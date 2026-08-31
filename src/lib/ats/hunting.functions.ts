@@ -13,6 +13,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { recordAtsEvent } from "./audit.server";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
+import { sel } from "@/lib/grid/dynamic-select";
 
 // ────────────────────────────────────────────────────────────────────────────
 // Capturas
@@ -379,6 +380,36 @@ export const renderHuntingTemplate = createServerFn({ method: "POST" })
   });
 
 // ────────────────────────────────────────────────────────────────────────────
+// Responsável dos candidatos capturados
+// ────────────────────────────────────────────────────────────────────────────
+
+/** Define o responsável (`assigned_to`) de candidatos capturados, em lote. */
+export const assignCandidatesResponsible = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        candidate_ids: z.array(z.string().uuid()).min(1).max(200),
+        assigned_to: z.string().uuid().nullable(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    const { data: rows, error } = await supabase
+      .from("ats_candidates")
+      .update({ assigned_to: data.assigned_to } as never)
+      .in("id", data.candidate_ids)
+      .select("id");
+    if (error) throw new Error(error.message);
+    const updated = Array.isArray(rows) ? rows.length : 0;
+    if (updated === 0) {
+      throw new Error("Você não tem permissão para alterar o responsável destes candidatos.");
+    }
+    return { updated };
+  });
+
+// ────────────────────────────────────────────────────────────────────────────
 // Listagens para UI
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -395,37 +426,31 @@ export const listRecentCaptures = createServerFn({ method: "POST" })
     const { supabase } = context;
     const { data: rows, error } = await supabase
       .from("ats_hunting_captures")
-      .select("id, candidate_id, source_url, captured_at, parser_version")
+      .select("id, candidate_id, source_url, captured_at, parser_version, captured_by")
       .order("captured_at", { ascending: false })
       .limit(data.limit);
     if (error) throw new Error(error.message);
     const ids = Array.from(new Set((rows ?? []).map((r) => r.candidate_id as string)));
-    let cands: Record<
-      string,
-      {
-        id: string;
-        full_name: string;
-        current_company: string | null;
-        current_position: string | null;
-        linkedin_url: string | null;
-      }
-    > = {};
+    type CandidateBrief = {
+      id: string;
+      full_name: string;
+      current_company: string | null;
+      current_position: string | null;
+      linkedin_url: string | null;
+      assigned_to: string | null;
+      owner_id: string | null;
+    };
+    let cands: Record<string, CandidateBrief> = {};
     if (ids.length) {
       const { data: c } = await supabase
         .from("ats_candidates")
-        .select("id, full_name, current_company, current_position, linkedin_url")
+        .select(
+          sel(
+            "id, full_name, current_company, current_position, linkedin_url, assigned_to, owner_id",
+          ),
+        )
         .in("id", ids);
-      cands = Object.fromEntries(
-        (
-          (c ?? []) as Array<{
-            id: string;
-            full_name: string;
-            current_company: string | null;
-            current_position: string | null;
-            linkedin_url: string | null;
-          }>
-        ).map((x) => [x.id, x]),
-      );
+      cands = Object.fromEntries(((c ?? []) as unknown as CandidateBrief[]).map((x) => [x.id, x]));
     }
     return {
       captures: (rows ?? []).map((r) => ({

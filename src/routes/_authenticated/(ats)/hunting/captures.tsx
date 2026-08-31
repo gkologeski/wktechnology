@@ -3,8 +3,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
-import { ExternalLink, Inbox, Sparkles } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ExternalLink, Inbox, Sparkles, UserCheck } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -13,8 +13,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Link } from "@tanstack/react-router";
-import { listRecentCaptures } from "@/lib/ats/hunting.functions";
+import { AssigneeCell } from "@/components/entity/assignee-cell";
+import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
+import { responsibleId } from "@/lib/entity/responsible";
+import { listRecentCaptures, assignCandidatesResponsible } from "@/lib/ats/hunting.functions";
 import { enrichCapturesBulk } from "@/lib/ats/hunting-enrich.functions";
 
 export const Route = createFileRoute("/_authenticated/(ats)/hunting/captures")({
@@ -42,6 +52,33 @@ function HuntingCapturesPage() {
     mutationFn: (ids: string[]) => enrich({ data: { capture_ids: ids } }),
     onSuccess: (r) => {
       toast.success(`Enriquecidos: ${r.ok} · falhas: ${r.failed}`);
+      setSelected(new Set());
+      qc.invalidateQueries({ queryKey: ["hunting-captures"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const assign = useServerFn(assignCandidatesResponsible);
+  const { data: members } = useWorkspaceMembers();
+
+  const selectedCandidateIds = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          captures
+            .filter((c) => selected.has(c.id))
+            .map((c) => c.candidate_id as string)
+            .filter(Boolean),
+        ),
+      ),
+    [captures, selected],
+  );
+
+  const assignMut = useMutation({
+    mutationFn: (assignedTo: string | null) =>
+      assign({ data: { candidate_ids: selectedCandidateIds, assigned_to: assignedTo } }),
+    onSuccess: (r) => {
+      toast.success(`Responsável atualizado em ${r.updated} candidato(s).`);
       setSelected(new Set());
       qc.invalidateQueries({ queryKey: ["hunting-captures"] });
     },
@@ -105,7 +142,7 @@ function HuntingCapturesPage() {
       ) : (
         <Card>
           <CardContent className="p-0">
-            <div className="flex items-center gap-3 border-b border-border-subtle px-4 py-2">
+            <div className="flex flex-wrap items-center gap-3 border-b border-border-subtle px-4 py-2">
               <Checkbox
                 checked={allChecked}
                 onCheckedChange={toggleAll}
@@ -114,8 +151,29 @@ function HuntingCapturesPage() {
               <span className="text-xs text-muted-foreground">
                 {selected.size > 0
                   ? `${selected.size} selecionados`
-                  : "Selecione para enriquecer com IA"}
+                  : "Selecione para enriquecer com IA ou definir responsável"}
               </span>
+              {selected.size > 0 && (
+                <div className="ml-auto flex items-center gap-2">
+                  <UserCheck className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                  <Select
+                    disabled={assignMut.isPending}
+                    onValueChange={(v) => assignMut.mutate(v === "__none__" ? null : v)}
+                  >
+                    <SelectTrigger className="h-8 w-52" aria-label="Definir responsável">
+                      <SelectValue placeholder="Definir responsável" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Sem responsável</SelectItem>
+                      {(members ?? []).map((m) => (
+                        <SelectItem key={m.user_id} value={m.user_id}>
+                          {m.full_name?.trim() || m.user_id.slice(0, 8)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
             <div className="divide-y">
               {captures.map((c) => {
@@ -153,6 +211,10 @@ function HuntingCapturesPage() {
                           {cand?.current_position ?? "—"}
                           {cand?.current_company ? ` · ${cand.current_company}` : ""}
                         </p>
+                        <AssigneeCell
+                          assignedTo={cand ? responsibleId(cand) : null}
+                          className="text-xs"
+                        />
                         <p className="text-xs text-muted-foreground">
                           Capturado{" "}
                           {formatDistanceToNow(new Date(c.captured_at as string), {

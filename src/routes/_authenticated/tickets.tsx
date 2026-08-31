@@ -88,6 +88,7 @@ import { notifyTicketStatusChange } from "@/lib/tickets-notify.functions";
 import { SlaBadge } from "@/components/sla/sla-badge";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { deleteRowGuarded, deleteRowsGuarded, partialDeleteMessage } from "@/lib/delete-guard";
+import { ticketResponsibleId } from "@/lib/entity/responsible";
 
 export const Route = createFileRoute("/_authenticated/tickets")({
   component: TicketsPage,
@@ -232,7 +233,7 @@ function TicketsIndex() {
     let list = filterByView(tickets, view, user?.id ?? null);
     if (pipeline?.id) list = list.filter((t) => !t.pipeline_id || t.pipeline_id === pipeline.id);
     if (priorityFilter !== "all") list = list.filter((t) => t.priority === priorityFilter);
-    if (ownerFilter !== "all") list = list.filter((t) => t.assignee_id === ownerFilter);
+    if (ownerFilter !== "all") list = list.filter((t) => ticketResponsibleId(t) === ownerFilter);
     const q = search.trim().toLowerCase();
     if (q) {
       list = list.filter((t) => {
@@ -591,7 +592,7 @@ function TicketsIndex() {
                   <TableHead>Status</TableHead>
                   <TableHead>Contato</TableHead>
                   <TableHead>Empresa</TableHead>
-                  <TableHead>Atribuído a</TableHead>
+                  <TableHead>Responsável</TableHead>
                   <TableHead>Criado</TableHead>
                   <TableHead className="w-8" />
                 </TableRow>
@@ -612,7 +613,8 @@ function TicketsIndex() {
                   </TableRow>
                 )}
                 {filtered.map((t) => {
-                  const ownerName = t.assignee_id ? lookups.owners.get(t.assignee_id) : undefined;
+                  const responsible = ticketResponsibleId(t);
+                  const ownerName = responsible ? lookups.owners.get(responsible) : undefined;
                   return (
                     <TableRow key={t.id} className="cursor-pointer" onClick={() => openEdit(t)}>
                       <TableCell onClick={(e) => e.stopPropagation()}>
@@ -809,7 +811,7 @@ function TicketsIndex() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Atribuído a</Label>
+              <Label>Responsável</Label>
               <Select
                 value={draft.assignee_id ?? ""}
                 onValueChange={(v) => setDraft({ ...draft, assignee_id: v || null })}

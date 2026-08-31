@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Mail, Phone, Building2, User as UserIcon, Calendar, Tag } from "lucide-react";
 import { PRIORITIES, STATUSES, type TicketRow } from "./types";
+import { ticketResponsibleId, creatorId } from "@/lib/entity/responsible";
 
 export function TicketsSplitView({
   tickets,
@@ -46,7 +47,11 @@ export function TicketsSplitView({
               active={t.id === selectedId}
               contactName={t.contact_id ? lookups.contacts.get(t.contact_id) : undefined}
               companyName={t.company_id ? lookups.companies.get(t.company_id) : undefined}
-              ownerName={t.assignee_id ? lookups.owners.get(t.assignee_id) : undefined}
+              ownerName={
+                ticketResponsibleId(t)
+                  ? lookups.owners.get(ticketResponsibleId(t) as string)
+                  : undefined
+              }
               onClick={() => setSelectedId(t.id)}
             />
           ))}
@@ -116,8 +121,21 @@ export function TicketsSplitView({
               />
               <Field
                 icon={UserIcon}
-                label="Atribuído a"
-                value={selected.assignee_id ? lookups.owners.get(selected.assignee_id) : "—"}
+                label="Responsável"
+                value={
+                  ticketResponsibleId(selected)
+                    ? lookups.owners.get(ticketResponsibleId(selected) as string)
+                    : "—"
+                }
+              />
+              <Field
+                icon={UserIcon}
+                label="Criado por"
+                value={
+                  creatorId(selected)
+                    ? (lookups.owners.get(creatorId(selected) as string) ?? "—")
+                    : "—"
+                }
               />
               <Field
                 icon={Calendar}

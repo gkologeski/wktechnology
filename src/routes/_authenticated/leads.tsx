@@ -243,7 +243,9 @@ function LeadsHubspotView() {
     if (activeView === "mine" && user?.id)
       q = q.or(responsibleOrExpr([user.id], { columns: RESPONSIBLE_COLUMNS_FULL }));
     if (activeView === "unassigned")
-      q = q.or(responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_FULL, includeUnassigned: true }));
+      q = q.or(
+        responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_FULL, includeUnassigned: true }),
+      );
     if (activeView === "open") q = q.not("status", "in", "(qualified,disqualified)");
     if (activeView === "new_week") {
       const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
@@ -283,7 +285,9 @@ function LeadsHubspotView() {
         userIds.length === 0 &&
         hsIds.length === 0
       ) {
-        q = q.or(responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_FULL, includeUnassigned: true }));
+        q = q.or(
+          responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_FULL, includeUnassigned: true }),
+        );
       } else if (parts.length > 0) {
         q = q.or(parts.join(","));
       }

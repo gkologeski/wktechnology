@@ -551,11 +551,11 @@ function CompaniesHubspotView() {
         // Refaz a query atual sem paginação (limit defensivo de 5.000).
         let q = supabase.from("companies").select("id");
         if (activeView === "mine" && user?.id)
-        q = q.or(responsibleOrExpr([user.id], { columns: RESPONSIBLE_COLUMNS_FULL }));
+          q = q.or(responsibleOrExpr([user.id], { columns: RESPONSIBLE_COLUMNS_FULL }));
         if (activeView === "unassigned")
-        q = q.or(
-          responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_FULL, includeUnassigned: true }),
-        );
+          q = q.or(
+            responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_FULL, includeUnassigned: true }),
+          );
         if (activeView === "new_week") {
           const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
           q = q.gte("created_at", since);
@@ -575,17 +575,17 @@ function CompaniesHubspotView() {
         }
         if (filters.ownerIds.length > 0 && filters.includeUnassigned) {
           q = q.or(
-          responsibleOrExpr(filters.ownerIds, {
-            columns: RESPONSIBLE_COLUMNS_FULL,
-            includeUnassigned: true,
-          }),
-        );
+            responsibleOrExpr(filters.ownerIds, {
+              columns: RESPONSIBLE_COLUMNS_FULL,
+              includeUnassigned: true,
+            }),
+          );
         } else if (filters.ownerIds.length > 0) {
           q = q.or(responsibleOrExpr(filters.ownerIds, { columns: RESPONSIBLE_COLUMNS_FULL }));
         } else if (filters.includeUnassigned) {
           q = q.or(
-          responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_FULL, includeUnassigned: true }),
-        );
+            responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_FULL, includeUnassigned: true }),
+          );
         }
         const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
         if (term) {

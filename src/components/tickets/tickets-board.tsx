@@ -15,6 +15,7 @@ import type { Pipeline, PipelineStage } from "@/lib/pipelines";
 import { TicketCard } from "./ticket-card";
 import { notifyTicketStatusChange } from "@/lib/tickets-notify.functions";
 import type { TicketRow, TicketStatus } from "./types";
+import { ticketResponsibleId } from "@/lib/entity/responsible";
 import { KanbanScrollContainer } from "@/components/kanban/kanban-scroll-container";
 import { computeTicketSignals } from "@/lib/kanban/tickets-signals";
 import { Flame } from "lucide-react";
@@ -225,7 +226,11 @@ export function TicketsBoard({
                       columnId={s.value}
                       contactName={t.contact_id ? lookups.contacts.get(t.contact_id) : undefined}
                       companyName={t.company_id ? lookups.companies.get(t.company_id) : undefined}
-                      ownerName={t.assignee_id ? lookups.owners.get(t.assignee_id) : undefined}
+                      ownerName={
+                        ticketResponsibleId(t)
+                          ? lookups.owners.get(ticketResponsibleId(t) as string)
+                          : undefined
+                      }
                       signals={sig}
                       dimmed={focusMode && sig?.klass === "cold"}
                       selectable={selectable}

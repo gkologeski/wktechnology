@@ -2,6 +2,7 @@ import { Inbox, UserCheck, UserX, Flame, Clock3, CheckCircle2, ListFilter } from
 import { Button } from "@/components/ui/button";
 import type { LucideIcon } from "lucide-react";
 import type { TicketRow } from "./types";
+import { ticketResponsibleId } from "@/lib/entity/responsible";
 
 export type ViewKey = "all" | "mine" | "unassigned" | "urgent" | "overdue" | "closed_today";
 
@@ -21,11 +22,12 @@ export function filterByView(tickets: TicketRow[], view: ViewKey, userId: string
   switch (view) {
     case "mine":
       return tickets.filter(
-        (t) => t.assignee_id === userId && t.status !== "closed" && t.status !== "resolved",
+        (t) =>
+          ticketResponsibleId(t) === userId && t.status !== "closed" && t.status !== "resolved",
       );
     case "unassigned":
       return tickets.filter(
-        (t) => !t.assignee_id && t.status !== "closed" && t.status !== "resolved",
+        (t) => !ticketResponsibleId(t) && t.status !== "closed" && t.status !== "resolved",
       );
     case "urgent":
       return tickets.filter((t) => t.priority === "urgent" && t.status !== "closed");

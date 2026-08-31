@@ -2,10 +2,10 @@
 -- Migração aditiva: nenhuma coluna é removida, renomeada ou tem o tipo alterado.
 
 -- ---------------------------------------------------------------------------
--- 1) Coluna de responsável onde ainda não existe (tickets)
+-- 1) Chamados já possuem a coluna de responsável (`assignee_id`);
+--    nenhuma coluna nova é criada — apenas índice de apoio.
 -- ---------------------------------------------------------------------------
-ALTER TABLE public.tickets ADD COLUMN IF NOT EXISTS assigned_to uuid;
-CREATE INDEX IF NOT EXISTS tickets_assigned_to_idx ON public.tickets (assigned_to);
+CREATE INDEX IF NOT EXISTS tickets_assignee_id_idx ON public.tickets (assignee_id);
 
 -- ---------------------------------------------------------------------------
 -- 2) Função única de "registro é meu" (responsável OU criador)
@@ -60,7 +60,8 @@ BEGIN
 END
 $backfill$;
 
-UPDATE public.tickets SET assigned_to = owner_id WHERE assigned_to IS NULL AND owner_id IS NOT NULL;
+-- Chamados: responsável default = criador quando ainda vazio
+UPDATE public.tickets SET assignee_id = owner_id WHERE assignee_id IS NULL AND owner_id IS NOT NULL;
 
 -- ---------------------------------------------------------------------------
 -- 4) Gatilho: assigned_to default na criação + espelho da coluna legada
@@ -161,3 +162,58 @@ BEGIN
   END LOOP;
 END
 $policies$;
+
+-- ---------------------------------------------------------------------------
+-- 6) Chamados: gatilho de responsável default + escopo "meus registros"
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.tickets_sync_responsible()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF TG_OP = 'INSERT' AND NEW.assignee_id IS NULL THEN
+    NEW.assignee_id := NEW.owner_id;
+  END IF;
+  RETURN NEW;
+END
+$$;
+
+DROP TRIGGER IF EXISTS trg_tickets_sync_responsible ON public.tickets;
+CREATE TRIGGER trg_tickets_sync_responsible
+  BEFORE INSERT ON public.tickets
+  FOR EACH ROW EXECUTE FUNCTION public.tickets_sync_responsible();
+
+DO $ticket_policies$
+DECLARE
+  p record;
+  new_qual text;
+  new_check text;
+BEGIN
+  FOR p IN
+    SELECT tablename, policyname, permissive, roles, cmd, qual, with_check
+      FROM pg_policies
+     WHERE schemaname = 'public'
+       AND tablename = 'tickets'
+       AND cmd <> 'INSERT'
+       AND (qual LIKE '%owner_id = auth.uid()%' OR with_check LIKE '%owner_id = auth.uid()%')
+  LOOP
+    new_qual := replace(COALESCE(p.qual, ''), 'owner_id = auth.uid()',
+                        'is_own_record(owner_id, assignee_id)');
+    new_check := replace(COALESCE(p.with_check, ''), 'owner_id = auth.uid()',
+                         'is_own_record(owner_id, assignee_id)');
+
+    EXECUTE format('DROP POLICY IF EXISTS %I ON public.tickets', p.policyname);
+    EXECUTE format(
+      'CREATE POLICY %I ON public.tickets AS %s FOR %s TO %s %s %s',
+      p.policyname,
+      CASE WHEN p.permissive = 'PERMISSIVE' THEN 'PERMISSIVE' ELSE 'RESTRICTIVE' END,
+      p.cmd,
+      array_to_string(p.roles, ', '),
+      CASE WHEN new_qual = '' THEN '' ELSE 'USING (' || new_qual || ')' END,
+      CASE WHEN new_check = '' THEN '' ELSE 'WITH CHECK (' || new_check || ')' END
+    );
+  END LOOP;
+END
+$ticket_policies$;

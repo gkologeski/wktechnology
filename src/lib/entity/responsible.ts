@@ -47,6 +47,16 @@ export const RESPONSIBLE_COLUMNS_FULL: ResponsibleColumns = [
   "owner_id",
 ];
 export const RESPONSIBLE_COLUMNS_BASIC: ResponsibleColumns = ["assigned_to", "owner_id"];
+/** Chamados (TechService) usam `assignee_id` como coluna de responsável. */
+export const RESPONSIBLE_COLUMNS_TICKET: ResponsibleColumns = ["assignee_id", "owner_id"];
+
+/** Responsável efetivo de um chamado (`assignee_id ?? owner_id`). */
+export function ticketResponsibleId(
+  row: { assignee_id?: string | null; owner_id?: string | null } | null | undefined,
+): string | null {
+  if (!row) return null;
+  return row.assignee_id ?? row.owner_id ?? null;
+}
 
 /**
  * Monta a cláusula `or(...)` do PostgREST para filtrar pelo responsável efetivo,
