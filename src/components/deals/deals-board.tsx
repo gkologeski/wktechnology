@@ -14,6 +14,10 @@ import { DealsBoardCard } from "./deals-board-card";
 import { KanbanScrollContainer } from "@/components/kanban/kanban-scroll-container";
 import { LostReasonDialog, type LostReasonResult } from "@/components/deals/lost-reason-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { Play } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { startFocusQueue } from "@/lib/focus-queue";
 import { useBoardSelection } from "@/components/kanban/use-board-selection";
 import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
 
