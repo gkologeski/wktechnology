@@ -4,6 +4,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SB = any;
@@ -158,8 +159,12 @@ export const deleteJobRole = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     await assertWorkspaceOwner(supabase, userId);
     await assertNotSystemRow(supabase, "job_roles", data.id);
-    const { error } = await supabase.from("job_roles").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    await deleteByIdGuarded(
+      supabase,
+      "job_roles",
+      data.id,
+      "Você não tem permissão para excluir este cargo.",
+    );
     await logAudit(supabase, userId, "role.delete", "job_role", data.id, null);
     return { ok: true };
   });
@@ -241,8 +246,12 @@ export const deletePermissionSet = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     await assertWorkspaceOwner(supabase, userId);
     await assertNotSystemRow(supabase, "permission_sets", data.id);
-    const { error } = await supabase.from("permission_sets").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    await deleteByIdGuarded(
+      supabase,
+      "permission_sets",
+      data.id,
+      "Você não tem permissão para excluir este pacote de permissões.",
+    );
     await logAudit(supabase, userId, "set.delete", "permission_set", data.id, null);
     return { ok: true };
   });
@@ -303,8 +312,12 @@ export const deleteFieldRule = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     await assertWorkspaceOwner(supabase, userId);
     await assertNotSystemRow(supabase, "field_permission_rules", data.id);
-    const { error } = await supabase.from("field_permission_rules").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    await deleteByIdGuarded(
+      supabase,
+      "field_permission_rules",
+      data.id,
+      "Você não tem permissão para excluir esta regra de campo.",
+    );
     await logAudit(supabase, userId, "field_rule.delete", "field_rule", data.id, null);
     return { ok: true };
   });
