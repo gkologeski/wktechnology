@@ -510,24 +510,15 @@ function TicketsIndex() {
         <TabsContent value="table" className="mt-4">
           {selected.size > 0 && (
             <BulkActionBar count={selected.size} onClear={clearSelection}>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="ghost" className="h-7">
-                    <UserCheck className="h-3.5 w-3.5 mr-1" />
-                    Atribuir
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  {members.map((m) => (
-                    <DropdownMenuItem
-                      key={m.user_id}
-                      onSelect={() => bulkUpdate({ assignee_id: m.user_id })}
-                    >
-                      {m.full_name}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7"
+                onClick={() => setAssignOpen(true)}
+              >
+                <UserCheck className="h-3.5 w-3.5 mr-1" />
+                Atribuir
+              </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button size="sm" variant="ghost" className="h-7">
