@@ -76,6 +76,16 @@ function LeadsHubspotView() {
   const { canAny: canAnyPermission } = usePermissions();
   const canProspectingMode =
     canAnyPermission([...QUEUE_VIEW]) && canAnyPermission([...QUEUE_CREATE, ...QUEUE_UPDATE]);
+  /** RBAC de leads — a RLS continua sendo a fonte de verdade na escrita. */
+  const canUpdateLeads = canAnyPermission([
+    "techsales.leads.update.own",
+    "techsales.leads.update.workspace",
+  ]);
+  const canDeleteLeads = canAnyPermission([
+    "techsales.leads.delete.own",
+    "techsales.leads.delete.workspace",
+  ]);
+
   const listProspectingQueues = useServerFn(listQueues);
   const upsertProspectingQueue = useServerFn(upsertQueue);
   const [prospectingBusy, setProspectingBusy] = useState(false);
