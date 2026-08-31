@@ -22,7 +22,14 @@ import {
 } from "@/components/ui/select";
 import { Link } from "@tanstack/react-router";
 import { AssigneeCell } from "@/components/entity/assignee-cell";
+import {
+  AssigneeFilter,
+  ASSIGNEE_ALL,
+  ASSIGNEE_ME,
+  ASSIGNEE_NONE,
+} from "@/components/entity/assignee-filter";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
+import { useCurrentUserId } from "@/hooks/use-current-user-id";
 import { responsibleId } from "@/lib/entity/responsible";
 import { listRecentCaptures, assignCandidatesResponsible } from "@/lib/ats/hunting.functions";
 import { enrichCapturesBulk } from "@/lib/ats/hunting-enrich.functions";
@@ -45,7 +52,19 @@ function HuntingCapturesPage() {
   });
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const captures = q.data?.captures ?? [];
+  const [assigneeFilter, setAssigneeFilter] = useState<string>(ASSIGNEE_ALL);
+  const meId = useCurrentUserId();
+  const allCaptures = q.data?.captures ?? [];
+  const captures = useMemo(() => {
+    if (assigneeFilter === ASSIGNEE_ALL) return allCaptures;
+    return allCaptures.filter((c) => {
+      const responsible = c.candidate ? responsibleId(c.candidate) : null;
+      if (assigneeFilter === ASSIGNEE_NONE) return responsible == null;
+      if (assigneeFilter === ASSIGNEE_ME) return !!meId && responsible === meId;
+      return responsible === assigneeFilter;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q.data?.captures, assigneeFilter, meId]);
   const allChecked = captures.length > 0 && selected.size === captures.length;
 
   const enrichMut = useMutation({
@@ -153,6 +172,18 @@ function HuntingCapturesPage() {
                   ? `${selected.size} selecionados`
                   : "Selecione para enriquecer com IA ou definir responsável"}
               </span>
+              {selected.size === 0 && (
+                <div className="ml-auto">
+                  <AssigneeFilter
+                    value={assigneeFilter}
+                    onChange={(v) => {
+                      setSelected(new Set());
+                      setAssigneeFilter(v);
+                    }}
+                    className="h-8 w-52"
+                  />
+                </div>
+              )}
               {selected.size > 0 && (
                 <div className="ml-auto flex items-center gap-2">
                   <UserCheck className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />

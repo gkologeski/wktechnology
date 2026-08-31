@@ -48,7 +48,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { AssigneeCell } from "@/components/entity/assignee-cell";
+import {
+  AssigneeFilter,
+  ASSIGNEE_ALL,
+  ASSIGNEE_ME,
+  ASSIGNEE_NONE,
+} from "@/components/entity/assignee-filter";
+import { BulkAssignDialog } from "@/components/bulk-assign-dialog";
 import {
   Plus,
   LayoutGrid,
@@ -143,7 +150,8 @@ function TicketsIndex() {
   const [pendingCompanyName, setPendingCompanyName] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
-  const [ownerFilter, setOwnerFilter] = useState<string>("all");
+  const [ownerFilter, setOwnerFilter] = useState<string>(ASSIGNEE_ALL);
+  const [assignOpen, setAssignOpen] = useState(false);
   const TICKETS_FOCUS_KEY = "tickets:focusMode";
   const [focusMode, setFocusMode] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -233,7 +241,14 @@ function TicketsIndex() {
     let list = filterByView(tickets, view, user?.id ?? null);
     if (pipeline?.id) list = list.filter((t) => !t.pipeline_id || t.pipeline_id === pipeline.id);
     if (priorityFilter !== "all") list = list.filter((t) => t.priority === priorityFilter);
-    if (ownerFilter !== "all") list = list.filter((t) => ticketResponsibleId(t) === ownerFilter);
+    if (ownerFilter !== ASSIGNEE_ALL) {
+      list = list.filter((t) => {
+        const responsible = ticketResponsibleId(t);
+        if (ownerFilter === ASSIGNEE_NONE) return responsible == null;
+        if (ownerFilter === ASSIGNEE_ME) return !!user?.id && responsible === user.id;
+        return responsible === ownerFilter;
+      });
+    }
     const q = search.trim().toLowerCase();
     if (q) {
       list = list.filter((t) => {
@@ -442,19 +457,7 @@ function TicketsIndex() {
           />
         </div>
 
-        <Select value={ownerFilter} onValueChange={setOwnerFilter}>
-          <SelectTrigger className="h-9 w-[160px]">
-            <SelectValue placeholder="Responsável" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os responsáveis</SelectItem>
-            {members.map((m) => (
-              <SelectItem key={m.user_id} value={m.user_id}>
-                {m.full_name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <AssigneeFilter value={ownerFilter} onChange={setOwnerFilter} className="w-[200px]" />
 
         <Select value={priorityFilter} onValueChange={setPriorityFilter}>
           <SelectTrigger className="h-9 w-[160px]">
@@ -503,24 +506,10 @@ function TicketsIndex() {
         <TabsContent value="table" className="mt-4">
           {selected.size > 0 && (
             <BulkActionBar count={selected.size} onClear={clearSelection}>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="ghost" className="h-7">
-                    <UserCheck className="h-3.5 w-3.5 mr-1" />
-                    Atribuir
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  {members.map((m) => (
-                    <DropdownMenuItem
-                      key={m.user_id}
-                      onSelect={() => bulkUpdate({ assignee_id: m.user_id })}
-                    >
-                      {m.full_name}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button size="sm" variant="ghost" className="h-7" onClick={() => setAssignOpen(true)}>
+                <UserCheck className="h-3.5 w-3.5 mr-1" />
+                Atribuir
+              </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button size="sm" variant="ghost" className="h-7">
@@ -614,7 +603,7 @@ function TicketsIndex() {
                 )}
                 {filtered.map((t) => {
                   const responsible = ticketResponsibleId(t);
-                  const ownerName = responsible ? lookups.owners.get(responsible) : undefined;
+
                   return (
                     <TableRow key={t.id} className="cursor-pointer" onClick={() => openEdit(t)}>
                       <TableCell onClick={(e) => e.stopPropagation()}>
@@ -685,22 +674,7 @@ function TicketsIndex() {
                         {t.company_id ? (lookups.companies.get(t.company_id) ?? "—") : "—"}
                       </TableCell>
                       <TableCell>
-                        {ownerName ? (
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-5 w-5 text-[9px]">
-                              <AvatarFallback className="bg-secondary text-secondary-foreground">
-                                {ownerName
-                                  .split(" ")
-                                  .map((p) => p[0])
-                                  .slice(0, 2)
-                                  .join("")}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="text-xs">{ownerName}</span>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">Não atribuído</span>
-                        )}
+                        <AssigneeCell assignedTo={responsible} className="text-xs" />
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground tabular-nums">
                         {formatDateTime(t.created_at)}
@@ -934,6 +908,17 @@ function TicketsIndex() {
         onOpenChange={setCreateCompanyOpen}
         initialName={pendingCompanyName}
         onCreated={(id) => setDraft((d) => ({ ...d, company_id: id }))}
+      />
+      <BulkAssignDialog
+        open={assignOpen}
+        setOpen={setAssignOpen}
+        table="tickets"
+        column="assignee_id"
+        ids={Array.from(selected)}
+        onDone={() => {
+          clearSelection();
+          qc.invalidateQueries({ queryKey: ["tickets"] });
+        }}
       />
     </div>
   );
