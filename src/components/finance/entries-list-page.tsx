@@ -24,6 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
+import { formatCompactDateTime } from "@/lib/format/compact-date";
 import { listFinancialEntries } from "@/lib/finance.functions";
 import { QuickCreateEntryDialog } from "@/components/finance/quick-create-entry-dialog";
 import { RegisterPaymentDialog } from "@/components/finance/register-payment-dialog";
@@ -300,7 +301,7 @@ export function EntriesListPage({
                   {formatCurrency(Number(e.amount), e.currency)}
                 </span>
                 <span className="text-muted-foreground">
-                  {formatDateTime(e.due_date).split(" ")[0]}
+                  {formatCompactDateTime(e.due_date)}
                 </span>
               </div>
               <Badge variant="outline" className={STATUS_TONE[e.status] ?? ""}>

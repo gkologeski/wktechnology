@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/table";
 import { listProjects } from "@/lib/projects.functions";
 import { formatDateTime } from "@/lib/crm";
+import { formatCompactDateTime } from "@/lib/format/compact-date";
 import { QuickCreateProjectDialog } from "@/components/projects/quick-create-project-dialog";
 import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
 import { AssigneeCell } from "@/components/entity/assignee-cell";
@@ -231,7 +232,7 @@ function ProjectsPage() {
                   </p>
                 )}
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{p.due_at ? formatDateTime(p.due_at).split(" ")[0] : "sem prazo"}</span>
+                  <span>{p.due_at ? formatCompactDateTime(p.due_at) : "sem prazo"}</span>
                   <span className="tabular-nums">{p.progress ?? 0}%</span>
                 </div>
                 <AssigneeCell assignedTo={p.assigned_to} />

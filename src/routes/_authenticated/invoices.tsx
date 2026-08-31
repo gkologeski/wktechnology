@@ -1,4 +1,5 @@
 import { formatDateTime } from "@/lib/crm";
+import { formatCompactDateTime } from "@/lib/format/compact-date";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -251,7 +252,7 @@ function InvoicesPage() {
                       })}
                     </span>
                     <span className="text-muted-foreground">
-                      {formatDateTime(inv.due_date).split(" ")[0]}
+                      {formatCompactDateTime(inv.due_date)}
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground">{inv.gateway ?? "—"}</p>
