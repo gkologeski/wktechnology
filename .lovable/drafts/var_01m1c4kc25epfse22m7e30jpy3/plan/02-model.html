@@ -1,0 +1,47 @@
+<svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    text { font-family: var(--font-sans); fill: hsl(var(--foreground)); }
+    .lbl { font-size: 14px; font-weight: 480; }
+    .sm { font-size: 12px; fill: hsl(var(--muted-foreground)); }
+    .mono { font-family: var(--font-mono); font-size: 12px; fill: hsl(var(--muted-foreground)); }
+    .box { fill: none; stroke: hsl(var(--muted-foreground)); stroke-width: 1; }
+    .zone { fill: none; stroke: hsl(var(--border)); stroke-width: 1; stroke-dasharray: 4 3; }
+    .wire { stroke: hsl(var(--muted-foreground)); stroke-width: 1; fill: none; }
+    .acc { fill: none; stroke: hsl(var(--accent)); stroke-width: 1; }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="hsl(var(--muted-foreground))"/>
+    </marker>
+  </defs>
+
+  <rect class="zone" x="8" y="8" width="300" height="120" rx="8"/>
+  <text class="sm" x="20" y="28">entidades já padronizadas</text>
+  <rect class="box" x="24" y="40" width="120" height="34" rx="8"/>
+  <text class="lbl" x="84" y="61" text-anchor="middle">criador</text>
+  <text class="mono" x="84" y="90" text-anchor="middle">created_by ?? owner_id</text>
+  <rect class="box" x="168" y="40" width="120" height="34" rx="8"/>
+  <text class="lbl" x="228" y="61" text-anchor="middle">responsável</text>
+  <text class="mono" x="228" y="90" text-anchor="middle">assigned_to ?? owner_id</text>
+
+  <rect class="zone" x="332" y="8" width="300" height="120" rx="8"/>
+  <text class="sm" x="344" y="28">chamados (tickets)</text>
+  <rect class="box" x="348" y="40" width="120" height="34" rx="8"/>
+  <text class="lbl" x="408" y="61" text-anchor="middle">criador</text>
+  <text class="mono" x="408" y="90" text-anchor="middle">owner_id</text>
+  <rect class="acc" x="492" y="40" width="120" height="34" rx="8"/>
+  <text class="lbl" x="552" y="61" text-anchor="middle">responsável</text>
+  <text class="mono" x="552" y="90" text-anchor="middle">assignee_id</text>
+
+  <rect class="zone" x="8" y="160" width="624" height="120" rx="8"/>
+  <text class="sm" x="20" y="180">hunting (ats_candidates) — só interface, schema já pronto</text>
+  <rect class="box" x="24" y="196" width="150" height="34" rx="8"/>
+  <text class="lbl" x="99" y="217" text-anchor="middle">card capturado</text>
+  <line class="wire" x1="180" y1="213" x2="238" y2="213" marker-end="url(#a)"/>
+  <rect class="box" x="244" y="196" width="170" height="34" rx="8"/>
+  <text class="lbl" x="329" y="217" text-anchor="middle">AssigneeCell</text>
+  <line class="wire" x1="420" y1="213" x2="478" y2="213" marker-end="url(#a)"/>
+  <rect class="box" x="484" y="196" width="130" height="34" rx="8"/>
+  <text class="lbl" x="549" y="217" text-anchor="middle">filtro / massa</text>
+  <text class="mono" x="24" y="256">responsibleId(candidato) = assigned_to ?? owner_id</text>
+</svg>
