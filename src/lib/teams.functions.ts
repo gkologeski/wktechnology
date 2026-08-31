@@ -2,6 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { deleteWhereGuarded } from "@/lib/db/delete-guarded";
 
 const TeamRole = z.enum(["admin", "manager", "member"]);
 export type TeamRole = z.infer<typeof TeamRole>;
@@ -714,12 +715,12 @@ export const removeTeamMember = createServerFn({ method: "POST" })
       reassigned += count ?? 0;
     }
 
-    const { error } = await supabaseAdmin
-      .from("workspace_members")
-      .delete()
-      .eq("workspace_id", workspace.id)
-      .eq("user_id", data.member_user_id);
-    if (error) throw new Error(error.message);
+    await deleteWhereGuarded(
+      supabaseAdmin,
+      "workspace_members",
+      { workspace_id: workspace.id, user_id: data.member_user_id },
+      "Membro não encontrado neste workspace.",
+    );
 
     await supabaseAdmin
       .from("user_roles")

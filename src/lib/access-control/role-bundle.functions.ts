@@ -8,6 +8,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchAllPages } from "./fetch-all";
+import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 const BUNDLE_MODULE = "__bundle__";
 
@@ -688,7 +689,11 @@ export const deleteJobRole = createServerFn({ method: "POST" })
       await supabase.from("permission_sets").delete().eq("id", setId);
     }
 
-    const del = await supabase.from("job_roles").delete().eq("id", data.role_id);
-    if (del.error) throw new Error(del.error.message);
+    await deleteByIdGuarded(
+      supabase,
+      "job_roles",
+      data.role_id,
+      "Você não tem permissão para excluir este cargo.",
+    );
     return { ok: true };
   });
