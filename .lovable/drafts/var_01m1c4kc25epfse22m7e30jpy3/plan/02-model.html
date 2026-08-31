@@ -1,0 +1,47 @@
+<svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" style="font-family: var(--font-sans)">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10" fill="none" stroke="hsl(var(--muted-foreground))" stroke-width="1"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="8" width="300" height="128" rx="8" fill="none" stroke="hsl(var(--border))" stroke-dasharray="4 3"/>
+  <text x="14" y="28" style="font-size:12px" fill="hsl(var(--muted-foreground))">hoje — 3 colunas, sem regra única</text>
+  <rect x="16" y="40" width="126" height="34" rx="8" fill="none" stroke="hsl(var(--muted-foreground))"/>
+  <text x="79" y="62" text-anchor="middle" style="font-size:12px;font-family:var(--font-mono)" fill="hsl(var(--foreground))">owner_id</text>
+  <rect x="156" y="40" width="126" height="34" rx="8" fill="none" stroke="hsl(var(--muted-foreground))"/>
+  <text x="219" y="62" text-anchor="middle" style="font-size:12px;font-family:var(--font-mono)" fill="hsl(var(--foreground))">assigned_to</text>
+  <rect x="16" y="84" width="126" height="34" rx="8" fill="none" stroke="hsl(var(--muted-foreground))"/>
+  <text x="79" y="106" text-anchor="middle" style="font-size:12px;font-family:var(--font-mono)" fill="hsl(var(--foreground))">assigned_user_id</text>
+  <rect x="156" y="84" width="126" height="34" rx="8" fill="none" stroke="hsl(var(--muted-foreground))"/>
+  <text x="219" y="106" text-anchor="middle" style="font-size:12px;font-family:var(--font-mono)" fill="hsl(var(--foreground))">hubspot_owner_id</text>
+
+  <line x1="304" y1="72" x2="352" y2="72" stroke="hsl(var(--muted-foreground))" marker-end="url(#a)"/>
+
+  <rect x="356" y="8" width="284" height="128" rx="8" fill="none" stroke="hsl(var(--border))" stroke-dasharray="4 3"/>
+  <text x="370" y="28" style="font-size:12px" fill="hsl(var(--muted-foreground))">alvo — 2 conceitos</text>
+  <rect x="372" y="40" width="252" height="34" rx="8" fill="none" stroke="hsl(var(--muted-foreground))"/>
+  <text x="386" y="62" style="font-size:12px" fill="hsl(var(--foreground))">Criador</text>
+  <text x="618" y="62" text-anchor="end" style="font-size:12px;font-family:var(--font-mono)" fill="hsl(var(--muted-foreground))">created_by ?? owner_id</text>
+  <rect x="372" y="84" width="252" height="34" rx="8" fill="hsl(var(--accent))" stroke="none"/>
+  <text x="386" y="106" style="font-size:12px;font-weight:480" fill="hsl(var(--accent-foreground))">Responsável</text>
+  <text x="618" y="106" text-anchor="end" style="font-size:12px;font-family:var(--font-mono)" fill="hsl(var(--accent-foreground))">assigned_to ?? owner_id</text>
+
+  <text x="0" y="176" style="font-size:12px" fill="hsl(var(--muted-foreground))">camadas que passam a usar a mesma regra</text>
+  <rect x="0" y="188" width="146" height="40" rx="8" fill="none" stroke="hsl(var(--muted-foreground))"/>
+  <text x="73" y="212" text-anchor="middle" style="font-size:14px;font-weight:480" fill="hsl(var(--foreground))">Banco</text>
+  <line x1="146" y1="208" x2="188" y2="208" stroke="hsl(var(--muted-foreground))" marker-end="url(#a)"/>
+  <rect x="190" y="188" width="146" height="40" rx="8" fill="none" stroke="hsl(var(--muted-foreground))"/>
+  <text x="263" y="212" text-anchor="middle" style="font-size:14px;font-weight:480" fill="hsl(var(--foreground))">Helper único</text>
+  <line x1="336" y1="208" x2="378" y2="208" stroke="hsl(var(--muted-foreground))" marker-end="url(#a)"/>
+  <rect x="380" y="188" width="126" height="40" rx="8" fill="none" stroke="hsl(var(--muted-foreground))"/>
+  <text x="443" y="212" text-anchor="middle" style="font-size:14px;font-weight:480" fill="hsl(var(--foreground))">Grids / Kanban</text>
+  <line x1="506" y1="208" x2="548" y2="208" stroke="hsl(var(--muted-foreground))" marker-end="url(#a)"/>
+  <rect x="550" y="188" width="90" height="40" rx="8" fill="none" stroke="hsl(var(--muted-foreground))"/>
+  <text x="595" y="212" text-anchor="middle" style="font-size:14px;font-weight:480" fill="hsl(var(--foreground))">Filtros</text>
+
+  <circle cx="10" cy="258" r="9" fill="hsl(var(--accent))"/>
+  <text x="10" y="262" text-anchor="middle" style="font-size:11px;font-weight:480" fill="hsl(var(--accent-foreground))">!</text>
+  <text x="28" y="255" style="font-size:12px" fill="hsl(var(--muted-foreground))">536 políticas RLS usam owner_id como escopo de acesso — nada é renomeado</text>
+  <text x="28" y="273" style="font-size:12px" fill="hsl(var(--muted-foreground))">nem removido; o escopo "meus registros" passa a considerar os dois campos.</text>
+</svg>
