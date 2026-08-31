@@ -63,3 +63,12 @@ linhas, imports estáticos, tempo de build/typecheck antes
 ## Validação
 typecheck, lint, test, build + smoke nas telas tocadas; comparar métricas
 ```
+
+---
+
+## Onde vai o ajuste pequeno de UI
+
+Bug ou incômodo cosmético de interface **não** abre plano próprio: registre em
+`docs/polimento-semanal.md`, a fila única de polimento. Só vira plano
+`feature`/`refactor` quando exigir mudança de schema, RLS, permissões,
+autenticação ou regra de negócio.
