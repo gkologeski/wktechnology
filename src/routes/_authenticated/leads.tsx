@@ -711,27 +711,8 @@ function LeadsHubspotView() {
           <LeadsToolbar
             search={search}
             setSearch={setSearch}
-            selectedCount={selectedIds.size}
-            total={total}
-            isSelectingAll={isSelectingAll}
-            onSelectAllMatching={selectAllMatching}
-            onStartQueueFromSelection={() => {
-              const ids = Array.from(selectedIds);
-              if (!ids.length) return;
-              startFocusQueue("leads", ids, `Leads · ${ids.length.toLocaleString("pt-BR")}`);
-              toast.success(`Fila iniciada com ${ids.length} lead(s)`);
-              navigate({ to: "/leads/$id", params: { id: ids[0] } });
-            }}
-            canProspectingMode={canProspectingMode}
-            prospectingBusy={prospectingBusy}
-            onProspectingFromSelection={() =>
-              void startProspectingMode(Array.from(selectedIds).slice(0, PROSPECTING_MODE_LIMIT))
-            }
-            onEnrichSelection={() => setEnrichIds(Array.from(selectedIds))}
-            onAddToProspectingSelection={() => setProspectingIds(Array.from(selectedIds))}
-            onBulkDelete={bulkDelete}
-            onBulkEdit={() => setBulkEditOpen(true)}
-            onClearSelection={clearSelection}
+            ColumnsButton={ColumnsButton}
+
             ColumnsButton={ColumnsButton}
             onExportCsv={exportCsv}
             ViewToggle={
