@@ -621,7 +621,7 @@ function TicketsIndex() {
                 )}
                 {filtered.map((t) => {
                   const responsible = ticketResponsibleId(t);
-                  const ownerName = responsible ? lookups.owners.get(responsible) : undefined;
+                  
                   return (
                     <TableRow key={t.id} className="cursor-pointer" onClick={() => openEdit(t)}>
                       <TableCell onClick={(e) => e.stopPropagation()}>
