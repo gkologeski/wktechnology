@@ -36,11 +36,6 @@ export function SubstatusQuickPicker({
   const [saving, setSaving] = useState(false);
   const current = all.find((s) => s.id === value) ?? null;
 
-  // Etapa sem substatus: gestores veem um atalho para configurar; demais, nada.
-  if (options.length === 0 && !current) {
-    if (isLoading) return null;
-    return <SubstatusManageHint />;
-  }
   if (!canUpdate) return <SubstatusBadge substatus={current} />;
 
   const apply = async (next: string | null) => {
