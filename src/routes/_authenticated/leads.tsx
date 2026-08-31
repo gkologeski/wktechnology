@@ -713,7 +713,6 @@ function LeadsHubspotView() {
             setSearch={setSearch}
             ColumnsButton={ColumnsButton}
 
-            ColumnsButton={ColumnsButton}
             onExportCsv={exportCsv}
             ViewToggle={
               <div
