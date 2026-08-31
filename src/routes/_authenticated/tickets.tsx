@@ -150,7 +150,8 @@ function TicketsIndex() {
   const [pendingCompanyName, setPendingCompanyName] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
-  const [ownerFilter, setOwnerFilter] = useState<string>("all");
+  const [ownerFilter, setOwnerFilter] = useState<string>(ASSIGNEE_ALL);
+  const [assignOpen, setAssignOpen] = useState(false);
   const TICKETS_FOCUS_KEY = "tickets:focusMode";
   const [focusMode, setFocusMode] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
