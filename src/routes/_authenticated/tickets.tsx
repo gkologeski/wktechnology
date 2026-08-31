@@ -914,6 +914,18 @@ function TicketsIndex() {
         initialName={pendingCompanyName}
         onCreated={(id) => setDraft((d) => ({ ...d, company_id: id }))}
       />
+      <BulkAssignDialog
+        open={assignOpen}
+        setOpen={setAssignOpen}
+        table="tickets"
+        column="assignee_id"
+        ids={Array.from(selected)}
+        onDone={() => {
+          clearSelection();
+          qc.invalidateQueries({ queryKey: ["tickets"] });
+        }}
+      />
+
     </div>
   );
 }
