@@ -83,7 +83,6 @@ export function LeadsTopBar({
           </Button>
         )}
 
-
         <Can permission="techsales.leads.create.own">
           <Button size="sm" onClick={onCreateLead}>
             <Plus className="mr-1.5 h-4 w-4" /> Criar lead

@@ -724,7 +724,6 @@ function LeadsHubspotView() {
             search={search}
             setSearch={setSearch}
             ColumnsButton={ColumnsButton}
-
             onExportCsv={exportCsv}
             ViewToggle={
               <div
@@ -767,7 +766,6 @@ function LeadsHubspotView() {
                   ownerNames={ownerNameMap}
                   canUpdate={canUpdateLeads}
                   canDelete={canDeleteLeads}
-
                   canProspectingMode={canProspectingMode}
                   prospectingBusy={prospectingBusy}
                   onFetchStageIds={fetchStageLeadIds}
@@ -851,7 +849,6 @@ function LeadsHubspotView() {
       )}
 
       <ColumnsEditor />
-
 
       <LeadsDialogs
         bulkEditOpen={bulkEditOpen}
