@@ -2,6 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 export const PEOPLE_DOC_STATUSES = ["valid", "expiring", "expired", "missing"] as const;
 export type PeopleDocStatus = (typeof PEOPLE_DOC_STATUSES)[number];
@@ -110,8 +111,12 @@ export const deletePersonDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("people_documents").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    await deleteByIdGuarded(
+      context.supabase,
+      "people_documents",
+      data.id,
+      "Você não tem permissão para excluir este documento.",
+    );
     return { ok: true };
   });
 

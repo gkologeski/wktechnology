@@ -9,6 +9,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { recordAtsEvent } from "./audit.server";
+import { deleteByIdGuarded, deleteWhereGuarded } from "@/lib/db/delete-guarded";
 
 const POOL_TYPE = z.enum(["static", "smart"]);
 const RELATIONSHIP_STATUS = z.enum(["cold", "engaged", "nurturing", "do_not_contact"]);
@@ -111,8 +112,12 @@ export const deletePool = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
-    const { error } = await context.supabase.from("ats_talent_pools").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    await deleteByIdGuarded(
+      context.supabase,
+      "ats_talent_pools",
+      data.id,
+      "Você não tem permissão para excluir este pool de talentos.",
+    );
     return { ok: true };
   });
 
@@ -164,12 +169,12 @@ export const removeFromPool = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ context, data }) => {
-    const { error } = await context.supabase
-      .from("ats_talent_pool_members")
-      .delete()
-      .eq("pool_id", data.pool_id)
-      .eq("candidate_id", data.candidate_id);
-    if (error) throw new Error(error.message);
+    await deleteWhereGuarded(
+      context.supabase,
+      "ats_talent_pool_members",
+      { pool_id: data.pool_id, candidate_id: data.candidate_id },
+      "Você não tem permissão para excluir este membro do pool.",
+    );
     return { ok: true };
   });
 

@@ -71,6 +71,9 @@ export const scanCandidateFraud = createServerFn({ method: "POST" })
             details: { phone, dup_ids: ids } as Json,
           });
 
+    // Recalcular flags automáticas: limpeza idempotente antes de regravar.
+    // Não usa guarda de linhas afetadas porque 0 linhas é resultado válido
+    // (nenhuma flag automática existente); flags manuais são preservadas.
     await supabase
       .from("ats_candidate_flags")
       .delete()

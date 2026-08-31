@@ -5,6 +5,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 // ============================================================
 // Enums e labels
@@ -236,11 +237,12 @@ export const deletePsychAssessment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("people_psychosocial_assessments")
-      .delete()
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
+    await deleteByIdGuarded(
+      context.supabase,
+      "people_psychosocial_assessments",
+      data.id,
+      "Você não tem permissão para excluir esta avaliação psicossocial.",
+    );
     return { ok: true };
   });
 
@@ -319,7 +321,11 @@ export const deleteIncident = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("people_incidents").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    await deleteByIdGuarded(
+      context.supabase,
+      "people_incidents",
+      data.id,
+      "Você não tem permissão para excluir este incidente.",
+    );
     return { ok: true };
   });

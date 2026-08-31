@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { deleteWhereGuarded } from "@/lib/db/delete-guarded";
 
 const TemplateSchema = z.object({
   stage_value: z.string().min(1).max(50),
@@ -67,12 +68,12 @@ export const deleteStageEmail = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    const { error } = await supabase
-      .from("ats_stage_emails")
-      .delete()
-      .eq("workspace_id", workspaceId)
-      .eq("stage_value", data.stage_value);
-    if (error) throw new Error(error.message);
+    await deleteWhereGuarded(
+      supabase,
+      "ats_stage_emails",
+      { workspace_id: workspaceId, stage_value: data.stage_value },
+      "Você não tem permissão para excluir este e-mail de etapa.",
+    );
     return { ok: true };
   });
 

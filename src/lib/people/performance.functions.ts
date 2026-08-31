@@ -5,6 +5,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 // ============================================================
 // Types
@@ -208,8 +209,12 @@ export const deleteGoal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("people_goals").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    await deleteByIdGuarded(
+      context.supabase,
+      "people_goals",
+      data.id,
+      "Você não tem permissão para excluir esta meta.",
+    );
     return { ok: true };
   });
 
@@ -290,8 +295,12 @@ export const deleteOneOnOne = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("people_one_on_ones").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    await deleteByIdGuarded(
+      context.supabase,
+      "people_one_on_ones",
+      data.id,
+      "Você não tem permissão para excluir este 1:1.",
+    );
     return { ok: true };
   });
 
@@ -381,7 +390,11 @@ export const deleteReview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("people_reviews").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    await deleteByIdGuarded(
+      context.supabase,
+      "people_reviews",
+      data.id,
+      "Você não tem permissão para excluir esta avaliação.",
+    );
     return { ok: true };
   });

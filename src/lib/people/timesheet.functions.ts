@@ -5,6 +5,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 export type TimesheetEntry = {
   id: string;
@@ -425,11 +426,12 @@ export const deleteTimeEntry = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("project_time_entries")
-      .delete()
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
+    await deleteByIdGuarded(
+      context.supabase,
+      "project_time_entries",
+      data.id,
+      "Você não tem permissão para excluir este apontamento.",
+    );
     return { ok: true };
   });
 

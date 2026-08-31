@@ -62,14 +62,15 @@ const ENTITIES: Entity[] = [
   },
 ];
 
-async function permissionKeys(supa: SupabaseClient): Promise<Set<string>> {
-  const { data, error } = await supa.rpc("current_user_permissions");
+async function permissionKeys(supa: SupabaseClient, workspaceId: string): Promise<Set<string>> {
+  // `current_user_permissions(_workspace_id uuid)` retorna SETOF text.
+  const { data, error } = await supa.rpc("current_user_permissions", {
+    _workspace_id: workspaceId,
+  });
   if (error) throw new Error("current_user_permissions: " + error.message);
   const keys = new Set<string>();
-  for (const row of (data ?? []) as Array<Record<string, unknown>>) {
-    for (const value of Object.values(row)) {
-      if (typeof value === "string" && value.includes(".")) keys.add(value);
-    }
+  for (const value of (data ?? []) as unknown[]) {
+    if (typeof value === "string" && value.includes(".")) keys.add(value);
   }
   return keys;
 }
@@ -98,10 +99,13 @@ for (const entity of ENTITIES) {
       .limit(1);
     const otherUser = (members?.[0] as { user_id: string } | undefined)?.user_id ?? userId;
 
+    // A criação precisa nascer com o próprio usuário como owner: as policies de
+    // INSERT exigem `owner_id = auth.uid()`. A transferência para outro membro
+    // é feita depois, e é opcional (só ocorre se o papel permitir reatribuir).
     const payload = {
       ...entity.row(tag),
       workspace_id: workspaceId,
-      owner_id: otherUser,
+      owner_id: userId,
     } as Record<string, unknown>;
 
     const { data: inserted, error: insertError } = await supa
@@ -117,8 +121,13 @@ for (const entity of ENTITIES) {
     const id = (inserted as { id: string }).id;
     let removed = false;
 
+    if (otherUser !== userId) {
+      // Falha aqui é aceitável (papel sem permissão de reatribuir).
+      await supa.from(entity.table).update({ owner_id: otherUser }).eq("id", id);
+    }
+
     try {
-      // 1. Registro de outro membro do workspace é legível.
+      // 1. Registro do workspace é legível independentemente do responsável.
       expect(await readable(supa, entity.table, id)).toBe(true);
 
       // 2. Nenhum registro de outro workspace aparece.
@@ -131,7 +140,7 @@ for (const entity of ENTITIES) {
       expect(foreign ?? []).toHaveLength(0);
 
       // 3. Exclusão coerente com a permissão efetiva.
-      const keys = await permissionKeys(supa);
+      const keys = await permissionKeys(supa, workspaceId);
       const canDelete = entity.deleteKeys.some((key) => keys.has(key));
 
       const { data: affected, error: deleteError } = await supa

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 const IdInput = z.object({ id: z.string().uuid() });
 
@@ -411,10 +412,11 @@ export const removeCandidateFromPool = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ membership_id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const { error } = await supabase
-      .from("ats_talent_pool_members")
-      .delete()
-      .eq("id", data.membership_id);
-    if (error) throw new Error(error.message);
+    await deleteByIdGuarded(
+      supabase,
+      "ats_talent_pool_members",
+      data.membership_id,
+      "Você não tem permissão para excluir este membro do pool.",
+    );
     return { ok: true };
   });

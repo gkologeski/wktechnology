@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { emitEvent } from "@/lib/events.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 export const ONB_KINDS = ["onboarding", "offboarding"] as const;
 export type OnbKind = (typeof ONB_KINDS)[number];
@@ -185,11 +186,12 @@ export const deleteOnbTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("people_onboarding_templates")
-      .delete()
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
+    await deleteByIdGuarded(
+      context.supabase,
+      "people_onboarding_templates",
+      data.id,
+      "Você não tem permissão para excluir este modelo de onboarding.",
+    );
     return { ok: true };
   });
 
@@ -354,11 +356,12 @@ export const deleteOnbPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("people_onboarding_plans")
-      .delete()
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
+    await deleteByIdGuarded(
+      context.supabase,
+      "people_onboarding_plans",
+      data.id,
+      "Você não tem permissão para excluir este plano de onboarding.",
+    );
     return { ok: true };
   });
 
@@ -453,11 +456,12 @@ export const deleteOnbTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("people_onboarding_tasks")
-      .delete()
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
+    await deleteByIdGuarded(
+      context.supabase,
+      "people_onboarding_tasks",
+      data.id,
+      "Você não tem permissão para excluir esta tarefa de onboarding.",
+    );
     return { ok: true };
   });
 
