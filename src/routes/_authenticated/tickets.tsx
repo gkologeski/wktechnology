@@ -506,12 +506,7 @@ function TicketsIndex() {
         <TabsContent value="table" className="mt-4">
           {selected.size > 0 && (
             <BulkActionBar count={selected.size} onClear={clearSelection}>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-7"
-                onClick={() => setAssignOpen(true)}
-              >
+              <Button size="sm" variant="ghost" className="h-7" onClick={() => setAssignOpen(true)}>
                 <UserCheck className="h-3.5 w-3.5 mr-1" />
                 Atribuir
               </Button>
@@ -608,7 +603,7 @@ function TicketsIndex() {
                 )}
                 {filtered.map((t) => {
                   const responsible = ticketResponsibleId(t);
-                  
+
                   return (
                     <TableRow key={t.id} className="cursor-pointer" onClick={() => openEdit(t)}>
                       <TableCell onClick={(e) => e.stopPropagation()}>
@@ -925,7 +920,6 @@ function TicketsIndex() {
           qc.invalidateQueries({ queryKey: ["tickets"] });
         }}
       />
-
     </div>
   );
 }
