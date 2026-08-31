@@ -13,9 +13,9 @@
     "verbatimModuleSyntax": false,
     "noEmit": true,
 
-    /* Cache incremental: evita rechecar o projeto inteiro em cada typecheck */
+    /* Cache incremental: fora de node_modules para sobreviver a reinstalações */
     "incremental": true,
-    "tsBuildInfoFile": "node_modules/.cache/tsbuildinfo/app.tsbuildinfo",
+    "tsBuildInfoFile": ".tscache/app.tsbuildinfo",
 
 
     /* Linting */
