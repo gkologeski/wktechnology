@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { formatCompactDateTime } from "@/lib/format/compact-date";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -751,7 +752,7 @@ function ContractsPage() {
                   </p>
                   {c.starts_at ? (
                     <p className="text-xs text-muted-foreground">
-                      Início {new Date(c.starts_at).toLocaleDateString("pt-BR")}
+                      Início {formatCompactDateTime(c.starts_at as string)}
                     </p>
                   ) : null}
                 </div>
