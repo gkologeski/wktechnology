@@ -55,43 +55,31 @@ export function LeadsTopBar({
             <Download className="mr-1.5 h-4 w-4" /> Exportar
           </Button>
         </Can>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onStartQueue}
-          disabled={isLoading || total === 0}
-          aria-label={
-            hasSelection
-              ? `Iniciar fila com ${selectedCount} lead(s) selecionado(s)`
-              : "Iniciar fila com todos os leads do filtro atual"
-          }
-          title={
-            hasSelection
-              ? "Percorrer apenas os leads selecionados, um a um"
-              : "Percorrer todos os leads do filtro atual, um a um"
-          }
-        >
-          <Play className="mr-1.5 h-4 w-4" /> Iniciar fila{selectionSuffix}
-        </Button>
-        {canProspectingMode && (
+        {/* Com seleção ativa, essas ações vivem na barra de ações em massa
+            (evita duplicar o mesmo comando em dois lugares). */}
+        {!hasSelection && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onStartQueue}
+            disabled={isLoading || total === 0}
+            aria-label="Iniciar fila com todos os leads do filtro atual"
+            title="Percorrer todos os leads do filtro atual, um a um"
+          >
+            <Play className="mr-1.5 h-4 w-4" /> Iniciar fila
+          </Button>
+        )}
+        {canProspectingMode && !hasSelection && (
           <Button
             variant="outline"
             size="sm"
             onClick={onStartProspectingMode}
             disabled={isLoading || total === 0 || prospectingBusy}
-            aria-label={
-              hasSelection
-                ? `Modo Prospecção com ${selectedCount} lead(s) selecionado(s)`
-                : "Modo Prospecção com os leads do filtro atual"
-            }
-            title={
-              hasSelection
-                ? "Trabalhar os leads selecionados na tela de Prospecção"
-                : "Trabalhar os leads do filtro atual na tela de Prospecção (questionário, qualificação e timeline)"
-            }
+            aria-label="Modo Prospecção com os leads do filtro atual"
+            title="Trabalhar os leads do filtro atual na tela de Prospecção (questionário, qualificação e timeline)"
           >
             <Headphones className="mr-1.5 h-4 w-4" />
-            {prospectingBusy ? "Preparando…" : `Modo Prospecção${selectionSuffix}`}
+            {prospectingBusy ? "Preparando…" : "Modo Prospecção"}
           </Button>
         )}
 

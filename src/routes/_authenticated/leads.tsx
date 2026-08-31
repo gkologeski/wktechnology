@@ -50,6 +50,8 @@ import { LeadsTopBar } from "@/components/leads/leads-top-bar";
 import { LeadsViewTabs } from "@/components/leads/leads-view-tabs";
 import { LeadsFiltersSidebar } from "@/components/leads/leads-filters-sidebar";
 import { LeadsToolbar } from "@/components/leads/leads-toolbar";
+import { LeadsBulkBar } from "@/components/leads/leads-bulk-bar";
+
 import { LeadsTable } from "@/components/leads/leads-table";
 import { LeadsBoard } from "@/components/leads/leads-board";
 import { Button } from "@/components/ui/button";
@@ -76,6 +78,16 @@ function LeadsHubspotView() {
   const { canAny: canAnyPermission } = usePermissions();
   const canProspectingMode =
     canAnyPermission([...QUEUE_VIEW]) && canAnyPermission([...QUEUE_CREATE, ...QUEUE_UPDATE]);
+  /** RBAC de leads — a RLS continua sendo a fonte de verdade na escrita. */
+  const canUpdateLeads = canAnyPermission([
+    "techsales.leads.update.own",
+    "techsales.leads.update.workspace",
+  ]);
+  const canDeleteLeads = canAnyPermission([
+    "techsales.leads.delete.own",
+    "techsales.leads.delete.workspace",
+  ]);
+
   const listProspectingQueues = useServerFn(listQueues);
   const upsertProspectingQueue = useServerFn(upsertQueue);
   const [prospectingBusy, setProspectingBusy] = useState(false);
@@ -711,27 +723,6 @@ function LeadsHubspotView() {
           <LeadsToolbar
             search={search}
             setSearch={setSearch}
-            selectedCount={selectedIds.size}
-            total={total}
-            isSelectingAll={isSelectingAll}
-            onSelectAllMatching={selectAllMatching}
-            onStartQueueFromSelection={() => {
-              const ids = Array.from(selectedIds);
-              if (!ids.length) return;
-              startFocusQueue("leads", ids, `Leads · ${ids.length.toLocaleString("pt-BR")}`);
-              toast.success(`Fila iniciada com ${ids.length} lead(s)`);
-              navigate({ to: "/leads/$id", params: { id: ids[0] } });
-            }}
-            canProspectingMode={canProspectingMode}
-            prospectingBusy={prospectingBusy}
-            onProspectingFromSelection={() =>
-              void startProspectingMode(Array.from(selectedIds).slice(0, PROSPECTING_MODE_LIMIT))
-            }
-            onEnrichSelection={() => setEnrichIds(Array.from(selectedIds))}
-            onAddToProspectingSelection={() => setProspectingIds(Array.from(selectedIds))}
-            onBulkDelete={bulkDelete}
-            onBulkEdit={() => setBulkEditOpen(true)}
-            onClearSelection={clearSelection}
             ColumnsButton={ColumnsButton}
             onExportCsv={exportCsv}
             ViewToggle={
@@ -773,6 +764,8 @@ function LeadsHubspotView() {
                   leads={rows}
                   columns={boardColumns}
                   ownerNames={ownerNameMap}
+                  canUpdate={canUpdateLeads}
+                  canDelete={canDeleteLeads}
                   canProspectingMode={canProspectingMode}
                   prospectingBusy={prospectingBusy}
                   onFetchStageIds={fetchStageLeadIds}
@@ -827,6 +820,33 @@ function LeadsHubspotView() {
           )}
         </div>
       </div>
+
+      {/* Ações em massa do modo Tabela: barra flutuante padrão do sistema. */}
+      {viewMode === "table" && (
+        <LeadsBulkBar
+          selectedCount={selectedIds.size}
+          total={total}
+          isSelectingAll={isSelectingAll}
+          onSelectAllMatching={() => void selectAllMatching()}
+          onStartQueueFromSelection={() => {
+            const ids = Array.from(selectedIds);
+            if (!ids.length) return;
+            startFocusQueue("leads", ids, `Leads · ${ids.length.toLocaleString("pt-BR")}`);
+            toast.success(`Fila iniciada com ${ids.length} lead(s)`);
+            navigate({ to: "/leads/$id", params: { id: ids[0] } });
+          }}
+          canProspectingMode={canProspectingMode}
+          prospectingBusy={prospectingBusy}
+          onProspectingFromSelection={() =>
+            void startProspectingMode(Array.from(selectedIds).slice(0, PROSPECTING_MODE_LIMIT))
+          }
+          onEnrichSelection={() => setEnrichIds(Array.from(selectedIds))}
+          onAddToProspectingSelection={() => setProspectingIds(Array.from(selectedIds))}
+          onBulkDelete={bulkDelete}
+          onBulkEdit={() => setBulkEditOpen(true)}
+          onClearSelection={clearSelection}
+        />
+      )}
 
       <ColumnsEditor />
 
