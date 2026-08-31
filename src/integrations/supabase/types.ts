@@ -19999,6 +19999,10 @@ export type Database = {
         Args: { _conv: string; _user: string }
         Returns: boolean
       }
+      is_own_record: {
+        Args: { _assigned_to: string; _owner_id: string }
+        Returns: boolean
+      }
       is_platform_admin: { Args: { _user: string }; Returns: boolean }
       is_workspace_admin: {
         Args: { _user: string; _workspace: string }
