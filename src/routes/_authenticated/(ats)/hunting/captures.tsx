@@ -172,6 +172,15 @@ function HuntingCapturesPage() {
                   ? `${selected.size} selecionados`
                   : "Selecione para enriquecer com IA ou definir responsável"}
               </span>
+              {selected.size === 0 && (
+                <div className="ml-auto">
+                  <AssigneeFilter
+                    value={assigneeFilter}
+                    onChange={setAssigneeFilter}
+                    className="h-8 w-52"
+                  />
+                </div>
+              )}
               {selected.size > 0 && (
                 <div className="ml-auto flex items-center gap-2">
                   <UserCheck className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
