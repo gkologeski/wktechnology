@@ -753,6 +753,9 @@ function LeadsHubspotView() {
                   leads={rows}
                   columns={boardColumns}
                   ownerNames={ownerNameMap}
+                  canUpdate={canUpdateLeads}
+                  canDelete={canDeleteLeads}
+
                   canProspectingMode={canProspectingMode}
                   prospectingBusy={prospectingBusy}
                   onFetchStageIds={fetchStageLeadIds}
