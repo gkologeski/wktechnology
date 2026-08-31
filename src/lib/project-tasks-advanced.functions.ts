@@ -4,6 +4,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 const depTypeEnum = z.enum([
   "finish_to_start",
@@ -65,8 +66,7 @@ export const removeDependency = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { error } = await supabase.from("project_task_dependencies").delete().eq("id", data.id);
-    if (error) throw error;
+    await deleteByIdGuarded(supabase, "project_task_dependencies", data.id);
     return { ok: true };
   });
 
@@ -166,8 +166,7 @@ export const removeChecklistItem = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { error } = await supabase.from("project_task_checklists").delete().eq("id", data.id);
-    if (error) throw error;
+    await deleteByIdGuarded(supabase, "project_task_checklists", data.id);
     return { ok: true };
   });
 

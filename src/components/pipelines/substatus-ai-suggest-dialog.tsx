@@ -109,7 +109,10 @@ export function SubstatusAiSuggestDialog({
           )}
 
           {run.isError && (
-            <div className="space-y-2 rounded-md border border-destructive/40 p-4 text-sm" role="alert">
+            <div
+              className="space-y-2 rounded-md border border-destructive/40 p-4 text-sm"
+              role="alert"
+            >
               <p className="flex items-center gap-2 font-medium">
                 <AlertTriangle className="h-4 w-4" />
                 {run.error instanceof Error ? run.error.message : "Falha ao gerar sugestões."}
@@ -127,7 +130,10 @@ export function SubstatusAiSuggestDialog({
           )}
 
           {items.map((item, index) => (
-            <div key={`${item.name}-${index}`} className="flex items-start gap-3 rounded-md border p-3">
+            <div
+              key={`${item.name}-${index}`}
+              className="flex items-start gap-3 rounded-md border p-3"
+            >
               <Checkbox
                 id={`ai-sub-${index}`}
                 checked={item.selected}
@@ -155,7 +161,10 @@ export function SubstatusAiSuggestDialog({
                   )}
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor={`ai-sub-name-${index}`} className="text-[10px] text-muted-foreground">
+                  <Label
+                    htmlFor={`ai-sub-name-${index}`}
+                    className="text-[10px] text-muted-foreground"
+                  >
                     Nome
                   </Label>
                   <Input

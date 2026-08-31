@@ -10,7 +10,6 @@ import { useBoardSelection } from "@/components/kanban/use-board-selection";
 import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
 import type { BulkField } from "@/components/bulk-edit-dialog";
 
-
 export type BoardStage = { value: string; label: string; color?: string };
 
 export function EntityBoard<T extends { id: string }>({
@@ -44,7 +43,6 @@ export function EntityBoard<T extends { id: string }>({
   /** Campos fixos de edição em massa (tabelas fora do catálogo dinâmico). */
   bulkEditFields?: BulkField[];
 }) {
-
   const qc = useQueryClient();
   const selection = useBoardSelection(rows);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -151,7 +149,6 @@ export function EntityBoard<T extends { id: string }>({
           canUpdate={canUpdate}
           canDelete={canDelete}
           bulkEditFields={bulkEditFields}
-
           onClear={selection.clear}
           onDone={() => void qc.invalidateQueries({ queryKey: [table] })}
         />

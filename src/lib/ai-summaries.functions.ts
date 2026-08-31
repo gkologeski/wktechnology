@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 const ENTITY = z.enum(["lead", "contact", "deal", "ticket"]);
 const KIND = z.enum(["conversation", "call", "meeting", "email", "notes", "tasks", "all"]);
@@ -522,7 +523,6 @@ export const deleteAiSummary = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { error } = await supabase.from("ai_summaries").delete().eq("id", data.id);
-    if (error) throw error;
+    await deleteByIdGuarded(supabase, "ai_summaries", data.id);
     return { ok: true };
   });

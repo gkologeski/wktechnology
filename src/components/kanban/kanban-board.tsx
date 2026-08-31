@@ -77,7 +77,6 @@ export type KanbanBoardProps<T extends { id: string }> = {
   bulkEditFields?: BulkField[];
 };
 
-
 export function KanbanBoard<T extends { id: string }>({
   rows,
   table,
@@ -99,7 +98,6 @@ export function KanbanBoard<T extends { id: string }>({
   canDelete = false,
   cardLabel,
   bulkEditFields,
-
 }: KanbanBoardProps<T>) {
   const qc = useQueryClient();
   const selection = useBoardSelection(rows);
@@ -300,7 +298,6 @@ export function KanbanBoard<T extends { id: string }>({
           canUpdate={canUpdate}
           canDelete={canDelete}
           bulkEditFields={bulkEditFields}
-
           onClear={selection.clear}
           onDone={invalidate}
         />

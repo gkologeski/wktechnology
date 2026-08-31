@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 const fieldTypeEnum = z.enum(["text", "number", "date", "select", "checkbox", "url"]);
 
@@ -66,8 +67,7 @@ export const deleteCustomField = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { error } = await supabase.from("project_list_custom_fields").delete().eq("id", data.id);
-    if (error) throw error;
+    await deleteByIdGuarded(supabase, "project_list_custom_fields", data.id);
     return { ok: true };
   });
 
@@ -155,8 +155,7 @@ export const deleteTemplate = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { error } = await supabase.from("project_list_templates").delete().eq("id", data.id);
-    if (error) throw error;
+    await deleteByIdGuarded(supabase, "project_list_templates", data.id);
     return { ok: true };
   });
 

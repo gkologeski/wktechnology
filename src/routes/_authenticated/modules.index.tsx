@@ -203,7 +203,12 @@ const SHORTCUTS: Shortcut[] = [
     desc: "Cargos e pacotes de permissão.",
     icon: Shield,
   },
-  { to: "/settings/marketplace", title: "Marketplace", desc: "Add-ons e integrações.", icon: Store },
+  {
+    to: "/settings/marketplace",
+    title: "Marketplace",
+    desc: "Add-ons e integrações.",
+    icon: Store,
+  },
   { to: "/invoices", title: "Faturas", desc: "Histórico de pagamentos.", icon: Receipt },
 ];
 

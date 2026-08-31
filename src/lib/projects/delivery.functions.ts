@@ -5,6 +5,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertAnyPermission } from "@/lib/access-control/enforce.server";
+import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 export type ProjectUpdateRow = {
   id: string;
@@ -235,7 +236,6 @@ export const deleteProjectUpdate = createServerFn({ method: "POST" })
       "techprojects.project_updates.delete.workspace",
     ]);
 
-    const { error } = await supabase.from("project_updates").delete().eq("id", data.id);
-    if (error) throw error;
+    await deleteByIdGuarded(supabase, "project_updates", data.id);
     return { ok: true };
   });

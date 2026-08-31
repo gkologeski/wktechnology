@@ -8,6 +8,13 @@
       "when": 1787942557368,
       "tag": "0000_grant_property_history_read",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788197158239,
+      "tag": "0001_harden_payment_webhook_events_grants",
+      "breakpoints": true
     }
   ]
 }

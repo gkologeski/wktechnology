@@ -24,6 +24,7 @@ import { Plus, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 import { CARD_FIELD_OPTIONS, DEFAULT_CARD_FIELDS } from "@/components/deals/deals-board-card";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 export const Route = createFileRoute("/_authenticated/settings/pipelines")({
   component: PipelinesSettings,
@@ -310,8 +311,7 @@ function PipelineEditor({
     if (!(await confirmDialog(`Excluir pipeline "${pipeline.name}"?`))) return;
     setDeleting(true);
     try {
-      const { error } = await supabase.from("pipelines").delete().eq("id", pipeline.id);
-      if (error) throw error;
+      await deleteByIdGuarded(supabase, "pipelines", pipeline.id);
       toast.success("Excluído");
       onSaved();
     } catch (e) {
