@@ -11,6 +11,7 @@ import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { recordAtsEvent } from "./audit.server";
 import { buildGridSelect } from "@/lib/grid/dynamic-select";
 import { atsGridInputSchema, type AtsGridInput } from "@/lib/grid/ats-grid-input";
+import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 const BASE_OFFER_KEYS = [
   "id",
@@ -271,7 +272,11 @@ export const deleteOffer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("ats_offers").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    await deleteByIdGuarded(
+      context.supabase,
+      "ats_offers",
+      data.id,
+      "Você não tem permissão para excluir esta proposta.",
+    );
     return { ok: true };
   });

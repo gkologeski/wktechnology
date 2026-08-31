@@ -10,6 +10,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { recordAtsEvent } from "./audit.server";
+import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 const CHANNEL = z.enum([
   "email",
@@ -117,11 +118,12 @@ export const deleteSequence = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
-    const { error } = await context.supabase
-      .from("ats_sourcing_sequences")
-      .delete()
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
+    await deleteByIdGuarded(
+      context.supabase,
+      "ats_sourcing_sequences",
+      data.id,
+      "Você não tem permissão para excluir esta cadência.",
+    );
     return { ok: true };
   });
 
@@ -177,11 +179,12 @@ export const deleteStep = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
-    const { error } = await context.supabase
-      .from("ats_sourcing_sequence_steps")
-      .delete()
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
+    await deleteByIdGuarded(
+      context.supabase,
+      "ats_sourcing_sequence_steps",
+      data.id,
+      "Você não tem permissão para excluir este passo da cadência.",
+    );
     return { ok: true };
   });
 

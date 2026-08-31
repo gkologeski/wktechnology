@@ -12,6 +12,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { recordAtsEvent } from "./audit.server";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 // ────────────────────────────────────────────────────────────────────────────
 // Capturas
@@ -314,11 +315,12 @@ export const deleteHuntingTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
-    const { error } = await context.supabase
-      .from("ats_hunting_templates")
-      .delete()
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
+    await deleteByIdGuarded(
+      context.supabase,
+      "ats_hunting_templates",
+      data.id,
+      "Você não tem permissão para excluir este modelo de hunting.",
+    );
     return { ok: true };
   });
 

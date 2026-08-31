@@ -23,3 +23,20 @@ export async function deleteByIdGuarded(
   if (error) throw error;
   if (!Array.isArray(data) || data.length === 0) throw new Error(deniedMessage);
 }
+
+/**
+ * Igual a `deleteByIdGuarded`, mas para exclusões com filtro composto
+ * (ex.: `{ id, workspace_id }` ou `{ pool_id, candidate_id }`).
+ * Lança erro quando nenhuma linha foi afetada.
+ */
+export async function deleteWhereGuarded(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  client: any,
+  table: string,
+  match: Record<string, unknown>,
+  deniedMessage: string = DELETE_DENIED_MESSAGE,
+): Promise<void> {
+  const { data, error } = await client.from(table).delete().match(match).select("id");
+  if (error) throw error;
+  if (!Array.isArray(data) || data.length === 0) throw new Error(deniedMessage);
+}

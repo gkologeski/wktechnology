@@ -3,6 +3,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 export const ALLOCATION_STATUSES = ["active", "paused", "ended"] as const;
 export type AllocationStatus = (typeof ALLOCATION_STATUSES)[number];
@@ -308,8 +309,12 @@ export const deleteAllocation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("people_allocations").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    await deleteByIdGuarded(
+      context.supabase,
+      "people_allocations",
+      data.id,
+      "Você não tem permissão para excluir esta alocação.",
+    );
     return { ok: true };
   });
 

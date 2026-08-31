@@ -153,6 +153,9 @@ async function syncServices(
   templateId: string,
   serviceIds: string[],
 ) {
+  // Sincronização de filhos: limpeza idempotente antes de reinserir o vínculo.
+  // 0 linhas afetadas é resultado válido (modelo sem serviços), por isso não há
+  // guarda de permissão aqui — o gate está no upsert do modelo.
   await supabase.from("contract_template_services").delete().eq("template_id", templateId);
   if (!serviceIds.length) return;
   const { error } = await supabase.from("contract_template_services").insert(

@@ -4,6 +4,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { deleteWhereGuarded } from "@/lib/db/delete-guarded";
 
 async function loadWabaTokenByPhoneNumberId(workspaceId: string, phoneNumberId: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -686,12 +687,12 @@ export const deleteAdSlug = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const ws = await resolveActiveWorkspace(userId);
-    const { error } = await supabase
-      .from("wa_ad_slugs")
-      .delete()
-      .eq("id", data.id)
-      .eq("workspace_id", ws);
-    if (error) throw new Error(error.message);
+    await deleteWhereGuarded(
+      supabase,
+      "wa_ad_slugs",
+      { id: data.id, workspace_id: ws },
+      "Você não tem permissão para excluir este slug de anúncio.",
+    );
     return { ok: true };
   });
 

@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { deleteWhereGuarded } from "@/lib/db/delete-guarded";
 
 const CriterionSchema = z.object({
   key: z.string().min(1).max(40),
@@ -82,12 +83,12 @@ export const deleteScorecard = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    const { error } = await supabase
-      .from("ats_scorecards")
-      .delete()
-      .eq("id", data.id)
-      .eq("workspace_id", workspaceId);
-    if (error) throw new Error(error.message);
+    await deleteWhereGuarded(
+      supabase,
+      "ats_scorecards",
+      { id: data.id, workspace_id: workspaceId },
+      "Você não tem permissão para excluir este scorecard.",
+    );
     return { ok: true };
   });
 

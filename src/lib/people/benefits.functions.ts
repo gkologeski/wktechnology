@@ -3,6 +3,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 export const BENEFIT_TYPES = [
   "health",
@@ -162,8 +163,12 @@ export const deletePeopleBenefit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { id: string }) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("people_benefits").delete().eq("id", data.id);
-    if (error) throw error;
+    await deleteByIdGuarded(
+      context.supabase,
+      "people_benefits",
+      data.id,
+      "Você não tem permissão para excluir este benefício.",
+    );
     return { ok: true };
   });
 

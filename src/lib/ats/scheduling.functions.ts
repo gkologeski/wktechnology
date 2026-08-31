@@ -4,6 +4,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 // ----- types ----------------------------------------------------------------
 
@@ -107,11 +108,12 @@ export const deletePool = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
-    const { error } = await context.supabase
-      .from("ats_interviewer_pools")
-      .delete()
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
+    await deleteByIdGuarded(
+      context.supabase,
+      "ats_interviewer_pools",
+      data.id,
+      "Você não tem permissão para excluir este pool de entrevistadores.",
+    );
     return { ok: true };
   });
 
@@ -145,11 +147,12 @@ export const removePoolMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
-    const { error } = await context.supabase
-      .from("ats_interviewer_pool_members")
-      .delete()
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
+    await deleteByIdGuarded(
+      context.supabase,
+      "ats_interviewer_pool_members",
+      data.id,
+      "Você não tem permissão para excluir este membro do pool.",
+    );
     return { ok: true };
   });
 
@@ -218,11 +221,12 @@ export const deleteAvailability = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
-    const { error } = await context.supabase
-      .from("ats_interviewer_availability")
-      .delete()
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
+    await deleteByIdGuarded(
+      context.supabase,
+      "ats_interviewer_availability",
+      data.id,
+      "Você não tem permissão para excluir esta disponibilidade.",
+    );
     return { ok: true };
   });
 
