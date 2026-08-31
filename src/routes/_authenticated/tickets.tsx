@@ -48,7 +48,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { AssigneeCell } from "@/components/entity/assignee-cell";
+import {
+  AssigneeFilter,
+  ASSIGNEE_ALL,
+  ASSIGNEE_ME,
+  ASSIGNEE_NONE,
+} from "@/components/entity/assignee-filter";
+import { BulkAssignDialog } from "@/components/bulk-assign-dialog";
 import {
   Plus,
   LayoutGrid,
@@ -685,22 +692,7 @@ function TicketsIndex() {
                         {t.company_id ? (lookups.companies.get(t.company_id) ?? "—") : "—"}
                       </TableCell>
                       <TableCell>
-                        {ownerName ? (
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-5 w-5 text-[9px]">
-                              <AvatarFallback className="bg-secondary text-secondary-foreground">
-                                {ownerName
-                                  .split(" ")
-                                  .map((p) => p[0])
-                                  .slice(0, 2)
-                                  .join("")}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="text-xs">{ownerName}</span>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">Não atribuído</span>
-                        )}
+                        <AssigneeCell assignedTo={responsible} className="text-xs" />
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground tabular-nums">
                         {formatDateTime(t.created_at)}
