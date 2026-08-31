@@ -49,6 +49,11 @@ import { getDateRange, type CustomRange, type DatePreset } from "@/lib/date-pres
 import { DateFilter } from "@/components/date-filter";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { translateFieldValue } from "@/lib/i18n/hubspot-values";
+import {
+  RESPONSIBLE_COLUMNS_FULL,
+  responsibleId,
+  responsibleOrExpr,
+} from "@/lib/entity/responsible";
 
 import {
   CheckboxFilter,
@@ -229,8 +234,12 @@ function CompaniesHubspotView() {
         { count: "exact" },
       );
 
-      if (activeView === "mine" && user?.id) q = q.eq("owner_id", user.id);
-      if (activeView === "unassigned") q = q.is("owner_id", null);
+      if (activeView === "mine" && user?.id)
+        q = q.or(responsibleOrExpr([user.id], { columns: RESPONSIBLE_COLUMNS_FULL }));
+      if (activeView === "unassigned")
+        q = q.or(
+          responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_FULL, includeUnassigned: true }),
+        );
       if (activeView === "new_week") {
         const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
         q = q.gte("created_at", since);
@@ -250,11 +259,18 @@ function CompaniesHubspotView() {
       }
 
       if (filters.ownerIds.length > 0 && filters.includeUnassigned) {
-        q = q.or(`owner_id.in.(${filters.ownerIds.join(",")}),owner_id.is.null`);
+        q = q.or(
+          responsibleOrExpr(filters.ownerIds, {
+            columns: RESPONSIBLE_COLUMNS_FULL,
+            includeUnassigned: true,
+          }),
+        );
       } else if (filters.ownerIds.length > 0) {
-        q = q.in("owner_id", filters.ownerIds);
+        q = q.or(responsibleOrExpr(filters.ownerIds, { columns: RESPONSIBLE_COLUMNS_FULL }));
       } else if (filters.includeUnassigned) {
-        q = q.is("owner_id", null);
+        q = q.or(
+          responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_FULL, includeUnassigned: true }),
+        );
       }
 
       const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
@@ -412,10 +428,19 @@ function CompaniesHubspotView() {
         key: "owner",
         label: "Responsável",
         render: (c) =>
-          c.owner_id ? (
-            <div className="flex items-center gap-2" title={nameFor(c.owner_id)}>
-              <InitialsAvatar text={initialsFor(c.owner_id)} seed={c.owner_id} size={6} />
-              <span className="truncate text-sm">{nameFor(c.owner_id)}</span>
+          responsibleId(c as Parameters<typeof responsibleId>[0]) ? (
+            <div
+              className="flex items-center gap-2"
+              title={nameFor(responsibleId(c as Parameters<typeof responsibleId>[0]) ?? "")}
+            >
+              <InitialsAvatar
+                text={initialsFor(responsibleId(c as Parameters<typeof responsibleId>[0]) ?? "")}
+                seed={responsibleId(c as Parameters<typeof responsibleId>[0]) ?? ""}
+                size={6}
+              />
+              <span className="truncate text-sm">
+                {nameFor(responsibleId(c as Parameters<typeof responsibleId>[0]) ?? "")}
+              </span>
             </div>
           ) : (
             <span className="text-muted-foreground">—</span>
@@ -525,8 +550,12 @@ function CompaniesHubspotView() {
       } else {
         // Refaz a query atual sem paginação (limit defensivo de 5.000).
         let q = supabase.from("companies").select("id");
-        if (activeView === "mine" && user?.id) q = q.eq("owner_id", user.id);
-        if (activeView === "unassigned") q = q.is("owner_id", null);
+        if (activeView === "mine" && user?.id)
+        q = q.or(responsibleOrExpr([user.id], { columns: RESPONSIBLE_COLUMNS_FULL }));
+        if (activeView === "unassigned")
+        q = q.or(
+          responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_FULL, includeUnassigned: true }),
+        );
         if (activeView === "new_week") {
           const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
           q = q.gte("created_at", since);
@@ -545,11 +574,18 @@ function CompaniesHubspotView() {
           if (end) q = q.lt("created_at", end.toISOString());
         }
         if (filters.ownerIds.length > 0 && filters.includeUnassigned) {
-          q = q.or(`owner_id.in.(${filters.ownerIds.join(",")}),owner_id.is.null`);
+          q = q.or(
+          responsibleOrExpr(filters.ownerIds, {
+            columns: RESPONSIBLE_COLUMNS_FULL,
+            includeUnassigned: true,
+          }),
+        );
         } else if (filters.ownerIds.length > 0) {
-          q = q.in("owner_id", filters.ownerIds);
+          q = q.or(responsibleOrExpr(filters.ownerIds, { columns: RESPONSIBLE_COLUMNS_FULL }));
         } else if (filters.includeUnassigned) {
-          q = q.is("owner_id", null);
+          q = q.or(
+          responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_FULL, includeUnassigned: true }),
+        );
         }
         const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
         if (term) {

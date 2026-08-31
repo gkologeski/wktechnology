@@ -62,6 +62,11 @@ import { useResourceScope } from "@/lib/access-control/use-resource-scope";
 import { TablePagination } from "@/components/table-pagination";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { deleteRowGuarded, deleteRowsGuarded, partialDeleteMessage } from "@/lib/delete-guard";
+import {
+  RESPONSIBLE_COLUMNS_BASIC,
+  responsibleId,
+  responsibleOrExpr,
+} from "@/lib/entity/responsible";
 
 export const Route = createFileRoute("/_authenticated/tasks")({
   component: TasksPage,
@@ -251,7 +256,10 @@ function TasksHubspotView() {
     const endOfDay = new Date(startOfDay.getTime() + 86_400_000);
 
     if (activeView === "mine_open" && user?.id) {
-      q = q.eq("owner_id", user.id).eq("completed", false).neq("task_status", "COMPLETED");
+      q = q
+        .or(responsibleOrExpr([user.id], { columns: RESPONSIBLE_COLUMNS_BASIC }))
+        .eq("completed", false)
+        .neq("task_status", "COMPLETED");
     } else if (activeView === "due_today") {
       q = q
         .eq("completed", false)
@@ -279,10 +287,15 @@ function TasksHubspotView() {
         .lt("due_date", new Date(startOfDay.getTime() + 7 * 86_400_000).toISOString());
     }
 
-    // Responsável (owner_id em activities), respeitando o escopo efetivo.
-    if (assignee === ASSIGNEE_ME && user?.id) q = q.eq("owner_id", user.id);
-    else if (assignee === ASSIGNEE_NONE) q = q.is("owner_id", null);
-    else if (assignee !== ASSIGNEE_ALL) q = q.eq("owner_id", assignee);
+    // Responsável efetivo (assigned_to com fallback para owner_id), respeitando o escopo.
+    if (assignee === ASSIGNEE_ME && user?.id)
+      q = q.or(responsibleOrExpr([user.id], { columns: RESPONSIBLE_COLUMNS_BASIC }));
+    else if (assignee === ASSIGNEE_NONE)
+      q = q.or(
+        responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_BASIC, includeUnassigned: true }),
+      );
+    else if (assignee !== ASSIGNEE_ALL)
+      q = q.or(responsibleOrExpr([assignee], { columns: RESPONSIBLE_COLUMNS_BASIC }));
 
     const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
     if (term) {
@@ -390,13 +403,19 @@ function TasksHubspotView() {
       "tasks",
       "owners",
       rows
-        .map((r) => r.owner_id)
+        .map((r) => responsibleId(r as Parameters<typeof responsibleId>[0]))
         .filter(Boolean)
         .join(","),
     ],
     enabled: rows.length > 0,
     queryFn: async () => {
-      const ids = [...new Set(rows.map((r) => r.owner_id).filter(Boolean) as string[])];
+      const ids = [
+        ...new Set(
+          rows
+            .map((r) => responsibleId(r as Parameters<typeof responsibleId>[0]))
+            .filter(Boolean) as string[],
+        ),
+      ];
       if (!ids.length) return {} as Record<string, string>;
       const { data } = await supabase.from("profiles").select("id, full_name").in("id", ids);
       return Object.fromEntries((data ?? []).map((p) => [p.id, p.full_name ?? ""])) as Record<
@@ -646,8 +665,9 @@ function TasksHubspotView() {
       key: "owner",
       label: "Responsável",
       render: (t) => {
-        if (!t.owner_id) return <span className="text-muted-foreground">—</span>;
-        const name = ownersMap[t.owner_id] || "—";
+        const rid = responsibleId(t as Parameters<typeof responsibleId>[0]);
+        if (!rid) return <span className="text-muted-foreground">—</span>;
+        const name = ownersMap[rid] || "—";
         const initials =
           name && name !== "—"
             ? name
@@ -656,10 +676,10 @@ function TasksHubspotView() {
                 .slice(0, 2)
                 .map((p) => p[0]?.toUpperCase() ?? "")
                 .join("")
-            : t.owner_id.slice(0, 2).toUpperCase();
+            : rid.slice(0, 2).toUpperCase();
         return (
           <div className="flex items-center gap-2" title={name}>
-            <InitialsAvatar text={initials} seed={t.owner_id} size={6} />
+            <InitialsAvatar text={initials} seed={rid} size={6} />
             <span className="truncate text-sm">{name}</span>
           </div>
         );

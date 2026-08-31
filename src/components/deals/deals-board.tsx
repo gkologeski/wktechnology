@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Play } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { startFocusQueue } from "@/lib/focus-queue";
+import { responsibleId } from "@/lib/entity/responsible";
 import { useBoardSelection } from "@/components/kanban/use-board-selection";
 import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
 
@@ -249,7 +250,7 @@ export function DealsBoard({
                             ? lookups.contacts.get(d.primary_contact_id)
                             : undefined
                         }
-                        ownerName={lookups.owners.get(d.owner_id) ?? "—"}
+                        ownerName={lookups.owners.get(responsibleId(d) ?? "") ?? "—"}
                         fields={pipeline.config?.card_fields}
                         nextActivityDate={nextActivities?.get(d.id) ?? null}
                         signals={sig}

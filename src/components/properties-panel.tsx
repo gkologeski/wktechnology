@@ -46,6 +46,9 @@ import { translateFieldValue } from "@/lib/i18n/hubspot-values";
 import { CurrencyInput } from "@/components/ui/currency-input";
 
 import { OwnerField } from "@/components/entity/owner-field";
+import { AssigneeField } from "@/components/entity/assignee-field";
+import { CreatorField } from "@/components/entity/creator-field";
+import { creatorId, responsibleId } from "@/lib/entity/responsible";
 
 // E.164-compliant chars only: digits, leading +, plus visual separators.
 const PHONE_INPUT_RE = /[^\d+\s\-()]/g;
@@ -506,7 +509,12 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
     );
   };
 
+  const rowRecord = row as Record<string, unknown>;
   const hasOwner = Object.prototype.hasOwnProperty.call(row, "owner_id");
+  const hasAssigned = Object.prototype.hasOwnProperty.call(row, "assigned_to");
+  const hasCreator = hasOwner || Object.prototype.hasOwnProperty.call(row, "created_by");
+  const responsible = responsibleId(rowRecord as Parameters<typeof responsibleId>[0]);
+  const creator = creatorId(rowRecord as Parameters<typeof creatorId>[0]);
   return (
     <div className="bg-card rounded-2xl p-6 shadow-sm border border-border/60 space-y-5">
       <div className="flex items-center justify-between">
@@ -520,14 +528,24 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
           <History className="h-3 w-3 mr-1" /> Histórico
         </Button>
       </div>
-      {hasOwner && (
-        <div className="pb-4 border-b border-border/60">
-          <OwnerField
-            table={table}
-            rowId={row.id}
-            ownerId={(row as Record<string, unknown>).owner_id as string | null | undefined}
-            onChanged={() => onSaved?.()}
-          />
+      {(hasAssigned || hasOwner) && (
+        <div className="pb-4 border-b border-border/60 space-y-4">
+          {hasAssigned ? (
+            <AssigneeField
+              table={table}
+              rowId={row.id}
+              assignedTo={responsible}
+              onChanged={() => onSaved?.()}
+            />
+          ) : (
+            <OwnerField
+              table={table}
+              rowId={row.id}
+              ownerId={rowRecord.owner_id as string | null | undefined}
+              onChanged={() => onSaved?.()}
+            />
+          )}
+          {hasAssigned && hasCreator && <CreatorField creatorId={creator} compact />}
         </div>
       )}
 

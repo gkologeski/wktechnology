@@ -66,6 +66,11 @@ import { formatDateTime } from "@/lib/crm";
 import { exportRowsToCsv } from "@/lib/csv-export";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
+import {
+  RESPONSIBLE_COLUMNS_FULL,
+  responsibleId,
+  responsibleOrExpr,
+} from "@/lib/entity/responsible";
 
 export const Route = createFileRoute("/_authenticated/contacts")({
   component: ContactsPage,
@@ -223,11 +228,12 @@ function ContactsHubspotView() {
       );
 
       if (activeView === "mine" && user?.id) {
-        q = q.or(
-          `assigned_user_id.eq.${user.id},and(assigned_user_id.is.null,owner_id.eq.${user.id})`,
-        );
+        q = q.or(responsibleOrExpr([user.id], { columns: RESPONSIBLE_COLUMNS_FULL }));
       }
-      if (activeView === "unassigned") q = q.is("assigned_user_id", null).is("owner_id", null);
+      if (activeView === "unassigned")
+        q = q.or(
+          responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_FULL, includeUnassigned: true }),
+        );
       if (activeView === "new_week") {
         const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
         q = q.gte("created_at", since);
@@ -247,11 +253,13 @@ function ContactsHubspotView() {
       const { userIds, hubspotIds } = splitOwnerIds(filters.ownerIds);
       const ownerClauses: string[] = [];
       if (userIds.length > 0) {
-        ownerClauses.push(`assigned_user_id.in.(${userIds.join(",")})`);
-        ownerClauses.push(`and(assigned_user_id.is.null,owner_id.in.(${userIds.join(",")}))`);
+        ownerClauses.push(responsibleOrExpr(userIds, { columns: RESPONSIBLE_COLUMNS_FULL }));
       }
       if (hubspotIds.length > 0) ownerClauses.push(`hubspot_owner_id.in.(${hubspotIds.join(",")})`);
-      if (filters.includeUnassigned) ownerClauses.push("assigned_user_id.is.null,owner_id.is.null");
+      if (filters.includeUnassigned)
+        ownerClauses.push(
+          responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_FULL, includeUnassigned: true }),
+        );
       if (ownerClauses.length > 0) {
         q = q.or(ownerClauses.join(","));
       }
@@ -417,11 +425,11 @@ function ContactsHubspotView() {
         key: "owner",
         label: "Responsável",
         render: (c) => {
-          const responsibleId = c.assigned_user_id ?? c.owner_id;
-          return responsibleId ? (
-            <div className="flex items-center gap-2" title={nameFor(responsibleId)}>
-              <InitialsAvatar text={initialsFor(responsibleId)} seed={responsibleId} size={6} />
-              <span className="truncate text-sm">{nameFor(responsibleId)}</span>
+          const rid = responsibleId(c as Parameters<typeof responsibleId>[0]);
+          return rid ? (
+            <div className="flex items-center gap-2" title={nameFor(rid)}>
+              <InitialsAvatar text={initialsFor(rid)} seed={rid} size={6} />
+              <span className="truncate text-sm">{nameFor(rid)}</span>
             </div>
           ) : (
             <span className="text-muted-foreground">—</span>
@@ -542,12 +550,15 @@ function ContactsHubspotView() {
               try {
                 let q = supabase.from("contacts").select("id");
                 if (activeView === "mine" && user?.id) {
-                  q = q.or(
-                    `assigned_user_id.eq.${user.id},and(assigned_user_id.is.null,owner_id.eq.${user.id})`,
-                  );
+                  q = q.or(responsibleOrExpr([user.id], { columns: RESPONSIBLE_COLUMNS_FULL }));
                 }
                 if (activeView === "unassigned")
-                  q = q.is("assigned_user_id", null).is("owner_id", null);
+                  q = q.or(
+                    responsibleOrExpr([], {
+                      columns: RESPONSIBLE_COLUMNS_FULL,
+                      includeUnassigned: true,
+                    }),
+                  );
                 if (activeView === "new_week") {
                   const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
                   q = q.gte("created_at", since);
@@ -566,15 +577,19 @@ function ContactsHubspotView() {
                 const { userIds, hubspotIds } = splitOwnerIds(filters.ownerIds);
                 const ownerClauses: string[] = [];
                 if (userIds.length > 0) {
-                  ownerClauses.push(`assigned_user_id.in.(${userIds.join(",")})`);
                   ownerClauses.push(
-                    `and(assigned_user_id.is.null,owner_id.in.(${userIds.join(",")}))`,
+                    responsibleOrExpr(userIds, { columns: RESPONSIBLE_COLUMNS_FULL }),
                   );
                 }
                 if (hubspotIds.length > 0)
                   ownerClauses.push(`hubspot_owner_id.in.(${hubspotIds.join(",")})`);
                 if (filters.includeUnassigned)
-                  ownerClauses.push("assigned_user_id.is.null,owner_id.is.null");
+                  ownerClauses.push(
+                    responsibleOrExpr([], {
+                      columns: RESPONSIBLE_COLUMNS_FULL,
+                      includeUnassigned: true,
+                    }),
+                  );
                 if (ownerClauses.length > 0) q = q.or(ownerClauses.join(","));
                 const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
                 if (term) {

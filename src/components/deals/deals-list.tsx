@@ -11,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { responsibleId } from "@/lib/entity/responsible";
 
 export function DealsList({
   pipeline,
@@ -96,7 +97,7 @@ export function DealsList({
                           : "—"}
                       </TableCell>
                       <TableCell className="text-sm">
-                        {lookups.owners.get(d.owner_id) ?? "—"}
+                        {lookups.owners.get(responsibleId(d) ?? "") ?? "—"}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {formatCurrency(Number(d.value), d.currency)}

@@ -36,6 +36,7 @@ import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
 import { Can, usePermissions } from "@/lib/access-control/use-permissions";
 import { useGridProjection } from "@/hooks/use-grid-projection";
 import { buildGridSelect } from "@/lib/grid/dynamic-select";
+import { responsibleId } from "@/lib/entity/responsible";
 
 /** Colunas sempre necessárias nas visões de negócios (tabela, kanban, lista, previsão). */
 const BASE_DEAL_KEYS = [
@@ -259,7 +260,8 @@ function DealsPage() {
   const ownerOptions = useMemo(() => {
     const ids = new Set<string>(profiles.map((p) => p.id));
     deals.forEach((d) => {
-      if (d.owner_id) ids.add(d.owner_id);
+      const rid = responsibleId(d);
+      if (rid) ids.add(rid);
     });
     return Array.from(ids).map((id) => ({ id, name: lookups.owners.get(id) ?? id.slice(0, 8) }));
   }, [deals, lookups, profiles]);
@@ -286,7 +288,7 @@ function DealsPage() {
     const search = filters.search.trim().toLowerCase();
     return deals.filter((d) => {
       if (selected?.id && d.pipeline_id !== selected.id) return false;
-      if (filters.ownerId && d.owner_id !== filters.ownerId) return false;
+      if (filters.ownerId && responsibleId(d) !== filters.ownerId) return false;
       if (
         filters.substatusIds.length > 0 &&
         !filters.substatusIds.includes(d.stage_substatus_id ?? "")

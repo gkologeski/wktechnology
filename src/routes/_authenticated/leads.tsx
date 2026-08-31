@@ -25,6 +25,11 @@ import { useGridProjection } from "@/hooks/use-grid-projection";
 import { buildGridSelect } from "@/lib/grid/dynamic-select";
 
 import { getDateRange, type CustomRange, type DatePreset } from "@/lib/date-presets";
+import {
+  RESPONSIBLE_COLUMNS_FULL,
+  responsibleId,
+  responsibleOrExpr,
+} from "@/lib/entity/responsible";
 
 import { convertLead } from "@/lib/lead-convert";
 import { exportRowsToCsv } from "@/lib/csv-export";
@@ -235,8 +240,10 @@ function LeadsHubspotView() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const applyFilters = (q: any) => {
     // View
-    if (activeView === "mine" && user?.id) q = q.eq("owner_id", user.id);
-    if (activeView === "unassigned") q = q.is("owner_id", null);
+    if (activeView === "mine" && user?.id)
+      q = q.or(responsibleOrExpr([user.id], { columns: RESPONSIBLE_COLUMNS_FULL }));
+    if (activeView === "unassigned")
+      q = q.or(responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_FULL, includeUnassigned: true }));
     if (activeView === "open") q = q.not("status", "in", "(qualified,disqualified)");
     if (activeView === "new_week") {
       const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
@@ -263,16 +270,20 @@ function LeadsHubspotView() {
         else userIds.push(id);
       }
       const parts: string[] = [];
-      if (userIds.length > 0) parts.push(`owner_id.in.(${userIds.join(",")})`);
+      if (userIds.length > 0)
+        parts.push(responsibleOrExpr(userIds, { columns: RESPONSIBLE_COLUMNS_FULL }));
       if (hsIds.length > 0) parts.push(`hubspot_owner_id.in.(${hsIds.join(",")})`);
-      if (filters.includeUnassigned) parts.push(`owner_id.is.null`);
+      if (filters.includeUnassigned)
+        parts.push(
+          responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_FULL, includeUnassigned: true }),
+        );
       if (
         parts.length === 1 &&
         filters.includeUnassigned &&
         userIds.length === 0 &&
         hsIds.length === 0
       ) {
-        q = q.is("owner_id", null);
+        q = q.or(responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_FULL, includeUnassigned: true }));
       } else if (parts.length > 0) {
         q = q.or(parts.join(","));
       }
@@ -560,7 +571,7 @@ function LeadsHubspotView() {
   const ownerNameMap = useMemo(() => {
     const map = new Map<string, string>();
     for (const r of rows) {
-      const id = (r as { owner_id?: string | null }).owner_id;
+      const id = responsibleId(r as Parameters<typeof responsibleId>[0]);
       if (id && !map.has(id)) map.set(id, nameFor(id) ?? "—");
     }
     return map;
