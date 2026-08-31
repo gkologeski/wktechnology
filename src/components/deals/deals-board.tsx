@@ -284,6 +284,22 @@ export function DealsBoard({
           canDelete={canDelete}
           onClear={selection.clear}
           onDone={() => void qc.invalidateQueries({ queryKey: ["deals"] })}
+          extraActions={
+            <Button
+              variant="outline"
+              size="sm"
+              title="Percorrer os negócios selecionados, um a um"
+              onClick={() => {
+                const ids = selection.ids;
+                if (!ids.length) return toast.error("Nenhum negócio selecionado.");
+                startFocusQueue("deals", ids, `Negócios · ${ids.length.toLocaleString("pt-BR")}`);
+                toast.success(`Fila iniciada com ${ids.length} negócio(s)`);
+                void navigate({ to: "/deals/$id", params: { id: ids[0] } });
+              }}
+            >
+              <Play className="mr-1 h-4 w-4" /> Iniciar fila
+            </Button>
+          }
         />
       )}
 
