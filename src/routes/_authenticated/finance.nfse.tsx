@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table";
 import { listNfse } from "@/lib/nfse.functions";
 import { formatDateTime } from "@/lib/crm";
+import { formatCompactDateTime } from "@/lib/format/compact-date";
 import {
   Select,
   SelectContent,
@@ -184,7 +185,7 @@ function NfseListPage() {
                     : "—"}
                 </span>
                 <span className="text-muted-foreground">
-                  {formatDateTime(n.issued_at ?? n.created_at).split(" ")[0]}
+                  {formatCompactDateTime(n.issued_at ?? n.created_at)}
                 </span>
               </div>
               {n.error_message && (

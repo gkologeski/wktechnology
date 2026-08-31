@@ -27,6 +27,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatDateTime } from "@/lib/crm";
+import { formatCompactDateTime } from "@/lib/format/compact-date";
 import { listAllProjectTasks, listProjects } from "@/lib/projects.functions";
 import { useGridSelection } from "@/components/grid/use-grid-selection";
 import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
@@ -268,7 +269,7 @@ function ProjectTasksPage() {
                   </Link>
                 )}
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{t.due_at ? formatDateTime(t.due_at).split(" ")[0] : "sem prazo"}</span>
+                  <span>{t.due_at ? formatCompactDateTime(t.due_at) : "sem prazo"}</span>
                   <span className="tabular-nums">
                     {t.estimated_hours ? `${t.estimated_hours}h` : ""}
                   </span>

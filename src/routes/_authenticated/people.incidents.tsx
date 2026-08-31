@@ -1,4 +1,5 @@
 // /people/incidents — visão agregada de incidentes de segurança/assédio do workspace.
+import { formatCompactDateTime } from "@/lib/format/compact-date";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -208,7 +209,7 @@ function IncidentsListPage() {
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground">
-                {new Date(i.occurred_at).toLocaleDateString("pt-BR")}
+                {formatCompactDateTime(i.occurred_at)}
               </p>
             </div>
           )}
