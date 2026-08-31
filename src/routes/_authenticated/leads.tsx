@@ -50,6 +50,8 @@ import { LeadsTopBar } from "@/components/leads/leads-top-bar";
 import { LeadsViewTabs } from "@/components/leads/leads-view-tabs";
 import { LeadsFiltersSidebar } from "@/components/leads/leads-filters-sidebar";
 import { LeadsToolbar } from "@/components/leads/leads-toolbar";
+import { LeadsBulkBar } from "@/components/leads/leads-bulk-bar";
+
 import { LeadsTable } from "@/components/leads/leads-table";
 import { LeadsBoard } from "@/components/leads/leads-board";
 import { Button } from "@/components/ui/button";
