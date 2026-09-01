@@ -355,7 +355,10 @@ export function CreateLeadDialog({
                     </p>
                   )}
                 </div>
-                <div className="space-y-1.5">
+                <div
+                  className="space-y-1.5"
+                  onBlur={() => void checkDuplicateField("phone")}
+                >
                   <Label htmlFor="phone">Telefone</Label>
                   <PhoneInput
                     id="phone"
@@ -367,6 +370,7 @@ export function CreateLeadDialog({
                       setForm({ ...form, phone: v });
                     }}
                   />
+
 
                   {dupError?.field === "phone" && (
                     <p id="phone-error" role="alert" className="text-[11px] text-destructive">
