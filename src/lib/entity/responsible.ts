@@ -48,14 +48,19 @@ export const RESPONSIBLE_COLUMNS_FULL: ResponsibleColumns = [
 ];
 export const RESPONSIBLE_COLUMNS_BASIC: ResponsibleColumns = ["assigned_to", "owner_id"];
 /** Chamados (TechService) usam `assignee_id` como coluna de responsável. */
-export const RESPONSIBLE_COLUMNS_TICKET: ResponsibleColumns = ["assignee_id", "owner_id"];
+export const RESPONSIBLE_COLUMNS_TICKET: ResponsibleColumns = ["assignee_id"];
 
-/** Responsável efetivo de um chamado (`assignee_id ?? owner_id`). */
+/**
+ * Responsável efetivo de um chamado: apenas `assignee_id`.
+ * Não há fallback para `owner_id` porque em `tickets` essa coluna é NOT NULL
+ * (escopo/criador) — o fallback tornaria todo chamado "atribuído" e deixaria
+ * o filtro "Sem responsável" sempre vazio.
+ */
 export function ticketResponsibleId(
-  row: { assignee_id?: string | null; owner_id?: string | null } | null | undefined,
+  row: { assignee_id?: string | null } | null | undefined,
 ): string | null {
   if (!row) return null;
-  return row.assignee_id ?? row.owner_id ?? null;
+  return row.assignee_id ?? null;
 }
 
 /**
