@@ -52,10 +52,12 @@ export function BulkCreateActivityDialog({
     if (!subject.trim()) return toast.error("Assunto é obrigatório");
     setSaving(true);
     const col = RELATED_COL[entity];
-    const ownerId = assigneeId || user.id;
+    // `owner_id` precisa ser o próprio usuário (RLS: owner_id = auth.uid()).
+    // O responsável escolhido vai em `assigned_to`.
     const rows = ids.map((id) => ({
-      owner_id: ownerId,
+      owner_id: user.id,
       created_by: user.id,
+      assigned_to: assigneeId || user.id,
       type,
       subject,
       body: body || null,
