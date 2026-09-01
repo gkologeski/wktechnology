@@ -366,8 +366,8 @@ export function CreateLeadDialog({
                       if (dupError?.field === "phone") setDupError(null);
                       setForm({ ...form, phone: v });
                     }}
-                    onBlur={() => void checkDuplicateField("phone")}
                   />
+
                   {dupError?.field === "phone" && (
                     <p id="phone-error" role="alert" className="text-[11px] text-destructive">
                       {dupError.message}
