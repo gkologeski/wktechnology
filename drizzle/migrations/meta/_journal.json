@@ -43,6 +43,13 @@
       "when": 1788208913771,
       "tag": "0005_responsible_own_scope_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788261798848,
+      "tag": "0006_contacts_search_trgm_index",
+      "breakpoints": true
     }
   ]
 }
