@@ -52,6 +52,9 @@ type RowDraft = {
 };
 
 const UNMAPPED_KEY = ["deal-line-items", "unmapped-names"] as const;
+// Nomes marcados como "não é serviço" (ex.: linhas de desconto). Preferência
+// local do usuário — nada é gravado no banco.
+const IGNORED_KEY = "wk_line_item_migration_ignored";
 
 export function LineItemMigrationPage() {
   const qc = useQueryClient();
