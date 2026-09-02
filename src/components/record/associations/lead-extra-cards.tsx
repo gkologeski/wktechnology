@@ -350,7 +350,7 @@ async function loadProspecting(leadId: string): Promise<ProspectingBundle[]> {
       .limit(3),
     supabase
       .from("sdr_enrollments")
-      .select("id, status, messages_sent, last_action_at, created_at, playbooks(id, name)")
+      .select("id, status, messages_sent, last_action_at, created_at, sdr_playbooks(id, name)")
       .eq("lead_id", leadId)
       .order("created_at", { ascending: false })
       .limit(5),
@@ -387,12 +387,12 @@ async function loadProspecting(leadId: string): Promise<ProspectingBundle[]> {
     messages_sent: number | null;
     last_action_at: string | null;
     created_at: string;
-    playbooks: { id: string; name: string | null } | null;
+    sdr_playbooks: { id: string; name: string | null } | null;
   }[]) {
     out.push({
       kind: "enrollment",
       id: e.id,
-      title: `Cadência: ${e.playbooks?.name || "sem nome"}`,
+      title: `Cadência: ${e.sdr_playbooks?.name || "sem nome"}`,
       meta: [
         e.status ? (ENROLLMENT_STATUS_LABEL[e.status] ?? e.status) : null,
         e.messages_sent ? `${e.messages_sent} mensagem(ns)` : null,
