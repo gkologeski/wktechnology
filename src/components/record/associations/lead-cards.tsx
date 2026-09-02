@@ -328,7 +328,10 @@ export function LeadDealsCard({ entityId }: { entityId: string }) {
                         <DetailRow label="Fase" value={stageLabel} />
                       </div>
                     </div>
-                    <AssocItemActions link={{ to: "/deals/$id", params: { id: d.id } }} />
+                    <AssocItemActions
+                      link={{ to: "/deals/$id", params: { id: d.id } }}
+                      onUnlink={() => void unlinkDeal()}
+                    />
                   </div>
                 </li>
               );
@@ -337,9 +340,11 @@ export function LeadDealsCard({ entityId }: { entityId: string }) {
           <ViewAllFooter href="/deals" label="Exibir todos os Negócios associados" />
         </>
       )}
+      {associate.dialog}
     </AssocCard>
   );
 }
+
 
 /* ───────────── Contact/Company → Leads card (read-only) ───────────── */
 
