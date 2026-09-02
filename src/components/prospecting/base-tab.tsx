@@ -65,9 +65,12 @@ type DealRow = {
   lost_at: string | null;
   updated_at: string | null;
   companies: { id: string; name: string | null; domain: string | null; city: string | null } | null;
-  primary_contact:
-    | { id: string; first_name: string | null; last_name: string | null; email: string | null }
-    | null;
+  primary_contact: {
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+    email: string | null;
+  } | null;
   deal_line_items: { service_catalog_id: string | null; name: string | null }[] | null;
 };
 
@@ -114,7 +117,6 @@ export function BaseTab() {
         .returns<ServiceOption[]>();
       if (error) throw new Error(error.message);
       return data ?? [];
-
     },
     staleTime: 300_000,
   });
@@ -149,10 +151,9 @@ export function BaseTab() {
 
       if (period !== "all") {
         const since = new Date(Date.now() - Number(period) * 86_400_000).toISOString();
-        const dateCol = outcome === "lost" ? "lost_at" : outcome === "won" ? "closed_at" : "updated_at";
-        query = query.or(
-          `${dateCol}.gte.${since},and(${dateCol}.is.null,updated_at.gte.${since})`,
-        );
+        const dateCol =
+          outcome === "lost" ? "lost_at" : outcome === "won" ? "closed_at" : "updated_at";
+        query = query.or(`${dateCol}.gte.${since},and(${dateCol}.is.null,updated_at.gte.${since})`);
       }
 
       const { data, error } = await query
@@ -216,7 +217,9 @@ export function BaseTab() {
   const totalDeals = rows.reduce((acc, r) => acc + r.dealsCount, 0);
 
   const serviceLabel =
-    serviceId === "all" ? "Todos os serviços" : (services ?? []).find((s) => s.id === serviceId)?.name ?? "Serviço";
+    serviceId === "all"
+      ? "Todos os serviços"
+      : ((services ?? []).find((s) => s.id === serviceId)?.name ?? "Serviço");
   const periodLabel = PERIODS.find((p) => p.value === period)?.label ?? "";
 
   const copyNames = async () => {
@@ -231,7 +234,15 @@ export function BaseTab() {
 
   const exportCsv = () => {
     if (rows.length === 0) return;
-    const header = ["Cliente", "Contato", "E-mail", "Serviços", "Negócios", "Valor total", "Última data"];
+    const header = [
+      "Cliente",
+      "Contato",
+      "E-mail",
+      "Serviços",
+      "Negócios",
+      "Valor total",
+      "Última data",
+    ];
     const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
     const body = rows.map((r) =>
       [
