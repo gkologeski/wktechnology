@@ -203,8 +203,16 @@ export function LineItemMigrationPage() {
       const res = (await applyMapping({ data: { entries } })) as {
         updated: number;
         failures: Array<{ name: string; message: string }>;
+        results?: Array<{ name: string; updated: number }>;
       };
+      setLastResults(Object.fromEntries((res.results ?? []).map((r) => [r.name, r.updated])));
       toast.success(`${res.updated} item(ns) de linha classificado(s).`);
+      const zeros = (res.results ?? []).filter((r) => r.updated === 0);
+      if (zeros.length > 0) {
+        toast.warning(
+          `${zeros.length} nome(s) aprovado(s) não atualizaram nenhum item (ex.: ${zeros[0]?.name}).`,
+        );
+      }
       if (res.failures.length > 0) {
         toast.error(`${res.failures.length} nome(s) falharam: ${res.failures[0]?.message ?? ""}`);
       }
