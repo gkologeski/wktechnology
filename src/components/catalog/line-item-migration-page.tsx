@@ -187,6 +187,7 @@ export function LineItemMigrationPage() {
         const unit = catalog.find((c) => c.id === d.serviceCatalogId)?.unit ?? null;
         return {
           name: g.name,
+          rawNames: g.rawNames?.length ? g.rawNames : [g.name],
           serviceCatalogId: d.serviceCatalogId as string,
           jobProfileId: d.jobProfileId,
           seniority: d.seniority,
