@@ -150,7 +150,9 @@ export function BaseTab() {
       if (period !== "all") {
         const since = new Date(Date.now() - Number(period) * 86_400_000).toISOString();
         const dateCol = outcome === "lost" ? "lost_at" : outcome === "won" ? "closed_at" : "updated_at";
-        query = query.or(`${dateCol}.gte.${since},updated_at.gte.${since}`);
+        query = query.or(
+          `${dateCol}.gte.${since},and(${dateCol}.is.null,updated_at.gte.${since})`,
+        );
       }
 
       const { data, error } = await query
