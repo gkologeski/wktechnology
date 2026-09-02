@@ -22,7 +22,6 @@ import {
 import { AddAssociation } from "@/components/record/add-association";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
 
-
 /* ───────────── Lead → Contact / Deal cards (read-only, from conversion) ───────────── */
 
 export function LeadContactsCard({ entityId }: { entityId: string }) {
@@ -285,7 +284,6 @@ export function LeadDealsCard({ entityId }: { entityId: string }) {
       count={rows.length}
       action={action}
     >
-
       {rows.length === 0 ? (
         <Empty label="Nenhum negócio vinculado." />
       ) : (
@@ -344,7 +342,6 @@ export function LeadDealsCard({ entityId }: { entityId: string }) {
     </AssocCard>
   );
 }
-
 
 /* ───────────── Contact/Company → Leads card (read-only) ───────────── */
 

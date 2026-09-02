@@ -48,7 +48,6 @@ const CallHistoryPanel = lazy(() =>
   import("@/components/voice/call-history-panel").then((m) => ({ default: m.CallHistoryPanel })),
 );
 
-
 export type AssociationEntity = "contact" | "lead" | "company" | "deal" | "ticket";
 
 type Props = {
@@ -146,7 +145,6 @@ export function AssociationsPanel({ entity, entityId, companyId, contactId, deal
         </>
       )}
       {entity !== "ticket" && <AttachmentsCard entity={entity} entityId={entityId} />}
-
     </>
   );
 }
