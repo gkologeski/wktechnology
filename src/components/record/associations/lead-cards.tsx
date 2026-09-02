@@ -17,8 +17,11 @@ import {
   EntityAvatar,
   ViewAllFooter,
   formatDealDateLong,
+  useAssociateWithPeriod,
 } from "./primitives";
+import { AddAssociation } from "@/components/record/add-association";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
+
 
 /* ───────────── Lead → Contact / Deal cards (read-only, from conversion) ───────────── */
 
