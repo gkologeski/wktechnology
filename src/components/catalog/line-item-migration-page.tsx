@@ -331,7 +331,27 @@ export function LineItemMigrationPage() {
             <div className="py-10 text-center text-sm text-muted-foreground">
               {groups.length === 0
                 ? "Todos os itens de linha já estão vinculados a um serviço do catálogo."
-                : "Nenhum nome encontrado com a busca atual."}
+                : visible.length === 0
+                  ? "Nada pendente: os nomes restantes foram marcados como “não é serviço”."
+                  : "Nenhum nome encontrado com a busca atual."}
+              {ignored.length > 0 ? (
+                <div className="mt-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setIgnored([]);
+                      try {
+                        window.localStorage.removeItem(IGNORED_KEY);
+                      } catch {
+                        /* sem persistência disponível */
+                      }
+                    }}
+                  >
+                    Mostrar {ignored.length} nome(s) oculto(s)
+                  </Button>
+                </div>
+              ) : null}
             </div>
           ) : (
             <div className="space-y-2">
