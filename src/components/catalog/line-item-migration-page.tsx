@@ -144,11 +144,13 @@ export function LineItemMigrationPage() {
     });
   }, [groups, catalog, profiles]);
 
+  const visible = useMemo(() => groups.filter((g) => !ignored.includes(g.name)), [groups, ignored]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return groups;
-    return groups.filter((g) => g.name.toLowerCase().includes(q));
-  }, [groups, search]);
+    if (!q) return visible;
+    return visible.filter((g) => g.name.toLowerCase().includes(q));
+  }, [visible, search]);
 
   const approvedCount = filtered.filter(
     (g) => drafts[g.name]?.approved && drafts[g.name]?.serviceCatalogId,
