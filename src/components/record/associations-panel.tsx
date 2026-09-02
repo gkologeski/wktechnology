@@ -21,6 +21,34 @@ const SingleDealCard = lazy(() =>
   import("./associations/company-cards").then((m) => ({ default: m.SingleDealCard })),
 );
 
+// Cards extras do lead (formulários, agendamentos, e-mails, campanhas, prospecção)
+// e o card de "Lead de origem" exibido no negócio.
+const LeadFormSubmissionsCard = lazy(() =>
+  import("./associations/lead-extra-cards").then((m) => ({ default: m.LeadFormSubmissionsCard })),
+);
+const LeadBookingsCard = lazy(() =>
+  import("./associations/lead-extra-cards").then((m) => ({ default: m.LeadBookingsCard })),
+);
+const LeadEmailThreadsCard = lazy(() =>
+  import("./associations/lead-extra-cards").then((m) => ({ default: m.LeadEmailThreadsCard })),
+);
+const LeadBroadcastsCard = lazy(() =>
+  import("./associations/lead-extra-cards").then((m) => ({ default: m.LeadBroadcastsCard })),
+);
+const LeadProspectingCard = lazy(() =>
+  import("./associations/lead-extra-cards").then((m) => ({ default: m.LeadProspectingCard })),
+);
+const DealOriginLeadCard = lazy(() =>
+  import("./associations/lead-extra-cards").then((m) => ({ default: m.DealOriginLeadCard })),
+);
+const MeetingsPanel = lazy(() =>
+  import("@/components/meetings/meetings-panel").then((m) => ({ default: m.MeetingsPanel })),
+);
+const CallHistoryPanel = lazy(() =>
+  import("@/components/voice/call-history-panel").then((m) => ({ default: m.CallHistoryPanel })),
+);
+
+
 export type AssociationEntity = "contact" | "lead" | "company" | "deal" | "ticket";
 
 type Props = {
