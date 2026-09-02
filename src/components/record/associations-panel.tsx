@@ -21,6 +21,33 @@ const SingleDealCard = lazy(() =>
   import("./associations/company-cards").then((m) => ({ default: m.SingleDealCard })),
 );
 
+// Cards extras do lead (formulários, agendamentos, e-mails, campanhas, prospecção)
+// e o card de "Lead de origem" exibido no negócio.
+const LeadFormSubmissionsCard = lazy(() =>
+  import("./associations/lead-extra-cards").then((m) => ({ default: m.LeadFormSubmissionsCard })),
+);
+const LeadBookingsCard = lazy(() =>
+  import("./associations/lead-extra-cards").then((m) => ({ default: m.LeadBookingsCard })),
+);
+const LeadEmailThreadsCard = lazy(() =>
+  import("./associations/lead-extra-cards").then((m) => ({ default: m.LeadEmailThreadsCard })),
+);
+const LeadBroadcastsCard = lazy(() =>
+  import("./associations/lead-extra-cards").then((m) => ({ default: m.LeadBroadcastsCard })),
+);
+const LeadProspectingCard = lazy(() =>
+  import("./associations/lead-extra-cards").then((m) => ({ default: m.LeadProspectingCard })),
+);
+const DealOriginLeadCard = lazy(() =>
+  import("./associations/lead-extra-cards").then((m) => ({ default: m.DealOriginLeadCard })),
+);
+const MeetingsPanel = lazy(() =>
+  import("@/components/meetings/meetings-panel").then((m) => ({ default: m.MeetingsPanel })),
+);
+const CallHistoryPanel = lazy(() =>
+  import("@/components/voice/call-history-panel").then((m) => ({ default: m.CallHistoryPanel })),
+);
+
 export type AssociationEntity = "contact" | "lead" | "company" | "deal" | "ticket";
 
 type Props = {
@@ -77,6 +104,11 @@ export function AssociationsPanel({ entity, entityId, companyId, contactId, deal
           <LeadDealsCard entityId={entityId} />
         </LazyCard>
       )}
+      {entity === "deal" && (
+        <LazyCard>
+          <DealOriginLeadCard entityId={entityId} />
+        </LazyCard>
+      )}
       {entity === "ticket" && (
         <LazyCard>
           <SingleDealCard entityId={entityId} dealId={dealId ?? null} />
@@ -87,6 +119,31 @@ export function AssociationsPanel({ entity, entityId, companyId, contactId, deal
       )}
       {entity !== "ticket" && <TasksCard entity={entity} entityId={entityId} />}
       {entity !== "ticket" && <EmailsCard entity={entity} entityId={entityId} />}
+      {entity === "lead" && (
+        <>
+          <LazyCard>
+            <LeadEmailThreadsCard entityId={entityId} />
+          </LazyCard>
+          <LazyCard>
+            <MeetingsPanel entity="lead" entityId={entityId} />
+          </LazyCard>
+          <LazyCard>
+            <CallHistoryPanel entity="lead" entityId={entityId} />
+          </LazyCard>
+          <LazyCard>
+            <LeadBookingsCard entityId={entityId} />
+          </LazyCard>
+          <LazyCard>
+            <LeadFormSubmissionsCard entityId={entityId} />
+          </LazyCard>
+          <LazyCard>
+            <LeadBroadcastsCard entityId={entityId} />
+          </LazyCard>
+          <LazyCard>
+            <LeadProspectingCard entityId={entityId} />
+          </LazyCard>
+        </>
+      )}
       {entity !== "ticket" && <AttachmentsCard entity={entity} entityId={entityId} />}
     </>
   );

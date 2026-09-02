@@ -17,7 +17,9 @@ import {
   EntityAvatar,
   ViewAllFooter,
   formatDealDateLong,
+  useAssociateWithPeriod,
 } from "./primitives";
+import { AddAssociation } from "@/components/record/add-association";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
 
 /* ───────────── Lead → Contact / Deal cards (read-only, from conversion) ───────────── */
@@ -223,10 +225,65 @@ export function LeadDealsCard({ entityId }: { entityId: string }) {
     };
   }, [entityId, tick]);
 
+  const linkDeal = async (dealId: string) => {
+    const { data: affected, error } = await supabase
+      .from("leads")
+      .update({ converted_deal_id: dealId })
+      .eq("id", entityId)
+      .select("id");
+    if (error) {
+      toast.error(error.message || "Falha ao vincular negócio");
+      return;
+    }
+    if (deniedIfUnaffected(affected)) return;
+    toast.success("Negócio vinculado");
+    setTick((t) => t + 1);
+  };
+
+  const unlinkDeal = async () => {
+    const { data: affected, error } = await supabase
+      .from("leads")
+      .update({ converted_deal_id: null })
+      .eq("id", entityId)
+      .select("id");
+    if (error) {
+      toast.error(error.message || "Falha ao remover vínculo");
+      return;
+    }
+    if (deniedIfUnaffected(affected)) return;
+    toast.success("Negócio removido");
+    setTick((t) => t + 1);
+  };
+
+  const associate = useAssociateWithPeriod({
+    sourceKind: "lead",
+    sourceId: entityId,
+    targetKind: "deal",
+    doAssociate: (id) => linkDeal(id),
+    title: "Vincular negócio ao lead",
+  });
+
   const rows = deal ? [deal] : [];
 
+  const action = !deal ? (
+    <AddAssociation
+      entity="deals"
+      select="id, name, value, currency"
+      searchColumn="name"
+      labelFrom={(r) => String(r["name"] ?? "Sem nome")}
+      placeholder="Buscar negócio…"
+      label="Adicionar negócio"
+      onPick={(id) => associate.request(id)}
+    />
+  ) : null;
+
   return (
-    <AssocCard icon={<Briefcase className="w-4 h-4" />} title="Negócios" count={rows.length}>
+    <AssocCard
+      icon={<Briefcase className="w-4 h-4" />}
+      title="Negócios"
+      count={rows.length}
+      action={action}
+    >
       {rows.length === 0 ? (
         <Empty label="Nenhum negócio vinculado." />
       ) : (
@@ -269,7 +326,10 @@ export function LeadDealsCard({ entityId }: { entityId: string }) {
                         <DetailRow label="Fase" value={stageLabel} />
                       </div>
                     </div>
-                    <AssocItemActions link={{ to: "/deals/$id", params: { id: d.id } }} />
+                    <AssocItemActions
+                      link={{ to: "/deals/$id", params: { id: d.id } }}
+                      onUnlink={() => void unlinkDeal()}
+                    />
                   </div>
                 </li>
               );
@@ -278,6 +338,7 @@ export function LeadDealsCard({ entityId }: { entityId: string }) {
           <ViewAllFooter href="/deals" label="Exibir todos os Negócios associados" />
         </>
       )}
+      {associate.dialog}
     </AssocCard>
   );
 }
