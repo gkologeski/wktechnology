@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { ShieldOff } from "lucide-react";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { QueueTab } from "@/components/prospecting/queue-tab";
+import { BaseTab } from "@/components/prospecting/base-tab";
 import { NurturingTab } from "@/components/prospecting/nurturing-tab";
 
 import { QuestionnairesTab } from "@/components/prospecting/questionnaires-tab";
@@ -33,6 +34,7 @@ import { VoiceAgentPage } from "@/components/prospecting/pages/voice-agent-page"
 
 const TAB_VALUES = [
   "fila",
+  "base",
   "nutricao",
   "questionarios",
   "cadencias",
@@ -63,6 +65,12 @@ const TABS: readonly TabDef[] = [
     label: "Fila",
     permission: "techsales.prospecting.queue.view",
     Component: QueueTab,
+  },
+  {
+    value: "base",
+    label: "Base",
+    permission: "techsales.prospecting.search.view",
+    Component: BaseTab,
   },
   {
     value: "nutricao",
