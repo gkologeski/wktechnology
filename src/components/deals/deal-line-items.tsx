@@ -448,7 +448,36 @@ export function LineItemsEditorBody({
                     </div>
                   ) : null}
                 </div>
-              ) : null}
+              ) : (
+                <div className="flex flex-wrap items-center gap-2 rounded-md border border-dashed bg-muted/30 p-2">
+                  <span className="text-xs text-muted-foreground">
+                    Item sem linha de serviço. Vincule ao catálogo para entrar nos relatórios por
+                    serviço.
+                  </span>
+                  <div className="w-[240px]">
+                    <EntityCombobox
+                      entity="service_catalog"
+                      select="id, name, code, unit"
+                      searchColumns={["name", "code", "description"]}
+                      filters={{ active: true }}
+                      labelFrom={(r) => String((r as { name?: string }).name ?? "Serviço")}
+                      value={null}
+                      onChange={(id, item) => {
+                        if (!id) return;
+                        update(li.id, {
+                          service_catalog_id: id,
+                          ...(li.name ? {} : { name: item?.label ?? null }),
+                        } as Partial<LineItem>);
+                      }}
+                      placeholder="Vincular serviço…"
+                      emptyLabel="Nenhum serviço"
+                      icon={Wrench}
+                      clearable={false}
+                    />
+                  </div>
+                </div>
+              )}
+
 
               <div className="grid grid-cols-4 gap-2">
                 <LabeledNumber
