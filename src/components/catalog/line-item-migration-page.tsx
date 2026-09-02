@@ -68,6 +68,32 @@ export function LineItemMigrationPage() {
   const [drafts, setDrafts] = useState<Record<string, RowDraft>>({});
   const [saving, setSaving] = useState(false);
   const [savingProfiles, setSavingProfiles] = useState(false);
+  const [ignored, setIgnored] = useState<string[]>([]);
+  const [lastResults, setLastResults] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(IGNORED_KEY);
+      if (raw) setIgnored(JSON.parse(raw) as string[]);
+    } catch {
+      /* preferência local inválida: começa vazia */
+    }
+  }, []);
+
+  function toggleIgnored(name: string) {
+    setIgnored((current) => {
+      const next = current.includes(name)
+        ? current.filter((n) => n !== name)
+        : [...current, name];
+      try {
+        window.localStorage.setItem(IGNORED_KEY, JSON.stringify(next));
+      } catch {
+        /* sem persistência disponível */
+      }
+      return next;
+    });
+  }
 
   const {
     data: unmapped,
