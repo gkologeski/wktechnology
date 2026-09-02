@@ -135,8 +135,7 @@ export const applyLineItemMapping = createServerFn({ method: "POST" })
       if (entry.seniority !== undefined) patch.seniority = entry.seniority ?? null;
       if (entry.unit) patch.unit = entry.unit;
 
-      const names =
-        entry.rawNames && entry.rawNames.length > 0 ? entry.rawNames : [entry.name];
+      const names = entry.rawNames && entry.rawNames.length > 0 ? entry.rawNames : [entry.name];
       const { data: rows, error } = await supabase
         .from("deal_line_items")
         .update(patch)

@@ -83,9 +83,7 @@ export function LineItemMigrationPage() {
 
   function toggleIgnored(name: string) {
     setIgnored((current) => {
-      const next = current.includes(name)
-        ? current.filter((n) => n !== name)
-        : [...current, name];
+      const next = current.includes(name) ? current.filter((n) => n !== name) : [...current, name];
       try {
         window.localStorage.setItem(IGNORED_KEY, JSON.stringify(next));
       } catch {
