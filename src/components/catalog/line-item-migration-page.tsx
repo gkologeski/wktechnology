@@ -373,7 +373,21 @@ export function LineItemMigrationPage() {
                               {SENIORITY_LABEL[d.seniority] ?? d.seniority}
                             </Badge>
                           ) : null}
+                          {lastResults[g.name] === 0 ? (
+                            <Badge variant="destructive" className="text-xs">
+                              Nenhum item atualizado
+                            </Badge>
+                          ) : null}
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="mt-1 h-7 px-2 text-xs text-muted-foreground"
+                          onClick={() => toggleIgnored(g.name)}
+                        >
+                          <EyeOff aria-hidden="true" className="mr-1 h-3.5 w-3.5" />
+                          Não é serviço
+                        </Button>
                       </div>
 
                       <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-3">
