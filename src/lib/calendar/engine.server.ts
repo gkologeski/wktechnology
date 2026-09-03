@@ -762,9 +762,11 @@ export async function syncPastRecordings(
     .eq("calendar_account_id", account.id)
     .not("conference_id", "is", null)
     .is("recording_drive_file_id", null)
+    .lt("recording_attempts", RECORDING_MAX_ATTEMPTS)
     .gte("end_at", since)
     .lte("end_at", until)
     .limit(50);
+
   let found = 0;
   let missing = 0;
   let errors = 0;
