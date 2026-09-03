@@ -118,7 +118,8 @@ export function DateRangePicker({
           className={cn("justify-start gap-2 text-left font-normal", className)}
         >
           <CalendarIcon aria-hidden="true" className="h-4 w-4 opacity-70" />
-          <span className="truncate">{label}</span>
+          <span className={cn("truncate", !current && "text-muted-foreground")}>{label}</span>
+
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align={align}>
