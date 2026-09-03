@@ -3,7 +3,7 @@ import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
-import { DateFilter } from "@/components/date-filter";
+import { DateRangeFilter } from "@/components/date-range-filter";
 import { translateFieldValue } from "@/lib/i18n/hubspot-values";
 import { cn } from "@/lib/utils";
 import type { LeadStage } from "@/lib/leads/stages";
@@ -189,12 +189,10 @@ export function LeadsFiltersSidebar({
         </FilterGroup>
 
         <FilterGroup title="Data de criação">
-          <DateFilter
-            name="leads-created"
-            value={filters.createdPreset}
-            custom={filters.createdCustom}
-            onChange={({ value, custom }) =>
-              setFilters((f) => ({ ...f, createdPreset: value, createdCustom: custom }))
+          <DateRangeFilter
+            value={{ preset: filters.createdPreset, custom: filters.createdCustom }}
+            onChange={(v) =>
+              setFilters((f) => ({ ...f, createdPreset: v.preset, createdCustom: v.custom ?? {} }))
             }
           />
         </FilterGroup>

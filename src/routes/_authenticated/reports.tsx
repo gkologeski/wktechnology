@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
+import { DateRangePicker } from "@/components/date-range-picker";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,10 @@ const compactNumber = (v: number) =>
   new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(
     Number(v) || 0,
   );
+
+function reportIsoDay(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 export const Route = createFileRoute("/_authenticated/reports")({
   component: ReportsPage,
@@ -378,23 +383,24 @@ function ReportsPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-1.5">
-                      <Label>De</Label>
-                      <Input
-                        type="date"
-                        value={config.dateFrom ?? ""}
-                        onChange={(e) =>
-                          setConfig({ ...config, dateFrom: e.target.value || undefined })
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <Label>Período</Label>
+                      <DateRangePicker
+                        className="w-full"
+                        value={
+                          config.dateFrom && config.dateTo
+                            ? {
+                                from: new Date(`${config.dateFrom}T00:00:00`),
+                                to: new Date(`${config.dateTo}T00:00:00`),
+                              }
+                            : undefined
                         }
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Até</Label>
-                      <Input
-                        type="date"
-                        value={config.dateTo ?? ""}
-                        onChange={(e) =>
-                          setConfig({ ...config, dateTo: e.target.value || undefined })
+                        onChange={(r) =>
+                          setConfig({
+                            ...config,
+                            dateFrom: reportIsoDay(r.from),
+                            dateTo: reportIsoDay(r.to),
+                          })
                         }
                       />
                     </div>

@@ -227,6 +227,9 @@ export type PresetKey =
   | "thisWeek"
   | "lastWeek"
   | "nextWeek"
+  | "thisMonth"
+  | "lastMonth"
+  | "nextMonth"
   | "thisQuarter"
   | "lastQuarter"
   | "nextQuarter"
@@ -249,6 +252,7 @@ export type DateRange = { from: Date; to: Date };
 export type PresetGroup =
   | "Dias"
   | "Semanas"
+  | "Meses"
   | "Trimestres"
   | "Semestres"
   | "Anos"
@@ -261,6 +265,9 @@ export const PRESETS: { key: PresetKey; label: string; group: PresetGroup }[] = 
   { key: "thisWeek", label: "Essa Semana", group: "Semanas" },
   { key: "lastWeek", label: "Semana Passada", group: "Semanas" },
   { key: "nextWeek", label: "Próxima Semana", group: "Semanas" },
+  { key: "thisMonth", label: "Esse Mês", group: "Meses" },
+  { key: "lastMonth", label: "Mês Passado", group: "Meses" },
+  { key: "nextMonth", label: "Próximo Mês", group: "Meses" },
   { key: "thisQuarter", label: "Esse Trimestre", group: "Trimestres" },
   { key: "lastQuarter", label: "Trimestre Passado", group: "Trimestres" },
   { key: "nextQuarter", label: "Próximo Trimestre", group: "Trimestres" },
@@ -313,6 +320,16 @@ export function getPresetRange(key: PresetKey, now: Date = new Date()): DateRang
     case "nextWeek": {
       const d = addWeeks(now, 1);
       return { from: startOfWeek(d, WEEK_OPTS), to: endOfWeek(d, WEEK_OPTS) };
+    }
+    case "thisMonth":
+      return { from: startOfMonth(now), to: endOfMonth(now) };
+    case "lastMonth": {
+      const d = addMonths(now, -1);
+      return { from: startOfMonth(d), to: endOfMonth(d) };
+    }
+    case "nextMonth": {
+      const d = addMonths(now, 1);
+      return { from: startOfMonth(d), to: endOfMonth(d) };
     }
     case "thisQuarter":
       return { from: startOfQuarter(now), to: endOfQuarter(now) };

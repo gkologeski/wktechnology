@@ -44,7 +44,7 @@ import { OwnerFilter, splitOwnerIds, type OwnerFilterValue } from "@/components/
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 
 import { getDateRange, type CustomRange, type DatePreset } from "@/lib/date-presets";
-import { DateFilter } from "@/components/date-filter";
+import { DateRangeFilter } from "@/components/date-range-filter";
 
 import {
   CheckboxFilter,
@@ -700,12 +700,14 @@ function ContactsHubspotView() {
           </FilterGroup>
 
           <FilterGroup title="Data de criação">
-            <DateFilter
-              name="contacts-created"
-              value={filters.createdPreset}
-              custom={filters.createdCustom}
-              onChange={({ value, custom }) =>
-                setFilters((f) => ({ ...f, createdPreset: value, createdCustom: custom }))
+            <DateRangeFilter
+              value={{ preset: filters.createdPreset, custom: filters.createdCustom }}
+              onChange={(v) =>
+                setFilters((f) => ({
+                  ...f,
+                  createdPreset: v.preset,
+                  createdCustom: v.custom ?? {},
+                }))
               }
             />
           </FilterGroup>

@@ -6,6 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { IsoDateRangePicker } from "@/components/iso-date-range-picker";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -246,36 +247,30 @@ export function DealsToolbar({
 
         {filters.closedPeriod === "custom" && (
           <>
-            <Input
-              type="date"
-              aria-label="Fechado a partir de"
-              value={filters.closedStart}
-              onChange={(e) => setF("closedStart", e.target.value)}
-              className="h-9 w-[150px]"
-            />
-            <Input
-              type="date"
-              aria-label="Fechado até"
-              value={filters.closedEnd}
-              onChange={(e) => setF("closedEnd", e.target.value)}
-              className="h-9 w-[150px]"
+            <IsoDateRangePicker
+              ariaLabel="Período de fechamento"
+              className="h-9"
+              from={filters.closedStart}
+              to={filters.closedEnd}
+              onChange={({ from, to }) => {
+                setF("closedStart", from);
+                setF("closedEnd", to);
+              }}
             />
           </>
         )}
 
         {filters.period === "custom" && (
           <>
-            <Input
-              type="date"
-              value={filters.customStart}
-              onChange={(e) => setF("customStart", e.target.value)}
-              className="h-9 w-[150px]"
-            />
-            <Input
-              type="date"
-              value={filters.customEnd}
-              onChange={(e) => setF("customEnd", e.target.value)}
-              className="h-9 w-[150px]"
+            <IsoDateRangePicker
+              ariaLabel="Período personalizado"
+              className="h-9"
+              from={filters.customStart}
+              to={filters.customEnd}
+              onChange={({ from, to }) => {
+                setF("customStart", from);
+                setF("customEnd", to);
+              }}
             />
           </>
         )}

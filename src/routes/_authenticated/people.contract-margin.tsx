@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, DollarSign, Clock, TrendingUp, Users } from "lucide-react";
 
+import { IsoDateRangePicker } from "@/components/iso-date-range-picker";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -139,14 +140,15 @@ function ContractMarginPage() {
           <div className="flex items-end justify-between gap-4 flex-wrap">
             <CardTitle className="text-base">Contratos</CardTitle>
             <div className="flex gap-2">
-              <div>
-                <Label className="text-xs">De</Label>
-                <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
-              </div>
-              <div>
-                <Label className="text-xs">Até</Label>
-                <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
-              </div>
+              <IsoDateRangePicker
+                ariaLabel="Período dos contratos"
+                from={start}
+                to={end}
+                onChange={({ from, to }) => {
+                  setStart(from);
+                  setEnd(to);
+                }}
+              />
             </div>
           </div>
         </CardHeader>

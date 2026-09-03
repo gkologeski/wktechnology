@@ -7,6 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { ArrowLeft, CheckCircle2, FileText, Clock, DollarSign } from "lucide-react";
 
+import { IsoDateRangePicker } from "@/components/iso-date-range-picker";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -168,15 +169,17 @@ function PeopleBillingPage() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-muted-foreground">Período</CardTitle>
           </CardHeader>
-          <CardContent className="flex gap-2">
-            <div className="flex-1">
-              <Label className="text-xs">De</Label>
-              <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
-            </div>
-            <div className="flex-1">
-              <Label className="text-xs">Até</Label>
-              <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
-            </div>
+          <CardContent>
+            <IsoDateRangePicker
+              className="w-full"
+              ariaLabel="Período de faturamento"
+              from={start}
+              to={end}
+              onChange={({ from, to }) => {
+                setStart(from);
+                setEnd(to);
+              }}
+            />
           </CardContent>
         </Card>
       </div>

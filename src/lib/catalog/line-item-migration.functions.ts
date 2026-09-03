@@ -38,6 +38,8 @@ export type UnmappedGroup = {
   name: string;
   /** Variantes cruas do nome no banco (com espaços/caixa originais). */
   rawNames: string[];
+  /** IDs dos itens sem serviço deste grupo — identificação estável no update. */
+  itemIds: string[];
   itemCount: number;
   dealCount: number;
   totalValue: number;
@@ -64,7 +66,13 @@ export const listUnmappedLineItemNames = createServerFn({ method: "POST" })
 
     const map = new Map<
       string,
-      { itemCount: number; deals: Set<string>; totalValue: number; rawNames: Set<string> }
+      {
+        itemCount: number;
+        deals: Set<string>;
+        totalValue: number;
+        rawNames: Set<string>;
+        itemIds: string[];
+      }
     >();
     for (const row of data ?? []) {
       const raw = row.name ?? "";
@@ -75,9 +83,11 @@ export const listUnmappedLineItemNames = createServerFn({ method: "POST" })
         deals: new Set<string>(),
         totalValue: 0,
         rawNames: new Set<string>(),
+        itemIds: [] as string[],
       };
       entry.itemCount += 1;
       entry.rawNames.add(raw);
+      entry.itemIds.push(row.id);
       if (row.deal_id) entry.deals.add(row.deal_id);
       entry.totalValue += Number(row.quantity ?? 0) * Number(row.unit_price ?? 0);
       map.set(name, entry);
@@ -87,6 +97,7 @@ export const listUnmappedLineItemNames = createServerFn({ method: "POST" })
       .map(([name, v]) => ({
         name,
         rawNames: [...v.rawNames],
+        itemIds: v.itemIds,
         itemCount: v.itemCount,
         dealCount: v.deals.size,
         totalValue: v.totalValue,
@@ -100,6 +111,9 @@ const mappingEntry = z.object({
   name: z.string().min(1),
   // Nomes exatamente como estão no banco; quando ausente, cai no nome aparado.
   rawNames: z.array(z.string().min(1)).min(1).max(50).optional(),
+  // Identificação estável dos itens a classificar (evita problemas de
+  // casamento por texto quando o nome tem espaços nas extremidades).
+  itemIds: z.array(z.string().uuid()).min(1).max(5000).optional(),
   serviceCatalogId: z.string().uuid(),
   jobProfileId: z.string().uuid().nullable().optional(),
   seniority: z.string().min(1).nullable().optional(),
@@ -136,10 +150,11 @@ export const applyLineItemMapping = createServerFn({ method: "POST" })
       if (entry.unit) patch.unit = entry.unit;
 
       const names = entry.rawNames && entry.rawNames.length > 0 ? entry.rawNames : [entry.name];
-      const { data: rows, error } = await supabase
-        .from("deal_line_items")
-        .update(patch)
-        .in("name", names)
+      const byId = entry.itemIds && entry.itemIds.length > 0;
+      const query = supabase.from("deal_line_items").update(patch);
+      const { data: rows, error } = await (
+        byId ? query.in("id", entry.itemIds as string[]) : query.in("name", names)
+      )
         .is("service_catalog_id", null)
         .select("id");
       if (error) {

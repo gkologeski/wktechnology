@@ -1,3 +1,6 @@
+// Seletor de intervalo de datas em pt-BR — componente oficial do sistema.
+// Regras: "Período" (personalizado) fica no topo; a seleção personalizada
+// acontece em dois cliques e o popover NÃO fecha no primeiro clique.
 import * as React from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -25,11 +28,15 @@ export type DateRangePickerProps = {
   defaultPreset?: PresetKey;
   align?: "start" | "center" | "end";
   className?: string;
+  /** Rótulo acessível do botão. */
+  ariaLabel?: string;
+  size?: "sm" | "default";
 };
 
-const GROUP_ORDER: PresetGroup[] = [
+export const DATE_GROUP_ORDER: PresetGroup[] = [
   "Dias",
   "Semanas",
+  "Meses",
   "Trimestres",
   "Semestres",
   "Anos",
@@ -40,48 +47,90 @@ export function DateRangePicker({
   value,
   onChange,
   defaultPreset = "last30",
-  align = "end",
+  align = "start",
   className,
+  ariaLabel = "Selecionar período",
+  size = "default",
 }: DateRangePickerProps) {
   const [open, setOpen] = React.useState(false);
   const [activePreset, setActivePreset] = React.useState<PresetKey | "custom">(defaultPreset);
+  // Seleção parcial: primeiro clique no calendário fica pendente até o segundo.
+  const [pending, setPending] = React.useState<{ from: Date } | null>(null);
 
   const current = value ?? getPresetRange(defaultPreset);
 
   const handlePreset = (key: PresetKey) => {
-    const range = getPresetRange(key);
     setActivePreset(key);
-    onChange(range, key);
+    setPending(null);
+    onChange(getPresetRange(key), key);
     setOpen(false);
   };
 
   const handleCalendar = (r: RDPDateRange | undefined) => {
-    if (r?.from && r?.to) {
+    const clicked = pending ? (r?.to ?? r?.from) : (r?.from ?? r?.to);
+    if (!clicked) return;
+    if (!pending) {
       setActivePreset("custom");
-      onChange({ from: r.from, to: r.to });
+      setPending({ from: clicked });
+      return;
     }
+    const [from, to] =
+      clicked.getTime() < pending.from.getTime()
+        ? [clicked, pending.from]
+        : [pending.from, clicked];
+    setPending(null);
+    setActivePreset("custom");
+    onChange({ from, to });
+    setOpen(false);
   };
 
   const label = `${format(current.from, "dd/MM/yyyy", { locale: ptBR })} – ${format(current.to, "dd/MM/yyyy", { locale: ptBR })}`;
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        // Não fecha com seleção incompleta: o usuário precisa do 2º clique.
+        if (!next && pending) return;
+        if (!next) setPending(null);
+        setOpen(next);
+      }}
+    >
       <PopoverTrigger asChild>
         <Button
+          type="button"
           variant="outline"
-          className={cn("justify-start text-left font-normal gap-2", className)}
+          size={size}
+          aria-label={ariaLabel}
+          className={cn("justify-start gap-2 text-left font-normal", className)}
         >
-          <CalendarIcon className="h-4 w-4" />
-          {label}
+          <CalendarIcon aria-hidden="true" className="h-4 w-4 opacity-70" />
+          <span className="truncate">{label}</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align={align}>
-        <div className="flex">
-          <ScrollArea className="h-[360px] w-[220px] border-r">
+        <div className="flex flex-col sm:flex-row">
+          <ScrollArea className="h-[300px] w-full border-b sm:h-[360px] sm:w-[220px] sm:border-b-0 sm:border-r">
             <div className="p-2">
-              {GROUP_ORDER.map((group, gi) => (
+              <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
+                Personalizado
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setActivePreset("custom");
+                  setPending(null);
+                }}
+                className={cn(
+                  "w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground",
+                  activePreset === "custom" && "bg-accent text-accent-foreground",
+                )}
+              >
+                Período
+              </button>
+              {DATE_GROUP_ORDER.map((group) => (
                 <div key={group}>
-                  {gi > 0 && <Separator className="my-2" />}
+                  <Separator className="my-2" />
                   <div className="px-2 py-1 text-xs font-medium text-muted-foreground">{group}</div>
                   {PRESETS.filter((p) => p.group === group).map((p) => (
                     <button
@@ -100,15 +149,23 @@ export function DateRangePicker({
               ))}
             </div>
           </ScrollArea>
-          <Calendar
-            mode="range"
-            numberOfMonths={2}
-            selected={{ from: current.from, to: current.to }}
-            onSelect={handleCalendar}
-            locale={ptBR}
-            initialFocus
-            className={cn("p-3 pointer-events-auto")}
-          />
+          <div className="p-0">
+            {pending ? (
+              <p className="px-3 pt-3 text-xs text-muted-foreground">
+                Início {format(pending.from, "dd/MM/yyyy", { locale: ptBR })} — escolha a data
+                final.
+              </p>
+            ) : null}
+            <Calendar
+              mode="range"
+              numberOfMonths={2}
+              defaultMonth={current.from}
+              selected={pending ? { from: pending.from, to: undefined } : undefined}
+              onSelect={handleCalendar}
+              locale={ptBR}
+              className={cn("pointer-events-auto p-3")}
+            />
+          </div>
         </div>
       </PopoverContent>
     </Popover>

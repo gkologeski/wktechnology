@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
+import { DateRangePicker } from "@/components/date-range-picker";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -60,6 +61,10 @@ function fmtDays(n: number) {
   return `${(n || 0).toFixed(1)} d`;
 }
 
+function toIsoDay(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 function AnalyticsPage() {
   const funnelFn = useServerFn(getFunnel);
   const velocityFn = useServerFn(getSalesVelocity);
@@ -73,6 +78,12 @@ function AnalyticsPage() {
   const [dateFrom, setDateFrom] = useState(defaultFrom);
   const [dateTo, setDateTo] = useState("");
   const [pipelineId, setPipelineId] = useState<string>("all");
+
+  const rangeValue = useMemo(() => {
+    const from = dateFrom ? new Date(`${dateFrom}T00:00:00`) : new Date(defaultFrom + "T00:00:00");
+    const to = dateTo ? new Date(`${dateTo}T00:00:00`) : new Date();
+    return { from, to };
+  }, [dateFrom, dateTo, defaultFrom]);
 
   const filters = useMemo(
     () => ({
@@ -106,13 +117,17 @@ function AnalyticsPage() {
 
       <Card>
         <CardContent className="py-4 grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
-          <div>
-            <Label className="text-xs">De</Label>
-            <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-          </div>
-          <div>
-            <Label className="text-xs">Até</Label>
-            <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+          <div className="md:col-span-2">
+            <Label className="text-xs">Período</Label>
+            <DateRangePicker
+              className="mt-1 w-full"
+              value={rangeValue}
+              defaultPreset="last180"
+              onChange={(r) => {
+                setDateFrom(toIsoDay(r.from));
+                setDateTo(toIsoDay(r.to));
+              }}
+            />
           </div>
           <div>
             <Label className="text-xs">Pipeline</Label>
