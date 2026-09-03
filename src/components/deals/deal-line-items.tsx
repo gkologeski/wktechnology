@@ -478,7 +478,6 @@ export function LineItemsEditorBody({
                 </div>
               )}
 
-
               <div className="grid grid-cols-4 gap-2">
                 <LabeledNumber
                   label="Qtd"

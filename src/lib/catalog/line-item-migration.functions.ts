@@ -36,6 +36,8 @@ type RawLineItem = {
 
 export type UnmappedGroup = {
   name: string;
+  /** Variantes cruas do nome no banco (com espaços/caixa originais). */
+  rawNames: string[];
   itemCount: number;
   dealCount: number;
   totalValue: number;
@@ -60,12 +62,22 @@ export const listUnmappedLineItemNames = createServerFn({ method: "POST" })
       .returns<RawLineItem[]>();
     if (error) throw error;
 
-    const map = new Map<string, { itemCount: number; deals: Set<string>; totalValue: number }>();
+    const map = new Map<
+      string,
+      { itemCount: number; deals: Set<string>; totalValue: number; rawNames: Set<string> }
+    >();
     for (const row of data ?? []) {
-      const name = (row.name ?? "").trim();
+      const raw = row.name ?? "";
+      const name = raw.trim();
       if (!name) continue;
-      const entry = map.get(name) ?? { itemCount: 0, deals: new Set<string>(), totalValue: 0 };
+      const entry = map.get(name) ?? {
+        itemCount: 0,
+        deals: new Set<string>(),
+        totalValue: 0,
+        rawNames: new Set<string>(),
+      };
       entry.itemCount += 1;
+      entry.rawNames.add(raw);
       if (row.deal_id) entry.deals.add(row.deal_id);
       entry.totalValue += Number(row.quantity ?? 0) * Number(row.unit_price ?? 0);
       map.set(name, entry);
@@ -74,6 +86,7 @@ export const listUnmappedLineItemNames = createServerFn({ method: "POST" })
     const groups: UnmappedGroup[] = [...map.entries()]
       .map(([name, v]) => ({
         name,
+        rawNames: [...v.rawNames],
         itemCount: v.itemCount,
         dealCount: v.deals.size,
         totalValue: v.totalValue,
@@ -85,6 +98,8 @@ export const listUnmappedLineItemNames = createServerFn({ method: "POST" })
 
 const mappingEntry = z.object({
   name: z.string().min(1),
+  // Nomes exatamente como estão no banco; quando ausente, cai no nome aparado.
+  rawNames: z.array(z.string().min(1)).min(1).max(50).optional(),
   serviceCatalogId: z.string().uuid(),
   jobProfileId: z.string().uuid().nullable().optional(),
   seniority: z.string().min(1).nullable().optional(),
@@ -107,6 +122,7 @@ export const applyLineItemMapping = createServerFn({ method: "POST" })
 
     let updated = 0;
     const failures: Array<{ name: string; message: string }> = [];
+    const results: Array<{ name: string; updated: number }> = [];
 
     for (const entry of data.entries) {
       const patch: {
@@ -119,20 +135,23 @@ export const applyLineItemMapping = createServerFn({ method: "POST" })
       if (entry.seniority !== undefined) patch.seniority = entry.seniority ?? null;
       if (entry.unit) patch.unit = entry.unit;
 
+      const names = entry.rawNames && entry.rawNames.length > 0 ? entry.rawNames : [entry.name];
       const { data: rows, error } = await supabase
         .from("deal_line_items")
         .update(patch)
-        .eq("name", entry.name)
+        .in("name", names)
         .is("service_catalog_id", null)
         .select("id");
       if (error) {
         failures.push({ name: entry.name, message: error.message });
         continue;
       }
-      updated += rows?.length ?? 0;
+      const count = rows?.length ?? 0;
+      updated += count;
+      results.push({ name: entry.name, updated: count });
     }
 
-    return { updated, failures };
+    return { updated, failures, results };
   });
 
 const jobProfileEntry = z.object({

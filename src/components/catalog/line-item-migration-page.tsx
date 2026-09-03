@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowRightLeft, Check, Wand2 } from "lucide-react";
+import { ArrowRightLeft, Check, EyeOff, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +52,9 @@ type RowDraft = {
 };
 
 const UNMAPPED_KEY = ["deal-line-items", "unmapped-names"] as const;
+// Nomes marcados como "não é serviço" (ex.: linhas de desconto). Preferência
+// local do usuário — nada é gravado no banco.
+const IGNORED_KEY = "wk_line_item_migration_ignored";
 
 export function LineItemMigrationPage() {
   const qc = useQueryClient();
@@ -65,6 +68,30 @@ export function LineItemMigrationPage() {
   const [drafts, setDrafts] = useState<Record<string, RowDraft>>({});
   const [saving, setSaving] = useState(false);
   const [savingProfiles, setSavingProfiles] = useState(false);
+  const [ignored, setIgnored] = useState<string[]>([]);
+  const [lastResults, setLastResults] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(IGNORED_KEY);
+      if (raw) setIgnored(JSON.parse(raw) as string[]);
+    } catch {
+      /* preferência local inválida: começa vazia */
+    }
+  }, []);
+
+  function toggleIgnored(name: string) {
+    setIgnored((current) => {
+      const next = current.includes(name) ? current.filter((n) => n !== name) : [...current, name];
+      try {
+        window.localStorage.setItem(IGNORED_KEY, JSON.stringify(next));
+      } catch {
+        /* sem persistência disponível */
+      }
+      return next;
+    });
+  }
 
   const {
     data: unmapped,
@@ -115,11 +142,13 @@ export function LineItemMigrationPage() {
     });
   }, [groups, catalog, profiles]);
 
+  const visible = useMemo(() => groups.filter((g) => !ignored.includes(g.name)), [groups, ignored]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return groups;
-    return groups.filter((g) => g.name.toLowerCase().includes(q));
-  }, [groups, search]);
+    if (!q) return visible;
+    return visible.filter((g) => g.name.toLowerCase().includes(q));
+  }, [visible, search]);
 
   const approvedCount = filtered.filter(
     (g) => drafts[g.name]?.approved && drafts[g.name]?.serviceCatalogId,
@@ -156,6 +185,7 @@ export function LineItemMigrationPage() {
         const unit = catalog.find((c) => c.id === d.serviceCatalogId)?.unit ?? null;
         return {
           name: g.name,
+          rawNames: g.rawNames?.length ? g.rawNames : [g.name],
           serviceCatalogId: d.serviceCatalogId as string,
           jobProfileId: d.jobProfileId,
           seniority: d.seniority,
@@ -171,8 +201,16 @@ export function LineItemMigrationPage() {
       const res = (await applyMapping({ data: { entries } })) as {
         updated: number;
         failures: Array<{ name: string; message: string }>;
+        results?: Array<{ name: string; updated: number }>;
       };
+      setLastResults(Object.fromEntries((res.results ?? []).map((r) => [r.name, r.updated])));
       toast.success(`${res.updated} item(ns) de linha classificado(s).`);
+      const zeros = (res.results ?? []).filter((r) => r.updated === 0);
+      if (zeros.length > 0) {
+        toast.warning(
+          `${zeros.length} nome(s) aprovado(s) não atualizaram nenhum item (ex.: ${zeros[0]?.name}).`,
+        );
+      }
       if (res.failures.length > 0) {
         toast.error(`${res.failures.length} nome(s) falharam: ${res.failures[0]?.message ?? ""}`);
       }
@@ -291,7 +329,27 @@ export function LineItemMigrationPage() {
             <div className="py-10 text-center text-sm text-muted-foreground">
               {groups.length === 0
                 ? "Todos os itens de linha já estão vinculados a um serviço do catálogo."
-                : "Nenhum nome encontrado com a busca atual."}
+                : visible.length === 0
+                  ? "Nada pendente: os nomes restantes foram marcados como “não é serviço”."
+                  : "Nenhum nome encontrado com a busca atual."}
+              {ignored.length > 0 ? (
+                <div className="mt-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setIgnored([]);
+                      try {
+                        window.localStorage.removeItem(IGNORED_KEY);
+                      } catch {
+                        /* sem persistência disponível */
+                      }
+                    }}
+                  >
+                    Mostrar {ignored.length} nome(s) oculto(s)
+                  </Button>
+                </div>
+              ) : null}
             </div>
           ) : (
             <div className="space-y-2">
@@ -333,7 +391,21 @@ export function LineItemMigrationPage() {
                               {SENIORITY_LABEL[d.seniority] ?? d.seniority}
                             </Badge>
                           ) : null}
+                          {lastResults[g.name] === 0 ? (
+                            <Badge variant="destructive" className="text-xs">
+                              Nenhum item atualizado
+                            </Badge>
+                          ) : null}
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="mt-1 h-7 px-2 text-xs text-muted-foreground"
+                          onClick={() => toggleIgnored(g.name)}
+                        >
+                          <EyeOff aria-hidden="true" className="mr-1 h-3.5 w-3.5" />
+                          Não é serviço
+                        </Button>
                       </div>
 
                       <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-3">
