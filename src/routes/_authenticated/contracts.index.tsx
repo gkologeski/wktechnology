@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 
+import { IsoDateRangePicker } from "@/components/iso-date-range-picker";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -563,49 +564,25 @@ function ContractsPage() {
                   Já encerrados
                 </Button>
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-2">
                 <div className="space-y-1">
-                  <Label htmlFor="starts-from" className="text-xs text-muted-foreground">
-                    Início de
-                  </Label>
-                  <Input
-                    id="starts-from"
-                    type="date"
-                    value={sp.startsFrom}
-                    onChange={(e) => setFilter({ startsFrom: e.target.value })}
+                  <Label className="text-xs text-muted-foreground">Período de início</Label>
+                  <IsoDateRangePicker
+                    className="w-full"
+                    ariaLabel="Período de início do contrato"
+                    from={sp.startsFrom}
+                    to={sp.startsTo}
+                    onChange={({ from, to }) => setFilter({ startsFrom: from, startsTo: to })}
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="starts-to" className="text-xs text-muted-foreground">
-                    Início até
-                  </Label>
-                  <Input
-                    id="starts-to"
-                    type="date"
-                    value={sp.startsTo}
-                    onChange={(e) => setFilter({ startsTo: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="ends-from" className="text-xs text-muted-foreground">
-                    Término de
-                  </Label>
-                  <Input
-                    id="ends-from"
-                    type="date"
-                    value={sp.endsFrom}
-                    onChange={(e) => setFilter({ endsFrom: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="ends-to" className="text-xs text-muted-foreground">
-                    Término até
-                  </Label>
-                  <Input
-                    id="ends-to"
-                    type="date"
-                    value={sp.endsTo}
-                    onChange={(e) => setFilter({ endsTo: e.target.value })}
+                  <Label className="text-xs text-muted-foreground">Período de término</Label>
+                  <IsoDateRangePicker
+                    className="w-full"
+                    ariaLabel="Período de término do contrato"
+                    from={sp.endsFrom}
+                    to={sp.endsTo}
+                    onChange={({ from, to }) => setFilter({ endsFrom: from, endsTo: to })}
                   />
                 </div>
               </div>
