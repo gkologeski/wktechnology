@@ -31,7 +31,12 @@ export type DateRangePickerProps = {
   /** Rótulo acessível do botão. */
   ariaLabel?: string;
   size?: "sm" | "default";
+  /** Texto exibido quando nenhum período está aplicado. */
+  placeholder?: string;
+  /** Quando informado, exibe ação para limpar o período aplicado. */
+  onClear?: () => void;
 };
+
 
 export const DATE_GROUP_ORDER: PresetGroup[] = [
   "Dias",
