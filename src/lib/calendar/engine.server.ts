@@ -716,8 +716,12 @@ async function matchRecordingByCode(
   };
 }
 
-// (removido) cap de tentativas — o lookup é O(1) contra o índice, então
-// re-tentar em cada tick é barato e cobre o caso "MP4 publicado depois".
+// Teto de tentativas por evento: o lookup é barato, mas re-tentar para sempre
+// mantém carga permanente (1 update por evento a cada tick). ~300 tentativas
+// cobrem mais de 24h de publicação tardia do MP4; depois disso paramos.
+const RECORDING_MAX_ATTEMPTS = 300;
+
+
 
 export async function syncPastRecordings(
   account: CalendarAccountRow & { meet_index_cursor?: string | null },
