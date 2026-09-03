@@ -37,7 +37,6 @@ export type DateRangePickerProps = {
   onClear?: () => void;
 };
 
-
 export const DATE_GROUP_ORDER: PresetGroup[] = [
   "Dias",
   "Semanas",
@@ -98,7 +97,6 @@ export function DateRangePicker({
     ? `${format(current.from, "dd/MM/yyyy", { locale: ptBR })} – ${format(current.to, "dd/MM/yyyy", { locale: ptBR })}`
     : placeholder;
 
-
   return (
     <Popover
       open={open}
@@ -119,7 +117,6 @@ export function DateRangePicker({
         >
           <CalendarIcon aria-hidden="true" className="h-4 w-4 opacity-70" />
           <span className={cn("truncate", !current && "text-muted-foreground")}>{label}</span>
-
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align={align}>
@@ -197,7 +194,6 @@ export function DateRangePicker({
               </div>
             ) : null}
           </div>
-
         </div>
       </PopoverContent>
     </Popover>

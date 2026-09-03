@@ -588,7 +588,6 @@ function ContractsPage() {
                     onChange={({ from, to }) => setFilter({ endsFrom: from, endsTo: to })}
                     onClear={() => setFilter({ endsFrom: "", endsTo: "" })}
                   />
-
                 </div>
               </div>
             </div>

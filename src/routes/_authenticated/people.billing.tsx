@@ -185,7 +185,6 @@ function PeopleBillingPage() {
                 setEnd("");
               }}
             />
-
           </CardContent>
         </Card>
       </div>

@@ -672,7 +672,6 @@ export async function indexMeetRecordings(
   }
 
   return { scanned, upserted, pages, error: lastError };
-
 }
 
 /**
@@ -720,8 +719,6 @@ async function matchRecordingByCode(
 // mantém carga permanente (1 update por evento a cada tick). ~300 tentativas
 // cobrem mais de 24h de publicação tardia do MP4; depois disso paramos.
 const RECORDING_MAX_ATTEMPTS = 300;
-
-
 
 export async function syncPastRecordings(
   account: CalendarAccountRow & { meet_index_cursor?: string | null },
