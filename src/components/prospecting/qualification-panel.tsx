@@ -79,7 +79,7 @@ import { handlePermissionError } from "@/lib/access-control/handle-permission-er
 import { notifyTimelineRefresh } from "@/lib/timeline-refresh";
 import { saveSurveyActivity } from "@/lib/surveys/survey-activity.functions";
 
-type Entity = "lead";
+type Entity = "lead" | "contact";
 
 const ICP_LABEL: Record<string, string> = {
   high: "Alto",
@@ -243,7 +243,8 @@ export function QualificationPanel({
           ...(linkedinParam ? { linkedinUrl: linkedinParam } : {}),
         },
       }),
-    enabled: !!entityId,
+    // Enriquecimento é específico de leads (Apollo por lead_id).
+    enabled: !!entityId && entity === "lead",
     retry: false,
     staleTime: 5 * 60 * 1000,
   });
