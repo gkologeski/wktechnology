@@ -661,7 +661,10 @@ export async function indexMeetRecordings(
     pageToken = page.nextPageToken;
   } while (pageToken && pages < MEET_INDEX_MAX_PAGES);
 
-  if (latestModified && latestModified !== cursor) {
+  // Só avança o cursor quando a varredura terminou (sem erro e sem páginas
+  // pendentes) — evita pular gravações antigas ainda não lidas.
+  const fullScan = !lastError && !pageToken;
+  if (fullScan && latestModified && latestModified !== cursor) {
     await supabaseAdmin
       .from("calendar_accounts")
       .update({ meet_index_cursor: latestModified } as never)
@@ -669,6 +672,7 @@ export async function indexMeetRecordings(
   }
 
   return { scanned, upserted, pages, error: lastError };
+
 }
 
 /**
