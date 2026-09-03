@@ -56,13 +56,18 @@ export function DateRangePicker({
   className,
   ariaLabel = "Selecionar período",
   size = "default",
+  placeholder = "Selecionar período",
+  onClear,
 }: DateRangePickerProps) {
   const [open, setOpen] = React.useState(false);
-  const [activePreset, setActivePreset] = React.useState<PresetKey | "custom">(defaultPreset);
+  const [activePreset, setActivePreset] = React.useState<PresetKey | "custom">(
+    value ? defaultPreset : "custom",
+  );
   // Seleção parcial: primeiro clique no calendário fica pendente até o segundo.
   const [pending, setPending] = React.useState<{ from: Date } | null>(null);
 
-  const current = value ?? getPresetRange(defaultPreset);
+  // Sem valor aplicado não inventamos um período: o rótulo fica vazio.
+  const current = value ?? null;
 
   const handlePreset = (key: PresetKey) => {
     setActivePreset(key);
@@ -89,7 +94,10 @@ export function DateRangePicker({
     setOpen(false);
   };
 
-  const label = `${format(current.from, "dd/MM/yyyy", { locale: ptBR })} – ${format(current.to, "dd/MM/yyyy", { locale: ptBR })}`;
+  const label = current
+    ? `${format(current.from, "dd/MM/yyyy", { locale: ptBR })} – ${format(current.to, "dd/MM/yyyy", { locale: ptBR })}`
+    : placeholder;
+
 
   return (
     <Popover
