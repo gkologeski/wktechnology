@@ -18,6 +18,8 @@ export function IsoDateRangePicker({
   from,
   to,
   onChange,
+  onClear,
+  placeholder,
   defaultPreset = "last30",
   className,
   ariaLabel,
@@ -27,6 +29,9 @@ export function IsoDateRangePicker({
   from?: string;
   to?: string;
   onChange: (range: { from: string; to: string }) => void;
+  /** Quando informado, o seletor oferece ação para limpar o período. */
+  onClear?: () => void;
+  placeholder?: string;
   defaultPreset?: PresetKey;
   className?: string;
   ariaLabel?: string;
@@ -41,7 +46,9 @@ export function IsoDateRangePicker({
       align={align}
       size={size}
       ariaLabel={ariaLabel}
+      placeholder={placeholder}
       defaultPreset={defaultPreset}
+      onClear={onClear}
       value={f && t ? { from: f, to: t } : undefined}
       onChange={(r) => onChange({ from: isoDay(r.from), to: isoDay(r.to) })}
     />

@@ -173,11 +173,16 @@ function PeopleBillingPage() {
             <IsoDateRangePicker
               className="w-full"
               ariaLabel="Período de faturamento"
+              placeholder="Todo o período"
               from={start}
               to={end}
               onChange={({ from, to }) => {
                 setStart(from);
                 setEnd(to);
+              }}
+              onClear={() => {
+                setStart("");
+                setEnd("");
               }}
             />
           </CardContent>

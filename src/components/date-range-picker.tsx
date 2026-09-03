@@ -31,6 +31,10 @@ export type DateRangePickerProps = {
   /** Rótulo acessível do botão. */
   ariaLabel?: string;
   size?: "sm" | "default";
+  /** Texto exibido quando nenhum período está aplicado. */
+  placeholder?: string;
+  /** Quando informado, exibe ação para limpar o período aplicado. */
+  onClear?: () => void;
 };
 
 export const DATE_GROUP_ORDER: PresetGroup[] = [
@@ -51,13 +55,18 @@ export function DateRangePicker({
   className,
   ariaLabel = "Selecionar período",
   size = "default",
+  placeholder = "Selecionar período",
+  onClear,
 }: DateRangePickerProps) {
   const [open, setOpen] = React.useState(false);
-  const [activePreset, setActivePreset] = React.useState<PresetKey | "custom">(defaultPreset);
+  const [activePreset, setActivePreset] = React.useState<PresetKey | "custom">(
+    value ? defaultPreset : "custom",
+  );
   // Seleção parcial: primeiro clique no calendário fica pendente até o segundo.
   const [pending, setPending] = React.useState<{ from: Date } | null>(null);
 
-  const current = value ?? getPresetRange(defaultPreset);
+  // Sem valor aplicado não inventamos um período: o rótulo fica vazio.
+  const current = value ?? null;
 
   const handlePreset = (key: PresetKey) => {
     setActivePreset(key);
@@ -84,7 +93,9 @@ export function DateRangePicker({
     setOpen(false);
   };
 
-  const label = `${format(current.from, "dd/MM/yyyy", { locale: ptBR })} – ${format(current.to, "dd/MM/yyyy", { locale: ptBR })}`;
+  const label = current
+    ? `${format(current.from, "dd/MM/yyyy", { locale: ptBR })} – ${format(current.to, "dd/MM/yyyy", { locale: ptBR })}`
+    : placeholder;
 
   return (
     <Popover
@@ -105,7 +116,7 @@ export function DateRangePicker({
           className={cn("justify-start gap-2 text-left font-normal", className)}
         >
           <CalendarIcon aria-hidden="true" className="h-4 w-4 opacity-70" />
-          <span className="truncate">{label}</span>
+          <span className={cn("truncate", !current && "text-muted-foreground")}>{label}</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align={align}>
@@ -159,12 +170,29 @@ export function DateRangePicker({
             <Calendar
               mode="range"
               numberOfMonths={2}
-              defaultMonth={current.from}
+              defaultMonth={current?.from ?? new Date()}
               selected={pending ? { from: pending.from, to: undefined } : undefined}
               onSelect={handleCalendar}
               locale={ptBR}
               className={cn("pointer-events-auto p-3")}
             />
+            {onClear && current ? (
+              <div className="flex justify-end border-t p-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setPending(null);
+                    setActivePreset("custom");
+                    onClear();
+                    setOpen(false);
+                  }}
+                >
+                  Limpar período
+                </Button>
+              </div>
+            ) : null}
           </div>
         </div>
       </PopoverContent>

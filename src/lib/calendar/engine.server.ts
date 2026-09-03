@@ -661,7 +661,10 @@ export async function indexMeetRecordings(
     pageToken = page.nextPageToken;
   } while (pageToken && pages < MEET_INDEX_MAX_PAGES);
 
-  if (latestModified && latestModified !== cursor) {
+  // Só avança o cursor quando a varredura terminou (sem erro e sem páginas
+  // pendentes) — evita pular gravações antigas ainda não lidas.
+  const fullScan = !lastError && !pageToken;
+  if (fullScan && latestModified && latestModified !== cursor) {
     await supabaseAdmin
       .from("calendar_accounts")
       .update({ meet_index_cursor: latestModified } as never)
@@ -712,8 +715,10 @@ async function matchRecordingByCode(
   };
 }
 
-// (removido) cap de tentativas — o lookup é O(1) contra o índice, então
-// re-tentar em cada tick é barato e cobre o caso "MP4 publicado depois".
+// Teto de tentativas por evento: o lookup é barato, mas re-tentar para sempre
+// mantém carga permanente (1 update por evento a cada tick). ~300 tentativas
+// cobrem mais de 24h de publicação tardia do MP4; depois disso paramos.
+const RECORDING_MAX_ATTEMPTS = 300;
 
 export async function syncPastRecordings(
   account: CalendarAccountRow & { meet_index_cursor?: string | null },
@@ -754,9 +759,11 @@ export async function syncPastRecordings(
     .eq("calendar_account_id", account.id)
     .not("conference_id", "is", null)
     .is("recording_drive_file_id", null)
+    .lt("recording_attempts", RECORDING_MAX_ATTEMPTS)
     .gte("end_at", since)
     .lte("end_at", until)
     .limit(50);
+
   let found = 0;
   let missing = 0;
   let errors = 0;
