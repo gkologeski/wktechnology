@@ -570,9 +570,11 @@ function ContractsPage() {
                   <IsoDateRangePicker
                     className="w-full"
                     ariaLabel="Período de início do contrato"
+                    placeholder="Qualquer data de início"
                     from={sp.startsFrom}
                     to={sp.startsTo}
                     onChange={({ from, to }) => setFilter({ startsFrom: from, startsTo: to })}
+                    onClear={() => setFilter({ startsFrom: "", startsTo: "" })}
                   />
                 </div>
                 <div className="space-y-1">
@@ -580,10 +582,13 @@ function ContractsPage() {
                   <IsoDateRangePicker
                     className="w-full"
                     ariaLabel="Período de término do contrato"
+                    placeholder="Qualquer data de término"
                     from={sp.endsFrom}
                     to={sp.endsTo}
                     onChange={({ from, to }) => setFilter({ endsFrom: from, endsTo: to })}
+                    onClear={() => setFilter({ endsFrom: "", endsTo: "" })}
                   />
+
                 </div>
               </div>
             </div>
