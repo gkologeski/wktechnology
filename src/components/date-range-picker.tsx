@@ -173,13 +173,31 @@ export function DateRangePicker({
             <Calendar
               mode="range"
               numberOfMonths={2}
-              defaultMonth={current.from}
+              defaultMonth={current?.from ?? new Date()}
               selected={pending ? { from: pending.from, to: undefined } : undefined}
               onSelect={handleCalendar}
               locale={ptBR}
               className={cn("pointer-events-auto p-3")}
             />
+            {onClear && current ? (
+              <div className="flex justify-end border-t p-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setPending(null);
+                    setActivePreset("custom");
+                    onClear();
+                    setOpen(false);
+                  }}
+                >
+                  Limpar período
+                </Button>
+              </div>
+            ) : null}
           </div>
+
         </div>
       </PopoverContent>
     </Popover>
