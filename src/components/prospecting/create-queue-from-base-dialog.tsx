@@ -181,11 +181,7 @@ export function CreateQueueFromBaseDialog({
               false
             }
           >
-            {save.isPending
-              ? "Criando…"
-              : mode === "new"
-                ? "Criar fila"
-                : "Adicionar à fila"}
+            {save.isPending ? "Criando…" : mode === "new" ? "Criar fila" : "Adicionar à fila"}
           </Button>
         </DialogFooter>
       </DialogContent>

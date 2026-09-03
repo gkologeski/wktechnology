@@ -219,9 +219,7 @@ export function BaseTab() {
       const key = d.company_id;
       if (!key) continue;
       const date = dealDate(d, outcome);
-      const svcs = (d.deal_line_items ?? [])
-        .map((li) => li.name)
-        .filter((n): n is string => !!n);
+      const svcs = (d.deal_line_items ?? []).map((li) => li.name).filter((n): n is string => !!n);
       const entry = map.get(key) ?? {
         services: [] as string[],
         dealsCount: 0,
