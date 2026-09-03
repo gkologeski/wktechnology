@@ -186,6 +186,7 @@ export function LineItemMigrationPage() {
         return {
           name: g.name,
           rawNames: g.rawNames?.length ? g.rawNames : [g.name],
+          ...(g.itemIds?.length ? { itemIds: g.itemIds } : {}),
           serviceCatalogId: d.serviceCatalogId as string,
           jobProfileId: d.jobProfileId,
           seniority: d.seniority,

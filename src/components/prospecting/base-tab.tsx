@@ -12,6 +12,12 @@ import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import {
+  DateRangeFilter,
+  describeRange,
+  resolveDateRange,
+  type DateRangeValue,
+} from "@/components/date-range-filter";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,14 +51,6 @@ const OUTCOME_LABEL: Record<Outcome, string> = {
   lost: "Perdidos",
   open: "Em aberto",
 };
-
-const PERIODS = [
-  { value: "30", label: "Últimos 30 dias" },
-  { value: "90", label: "Últimos 90 dias" },
-  { value: "180", label: "Últimos 180 dias" },
-  { value: "365", label: "Últimos 12 meses" },
-  { value: "all", label: "Todo o período" },
-] as const;
 
 type ServiceOption = { id: string; name: string };
 
@@ -103,7 +101,7 @@ function dealDate(d: DealRow, outcome: Outcome): string | null {
 export function BaseTab() {
   const [outcome, setOutcome] = useState<Outcome>("won");
   const [serviceId, setServiceId] = useState<string>("all");
-  const [period, setPeriod] = useState<string>("180");
+  const [period, setPeriod] = useState<DateRangeValue>({ preset: "last_180d" });
   const [search, setSearch] = useState("");
 
   const { data: services } = useQuery({
@@ -149,11 +147,20 @@ export function BaseTab() {
         query = query.eq("deal_line_items.service_catalog_id", serviceId);
       }
 
-      if (period !== "all") {
-        const since = new Date(Date.now() - Number(period) * 86_400_000).toISOString();
+      const { start, end } = resolveDateRange(period);
+      if (start || end) {
         const dateCol =
           outcome === "lost" ? "lost_at" : outcome === "won" ? "closed_at" : "updated_at";
-        query = query.or(`${dateCol}.gte.${since},and(${dateCol}.is.null,updated_at.gte.${since})`);
+        if (start) {
+          const since = new Date(`${start}T00:00:00`).toISOString();
+          query = query.or(
+            `${dateCol}.gte.${since},and(${dateCol}.is.null,updated_at.gte.${since})`,
+          );
+        }
+        if (end) {
+          const until = new Date(`${end}T00:00:00`).toISOString();
+          query = query.or(`${dateCol}.lt.${until},and(${dateCol}.is.null,updated_at.lt.${until})`);
+        }
       }
 
       const { data, error } = await query
@@ -220,7 +227,7 @@ export function BaseTab() {
     serviceId === "all"
       ? "Todos os serviços"
       : ((services ?? []).find((s) => s.id === serviceId)?.name ?? "Serviço");
-  const periodLabel = PERIODS.find((p) => p.value === period)?.label ?? "";
+  const periodLabel = describeRange(period);
 
   const copyNames = async () => {
     if (rows.length === 0) return;
@@ -308,18 +315,7 @@ export function BaseTab() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="base-period">Período</Label>
-            <Select value={period} onValueChange={setPeriod}>
-              <SelectTrigger id="base-period">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PERIODS.map((p) => (
-                  <SelectItem key={p.value} value={p.value}>
-                    {p.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <DateRangeFilter className="w-full" value={period} onChange={setPeriod} />
           </div>
         </CardContent>
       </Card>
