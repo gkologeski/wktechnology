@@ -9,6 +9,8 @@
     "build:dev": "NODE_OPTIONS=--max-old-space-size=8192 vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "lint:types": "eslint --config eslint.typed.config.mjs .",
     "typecheck": "tsgo --noEmit",
     "typecheck:inc": "tsc --noEmit --incremental",
     "typecheck:tsc": "tsc --noEmit",
