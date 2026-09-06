@@ -23,6 +23,7 @@ import {
   CallDurationBadges,
   CallRecordingPlayer,
   CallSummaryBadges,
+  EmailStatusBadges,
   isStructuredCallBody,
 } from "@/components/activity/call-meta";
 import {
