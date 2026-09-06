@@ -56,11 +56,7 @@ import {
   AssociateRecordsForm,
   DisassociateRecordsForm,
 } from "./step-forms/association-forms";
-import {
-  SwitchByValueForm,
-  BranchMultiForm,
-  DelayUntilDateForm,
-} from "./step-forms/flow-forms";
+import { SwitchByValueForm, BranchMultiForm, DelayUntilDateForm } from "./step-forms/flow-forms";
 import {
   SetSubstatusForm,
   FormatDataForm,

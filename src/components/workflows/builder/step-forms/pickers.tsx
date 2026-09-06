@@ -43,7 +43,6 @@ import { ACTION_LABELS, type WorkflowEntity, type WorkflowAction } from "@/lib/w
 import { useServerFn } from "@tanstack/react-start";
 import { listAvailableSurveys } from "@/lib/surveys/survey-activity.functions";
 
-
 export function AssociationSelect({
   entity,
   value,
@@ -195,7 +194,13 @@ export function UserPicker({ value, onChange }: { value: string; onChange: (v: s
   );
 }
 
-export function RotationRulePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+export function RotationRulePicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
   const { data: rules = [] } = useQuery({
     queryKey: ["rotation-rules-picker"],
     queryFn: async () => {
@@ -229,7 +234,13 @@ export function RotationRulePicker({ value, onChange }: { value: string; onChang
   );
 }
 
-export function SequencePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+export function SequencePicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
   const { data: seqs = [] } = useQuery({
     queryKey: ["sequences-picker"],
     queryFn: async () => {
