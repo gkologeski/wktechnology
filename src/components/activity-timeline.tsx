@@ -125,17 +125,23 @@ export function ActivityTimeline({
   relatedId: string;
 }) {
   const { user } = useAuth();
-  const [items, setItems] = useState<Activity[]>([]);
-  // Metadados enriquecidos de e-mails (corpo, anexos, aberturas, cliques),
-  // indexados pelo id da atividade correspondente.
-  const [emailMeta, setEmailMeta] = useState<Map<string, EmailMeta>>(new Map());
-  // Respostas de pesquisas, indexadas pelo id da atividade do tipo "survey".
-  const [surveyMeta, setSurveyMeta] = useState<Map<string, SurveyResponseSummary>>(new Map());
-  // Contador incrementado por eventos de realtime para refazer o fetch das respostas.
-  const [surveyTick, setSurveyTick] = useState(0);
-
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const {
+    items,
+    emailMeta,
+    surveyMeta,
+    loading,
+    refreshing,
+    load,
+    showHistory,
+    setShowHistory,
+    datePreset,
+    setDatePreset,
+    dateCustom,
+    setDateCustom,
+    timelineEntries,
+    resolveHistoryValue,
+    resolveHistoryActor,
+  } = useTimelineFeed(relatedKey, relatedId);
 
   const [composerOpen, setComposerOpen] = useState(false);
   const [type, setType] = useState<LogKind>("note");
