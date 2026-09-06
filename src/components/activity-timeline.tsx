@@ -111,6 +111,13 @@ import { TimelineComposer } from "./activity/timeline-composer";
 import { TimelineActionDialogs } from "./activity/timeline-action-dialogs";
 import { TimelineRail } from "./activity/timeline-rail";
 import { useTimelineFeed } from "./activity/use-timeline-feed";
+import {
+  activityAttachments,
+  insertActivity,
+  removeActivity,
+  toggleActivityDone,
+  updateActivity,
+} from "@/lib/timeline/activity-mutations";
 
 // O discador carrega o SDK de voz da Twilio; só baixamos esse código quando o
 // usuário abre a ação de ligação pela primeira vez.
