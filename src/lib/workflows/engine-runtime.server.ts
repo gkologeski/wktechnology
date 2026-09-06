@@ -1,22 +1,11 @@
 // Ciclo de execução do motor: enfileiramento, runs, ticks de fila e de tempo.
 // Extraído de engine.server.ts sem mudança de comportamento.
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { applyRotation } from "@/lib/rotation/engine.server";
-import type {
-  WorkflowAction,
-  WorkflowCondition,
-  WorkflowEntity,
-  WorkflowFilter,
-  WorkflowTrigger,
-} from "./types";
-import { isFilterGroup } from "./types";
-import { ACTION_LABELS } from "./types";
-import { getPath } from "@/lib/message-tokens";
-import { renderWorkflowTokens, toStr } from "./render-tokens";
+import type { WorkflowAction, WorkflowCondition, WorkflowEntity, WorkflowTrigger } from "./types";
 import { hydrateTriggerAssociations } from "./hydrate-associations.server";
-import { checkLeadDuplicate } from "@/lib/leads/lead-duplicate-check";
-import { type AnyRow, type LogStep, evalConditions, getField } from "./engine-shared.server";
+import { type AnyRow, evalConditions } from "./engine-shared.server";
 import { type RunResult, runActions } from "./engine-actions.server";
+
 
 export interface EventRow {
   id: string;
