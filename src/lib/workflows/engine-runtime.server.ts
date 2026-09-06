@@ -6,7 +6,6 @@ import { hydrateTriggerAssociations } from "./hydrate-associations.server";
 import { type AnyRow, evalConditions } from "./engine-shared.server";
 import { type RunResult, runActions } from "./engine-actions.server";
 
-
 export interface EventRow {
   id: string;
   owner_id: string;
@@ -267,4 +266,3 @@ export async function tickWorkflows(supabase: SupabaseClient, limit = 50) {
 
 // Os triggers baseados em tempo vivem em engine-time-triggers.server.ts.
 export { tickTimeTriggers } from "./engine-time-triggers.server";
-
