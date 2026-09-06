@@ -1,4 +1,5 @@
-import type { FieldOpt } from "../step-tree";
+import { FieldSelect } from "./pickers";
+import type { FieldOpt } from "../../step-tree";
 import {
   countSteps,
   describeAction,
@@ -7,16 +8,16 @@ import {
   getBranchList,
   setBranchList,
   isBranchKey,
-} from "../step-tree";
-import { useEntityFieldOptions } from "../use-entity-field-options";
+} from "../../step-tree";
+import { useEntityFieldOptions } from "../../use-entity-field-options";
 import {
   ConditionListEditor,
   FieldValueEditor,
   newLeafCondition,
   normalizeTopGroup,
   denormalizeTopGroup,
-} from "../conditions-editor";
-import { EntityPickerDialog } from "../entity-picker-dialog";
+} from "../../conditions-editor";
+import { EntityPickerDialog } from "../../entity-picker-dialog";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,11 +35,11 @@ import { Plus, Webhook, X, ArrowUp, ArrowDown } from "lucide-react";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ExtraFieldsEditor, FkPicker } from "../extra-fields-editor";
-import { GenericRecordForm } from "../generic-record-form";
-import { TokenInput, TokenTextarea } from "../token-input";
+import { ExtraFieldsEditor, FkPicker } from "../../extra-fields-editor";
+import { GenericRecordForm } from "../../generic-record-form";
+import { TokenInput, TokenTextarea } from "../../token-input";
 import { useWorkspaceSubstatuses } from "@/lib/pipelines/substatuses";
-import { ActionTemplatesBar } from "../action-templates-bar";
+import { ActionTemplatesBar } from "../../action-templates-bar";
 import { ACTION_LABELS, type WorkflowEntity, type WorkflowAction } from "@/lib/workflows/types";
 import { useServerFn } from "@tanstack/react-start";
 import { listAvailableSurveys } from "@/lib/surveys/survey-activity.functions";
