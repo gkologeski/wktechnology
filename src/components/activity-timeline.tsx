@@ -622,134 +622,30 @@ export function ActivityTimeline({
       />
 
       {/* Action dialogs */}
-      <MeetingDialog
-        open={openAction === "meeting"}
-        onOpenChange={(v) => !v && setOpenAction(null)}
-        defaultAttendee={target.email ?? ""}
+      <TimelineActionDialogs
+        openAction={openAction}
+        onClose={() => setOpenAction(null)}
         relatedKey={relatedKey}
         relatedId={relatedId}
-        onCreated={() => void load()}
-      />
-      <SendEmailDialog
-        open={openAction === "email"}
-        onOpenChange={(v) => !v && setOpenAction(null)}
-        defaultTo={target.email ?? ""}
-        contactId={target.contactId}
-        leadId={relatedKey === "related_lead_id" ? relatedId : undefined}
-        dealId={relatedKey === "related_deal_id" ? relatedId : undefined}
-        companyId={relatedKey === "related_company_id" ? relatedId : undefined}
-        contactName={target.name}
-        onSent={() => void load()}
-      />
-      {openAction === "call" &&
-        !target.phone &&
-        (() => {
-          toast.error("Sem telefone disponível para esta entidade.");
-          setTimeout(() => setOpenAction(null), 0);
-          return null;
-        })()}
-      {target.phone && dialerMounted && (
-        <Suspense fallback={null}>
-          <CallDialer
-            open={openAction === "call"}
-            onOpenChange={(v: boolean) => !v && setOpenAction(null)}
-            defaultTo={target.phone}
-            contactId={target.contactId}
-            contactName={target.name}
-          />
-        </Suspense>
-      )}
-      {openAction === "whatsapp" &&
-        !target.phone &&
-        (() => {
-          toast.error("Sem telefone disponível para esta entidade.");
-          setTimeout(() => setOpenAction(null), 0);
-          return null;
-        })()}
-      {target.phone && (
-        <SendWhatsAppDialog
-          open={openAction === "whatsapp"}
-          onOpenChange={(v) => !v && setOpenAction(null)}
-          defaultTo={target.phone}
-          contactId={target.contactId}
-          contactName={target.name}
-        />
-      )}
-
-      <SurveyActivityDialog
-        open={openAction === "survey"}
-        onOpenChange={(v) => !v && setOpenAction(null)}
-        relatedKey={relatedKey}
-        relatedId={relatedId}
-        onSaved={() => void load()}
+        target={target}
+        dialerMounted={dialerMounted}
+        onRefresh={() => void load()}
       />
 
       {/* Timeline rail */}
-      <div className="flex items-center gap-3">
-        <div className="h-px flex-1 bg-border/60" />
-        <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
-          Timeline
-        </span>
-        {(() => {
-          const aiEntity =
-            relatedKey === "related_lead_id"
-              ? "lead"
-              : relatedKey === "related_contact_id"
-                ? "contact"
-                : relatedKey === "related_deal_id"
-                  ? "deal"
-                  : null;
-          if (!aiEntity) return null;
-          return (
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5">
-                  <Sparkles className="h-3 w-3 text-primary" />
-                  Resumo IA
-                </Button>
-              </SheetTrigger>
-              <SheetContent className="w-[480px] sm:max-w-[480px] overflow-y-auto">
-                <SheetHeader>
-                  <SheetTitle className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-primary" /> Resumo IA
-                  </SheetTitle>
-                </SheetHeader>
-                <div className="mt-4">
-                  <AiSummaryPanel entity={aiEntity} entityId={relatedId} />
-                </div>
-              </SheetContent>
-            </Sheet>
-          );
-        })()}
-        <div className="h-px flex-1 bg-border/60" />
-        <DateRangeFilter
-          className="h-8 flex-none text-xs"
-          value={{ preset: datePreset, custom: dateCustom }}
-          onChange={(v) => {
-            setDatePreset(v.preset);
-            setDateCustom(v.custom ?? {});
-          }}
-        />
-        <Button
-          variant={showHistory ? "secondary" : "outline"}
-          size="sm"
-          className="gap-2 h-8 text-xs"
-          aria-pressed={showHistory}
-          onClick={() => setShowHistory((v) => !v)}
-        >
-          <History className="h-3.5 w-3.5" />
-          Histórico
-        </Button>
-        {refreshing && !loading && (
-          <span
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground ml-1"
-            aria-live="polite"
-          >
-            <Loader2 className="h-3 w-3 animate-spin" />
-            Atualizando…
-          </span>
-        )}
-      </div>
+      <TimelineRail
+        relatedKey={relatedKey}
+        relatedId={relatedId}
+        datePreset={datePreset}
+        dateCustom={dateCustom}
+        onDateChange={(preset, custom) => {
+          setDatePreset(preset);
+          setDateCustom(custom);
+        }}
+        showHistory={showHistory}
+        onToggleHistory={() => setShowHistory((v) => !v)}
+        refreshing={refreshing && !loading}
+      />
 
       {loading ? (
         <div className="text-sm text-muted-foreground">Carregando...</div>
