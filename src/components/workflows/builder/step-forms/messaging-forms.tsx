@@ -1,4 +1,4 @@
-import type { FieldOpt } from "../../step-tree";
+import type { FieldOpt } from "../step-tree";
 import {
   countSteps,
   describeAction,
@@ -7,16 +7,16 @@ import {
   getBranchList,
   setBranchList,
   isBranchKey,
-} from "../../step-tree";
-import { useEntityFieldOptions } from "../../use-entity-field-options";
+} from "../step-tree";
+import { useEntityFieldOptions } from "../use-entity-field-options";
 import {
   ConditionListEditor,
   FieldValueEditor,
   newLeafCondition,
   normalizeTopGroup,
   denormalizeTopGroup,
-} from "../../conditions-editor";
-import { EntityPickerDialog } from "../../entity-picker-dialog";
+} from "../conditions-editor";
+import { EntityPickerDialog } from "../entity-picker-dialog";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
