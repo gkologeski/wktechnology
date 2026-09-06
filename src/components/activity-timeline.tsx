@@ -1,14 +1,6 @@
-import { useEffect, useMemo, useState, lazy, Suspense } from "react";
-import { useRefreshCallback } from "@/hooks/use-refresh-callback";
-import { REMINDER_OPTIONS } from "@/lib/activity-reminders";
+import { useEffect, useState } from "react";
 import { FileCenterPickerDialog } from "@/components/files/file-center-picker";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import { RichHtmlEditor, HtmlContent, extractMentionIds } from "@/components/rich-html-editor";
-import { ACTIVITY_TYPES, formatDateTime, type ActivityType } from "@/lib/crm";
+import { extractMentionIds } from "@/components/rich-html-editor";
 import type { Activity } from "@/lib/db-types";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
@@ -19,86 +11,19 @@ import {
   summarizeCalendarEventRecording,
 } from "@/lib/meetings.functions";
 import { notifyActivityEvent } from "@/lib/notifications.functions";
-import { AttachmentPreview } from "@/components/timeline/attachment-preview";
-import { ActivityComments } from "@/components/timeline/activity-comments";
 import { maybeConvertWhatsAppPaste } from "@/lib/whatsapp-paste";
-import {
-  Mail,
-  CalendarDays,
-  Trash2,
-  Paperclip,
-  X,
-  Pencil,
-  Check,
-  Send,
-  Sparkles,
-  Link as LinkIcon,
-  Users,
-  User,
-  Video,
-  Zap,
-  FolderOpen,
-  History,
-} from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { CalendarRange, Filter, Loader2 } from "lucide-react";
-import { DateRangeFilter } from "@/components/date-range-filter";
-import {
-  DATE_PRESET_LABELS,
-  getDateRange,
-  type CustomRange,
-  type DatePreset,
-} from "@/lib/date-presets";
-import { SendEmailDialog } from "@/components/email/send-email-dialog";
 import { useHasMessageDraft } from "@/hooks/use-has-message-draft";
-import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
-import { MeetingDialog } from "@/components/meetings/meeting-dialog";
-import { StartVideoButton } from "@/components/meetings/start-video-button";
-import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
-import { deleteRowGuarded } from "@/lib/delete-guard";
 import {
   type Attachment,
   type BarAction,
   type CreateAction,
-  type EmailMeta,
-  ICONS,
   LOG_LABEL,
   type LogKind,
   type RelatedKey,
-  TASK_DUE_PRESET_LABELS,
-  type TaskDuePreset,
   type TeamMember,
-  calendarAttendees,
-  computeDuePreset,
-  openEmailAttachment,
 } from "./activity/timeline-shared";
 import { TimelineActionBar } from "./activity/timeline-action-bar";
-
-import { EmailTimelineItem } from "./activity/email-timeline-item";
 import { HistoryTimelineItem } from "./activity/history-timeline-item";
-import { useHistoryLabels } from "./activity/use-history-labels";
-import {
-  groupPropertyChanges,
-  type HistoryGroup,
-  type PropertyChangeRow,
-} from "@/lib/timeline/history-groups";
-import { SurveyActivityDialog } from "@/components/surveys/survey-activity-dialog";
-import {
-  SurveyTimelineCard,
-  type SurveyResponseSummary,
-} from "@/components/surveys/survey-timeline-card";
-import { getActivitySurveyResponses } from "@/lib/surveys/survey-activity.functions";
-import { fetchTimelineData } from "@/lib/timeline/activity-fetch";
 import {
   fetchTimelineTarget,
   fetchTimelineTeam,
@@ -120,11 +45,6 @@ import {
 } from "@/lib/timeline/activity-mutations";
 import { InstantRoomButton } from "./activity/instant-room-button";
 
-// O discador carrega o SDK de voz da Twilio; só baixamos esse código quando o
-// usuário abre a ação de ligação pela primeira vez.
-const CallDialer = lazy(() =>
-  import("@/components/voice/call-dialer").then((m) => ({ default: m.CallDialer })),
-);
 
 export function ActivityTimeline({
   relatedKey,
