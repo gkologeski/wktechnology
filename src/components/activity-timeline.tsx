@@ -23,7 +23,7 @@ import {
   type TeamMember,
 } from "./activity/timeline-shared";
 import { TimelineActionBar } from "./activity/timeline-action-bar";
-import { HistoryTimelineItem } from "./activity/history-timeline-item";
+import { TimelineEntriesList } from "./activity/timeline-entries-list";
 import {
   fetchTimelineTarget,
   fetchTimelineTeam,
