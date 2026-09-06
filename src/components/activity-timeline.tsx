@@ -42,6 +42,7 @@ import {
   updateActivity,
 } from "@/lib/timeline/activity-mutations";
 import { InstantRoomButton } from "./activity/instant-room-button";
+import { useActivityEditing } from "./activity/use-activity-editing";
 
 export function ActivityTimeline({
   relatedKey,
@@ -78,18 +79,12 @@ export function ActivityTimeline({
   const [dueDate, setDueDate] = useState("");
   const [remindBefore, setRemindBefore] = useState("0");
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [editPickerOpen, setEditPickerOpen] = useState(false);
   const [assigneeId, setAssigneeId] = useState<string>("");
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [currentWorkspaceId, setCurrentWorkspaceId] = useState<string | null>(null);
   const [mentions, setMentions] = useState<TeamMember[]>([]);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingBody, setEditingBody] = useState("");
-  const [editingAttachments, setEditingAttachments] = useState<Attachment[]>([]);
-  const [editingNewFiles, setEditingNewFiles] = useState<File[]>([]);
-  const [editingAssigneeId, setEditingAssigneeId] = useState<string | null>(null);
-  const [editingDueDate, setEditingDueDate] = useState<string | null>(null);
+  const editing = useActivityEditing(user?.id, () => afterChange());
 
   const notifyActivityEventFn = useServerFn(notifyActivityEvent);
 
@@ -203,40 +198,6 @@ export function ActivityTimeline({
   const remove = async (id: string) => {
     const res = await removeActivity(id);
     if (!res.ok) return toast.error(res.error);
-    afterChange();
-  };
-
-  const startEdit = (a: Activity) => {
-    setEditingId(a.id);
-    setEditingBody(a.body ?? "");
-    setEditingAttachments(activityAttachments(a));
-    setEditingNewFiles([]);
-    setEditingAssigneeId(
-      a.type === "task" ? ((a as unknown as { owner_id?: string | null }).owner_id ?? null) : null,
-    );
-    setEditingDueDate(a.type === "task" ? (a.due_date ?? null) : null);
-  };
-
-  const uploadEditingFiles = async (): Promise<Attachment[]> =>
-    !user || editingNewFiles.length === 0 ? [] : uploadTimelineFiles(user.id, editingNewFiles);
-
-  const saveEdit = async (a: Activity) => {
-    const uploaded = await uploadEditingFiles();
-    const patch: Record<string, unknown> = {
-      body: editingBody || null,
-      attachments: [...editingAttachments, ...uploaded],
-    };
-    if (a.type === "task") {
-      patch.owner_id = editingAssigneeId ?? user?.id ?? null;
-      patch.due_date = editingDueDate ? new Date(editingDueDate).toISOString() : null;
-    }
-    const res = await updateActivity(a.id, patch);
-    if (!res.ok) return toast.error(res.error);
-    setEditingId(null);
-    setEditingAttachments([]);
-    setEditingNewFiles([]);
-    setEditingAssigneeId(null);
-    setEditingDueDate(null);
     afterChange();
   };
 
@@ -359,9 +320,9 @@ export function ActivityTimeline({
         onPicked={(files) => setPendingFiles((p) => [...p, ...files])}
       />
       <FileCenterPickerDialog
-        open={editPickerOpen}
-        onOpenChange={setEditPickerOpen}
-        onPicked={(files) => setEditingNewFiles((p) => [...p, ...files])}
+        open={editing.pickerOpen}
+        onOpenChange={editing.setPickerOpen}
+        onPicked={(files) => editing.setNewFiles((p) => [...p, ...files])}
       />
 
       {/* Action dialogs */}
@@ -400,7 +361,7 @@ export function ActivityTimeline({
         resolveHistoryValue={resolveHistoryValue}
         resolveHistoryActor={resolveHistoryActor}
         onToggleDone={(row) => void toggleDone(row)}
-        onStartEdit={startEdit}
+        onStartEdit={editing.startEdit}
         onRemove={(id) => void remove(id)}
         onSummarizeMeeting={(id) => void onSummarizeMeeting(id)}
         signRecording={async (path) => {
@@ -408,20 +369,20 @@ export function ActivityTimeline({
           return url;
         }}
         editing={{
-          id: editingId,
-          body: editingBody,
-          onBodyChange: setEditingBody,
-          assigneeId: editingAssigneeId,
-          onAssigneeChange: setEditingAssigneeId,
-          dueDate: editingDueDate,
-          onDueDateChange: setEditingDueDate,
-          attachments: editingAttachments,
-          onAttachmentsChange: setEditingAttachments,
-          newFiles: editingNewFiles,
-          onNewFilesChange: setEditingNewFiles,
-          onOpenFileCenter: () => setEditPickerOpen(true),
-          onSave: (a) => void saveEdit(a),
-          onCancel: () => setEditingId(null),
+          id: editing.editingId,
+          body: editing.body,
+          onBodyChange: editing.setBody,
+          assigneeId: editing.assigneeId,
+          onAssigneeChange: editing.setAssigneeId,
+          dueDate: editing.dueDate,
+          onDueDateChange: editing.setDueDate,
+          attachments: editing.attachments,
+          onAttachmentsChange: editing.setAttachments,
+          newFiles: editing.newFiles,
+          onNewFilesChange: editing.setNewFiles,
+          onOpenFileCenter: () => editing.setPickerOpen(true),
+          onSave: (a) => void editing.saveEdit(a),
+          onCancel: () => editing.setEditingId(null),
         }}
       />
     </div>
