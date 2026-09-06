@@ -1,3 +1,4 @@
+import { UserPicker } from "./pickers";
 import type { FieldOpt } from "../step-tree";
 import {
   countSteps,
