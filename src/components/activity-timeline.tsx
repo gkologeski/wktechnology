@@ -573,141 +573,39 @@ export function ActivityTimeline({
 
         {/* Inline composer (only when a "log" action is selected) */}
         {composerOpen && (
-          <div className="border-t border-border/60 p-4 space-y-3 bg-muted/10">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <span className="text-primary">{ICONS[type]}</span>
-                {currentLogLabel}
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setComposerOpen(false);
-                  setSubject("");
-                  setBody("");
-                  setDueDate("");
-                  setRemindBefore("0");
-                  setPendingFiles([]);
-                }}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Input
-                placeholder="Assunto (opcional)"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                className="flex-1 min-w-[200px]"
-              />
-              {(type === "task" || type === "call" || type === "meeting") && (
-                <>
-                  <Input
-                    type="datetime-local"
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                    className="w-56"
-                    aria-label={type === "task" ? "Vencimento" : "Data e hora"}
-                    title={type === "task" ? "Vencimento" : "Data e hora"}
-                  />
-                  <select
-                    value={remindBefore}
-                    onChange={(e) => setRemindBefore(e.target.value)}
-                    disabled={!dueDate}
-                    className="h-9 rounded-md border bg-background px-3 text-sm disabled:opacity-50"
-                    aria-label="Lembrete"
-                    title="Lembrete"
-                  >
-                    <option value="none">Sem lembrete</option>
-                    {REMINDER_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
-                </>
-              )}
-              {type === "task" && (
-                <select
-                  value={assigneeId || user?.id || ""}
-                  onChange={(e) => setAssigneeId(e.target.value)}
-                  className="h-9 rounded-md border bg-background px-3 text-sm"
-                  aria-label="Atribuir tarefa para"
-                  title="Atribuir tarefa para"
-                >
-                  {team.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
-                      {m.id === user?.id ? " (você)" : ""}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-            <div className="relative">
-              <RichHtmlEditor
-                value={body}
-                onChange={setBody}
-                placeholder={
-                  type === "task"
-                    ? "Descreva a tarefa..."
-                    : "Descreva o que aconteceu... use @ para mencionar, arraste arquivos para anexar"
-                }
-                minHeight={96}
-                mentions={team}
-                onMentionAdd={(m) => {
-                  if (!mentions.find((x) => x.id === m.id)) setMentions((prev) => [...prev, m]);
-                }}
-              />
-            </div>
-            {pendingFiles.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {pendingFiles.map((f, i) => (
-                  <Badge key={i} variant="secondary" className="gap-1">
-                    <Paperclip className="h-3 w-3" /> {f.name}
-                    <button onClick={() => setPendingFiles((p) => p.filter((_, idx) => idx !== i))}>
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            )}
-            <div className="flex justify-between items-center pt-3 border-t border-border/60">
-              <div className="flex items-center gap-3">
-                <label className="cursor-pointer text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
-                  <input
-                    type="file"
-                    multiple
-                    className="hidden"
-                    onChange={(e) => {
-                      const files = Array.from(e.target.files ?? []);
-                      if (files.length) setPendingFiles((p) => [...p, ...files]);
-                      e.target.value = "";
-                    }}
-                  />
-                  <Paperclip className="h-4 w-4" /> Anexar
-                </label>
-                <button
-                  type="button"
-                  className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
-                  onClick={() => setPickerOpen(true)}
-                >
-                  <FolderOpen className="h-4 w-4" /> Centro de Arquivos
-                </button>
-              </div>
-              <Button
-                onClick={async () => {
-                  await add();
-                  setComposerOpen(false);
-                }}
-                size="sm"
-                className="rounded-xl shadow-md shadow-primary/20 font-semibold"
-              >
-                Salvar {currentLogLabel}
-              </Button>
-            </div>
-          </div>
+          <TimelineComposer
+            type={type}
+            label={currentLogLabel}
+            currentUserId={user?.id}
+            team={team}
+            subject={subject}
+            onSubjectChange={setSubject}
+            body={body}
+            onBodyChange={setBody}
+            onMentionAdd={(m) => {
+              if (!mentions.find((x) => x.id === m.id)) setMentions((prev) => [...prev, m]);
+            }}
+            dueDate={dueDate}
+            onDueDateChange={setDueDate}
+            remindBefore={remindBefore}
+            onRemindBeforeChange={setRemindBefore}
+            assigneeId={assigneeId}
+            onAssigneeChange={setAssigneeId}
+            pendingFiles={pendingFiles}
+            onPendingFilesChange={setPendingFiles}
+            onOpenFileCenter={() => setPickerOpen(true)}
+            onClose={() => {
+              setComposerOpen(false);
+              setSubject("");
+              setBody("");
+              setDueDate("");
+              setRemindBefore("0");
+              setPendingFiles([]);
+            }}
+            onSave={() => {
+              void add().then(() => setComposerOpen(false));
+            }}
+          />
         )}
       </div>
 
