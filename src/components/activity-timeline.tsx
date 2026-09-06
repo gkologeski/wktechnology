@@ -352,65 +352,10 @@ export function ActivityTimeline({
     });
   }, [user]);
 
-  const uploadFiles = async (): Promise<Attachment[]> => {
-    if (!user || pendingFiles.length === 0) return [];
-    const out: Attachment[] = [];
-    for (const file of pendingFiles) {
-      const safeName =
-        file.name
-          .normalize("NFKD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/[^a-zA-Z0-9._-]+/g, "_")
-          .replace(/_+/g, "_")
-          .replace(/^_+|_+$/g, "")
-          .slice(-120) || "file";
-      const path = `${user.id}/${crypto.randomUUID()}-${safeName}`;
-      const { error } = await supabase.storage
-        .from("notes-attachments")
-        .upload(path, file, { contentType: file.type });
-      if (error) {
-        toast.error(`Falha em ${file.name}: ${error.message}`);
-        continue;
-      }
-      out.push({ path, name: file.name, size: file.size, type: file.type });
-    }
-    return out;
-  };
+  const uploadFiles = async (): Promise<Attachment[]> =>
+    !user || pendingFiles.length === 0 ? [] : uploadTimelineFiles(user.id, pendingFiles);
 
-  const resolveAutoLinks = async (): Promise<Partial<Record<RelatedKey, string>>> => {
-    const links: Partial<Record<RelatedKey, string>> = { [relatedKey]: relatedId };
-    try {
-      if (relatedKey === "related_deal_id") {
-        const { data: d } = await supabase
-          .from("deals")
-          .select("company_id, primary_contact_id")
-          .eq("id", relatedId)
-          .maybeSingle();
-        if (d?.company_id) links.related_company_id = d.company_id;
-        let contactId = d?.primary_contact_id ?? null;
-        if (!contactId) {
-          const { data: dc } = await supabase
-            .from("deal_contacts")
-            .select("contact_id")
-            .eq("deal_id", relatedId)
-            .limit(1)
-            .maybeSingle();
-          contactId = dc?.contact_id ?? null;
-        }
-        if (contactId) links.related_contact_id = contactId;
-      } else if (relatedKey === "related_contact_id") {
-        const { data: c } = await supabase
-          .from("contacts")
-          .select("company_id")
-          .eq("id", relatedId)
-          .maybeSingle();
-        if (c?.company_id) links.related_company_id = c.company_id;
-      }
-    } catch {
-      /* default link already set */
-    }
-    return links;
-  };
+  const resolveAutoLinks = () => resolveTimelineAutoLinks(relatedKey, relatedId);
 
   const add = async () => {
     if (!user) return;
