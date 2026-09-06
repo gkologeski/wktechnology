@@ -30,8 +30,6 @@ import {
   resolveTimelineAutoLinks,
   uploadTimelineFiles,
 } from "@/lib/timeline/activity-entities";
-import { ActivityTimelineItem } from "./activity/activity-timeline-item";
-import { ActivityEditForm } from "./activity/activity-edit-form";
 import { TimelineComposer } from "./activity/timeline-composer";
 import { TimelineActionDialogs } from "./activity/timeline-action-dialogs";
 import { TimelineRail } from "./activity/timeline-rail";
@@ -44,7 +42,6 @@ import {
   updateActivity,
 } from "@/lib/timeline/activity-mutations";
 import { InstantRoomButton } from "./activity/instant-room-button";
-
 
 export function ActivityTimeline({
   relatedKey,
@@ -129,8 +126,6 @@ export function ActivityTimeline({
   const hasWhatsAppDraft = useHasMessageDraft({
     scope: { channel: "whatsapp", contactId: target.contactId, to: target.phone ?? "" },
   });
-
-  const [dateOpen, setDateOpen] = useState(false);
 
   // Resolve email/phone/contact from parent entity for the "Criar" actions
   useEffect(() => {
