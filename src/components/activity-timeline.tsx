@@ -431,30 +431,8 @@ export function ActivityTimeline({
     setEditingDueDate(a.type === "task" ? (a.due_date ?? null) : null);
   };
 
-  const uploadEditingFiles = async (): Promise<Attachment[]> => {
-    if (!user || editingNewFiles.length === 0) return [];
-    const out: Attachment[] = [];
-    for (const file of editingNewFiles) {
-      const safeName =
-        file.name
-          .normalize("NFKD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/[^a-zA-Z0-9._-]+/g, "_")
-          .replace(/_+/g, "_")
-          .replace(/^_+|_+$/g, "")
-          .slice(-120) || "file";
-      const path = `${user.id}/${crypto.randomUUID()}-${safeName}`;
-      const { error } = await supabase.storage
-        .from("notes-attachments")
-        .upload(path, file, { contentType: file.type });
-      if (error) {
-        toast.error(`Falha em ${file.name}: ${error.message}`);
-        continue;
-      }
-      out.push({ path, name: file.name, size: file.size, type: file.type });
-    }
-    return out;
-  };
+  const uploadEditingFiles = async (): Promise<Attachment[]> =>
+    !user || editingNewFiles.length === 0 ? [] : uploadTimelineFiles(user.id, editingNewFiles);
 
   const saveEdit = async (a: Activity) => {
     const uploaded = await uploadEditingFiles();
