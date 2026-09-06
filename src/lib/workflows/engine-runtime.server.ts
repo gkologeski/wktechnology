@@ -15,13 +15,30 @@ import { getPath } from "@/lib/message-tokens";
 import { renderWorkflowTokens, toStr } from "./render-tokens";
 import { hydrateTriggerAssociations } from "./hydrate-associations.server";
 import { checkLeadDuplicate } from "@/lib/leads/lead-duplicate-check";
-import {
-  type AnyRow,
-  type LogStep,
-  evalConditions,
-  getField,
-} from "./engine-shared.server";
-import { runActions } from "./engine-actions.server";
+import { type AnyRow, type LogStep, evalConditions, getField } from "./engine-shared.server";
+import { type RunResult, runActions } from "./engine-actions.server";
+
+export interface EventRow {
+  id: string;
+  owner_id: string;
+  entity: WorkflowEntity;
+  entity_id: string;
+  event_type: string;
+  before: AnyRow | null;
+  after: AnyRow | null;
+  resume_workflow_id?: string | null;
+  resume_cursor?: number | null;
+}
+
+interface WorkflowRow {
+  id: string;
+  owner_id: string;
+  workspace_id: string;
+  entity: WorkflowEntity;
+  trigger: WorkflowTrigger;
+  actions: WorkflowAction[];
+  goal_filters?: WorkflowCondition[] | null;
+}
 
 async function alreadyEnrolled(
   supabase: SupabaseClient,

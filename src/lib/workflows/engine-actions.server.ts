@@ -19,6 +19,7 @@ import {
   type AnyRow,
   type LogStep,
   assignFieldFor,
+  notificationLinkFor,
   evalConditions,
   evalFilter,
   getField,
@@ -1236,26 +1237,3 @@ async function runAction(
     };
   }
 }
-
-interface EventRow {
-  id: string;
-  owner_id: string;
-  entity: WorkflowEntity;
-  entity_id: string;
-  event_type: string;
-  before: AnyRow | null;
-  after: AnyRow | null;
-  resume_workflow_id?: string | null;
-  resume_cursor?: number | null;
-}
-
-interface WorkflowRow {
-  id: string;
-  owner_id: string;
-  workspace_id: string;
-  entity: WorkflowEntity;
-  trigger: WorkflowTrigger;
-  actions: WorkflowAction[];
-  goal_filters?: WorkflowCondition[] | null;
-}
-
