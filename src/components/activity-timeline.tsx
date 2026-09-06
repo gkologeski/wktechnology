@@ -338,110 +338,18 @@ export function ActivityTimeline({
 
   // Resolve email/phone/contact from parent entity for the "Criar" actions
   useEffect(() => {
-    (async () => {
-      try {
-        if (relatedKey === "related_lead_id") {
-          const { data } = await supabase
-            .from("leads")
-            .select("email, phone, first_name, last_name")
-            .eq("id", relatedId)
-            .maybeSingle();
-          if (data)
-            setTarget({
-              email: data.email ?? undefined,
-              phone: data.phone ?? undefined,
-              name: `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim(),
-            });
-        } else if (relatedKey === "related_contact_id") {
-          const { data } = await supabase
-            .from("contacts")
-            .select("id, email, phone, mobile_phone, first_name, last_name")
-            .eq("id", relatedId)
-            .maybeSingle();
-          if (data)
-            setTarget({
-              email: data.email ?? undefined,
-              phone: data.phone ?? data.mobile_phone ?? undefined,
-              contactId: data.id,
-              name: `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim(),
-            });
-        } else if (relatedKey === "related_company_id") {
-          const { data } = await supabase
-            .from("companies")
-            .select("phone, name")
-            .eq("id", relatedId)
-            .maybeSingle();
-          if (data) setTarget({ phone: data.phone ?? undefined, name: data.name ?? undefined });
-        } else if (relatedKey === "related_deal_id") {
-          const { data: d } = await supabase
-            .from("deals")
-            .select("primary_contact_id, name")
-            .eq("id", relatedId)
-            .maybeSingle();
-          let contactId = d?.primary_contact_id ?? null;
-          if (!contactId) {
-            const { data: dc } = await supabase
-              .from("deal_contacts")
-              .select("contact_id")
-              .eq("deal_id", relatedId)
-              .limit(1)
-              .maybeSingle();
-            contactId = dc?.contact_id ?? null;
-          }
-          if (contactId) {
-            const { data: c } = await supabase
-              .from("contacts")
-              .select("id, email, phone, mobile_phone, first_name, last_name")
-              .eq("id", contactId)
-              .maybeSingle();
-            if (c)
-              setTarget({
-                email: c.email ?? undefined,
-                phone: c.phone ?? c.mobile_phone ?? undefined,
-                contactId: c.id,
-                name: `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim(),
-              });
-          } else {
-            setTarget({ name: d?.name ?? undefined });
-          }
-        }
-      } catch {
-        // ignore
-      }
-    })();
+    void fetchTimelineTarget(relatedKey, relatedId).then((t) => {
+      if (t) setTarget(t);
+    });
   }, [relatedKey, relatedId]);
 
   // Load workspace members for @mentions and task assignment
   useEffect(() => {
     if (!user) return;
-    (async () => {
-      const list: TeamMember[] = [{ id: user.id, name: user.email ?? "Você" }];
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("active_workspace_id")
-        .eq("id", user.id)
-        .maybeSingle();
-      const wsId = (profile as { active_workspace_id?: string } | null)?.active_workspace_id;
-      setCurrentWorkspaceId(wsId ?? null);
-      if (wsId) {
-        const { data: wm } = await supabase
-          .from("workspace_members")
-          .select("user_id")
-          .eq("workspace_id", wsId);
-        const ids = [...new Set((wm ?? []).map((t) => t.user_id))];
-        if (ids.length) {
-          const { data: profs } = await supabase
-            .from("profiles")
-            .select("id, full_name")
-            .in("id", ids);
-          for (const p of profs ?? []) {
-            if (!list.find((x) => x.id === p.id))
-              list.push({ id: p.id, name: p.full_name ?? p.id });
-          }
-        }
-      }
+    void fetchTimelineTeam(user).then(({ team: list, workspaceId }) => {
+      setCurrentWorkspaceId(workspaceId);
       setTeam(list);
-    })();
+    });
   }, [user]);
 
   const uploadFiles = async (): Promise<Attachment[]> => {
