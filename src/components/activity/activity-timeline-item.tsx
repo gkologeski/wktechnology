@@ -142,28 +142,7 @@ export function ActivityTimelineItem({
         <CallSummaryBadges activity={a} />
         <CallDurationBadges activity={a} />
         <CallRecordingPlayer activity={a} />
-        {a.type === "email" && !emailMeta && (
-          <>
-            {(a.email_direction || a.email_status) && (
-              <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
-                {a.email_direction && (
-                  <span className="rounded border px-1.5 py-0.5 text-[10px] capitalize">
-                    {a.email_direction === "inbound"
-                      ? "recebido"
-                      : a.email_direction === "outbound"
-                        ? "enviado"
-                        : a.email_direction}
-                  </span>
-                )}
-                {a.email_status && (
-                  <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] capitalize text-secondary-foreground">
-                    {a.email_status}
-                  </span>
-                )}
-              </div>
-            )}
-          </>
-        )}
+        {a.type === "email" && !emailMeta && <EmailStatusBadges activity={a} />}
 
         {/* Mentions render inline within the body HTML; no duplicate chip below. */}
         {!isEditing && atts.length > 0 && (
