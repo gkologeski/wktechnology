@@ -105,6 +105,8 @@ import {
   resolveTimelineAutoLinks,
   uploadTimelineFiles,
 } from "@/lib/timeline/activity-entities";
+import { ActivityTimelineItem } from "./activity/activity-timeline-item";
+import { ActivityEditForm } from "./activity/activity-edit-form";
 
 // O discador carrega o SDK de voz da Twilio; só baixamos esse código quando o
 // usuário abre a ação de ligação pela primeira vez.
