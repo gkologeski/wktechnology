@@ -98,6 +98,13 @@ import {
   type SurveyResponseSummary,
 } from "@/components/surveys/survey-timeline-card";
 import { getActivitySurveyResponses } from "@/lib/surveys/survey-activity.functions";
+import { fetchTimelineData } from "@/lib/timeline/activity-fetch";
+import {
+  fetchTimelineTarget,
+  fetchTimelineTeam,
+  resolveTimelineAutoLinks,
+  uploadTimelineFiles,
+} from "@/lib/timeline/activity-entities";
 
 // O discador carrega o SDK de voz da Twilio; só baixamos esse código quando o
 // usuário abre a ação de ligação pela primeira vez.
