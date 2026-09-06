@@ -18,7 +18,7 @@ export type TimelineEditingState = {
   dueDate: string | null;
   onDueDateChange: (v: string | null) => void;
   attachments: Attachment[];
-  onAttachmentsChange: (v: Attachment[]) => void;
+  onAttachmentsChange: (updater: (prev: Attachment[]) => Attachment[]) => void;
   newFiles: File[];
   onNewFilesChange: (updater: (prev: File[]) => File[]) => void;
   onOpenFileCenter: () => void;
