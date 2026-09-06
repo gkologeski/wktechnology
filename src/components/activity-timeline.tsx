@@ -249,14 +249,10 @@ export function ActivityTimeline({
       attachments,
       ...autoLinks,
     };
-    const { data: inserted, error } = await supabase
-      .from("activities")
-      .insert(payload as never)
-      .select("id")
-      .single();
-    if (error) return toast.error(error.message);
-    if (inserted?.id) {
-      void notifyActivityEventFn({ data: { activityId: inserted.id } }).catch(() => {});
+    const res = await insertActivity(payload);
+    if (!res.ok) return toast.error(res.error);
+    if (res.insertedId) {
+      void notifyActivityEventFn({ data: { activityId: res.insertedId } }).catch(() => {});
     }
     setSubject("");
     setBody("");
@@ -269,29 +265,28 @@ export function ActivityTimeline({
     window.dispatchEvent(new CustomEvent("activities:changed"));
   };
 
-  const toggleDone = async (a: Activity) => {
-    const { error } = await supabase
-      .from("activities")
-      .update({ completed: !a.completed })
-      .eq("id", a.id);
-    if (error) return toast.error(error.message);
+  /** Recarrega a timeline e avisa os demais componentes da mudança. */
+  const afterChange = () => {
     void load();
     window.dispatchEvent(new CustomEvent("activities:changed"));
   };
 
-  const remove = async (id: string) => {
-    const res = await deleteRowGuarded("activities", id);
-    if (!res.ok) return toast.error(res.message);
+  const toggleDone = async (a: Activity) => {
+    const res = await toggleActivityDone(a);
+    if (!res.ok) return toast.error(res.error);
+    afterChange();
+  };
 
-    void load();
-    window.dispatchEvent(new CustomEvent("activities:changed"));
+  const remove = async (id: string) => {
+    const res = await removeActivity(id);
+    if (!res.ok) return toast.error(res.error);
+    afterChange();
   };
 
   const startEdit = (a: Activity) => {
     setEditingId(a.id);
     setEditingBody(a.body ?? "");
-    const existing = (a as unknown as { attachments?: Attachment[] }).attachments ?? [];
-    setEditingAttachments(existing);
+    setEditingAttachments(activityAttachments(a));
     setEditingNewFiles([]);
     setEditingAssigneeId(
       a.type === "task" ? ((a as unknown as { owner_id?: string | null }).owner_id ?? null) : null,
@@ -304,27 +299,22 @@ export function ActivityTimeline({
 
   const saveEdit = async (a: Activity) => {
     const uploaded = await uploadEditingFiles();
-    const finalAttachments = [...editingAttachments, ...uploaded];
     const patch: Record<string, unknown> = {
       body: editingBody || null,
-      attachments: finalAttachments,
+      attachments: [...editingAttachments, ...uploaded],
     };
     if (a.type === "task") {
       patch.owner_id = editingAssigneeId ?? user?.id ?? null;
       patch.due_date = editingDueDate ? new Date(editingDueDate).toISOString() : null;
     }
-    const { error } = await supabase
-      .from("activities")
-      .update(patch as never)
-      .eq("id", a.id);
-    if (error) return toast.error(error.message);
+    const res = await updateActivity(a.id, patch);
+    if (!res.ok) return toast.error(res.error);
     setEditingId(null);
     setEditingAttachments([]);
     setEditingNewFiles([]);
     setEditingAssigneeId(null);
     setEditingDueDate(null);
-    void load();
-    window.dispatchEvent(new CustomEvent("activities:changed"));
+    afterChange();
   };
 
   const signMeetingRec = useServerFn(signMeetingRecording);
