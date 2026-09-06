@@ -71,7 +71,9 @@ async function enrichEmails(baseRows: Activity[]) {
   const emailMeta = new Map<string, EmailMeta>();
   const messageIds = [
     ...new Set(
-      baseRows.map((row) => strField(externalIds(row), "email_message_id")).filter(Boolean) as string[],
+      baseRows
+        .map((row) => strField(externalIds(row), "email_message_id"))
+        .filter(Boolean) as string[],
     ),
   ];
   if (messageIds.length === 0) return { rows: baseRows, emailMeta };
@@ -117,7 +119,9 @@ async function enrichEmails(baseRows: Activity[]) {
     }));
     const click = lastClick.get(message.id);
     const dir =
-      message.direction === "inbound" || message.direction === "outbound" ? message.direction : null;
+      message.direction === "inbound" || message.direction === "outbound"
+        ? message.direction
+        : null;
     emailMeta.set(row.id, {
       direction: dir,
       from_email: message.from_email,
