@@ -118,6 +118,7 @@ import {
   toggleActivityDone,
   updateActivity,
 } from "@/lib/timeline/activity-mutations";
+import { InstantRoomButton } from "./activity/instant-room-button";
 
 // O discador carrega o SDK de voz da Twilio; só baixamos esse código quando o
 // usuário abre a ação de ligação pela primeira vez.
