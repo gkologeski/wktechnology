@@ -5,11 +5,7 @@ import type { Activity } from "@/lib/db-types";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { useServerFn } from "@tanstack/react-start";
-import {
-  signMeetingRecording,
-  generateMeetingSummary,
-  summarizeCalendarEventRecording,
-} from "@/lib/meetings.functions";
+import { signMeetingRecording } from "@/lib/meetings.functions";
 import { notifyActivityEvent } from "@/lib/notifications.functions";
 import { maybeConvertWhatsAppPaste } from "@/lib/whatsapp-paste";
 import { useHasMessageDraft } from "@/hooks/use-has-message-draft";
@@ -43,6 +39,7 @@ import {
 } from "@/lib/timeline/activity-mutations";
 import { InstantRoomButton } from "./activity/instant-room-button";
 import { useActivityEditing } from "./activity/use-activity-editing";
+import { useMeetingSummary } from "./activity/use-meeting-summary";
 
 export function ActivityTimeline({
   relatedKey,

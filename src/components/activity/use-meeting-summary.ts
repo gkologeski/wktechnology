@@ -4,10 +4,7 @@
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import type { Activity } from "@/lib/db-types";
-import {
-  generateMeetingSummary,
-  summarizeCalendarEventRecording,
-} from "@/lib/meetings.functions";
+import { generateMeetingSummary, summarizeCalendarEventRecording } from "@/lib/meetings.functions";
 
 export function useMeetingSummary(items: Activity[], onSummarized: () => void) {
   const summarizeMeetingFn = useServerFn(generateMeetingSummary);
