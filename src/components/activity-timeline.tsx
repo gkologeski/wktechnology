@@ -395,67 +395,40 @@ export function ActivityTimeline({
         refreshing={refreshing && !loading}
       />
 
-      {loading ? (
-        <div className="text-sm text-muted-foreground">Carregando...</div>
-      ) : timelineEntries.length === 0 ? (
-        <div className="text-sm text-muted-foreground text-center py-6">
-          Nenhuma atividade ainda.
-        </div>
-      ) : (
-        <ol className="space-y-5">
-          {timelineEntries.map((entry) => {
-            if (entry.history) {
-              return (
-                <HistoryTimelineItem
-                  key={entry.history.id}
-                  group={entry.history}
-                  resolveValue={resolveHistoryValue}
-                  resolveActor={resolveHistoryActor}
-                />
-              );
-            }
-            const a = entry.activity as Activity;
-            return (
-              <ActivityTimelineItem
-                key={a.id}
-                activity={a}
-                emailMeta={emailMeta.get(a.id)}
-                surveyResponse={surveyMeta.get(a.id)}
-                team={team}
-                currentWorkspaceId={currentWorkspaceId}
-                isEditing={editingId === a.id}
-                onToggleDone={(row) => void toggleDone(row)}
-                onStartEdit={startEdit}
-                onRemove={(id) => void remove(id)}
-                onSummarizeMeeting={(id) => void onSummarizeMeeting(id)}
-                signRecording={async (path) => {
-                  const { url } = await signMeetingRec({ data: { path } });
-                  return url;
-                }}
-                editForm={
-                  <ActivityEditForm
-                    activity={a}
-                    team={team}
-                    body={editingBody}
-                    onBodyChange={setEditingBody}
-                    assigneeId={editingAssigneeId}
-                    onAssigneeChange={setEditingAssigneeId}
-                    dueDate={editingDueDate}
-                    onDueDateChange={setEditingDueDate}
-                    attachments={editingAttachments}
-                    onAttachmentsChange={setEditingAttachments}
-                    newFiles={editingNewFiles}
-                    onNewFilesChange={setEditingNewFiles}
-                    onOpenFileCenter={() => setEditPickerOpen(true)}
-                    onSave={() => void saveEdit(a)}
-                    onCancel={() => setEditingId(null)}
-                  />
-                }
-              />
-            );
-          })}
-        </ol>
-      )}
+      <TimelineEntriesList
+        loading={loading}
+        entries={timelineEntries}
+        emailMeta={emailMeta}
+        surveyMeta={surveyMeta}
+        team={team}
+        currentWorkspaceId={currentWorkspaceId}
+        resolveHistoryValue={resolveHistoryValue}
+        resolveHistoryActor={resolveHistoryActor}
+        onToggleDone={(row) => void toggleDone(row)}
+        onStartEdit={startEdit}
+        onRemove={(id) => void remove(id)}
+        onSummarizeMeeting={(id) => void onSummarizeMeeting(id)}
+        signRecording={async (path) => {
+          const { url } = await signMeetingRec({ data: { path } });
+          return url;
+        }}
+        editing={{
+          id: editingId,
+          body: editingBody,
+          onBodyChange: setEditingBody,
+          assigneeId: editingAssigneeId,
+          onAssigneeChange: setEditingAssigneeId,
+          dueDate: editingDueDate,
+          onDueDateChange: setEditingDueDate,
+          attachments: editingAttachments,
+          onAttachmentsChange: setEditingAttachments,
+          newFiles: editingNewFiles,
+          onNewFilesChange: setEditingNewFiles,
+          onOpenFileCenter: () => setEditPickerOpen(true),
+          onSave: (a) => void saveEdit(a),
+          onCancel: () => setEditingId(null),
+        }}
+      />
     </div>
   );
 }
