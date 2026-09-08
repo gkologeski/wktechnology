@@ -50,6 +50,13 @@
       "when": 1788261798848,
       "tag": "0006_contacts_search_trgm_index",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1788888612511,
+      "tag": "0007_projects_time_tracking_v2",
+      "breakpoints": true
     }
   ]
 }

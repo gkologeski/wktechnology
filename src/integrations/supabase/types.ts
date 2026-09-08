@@ -13105,6 +13105,7 @@ export type Database = {
       project_members: {
         Row: {
           bill_rate_hour: number | null
+          can_track_time: boolean
           cost_rate_hour: number | null
           created_at: string
           id: string
@@ -13116,6 +13117,7 @@ export type Database = {
         }
         Insert: {
           bill_rate_hour?: number | null
+          can_track_time?: boolean
           cost_rate_hour?: number | null
           created_at?: string
           id?: string
@@ -13127,6 +13129,7 @@ export type Database = {
         }
         Update: {
           bill_rate_hour?: number | null
+          can_track_time?: boolean
           cost_rate_hour?: number | null
           created_at?: string
           id?: string
@@ -13544,18 +13547,30 @@ export type Database = {
           approved_by: string | null
           billable: boolean
           created_at: string
+          created_by: string | null
           description: string | null
+          duration_minutes: number | null
+          end_time: string | null
           entry_date: string | null
+          external_id: string | null
           financial_entry_id: string | null
           hourly_rate: number | null
           hours: number | null
           id: string
           invoice_id: string | null
           invoiced_at: string | null
+          locked_at: string | null
           person_id: string | null
           project_id: string
+          reject_reason: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          source: string
+          start_time: string | null
           started_at: string | null
+          status: string
           stopped_at: string | null
+          submitted_at: string | null
           task_id: string | null
           updated_at: string
           user_id: string
@@ -13567,18 +13582,30 @@ export type Database = {
           approved_by?: string | null
           billable?: boolean
           created_at?: string
+          created_by?: string | null
           description?: string | null
+          duration_minutes?: number | null
+          end_time?: string | null
           entry_date?: string | null
+          external_id?: string | null
           financial_entry_id?: string | null
           hourly_rate?: number | null
           hours?: number | null
           id?: string
           invoice_id?: string | null
           invoiced_at?: string | null
+          locked_at?: string | null
           person_id?: string | null
           project_id: string
+          reject_reason?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          source?: string
+          start_time?: string | null
           started_at?: string | null
+          status?: string
           stopped_at?: string | null
+          submitted_at?: string | null
           task_id?: string | null
           updated_at?: string
           user_id: string
@@ -13590,18 +13617,30 @@ export type Database = {
           approved_by?: string | null
           billable?: boolean
           created_at?: string
+          created_by?: string | null
           description?: string | null
+          duration_minutes?: number | null
+          end_time?: string | null
           entry_date?: string | null
+          external_id?: string | null
           financial_entry_id?: string | null
           hourly_rate?: number | null
           hours?: number | null
           id?: string
           invoice_id?: string | null
           invoiced_at?: string | null
+          locked_at?: string | null
           person_id?: string | null
           project_id?: string
+          reject_reason?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          source?: string
+          start_time?: string | null
           started_at?: string | null
+          status?: string
           stopped_at?: string | null
+          submitted_at?: string | null
           task_id?: string | null
           updated_at?: string
           user_id?: string

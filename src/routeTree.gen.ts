@@ -181,6 +181,8 @@ import { Route as AuthenticatedProjectsTimesheetRouteImport } from './routes/_au
 import { Route as AuthenticatedProjectsTasksRouteImport } from './routes/_authenticated/projects.tasks'
 import { Route as AuthenticatedProjectsSpacesRouteImport } from './routes/_authenticated/projects.spaces'
 import { Route as AuthenticatedProjectsMyWorkRouteImport } from './routes/_authenticated/projects.my-work'
+import { Route as AuthenticatedProjectsMyHoursRouteImport } from './routes/_authenticated/projects.my-hours'
+import { Route as AuthenticatedProjectsHoursReviewRouteImport } from './routes/_authenticated/projects.hours-review'
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedPeoplePsychosocialRouteImport } from './routes/_authenticated/people.psychosocial'
 import { Route as AuthenticatedPeopleOnboardingTemplatesRouteImport } from './routes/_authenticated/people.onboarding-templates'
@@ -271,6 +273,7 @@ import { Route as ApiPublicZapierSubscribeRouteImport } from './routes/api/publi
 import { Route as ApiPublicWidgetSessionRouteImport } from './routes/api/public/widget/session'
 import { Route as ApiPublicWidgetScriptRouteImport } from './routes/api/public/widget/script'
 import { Route as ApiPublicWidgetMessagesRouteImport } from './routes/api/public/widget/messages'
+import { Route as ApiPublicV1TimeEntriesRouteImport } from './routes/api/public/v1/time-entries'
 import { Route as ApiPublicV1MeetingsRouteImport } from './routes/api/public/v1/meetings'
 import { Route as ApiPublicV1LeadsRouteImport } from './routes/api/public/v1/leads'
 import { Route as ApiPublicV1DealsRouteImport } from './routes/api/public/v1/deals'
@@ -1353,6 +1356,18 @@ const AuthenticatedProjectsMyWorkRoute =
     path: '/projects/my-work',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedProjectsMyHoursRoute =
+  AuthenticatedProjectsMyHoursRouteImport.update({
+    id: '/projects/my-hours',
+    path: '/projects/my-hours',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedProjectsHoursReviewRoute =
+  AuthenticatedProjectsHoursReviewRouteImport.update({
+    id: '/projects/hours-review',
+    path: '/projects/hours-review',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProjectsIdRoute = AuthenticatedProjectsIdRouteImport.update({
   id: '/projects/$id',
   path: '/projects/$id',
@@ -1873,6 +1888,11 @@ const ApiPublicWidgetScriptRoute = ApiPublicWidgetScriptRouteImport.update({
 const ApiPublicWidgetMessagesRoute = ApiPublicWidgetMessagesRouteImport.update({
   id: '/api/public/widget/messages',
   path: '/api/public/widget/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicV1TimeEntriesRoute = ApiPublicV1TimeEntriesRouteImport.update({
+  id: '/api/public/v1/time-entries',
+  path: '/api/public/v1/time-entries',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicV1MeetingsRoute = ApiPublicV1MeetingsRouteImport.update({
@@ -2676,6 +2696,8 @@ export interface FileRoutesByFullPath {
   '/people/onboarding-templates': typeof AuthenticatedPeopleOnboardingTemplatesRoute
   '/people/psychosocial': typeof AuthenticatedPeoplePsychosocialRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/projects/hours-review': typeof AuthenticatedProjectsHoursReviewRoute
+  '/projects/my-hours': typeof AuthenticatedProjectsMyHoursRoute
   '/projects/my-work': typeof AuthenticatedProjectsMyWorkRoute
   '/projects/spaces': typeof AuthenticatedProjectsSpacesRoute
   '/projects/tasks': typeof AuthenticatedProjectsTasksRoute
@@ -2877,6 +2899,7 @@ export interface FileRoutesByFullPath {
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
   '/api/public/v1/meetings': typeof ApiPublicV1MeetingsRouteWithChildren
+  '/api/public/v1/time-entries': typeof ApiPublicV1TimeEntriesRoute
   '/api/public/widget/messages': typeof ApiPublicWidgetMessagesRoute
   '/api/public/widget/script': typeof ApiPublicWidgetScriptRoute
   '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
@@ -3048,6 +3071,8 @@ export interface FileRoutesByTo {
   '/people/onboarding-templates': typeof AuthenticatedPeopleOnboardingTemplatesRoute
   '/people/psychosocial': typeof AuthenticatedPeoplePsychosocialRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/projects/hours-review': typeof AuthenticatedProjectsHoursReviewRoute
+  '/projects/my-hours': typeof AuthenticatedProjectsMyHoursRoute
   '/projects/my-work': typeof AuthenticatedProjectsMyWorkRoute
   '/projects/spaces': typeof AuthenticatedProjectsSpacesRoute
   '/projects/tasks': typeof AuthenticatedProjectsTasksRoute
@@ -3248,6 +3273,7 @@ export interface FileRoutesByTo {
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
   '/api/public/v1/meetings': typeof ApiPublicV1MeetingsRouteWithChildren
+  '/api/public/v1/time-entries': typeof ApiPublicV1TimeEntriesRoute
   '/api/public/widget/messages': typeof ApiPublicWidgetMessagesRoute
   '/api/public/widget/script': typeof ApiPublicWidgetScriptRoute
   '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
@@ -3426,6 +3452,8 @@ export interface FileRoutesById {
   '/_authenticated/people/onboarding-templates': typeof AuthenticatedPeopleOnboardingTemplatesRoute
   '/_authenticated/people/psychosocial': typeof AuthenticatedPeoplePsychosocialRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/_authenticated/projects/hours-review': typeof AuthenticatedProjectsHoursReviewRoute
+  '/_authenticated/projects/my-hours': typeof AuthenticatedProjectsMyHoursRoute
   '/_authenticated/projects/my-work': typeof AuthenticatedProjectsMyWorkRoute
   '/_authenticated/projects/spaces': typeof AuthenticatedProjectsSpacesRoute
   '/_authenticated/projects/tasks': typeof AuthenticatedProjectsTasksRoute
@@ -3627,6 +3655,7 @@ export interface FileRoutesById {
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
   '/api/public/v1/meetings': typeof ApiPublicV1MeetingsRouteWithChildren
+  '/api/public/v1/time-entries': typeof ApiPublicV1TimeEntriesRoute
   '/api/public/widget/messages': typeof ApiPublicWidgetMessagesRoute
   '/api/public/widget/script': typeof ApiPublicWidgetScriptRoute
   '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
@@ -3805,6 +3834,8 @@ export interface FileRouteTypes {
     | '/people/onboarding-templates'
     | '/people/psychosocial'
     | '/projects/$id'
+    | '/projects/hours-review'
+    | '/projects/my-hours'
     | '/projects/my-work'
     | '/projects/spaces'
     | '/projects/tasks'
@@ -4006,6 +4037,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/deals'
     | '/api/public/v1/leads'
     | '/api/public/v1/meetings'
+    | '/api/public/v1/time-entries'
     | '/api/public/widget/messages'
     | '/api/public/widget/script'
     | '/api/public/widget/session'
@@ -4177,6 +4209,8 @@ export interface FileRouteTypes {
     | '/people/onboarding-templates'
     | '/people/psychosocial'
     | '/projects/$id'
+    | '/projects/hours-review'
+    | '/projects/my-hours'
     | '/projects/my-work'
     | '/projects/spaces'
     | '/projects/tasks'
@@ -4377,6 +4411,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/deals'
     | '/api/public/v1/leads'
     | '/api/public/v1/meetings'
+    | '/api/public/v1/time-entries'
     | '/api/public/widget/messages'
     | '/api/public/widget/script'
     | '/api/public/widget/session'
@@ -4554,6 +4589,8 @@ export interface FileRouteTypes {
     | '/_authenticated/people/onboarding-templates'
     | '/_authenticated/people/psychosocial'
     | '/_authenticated/projects/$id'
+    | '/_authenticated/projects/hours-review'
+    | '/_authenticated/projects/my-hours'
     | '/_authenticated/projects/my-work'
     | '/_authenticated/projects/spaces'
     | '/_authenticated/projects/tasks'
@@ -4755,6 +4792,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/deals'
     | '/api/public/v1/leads'
     | '/api/public/v1/meetings'
+    | '/api/public/v1/time-entries'
     | '/api/public/widget/messages'
     | '/api/public/widget/script'
     | '/api/public/widget/session'
@@ -4895,6 +4933,7 @@ export interface RootRouteChildren {
   ApiPublicV1DealsRoute: typeof ApiPublicV1DealsRoute
   ApiPublicV1LeadsRoute: typeof ApiPublicV1LeadsRoute
   ApiPublicV1MeetingsRoute: typeof ApiPublicV1MeetingsRouteWithChildren
+  ApiPublicV1TimeEntriesRoute: typeof ApiPublicV1TimeEntriesRoute
   ApiPublicWidgetMessagesRoute: typeof ApiPublicWidgetMessagesRoute
   ApiPublicWidgetScriptRoute: typeof ApiPublicWidgetScriptRoute
   ApiPublicWidgetSessionRoute: typeof ApiPublicWidgetSessionRoute
@@ -6121,6 +6160,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsMyWorkRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/projects/my-hours': {
+      id: '/_authenticated/projects/my-hours'
+      path: '/projects/my-hours'
+      fullPath: '/projects/my-hours'
+      preLoaderRoute: typeof AuthenticatedProjectsMyHoursRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/projects/hours-review': {
+      id: '/_authenticated/projects/hours-review'
+      path: '/projects/hours-review'
+      fullPath: '/projects/hours-review'
+      preLoaderRoute: typeof AuthenticatedProjectsHoursReviewRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/projects/$id': {
       id: '/_authenticated/projects/$id'
       path: '/projects/$id'
@@ -6749,6 +6802,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/widget/messages'
       fullPath: '/api/public/widget/messages'
       preLoaderRoute: typeof ApiPublicWidgetMessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/time-entries': {
+      id: '/api/public/v1/time-entries'
+      path: '/api/public/v1/time-entries'
+      fullPath: '/api/public/v1/time-entries'
+      preLoaderRoute: typeof ApiPublicV1TimeEntriesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/v1/meetings': {
@@ -8109,6 +8169,8 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPeopleOnboardingTemplatesRoute: typeof AuthenticatedPeopleOnboardingTemplatesRoute
   AuthenticatedPeoplePsychosocialRoute: typeof AuthenticatedPeoplePsychosocialRoute
   AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
+  AuthenticatedProjectsHoursReviewRoute: typeof AuthenticatedProjectsHoursReviewRoute
+  AuthenticatedProjectsMyHoursRoute: typeof AuthenticatedProjectsMyHoursRoute
   AuthenticatedProjectsMyWorkRoute: typeof AuthenticatedProjectsMyWorkRoute
   AuthenticatedProjectsSpacesRoute: typeof AuthenticatedProjectsSpacesRoute
   AuthenticatedProjectsTasksRoute: typeof AuthenticatedProjectsTasksRoute
@@ -8252,6 +8314,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedPeopleOnboardingTemplatesRoute,
   AuthenticatedPeoplePsychosocialRoute: AuthenticatedPeoplePsychosocialRoute,
   AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRoute,
+  AuthenticatedProjectsHoursReviewRoute: AuthenticatedProjectsHoursReviewRoute,
+  AuthenticatedProjectsMyHoursRoute: AuthenticatedProjectsMyHoursRoute,
   AuthenticatedProjectsMyWorkRoute: AuthenticatedProjectsMyWorkRoute,
   AuthenticatedProjectsSpacesRoute: AuthenticatedProjectsSpacesRoute,
   AuthenticatedProjectsTasksRoute: AuthenticatedProjectsTasksRoute,
@@ -8504,6 +8568,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicV1DealsRoute: ApiPublicV1DealsRoute,
   ApiPublicV1LeadsRoute: ApiPublicV1LeadsRoute,
   ApiPublicV1MeetingsRoute: ApiPublicV1MeetingsRouteWithChildren,
+  ApiPublicV1TimeEntriesRoute: ApiPublicV1TimeEntriesRoute,
   ApiPublicWidgetMessagesRoute: ApiPublicWidgetMessagesRoute,
   ApiPublicWidgetScriptRoute: ApiPublicWidgetScriptRoute,
   ApiPublicWidgetSessionRoute: ApiPublicWidgetSessionRoute,
