@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { completeInviteProfile } from "@/lib/teams.functions";
 
-export const Route = createFileRoute("/accept-invite")({
+export const Route = createFileRoute("/accept-invite/")({
   component: AcceptInvitePage,
   head: () => ({
     meta: [
