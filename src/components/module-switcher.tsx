@@ -3,15 +3,17 @@
 
 import { useState } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import { Check, ChevronsUpDown, LayoutGrid, Home } from "lucide-react";
+import { Check, ChevronsUpDown, LayoutGrid, Home, Lock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { MODULE_LIST } from "@/lib/modules/registry";
 import { useModuleLicenses } from "@/hooks/use-module-licenses";
+import { useModuleAccess } from "@/hooks/use-module-access";
 import { useActiveModule, setStoredActiveModule } from "@/lib/modules/active-module";
 import { isWorkspacePathname } from "@/lib/menu-config-erp";
 import { cn } from "@/lib/utils";
+
 
 // Rotas neutras extras do workspace que não constam em WORKSPACE_ROUTE_PREFIXES.
 const EXTRA_WORKSPACE_PREFIXES = ["/integrations"];
@@ -24,6 +26,7 @@ function isWorkspaceRoute(pathname: string): boolean {
 export function ModuleSwitcher({ className }: { className?: string }) {
   const active = useActiveModule();
   const { isLicensed } = useModuleLicenses();
+  const { canAccessModule } = useModuleAccess();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -36,11 +39,13 @@ export function ModuleSwitcher({ className }: { className?: string }) {
   const handleSelect = (moduleId: typeof active) => {
     setOpen(false);
     if (!isWorkspaceContext && moduleId === active) return;
+    if (!canAccessModule(moduleId)) return;
     const target = MODULE_LIST.find((m) => m.id === moduleId);
     if (!target) return;
     setStoredActiveModule(moduleId);
     navigate({ to: target.defaultRoute });
   };
+
 
   const activeDef = MODULE_LIST.find((m) => m.id === active) ?? MODULE_LIST[0];
 
@@ -96,13 +101,20 @@ export function ModuleSwitcher({ className }: { className?: string }) {
         {MODULE_LIST.filter((m) => m.id !== "services" && isLicensed(m.id)).map((m) => {
           const Icon = m.icon;
           const isActive = !isWorkspaceContext && m.id === active;
+          const allowed = canAccessModule(m.id);
           return (
             <button
               key={m.id}
               type="button"
               onClick={() => handleSelect(m.id)}
+              disabled={!allowed}
+              aria-disabled={!allowed}
+              title={allowed ? undefined : "Você não tem acesso a este módulo"}
               className={cn(
-                "w-full flex items-center gap-3 rounded-md px-2 py-2 text-left text-sm hover:bg-accent transition-colors",
+                "w-full flex items-center gap-3 rounded-md px-2 py-2 text-left text-sm transition-colors",
+                allowed
+                  ? "hover:bg-accent"
+                  : "opacity-50 cursor-not-allowed hover:bg-transparent",
                 isActive && "bg-accent",
               )}
             >
@@ -115,13 +127,15 @@ export function ModuleSwitcher({ className }: { className?: string }) {
               <span className="flex-1 min-w-0">
                 <div className="font-medium leading-tight truncate">{m.productName}</div>
                 <div className="text-[11px] text-muted-foreground truncate">
-                  {m.shortDescription}
+                  {allowed ? m.shortDescription : "Sem acesso"}
                 </div>
               </span>
-              {isActive && <Check className="h-4 w-4 text-primary" />}
+              {isActive && allowed && <Check className="h-4 w-4 text-primary" />}
+              {!allowed && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
             </button>
           );
         })}
+
       </PopoverContent>
     </Popover>
   );
