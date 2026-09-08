@@ -12,7 +12,6 @@ import { MODULES } from "@/lib/modules/registry";
 import { isWorkspacePathname } from "@/lib/menu-config-erp";
 import { ShieldAlert } from "lucide-react";
 
-
 import { BugReportButton } from "@/components/bug-report/bug-report-button";
 import { ChatTrigger } from "@/components/chat/chat-trigger";
 import { NotificationsBell } from "@/components/notifications-bell";
@@ -96,11 +95,7 @@ function AuthenticatedLayout() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { isAdmin, isManager, loading: roleLoading } = useMyRole();
   const { isLicensed } = useModuleLicenses();
-  const {
-    canAccessModule,
-    soleModule,
-    loading: accessLoading,
-  } = useModuleAccess();
+  const { canAccessModule, soleModule, loading: accessLoading } = useModuleAccess();
 
   useEffect(() => {
     if (!loading && !user) router.navigate({ to: "/login" });
@@ -138,7 +133,6 @@ function AuthenticatedLayout() {
   const licenseBlocked = !!pathModule && !isLicensed(pathModule);
   const moduleBlocked = !accessLoading && !!pathModule && !canAccessModule(pathModule);
   const blocked = roleBlocked || licenseBlocked || moduleBlocked;
-
 
   return (
     <SidebarProvider>
@@ -180,7 +174,6 @@ function AuthenticatedLayout() {
                       ? "Você não tem acesso a este módulo. Fale com um administrador do workspace."
                       : "Você não tem permissão para acessar esta tela. Fale com um administrador do workspace."}
                 </p>
-
               </div>
             ) : (
               <Outlet />

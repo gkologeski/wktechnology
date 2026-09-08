@@ -14,7 +14,6 @@ import { useActiveModule, setStoredActiveModule } from "@/lib/modules/active-mod
 import { isWorkspacePathname } from "@/lib/menu-config-erp";
 import { cn } from "@/lib/utils";
 
-
 // Rotas neutras extras do workspace que não constam em WORKSPACE_ROUTE_PREFIXES.
 const EXTRA_WORKSPACE_PREFIXES = ["/integrations"];
 
@@ -45,7 +44,6 @@ export function ModuleSwitcher({ className }: { className?: string }) {
     setStoredActiveModule(moduleId);
     navigate({ to: target.defaultRoute });
   };
-
 
   const activeDef = MODULE_LIST.find((m) => m.id === active) ?? MODULE_LIST[0];
 
@@ -112,9 +110,7 @@ export function ModuleSwitcher({ className }: { className?: string }) {
               title={allowed ? undefined : "Você não tem acesso a este módulo"}
               className={cn(
                 "w-full flex items-center gap-3 rounded-md px-2 py-2 text-left text-sm transition-colors",
-                allowed
-                  ? "hover:bg-accent"
-                  : "opacity-50 cursor-not-allowed hover:bg-transparent",
+                allowed ? "hover:bg-accent" : "opacity-50 cursor-not-allowed hover:bg-transparent",
                 isActive && "bg-accent",
               )}
             >
@@ -135,7 +131,6 @@ export function ModuleSwitcher({ className }: { className?: string }) {
             </button>
           );
         })}
-
       </PopoverContent>
     </Popover>
   );

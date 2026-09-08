@@ -22,20 +22,14 @@ export const PROJECTS_SIDEBAR_GROUPS: SidebarGroup[] = [
         url: "/projects/spaces",
         need: "manager",
         icon: LayoutGrid,
-        permissionAny: [
-          "techprojects.spaces.view.team",
-          "techprojects.spaces.view.workspace",
-        ],
+        permissionAny: ["techprojects.spaces.view.team", "techprojects.spaces.view.workspace"],
       },
       {
         title: "Projetos",
         url: "/projects",
         need: "manager",
         icon: Kanban,
-        permissionAny: [
-          "techprojects.projects.view.team",
-          "techprojects.projects.view.workspace",
-        ],
+        permissionAny: ["techprojects.projects.view.team", "techprojects.projects.view.workspace"],
       },
       {
         title: "Tarefas",
@@ -56,7 +50,10 @@ export const PROJECTS_SIDEBAR_GROUPS: SidebarGroup[] = [
         title: "Minhas Horas",
         url: "/projects/my-hours",
         icon: Timer,
-        permissionAny: ["techprojects.time_entries.view.own", "techprojects.time_entries.view.workspace"],
+        permissionAny: [
+          "techprojects.time_entries.view.own",
+          "techprojects.time_entries.view.workspace",
+        ],
       },
       {
         title: "Revisão de Horas",
