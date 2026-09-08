@@ -8,7 +8,7 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
   const req = getRequest();
   if (req) {
     const url = new URL(req.url);
-    if (url.pathname.startsWith("/lovable/") || url.pathname === "/email/unsubscribe") {
+    if (url.pathname.startsWith("/lovable/")) {
       return next();
     }
   }

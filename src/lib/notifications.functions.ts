@@ -254,9 +254,9 @@ export const notifyActivityEvent = createServerFn({ method: "POST" })
     }
 
     // Build origin for email link (server-only helper loaded inside the handler)
-    const { getRequestOrigin, getRequestAuthorization } =
-      await import("@/lib/request-origin.server");
+    const { getRequestOrigin } = await import("@/lib/request-origin.server");
     const origin = getRequestOrigin();
+
     const fullLink = link.link ? `${origin}${link.link}` : origin || undefined;
 
     // Insert in-app notifications + collect email targets
@@ -306,33 +306,27 @@ export const notifyActivityEvent = createServerFn({ method: "POST" })
     if (emailJobs.length > 0) {
       try {
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const bearer = getRequestAuthorization();
-        const sendUrl = origin ? `${origin}/lovable/email/transactional/send` : "";
+        const { sendTransactionalEmailFromServer } = await import("@/lib/email-send.server");
         for (const job of emailJobs) {
           // Resolve email
           const { data: u } = await supabaseAdmin.auth.admin.getUserById(job.to);
           const email = u?.user?.email;
-          if (!email || !sendUrl) continue;
+          if (!email) continue;
           try {
-            await fetch(sendUrl, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                ...(bearer ? { Authorization: bearer } : {}),
+            const res = await sendTransactionalEmailFromServer({
+              supabase: supabaseAdmin,
+              templateName: "mention-notification",
+              recipientEmail: email,
+              idempotencyKey: `${job.category}:${a.id}:${job.to}`,
+              templateData: {
+                recipientName: job.recipientName,
+                mentionerName: authorName,
+                category: job.category,
+                snippet,
+                link: fullLink,
               },
-              body: JSON.stringify({
-                templateName: "mention-notification",
-                recipientEmail: email,
-                idempotencyKey: `${job.category}:${a.id}:${job.to}`,
-                templateData: {
-                  recipientName: job.recipientName,
-                  mentionerName: authorName,
-                  category: job.category,
-                  snippet,
-                  link: fullLink,
-                },
-              }),
             });
+            if (res.status === "error") console.error("send email failed", res.error);
           } catch (e) {
             console.error("send email failed", e);
           }
