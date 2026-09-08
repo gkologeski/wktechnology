@@ -40,7 +40,6 @@ import { Route as MeetTokenRouteImport } from './routes/meet.$token'
 import { Route as LpSlugRouteImport } from './routes/lp.$slug'
 import { Route as KbSlugRouteImport } from './routes/kb.$slug'
 import { Route as InterviewTokenRouteImport } from './routes/interview.$token'
-import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as CareersSlugRouteImport } from './routes/careers.$slug'
 import { Route as BookSlugRouteImport } from './routes/book.$slug'
 import { Route as AcceptInviteTokenRouteImport } from './routes/accept-invite.$token'
@@ -89,7 +88,7 @@ import { Route as AuthenticatedHomeIndexRouteImport } from './routes/_authentica
 import { Route as AuthenticatedFinanceIndexRouteImport } from './routes/_authenticated/finance.index'
 import { Route as AuthenticatedContractsIndexRouteImport } from './routes/_authenticated/contracts.index'
 import { Route as AuthenticatedAtsIndexRouteImport } from './routes/_authenticated/ats.index'
-import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
 import { Route as ApiAgentChatRouteImport } from './routes/api/agent/chat'
 import { Route as AuthenticatedWorkspaceModulesRouteImport } from './routes/_authenticated/workspace.modules'
 import { Route as AuthenticatedTicketsIdRouteImport } from './routes/_authenticated/tickets.$id'
@@ -266,9 +265,7 @@ import { Route as AuthenticatedatsSourcingIndexRouteImport } from './routes/_aut
 import { Route as AuthenticatedatsJobsIndexRouteImport } from './routes/_authenticated/(ats)/jobs.index'
 import { Route as AuthenticatedatsHuntingIndexRouteImport } from './routes/_authenticated/(ats)/hunting/index'
 import { Route as AuthenticatedatsCandidatesIndexRouteImport } from './routes/_authenticated/(ats)/candidates.index'
-import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
-import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicZapierSubscribeRouteImport } from './routes/api/public/zapier/subscribe'
@@ -545,11 +542,6 @@ const InterviewTokenRoute = InterviewTokenRouteImport.update({
   path: '/interview/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
-const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
-  id: '/email/unsubscribe',
-  path: '/email/unsubscribe',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const CareersSlugRoute = CareersSlugRouteImport.update({
   id: '/careers/$slug',
   path: '/careers/$slug',
@@ -812,9 +804,9 @@ const AuthenticatedAtsIndexRoute = AuthenticatedAtsIndexRouteImport.update({
   path: '/ats/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
-  id: '/lovable/email/suppression',
-  path: '/lovable/email/suppression',
+const LovableEmailEventsRoute = LovableEmailEventsRouteImport.update({
+  id: '/lovable/email/events',
+  path: '/lovable/email/events',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAgentChatRoute = ApiAgentChatRouteImport.update({
@@ -1853,22 +1845,10 @@ const AuthenticatedatsCandidatesIndexRoute =
     path: '/candidates/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const LovableEmailTransactionalSendRoute =
-  LovableEmailTransactionalSendRouteImport.update({
-    id: '/lovable/email/transactional/send',
-    path: '/lovable/email/transactional/send',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const LovableEmailTransactionalPreviewRoute =
   LovableEmailTransactionalPreviewRouteImport.update({
     id: '/lovable/email/transactional/preview',
     path: '/lovable/email/transactional/preview',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableEmailQueueProcessRoute =
-  LovableEmailQueueProcessRouteImport.update({
-    id: '/lovable/email/queue/process',
-    path: '/lovable/email/queue/process',
     getParentRoute: () => rootRouteImport,
   } as any)
 const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
@@ -2616,7 +2596,6 @@ export interface FileRoutesByFullPath {
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
   '/careers/$slug': typeof CareersSlugRoute
-  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/interview/$token': typeof InterviewTokenRoute
   '/kb/$slug': typeof KbSlugRoute
   '/lp/$slug': typeof LpSlugRoute
@@ -2801,7 +2780,7 @@ export interface FileRoutesByFullPath {
   '/tickets/$id': typeof AuthenticatedTicketsIdRoute
   '/workspace/modules': typeof AuthenticatedWorkspaceModulesRoute
   '/api/agent/chat': typeof ApiAgentChatRoute
-  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
   '/ats/': typeof AuthenticatedAtsIndexRoute
   '/contracts/': typeof AuthenticatedContractsIndexRoute
   '/finance/': typeof AuthenticatedFinanceIndexRoute
@@ -2918,9 +2897,7 @@ export interface FileRoutesByFullPath {
   '/api/public/zapier/subscribe': typeof ApiPublicZapierSubscribeRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
-  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
-  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/candidates/': typeof AuthenticatedatsCandidatesIndexRoute
   '/hunting/': typeof AuthenticatedatsHuntingIndexRoute
   '/jobs/': typeof AuthenticatedatsJobsIndexRoute
@@ -2993,7 +2970,6 @@ export interface FileRoutesByTo {
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
   '/careers/$slug': typeof CareersSlugRoute
-  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/interview/$token': typeof InterviewTokenRoute
   '/kb/$slug': typeof KbSlugRoute
   '/lp/$slug': typeof LpSlugRoute
@@ -3177,7 +3153,7 @@ export interface FileRoutesByTo {
   '/tickets/$id': typeof AuthenticatedTicketsIdRoute
   '/workspace/modules': typeof AuthenticatedWorkspaceModulesRoute
   '/api/agent/chat': typeof ApiAgentChatRoute
-  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
   '/ats': typeof AuthenticatedAtsIndexRoute
   '/contracts': typeof AuthenticatedContractsIndexRoute
   '/finance': typeof AuthenticatedFinanceIndexRoute
@@ -3294,9 +3270,7 @@ export interface FileRoutesByTo {
   '/api/public/zapier/subscribe': typeof ApiPublicZapierSubscribeRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
-  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
-  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/candidates': typeof AuthenticatedatsCandidatesIndexRoute
   '/hunting': typeof AuthenticatedatsHuntingIndexRoute
   '/jobs': typeof AuthenticatedatsJobsIndexRoute
@@ -3376,7 +3350,6 @@ export interface FileRoutesById {
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
   '/careers/$slug': typeof CareersSlugRoute
-  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/interview/$token': typeof InterviewTokenRoute
   '/kb/$slug': typeof KbSlugRoute
   '/lp/$slug': typeof LpSlugRoute
@@ -3561,7 +3534,7 @@ export interface FileRoutesById {
   '/_authenticated/tickets/$id': typeof AuthenticatedTicketsIdRoute
   '/_authenticated/workspace/modules': typeof AuthenticatedWorkspaceModulesRoute
   '/api/agent/chat': typeof ApiAgentChatRoute
-  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
   '/_authenticated/ats/': typeof AuthenticatedAtsIndexRoute
   '/_authenticated/contracts/': typeof AuthenticatedContractsIndexRoute
   '/_authenticated/finance/': typeof AuthenticatedFinanceIndexRoute
@@ -3678,9 +3651,7 @@ export interface FileRoutesById {
   '/api/public/zapier/subscribe': typeof ApiPublicZapierSubscribeRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
-  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
-  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/_authenticated/(ats)/candidates/': typeof AuthenticatedatsCandidatesIndexRoute
   '/_authenticated/(ats)/hunting/': typeof AuthenticatedatsHuntingIndexRoute
   '/_authenticated/(ats)/jobs/': typeof AuthenticatedatsJobsIndexRoute
@@ -3760,7 +3731,6 @@ export interface FileRouteTypes {
     | '/accept-invite/$token'
     | '/book/$slug'
     | '/careers/$slug'
-    | '/email/unsubscribe'
     | '/interview/$token'
     | '/kb/$slug'
     | '/lp/$slug'
@@ -3945,7 +3915,7 @@ export interface FileRouteTypes {
     | '/tickets/$id'
     | '/workspace/modules'
     | '/api/agent/chat'
-    | '/lovable/email/suppression'
+    | '/lovable/email/events'
     | '/ats/'
     | '/contracts/'
     | '/finance/'
@@ -4062,9 +4032,7 @@ export interface FileRouteTypes {
     | '/api/public/zapier/subscribe'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
-    | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
-    | '/lovable/email/transactional/send'
     | '/candidates/'
     | '/hunting/'
     | '/jobs/'
@@ -4137,7 +4105,6 @@ export interface FileRouteTypes {
     | '/accept-invite/$token'
     | '/book/$slug'
     | '/careers/$slug'
-    | '/email/unsubscribe'
     | '/interview/$token'
     | '/kb/$slug'
     | '/lp/$slug'
@@ -4321,7 +4288,7 @@ export interface FileRouteTypes {
     | '/tickets/$id'
     | '/workspace/modules'
     | '/api/agent/chat'
-    | '/lovable/email/suppression'
+    | '/lovable/email/events'
     | '/ats'
     | '/contracts'
     | '/finance'
@@ -4438,9 +4405,7 @@ export interface FileRouteTypes {
     | '/api/public/zapier/subscribe'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
-    | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
-    | '/lovable/email/transactional/send'
     | '/candidates'
     | '/hunting'
     | '/jobs'
@@ -4519,7 +4484,6 @@ export interface FileRouteTypes {
     | '/accept-invite/$token'
     | '/book/$slug'
     | '/careers/$slug'
-    | '/email/unsubscribe'
     | '/interview/$token'
     | '/kb/$slug'
     | '/lp/$slug'
@@ -4704,7 +4668,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tickets/$id'
     | '/_authenticated/workspace/modules'
     | '/api/agent/chat'
-    | '/lovable/email/suppression'
+    | '/lovable/email/events'
     | '/_authenticated/ats/'
     | '/_authenticated/contracts/'
     | '/_authenticated/finance/'
@@ -4821,9 +4785,7 @@ export interface FileRouteTypes {
     | '/api/public/zapier/subscribe'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
-    | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
-    | '/lovable/email/transactional/send'
     | '/_authenticated/(ats)/candidates/'
     | '/_authenticated/(ats)/hunting/'
     | '/_authenticated/(ats)/jobs/'
@@ -4876,7 +4838,6 @@ export interface RootRouteChildren {
   AcceptInviteTokenRoute: typeof AcceptInviteTokenRoute
   BookSlugRoute: typeof BookSlugRoute
   CareersSlugRoute: typeof CareersSlugRoute
-  EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   InterviewTokenRoute: typeof InterviewTokenRoute
   KbSlugRoute: typeof KbSlugRoute
   LpSlugRoute: typeof LpSlugRoute
@@ -4897,7 +4858,7 @@ export interface RootRouteChildren {
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiAgentChatRoute: typeof ApiAgentChatRoute
-  LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  LovableEmailEventsRoute: typeof LovableEmailEventsRoute
   ApiPublicBankingInterWebhookRoute: typeof ApiPublicBankingInterWebhookRoute
   ApiPublicBookingSlugRoute: typeof ApiPublicBookingSlugRouteWithChildren
   ApiPublicFilesTokenRoute: typeof ApiPublicFilesTokenRoute
@@ -4965,9 +4926,7 @@ export interface RootRouteChildren {
   ApiPublicZapierSubscribeRoute: typeof ApiPublicZapierSubscribeRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
-  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
-  LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
   ApiPublicEmailClickMessageIdRoute: typeof ApiPublicEmailClickMessageIdRoute
   ApiPublicEmailPixelMessageIdRoute: typeof ApiPublicEmailPixelMessageIdRoute
   ApiPublicEmailUnsubscribeTokenRoute: typeof ApiPublicEmailUnsubscribeTokenRoute
@@ -5198,13 +5157,6 @@ declare module '@tanstack/react-router' {
       path: '/interview/$token'
       fullPath: '/interview/$token'
       preLoaderRoute: typeof InterviewTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/email/unsubscribe': {
-      id: '/email/unsubscribe'
-      path: '/email/unsubscribe'
-      fullPath: '/email/unsubscribe'
-      preLoaderRoute: typeof EmailUnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/careers/$slug': {
@@ -5543,11 +5495,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAtsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/lovable/email/suppression': {
-      id: '/lovable/email/suppression'
-      path: '/lovable/email/suppression'
-      fullPath: '/lovable/email/suppression'
-      preLoaderRoute: typeof LovableEmailSuppressionRouteImport
+    '/lovable/email/events': {
+      id: '/lovable/email/events'
+      path: '/lovable/email/events'
+      fullPath: '/lovable/email/events'
+      preLoaderRoute: typeof LovableEmailEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/agent/chat': {
@@ -6782,25 +6734,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedatsCandidatesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/lovable/email/transactional/send': {
-      id: '/lovable/email/transactional/send'
-      path: '/lovable/email/transactional/send'
-      fullPath: '/lovable/email/transactional/send'
-      preLoaderRoute: typeof LovableEmailTransactionalSendRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/lovable/email/transactional/preview': {
       id: '/lovable/email/transactional/preview'
       path: '/lovable/email/transactional/preview'
       fullPath: '/lovable/email/transactional/preview'
       preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/email/queue/process': {
-      id: '/lovable/email/queue/process'
-      path: '/lovable/email/queue/process'
-      fullPath: '/lovable/email/queue/process'
-      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lovable/email/auth/webhook': {
@@ -8505,7 +8443,6 @@ const rootRouteChildren: RootRouteChildren = {
   AcceptInviteTokenRoute: AcceptInviteTokenRoute,
   BookSlugRoute: BookSlugRoute,
   CareersSlugRoute: CareersSlugRoute,
-  EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   InterviewTokenRoute: InterviewTokenRoute,
   KbSlugRoute: KbSlugRoute,
   LpSlugRoute: LpSlugRoute,
@@ -8526,7 +8463,7 @@ const rootRouteChildren: RootRouteChildren = {
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiAgentChatRoute: ApiAgentChatRoute,
-  LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  LovableEmailEventsRoute: LovableEmailEventsRoute,
   ApiPublicBankingInterWebhookRoute: ApiPublicBankingInterWebhookRoute,
   ApiPublicBookingSlugRoute: ApiPublicBookingSlugRouteWithChildren,
   ApiPublicFilesTokenRoute: ApiPublicFilesTokenRoute,
@@ -8605,9 +8542,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicZapierSubscribeRoute: ApiPublicZapierSubscribeRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
-  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
-  LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
   ApiPublicEmailClickMessageIdRoute: ApiPublicEmailClickMessageIdRoute,
   ApiPublicEmailPixelMessageIdRoute: ApiPublicEmailPixelMessageIdRoute,
   ApiPublicEmailUnsubscribeTokenRoute: ApiPublicEmailUnsubscribeTokenRoute,
