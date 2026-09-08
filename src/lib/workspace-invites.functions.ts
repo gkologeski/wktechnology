@@ -89,7 +89,10 @@ async function sendWorkspaceInviteEmail(args: {
         text,
         purpose: "transactional",
         label: templateName,
-        idempotency_key: `workspace-invite:${args.inviteId}`,
+        // Inclui um bucket de minuto para que reenvios manuais gerem uma nova
+        // entrega (a chave fixa por convite fazia o provedor tratar como duplicata),
+        // mantendo proteção contra duplo clique dentro do mesmo minuto.
+        idempotency_key: `workspace-invite:${args.inviteId}:${Math.floor(Date.now() / 60000)}`,
         message_id: messageId,
         unsubscribe_token: unsubscribeToken,
       },

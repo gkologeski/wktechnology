@@ -21,11 +21,11 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DpaRouteImport } from './routes/dpa'
-import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as KbIndexRouteImport } from './routes/kb.index'
 import { Route as CareersIndexRouteImport } from './routes/careers.index'
+import { Route as AcceptInviteIndexRouteImport } from './routes/accept-invite.index'
 import { Route as WidgetWorkspaceIdRouteImport } from './routes/widget.$workspaceId'
 import { Route as WaSlugRouteImport } from './routes/wa.$slug'
 import { Route as VerifyHashRouteImport } from './routes/verify.$hash'
@@ -269,6 +269,8 @@ import { Route as AuthenticatedatsCandidatesIndexRouteImport } from './routes/_a
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
+import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicZapierSubscribeRouteImport } from './routes/api/public/zapier/subscribe'
 import { Route as ApiPublicWidgetSessionRouteImport } from './routes/api/public/widget/session'
 import { Route as ApiPublicWidgetScriptRouteImport } from './routes/api/public/widget/script'
@@ -449,11 +451,6 @@ const DpaRoute = DpaRouteImport.update({
   path: '/dpa',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AcceptInviteRoute = AcceptInviteRouteImport.update({
-  id: '/accept-invite',
-  path: '/accept-invite',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -471,6 +468,11 @@ const KbIndexRoute = KbIndexRouteImport.update({
 const CareersIndexRoute = CareersIndexRouteImport.update({
   id: '/careers/',
   path: '/careers/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AcceptInviteIndexRoute = AcceptInviteIndexRouteImport.update({
+  id: '/accept-invite/',
+  path: '/accept-invite/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WidgetWorkspaceIdRoute = WidgetWorkspaceIdRouteImport.update({
@@ -559,9 +561,9 @@ const BookSlugRoute = BookSlugRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AcceptInviteTokenRoute = AcceptInviteTokenRouteImport.update({
-  id: '/$token',
-  path: '/$token',
-  getParentRoute: () => AcceptInviteRoute,
+  id: '/accept-invite/$token',
+  path: '/accept-invite/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedTicketsRoute = AuthenticatedTicketsRouteImport.update({
   id: '/tickets',
@@ -1869,6 +1871,16 @@ const LovableEmailQueueProcessRoute =
     path: '/lovable/email/queue/process',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
+  id: '/lovable/email/auth/webhook',
+  path: '/lovable/email/auth/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
+  id: '/lovable/email/auth/preview',
+  path: '/lovable/email/auth/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicZapierSubscribeRoute =
   ApiPublicZapierSubscribeRouteImport.update({
     id: '/api/public/zapier/subscribe',
@@ -2560,7 +2572,6 @@ const ApiPublicV1AtsApplicationsIdHireRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/accept-invite': typeof AcceptInviteRouteWithChildren
   '/dpa': typeof DpaRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
@@ -2620,6 +2631,7 @@ export interface FileRoutesByFullPath {
   '/verify/$hash': typeof VerifyHashRoute
   '/wa/$slug': typeof WaSlugRoute
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
+  '/accept-invite/': typeof AcceptInviteIndexRoute
   '/careers/': typeof CareersIndexRoute
   '/kb/': typeof KbIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -2904,6 +2916,8 @@ export interface FileRoutesByFullPath {
   '/api/public/widget/script': typeof ApiPublicWidgetScriptRoute
   '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
   '/api/public/zapier/subscribe': typeof ApiPublicZapierSubscribeRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -2940,7 +2954,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/accept-invite': typeof AcceptInviteRouteWithChildren
   '/dpa': typeof DpaRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
@@ -2995,6 +3008,7 @@ export interface FileRoutesByTo {
   '/verify/$hash': typeof VerifyHashRoute
   '/wa/$slug': typeof WaSlugRoute
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
+  '/accept-invite': typeof AcceptInviteIndexRoute
   '/careers': typeof CareersIndexRoute
   '/kb': typeof KbIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -3278,6 +3292,8 @@ export interface FileRoutesByTo {
   '/api/public/widget/script': typeof ApiPublicWidgetScriptRoute
   '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
   '/api/public/zapier/subscribe': typeof ApiPublicZapierSubscribeRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -3316,7 +3332,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
-  '/accept-invite': typeof AcceptInviteRouteWithChildren
   '/dpa': typeof DpaRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
@@ -3376,6 +3391,7 @@ export interface FileRoutesById {
   '/verify/$hash': typeof VerifyHashRoute
   '/wa/$slug': typeof WaSlugRoute
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
+  '/accept-invite/': typeof AcceptInviteIndexRoute
   '/careers/': typeof CareersIndexRoute
   '/kb/': typeof KbIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -3660,6 +3676,8 @@ export interface FileRoutesById {
   '/api/public/widget/script': typeof ApiPublicWidgetScriptRoute
   '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
   '/api/public/zapier/subscribe': typeof ApiPublicZapierSubscribeRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -3698,7 +3716,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/accept-invite'
     | '/dpa'
     | '/login'
     | '/mcp'
@@ -3758,6 +3775,7 @@ export interface FileRouteTypes {
     | '/verify/$hash'
     | '/wa/$slug'
     | '/widget/$workspaceId'
+    | '/accept-invite/'
     | '/careers/'
     | '/kb/'
     | '/.lovable/oauth/consent'
@@ -4042,6 +4060,8 @@ export interface FileRouteTypes {
     | '/api/public/widget/script'
     | '/api/public/widget/session'
     | '/api/public/zapier/subscribe'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -4078,7 +4098,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/accept-invite'
     | '/dpa'
     | '/login'
     | '/mcp'
@@ -4133,6 +4152,7 @@ export interface FileRouteTypes {
     | '/verify/$hash'
     | '/wa/$slug'
     | '/widget/$workspaceId'
+    | '/accept-invite'
     | '/careers'
     | '/kb'
     | '/.lovable/oauth/consent'
@@ -4416,6 +4436,8 @@ export interface FileRouteTypes {
     | '/api/public/widget/script'
     | '/api/public/widget/session'
     | '/api/public/zapier/subscribe'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -4453,7 +4475,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
-    | '/accept-invite'
     | '/dpa'
     | '/login'
     | '/mcp'
@@ -4513,6 +4534,7 @@ export interface FileRouteTypes {
     | '/verify/$hash'
     | '/wa/$slug'
     | '/widget/$workspaceId'
+    | '/accept-invite/'
     | '/careers/'
     | '/kb/'
     | '/.lovable/oauth/consent'
@@ -4797,6 +4819,8 @@ export interface FileRouteTypes {
     | '/api/public/widget/script'
     | '/api/public/widget/session'
     | '/api/public/zapier/subscribe'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -4835,7 +4859,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
-  AcceptInviteRoute: typeof AcceptInviteRouteWithChildren
   DpaRoute: typeof DpaRoute
   LoginRoute: typeof LoginRoute
   McpRoute: typeof McpRoute
@@ -4850,6 +4873,7 @@ export interface RootRouteChildren {
   UnsubscribeRoute: typeof UnsubscribeRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  AcceptInviteTokenRoute: typeof AcceptInviteTokenRoute
   BookSlugRoute: typeof BookSlugRoute
   CareersSlugRoute: typeof CareersSlugRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
@@ -4867,6 +4891,7 @@ export interface RootRouteChildren {
   VerifyHashRoute: typeof VerifyHashRoute
   WaSlugRoute: typeof WaSlugRoute
   WidgetWorkspaceIdRoute: typeof WidgetWorkspaceIdRoute
+  AcceptInviteIndexRoute: typeof AcceptInviteIndexRoute
   CareersIndexRoute: typeof CareersIndexRoute
   KbIndexRoute: typeof KbIndexRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
@@ -4938,6 +4963,8 @@ export interface RootRouteChildren {
   ApiPublicWidgetScriptRoute: typeof ApiPublicWidgetScriptRoute
   ApiPublicWidgetSessionRoute: typeof ApiPublicWidgetSessionRoute
   ApiPublicZapierSubscribeRoute: typeof ApiPublicZapierSubscribeRoute
+  LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
+  LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
   LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
@@ -5040,13 +5067,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DpaRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/accept-invite': {
-      id: '/accept-invite'
-      path: '/accept-invite'
-      fullPath: '/accept-invite'
-      preLoaderRoute: typeof AcceptInviteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
@@ -5073,6 +5093,13 @@ declare module '@tanstack/react-router' {
       path: '/careers'
       fullPath: '/careers/'
       preLoaderRoute: typeof CareersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accept-invite/': {
+      id: '/accept-invite/'
+      path: '/accept-invite'
+      fullPath: '/accept-invite/'
+      preLoaderRoute: typeof AcceptInviteIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/widget/$workspaceId': {
@@ -5196,10 +5223,10 @@ declare module '@tanstack/react-router' {
     }
     '/accept-invite/$token': {
       id: '/accept-invite/$token'
-      path: '/$token'
+      path: '/accept-invite/$token'
       fullPath: '/accept-invite/$token'
       preLoaderRoute: typeof AcceptInviteTokenRouteImport
-      parentRoute: typeof AcceptInviteRoute
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/tickets': {
       id: '/_authenticated/tickets'
@@ -6774,6 +6801,20 @@ declare module '@tanstack/react-router' {
       path: '/lovable/email/queue/process'
       fullPath: '/lovable/email/queue/process'
       preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/auth/webhook': {
+      id: '/lovable/email/auth/webhook'
+      path: '/lovable/email/auth/webhook'
+      fullPath: '/lovable/email/auth/webhook'
+      preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/auth/preview': {
+      id: '/lovable/email/auth/preview'
+      path: '/lovable/email/auth/preview'
+      fullPath: '/lovable/email/auth/preview'
+      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/zapier/subscribe': {
@@ -8371,18 +8412,6 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
-interface AcceptInviteRouteChildren {
-  AcceptInviteTokenRoute: typeof AcceptInviteTokenRoute
-}
-
-const AcceptInviteRouteChildren: AcceptInviteRouteChildren = {
-  AcceptInviteTokenRoute: AcceptInviteTokenRoute,
-}
-
-const AcceptInviteRouteWithChildren = AcceptInviteRoute._addFileChildren(
-  AcceptInviteRouteChildren,
-)
-
 interface ApiPublicBookingSlugRouteChildren {
   ApiPublicBookingSlugSubmitRoute: typeof ApiPublicBookingSlugSubmitRoute
 }
@@ -8458,7 +8487,6 @@ const ApiPublicV1AtsApplicationsRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
-  AcceptInviteRoute: AcceptInviteRouteWithChildren,
   DpaRoute: DpaRoute,
   LoginRoute: LoginRoute,
   McpRoute: McpRoute,
@@ -8474,6 +8502,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
+  AcceptInviteTokenRoute: AcceptInviteTokenRoute,
   BookSlugRoute: BookSlugRoute,
   CareersSlugRoute: CareersSlugRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
@@ -8491,6 +8520,7 @@ const rootRouteChildren: RootRouteChildren = {
   VerifyHashRoute: VerifyHashRoute,
   WaSlugRoute: WaSlugRoute,
   WidgetWorkspaceIdRoute: WidgetWorkspaceIdRoute,
+  AcceptInviteIndexRoute: AcceptInviteIndexRoute,
   CareersIndexRoute: CareersIndexRoute,
   KbIndexRoute: KbIndexRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
@@ -8573,6 +8603,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicWidgetScriptRoute: ApiPublicWidgetScriptRoute,
   ApiPublicWidgetSessionRoute: ApiPublicWidgetSessionRoute,
   ApiPublicZapierSubscribeRoute: ApiPublicZapierSubscribeRoute,
+  LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
+  LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
   LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
