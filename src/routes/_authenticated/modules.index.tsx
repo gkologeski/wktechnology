@@ -24,6 +24,7 @@ import { listWorkspaceModules, type WorkspaceModuleRow } from "@/lib/workspace/m
 import { buildModuleUrl } from "@/lib/hosts";
 import { MODULES, type ModuleId } from "@/lib/modules/registry";
 import { setStoredActiveModule } from "@/lib/modules/active-module";
+import { useModuleAccess } from "@/hooks/use-module-access";
 import { PageHeader, SectionHeader, MetricCard, StatusBadge } from "@/components/techhire/ui";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -72,6 +73,7 @@ function openModule(moduleId: ModuleId) {
 
 function ModulesGrid() {
   const listFn = useServerFn(listWorkspaceModules);
+  const { canAccessModule } = useModuleAccess();
   const { data, isLoading, isError } = useQuery({
     queryKey: ["home-workspace-modules"],
     queryFn: () => listFn(),
@@ -109,13 +111,15 @@ function ModulesGrid() {
           : m.is_contracted
             ? "Disponível"
             : "Não contratado";
-        const canEnter = m.enabled && isRegisteredModule;
+        const hasModuleAccess = canAccessModule(m.id);
+        const canEnter = m.enabled && isRegisteredModule && hasModuleAccess;
         return (
           <Card
             key={m.id}
             className={cn(
               "h-full flex flex-col transition-all",
               canEnter && "hover:border-primary/40 hover:shadow-sm",
+              !hasModuleAccess && "opacity-60",
             )}
           >
             <CardHeader>
@@ -148,6 +152,8 @@ function ModulesGrid() {
                   Entrar
                   <ArrowRight className="ml-1 h-3.5 w-3.5" />
                 </Button>
+              ) : !hasModuleAccess ? (
+                <span className="text-xs text-muted-foreground">Sem acesso</span>
               ) : (
                 <Button size="sm" variant="outline" asChild>
                   <Link to="/workspace/modules">Configurar</Link>

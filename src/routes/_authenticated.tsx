@@ -6,8 +6,12 @@ import { CrossModuleBanner } from "@/components/cross-module-banner";
 import { useAuth } from "@/lib/auth";
 import { useMyRole } from "@/lib/use-my-role";
 import { useModuleLicenses } from "@/hooks/use-module-licenses";
-import { detectModuleFromPath } from "@/lib/modules/active-module";
+import { useModuleAccess } from "@/hooks/use-module-access";
+import { detectModuleFromPath, setStoredActiveModule } from "@/lib/modules/active-module";
+import { MODULES } from "@/lib/modules/registry";
+import { isWorkspacePathname } from "@/lib/menu-config-erp";
 import { ShieldAlert } from "lucide-react";
+
 import { BugReportButton } from "@/components/bug-report/bug-report-button";
 import { ChatTrigger } from "@/components/chat/chat-trigger";
 import { NotificationsBell } from "@/components/notifications-bell";
@@ -91,10 +95,27 @@ function AuthenticatedLayout() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { isAdmin, isManager, loading: roleLoading } = useMyRole();
   const { isLicensed } = useModuleLicenses();
+  const { canAccessModule, soleModule, loading: accessLoading } = useModuleAccess();
 
   useEffect(() => {
     if (!loading && !user) router.navigate({ to: "/login" });
   }, [user, loading, router]);
+
+  // Usuário com um único módulo disponível entra direto nele.
+  useEffect(() => {
+    if (accessLoading || !soleModule) return;
+    const current = detectModuleFromPath(path);
+    if (current === soleModule) return;
+    setStoredActiveModule(soleModule);
+    if (!current && !isWorkspacePathname(path)) return;
+    if (current && current !== soleModule) {
+      router.navigate({ to: MODULES[soleModule].defaultRoute });
+      return;
+    }
+    if (isWorkspacePathname(path)) {
+      router.navigate({ to: MODULES[soleModule].defaultRoute });
+    }
+  }, [accessLoading, soleModule, path, router]);
 
   if (loading || !user) {
     return (
@@ -110,7 +131,8 @@ function AuthenticatedLayout() {
 
   const pathModule = detectModuleFromPath(path);
   const licenseBlocked = !!pathModule && !isLicensed(pathModule);
-  const blocked = roleBlocked || licenseBlocked;
+  const moduleBlocked = !accessLoading && !!pathModule && !canAccessModule(pathModule);
+  const blocked = roleBlocked || licenseBlocked || moduleBlocked;
 
   return (
     <SidebarProvider>
@@ -139,12 +161,18 @@ function AuthenticatedLayout() {
               <div className="max-w-md mx-auto mt-24 text-center space-y-3 border rounded-lg p-8 bg-background">
                 <ShieldAlert className="h-10 w-10 mx-auto text-muted-foreground" />
                 <h2 className="text-lg font-semibold">
-                  {licenseBlocked && !roleBlocked ? "Módulo não contratado" : "Acesso restrito"}
+                  {licenseBlocked && !roleBlocked
+                    ? "Módulo não contratado"
+                    : moduleBlocked && !roleBlocked
+                      ? "Módulo sem acesso"
+                      : "Acesso restrito"}
                 </h2>
                 <p className="text-sm text-muted-foreground">
                   {licenseBlocked && !roleBlocked
                     ? "Este módulo não está habilitado para o seu workspace. Um administrador pode contratá-lo em Módulos do workspace."
-                    : "Você não tem permissão para acessar esta tela. Fale com um administrador do workspace."}
+                    : moduleBlocked && !roleBlocked
+                      ? "Você não tem acesso a este módulo. Fale com um administrador do workspace."
+                      : "Você não tem permissão para acessar esta tela. Fale com um administrador do workspace."}
                 </p>
               </div>
             ) : (
