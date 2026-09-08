@@ -9,6 +9,9 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
+// Nota: o cronômetro grava apenas duração (não horário de início/fim do dia),
+// para não colidir com a validação de sobreposição dos apontamentos manuais.
+
 // ============= TIMER =============
 
 export const getRunningTimer = createServerFn({ method: "POST" })
@@ -61,6 +64,7 @@ export const startTimer = createServerFn({ method: "POST" })
         .update({
           stopped_at: now.toISOString(),
           hours: Number(hours.toFixed(2)),
+          duration_minutes: Math.max(0, Math.round(hours * 60)),
           entry_date: now.toISOString().slice(0, 10),
         })
         .eq("id", running.id);
@@ -79,6 +83,8 @@ export const startTimer = createServerFn({ method: "POST" })
         hourly_rate: data.hourlyRate ?? null,
         started_at: nowIso,
         stopped_at: null,
+        source: "timer",
+        status: "draft",
         entry_date: nowIso.slice(0, 10),
         hours: null,
       })
@@ -123,6 +129,7 @@ export const stopTimer = createServerFn({ method: "POST" })
       .update({
         stopped_at: now.toISOString(),
         hours: Number(hours.toFixed(2)),
+        duration_minutes: Math.max(0, Math.round(hours * 60)),
         entry_date: now.toISOString().slice(0, 10),
       })
       .eq("id", entry.id)
