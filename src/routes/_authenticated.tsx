@@ -9,7 +9,7 @@ import { useModuleLicenses } from "@/hooks/use-module-licenses";
 import { useModuleAccess } from "@/hooks/use-module-access";
 import { detectModuleFromPath, setStoredActiveModule } from "@/lib/modules/active-module";
 import { MODULES } from "@/lib/modules/registry";
-import { isWorkspacePathname } from "@/lib/menu-config-erp";
+
 import { ShieldAlert } from "lucide-react";
 
 import { BugReportButton } from "@/components/bug-report/bug-report-button";
@@ -102,17 +102,19 @@ function AuthenticatedLayout() {
   }, [user, loading, router]);
 
   // Usuário com um único módulo disponível entra direto nele.
+  // Só redireciona a partir da Home do ERP ou de um módulo sem acesso — páginas
+  // neutras (conta, configurações pessoais, /modules, arquivos) seguem acessíveis.
   useEffect(() => {
     if (accessLoading || !soleModule) return;
     const current = detectModuleFromPath(path);
     if (current === soleModule) return;
     setStoredActiveModule(soleModule);
-    if (!current && !isWorkspacePathname(path)) return;
+    const isErpHome = path === "/home" || path === "/home/";
     if (current && current !== soleModule) {
       router.navigate({ to: MODULES[soleModule].defaultRoute });
       return;
     }
-    if (isWorkspacePathname(path)) {
+    if (!current && isErpHome) {
       router.navigate({ to: MODULES[soleModule].defaultRoute });
     }
   }, [accessLoading, soleModule, path, router]);

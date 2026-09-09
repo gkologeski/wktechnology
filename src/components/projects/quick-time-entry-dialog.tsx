@@ -1,6 +1,6 @@
 // Apontamento rápido de horas do TechProjects.
 // Objetivo de UX: registrar um apontamento em menos de 20 segundos.
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -79,8 +79,20 @@ export function QuickTimeEntryDialog({
   });
   const projects = projectsQuery.data?.projects ?? [];
 
+  // Só reinicializa o formulário na ABERTURA do modal. Referências novas de
+  // `draft` (re-render do pai por refetch) não devem apagar o que o usuário digitou.
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+  const wasOpen = useRef(false);
+
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      wasOpen.current = false;
+      return;
+    }
+    if (wasOpen.current) return;
+    wasOpen.current = true;
+    const draft = draftRef.current;
     setProjectId(draft?.projectId ?? "");
     setTaskId(draft?.taskId ?? "");
     setTaskTitle("");
@@ -89,7 +101,7 @@ export function QuickTimeEntryDialog({
     setEndTime(hhmm(draft?.endTime) || "10:00");
     setDescription(draft?.description ?? "");
     setBillable(draft?.billable ?? true);
-  }, [open, draft]);
+  }, [open]);
 
   // Projeto único: seleciona automaticamente.
   useEffect(() => {
