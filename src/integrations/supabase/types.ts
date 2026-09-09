@@ -19941,15 +19941,6 @@ export type Database = {
       current_user_workspaces: { Args: never; Returns: string[] }
       dashboard_metrics: { Args: never; Returns: Json }
       default_workspace_for_user: { Args: { _user: string }; Returns: string }
-      delete_email: {
-        Args: { message_id: number; queue_name: string }
-        Returns: boolean
-      }
-      email_queue_dispatch: { Args: never; Returns: undefined }
-      enqueue_email: {
-        Args: { payload: Json; queue_name: string }
-        Returns: number
-      }
       ensure_silver_medalist_pool: { Args: { _owner: string }; Returns: string }
       esign_verify_hash: {
         Args: { _hash: string }
@@ -20079,15 +20070,6 @@ export type Database = {
         }
         Returns: number
       }
-      move_to_dlq: {
-        Args: {
-          dlq_name: string
-          message_id: number
-          payload: Json
-          source_queue: string
-        }
-        Returns: number
-      }
       people_document_derive_status: {
         Args: { _expires: string }
         Returns: Database["public"]["Enums"]["people_doc_status"]
@@ -20117,14 +20099,6 @@ export type Database = {
       purge_workspace: {
         Args: { _actor: string; _confirm_name: string; _workspace: string }
         Returns: undefined
-      }
-      read_email_batch: {
-        Args: { batch_size: number; queue_name: string; vt: number }
-        Returns: {
-          message: Json
-          msg_id: number
-          read_ct: number
-        }[]
       }
       recalc_deal_value: { Args: { _deal_id: string }; Returns: undefined }
       recalc_financial_entry: {
