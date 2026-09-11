@@ -1,48 +1,64 @@
-# Esconder globalmente o que o usuário não tem acesso
+# Conferência das datas de criação, ganho e perda vindas do HubSpot
 
-## Problema (verificado no código)
+## O que a verificação no banco mostrou
 
-- `canSee()` em `src/lib/menu-config.ts` libera qualquer item que não declare papel nem permissão: `if (need === undefined) return true`. Ou seja, o menu **falha aberto**.
-- Os menus de TechHire, TechContracts, Core (Cadastros) e ERP Home (`menu-config-ats.ts`, `menu-config-contracts.ts`, `menu-config-core.ts`, `menu-config-erp.ts`) não declaram nenhuma permissão — por isso aparecem inteiros para o usuário `teste@`.
-- O menu lateral é montado pelo módulo ativo sem verificar acesso ao módulo, então o usuário vê o menu do TechProjects mesmo com "Módulo sem acesso" (print 3).
-- Outros pontos de entrada não checam nada: menu Workspace, Configurações, botão "+", busca global, cartões "Abrir módulo" da Home e abas internas (ex.: Prospecção, print 1).
+Boa notícia: no geral **as datas são as originais do HubSpot**, não datas de migração.
 
-## O que será feito
+| Entidade | Registros | Com dado original do HubSpot | Divergências de data de criação |
+| --- | --- | --- | --- |
+| Negócios | 1.785 | 1.764 | 0 |
+| Contatos | 51.095 | 50.811 | 0 |
+| Empresas | 32.015 | 31.906 | 0 |
+| Leads | 5.885 | 5.698 | 0 |
 
-Decisão adotada: **ocultar** tudo que o usuário não pode acessar (sem cadeado no menu lateral). O cadeado permanece apenas no seletor de módulos e nos cartões de módulo, onde faz sentido mostrar que o módulo existe mas não está liberado.
+Atividades também têm datas antigas reais (a mais antiga é de agosto de 2022).
 
-### 1. Regra de visibilidade "fail-closed"
+O que provavelmente causou a impressão: **1.322 negócios aparecem criados em 31/05/2024**.
+Essa data vem do próprio HubSpot (é a data de criação registrada lá, provavelmente quando a
+base foi carregada no HubSpot), então nada foi perdido no nosso lado — só não é a data real
+da primeira conversa daquele negócio. Não temos outra fonte para recuperar isso.
 
-- `canSee()` passa a exigir declaração explícita: item sem papel e sem permissão só aparece para quem tem acesso ao módulo dono do item; itens de área restrita exigem a permissão declarada.
-- Administradores do workspace e admins de plataforma continuam vendo tudo.
-- Enquanto as permissões carregam, o menu não pisca itens proibidos (renderiza esqueleto).
+## Onde há realmente erro (poucos casos, em ganho/perda)
 
-### 2. Cobertura de permissões nos menus faltantes
+Negócios ganhos: 424 | Negócios perdidos: 1.290
 
-Declarar `permissionAny` em todos os itens de TechHire, TechContracts, Cadastros (Core) e ERP Home, usando as chaves já existentes no catálogo (`techhire.*`, `techcontracts.*`, `techsales.catalog.*`, `system.*`). Nenhuma chave nova é criada sem existir no catálogo; onde faltar chave, o item passa a seguir o acesso ao módulo.
+- **11 negócios** têm data de ganho/perda gravada em agosto/setembro de 2026 (momento em que
+  a etapa foi mexida dentro do TechERP) em vez da data original do HubSpot. Exemplos:
+  um perdido em 22/10/2025 aparece como 29/08/2026; um ganho em 30/04/2026 aparece como 02/09/2026.
+- **5 negócios perdidos** estão sem data de perda.
+- **15 negócios** fechados não têm data de fechamento no dado original do HubSpot
+  (12 perdidos, 3 ganhos) — para esses não existe fonte para corrigir.
 
-### 3. Menu lateral respeita acesso ao módulo
+Efeito prático: os gráficos e KPIs de fechamento por período jogam esses 11 negócios para
+agosto/setembro de 2026 e ignoram os 5 sem data.
 
-O menu do módulo só é montado quando o usuário tem acesso àquele módulo. Sem acesso, o menu mostra apenas o que ele realmente pode abrir (nada do módulo bloqueado), evitando a situação do print 3.
+## O que propõo fazer
 
-### 4. Outros pontos de entrada (todos os selecionados)
-
-- **Menu Workspace, Configurações e botão "+"**: cada item passa pelo mesmo filtro; grupos vazios desaparecem e o botão inteiro só aparece se sobrar alguma ação.
-- **Busca global (⌘K) e comandos**: resultados e comandos de navegação filtrados por permissão/módulo.
-- **Home / painel de módulos**: cartões de módulos sem acesso ficam esmaecidos com cadeado, sem "Abrir módulo" e sem métricas.
-- **Abas internas**: abas sem permissão deixam de ser renderizadas; se nenhuma aba sobrar, a tela nem aparece no menu (como já ocorre em Prospecção).
-
-### 5. Fonte única de decisão
-
-Um único hook de acesso (`useModuleAccess` + permissões granulares) alimenta menu lateral, topo, busca, home, abas e o gate de rota, para não haver divergência entre "vê" e "consegue entrar". O gate de rota continua como última barreira, e o banco (RLS) permanece intocado.
+1. **Corrigir as 11 datas divergentes**, gravando a data de fechamento original do HubSpot
+   na data de ganho (ganhos) ou de perda (perdidos).
+2. **Preencher a data de perda dos 5 negócios**, quando o HubSpot tiver a informação;
+   os que não tiverem ficam sem data (não vou inventar data).
+3. **Evitar a recorrência**: hoje, quando alguém muda a etapa de um negócio importado, o
+   sistema sobrescreve a data de fechamento com a data de hoje. Vou passar a preservar a
+   data original quando o negócio já tiver uma data de fechamento vinda do HubSpot.
+4. Relatar ao final quantos registros foram corrigidos e quantos continuam sem data por
+   falta de dado de origem.
 
 ## Detalhes técnicos
 
-- Arquivos previstos: `src/lib/menu-config.ts` (assinatura de `canSee` + módulo dono por item), `menu-config-ats.ts`, `menu-config-contracts.ts`, `menu-config-core.ts`, `menu-config-erp.ts`, `menu-config-projects.ts`, `src/components/app-sidebar.tsx`, `settings-menu.tsx`, `quick-create-menu.tsx`, `workspace-menu.tsx`, `src/components/global-search/*`, painel de módulos da Home e `src/routes/_authenticated.tsx`.
-- `menu-config.test.ts` é estendido: um perfil só com `techprojects.*.own` não deve ver nenhum item de outros módulos, nem itens administrativos.
-- Sem migração, sem alteração de RLS, schema, autenticação ou regra de negócio. Nenhuma funcionalidade é removida para quem tem permissão.
-- Validação: `bun run typecheck`, `bun run lint`, `bun run test` e conferência no navegador autenticado com o usuário `teste@` e com um administrador (para garantir que o admin continua vendo tudo).
+- Migration de dados em `drizzle/migrations/` com dois `UPDATE` idempotentes sobre `deals`,
+  lendo `nullif(hs_raw->'properties'->>'closedate','')::timestamptz`:
+  - `stage = 'won'` → `closed_at`; `stage = 'lost'` → `lost_at`, apenas quando divergente
+    (comparação por minuto) ou nulo.
+  - Limpa `closed_at` residual em perdidos e `lost_at` residual em ganhos.
+- Ajuste na função `public.deals_set_closed_at()`: ao entrar em `won`/`lost`, usar a data do
+  HubSpot (`hs_raw->'properties'->>'closedate'`) como valor inicial quando existir, mantendo
+  `now()` para negócios criados no próprio TechERP e preservando valor informado pelo app.
+- Sem alteração de RLS, GRANTs, schema de outras tabelas ou telas.
+- Validação: `bun run typecheck`, `bun run lint`, `bun run test`, e reconferência das mesmas
+  contagens de divergência (devem ir a zero, exceto os 15 sem dado de origem).
 
-## Riscos
+## Fora de escopo
 
-- Regra fail-closed pode ocultar itens de usuários cujo papel não tenha nenhuma permissão declarada daquele módulo. Mitigação: admin/gestor irrestrito, testes por papel e checagem manual com um usuário comum antes de publicar.
+- Recuperar a data "real" dos 1.322 negócios criados em 31/05/2024 (não existe fonte).
+- Alterar datas de contatos, empresas, leads e atividades — estão corretas.
