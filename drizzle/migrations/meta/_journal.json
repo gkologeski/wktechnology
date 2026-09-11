@@ -64,6 +64,13 @@
       "when": 1788892412785,
       "tag": "0008_seed_time_tracker_job_role",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789170041821,
+      "tag": "0009_deals_closed_at_prefer_hubspot_date",
+      "breakpoints": true
     }
   ]
 }
