@@ -19940,6 +19940,7 @@ export type Database = {
       }
       current_user_workspaces: { Args: never; Returns: string[] }
       dashboard_metrics: { Args: never; Returns: Json }
+      deals_hs_close_date: { Args: { _hs_raw: Json }; Returns: string }
       default_workspace_for_user: { Args: { _user: string }; Returns: string }
       ensure_silver_medalist_pool: { Args: { _owner: string }; Returns: string }
       esign_verify_hash: {
