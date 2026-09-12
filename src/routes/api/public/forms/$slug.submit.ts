@@ -127,7 +127,12 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
               .eq("id", leadId)
               .maybeSingle();
             if (existing) {
-              const patch: Record<string, string> = {};
+              const patch: {
+                last_name?: string;
+                email?: string;
+                phone?: string;
+                company_name?: string;
+              } = {};
               if (!existing.last_name && lastName) patch.last_name = lastName;
               if (!existing.email && email) patch.email = email;
               if (!existing.phone && phone) patch.phone = phone;
