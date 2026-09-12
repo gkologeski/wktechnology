@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ensureLeadRelationsSafe } from "@/lib/leads/lead-relations";
+import { checkLeadDuplicate } from "@/lib/leads/lead-duplicate-check";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -110,40 +111,104 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
         const company = clean.company || clean.company_name || null;
 
         if (form.target === "lead") {
-          const { data: lead, error: lerr } = await supabaseAdmin
-            .from("leads")
-            .insert({
-              owner_id: form.owner_id,
-              first_name: firstName,
-              last_name: lastName,
-              email: email || null,
-              phone: phone || null,
-              company_name: company,
-              source: `form:${params.slug}`,
-              custom_fields: clean,
-            })
-            .select("id")
-            .single();
-          if (lerr) return Response.json({ error: lerr.message }, { status: 500, headers: cors });
-          leadId = lead.id;
+          // Visitante nunca deve ver erro interno de duplicidade: se o lead já
+          // existe, o envio é anexado a ele.
+          const dup = await checkLeadDuplicate(supabaseAdmin, {
+            workspaceId: form.workspace_id,
+            email: email || null,
+            phone: phone || null,
+          }).catch(() => null);
+
+          if (dup?.duplicate && dup.existingId) {
+            leadId = dup.existingId;
+            const { data: existing } = await supabaseAdmin
+              .from("leads")
+              .select("id, last_name, email, phone, company_name")
+              .eq("id", leadId)
+              .maybeSingle();
+            if (existing) {
+              const patch: {
+                last_name?: string;
+                email?: string;
+                phone?: string;
+                company_name?: string;
+              } = {};
+              if (!existing.last_name && lastName) patch.last_name = lastName;
+              if (!existing.email && email) patch.email = email;
+              if (!existing.phone && phone) patch.phone = phone;
+              if (!existing.company_name && company) patch.company_name = company;
+              if (Object.keys(patch).length > 0) {
+                const { error: uerr } = await supabaseAdmin
+                  .from("leads")
+                  .update(patch)
+                  .eq("id", leadId);
+                if (uerr) console.error("[forms.submit] lead update failed", uerr.message);
+              }
+            }
+          } else {
+            const { data: lead, error: lerr } = await supabaseAdmin
+              .from("leads")
+              .insert({
+                owner_id: form.owner_id,
+                first_name: firstName,
+                last_name: lastName,
+                email: email || null,
+                phone: phone || null,
+                company_name: company,
+                source: `form:${params.slug}`,
+                custom_fields: clean,
+              })
+              .select("id")
+              .single();
+            if (lerr || !lead) {
+              console.error("[forms.submit] lead insert failed", lerr?.message);
+              return Response.json(
+                { error: "Não foi possível enviar agora, tente novamente." },
+                { status: 500, headers: cors },
+              );
+            }
+            leadId = lead.id;
+          }
           // Garante empresa e contato vinculados ao lead
-          const rel = await ensureLeadRelationsSafe(supabaseAdmin, lead.id);
+          const rel = await ensureLeadRelationsSafe(supabaseAdmin, leadId);
           contactId = rel?.contactId ?? null;
         } else {
-          const { data: contact, error: cerr } = await supabaseAdmin
-            .from("contacts")
-            .insert({
-              owner_id: form.owner_id,
-              first_name: firstName,
-              last_name: lastName,
-              email: email || null,
-              phone: phone || null,
-              custom_fields: clean,
-            })
-            .select("id")
-            .single();
-          if (cerr) return Response.json({ error: cerr.message }, { status: 500, headers: cors });
-          contactId = contact.id;
+          // Reaproveita contato existente por e-mail/telefone no mesmo workspace
+          let existingContactId: string | null = null;
+          if (email || phone) {
+            let cq = supabaseAdmin
+              .from("contacts")
+              .select("id")
+              .eq("workspace_id", form.workspace_id)
+              .limit(1);
+            cq = email ? cq.ilike("email", email) : cq.eq("phone", phone!);
+            const { data: found } = await cq.maybeSingle();
+            existingContactId = found?.id ?? null;
+          }
+          if (existingContactId) {
+            contactId = existingContactId;
+          } else {
+            const { data: contact, error: cerr } = await supabaseAdmin
+              .from("contacts")
+              .insert({
+                owner_id: form.owner_id,
+                first_name: firstName,
+                last_name: lastName,
+                email: email || null,
+                phone: phone || null,
+                custom_fields: clean,
+              })
+              .select("id")
+              .single();
+            if (cerr || !contact) {
+              console.error("[forms.submit] contact insert failed", cerr?.message);
+              return Response.json(
+                { error: "Não foi possível enviar agora, tente novamente." },
+                { status: 500, headers: cors },
+              );
+            }
+            contactId = contact.id;
+          }
         }
 
         await supabaseAdmin.from("form_submissions").insert({
