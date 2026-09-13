@@ -440,9 +440,10 @@ function LeadsHubspotView() {
     queryFn: async () => {
       let q = supabase.from("leads").select("id", { count: "exact", head: true });
       q = applyFilters(q, true);
+      q = q.in("status", ["qualified", "disqualified"]);
       const { count, error } = await q;
       if (error) throw error;
-      return Math.max(0, (count ?? 0) - total);
+      return count ?? 0;
     },
   });
 
