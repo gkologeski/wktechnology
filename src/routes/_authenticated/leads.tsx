@@ -793,6 +793,27 @@ function LeadsHubspotView() {
             }
           />
 
+          {activeView === "open" && hiddenCount > 0 && (
+            <div className="flex flex-wrap items-center gap-2 border-b bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+              <span>
+                {hiddenCount === 1
+                  ? "1 lead qualificado/desqualificado está oculto nesta visão."
+                  : `${hiddenCount} leads qualificados/desqualificados estão ocultos nesta visão.`}
+              </span>
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0 text-xs"
+                onClick={() => {
+                  setActiveView("all");
+                  setActiveSavedId(null);
+                }}
+              >
+                Ver todos os leads
+              </Button>
+            </div>
+          )}
+
           {viewMode === "board" ? (
             <div className="min-h-0 flex-1 overflow-hidden p-3">
               {boardLoading && !boardColumns ? (
