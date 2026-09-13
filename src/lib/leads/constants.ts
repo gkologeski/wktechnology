@@ -23,13 +23,7 @@ export const STATUS_TONE: Record<string, { dot: string; bg: string; text: string
   },
 };
 
-export type ViewId =
-  | "all"
-  | "open"
-  | "mine"
-  | "unassigned"
-  | "new_week"
-  | "recent_submissions";
+export type ViewId = "all" | "open" | "mine" | "unassigned" | "new_week" | "recent_submissions";
 export const VIEWS: { id: ViewId; label: string }[] = [
   { id: "all", label: "Todos os leads" },
   { id: "open", label: "Abertos" },

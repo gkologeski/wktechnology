@@ -125,7 +125,9 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
             leadId = dup.existingId;
             const { data: existing } = await supabaseAdmin
               .from("leads")
-              .select("id, first_name, last_name, email, phone, company_name, assigned_to, owner_id")
+              .select(
+                "id, first_name, last_name, email, phone, company_name, assigned_to, owner_id",
+              )
               .eq("id", leadId)
               .maybeSingle();
             if (existing) {
