@@ -2,15 +2,29 @@
 // Fonte única para o troca-módulos, o gate de rotas e o painel de módulos.
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { supabase } from "@/integrations/supabase/client";
 import { getMyModuleAccess, type MyModuleAccess } from "@/lib/modules/module-access.functions";
 import type { ModuleId } from "@/lib/modules/registry";
+
+const NO_SESSION: MyModuleAccess = {
+  workspaceId: null,
+  licensed: [],
+  allowed: [],
+  unrestricted: true,
+};
 
 export function useModuleAccess() {
   const fn = useServerFn(getMyModuleAccess);
   const query = useQuery<MyModuleAccess>({
     queryKey: ["my-module-access"],
-    queryFn: () => fn(),
+    queryFn: async () => {
+      // Sem sessão (ex.: /login) a server fn protegida retornaria 401.
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) return NO_SESSION;
+      return await fn();
+    },
     staleTime: 5 * 60_000,
+    retry: false,
   });
 
   const data = query.data;
