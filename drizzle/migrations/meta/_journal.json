@@ -71,6 +71,13 @@
       "when": 1789170041821,
       "tag": "0009_deals_closed_at_prefer_hubspot_date",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1789263994594,
+      "tag": "0010_deals_closed_at_actual_date",
+      "breakpoints": true
     }
   ]
 }
