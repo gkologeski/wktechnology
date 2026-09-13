@@ -430,6 +430,23 @@ function LeadsHubspotView() {
   const total = result?.count ?? 0;
 
   /**
+   * Na visão "Abertos" os leads qualificados/desqualificados ficam de fora.
+   * Contamos quantos são para avisar o usuário, em vez de deixá-lo procurando
+   * um lead que existe mas está filtrado.
+   */
+  const { data: hiddenCount = 0 } = useQuery({
+    enabled: activeView === "open",
+    queryKey: ["leads", "hidden-count", filters, debouncedSearch, user?.id, stagesKey],
+    queryFn: async () => {
+      let q = supabase.from("leads").select("id", { count: "exact", head: true });
+      q = applyFilters(q, true);
+      const { count, error } = await q;
+      if (error) throw error;
+      return Math.max(0, (count ?? 0) - total);
+    },
+  });
+
+  /**
    * Quadro (Kanban): consulta própria por etapa, com contagem exata no banco.
    * Sem isso o cabeçalho da coluna exibia apenas os cards da página atual,
    * divergindo do total mostrado pelo filtro lateral.
