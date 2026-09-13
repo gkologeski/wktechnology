@@ -300,7 +300,7 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
             assigned_to: form.owner_id,
             type: "note",
             subject: `Formulário enviado: ${form.name ?? params.slug}`,
-            body: filled.join("\n"),
+            body: filled.join(""),
             related_lead_id: leadId,
             related_contact_id: contactId,
           });
