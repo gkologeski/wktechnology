@@ -193,12 +193,29 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
               .single();
             if (lerr || !lead) {
               console.error("[forms.submit] lead insert failed", lerr?.message);
-              return Response.json(
-                { error: "Não foi possível enviar agora, tente novamente." },
-                { status: 500, headers: cors },
-              );
+              // Rede de segurança: se o insert falhou por duplicidade (regra do
+              // banco), anexa o envio ao lead existente em vez de perder o contato.
+              const retry = await checkLeadDuplicate(supabaseAdmin, {
+                workspaceId: form.workspace_id,
+                email: email || null,
+                phone: phone || null,
+              }).catch(() => null);
+              if (retry?.duplicate && retry.existingId) {
+                leadId = retry.existingId;
+                const { error: uerr } = await supabaseAdmin
+                  .from("leads")
+                  .update({ last_form_submission_at: new Date().toISOString() })
+                  .eq("id", leadId);
+                if (uerr) console.error("[forms.submit] lead touch failed", uerr.message);
+              } else {
+                return Response.json(
+                  { error: "Não foi possível enviar agora, tente novamente." },
+                  { status: 500, headers: cors },
+                );
+              }
+            } else {
+              leadId = lead.id;
             }
-            leadId = lead.id;
           }
           // Garante empresa e contato vinculados ao lead
           const rel = await ensureLeadRelationsSafe(supabaseAdmin, leadId);
