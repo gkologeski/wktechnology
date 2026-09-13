@@ -123,7 +123,7 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
             leadId = dup.existingId;
             const { data: existing } = await supabaseAdmin
               .from("leads")
-              .select("id, last_name, email, phone, company_name")
+              .select("id, first_name, last_name, email, phone, company_name, assigned_to, owner_id")
               .eq("id", leadId)
               .maybeSingle();
             if (existing) {
@@ -132,17 +132,43 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
                 email?: string;
                 phone?: string;
                 company_name?: string;
-              } = {};
+                last_form_submission_at?: string;
+              } = { last_form_submission_at: new Date().toISOString() };
               if (!existing.last_name && lastName) patch.last_name = lastName;
               if (!existing.email && email) patch.email = email;
               if (!existing.phone && phone) patch.phone = phone;
               if (!existing.company_name && company) patch.company_name = company;
-              if (Object.keys(patch).length > 0) {
-                const { error: uerr } = await supabaseAdmin
-                  .from("leads")
-                  .update(patch)
-                  .eq("id", leadId);
-                if (uerr) console.error("[forms.submit] lead update failed", uerr.message);
+              const { error: uerr } = await supabaseAdmin
+                .from("leads")
+                .update(patch)
+                .eq("id", leadId);
+              if (uerr) console.error("[forms.submit] lead update failed", uerr.message);
+
+              // Nome informado no envio difere do cadastro: destaca na nota.
+              const submitted = [firstName, lastName].filter(Boolean).join(" ").trim();
+              const current = [existing.first_name, existing.last_name]
+                .filter(Boolean)
+                .join(" ")
+                .trim();
+              if (submitted && current && submitted.toLowerCase() !== current.toLowerCase()) {
+                submittedNameNote = submitted;
+              }
+
+              // Avisa o responsável de que o lead recebeu um novo envio.
+              const notifyUser = existing.assigned_to || existing.owner_id;
+              if (notifyUser) {
+                const { error: nerr } = await supabaseAdmin.from("notifications").insert({
+                  owner_id: notifyUser,
+                  user_id: notifyUser,
+                  workspace_id: form.workspace_id,
+                  type: "form_submission",
+                  title: "Novo envio de formulário",
+                  body: `${current || submitted || "Lead"} enviou o formulário "${form.name ?? params.slug}" novamente.`,
+                  link: `/leads/${leadId}`,
+                  entity: "lead",
+                  entity_id: leadId,
+                });
+                if (nerr) console.error("[forms.submit] notification failed", nerr.message);
               }
             }
           } else {
