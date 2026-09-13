@@ -99,6 +99,8 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
 
         let leadId: string | null = null;
         let contactId: string | null = null;
+        /** Nome informado no envio quando difere do lead já cadastrado. */
+        let submittedNameNote: string | null = null;
 
         const email = clean.email || clean.Email;
         const phone = clean.phone || clean.telefone || clean.tel;
@@ -183,6 +185,7 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
                 company_name: company,
                 source: `form:${params.slug}`,
                 custom_fields: clean,
+                last_form_submission_at: new Date().toISOString(),
               })
               .select("id")
               .single();
