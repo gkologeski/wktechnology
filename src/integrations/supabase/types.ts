@@ -9607,6 +9607,7 @@ export type Database = {
           hubspot_owner_id: string | null
           id: string
           label: string | null
+          last_form_submission_at: string | null
           last_name: string | null
           linkedin_url: string | null
           mobile_phone: string | null
@@ -9645,6 +9646,7 @@ export type Database = {
           hubspot_owner_id?: string | null
           id?: string
           label?: string | null
+          last_form_submission_at?: string | null
           last_name?: string | null
           linkedin_url?: string | null
           mobile_phone?: string | null
@@ -9683,6 +9685,7 @@ export type Database = {
           hubspot_owner_id?: string | null
           id?: string
           label?: string | null
+          last_form_submission_at?: string | null
           last_name?: string | null
           linkedin_url?: string | null
           mobile_phone?: string | null

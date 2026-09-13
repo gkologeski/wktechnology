@@ -45,6 +45,7 @@ import {
   DEFAULT_FILTERS,
   PROSPECTING_MODE_LIMIT,
   PROSPECTING_MODE_QUEUE_NAME,
+  RECENT_SUBMISSION_DAYS,
   type Filters,
   type LeadGridRow,
   type SortDir,
@@ -238,7 +239,7 @@ function LeadsHubspotView() {
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const applyFilters = (q: any) => {
+  const applyFilters = (q: any, ignoreStatusView = false) => {
     // View
     if (activeView === "mine" && user?.id)
       q = q.or(responsibleOrExpr([user.id], { columns: RESPONSIBLE_COLUMNS_FULL }));
@@ -246,10 +247,16 @@ function LeadsHubspotView() {
       q = q.or(
         responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_FULL, includeUnassigned: true }),
       );
-    if (activeView === "open") q = q.not("status", "in", "(qualified,disqualified)");
+    if (activeView === "open" && !ignoreStatusView)
+      q = q.not("status", "in", "(qualified,disqualified)");
     if (activeView === "new_week") {
       const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
       q = q.gte("created_at", since);
+    }
+    // "Novos envios": leads com envio de formulário recente, em qualquer etapa.
+    if (activeView === "recent_submissions") {
+      const since = new Date(Date.now() - RECENT_SUBMISSION_DAYS * 86_400_000).toISOString();
+      q = q.gte("last_form_submission_at", since);
     }
     if (filters.status.length > 0) {
       q = q.or(stagesOrExpr(stages, filters.status));
@@ -421,6 +428,24 @@ function LeadsHubspotView() {
 
   const rows = result?.rows ?? [];
   const total = result?.count ?? 0;
+
+  /**
+   * Na visão "Abertos" os leads qualificados/desqualificados ficam de fora.
+   * Contamos quantos são para avisar o usuário, em vez de deixá-lo procurando
+   * um lead que existe mas está filtrado.
+   */
+  const { data: hiddenCount = 0 } = useQuery({
+    enabled: activeView === "open",
+    queryKey: ["leads", "hidden-count", filters, debouncedSearch, user?.id, stagesKey],
+    queryFn: async () => {
+      let q = supabase.from("leads").select("id", { count: "exact", head: true });
+      q = applyFilters(q, true);
+      q = q.in("status", ["qualified", "disqualified"]);
+      const { count, error } = await q;
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
 
   /**
    * Quadro (Kanban): consulta própria por etapa, com contagem exata no banco.
@@ -767,6 +792,27 @@ function LeadsHubspotView() {
               </div>
             }
           />
+
+          {activeView === "open" && hiddenCount > 0 && (
+            <div className="flex flex-wrap items-center gap-2 border-b bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+              <span>
+                {hiddenCount === 1
+                  ? "1 lead qualificado/desqualificado está oculto nesta visão."
+                  : `${hiddenCount} leads qualificados/desqualificados estão ocultos nesta visão.`}
+              </span>
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0 text-xs"
+                onClick={() => {
+                  setActiveView("all");
+                  setActiveSavedId(null);
+                }}
+              >
+                Ver todos os leads
+              </Button>
+            </div>
+          )}
 
           {viewMode === "board" ? (
             <div className="min-h-0 flex-1 overflow-hidden p-3">
