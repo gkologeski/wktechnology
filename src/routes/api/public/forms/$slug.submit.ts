@@ -272,11 +272,25 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
 
         // Nota na timeline com os campos preenchidos, na ordem definida no
         // formulário. Falha aqui não invalida o envio: apenas registra log.
+        // O corpo é HTML (a timeline renderiza via HtmlContent/DOMPurify), com
+        // escape nos valores enviados pelo visitante.
+        const escapeHtml = (s: string) =>
+          s
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
         const filled = fields
           .filter((f) => clean[f.key])
-          .map((f) => `${f.label || f.key}: ${clean[f.key]}`);
+          .map(
+            (f) =>
+              `<p><strong>${escapeHtml(String(f.label || f.key))}:</strong> ${escapeHtml(String(clean[f.key]))}</p>`,
+          );
         if (submittedNameNote) {
-          filled.unshift(`Nome informado no envio: ${submittedNameNote}`);
+          filled.unshift(
+            `<p><em>Nome informado no envio: ${escapeHtml(submittedNameNote)}</em></p>`,
+          );
         }
         if (filled.length && (leadId || contactId)) {
           const { error: aerr } = await supabaseAdmin.from("activities").insert({
@@ -286,7 +300,7 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
             assigned_to: form.owner_id,
             type: "note",
             subject: `Formulário enviado: ${form.name ?? params.slug}`,
-            body: filled.join("\n"),
+            body: filled.join(""),
             related_lead_id: leadId,
             related_contact_id: contactId,
           });
