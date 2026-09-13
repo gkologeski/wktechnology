@@ -45,6 +45,7 @@ import {
   DEFAULT_FILTERS,
   PROSPECTING_MODE_LIMIT,
   PROSPECTING_MODE_QUEUE_NAME,
+  RECENT_SUBMISSION_DAYS,
   type Filters,
   type LeadGridRow,
   type SortDir,
@@ -238,7 +239,7 @@ function LeadsHubspotView() {
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const applyFilters = (q: any) => {
+  const applyFilters = (q: any, ignoreStatusView = false) => {
     // View
     if (activeView === "mine" && user?.id)
       q = q.or(responsibleOrExpr([user.id], { columns: RESPONSIBLE_COLUMNS_FULL }));
