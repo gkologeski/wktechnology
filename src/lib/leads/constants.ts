@@ -23,18 +23,33 @@ export const STATUS_TONE: Record<string, { dot: string; bg: string; text: string
   },
 };
 
-export type ViewId = "all" | "open" | "mine" | "unassigned" | "new_week";
+export type ViewId =
+  | "all"
+  | "open"
+  | "mine"
+  | "unassigned"
+  | "new_week"
+  | "recent_submissions";
 export const VIEWS: { id: ViewId; label: string }[] = [
   { id: "all", label: "Todos os leads" },
   { id: "open", label: "Abertos" },
   { id: "mine", label: "Meus leads" },
   { id: "unassigned", label: "Sem responsável" },
   { id: "new_week", label: "Novos esta semana" },
+  { id: "recent_submissions", label: "Novos envios" },
 ];
+
+/** Janela da visão "Novos envios" (dias). */
+export const RECENT_SUBMISSION_DAYS = 30;
 
 /** Colunas fixas ordenáveis do grid; colunas do catálogo entram como string. */
 export type SortKey = string;
-export const DECLARED_SORT_KEYS = ["first_name", "created_at", "score"] as const;
+export const DECLARED_SORT_KEYS = [
+  "first_name",
+  "created_at",
+  "score",
+  "last_form_submission_at",
+] as const;
 /** Colunas sempre projetadas (ações, filtros, seleção e células fixas). */
 export const BASE_LEAD_KEYS = [
   "id",
