@@ -246,10 +246,16 @@ function LeadsHubspotView() {
       q = q.or(
         responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_FULL, includeUnassigned: true }),
       );
-    if (activeView === "open") q = q.not("status", "in", "(qualified,disqualified)");
+    if (activeView === "open" && !ignoreStatusView)
+      q = q.not("status", "in", "(qualified,disqualified)");
     if (activeView === "new_week") {
       const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
       q = q.gte("created_at", since);
+    }
+    // "Novos envios": leads com envio de formulário recente, em qualquer etapa.
+    if (activeView === "recent_submissions") {
+      const since = new Date(Date.now() - RECENT_SUBMISSION_DAYS * 86_400_000).toISOString();
+      q = q.gte("last_form_submission_at", since);
     }
     if (filters.status.length > 0) {
       q = q.or(stagesOrExpr(stages, filters.status));
