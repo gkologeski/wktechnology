@@ -112,6 +112,10 @@ export async function runDealsStep(args: StepRunArgs): Promise<StepResult | void
             pipeline_id: localPipelineId,
             company_id: localCompanyId,
             expected_close_date: p.closedate ? p.closedate.slice(0, 10) : null,
+            // No HubSpot, closedate é a data prevista; quando a etapa lá já é
+            // fechada, ela representa o fechamento real e vira a data local.
+            ...(legacyStage === "won" && p.closedate ? { closed_at: p.closedate } : {}),
+            ...(legacyStage === "lost" && p.closedate ? { lost_at: p.closedate } : {}),
             ...mapped,
             external_ids: {
               hubspot: d.id,
@@ -236,6 +240,8 @@ export async function runDealsStep(args: StepRunArgs): Promise<StepResult | void
             pipeline_id: localPipelineId,
             company_id: localCompanyId,
             expected_close_date: p.closedate ? p.closedate.slice(0, 10) : null,
+            ...(legacyStage === "won" && p.closedate ? { closed_at: p.closedate } : {}),
+            ...(legacyStage === "lost" && p.closedate ? { lost_at: p.closedate } : {}),
             ...mapped,
             external_ids: {
               hubspot: d.id,
