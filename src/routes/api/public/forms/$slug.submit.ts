@@ -256,6 +256,9 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
         const filled = fields
           .filter((f) => clean[f.key])
           .map((f) => `${f.label || f.key}: ${clean[f.key]}`);
+        if (submittedNameNote) {
+          filled.unshift(`Nome informado no envio: ${submittedNameNote}`);
+        }
         if (filled.length && (leadId || contactId)) {
           const { error: aerr } = await supabaseAdmin.from("activities").insert({
             owner_id: form.owner_id,
