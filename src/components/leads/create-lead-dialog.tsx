@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -27,7 +27,10 @@ import { ensureLeadSource } from "@/lib/lead-sources";
 import { ensureLeadRelationsSafe } from "@/lib/leads/lead-relations";
 import { checkLeadDuplicate } from "@/lib/leads/lead-duplicate-check";
 import { normalizeLinkedinUrl } from "@/lib/prospecting/linkedin-url";
-import { enrichLeadForQualification } from "@/lib/prospecting/qualification-enrichment.functions";
+import {
+  enrichLeadForQualification,
+  previewLinkedinEnrichment,
+} from "@/lib/prospecting/qualification-enrichment.functions";
 import { markLinkedinEnriched } from "@/lib/prospecting/use-linkedin-enrichment";
 import { isEmail, toE164 } from "@/lib/validators";
 import { useToastCreated } from "@/lib/toast-nav";
