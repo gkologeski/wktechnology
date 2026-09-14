@@ -297,8 +297,6 @@ import { Route as ApiPublicHooksWhatsappCampaignTickRouteImport } from './routes
 import { Route as ApiPublicHooksWebhookTickRouteImport } from './routes/api/public/hooks/webhook-tick'
 import { Route as ApiPublicHooksVapiRouteImport } from './routes/api/public/hooks/vapi'
 import { Route as ApiPublicHooksUnipileInvitesSyncRouteImport } from './routes/api/public/hooks/unipile-invites-sync'
-import { Route as ApiPublicHooksTwilioWhatsappStatusRouteImport } from './routes/api/public/hooks/twilio-whatsapp-status'
-import { Route as ApiPublicHooksTwilioWhatsappRouteImport } from './routes/api/public/hooks/twilio-whatsapp'
 import { Route as ApiPublicHooksSourcingTickRouteImport } from './routes/api/public/hooks/sourcing-tick'
 import { Route as ApiPublicHooksSourcingInboundEmailRouteImport } from './routes/api/public/hooks/sourcing-inbound-email'
 import { Route as ApiPublicHooksSlaTickRouteImport } from './routes/api/public/hooks/sla-tick'
@@ -2021,18 +2019,6 @@ const ApiPublicHooksUnipileInvitesSyncRoute =
     path: '/api/public/hooks/unipile-invites-sync',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksTwilioWhatsappStatusRoute =
-  ApiPublicHooksTwilioWhatsappStatusRouteImport.update({
-    id: '/api/public/hooks/twilio-whatsapp-status',
-    path: '/api/public/hooks/twilio-whatsapp-status',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksTwilioWhatsappRoute =
-  ApiPublicHooksTwilioWhatsappRouteImport.update({
-    id: '/api/public/hooks/twilio-whatsapp',
-    path: '/api/public/hooks/twilio-whatsapp',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiPublicHooksSourcingTickRoute =
   ApiPublicHooksSourcingTickRouteImport.update({
     id: '/api/public/hooks/sourcing-tick',
@@ -2864,8 +2850,6 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/sla-tick': typeof ApiPublicHooksSlaTickRoute
   '/api/public/hooks/sourcing-inbound-email': typeof ApiPublicHooksSourcingInboundEmailRoute
   '/api/public/hooks/sourcing-tick': typeof ApiPublicHooksSourcingTickRoute
-  '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
-  '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
   '/api/public/hooks/unipile-invites-sync': typeof ApiPublicHooksUnipileInvitesSyncRoute
   '/api/public/hooks/vapi': typeof ApiPublicHooksVapiRoute
   '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
@@ -3237,8 +3221,6 @@ export interface FileRoutesByTo {
   '/api/public/hooks/sla-tick': typeof ApiPublicHooksSlaTickRoute
   '/api/public/hooks/sourcing-inbound-email': typeof ApiPublicHooksSourcingInboundEmailRoute
   '/api/public/hooks/sourcing-tick': typeof ApiPublicHooksSourcingTickRoute
-  '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
-  '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
   '/api/public/hooks/unipile-invites-sync': typeof ApiPublicHooksUnipileInvitesSyncRoute
   '/api/public/hooks/vapi': typeof ApiPublicHooksVapiRoute
   '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
@@ -3618,8 +3600,6 @@ export interface FileRoutesById {
   '/api/public/hooks/sla-tick': typeof ApiPublicHooksSlaTickRoute
   '/api/public/hooks/sourcing-inbound-email': typeof ApiPublicHooksSourcingInboundEmailRoute
   '/api/public/hooks/sourcing-tick': typeof ApiPublicHooksSourcingTickRoute
-  '/api/public/hooks/twilio-whatsapp': typeof ApiPublicHooksTwilioWhatsappRoute
-  '/api/public/hooks/twilio-whatsapp-status': typeof ApiPublicHooksTwilioWhatsappStatusRoute
   '/api/public/hooks/unipile-invites-sync': typeof ApiPublicHooksUnipileInvitesSyncRoute
   '/api/public/hooks/vapi': typeof ApiPublicHooksVapiRoute
   '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
@@ -3999,8 +3979,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/sla-tick'
     | '/api/public/hooks/sourcing-inbound-email'
     | '/api/public/hooks/sourcing-tick'
-    | '/api/public/hooks/twilio-whatsapp'
-    | '/api/public/hooks/twilio-whatsapp-status'
     | '/api/public/hooks/unipile-invites-sync'
     | '/api/public/hooks/vapi'
     | '/api/public/hooks/webhook-tick'
@@ -4372,8 +4350,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/sla-tick'
     | '/api/public/hooks/sourcing-inbound-email'
     | '/api/public/hooks/sourcing-tick'
-    | '/api/public/hooks/twilio-whatsapp'
-    | '/api/public/hooks/twilio-whatsapp-status'
     | '/api/public/hooks/unipile-invites-sync'
     | '/api/public/hooks/vapi'
     | '/api/public/hooks/webhook-tick'
@@ -4752,8 +4728,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/sla-tick'
     | '/api/public/hooks/sourcing-inbound-email'
     | '/api/public/hooks/sourcing-tick'
-    | '/api/public/hooks/twilio-whatsapp'
-    | '/api/public/hooks/twilio-whatsapp-status'
     | '/api/public/hooks/unipile-invites-sync'
     | '/api/public/hooks/vapi'
     | '/api/public/hooks/webhook-tick'
@@ -4893,8 +4867,6 @@ export interface RootRouteChildren {
   ApiPublicHooksSlaTickRoute: typeof ApiPublicHooksSlaTickRoute
   ApiPublicHooksSourcingInboundEmailRoute: typeof ApiPublicHooksSourcingInboundEmailRoute
   ApiPublicHooksSourcingTickRoute: typeof ApiPublicHooksSourcingTickRoute
-  ApiPublicHooksTwilioWhatsappRoute: typeof ApiPublicHooksTwilioWhatsappRoute
-  ApiPublicHooksTwilioWhatsappStatusRoute: typeof ApiPublicHooksTwilioWhatsappStatusRoute
   ApiPublicHooksUnipileInvitesSyncRoute: typeof ApiPublicHooksUnipileInvitesSyncRoute
   ApiPublicHooksVapiRoute: typeof ApiPublicHooksVapiRoute
   ApiPublicHooksWebhookTickRoute: typeof ApiPublicHooksWebhookTickRoute
@@ -6958,20 +6930,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksUnipileInvitesSyncRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/twilio-whatsapp-status': {
-      id: '/api/public/hooks/twilio-whatsapp-status'
-      path: '/api/public/hooks/twilio-whatsapp-status'
-      fullPath: '/api/public/hooks/twilio-whatsapp-status'
-      preLoaderRoute: typeof ApiPublicHooksTwilioWhatsappStatusRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/twilio-whatsapp': {
-      id: '/api/public/hooks/twilio-whatsapp'
-      path: '/api/public/hooks/twilio-whatsapp'
-      fullPath: '/api/public/hooks/twilio-whatsapp'
-      preLoaderRoute: typeof ApiPublicHooksTwilioWhatsappRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/hooks/sourcing-tick': {
       id: '/api/public/hooks/sourcing-tick'
       path: '/api/public/hooks/sourcing-tick'
@@ -8506,9 +8464,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksSourcingInboundEmailRoute:
     ApiPublicHooksSourcingInboundEmailRoute,
   ApiPublicHooksSourcingTickRoute: ApiPublicHooksSourcingTickRoute,
-  ApiPublicHooksTwilioWhatsappRoute: ApiPublicHooksTwilioWhatsappRoute,
-  ApiPublicHooksTwilioWhatsappStatusRoute:
-    ApiPublicHooksTwilioWhatsappStatusRoute,
   ApiPublicHooksUnipileInvitesSyncRoute: ApiPublicHooksUnipileInvitesSyncRoute,
   ApiPublicHooksVapiRoute: ApiPublicHooksVapiRoute,
   ApiPublicHooksWebhookTickRoute: ApiPublicHooksWebhookTickRoute,
