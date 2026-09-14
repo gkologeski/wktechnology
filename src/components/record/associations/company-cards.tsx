@@ -336,7 +336,6 @@ export function ContactsCard({
             onPick={request}
             onCreateNew={() => setCreateOpen(true)}
           />
-
         }
       >
         {rows.length === 0 ? (
@@ -509,7 +508,6 @@ export function SingleContactCard({
             onCreateNew={() => setCreateOpen(true)}
             label={c ? "Trocar" : "Adicionar"}
           />
-
         }
       >
         {!c ? (

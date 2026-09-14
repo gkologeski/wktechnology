@@ -20,7 +20,10 @@ type Match = {
 
 // Remove caracteres que quebram o filtro .or() do PostgREST
 function sanitizeOrTerm(q: string) {
-  return q.replace(/[,()%]/g, " ").replace(/\s+/g, " ").trim();
+  return q
+    .replace(/[,()%]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function fullName(m: Pick<Match, "first_name" | "last_name">) {
@@ -89,7 +92,6 @@ function MatchList({
     </div>
   );
 }
-
 
 export function ContactPicker({
   mode = "pick_or_create",
@@ -287,7 +289,6 @@ export function ContactPicker({
       {matches.length > 0 && (
         <MatchList title="Contatos parecidos" rows={matches} onSelect={select} />
       )}
-
 
       {loading && value.name.trim().length >= 2 && !value.id && (
         <p className="text-[11px] text-muted-foreground">Buscando…</p>

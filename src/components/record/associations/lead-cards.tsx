@@ -110,7 +110,6 @@ export function LeadContactsCard({
       onPick={(id) => linkContact(id)}
       onCreateNew={() => setCreateOpen(true)}
     />
-
   ) : null;
 
   return (
