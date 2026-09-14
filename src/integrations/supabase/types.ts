@@ -9615,6 +9615,7 @@ export type Database = {
           nurture_started_at: string | null
           owner_id: string
           phone: string | null
+          phone_digits: string | null
           pipeline_id: string | null
           score: number
           source: string | null
@@ -9654,6 +9655,7 @@ export type Database = {
           nurture_started_at?: string | null
           owner_id: string
           phone?: string | null
+          phone_digits?: string | null
           pipeline_id?: string | null
           score?: number
           source?: string | null
@@ -9693,6 +9695,7 @@ export type Database = {
           nurture_started_at?: string | null
           owner_id?: string
           phone?: string | null
+          phone_digits?: string | null
           pipeline_id?: string | null
           score?: number
           source?: string | null
