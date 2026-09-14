@@ -32,7 +32,7 @@ Trocar o motor de envio de WhatsApp do Twilio para a API oficial da Meta, manten
 
 3. **Templates oficiais nas telas**
    - Diálogo de envio e campanhas passam a listar os templates aprovados na Meta do workspace, com as variáveis posicionais que a Meta exige.
-   - Templates antigos do Twilio continuam visíveis apenas para workspaces sem Meta.
+   - As listas de templates do Twilio saem das telas.
 
 4. **Limites e conformidade multi-cliente**
    - Cada workspace só envia pelos próprios números (isolamento já garantido por RLS; será revalidado).
