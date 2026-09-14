@@ -204,9 +204,11 @@ export function CompanyCard({
 export function ContactsCard({
   entity,
   entityId,
+  companyId,
 }: {
   entity: "company" | "deal";
   entityId: string;
+  companyId?: string | null;
 }) {
   type ContactRow = {
     id: string;
