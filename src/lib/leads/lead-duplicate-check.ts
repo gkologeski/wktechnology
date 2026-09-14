@@ -67,29 +67,20 @@ export async function checkLeadDuplicate(
     }
   }
 
-  // Telefone é gravado com máscaras variadas, então a comparação por dígitos
-  // acontece em memória — mas paginando, porque a API corta a resposta em 1.000.
+  // Telefone é gravado com máscaras variadas; a coluna gerada `phone_digits`
+  // (índice por workspace) resolve a comparação normalizada no banco, em uma
+  // única consulta — sem varrer a base inteira pela rede.
   if (phoneDigits) {
-    const PAGE = 1000;
-    for (let page = 0; page < 200; page += 1) {
-      const from = page * PAGE;
-      const { data, error } = await base()
-        .not("phone", "is", null)
-        .order("id", { ascending: true })
-        .range(from, from + PAGE - 1);
-      if (error) throw new Error(error.message);
-      const rows = data ?? [];
-      for (const row of rows) {
-        if (normalizePhone(row.phone) === phoneDigits) {
-          return {
-            duplicate: true,
-            field: "phone",
-            existingId: row.id,
-            message: `Já existe um lead com o telefone ${input.phone?.trim() ?? ""} neste workspace.`,
-          };
-        }
-      }
-      if (rows.length < PAGE) break;
+    const { data, error } = await base().eq("phone_digits", phoneDigits).limit(1);
+    if (error) throw new Error(error.message);
+    const row = (data ?? [])[0];
+    if (row) {
+      return {
+        duplicate: true,
+        field: "phone",
+        existingId: row.id,
+        message: `Já existe um lead com o telefone ${input.phone?.trim() ?? ""} neste workspace.`,
+      };
     }
   }
 
