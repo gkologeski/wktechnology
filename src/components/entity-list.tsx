@@ -34,6 +34,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { PageHeader } from "@/components/page-header";
 import { BulkActionBar } from "@/components/bulk-action-bar";
+import { ExportMenuButton } from "@/components/export-menu-button";
+import { exportRows, type ExportFormat } from "@/lib/export/export-rows";
 import { BulkEditDialog, type BulkField } from "@/components/bulk-edit-dialog";
 import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
 import { isBulkEditEntity } from "@/lib/grid/bulk-edit-fields";
@@ -348,17 +350,13 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
     qc.invalidateQueries({ queryKey: [table] });
   };
 
-  const exportCsv = (rowsToExport?: T[]) => {
+  const exportData = async (format: ExportFormat, rowsToExport?: T[]): Promise<void> => {
     const out = rowsToExport ?? filtered;
-    if (!out.length) return toast.error("Nada para exportar");
-    const csv = Papa.unparse(out as unknown as Record<string, unknown>[]);
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${table}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    if (!out.length) {
+      toast.error("Nada para exportar");
+      return;
+    }
+    await exportRows(out as unknown as Record<string, unknown>[], { filename: table, format });
   };
 
   const importCsv = async (file: File) => {
@@ -525,9 +523,7 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
           <>
             {csvEnabled && (
               <>
-                <Button variant="outline" size="sm" onClick={() => exportCsv()}>
-                  Exportar CSV
-                </Button>
+                <ExportMenuButton onExport={(f) => exportData(f)} />
                 <label className="inline-flex">
                   <input
                     type="file"
@@ -589,9 +585,10 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
           onSelectAll={selectAllMatching}
           isSelectingAll={isSelectingAll}
         >
-          <Button variant="outline" size="sm" onClick={() => exportCsv(selectedRows)}>
-            Exportar selecionados
-          </Button>
+          <ExportMenuButton
+            label="Exportar selecionados"
+            onExport={(f) => exportData(f, selectedRows)}
+          />
           {(dynamicBulkEntity || (bulkEditFields && bulkEditFields.length > 0)) && (
             <Button variant="outline" size="sm" onClick={() => setBulkEditOpen(true)}>
               Editar em massa

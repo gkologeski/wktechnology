@@ -14,6 +14,8 @@ import { cn } from "@/lib/utils";
 import { toE164 } from "@/lib/validators";
 import { Button } from "@/components/ui/button";
 import { BulkActionBar } from "@/components/bulk-action-bar";
+import { ExportMenuButton } from "@/components/export-menu-button";
+import { exportRows, type ExportFormat } from "@/lib/export/export-rows";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -295,18 +297,26 @@ function ContactsHubspotView() {
   const allSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
   const someSelected = rows.some((r) => selectedIds.has(r.id));
 
-  const exportCsv = () => {
-    if (!rows.length) return toast.error("Nenhum registro para exportar");
-    exportRowsToCsv("contatos", rows as unknown as Record<string, unknown>[], [
-      { key: "first_name", label: "Nome" },
-      { key: "last_name", label: "Sobrenome" },
-      { key: "email", label: "Email" },
-      { key: "phone", label: "Telefone" },
-      { key: "job_title", label: "Cargo" },
-      { key: "lifecycle_stage", label: "Estágio" },
-      { key: "created_at", label: "Criado em" },
-      { key: "updated_at", label: "Atualizado em" },
-    ]);
+  const exportData = async (format: ExportFormat, rowsToExport?: typeof rows): Promise<void> => {
+    const out = rowsToExport ?? rows;
+    if (!out.length) {
+      toast.error("Nenhum registro para exportar");
+      return;
+    }
+    await exportRows<Record<string, unknown>>(out as unknown as Record<string, unknown>[], {
+      filename: "contatos",
+      format,
+      columns: [
+        { header: "Nome", value: (r) => r["first_name"] },
+        { header: "Sobrenome", value: (r) => r["last_name"] },
+        { header: "Email", value: (r) => r["email"] },
+        { header: "Telefone", value: (r) => r["phone"] },
+        { header: "Cargo", value: (r) => r["job_title"] },
+        { header: "Estágio", value: (r) => r["lifecycle_stage"] },
+        { header: "Criado em", value: (r) => r["created_at"] },
+        { header: "Atualizado em", value: (r) => r["updated_at"] },
+      ],
+    });
   };
 
   const toggleAll = () =>
@@ -626,9 +636,7 @@ function ContactsHubspotView() {
             <Play className="mr-1.5 h-4 w-4" /> Iniciar fila
           </Button>
           <Can permission="techsales.contacts.export.workspace">
-            <Button variant="outline" size="sm" onClick={exportCsv}>
-              <Download className="mr-1.5 h-4 w-4" /> Exportar
-            </Button>
+            <ExportMenuButton onExport={(f) => exportData(f)} />
           </Can>
           <Can permission="techsales.contacts.create.own">
             <Button size="sm" onClick={() => setCreateOpen(true)}>
@@ -745,6 +753,16 @@ function ContactsHubspotView() {
                 >
                   <Play className="mr-1 h-3.5 w-3.5" /> Iniciar fila
                 </Button>
+                <ExportMenuButton
+                  variant="ghost"
+                  label="Exportar selecionados"
+                  onExport={(f) =>
+                    exportData(
+                      f,
+                      rows.filter((r) => selectedIds.has(r.id)),
+                    )
+                  }
+                />
                 <Button
                   variant="ghost"
                   size="sm"
@@ -811,7 +829,15 @@ function ContactsHubspotView() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onSelect={exportCsv}>Exportar CSV</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => void exportData("csv")}>
+                    Exportar CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => void exportData("json")}>
+                    Exportar JSON
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => void exportData("xlsx")}>
+                    Exportar Excel (XLSX)
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
