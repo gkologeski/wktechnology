@@ -21,7 +21,7 @@ Está faltando:
 Trocar o motor de envio de WhatsApp do Twilio para a API oficial da Meta, mantendo todas as telas e funcionalidades como estão, com múltiplos workspaces/clientes cada um com seu próprio número.
 
 1. **Escolha automática do canal por workspace**
-   - Se o workspace tem número Meta conectado, envia pela Meta; se não tem, continua pelo Twilio (nada quebra durante a transição).
+   - Todo envio passa a sair pela Meta; o Twilio é removido do WhatsApp. Workspace sem número Meta conectado recebe aviso claro para conectar em Configurações, em vez de enviar por outro canal.
    - Quando há mais de um número no workspace, usa o número padrão definido nas configurações; a conversa já existente mantém o número usado anteriormente.
 
 2. **Envio unificado**
@@ -32,7 +32,7 @@ Trocar o motor de envio de WhatsApp do Twilio para a API oficial da Meta, manten
 
 3. **Templates oficiais nas telas**
    - Diálogo de envio e campanhas passam a listar os templates aprovados na Meta do workspace, com as variáveis posicionais que a Meta exige.
-   - Templates antigos do Twilio continuam visíveis apenas para workspaces sem Meta.
+   - As listas de templates do Twilio saem das telas.
 
 4. **Limites e conformidade multi-cliente**
    - Cada workspace só envia pelos próprios números (isolamento já garantido por RLS; será revalidado).
@@ -44,7 +44,7 @@ Trocar o motor de envio de WhatsApp do Twilio para a API oficial da Meta, manten
 
 ## Detalhes técnicos
 
-- Novo resolvedor de canal (`provider`) em módulo server-only, consultando `wa_phone_numbers`/`wa_business_accounts` do workspace ativo; `sendWhatsAppMessage` em `src/lib/whatsapp.functions.ts` passa a delegar para Meta ou Twilio mantendo a mesma assinatura, para não alterar chamadores.
+- `sendWhatsAppMessage` em `src/lib/whatsapp.functions.ts` mantém a assinatura (para não alterar chamadores), mas passa a resolver o número Meta do workspace em `wa_phone_numbers`/`wa_business_accounts` e enviar pela Cloud API; o código Twilio de WhatsApp (envio, webhooks `twilio-whatsapp*`, templates) é removido. Voz/Twilio Voice permanece intacto.
 - `src/lib/whatsapp-send.server.ts` (cobrança/cron) ganha o mesmo resolvedor.
 - Envio de mídia e `mark_as_read` adicionados em `src/lib/whatsapp-meta.functions.ts`; status por `wamid` no webhook `src/routes/api/public/meta/whatsapp-webhook.ts`.
 - Campanhas (`campaigns.whatsapp.tsx` + `whatsapp-campaign-tick.ts`) e `send-whatsapp-dialog.tsx` passam a ler `listTemplates` da Meta.
