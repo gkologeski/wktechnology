@@ -24,7 +24,13 @@ import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
 
 /* ───────────── Lead → Contact / Deal cards (read-only, from conversion) ───────────── */
 
-export function LeadContactsCard({ entityId }: { entityId: string }) {
+export function LeadContactsCard({
+  entityId,
+  companyId,
+}: {
+  entityId: string;
+  companyId?: string | null;
+}) {
   const [contact, setContact] = useState<{
     id: string;
     first_name: string | null;
