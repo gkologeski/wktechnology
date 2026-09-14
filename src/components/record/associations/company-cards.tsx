@@ -430,9 +430,11 @@ export function ContactsCard({
 export function SingleContactCard({
   entityId,
   contactId,
+  companyId,
 }: {
   entityId: string;
   contactId: string | null;
+  companyId?: string | null;
 }) {
   const [c, setC] = useState<{
     id: string;
