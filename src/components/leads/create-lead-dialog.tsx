@@ -56,6 +56,7 @@ export function CreateLeadDialog({
 }) {
   const { user } = useAuth();
   const toastCreated = useToastCreated();
+  const enrichFn = useServerFn(enrichLeadForQualification);
   const [saving, setSaving] = useState(false);
   const [step, setStep] = useState<"search" | "form">("search");
   const [form, setForm] = useState(EMPTY_FORM);
