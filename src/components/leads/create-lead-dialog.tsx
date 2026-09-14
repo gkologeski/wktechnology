@@ -26,6 +26,8 @@ import { ensureLeadSource } from "@/lib/lead-sources";
 import { ensureLeadRelationsSafe } from "@/lib/leads/lead-relations";
 import { checkLeadDuplicate } from "@/lib/leads/lead-duplicate-check";
 import { normalizeLinkedinUrl } from "@/lib/prospecting/linkedin-url";
+import { enrichLeadForQualification } from "@/lib/prospecting/qualification-enrichment.functions";
+import { markLinkedinEnriched } from "@/lib/prospecting/use-linkedin-enrichment";
 import { isEmail, toE164 } from "@/lib/validators";
 import { useToastCreated } from "@/lib/toast-nav";
 import { OnboardingGuidedEntry } from "@/components/onboarding/onboarding-guided-entry";
