@@ -140,6 +140,74 @@ export function CreateLeadDialog({
     }
   };
 
+  /**
+   * Busca os dados do LinkedIn assim que o link é informado (blur/Enter) e
+   * preenche apenas os campos ainda vazios — nada é gravado no banco aqui.
+   */
+  const runLinkedinPreview = async () => {
+    const raw = form.linkedin_url.trim();
+    if (!raw || linkedinLoading) return;
+    const parsed = normalizeLinkedinUrl(raw);
+    if (!parsed.ok) {
+      setLinkedinError(parsed.error);
+      return;
+    }
+    setLinkedinError(null);
+    if (previewedLinkedin.current === parsed.url) return;
+    previewedLinkedin.current = parsed.url;
+    setLinkedinLoading(true);
+    const toastId = `linkedin-preview-${parsed.url}`;
+    toast.loading("Buscando dados do LinkedIn…", { id: toastId });
+    try {
+      const result = await previewFn({
+        data: {
+          linkedinUrl: parsed.url,
+          companyName: company.name.trim() || null,
+          domain: companyDomain ?? null,
+        },
+      });
+      const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+      const filled: string[] = [];
+      setForm((f) => {
+        const next = { ...f, linkedin_url: result.linkedinUrl };
+        const put = (key: keyof typeof EMPTY_FORM, value: string, label: string) => {
+          if (!value || str(next[key])) return;
+          next[key] = value;
+          filled.push(label);
+        };
+        put("first_name", str(result.lead.first_name), "nome");
+        put("last_name", str(result.lead.last_name), "sobrenome");
+        put("email", str(result.lead.email), "e-mail");
+        put("phone", str(result.lead.phone), "telefone");
+        put("company_name", str(result.lead.company_name), "empresa");
+        return next;
+      });
+      const suggestedCompany = str(result.lead.company_name) || str(result.companies.name);
+      if (suggestedCompany && !company.id && !company.name.trim()) {
+        await resolveCompanyByName(suggestedCompany);
+      }
+      if (filled.length > 0) {
+        toast.success(`Preenchido pelo LinkedIn: ${filled.join(", ")}.`, { id: toastId });
+      } else if (result.found) {
+        toast.info("Os dados do LinkedIn já estavam preenchidos.", { id: toastId });
+      } else {
+        toast.info(result.warnings[0] ?? "Nenhum dado encontrado para este LinkedIn.", {
+          id: toastId,
+        });
+      }
+    } catch (err) {
+      // Permite nova tentativa depois de uma falha (crédito, rede, etc.).
+      previewedLinkedin.current = null;
+      toast.error(err instanceof Error ? err.message : "Não foi possível consultar o LinkedIn.", {
+        id: toastId,
+      });
+    } finally {
+      setLinkedinLoading(false);
+    }
+  };
+
+
+
   const applyContact = (contact: ContactSearchResult) => {
     setForm({
       ...EMPTY_FORM,
