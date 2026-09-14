@@ -429,20 +429,39 @@ export function CreateLeadDialog({
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="linkedin_url">LinkedIn</Label>
-                  <Input
-                    id="linkedin_url"
-                    value={form.linkedin_url}
-                    placeholder="https://www.linkedin.com/in/nome-sobrenome"
-                    aria-invalid={linkedinError ? true : undefined}
-                    aria-describedby="linkedin_url-hint"
-                    onChange={(e) => {
-                      setLinkedinError(null);
-                      setForm({ ...form, linkedin_url: e.target.value });
-                    }}
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id="linkedin_url"
+                      value={form.linkedin_url}
+                      placeholder="https://www.linkedin.com/in/nome-sobrenome"
+                      aria-invalid={linkedinError ? true : undefined}
+                      aria-describedby="linkedin_url-hint"
+                      aria-busy={linkedinLoading || undefined}
+                      disabled={linkedinLoading}
+                      onChange={(e) => {
+                        setLinkedinError(null);
+                        setForm({ ...form, linkedin_url: e.target.value });
+                      }}
+                      onBlur={() => void runLinkedinPreview()}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          void runLinkedinPreview();
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => void runLinkedinPreview()}
+                      disabled={linkedinLoading || !form.linkedin_url.trim()}
+                    >
+                      {linkedinLoading ? "Buscando…" : "Buscar"}
+                    </Button>
+                  </div>
                   <p id="linkedin_url-hint" className="text-[11px] text-muted-foreground">
                     {linkedinError ??
-                      "Opcional. Melhora a precisão do enriquecimento na qualificação."}
+                      "Opcional. Ao informar o link, buscamos nome, e-mail, telefone e empresa e preenchemos os campos vazios."}
                   </p>
                 </div>
                 <div className="space-y-1.5">
