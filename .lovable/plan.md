@@ -21,7 +21,7 @@ Está faltando:
 Trocar o motor de envio de WhatsApp do Twilio para a API oficial da Meta, mantendo todas as telas e funcionalidades como estão, com múltiplos workspaces/clientes cada um com seu próprio número.
 
 1. **Escolha automática do canal por workspace**
-   - Se o workspace tem número Meta conectado, envia pela Meta; se não tem, continua pelo Twilio (nada quebra durante a transição).
+   - Todo envio passa a sair pela Meta; o Twilio é removido do WhatsApp. Workspace sem número Meta conectado recebe aviso claro para conectar em Configurações, em vez de enviar por outro canal.
    - Quando há mais de um número no workspace, usa o número padrão definido nas configurações; a conversa já existente mantém o número usado anteriormente.
 
 2. **Envio unificado**
