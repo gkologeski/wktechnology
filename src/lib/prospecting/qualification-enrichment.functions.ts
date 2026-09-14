@@ -275,6 +275,57 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
     return payload;
   });
 
+/**
+ * Prévia do enriquecimento pelo LinkedIn **antes** de existir o lead.
+ *
+ * Usada no cadastro: o usuário cola o link e os campos são preenchidos na
+ * hora, sem gravar nada no banco. Nada é persistido nem cacheado aqui — o
+ * enriquecimento completo (empresa, contato, telefone) roda depois de salvar.
+ */
+export const previewLinkedinEnrichment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        linkedinUrl: z.string().trim().min(1).max(500),
+        companyName: z.string().trim().max(200).optional().nullable(),
+        domain: z.string().trim().max(200).optional().nullable(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { normalizeLinkedinUrl } = await import("./linkedin-url");
+    const parsed = normalizeLinkedinUrl(data.linkedinUrl);
+    if (!parsed.ok) throw new Error(parsed.error);
+
+    const { LEAD_KEYS, COMPANY_KEYS, pick } = await import("./qualification-enrichment.server");
+    const { runApolloCascade } = await import("@/lib/integrations/apollo-enrich.server");
+    const result = await runApolloCascade({
+      first_name: null,
+      last_name: null,
+      email: null,
+      linkedin_url: parsed.url,
+      company_name: data.companyName ?? null,
+      website: null,
+      domain: data.domain ?? null,
+    });
+
+    const lead = pick(result.person as Record<string, unknown> | null, LEAD_KEYS);
+    const companies = pick(result.company as Record<string, unknown> | null, COMPANY_KEYS);
+    if (result.company?.name && !lead.company_name) lead.company_name = result.company.name;
+
+    return {
+      linkedinUrl: parsed.url,
+      found: Object.keys(lead).length > 0 || Object.keys(companies).length > 0,
+      warnings: result.warnings,
+      lead,
+      companies,
+      jobTitle: ((result.person as Record<string, unknown> | null)?.job_title ?? null) as
+        | string
+        | null,
+    };
+  });
+
 const ValuesSchema = z.record(z.string(), z.unknown()).optional();
 
 export const applyQualificationEnrichment = createServerFn({ method: "POST" })
