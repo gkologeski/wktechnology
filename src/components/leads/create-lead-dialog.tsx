@@ -206,8 +206,6 @@ export function CreateLeadDialog({
     }
   };
 
-
-
   const applyContact = (contact: ContactSearchResult) => {
     setForm({
       ...EMPTY_FORM,
