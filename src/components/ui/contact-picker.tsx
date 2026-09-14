@@ -66,9 +66,32 @@ export function ContactPicker({
   className,
 }: ContactPickerProps) {
   const [matches, setMatches] = useState<Match[]>([]);
+  const [companyMatches, setCompanyMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(false);
   const lastSearchedRef = useRef<string>("");
   const reqIdRef = useRef(0);
+
+  // Sugere os contatos da empresa do registro antes de digitar qualquer coisa.
+  useEffect(() => {
+    if (!companyId) {
+      setCompanyMatches([]);
+      return;
+    }
+    let cancel = false;
+    (async () => {
+      const { data } = await supabase
+        .from("contacts")
+        .select(MATCH_SELECT)
+        .eq("company_id", companyId)
+        .is("deleted_at", null)
+        .limit(10);
+      if (cancel) return;
+      setCompanyMatches((data ?? []) as never as Match[]);
+    })();
+    return () => {
+      cancel = true;
+    };
+  }, [companyId]);
 
   // Hidrata nome quando recebemos só o id.
   useEffect(() => {
