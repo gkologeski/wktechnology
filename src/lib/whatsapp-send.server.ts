@@ -28,13 +28,14 @@ export async function sendWhatsAppFromServer(params: {
   to: string;
   body: string;
   contactId?: string | null;
+  /** Rótulo interno registrado no histórico (não é o template da Meta). */
   templateName?: string | null;
-  templateLanguage?: string | null;
-  templateVariables?: string[];
+  /** Template aprovado na Meta, obrigatório fora da janela de 24h. */
+  metaTemplate?: { name: string; language?: string; variables?: string[] } | null;
   source?: Record<string, unknown>;
 }): Promise<WaSendResult> {
   const { supabase, workspaceId, to, body } = params;
-  if (!to || (!body && !params.templateName)) throw new Error("Destinatário ou mensagem vazios");
+  if (!to || (!body && !params.metaTemplate)) throw new Error("Destinatário ou mensagem vazios");
 
   const toBare = normalizePhone(to);
   const existing = await findConversationNumber(supabase, workspaceId, toBare);
@@ -43,13 +44,7 @@ export async function sendWhatsAppFromServer(params: {
   const { wamid, raw } = await metaSend(num, {
     to: toBare,
     body,
-    template: params.templateName
-      ? {
-          name: params.templateName,
-          language: params.templateLanguage ?? undefined,
-          variables: params.templateVariables ?? [],
-        }
-      : null,
+    template: params.metaTemplate ?? null,
   });
 
   // Log da conversa + mensagem (best-effort; falhas não invalidam o envio real)
