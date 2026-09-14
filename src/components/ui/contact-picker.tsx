@@ -20,12 +20,15 @@ type Match = {
 
 // Remove caracteres que quebram o filtro .or() do PostgREST
 function sanitizeOrTerm(q: string) {
-  return q.replace(/[,()%]/g, " ").trim();
+  return q.replace(/[,()%]/g, " ").replace(/\s+/g, " ").trim();
 }
 
 function fullName(m: Pick<Match, "first_name" | "last_name">) {
   return [m.first_name, m.last_name].filter(Boolean).join(" ").trim();
 }
+
+const SEARCH_COLS = ["first_name", "last_name", "email", "phone", "mobile_phone"] as const;
+const MATCH_SELECT = "id, first_name, last_name, email, phone, mobile_phone";
 
 export interface ContactPickerProps {
   /**
@@ -42,9 +45,12 @@ export interface ContactPickerProps {
   toastOnMatches?: boolean;
   /** Buscar o nome quando recebemos só o id. Default: true. */
   hydrateById?: boolean;
+  /** Empresa do registro: sugere os contatos dela antes de digitar. */
+  companyId?: string | null;
   id?: string;
   className?: string;
 }
+
 
 export function ContactPicker({
   mode = "pick_or_create",
