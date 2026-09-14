@@ -20,12 +20,18 @@ type Match = {
 
 // Remove caracteres que quebram o filtro .or() do PostgREST
 function sanitizeOrTerm(q: string) {
-  return q.replace(/[,()%]/g, " ").trim();
+  return q
+    .replace(/[,()%]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function fullName(m: Pick<Match, "first_name" | "last_name">) {
   return [m.first_name, m.last_name].filter(Boolean).join(" ").trim();
 }
+
+const SEARCH_COLS = ["first_name", "last_name", "email", "phone", "mobile_phone"] as const;
+const MATCH_SELECT = "id, first_name, last_name, email, phone, mobile_phone";
 
 export interface ContactPickerProps {
   /**
@@ -42,8 +48,49 @@ export interface ContactPickerProps {
   toastOnMatches?: boolean;
   /** Buscar o nome quando recebemos só o id. Default: true. */
   hydrateById?: boolean;
+  /** Empresa do registro: sugere os contatos dela antes de digitar. */
+  companyId?: string | null;
   id?: string;
   className?: string;
+}
+
+/** Lista de contatos selecionáveis com rótulo de seção. */
+function MatchList({
+  title,
+  rows,
+  onSelect,
+}: {
+  title: string;
+  rows: Match[];
+  onSelect: (m: Match) => void;
+}) {
+  return (
+    <div className="max-h-72 space-y-1 overflow-y-auto rounded-md border bg-muted/30 p-2">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {title}
+      </p>
+      {rows.map((m) => {
+        const name = fullName(m) || "(sem nome)";
+        const phone = m.phone || m.mobile_phone;
+        const meta = [m.email, phone].filter(Boolean).join(" · ");
+        return (
+          <Button
+            key={m.id}
+            type="button"
+            variant="ghost"
+            className="h-auto w-full justify-start gap-2 px-2 py-1 text-sm font-normal"
+            onClick={() => onSelect(m)}
+          >
+            <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            <span className="flex min-w-0 flex-col items-start">
+              <span className="truncate">{name}</span>
+              {meta && <span className="truncate text-[11px] text-muted-foreground">{meta}</span>}
+            </span>
+          </Button>
+        );
+      })}
+    </div>
+  );
 }
 
 export function ContactPicker({
@@ -55,13 +102,37 @@ export function ContactPicker({
   autoFocus,
   toastOnMatches = false,
   hydrateById = true,
+  companyId,
   id,
   className,
 }: ContactPickerProps) {
   const [matches, setMatches] = useState<Match[]>([]);
+  const [companyMatches, setCompanyMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(false);
   const lastSearchedRef = useRef<string>("");
   const reqIdRef = useRef(0);
+
+  // Sugere os contatos da empresa do registro antes de digitar qualquer coisa.
+  useEffect(() => {
+    if (!companyId) {
+      setCompanyMatches([]);
+      return;
+    }
+    let cancel = false;
+    (async () => {
+      const { data } = await supabase
+        .from("contacts")
+        .select(MATCH_SELECT)
+        .eq("company_id", companyId)
+        .is("deleted_at", null)
+        .limit(10);
+      if (cancel) return;
+      setCompanyMatches((data ?? []) as never as Match[]);
+    })();
+    return () => {
+      cancel = true;
+    };
+  }, [companyId]);
 
   // Hidrata nome quando recebemos só o id.
   useEffect(() => {
@@ -84,8 +155,8 @@ export function ContactPicker({
   }, [value.id, hydrateById]);
 
   // Busca a partir de 2 caracteres em nome, email, telefone ou celular.
-  // Faz um único round-trip com OR amplo (rápido, usa índices trigram)
-  // e refina em memória para exigir todos os tokens (AND).
+  // Cada palavra digitada é uma condição obrigatória no banco (AND de ORs por
+  // coluna), para não perder registros por causa do limite de linhas.
   useEffect(() => {
     const q = value.name.trim();
     if (value.id) {
@@ -110,32 +181,21 @@ export function ContactPicker({
         return;
       }
       const tokens = term.split(/\s+/).filter(Boolean);
-      const cols = ["first_name", "last_name", "email", "phone", "mobile_phone"];
-      const ors: string[] = [];
-      ors.push(...cols.map((c) => `${c}.ilike.%${term}%`));
+      let query = supabase.from("contacts").select(MATCH_SELECT).is("deleted_at", null);
+      // .or() encadeados são combinados com AND pelo PostgREST: cada token
+      // precisa aparecer em alguma das colunas pesquisáveis.
       for (const tok of tokens) {
-        for (const c of cols) ors.push(`${c}.ilike.%${tok}%`);
+        query = query.or(SEARCH_COLS.map((c) => `${c}.ilike.%${tok}%`).join(","));
       }
-      const { data, error } = await supabase
-        .from("contacts")
-        .select("id, first_name, last_name, email, phone, mobile_phone")
-        .or(ors.join(","))
-        .limit(50);
+      const { data, error } = await query.limit(50);
       if (reqId !== reqIdRef.current) return;
       setLoading(false);
       if (error) {
         setMatches([]);
         return;
       }
-      let rows = (data ?? []) as Match[];
-      const lowerTokens = tokens.map((t) => t.toLowerCase());
-      rows = rows.filter((r) => {
-        const hay = [r.first_name, r.last_name, r.email, r.phone, r.mobile_phone]
-          .filter(Boolean)
-          .map((s) => String(s).toLowerCase())
-          .join(" ");
-        return lowerTokens.every((tok) => hay.includes(tok));
-      });
+      let rows = (data ?? []) as never as Match[];
+
       const lowerTerm = term.toLowerCase();
       const score = (r: Match) => {
         const name = fullName(r).toLowerCase();
@@ -222,34 +282,12 @@ export function ContactPicker({
         </div>
       )}
 
+      {!value.id && matches.length === 0 && !loading && companyMatches.length > 0 && (
+        <MatchList title="Contatos desta empresa" rows={companyMatches} onSelect={select} />
+      )}
+
       {matches.length > 0 && (
-        <div className="max-h-72 space-y-1 overflow-y-auto rounded-md border bg-muted/30 p-2">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Contatos parecidos
-          </p>
-          {matches.map((m) => {
-            const name = fullName(m) || "(sem nome)";
-            const phone = m.phone || m.mobile_phone;
-            const meta = [m.email, phone].filter(Boolean).join(" · ");
-            return (
-              <Button
-                key={m.id}
-                type="button"
-                variant="ghost"
-                className="h-auto w-full justify-start gap-2 px-2 py-1 text-sm font-normal"
-                onClick={() => select(m)}
-              >
-                <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                <span className="flex min-w-0 flex-col items-start">
-                  <span className="truncate">{name}</span>
-                  {meta && (
-                    <span className="truncate text-[11px] text-muted-foreground">{meta}</span>
-                  )}
-                </span>
-              </Button>
-            );
-          })}
-        </div>
+        <MatchList title="Contatos parecidos" rows={matches} onSelect={select} />
       )}
 
       {loading && value.name.trim().length >= 2 && !value.id && (
@@ -307,6 +345,8 @@ export interface ContactPickerPopoverProps {
   onCreateNew?: () => void;
   placeholder?: string;
   label?: string;
+  /** Empresa do registro: sugere os contatos dela ao abrir. */
+  companyId?: string | null;
 }
 
 export function ContactPickerPopover({
@@ -314,6 +354,7 @@ export function ContactPickerPopover({
   onCreateNew,
   placeholder = "Buscar contato…",
   label,
+  companyId,
 }: ContactPickerPopoverProps) {
   const [open, setOpen] = useState(false);
   return (
@@ -332,6 +373,7 @@ export function ContactPickerPopover({
         <ContactPickerById
           mode="pick"
           id={null}
+          companyId={companyId}
           onChange={async (id) => {
             if (id) {
               await onPick(id);
@@ -341,6 +383,7 @@ export function ContactPickerPopover({
           placeholder={placeholder}
           autoFocus
         />
+
         {onCreateNew && (
           <Button
             variant="outline"

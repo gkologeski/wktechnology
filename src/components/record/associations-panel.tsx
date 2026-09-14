@@ -79,18 +79,23 @@ export function AssociationsPanel({ entity, entityId, companyId, contactId, deal
         <CompanyCard entity={entity} entityId={entityId} companyId={companyId ?? null} />
       )}
       {(entity === "company" || entity === "deal") && (
-        <ContactsCard entity={entity} entityId={entityId} />
+        <ContactsCard entity={entity} entityId={entityId} companyId={companyId ?? null} />
       )}
       {entity === "lead" && (
         <LazyCard>
-          <LeadContactsCard entityId={entityId} />
+          <LeadContactsCard entityId={entityId} companyId={companyId ?? null} />
         </LazyCard>
       )}
       {entity === "ticket" && (
         <LazyCard>
-          <SingleContactCard entityId={entityId} contactId={contactId ?? null} />
+          <SingleContactCard
+            entityId={entityId}
+            contactId={contactId ?? null}
+            companyId={companyId ?? null}
+          />
         </LazyCard>
       )}
+
       {(entity === "contact" || entity === "company") && (
         <DealsCard entity={entity} entityId={entityId} companyId={companyId} />
       )}

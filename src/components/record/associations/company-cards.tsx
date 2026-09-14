@@ -204,9 +204,11 @@ export function CompanyCard({
 export function ContactsCard({
   entity,
   entityId,
+  companyId,
 }: {
   entity: "company" | "deal";
   entityId: string;
+  companyId?: string | null;
 }) {
   type ContactRow = {
     id: string;
@@ -330,6 +332,7 @@ export function ContactsCard({
         action={
           <ContactPickerPopover
             placeholder="Buscar contato…"
+            companyId={entity === "company" ? entityId : (companyId ?? null)}
             onPick={request}
             onCreateNew={() => setCreateOpen(true)}
           />
@@ -426,9 +429,11 @@ export function ContactsCard({
 export function SingleContactCard({
   entityId,
   contactId,
+  companyId,
 }: {
   entityId: string;
   contactId: string | null;
+  companyId?: string | null;
 }) {
   const [c, setC] = useState<{
     id: string;
@@ -498,6 +503,7 @@ export function SingleContactCard({
         action={
           <ContactPickerPopover
             placeholder="Buscar contato…"
+            companyId={companyId ?? null}
             onPick={request}
             onCreateNew={() => setCreateOpen(true)}
             label={c ? "Trocar" : "Adicionar"}
