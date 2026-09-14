@@ -344,6 +344,8 @@ export interface ContactPickerPopoverProps {
   onCreateNew?: () => void;
   placeholder?: string;
   label?: string;
+  /** Empresa do registro: sugere os contatos dela ao abrir. */
+  companyId?: string | null;
 }
 
 export function ContactPickerPopover({
@@ -351,6 +353,7 @@ export function ContactPickerPopover({
   onCreateNew,
   placeholder = "Buscar contato…",
   label,
+  companyId,
 }: ContactPickerPopoverProps) {
   const [open, setOpen] = useState(false);
   return (
@@ -369,6 +372,7 @@ export function ContactPickerPopover({
         <ContactPickerById
           mode="pick"
           id={null}
+          companyId={companyId}
           onChange={async (id) => {
             if (id) {
               await onPick(id);
@@ -378,6 +382,7 @@ export function ContactPickerPopover({
           placeholder={placeholder}
           autoFocus
         />
+
         {onCreateNew && (
           <Button
             variant="outline"
