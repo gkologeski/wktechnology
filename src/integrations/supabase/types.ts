@@ -18658,6 +18658,7 @@ export type Database = {
           status: string
           twilio_sid: string | null
           variables: Json
+          wa_message_id: string | null
           workspace_id: string
         }
         Insert: {
@@ -18672,6 +18673,7 @@ export type Database = {
           status?: string
           twilio_sid?: string | null
           variables?: Json
+          wa_message_id?: string | null
           workspace_id?: string
         }
         Update: {
@@ -18686,6 +18688,7 @@ export type Database = {
           status?: string
           twilio_sid?: string | null
           variables?: Json
+          wa_message_id?: string | null
           workspace_id?: string
         }
         Relationships: [
@@ -18724,6 +18727,7 @@ export type Database = {
           sent: number
           started_at: string | null
           status: string
+          template_language: string | null
           template_name: string | null
           total: number
           updated_at: string
@@ -18747,6 +18751,7 @@ export type Database = {
           sent?: number
           started_at?: string | null
           status?: string
+          template_language?: string | null
           template_name?: string | null
           total?: number
           updated_at?: string
@@ -18770,6 +18775,7 @@ export type Database = {
           sent?: number
           started_at?: string | null
           status?: string
+          template_language?: string | null
           template_name?: string | null
           total?: number
           updated_at?: string

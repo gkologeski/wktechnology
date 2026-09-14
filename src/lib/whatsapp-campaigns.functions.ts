@@ -12,11 +12,7 @@ const CreateInput = z.object({
   name: z.string().min(1).max(120),
   body_template: z.string().max(1600).optional().default(""),
   template_name: z.string().max(60).optional(),
-  content_sid: z
-    .string()
-    .regex(/^HX[0-9a-fA-F]{32}$/, "ContentSid inválido")
-    .optional()
-    .or(z.literal("")),
+  template_language: z.string().max(10).optional(),
   content_variables_template: z.record(z.string(), z.string()).optional(),
   media_url: z.string().url().optional().or(z.literal("")),
   media_content_type: z.string().max(120).optional(),
@@ -37,7 +33,7 @@ export const createWhatsAppCampaign = createServerFn({ method: "POST" })
         name: data.name,
         body_template: data.body_template || null,
         template_name: data.template_name || null,
-        content_sid: data.content_sid || null,
+        template_language: data.template_language || null,
         content_variables_template: data.content_variables_template ?? {},
         media_url: data.media_url || null,
         media_content_type: data.media_content_type || null,
@@ -132,12 +128,7 @@ const UpdateInput = z.object({
   name: z.string().min(1).max(120).optional(),
   body_template: z.string().max(1600).nullable().optional(),
   template_name: z.string().max(60).nullable().optional(),
-  content_sid: z
-    .string()
-    .regex(/^HX[0-9a-fA-F]{32}$/, "ContentSid inválido")
-    .nullable()
-    .optional()
-    .or(z.literal("")),
+  template_language: z.string().max(10).nullable().optional(),
   content_variables_template: z.record(z.string(), z.string()).optional(),
   media_url: z.string().url().nullable().optional().or(z.literal("")),
   media_content_type: z.string().max(120).nullable().optional(),
@@ -163,7 +154,8 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
     if (data.name !== undefined) patch.name = data.name;
     if (data.body_template !== undefined) patch.body_template = data.body_template || null;
     if (data.template_name !== undefined) patch.template_name = data.template_name || null;
-    if (data.content_sid !== undefined) patch.content_sid = data.content_sid || null;
+    if (data.template_language !== undefined)
+      patch.template_language = data.template_language || null;
     if (data.content_variables_template !== undefined)
       patch.content_variables_template = data.content_variables_template;
     if (data.media_url !== undefined) patch.media_url = data.media_url || null;

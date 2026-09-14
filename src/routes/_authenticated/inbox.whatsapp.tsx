@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -56,7 +56,7 @@ import { toast } from "sonner";
 import { formatDateTime } from "@/lib/crm";
 import { useAuth } from "@/lib/auth";
 import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
-import { WhatsAppTemplatesEditor } from "@/components/whatsapp/whatsapp-templates-editor";
+
 
 export const Route = createFileRoute("/_authenticated/inbox/whatsapp")({
   component: WhatsAppInbox,
@@ -510,25 +510,25 @@ function WhatsAppSettingsButton() {
   const getCfg = useServerFn(getWhatsAppConfig);
   const saveCfg = useServerFn(saveWhatsAppConfig);
   const [open, setOpen] = useState(false);
-  const [from, setFrom] = useState("");
-  const [baseUrl, setBaseUrl] = useState("");
+  const [selected, setSelected] = useState("");
   const cfgQ = useQuery({ queryKey: ["wa", "config"], queryFn: () => getCfg(), enabled: open });
+
   useEffect(() => {
-    if (cfgQ.data) {
-      setFrom(cfgQ.data.from_number || "");
-      setBaseUrl(cfgQ.data.public_base_url || "");
-    }
+    if (cfgQ.data?.default_phone_number_id) setSelected(cfgQ.data.default_phone_number_id);
   }, [cfgQ.data]);
+
   const saveMut = useMutation({
-    mutationFn: () => saveCfg({ data: { from_number: from, public_base_url: baseUrl } }),
+    mutationFn: () => saveCfg({ data: { default_phone_number_id: selected } }),
     onSuccess: () => {
-      toast.success("Configuração salva");
+      toast.success("Número padrão atualizado");
       setOpen(false);
       qc.invalidateQueries({ queryKey: ["wa", "config"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
-  const effectiveBase = cfgQ.data?.effective_public_base ?? "";
+
+  const numbers = cfgQ.data?.numbers ?? [];
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -538,54 +538,64 @@ function WhatsAppSettingsButton() {
       </DialogTrigger>
       <DialogContent className="overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Twilio WhatsApp</DialogTitle>
+          <DialogTitle>WhatsApp Business (API oficial da Meta)</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
-          <div>
-            <label className="text-sm font-medium">From (E.164)</label>
-            <Input
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-              placeholder="+14155238886 (sandbox)"
-            />
-            <p className="mt-1 text-xs text-muted-foreground">
-              Deixe vazio para usar o sandbox padrão da Twilio (+14155238886). Para produção, cole o
-              número aprovado para WhatsApp Business.
-            </p>
-          </div>
-          <div>
-            <label className="text-sm font-medium">URL pública (base)</label>
-            <Input
-              value={baseUrl}
-              onChange={(e) => setBaseUrl(e.target.value)}
-              placeholder={effectiveBase || "https://seu-dominio.com"}
-            />
-            <p className="mt-1 text-xs text-muted-foreground">
-              Usada para webhooks de entrada e status callback. Padrão: domínio publicado.
-            </p>
-          </div>
-          <div className="rounded-md border bg-muted/40 p-3 text-xs space-y-2">
-            <div>
-              <div className="font-medium">Webhook inbound (When a message comes in)</div>
-              <code className="break-all">{effectiveBase}/api/public/hooks/twilio-whatsapp</code>
+          {cfgQ.isLoading ? (
+            <p className="text-sm text-muted-foreground">Carregando números conectados…</p>
+          ) : numbers.length === 0 ? (
+            <div className="rounded-md border bg-muted/40 p-3 text-sm space-y-2">
+              <p className="font-medium">Nenhum número conectado</p>
+              <p className="text-muted-foreground">
+                Conecte sua conta do WhatsApp Business em Configurações › WhatsApp (Meta) para
+                enviar e receber mensagens.
+              </p>
+              <Button asChild size="sm" variant="outline">
+                <Link to="/settings/whatsapp">Abrir configurações do WhatsApp</Link>
+              </Button>
             </div>
-            <div>
-              <div className="font-medium">Status callback (entrega/leitura)</div>
-              <code className="break-all">
-                {effectiveBase}/api/public/hooks/twilio-whatsapp-status
-              </code>
-              <p className="mt-1 text-muted-foreground">
-                Já é enviado automaticamente em cada mensagem. Use no Twilio Console se quiser
-                também receber por número.
+          ) : (
+            <div className="space-y-2">
+              <span className="text-sm font-medium">Número padrão de envio</span>
+              <div className="space-y-2">
+                {numbers.map((n) => (
+                  <label
+                    key={n.phone_number_id}
+                    className="flex cursor-pointer items-center gap-3 rounded-md border p-3 text-sm focus-within:ring-2 focus-within:ring-ring"
+                  >
+                    <input
+                      type="radio"
+                      name="wa-default-number"
+                      className="h-4 w-4"
+                      checked={selected === n.phone_number_id}
+                      onChange={() => setSelected(n.phone_number_id)}
+                    />
+                    <span>
+                      <span className="font-medium">{n.display_phone_number}</span>
+                      {n.verified_name ? (
+                        <span className="text-muted-foreground"> · {n.verified_name}</span>
+                      ) : null}
+                      {n.quality_rating ? (
+                        <span className="block text-xs text-muted-foreground">
+                          Qualidade: {n.quality_rating}
+                        </span>
+                      ) : null}
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Conversas já iniciadas continuam usando o número original. Templates aprovados são
+                gerenciados em Configurações › Templates do WhatsApp.
               </p>
             </div>
-          </div>
-          <div className="border-t pt-3">
-            <WhatsAppTemplatesEditor />
-          </div>
+          )}
         </div>
         <DialogFooter>
-          <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
+          <Button
+            onClick={() => saveMut.mutate()}
+            disabled={saveMut.isPending || !selected || numbers.length === 0}
+          >
             Salvar
           </Button>
         </DialogFooter>

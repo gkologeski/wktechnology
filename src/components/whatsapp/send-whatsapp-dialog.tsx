@@ -185,15 +185,13 @@ export function SendWhatsAppDialog({
   const varCount = Math.max(placeholderCount, selectedTpl?.variableCount ?? 0);
 
   const previewBody = selectedTpl ? applyTemplate(selectedTpl.body, vars) : renderTokens(body, ctx);
-  const isOfficialHsm = !!selectedTpl?.contentSid;
+  const isOfficialHsm = !!selectedTpl;
 
   const sendMut = useMutation({
     mutationFn: () => {
-      const contentVariables =
+      const templateVariables =
         isOfficialHsm && varCount > 0
-          ? Object.fromEntries(
-              Array.from({ length: varCount }, (_, i) => [String(i + 1), vars[i] ?? ""]),
-            )
+          ? Array.from({ length: varCount }, (_, i) => vars[i] ?? "")
           : undefined;
       return sendFn({
         data: {
@@ -201,8 +199,8 @@ export function SendWhatsAppDialog({
           body: isOfficialHsm ? "" : previewBody,
           contactId,
           templateName: templateName || undefined,
-          contentSid: isOfficialHsm ? selectedTpl!.contentSid : undefined,
-          contentVariables,
+          templateLanguage: selectedTpl?.language,
+          templateVariables,
           mediaUrl: isOfficialHsm ? undefined : media?.url,
           mediaContentType: isOfficialHsm ? undefined : media?.contentType,
         },
@@ -273,9 +271,9 @@ export function SendWhatsAppDialog({
               <SelectContent>
                 <SelectItem value="_none">Mensagem livre</SelectItem>
                 {templates.map((t) => (
-                  <SelectItem key={t.name} value={t.name}>
+                  <SelectItem key={`${t.name}:${t.language}`} value={t.name}>
                     {t.name}
-                    {t.contentSid ? "  · HSM oficial" : ""}
+                    {t.approved ? ` · ${t.language}` : ` · ${t.status}`}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -324,14 +322,15 @@ export function SendWhatsAppDialog({
                 </div>
               ))}
               <div>
-                <Label>Preview {isOfficialHsm ? "(HSM oficial)" : ""}</Label>
+                <Label>Preview {isOfficialHsm ? "(template oficial)" : ""}</Label>
                 <div className="rounded-md border bg-muted/40 p-2 text-sm whitespace-pre-wrap">
                   {previewBody || "—"}
                 </div>
                 {isOfficialHsm && (
                   <p className="mt-1 text-[10px] text-muted-foreground">
-                    Será enviado via ContentSid {selectedTpl!.contentSid} — Twilio renderiza o corpo
-                    aprovado. Mídia/texto livre são ignorados.
+                    Será enviado como template aprovado ({selectedTpl!.name} ·{" "}
+                    {selectedTpl!.language}) pela API oficial da Meta. Mídia e texto livre são
+                    ignorados.
                   </p>
                 )}
               </div>
