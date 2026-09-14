@@ -61,7 +61,9 @@ export async function sendWhatsAppFromServer(params: {
           provider: "meta",
           wa_phone_number_id: num.phoneNumberId,
           last_message_at: new Date().toISOString(),
-          last_message_preview: (body || `[template ${params.templateName}]`).slice(0, 120),
+          last_message_preview: (
+            body || `[template ${params.metaTemplate?.name ?? params.templateName ?? ""}]`
+          ).slice(0, 120),
         },
         { onConflict: "contact_phone,twilio_number" },
       )
@@ -81,7 +83,7 @@ export async function sendWhatsAppFromServer(params: {
         wa_message_id: wamid,
         status: "sent",
         template_name: params.templateName ?? null,
-        is_template: !!params.templateName,
+        is_template: !!params.metaTemplate,
         sent_at: new Date().toISOString(),
         raw: { ...raw, source: params.source ?? { origin: "dunning" } },
       });
