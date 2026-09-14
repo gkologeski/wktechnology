@@ -90,7 +90,7 @@ export const getWhatsAppCampaign = createServerFn({ method: "POST" })
     if (error) throw error;
     const { data: recips } = await supabase
       .from("whatsapp_campaign_recipients")
-      .select("id, phone, status, twilio_sid, error, sent_at")
+      .select("id, phone, status, wa_message_id, error, sent_at")
       .eq("campaign_id", data.id)
       .order("created_at", { ascending: true })
       .limit(500);

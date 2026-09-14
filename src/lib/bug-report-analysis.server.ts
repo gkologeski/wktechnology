@@ -68,7 +68,6 @@ const PROJECT_AREAS: { area: string; hints: string[] }[] = [
       "src/routes/_authenticated/inbox.whatsapp.tsx",
       "src/routes/_authenticated/campaigns.whatsapp.tsx",
       "src/components/whatsapp/*",
-      "src/routes/api/public/hooks/twilio-whatsapp.ts",
     ],
   },
   {

@@ -242,7 +242,7 @@ export function SendWhatsAppDialog({
             <MessageDraftStatus status={draft.status} savedAt={draft.savedAt} />
           </div>
           <DialogDescription>
-            {contactName ? `Para ${contactName}` : "Envie uma mensagem via Twilio"}
+            {contactName ? `Para ${contactName}` : "Envie uma mensagem pela API oficial da Meta"}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
