@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -26,6 +27,8 @@ import { ensureLeadSource } from "@/lib/lead-sources";
 import { ensureLeadRelationsSafe } from "@/lib/leads/lead-relations";
 import { checkLeadDuplicate } from "@/lib/leads/lead-duplicate-check";
 import { normalizeLinkedinUrl } from "@/lib/prospecting/linkedin-url";
+import { enrichLeadForQualification } from "@/lib/prospecting/qualification-enrichment.functions";
+import { markLinkedinEnriched } from "@/lib/prospecting/use-linkedin-enrichment";
 import { isEmail, toE164 } from "@/lib/validators";
 import { useToastCreated } from "@/lib/toast-nav";
 import { OnboardingGuidedEntry } from "@/components/onboarding/onboarding-guided-entry";
@@ -53,6 +56,7 @@ export function CreateLeadDialog({
 }) {
   const { user } = useAuth();
   const toastCreated = useToastCreated();
+  const enrichFn = useServerFn(enrichLeadForQualification);
   const [saving, setSaving] = useState(false);
   const [step, setStep] = useState<"search" | "form">("search");
   const [form, setForm] = useState(EMPTY_FORM);
@@ -252,6 +256,34 @@ export function CreateLeadDialog({
       }
       // Garante empresa e contato vinculados ao lead recém-criado
       await ensureLeadRelationsSafe(supabase, data!.id);
+      // LinkedIn informado no cadastro: dispara o enriquecimento na hora.
+      // Roda em segundo plano (é chamada paga e lenta) com feedback próprio.
+      if (linkedinUrl) {
+        const leadId = data!.id;
+        const toastId = `linkedin-enrich-${leadId}`;
+        markLinkedinEnriched(leadId, linkedinUrl);
+        toast.loading("Enriquecendo o lead pelo LinkedIn…", { id: toastId });
+        void (async () => {
+          try {
+            const result = await enrichFn({
+              data: { leadId, linkedinUrl, force: true },
+            });
+            if (result.found) {
+              toast.success("Lead enriquecido a partir do LinkedIn.", { id: toastId });
+            } else {
+              toast.info(result.warnings[0] ?? "Nenhum dado novo encontrado para este LinkedIn.", {
+                id: toastId,
+              });
+            }
+            onCreated?.(leadId);
+          } catch (err) {
+            toast.error(
+              err instanceof Error ? err.message : "Não foi possível enriquecer pelo LinkedIn.",
+              { id: toastId },
+            );
+          }
+        })();
+      }
       // Persiste fonte nova no catálogo
       if (form.source.trim()) {
         await ensureLeadSource(user.id, form.source.trim());
