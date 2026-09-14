@@ -256,6 +256,34 @@ export function CreateLeadDialog({
       }
       // Garante empresa e contato vinculados ao lead recém-criado
       await ensureLeadRelationsSafe(supabase, data!.id);
+      // LinkedIn informado no cadastro: dispara o enriquecimento na hora.
+      // Roda em segundo plano (é chamada paga e lenta) com feedback próprio.
+      if (linkedinUrl) {
+        const leadId = data!.id;
+        const toastId = `linkedin-enrich-${leadId}`;
+        markLinkedinEnriched(leadId, linkedinUrl);
+        toast.loading("Enriquecendo o lead pelo LinkedIn…", { id: toastId });
+        void (async () => {
+          try {
+            const result = await enrichFn({
+              data: { leadId, linkedinUrl, force: true },
+            });
+            if (result.found) {
+              toast.success("Lead enriquecido a partir do LinkedIn.", { id: toastId });
+            } else {
+              toast.info(result.warnings[0] ?? "Nenhum dado novo encontrado para este LinkedIn.", {
+                id: toastId,
+              });
+            }
+            onCreated?.(leadId);
+          } catch (err) {
+            toast.error(
+              err instanceof Error ? err.message : "Não foi possível enriquecer pelo LinkedIn.",
+              { id: toastId },
+            );
+          }
+        })();
+      }
       // Persiste fonte nova no catálogo
       if (form.source.trim()) {
         await ensureLeadSource(user.id, form.source.trim());
