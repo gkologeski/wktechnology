@@ -33,7 +33,8 @@ import {
   useLegalEntityFilter,
   useLegalEntityFilterInput,
 } from "@/components/finance/legal-entity-select";
-import { downloadCsv, toCsv } from "@/lib/csv-export";
+import { ExportMenuButton } from "@/components/export-menu-button";
+import { exportRows } from "@/lib/export/export-rows";
 import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
 import { AssigneeCell } from "@/components/entity/assignee-cell";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -153,32 +154,30 @@ export function EntriesListPage({
         countLabel={rows.length === 1 ? "lançamento" : "lançamentos"}
         actions={
           <div className="flex gap-2">
-            <Button
-              variant="outline"
+            <ExportMenuButton
+              size="default"
               disabled={rows.length === 0}
-              onClick={() => {
-                const csv = toCsv(rows, [
-                  { header: "Descrição", value: (r) => r.description },
-                  { header: "Contraparte", value: (r) => r.companies?.name ?? "" },
-                  { header: "Categoria", value: (r) => r.financial_categories?.name ?? "" },
-                  { header: "Status", value: (r) => STATUS_LABEL[r.status] ?? r.status },
-                  { header: "Valor", value: (r) => Number(r.amount).toFixed(2) },
-                  {
-                    header: "Em aberto",
-                    value: (r) => (Number(r.amount) - Number(r.paid_amount ?? 0)).toFixed(2),
-                  },
-                  { header: "Moeda", value: (r) => r.currency ?? "BRL" },
-                  { header: "Vencimento", value: (r) => r.due_date },
-                  { header: "Competência", value: (r) => r.competence_date ?? "" },
-                ]);
-                downloadCsv(
-                  `financeiro-${direction}-${new Date().toISOString().slice(0, 10)}`,
-                  csv,
-                );
-              }}
-            >
-              <Download className="h-4 w-4 mr-1" /> Exportar CSV
-            </Button>
+              onExport={(format) =>
+                exportRows(rows, {
+                  filename: `financeiro-${direction}`,
+                  format,
+                  columns: [
+                    { header: "Descrição", value: (r) => r.description },
+                    { header: "Contraparte", value: (r) => r.companies?.name ?? "" },
+                    { header: "Categoria", value: (r) => r.financial_categories?.name ?? "" },
+                    { header: "Status", value: (r) => STATUS_LABEL[r.status] ?? r.status },
+                    { header: "Valor", value: (r) => Number(r.amount).toFixed(2) },
+                    {
+                      header: "Em aberto",
+                      value: (r) => (Number(r.amount) - Number(r.paid_amount ?? 0)).toFixed(2),
+                    },
+                    { header: "Moeda", value: (r) => r.currency ?? "BRL" },
+                    { header: "Vencimento", value: (r) => r.due_date },
+                    { header: "Competência", value: (r) => r.competence_date ?? "" },
+                  ],
+                })
+              }
+            />
             <Button onClick={() => setOpenNew(true)}>
               <Plus className="h-4 w-4 mr-1" /> Novo lançamento
             </Button>

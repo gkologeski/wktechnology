@@ -10,6 +10,8 @@ import { TASK_PRIORITIES, TASK_STATUSES, formatDateTime } from "@/lib/crm";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { BulkActionBar } from "@/components/bulk-action-bar";
+import { ExportMenuButton } from "@/components/export-menu-button";
+import { exportRows, type ExportFormat } from "@/lib/export/export-rows";
 import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -227,17 +229,28 @@ function TasksHubspotView() {
     });
   };
 
-  const exportCsv = () => {
-    if (!rows.length) return toast.error("Nenhum registro para exportar");
-    exportRowsToCsv("tarefas", rows as unknown as Record<string, unknown>[], [
-      { key: "subject", label: "Assunto" },
-      { key: "task_status", label: "Status" },
-      { key: "task_priority", label: "Prioridade" },
-      { key: "due_date", label: "Vencimento" },
-      { key: "completed", label: "Concluída" },
-      { key: "created_at", label: "Criado em" },
-      { key: "updated_at", label: "Atualizado em" },
-    ]);
+  const exportData = async (
+    format: ExportFormat,
+    rowsToExport?: Record<string, unknown>[],
+  ): Promise<void> => {
+    const out = (rowsToExport ?? (rows as unknown as Record<string, unknown>[])) || [];
+    if (!out.length) {
+      toast.error("Nenhum registro para exportar");
+      return;
+    }
+    await exportRows<Record<string, unknown>>(out, {
+      filename: "tarefas",
+      format,
+      columns: [
+        { header: "Assunto", value: (r) => r["subject"] },
+        { header: "Status", value: (r) => r["task_status"] },
+        { header: "Prioridade", value: (r) => r["task_priority"] },
+        { header: "Vencimento", value: (r) => r["due_date"] },
+        { header: "Concluída", value: (r) => r["completed"] },
+        { header: "Criado em", value: (r) => r["created_at"] },
+        { header: "Atualizado em", value: (r) => r["updated_at"] },
+      ],
+    });
   };
 
   useEffect(() => {
@@ -750,9 +763,7 @@ function TasksHubspotView() {
           <Button variant="outline" size="sm" asChild>
             <Link to="/tasks/queues">Queues</Link>
           </Button>
-          <Button variant="outline" size="sm" onClick={exportCsv}>
-            <Download className="mr-1.5 h-4 w-4" /> Exportar
-          </Button>
+          <ExportMenuButton onExport={(f) => exportData(f)} />
           <Button size="sm" onClick={() => setCreateOpen(true)}>
             <Plus className="mr-1.5 h-4 w-4" /> Criar tarefa
           </Button>
@@ -908,6 +919,18 @@ function TasksHubspotView() {
                 onSelectAll={selectAllMatching}
                 isSelectingAll={isSelectingAll}
               >
+                <ExportMenuButton
+                  variant="ghost"
+                  label="Exportar selecionados"
+                  onExport={(f) =>
+                    exportData(
+                      f,
+                      (rows as unknown as Record<string, unknown>[]).filter((r) =>
+                        selectedIds.has(String(r["id"])),
+                      ),
+                    )
+                  }
+                />
                 <Button variant="ghost" size="sm" className="h-7" onClick={bulkComplete}>
                   <Check className="mr-1 h-3.5 w-3.5" /> Concluir
                 </Button>
@@ -938,7 +961,15 @@ function TasksHubspotView() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onSelect={exportCsv}>Exportar CSV</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => void exportData("csv")}>
+                    Exportar CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => void exportData("json")}>
+                    Exportar JSON
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => void exportData("xlsx")}>
+                    Exportar Excel (XLSX)
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

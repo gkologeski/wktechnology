@@ -3,11 +3,12 @@
 // e excluir com confirmação por contagem — tudo respeitando RBAC/RLS.
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import Papa from "papaparse";
 import { ListTodo, UserCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { BulkActionBar } from "@/components/bulk-action-bar";
+import { ExportMenuButton } from "@/components/export-menu-button";
+import { exportRows, type ExportFormat } from "@/lib/export/export-rows";
 import { BulkEditDialog, type BulkField } from "@/components/bulk-edit-dialog";
 import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
 import { BulkAssignDialog } from "@/components/bulk-assign-dialog";
@@ -85,29 +86,29 @@ export function GridBulkBar<T extends { id: string }>({
     return out;
   };
 
-  const exportCsv = async () => {
-    if (!ids.length) return toast.error("Nada para exportar");
+  const exportSelected = async (format: ExportFormat): Promise<void> => {
+    if (!ids.length) {
+      toast.error("Nada para exportar");
+      return;
+    }
     setExporting(true);
     try {
       // Quadros paginam os cards (ex.: 100 por etapa) — quando há mais ids
       // selecionados do que linhas carregadas, busca tudo antes de exportar.
       const data = rows.length >= ids.length ? rows : await fetchAllRows();
-      if (!data.length) return toast.error("Nada para exportar");
+      if (!data.length) {
+        toast.error("Nada para exportar");
+        return;
+      }
       if (data.length < ids.length) {
         toast.warning(
           `${data.length} de ${ids.length} registros exportados — os demais estão fora do seu acesso.`,
         );
       }
-      const csv = Papa.unparse(data as unknown as Record<string, unknown>[]);
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${table}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao exportar");
+      await exportRows(data as unknown as Record<string, unknown>[], {
+        filename: table,
+        format,
+      });
     } finally {
       setExporting(false);
     }
@@ -142,9 +143,11 @@ export function GridBulkBar<T extends { id: string }>({
         isSelectingAll={isSelectingAll}
       >
         {csvEnabled && (
-          <Button variant="outline" size="sm" disabled={exporting} onClick={() => void exportCsv()}>
-            {exporting ? "Exportando…" : "Exportar selecionados"}
-          </Button>
+          <ExportMenuButton
+            label="Exportar selecionados"
+            disabled={exporting}
+            onExport={exportSelected}
+          />
         )}
         {canBulkEdit && (
           <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
