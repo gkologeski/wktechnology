@@ -106,9 +106,11 @@ export function LeadContactsCard({
   const action = !contact ? (
     <ContactPickerPopover
       label="Adicionar contato"
+      companyId={companyId ?? null}
       onPick={(id) => linkContact(id)}
       onCreateNew={() => setCreateOpen(true)}
     />
+
   ) : null;
 
   return (
