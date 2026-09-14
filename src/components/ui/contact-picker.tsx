@@ -114,8 +114,8 @@ export function ContactPicker({
   }, [value.id, hydrateById]);
 
   // Busca a partir de 2 caracteres em nome, email, telefone ou celular.
-  // Faz um único round-trip com OR amplo (rápido, usa índices trigram)
-  // e refina em memória para exigir todos os tokens (AND).
+  // Cada palavra digitada é uma condição obrigatória no banco (AND de ORs por
+  // coluna), para não perder registros por causa do limite de linhas.
   useEffect(() => {
     const q = value.name.trim();
     if (value.id) {
@@ -140,32 +140,21 @@ export function ContactPicker({
         return;
       }
       const tokens = term.split(/\s+/).filter(Boolean);
-      const cols = ["first_name", "last_name", "email", "phone", "mobile_phone"];
-      const ors: string[] = [];
-      ors.push(...cols.map((c) => `${c}.ilike.%${term}%`));
+      let query = supabase.from("contacts").select(MATCH_SELECT).is("deleted_at", null);
+      // .or() encadeados são combinados com AND pelo PostgREST: cada token
+      // precisa aparecer em alguma das colunas pesquisáveis.
       for (const tok of tokens) {
-        for (const c of cols) ors.push(`${c}.ilike.%${tok}%`);
+        query = query.or(SEARCH_COLS.map((c) => `${c}.ilike.%${tok}%`).join(","));
       }
-      const { data, error } = await supabase
-        .from("contacts")
-        .select("id, first_name, last_name, email, phone, mobile_phone")
-        .or(ors.join(","))
-        .limit(50);
+      const { data, error } = await query.limit(50);
       if (reqId !== reqIdRef.current) return;
       setLoading(false);
       if (error) {
         setMatches([]);
         return;
       }
-      let rows = (data ?? []) as Match[];
-      const lowerTokens = tokens.map((t) => t.toLowerCase());
-      rows = rows.filter((r) => {
-        const hay = [r.first_name, r.last_name, r.email, r.phone, r.mobile_phone]
-          .filter(Boolean)
-          .map((s) => String(s).toLowerCase())
-          .join(" ");
-        return lowerTokens.every((tok) => hay.includes(tok));
-      });
+      let rows = (data ?? []) as never as Match[];
+
       const lowerTerm = term.toLowerCase();
       const score = (r: Match) => {
         const name = fullName(r).toLowerCase();
