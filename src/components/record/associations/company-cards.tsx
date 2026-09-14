@@ -504,10 +504,12 @@ export function SingleContactCard({
         action={
           <ContactPickerPopover
             placeholder="Buscar contato…"
+            companyId={companyId ?? null}
             onPick={request}
             onCreateNew={() => setCreateOpen(true)}
             label={c ? "Trocar" : "Adicionar"}
           />
+
         }
       >
         {!c ? (
