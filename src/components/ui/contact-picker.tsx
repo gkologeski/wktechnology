@@ -61,6 +61,7 @@ export function ContactPicker({
   autoFocus,
   toastOnMatches = false,
   hydrateById = true,
+  companyId,
   id,
   className,
 }: ContactPickerProps) {
