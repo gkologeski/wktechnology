@@ -60,6 +60,10 @@ export function CreateLeadDialog({
   const { user } = useAuth();
   const toastCreated = useToastCreated();
   const enrichFn = useServerFn(enrichLeadForQualification);
+  const previewFn = useServerFn(previewLinkedinEnrichment);
+  const [linkedinLoading, setLinkedinLoading] = useState(false);
+  /** Último LinkedIn já consultado — evita repetir a chamada paga no blur. */
+  const previewedLinkedin = useRef<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [step, setStep] = useState<"search" | "form">("search");
   const [form, setForm] = useState(EMPTY_FORM);
@@ -82,6 +86,8 @@ export function CreateLeadDialog({
     setDomainInput("");
     setCompany({ id: null, name: "" });
     setStep("search");
+    setLinkedinLoading(false);
+    previewedLinkedin.current = null;
   };
 
   const closeDialog = () => {
