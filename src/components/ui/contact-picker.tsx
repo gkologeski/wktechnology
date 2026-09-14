@@ -51,6 +51,45 @@ export interface ContactPickerProps {
   className?: string;
 }
 
+/** Lista de contatos selecionáveis com rótulo de seção. */
+function MatchList({
+  title,
+  rows,
+  onSelect,
+}: {
+  title: string;
+  rows: Match[];
+  onSelect: (m: Match) => void;
+}) {
+  return (
+    <div className="max-h-72 space-y-1 overflow-y-auto rounded-md border bg-muted/30 p-2">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {title}
+      </p>
+      {rows.map((m) => {
+        const name = fullName(m) || "(sem nome)";
+        const phone = m.phone || m.mobile_phone;
+        const meta = [m.email, phone].filter(Boolean).join(" · ");
+        return (
+          <Button
+            key={m.id}
+            type="button"
+            variant="ghost"
+            className="h-auto w-full justify-start gap-2 px-2 py-1 text-sm font-normal"
+            onClick={() => onSelect(m)}
+          >
+            <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            <span className="flex min-w-0 flex-col items-start">
+              <span className="truncate">{name}</span>
+              {meta && <span className="truncate text-[11px] text-muted-foreground">{meta}</span>}
+            </span>
+          </Button>
+        );
+      })}
+    </div>
+  );
+}
+
 
 export function ContactPicker({
   mode = "pick_or_create",
