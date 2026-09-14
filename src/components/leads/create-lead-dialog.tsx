@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -27,7 +27,10 @@ import { ensureLeadSource } from "@/lib/lead-sources";
 import { ensureLeadRelationsSafe } from "@/lib/leads/lead-relations";
 import { checkLeadDuplicate } from "@/lib/leads/lead-duplicate-check";
 import { normalizeLinkedinUrl } from "@/lib/prospecting/linkedin-url";
-import { enrichLeadForQualification } from "@/lib/prospecting/qualification-enrichment.functions";
+import {
+  enrichLeadForQualification,
+  previewLinkedinEnrichment,
+} from "@/lib/prospecting/qualification-enrichment.functions";
 import { markLinkedinEnriched } from "@/lib/prospecting/use-linkedin-enrichment";
 import { isEmail, toE164 } from "@/lib/validators";
 import { useToastCreated } from "@/lib/toast-nav";
@@ -57,6 +60,10 @@ export function CreateLeadDialog({
   const { user } = useAuth();
   const toastCreated = useToastCreated();
   const enrichFn = useServerFn(enrichLeadForQualification);
+  const previewFn = useServerFn(previewLinkedinEnrichment);
+  const [linkedinLoading, setLinkedinLoading] = useState(false);
+  /** Último LinkedIn já consultado — evita repetir a chamada paga no blur. */
+  const previewedLinkedin = useRef<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [step, setStep] = useState<"search" | "form">("search");
   const [form, setForm] = useState(EMPTY_FORM);
@@ -79,6 +86,8 @@ export function CreateLeadDialog({
     setDomainInput("");
     setCompany({ id: null, name: "" });
     setStep("search");
+    setLinkedinLoading(false);
+    previewedLinkedin.current = null;
   };
 
   const closeDialog = () => {
@@ -128,6 +137,72 @@ export function CreateLeadDialog({
       handleCompanyChange({ id: data.id as string, name: (data.name as string) ?? term });
     } else {
       setCompany({ id: null, name: term });
+    }
+  };
+
+  /**
+   * Busca os dados do LinkedIn assim que o link é informado (blur/Enter) e
+   * preenche apenas os campos ainda vazios — nada é gravado no banco aqui.
+   */
+  const runLinkedinPreview = async () => {
+    const raw = form.linkedin_url.trim();
+    if (!raw || linkedinLoading) return;
+    const parsed = normalizeLinkedinUrl(raw);
+    if (!parsed.ok) {
+      setLinkedinError(parsed.error);
+      return;
+    }
+    setLinkedinError(null);
+    if (previewedLinkedin.current === parsed.url) return;
+    previewedLinkedin.current = parsed.url;
+    setLinkedinLoading(true);
+    const toastId = `linkedin-preview-${parsed.url}`;
+    toast.loading("Buscando dados do LinkedIn…", { id: toastId });
+    try {
+      const result = await previewFn({
+        data: {
+          linkedinUrl: parsed.url,
+          companyName: company.name.trim() || null,
+          domain: companyDomain ?? null,
+        },
+      });
+      const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+      const filled: string[] = [];
+      setForm((f) => {
+        const next = { ...f, linkedin_url: result.linkedinUrl };
+        const put = (key: keyof typeof EMPTY_FORM, value: string, label: string) => {
+          if (!value || str(next[key])) return;
+          next[key] = value;
+          filled.push(label);
+        };
+        put("first_name", str(result.lead.first_name), "nome");
+        put("last_name", str(result.lead.last_name), "sobrenome");
+        put("email", str(result.lead.email), "e-mail");
+        put("phone", str(result.lead.phone), "telefone");
+        put("company_name", str(result.lead.company_name), "empresa");
+        return next;
+      });
+      const suggestedCompany = str(result.lead.company_name) || str(result.companies.name);
+      if (suggestedCompany && !company.id && !company.name.trim()) {
+        await resolveCompanyByName(suggestedCompany);
+      }
+      if (filled.length > 0) {
+        toast.success(`Preenchido pelo LinkedIn: ${filled.join(", ")}.`, { id: toastId });
+      } else if (result.found) {
+        toast.info("Os dados do LinkedIn já estavam preenchidos.", { id: toastId });
+      } else {
+        toast.info(result.warnings[0] ?? "Nenhum dado encontrado para este LinkedIn.", {
+          id: toastId,
+        });
+      }
+    } catch (err) {
+      // Permite nova tentativa depois de uma falha (crédito, rede, etc.).
+      previewedLinkedin.current = null;
+      toast.error(err instanceof Error ? err.message : "Não foi possível consultar o LinkedIn.", {
+        id: toastId,
+      });
+    } finally {
+      setLinkedinLoading(false);
     }
   };
 
@@ -352,20 +427,39 @@ export function CreateLeadDialog({
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="linkedin_url">LinkedIn</Label>
-                  <Input
-                    id="linkedin_url"
-                    value={form.linkedin_url}
-                    placeholder="https://www.linkedin.com/in/nome-sobrenome"
-                    aria-invalid={linkedinError ? true : undefined}
-                    aria-describedby="linkedin_url-hint"
-                    onChange={(e) => {
-                      setLinkedinError(null);
-                      setForm({ ...form, linkedin_url: e.target.value });
-                    }}
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id="linkedin_url"
+                      value={form.linkedin_url}
+                      placeholder="https://www.linkedin.com/in/nome-sobrenome"
+                      aria-invalid={linkedinError ? true : undefined}
+                      aria-describedby="linkedin_url-hint"
+                      aria-busy={linkedinLoading || undefined}
+                      disabled={linkedinLoading}
+                      onChange={(e) => {
+                        setLinkedinError(null);
+                        setForm({ ...form, linkedin_url: e.target.value });
+                      }}
+                      onBlur={() => void runLinkedinPreview()}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          void runLinkedinPreview();
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => void runLinkedinPreview()}
+                      disabled={linkedinLoading || !form.linkedin_url.trim()}
+                    >
+                      {linkedinLoading ? "Buscando…" : "Buscar"}
+                    </Button>
+                  </div>
                   <p id="linkedin_url-hint" className="text-[11px] text-muted-foreground">
                     {linkedinError ??
-                      "Opcional. Melhora a precisão do enriquecimento na qualificação."}
+                      "Opcional. Ao informar o link, buscamos nome, e-mail, telefone e empresa e preenchemos os campos vazios."}
                   </p>
                 </div>
                 <div className="space-y-1.5">
