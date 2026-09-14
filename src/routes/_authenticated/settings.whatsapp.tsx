@@ -1,7 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Link as LinkIcon, RefreshCw, Plus, Phone, Shield, Check } from "lucide-react";
+import {
+  Check,
+  Copy,
+  Link as LinkIcon,
+  Loader2,
+  Phone,
+  Plus,
+  RefreshCw,
+  Shield,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -9,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { WhatsAppSetupGuide } from "@/components/whatsapp/whatsapp-setup-guide";
 import {
   listWabas,
   connectWaba,
@@ -18,6 +28,22 @@ import {
 } from "@/lib/whatsapp-meta.functions";
 
 export const Route = createFileRoute("/_authenticated/settings/whatsapp")({
+  head: () => ({
+    meta: [
+      { title: "Configurar WhatsApp oficial | TechERP" },
+      {
+        name: "description",
+        content: "Conecte sua conta do WhatsApp Business da Meta ao TechERP.",
+      },
+      { property: "og:title", content: "Configurar WhatsApp oficial | TechERP" },
+      {
+        property: "og:description",
+        content: "Guia de conexão do WhatsApp Business da Meta ao TechERP.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: WhatsAppSettings,
 });
 
@@ -82,7 +108,9 @@ function WhatsAppSettings() {
         </p>
       </div>
 
-      <Card>
+      <WhatsAppSetupGuide />
+
+      <Card id="whatsapp-webhook">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Shield className="size-4" /> Webhook
@@ -94,12 +122,29 @@ function WhatsAppSettings() {
         <CardContent className="space-y-3 text-sm">
           <div>
             <Label className="text-xs text-muted-foreground">Callback URL</Label>
-            <div className="font-mono bg-muted rounded px-3 py-2 break-all">{WEBHOOK_URL}</div>
+            <div className="flex items-start gap-2">
+              <div className="min-w-0 flex-1 break-all rounded bg-muted px-3 py-2 font-mono">
+                {WEBHOOK_URL}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label="Copiar URL do webhook"
+                title="Copiar URL do webhook"
+                onClick={async () => {
+                  await navigator.clipboard.writeText(WEBHOOK_URL);
+                  toast.success("URL do webhook copiada");
+                }}
+              >
+                <Copy className="size-4" aria-hidden="true" />
+              </Button>
+            </div>
           </div>
           <div>
             <Label className="text-xs text-muted-foreground">Verify Token</Label>
             <div className="font-mono bg-muted rounded px-3 py-2">
-              valor do secret <code>META_WHATSAPP_VERIFY_TOKEN</code>
+              Solicite ao administrador responsável pela configuração do TechERP.
             </div>
           </div>
           <div className="text-xs text-muted-foreground">
@@ -109,19 +154,20 @@ function WhatsAppSettings() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card id="connect-whatsapp">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Plus className="size-4" /> Conectar WhatsApp Business Account
           </CardTitle>
           <CardDescription>
-            Cole o WABA ID e um System User access token (longa duração) gerado no Business Manager.
+            Cole o ID da conta do WhatsApp Business e o token de longa duração gerado para o Usuário
+            do Sistema.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={onConnect} className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1">
-              <Label htmlFor="waba">WABA ID</Label>
+              <Label htmlFor="waba">ID da conta do WhatsApp Business (WABA ID)</Label>
               <Input
                 id="waba"
                 value={wabaId}
@@ -139,7 +185,7 @@ function WhatsAppSettings() {
               />
             </div>
             <div className="space-y-1 sm:col-span-2">
-              <Label htmlFor="token">System User Access Token</Label>
+              <Label htmlFor="token">Token de acesso do Usuário do Sistema</Label>
               <Input
                 id="token"
                 type="password"
@@ -162,7 +208,7 @@ function WhatsAppSettings() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card id="connected-whatsapp-accounts">
         <CardHeader>
           <CardTitle className="text-base">Contas conectadas</CardTitle>
         </CardHeader>
@@ -200,7 +246,7 @@ function WhatsAppSettings() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card id="whatsapp-phone-numbers">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Phone className="size-4" /> Números
