@@ -332,9 +332,11 @@ export function ContactsCard({
         action={
           <ContactPickerPopover
             placeholder="Buscar contato…"
+            companyId={entity === "company" ? entityId : (companyId ?? null)}
             onPick={request}
             onCreateNew={() => setCreateOpen(true)}
           />
+
         }
       >
         {rows.length === 0 ? (
