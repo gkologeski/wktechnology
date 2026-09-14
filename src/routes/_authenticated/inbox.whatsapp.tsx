@@ -57,7 +57,6 @@ import { formatDateTime } from "@/lib/crm";
 import { useAuth } from "@/lib/auth";
 import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
 
-
 export const Route = createFileRoute("/_authenticated/inbox/whatsapp")({
   component: WhatsAppInbox,
 });

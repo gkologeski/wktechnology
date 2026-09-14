@@ -243,17 +243,13 @@ function CampaignsPage() {
                   <label className="text-xs text-muted-foreground">
                     Mensagem (use {`{{1}}, {{2}}`} para variáveis)
                   </label>
-                  <Textarea
-                    rows={3}
-                    value={body}
-                    onChange={(e) => setBody(e.target.value)}
-                  />
+                  <Textarea rows={3} value={body} onChange={(e) => setBody(e.target.value)} />
                 </div>
               )}
               {isHsm && (
                 <p className="text-xs text-muted-foreground">
-                  Template oficial aprovado pela Meta. Use as colunas após o telefone
-                  para as {selectedTpl?.variableCount ?? 0} variáveis.
+                  Template oficial aprovado pela Meta. Use as colunas após o telefone para as{" "}
+                  {selectedTpl?.variableCount ?? 0} variáveis.
                 </p>
               )}
               <div>

@@ -48,9 +48,8 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    const { resolveWaNumber, metaSend, findConversationNumber } = await import(
-      "@/lib/whatsapp/meta-channel.server"
-    );
+    const { resolveWaNumber, metaSend, findConversationNumber } =
+      await import("@/lib/whatsapp/meta-channel.server");
 
     const toBare = normalizePhone(data.to);
     const existing = await findConversationNumber(supabase, workspaceId, toBare);
@@ -205,9 +204,8 @@ export const markWhatsAppRead = createServerFn({ method: "POST" })
         .maybeSingle();
       if (last?.wa_message_id) {
         const workspaceId = await resolveActiveWorkspace(userId);
-        const { resolveWaNumber, metaMarkRead } = await import(
-          "@/lib/whatsapp/meta-channel.server"
-        );
+        const { resolveWaNumber, metaMarkRead } =
+          await import("@/lib/whatsapp/meta-channel.server");
         const num = await resolveWaNumber(workspaceId, conv?.wa_phone_number_id ?? null);
         await metaMarkRead(num, last.wa_message_id as string);
       }
@@ -339,9 +337,9 @@ export const listWhatsAppTemplates = createServerFn({ method: "GET" })
     if (error) throw error;
     return (data ?? []).map((t: any) => {
       const comps = Array.isArray(t.components) ? t.components : [];
-      const bodyComp = comps.find(
-        (c: any) => String(c?.type ?? "").toUpperCase() === "BODY",
-      ) as { text?: string } | undefined;
+      const bodyComp = comps.find((c: any) => String(c?.type ?? "").toUpperCase() === "BODY") as
+        | { text?: string }
+        | undefined;
       const body = bodyComp?.text ?? "";
       const variableCount = Array.from(body.matchAll(/\{\{(\d+)\}\}/g))
         .map((m) => Number(m[1]))
