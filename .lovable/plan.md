@@ -44,7 +44,7 @@ Trocar o motor de envio de WhatsApp do Twilio para a API oficial da Meta, manten
 
 ## Detalhes técnicos
 
-- Novo resolvedor de canal (`provider`) em módulo server-only, consultando `wa_phone_numbers`/`wa_business_accounts` do workspace ativo; `sendWhatsAppMessage` em `src/lib/whatsapp.functions.ts` passa a delegar para Meta ou Twilio mantendo a mesma assinatura, para não alterar chamadores.
+- `sendWhatsAppMessage` em `src/lib/whatsapp.functions.ts` mantém a assinatura (para não alterar chamadores), mas passa a resolver o número Meta do workspace em `wa_phone_numbers`/`wa_business_accounts` e enviar pela Cloud API; o código Twilio de WhatsApp (envio, webhooks `twilio-whatsapp*`, templates) é removido. Voz/Twilio Voice permanece intacto.
 - `src/lib/whatsapp-send.server.ts` (cobrança/cron) ganha o mesmo resolvedor.
 - Envio de mídia e `mark_as_read` adicionados em `src/lib/whatsapp-meta.functions.ts`; status por `wamid` no webhook `src/routes/api/public/meta/whatsapp-webhook.ts`.
 - Campanhas (`campaigns.whatsapp.tsx` + `whatsapp-campaign-tick.ts`) e `send-whatsapp-dialog.tsx` passam a ler `listTemplates` da Meta.
