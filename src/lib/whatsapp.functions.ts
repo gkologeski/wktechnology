@@ -3,62 +3,13 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
-const GATEWAY_URL = "https://connector-gateway.lovable.dev/twilio";
-const SANDBOX_FROM = "whatsapp:+14155238886";
-
-function twilioHeaders() {
-  const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
-  if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
-  const TWILIO_API_KEY = process.env.TWILIO_API_KEY;
-  if (!TWILIO_API_KEY) throw new Error("Conecte o Twilio para enviar WhatsApp");
-  return {
-    Authorization: `Bearer ${LOVABLE_API_KEY}`,
-    "X-Connection-Api-Key": TWILIO_API_KEY,
-    "Content-Type": "application/x-www-form-urlencoded",
-  };
+export function applyTemplate(body: string, vars: string[]): string {
+  return body.replace(/\{\{(\d+)\}\}/g, (_, n) => vars[Number(n) - 1] ?? "");
 }
 
 function normalizePhone(raw: string): string {
   const digits = raw.replace(/[^\d+]/g, "");
   return digits.startsWith("+") ? digits : `+${digits}`;
-}
-function toWa(phone: string): string {
-  const p = normalizePhone(phone);
-  return p.startsWith("whatsapp:") ? p : `whatsapp:${p}`;
-}
-
-export function applyTemplate(body: string, vars: string[]): string {
-  return body.replace(/\{\{(\d+)\}\}/g, (_, n) => vars[Number(n) - 1] ?? "");
-}
-
-async function getIntegrationConfig(supabase: any, workspaceId: string) {
-  const { data } = await supabase
-    .from("integrations")
-    .select("config")
-    .eq("owner_id", workspaceId)
-    .eq("provider", "twilio_whatsapp")
-    .maybeSingle();
-  return (data?.config ?? {}) as {
-    from_number?: string;
-    public_base_url?: string;
-    templates?: {
-      name: string;
-      body: string;
-      contentSid?: string;
-      variableCount?: number;
-    }[];
-  };
-}
-
-const DEFAULT_PUBLIC_BASE = "https://app.wktechnology.com.br";
-async function resolvePublicBase(supabase: any, workspaceId: string): Promise<string> {
-  const cfg = await getIntegrationConfig(supabase, workspaceId);
-  return (cfg.public_base_url || DEFAULT_PUBLIC_BASE).replace(/\/$/, "");
-}
-
-async function resolveFromNumber(supabase: any, workspaceId: string): Promise<string> {
-  const cfg = await getIntegrationConfig(supabase, workspaceId);
-  return cfg.from_number ? toWa(cfg.from_number) : SANDBOX_FROM;
 }
 
 async function findContactByPhone(supabase: any, phoneE164: string): Promise<string | null> {
@@ -73,62 +24,51 @@ async function findContactByPhone(supabase: any, phoneE164: string): Promise<str
   return data?.id ?? null;
 }
 
-// ---------- send ----------
+// ---------- send (API oficial da Meta) ----------
 export const sendWhatsAppMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
     z
       .object({
         to: z.string().min(5),
-        body: z.string().max(1600).optional().default(""),
+        body: z.string().max(4096).optional().default(""),
         contactId: z.string().uuid().optional(),
         mediaUrl: z.string().url().optional(),
         mediaContentType: z.string().max(120).optional(),
         templateName: z.string().optional(),
-        contentSid: z
-          .string()
-          .regex(/^HX[0-9a-fA-F]{32}$/)
-          .optional(),
-        contentVariables: z.record(z.string(), z.string()).optional(),
+        templateLanguage: z.string().max(10).optional(),
+        templateVariables: z.array(z.string().max(1024)).max(20).optional(),
+        contextMessageId: z.string().max(200).optional(),
       })
-      .refine((v) => v.body.trim().length > 0 || !!v.mediaUrl || !!v.contentSid, {
-        message: "Informe um texto, anexo ou template oficial",
+      .refine((v) => v.body.trim().length > 0 || !!v.mediaUrl || !!v.templateName, {
+        message: "Informe um texto, anexo ou template aprovado",
       })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    const from = await resolveFromNumber(supabase, workspaceId);
-    const toWaNum = toWa(data.to);
+    const { resolveWaNumber, metaSend, findConversationNumber } =
+      await import("@/lib/whatsapp/meta-channel.server");
+
     const toBare = normalizePhone(data.to);
-    const fromBare = from.replace(/^whatsapp:/, "");
+    const existing = await findConversationNumber(supabase, workspaceId, toBare);
+    const num = await resolveWaNumber(workspaceId, existing?.phoneNumberId ?? null);
 
-    const publicBase = await resolvePublicBase(supabase, workspaceId);
-    const params = new URLSearchParams({
-      From: from,
-      To: toWaNum,
-      StatusCallback: `${publicBase}/api/public/hooks/twilio-whatsapp-status`,
+    const { wamid, raw } = await metaSend(num, {
+      to: toBare,
+      body: data.body,
+      mediaUrl: data.mediaUrl,
+      mediaContentType: data.mediaContentType,
+      template: data.templateName
+        ? {
+            name: data.templateName,
+            language: data.templateLanguage,
+            variables: data.templateVariables ?? [],
+          }
+        : null,
+      contextMessageId: data.contextMessageId,
     });
-    if (data.contentSid) {
-      params.set("ContentSid", data.contentSid);
-      if (data.contentVariables && Object.keys(data.contentVariables).length > 0) {
-        params.set("ContentVariables", JSON.stringify(data.contentVariables));
-      }
-    } else {
-      if (data.body) params.set("Body", data.body);
-      if (data.mediaUrl) params.set("MediaUrl", data.mediaUrl);
-    }
-
-    const res = await fetch(`${GATEWAY_URL}/Messages.json`, {
-      method: "POST",
-      headers: twilioHeaders(),
-      body: params,
-    });
-    const tw = await res.json();
-    if (!res.ok) {
-      throw new Error(`Twilio erro [${res.status}]: ${tw?.message ?? JSON.stringify(tw)}`);
-    }
 
     // Resolve contato pelo telefone se não informado
     let contactId = data.contactId ?? null;
@@ -136,18 +76,23 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
       contactId = await findContactByPhone(supabase, toBare);
     }
 
-    // upsert conversation
+    const preview =
+      (data.body && data.body.slice(0, 120)) ||
+      (data.mediaUrl ? "[mídia]" : data.templateName ? `[template ${data.templateName}]` : "");
+
     const { data: conv, error: cErr } = await supabase
       .from("whatsapp_conversations")
       .upsert(
         {
           owner_id: workspaceId,
+          workspace_id: workspaceId,
           contact_id: contactId,
           contact_phone: toBare,
-          twilio_number: fromBare,
+          twilio_number: num.displayPhoneNumber,
+          provider: "meta",
+          wa_phone_number_id: num.phoneNumberId,
           last_message_at: new Date().toISOString(),
-          last_message_preview:
-            (data.body && data.body.slice(0, 120)) || (data.mediaUrl ? "[mídia]" : ""),
+          last_message_preview: preview,
         },
         { onConflict: "contact_phone,twilio_number" },
       )
@@ -158,39 +103,41 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
     const { error: mErr } = await supabase.from("whatsapp_messages").insert({
       conversation_id: conv.id,
       owner_id: workspaceId,
+      workspace_id: workspaceId,
       direction: "outbound",
       body: data.body,
       media_url: data.mediaUrl ?? null,
       media_content_type: data.mediaContentType ?? null,
-      from_number: fromBare,
+      from_number: num.displayPhoneNumber,
       to_number: toBare,
-      twilio_sid: tw.sid,
-      status: tw.status ?? "queued",
+      provider: "meta",
+      wa_message_id: wamid,
+      context_message_id: data.contextMessageId ?? null,
+      status: "sent",
       template_name: data.templateName ?? null,
       is_template: !!data.templateName,
       sent_by: userId,
       sent_at: new Date().toISOString(),
-      raw: tw,
+      raw,
     });
     if (mErr) throw mErr;
 
-    // Cria atividade na timeline do contato (se vinculado)
     if (contactId) {
       await supabase.from("activities").insert({
         owner_id: workspaceId,
         type: "whatsapp",
         related_contact_id: contactId,
         subject: data.templateName ? `WhatsApp · ${data.templateName}` : "WhatsApp enviado",
-        body: data.body || (data.mediaUrl ? "[mídia]" : ""),
+        body: data.body || preview,
         email_direction: "outbound",
         completed: true,
         outcome: "sent",
         outcome_set_at: new Date().toISOString(),
-        external_ids: { twilio_sid: tw.sid, conversation_id: conv.id },
+        external_ids: { wa_message_id: wamid, conversation_id: conv.id },
       });
     }
 
-    return { ok: true, sid: tw.sid as string, conversationId: conv.id as string };
+    return { ok: true, sid: wamid ?? "", conversationId: conv.id as string };
   });
 
 // ---------- list conversations ----------
@@ -201,7 +148,7 @@ export const listWhatsAppConversations = createServerFn({ method: "GET" })
     const { data, error } = await supabase
       .from("whatsapp_conversations")
       .select(
-        "id, contact_id, contact_phone, twilio_number, last_message_at, last_message_preview, unread_count, status, assigned_to",
+        "id, contact_id, contact_phone, twilio_number, provider, wa_phone_number_id, last_inbound_at, last_message_at, last_message_preview, unread_count, status, assigned_to",
       )
       .order("last_message_at", { ascending: false, nullsFirst: false })
       .limit(200);
@@ -218,7 +165,7 @@ export const listWhatsAppMessages = createServerFn({ method: "POST" })
     const { data: rows, error } = await supabase
       .from("whatsapp_messages")
       .select(
-        "id, direction, body, media_url, media_content_type, status, created_at, sent_at, delivered_at, read_at, twilio_sid, template_name, is_template",
+        "id, direction, body, media_url, media_content_type, status, created_at, sent_at, delivered_at, read_at, wa_message_id, template_name, is_template",
       )
       .eq("conversation_id", data.conversationId)
       .order("created_at", { ascending: true })
@@ -232,64 +179,88 @@ export const markWhatsAppRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ conversationId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
     const { error } = await supabase
       .from("whatsapp_conversations")
       .update({ unread_count: 0 })
       .eq("id", data.conversationId);
     if (error) throw error;
+
+    // Confirma a leitura na Meta (best-effort) usando a última mensagem recebida.
+    try {
+      const { data: last } = await supabase
+        .from("whatsapp_messages")
+        .select("wa_message_id")
+        .eq("conversation_id", data.conversationId)
+        .eq("direction", "inbound")
+        .not("wa_message_id", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const { data: conv } = await supabase
+        .from("whatsapp_conversations")
+        .select("wa_phone_number_id")
+        .eq("id", data.conversationId)
+        .maybeSingle();
+      if (last?.wa_message_id) {
+        const workspaceId = await resolveActiveWorkspace(userId);
+        const { resolveWaNumber, metaMarkRead } =
+          await import("@/lib/whatsapp/meta-channel.server");
+        const num = await resolveWaNumber(workspaceId, conv?.wa_phone_number_id ?? null);
+        await metaMarkRead(num, last.wa_message_id as string);
+      }
+    } catch {
+      // leitura na Meta é opcional; a caixa de entrada continua consistente
+    }
     return { ok: true };
   });
 
-// ---------- get/save sender config ----------
+// ---------- números conectados (configuração) ----------
 export const getWhatsAppConfig = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    const cfg = await getIntegrationConfig(supabase, workspaceId);
+    const { data: numbers } = await supabase
+      .from("wa_phone_numbers")
+      .select("phone_number_id, display_phone_number, verified_name, quality_rating, is_default")
+      .eq("workspace_id", workspaceId)
+      .order("is_default", { ascending: false });
+    const list = numbers ?? [];
+    const def = list.find((n: any) => n.is_default) ?? list[0] ?? null;
     return {
-      from_number: cfg.from_number ?? "",
-      public_base_url: cfg.public_base_url ?? "",
-      effective_from: cfg.from_number
-        ? normalizePhone(cfg.from_number)
-        : SANDBOX_FROM.replace("whatsapp:", ""),
-      effective_public_base: cfg.public_base_url || DEFAULT_PUBLIC_BASE,
-      using_sandbox: !cfg.from_number,
-      templates: cfg.templates ?? [],
+      provider: "meta" as const,
+      connected: list.length > 0,
+      numbers: list as {
+        phone_number_id: string;
+        display_phone_number: string;
+        verified_name: string | null;
+        quality_rating: string | null;
+        is_default: boolean;
+      }[],
+      default_phone_number_id: def?.phone_number_id ?? null,
+      effective_from: def ? normalizePhone(def.display_phone_number) : "",
     };
   });
 
 export const saveWhatsAppConfig = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z
-      .object({
-        from_number: z.string().min(0).max(32),
-        public_base_url: z.string().min(0).max(255).optional(),
-      })
-      .parse(input),
+    z.object({ default_phone_number_id: z.string().min(3).max(64) }).parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    const from = data.from_number.trim();
-    const base = (data.public_base_url ?? "").trim().replace(/\/$/, "");
-    const cfg = await getIntegrationConfig(supabase, workspaceId);
-    const newCfg = {
-      ...cfg,
-      from_number: from ? normalizePhone(from) : undefined,
-      public_base_url: base || undefined,
-    };
-    const { error } = await supabase.from("integrations").upsert(
-      {
-        owner_id: workspaceId,
-        provider: "twilio_whatsapp",
-        status: from ? "connected" : "pending",
-        config: newCfg,
-      },
-      { onConflict: "owner_id,provider" },
-    );
+    const { error: clearErr } = await supabase
+      .from("wa_phone_numbers")
+      .update({ is_default: false })
+      .eq("workspace_id", workspaceId);
+    if (clearErr) throw clearErr;
+    const { error } = await supabase
+      .from("wa_phone_numbers")
+      .update({ is_default: true })
+      .eq("workspace_id", workspaceId)
+      .eq("phone_number_id", data.default_phone_number_id);
     if (error) throw error;
     return { ok: true };
   });
@@ -352,45 +323,34 @@ export const setWhatsAppConversationStatus = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-// ---------- templates ----------
-const TemplateSchema = z.object({
-  name: z.string().min(1).max(60),
-  body: z.string().min(1).max(1600),
-  contentSid: z
-    .string()
-    .regex(/^HX[0-9a-fA-F]{32}$/, "ContentSid deve começar com HX e ter 34 chars")
-    .optional()
-    .or(z.literal("")),
-  variableCount: z.number().int().min(0).max(20).optional(),
-});
-
+// ---------- templates aprovados na Meta ----------
 export const listWhatsAppTemplates = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const cfg = await getIntegrationConfig(
-      context.supabase,
-      await resolveActiveWorkspace(context.userId),
-    );
-    return cfg.templates ?? [];
-  });
-
-export const saveWhatsAppTemplates = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ templates: z.array(TemplateSchema).max(50) }).parse(input))
-  .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    const cfg = await getIntegrationConfig(supabase, workspaceId);
-    const newCfg = { ...cfg, templates: data.templates };
-    const { error } = await supabase.from("integrations").upsert(
-      {
-        owner_id: workspaceId,
-        provider: "twilio_whatsapp",
-        status: cfg.from_number ? "connected" : "pending",
-        config: newCfg,
-      },
-      { onConflict: "owner_id,provider" },
-    );
+    const { data, error } = await supabase
+      .from("wa_templates")
+      .select("name, language, status, components")
+      .eq("workspace_id", workspaceId)
+      .order("name", { ascending: true });
     if (error) throw error;
-    return { ok: true };
+    return (data ?? []).map((t: any) => {
+      const comps = Array.isArray(t.components) ? t.components : [];
+      const bodyComp = comps.find((c: any) => String(c?.type ?? "").toUpperCase() === "BODY") as
+        | { text?: string }
+        | undefined;
+      const body = bodyComp?.text ?? "";
+      const variableCount = Array.from(body.matchAll(/\{\{(\d+)\}\}/g))
+        .map((m) => Number(m[1]))
+        .reduce((a, b) => Math.max(a, b), 0);
+      return {
+        name: t.name as string,
+        language: (t.language as string) ?? "pt_BR",
+        status: (t.status as string) ?? "PENDING",
+        approved: String(t.status ?? "").toUpperCase() === "APPROVED",
+        body,
+        variableCount,
+      };
+    });
   });

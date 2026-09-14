@@ -189,7 +189,7 @@ async function executeStep(
       return {
         ...eventBase,
         status: "sent",
-        provider: "twilio",
+        provider: "meta",
         message_sid: result.sid,
         provider_status: result.status,
         to: result.to,

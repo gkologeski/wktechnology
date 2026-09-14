@@ -81,7 +81,7 @@ function CampaignsPage() {
   const [mediaUrl, setMediaUrl] = useState("");
 
   const selectedTpl = templates.find((t) => t.name === templateName);
-  const isHsm = !!selectedTpl?.contentSid;
+  const isHsm = !!selectedTpl;
   const isEditing = editingId !== null;
 
   function resetForm() {
@@ -126,7 +126,7 @@ function CampaignsPage() {
             name,
             body_template: selectedTpl?.body ?? body,
             template_name: templateName !== "__none__" ? templateName : null,
-            content_sid: selectedTpl?.contentSid || null,
+            template_language: selectedTpl?.language ?? null,
             content_variables_template,
             media_url: mediaUrl || null,
             rate_per_minute: rate,
@@ -150,7 +150,7 @@ function CampaignsPage() {
           name,
           body_template: selectedTpl?.body ?? body,
           template_name: templateName !== "__none__" ? templateName : undefined,
-          content_sid: selectedTpl?.contentSid || undefined,
+          template_language: selectedTpl?.language ?? undefined,
           content_variables_template,
           media_url: mediaUrl || undefined,
           rate_per_minute: rate,
@@ -221,7 +221,7 @@ function CampaignsPage() {
                       <SelectItem value="__none__">Nenhum (texto livre)</SelectItem>
                       {templates.map((t) => (
                         <SelectItem key={t.name} value={t.name}>
-                          {t.name} {t.contentSid ? "· HSM oficial" : ""}
+                          {t.name} {t.approved ? `· ${t.language}` : `· ${t.status}`}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -243,18 +243,13 @@ function CampaignsPage() {
                   <label className="text-xs text-muted-foreground">
                     Mensagem (use {`{{1}}, {{2}}`} para variáveis)
                   </label>
-                  <Textarea
-                    rows={3}
-                    value={selectedTpl?.body ?? body}
-                    onChange={(e) => setBody(e.target.value)}
-                    disabled={!!selectedTpl}
-                  />
+                  <Textarea rows={3} value={body} onChange={(e) => setBody(e.target.value)} />
                 </div>
               )}
               {isHsm && (
                 <p className="text-xs text-muted-foreground">
-                  Template HSM oficial — corpo aprovado pela Meta. Use as colunas após o telefone
-                  para as {selectedTpl?.variableCount ?? 0} variáveis.
+                  Template oficial aprovado pela Meta. Use as colunas após o telefone para as{" "}
+                  {selectedTpl?.variableCount ?? 0} variáveis.
                 </p>
               )}
               <div>

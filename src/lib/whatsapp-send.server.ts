@@ -1,49 +1,13 @@
 // Envio de WhatsApp para uso em contextos server-only (cron, régua de cobrança).
-// Reaproveita a mesma infra Twilio de `whatsapp.functions.ts`, porém sem
-// depender de um usuário autenticado.
+// Usa exclusivamente a API oficial da Meta (Cloud API), sem depender de um
+// usuário autenticado.
 import type { SupabaseClient } from "@supabase/supabase-js";
-
-const GATEWAY_URL = "https://connector-gateway.lovable.dev/twilio";
-const SANDBOX_FROM = "whatsapp:+14155238886";
-const DEFAULT_PUBLIC_BASE = "https://app.wktechnology.com.br";
-
-function twilioHeaders() {
-  const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
-  if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
-  const TWILIO_API_KEY = process.env.TWILIO_API_KEY;
-  if (!TWILIO_API_KEY) throw new Error("Conecte o Twilio para enviar WhatsApp");
-  return {
-    Authorization: `Bearer ${LOVABLE_API_KEY}`,
-    "X-Connection-Api-Key": TWILIO_API_KEY,
-    "Content-Type": "application/x-www-form-urlencoded",
-  };
-}
-
-function normalizePhone(raw: string): string {
-  const digits = raw.replace(/[^\d+]/g, "");
-  return digits.startsWith("+") ? digits : `+${digits}`;
-}
-
-function toWa(phone: string): string {
-  const p = normalizePhone(phone);
-  return p.startsWith("whatsapp:") ? p : `whatsapp:${p}`;
-}
-
-async function loadWaConfig(supabase: SupabaseClient, workspaceId: string) {
-  const { data } = await supabase
-    .from("integrations")
-    .select("config")
-    .eq("owner_id", workspaceId)
-    .eq("provider", "twilio_whatsapp")
-    .maybeSingle();
-  const cfg = (data?.config ?? {}) as {
-    from_number?: string;
-    public_base_url?: string;
-  };
-  const from = cfg.from_number ? toWa(cfg.from_number) : SANDBOX_FROM;
-  const publicBase = (cfg.public_base_url || DEFAULT_PUBLIC_BASE).replace(/\/$/, "");
-  return { from, publicBase };
-}
+import {
+  metaSend,
+  normalizePhone,
+  resolveWaNumber,
+  findConversationNumber,
+} from "@/lib/whatsapp/meta-channel.server";
 
 export type WaSendResult = {
   ok: true;
@@ -54,7 +18,7 @@ export type WaSendResult = {
 };
 
 /**
- * Envia uma mensagem de WhatsApp texto para o número informado.
+ * Envia uma mensagem de WhatsApp (texto ou template aprovado) pela Meta.
  * Registra `whatsapp_conversations` + `whatsapp_messages` no workspace.
  * Lança erro em falhas — cabe ao chamador tratar e registrar no histórico.
  */
@@ -64,38 +28,24 @@ export async function sendWhatsAppFromServer(params: {
   to: string;
   body: string;
   contactId?: string | null;
+  /** Rótulo interno registrado no histórico (não é o template da Meta). */
   templateName?: string | null;
+  /** Template aprovado na Meta, obrigatório fora da janela de 24h. */
+  metaTemplate?: { name: string; language?: string; variables?: string[] } | null;
   source?: Record<string, unknown>;
 }): Promise<WaSendResult> {
   const { supabase, workspaceId, to, body } = params;
-  if (!to || !body) throw new Error("Destinatário ou mensagem vazios");
+  if (!to || (!body && !params.metaTemplate)) throw new Error("Destinatário ou mensagem vazios");
 
-  const { from, publicBase } = await loadWaConfig(supabase, workspaceId);
-  const toWaNum = toWa(to);
   const toBare = normalizePhone(to);
-  const fromBare = from.replace(/^whatsapp:/, "");
+  const existing = await findConversationNumber(supabase, workspaceId, toBare);
+  const num = await resolveWaNumber(workspaceId, existing?.phoneNumberId ?? null);
 
-  const search = new URLSearchParams({
-    From: from,
-    To: toWaNum,
-    Body: body,
-    StatusCallback: `${publicBase}/api/public/hooks/twilio-whatsapp-status`,
+  const { wamid, raw } = await metaSend(num, {
+    to: toBare,
+    body,
+    template: params.metaTemplate ?? null,
   });
-
-  const res = await fetch(`${GATEWAY_URL}/Messages.json`, {
-    method: "POST",
-    headers: twilioHeaders(),
-    body: search,
-  });
-  const tw = (await res.json().catch(() => ({}))) as {
-    sid?: string;
-    status?: string;
-    message?: string;
-    code?: number;
-  };
-  if (!res.ok) {
-    throw new Error(`Twilio erro [${res.status}]: ${tw?.message ?? JSON.stringify(tw)}`);
-  }
 
   // Log da conversa + mensagem (best-effort; falhas não invalidam o envio real)
   try {
@@ -104,11 +54,16 @@ export async function sendWhatsAppFromServer(params: {
       .upsert(
         {
           owner_id: workspaceId,
+          workspace_id: workspaceId,
           contact_id: params.contactId ?? null,
           contact_phone: toBare,
-          twilio_number: fromBare,
+          twilio_number: num.displayPhoneNumber,
+          provider: "meta",
+          wa_phone_number_id: num.phoneNumberId,
           last_message_at: new Date().toISOString(),
-          last_message_preview: body.slice(0, 120),
+          last_message_preview: (
+            body || `[template ${params.metaTemplate?.name ?? params.templateName ?? ""}]`
+          ).slice(0, 120),
         },
         { onConflict: "contact_phone,twilio_number" },
       )
@@ -119,16 +74,18 @@ export async function sendWhatsAppFromServer(params: {
       await supabase.from("whatsapp_messages").insert({
         conversation_id: conv.id,
         owner_id: workspaceId,
+        workspace_id: workspaceId,
         direction: "outbound",
         body,
-        from_number: fromBare,
+        from_number: num.displayPhoneNumber,
         to_number: toBare,
-        twilio_sid: tw.sid,
-        status: tw.status ?? "queued",
+        provider: "meta",
+        wa_message_id: wamid,
+        status: "sent",
         template_name: params.templateName ?? null,
-        is_template: !!params.templateName,
+        is_template: !!params.metaTemplate,
         sent_at: new Date().toISOString(),
-        raw: { ...tw, source: params.source ?? { origin: "dunning" } },
+        raw: { ...raw, source: params.source ?? { origin: "dunning" } },
       });
     }
   } catch (e) {
@@ -137,9 +94,9 @@ export async function sendWhatsAppFromServer(params: {
 
   return {
     ok: true,
-    sid: tw.sid ?? "",
-    status: tw.status ?? "queued",
-    from: fromBare,
+    sid: wamid ?? "",
+    status: "sent",
+    from: num.displayPhoneNumber,
     to: toBare,
   };
 }
