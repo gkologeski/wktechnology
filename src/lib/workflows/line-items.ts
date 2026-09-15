@@ -17,12 +17,12 @@ export interface LineItemFieldDef {
   label: string;
   type?: LineItemFieldType;
   /** Quando presente, o valor é um ID e a interface usa busca por nome. */
-  ref?: "service";
+  ref?: "service_catalog";
 }
 
 /** Catálogo exibido no grupo "Itens do negócio" do seletor de campos. */
 export const LINE_ITEM_FIELDS: LineItemFieldDef[] = [
-  { name: "line_items.service_catalog_id", label: "Serviço", ref: "service" },
+  { name: "line_items.service_catalog_id", label: "Serviço", ref: "service_catalog" },
   { name: "line_items.service_name", label: "Serviço (nome)", type: "text" },
   { name: "line_items.job_profile_name", label: "Cargo/perfil (nome)", type: "text" },
   { name: "line_items.seniority", label: "Senioridade", type: "text" },

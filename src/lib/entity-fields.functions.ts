@@ -4,7 +4,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { REF_COLUMNS, TECHNICAL_ID_COLUMNS, type RefKind } from "./entity-fields-refs";
+import {
+  REF_COLUMNS,
+  REF_COLUMNS_BY_ENTITY,
+  TECHNICAL_ID_COLUMNS,
+  type RefKind,
+} from "./entity-fields-refs";
 import { isMoneyField } from "./format/money-fields";
 
 import { toLabel, UUID_RE, LEGACY_SYSTEM_FIELDS } from "./entity-fields-meta";
@@ -264,7 +269,8 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
       if (r.column_name === "stage" && hasStageId) def.system = true;
       if (isContracts && r.column_name === "body_html") def.richText = true;
 
-      const ref = REF_COLUMNS[r.column_name];
+      // Override por entidade primeiro (ex.: `category_id` muda de tabela).
+      const ref = REF_COLUMNS_BY_ENTITY[data.entity]?.[r.column_name] ?? REF_COLUMNS[r.column_name];
       if (ref) {
         // Referência: seletor com busca por nome; grava o ID e nunca lista hashes.
         def.ref = ref;

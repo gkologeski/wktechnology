@@ -52,8 +52,10 @@ const REF_SOURCE: Record<
       | "ats_candidates"
       | "projects"
       | "project_milestones"
+      | "services"
       | "service_catalog"
-      | "financial_categories";
+      | "financial_categories"
+      | "kb_categories";
     select: string;
   }
 > = {
@@ -68,8 +70,10 @@ const REF_SOURCE: Record<
   candidate: { table: "ats_candidates", select: "id, full_name" },
   project: { table: "projects", select: "id, name" },
   milestone: { table: "project_milestones", select: "id, name" },
-  service: { table: "service_catalog", select: "id, name" },
-  category: { table: "financial_categories", select: "id, name" },
+  service: { table: "services", select: "id, name" },
+  service_catalog: { table: "service_catalog", select: "id, name" },
+  financial_category: { table: "financial_categories", select: "id, name" },
+  kb_category: { table: "kb_categories", select: "id, name" },
 };
 
 function rowLabel(r: Record<string, unknown>): string {

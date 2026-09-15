@@ -623,7 +623,9 @@ const SimpleRefInput = RefInput.extend({
     "project",
     "milestone",
     "service",
-    "category",
+    "service_catalog",
+    "financial_category",
+    "kb_category",
   ]),
   /** Substatus: etapa escolhida no passo/condição (obrigatória para listar). */
   stage_value: z.string().trim().max(120).optional(),
@@ -724,8 +726,10 @@ export const searchSimpleRefs = createServerFn({ method: "POST" })
       job: { table: "ats_jobs", col: "title" },
       project: { table: "projects", col: "name" },
       milestone: { table: "project_milestones", col: "name" },
-      service: { table: "service_catalog", col: "name" },
-      category: { table: "financial_categories", col: "name" },
+      service: { table: "services", col: "name" },
+      service_catalog: { table: "service_catalog", col: "name" },
+      financial_category: { table: "financial_categories", col: "name" },
+      kb_category: { table: "kb_categories", col: "name" },
     } as const;
     const src = SOURCES[data.kind];
     let query = (supabase as any)
