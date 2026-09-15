@@ -15,6 +15,9 @@ type LineForTotals = {
   discount_amount?: number | string | null;
   discount_type?: string | null;
   tax_rate?: number | string | null;
+  billing_model?: string | null;
+  percent?: number | string | null;
+  percent_base_amount?: number | string | null;
 };
 
 function nn(v: unknown): number {
@@ -22,13 +25,22 @@ function nn(v: unknown): number {
   return Number.isFinite(x) ? x : 0;
 }
 
-// Mirror of frontend `lineDiscount` in components/deals/deal-line-items.tsx.
+// Mirror of frontend `lineGross` in lib/catalog/billing-model.ts: respects the
+// billing model (fixed value, percent of a base, or quantity × unit price).
+function lineGrossServer(li: LineForTotals) {
+  const model = li.billing_model ?? "per_unit";
+  if (model === "fixed") return nn(li.unit_price);
+  if (model === "percent_of_base") {
+    return nn(li.quantity) * nn(li.percent_base_amount) * (nn(li.percent) / 100);
+  }
+  return nn(li.quantity) * nn(li.unit_price);
+}
+
+// Mirror of frontend `lineDiscount` in components/deals/use-line-items.ts.
 // When discount_type === 'amount', discount_amount is the discount for the
 // whole line (not per unit), capped at the gross line total.
 function lineDiscountServer(li: LineForTotals) {
-  const qty = nn(li.quantity);
-  const price = nn(li.unit_price);
-  const gross = qty * price;
+  const gross = lineGrossServer(li);
   if ((li.discount_type ?? "pct") === "amount") {
     return Math.min(Math.max(nn(li.discount_amount), 0), gross);
   }
@@ -41,7 +53,7 @@ function recompute(items: LineForTotals[]) {
     tax = 0,
     total = 0;
   for (const li of items) {
-    const sub = nn(li.quantity) * nn(li.unit_price);
+    const sub = lineGrossServer(li);
     const disc = lineDiscountServer(li);
     const base = sub - disc;
     const tx = base * (nn(li.tax_rate) / 100);
