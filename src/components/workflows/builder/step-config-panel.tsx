@@ -36,6 +36,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ExtraFieldsEditor, FkPicker } from "../extra-fields-editor";
 import { GenericRecordForm } from "../generic-record-form";
+import { CreateContractFromDealForm } from "./step-forms/contract-forms";
 import { TokenInput, TokenTextarea } from "../token-input";
 import { useWorkspaceSubstatuses } from "@/lib/pipelines/substatuses";
 import { ActionTemplatesBar } from "../action-templates-bar";
@@ -1020,6 +1021,8 @@ function StepConfigForm({
     case "update_record":
     case "delete_record":
       return <GenericRecordForm action={action} onChange={onChange} triggerEntity={entity} />;
+    case "create_contract_from_deal":
+      return <CreateContractFromDealForm action={action} onChange={onChange} />;
     default: {
       const _exhaustive: never = action;
       void _exhaustive;

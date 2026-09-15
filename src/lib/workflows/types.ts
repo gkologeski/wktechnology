@@ -565,6 +565,7 @@ export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionTy
       "assign_recruiter",
     ],
   },
+  { label: "Contratos", actions: ["create_contract_from_deal"] },
   { label: "Utilitários", actions: ["format_data"] },
   { label: "Externo", actions: ["webhook"] },
 ];
