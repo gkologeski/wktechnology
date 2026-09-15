@@ -57,6 +57,13 @@ export const LABELS: Record<string, string> = {
   expected_close_date: "Fechamento esperado",
   lost_at: "Perdido em",
 
+  // Contratos — também no fallback global para caminhos que ainda não
+  // informam a entidade ao resolver o rótulo.
+  document_kind: "Tipo de documento",
+  amendment_number: "Número do aditivo",
+  amendment_of_id: "Aditivo do contrato",
+  amendment_effective_at: "Vigência do aditivo",
+
   dealtype: "Tipo de negócio",
   hs_priority: "Prioridade",
   hs_deal_stage_probability: "Probabilidade",

@@ -9,13 +9,22 @@ import {
 import { CONTRACT_FIELD_LABELS, CONTRACT_FIELD_OPTIONS } from "../workflow-field-meta";
 import { applyDefaults, effectiveDefaults, sanitizeDefaults } from "../contract-defaults-shared";
 import { columnsToKind, kindToColumns } from "../contract-kinds";
+import { toLabel } from "../../entity-fields-meta";
 
 describe("catálogo de campos de contrato", () => {
   it("todo campo tem rótulo em português (nunca o nome da coluna)", () => {
     for (const field of CONTRACT_FIELDS) {
       expect(field.label, field.name).not.toBe(field.name);
       expect(CONTRACT_FIELD_LABELS[field.name], field.name).toBeTruthy();
+      expect(toLabel(field.name, "contracts"), field.name).toBe(field.label);
     }
+  });
+
+  it("traduz campos de aditivo também no caminho global de fallback", () => {
+    expect(toLabel("document_kind")).toBe("Tipo de documento");
+    expect(toLabel("amendment_number")).toBe("Número do aditivo");
+    expect(toLabel("amendment_of_id")).toBe("Aditivo do contrato");
+    expect(toLabel("amendment_effective_at")).toBe("Vigência do aditivo");
   });
 
   it("todo combo tem opções e nenhum rótulo igual ao valor cru em inglês", () => {
