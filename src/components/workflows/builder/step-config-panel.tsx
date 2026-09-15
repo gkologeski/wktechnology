@@ -310,6 +310,7 @@ function StepConfigForm({
           <ConditionListEditor
             value={action.filters}
             fields={entityFields}
+            entity={entity}
             priorFields={priorFields}
             defaultField={entityFields[0]?.name ?? ""}
             onChange={(next) => onChange({ ...action, filters: next })}
