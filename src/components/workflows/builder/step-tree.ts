@@ -86,6 +86,7 @@ export const ACTION_ICONS: Record<WorkflowActionType, typeof Zap> = {
   create_record: PlusIcon,
   update_record: Sparkles,
   delete_record: Eraser,
+  create_contract_from_deal: FileSignature,
 };
 
 export function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
@@ -172,6 +173,8 @@ export function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
       return { type, table: "activities", target_id: "{{id}}", values: {} };
     case "delete_record":
       return { type, table: "activities", target_id: "{{id}}" };
+    case "create_contract_from_deal":
+      return { type, role: "provider", document_kind: "contract", copy_line_items: true, skip_if_exists: true };
   }
 }
 
