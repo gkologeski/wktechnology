@@ -72,6 +72,7 @@ export const SEGMENT_LABELS: Record<string, string> = {
   slack: "Slack",
   payments: "Pagamentos",
   pipelines: "Funis",
+  "contract-defaults": "Padrões de contrato",
   playbooks: "Playbooks",
   portal: "Portal",
   "property-groups: ": "Grupos de propriedades",
