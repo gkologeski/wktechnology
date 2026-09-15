@@ -69,6 +69,11 @@ export interface WorkflowFilter {
   field: string;
   op: FilterOp;
   value?: unknown;
+  /**
+   * Só para campos de lista (`line_items.*`): a condição vale quando qualquer
+   * item atende (`any`, padrão) ou quando todos atendem (`all`).
+   */
+  match?: "any" | "all";
 }
 
 /** Grupo de condições combinadas com E/OU (agrupamento aninhado, estilo HubSpot). */

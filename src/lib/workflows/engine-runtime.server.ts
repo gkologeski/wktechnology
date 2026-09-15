@@ -3,6 +3,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { WorkflowAction, WorkflowCondition, WorkflowEntity, WorkflowTrigger } from "./types";
 import { hydrateTriggerAssociations } from "./hydrate-associations.server";
+import { hydrateDealLineItems } from "./line-items.server";
 import { type AnyRow, evalConditions } from "./engine-shared.server";
 import { type RunResult, runActions } from "./engine-actions.server";
 
@@ -57,11 +58,12 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
       .maybeSingle();
     if (wf) {
       const wfr = wf as WorkflowRow;
-      const hydratedAfter = await hydrateTriggerAssociations(
+      const wfJson = JSON.stringify({ t: wfr.trigger, a: wfr.actions });
+      const hydratedAfter = await hydrateDealLineItems(
         supabase,
         event.entity,
-        event.after,
-        JSON.stringify({ t: wfr.trigger, a: wfr.actions }),
+        await hydrateTriggerAssociations(supabase, event.entity, event.after, wfJson),
+        wfJson,
       );
 
       const { data: run } = await supabase
@@ -118,11 +120,12 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
 
     // Hidrata associações do gatilho (empresa, contato, negócio…) antes de
     // avaliar condições e executar ações, para resolver `{{company.name}}`.
-    const hydratedAfter = await hydrateTriggerAssociations(
+    const wfJson = JSON.stringify({ t: trig, a: wf.actions, g: wf.goal_filters });
+    const hydratedAfter = await hydrateDealLineItems(
       supabase,
       event.entity,
-      event.after,
-      JSON.stringify({ t: trig, a: wf.actions }),
+      await hydrateTriggerAssociations(supabase, event.entity, event.after, wfJson),
+      wfJson,
     );
 
     const filters = trig.filters ?? [];

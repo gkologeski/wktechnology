@@ -15,6 +15,11 @@ import { Plus, Trash2, Braces, List, X } from "lucide-react";
 import { FkPicker } from "../extra-fields-editor";
 import { TokenInput } from "../token-input";
 import {
+  LINE_ITEM_COUNT_FIELD,
+  LINE_ITEM_FIELDS,
+  isLineItemField,
+} from "@/lib/workflows/line-items";
+import {
   FILTER_OPS,
   type WorkflowFilter,
   type WorkflowCondition,
@@ -59,12 +64,15 @@ export function ConditionListEditor({
   fields,
   priorFields = [],
   defaultField,
+  entity,
 }: {
   value: WorkflowCondition[] | undefined;
   onChange: (next: WorkflowCondition[]) => void;
   fields: FieldOpt[];
   priorFields?: FieldOpt[];
   defaultField: string;
+  /** Entidade das condições — habilita o grupo "Itens do negócio" em Negócios. */
+  entity?: string;
 }) {
   const group = normalizeTopGroup(value ?? []);
   return (
@@ -74,6 +82,7 @@ export function ConditionListEditor({
       fields={fields}
       priorFields={priorFields}
       defaultField={defaultField}
+      entity={entity}
       onChange={(g) => onChange(denormalizeTopGroup(g))}
     />
   );
@@ -87,6 +96,7 @@ export function ConditionGroupEditor({
   priorFields = [],
   defaultField,
   depth,
+  entity,
 }: {
   group: WorkflowFilterGroup;
   onChange: (g: WorkflowFilterGroup) => void;
@@ -95,8 +105,16 @@ export function ConditionGroupEditor({
   priorFields?: FieldOpt[];
   defaultField: string;
   depth: number;
+  entity?: string;
 }) {
   const children = group.conditions ?? [];
+  // Etapa escolhida em condições irmãs — o substatus depende dela.
+  const siblingStage = children.reduce<string>((acc, node) => {
+    if (acc || isFilterGroup(node)) return acc;
+    if (node.field !== "stage" && node.field !== "stage_value" && node.field !== "stage_id")
+      return acc;
+    return typeof node.value === "string" ? node.value : acc;
+  }, "");
   const setChildren = (fn: (list: WorkflowCondition[]) => WorkflowCondition[]) =>
     onChange({ ...group, conditions: fn(children) });
   const canNest = depth < MAX_CONDITION_DEPTH_UI;
@@ -182,6 +200,7 @@ export function ConditionGroupEditor({
             fields={fields}
             priorFields={priorFields}
             defaultField={defaultField}
+            entity={entity}
             onChange={(g) => setChildren((p) => p.map((x, idx) => (idx === i ? g : x)))}
             onRemove={() => setChildren((p) => p.filter((_, idx) => idx !== i))}
           />
@@ -191,6 +210,8 @@ export function ConditionGroupEditor({
             filter={node}
             fields={fields}
             priorFields={priorFields}
+            entity={entity}
+            stageValue={siblingStage}
             onChange={(nf) => setChildren((p) => p.map((x, idx) => (idx === i ? nf : x)))}
             onRemove={() => setChildren((p) => p.filter((_, idx) => idx !== i))}
           />
@@ -211,12 +232,15 @@ export function FieldValueEditor({
   onChange,
   placeholder = "valor",
   compact = false,
+  stageValue,
 }: {
   field?: FieldOpt;
   value: unknown;
   onChange: (v: string | number) => void;
   placeholder?: string;
   compact?: boolean;
+  /** Etapa escolhida no mesmo bloco — o substatus depende dela. */
+  stageValue?: string;
 }) {
   const str =
     value === null || value === undefined || typeof value === "object" ? "" : String(value);
@@ -225,7 +249,19 @@ export function FieldValueEditor({
   const options = field?.options ?? [];
 
   if (field?.ref) {
-    return <FkPicker kind={field.ref} value={str} onChange={(v) => onChange(v)} />;
+    const isSubstatus = field.ref === "substatus";
+    return (
+      <FkPicker
+        kind={field.ref}
+        value={str}
+        onChange={(v) => onChange(v)}
+        filters={isSubstatus ? { stage_value: stageValue } : undefined}
+        disabled={isSubstatus && !stageValue}
+        disabledHint={
+          isSubstatus ? "Escolha a etapa em outra condição deste grupo primeiro" : undefined
+        }
+      />
+    );
   }
 
   if (options.length > 0 && !tokenMode) {
@@ -305,6 +341,8 @@ export function FilterRow({
   priorFields = [],
   onChange,
   onRemove,
+  entity,
+  stageValue,
 }: {
   filter: WorkflowFilter;
   fields: FieldOpt[];
@@ -312,12 +350,32 @@ export function FilterRow({
   priorFields?: FieldOpt[];
   onChange: (f: WorkflowFilter) => void;
   onRemove: () => void;
+  /** Entidade — habilita o grupo "Itens do negócio" em Negócios. */
+  entity?: string;
+  /** Etapa escolhida no grupo — pré-requisito do substatus. */
+  stageValue?: string;
 }) {
   const needsValue = filter.op !== "is_empty" && filter.op !== "is_not_empty";
   const isPriorStep = filter.field?.startsWith("steps.") ?? false;
-  const selected = isPriorStep ? undefined : fields.find((f) => f.name === filter.field);
+  const lineItemFields: FieldOpt[] =
+    entity === "deals"
+      ? LINE_ITEM_FIELDS.map((f) => ({
+          name: f.name,
+          label: f.label,
+          type: f.type,
+          ref: f.ref,
+        }))
+      : [];
+  const isLineItem = isLineItemField(filter.field);
+  const selected = isPriorStep
+    ? undefined
+    : (fields.find((f) => f.name === filter.field) ??
+      lineItemFields.find((f) => f.name === filter.field));
   const missingSelectedField =
-    !isPriorStep && filter.field && !fields.some((field) => field.name === filter.field);
+    !isPriorStep &&
+    filter.field &&
+    !fields.some((field) => field.name === filter.field) &&
+    !lineItemFields.some((field) => field.name === filter.field);
   const options = selected?.options;
   const type = selected?.type;
   return (
@@ -349,6 +407,16 @@ export function FilterRow({
                 ))}
               </SelectGroup>
             )}
+            {lineItemFields.length > 0 && (
+              <SelectGroup>
+                <SelectLabel className="text-[11px]">Itens do negócio</SelectLabel>
+                {lineItemFields.map((f) => (
+                  <SelectItem key={f.name} value={f.name}>
+                    {f.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            )}
             {isPriorStep && !priorFields.some((f) => f.name === filter.field) && (
               <SelectItem value={filter.field}>{filter.field}</SelectItem>
             )}
@@ -371,12 +439,30 @@ export function FilterRow({
           ))}
         </SelectContent>
       </Select>
+      {isLineItem && filter.field !== LINE_ITEM_COUNT_FIELD && (
+        <Select
+          value={filter.match ?? "any"}
+          onValueChange={(v) => onChange({ ...filter, match: v as "any" | "all" })}
+        >
+          <SelectTrigger
+            className="h-8 text-xs"
+            aria-label="A condição vale para qualquer item ou para todos"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="any">Vale para qualquer item</SelectItem>
+            <SelectItem value="all">Vale para todos os itens</SelectItem>
+          </SelectContent>
+        </Select>
+      )}
       {needsValue && (
         <FieldValueEditor
           field={selected ?? (type ? { name: filter.field, label: filter.field, type } : undefined)}
           value={filter.value}
           onChange={(v) => onChange({ ...filter, value: v })}
           compact
+          stageValue={stageValue}
         />
       )}
     </div>

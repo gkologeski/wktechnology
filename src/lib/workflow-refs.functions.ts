@@ -625,6 +625,14 @@ const SimpleRefInput = RefInput.extend({
     "service",
     "category",
   ]),
+  /** Substatus: etapa escolhida no passo/condição (obrigatória para listar). */
+  stage_value: z.string().trim().max(120).optional(),
+  /** Substatus: pipeline escolhido, quando informado. */
+  pipeline_id: z
+    .string()
+    .trim()
+    .optional()
+    .transform((v) => (v && UUID_RE.test(v) ? v : undefined)),
 });
 
 export const searchSimpleRefs = createServerFn({ method: "POST" })
@@ -637,6 +645,10 @@ export const searchSimpleRefs = createServerFn({ method: "POST" })
     const like = q ? `%${escapeLike(q)}%` : null;
 
     if (data.kind === "substatus") {
+      // Substatus é dependente da etapa: sem etapa escolhida não há lista.
+      // A hidratação por `ids` continua sem filtro para preservar rótulos de
+      // valores já salvos (inclusive de outras etapas ou inativos).
+      if (!ids && !data.stage_value) return [];
       let query = supabase
         .from("pipeline_stage_substatuses")
         .select("id, name, stage_value, is_active")
@@ -645,7 +657,8 @@ export const searchSimpleRefs = createServerFn({ method: "POST" })
         .limit(LIMIT);
       if (ids) query = query.in("id", ids);
       else {
-        query = query.eq("is_active", true);
+        query = query.eq("is_active", true).eq("stage_value", data.stage_value!);
+        if (data.pipeline_id) query = query.eq("pipeline_id", data.pipeline_id);
         if (like) query = query.ilike("name", like);
       }
       const { data: rows, error } = await query;
@@ -653,7 +666,11 @@ export const searchSimpleRefs = createServerFn({ method: "POST" })
       return ((rows ?? []) as Array<{ id: string; name: string; stage_value: string | null }>).map(
         (r) => ({
           id: r.id,
-          name: [r.stage_value, r.name].filter(Boolean).join(" · ") || "Substatus sem nome",
+          // Com etapa escolhida o nome basta; na hidratação mostramos a etapa
+          // para deixar claro que o valor salvo é de outra etapa.
+          name: ids
+            ? [r.stage_value, r.name].filter(Boolean).join(" · ") || "Substatus sem nome"
+            : r.name || "Substatus sem nome",
         }),
       );
     }
