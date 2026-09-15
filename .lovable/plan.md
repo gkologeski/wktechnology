@@ -33,10 +33,12 @@ Cada serviço do catálogo passa a ter uma **forma de cobrança padrão**, que s
 
 Os presets de contratação existentes continuam funcionando e passam a carregar também a forma de cobrança, unidade e recorrência.
 
-## Parte 3 — Ligação negócio → contrato
+## Parte 3 — Ligação negócio → contrato (via workflow)
 
-- Ao gerar o contrato a partir do negócio ganho, cada item de linha vira um serviço do contrato **com todos os campos de cobrança já preenchidos** (forma, unidade, valor, quantidade, percentual, recorrência) — sem redigitar nada.
-- No contrato, a tela de serviços passa a mostrar a cobrança de forma legível ("R$ 250/hora × 160h/mês", "100% do salário alvo por vaga") e permite ajuste antes de ativar.
+- A criação do contrato **não** é automática nem embutida no código: quem decide é um workflow criado pelo usuário, com gatilho na etapa de contratação do negócio (ou em qualquer condição que ele escolher, inclusive por serviço/itens de linha).
+- Nova ação de workflow "Criar contrato a partir do negócio", configurável: tipo de contrato, modelo, entidade legal e responsável. Ao disparar, ela carrega os dados do negócio daquele momento — empresa, contato, responsável, valor, moeda — e cada item de linha vira um serviço do contrato **com todos os campos de cobrança já preenchidos** (forma, unidade, valor, quantidade, percentual, recorrência), sem redigitar nada.
+- A ação é idempotente: se o negócio já tem contrato criado pelo workflow, ela não duplica; registra no log da execução e na timeline do negócio.
+- No contrato, a tela de serviços mostra a cobrança de forma legível ("R$ 250/hora × 160h/mês", "100% do salário alvo por vaga") e permite ajuste antes de ativar.
 - Divergências entre o negócio e o contrato (valor alterado, quantidade diferente) ficam visíveis no contrato como aviso, sem bloquear.
 - A cobrança percentual do Hunting alimenta o faturamento pelo valor calculado (salário alvo × percentual), não por um valor digitado solto.
 
