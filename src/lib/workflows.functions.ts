@@ -1,4 +1,5 @@
 import { conditionsSummary, evaluateConditions } from "@/lib/workflows/conditions";
+import { isLineItemField, lineItemCaseMatches } from "@/lib/workflows/line-items";
 // Server functions para o builder de Workflows.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
