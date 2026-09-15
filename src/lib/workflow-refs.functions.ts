@@ -667,11 +667,12 @@ export const searchSimpleRefs = createServerFn({ method: "POST" })
       else if (like) query = query.or(`full_name.ilike.${like},email.ilike.${like}`);
       const { data: rows, error } = await query;
       if (error) throw new Error(error.message);
-      return ((rows ?? []) as Array<{ id: string; full_name: string | null; email: string | null }>)
-        .map((r) => ({
-          id: r.id,
-          name: (r.full_name ?? "").trim() || r.email || "Candidato sem nome",
-        }));
+      return (
+        (rows ?? []) as Array<{ id: string; full_name: string | null; email: string | null }>
+      ).map((r) => ({
+        id: r.id,
+        name: (r.full_name ?? "").trim() || r.email || "Candidato sem nome",
+      }));
     }
 
     if (data.kind === "application") {

@@ -378,8 +378,7 @@ export function FkPicker({
       if (kind === "legal_entity") return await fetchLegalEntities({ data: { q: q || undefined } });
       if (kind === "contract") return await fetchContracts({ data: { q: q || undefined } });
       if (kind === "deal") return await fetchDeals({ data: { q: q || undefined } });
-      if (simpleKind)
-        return await fetchSimple({ data: { kind: simpleKind, q: q || undefined } });
+      if (simpleKind) return await fetchSimple({ data: { kind: simpleKind, q: q || undefined } });
       const rows = await fetchUsers({ data: { q: q || undefined } });
       return rows.map((r: { id: string; name: string }) => ({ id: r.id, name: r.name }));
     },
