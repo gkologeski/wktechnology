@@ -559,6 +559,11 @@ export function LineItemsEditorBody({
                       </button>
                     </div>
                   </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    {(li.discount_type ?? "pct") === "amount"
+                      ? "Valor total da linha"
+                      : "% do subtotal da linha"}
+                  </p>
                 </div>
                 <LabeledNumber
                   label="Imp %"
