@@ -479,3 +479,70 @@ export const linkCatalogServiceToContract = createServerFn({ method: "POST" })
     if (error) throw error;
     return row;
   });
+
+// ============= DIVERGÊNCIAS COM O NEGÓCIO =============
+
+/**
+ * Compara os serviços do contrato com os itens de linha do negócio que os
+ * originaram (quando o contrato foi criado por workflow a partir do negócio).
+ * Só informa: não altera nada e não bloqueia o contrato.
+ */
+export const listServiceDealDivergences = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ contractId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techservice.services.view.workspace",
+      "techservice.services.view.own",
+    ]);
+
+    const { data: services, error } = await supabase
+      .from("services")
+      .select(
+        "id, name, quantity, unit_price, unit, billing_model, percent, percent_base_amount, cadence, source_deal_line_item_id",
+      )
+      .eq("contract_id", data.contractId)
+      .not("source_deal_line_item_id", "is", null);
+    if (error) throw new Error(error.message);
+
+    const rows = (services ?? []) as Array<Record<string, unknown>>;
+    const ids = rows.map((s) => String(s.source_deal_line_item_id));
+    if (ids.length === 0) return [] as Array<{ serviceId: string; fields: string[] }>;
+
+    const { data: lineItems, error: liErr } = await supabase
+      .from("deal_line_items")
+      .select("id, quantity, unit_price, unit, billing_model, percent, percent_base_amount, cadence")
+      .in("id", ids);
+    if (liErr) throw new Error(liErr.message);
+    const byId = new Map(
+      ((lineItems ?? []) as Array<Record<string, unknown>>).map((li) => [String(li.id), li]),
+    );
+
+    const compare = [
+      ["quantity", "quantidade"],
+      ["unit_price", "valor"],
+      ["unit", "unidade"],
+      ["billing_model", "forma de cobrança"],
+      ["percent", "percentual"],
+      ["percent_base_amount", "base de cálculo"],
+      ["cadence", "recorrência"],
+    ] as const;
+
+    const out: Array<{ serviceId: string; fields: string[] }> = [];
+    for (const s of rows) {
+      const li = byId.get(String(s.source_deal_line_item_id));
+      if (!li) continue;
+      const fields: string[] = [];
+      for (const [key, label] of compare) {
+        const a = s[key];
+        const b = li[key];
+        const norm = (v: unknown) =>
+          v == null ? null : typeof v === "number" || !Number.isNaN(Number(v)) ? Number(v) : v;
+        if (JSON.stringify(norm(a)) !== JSON.stringify(norm(b))) fields.push(label);
+      }
+      if (fields.length > 0) out.push({ serviceId: String(s.id), fields });
+    }
+    return out;
+  });
