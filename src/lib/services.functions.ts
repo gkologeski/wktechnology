@@ -101,6 +101,14 @@ const createInput = z.object({
   currency: z.string().default("BRL"),
   startsAt: z.string().nullable().optional(),
   endsAt: z.string().nullable().optional(),
+  // Cobrança compartilhada com o catálogo e com os itens de linha do negócio.
+  unit: z.string().max(40).nullable().optional(),
+  billingModel: z
+    .enum(["per_unit", "per_hour", "per_headcount_month", "percent_of_base", "fixed"])
+    .nullable()
+    .optional(),
+  percent: z.number().nonnegative().nullable().optional(),
+  percentBaseAmount: z.number().nonnegative().nullable().optional(),
 });
 
 export const createService = createServerFn({ method: "POST" })
@@ -143,6 +151,10 @@ export const createService = createServerFn({ method: "POST" })
         currency: data.currency || contract.currency || "BRL",
         starts_at: data.startsAt ?? null,
         ends_at: data.endsAt ?? null,
+        unit: data.unit ?? null,
+        billing_model: data.billingModel ?? null,
+        percent: data.percent ?? null,
+        percent_base_amount: data.percentBaseAmount ?? null,
         status: "pending",
       })
       .select("*")
@@ -172,6 +184,13 @@ const patchInput = z.object({
       job_profile_id: z.string().uuid().nullable().optional(),
       seniority: z.string().nullable().optional(),
       competencies: z.array(z.string()).optional(),
+      unit: z.string().max(40).nullable().optional(),
+      billing_model: z
+        .enum(["per_unit", "per_hour", "per_headcount_month", "percent_of_base", "fixed"])
+        .nullable()
+        .optional(),
+      percent: z.number().nonnegative().nullable().optional(),
+      percent_base_amount: z.number().nonnegative().nullable().optional(),
     })
     .strict(),
 });
