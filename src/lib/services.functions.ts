@@ -538,7 +538,9 @@ export const listServiceDealDivergences = createServerFn({ method: "POST" })
 
     const { data: lineItems, error: liErr } = await supabase
       .from("deal_line_items")
-      .select("id, quantity, unit_price, unit, billing_model, percent, percent_base_amount, cadence")
+      .select(
+        "id, quantity, unit_price, unit, billing_model, percent, percent_base_amount, cadence",
+      )
       .in("id", ids);
     if (liErr) throw new Error(liErr.message);
     const byId = new Map(
