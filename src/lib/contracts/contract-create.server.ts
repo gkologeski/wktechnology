@@ -2,7 +2,6 @@
 // partir do negócio e pela ação de workflow. Concentra a leitura do negócio,
 // a aplicação dos padrões do workspace e a cópia dos itens de linha como
 // serviços do contrato (mantendo a cobrança).
-import { randomBytes } from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   applyDefaults,
@@ -55,7 +54,9 @@ export type DealSnapshot = {
 };
 
 function tokenValue() {
-  return randomBytes(24).toString("hex");
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 function generateNumber() {

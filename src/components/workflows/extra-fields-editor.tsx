@@ -733,7 +733,8 @@ export function ExtraFieldsEditor({
 
   const fetchCatalog = useServerFn(getEntityFieldCatalog);
   const { data, isLoading, error } = useQuery({
-    queryKey: ["wf-entity-fields-full", entity],
+    // Versão do catálogo evita manter rótulos antigos após uma atualização.
+    queryKey: ["wf-entity-fields-full", "pt-br-v2", entity],
     queryFn: () => fetchCatalog({ data: { entity } }),
     staleTime: 5 * 60_000,
   });
