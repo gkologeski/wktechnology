@@ -62,8 +62,9 @@ export function lineItemTotal(item: LineItemRow): number {
   const gross = num(item["quantity"]) * num(item["unit_price"]);
   const pct = num(item["discount_pct"]);
   const abs = num(item["discount_amount"]);
-  const discount = item["discount_type"] === "amount" ? abs : (gross * pct) / 100;
-  const total = gross - (discount || 0);
+  const raw = item["discount_type"] === "amount" ? abs : (gross * pct) / 100;
+  const discount = Math.min(Math.max(raw || 0, 0), gross);
+  const total = gross - discount;
   return Math.round(total * 100) / 100;
 }
 

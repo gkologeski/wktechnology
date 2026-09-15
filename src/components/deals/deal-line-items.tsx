@@ -60,8 +60,8 @@ function lineDiscount(li: {
   const price = n(li.unit_price);
   const gross = qty * price;
   if ((li.discount_type ?? "pct") === "amount") {
-    const raw = n(li.discount_amount) * qty;
-    return Math.min(Math.max(raw, 0), gross);
+    // Desconto em R$ é o valor total da linha (não por unidade).
+    return Math.min(Math.max(n(li.discount_amount), 0), gross);
   }
   return gross * (n(li.discount_pct) / 100);
 }
