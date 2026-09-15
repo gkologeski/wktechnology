@@ -166,6 +166,27 @@ export function ContractServices({
                     </span>
                   ) : null}
                 </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Cobrança:{" "}
+                  {describeBilling(
+                    {
+                      billing_model: s.billing_model,
+                      quantity: s.quantity,
+                      unit_price: s.unit_price,
+                      percent: s.percent,
+                      percent_base_amount: s.percent_base_amount,
+                      unit: s.unit,
+                      cadence: s.cadence,
+                      percent_base_label: s.description,
+                    },
+                    (v) => formatCurrency(v, s.currency ?? currency),
+                  )}
+                </p>
+                {divergenceFields(s.id).length > 0 ? (
+                  <p className="mt-1 text-xs text-amber-600 dark:text-amber-500">
+                    Diferente do negócio de origem: {divergenceFields(s.id).join(", ")}.
+                  </p>
+                ) : null}
                 {s.status === "pending" ? (
                   <div className="mt-2">
                     <Button
