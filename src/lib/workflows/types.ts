@@ -498,6 +498,7 @@ export const ACTION_LABELS: Record<WorkflowActionType, string> = {
   create_record: "Criar registro (qualquer módulo)",
   update_record: "Atualizar registro (qualquer módulo)",
   delete_record: "Excluir registro (qualquer módulo)",
+  create_contract_from_deal: "Criar contrato a partir do negócio",
 };
 
 // Categorias exibidas na biblioteca de ações do builder (estilo HubSpot).
