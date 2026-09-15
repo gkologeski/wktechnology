@@ -6,6 +6,7 @@
 // real de campos da entidade — uma lista fixa não tem relação com o gatilho.
 
 import type { MessageToken } from "@/lib/message-tokens-catalog";
+import { LINE_ITEM_TOKENS } from "./line-items";
 
 export type TokenFieldOpt = {
   name: string;
@@ -17,6 +18,7 @@ export type TokenFieldOpt = {
 };
 
 const GROUP_RECORD = "Registro";
+const GROUP_LINE_ITEMS = "Itens do negócio";
 const GROUP_REFS = "Identificadores (ID)";
 const GROUP_STEPS = "Passos anteriores";
 const GROUP_VARS = "Variáveis do fluxo";
