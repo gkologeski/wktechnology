@@ -426,7 +426,9 @@ export const linkCatalogServiceToContract = createServerFn({ method: "POST" })
 
     const { data: catalog, error: catErr } = await supabase
       .from("service_catalog")
-      .select("id, name, description, base_price, currency, active")
+      .select(
+        "id, name, description, base_price, currency, active, unit, billing_model, default_percent, default_cadence",
+      )
       .eq("id", data.serviceCatalogId)
       .maybeSingle();
     if (catErr) throw catErr;
@@ -487,6 +489,10 @@ export const linkCatalogServiceToContract = createServerFn({ method: "POST" })
         currency: contract.currency || catalog.currency || "BRL",
         starts_at: data.startsAt ?? null,
         ends_at: data.endsAt ?? null,
+        // A cobrança do serviço herda o modelo do catálogo e continua editável.
+        unit: catalog.unit ?? null,
+        billing_model: catalog.billing_model ?? null,
+        percent: catalog.default_percent ?? null,
         status: "pending",
         job_profile_id: jobProfileId,
         seniority,
