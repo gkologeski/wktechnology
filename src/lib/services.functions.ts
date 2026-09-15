@@ -101,6 +101,14 @@ const createInput = z.object({
   currency: z.string().default("BRL"),
   startsAt: z.string().nullable().optional(),
   endsAt: z.string().nullable().optional(),
+  // Cobrança compartilhada com o catálogo e com os itens de linha do negócio.
+  unit: z.string().max(40).nullable().optional(),
+  billingModel: z
+    .enum(["per_unit", "per_hour", "per_headcount_month", "percent_of_base", "fixed"])
+    .nullable()
+    .optional(),
+  percent: z.number().nonnegative().nullable().optional(),
+  percentBaseAmount: z.number().nonnegative().nullable().optional(),
 });
 
 export const createService = createServerFn({ method: "POST" })
@@ -143,6 +151,10 @@ export const createService = createServerFn({ method: "POST" })
         currency: data.currency || contract.currency || "BRL",
         starts_at: data.startsAt ?? null,
         ends_at: data.endsAt ?? null,
+        unit: data.unit ?? null,
+        billing_model: data.billingModel ?? null,
+        percent: data.percent ?? null,
+        percent_base_amount: data.percentBaseAmount ?? null,
         status: "pending",
       })
       .select("*")
@@ -172,6 +184,13 @@ const patchInput = z.object({
       job_profile_id: z.string().uuid().nullable().optional(),
       seniority: z.string().nullable().optional(),
       competencies: z.array(z.string()).optional(),
+      unit: z.string().max(40).nullable().optional(),
+      billing_model: z
+        .enum(["per_unit", "per_hour", "per_headcount_month", "percent_of_base", "fixed"])
+        .nullable()
+        .optional(),
+      percent: z.number().nonnegative().nullable().optional(),
+      percent_base_amount: z.number().nonnegative().nullable().optional(),
     })
     .strict(),
 });
@@ -407,7 +426,9 @@ export const linkCatalogServiceToContract = createServerFn({ method: "POST" })
 
     const { data: catalog, error: catErr } = await supabase
       .from("service_catalog")
-      .select("id, name, description, base_price, currency, active")
+      .select(
+        "id, name, description, base_price, currency, active, unit, billing_model, default_percent, default_cadence",
+      )
       .eq("id", data.serviceCatalogId)
       .maybeSingle();
     if (catErr) throw catErr;
@@ -468,6 +489,10 @@ export const linkCatalogServiceToContract = createServerFn({ method: "POST" })
         currency: contract.currency || catalog.currency || "BRL",
         starts_at: data.startsAt ?? null,
         ends_at: data.endsAt ?? null,
+        // A cobrança do serviço herda o modelo do catálogo e continua editável.
+        unit: catalog.unit ?? null,
+        billing_model: catalog.billing_model ?? null,
+        percent: catalog.default_percent ?? null,
         status: "pending",
         job_profile_id: jobProfileId,
         seniority,
@@ -478,4 +503,73 @@ export const linkCatalogServiceToContract = createServerFn({ method: "POST" })
       .single();
     if (error) throw error;
     return row;
+  });
+
+// ============= DIVERGÊNCIAS COM O NEGÓCIO =============
+
+/**
+ * Compara os serviços do contrato com os itens de linha do negócio que os
+ * originaram (quando o contrato foi criado por workflow a partir do negócio).
+ * Só informa: não altera nada e não bloqueia o contrato.
+ */
+export const listServiceDealDivergences = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ contractId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techservice.services.view.workspace",
+      "techservice.services.view.own",
+    ]);
+
+    const { data: services, error } = await supabase
+      .from("services")
+      .select(
+        "id, name, quantity, unit_price, unit, billing_model, percent, percent_base_amount, cadence, source_deal_line_item_id",
+      )
+      .eq("contract_id", data.contractId)
+      .not("source_deal_line_item_id", "is", null);
+    if (error) throw new Error(error.message);
+
+    const rows = (services ?? []) as Array<Record<string, unknown>>;
+    const ids = rows.map((s) => String(s.source_deal_line_item_id));
+    if (ids.length === 0) return [] as Array<{ serviceId: string; fields: string[] }>;
+
+    const { data: lineItems, error: liErr } = await supabase
+      .from("deal_line_items")
+      .select(
+        "id, quantity, unit_price, unit, billing_model, percent, percent_base_amount, cadence",
+      )
+      .in("id", ids);
+    if (liErr) throw new Error(liErr.message);
+    const byId = new Map(
+      ((lineItems ?? []) as Array<Record<string, unknown>>).map((li) => [String(li.id), li]),
+    );
+
+    const compare = [
+      ["quantity", "quantidade"],
+      ["unit_price", "valor"],
+      ["unit", "unidade"],
+      ["billing_model", "forma de cobrança"],
+      ["percent", "percentual"],
+      ["percent_base_amount", "base de cálculo"],
+      ["cadence", "recorrência"],
+    ] as const;
+
+    const out: Array<{ serviceId: string; fields: string[] }> = [];
+    for (const s of rows) {
+      const li = byId.get(String(s.source_deal_line_item_id));
+      if (!li) continue;
+      const fields: string[] = [];
+      for (const [key, label] of compare) {
+        const a = s[key];
+        const b = li[key];
+        const norm = (v: unknown) =>
+          v == null ? null : typeof v === "number" || !Number.isNaN(Number(v)) ? Number(v) : v;
+        if (JSON.stringify(norm(a)) !== JSON.stringify(norm(b))) fields.push(label);
+      }
+      if (fields.length > 0) out.push({ serviceId: String(s.id), fields });
+    }
+    return out;
   });

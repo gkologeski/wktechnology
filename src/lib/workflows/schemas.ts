@@ -360,6 +360,17 @@ export const SimpleActionSchema = z.discriminatedUnion("type", [
     table: WritableTableEnum,
     target_id: z.string().min(1).max(200),
   }),
+  z.object({
+    type: z.literal("create_contract_from_deal"),
+    role: z.enum(["provider", "client"]).optional(),
+    document_kind: z.enum(["contract", "amendment", "purchase"]).optional(),
+    title: z.string().max(300).optional(),
+    status: z.string().max(40).optional(),
+    starts_at: z.string().max(100).optional(),
+    template_id: z.string().uuid().optional(),
+    copy_line_items: z.boolean().optional(),
+    skip_if_exists: z.boolean().optional(),
+  }),
 ]);
 
 const MAX_BRANCH_DEPTH = 3;

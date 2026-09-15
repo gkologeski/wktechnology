@@ -382,6 +382,26 @@ export type WorkflowAction =
       type: "delete_record";
       table: WorkflowWritableTable;
       target_id: string;
+    }
+  // Contratos — criação a partir do negócio (configurada pelo usuário no workflow)
+  | {
+      type: "create_contract_from_deal";
+      /** Papel do contrato: prestação (provider) ou compra (client). */
+      role?: "provider" | "client";
+      /** contract | amendment | purchase. Padrão: contract. */
+      document_kind?: string;
+      /** Título do contrato. Aceita tokens. Padrão: "Contrato — {nome do negócio}". */
+      title?: string;
+      /** Situação inicial. Padrão: draft. */
+      status?: string;
+      /** Início da vigência. Aceita tokens/data ISO. */
+      starts_at?: string;
+      /** Modelo de contrato usado para preencher o corpo. */
+      template_id?: string;
+      /** Copiar itens de linha do negócio como serviços do contrato. Padrão: true. */
+      copy_line_items?: boolean;
+      /** Não recriar se o negócio já tem contrato do mesmo tipo. Padrão: true. */
+      skip_if_exists?: boolean;
     };
 
 export type WorkflowActionType = WorkflowAction["type"];
@@ -478,6 +498,7 @@ export const ACTION_LABELS: Record<WorkflowActionType, string> = {
   create_record: "Criar registro (qualquer módulo)",
   update_record: "Atualizar registro (qualquer módulo)",
   delete_record: "Excluir registro (qualquer módulo)",
+  create_contract_from_deal: "Criar contrato a partir do negócio",
 };
 
 // Categorias exibidas na biblioteca de ações do builder (estilo HubSpot).
@@ -544,6 +565,7 @@ export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionTy
       "assign_recruiter",
     ],
   },
+  { label: "Contratos", actions: ["create_contract_from_deal"] },
   { label: "Utilitários", actions: ["format_data"] },
   { label: "Externo", actions: ["webhook"] },
 ];
