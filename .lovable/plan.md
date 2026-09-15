@@ -65,11 +65,13 @@ Nada é removido; condições existentes continuam válidas.
 
 ### Parte 2
 
-- Campo virtual `line_item_service_id` (rótulo "Serviço (itens do negócio)") no catálogo de campos de `deals`, marcado como somente-condição (não editável em passos de criação/atualização), com `ref: "service"` para reaproveitar o `FkPicker` de serviços.
-- `src/lib/workflows/engine-shared.server.ts`: `evalFilter` passa a aceitar campos virtuais resolvidos previamente; a comparação usa lista (qualquer item satisfaz) para `eq`/`in`/`contains`.
-- `src/lib/workflows/hydrate-associations.server.ts` (ou etapa equivalente antes da avaliação): quando as condições do workflow referenciarem o campo virtual, carregar `deal_line_items` do negócio (`service_catalog_id`, nome do serviço) e anexar ao registro avaliado como `line_item_service_id[]` e `line_item_service_name[]`. Sem referência ao campo, nenhuma consulta extra é feita.
-- `src/lib/workflows/token-catalog.ts`: token `{{deal.services}}` a partir da mesma hidratação.
-- Testes em `src/lib/workflows/conditions.test.ts` cobrindo múltiplos itens, item sem serviço e negócio sem itens.
+- Novo módulo `src/lib/workflows/line-items.ts`: catálogo dos campos virtuais `line_items.*` (`service_catalog_id`, `job_profile_id`, `seniority`, `contracting_preset_id`, `name`, `description`, `quantity`, `unit_price`, `total`, `count`) com rótulos PT-BR, tipos e `ref` (serviço/cargo/preset) — colunas confirmadas em `deal_line_items`.
+- `src/lib/workflows/types.ts`: `WorkflowFilter` ganha `match?: "any" | "all"` (padrão `any`), usado apenas por campos `line_items.*`.
+- `src/lib/workflows/engine-shared.server.ts`: em `evalFilter`, quando `f.field` começa com `line_items.`, avaliar a lista de itens hidratada (`any`/`all`), reaproveitando a comparação por operador já existente; `count` compara o número de itens.
+- Hidratação: nova função em `src/lib/workflows/hydrate-associations.server.ts` (ou `line-items.server.ts` irmão) que, quando o JSON do workflow referenciar `line_items.` ou os tokens de itens, carrega `deal_line_items` do negócio com o nome do serviço/cargo/preset e anexa `__line_items` ao registro avaliado. Sem referência, nenhuma consulta extra.
+- `src/components/workflows/builder/conditions-editor.tsx`: grupo "Itens do negócio" no seletor de campos (só para `entity === "deals"`), seletor de referência por nome nos campos de serviço/cargo/preset, e alternância "qualquer item / todos os itens".
+- `src/lib/workflows/token-catalog.ts` + `render-tokens.ts`: tokens `{{deal.services}}`, `{{deal.line_items_count}}`, `{{deal.line_items_summary}}`.
+- Testes em `src/lib/workflows/conditions.test.ts` (e um teste do avaliador) cobrindo: qualquer item, todos os itens, item sem serviço, negócio sem itens e comparações numéricas.
 
 Sem migration, sem alteração de schema, RLS, permissões ou regra de negócio dos módulos.
 
@@ -81,5 +83,6 @@ Sem migration, sem alteração de schema, RLS, permissões ou regra de negócio 
 
 1. Passo "Atualizar registro" em Negócios: sem etapa, o substatus fica desabilitado; ao escolher a etapa, lista só os substatus dela; ao trocar a etapa, o valor incompatível é limpo.
 2. Abrir workflow antigo com substatus de outra etapa: o nome continua exibido.
-3. Nova condição em Negócios → "Serviço (itens do negócio)" é igual a "Hunting": salvar, alterar um negócio com item de Hunting e conferir a execução no histórico do workflow.
-4. Negócio sem itens de linha: a condição não dispara.
+3. Nova condição em Negócios → "Itens do negócio · Serviço" é igual a "Hunting": salvar, alterar um negócio com item de Hunting e conferir a execução no histórico do workflow.
+4. Repetir com modo "todos os itens" e com "Quantidade de itens do negócio maior que 1".
+5. Negócio sem itens de linha: as condições sobre itens não disparam.
