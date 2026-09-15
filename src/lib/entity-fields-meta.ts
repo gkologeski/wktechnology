@@ -77,6 +77,7 @@ export const LABELS: Record<string, string> = {
   assignee_id: "Responsável",
   due_at: "Vence em",
   sla_policy_id: "Política de SLA",
+  stage_substatus_id: "Substatus da etapa",
   first_response_at: "Primeira resposta em",
   resolved_at: "Resolvido em",
   closed_at: "Fechado em",
