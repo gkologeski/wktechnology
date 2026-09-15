@@ -118,6 +118,28 @@ export function lineItemTokenValues(items: LineItemRow[]): Record<string, unknow
   };
 }
 
+/**
+ * O valor do case bate com o campo de item de linha?
+ * `any` (padrão) exige pelo menos um item; `all` exige todos os itens.
+ * Comparação tolerante a tipo (número gravado como texto no case).
+ */
+export function lineItemCaseMatches(
+  row: Record<string, unknown> | null | undefined,
+  field: string,
+  caseValue: unknown,
+  match: "any" | "all" = "any",
+): boolean {
+  const items = lineItemsOf(row);
+  const same = (a: unknown, b: unknown) =>
+    a === b || (a != null && b != null && String(a) === String(b));
+  if (field === LINE_ITEM_COUNT_FIELD) return same(items.length, caseValue);
+  if (items.length === 0) return false;
+  const values = items.map((it) => lineItemValue(it, field));
+  return match === "all"
+    ? values.every((v) => same(v, caseValue))
+    : values.some((v) => same(v, caseValue));
+}
+
 /** O JSON do workflow referencia itens de linha (campos ou tokens)? */
 export function workflowUsesLineItems(workflowJson: string): boolean {
   return (

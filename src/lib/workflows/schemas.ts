@@ -394,7 +394,8 @@ export function parseActionAtDepth(raw: unknown, depth: number): ActionInput {
         };
       });
       const def = parseActionsAtDepth(src.default ?? [], depth + 1);
-      return { type: "switch_by_value", field, cases, default: def };
+      const match = src.match === "all" ? ("all" as const) : ("any" as const);
+      return { type: "switch_by_value", field, match, cases, default: def };
     }
     if (src.type === "branch_multi") {
       if (depth >= MAX_BRANCH_DEPTH) throw new Error("profundidade máxima excedida");

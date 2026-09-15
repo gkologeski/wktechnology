@@ -4,6 +4,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { WorkflowAction } from "../types";
 import { type LogStep, evalConditions, getField, renderTokens } from "../engine-shared.server";
+import {
+  isLineItemField,
+  lineItemCaseMatches,
+  lineItemValue,
+  lineItemsOf,
+  type LineItemRow,
+} from "../line-items";
 import type { RunCtx, RunResult } from "./run-context";
 
 /** Ações que alteram o fluxo da lista de passos. */
@@ -129,8 +136,15 @@ export async function runControlAction(
 
   // Switch por valor: escolhe primeiro case cujo value bate, ou default.
   if (action.type === "switch_by_value") {
-    const v = getField(ctx.after, action.field);
-    const matched = action.cases.find((c) => c.value === v);
+    const onLineItems = isLineItemField(action.field);
+    const v = onLineItems
+      ? lineItemsOf(ctx.after).map((it: LineItemRow) => lineItemValue(it, action.field))
+      : getField(ctx.after, action.field);
+    const matched = onLineItems
+      ? action.cases.find((c) =>
+          lineItemCaseMatches(ctx.after, action.field, c.value, action.match ?? "any"),
+        )
+      : action.cases.find((c) => c.value === v);
     const branchActions = matched ? matched.actions : (action.default ?? []);
     logs.push(
       annotate({

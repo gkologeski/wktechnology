@@ -1,4 +1,9 @@
 import { FieldSelect } from "./pickers";
+import {
+  LINE_ITEM_COUNT_FIELD,
+  LINE_ITEM_FIELDS,
+  isLineItemField,
+} from "@/lib/workflows/line-items";
 import type { FieldOpt } from "../step-tree";
 import {
   countSteps,
@@ -57,7 +62,14 @@ export function SwitchByValueForm({
 }) {
   const setCases = (next: typeof action.cases) => onChange({ ...action, cases: next });
   const cases = action.cases ?? [];
-  const selectedField = entityFields.find((f) => f.name === action.field);
+  const lineItemFields: FieldOpt[] =
+    entity === "deals"
+      ? LINE_ITEM_FIELDS.map((f) => ({ name: f.name, label: f.label, type: f.type, ref: f.ref }))
+      : [];
+  const isLineItem = isLineItemField(action.field);
+  const selectedField =
+    entityFields.find((f) => f.name === action.field) ??
+    lineItemFields.find((f) => f.name === action.field);
   const moveCase = (i: number, dir: -1 | 1) => {
     const j = i + dir;
     if (j < 0 || j >= cases.length) return;
