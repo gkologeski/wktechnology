@@ -5162,6 +5162,44 @@ export type Database = {
           },
         ]
       }
+      contract_defaults: {
+        Row: {
+          created_at: string
+          defaults: Json
+          document_kind: string | null
+          id: string
+          owner_id: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          defaults?: Json
+          document_kind?: string | null
+          id?: string
+          owner_id?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          defaults?: Json
+          document_kind?: string | null
+          id?: string
+          owner_id?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_defaults_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contract_events: {
         Row: {
           actor_id: string | null

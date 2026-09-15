@@ -15,6 +15,10 @@ import {
 /** Rótulos PT-BR de todas as colunas de contrato. */
 export const CONTRACT_FIELD_LABELS: Record<string, string> = {
   role: "Papel na relação",
+  document_kind: "Tipo de documento",
+  amendment_number: "Número do aditivo",
+  amendment_of_id: "Aditivo do contrato",
+  amendment_effective_at: "Vigência do aditivo",
   status: "Status do contrato",
   title: "Título do contrato",
   number: "Número do contrato",
@@ -83,6 +87,10 @@ export const CONTRACT_FIELD_OPTIONS: Record<string, { value: string; label: stri
   role: [
     { value: "provider", label: "Prestação (somos o prestador)" },
     { value: "client", label: "Compra (somos o cliente)" },
+  ],
+  document_kind: [
+    { value: "main", label: "Contrato principal" },
+    { value: "amendment", label: "Aditivo" },
   ],
   status: [
     { value: "draft", label: "Rascunho" },

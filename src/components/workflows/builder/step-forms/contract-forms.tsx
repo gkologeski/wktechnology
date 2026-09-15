@@ -11,8 +11,21 @@ import {
 import { TokenInput } from "@/components/workflows/token-input";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
 import type { WorkflowAction } from "@/lib/workflows/types";
+import {
+  CONTRACT_KINDS,
+  CONTRACT_KIND_LABEL,
+  isContractKind,
+} from "@/lib/contracts/contract-kinds";
 
 type Action = Extract<WorkflowAction, { type: "create_contract_from_deal" }>;
+
+/** Workflows antigos guardavam "contract"/"purchase" em `document_kind`. */
+function normalizeKind(raw: string | null | undefined): string {
+  if (isContractKind(raw)) return raw;
+  if (raw === "purchase") return "client";
+  if (raw === "amendment") return "amendment";
+  return "provider";
+}
 
 export function CreateContractFromDealForm({
   action,
@@ -27,21 +40,23 @@ export function CreateContractFromDealForm({
         <div>
           <Label className="text-xs">Tipo de contrato</Label>
           <Select
-            value={action.document_kind ?? "contract"}
+            value={normalizeKind(action.document_kind)}
             onValueChange={(v) => onChange({ ...action, document_kind: v })}
           >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="contract">Contrato</SelectItem>
-              <SelectItem value="purchase">Contrato de compra</SelectItem>
-              <SelectItem value="amendment">Aditivo</SelectItem>
+              {CONTRACT_KINDS.map((k) => (
+                <SelectItem key={k} value={k}>
+                  {CONTRACT_KIND_LABEL[k]}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
         <div>
-          <Label className="text-xs">Papel</Label>
+          <Label className="text-xs">Papel do aditivo</Label>
           <Select
             value={action.role ?? "provider"}
             onValueChange={(v) => onChange({ ...action, role: v as "provider" | "client" })}
