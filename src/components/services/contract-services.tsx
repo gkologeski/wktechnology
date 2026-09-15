@@ -7,7 +7,12 @@ import { Link2, Play, ExternalLink } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { listServices, activateService } from "@/lib/services.functions";
+import {
+  listServices,
+  activateService,
+  listServiceDealDivergences,
+} from "@/lib/services.functions";
+import { describeBilling } from "@/lib/catalog/billing-model";
 import { listJobProfileOptions } from "@/lib/job-profiles.functions";
 import { SENIORITY_LABEL } from "@/lib/job-profiles-shared";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
@@ -66,6 +71,18 @@ export function ContractServices({
     queryFn: () => listProfiles({ data: {} }) as Promise<{ id: string; name: string }[]>,
     staleTime: 60_000,
   });
+  const listDivergences = useServerFn(listServiceDealDivergences);
+  const { data: divergences = [] } = useQuery({
+    queryKey: ["contract-service-divergences", contractId],
+    queryFn: () =>
+      listDivergences({ data: { contractId } }) as Promise<
+        Array<{ serviceId: string; fields: string[] }>
+      >,
+    staleTime: 30_000,
+  });
+  const divergenceFields = (serviceId: string) =>
+    divergences.find((d) => d.serviceId === serviceId)?.fields ?? [];
+
   const profileName = (id: string | null | undefined) =>
     id ? (profiles.find((p) => p.id === id)?.name ?? null) : null;
 
@@ -179,7 +196,7 @@ export function ContractServices({
                       cadence: s.cadence,
                       percent_base_label: s.description,
                     },
-                    (v) => formatCurrency(v, s.currency ?? currency),
+                    (v: number) => formatCurrency(v, s.currency ?? currency),
                   )}
                 </p>
                 {divergenceFields(s.id).length > 0 ? (
