@@ -23,15 +23,14 @@ function nn(v: unknown): number {
 }
 
 // Mirror of frontend `lineDiscount` in components/deals/deal-line-items.tsx.
-// When discount_type === 'amount', discount is discount_amount * quantity,
-// capped at the gross line total.
+// When discount_type === 'amount', discount_amount is the discount for the
+// whole line (not per unit), capped at the gross line total.
 function lineDiscountServer(li: LineForTotals) {
   const qty = nn(li.quantity);
   const price = nn(li.unit_price);
   const gross = qty * price;
   if ((li.discount_type ?? "pct") === "amount") {
-    const raw = nn(li.discount_amount) * qty;
-    return Math.min(Math.max(raw, 0), gross);
+    return Math.min(Math.max(nn(li.discount_amount), 0), gross);
   }
   return gross * (nn(li.discount_pct) / 100);
 }

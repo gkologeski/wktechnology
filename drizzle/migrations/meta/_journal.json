@@ -99,6 +99,13 @@
       "when": 1789420429422,
       "tag": "0013_whatsapp_meta_campaign_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1789493994430,
+      "tag": "0014_recompute_deal_value_amount_discount",
+      "breakpoints": true
     }
   ]
 }

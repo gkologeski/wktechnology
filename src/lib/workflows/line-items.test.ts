@@ -43,6 +43,25 @@ describe("line items — campos virtuais", () => {
     expect(lineItemTotal(items[1]!)).toBe(500);
   });
 
+  it("desconto em valor é da linha inteira e nunca passa do bruto", () => {
+    expect(
+      lineItemTotal({
+        quantity: 16,
+        unit_price: 200,
+        discount_type: "amount",
+        discount_amount: 200,
+      }),
+    ).toBe(3000);
+    expect(
+      lineItemTotal({
+        quantity: 2,
+        unit_price: 100,
+        discount_type: "amount",
+        discount_amount: 500,
+      }),
+    ).toBe(0);
+  });
+
   it("resume serviços e tokens", () => {
     expect(lineItemServiceNames(items)).toEqual(["Hunting", "Fábrica de Software"]);
     expect(lineItemTokenValues(items)["line_items_count"]).toBe(2);
