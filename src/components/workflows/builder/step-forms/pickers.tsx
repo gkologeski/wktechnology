@@ -26,7 +26,9 @@ import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -99,13 +101,17 @@ export function FieldSelect({
   entity,
   value,
   onChange,
+  extraGroups = [],
 }: {
   entity: WorkflowEntity;
   value: string;
   onChange: (v: string) => void;
+  /** Grupos adicionais de campos (ex.: "Itens do negócio"). */
+  extraGroups?: Array<{ label: string; fields: FieldOpt[] }>;
 }) {
   const fields = useEntityFieldOptions(entity);
-  if (fields.length === 0) {
+  const groups = extraGroups.filter((g) => g.fields.length > 0);
+  if (fields.length === 0 && groups.length === 0) {
     return <Input value={value} onChange={(e) => onChange(e.target.value)} />;
   }
   return (
@@ -113,11 +119,32 @@ export function FieldSelect({
       <SelectTrigger>
         <SelectValue placeholder="Escolha um campo" />
       </SelectTrigger>
-      <SelectContent>
-        {fields.map((f) => (
-          <SelectItem key={f.name} value={f.name}>
-            {f.label}
-          </SelectItem>
+      <SelectContent className="max-h-72">
+        {groups.length === 0 ? (
+          fields.map((f) => (
+            <SelectItem key={f.name} value={f.name}>
+              {f.label}
+            </SelectItem>
+          ))
+        ) : (
+          <SelectGroup>
+            <SelectLabel className="text-[11px]">Propriedades do registro</SelectLabel>
+            {fields.map((f) => (
+              <SelectItem key={f.name} value={f.name}>
+                {f.label}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        )}
+        {groups.map((g) => (
+          <SelectGroup key={g.label}>
+            <SelectLabel className="text-[11px]">{g.label}</SelectLabel>
+            {g.fields.map((f) => (
+              <SelectItem key={f.name} value={f.name}>
+                {f.label}
+              </SelectItem>
+            ))}
+          </SelectGroup>
         ))}
       </SelectContent>
     </Select>

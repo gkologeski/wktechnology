@@ -299,6 +299,8 @@ export type WorkflowAction =
   | {
       type: "switch_by_value";
       field: string;
+      /** Só para campos `line_items.*`: qualquer item ou todos. Default: "any". */
+      match?: "any" | "all";
       cases: SwitchCase[];
       default: WorkflowAction[];
     }

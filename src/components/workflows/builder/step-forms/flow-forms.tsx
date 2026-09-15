@@ -1,4 +1,9 @@
 import { FieldSelect } from "./pickers";
+import {
+  LINE_ITEM_COUNT_FIELD,
+  LINE_ITEM_FIELDS,
+  isLineItemField,
+} from "@/lib/workflows/line-items";
 import type { FieldOpt } from "../step-tree";
 import {
   countSteps,
@@ -57,7 +62,14 @@ export function SwitchByValueForm({
 }) {
   const setCases = (next: typeof action.cases) => onChange({ ...action, cases: next });
   const cases = action.cases ?? [];
-  const selectedField = entityFields.find((f) => f.name === action.field);
+  const lineItemFields: FieldOpt[] =
+    entity === "deals"
+      ? LINE_ITEM_FIELDS.map((f) => ({ name: f.name, label: f.label, type: f.type, ref: f.ref }))
+      : [];
+  const isLineItem = isLineItemField(action.field);
+  const selectedField =
+    entityFields.find((f) => f.name === action.field) ??
+    lineItemFields.find((f) => f.name === action.field);
   const moveCase = (i: number, dir: -1 | 1) => {
     const j = i + dir;
     if (j < 0 || j >= cases.length) return;
@@ -77,9 +89,37 @@ export function SwitchByValueForm({
         <FieldSelect
           entity={entity}
           value={action.field}
-          onChange={(v) => onChange({ ...action, field: v })}
+          onChange={(v) =>
+            onChange({
+              ...action,
+              field: v,
+              // Trocar o tipo de campo invalida valores de case incompatíveis.
+              cases:
+                isLineItemField(v) === isLineItemField(action.field)
+                  ? cases
+                  : cases.map((c) => ({ ...c, value: "" })),
+            })
+          }
+          extraGroups={[{ label: "Itens do negócio", fields: lineItemFields }]}
         />
       </div>
+      {isLineItem && action.field !== LINE_ITEM_COUNT_FIELD && (
+        <div>
+          <Label className="text-xs">Aplicar a</Label>
+          <Select
+            value={action.match ?? "any"}
+            onValueChange={(v) => onChange({ ...action, match: v as "any" | "all" })}
+          >
+            <SelectTrigger aria-label="O case vale para qualquer item ou para todos">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="any">Qualquer item do negócio</SelectItem>
+              <SelectItem value="all">Todos os itens do negócio</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label className="text-xs">Cases</Label>

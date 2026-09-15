@@ -1,4 +1,5 @@
 import { conditionsSummary, evaluateConditions } from "@/lib/workflows/conditions";
+import { isLineItemField, lineItemCaseMatches } from "@/lib/workflows/line-items";
 // Server functions para o builder de Workflows.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -322,8 +323,12 @@ export const testWorkflow = createServerFn({ method: "POST" })
           });
           walk(passes ? a.then : a.else, depth + 1);
         } else if (a.type === "switch_by_value") {
-          const v = (rec as Record<string, unknown>)[a.field];
-          const match = a.cases.find((c) => c.value === v);
+          const row = rec as Record<string, unknown>;
+          const onItems = isLineItemField(a.field);
+          const v = onItems ? "(itens do negócio)" : row[a.field];
+          const match = onItems
+            ? a.cases.find((c) => lineItemCaseMatches(row, a.field, c.value, a.match ?? "any"))
+            : a.cases.find((c) => c.value === v);
           log.push({
             step: `${prefix}switch_by_value(${a.field}=${String(v)}) → ${match ? (match.label ?? String(match.value)) : "default"}`,
             ok: true,
