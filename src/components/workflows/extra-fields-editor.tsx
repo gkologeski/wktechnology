@@ -435,7 +435,6 @@ export function FkPicker({
     },
   });
 
-
   // Tipos sem cache global de rótulos: hidrata o nome pelo ID selecionado
   // para nunca exibir hash na interface.
   const needsHydrate =
@@ -496,7 +495,6 @@ export function FkPicker({
       </div>
     );
   }
-
 
   // Token conhecido (ex.: "Empresa do gatilho"): mostra rótulo amigável em vez
   // do token cru, mantendo o combo para trocar a escolha.
