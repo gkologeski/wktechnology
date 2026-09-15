@@ -30,6 +30,7 @@ import {
   Hash,
   MessageSquare,
   ClipboardList,
+  FileSignature,
 } from "lucide-react";
 import { ACTION_LABELS, type WorkflowAction, type WorkflowActionType } from "@/lib/workflows/types";
 import { conditionsSummary } from "@/lib/workflows/conditions";
