@@ -640,8 +640,13 @@ export function describeAction(a: WorkflowAction, labels?: DescribeLabels): stri
       return `email: ${a.subject || "—"}`;
     case "send_whatsapp":
       return `whatsapp: ${a.template_name || a.body?.slice(0, 30) || "—"}`;
-    case "switch_by_value":
-      return `switch ${a.field} · ${a.cases.length} case(s)`;
+    case "switch_by_value": {
+      const li = LINE_ITEM_FIELDS.find((f) => f.name === a.field);
+      const label = li
+        ? `${li.label}${a.field === LINE_ITEM_COUNT_FIELD ? "" : a.match === "all" ? " (todos os itens)" : " (qualquer item)"}`
+        : a.field;
+      return `switch ${label} · ${a.cases.length} case(s)`;
+    }
     case "branch_multi":
       return `${a.branches.length} ramo(s) + senão`;
     case "delay_until_date":
