@@ -158,7 +158,7 @@ export function WorkflowBuilder({
     }
     return {
       text: [
-        ...buildTextTokens(fieldOptions, priorStepFields),
+        ...buildTextTokens(fieldOptions, priorStepFields, state.entity),
         ...buildAssociationTextTokens(state.entity),
         ...buildVarTokens(flowVarNames),
       ],
