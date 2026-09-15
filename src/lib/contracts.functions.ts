@@ -2,19 +2,11 @@
 // CRUD, número gerado, criação a partir de deal, transições de status.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { randomBytes } from "crypto";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { assertAnyPermission } from "@/lib/access-control/enforce.server";
 
-function token() {
-  return randomBytes(24).toString("hex");
-}
 
-function generateNumber() {
-  const yearMonth = new Date().toISOString().slice(0, 7).replace("-", "");
-  return `C-${yearMonth}-${Math.floor(Math.random() * 9000 + 1000)}`;
-}
 
 const roleEnum = z.enum(["provider", "client"]);
 const statusEnum = z.enum([
@@ -793,17 +785,18 @@ export const standardizeContractTitlesByStatus = createServerFn({ method: "POST"
 
 // ============= CREATE =============
 
+// Formulário completo: qualquer campo do catálogo pode vir preenchido.
+// A precedência (padrão do workspace < negócio < entrada do usuário) e a cópia
+// dos itens de linha ficam em `contracts/contract-create.server`.
 const createInput = z.object({
-  role: roleEnum.default("provider"),
-  title: z.string().min(1),
-  counterpartyCompanyId: z.string().uuid().nullable().optional(),
+  kind: z.enum(["provider", "client", "amendment"]).default("provider"),
+  role: roleEnum.optional(),
+  fields: z
+    .record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()]))
+    .default({}),
   dealId: z.string().uuid().nullable().optional(),
-  totalValue: z.number().nonnegative().optional(),
-  currency: z.string().default("BRL"),
-  startsAt: z.string().nullable().optional(),
-  endsAt: z.string().nullable().optional(),
-  autoRenew: z.boolean().optional(),
-  noticeDays: z.number().int().nonnegative().optional(),
+  copyLineItems: z.boolean().optional(),
+  lineItemIds: z.array(z.string().uuid()).nullable().optional(),
   bodyHtml: z.string().nullable().optional(),
 });
 
@@ -816,39 +809,35 @@ export const createContract = createServerFn({ method: "POST" })
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techcontracts.contracts.create.own",
     ]);
-    const { data: row, error } = await supabase
-      .from("contracts")
-      .insert({
-        workspace_id: workspaceId,
-        owner_id: userId,
-        role: data.role,
-        title: data.title,
-        counterparty_company_id: data.counterpartyCompanyId ?? null,
-        deal_id: data.dealId ?? null,
-        total_value: data.totalValue ?? 0,
-        currency: data.currency,
-        starts_at: data.startsAt ?? null,
-        ends_at: data.endsAt ?? null,
-        auto_renew: data.autoRenew ?? false,
-        notice_days: data.noticeDays ?? 30,
-        body_html: data.bodyHtml ?? null,
-        number: generateNumber(),
-        public_token: token(),
-        status: "draft",
-      })
-      .select("*")
-      .single();
-    if (error) throw error;
-    return row;
+    const { createContractShared } = await import("@/lib/contracts/contract-create.server");
+    const { contract } = await createContractShared(supabase, {
+      workspaceId,
+      userId,
+      kind: data.kind,
+      role: data.role ?? null,
+      fields: data.fields,
+      dealId: data.dealId ?? null,
+      copyLineItems: data.copyLineItems,
+      lineItemIds: data.lineItemIds ?? null,
+      bodyHtml: data.bodyHtml ?? null,
+    });
+    return contract;
   });
 
 // ============= CREATE FROM DEAL =============
-// Deal ganho → contrato provider herdando empresa e primeiros dados.
+// Contrato de prestação a partir do negócio, com padrões do workspace,
+// snapshot do negócio e itens de linha convertidos em serviços.
 
 export const createContractFromDeal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({ dealId: z.string().uuid(), title: z.string().optional() }).parse(input),
+    z
+      .object({
+        dealId: z.string().uuid(),
+        title: z.string().optional(),
+        copyLineItems: z.boolean().optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -856,34 +845,19 @@ export const createContractFromDeal = createServerFn({ method: "POST" })
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techcontracts.contracts.create.own",
     ]);
-
-    const { data: deal, error: dErr } = await supabase
-      .from("deals")
-      .select("id, name, currency, company_id, value")
-      .eq("id", data.dealId)
-      .maybeSingle();
-    if (dErr) throw dErr;
-    if (!deal) throw new Error("Negócio não encontrado");
-
-    const { data: row, error } = await supabase
-      .from("contracts")
-      .insert({
-        workspace_id: workspaceId,
-        owner_id: userId,
-        role: "provider",
-        title: data.title ?? `Contrato — ${deal.name}`,
-        counterparty_company_id: deal.company_id ?? null,
-        deal_id: deal.id,
-        total_value: Number(deal.value ?? 0),
-        currency: deal.currency ?? "BRL",
-        number: generateNumber(),
-        public_token: token(),
-        status: "draft",
-      })
-      .select("*")
-      .single();
-    if (error) throw error;
-    return row;
+    const { createContractShared, loadDealForContract } = await import(
+      "@/lib/contracts/contract-create.server"
+    );
+    const { deal } = await loadDealForContract(supabase, data.dealId);
+    const { contract } = await createContractShared(supabase, {
+      workspaceId,
+      userId,
+      kind: "provider",
+      fields: { title: data.title ?? `Contrato — ${deal.name ?? "negócio"}` },
+      dealId: data.dealId,
+      copyLineItems: data.copyLineItems,
+    });
+    return contract;
   });
 
 // ============= UPDATE =============

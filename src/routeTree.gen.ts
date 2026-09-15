@@ -162,6 +162,7 @@ import { Route as AuthenticatedSettingsDunningRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsDataResidencyRouteImport } from './routes/_authenticated/settings.data-residency'
 import { Route as AuthenticatedSettingsCustomPropertiesRouteImport } from './routes/_authenticated/settings.custom-properties'
 import { Route as AuthenticatedSettingsCustomObjectsRouteImport } from './routes/_authenticated/settings.custom-objects'
+import { Route as AuthenticatedSettingsContractDefaultsRouteImport } from './routes/_authenticated/settings.contract-defaults'
 import { Route as AuthenticatedSettingsClausesRouteImport } from './routes/_authenticated/settings.clauses'
 import { Route as AuthenticatedSettingsChargingTemplatesRouteImport } from './routes/_authenticated/settings.charging-templates'
 import { Route as AuthenticatedSettingsCalendarsRouteImport } from './routes/_authenticated/settings.calendars'
@@ -1239,6 +1240,12 @@ const AuthenticatedSettingsCustomObjectsRoute =
   AuthenticatedSettingsCustomObjectsRouteImport.update({
     id: '/custom-objects',
     path: '/custom-objects',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsContractDefaultsRoute =
+  AuthenticatedSettingsContractDefaultsRouteImport.update({
+    id: '/contract-defaults',
+    path: '/contract-defaults',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsClausesRoute =
@@ -2693,6 +2700,7 @@ export interface FileRoutesByFullPath {
   '/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
   '/settings/charging-templates': typeof AuthenticatedSettingsChargingTemplatesRoute
   '/settings/clauses': typeof AuthenticatedSettingsClausesRoute
+  '/settings/contract-defaults': typeof AuthenticatedSettingsContractDefaultsRoute
   '/settings/custom-objects': typeof AuthenticatedSettingsCustomObjectsRoute
   '/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/settings/data-residency': typeof AuthenticatedSettingsDataResidencyRoute
@@ -3065,6 +3073,7 @@ export interface FileRoutesByTo {
   '/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
   '/settings/charging-templates': typeof AuthenticatedSettingsChargingTemplatesRoute
   '/settings/clauses': typeof AuthenticatedSettingsClausesRoute
+  '/settings/contract-defaults': typeof AuthenticatedSettingsContractDefaultsRoute
   '/settings/custom-objects': typeof AuthenticatedSettingsCustomObjectsRoute
   '/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/settings/data-residency': typeof AuthenticatedSettingsDataResidencyRoute
@@ -3443,6 +3452,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
   '/_authenticated/settings/charging-templates': typeof AuthenticatedSettingsChargingTemplatesRoute
   '/_authenticated/settings/clauses': typeof AuthenticatedSettingsClausesRoute
+  '/_authenticated/settings/contract-defaults': typeof AuthenticatedSettingsContractDefaultsRoute
   '/_authenticated/settings/custom-objects': typeof AuthenticatedSettingsCustomObjectsRoute
   '/_authenticated/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/_authenticated/settings/data-residency': typeof AuthenticatedSettingsDataResidencyRoute
@@ -3822,6 +3832,7 @@ export interface FileRouteTypes {
     | '/settings/calendars'
     | '/settings/charging-templates'
     | '/settings/clauses'
+    | '/settings/contract-defaults'
     | '/settings/custom-objects'
     | '/settings/custom-properties'
     | '/settings/data-residency'
@@ -4194,6 +4205,7 @@ export interface FileRouteTypes {
     | '/settings/calendars'
     | '/settings/charging-templates'
     | '/settings/clauses'
+    | '/settings/contract-defaults'
     | '/settings/custom-objects'
     | '/settings/custom-properties'
     | '/settings/data-residency'
@@ -4571,6 +4583,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/calendars'
     | '/_authenticated/settings/charging-templates'
     | '/_authenticated/settings/clauses'
+    | '/_authenticated/settings/contract-defaults'
     | '/_authenticated/settings/custom-objects'
     | '/_authenticated/settings/custom-properties'
     | '/_authenticated/settings/data-residency'
@@ -5983,6 +5996,13 @@ declare module '@tanstack/react-router' {
       path: '/custom-objects'
       fullPath: '/settings/custom-objects'
       preLoaderRoute: typeof AuthenticatedSettingsCustomObjectsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/contract-defaults': {
+      id: '/_authenticated/settings/contract-defaults'
+      path: '/contract-defaults'
+      fullPath: '/settings/contract-defaults'
+      preLoaderRoute: typeof AuthenticatedSettingsContractDefaultsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/clauses': {
@@ -7721,6 +7741,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsCalendarsRoute: typeof AuthenticatedSettingsCalendarsRoute
   AuthenticatedSettingsChargingTemplatesRoute: typeof AuthenticatedSettingsChargingTemplatesRoute
   AuthenticatedSettingsClausesRoute: typeof AuthenticatedSettingsClausesRoute
+  AuthenticatedSettingsContractDefaultsRoute: typeof AuthenticatedSettingsContractDefaultsRoute
   AuthenticatedSettingsCustomObjectsRoute: typeof AuthenticatedSettingsCustomObjectsRoute
   AuthenticatedSettingsCustomPropertiesRoute: typeof AuthenticatedSettingsCustomPropertiesRoute
   AuthenticatedSettingsDataResidencyRoute: typeof AuthenticatedSettingsDataResidencyRoute
@@ -7817,6 +7838,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsChargingTemplatesRoute:
     AuthenticatedSettingsChargingTemplatesRoute,
   AuthenticatedSettingsClausesRoute: AuthenticatedSettingsClausesRoute,
+  AuthenticatedSettingsContractDefaultsRoute:
+    AuthenticatedSettingsContractDefaultsRoute,
   AuthenticatedSettingsCustomObjectsRoute:
     AuthenticatedSettingsCustomObjectsRoute,
   AuthenticatedSettingsCustomPropertiesRoute:

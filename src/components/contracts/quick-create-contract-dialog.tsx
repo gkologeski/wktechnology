@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+// Novo contrato: escolha do tipo de documento + formulário completo, já com os
+// padrões do workspace e os dados/serviços do negócio pré-carregados.
+import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CurrencyInput } from "@/components/ui/currency-input";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -14,18 +14,14 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { EntityCombobox } from "@/components/ui/entity-combobox";
-import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialogs";
+import { Skeleton } from "@/components/ui/skeleton";
 import { createContract } from "@/lib/contracts.functions";
-import { supabase } from "@/integrations/supabase/client";
-import { buildContractTitle } from "@/lib/contracts/title";
+import type { ContractKind } from "@/lib/contracts/contract-kinds";
+import type { ContractDefaultsMap } from "@/lib/contracts/contract-defaults-shared";
+import { ContractKindPicker } from "./contract-form/contract-kind-picker";
+import { ContractFieldsForm } from "./contract-form/contract-fields-form";
+import { DealServicesPreview } from "./contract-form/deal-services-preview";
+import { useContractForm } from "./contract-form/use-contract-form";
 
 type Props = {
   open: boolean;
@@ -45,78 +41,39 @@ export function QuickCreateContractDialog({
   initialRole = "provider",
 }: Props) {
   const create = useServerFn(createContract);
-  const [title, setTitle] = useState("");
-  const [role, setRole] = useState<"provider" | "client">(initialRole);
-  const [companyId, setCompanyId] = useState<string | null>(initialCompanyId ?? null);
-  const [dealId, setDealId] = useState<string | null>(initialDealId ?? null);
-  const [totalValue, setTotalValue] = useState<number | "">("");
-  const [startsAt, setStartsAt] = useState("");
-  const [endsAt, setEndsAt] = useState("");
   const [saving, setSaving] = useState(false);
-  const [createCompanyOpen, setCreateCompanyOpen] = useState(false);
-  const [pendingCompanyName, setPendingCompanyName] = useState("");
-  const [companyName, setCompanyName] = useState<string | null>(null);
-  // Última sugestão emitida: só substituímos o título se o usuário não digitou o dele.
-  const lastSuggestion = useRef<string | null>(null);
+  const [copyServices, setCopyServices] = useState(true);
 
-  const ownEntityQuery = useQuery({
-    queryKey: ["own-legal-entity-name"],
-    queryFn: async () => {
-      const { data } = await supabase.from("legal_entities").select("name").limit(1).maybeSingle();
-      return (data?.name as string | undefined) ?? null;
-    },
-    enabled: open,
-    staleTime: 300_000,
+  const form = useContractForm({
+    open,
+    initialKind: initialRole as ContractKind,
+    initialCompanyId,
+    initialDealId,
   });
 
-  useEffect(() => {
-    if (!open) return;
-    const suggestion = buildContractTitle({
-      role,
-      contractingName: role === "client" ? (ownEntityQuery.data ?? null) : companyName,
-      counterpartyName: companyName,
-      ownName: ownEntityQuery.data ?? null,
-      startsAt: startsAt || null,
-    });
-    if (!suggestion) return;
-    setTitle((current) => {
-      if (current.trim() && current !== lastSuggestion.current) return current;
-      lastSuggestion.current = suggestion;
-      return suggestion;
-    });
-  }, [open, role, companyName, startsAt, ownEntityQuery.data]);
-
-  useEffect(() => {
-    if (open) {
-      setTitle("");
-      setRole(initialRole);
-      setCompanyId(initialCompanyId ?? null);
-      setDealId(initialDealId ?? null);
-      setTotalValue("");
-      setStartsAt("");
-      setEndsAt("");
-      setCompanyName(null);
-      lastSuggestion.current = null;
-    }
-  }, [open, initialCompanyId, initialDealId, initialRole]);
+  const dealId = (form.values["deal_id"] as string | null) ?? null;
+  const lineItems = form.prefill.data?.lineItems ?? [];
+  const servicesDisabled = form.kind !== "provider";
 
   async function submit() {
-    if (!title.trim()) {
+    const title = String(form.values["title"] ?? "").trim();
+    if (!title) {
       toast.error("Informe um título.");
+      return;
+    }
+    if (form.kind === "amendment" && !form.values["parent_contract_id"]) {
+      toast.error("Selecione o contrato principal do aditivo.");
       return;
     }
     setSaving(true);
     try {
       const row = await create({
         data: {
-          title: title.trim(),
-          role,
-          counterpartyCompanyId: companyId,
+          kind: form.kind,
+          fields: { ...form.values, title } as ContractDefaultsMap,
           dealId,
-          totalValue: typeof totalValue === "number" ? totalValue : 0,
-          currency: "BRL",
-          startsAt: startsAt || null,
-          endsAt: endsAt || null,
+          copyLineItems: copyServices && !servicesDisabled,
+          lineItemIds: form.selectedItemIds ?? null,
         },
       });
       toast.success("Contrato criado.");
@@ -130,96 +87,77 @@ export function QuickCreateContractDialog({
   }
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Novo contrato</DialogTitle>
-            <DialogDescription>
-              Crie um contrato em rascunho. Os detalhes podem ser editados depois.
-            </DialogDescription>
-          </DialogHeader>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Novo contrato</DialogTitle>
+          <DialogDescription>
+            Escolha o tipo de contrato. Os campos já vêm com os padrões do workspace e, quando há
+            negócio vinculado, com os dados e serviços contratados.
+          </DialogDescription>
+        </DialogHeader>
 
-          <div className="space-y-4">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
+          <ContractKindPicker value={form.kind} onChange={form.setKind} />
+
+          {form.prefill.isLoading && dealId && (
             <div className="space-y-2">
-              <Label>Tipo</Label>
-              <Select value={role} onValueChange={(v) => setRole(v as "provider" | "client")}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="provider">Prestação (nós fornecemos)</SelectItem>
-                  <SelectItem value="client">Compra (nós contratamos)</SelectItem>
-                </SelectContent>
-              </Select>
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-20 w-full" />
             </div>
+          )}
+          {form.prefill.isError && (
+            <p className="text-xs text-destructive">
+              Não foi possível carregar os dados do negócio. Verifique a seleção do negócio e tente
+              novamente.
+            </p>
+          )}
 
-            <div className="space-y-2">
-              <Label>Título *</Label>
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Ex.: Contrato de prestação de serviços — ACME"
-              />
-            </div>
+          <ContractFieldsForm
+            fields={form.fields}
+            values={form.values}
+            onChange={form.setValue}
+            hints={form.hints}
+          />
 
-            <div className="space-y-2">
-              <Label>Contraparte (empresa)</Label>
-              <EntityCombobox
-                entity="companies"
-                select="id, name, domain"
-                labelFrom={(r) => (r.name as string) ?? ""}
-                hintFrom={(r) => (r.domain as string | null) ?? null}
-                value={companyId}
-                onChange={(id, item) => {
-                  setCompanyId(id);
-                  setCompanyName((item?.label as string | undefined) ?? null);
-                }}
-                placeholder="Selecione a empresa"
-                onCreateNew={(name) => {
-                  setPendingCompanyName(name);
-                  setCreateCompanyOpen(true);
-                }}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Início</Label>
-                <Input type="date" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
+          {dealId && (
+            <div className="space-y-2 rounded-lg border p-3">
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="copy-services" className="text-sm font-medium">
+                  Copiar serviços do negócio para o contrato
+                </Label>
+                <Switch
+                  id="copy-services"
+                  checked={copyServices && !servicesDisabled}
+                  disabled={servicesDisabled}
+                  onCheckedChange={setCopyServices}
+                />
               </div>
-              <div className="space-y-2">
-                <Label>Fim</Label>
-                <Input type="date" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Valor total</Label>
-              <CurrencyInput
-                value={typeof totalValue === "number" ? totalValue : undefined}
-                onValueChange={(v) => setTotalValue(typeof v === "number" ? v : "")}
-                currency="BRL"
+              <DealServicesPreview
+                items={lineItems}
+                selectedIds={form.selectedItemIds ?? []}
+                disabled={servicesDisabled || !copyServices}
+                currency={(form.values["currency"] as string) ?? "BRL"}
+                onToggle={(id, checked) =>
+                  form.setSelectedItemIds((cur) => {
+                    const base = cur ?? [];
+                    return checked ? [...new Set([...base, id])] : base.filter((x) => x !== id);
+                  })
+                }
               />
             </div>
-          </div>
+          )}
+        </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-              Cancelar
-            </Button>
-            <Button onClick={submit} disabled={saving}>
-              {saving ? "Criando…" : "Criar contrato"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      <QuickCreateCompanyDialog
-        open={createCompanyOpen}
-        onOpenChange={setCreateCompanyOpen}
-        initialName={pendingCompanyName}
-        onCreated={(id) => setCompanyId(id)}
-      />
-    </>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+            Cancelar
+          </Button>
+          <Button onClick={submit} disabled={saving}>
+            {saving ? "Criando…" : "Criar contrato"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
