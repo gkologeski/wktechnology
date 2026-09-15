@@ -57,7 +57,7 @@ import {
 import { cn } from "@/lib/utils";
 import { getEntityFieldCatalog, type EntityFieldDef } from "@/lib/entity-fields.functions";
 import { WordEditor } from "@/components/word-editor-lazy";
-import { REF_COLUMNS, type RefKind } from "@/lib/entity-fields-refs";
+import { REF_COLUMNS, isSimpleRefKind, type RefKind } from "@/lib/entity-fields-refs";
 import {
   searchCompanies,
   searchContacts,
@@ -65,6 +65,7 @@ import {
   searchDeals,
   searchLegalEntities,
   searchPipelines,
+  searchSimpleRefs,
   searchUsers,
 } from "@/lib/workflow-refs.functions";
 import { CompanyScopedPicker } from "./company-scoped-picker";
@@ -356,6 +357,8 @@ export function FkPicker({
   const fetchLegalEntities = useServerFn(searchLegalEntities);
   const fetchContracts = useServerFn(searchContracts);
   const fetchDeals = useServerFn(searchDeals);
+  const fetchSimple = useServerFn(searchSimpleRefs);
+  const simpleKind = isSimpleRefKind(kind) ? kind : null;
 
   // debounce 200ms sobre o input
   useEffect(() => {
@@ -375,6 +378,7 @@ export function FkPicker({
       if (kind === "legal_entity") return await fetchLegalEntities({ data: { q: q || undefined } });
       if (kind === "contract") return await fetchContracts({ data: { q: q || undefined } });
       if (kind === "deal") return await fetchDeals({ data: { q: q || undefined } });
+      if (simpleKind) return await fetchSimple({ data: { kind: simpleKind, q: q || undefined } });
       const rows = await fetchUsers({ data: { q: q || undefined } });
       return rows.map((r: { id: string; name: string }) => ({ id: r.id, name: r.name }));
     },
@@ -383,14 +387,17 @@ export function FkPicker({
   // Tipos sem cache global de rótulos: hidrata o nome pelo ID selecionado
   // para nunca exibir hash na interface.
   const needsHydrate =
-    !!value && !isToken && (kind === "legal_entity" || kind === "contract" || kind === "deal");
+    !!value &&
+    !isToken &&
+    (kind === "legal_entity" || kind === "contract" || kind === "deal" || !!simpleKind);
   const hydrated = useQuery({
     queryKey: ["wf-ref-label", kind, value],
     enabled: needsHydrate,
     staleTime: 300_000,
     queryFn: async () => {
-      const rows =
-        kind === "legal_entity"
+      const rows = simpleKind
+        ? await fetchSimple({ data: { kind: simpleKind, ids: [value] } })
+        : kind === "legal_entity"
           ? await fetchLegalEntities({ data: { ids: [value] } })
           : kind === "deal"
             ? await fetchDeals({ data: { ids: [value] } })

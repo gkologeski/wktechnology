@@ -16,8 +16,9 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
-import type { RefKind } from "@/lib/entity-fields-refs";
+import { isSimpleRefKind, type RefKind } from "@/lib/entity-fields-refs";
 import {
+  searchSimpleRefs,
   searchCompanies,
   searchContacts,
   searchContracts,
@@ -37,6 +38,14 @@ const PLACEHOLDER: Record<RefKind, string> = {
   legal_entity: "Selecionar pessoa jurídica…",
   contract: "Selecionar contrato…",
   deal: "Selecionar negócio…",
+  substatus: "Selecionar substatus…",
+  job: "Selecionar vaga…",
+  candidate: "Selecionar candidato…",
+  application: "Selecionar candidatura…",
+  project: "Selecionar projeto…",
+  milestone: "Selecionar marco…",
+  service: "Selecionar serviço…",
+  category: "Selecionar categoria…",
 };
 
 export function BulkRefPicker({
@@ -59,6 +68,7 @@ export function BulkRefPicker({
   const fetchLegalEntities = useServerFn(searchLegalEntities);
   const fetchContracts = useServerFn(searchContracts);
   const fetchDeals = useServerFn(searchDeals);
+  const fetchSimple = useServerFn(searchSimpleRefs);
 
   useEffect(() => {
     const t = setTimeout(() => setQ(rawQ.trim()), 200);
@@ -73,6 +83,7 @@ export function BulkRefPicker({
     if (kind === "legal_entity") return (await fetchLegalEntities({ data })) as Item[];
     if (kind === "contract") return (await fetchContracts({ data })) as Item[];
     if (kind === "deal") return (await fetchDeals({ data })) as Item[];
+    if (isSimpleRefKind(kind)) return (await fetchSimple({ data: { ...data, kind } })) as Item[];
     return (await fetchUsers({ data })) as Item[];
   };
 

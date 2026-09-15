@@ -605,3 +605,122 @@ export const searchDeals = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return ((rows ?? []) as DealRow[]).map(toItem);
   });
+
+/**
+ * Busca genérica de cadastros auxiliares e entidades de outros módulos usados
+ * como referência em Workflows (substatus, vaga, candidato, candidatura,
+ * projeto, marco, serviço, categoria financeira).
+ *
+ * Sempre devolve `{ id, name }` — a interface nunca exibe o UUID cru.
+ * Respeita RLS (usa `context.supabase`).
+ */
+const SimpleRefInput = RefInput.extend({
+  kind: z.enum([
+    "substatus",
+    "job",
+    "candidate",
+    "application",
+    "project",
+    "milestone",
+    "service",
+    "category",
+  ]),
+});
+
+export const searchSimpleRefs = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => SimpleRefInput.parse(i))
+  .handler(async ({ data, context }): Promise<Array<{ id: string; name: string }>> => {
+    const { supabase } = context;
+    const ids = data.ids && data.ids.length > 0 ? data.ids : null;
+    const q = data.q?.trim();
+    const like = q ? `%${escapeLike(q)}%` : null;
+
+    if (data.kind === "substatus") {
+      let query = supabase
+        .from("pipeline_stage_substatuses")
+        .select("id, name, stage_value, is_active")
+        .order("sort_order", { ascending: true })
+        .limit(LIMIT);
+      if (ids) query = query.in("id", ids);
+      else {
+        query = query.eq("is_active", true);
+        if (like) query = query.ilike("name", like);
+      }
+      const { data: rows, error } = await query;
+      if (error) throw new Error(error.message);
+      return ((rows ?? []) as Array<{ id: string; name: string; stage_value: string | null }>).map(
+        (r) => ({
+          id: r.id,
+          name: [r.stage_value, r.name].filter(Boolean).join(" · ") || "Substatus sem nome",
+        }),
+      );
+    }
+
+    if (data.kind === "candidate") {
+      let query = supabase
+        .from("ats_candidates")
+        .select("id, full_name, email")
+        .order("full_name")
+        .limit(LIMIT);
+      if (ids) query = query.in("id", ids);
+      else if (like) query = query.or(`full_name.ilike.${like},email.ilike.${like}`);
+      const { data: rows, error } = await query;
+      if (error) throw new Error(error.message);
+      return (
+        (rows ?? []) as Array<{ id: string; full_name: string | null; email: string | null }>
+      ).map((r) => ({
+        id: r.id,
+        name: (r.full_name ?? "").trim() || r.email || "Candidato sem nome",
+      }));
+    }
+
+    if (data.kind === "application") {
+      let query = supabase
+        .from("ats_applications")
+        .select("id, updated_at, candidate:ats_candidates(full_name, email), job:ats_jobs(title)")
+        .order("updated_at", { ascending: false })
+        .limit(LIMIT);
+      if (ids) query = query.in("id", ids);
+      const { data: rows, error } = await query;
+      if (error) throw new Error(error.message);
+      type Row = {
+        id: string;
+        candidate: { full_name: string | null; email: string | null } | null;
+        job: { title: string | null } | null;
+      };
+      let mapped = ((rows ?? []) as unknown as Row[]).map((r) => ({
+        id: r.id,
+        name: `${(r.candidate?.full_name ?? "").trim() || r.candidate?.email || "Candidato"} — ${
+          r.job?.title || "Vaga"
+        }`,
+      }));
+      if (!ids && q) {
+        const needle = q.toLowerCase();
+        mapped = mapped.filter((m) => m.name.toLowerCase().includes(needle));
+      }
+      return mapped;
+    }
+
+    const SOURCES = {
+      job: { table: "ats_jobs", col: "title" },
+      project: { table: "projects", col: "name" },
+      milestone: { table: "project_milestones", col: "name" },
+      service: { table: "service_catalog", col: "name" },
+      category: { table: "financial_categories", col: "name" },
+    } as const;
+    const src = SOURCES[data.kind];
+    let query = (supabase as any)
+      .from(src.table)
+      .select(`id, ${src.col}`)
+      .order(src.col)
+      .limit(LIMIT);
+    if (ids) query = query.in("id", ids);
+    else if (like) query = query.ilike(src.col, like);
+    const { data: rows, error } = await query;
+    if (error) throw new Error(error.message);
+    return ((rows ?? []) as Array<Record<string, string | null>>).map((r) => ({
+      id: r.id as string,
+      name: (r[src.col] ?? "")?.trim() || "(sem nome)",
+    }));
+  });

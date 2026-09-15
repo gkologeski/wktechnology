@@ -35,10 +35,25 @@ export type CatalogEntity =
 
 type RefKind = NonNullable<EntityFieldDef["ref"]>;
 
+type RefSourceKind = Exclude<RefKind, "user" | "application">;
+
 const REF_SOURCE: Record<
-  Exclude<RefKind, "user">,
+  RefSourceKind,
   {
-    table: "companies" | "contacts" | "pipelines" | "deals" | "contracts" | "legal_entities";
+    table:
+      | "companies"
+      | "contacts"
+      | "pipelines"
+      | "deals"
+      | "contracts"
+      | "legal_entities"
+      | "pipeline_stage_substatuses"
+      | "ats_jobs"
+      | "ats_candidates"
+      | "projects"
+      | "project_milestones"
+      | "service_catalog"
+      | "financial_categories";
     select: string;
   }
 > = {
@@ -48,10 +63,17 @@ const REF_SOURCE: Record<
   deal: { table: "deals", select: "id, name" },
   contract: { table: "contracts", select: "id, title" },
   legal_entity: { table: "legal_entities", select: "id, name" },
+  substatus: { table: "pipeline_stage_substatuses", select: "id, name" },
+  job: { table: "ats_jobs", select: "id, title" },
+  candidate: { table: "ats_candidates", select: "id, full_name" },
+  project: { table: "projects", select: "id, name" },
+  milestone: { table: "project_milestones", select: "id, name" },
+  service: { table: "service_catalog", select: "id, name" },
+  category: { table: "financial_categories", select: "id, name" },
 };
 
 function rowLabel(r: Record<string, unknown>): string {
-  const name = (r.name ?? r.title) as string | undefined;
+  const name = (r.name ?? r.title ?? r.full_name) as string | undefined;
   if (name) return name;
   const full = `${(r.first_name as string) ?? ""} ${(r.last_name as string) ?? ""}`.trim();
   return full;
@@ -60,7 +82,7 @@ function rowLabel(r: Record<string, unknown>): string {
 /** Mapa id → nome para os tipos de referência realmente usados nas colunas visíveis. */
 function useRefMaps(kinds: RefKind[]) {
   const needed = Array.from(new Set(kinds)).filter(
-    (k): k is Exclude<RefKind, "user"> => k !== "user",
+    (k): k is RefSourceKind => k !== "user" && k !== "application",
   );
   const key = needed.slice().sort().join(",");
 

@@ -4,7 +4,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { REF_COLUMNS, type RefKind } from "./entity-fields-refs";
+import { REF_COLUMNS, TECHNICAL_ID_COLUMNS, type RefKind } from "./entity-fields-refs";
 import { isMoneyField } from "./format/money-fields";
 
 import { toLabel, UUID_RE, LEGACY_SYSTEM_FIELDS } from "./entity-fields-meta";
@@ -255,7 +255,11 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
         type,
         required: r.is_nullable === "NO" && !r.has_default,
       };
-      if (systemFields.has(r.column_name) || legacySystemFields.has(r.column_name))
+      if (
+        systemFields.has(r.column_name) ||
+        legacySystemFields.has(r.column_name) ||
+        TECHNICAL_ID_COLUMNS.has(r.column_name)
+      )
         def.system = true;
       if (r.column_name === "stage" && hasStageId) def.system = true;
       if (isContracts && r.column_name === "body_html") def.richText = true;
