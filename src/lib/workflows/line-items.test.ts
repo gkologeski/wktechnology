@@ -71,11 +71,7 @@ describe("line items — avaliação de condições", () => {
       ),
     ).toBe(false);
     expect(
-      evalFilter(
-        { field: "line_items.quantity", op: "gt", value: 0, match: "all" },
-        deal,
-        null,
-      ),
+      evalFilter({ field: "line_items.quantity", op: "gt", value: 0, match: "all" }, deal, null),
     ).toBe(true);
   });
 
@@ -85,7 +81,9 @@ describe("line items — avaliação de condições", () => {
 
   it("negócio sem itens só atende 'está vazio'", () => {
     const empty = { id: "d2", [LINE_ITEMS_KEY]: [] };
-    expect(evalFilter({ field: "line_items.service_name", op: "is_empty" }, empty, null)).toBe(true);
+    expect(evalFilter({ field: "line_items.service_name", op: "is_empty" }, empty, null)).toBe(
+      true,
+    );
     expect(
       evalFilter({ field: "line_items.service_name", op: "eq", value: "Hunting" }, empty, null),
     ).toBe(false);
