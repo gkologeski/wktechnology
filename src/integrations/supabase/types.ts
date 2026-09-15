@@ -5374,6 +5374,8 @@ export type Database = {
       contracting_presets: {
         Row: {
           active: boolean
+          billing_model: Database["public"]["Enums"]["billing_model"] | null
+          cadence: string | null
           code: string | null
           competencies: string[]
           created_at: string
@@ -5386,6 +5388,7 @@ export type Database = {
           name: string
           notes: string | null
           owner_id: string
+          percent: number | null
           seniority: string | null
           service_catalog_id: string | null
           unit: string
@@ -5394,6 +5397,8 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          billing_model?: Database["public"]["Enums"]["billing_model"] | null
+          cadence?: string | null
           code?: string | null
           competencies?: string[]
           created_at?: string
@@ -5406,6 +5411,7 @@ export type Database = {
           name: string
           notes?: string | null
           owner_id?: string
+          percent?: number | null
           seniority?: string | null
           service_catalog_id?: string | null
           unit?: string
@@ -5414,6 +5420,8 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          billing_model?: Database["public"]["Enums"]["billing_model"] | null
+          cadence?: string | null
           code?: string | null
           competencies?: string[]
           created_at?: string
@@ -5426,6 +5434,7 @@ export type Database = {
           name?: string
           notes?: string | null
           owner_id?: string
+          percent?: number | null
           seniority?: string | null
           service_catalog_id?: string | null
           unit?: string
@@ -6447,6 +6456,8 @@ export type Database = {
       }
       deal_line_items: {
         Row: {
+          billing_model: Database["public"]["Enums"]["billing_model"] | null
+          cadence: string | null
           contracting_preset_id: string | null
           created_at: string
           deal_id: string
@@ -6458,6 +6469,8 @@ export type Database = {
           job_profile_id: string | null
           name: string
           owner_id: string
+          percent: number | null
+          percent_base_amount: number | null
           position: number
           quantity: number
           seniority: string | null
@@ -6469,6 +6482,8 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          billing_model?: Database["public"]["Enums"]["billing_model"] | null
+          cadence?: string | null
           contracting_preset_id?: string | null
           created_at?: string
           deal_id: string
@@ -6480,6 +6495,8 @@ export type Database = {
           job_profile_id?: string | null
           name: string
           owner_id: string
+          percent?: number | null
+          percent_base_amount?: number | null
           position?: number
           quantity?: number
           seniority?: string | null
@@ -6491,6 +6508,8 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          billing_model?: Database["public"]["Enums"]["billing_model"] | null
+          cadence?: string | null
           contracting_preset_id?: string | null
           created_at?: string
           deal_id?: string
@@ -6502,6 +6521,8 @@ export type Database = {
           job_profile_id?: string | null
           name?: string
           owner_id?: string
+          percent?: number | null
+          percent_base_amount?: number | null
           position?: number
           quantity?: number
           seniority?: string | null
@@ -15161,6 +15182,8 @@ export type Database = {
       }
       quote_line_items: {
         Row: {
+          billing_model: Database["public"]["Enums"]["billing_model"] | null
+          cadence: string | null
           contracting_preset_id: string | null
           created_at: string
           description: string | null
@@ -15171,6 +15194,8 @@ export type Database = {
           job_profile_id: string | null
           name: string
           owner_id: string
+          percent: number | null
+          percent_base_amount: number | null
           position: number
           quantity: number
           quote_id: string
@@ -15182,6 +15207,8 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          billing_model?: Database["public"]["Enums"]["billing_model"] | null
+          cadence?: string | null
           contracting_preset_id?: string | null
           created_at?: string
           description?: string | null
@@ -15192,6 +15219,8 @@ export type Database = {
           job_profile_id?: string | null
           name: string
           owner_id: string
+          percent?: number | null
+          percent_base_amount?: number | null
           position?: number
           quantity?: number
           quote_id: string
@@ -15203,6 +15232,8 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          billing_model?: Database["public"]["Enums"]["billing_model"] | null
+          cadence?: string | null
           contracting_preset_id?: string | null
           created_at?: string
           description?: string | null
@@ -15213,6 +15244,8 @@ export type Database = {
           job_profile_id?: string | null
           name?: string
           owner_id?: string
+          percent?: number | null
+          percent_base_amount?: number | null
           position?: number
           quantity?: number
           quote_id?: string
@@ -16418,7 +16451,9 @@ export type Database = {
       service_catalog: {
         Row: {
           active: boolean
+          allowed_units: string[]
           base_price: number
+          billing_model: Database["public"]["Enums"]["billing_model"] | null
           category: string | null
           code: string | null
           competencies: string[]
@@ -16426,11 +16461,14 @@ export type Database = {
           created_at: string
           created_by: string | null
           currency: string
+          default_cadence: string | null
+          default_percent: number | null
           default_sla_hours: number | null
           description: string | null
           id: string
           name: string
           owner_id: string
+          percent_base_label: string | null
           service_type: string
           tags: string[]
           tax_rate: number
@@ -16440,7 +16478,9 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          allowed_units?: string[]
           base_price?: number
+          billing_model?: Database["public"]["Enums"]["billing_model"] | null
           category?: string | null
           code?: string | null
           competencies?: string[]
@@ -16448,11 +16488,14 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           currency?: string
+          default_cadence?: string | null
+          default_percent?: number | null
           default_sla_hours?: number | null
           description?: string | null
           id?: string
           name: string
           owner_id: string
+          percent_base_label?: string | null
           service_type?: string
           tags?: string[]
           tax_rate?: number
@@ -16462,7 +16505,9 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          allowed_units?: string[]
           base_price?: number
+          billing_model?: Database["public"]["Enums"]["billing_model"] | null
           category?: string | null
           code?: string | null
           competencies?: string[]
@@ -16470,11 +16515,14 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           currency?: string
+          default_cadence?: string | null
+          default_percent?: number | null
           default_sla_hours?: number | null
           description?: string | null
           id?: string
           name?: string
           owner_id?: string
+          percent_base_label?: string | null
           service_type?: string
           tags?: string[]
           tax_rate?: number
@@ -16487,6 +16535,7 @@ export type Database = {
       services: {
         Row: {
           assigned_to: string | null
+          billing_model: Database["public"]["Enums"]["billing_model"] | null
           cadence: Database["public"]["Enums"]["service_cadence"] | null
           competencies: string[]
           contract_id: string
@@ -16501,18 +16550,23 @@ export type Database = {
           name: string
           next_billing_at: string | null
           owner_id: string
+          percent: number | null
+          percent_base_amount: number | null
           quantity: number
           role: Database["public"]["Enums"]["contract_role"]
           seniority: string | null
+          source_deal_line_item_id: string | null
           starts_at: string | null
           status: Database["public"]["Enums"]["service_status"]
           type: Database["public"]["Enums"]["service_type"]
+          unit: string | null
           unit_price: number
           updated_at: string
           workspace_id: string
         }
         Insert: {
           assigned_to?: string | null
+          billing_model?: Database["public"]["Enums"]["billing_model"] | null
           cadence?: Database["public"]["Enums"]["service_cadence"] | null
           competencies?: string[]
           contract_id: string
@@ -16527,18 +16581,23 @@ export type Database = {
           name: string
           next_billing_at?: string | null
           owner_id: string
+          percent?: number | null
+          percent_base_amount?: number | null
           quantity?: number
           role: Database["public"]["Enums"]["contract_role"]
           seniority?: string | null
+          source_deal_line_item_id?: string | null
           starts_at?: string | null
           status?: Database["public"]["Enums"]["service_status"]
           type?: Database["public"]["Enums"]["service_type"]
+          unit?: string | null
           unit_price?: number
           updated_at?: string
           workspace_id: string
         }
         Update: {
           assigned_to?: string | null
+          billing_model?: Database["public"]["Enums"]["billing_model"] | null
           cadence?: Database["public"]["Enums"]["service_cadence"] | null
           competencies?: string[]
           contract_id?: string
@@ -16553,12 +16612,16 @@ export type Database = {
           name?: string
           next_billing_at?: string | null
           owner_id?: string
+          percent?: number | null
+          percent_base_amount?: number | null
           quantity?: number
           role?: Database["public"]["Enums"]["contract_role"]
           seniority?: string | null
+          source_deal_line_item_id?: string | null
           starts_at?: string | null
           status?: Database["public"]["Enums"]["service_status"]
           type?: Database["public"]["Enums"]["service_type"]
+          unit?: string | null
           unit_price?: number
           updated_at?: string
           workspace_id?: string
@@ -20234,6 +20297,12 @@ export type Database = {
       allocation_status: "active" | "paused" | "ended"
       app_role: "admin" | "manager" | "member"
       billing_interval: "week" | "month" | "quarter" | "year"
+      billing_model:
+        | "per_unit"
+        | "per_hour"
+        | "per_headcount_month"
+        | "percent_of_base"
+        | "fixed"
       booking_status: "confirmed" | "canceled"
       contract_approval_stage: "legal" | "finance" | "purchasing"
       contract_approval_status: "pending" | "approved" | "rejected" | "skipped"
@@ -20532,6 +20601,13 @@ export const Constants = {
       allocation_status: ["active", "paused", "ended"],
       app_role: ["admin", "manager", "member"],
       billing_interval: ["week", "month", "quarter", "year"],
+      billing_model: [
+        "per_unit",
+        "per_hour",
+        "per_headcount_month",
+        "percent_of_base",
+        "fixed",
+      ],
       booking_status: ["confirmed", "canceled"],
       contract_approval_stage: ["legal", "finance", "purchasing"],
       contract_approval_status: ["pending", "approved", "rejected", "skipped"],
