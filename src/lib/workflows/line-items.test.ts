@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   LINE_ITEMS_KEY,
   isLineItemField,
+  lineItemCaseMatches,
   lineItemServiceNames,
   lineItemTokenValues,
   lineItemTotal,
@@ -94,5 +95,29 @@ describe("line items — avaliação de condições", () => {
     expect(
       evalFilter({ field: "line_items.total", op: "gt", value: 1500, match: "all" }, deal, null),
     ).toBe(false);
+  });
+});
+
+describe("switch por valor sobre itens do negócio", () => {
+  it("modo padrão (qualquer item) bate quando um item corresponde", () => {
+    expect(lineItemCaseMatches(deal, "line_items.service_name", "Hunting")).toBe(true);
+    expect(lineItemCaseMatches(deal, "line_items.service_name", "Alocação")).toBe(false);
+  });
+
+  it("modo todos exige que todos os itens correspondam", () => {
+    expect(lineItemCaseMatches(deal, "line_items.service_name", "Hunting", "all")).toBe(false);
+    const single = { id: "d3", [LINE_ITEMS_KEY]: [items[0]] };
+    expect(lineItemCaseMatches(single, "line_items.service_name", "Hunting", "all")).toBe(true);
+  });
+
+  it("compara contagem e tolera valor em texto", () => {
+    expect(lineItemCaseMatches(deal, "line_items.count", 2)).toBe(true);
+    expect(lineItemCaseMatches(deal, "line_items.count", "2")).toBe(true);
+    expect(lineItemCaseMatches(deal, "line_items.quantity", "1")).toBe(true);
+  });
+
+  it("negócio sem itens não bate nenhum case", () => {
+    const empty = { id: "d4", [LINE_ITEMS_KEY]: [] };
+    expect(lineItemCaseMatches(empty, "line_items.service_name", "Hunting")).toBe(false);
   });
 });
