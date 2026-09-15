@@ -1,3 +1,4 @@
+import { LINE_ITEM_COUNT_FIELD, LINE_ITEM_FIELDS } from "@/lib/workflows/line-items";
 import {
   Zap,
   Clock,
