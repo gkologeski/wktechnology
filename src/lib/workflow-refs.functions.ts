@@ -640,7 +640,8 @@ export const searchSimpleRefs = createServerFn({ method: "POST" })
       let query = supabase
         .from("pipeline_stage_substatuses")
         .select("id, name, stage_value, is_active")
-        .order("sort_order", { ascending: true })
+        .order("position", { ascending: true })
+        .order("name", { ascending: true })
         .limit(LIMIT);
       if (ids) query = query.in("id", ids);
       else {

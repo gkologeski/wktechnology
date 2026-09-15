@@ -583,7 +583,9 @@ export function FkPicker({
                     )}
                     {!isLoading && searchQuery.isError && (
                       <div className="px-3 py-6 text-center text-xs text-destructive">
-                        Erro ao buscar.
+                        {searchQuery.error instanceof Error && searchQuery.error.message
+                          ? `Erro ao buscar: ${searchQuery.error.message}`
+                          : "Erro ao buscar."}
                       </div>
                     )}
                     {!isLoading && !searchQuery.isError && items.length === 0 && (
