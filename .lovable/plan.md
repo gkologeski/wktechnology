@@ -1,4 +1,4 @@
-# Workflows: substatus dependente da etapa + condição pelo serviço do negócio
+# Workflows: substatus dependente da etapa + condições pelos itens de linha do negócio
 
 Dois ajustes no construtor de workflows.
 
@@ -22,21 +22,34 @@ Passo "Criar/Atualizar registro" (Negócios, Leads, Chamados), condições do ga
 
 ---
 
-## Parte 2 — Condição pelo serviço do negócio
+## Parte 2 — Filtrar e condicionar pelos itens de linha do negócio
 
-Hoje não existe como condicionar um workflow ao serviço do negócio, porque o serviço não é um campo do negócio: ele vem dos **itens de linha** (um negócio pode ter vários serviços). As condições só leem campos do próprio registro, por isso o campo não aparece na lista.
+Hoje as condições só leem campos do próprio negócio. Os itens de linha (serviço, cargo, senioridade, quantidade, valor) ficam em outra tabela e não aparecem na lista de campos — por isso não há como escrever "se o serviço do negócio for Hunting".
 
 ### O que passa a existir
 
-Um novo campo de condição em Negócios: **"Serviço (itens do negócio)"**.
+Um grupo novo no seletor de campos das condições em Negócios: **"Itens do negócio"**, com os campos:
 
-- Operadores: **é igual a**, **está entre** (vários serviços), **contém** (busca por texto no nome), **está vazio** / **não está vazio**.
-- A escolha do serviço é por nome, com busca no catálogo de serviços (grava o ID, como nos demais campos de referência).
-- Avaliação: verdadeira quando **qualquer** item de linha do negócio corresponde. Ex.: "Serviço (itens do negócio) é igual a Hunting" dispara para negócios que tenham pelo menos um item de Hunting.
-- Disponível também nas ramificações e nos critérios de meta, com o mesmo comportamento.
-- Como o serviço é definido nos itens de linha (depois da criação do negócio), gatilhos de criação podem ainda não ter serviço: nesse caso a condição é falsa. A recomendação na própria tela é usar o gatilho de atualização do negócio.
+- **Serviço** (escolha por nome no catálogo de serviços)
+- **Cargo/perfil** e **Senioridade**
+- **Preset de contratação**
+- **Descrição do item** (texto)
+- **Quantidade**, **Valor unitário** e **Valor total do item**
+- **Quantidade de itens do negócio** (número de linhas)
 
-Também fica disponível o token `{{deal.services}}` (nomes dos serviços do negócio, separados por vírgula) para uso em textos de e-mail, tarefa e atividade.
+### Como a condição é avaliada
+
+- Regra padrão: a condição é verdadeira quando **qualquer** item de linha atende. Ex.: "Serviço é igual a Hunting" dispara para negócios com pelo menos um item de Hunting.
+- Cada condição também aceita o modo **"todos os itens"**, para casos como "todos os itens são do serviço X".
+- Operadores conforme o tipo: igual/diferente/está entre (vários valores)/contém para texto e referência; maior que/menor que para número; está vazio/não está vazio.
+- Quando o negócio não tem itens, condições sobre itens são falsas (e "está vazio" é verdadeira).
+- Como os itens são cadastrados depois de criar o negócio, gatilhos de criação normalmente ainda não têm itens; a tela avisa e sugere o gatilho de atualização do negócio.
+
+### Onde se aplica
+
+Condições do gatilho, condições de ramificação e critérios de meta — o mesmo seletor.
+
+Além disso, ficam disponíveis tokens de texto para usar em e-mail, tarefa e atividade: `{{deal.services}}` (nomes dos serviços separados por vírgula), `{{deal.line_items_count}}` e `{{deal.line_items_summary}}` (lista "Serviço — qtd x valor").
 
 Nada é removido; condições existentes continuam válidas.
 
