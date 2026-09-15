@@ -27,6 +27,12 @@ describe("catálogo de campos de contrato", () => {
     expect(toLabel("amendment_effective_at")).toBe("Vigência do aditivo");
   });
 
+  it("o catálogo dinâmico resolve todos os campos conhecidos de contrato em português", () => {
+    for (const [name, expectedLabel] of Object.entries(CONTRACT_FIELD_LABELS)) {
+      expect(toLabel(name, "contracts"), name).toBe(expectedLabel);
+    }
+  });
+
   it("todo combo tem opções e nenhum rótulo igual ao valor cru em inglês", () => {
     for (const field of CONTRACT_FIELDS.filter((f) => f.type === "select")) {
       expect(field.options?.length, field.name).toBeGreaterThan(0);
