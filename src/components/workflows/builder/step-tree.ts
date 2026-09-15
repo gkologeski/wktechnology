@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { ACTION_LABELS, type WorkflowAction, type WorkflowActionType } from "@/lib/workflows/types";
 import { conditionsSummary } from "@/lib/workflows/conditions";
+import type { RefKind } from "@/lib/entity-fields-refs";
 
 export type FieldOpt = {
   name: string;
@@ -39,7 +40,7 @@ export type FieldOpt = {
   type?: "text" | "number" | "currency" | "date" | "select" | "boolean";
   options?: { value: string; label: string }[];
   /** Campo de referência: usa seletor com busca por nome (grava o ID). */
-  ref?: "user" | "company" | "contact" | "pipeline";
+  ref?: RefKind;
   /** Campo controlado pelo sistema (não deve virar variável de texto). */
   system?: boolean;
 };

@@ -224,6 +224,7 @@ export function TriggerConfigPanel({
         <ConditionListEditor
           value={trigger.filters}
           fields={fields}
+          entity={entity}
           defaultField={defaultField}
           onChange={(next) => setFilters(() => next)}
         />
@@ -292,6 +293,7 @@ export function TriggerConfigPanel({
         <ConditionListEditor
           value={trigger.goal_filters}
           fields={fields}
+          entity={entity}
           defaultField={defaultField}
           onChange={(next) => onChange((t) => ({ ...t, goal_filters: next }))}
         />

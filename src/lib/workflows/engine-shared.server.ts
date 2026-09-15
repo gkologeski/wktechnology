@@ -4,6 +4,13 @@ import type { WorkflowCondition, WorkflowEntity, WorkflowFilter } from "./types"
 import { isFilterGroup } from "./types";
 import { getPath } from "@/lib/message-tokens";
 import { renderWorkflowTokens, toStr } from "./render-tokens";
+import {
+  LINE_ITEM_COUNT_FIELD,
+  isLineItemField,
+  lineItemValue,
+  lineItemsOf,
+  type LineItemRow,
+} from "./line-items";
 
 export type AnyRow = Record<string, unknown>;
 export type LogStep = {
@@ -126,20 +133,8 @@ export function mergeExtra(
   return merged;
 }
 
-export function evalFilter(
-  f: WorkflowFilter,
-  after: AnyRow | null,
-  before: AnyRow | null,
-  vars?: AnyRow,
-): boolean {
-  const v = getField(after, f.field);
-  // O valor comparado pode referenciar variáveis ou a saída de passos
-  // anteriores via token ({{vars.X}} / {{steps.N.campo}}).
-  const target =
-    typeof f.value === "string" && f.value.includes("{{")
-      ? renderTokens(f.value, after, vars)
-      : f.value;
-  switch (f.op) {
+function compareValue(op: WorkflowFilter["op"], v: unknown, target: unknown): boolean {
+  switch (op) {
     case "eq":
       return v === target;
     case "neq":
@@ -159,10 +154,6 @@ export function evalFilter(
       return typeof v === "number" && typeof target === "number" && v > target;
     case "lt":
       return typeof v === "number" && typeof target === "number" && v < target;
-    case "changed_to": {
-      const prev = getField(before, f.field);
-      return v === target && prev !== target;
-    }
 
     case "is_empty":
       return v == null || v === "";
@@ -171,6 +162,38 @@ export function evalFilter(
     default:
       return false;
   }
+}
+
+export function evalFilter(
+  f: WorkflowFilter,
+  after: AnyRow | null,
+  before: AnyRow | null,
+  vars?: AnyRow,
+): boolean {
+  // O valor comparado pode referenciar variáveis ou a saída de passos
+  // anteriores via token ({{vars.X}} / {{steps.N.campo}}).
+  const target =
+    typeof f.value === "string" && f.value.includes("{{")
+      ? renderTokens(f.value, after, vars)
+      : f.value;
+
+  // Campos dos itens de linha do negócio: avaliados sobre a lista hidratada.
+  if (isLineItemField(f.field)) {
+    const items = lineItemsOf(after);
+    if (f.field === LINE_ITEM_COUNT_FIELD) return compareValue(f.op, items.length, target);
+    if (items.length === 0) return f.op === "is_empty";
+    const values: unknown[] = items.map((it: LineItemRow) => lineItemValue(it, f.field));
+    return f.match === "all"
+      ? values.every((v) => compareValue(f.op, v, target))
+      : values.some((v) => compareValue(f.op, v, target));
+  }
+
+  const v = getField(after, f.field);
+  if (f.op === "changed_to") {
+    const prev = getField(before, f.field);
+    return v === target && prev !== target;
+  }
+  return compareValue(f.op, v, target);
 }
 
 /** Avalia um nó de condição (condição simples ou grupo E/OU aninhado). */

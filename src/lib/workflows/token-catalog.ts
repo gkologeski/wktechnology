@@ -6,6 +6,7 @@
 // real de campos da entidade — uma lista fixa não tem relação com o gatilho.
 
 import type { MessageToken } from "@/lib/message-tokens-catalog";
+import { LINE_ITEM_TOKENS } from "./line-items";
 
 export type TokenFieldOpt = {
   name: string;
@@ -17,6 +18,7 @@ export type TokenFieldOpt = {
 };
 
 const GROUP_RECORD = "Registro";
+const GROUP_LINE_ITEMS = "Itens do negócio";
 const GROUP_REFS = "Identificadores (ID)";
 const GROUP_STEPS = "Passos anteriores";
 const GROUP_VARS = "Variáveis do fluxo";
@@ -47,12 +49,19 @@ const SKIP = new Set(["id", "owner_id", "workspace_id", "created_at", "updated_a
 export function buildTextTokens(
   entityFields: TokenFieldOpt[],
   priorFields: TokenFieldOpt[] = [],
+  entity?: string,
 ): MessageToken[] {
   const out: MessageToken[] = [];
   for (const f of entityFields) {
     if (f.ref || f.system || SKIP.has(f.name)) continue;
     if (f.name.endsWith("_id")) continue;
     out.push({ token: `{{${f.name}}}`, label: f.label, group: GROUP_RECORD });
+  }
+  // Itens de linha do negócio (tabela relacionada, hidratada sob demanda).
+  if (entity === "deals") {
+    for (const t of LINE_ITEM_TOKENS) {
+      out.push({ token: t.token, label: t.label, group: GROUP_LINE_ITEMS });
+    }
   }
   for (const f of priorFields) {
     out.push({ token: `{{${f.name}}}`, label: f.label, group: GROUP_STEPS });

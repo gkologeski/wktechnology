@@ -230,6 +230,7 @@ export function BranchMultiForm({
             <ConditionListEditor
               value={b.filters}
               fields={entityFields}
+              entity={entity}
               priorFields={priorFields}
               defaultField={entityFields[0]?.name ?? ""}
               onChange={(next) =>

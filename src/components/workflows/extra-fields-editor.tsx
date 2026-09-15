@@ -198,6 +198,31 @@ function FieldInput({
 }) {
   const strVal = value == null ? "" : String(value);
 
+  // Substatus depende da etapa escolhida no mesmo passo: ao trocar a etapa,
+  // um substatus já escolhido (de outra etapa) é limpo.
+  const stageOfStep =
+    typeof siblingValues?.["stage_value"] === "string"
+      ? (siblingValues["stage_value"] as string)
+      : typeof siblingValues?.["stage_id"] === "string"
+        ? (siblingValues["stage_id"] as string)
+        : typeof siblingValues?.["stage"] === "string"
+          ? (siblingValues["stage"] as string)
+          : "";
+  const pipelineOfStep =
+    typeof siblingValues?.["pipeline_id"] === "string"
+      ? (siblingValues["pipeline_id"] as string)
+      : "";
+  const isSubstatusField = field.name === "stage_substatus_id";
+  const prevStage = useRef(stageOfStep);
+  useEffect(() => {
+    if (!isSubstatusField) return;
+    if (prevStage.current === stageOfStep) return;
+    prevStage.current = stageOfStep;
+    if (strVal && !/\{\{.+\}\}/.test(strVal)) onChange(null);
+    // onChange é estável o suficiente no builder; a dependência é a etapa.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stageOfStep, isSubstatusField]);
+
   if (field.name === "custom_fields") {
     return <CustomFieldsEditor value={value} onChange={(v) => onChange(v)} />;
   }
@@ -290,6 +315,13 @@ function FieldInput({
             ? "No papel de Prestação, a empresa contratante é a contraparte — use uma variável do gatilho ou de um passo anterior."
             : undefined
         }
+        filters={
+          isSubstatusField
+            ? { stage_value: stageOfStep, pipeline_id: pipelineOfStep || undefined }
+            : undefined
+        }
+        disabled={isSubstatusField && !stageOfStep}
+        disabledHint={isSubstatusField ? "Escolha a etapa primeiro" : undefined}
       />
     );
   }
@@ -332,6 +364,9 @@ export function FkPicker({
   onChange,
   hideRecords,
   hideRecordsHint,
+  filters,
+  disabled,
+  disabledHint,
 }: {
   kind: RefKind;
   value: string;
@@ -340,6 +375,12 @@ export function FkPicker({
   hideRecords?: boolean;
   /** Aviso curto explicando por que a lista de registros está oculta. */
   hideRecordsHint?: string;
+  /** Filtros dependentes de outros campos (ex.: substatus depende da etapa). */
+  filters?: { stage_value?: string; pipeline_id?: string };
+  /** Desabilita o seletor (ex.: falta escolher a etapa). */
+  disabled?: boolean;
+  /** Dica exibida quando o seletor está desabilitado. */
+  disabledHint?: string;
 }) {
   const isToken = /^\s*\{\{.+\}\}\s*$/.test(value);
   // Opções pré-carregadas (gatilho + passos anteriores) compatíveis com o campo.
@@ -359,6 +400,8 @@ export function FkPicker({
   const fetchDeals = useServerFn(searchDeals);
   const fetchSimple = useServerFn(searchSimpleRefs);
   const simpleKind = isSimpleRefKind(kind) ? kind : null;
+  const stageValue = filters?.stage_value?.trim() || undefined;
+  const pipelineId = filters?.pipeline_id?.trim() || undefined;
 
   // debounce 200ms sobre o input
   useEffect(() => {
@@ -367,7 +410,7 @@ export function FkPicker({
   }, [rawQ]);
 
   const searchQuery = useQuery({
-    queryKey: ["wf-ref-search", kind, q],
+    queryKey: ["wf-ref-search", kind, q, stageValue ?? "", pipelineId ?? ""],
     enabled: open && !hideRecords,
     staleTime: 30_000,
     placeholderData: (prev) => prev,
@@ -378,7 +421,15 @@ export function FkPicker({
       if (kind === "legal_entity") return await fetchLegalEntities({ data: { q: q || undefined } });
       if (kind === "contract") return await fetchContracts({ data: { q: q || undefined } });
       if (kind === "deal") return await fetchDeals({ data: { q: q || undefined } });
-      if (simpleKind) return await fetchSimple({ data: { kind: simpleKind, q: q || undefined } });
+      if (simpleKind)
+        return await fetchSimple({
+          data: {
+            kind: simpleKind,
+            q: q || undefined,
+            stage_value: stageValue,
+            pipeline_id: pipelineId,
+          },
+        });
       const rows = await fetchUsers({ data: { q: q || undefined } });
       return rows.map((r: { id: string; name: string }) => ({ id: r.id, name: r.name }));
     },
@@ -422,6 +473,28 @@ export function FkPicker({
 
   const items = (searchQuery.data ?? []) as Array<{ id: string; name: string }>;
   const isLoading = searchQuery.isFetching;
+
+  // Campo dependente sem o pré-requisito escolhido (ex.: substatus sem etapa):
+  // fica desabilitado, mas segue possível usar uma variável do fluxo.
+  if (disabled && !value && !tokenMode) {
+    return (
+      <div className="space-y-1.5">
+        <div
+          aria-disabled="true"
+          className="flex h-9 items-center rounded-md border border-input bg-muted/40 px-3 text-sm text-muted-foreground"
+        >
+          {disabledHint ?? "Escolha a etapa primeiro"}
+        </div>
+        <button
+          type="button"
+          className="text-[11px] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+          onClick={() => setTokenMode(true)}
+        >
+          Usar variável…
+        </button>
+      </div>
+    );
+  }
 
   // Token conhecido (ex.: "Empresa do gatilho"): mostra rótulo amigável em vez
   // do token cru, mantendo o combo para trocar a escolha.
@@ -589,7 +662,11 @@ export function FkPicker({
                       </div>
                     )}
                     {!isLoading && !searchQuery.isError && items.length === 0 && (
-                      <CommandEmpty>Nenhum resultado.</CommandEmpty>
+                      <CommandEmpty>
+                        {simpleKind === "substatus"
+                          ? "Nenhum substatus cadastrado para esta etapa."
+                          : "Nenhum resultado."}
+                      </CommandEmpty>
                     )}
                     <CommandGroup heading="Registros">
                       {items.map((it) => (
