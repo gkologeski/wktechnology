@@ -89,9 +89,37 @@ export function SwitchByValueForm({
         <FieldSelect
           entity={entity}
           value={action.field}
-          onChange={(v) => onChange({ ...action, field: v })}
+          onChange={(v) =>
+            onChange({
+              ...action,
+              field: v,
+              // Trocar o tipo de campo invalida valores de case incompatíveis.
+              cases:
+                isLineItemField(v) === isLineItemField(action.field)
+                  ? cases
+                  : cases.map((c) => ({ ...c, value: "" })),
+            })
+          }
+          extraGroups={[{ label: "Itens do negócio", fields: lineItemFields }]}
         />
       </div>
+      {isLineItem && action.field !== LINE_ITEM_COUNT_FIELD && (
+        <div>
+          <Label className="text-xs">Aplicar a</Label>
+          <Select
+            value={action.match ?? "any"}
+            onValueChange={(v) => onChange({ ...action, match: v as "any" | "all" })}
+          >
+            <SelectTrigger aria-label="O case vale para qualquer item ou para todos">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="any">Qualquer item do negócio</SelectItem>
+              <SelectItem value="all">Todos os itens do negócio</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label className="text-xs">Cases</Label>
