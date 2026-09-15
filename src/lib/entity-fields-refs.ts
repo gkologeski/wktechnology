@@ -19,7 +19,9 @@ export type RefKind =
   | "project"
   | "milestone"
   | "service"
-  | "category";
+  | "service_catalog"
+  | "financial_category"
+  | "kb_category";
 
 /** Tipos resolvidos pela busca genérica `searchSimpleRefs`. */
 export const SIMPLE_REF_KINDS = [
@@ -30,7 +32,9 @@ export const SIMPLE_REF_KINDS = [
   "project",
   "milestone",
   "service",
-  "category",
+  "service_catalog",
+  "financial_category",
+  "kb_category",
 ] as const;
 
 export type SimpleRefKind = (typeof SIMPLE_REF_KINDS)[number];
@@ -74,7 +78,17 @@ export const REF_COLUMNS: Record<string, RefKind> = {
   project_id: "project",
   milestone_id: "milestone",
   service_id: "service",
-  category_id: "category",
+  service_catalog_id: "service_catalog",
+};
+
+/**
+ * Colunas homônimas que apontam para tabelas diferentes conforme a entidade.
+ * Ex.: `category_id` é categoria financeira em Financeiro e categoria da base
+ * de conhecimento em Artigos. Tem precedência sobre `REF_COLUMNS`.
+ */
+export const REF_COLUMNS_BY_ENTITY: Record<string, Record<string, RefKind>> = {
+  financial_entries: { category_id: "financial_category" },
+  kb_articles: { category_id: "kb_category" },
 };
 
 /**

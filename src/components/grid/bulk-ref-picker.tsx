@@ -45,7 +45,9 @@ const PLACEHOLDER: Record<RefKind, string> = {
   project: "Selecionar projeto…",
   milestone: "Selecionar marco…",
   service: "Selecionar serviço…",
-  category: "Selecionar categoria…",
+  service_catalog: "Selecionar serviço do catálogo…",
+  financial_category: "Selecionar categoria financeira…",
+  kb_category: "Selecionar categoria do artigo…",
 };
 
 export function BulkRefPicker({
