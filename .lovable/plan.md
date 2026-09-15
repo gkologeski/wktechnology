@@ -1,32 +1,64 @@
-# Substatus da etapa depende da etapa escolhida
+# Workflows: substatus dependente da etapa + condição pelo serviço do negócio
 
-Hoje o campo "Substatus da etapa" lista todos os substatus ativos do workspace, de qualquer etapa e de qualquer pipeline. Deve passar a listar apenas os substatus da etapa escolhida no mesmo contexto.
+Dois ajustes no construtor de workflows.
 
-## Regras
+---
 
-1. **Com etapa escolhida** (e pipeline, quando informado): o combo lista somente os substatus daquela etapa, na ordem cadastrada, com o rótulo do substatus (sem repetir o nome da etapa).
-2. **Sem etapa escolhida**: o campo aparece desabilitado com a mensagem "Escolha a etapa primeiro". Continua sendo possível usar uma variável ({{token}}) para casos em que a etapa vem de um passo anterior.
+## Parte 1 — "Substatus da etapa" só mostra os substatus da etapa escolhida
+
+Hoje o campo lista todos os substatus ativos do workspace, de qualquer etapa e pipeline.
+
+### Regras
+
+1. **Com etapa escolhida** (e pipeline, quando informado): o combo lista somente os substatus daquela etapa, na ordem cadastrada, com o nome do substatus (sem repetir o nome da etapa).
+2. **Sem etapa escolhida**: o campo fica desabilitado com a dica "Escolha a etapa primeiro". Continua possível usar uma variável ({{token}}) quando a etapa vem de um passo anterior.
 3. **Trocar a etapa** limpa um substatus já escolhido que não pertença à nova etapa, avisando na tela.
-4. **Valor já salvo** apontando para substatus de outra etapa ou inativo continua sendo exibido pelo nome (nada é perdido ao abrir workflows antigos).
-5. Quando a etapa escolhida não tem substatus cadastrados, o combo mostra o estado vazio "Nenhum substatus cadastrado para esta etapa", com atalho para o cadastro de substatus.
+4. **Valor já salvo** apontando para substatus de outra etapa ou inativo continua exibido pelo nome — nada se perde ao abrir workflows antigos.
+5. Etapa sem substatus cadastrados: estado vazio "Nenhum substatus cadastrado para esta etapa", com atalho para o cadastro.
 
-## Onde a regra se aplica
+### Onde se aplica
 
-- Passo "Criar/Atualizar registro" (Negócios, Leads, Chamados) — a etapa é um campo irmão no mesmo formulário.
-- Condições do gatilho e de ramificação — quando a mesma condição/grupo já filtra a etapa, o substatus é filtrado por ela; sem etapa definida na condição, vale a regra 2.
-- Critérios de meta, que reaproveitam o mesmo seletor.
+Passo "Criar/Atualizar registro" (Negócios, Leads, Chamados), condições do gatilho e de ramificação, e critérios de meta — todos usam o mesmo seletor.
 
-Sem alteração de banco, RLS, permissões, motor de workflows ou do valor gravado (segue o ID do substatus).
+---
+
+## Parte 2 — Condição pelo serviço do negócio
+
+Hoje não existe como condicionar um workflow ao serviço do negócio, porque o serviço não é um campo do negócio: ele vem dos **itens de linha** (um negócio pode ter vários serviços). As condições só leem campos do próprio registro, por isso o campo não aparece na lista.
+
+### O que passa a existir
+
+Um novo campo de condição em Negócios: **"Serviço (itens do negócio)"**.
+
+- Operadores: **é igual a**, **está entre** (vários serviços), **contém** (busca por texto no nome), **está vazio** / **não está vazio**.
+- A escolha do serviço é por nome, com busca no catálogo de serviços (grava o ID, como nos demais campos de referência).
+- Avaliação: verdadeira quando **qualquer** item de linha do negócio corresponde. Ex.: "Serviço (itens do negócio) é igual a Hunting" dispara para negócios que tenham pelo menos um item de Hunting.
+- Disponível também nas ramificações e nos critérios de meta, com o mesmo comportamento.
+- Como o serviço é definido nos itens de linha (depois da criação do negócio), gatilhos de criação podem ainda não ter serviço: nesse caso a condição é falsa. A recomendação na própria tela é usar o gatilho de atualização do negócio.
+
+Também fica disponível o token `{{deal.services}}` (nomes dos serviços do negócio, separados por vírgula) para uso em textos de e-mail, tarefa e atividade.
+
+Nada é removido; condições existentes continuam válidas.
+
+---
 
 ## Detalhes técnicos
 
-- `src/lib/workflow-refs.functions.ts` (`searchSimpleRefs`, ramo `substatus`): aceitar filtros opcionais `stage_value` e `pipeline_id` no input e aplicá-los na consulta; sem `stage_value`, não retornar lista (evita opções de outras etapas). Ordenação segue `position`.
-- `src/components/workflows/extra-fields-editor.tsx`:
-  - `FkPicker` recebe `filters?: { stage_value?: string; pipeline_id?: string }`, repassa na busca e inclui os filtros na `queryKey`; estado desabilitado + dica quando faltar `stage_value`.
-  - No render de `stage_substatus_id`, derivar os filtros de `siblingValues` (`stage_value` / `stage_id` e `pipeline_id`) — o mesmo mecanismo já usado em `contracting_legal_entity_id`.
-  - Ao mudar a etapa, limpar `stage_substatus_id` quando o valor atual não pertencer à nova etapa (hidratação já retorna a etapa do substatus).
-- `src/components/workflows/builder/conditions-editor.tsx`: para condições sobre `stage_substatus_id`, resolver a etapa a partir das condições irmãs sobre `stage_id`/`stage_value` no mesmo grupo e passar como filtro.
-- Hidratação de rótulo (busca por `ids`) continua sem filtro, garantindo a regra 4.
+### Parte 1
+
+- `src/lib/workflow-refs.functions.ts` (`searchSimpleRefs`, ramo `substatus`): aceitar `stage_value` e `pipeline_id` opcionais no input e aplicá-los na consulta; sem `stage_value`, não retornar lista. Ordenação segue `position`. Busca por `ids` (hidratação de rótulo) continua sem filtro, garantindo a regra 4.
+- `src/components/workflows/extra-fields-editor.tsx`: `FkPicker` recebe `filters?: { stage_value?: string; pipeline_id?: string }`, repassa na busca e inclui na `queryKey`; estado desabilitado + dica quando faltar etapa. No render de `stage_substatus_id`, derivar os filtros de `siblingValues` (`stage_value`/`stage_id`, `pipeline_id`) — mesmo mecanismo já usado em `contracting_legal_entity_id` — e limpar o valor incompatível ao trocar a etapa.
+- `src/components/workflows/builder/conditions-editor.tsx`: para condições sobre `stage_substatus_id`, resolver a etapa pelas condições irmãs sobre `stage_id`/`stage_value` do mesmo grupo.
+
+### Parte 2
+
+- Campo virtual `line_item_service_id` (rótulo "Serviço (itens do negócio)") no catálogo de campos de `deals`, marcado como somente-condição (não editável em passos de criação/atualização), com `ref: "service"` para reaproveitar o `FkPicker` de serviços.
+- `src/lib/workflows/engine-shared.server.ts`: `evalFilter` passa a aceitar campos virtuais resolvidos previamente; a comparação usa lista (qualquer item satisfaz) para `eq`/`in`/`contains`.
+- `src/lib/workflows/hydrate-associations.server.ts` (ou etapa equivalente antes da avaliação): quando as condições do workflow referenciarem o campo virtual, carregar `deal_line_items` do negócio (`service_catalog_id`, nome do serviço) e anexar ao registro avaliado como `line_item_service_id[]` e `line_item_service_name[]`. Sem referência ao campo, nenhuma consulta extra é feita.
+- `src/lib/workflows/token-catalog.ts`: token `{{deal.services}}` a partir da mesma hidratação.
+- Testes em `src/lib/workflows/conditions.test.ts` cobrindo múltiplos itens, item sem serviço e negócio sem itens.
+
+Sem migration, sem alteração de schema, RLS, permissões ou regra de negócio dos módulos.
 
 ## Validação
 
@@ -34,7 +66,7 @@ Sem alteração de banco, RLS, permissões, motor de workflows ou do valor grava
 
 ## Como validar manualmente
 
-1. `/settings/workflows` → passo "Atualizar registro" em Negócios: sem etapa, o substatus fica desabilitado com a dica.
-2. Escolher uma etapa: o combo lista só os substatus dela.
-3. Trocar a etapa: o substatus incompatível é limpo com aviso.
-4. Abrir um workflow antigo com substatus de outra etapa: o nome continua sendo exibido.
+1. Passo "Atualizar registro" em Negócios: sem etapa, o substatus fica desabilitado; ao escolher a etapa, lista só os substatus dela; ao trocar a etapa, o valor incompatível é limpo.
+2. Abrir workflow antigo com substatus de outra etapa: o nome continua exibido.
+3. Nova condição em Negócios → "Serviço (itens do negócio)" é igual a "Hunting": salvar, alterar um negócio com item de Hunting e conferir a execução no histórico do workflow.
+4. Negócio sem itens de linha: a condição não dispara.
