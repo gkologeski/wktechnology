@@ -382,6 +382,26 @@ export type WorkflowAction =
       type: "delete_record";
       table: WorkflowWritableTable;
       target_id: string;
+    }
+  // Contratos — criação a partir do negócio (configurada pelo usuário no workflow)
+  | {
+      type: "create_contract_from_deal";
+      /** Papel do contrato: prestação (provider) ou compra (client). */
+      role?: "provider" | "client";
+      /** contract | amendment | purchase. Padrão: contract. */
+      document_kind?: string;
+      /** Título do contrato. Aceita tokens. Padrão: "Contrato — {nome do negócio}". */
+      title?: string;
+      /** Situação inicial. Padrão: draft. */
+      status?: string;
+      /** Início da vigência. Aceita tokens/data ISO. */
+      starts_at?: string;
+      /** Modelo de contrato usado para preencher o corpo. */
+      template_id?: string;
+      /** Copiar itens de linha do negócio como serviços do contrato. Padrão: true. */
+      copy_line_items?: boolean;
+      /** Não recriar se o negócio já tem contrato do mesmo tipo. Padrão: true. */
+      skip_if_exists?: boolean;
     };
 
 export type WorkflowActionType = WorkflowAction["type"];
