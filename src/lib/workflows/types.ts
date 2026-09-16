@@ -402,6 +402,11 @@ export type WorkflowAction =
       copy_line_items?: boolean;
       /** Não recriar se o negócio já tem contrato do mesmo tipo. Padrão: true. */
       skip_if_exists?: boolean;
+      /**
+       * Demais campos do contrato (valores, moeda, pagamento, vigência…).
+       * Aceitam tokens do negócio; resolvidos e convertidos na execução.
+       */
+      extra_fields?: Record<string, unknown>;
     };
 
 export type WorkflowActionType = WorkflowAction["type"];
