@@ -99,7 +99,9 @@ export function WorkflowRunsList({
               <span className="flex-1 truncate">
                 {namesById?.[r.workflow_id] ?? r.workflow_id.slice(0, 8)}
               </span>
-              <Badge variant={variant}>{STATUS_LABELS[r.status] ?? r.status}</Badge>
+              <Badge variant={variant}>
+                {noAction ? "Concluída sem ação" : (STATUS_LABELS[r.status] ?? r.status)}
+              </Badge>
               <span className="text-xs text-muted-foreground">
                 {formatDistanceToNow(new Date(r.created_at), { addSuffix: true, locale: ptBR })}
               </span>
@@ -109,6 +111,11 @@ export function WorkflowRunsList({
                 {r.error && (
                   <p className="flex items-start gap-2 text-destructive font-medium" role="alert">
                     <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {r.error}
+                  </p>
+                )}
+                {noAction && (
+                  <p className="flex items-start gap-2 font-medium text-muted-foreground">
+                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {noAction}
                   </p>
                 )}
                 {steps.length > 0 ? (
