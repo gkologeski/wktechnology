@@ -72,10 +72,21 @@ export function WorkflowRunsList({
     <div className="divide-y rounded-md border">
       {runs.map((r) => {
         const isOpen = expanded === r.id;
-        const Icon = r.status === "success" ? CheckCircle2 : r.status === "error" ? XCircle : Clock;
-        const variant: "default" | "destructive" | "secondary" =
-          r.status === "success" ? "default" : r.status === "error" ? "destructive" : "secondary";
         const steps = Array.isArray(r.log) ? (r.log as RunLogStep[]) : [];
+        const noAction = r.status === "success" ? noOpReason(steps) : null;
+        const Icon = noAction
+          ? AlertTriangle
+          : r.status === "success"
+            ? CheckCircle2
+            : r.status === "error"
+              ? XCircle
+              : Clock;
+        const variant: "default" | "destructive" | "secondary" =
+          noAction || r.status !== "success"
+            ? r.status === "error"
+              ? "destructive"
+              : "secondary"
+            : "default";
         return (
           <div key={r.id}>
             <button
