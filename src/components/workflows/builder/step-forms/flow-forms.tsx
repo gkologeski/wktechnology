@@ -198,6 +198,23 @@ export function SwitchByValueForm({
       <p className="text-[11px] text-muted-foreground">
         Coluna padrão: {(action.default ?? []).length} passo(s).
       </p>
+      {(action.default ?? []).length === 0 && (
+        <p
+          className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-[11px] text-foreground"
+          role="status"
+        >
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" />
+          <span>
+            A coluna <strong>Padrão</strong> está vazia. Se nenhum case bater — por exemplo quando o
+            negócio não tem itens de linha — o workflow termina sem executar nada.
+          </span>
+        </p>
+      )}
+      {cases.some((c) => (c.actions ?? []).length === 0) && (
+        <p className="text-[11px] text-muted-foreground">
+          Há case(s) sem nenhum passo configurado: quando eles baterem, nada será executado.
+        </p>
+      )}
     </div>
   );
 }
