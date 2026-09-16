@@ -36,7 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Webhook, X, ArrowUp, ArrowDown } from "lucide-react";
+import { AlertTriangle, Plus, Webhook, X, ArrowUp, ArrowDown } from "lucide-react";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
