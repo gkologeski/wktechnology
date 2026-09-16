@@ -75,10 +75,7 @@ export async function handleRecordAction(
       };
     }
     case "create_record": {
-      const rendered: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(action.values ?? {})) {
-        rendered[k] = typeof v === "string" ? renderTokens(v, ctx.after, ctx.vars) : v;
-      }
+      const { rendered, skipped } = renderActionValues(action.values, ctx);
       // Fallbacks contextuais: quando o workflow dispara de uma entidade e
       // cria um registro filho, preenche automaticamente a FK de origem caso
       // o usuário não a tenha informado explicitamente.
