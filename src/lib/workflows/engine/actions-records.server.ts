@@ -110,6 +110,12 @@ export async function handleRecordAction(
         detail: {
           table: action.table,
           id: (insertRes.data as { id?: string } | null)?.id ?? null,
+          ...(skipped.length > 0
+            ? {
+                campos_ignorados: skipped,
+                aviso: `Campos sem valor no registro de origem foram ignorados: ${skipped.join(", ")}.`,
+              }
+            : {}),
         },
       };
     }
