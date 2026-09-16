@@ -73,12 +73,21 @@ export async function handleContractAction(
   const workspaceId = deal.workspace_id ?? ctx.workspaceId;
   if (!workspaceId) throw new Error("workspace do negócio não encontrado");
 
+  // Demais campos do contrato configurados no passo: tokens são resolvidos com
+  // os dados do negócio e convertidos para os tipos das colunas.
+  const resolvedExtra = resolveExtraFields(action.extra_fields, ctx.after, ctx.vars);
+  const { values: extraValues, warnings } = coerceContractFields(resolvedExtra);
+
   const { contract, servicesCreated } = await createContractShared(supabase, {
     workspaceId,
     userId: ctx.ownerId || deal.owner_id || "",
     kind,
     role: action.role ?? null,
-    fields: { title, starts_at: startsAt },
+    fields: {
+      ...(extraValues as Record<string, string | number | boolean | null>),
+      title,
+      starts_at: startsAt ?? (extraValues["starts_at"] as string | null) ?? null,
+    },
     dealId: deal.id,
     copyLineItems: action.copy_line_items !== false,
     bodyHtml,
@@ -89,6 +98,11 @@ export async function handleContractAction(
     at,
     ok: true,
     action: "create_contract_from_deal",
-    detail: { contract_id: (contract as { id: string }).id, services: servicesCreated, title },
+    detail: {
+      contract_id: (contract as { id: string }).id,
+      services: servicesCreated,
+      title,
+      ...(warnings.length > 0 ? { warnings } : {}),
+    },
   };
 }
