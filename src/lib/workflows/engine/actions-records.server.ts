@@ -23,8 +23,9 @@ export function renderActionValues(
       continue;
     }
     const out = renderTokens(v, ctx.after, ctx.vars);
-    const hadToken = v.includes("{{");
-    if (hadToken && (out == null || (typeof out === "string" && out.trim() === ""))) {
+    // Qualquer valor vazio é omitido (não só o que veio de variável): enviar ""
+    // para colunas uuid, número, data ou jsonb quebra a execução.
+    if (out == null || (typeof out === "string" && out.trim() === "")) {
       skipped.push(k);
       continue;
     }
@@ -88,14 +89,15 @@ export async function handleRecordAction(
         }
       }
       const ownerId = action.owner_id?.trim() || ctx.ownerId;
-      const withOwner = { ...rendered, owner_id: ownerId };
-      // Tenta com owner_id; se a tabela não tiver essa coluna, refaz sem.
+      const withOwner: Record<string, unknown> = { ...rendered, owner_id: ownerId };
+      if (!withOwner.workspace_id && ctx.workspaceId) withOwner.workspace_id = ctx.workspaceId;
+      // Tenta com owner_id/workspace_id; se a tabela não tiver essas colunas, refaz sem.
       let insertRes = await supabase
         .from(action.table)
         .insert(withOwner as never)
         .select("id")
         .maybeSingle();
-      if (insertRes.error && /owner_id/.test(insertRes.error.message)) {
+      if (insertRes.error && /owner_id|workspace_id/.test(insertRes.error.message)) {
         insertRes = await supabase
           .from(action.table)
           .insert(rendered as never)
