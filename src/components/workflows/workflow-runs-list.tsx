@@ -42,6 +42,17 @@ const STATUS_LABELS: Record<string, string> = {
   waiting_approval: "Aguardando aprovação",
 };
 
+/**
+ * Execução que terminou sem executar nenhuma ação (nenhuma condição bateu e o
+ * caminho padrão está vazio). O motor registra `no_op` no último passo.
+ */
+function noOpReason(steps: RunLogStep[]): string | null {
+  const last = steps[steps.length - 1];
+  const detail = last?.detail as { no_op?: boolean; reason?: string } | undefined;
+  if (!detail?.no_op) return null;
+  return detail.reason ?? "Nenhuma ação foi executada nesta execução.";
+}
+
 export function WorkflowRunsList({
   runs,
   namesById,
