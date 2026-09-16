@@ -4,9 +4,10 @@
 // cria o contrato e converte cada item de linha em serviço do contrato mantendo
 // a cobrança. Idempotente: não recria se já existe contrato do mesmo tipo.
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { type LogStep, renderTokens } from "../engine-shared.server";
+import { type LogStep, renderTokens, resolveExtraFields } from "../engine-shared.server";
 import { createContractShared, loadDealForContract } from "@/lib/contracts/contract-create.server";
 import { isContractKind, kindToColumns, type ContractKind } from "@/lib/contracts/contract-kinds";
+import { coerceContractFields } from "@/lib/contracts/contract-field-coerce";
 import type { RunCtx, RunnableAction } from "./run-context";
 
 /** Aceita tanto o novo formato (prestação/compra/aditivo) quanto o antigo. */
