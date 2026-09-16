@@ -252,47 +252,10 @@ function FieldInput({
     );
   }
 
-  if (field.type === "number" || field.type === "currency") {
-    const isInteger =
-      /(_days|_months|_count|_number|_seconds|_min|_ms|quantity|sort_order|view_count|installment_total|payment_day|version)$/.test(
-        field.name,
-      );
-    const handleChange = (raw: string) => onChange(raw === "" ? null : coerceValue(field, raw));
-
-    if (isInteger) {
-      return (
-        <IntegerInput
-          value={strVal}
-          onChange={(e) => handleChange(e.target.value)}
-          placeholder="0"
-        />
-      );
-    }
-
-    return (
-      <Input
-        type="text"
-        inputMode="decimal"
-        value={strVal}
-        onChange={(e) => handleChange(e.target.value)}
-        placeholder="0"
-      />
-    );
+  if (field.type === "number" || field.type === "currency" || field.type === "date") {
+    return <ValueOrTokenField field={field} value={value} onChange={onChange} />;
   }
 
-  if (field.type === "date") {
-    return (
-      <Input
-        type="datetime-local"
-        value={
-          typeof value === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value)
-            ? value.slice(0, 16)
-            : ""
-        }
-        onChange={(e) => onChange(e.target.value ? new Date(e.target.value).toISOString() : null)}
-      />
-    );
-  }
 
   // FKs conhecidas → combobox com nomes resolvidos.
   // Fonte única: o catálogo de campos (REF_COLUMNS) + `owner_id`, que é oculto
