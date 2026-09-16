@@ -25,16 +25,37 @@ export async function handleFieldAction(
       if (ctx.entity !== "leads" && ctx.entity !== "deals") {
         throw new Error("set_substatus suporta apenas leads e negócios");
       }
-      const { error } = await supabase
-        .from(ctx.entity)
-        .update({ stage_substatus_id: action.substatus_id })
-        .eq("id", ctx.entityId);
+      // O substatus pertence a uma etapa: se o registro está em outra etapa,
+      // movemos a etapa junto para não deixar os dois campos divergentes.
+      const patch: Record<string, unknown> = { stage_substatus_id: action.substatus_id };
+      let movedStage: string | null = null;
+      if (action.substatus_id) {
+        const { data: sub } = await supabase
+          .from("pipeline_stage_substatuses")
+          .select("pipeline_id, stage_value")
+          .eq("id", action.substatus_id)
+          .maybeSingle();
+        const target = sub as { pipeline_id?: string; stage_value?: string } | null;
+        const currentStage = (ctx.after?.["stage_id"] ?? ctx.after?.["stage"]) as string | undefined;
+        const samePipeline =
+          !target?.pipeline_id || target.pipeline_id === (ctx.after?.["pipeline_id"] as string);
+        if (target?.stage_value && samePipeline && target.stage_value !== currentStage) {
+          patch["stage_id"] = target.stage_value;
+          const legacy = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
+          if (legacy.includes(target.stage_value)) patch["stage"] = target.stage_value;
+          movedStage = target.stage_value;
+        }
+      }
+      const { error } = await supabase.from(ctx.entity).update(patch).eq("id", ctx.entityId);
       if (error) throw new Error(error.message);
       return {
         at,
         ok: true,
         action: "set_substatus",
-        detail: { substatus_id: action.substatus_id },
+        detail: {
+          substatus_id: action.substatus_id,
+          ...(movedStage ? { stage_moved_to: movedStage } : {}),
+        },
       };
     }
     case "clear_field": {
