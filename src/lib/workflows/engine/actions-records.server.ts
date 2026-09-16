@@ -122,10 +122,7 @@ export async function handleRecordAction(
     case "update_record": {
       const targetId = renderTokens(action.target_id, ctx.after, ctx.vars) as string;
       if (!targetId) throw new Error("target_id vazio");
-      const rendered: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(action.values ?? {})) {
-        rendered[k] = typeof v === "string" ? renderTokens(v, ctx.after, ctx.vars) : v;
-      }
+      const { rendered } = renderActionValues(action.values, ctx);
       const { error } = await supabase
         .from(action.table)
         .update(rendered as never)
