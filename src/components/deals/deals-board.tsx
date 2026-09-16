@@ -173,6 +173,31 @@ export function DealsBoard({
 
     await applyStageUpdate(batch, newStage);
     if (batch.length > 1) selection.clear();
+    void warnIfContractingWithoutItems(batch, newStage);
+  };
+
+  /**
+   * Etapas de contratação normalmente disparam workflows que leem os serviços
+   * do negócio. Sem itens de linha, esses workflows terminam sem fazer nada —
+   * avisamos na hora, sem bloquear o movimento.
+   */
+  const warnIfContractingWithoutItems = async (ids: string[], newStage: string) => {
+    const stage = pipeline.stages.find((s) => s.value === newStage);
+    const text = `${stage?.label ?? ""} ${newStage}`.toLowerCase();
+    if (!text.includes("contrat")) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (supabase as any)
+      .from("deal_line_items")
+      .select("deal_id")
+      .in("deal_id", ids);
+    const withItems = new Set(((data ?? []) as { deal_id: string }[]).map((r) => r.deal_id));
+    const missing = ids.filter((id) => !withItems.has(id));
+    if (missing.length === 0) return;
+    toast.warning(
+      missing.length === 1
+        ? "Este negócio não tem itens de linha: automações de contrato baseadas no serviço não vão gerar nada."
+        : `${missing.length} negócios sem itens de linha: automações de contrato baseadas no serviço não vão gerar nada.`,
+    );
   };
 
   const confirmLost = async (result: LostReasonResult) => {

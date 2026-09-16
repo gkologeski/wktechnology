@@ -42,6 +42,17 @@ const STATUS_LABELS: Record<string, string> = {
   waiting_approval: "Aguardando aprovação",
 };
 
+/**
+ * Execução que terminou sem executar nenhuma ação (nenhuma condição bateu e o
+ * caminho padrão está vazio). O motor registra `no_op` no último passo.
+ */
+function noOpReason(steps: RunLogStep[]): string | null {
+  const last = steps[steps.length - 1];
+  const detail = last?.detail as { no_op?: boolean; reason?: string } | undefined;
+  if (!detail?.no_op) return null;
+  return detail.reason ?? "Nenhuma ação foi executada nesta execução.";
+}
+
 export function WorkflowRunsList({
   runs,
   namesById,
@@ -61,10 +72,21 @@ export function WorkflowRunsList({
     <div className="divide-y rounded-md border">
       {runs.map((r) => {
         const isOpen = expanded === r.id;
-        const Icon = r.status === "success" ? CheckCircle2 : r.status === "error" ? XCircle : Clock;
-        const variant: "default" | "destructive" | "secondary" =
-          r.status === "success" ? "default" : r.status === "error" ? "destructive" : "secondary";
         const steps = Array.isArray(r.log) ? (r.log as RunLogStep[]) : [];
+        const noAction = r.status === "success" ? noOpReason(steps) : null;
+        const Icon = noAction
+          ? AlertTriangle
+          : r.status === "success"
+            ? CheckCircle2
+            : r.status === "error"
+              ? XCircle
+              : Clock;
+        const variant: "default" | "destructive" | "secondary" =
+          noAction || r.status !== "success"
+            ? r.status === "error"
+              ? "destructive"
+              : "secondary"
+            : "default";
         return (
           <div key={r.id}>
             <button
@@ -77,7 +99,9 @@ export function WorkflowRunsList({
               <span className="flex-1 truncate">
                 {namesById?.[r.workflow_id] ?? r.workflow_id.slice(0, 8)}
               </span>
-              <Badge variant={variant}>{STATUS_LABELS[r.status] ?? r.status}</Badge>
+              <Badge variant={variant}>
+                {noAction ? "Concluída sem ação" : (STATUS_LABELS[r.status] ?? r.status)}
+              </Badge>
               <span className="text-xs text-muted-foreground">
                 {formatDistanceToNow(new Date(r.created_at), { addSuffix: true, locale: ptBR })}
               </span>
@@ -87,6 +111,11 @@ export function WorkflowRunsList({
                 {r.error && (
                   <p className="flex items-start gap-2 text-destructive font-medium" role="alert">
                     <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {r.error}
+                  </p>
+                )}
+                {noAction && (
+                  <p className="flex items-start gap-2 font-medium text-muted-foreground">
+                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {noAction}
                   </p>
                 )}
                 {steps.length > 0 ? (

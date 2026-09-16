@@ -115,12 +115,23 @@ export async function runControlAction(
     const passes = evalConditions(filters, ctx.after, ctx.before, ctx.vars);
     const branchName = passes ? "then" : "else";
     const branchActions = passes ? (action.then ?? []) : (action.else ?? []);
+    const noOp = !passes && branchActions.length === 0;
     logs.push(
       annotate({
         at: new Date().toISOString(),
         ok: true,
         action: "branch_if",
-        detail: { branch: branchName, filters },
+        detail: {
+          branch: branchName,
+          filters,
+          ...(noOp
+            ? {
+                no_op: true,
+                reason:
+                  "As condições não foram atendidas e o caminho 'senão' está vazio: nada foi executado.",
+              }
+            : {}),
+        },
       }),
     );
     return runBranch(
@@ -137,8 +148,9 @@ export async function runControlAction(
   // Switch por valor: escolhe primeiro case cujo value bate, ou default.
   if (action.type === "switch_by_value") {
     const onLineItems = isLineItemField(action.field);
+    const items = onLineItems ? lineItemsOf(ctx.after) : [];
     const v = onLineItems
-      ? lineItemsOf(ctx.after).map((it: LineItemRow) => lineItemValue(it, action.field))
+      ? items.map((it: LineItemRow) => lineItemValue(it, action.field))
       : getField(ctx.after, action.field);
     const matched = onLineItems
       ? action.cases.find((c) =>
@@ -146,6 +158,14 @@ export async function runControlAction(
         )
       : action.cases.find((c) => c.value === v);
     const branchActions = matched ? matched.actions : (action.default ?? []);
+    // Nenhum case bateu e o caminho padrão está vazio: nada será executado.
+    // Explicamos o motivo em PT-BR para não falhar em silêncio.
+    const noOp = !matched && branchActions.length === 0;
+    const reason = !noOp
+      ? undefined
+      : onLineItems && items.length === 0
+        ? "O negócio não tem itens de linha, então nenhuma opção foi escolhida e o caminho padrão está vazio: nada foi executado."
+        : "Nenhuma opção bateu com o valor do campo e o caminho padrão está vazio: nada foi executado.";
     logs.push(
       annotate({
         at: new Date().toISOString(),
@@ -155,6 +175,7 @@ export async function runControlAction(
           field: action.field,
           value: v,
           matched: matched ? (matched.label ?? String(matched.value)) : "default",
+          ...(noOp ? { no_op: true, reason } : {}),
         },
       }),
     );
@@ -175,12 +196,22 @@ export async function runControlAction(
       evalConditions(b.filters, ctx.after, ctx.before, ctx.vars),
     );
     const branchActions = matched ? matched.actions : (action.else ?? []);
+    const noOp = !matched && branchActions.length === 0;
     logs.push(
       annotate({
         at: new Date().toISOString(),
         ok: true,
         action: "branch_multi",
-        detail: { matched: matched ? (matched.label ?? "branch") : "else" },
+        detail: {
+          matched: matched ? (matched.label ?? "branch") : "else",
+          ...(noOp
+            ? {
+                no_op: true,
+                reason:
+                  "Nenhuma ramificação bateu e o ramo 'senão' está vazio: nada foi executado.",
+              }
+            : {}),
+        },
       }),
     );
     return runBranch(
