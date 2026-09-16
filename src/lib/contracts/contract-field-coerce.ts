@@ -28,7 +28,7 @@ const DATE_FIELDS = new Set(["starts_at", "ends_at", "amendment_effective_at"]);
 export function parseBrNumber(raw: unknown): number | null {
   if (typeof raw === "number") return Number.isFinite(raw) ? raw : null;
   if (typeof raw !== "string") return null;
-  let s = raw.replace(/[^\d,.\-]/g, "").trim();
+  let s = raw.replace(/[^\d,.-]/g, "").trim();
   if (!s) return null;
   const hasComma = s.includes(",");
   const hasDot = s.includes(".");
