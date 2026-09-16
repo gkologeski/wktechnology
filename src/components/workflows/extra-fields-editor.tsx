@@ -361,7 +361,6 @@ function FieldInput({
     return <ValueOrTokenField field={field} value={value} onChange={onChange} />;
   }
 
-
   // FKs conhecidas → combobox com nomes resolvidos.
   // Fonte única: o catálogo de campos (REF_COLUMNS) + `owner_id`, que é oculto
   // no catálogo mas editável aqui.
