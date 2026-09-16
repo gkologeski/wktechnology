@@ -23,8 +23,9 @@ export function renderActionValues(
       continue;
     }
     const out = renderTokens(v, ctx.after, ctx.vars);
-    const hadToken = v.includes("{{");
-    if (hadToken && (out == null || (typeof out === "string" && out.trim() === ""))) {
+    // Qualquer valor vazio é omitido (não só o que veio de variável): enviar ""
+    // para colunas uuid, número, data ou jsonb quebra a execução.
+    if (out == null || (typeof out === "string" && out.trim() === "")) {
       skipped.push(k);
       continue;
     }
