@@ -36,7 +36,9 @@ export async function handleFieldAction(
           .eq("id", action.substatus_id)
           .maybeSingle();
         const target = sub as { pipeline_id?: string; stage_value?: string } | null;
-        const currentStage = (ctx.after?.["stage_id"] ?? ctx.after?.["stage"]) as string | undefined;
+        const currentStage = (ctx.after?.["stage_id"] ?? ctx.after?.["stage"]) as
+          | string
+          | undefined;
         const samePipeline =
           !target?.pipeline_id || target.pipeline_id === (ctx.after?.["pipeline_id"] as string);
         if (target?.stage_value && samePipeline && target.stage_value !== currentStage) {
