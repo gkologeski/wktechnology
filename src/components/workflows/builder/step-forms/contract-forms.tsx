@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TokenInput } from "@/components/workflows/token-input";
+import { ExtraFieldsEditor } from "@/components/workflows/extra-fields-editor";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
 import type { WorkflowAction } from "@/lib/workflows/types";
 import {
