@@ -115,12 +115,23 @@ export async function runControlAction(
     const passes = evalConditions(filters, ctx.after, ctx.before, ctx.vars);
     const branchName = passes ? "then" : "else";
     const branchActions = passes ? (action.then ?? []) : (action.else ?? []);
+    const noOp = !passes && branchActions.length === 0;
     logs.push(
       annotate({
         at: new Date().toISOString(),
         ok: true,
         action: "branch_if",
-        detail: { branch: branchName, filters },
+        detail: {
+          branch: branchName,
+          filters,
+          ...(noOp
+            ? {
+                no_op: true,
+                reason:
+                  "As condições não foram atendidas e o caminho 'senão' está vazio: nada foi executado.",
+              }
+            : {}),
+        },
       }),
     );
     return runBranch(
@@ -185,12 +196,22 @@ export async function runControlAction(
       evalConditions(b.filters, ctx.after, ctx.before, ctx.vars),
     );
     const branchActions = matched ? matched.actions : (action.else ?? []);
+    const noOp = !matched && branchActions.length === 0;
     logs.push(
       annotate({
         at: new Date().toISOString(),
         ok: true,
         action: "branch_multi",
-        detail: { matched: matched ? (matched.label ?? "branch") : "else" },
+        detail: {
+          matched: matched ? (matched.label ?? "branch") : "else",
+          ...(noOp
+            ? {
+                no_op: true,
+                reason:
+                  "Nenhuma ramificação bateu e o ramo 'senão' está vazio: nada foi executado.",
+              }
+            : {}),
+        },
       }),
     );
     return runBranch(
