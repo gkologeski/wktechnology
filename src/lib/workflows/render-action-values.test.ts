@@ -31,8 +31,9 @@ describe("renderActionValues", () => {
     expect(skipped).toEqual([]);
   });
 
-  it("preserva texto vazio digitado pelo usuário (sem variável)", () => {
-    const { rendered } = renderActionValues({ notes: "" }, ctx);
-    expect(rendered).toEqual({ notes: "" });
+  it("omite texto vazio para não quebrar colunas uuid/número/data", () => {
+    const { rendered, skipped } = renderActionValues({ notes: "" }, ctx);
+    expect(rendered).toEqual({});
+    expect(skipped).toEqual(["notes"]);
   });
 });
