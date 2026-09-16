@@ -123,6 +123,7 @@ export function useContractForm({
     if (!suggestion) return;
     setValues((current) => {
       const currentTitle = String(current["title"] ?? "");
+      if (currentTitle === suggestion) return current; // já aplicada: não recria o objeto
       if (currentTitle.trim() && currentTitle !== lastSuggestion.current) return current;
       lastSuggestion.current = suggestion;
       return { ...current, title: suggestion };
