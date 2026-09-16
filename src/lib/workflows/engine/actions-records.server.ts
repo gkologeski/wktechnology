@@ -4,6 +4,35 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { type LogStep, renderTokens } from "../engine-shared.server";
 import type { RunCtx, RunnableAction } from "./run-context";
 
+/**
+ * Resolve os valores do passo. Quando o usuário deixou um campo preenchido só
+ * com variável (ex.: `{{amendment_of_id}}`) e o registro de origem não tem esse
+ * dado, a variável resolve para texto vazio — enviar "" para uma coluna uuid,
+ * número ou data quebra a execução ("invalid input syntax for type uuid").
+ * Nesse caso o campo é simplesmente omitido, deixando o padrão da coluna.
+ */
+export function renderActionValues(
+  values: Record<string, unknown> | undefined,
+  ctx: RunCtx,
+): { rendered: Record<string, unknown>; skipped: string[] } {
+  const rendered: Record<string, unknown> = {};
+  const skipped: string[] = [];
+  for (const [k, v] of Object.entries(values ?? {})) {
+    if (typeof v !== "string") {
+      rendered[k] = v;
+      continue;
+    }
+    const out = renderTokens(v, ctx.after, ctx.vars);
+    const hadToken = v.includes("{{");
+    if (hadToken && (out == null || (typeof out === "string" && out.trim() === ""))) {
+      skipped.push(k);
+      continue;
+    }
+    rendered[k] = out;
+  }
+  return { rendered, skipped };
+}
+
 export async function handleRecordAction(
   supabase: SupabaseClient,
   action: RunnableAction,
@@ -46,10 +75,7 @@ export async function handleRecordAction(
       };
     }
     case "create_record": {
-      const rendered: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(action.values ?? {})) {
-        rendered[k] = typeof v === "string" ? renderTokens(v, ctx.after, ctx.vars) : v;
-      }
+      const { rendered, skipped } = renderActionValues(action.values, ctx);
       // Fallbacks contextuais: quando o workflow dispara de uma entidade e
       // cria um registro filho, preenche automaticamente a FK de origem caso
       // o usuário não a tenha informado explicitamente.
@@ -84,16 +110,19 @@ export async function handleRecordAction(
         detail: {
           table: action.table,
           id: (insertRes.data as { id?: string } | null)?.id ?? null,
+          ...(skipped.length > 0
+            ? {
+                campos_ignorados: skipped,
+                aviso: `Campos sem valor no registro de origem foram ignorados: ${skipped.join(", ")}.`,
+              }
+            : {}),
         },
       };
     }
     case "update_record": {
       const targetId = renderTokens(action.target_id, ctx.after, ctx.vars) as string;
       if (!targetId) throw new Error("target_id vazio");
-      const rendered: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(action.values ?? {})) {
-        rendered[k] = typeof v === "string" ? renderTokens(v, ctx.after, ctx.vars) : v;
-      }
+      const { rendered } = renderActionValues(action.values, ctx);
       const { error } = await supabase
         .from(action.table)
         .update(rendered as never)
