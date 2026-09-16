@@ -89,14 +89,15 @@ export async function handleRecordAction(
         }
       }
       const ownerId = action.owner_id?.trim() || ctx.ownerId;
-      const withOwner = { ...rendered, owner_id: ownerId };
-      // Tenta com owner_id; se a tabela não tiver essa coluna, refaz sem.
+      const withOwner: Record<string, unknown> = { ...rendered, owner_id: ownerId };
+      if (!withOwner.workspace_id && ctx.workspaceId) withOwner.workspace_id = ctx.workspaceId;
+      // Tenta com owner_id/workspace_id; se a tabela não tiver essas colunas, refaz sem.
       let insertRes = await supabase
         .from(action.table)
         .insert(withOwner as never)
         .select("id")
         .maybeSingle();
-      if (insertRes.error && /owner_id/.test(insertRes.error.message)) {
+      if (insertRes.error && /owner_id|workspace_id/.test(insertRes.error.message)) {
         insertRes = await supabase
           .from(action.table)
           .insert(rendered as never)
