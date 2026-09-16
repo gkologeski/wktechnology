@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TokenInput } from "@/components/workflows/token-input";
+import { ExtraFieldsEditor } from "@/components/workflows/extra-fields-editor";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
 import type { WorkflowAction } from "@/lib/workflows/types";
 import {
@@ -127,10 +128,30 @@ export function CreateContractFromDealForm({
         />
       </div>
 
+      <ExtraFieldsEditor
+        entity="contracts"
+        title="Mais campos do contrato"
+        extraFields={action.extra_fields}
+        hiddenKeys={[
+          "title",
+          "starts_at",
+          "deal_id",
+          "document_kind",
+          "role",
+          "status",
+          "body_html",
+          "number",
+          "public_token",
+        ]}
+        triggerEntity="deals"
+        onChange={(next) => onChange({ ...action, extra_fields: next })}
+      />
+
       <p className="text-xs text-muted-foreground">
         O contrato é criado com os dados do negócio no momento em que o workflow roda: empresa,
         moeda, responsável e cada item de linha com a cobrança já preenchida (forma, unidade, valor,
-        percentual e recorrência).
+        percentual e recorrência). Nos campos de valor e data você pode usar uma variável do negócio
+        (por exemplo o valor do negócio) em vez de digitar um número fixo.
       </p>
     </div>
   );

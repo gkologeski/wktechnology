@@ -184,6 +184,111 @@ function CustomFieldsEditor({
   );
 }
 
+const TOKEN_RE = /\{\{\s*[\w.]+\s*\}\}/;
+
+const INTEGER_FIELD_RE =
+  /(_days|_months|_count|_number|_seconds|_min|_ms|quantity|sort_order|view_count|installment_total|payment_day|version)$/;
+
+/**
+ * Campos numéricos, de moeda e de data podem receber um valor fixo ou uma
+ * variável do registro do gatilho (ex.: `{{value}}` = valor do negócio).
+ * A conversão do valor resolvido acontece na execução do workflow.
+ */
+function ValueOrTokenField({
+  field,
+  value,
+  onChange,
+}: {
+  field: EntityFieldDef;
+  value: unknown;
+  onChange: (v: unknown) => void;
+}) {
+  const strVal = value == null ? "" : String(value);
+  const looksLikeToken = typeof value === "string" && TOKEN_RE.test(value);
+  const [useToken, setUseToken] = useState(looksLikeToken);
+
+  // Valor vindo de fora já como token (ex.: passo carregado do banco).
+  useEffect(() => {
+    if (looksLikeToken) setUseToken(true);
+  }, [looksLikeToken]);
+
+  const toggle = (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      className="h-7 px-2 text-xs"
+      aria-label={useToken ? "Usar valor fixo" : "Usar variável do registro"}
+      onClick={() => {
+        setUseToken((prev) => {
+          if (prev) onChange(null);
+          return !prev;
+        });
+      }}
+    >
+      <Wand2 className="mr-1 h-3 w-3" />
+      {useToken ? "Valor fixo" : "Usar variável"}
+    </Button>
+  );
+
+  if (useToken) {
+    return (
+      <div className="space-y-1">
+        <TokenInput
+          value={typeof value === "string" ? value : ""}
+          onValueChange={(v) => onChange(v === "" ? null : v)}
+          placeholder="{{value}}"
+          aria-label={`Variável para ${field.label ?? field.name}`}
+        />
+        <div className="flex justify-end">{toggle}</div>
+      </div>
+    );
+  }
+
+  if (field.type === "date") {
+    return (
+      <div className="space-y-1">
+        <Input
+          type="datetime-local"
+          aria-label={field.label ?? field.name}
+          value={
+            typeof value === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value)
+              ? value.slice(0, 16)
+              : ""
+          }
+          onChange={(e) => onChange(e.target.value ? new Date(e.target.value).toISOString() : null)}
+        />
+        <div className="flex justify-end">{toggle}</div>
+      </div>
+    );
+  }
+
+  const handleChange = (raw: string) => onChange(raw === "" ? null : coerceValue(field, raw));
+
+  return (
+    <div className="space-y-1">
+      {INTEGER_FIELD_RE.test(field.name) ? (
+        <IntegerInput
+          value={strVal}
+          aria-label={field.label ?? field.name}
+          onChange={(e) => handleChange(e.target.value)}
+          placeholder="0"
+        />
+      ) : (
+        <Input
+          type="text"
+          inputMode="decimal"
+          aria-label={field.label ?? field.name}
+          value={strVal}
+          onChange={(e) => handleChange(e.target.value)}
+          placeholder="0"
+        />
+      )}
+      <div className="flex justify-end">{toggle}</div>
+    </div>
+  );
+}
+
 function FieldInput({
   field,
   value,
@@ -252,47 +357,10 @@ function FieldInput({
     );
   }
 
-  if (field.type === "number" || field.type === "currency") {
-    const isInteger =
-      /(_days|_months|_count|_number|_seconds|_min|_ms|quantity|sort_order|view_count|installment_total|payment_day|version)$/.test(
-        field.name,
-      );
-    const handleChange = (raw: string) => onChange(raw === "" ? null : coerceValue(field, raw));
-
-    if (isInteger) {
-      return (
-        <IntegerInput
-          value={strVal}
-          onChange={(e) => handleChange(e.target.value)}
-          placeholder="0"
-        />
-      );
-    }
-
-    return (
-      <Input
-        type="text"
-        inputMode="decimal"
-        value={strVal}
-        onChange={(e) => handleChange(e.target.value)}
-        placeholder="0"
-      />
-    );
+  if (field.type === "number" || field.type === "currency" || field.type === "date") {
+    return <ValueOrTokenField field={field} value={value} onChange={onChange} />;
   }
 
-  if (field.type === "date") {
-    return (
-      <Input
-        type="datetime-local"
-        value={
-          typeof value === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value)
-            ? value.slice(0, 16)
-            : ""
-        }
-        onChange={(e) => onChange(e.target.value ? new Date(e.target.value).toISOString() : null)}
-      />
-    );
-  }
 
   // FKs conhecidas → combobox com nomes resolvidos.
   // Fonte única: o catálogo de campos (REF_COLUMNS) + `owner_id`, que é oculto
