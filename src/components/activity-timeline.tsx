@@ -168,7 +168,16 @@ export function ActivityTimeline({
       ...autoLinks,
     };
     const res = await insertActivity(payload);
-    if (!res.ok) return toast.error(res.error);
+    if (!res.ok) {
+      if (isRlsDeniedMessage(res.error)) {
+        toast.error("Você não tem permissão para criar esta atividade", {
+          description:
+            "Peça ao administrador do workspace para revisar seu perfil de acesso em Atividades.",
+        });
+        return;
+      }
+      return toast.error(res.error);
+    }
     if (res.insertedId) {
       void notifyActivityEventFn({ data: { activityId: res.insertedId } }).catch(() => {});
     }
