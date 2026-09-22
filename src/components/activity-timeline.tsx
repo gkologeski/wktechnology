@@ -152,7 +152,10 @@ export function ActivityTimeline({
     const finalBody = waHtml ?? (body || null);
     const schedulable = type === "task" || type === "call" || type === "meeting";
     const payload: Record<string, unknown> = {
-      owner_id: type === "task" && assigneeId ? assigneeId : user.id,
+      // O dono é sempre quem cria (exigência das políticas de acesso);
+      // a pessoa escolhida entra como responsável.
+      owner_id: user.id,
+      assigned_to: type === "task" && assigneeId ? assigneeId : user.id,
       created_by: user.id,
       type,
       subject: subject || (waHtml ? "Conversa de WhatsApp" : null),
@@ -165,7 +168,16 @@ export function ActivityTimeline({
       ...autoLinks,
     };
     const res = await insertActivity(payload);
-    if (!res.ok) return toast.error(res.error);
+    if (!res.ok) {
+      if (res.error?.includes("row-level security")) {
+        toast.error("Você não tem permissão para criar esta atividade", {
+          description:
+            "Peça ao administrador do workspace para revisar seu perfil de acesso em Atividades.",
+        });
+        return;
+      }
+      return toast.error(res.error);
+    }
     if (res.insertedId) {
       void notifyActivityEventFn({ data: { activityId: res.insertedId } }).catch(() => {});
     }

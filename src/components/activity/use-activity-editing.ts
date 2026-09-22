@@ -22,7 +22,12 @@ export function useActivityEditing(userId: string | undefined, onSaved: () => vo
     setAttachments(activityAttachments(a));
     setNewFiles([]);
     setAssigneeId(
-      a.type === "task" ? ((a as unknown as { owner_id?: string | null }).owner_id ?? null) : null,
+      a.type === "task"
+        ? ((a as unknown as { assigned_to?: string | null; owner_id?: string | null })
+            .assigned_to ??
+            (a as unknown as { owner_id?: string | null }).owner_id ??
+            null)
+        : null,
     );
     setDueDate(a.type === "task" ? (a.due_date ?? null) : null);
   };
@@ -35,7 +40,9 @@ export function useActivityEditing(userId: string | undefined, onSaved: () => vo
       attachments: [...attachments, ...uploaded],
     };
     if (a.type === "task") {
-      patch.owner_id = assigneeId ?? userId ?? null;
+      // Responsável muda em assigned_to; o dono (criador) permanece intacto,
+      // pois as políticas de acesso exigem owner_id = usuário que criou.
+      patch.assigned_to = assigneeId ?? userId ?? null;
       patch.due_date = dueDate ? new Date(dueDate).toISOString() : null;
     }
     const res = await updateActivity(a.id, patch);
