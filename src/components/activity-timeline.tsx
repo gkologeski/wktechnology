@@ -152,7 +152,10 @@ export function ActivityTimeline({
     const finalBody = waHtml ?? (body || null);
     const schedulable = type === "task" || type === "call" || type === "meeting";
     const payload: Record<string, unknown> = {
-      owner_id: type === "task" && assigneeId ? assigneeId : user.id,
+      // O dono é sempre quem cria (exigência das políticas de acesso);
+      // a pessoa escolhida entra como responsável.
+      owner_id: user.id,
+      assigned_to: type === "task" && assigneeId ? assigneeId : user.id,
       created_by: user.id,
       type,
       subject: subject || (waHtml ? "Conversa de WhatsApp" : null),
