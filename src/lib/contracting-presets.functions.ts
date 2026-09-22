@@ -253,21 +253,32 @@ export const listContractingPresetOptions = createServerFn({ method: "POST" })
 export const listPresetsForService = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({ serviceCatalogId: z.string().uuid().nullable().optional() }).parse(input ?? {}),
+    z
+      .object({
+        serviceCatalogId: z.string().uuid().nullable().optional(),
+        search: z.string().optional(),
+        ids: z.array(z.string().uuid()).optional(),
+      })
+      .parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     await assertAnyPermission(supabase, userId, workspaceId, VIEW);
-    if (!data.serviceCatalogId) return [];
+    if (!data.serviceCatalogId && !(data.ids && data.ids.length > 0)) return [];
 
-    const { data: rows, error } = await supabase
-      .from("contracting_presets")
-      .select(OPTION_SELECT)
-      .eq("active", true)
-      .eq("service_catalog_id", data.serviceCatalogId)
-      .order("name")
-      .limit(100);
+    let q = supabase.from("contracting_presets").select(OPTION_SELECT);
+    if (data.ids && data.ids.length > 0) {
+      q = q.in("id", data.ids);
+    } else {
+      q = q.eq("active", true).eq("service_catalog_id", data.serviceCatalogId!);
+      const term = data.search?.trim();
+      if (term) {
+        const t = `%${term}%`;
+        q = q.or(`name.ilike.${t},code.ilike.${t}`);
+      }
+    }
+    const { data: rows, error } = await q.order("name").limit(100);
     if (error) throw error;
     return rows ?? [];
   });
