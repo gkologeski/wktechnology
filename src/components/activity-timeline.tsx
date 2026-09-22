@@ -169,7 +169,7 @@ export function ActivityTimeline({
     };
     const res = await insertActivity(payload);
     if (!res.ok) {
-      if (isRlsDeniedMessage(res.error)) {
+      if (res.error?.includes("row-level security")) {
         toast.error("Você não tem permissão para criar esta atividade", {
           description:
             "Peça ao administrador do workspace para revisar seu perfil de acesso em Atividades.",
