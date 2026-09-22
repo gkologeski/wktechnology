@@ -22,7 +22,12 @@ export function useActivityEditing(userId: string | undefined, onSaved: () => vo
     setAttachments(activityAttachments(a));
     setNewFiles([]);
     setAssigneeId(
-      a.type === "task" ? ((a as unknown as { owner_id?: string | null }).owner_id ?? null) : null,
+      a.type === "task"
+        ? ((a as unknown as { assigned_to?: string | null; owner_id?: string | null })
+            .assigned_to ??
+            (a as unknown as { owner_id?: string | null }).owner_id ??
+            null)
+        : null,
     );
     setDueDate(a.type === "task" ? (a.due_date ?? null) : null);
   };
