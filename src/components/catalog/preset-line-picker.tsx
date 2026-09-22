@@ -127,11 +127,7 @@ export function PresetLinePicker({
               {search.isError && (
                 <div className="px-3 py-2 text-sm text-destructive">
                   Erro ao buscar presets.{" "}
-                  <button
-                    type="button"
-                    className="underline"
-                    onClick={() => void search.refetch()}
-                  >
+                  <button type="button" className="underline" onClick={() => void search.refetch()}>
                     Tentar novamente
                   </button>
                 </div>
