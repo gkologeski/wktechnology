@@ -7,17 +7,38 @@ import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { notifyDialogClosed } from "@/lib/dialog-refresh";
+import { beginAuditSession, endAuditSession } from "@/lib/audit-session";
 
 // Notifica o QueryClient quando o sheet fecha para revalidar dados sem F5.
-const Sheet = ({ onOpenChange, ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) => (
-  <SheetPrimitive.Root
-    {...props}
-    onOpenChange={(open) => {
-      onOpenChange?.(open);
-      if (!open) notifyDialogClosed();
-    }}
-  />
-);
+const Sheet = ({ onOpenChange, ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) => {
+  const sessionRef = React.useRef<string | null>(null);
+  const isOpen = props.open ?? props.defaultOpen ?? false;
+
+  React.useEffect(() => {
+    if (isOpen && !sessionRef.current) sessionRef.current = beginAuditSession();
+    if (!isOpen && sessionRef.current) {
+      endAuditSession(sessionRef.current);
+      sessionRef.current = null;
+    }
+  }, [isOpen]);
+
+  React.useEffect(() => () => endAuditSession(sessionRef.current), []);
+
+  return (
+    <SheetPrimitive.Root
+      {...props}
+      onOpenChange={(open) => {
+        if (open && !sessionRef.current) sessionRef.current = beginAuditSession();
+        onOpenChange?.(open);
+        if (!open) {
+          endAuditSession(sessionRef.current);
+          sessionRef.current = null;
+          notifyDialogClosed();
+        }
+      }}
+    />
+  );
+};
 
 const SheetTrigger = SheetPrimitive.Trigger;
 

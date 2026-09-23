@@ -26,6 +26,7 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
     }
 
     const authHeader = request.headers.get("authorization");
+    const auditSession = request.headers.get("x-audit-session");
 
     if (!authHeader) {
       throw new Error("Unauthorized: No authorization header provided");
@@ -44,6 +45,7 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
       global: {
         headers: {
           Authorization: `Bearer ${token}`,
+          ...(auditSession ? { "x-audit-session": auditSession } : {}),
         },
       },
       auth: {

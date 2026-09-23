@@ -6,18 +6,39 @@ import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { notifyDialogClosed } from "@/lib/dialog-refresh";
+import { beginAuditSession, endAuditSession } from "@/lib/audit-session";
 
 // Wrapper do Root que notifica o QueryClient sempre que o dialog fecha, para
 // revalidar dados alterados dentro dele sem exigir F5 do usuário.
-const Dialog = ({ onOpenChange, ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) => (
-  <DialogPrimitive.Root
-    {...props}
-    onOpenChange={(open) => {
-      onOpenChange?.(open);
-      if (!open) notifyDialogClosed();
-    }}
-  />
-);
+const Dialog = ({ onOpenChange, ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) => {
+  const sessionRef = React.useRef<string | null>(null);
+  const isOpen = props.open ?? props.defaultOpen ?? false;
+
+  React.useEffect(() => {
+    if (isOpen && !sessionRef.current) sessionRef.current = beginAuditSession();
+    if (!isOpen && sessionRef.current) {
+      endAuditSession(sessionRef.current);
+      sessionRef.current = null;
+    }
+  }, [isOpen]);
+
+  React.useEffect(() => () => endAuditSession(sessionRef.current), []);
+
+  return (
+    <DialogPrimitive.Root
+      {...props}
+      onOpenChange={(open) => {
+        if (open && !sessionRef.current) sessionRef.current = beginAuditSession();
+        onOpenChange?.(open);
+        if (!open) {
+          endAuditSession(sessionRef.current);
+          sessionRef.current = null;
+          notifyDialogClosed();
+        }
+      }}
+    />
+  );
+};
 const DialogTrigger = DialogPrimitive.Trigger;
 const DialogPortal = DialogPrimitive.Portal;
 const DialogClose = DialogPrimitive.Close;
