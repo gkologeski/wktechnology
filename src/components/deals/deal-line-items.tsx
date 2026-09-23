@@ -130,6 +130,7 @@ export function LineItemsEditorBody({
     saveNow,
   } = useLineItemsEditor(dealId);
   const [productPickerKey, setProductPickerKey] = useState(0);
+  const [focusItemId, setFocusItemId] = useState<string | null>(null);
 
   return (
     <div className="space-y-3">
@@ -150,7 +151,11 @@ export function LineItemsEditorBody({
             value={null}
             onChange={(id) => {
               if (id) {
-                void addFromCatalogService(id).then(() => setProductPickerKey((k) => k + 1));
+                void addFromCatalogService(id).then((row) => {
+                  setProductPickerKey((k) => k + 1);
+                  const newId = (row as { id?: string } | null | undefined)?.id;
+                  if (newId) setFocusItemId(newId);
+                });
               }
             }}
             placeholder="Adicionar serviço do catálogo…"
@@ -192,8 +197,13 @@ export function LineItemsEditorBody({
               key={li.id}
               item={li}
               currency={currency}
+              autoFocusPreset={focusItemId === li.id}
+              onPresetFocused={() => setFocusItemId(null)}
               onDirty={markDirty}
-              onUpdate={(patch) => void update(li.id, patch)}
+              onUpdate={(patch) => {
+                if (patch.service_catalog_id && !li.service_catalog_id) setFocusItemId(li.id);
+                void update(li.id, patch);
+              }}
               onRemove={() => void remove(li.id)}
             />
           ))}

@@ -21,12 +21,16 @@ export function LineItemCard({
   onUpdate,
   onRemove,
   onDirty,
+  autoFocusPreset,
+  onPresetFocused,
 }: {
   item: LineItem;
   currency: string;
   onUpdate: (patch: Partial<LineItem>) => void;
   onRemove: () => void;
   onDirty?: () => void;
+  autoFocusPreset?: boolean;
+  onPresetFocused?: () => void;
 }) {
   const model = isBillingModel(li.billing_model) ? li.billing_model : "per_unit";
   const quantityEnabled = usesQuantity(model);
@@ -56,6 +60,8 @@ export function LineItemCard({
           <PresetLinePicker
             serviceCatalogId={li.service_catalog_id}
             value={li.contracting_preset_id ?? null}
+            autoOpen={autoFocusPreset}
+            onAutoOpened={onPresetFocused}
             onApply={(preset) => {
               if (!preset) {
                 onUpdate({
