@@ -66,7 +66,46 @@ export const listServices = createServerFn({ method: "POST" })
     }
     const { data: rows, error } = await q;
     if (error) throw error;
-    return rows ?? [];
+    const serviceRows = rows ?? [];
+    const sourceIds = serviceRows
+      .map((row) => row.source_deal_line_item_id)
+      .filter((id): id is string => typeof id === "string" && id.length > 0);
+    const sourceNames = new Map<
+      string,
+      { service_name: string | null; preset_name: string | null }
+    >();
+    if (sourceIds.length > 0) {
+      const { data: sources } = await supabase
+        .from("deal_line_items")
+        .select("id, service:service_catalog(name), preset:contracting_presets(name)")
+        .in("id", sourceIds);
+      for (const source of sources ?? []) {
+        sourceNames.set(source.id, {
+          service_name: source.service?.name ?? null,
+          preset_name: source.preset?.name ?? null,
+        });
+      }
+    }
+    return serviceRows.map((row) => {
+      const metadata =
+        row.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata)
+          ? (row.metadata as Record<string, unknown>)
+          : {};
+      const source = row.source_deal_line_item_id
+        ? sourceNames.get(row.source_deal_line_item_id)
+        : undefined;
+      return {
+        ...row,
+        service_name:
+          (typeof metadata["service_name"] === "string" ? metadata["service_name"] : null) ??
+          source?.service_name ??
+          null,
+        preset_name:
+          (typeof metadata["preset_name"] === "string" ? metadata["preset_name"] : null) ??
+          source?.preset_name ??
+          null,
+      };
+    });
   });
 
 export const getService = createServerFn({ method: "POST" })

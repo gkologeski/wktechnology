@@ -183,6 +183,7 @@ export const QUOTE_TEMPLATE_TOKENS: Array<{
     items: [
       { token: "{{#each items}}\n  ...\n{{/each}}", label: "Iterar itens" },
       { token: "{{name}}", label: "Nome do item" },
+      { token: "{{display_name}}", label: "Serviço, quantidade e preset" },
       { token: "{{description}}", label: "Descrição" },
       { token: "{{quantity}}", label: "Quantidade" },
       { token: "{{unit_price}}", label: "Preço unitário" },

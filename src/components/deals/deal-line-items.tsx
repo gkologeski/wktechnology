@@ -13,9 +13,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { formatCurrency } from "@/lib/crm";
+import { formatLineItemIdentity } from "@/lib/line-item-display";
 import { Row } from "./line-item-fields";
 import { LineItemCard } from "./line-item-card";
-import { lineTotal, n, useLineItems, useLineItemsEditor } from "./use-line-items";
+import { lineTotal, useLineItems, useLineItemsEditor } from "./use-line-items";
 
 export type { LineItem } from "./use-line-items";
 export { lineDiscount, lineSubtotalAfterDiscount, lineTotal } from "./use-line-items";
@@ -46,8 +47,7 @@ export function DealLineItems({
       {items.map((li) => (
         <li key={li.id} className="flex items-baseline justify-between gap-3 py-2">
           <div className="min-w-0 truncate">
-            <span className="text-sm">{li.name || "—"}</span>{" "}
-            <span className="text-xs text-muted-foreground">x{n(li.quantity)}</span>
+            <span className="text-sm">{formatLineItemIdentity(li)}</span>
           </div>
           <div className="text-sm tabular-nums shrink-0">
             {formatCurrency(lineTotal(li), currency)}

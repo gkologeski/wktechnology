@@ -10,6 +10,7 @@ import { presetToLinePatch } from "@/lib/contracting-presets-shared";
 import { SENIORITY_LABEL } from "@/lib/job-profiles-shared";
 import { formatCurrency } from "@/lib/crm";
 import { isBillingModel, unitLabel, usesQuantity } from "@/lib/catalog/billing-model";
+import { formatLineItemIdentity } from "@/lib/line-item-display";
 import { DiscountField, LabeledNumber, TextField } from "./line-item-fields";
 import { LineItemBillingFields } from "./line-item-billing-fields";
 import { lineTotal, n, type LineItem } from "./use-line-items";
@@ -29,7 +30,8 @@ export function LineItemCard({
 }) {
   const model = isBillingModel(li.billing_model) ? li.billing_model : "per_unit";
   const quantityEnabled = usesQuantity(model);
-  const priceLabel = model === "fixed" ? "Valor fixo" : `Preço / ${unitLabel(li.unit) ?? "unidade"}`;
+  const priceLabel =
+    model === "fixed" ? "Valor fixo" : `Preço / ${unitLabel(li.unit) ?? "unidade"}`;
 
   return (
     <div className="rounded-md border p-3 space-y-2">
@@ -47,6 +49,7 @@ export function LineItemCard({
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
+      <p className="text-xs text-muted-foreground">{formatLineItemIdentity(li)}</p>
 
       {li.service_catalog_id ? (
         <div className="grid gap-2 sm:grid-cols-2">
@@ -55,10 +58,18 @@ export function LineItemCard({
             value={li.contracting_preset_id ?? null}
             onApply={(preset) => {
               if (!preset) {
-                onUpdate({ contracting_preset_id: null, job_profile_id: null, seniority: null });
+                onUpdate({
+                  contracting_preset_id: null,
+                  preset_name: null,
+                  job_profile_id: null,
+                  seniority: null,
+                });
                 return;
               }
-              onUpdate(presetToLinePatch(preset) as Partial<LineItem>);
+              onUpdate({
+                ...(presetToLinePatch(preset) as Partial<LineItem>),
+                preset_name: preset.name,
+              });
             }}
           />
           {li.job_profile_id || li.seniority ? (
@@ -94,6 +105,7 @@ export function LineItemCard({
                 if (!id) return;
                 onUpdate({
                   service_catalog_id: id,
+                  service_name: item?.label ?? null,
                   ...(li.name ? {} : { name: item?.label ?? null }),
                 } as Partial<LineItem>);
               }}
@@ -106,12 +118,7 @@ export function LineItemCard({
         </div>
       )}
 
-      <LineItemBillingFields
-        item={li}
-        currency={currency}
-        onUpdate={onUpdate}
-        onDirty={onDirty}
-      />
+      <LineItemBillingFields item={li} currency={currency} onUpdate={onUpdate} onDirty={onDirty} />
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <LabeledNumber

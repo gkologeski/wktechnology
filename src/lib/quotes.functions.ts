@@ -20,6 +20,25 @@ type LineForTotals = {
   percent_base_amount?: number | string | null;
 };
 
+type PublicQuoteItem = {
+  id: string;
+  name: string;
+  description: string | null;
+  quantity: number;
+  unit_price: number;
+  discount_pct: number;
+  discount_amount: number;
+  discount_type: string;
+  tax_rate: number;
+  billing_model: string | null;
+  percent: number | null;
+  percent_base_amount: number | null;
+  seniority: string | null;
+  unit: string | null;
+  service_name: string | null;
+  preset_name: string | null;
+};
+
 function nn(v: unknown): number {
   const x = Number(v);
   return Number.isFinite(x) ? x : 0;
@@ -381,7 +400,7 @@ export const getQuoteByToken = createServerFn({ method: "POST" })
 
     const { data: items } = await supabaseAdmin
       .from("quote_line_items")
-      .select("*")
+      .select("*, service:service_catalog(name), preset:contracting_presets(name)")
       .eq("quote_id", quote.id)
       .order("position");
 
@@ -421,7 +440,19 @@ export const getQuoteByToken = createServerFn({ method: "POST" })
         .maybeSingle();
       template = (r.data ?? null) as typeof template;
     }
-    return { quote, items: items ?? [], company, contact, agent, template };
+    const enrichedItems = (
+      (items ?? []) as unknown as Array<
+        PublicQuoteItem & {
+          service?: { name: string | null } | null;
+          preset?: { name: string | null } | null;
+        }
+      >
+    ).map((item) => ({
+      ...item,
+      service_name: item.service?.name ?? null,
+      preset_name: item.preset?.name ?? null,
+    }));
+    return { quote, items: enrichedItems, company, contact, agent, template };
   });
 
 export const respondToQuote = createServerFn({ method: "POST" })

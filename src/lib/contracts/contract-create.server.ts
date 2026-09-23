@@ -37,10 +37,13 @@ export type DealLineItemRow = {
   job_profile_id: string | null;
   seniority: string | null;
   service_catalog_id: string | null;
+  contracting_preset_id: string | null;
+  service_name?: string | null;
+  preset_name?: string | null;
 };
 
 export const DEAL_LINE_ITEM_COLUMNS =
-  "id, name, description, quantity, unit_price, discount_pct, discount_amount, discount_type, tax_rate, unit, billing_model, percent, percent_base_amount, cadence, job_profile_id, seniority, service_catalog_id";
+  "id, name, description, quantity, unit_price, discount_pct, discount_amount, discount_type, tax_rate, unit, billing_model, percent, percent_base_amount, cadence, job_profile_id, seniority, service_catalog_id, contracting_preset_id, service:service_catalog(name), preset:contracting_presets(name)";
 
 export type DealSnapshot = {
   id: string;
@@ -86,7 +89,18 @@ export async function loadDealForContract(
 
   return {
     deal: deal as unknown as DealSnapshot,
-    items: (rows ?? []) as unknown as DealLineItemRow[],
+    items: (
+      (rows ?? []) as unknown as Array<
+        DealLineItemRow & {
+          service?: { name: string | null } | null;
+          preset?: { name: string | null } | null;
+        }
+      >
+    ).map((item) => ({
+      ...item,
+      service_name: item.service?.name ?? null,
+      preset_name: item.preset?.name ?? null,
+    })),
   };
 }
 
@@ -268,6 +282,9 @@ export async function createContractShared(
       starts_at: startsAt,
       metadata: {
         service_catalog_id: li.service_catalog_id,
+        service_name: li.service_name,
+        contracting_preset_id: li.contracting_preset_id,
+        preset_name: li.preset_name,
         discount_type: li.discount_type,
         discount_pct: li.discount_pct,
         discount_amount: li.discount_amount,

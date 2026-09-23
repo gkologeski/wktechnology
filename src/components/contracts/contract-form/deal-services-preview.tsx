@@ -3,6 +3,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { describeBilling } from "@/lib/catalog/billing-model";
 import { formatCurrency } from "@/lib/crm";
+import { formatLineItemIdentity } from "@/lib/line-item-display";
 
 export type PreviewLineItem = {
   id: string;
@@ -13,6 +14,8 @@ export type PreviewLineItem = {
   billing_model: string | null;
   percent: number | null;
   cadence: string | null;
+  service_name?: string | null;
+  preset_name?: string | null;
 };
 
 export function DealServicesPreview({
@@ -58,7 +61,7 @@ export function DealServicesPreview({
               />
               <div className="min-w-0">
                 <Label htmlFor={id} className="text-sm font-medium">
-                  {li.name ?? "Serviço"}
+                  {formatLineItemIdentity(li)}
                 </Label>
                 <p className="text-xs text-muted-foreground tabular-nums">
                   {describeBilling(li, money)}

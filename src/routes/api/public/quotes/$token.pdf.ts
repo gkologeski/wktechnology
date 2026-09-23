@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { renderQuoteTemplate, type QuoteRenderContext } from "@/lib/quote-template-renderer";
+import { formatLineItemIdentity } from "@/lib/line-item-display";
 
 // Renderiza o PDF de uma cotação pública via Chromium headless (Browserless).
 // Autorização: `public_token` no path (mesmo segredo usado pela página pública).
@@ -51,6 +52,7 @@ function buildFallbackHtml(ctx: {
   currency: string;
   items: Array<{
     name: string;
+    display_name: string;
     description: string;
     quantity: number;
     unit_price: number;
@@ -70,7 +72,7 @@ function buildFallbackHtml(ctx: {
     .map(
       (li) => `<tr>
         <td style="padding:10px 12px;border-top:1px solid #e5e7eb">
-          <div style="font-weight:500">${escape(li.name)}</div>
+          <div style="font-weight:500">${escape(li.display_name)}</div>
           ${li.description ? `<div style="font-size:12px;color:#6b7280;margin-top:2px">${escape(li.description)}</div>` : ""}
         </td>
         <td style="padding:10px 12px;border-top:1px solid #e5e7eb;text-align:right">${li.quantity}</td>
@@ -395,7 +397,7 @@ export const Route = createFileRoute("/api/public/quotes/$token/pdf")({
 
         const { data: items } = await supabaseAdmin
           .from("quote_line_items")
-          .select("*")
+          .select("*, service:service_catalog(name), preset:contracting_presets(name)")
           .eq("quote_id", quote.id)
           .order("position");
 
@@ -450,6 +452,12 @@ export const Route = createFileRoute("/api/public/quotes/$token/pdf")({
             (1 + Number(li.tax_rate ?? 0) / 100);
           return {
             name: li.name ?? "",
+            display_name: formatLineItemIdentity({
+              name: li.name,
+              quantity: li.quantity,
+              service_name: li.service?.name,
+              preset_name: li.preset?.name,
+            }),
             description: li.description ?? "",
             quantity: Number(li.quantity ?? 0),
             unit_price: Number(li.unit_price ?? 0),
@@ -480,6 +488,7 @@ export const Route = createFileRoute("/api/public/quotes/$token/pdf")({
           agent: { name: agent?.full_name ?? "", email: "" },
           items: itemsCtx.map((li) => ({
             name: li.name,
+            display_name: li.display_name,
             description: li.description,
             quantity: li.quantity,
             unit_price: fmt(li.unit_price),

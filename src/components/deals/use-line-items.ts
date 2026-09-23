@@ -31,6 +31,8 @@ export type LineItem = {
   deal_id: string;
   service_catalog_id?: string | null;
   contracting_preset_id?: string | null;
+  service_name?: string | null;
+  preset_name?: string | null;
   job_profile_id?: string | null;
   seniority?: string | null;
   unit?: string | null;
@@ -82,8 +84,7 @@ export function lineTotal(li: Partial<LineItem>) {
   return lineSubtotalAfterDiscount(li) * (1 + n(li.tax_rate) / 100);
 }
 
-export const lineItemsQueryKey = (dealId: string) =>
-  ["deal_line_items", dealId, "full"] as const;
+export const lineItemsQueryKey = (dealId: string) => ["deal_line_items", dealId, "full"] as const;
 
 export function useLineItems(dealId: string) {
   return useQuery({
@@ -92,11 +93,22 @@ export function useLineItems(dealId: string) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("deal_line_items")
-        .select("*")
+        .select("*, service:service_catalog(name), preset:contracting_presets(name)")
         .eq("deal_id", dealId)
         .order("position");
       if (error) throw error;
-      return (data ?? []) as LineItem[];
+      return (
+        (data ?? []) as Array<
+          LineItem & {
+            service?: { name: string | null } | null;
+            preset?: { name: string | null } | null;
+          }
+        >
+      ).map((item) => ({
+        ...item,
+        service_name: item.service?.name ?? null,
+        preset_name: item.preset?.name ?? null,
+      }));
     },
   });
 }
@@ -229,7 +241,9 @@ export function useLineItemsEditor(dealId: string) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: p, error: perr } = await (supabase as any)
       .from("service_catalog")
-      .select("id, name, base_price, tax_rate, unit, billing_model, default_cadence, default_percent")
+      .select(
+        "id, name, base_price, tax_rate, unit, billing_model, default_cadence, default_percent",
+      )
       .eq("id", sid)
       .maybeSingle();
     if (perr || !p) return toast.error(perr?.message ?? "Serviço não encontrado");
@@ -306,7 +320,10 @@ export function useLineItemsEditor(dealId: string) {
           kind: "update",
           id,
           label: item.name || "item",
-          previous: previousValues(item as unknown as Record<string, unknown>, patch) as Partial<LineItem>,
+          previous: previousValues(
+            item as unknown as Record<string, unknown>,
+            patch,
+          ) as Partial<LineItem>,
         }),
       );
     }
