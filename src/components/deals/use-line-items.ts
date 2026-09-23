@@ -7,6 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { DELETE_DENIED_MESSAGE } from "@/lib/delete-guard";
 import { useCurrentUserId } from "@/hooks/use-current-user-id";
 import { listPresetsForService } from "@/lib/contracting-presets.functions";
 import { presetToLinePatch, type PresetOption } from "@/lib/contracting-presets-shared";
