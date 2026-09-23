@@ -343,9 +343,9 @@ Total de áreas (tabelas) analisadas: **315**.
 | Core ERP | `app_settings` | /api/public/hooks/prospecting-dial-tick | negação total; leitura pública (anon) |
 | Core ERP | `bug_report_analyses` | /admin/bug-reports | somente administrador de plataforma |
 | Core ERP | `cron_run_logs` | /finance/banking<br>/finance/banking/reconciliation<br>/settings/integrations/contaazul<br>/settings/platform/alerts<br>/settings/platform/quotas<br>/settings/platform/sandbox<br>+1 | somente administrador de plataforma |
-| Integrações | `email_send_log` | /lovable/email/events<br>/<br>/accept-invite/:token<br>/candidates/:id<br>/companies<br>/companies/:id<br>+14 | regra específica, ver texto da policy |
-| Integrações | `email_send_state` | — | regra específica, ver texto da policy |
-| Integrações | `email_unsubscribe_tokens` | /accept-invite/:token<br>/candidates/:id<br>/careers/:slug<br>/careers/index<br>/companies<br>/contracts/index<br>+3 | regra específica, ver texto da policy |
+| Integrações | `email_send_log` | /lovable/email/events<br>/<br>/accept-invite/:token<br>/candidates/:id<br>/companies<br>/companies/:id<br>+14 | condição própria: `(auth.role() = 'service_role'::text)` |
+| Integrações | `email_send_state` | — | condição própria: `(auth.role() = 'service_role'::text)` |
+| Integrações | `email_unsubscribe_tokens` | /accept-invite/:token<br>/candidates/:id<br>/careers/:slug<br>/careers/index<br>/companies<br>/contracts/index<br>+3 | condição própria: `(auth.role() = 'service_role'::text)` |
 | Plataforma / Acesso | `job_role_default_permissions` | /settings/permissions | próprio perfil |
 | Integrações | `marketplace_apps` | /settings/marketplace/:slug<br>/settings/marketplace/index | somente serviço interno |
 | Plataforma / Acesso | `plan_entitlements` | /settings/billing<br>/settings/teams | somente administrador de plataforma |
@@ -355,15 +355,15 @@ Total de áreas (tabelas) analisadas: **315**.
 | Plataforma / Acesso | `platform_alert_rules` | /settings/platform/alerts<br>/settings/platform/quotas<br>/settings/platform/sandbox<br>/settings/platform/status | somente administrador de plataforma |
 | Plataforma / Acesso | `platform_sandboxes` | /settings/platform/alerts<br>/settings/platform/quotas<br>/settings/platform/sandbox<br>/settings/platform/status | somente administrador de plataforma |
 | Core ERP | `profiles` | /catalog/job-profiles<br>/<br>/__root<br>/accept-invite/:token<br>/accept-invite/index<br>/admin/bug-reports<br>+184 | próprio perfil |
-| Core ERP | `search_pinned` | / | regra específica, ver texto da policy |
-| Core ERP | `search_recent` | / | regra específica, ver texto da policy |
+| Core ERP | `search_pinned` | / | condição própria: `(auth.uid() = user_id)` |
+| Core ERP | `search_recent` | / | condição própria: `(auth.uid() = user_id)` |
 | Core ERP | `security_scan_findings` | /settings/platform/security | somente administrador de plataforma; somente serviço interno |
 | Core ERP | `security_scan_runs` | /settings/platform/security | somente administrador de plataforma; somente serviço interno |
-| Core ERP | `suppressed_emails` | /accept-invite/:token<br>/candidates/:id<br>/careers/:slug<br>/careers/index<br>/companies<br>/contracts/index<br>+4 | regra específica, ver texto da policy |
-| Integrações | `unipile_accounts` | /candidates/:id<br>/candidates/index<br>/hunting/observability<br>/hunting/search<br>/jobs/:id<br>/settings/integrations/linkedin<br>+1 | regra específica, ver texto da policy |
+| Core ERP | `suppressed_emails` | /accept-invite/:token<br>/candidates/:id<br>/careers/:slug<br>/careers/index<br>/companies<br>/contracts/index<br>+4 | condição própria: `(auth.role() = 'service_role'::text)` |
+| Integrações | `unipile_accounts` | /candidates/:id<br>/candidates/index<br>/hunting/observability<br>/hunting/search<br>/jobs/:id<br>/settings/integrations/linkedin<br>+1 | condição própria: `(auth.uid() = owner_id)` |
 | Integrações | `unipile_rate_buckets` | /candidates/:id<br>/candidates/index<br>/hunting/observability<br>/hunting/search<br>/jobs/:id<br>/settings/integrations/linkedin<br>+1 | próprio perfil |
 | Integrações | `unipile_request_log` | /candidates/:id<br>/candidates/index<br>/hunting/observability<br>/hunting/search<br>/jobs/:id<br>/settings/integrations/linkedin<br>+1 | próprio perfil |
-| Workflows | `workflow_time_cursors` | /api/public/hooks/workflows-tick<br>/api/public/hooks/workflows-time-triggers-tick | regra específica, ver texto da policy |
+| Workflows | `workflow_time_cursors` | /api/public/hooks/workflows-tick<br>/api/public/hooks/workflows-time-triggers-tick | condição própria: `(auth.uid() = owner_id)` |
 
 ## Ação recomendada por área (visões 1a e 1b)
 

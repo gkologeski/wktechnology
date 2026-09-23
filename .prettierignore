@@ -13,3 +13,6 @@ src/routes/mcp.ts
 
 # Regras de lint do toolkit (copiadas byte a byte)
 eslint-rules/
+
+# Relatório gerado por scripts/audit-access-rules.ts
+docs/qa/access-rule-audit.md
