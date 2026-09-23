@@ -7,6 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { DELETE_DENIED_MESSAGE } from "@/lib/delete-guard";
 import { useCurrentUserId } from "@/hooks/use-current-user-id";
 import { listPresetsForService } from "@/lib/contracting-presets.functions";
 import { presetToLinePatch, type PresetOption } from "@/lib/contracting-presets-shared";
@@ -296,11 +297,22 @@ export function useLineItemsEditor(dealId: string) {
     begin();
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any).from("deal_line_items").update(patch).eq("id", id);
+      const { data, error } = await (supabase as any)
+        .from("deal_line_items")
+        .update(patch)
+        .eq("id", id)
+        .select("id");
       if (error) {
         qc.setQueryData(lineItemsQueryKey(dealId), previous);
         refreshItems();
         toast.error(errorMessage(error.message));
+        return false;
+      }
+      // Quando a regra de acesso nega, o banco não devolve erro: só 0 linhas.
+      if (!Array.isArray(data) || data.length === 0) {
+        qc.setQueryData(lineItemsQueryKey(dealId), previous);
+        refreshItems();
+        toast.error("Você não tem permissão para alterar este item.");
         return false;
       }
       notifyDealsChanged();
@@ -336,11 +348,22 @@ export function useLineItemsEditor(dealId: string) {
     begin();
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any).from("deal_line_items").delete().eq("id", id);
+      const { data, error } = await (supabase as any)
+        .from("deal_line_items")
+        .delete()
+        .eq("id", id)
+        .select("id");
       if (error) {
         qc.setQueryData(lineItemsQueryKey(dealId), previous);
         refreshItems();
         toast.error(errorMessage(error.message));
+        return false;
+      }
+      // Exclusão negada pela regra de acesso não gera erro: apenas 0 linhas.
+      if (!Array.isArray(data) || data.length === 0) {
+        qc.setQueryData(lineItemsQueryKey(dealId), previous);
+        refreshItems();
+        toast.error(DELETE_DENIED_MESSAGE);
         return false;
       }
       if (record && item) {

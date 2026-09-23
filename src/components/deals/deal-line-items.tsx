@@ -1,6 +1,7 @@
 // Itens de linha do negócio: resumo, contador e editor completo (autosave por
 // campo, botão de salvar e desfazer da última ação).
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Save, Undo2, Wrench, Pencil } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,7 @@ import { formatCurrency } from "@/lib/crm";
 import { formatLineItemIdentity } from "@/lib/line-item-display";
 import { Row } from "./line-item-fields";
 import { LineItemCard } from "./line-item-card";
-import { lineTotal, useLineItems, useLineItemsEditor } from "./use-line-items";
+import { lineItemsQueryKey, lineTotal, useLineItems, useLineItemsEditor } from "./use-line-items";
 
 export type { LineItem } from "./use-line-items";
 export { lineDiscount, lineSubtotalAfterDiscount, lineTotal } from "./use-line-items";
@@ -70,8 +71,16 @@ export function DealLineItemsEditor({
   trigger: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const qc = useQueryClient();
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        // Ao fechar, revalidar: a lista nunca deve divergir do que está gravado.
+        if (!next) void qc.invalidateQueries({ queryKey: lineItemsQueryKey(dealId) });
+      }}
+    >
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-w-3xl overflow-y-auto">
         <DialogHeader>
