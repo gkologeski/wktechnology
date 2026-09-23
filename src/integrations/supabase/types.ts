@@ -3526,6 +3526,7 @@ export type Database = {
           id: string
           metadata: Json
           module_id: string | null
+          session_id: string | null
           workspace_owner_id: string
         }
         Insert: {
@@ -3539,6 +3540,7 @@ export type Database = {
           id?: string
           metadata?: Json
           module_id?: string | null
+          session_id?: string | null
           workspace_owner_id: string
         }
         Update: {
@@ -3552,6 +3554,7 @@ export type Database = {
           id?: string
           metadata?: Json
           module_id?: string | null
+          session_id?: string | null
           workspace_owner_id?: string
         }
         Relationships: []
@@ -13924,6 +13927,7 @@ export type Database = {
           old_value: Json | null
           owner_id: string
           property: string
+          session_id: string | null
           workspace_id: string
         }
         Insert: {
@@ -13936,6 +13940,7 @@ export type Database = {
           old_value?: Json | null
           owner_id: string
           property: string
+          session_id?: string | null
           workspace_id?: string
         }
         Update: {
@@ -13948,6 +13953,7 @@ export type Database = {
           old_value?: Json | null
           owner_id?: string
           property?: string
+          session_id?: string | null
           workspace_id?: string
         }
         Relationships: [
@@ -20224,6 +20230,7 @@ export type Database = {
         Args: { _ids: string[] }
         Returns: number
       }
+      request_audit_session_id: { Args: never; Returns: string }
       reschedule_lovable_cron: { Args: { p_secret: string }; Returns: Json }
       resolve_workspace_id: { Args: { _owner: string }; Returns: string }
       restore_workspace: {
