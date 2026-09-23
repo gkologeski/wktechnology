@@ -20,10 +20,19 @@ type LineForTotals = {
   percent_base_amount?: number | string | null;
 };
 
-type PublicQuoteItem = LineForTotals & {
+type PublicQuoteItem = {
   id: string;
   name: string;
   description: string | null;
+  quantity: number;
+  unit_price: number;
+  discount_pct: number;
+  discount_amount: number;
+  discount_type: string;
+  tax_rate: number;
+  billing_model: string | null;
+  percent: number | null;
+  percent_base_amount: number | null;
   seniority: string | null;
   unit: string | null;
   service_name: string | null;
