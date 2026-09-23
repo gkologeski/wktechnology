@@ -52,6 +52,7 @@ function buildFallbackHtml(ctx: {
   currency: string;
   items: Array<{
     name: string;
+    item_title?: string;
     display_name: string;
     description: string;
     quantity: number;
@@ -450,14 +451,17 @@ export const Route = createFileRoute("/api/public/quotes/$token/pdf")({
             Number(li.unit_price) *
             (1 - Number(li.discount_pct ?? 0) / 100) *
             (1 + Number(li.tax_rate ?? 0) / 100);
+          const displayName = formatLineItemIdentity({
+            name: li.name,
+            quantity: li.quantity,
+            service_name: li.service?.name,
+            preset_name: li.preset?.name,
+          });
           return {
-            name: li.name ?? "",
-            display_name: formatLineItemIdentity({
-              name: li.name,
-              quantity: li.quantity,
-              service_name: li.service?.name,
-              preset_name: li.preset?.name,
-            }),
+            // `name` carrega o rótulo padronizado; título cru em `item_title`.
+            name: displayName,
+            item_title: li.name ?? "",
+            display_name: displayName,
             description: li.description ?? "",
             quantity: Number(li.quantity ?? 0),
             unit_price: Number(li.unit_price ?? 0),
@@ -488,6 +492,7 @@ export const Route = createFileRoute("/api/public/quotes/$token/pdf")({
           agent: { name: agent?.full_name ?? "", email: "" },
           items: itemsCtx.map((li) => ({
             name: li.name,
+            item_title: li.item_title,
             display_name: li.display_name,
             description: li.description,
             quantity: li.quantity,

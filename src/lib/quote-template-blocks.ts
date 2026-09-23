@@ -273,7 +273,7 @@ export function renderBlock(b: TemplateBlock, theme: TemplateTheme): string {
       if (showTax) cols.push('<th style="text-align:right;padding:10px;color:#fff;">Imp</th>');
       cols.push('<th style="text-align:right;padding:10px;color:#fff;">Total</th>');
       const rowCells: string[] = [
-        `<td style="padding:10px;border-bottom:1px solid #e2e8f0;"><strong>{{name}}</strong>${showDesc ? `<div style="color:#64748b;font-size:12px;">{{description}}</div>` : ""}</td>`,
+        `<td style="padding:10px;border-bottom:1px solid #e2e8f0;"><strong>{{display_name}}</strong>${showDesc ? `<div style="color:#64748b;font-size:12px;">{{description}}</div>` : ""}</td>`,
         `<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;">{{quantity}}</td>`,
         `<td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;">{{unit_price}}</td>`,
       ];
