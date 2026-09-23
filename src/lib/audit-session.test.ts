@@ -9,7 +9,9 @@ import { beginAuditSession, endAuditSession } from "./audit-session";
 
 const headers = (supabase as unknown as { rest: { headers: Headers } }).rest.headers;
 
-afterEach(() => headers.delete("x-audit-session"));
+afterEach(() => {
+  headers.delete("x-audit-session");
+});
 
 describe("sessão de auditoria", () => {
   it("mantém a sessão do modal pai ao fechar um modal aninhado", () => {
