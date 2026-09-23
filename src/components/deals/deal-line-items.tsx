@@ -17,12 +17,7 @@ import { formatCurrency } from "@/lib/crm";
 import { formatLineItemIdentity } from "@/lib/line-item-display";
 import { Row } from "./line-item-fields";
 import { LineItemCard } from "./line-item-card";
-import {
-  lineItemsQueryKey,
-  lineTotal,
-  useLineItems,
-  useLineItemsEditor,
-} from "./use-line-items";
+import { lineItemsQueryKey, lineTotal, useLineItems, useLineItemsEditor } from "./use-line-items";
 
 export type { LineItem } from "./use-line-items";
 export { lineDiscount, lineSubtotalAfterDiscount, lineTotal } from "./use-line-items";
