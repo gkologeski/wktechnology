@@ -347,11 +347,22 @@ export function useLineItemsEditor(dealId: string) {
     begin();
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any).from("deal_line_items").delete().eq("id", id);
+      const { data, error } = await (supabase as any)
+        .from("deal_line_items")
+        .delete()
+        .eq("id", id)
+        .select("id");
       if (error) {
         qc.setQueryData(lineItemsQueryKey(dealId), previous);
         refreshItems();
         toast.error(errorMessage(error.message));
+        return false;
+      }
+      // Exclusão negada pela regra de acesso não gera erro: apenas 0 linhas.
+      if (!Array.isArray(data) || data.length === 0) {
+        qc.setQueryData(lineItemsQueryKey(dealId), previous);
+        refreshItems();
+        toast.error(DELETE_DENIED_MESSAGE);
         return false;
       }
       if (record && item) {
