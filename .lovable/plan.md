@@ -24,7 +24,11 @@ salvo.
 2. Aplicar a mesma separação nos três caminhos que gravam: alteração de campo,
    inclusão de item e desfazer (tanto desfazer de alteração quanto recriação de item
    excluído, que hoje reenviaria os mesmos rótulos).
-3. Sem mudança de comportamento visível além do erro desaparecer: o nome do preset
+3. Garantir que o vínculo do preset chegue ao banco: com o rótulo removido do envio, a
+   gravação passa a concluir e o preset (e os campos que ele preenche) fica salvo no
+   item. A validação inclui conferir no banco, depois de escolher o preset na tela, que
+   o item está de fato vinculado a ele.
+4. Sem mudança de comportamento visível além do erro desaparecer: o nome do preset
    continua sendo mostrado ao lado do item, o autosave continua igual e nada de
    valores, descontos, impostos ou totais muda.
 
