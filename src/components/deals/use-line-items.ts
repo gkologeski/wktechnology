@@ -296,11 +296,22 @@ export function useLineItemsEditor(dealId: string) {
     begin();
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any).from("deal_line_items").update(patch).eq("id", id);
+      const { data, error } = await (supabase as any)
+        .from("deal_line_items")
+        .update(patch)
+        .eq("id", id)
+        .select("id");
       if (error) {
         qc.setQueryData(lineItemsQueryKey(dealId), previous);
         refreshItems();
         toast.error(errorMessage(error.message));
+        return false;
+      }
+      // Quando a regra de acesso nega, o banco não devolve erro: só 0 linhas.
+      if (!Array.isArray(data) || data.length === 0) {
+        qc.setQueryData(lineItemsQueryKey(dealId), previous);
+        refreshItems();
+        toast.error("Você não tem permissão para alterar este item.");
         return false;
       }
       notifyDealsChanged();
