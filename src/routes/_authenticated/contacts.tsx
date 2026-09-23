@@ -193,15 +193,10 @@ function ContactsHubspotView() {
   const { data: companies = [] } = useQuery({
     queryKey: ["companies", "select"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("companies")
-        .select("id,name")
-        .order("name")
-        .limit(200);
+      const { data } = await supabase.from("companies").select("id,name").order("name").limit(200);
       return (data ?? []) as Pick<Company, "id" | "name">[];
     },
   });
-
 
   const {
     data: result,
