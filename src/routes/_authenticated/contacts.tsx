@@ -299,6 +299,26 @@ function ContactsHubspotView() {
 
   const rows = result?.rows ?? [];
   const total = result?.count ?? 0;
+
+  // Busca os nomes das empresas apenas dos contatos da página atual, evitando o
+  // teto de registros de uma listagem completa de empresas.
+  const pageCompanyIds = useMemo(
+    () => Array.from(new Set(rows.map((r) => r.company_id).filter(Boolean) as string[])).sort(),
+    [rows],
+  );
+  const { data: pageCompanies = [] } = useQuery({
+    queryKey: ["companies", "by-ids", pageCompanyIds],
+    enabled: pageCompanyIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase.from("companies").select("id,name").in("id", pageCompanyIds);
+      return (data ?? []) as Pick<Company, "id" | "name">[];
+    },
+  });
+  const companyMap = useMemo(
+    () => new Map(pageCompanies.map((c) => [c.id, c.name])),
+    [pageCompanies],
+  );
+
   const allSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
   const someSelected = rows.some((r) => selectedIds.has(r.id));
 
