@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { renderQuoteTemplate, type QuoteRenderContext } from "@/lib/quote-template-renderer";
 import { SENIORITY_LABEL } from "@/lib/job-profiles-shared";
+import { formatLineItemIdentity } from "@/lib/line-item-display";
 
 function lineRoleHint(li: { seniority?: string | null; unit?: string | null }) {
   return [
@@ -207,7 +208,7 @@ function PublicQuotePage() {
                   {items.map((li) => (
                     <tr key={li.id} className="border-t">
                       <td className="p-3">
-                        <div>{li.name}</div>
+                        <div>{formatLineItemIdentity(li)}</div>
                         {lineRoleHint(li) && (
                           <div className="text-xs text-muted-foreground mt-0.5">
                             {lineRoleHint(li)}
@@ -377,6 +378,8 @@ type LineItem = {
   tax_rate: number;
   seniority?: string | null;
   unit?: string | null;
+  service_name?: string | null;
+  preset_name?: string | null;
 };
 
 type QuoteForRender = {
@@ -452,6 +455,7 @@ function TemplatedQuote(props: TemplatedQuoteProps) {
           (1 + Number(li.tax_rate) / 100);
         return {
           name: li.name,
+          display_name: formatLineItemIdentity(li),
           description: li.description ?? "",
           quantity: Number(li.quantity),
           unit_price: fmt(Number(li.unit_price)),

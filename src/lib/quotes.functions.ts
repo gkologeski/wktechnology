@@ -20,6 +20,16 @@ type LineForTotals = {
   percent_base_amount?: number | string | null;
 };
 
+type PublicQuoteItem = LineForTotals & {
+  id: string;
+  name: string;
+  description: string | null;
+  seniority: string | null;
+  unit: string | null;
+  service_name: string | null;
+  preset_name: string | null;
+};
+
 function nn(v: unknown): number {
   const x = Number(v);
   return Number.isFinite(x) ? x : 0;
@@ -421,7 +431,7 @@ export const getQuoteByToken = createServerFn({ method: "POST" })
         .maybeSingle();
       template = (r.data ?? null) as typeof template;
     }
-    const enrichedItems = ((items ?? []) as Array<Record<string, unknown> & {
+    const enrichedItems = ((items ?? []) as unknown as Array<PublicQuoteItem & {
       service?: { name: string | null } | null;
       preset?: { name: string | null } | null;
     }>).map((item) => ({
