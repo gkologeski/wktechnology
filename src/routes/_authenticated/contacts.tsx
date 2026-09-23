@@ -292,7 +292,7 @@ function ContactsHubspotView() {
     },
   });
 
-  const rows = result?.rows ?? [];
+  const rows = useMemo(() => result?.rows ?? [], [result?.rows]);
   const total = result?.count ?? 0;
 
   // Busca os nomes das empresas apenas dos contatos da página atual, evitando o
