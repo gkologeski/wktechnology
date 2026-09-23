@@ -51,6 +51,8 @@ salvo.
 - Teste unitário para o helper de filtragem (campo derivado descartado, campos
   graváveis preservados).
 - `bunx vitest run`, `bunx eslint` nos arquivos alterados, `bunx tsgo --noEmit`.
+- Conferência no banco: após aplicar um preset pela tela, verificar que o item ficou
+  com o preset vinculado (e com cargo/senioridade/unidade preenchidos pelo preset).
 - Validação manual: abrir os itens de linha do negócio, aplicar e remover um preset,
   alterar quantidade/preço e confirmar "Tudo salvo" sem erro; recarregar a página e
-  conferir que os dados persistiram.
+  conferir que o preset e os dados persistiram.
