@@ -28,6 +28,21 @@ describe("renderQuoteTemplate — identificação dos itens", () => {
     expect(html).toContain("Outsourcing de TI x1 (Desenvolvedor Java Sr)|Outsourcing de TI|");
   });
 
+  it("preserva título customizado em {{name}} e {{display_name}}", () => {
+    const html = renderQuoteTemplate(
+      TEMPLATE,
+      ctxFor({
+        name: "Outsourcing – Projeto X",
+        quantity: 1,
+        service_name: "Outsourcing de TI",
+        preset_name: "Desenvolvedor Java Sr",
+      }),
+    );
+    expect(html).toContain(
+      "Outsourcing – Projeto X x1 (Desenvolvedor Java Sr)|Outsourcing – Projeto X|Outsourcing – Projeto X x1 (Desenvolvedor Java Sr)",
+    );
+  });
+
   it("não gera parênteses quando não há preset", () => {
     const html = renderQuoteTemplate(
       TEMPLATE,

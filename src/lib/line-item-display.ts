@@ -16,10 +16,10 @@ export function formatLineItemQuantity(value: number | string | null | undefined
   return new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 4 }).format(quantity);
 }
 
-/** Identificação visual comum: Serviço xQtd (Preset), com fallback para itens livres antigos. */
+/** Identificação visual comum: Título xQtd (Preset), com fallback para o serviço do catálogo. */
 export function formatLineItemIdentity(item: LineItemDisplayFields): string {
-  const service = clean(item.service_name) ?? clean(item.name) ?? "Serviço";
+  const title = clean(item.name) ?? clean(item.service_name) ?? "Serviço";
   const preset = clean(item.preset_name);
   const suffix = preset ? ` (${preset})` : "";
-  return `${service} x${formatLineItemQuantity(item.quantity)}${suffix}`;
+  return `${title} x${formatLineItemQuantity(item.quantity)}${suffix}`;
 }
