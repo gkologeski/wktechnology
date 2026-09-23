@@ -8,9 +8,13 @@ rótulo vindo do cadastro de presets, usado para exibição, e não uma informa�
 gravada no item. Resultado: a gravação falha com "Could not find the 'preset_name'
 column".
 
-Confirmado: a tabela de itens de linha do negócio não possui as colunas
-`preset_name`, `service_name` nem `job_profile_name` — esses três valores são
-derivados de consulta aos cadastros relacionados.
+Confirmado na estrutura da tabela: o preset escolhido **é** gravado, na coluna
+`contracting_preset_id` (junto com cargo, senioridade, unidade e forma de cobrança que
+o preset preenche). O que não existe como coluna é `preset_name` (e também
+`service_name` / `job_profile_name`) — esses são apenas rótulos lidos dos cadastros
+relacionados na hora de exibir. Hoje a tela envia o rótulo junto com a gravação, e é
+isso que quebra a operação inteira — inclusive impedindo que o vínculo do preset seja
+salvo.
 
 ## O que será feito
 
@@ -20,7 +24,11 @@ derivados de consulta aos cadastros relacionados.
 2. Aplicar a mesma separação nos três caminhos que gravam: alteração de campo,
    inclusão de item e desfazer (tanto desfazer de alteração quanto recriação de item
    excluído, que hoje reenviaria os mesmos rótulos).
-3. Sem mudança de comportamento visível além do erro desaparecer: o nome do preset
+3. Garantir que o vínculo do preset chegue ao banco: com o rótulo removido do envio, a
+   gravação passa a concluir e o preset (e os campos que ele preenche) fica salvo no
+   item. A validação inclui conferir no banco, depois de escolher o preset na tela, que
+   o item está de fato vinculado a ele.
+4. Sem mudança de comportamento visível além do erro desaparecer: o nome do preset
    continua sendo mostrado ao lado do item, o autosave continua igual e nada de
    valores, descontos, impostos ou totais muda.
 
@@ -43,6 +51,8 @@ derivados de consulta aos cadastros relacionados.
 - Teste unitário para o helper de filtragem (campo derivado descartado, campos
   graváveis preservados).
 - `bunx vitest run`, `bunx eslint` nos arquivos alterados, `bunx tsgo --noEmit`.
+- Conferência no banco: após aplicar um preset pela tela, verificar que o item ficou
+  com o preset vinculado (e com cargo/senioridade/unidade preenchidos pelo preset).
 - Validação manual: abrir os itens de linha do negócio, aplicar e remover um preset,
   alterar quantidade/preço e confirmar "Tudo salvo" sem erro; recarregar a página e
-  conferir que os dados persistiram.
+  conferir que o preset e os dados persistiram.
