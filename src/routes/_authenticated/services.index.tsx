@@ -85,7 +85,14 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ServiceRow = { id: string; assigned_to?: string | null } & Record<string, any>;
+type ServiceRow = {
+  id: string;
+  name?: string | null;
+  quantity?: number | string | null;
+  service_name?: string | null;
+  preset_name?: string | null;
+  assigned_to?: string | null;
+} & Record<string, any>;
 
 function ServicesPage() {
   const list = useServerFn(listServices);
