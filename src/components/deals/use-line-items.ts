@@ -85,6 +85,47 @@ export function lineTotal(li: Partial<LineItem>) {
   return lineSubtotalAfterDiscount(li) * (1 + n(li.tax_rate) / 100);
 }
 
+/**
+ * Colunas que existem de fato em `deal_line_items`. Campos como `preset_name`,
+ * `service_name` e `job_profile_name` são apenas rótulos derivados dos cadastros
+ * relacionados (usados na exibição) e não podem ser enviados ao banco.
+ */
+export const LINE_ITEM_PERSISTABLE_FIELDS = [
+  "id",
+  "owner_id",
+  "workspace_id",
+  "deal_id",
+  "service_catalog_id",
+  "contracting_preset_id",
+  "job_profile_id",
+  "seniority",
+  "unit",
+  "billing_model",
+  "percent",
+  "percent_base_amount",
+  "cadence",
+  "name",
+  "description",
+  "quantity",
+  "unit_price",
+  "discount_pct",
+  "discount_amount",
+  "discount_type",
+  "tax_rate",
+  "position",
+] as const;
+
+const PERSISTABLE = new Set<string>(LINE_ITEM_PERSISTABLE_FIELDS);
+
+/** Mantém só as chaves graváveis; descarta rótulos e joins de exibição. */
+export function persistableFields<T extends Record<string, unknown>>(patch: T) {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(patch)) {
+    if (PERSISTABLE.has(key)) out[key] = value;
+  }
+  return out;
+}
+
 export const lineItemsQueryKey = (dealId: string) => ["deal_line_items", dealId, "full"] as const;
 
 export function useLineItems(dealId: string) {
@@ -199,7 +240,7 @@ export function useLineItemsEditor(dealId: string) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("deal_line_items")
-        .insert(values)
+        .insert(persistableFields(values))
         .select("*")
         .single();
       if (error) {
@@ -294,12 +335,16 @@ export function useLineItemsEditor(dealId: string) {
     setItemsCache((current) =>
       current.map((item) => (item.id === id ? { ...item, ...patch } : item)),
     );
+    // Rótulos de exibição (nome do preset/serviço) não são colunas: só aparecem
+    // no cache. Se nada gravável sobrar, não há o que enviar ao banco.
+    const values = persistableFields(patch as Record<string, unknown>);
+    if (Object.keys(values).length === 0) return true;
     begin();
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("deal_line_items")
-        .update(patch)
+        .update(values)
         .eq("id", id)
         .select("id");
       if (error) {
@@ -397,7 +442,7 @@ export function useLineItemsEditor(dealId: string) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error } = await (supabase as any)
           .from("deal_line_items")
-          .insert({ ...rest, ...scope, id })
+          .insert(persistableFields({ ...rest, ...scope, id }))
           .select("*")
           .single();
         if (error) {
