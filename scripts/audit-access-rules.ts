@@ -158,7 +158,15 @@ function otherRuleLabel(ps: Policy[]): string {
   if (/auth\.uid\(\)\s*=\s*id|id\s*=\s*auth\.uid\(\)/.test(txt)) labels.push("próprio perfil");
   if (/service_role/.test(ps.map((p) => p.roles).join(","))) labels.push("somente serviço interno");
   if (/anon/.test(ps.map((p) => p.roles).join(","))) labels.push("leitura pública (anon)");
-  if (labels.length === 0) labels.push("regra específica, ver texto da policy");
+  if (labels.length === 0) {
+    const first = ps.find((p) => (p.qual || p.check || "").trim().length > 0);
+    const snippet = (first?.qual || first?.check || "")
+      .replace(/\s+/g, " ")
+      .replace(/\|/g, "\\|")
+      .trim()
+      .slice(0, 160);
+    labels.push(snippet ? `condição própria: \`${snippet}\`` : "sem condição legível");
+  }
   return [...new Set(labels)].join("; ");
 }
 
