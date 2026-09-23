@@ -148,6 +148,13 @@
       "when": 1790203902405,
       "tag": "0020_line_items_workspace_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790204223300,
+      "tag": "0021_service_people_workspace_rules",
+      "breakpoints": true
     }
   ]
 }
