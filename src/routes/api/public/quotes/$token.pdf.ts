@@ -450,14 +450,17 @@ export const Route = createFileRoute("/api/public/quotes/$token/pdf")({
             Number(li.unit_price) *
             (1 - Number(li.discount_pct ?? 0) / 100) *
             (1 + Number(li.tax_rate ?? 0) / 100);
+          const displayName = formatLineItemIdentity({
+            name: li.name,
+            quantity: li.quantity,
+            service_name: li.service?.name,
+            preset_name: li.preset?.name,
+          });
           return {
-            name: li.name ?? "",
-            display_name: formatLineItemIdentity({
-              name: li.name,
-              quantity: li.quantity,
-              service_name: li.service?.name,
-              preset_name: li.preset?.name,
-            }),
+            // `name` carrega o rótulo padronizado; título cru em `item_title`.
+            name: displayName,
+            item_title: li.name ?? "",
+            display_name: displayName,
             description: li.description ?? "",
             quantity: Number(li.quantity ?? 0),
             unit_price: Number(li.unit_price ?? 0),
