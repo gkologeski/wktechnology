@@ -189,14 +189,14 @@ function ContactsHubspotView() {
     setPage(0);
   }, [activeView, filters, debouncedSearch, sortKey, sortDir, pageSize]);
 
+  // Lista usada apenas no filtro lateral (mostra as primeiras empresas por nome).
   const { data: companies = [] } = useQuery({
     queryKey: ["companies", "select"],
     queryFn: async () => {
-      const { data } = await supabase.from("companies").select("id,name").order("name");
+      const { data } = await supabase.from("companies").select("id,name").order("name").limit(200);
       return (data ?? []) as Pick<Company, "id" | "name">[];
     },
   });
-  const companyMap = new Map(companies.map((c) => [c.id, c.name]));
 
   const {
     data: result,
@@ -292,8 +292,28 @@ function ContactsHubspotView() {
     },
   });
 
-  const rows = result?.rows ?? [];
+  const rows = useMemo(() => result?.rows ?? [], [result?.rows]);
   const total = result?.count ?? 0;
+
+  // Busca os nomes das empresas apenas dos contatos da página atual, evitando o
+  // teto de registros de uma listagem completa de empresas.
+  const pageCompanyIds = useMemo(
+    () => Array.from(new Set(rows.map((r) => r.company_id).filter(Boolean) as string[])).sort(),
+    [rows],
+  );
+  const { data: pageCompanies = [] } = useQuery({
+    queryKey: ["companies", "by-ids", pageCompanyIds],
+    enabled: pageCompanyIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase.from("companies").select("id,name").in("id", pageCompanyIds);
+      return (data ?? []) as Pick<Company, "id" | "name">[];
+    },
+  });
+  const companyMap = useMemo(
+    () => new Map(pageCompanies.map((c) => [c.id, c.name])),
+    [pageCompanies],
+  );
+
   const allSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
   const someSelected = rows.some((r) => selectedIds.has(r.id));
 
@@ -412,13 +432,25 @@ function ContactsHubspotView() {
       {
         key: "company",
         label: "Empresa",
-        render: (c) =>
-          c.company_id ? (
-            <span className="truncate">{companyMap.get(c.company_id) ?? "—"}</span>
+        render: (c) => {
+          const linked = c.company_id ? companyMap.get(c.company_id) : undefined;
+          const label = linked ?? c.company_name ?? null;
+          if (!label) return <span className="text-muted-foreground">—</span>;
+          return c.company_id ? (
+            <Link
+              to="/companies/$id"
+              params={{ id: c.company_id }}
+              className="truncate hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {label}
+            </Link>
           ) : (
-            <span className="text-muted-foreground">—</span>
-          ),
+            <span className="truncate">{label}</span>
+          );
+        },
       },
+
       {
         key: "lifecycle",
         label: "Etapa do ciclo",
