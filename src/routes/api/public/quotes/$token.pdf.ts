@@ -52,6 +52,7 @@ function buildFallbackHtml(ctx: {
   currency: string;
   items: Array<{
     name: string;
+    item_title?: string;
     display_name: string;
     description: string;
     quantity: number;
@@ -491,6 +492,7 @@ export const Route = createFileRoute("/api/public/quotes/$token/pdf")({
           agent: { name: agent?.full_name ?? "", email: "" },
           items: itemsCtx.map((li) => ({
             name: li.name,
+            item_title: li.item_title,
             display_name: li.display_name,
             description: li.description,
             quantity: li.quantity,

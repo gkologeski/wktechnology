@@ -126,8 +126,10 @@ export function sampleQuoteContext(): QuoteRenderContext {
     agent: { name: "João Vendedor", email: "joao@suaempresa.com" },
     items: [
       {
-        name: "Licença Plano Pro",
-        description: "Anual, 25 usuários",
+        name: "Outsourcing de TI x1 (Desenvolvedor Java Sr)",
+        item_title: "Outsourcing de TI",
+        display_name: "Outsourcing de TI x1 (Desenvolvedor Java Sr)",
+        description: "Alocação mensal, regime PJ",
         quantity: 1,
         unit_price: "R$ 9.000,00",
         discount_pct: 10,
@@ -135,7 +137,9 @@ export function sampleQuoteContext(): QuoteRenderContext {
         line_total: "R$ 8.829,00",
       },
       {
-        name: "Onboarding",
+        name: "Fábrica de Software x1",
+        item_title: "Fábrica de Software",
+        display_name: "Fábrica de Software x1",
         description: "8h de implantação",
         quantity: 1,
         unit_price: "R$ 3.000,00",
@@ -182,8 +186,9 @@ export const QUOTE_TEMPLATE_TOKENS: Array<{
     group: "Itens (dentro do bloco itens)",
     items: [
       { token: "{{#each items}}\n  ...\n{{/each}}", label: "Iterar itens" },
-      { token: "{{name}}", label: "Nome do item" },
-      { token: "{{display_name}}", label: "Serviço, quantidade e preset" },
+      { token: "{{name}}", label: "Serviço, quantidade e preset" },
+      { token: "{{display_name}}", label: "Serviço, quantidade e preset (igual a {{name}})" },
+      { token: "{{item_title}}", label: "Apenas o título do item" },
       { token: "{{description}}", label: "Descrição" },
       { token: "{{quantity}}", label: "Quantidade" },
       { token: "{{unit_price}}", label: "Preço unitário" },
