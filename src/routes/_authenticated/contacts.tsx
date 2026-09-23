@@ -437,13 +437,25 @@ function ContactsHubspotView() {
       {
         key: "company",
         label: "Empresa",
-        render: (c) =>
-          c.company_id ? (
-            <span className="truncate">{companyMap.get(c.company_id) ?? "—"}</span>
+        render: (c) => {
+          const linked = c.company_id ? companyMap.get(c.company_id) : undefined;
+          const label = linked ?? c.company_name ?? null;
+          if (!label) return <span className="text-muted-foreground">—</span>;
+          return c.company_id ? (
+            <Link
+              to="/companies/$id"
+              params={{ id: c.company_id }}
+              className="truncate hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {label}
+            </Link>
           ) : (
-            <span className="text-muted-foreground">—</span>
-          ),
+            <span className="truncate">{label}</span>
+          );
+        },
       },
+
       {
         key: "lifecycle",
         label: "Etapa do ciclo",
