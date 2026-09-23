@@ -40,12 +40,17 @@ export function PresetLinePicker({
   onApply,
   label = "Preset de contratação",
   disabled,
+  autoOpen,
+  onAutoOpened,
 }: {
   serviceCatalogId: string | null | undefined;
   value: string | null | undefined;
   onApply: (preset: PresetOption | null) => void;
   label?: string;
   disabled?: boolean;
+  /** Abre a busca automaticamente (ex.: item recém-adicionado). */
+  autoOpen?: boolean;
+  onAutoOpened?: () => void;
 }) {
   const listPresets = useServerFn(listPresetsForService);
   const [open, setOpen] = useState(false);
@@ -59,6 +64,14 @@ export function PresetLinePicker({
 
   // Presença de presets para o serviço (define se o campo aparece).
   const base = usePresetsForService(serviceCatalogId);
+  const hasPresets = (base.data?.length ?? 0) > 0;
+
+  useEffect(() => {
+    if (!autoOpen || disabled) return;
+    if (base.isLoading) return;
+    if (hasPresets) setOpen(true);
+    onAutoOpened?.();
+  }, [autoOpen, disabled, base.isLoading, hasPresets, onAutoOpened]);
 
   const search = useQuery({
     queryKey: [...presetsForServiceQueryKey(serviceCatalogId), "search", q],
