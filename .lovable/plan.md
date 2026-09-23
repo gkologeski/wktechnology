@@ -8,9 +8,13 @@ rótulo vindo do cadastro de presets, usado para exibição, e não uma informa�
 gravada no item. Resultado: a gravação falha com "Could not find the 'preset_name'
 column".
 
-Confirmado: a tabela de itens de linha do negócio não possui as colunas
-`preset_name`, `service_name` nem `job_profile_name` — esses três valores são
-derivados de consulta aos cadastros relacionados.
+Confirmado na estrutura da tabela: o preset escolhido **é** gravado, na coluna
+`contracting_preset_id` (junto com cargo, senioridade, unidade e forma de cobrança que
+o preset preenche). O que não existe como coluna é `preset_name` (e também
+`service_name` / `job_profile_name`) — esses são apenas rótulos lidos dos cadastros
+relacionados na hora de exibir. Hoje a tela envia o rótulo junto com a gravação, e é
+isso que quebra a operação inteira — inclusive impedindo que o vínculo do preset seja
+salvo.
 
 ## O que será feito
 
