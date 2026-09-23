@@ -1,6 +1,7 @@
 // Itens de linha do negócio: resumo, contador e editor completo (autosave por
 // campo, botão de salvar e desfazer da última ação).
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Save, Undo2, Wrench, Pencil } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
