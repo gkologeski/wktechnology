@@ -189,14 +189,19 @@ function ContactsHubspotView() {
     setPage(0);
   }, [activeView, filters, debouncedSearch, sortKey, sortDir, pageSize]);
 
+  // Lista usada apenas no filtro lateral (mostra as primeiras empresas por nome).
   const { data: companies = [] } = useQuery({
     queryKey: ["companies", "select"],
     queryFn: async () => {
-      const { data } = await supabase.from("companies").select("id,name").order("name");
+      const { data } = await supabase
+        .from("companies")
+        .select("id,name")
+        .order("name")
+        .limit(200);
       return (data ?? []) as Pick<Company, "id" | "name">[];
     },
   });
-  const companyMap = new Map(companies.map((c) => [c.id, c.name]));
+
 
   const {
     data: result,
