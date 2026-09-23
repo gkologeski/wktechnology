@@ -8,22 +8,18 @@ Ao adicionar um serviço do catálogo (ou vincular um serviço a um item em bran
 - `deal-line-items.tsx`: guarda `focusItemId` e repassa `autoFocusPreset` ao `LineItemCard` desse item; limpa após o uso.
 - `line-item-card.tsx` → `PresetLinePicker`: nova prop `autoOpen` que abre o popover e foca a busca na montagem (só se o serviço tiver presets).
 
-## 2. Atualizar preços dos presets com os produtos do HubSpot
+## 2. Atualizar preços dos presets com os produtos do HubSpot (ação única, sem tela)
 
-Hoje não guardamos os produtos do HubSpot no sistema (a tabela de Produtos foi removida), então os valores precisam ser lidos direto do HubSpot pela conexão já existente.
+Hoje não guardamos os produtos do HubSpot no sistema (a tabela de Produtos foi removida). A atualização é feita uma vez, direto no banco, lendo os produtos pela conexão do HubSpot. Nenhuma tela e nenhum código novo no app.
 
-Fluxo, com revisão antes de gravar:
-1. Tela **Catálogo > Presets > Atualizar com HubSpot** lista os produtos do HubSpot (nome, SKU, preço) e o preset correspondente sugerido (mesmo nome sem senioridade + senioridade, usando as regras de classificação já existentes).
-2. Mostra valor atual x valor do HubSpot; linhas sem correspondência ficam para escolha manual ou "ignorar".
-3. O usuário aprova e aplica; só `default_unit_price` (e `currency` quando vazia) é alterado. Presets sem correspondência ficam como estão.
-4. Resumo final: quantos atualizados, ignorados e sem correspondência.
+Passos:
+1. Ler todos os produtos do HubSpot (nome, SKU, preço, recorrência) pela conexão existente, com paginação.
+2. Casar cada produto com um preset ativo do workspace WK Technology: nome exato (sem acento/caixa), depois nome sem senioridade + senioridade, usando as mesmas regras já usadas na criação dos presets. Casamentos ambíguos (mais de um preset) ou sem correspondência não são tocados.
+3. Mostrar a você a prévia no chat: quantos casaram, exemplos de valor atual x novo, e a lista dos sem correspondência.
+4. Após sua confirmação, aplicar em lote: só `default_unit_price` (e `currency` quando vazia) dos presets casados. Produtos sem preço são ignorados.
+5. Conferir por consulta: quantos presets foram atualizados e total com preço antes/depois.
 
-Detalhes técnicos:
-- `src/lib/integrations/hubspot-products.server.ts`: paginação em `crm/v3/objects/products` (properties `name, hs_sku, price, hs_recurring_billing_period`) com o token da integração HubSpot do workspace.
-- `src/lib/contracting-presets-hubspot.functions.ts`: `previewHubspotPresetPrices()` e `applyHubspotPresetPrices(entries)`, com `requireSupabaseAuth` + `assertPermission` de edição do catálogo, filtradas por `workspace_id`.
-- Matching reaproveita `src/lib/catalog/line-item-classify.ts` (`parseSeniority`, `matchJobProfile`); testes unitários do casamento.
-- Tela com PageHeader, FilterBar, tabela, EmptyState, Skeletons, estado de erro (ex.: "HubSpot não conectado").
-- Sem migração, sem mudança de RLS; itens de linha já existentes não são alterados.
+O que não muda: itens de linha já existentes, cotações, contratos, regras de acesso e estrutura do banco.
 
 ## Validação
-`bunx vitest run`, `bunx eslint` nos arquivos alterados, `bunx tsgo --noEmit`; teste no navegador do foco automático e da prévia de preços.
+Parte 1: `bunx vitest run`, `bunx eslint` nos arquivos alterados, `bunx tsgo --noEmit` e teste no navegador do foco automático. Parte 2: consultas de conferência antes/depois.
