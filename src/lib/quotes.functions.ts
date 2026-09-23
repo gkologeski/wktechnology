@@ -440,10 +440,14 @@ export const getQuoteByToken = createServerFn({ method: "POST" })
         .maybeSingle();
       template = (r.data ?? null) as typeof template;
     }
-    const enrichedItems = ((items ?? []) as unknown as Array<PublicQuoteItem & {
-      service?: { name: string | null } | null;
-      preset?: { name: string | null } | null;
-    }>).map((item) => ({
+    const enrichedItems = (
+      (items ?? []) as unknown as Array<
+        PublicQuoteItem & {
+          service?: { name: string | null } | null;
+          preset?: { name: string | null } | null;
+        }
+      >
+    ).map((item) => ({
       ...item,
       service_name: item.service?.name ?? null,
       preset_name: item.preset?.name ?? null,

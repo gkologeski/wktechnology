@@ -30,7 +30,8 @@ export function LineItemCard({
 }) {
   const model = isBillingModel(li.billing_model) ? li.billing_model : "per_unit";
   const quantityEnabled = usesQuantity(model);
-  const priceLabel = model === "fixed" ? "Valor fixo" : `Preço / ${unitLabel(li.unit) ?? "unidade"}`;
+  const priceLabel =
+    model === "fixed" ? "Valor fixo" : `Preço / ${unitLabel(li.unit) ?? "unidade"}`;
 
   return (
     <div className="rounded-md border p-3 space-y-2">
@@ -117,12 +118,7 @@ export function LineItemCard({
         </div>
       )}
 
-      <LineItemBillingFields
-        item={li}
-        currency={currency}
-        onUpdate={onUpdate}
-        onDirty={onDirty}
-      />
+      <LineItemBillingFields item={li} currency={currency} onUpdate={onUpdate} onDirty={onDirty} />
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <LabeledNumber

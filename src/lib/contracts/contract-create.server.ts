@@ -89,10 +89,14 @@ export async function loadDealForContract(
 
   return {
     deal: deal as unknown as DealSnapshot,
-    items: ((rows ?? []) as unknown as Array<DealLineItemRow & {
-      service?: { name: string | null } | null;
-      preset?: { name: string | null } | null;
-    }>).map((item) => ({
+    items: (
+      (rows ?? []) as unknown as Array<
+        DealLineItemRow & {
+          service?: { name: string | null } | null;
+          preset?: { name: string | null } | null;
+        }
+      >
+    ).map((item) => ({
       ...item,
       service_name: item.service?.name ?? null,
       preset_name: item.preset?.name ?? null,

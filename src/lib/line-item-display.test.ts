@@ -15,9 +15,9 @@ describe("formatLineItemIdentity", () => {
   });
 
   it("omite os parênteses quando não há preset", () => {
-    expect(
-      formatLineItemIdentity({ service_name: "Fábrica de Software", quantity: 244 }),
-    ).toBe("Fábrica de Software x244");
+    expect(formatLineItemIdentity({ service_name: "Fábrica de Software", quantity: 244 })).toBe(
+      "Fábrica de Software x244",
+    );
   });
 
   it("usa o título do item quando não há serviço vinculado", () => {

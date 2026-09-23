@@ -326,7 +326,7 @@ function ServicesPage() {
                 params={{ id: s.id }}
                 className="text-sm font-medium hover:underline"
               >
-                 {formatLineItemIdentity(s)}
+                {formatLineItemIdentity(s)}
               </Link>
               <p className="text-xs text-muted-foreground">{TYPE_LABEL[s.type] ?? s.type}</p>
               <div className="flex items-center justify-between pt-1">
