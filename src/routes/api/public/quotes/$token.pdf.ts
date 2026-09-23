@@ -52,6 +52,7 @@ function buildFallbackHtml(ctx: {
   currency: string;
   items: Array<{
     name: string;
+    display_name: string;
     description: string;
     quantity: number;
     unit_price: number;
@@ -71,7 +72,7 @@ function buildFallbackHtml(ctx: {
     .map(
       (li) => `<tr>
         <td style="padding:10px 12px;border-top:1px solid #e5e7eb">
-          <div style="font-weight:500">${escape(li.name)}</div>
+          <div style="font-weight:500">${escape(li.display_name)}</div>
           ${li.description ? `<div style="font-size:12px;color:#6b7280;margin-top:2px">${escape(li.description)}</div>` : ""}
         </td>
         <td style="padding:10px 12px;border-top:1px solid #e5e7eb;text-align:right">${li.quantity}</td>

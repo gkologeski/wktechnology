@@ -16,6 +16,7 @@ import { describeBilling } from "@/lib/catalog/billing-model";
 import { listJobProfileOptions } from "@/lib/job-profiles.functions";
 import { SENIORITY_LABEL } from "@/lib/job-profiles-shared";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
+import { formatLineItemIdentity } from "@/lib/line-item-display";
 import { LinkCatalogServiceDialog } from "@/components/services/link-catalog-service-dialog";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -149,7 +150,7 @@ export function ContractServices({
                     params={{ id: s.id }}
                     className="min-w-0 flex items-center gap-1 text-primary group-hover:underline"
                   >
-                    <span className="font-semibold truncate">{s.name}</span>
+                    <span className="font-semibold truncate">{formatLineItemIdentity(s)}</span>
                     <ExternalLink className="h-3.5 w-3.5 shrink-0" />
                   </Link>
                   <Badge variant="outline" className="shrink-0">

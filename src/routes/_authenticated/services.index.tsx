@@ -27,6 +27,7 @@ import { listServices } from "@/lib/services.functions";
 import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
 import { AssigneeCell } from "@/components/entity/assignee-cell";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
+import { formatLineItemIdentity } from "@/lib/line-item-display";
 import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 import { useGridSelection, idQueryFor } from "@/components/grid/use-grid-selection";
 import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
@@ -120,7 +121,7 @@ function ServicesPage() {
       label: "Nome",
       render: (s) => (
         <Link to="/services/$id" params={{ id: s.id }} className="font-medium hover:underline">
-          {s.name}
+          {formatLineItemIdentity(s)}
         </Link>
       ),
     },
@@ -318,7 +319,7 @@ function ServicesPage() {
                 params={{ id: s.id }}
                 className="text-sm font-medium hover:underline"
               >
-                {s.name}
+                 {formatLineItemIdentity(s)}
               </Link>
               <p className="text-xs text-muted-foreground">{TYPE_LABEL[s.type] ?? s.type}</p>
               <div className="flex items-center justify-between pt-1">
