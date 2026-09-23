@@ -186,8 +186,8 @@ export const QUOTE_TEMPLATE_TOKENS: Array<{
     group: "Itens (dentro do bloco itens)",
     items: [
       { token: "{{#each items}}\n  ...\n{{/each}}", label: "Iterar itens" },
-      { token: "{{name}}", label: "Serviço, quantidade e preset" },
-      { token: "{{display_name}}", label: "Serviço, quantidade e preset (igual a {{name}})" },
+      { token: "{{name}}", label: "Título, quantidade e preset" },
+      { token: "{{display_name}}", label: "Título, quantidade e preset (igual a {{name}})" },
       { token: "{{item_title}}", label: "Apenas o título do item" },
       { token: "{{description}}", label: "Descrição" },
       { token: "{{quantity}}", label: "Quantidade" },

@@ -455,7 +455,7 @@ function TemplatedQuote(props: TemplatedQuoteProps) {
           (1 + Number(li.tax_rate) / 100);
         const displayName = formatLineItemIdentity(li);
         return {
-          // `name` imprime o rótulo padronizado (serviço, quantidade e preset)
+          // `name` imprime o rótulo padronizado (título, quantidade e preset)
           // para valer em todos os modelos já salvos; o título cru fica em `item_title`.
           name: displayName,
           item_title: li.name,

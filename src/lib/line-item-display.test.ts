@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { formatLineItemIdentity, formatLineItemQuantity } from "./line-item-display";
 
 describe("formatLineItemIdentity", () => {
-  it("exibe serviço, quantidade e preset", () => {
+  it("preserva o título digitado, quantidade e preset", () => {
     expect(
       formatLineItemIdentity({
         name: "Título livre",
@@ -11,7 +11,13 @@ describe("formatLineItemIdentity", () => {
         preset_name: "Desenvolvedor Java Sr",
         quantity: 1,
       }),
-    ).toBe("Outsourcing de TI x1 (Desenvolvedor Java Sr)");
+    ).toBe("Título livre x1 (Desenvolvedor Java Sr)");
+  });
+
+  it("usa o serviço do catálogo quando não há título digitado", () => {
+    expect(formatLineItemIdentity({ service_name: "Outsourcing de TI", quantity: 1 })).toBe(
+      "Outsourcing de TI x1",
+    );
   });
 
   it("omite os parênteses quando não há preset", () => {
