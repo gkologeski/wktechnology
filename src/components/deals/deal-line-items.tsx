@@ -70,8 +70,16 @@ export function DealLineItemsEditor({
   trigger: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const qc = useQueryClient();
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        // Ao fechar, revalidar: a lista nunca deve divergir do que está gravado.
+        if (!next) void qc.invalidateQueries({ queryKey: lineItemsQueryKey(dealId) });
+      }}
+    >
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-w-3xl overflow-y-auto">
         <DialogHeader>
