@@ -789,6 +789,26 @@
   }
 }
 
+.preview-editable {
+  cursor: pointer;
+  position: relative;
+  transition: box-shadow 150ms ease, filter 150ms ease;
+}
+
+.preview-editable:hover {
+  box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--action-accent) 62%, transparent);
+}
+
+.preview-editable-selected {
+  box-shadow: inset 0 0 0 2px var(--action-accent), 0 0 0 2px var(--product-panel);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preview-editable {
+    transition: none;
+  }
+}
+
 /* Impressão — dashboard exportado em PDF via window.print(). */
 @media print {
   @page {

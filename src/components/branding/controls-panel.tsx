@@ -55,11 +55,13 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export function ControlsPanel({ form, set, activeTargetId }: Props) {
   const radiusPx = parseInt(form.radius || "8", 10) || 8;
+  const targetClass = (id: string) =>
+    `space-y-2 rounded-md ${activeTargetId === id ? "bg-accent/40 p-2 ring-2 ring-action-accent" : ""}`;
 
   return (
     <div className="p-5 space-y-7">
       <Section title="Identidade visual">
-        <div className="space-y-2" data-branding-control="brand_name">
+        <div className={targetClass("brand_name")} data-branding-control="brand_name">
           <Label className="text-[11px] font-bold uppercase tracking-wide">Nome da marca</Label>
           <Input value={form.brand_name} onChange={(e) => set("brand_name", e.target.value)} />
         </div>
@@ -110,7 +112,7 @@ export function ControlsPanel({ form, set, activeTargetId }: Props) {
       </Section>
 
       <Section title="Estilo & formas">
-        <div className="space-y-2" data-branding-control="radius">
+        <div className={targetClass("radius")} data-branding-control="radius">
           <div className="flex justify-between">
             <Label className="text-[11px] font-bold uppercase tracking-wide">Raio da borda</Label>
             <span className="text-[10px] font-mono text-muted-foreground">{radiusPx}px</span>
@@ -126,7 +128,7 @@ export function ControlsPanel({ form, set, activeTargetId }: Props) {
           />
         </div>
 
-        <div className="space-y-2" data-branding-control="density">
+        <div className={targetClass("density")} data-branding-control="density">
           <Label className="text-[11px] font-bold uppercase tracking-wide">Densidade</Label>
           <div className="grid grid-cols-3 gap-1 p-1 bg-muted rounded-md">
             {DENSITIES.map((d) => (
@@ -146,7 +148,7 @@ export function ControlsPanel({ form, set, activeTargetId }: Props) {
           </div>
         </div>
 
-        <div className="space-y-2" data-branding-control="heading_font">
+        <div className={targetClass("heading_font")} data-branding-control="heading_font">
           <Label className="text-[11px] font-bold uppercase tracking-wide">Fonte de títulos</Label>
           <select
             value={form.heading_font}
@@ -162,7 +164,7 @@ export function ControlsPanel({ form, set, activeTargetId }: Props) {
           </select>
         </div>
 
-        <div className="space-y-2" data-branding-control="body_font">
+        <div className={targetClass("body_font")} data-branding-control="body_font">
           <Label className="text-[11px] font-bold uppercase tracking-wide">Fonte de texto</Label>
           <select
             value={form.body_font}
