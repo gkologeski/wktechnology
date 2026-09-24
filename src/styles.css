@@ -633,14 +633,17 @@
   border-top-left-radius: 0.125rem;
 }
 .prose .whatsapp-bubble-content {
-  padding: 0.42rem 0.55rem 0.32rem;
+  padding: 0.2rem 0.5rem 0.16rem;
   border: 0;
   color: var(--whatsapp-ink);
   font-family: system-ui, sans-serif;
   font-size: 0.8125rem;
-  line-height: 1.32;
+  line-height: 1.2;
   overflow-wrap: anywhere;
-  white-space: pre-wrap;
+  white-space: normal;
+}
+.prose .whatsapp-bubble-content :where(p, div) {
+  margin: 0;
 }
 .prose .whatsapp-message-time {
   display: inline-block;
