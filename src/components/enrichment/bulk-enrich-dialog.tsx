@@ -87,7 +87,7 @@ export function BulkEnrichDialog({
         toast.message(`Simulação: ${r.succeeded} alterações em ${ids.length} registros`);
       } else {
         toast.success(
-          `${r.succeeded} atualizados · ${r.unchanged} sem mudanças · ${r.failed} falhas · ${r.creditsUsed} crédito(s)`,
+          `${r.succeeded} atualizados · ${r.unchanged} sem mudanças · ${r.failed} falhas · ${r.creditsUsed} crédito(s)${r.phonePending ? ` · ${r.phonePending} telefone(s) solicitado(s), chegam em alguns minutos` : ""}`,
         );
         onDone?.();
         onOpenChange(false);

@@ -28,6 +28,7 @@ import { apolloRawRequest } from "./apollo-gateway.server";
 const LUSHA_BASE = "https://api.lusha.com";
 
 type ApolloPerson = {
+  id?: string | null;
   email?: string | null;
   first_name?: string | null;
   last_name?: string | null;
