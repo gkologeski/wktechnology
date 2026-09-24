@@ -191,6 +191,8 @@ export interface RunBatchResult {
   failed: number;
   unchanged: number;
   creditsUsed: number;
+  /** Telefones pedidos à Apollo que chegarão depois, em segundo plano. */
+  phonePending: number;
   dryRun: boolean;
   preview?: Array<{
     entity_id: string;
@@ -205,8 +207,8 @@ export async function runEnrichmentBatch(opts: RunBatchOpts): Promise<RunBatchRe
 
   const cols =
     entity === "lead"
-      ? "id, first_name, last_name, email, phone, company_name"
-      : "id, first_name, last_name, email, phone, job_title, linkedin_url, company_name";
+      ? "id, workspace_id, first_name, last_name, email, phone, company_name"
+      : "id, workspace_id, first_name, last_name, email, phone, job_title, linkedin_url, company_name";
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: rows, error } = await (supabase as any).from(table).select(cols).in("id", ids);
   if (error) throw new Error(error.message);
@@ -241,7 +243,8 @@ export async function runEnrichmentBatch(opts: RunBatchOpts): Promise<RunBatchRe
   let succeeded = 0,
     failed = 0,
     unchanged = 0,
-    credits = 0;
+    credits = 0,
+    phonePending = 0;
   const perJobCounts: Record<string, { ok: number; ko: number; cr: number }> = {};
   const preview: RunBatchResult["preview"] = [];
 
@@ -267,6 +270,27 @@ export async function runEnrichmentBatch(opts: RunBatchOpts): Promise<RunBatchRe
           continue;
         }
         const update = computeUpdate(currentBefore, enriched, entity, mode);
+        // Telefone pedido à Apollo chega depois via webhook: registra o destino
+        // para o número ser gravado no contato/lead quando for entregue.
+        if (
+          !dryRun &&
+          provider === "apollo" &&
+          enriched.phone_reveal_requested &&
+          !currentBefore.phone &&
+          !update.phone &&
+          typeof row.workspace_id === "string"
+        ) {
+          const { registerApolloPhoneReveals } = await import("./apollo-phone-reveal.server");
+          phonePending += await registerApolloPhoneReveals(
+            [{ workspaceId: row.workspace_id, entityType: entity, entityId: row.id }],
+            {
+              apolloPersonId: enriched.apollo_person_id,
+              linkedinUrl: enriched.linkedin_url ?? (currentBefore.linkedin_url as string | null),
+              email: enriched.email ?? (currentBefore.email as string | null),
+              signal: "bulk_enrich",
+            },
+          );
+        }
         const j = jobByProvider[provider];
         perJobCounts[j] ??= { ok: 0, ko: 0, cr: 0 };
         if (Object.keys(update).length === 0) {
@@ -359,6 +383,7 @@ export async function runEnrichmentBatch(opts: RunBatchOpts): Promise<RunBatchRe
     failed,
     unchanged,
     creditsUsed: credits,
+    phonePending,
     dryRun,
     preview: dryRun ? preview : undefined,
   };
