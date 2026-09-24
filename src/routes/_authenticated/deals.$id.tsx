@@ -265,7 +265,6 @@ function DealDetail() {
           </TooltipProvider>
         </div>
       </div>
-      </div>
       <div className="mt-4 border-t border-border-subtle pt-4">
         <StageTracker stages={stages} current={currentStage} onChange={setStage} />
         <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] md:items-start">
