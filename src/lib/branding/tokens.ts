@@ -116,6 +116,15 @@ export const BRAND_TOKENS: BrandToken[] = [
     light: "#f8fafd",
     dark: "#121c26",
   },
+  { key: "product-canvas", label: "Canvas operacional", group: "surfaces", light: "#e9f1f8", dark: "#050b11", hint: "Fundo cinza-azulado de listas e detalhes." },
+  { key: "product-header", label: "Cabeçalho operacional", group: "surfaces", light: "#f7fbfe", dark: "#0f1822" },
+  { key: "product-toolbar", label: "Faixa de filtros e abas", group: "surfaces", light: "#f2f8fc", dark: "#0b131c" },
+  { key: "product-panel", label: "Painel operacional", group: "surfaces", light: "#ffffff", dark: "#121c26" },
+  { key: "product-panel-muted", label: "Painel suave", group: "surfaces", light: "#f0f6fb", dark: "#19242f" },
+  { key: "product-panel-strong", label: "Painel forte", group: "surfaces", light: "#e0ebf3", dark: "#202d3a" },
+  { key: "product-divider", label: "Divisória operacional", group: "surfaces", light: "#c9d4dd", dark: "#353e47", hint: "Bordas entre faixas, colunas e painéis." },
+
+
 
   // Texto
   {
