@@ -18,6 +18,10 @@ export type EnrichedPerson = {
   job_title?: string | null;
   company_name?: string | null;
   linkedin_url?: string | null;
+  /** Id da pessoa na Apollo, usado para correlacionar o telefone entregue depois. */
+  apollo_person_id?: string | null;
+  /** A Apollo foi instruída a entregar o telefone via webhook. */
+  phone_reveal_requested?: boolean;
 };
 
 import { apolloRawRequest } from "./apollo-gateway.server";
@@ -85,6 +89,8 @@ export async function apolloMatch(input: {
     job_title: p.title ?? null,
     company_name: p.organization?.name ?? null,
     linkedin_url: p.linkedin_url ?? null,
+    apollo_person_id: p.id ?? null,
+    phone_reveal_requested: !!phoneWebhook,
   };
 }
 
