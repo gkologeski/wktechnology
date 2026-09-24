@@ -37,6 +37,13 @@ import { Can, usePermissions } from "@/lib/access-control/use-permissions";
 import { useGridProjection } from "@/hooks/use-grid-projection";
 import { buildGridSelect } from "@/lib/grid/dynamic-select";
 import { responsibleId } from "@/lib/entity/responsible";
+import {
+  ProductCanvas,
+  ProductContent,
+  ProductPageHeader,
+  ProductTabsBand,
+  ProductToolbarBand,
+} from "@/components/techhire/ui";
 
 /** Colunas sempre necessárias nas visões de negócios (tabela, kanban, lista, previsão). */
 const BASE_DEAL_KEYS = [
@@ -373,8 +380,8 @@ function DealsPage() {
   };
 
   return (
-    <div className="-m-4 min-h-full bg-surface-1 md:-m-6">
-      <header className="border-b border-border-subtle bg-surface-2 px-4 py-4 md:px-6">
+    <ProductCanvas>
+      <ProductPageHeader>
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 sm:flex sm:flex-wrap sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
@@ -406,7 +413,7 @@ function DealsPage() {
               <Button
                 size="sm"
                 onClick={openNew}
-                className="bg-[color:var(--hs-orange)] text-[color:var(--hs-orange-foreground)] hover:bg-[color:var(--hs-orange)]/90"
+                className="border border-action-accent bg-action-accent text-action-accent-foreground hover:bg-action-accent/80"
               >
                 <Plus className="mr-1 h-4 w-4" />{" "}
                 <span className="hidden sm:inline">Criar negócio</span>
@@ -414,9 +421,9 @@ function DealsPage() {
             </Can>
           </div>
         </div>
-      </header>
+      </ProductPageHeader>
 
-      <div className="border-b border-border-subtle bg-surface-2 px-4 py-3 md:px-6">
+      <ProductToolbarBand>
         <DealsToolbar
           pipelines={pipelines}
           selectedPipelineId={selectedId}
@@ -429,10 +436,10 @@ function DealsPage() {
           hotCount={boardHotCount}
           substatusOptions={substatuses}
         />
-      </div>
+      </ProductToolbarBand>
 
       <Tabs value={view} onValueChange={(v) => setView(v as typeof view)}>
-        <div className="border-b border-border-subtle bg-surface-2 px-4 md:px-6">
+        <ProductTabsBand>
           <TabsList className="h-10 rounded-none bg-transparent p-0">
             <TabsTrigger value="table">
               <TableIcon className="h-3.5 w-3.5 mr-1" /> Tabela
@@ -447,9 +454,9 @@ function DealsPage() {
               <TrendingUp className="h-3.5 w-3.5 mr-1" /> Previsão
             </TabsTrigger>
           </TabsList>
-        </div>
+        </ProductTabsBand>
 
-        <div className="p-4 md:p-6">
+        <ProductContent>
           {dealsLoading ? (
             <div className="space-y-2" aria-label="Carregando negócios">
               {[1, 2, 3, 4, 5].map((row) => (
@@ -514,7 +521,7 @@ function DealsPage() {
               </TabsContent>
             </>
           )}
-        </div>
+        </ProductContent>
       </Tabs>
 
       <DealDetailDrawer
@@ -526,6 +533,6 @@ function DealsPage() {
         contacts={contacts}
         ownerId={user?.id}
       />
-    </div>
+    </ProductCanvas>
   );
 }

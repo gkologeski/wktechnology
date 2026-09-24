@@ -380,7 +380,7 @@ export function DealsHubspotTable({
   });
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-md border border-border-subtle bg-surface-2 shadow-xs">
+    <div className="flex flex-col overflow-hidden rounded-md border border-product-divider bg-product-panel shadow-xs">
       {selectedIds.size > 0 && (
         <BulkActionBar count={selectedIds.size} onClear={clearSelection}>
           <>
@@ -412,14 +412,14 @@ export function DealsHubspotTable({
           </>
         </BulkActionBar>
       )}
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center border-b border-border-subtle px-3 py-2">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center border-b border-product-divider bg-product-panel-muted px-3 py-2">
         <span className="truncate text-xs text-text-tertiary">{total} negócio(s)</span>
         <ColumnsButton />
       </div>
 
       <div className="overflow-auto">
         <table className="w-full border-separate border-spacing-0 text-sm">
-          <thead className="sticky top-0 z-10 bg-surface-3">
+          <thead className="sticky top-0 z-10 bg-product-panel-strong">
             <tr className="text-left text-[11px] font-semibold uppercase text-text-tertiary">
               <th className="w-10 border-b px-3 py-2.5">
                 <HeaderCheckbox

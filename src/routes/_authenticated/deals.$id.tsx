@@ -236,7 +236,7 @@ function DealDetail() {
   };
 
   const header = (
-    <header className="bg-surface-2 px-4 py-4 md:px-6">
+    <header className="bg-product-header px-4 py-4 md:px-6">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 sm:flex sm:flex-wrap sm:justify-between">
         <div className="flex min-w-0 items-center gap-3">
           <Button
@@ -325,7 +325,7 @@ function DealDetail() {
           </TooltipProvider>
         </div>
       </div>
-      <div className="mt-4 border-t border-border-subtle pt-4">
+      <div className="mt-4 border-t border-product-divider pt-4">
         <StageTracker stages={stages} current={currentStage} onChange={setStage} />
         <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] md:items-start">
           <SubstatusSelect

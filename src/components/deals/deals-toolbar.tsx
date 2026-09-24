@@ -170,7 +170,7 @@ export function DealsToolbar({
             size="sm"
             className={`h-9 ${
               focusMode
-                ? "bg-[color:var(--hs-orange)] text-[color:var(--hs-orange-foreground)] hover:bg-[color:var(--hs-orange)]/90"
+                ? "border-action-accent bg-action-accent text-action-accent-foreground hover:bg-action-accent/80"
                 : ""
             }`}
             onClick={() => onToggleFocus(!focusMode)}
@@ -180,7 +180,7 @@ export function DealsToolbar({
             <Target className="h-4 w-4 mr-1" />
             Foco em fechamento
             {focusMode && hotCount !== undefined && hotCount > 0 ? (
-              <span className="ml-1.5 rounded bg-black/10 px-1.5 text-[10px] tabular-nums">
+              <span className="ml-1.5 rounded bg-foreground/10 px-1.5 text-[10px] tabular-nums">
                 {hotCount}
               </span>
             ) : null}

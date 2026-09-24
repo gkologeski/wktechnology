@@ -47,7 +47,7 @@ export function DealsForecast({ pipeline, deals }: { pipeline: Pipeline; deals: 
         <KPI label="Negócios" value={String(totals.count)} />
         <KPI label="Total" value={formatCurrency(totals.amount)} />
         <KPI label="Previsão ponderada" value={formatCurrency(totals.weighted)} accent />
-        <div className="rounded-md border border-border-subtle bg-surface-2 p-3 shadow-xs">
+        <div className="rounded-md border border-product-divider bg-product-panel p-3 shadow-xs">
           <div className="text-[11px] uppercase tracking-wide text-[var(--hs-text-muted)]">
             Meta
           </div>
@@ -89,10 +89,10 @@ export function DealsForecast({ pipeline, deals }: { pipeline: Pipeline; deals: 
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-md border border-border-subtle bg-surface-2 shadow-xs">
+      <div className="overflow-hidden rounded-md border border-product-divider bg-product-panel shadow-xs">
         <Table>
           <TableHeader>
-            <TableRow className="bg-surface-3">
+            <TableRow className="bg-product-panel-strong">
               <TableHead className="text-[11px] uppercase tracking-wide">Estágio</TableHead>
               <TableHead className="text-[11px] uppercase tracking-wide text-right">
                 Negócios
@@ -132,7 +132,7 @@ export function DealsForecast({ pipeline, deals }: { pipeline: Pipeline; deals: 
                 </TableCell>
               </TableRow>
             ))}
-            <TableRow className="bg-surface-3 font-semibold">
+            <TableRow className="bg-product-panel-muted font-semibold">
               <TableCell>Total</TableCell>
               <TableCell className="text-right tabular-nums">{totals.count}</TableCell>
               <TableCell />
@@ -153,7 +153,7 @@ export function DealsForecast({ pipeline, deals }: { pipeline: Pipeline; deals: 
 function KPI({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
     <div
-      className={`rounded-md border bg-surface-2 p-3 shadow-xs ${accent ? "border-[var(--hs-orange)]" : "border-border-subtle"}`}
+      className={`rounded-md border bg-product-panel p-3 shadow-xs ${accent ? "border-action-accent" : "border-product-divider"}`}
     >
       <div className="text-[11px] uppercase tracking-wide text-[var(--hs-text-muted)]">{label}</div>
       <div className="mt-1 text-lg font-semibold tabular-nums">{value}</div>
