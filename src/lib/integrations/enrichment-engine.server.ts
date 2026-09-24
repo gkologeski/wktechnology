@@ -64,14 +64,17 @@ export async function apolloMatch(input: {
     return null;
   }
 
-  const res = await fetch(`${APOLLO_BASE}/api/v1/people/match`, {
+  const res = await apolloRawRequest("/api/v1/people/match", key, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "X-Api-Key": key, accept: "application/json" },
-    body: JSON.stringify(params),
+    body: params,
   });
-  const body = (await res.json().catch(() => ({}))) as { person?: ApolloPerson };
-  if (!res.ok)
-    throw new Error(`Apollo erro [${res.status}]: ${JSON.stringify(body).slice(0, 300)}`);
+  if (!res.ok) throw new Error(`Apollo erro [${res.status}]: ${res.text.slice(0, 300)}`);
+  let body: { person?: ApolloPerson } = {};
+  try {
+    body = JSON.parse(res.text) as { person?: ApolloPerson };
+  } catch {
+    body = {};
+  }
   const p = body.person;
   if (!p) return null;
   return {
