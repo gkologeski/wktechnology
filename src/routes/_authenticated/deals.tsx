@@ -4,7 +4,6 @@ import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -14,6 +13,7 @@ import {
   List as ListIcon,
   Table as TableIcon,
   TrendingUp,
+  BriefcaseBusiness,
 } from "lucide-react";
 import { toast } from "sonner";
 import { startFocusQueue } from "@/lib/focus-queue";
@@ -64,6 +64,16 @@ const BASE_DEAL_KEYS = [
 
 export const Route = createFileRoute("/_authenticated/deals")({
   component: DealsRoute,
+  head: () => ({
+    meta: [
+      { title: "Negócios | TechERP" },
+      { name: "description", content: "Gerencie negócios, pipelines e previsões comerciais no TechERP." },
+      { property: "og:title", content: "Negócios | TechERP" },
+      { property: "og:description", content: "Gerencie negócios, pipelines e previsões comerciais no TechERP." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
 });
 
 function DealsRoute() {
@@ -156,7 +166,7 @@ function DealsPage() {
 
   const projection = useGridProjection({ gridKey: "deals", entity: "deals" });
 
-  const { data: deals = [] } = useQuery({
+  const { data: deals = [], isLoading: dealsLoading, isError: dealsError, refetch: refetchDeals } = useQuery({
     queryKey: ["deals", "list", projection.selectSignature, projection.needsCustomFields],
     enabled: !projection.isLoading,
     queryFn: async () => {
@@ -352,12 +362,19 @@ function DealsPage() {
   };
 
   return (
-    <div>
-      <PageHeader
-        title="Negócios"
-        description="Pipeline de vendas estilo HubSpot."
-        actions={
-          <div className="flex items-center gap-2">
+    <div className="-m-4 min-h-full bg-surface-1 md:-m-6">
+      <header className="border-b border-border-subtle bg-surface-2 px-4 py-4 md:px-6">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 sm:flex sm:flex-wrap sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
+              <BriefcaseBusiness className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-text-tertiary">CRM · Vendas</p>
+              <h1 className="truncate text-xl font-semibold text-text-primary">Negócios</h1>
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -371,7 +388,7 @@ function DealsPage() {
               disabled={filtered.length === 0}
               title="Percorrer todos os negócios do filtro atual, um a um"
             >
-              <Play className="h-4 w-4 mr-1" /> Iniciar fila
+              <Play className="mr-1 h-4 w-4" /> <span className="hidden sm:inline">Iniciar fila</span>
             </Button>
             <Can permission="techsales.deals.create.own">
               <Button
@@ -379,28 +396,31 @@ function DealsPage() {
                 onClick={openNew}
                 className="bg-[color:var(--hs-orange)] text-[color:var(--hs-orange-foreground)] hover:bg-[color:var(--hs-orange)]/90"
               >
-                <Plus className="h-4 w-4 mr-1" /> Criar negócio
+                <Plus className="mr-1 h-4 w-4" /> <span className="hidden sm:inline">Criar negócio</span>
               </Button>
             </Can>
           </div>
-        }
-      />
+        </div>
+      </header>
 
-      <DealsToolbar
-        pipelines={pipelines}
-        selectedPipelineId={selectedId}
-        onSelectPipeline={setSelectedId}
-        owners={ownerOptions}
-        filters={filters}
-        setFilters={setFilters}
-        focusMode={view === "board" ? focusMode : undefined}
-        onToggleFocus={view === "board" ? setFocusMode : undefined}
-        hotCount={boardHotCount}
-        substatusOptions={substatuses}
-      />
+      <div className="border-b border-border-subtle bg-surface-2 px-4 py-3 md:px-6">
+        <DealsToolbar
+          pipelines={pipelines}
+          selectedPipelineId={selectedId}
+          onSelectPipeline={setSelectedId}
+          owners={ownerOptions}
+          filters={filters}
+          setFilters={setFilters}
+          focusMode={view === "board" ? focusMode : undefined}
+          onToggleFocus={view === "board" ? setFocusMode : undefined}
+          hotCount={boardHotCount}
+          substatusOptions={substatuses}
+        />
+      </div>
 
-      <Tabs value={view} onValueChange={(v) => setView(v as typeof view)} className="mt-4">
-        <TabsList>
+      <Tabs value={view} onValueChange={(v) => setView(v as typeof view)}>
+        <div className="border-b border-border-subtle bg-surface-2 px-4 md:px-6">
+        <TabsList className="h-10 rounded-none bg-transparent p-0">
           <TabsTrigger value="table">
             <TableIcon className="h-3.5 w-3.5 mr-1" /> Tabela
           </TabsTrigger>
@@ -414,8 +434,19 @@ function DealsPage() {
             <TrendingUp className="h-3.5 w-3.5 mr-1" /> Previsão
           </TabsTrigger>
         </TabsList>
+        </div>
 
-        <TabsContent value="table" className="mt-4">
+        <div className="p-4 md:p-6">
+        {dealsLoading ? (
+          <div className="space-y-2" aria-label="Carregando negócios">
+            {[1, 2, 3, 4, 5].map((row) => <div key={row} className="h-12 animate-pulse rounded-md bg-surface-3" />)}
+          </div>
+        ) : dealsError ? (
+          <div className="grid min-h-52 place-items-center rounded-md border border-border-subtle bg-surface-2 p-6 text-center">
+            <div><p className="font-medium text-text-primary">Não foi possível carregar os negócios.</p><Button variant="outline" size="sm" className="mt-3" onClick={() => void refetchDeals()}>Tentar novamente</Button></div>
+          </div>
+        ) : <>
+        <TabsContent value="table" className="m-0">
           <DealsHubspotTable
             deals={filtered}
             pipeline={selected ?? undefined}
@@ -423,7 +454,7 @@ function DealsPage() {
             onOpen={openEdit}
           />
         </TabsContent>
-        <TabsContent value="board" className="mt-4">
+        <TabsContent value="board" className="m-0">
           {selected ? (
             <DealsBoard
               pipeline={selected}
@@ -440,14 +471,16 @@ function DealsPage() {
             <p className="text-sm text-muted-foreground">Carregando pipeline…</p>
           )}
         </TabsContent>
-        <TabsContent value="list" className="mt-4">
+        <TabsContent value="list" className="m-0">
           {selected && (
             <DealsList pipeline={selected} deals={filtered} lookups={lookups} onOpen={openEdit} />
           )}
         </TabsContent>
-        <TabsContent value="forecast" className="mt-4">
+        <TabsContent value="forecast" className="m-0">
           {selected && <DealsForecast pipeline={selected} deals={filtered} />}
         </TabsContent>
+        </>}
+        </div>
       </Tabs>
 
       <DealDetailDrawer

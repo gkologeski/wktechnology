@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Trash2, Briefcase } from "lucide-react";
+import { ArrowLeft, Trash2, Briefcase, Building2, CalendarDays, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -46,6 +46,16 @@ import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/deals/$id")({
   component: DealDetail,
+  head: () => ({
+    meta: [
+      { title: "Detalhe do negócio | TechERP" },
+      { name: "description", content: "Consulte atividades, propriedades e associações do negócio." },
+      { property: "og:title", content: "Detalhe do negócio | TechERP" },
+      { property: "og:description", content: "Consulte atividades, propriedades e associações do negócio." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
 });
 
 function DealDetail() {
@@ -57,7 +67,7 @@ function DealDetail() {
   const { user } = useAuth();
   const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techsales.deals");
 
-  const { data: deal } = useQuery({
+  const { data: deal, isLoading, isError, refetch } = useQuery({
     queryKey: qk.deal(id),
     queryFn: async () => {
       const { data, error } = await supabase.from("deals").select("*").eq("id", id).maybeSingle();
@@ -104,7 +114,9 @@ function DealDetail() {
     [dealPipeline],
   );
 
-  if (!deal) return <p className="text-sm text-muted-foreground">Carregando...</p>;
+  if (isLoading) return <div className="-m-4 space-y-3 p-6 md:-m-6"><div className="h-36 animate-pulse rounded-md bg-surface-3" /><div className="grid gap-3 xl:grid-cols-3"><div className="h-96 animate-pulse rounded-md bg-surface-3" /><div className="h-96 animate-pulse rounded-md bg-surface-3" /><div className="h-96 animate-pulse rounded-md bg-surface-3" /></div></div>;
+  if (isError) return <div className="grid min-h-72 place-items-center text-center"><div><p className="font-medium">Não foi possível carregar este negócio.</p><Button variant="outline" size="sm" className="mt-3" onClick={() => void refetch()}>Tentar novamente</Button></div></div>;
+  if (!deal) return <div className="grid min-h-72 place-items-center text-center"><div><p className="font-medium">Negócio não encontrado.</p><Button asChild variant="outline" size="sm" className="mt-3"><Link to="/deals">Voltar para negócios</Link></Button></div></div>;
 
   const currentStage = deal.stage_id || (deal.stage as string);
 
@@ -183,36 +195,36 @@ function DealDetail() {
   };
 
   const header = (
-    <div className="bg-card rounded-2xl shadow-sm border border-border/60 p-6 space-y-5">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-5 min-w-0">
-          <Button variant="ghost" size="icon" asChild className="rounded-full">
+    <header className="bg-surface-2 px-4 py-4 md:px-6">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 sm:flex sm:flex-wrap sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
+          <Button variant="ghost" size="icon" asChild className="shrink-0" aria-label="Voltar para negócios">
             <Link to="/deals">
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <div className="w-16 h-16 shrink-0 rounded-full bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center text-white shadow-lg shadow-primary/20 border-4 border-card">
-            <Briefcase className="h-7 w-7" />
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
+            <Briefcase className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-bold text-foreground truncate">{deal.name}</h1>
+            <p className="text-xs font-medium text-text-tertiary">Negócios</p>
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <h1 className="truncate text-xl font-semibold text-text-primary">{deal.name}</h1>
               <Badge
                 variant="outline"
-                className="rounded-full px-3 capitalize bg-primary/10 text-primary border-primary/20"
+                className="border-primary/20 bg-primary/10 px-2.5 text-primary"
               >
                 {stages.find((s) => s.value === currentStage)?.label ?? deal.stage}
               </Badge>
             </div>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {formatCurrency(deal.value, deal.currency)}
-              {deal.expected_close_date && (
-                <span> · Fechamento {formatDateTime(deal.expected_close_date)}</span>
-              )}
-            </p>
+            <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-text-secondary">
+              <span className="inline-flex items-center gap-1"><DollarSign className="h-3.5 w-3.5" />{formatCurrency(deal.value, deal.currency)}</span>
+              {deal.expected_close_date && <span className="inline-flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />Fechamento {formatDateTime(deal.expected_close_date)}</span>}
+              {deal.company_id && <span className="inline-flex items-center gap-1"><Building2 className="h-3.5 w-3.5" />Empresa associada</span>}
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           {pipelines.length > 0 && (
             <Select
               value={(deal as unknown as { pipeline_id?: string | null }).pipeline_id ?? ""}
@@ -253,16 +265,15 @@ function DealDetail() {
           </TooltipProvider>
         </div>
       </div>
-      <StageTracker stages={stages} current={currentStage} onChange={setStage} />
-      <SubstatusSelect
-        pipelineId={dealPipeline?.id ?? null}
-        stageValue={currentStage}
-        value={(deal as unknown as { stage_substatus_id?: string | null }).stage_substatus_id}
-        onChange={setSubstatus}
-        className="max-w-xs space-y-1"
-      />
-      <SubstatusHistory entity="deals" entityId={deal.id} className="max-w-xl" />
-    </div>
+      </div>
+      <div className="mt-4 border-t border-border-subtle pt-4">
+        <StageTracker stages={stages} current={currentStage} onChange={setStage} />
+        <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] md:items-start">
+          <SubstatusSelect pipelineId={dealPipeline?.id ?? null} stageValue={currentStage} value={(deal as unknown as { stage_substatus_id?: string | null }).stage_substatus_id} onChange={setSubstatus} className="space-y-1" />
+          <SubstatusHistory entity="deals" entityId={deal.id} className="max-w-xl" />
+        </div>
+      </div>
+    </header>
   );
 
   return (

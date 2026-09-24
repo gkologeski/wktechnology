@@ -42,10 +42,10 @@ export function DealsList({
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   return (
-    <div className="rounded-md border bg-card overflow-hidden">
+    <div className="overflow-hidden rounded-md border border-border-subtle bg-surface-2 shadow-xs">
       <Table>
         <TableHeader>
-          <TableRow className="bg-[var(--hs-surface)]">
+          <TableRow className="bg-surface-3">
             <TableHead className="text-[11px] uppercase tracking-wide w-[30%]">Negócio</TableHead>
             <TableHead className="text-[11px] uppercase tracking-wide">Empresa</TableHead>
             <TableHead className="text-[11px] uppercase tracking-wide">Contato</TableHead>
@@ -62,7 +62,7 @@ export function DealsList({
             return (
               <Fragment key={s.value}>
                 <TableRow
-                  className="bg-muted/40 cursor-pointer hover:bg-muted/60"
+                  className="cursor-pointer bg-surface-3 hover:bg-row-hover"
                   onClick={() => setCollapsed((c) => ({ ...c, [s.value]: !c[s.value] }))}
                 >
                   <TableCell colSpan={6} className="py-1.5">

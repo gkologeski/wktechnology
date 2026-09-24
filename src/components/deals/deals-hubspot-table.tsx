@@ -380,7 +380,7 @@ export function DealsHubspotTable({
   });
 
   return (
-    <div className="flex flex-col rounded-md border bg-card">
+    <div className="flex flex-col overflow-hidden rounded-md border border-border-subtle bg-surface-2 shadow-xs">
       {selectedIds.size > 0 && (
         <BulkActionBar count={selectedIds.size} onClear={clearSelection}>
           <>
@@ -412,15 +412,15 @@ export function DealsHubspotTable({
           </>
         </BulkActionBar>
       )}
-      <div className="flex items-center justify-between border-b px-3 py-2">
-        <span className="text-xs text-muted-foreground">{total} negócio(s)</span>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center border-b border-border-subtle px-3 py-2">
+        <span className="truncate text-xs text-text-tertiary">{total} negócio(s)</span>
         <ColumnsButton />
       </div>
 
       <div className="overflow-auto">
         <table className="w-full border-separate border-spacing-0 text-sm">
-          <thead className="sticky top-0 z-10 bg-muted/60 backdrop-blur">
-            <tr className="text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <thead className="sticky top-0 z-10 bg-surface-3">
+            <tr className="text-left text-[11px] font-semibold uppercase text-text-tertiary">
               <th className="w-10 border-b px-3 py-2.5">
                 <HeaderCheckbox
                   allSelected={allSelected}
@@ -456,7 +456,7 @@ export function DealsHubspotTable({
                   <tr
                     key={d.id}
                     className={cn(
-                      "group h-12 border-b transition-colors hover:bg-primary/5",
+                      "group h-11 border-b transition-colors hover:bg-row-hover",
                       checked && "bg-primary/5",
                     )}
                   >
