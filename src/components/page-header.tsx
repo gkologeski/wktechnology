@@ -14,15 +14,15 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
-      <div className="min-w-0">
-        <h1 className="text-3xl font-semibold tracking-tight text-primary">{title}</h1>
+    <header className="mb-5 flex flex-col gap-4 border-b border-product-divider pb-5 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+      <div className="min-w-0 flex-1">
+        <h1 className="text-2xl font-semibold text-text-primary">{title}</h1>
         {typeof count === "number" ? (
-          <p className="text-sm text-muted-foreground mt-1 tabular-nums">
+          <p className="mt-1.5 text-sm tabular-nums text-text-secondary" aria-live="polite">
             {count.toLocaleString("pt-BR")} {countLabel ?? (count === 1 ? "registro" : "registros")}
           </p>
         ) : description ? (
-          <p className="text-sm text-muted-foreground mt-1">{description}</p>
+          <p className="mt-1.5 max-w-2xl text-sm text-text-secondary">{description}</p>
         ) : null}
       </div>
       {actions && (
@@ -30,6 +30,6 @@ export function PageHeader({
           {actions}
         </div>
       )}
-    </div>
+    </header>
   );
 }

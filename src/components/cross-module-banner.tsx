@@ -4,7 +4,6 @@ import { Link } from "@tanstack/react-router";
 import { useActiveModule, usePathModule, setStoredActiveModule } from "@/lib/modules/active-module";
 import { MODULES } from "@/lib/modules/registry";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 /**
  * Banner exibido quando a rota atual pertence a um módulo diferente do
@@ -27,10 +26,7 @@ export function CrossModuleBanner() {
   return (
     <div
       role="status"
-      className={cn(
-        "mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-amber-200/70 bg-amber-50 px-3.5 py-2.5 text-sm text-amber-900",
-        "dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100",
-      )}
+      className="mb-4 flex flex-wrap items-center gap-3 rounded-md border border-product-divider bg-product-panel-muted px-3.5 py-2.5 text-sm text-text-primary"
     >
       <AlertCircle className="h-4 w-4 shrink-0" />
       <div className="min-w-0 flex-1">
@@ -42,14 +38,14 @@ export function CrossModuleBanner() {
           size="sm"
           variant="ghost"
           asChild
-          className="h-7 px-2 text-amber-900 hover:bg-amber-100 dark:text-amber-100 dark:hover:bg-amber-500/20"
+          className="h-7 px-2 text-text-primary hover:bg-product-panel-strong"
         >
           <Link to={info.active.defaultRoute}>Voltar para {info.active.productName}</Link>
         </Button>
         <Button
           size="sm"
           variant="outline"
-          className="h-7 gap-1 border-amber-300 bg-white text-amber-900 hover:bg-amber-100 dark:border-amber-500/40 dark:bg-transparent dark:text-amber-100"
+          className="h-7 gap-1 border-product-divider bg-product-panel text-text-primary hover:bg-product-panel-strong"
           onClick={() => setStoredActiveModule(info.visited.id)}
         >
           Ativar {info.visited.productName}

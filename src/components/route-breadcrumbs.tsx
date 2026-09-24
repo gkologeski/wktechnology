@@ -28,7 +28,7 @@ export function RouteBreadcrumbs() {
   const last = crumbs[crumbs.length - 1];
 
   return (
-    <div className="h-10 flex items-center border-b bg-background/60 backdrop-blur px-6">
+    <div className="flex h-10 items-center border-b border-product-divider bg-product-toolbar px-4 md:px-6">
       {/* Mobile: back + current */}
       <div className="flex items-center gap-2 sm:hidden text-sm">
         {crumbs.length > 1 && (
