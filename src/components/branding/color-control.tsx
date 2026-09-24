@@ -5,9 +5,11 @@ type Props = {
   label: string;
   value: string;
   onChange: (hex: string) => void;
+  controlId?: string;
+  active?: boolean;
 };
 
-export function ColorControl({ label, value, onChange }: Props) {
+export function ColorControl({ label, value, onChange, controlId, active = false }: Props) {
   const [text, setText] = useState(() => anyToHex(value));
 
   useEffect(() => {
@@ -21,7 +23,12 @@ export function ColorControl({ label, value, onChange }: Props) {
   };
 
   return (
-    <div className="space-y-2">
+    <div
+      data-branding-control={controlId}
+      className={`space-y-2 rounded-md transition-[box-shadow,background-color] ${
+        active ? "bg-accent/40 p-2 ring-2 ring-action-accent" : ""
+      }`}
+    >
       <label className="flex items-center justify-between">
         <span className="text-[11px] font-bold text-foreground uppercase tracking-wide">
           {label}
@@ -40,6 +47,7 @@ export function ColorControl({ label, value, onChange }: Props) {
         </label>
         <input
           type="text"
+          data-branding-focus={controlId ? "true" : undefined}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onBlur={(e) => commit(e.target.value)}

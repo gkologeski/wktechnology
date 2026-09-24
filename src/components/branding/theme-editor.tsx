@@ -25,6 +25,9 @@ type Props = {
   onChange: (next: BrandTheme) => void;
   /** Tema herdado (workspace) — usado no editor de módulo para mostrar o valor base. */
   inherited?: BrandTheme | null;
+  mode?: "light" | "dark";
+  onModeChange?: (mode: "light" | "dark") => void;
+  activeTargetId?: string | null;
 };
 
 const ASSET_FIELDS: Array<{
@@ -73,8 +76,20 @@ const ASSET_FIELDS: Array<{
   },
 ];
 
-export function ThemeEditor({ theme, onChange, inherited }: Props) {
-  const [mode, setMode] = useState<"light" | "dark">("light");
+export function ThemeEditor({
+  theme,
+  onChange,
+  inherited,
+  mode: controlledMode,
+  onModeChange,
+  activeTargetId,
+}: Props) {
+  const [internalMode, setInternalMode] = useState<"light" | "dark">("light");
+  const mode = controlledMode ?? internalMode;
+  const setMode = (next: "light" | "dark") => {
+    setInternalMode(next);
+    onModeChange?.(next);
+  };
 
   const defaults = defaultThemeColors(mode);
   const inheritedColors = (mode === "light" ? inherited?.light : inherited?.dark) ?? {};
@@ -193,6 +208,8 @@ export function ThemeEditor({ theme, onChange, inherited }: Props) {
                   label={token.label}
                   value={effective(token.key)}
                   onChange={(hex) => setColor(token.key, hex)}
+                  controlId={token.key}
+                  active={activeTargetId === token.key}
                 />
                 <div className="flex items-center justify-between">
                   <span className="text-[9px] uppercase tracking-wide text-muted-foreground">
@@ -219,7 +236,10 @@ export function ThemeEditor({ theme, onChange, inherited }: Props) {
         <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
           Ícones
         </h3>
-        <div className="space-y-2">
+        <div
+          className={`space-y-2 rounded-md ${activeTargetId === "icon-stroke" ? "bg-accent/40 p-2 ring-2 ring-action-accent" : ""}`}
+          data-branding-control="icon-stroke"
+        >
           <div className="flex justify-between">
             <Label htmlFor="icon-stroke" className="text-[11px] font-bold uppercase tracking-wide">
               Espessura do traço
@@ -233,13 +253,17 @@ export function ThemeEditor({ theme, onChange, inherited }: Props) {
             max={3}
             step={0.25}
             value={icons.stroke}
+            data-branding-focus="true"
             onChange={(e) =>
               onChange({ ...theme, icons: { ...theme.icons, stroke: Number(e.target.value) } })
             }
             className="w-full accent-primary"
           />
         </div>
-        <div className="space-y-2">
+        <div
+          className={`space-y-2 rounded-md ${activeTargetId === "icon-size" ? "bg-accent/40 p-2 ring-2 ring-action-accent" : ""}`}
+          data-branding-control="icon-size"
+        >
           <div className="flex justify-between">
             <Label htmlFor="icon-size" className="text-[11px] font-bold uppercase tracking-wide">
               Tamanho base
@@ -253,6 +277,7 @@ export function ThemeEditor({ theme, onChange, inherited }: Props) {
             max={24}
             step={1}
             value={icons.size}
+            data-branding-focus="true"
             onChange={(e) =>
               onChange({ ...theme, icons: { ...theme.icons, size: Number(e.target.value) } })
             }
@@ -267,8 +292,12 @@ export function ThemeEditor({ theme, onChange, inherited }: Props) {
           Logos e ilustrações
         </h3>
         {ASSET_FIELDS.map((field) => (
-          <ImageInput
+          <div
             key={field.key}
+            data-branding-control={field.key}
+            className={`rounded-md ${activeTargetId === field.key ? "bg-accent/40 p-2 ring-2 ring-action-accent" : ""}`}
+          >
+          <ImageInput
             label={field.label}
             helperText={field.helper}
             value={assets[field.key] ?? ""}
@@ -290,6 +319,7 @@ export function ThemeEditor({ theme, onChange, inherited }: Props) {
               onChange({ ...theme, assets: { ...theme.assets, [field.key]: url ?? "" } })
             }
           />
+          </div>
         ))}
       </section>
     </div>
