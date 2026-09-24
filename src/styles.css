@@ -156,6 +156,9 @@
   --product-divider: oklch(0.865 0.018 240);
   --action-accent: var(--accent);
   --action-accent-foreground: var(--foreground);
+  /* Compatibility aliases for shared kanbans while they adopt product tokens. */
+  --hs-orange: var(--action-accent);
+  --hs-orange-foreground: var(--action-accent-foreground);
 
   /* CRM pipeline semantics */
   --hs-surface: oklch(0.975 0.005 250);
