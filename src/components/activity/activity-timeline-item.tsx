@@ -30,6 +30,7 @@ import {
   SurveyTimelineCard,
   type SurveyResponseSummary,
 } from "@/components/surveys/survey-timeline-card";
+import { modernizeLegacyWhatsAppHtml } from "@/lib/whatsapp-paste";
 
 /** Atividades vindas de integrações não podem ser editadas na timeline. */
 function externalNotice(a: Activity): string | null {
@@ -136,7 +137,10 @@ export function ActivityTimelineItem({
         ) : (
           a.body &&
           !isStructuredCallBody(a) && (
-            <HtmlContent html={a.body} className="text-sm text-foreground/90 mt-1" />
+            <HtmlContent
+              html={modernizeLegacyWhatsAppHtml(a.body)}
+              className="text-sm text-foreground/90 mt-1"
+            />
           )
         )}
 
