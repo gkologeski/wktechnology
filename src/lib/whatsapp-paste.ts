@@ -186,8 +186,9 @@ export function modernizeLegacyWhatsAppHtml(input: string): string {
       /<table role="presentation" cellpadding="0" cellspacing="0" width="100%">/g,
       '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" class="whatsapp-messages">',
     )
-    .replace(/<td align="(right|left)" style="padding:0;line-height:0;">/g, (_match, align) =>
-      `<td align="${align}" class="whatsapp-message-cell">`,
+    .replace(
+      /<td align="(right|left)" style="padding:0;line-height:0;">/g,
+      (_match, align) => `<td align="${align}" class="whatsapp-message-cell">`,
     )
     .replace(
       /<table role="presentation" cellpadding="0" cellspacing="0" style="display:inline-table;max-width:78%;background:#075E54;color:#ffffff;border-radius:6px;">/g,
@@ -205,5 +206,8 @@ export function modernizeLegacyWhatsAppHtml(input: string): string {
       /<span style="display:inline-block;margin-left:6px;font-size:8px;color:#b9c7ce;vertical-align:bottom;">/g,
       '<span class="whatsapp-message-time">',
     )
-    .replace(/<span style="color:#53bdeb;">✓✓<\/span>/g, '<span class="whatsapp-read-check">✓✓</span>');
+    .replace(
+      /<span style="color:#53bdeb;">✓✓<\/span>/g,
+      '<span class="whatsapp-read-check">✓✓</span>',
+    );
 }
