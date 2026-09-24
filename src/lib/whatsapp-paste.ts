@@ -84,7 +84,15 @@ export function identifyWhatsAppUserSenders(
   );
   if (phoneMatches.length > 0) return new Set(phoneMatches);
 
-  const workspaceMatches = senders.filter((sender) => workspaceNames.has(normalizedName(sender)));
+  const workspaceMatches = senders.filter((sender) => {
+    const normalizedSender = normalizedName(sender);
+    if (workspaceNames.has(normalizedSender)) return true;
+    return [...workspaceNames].some((name) => {
+      if (!normalizedSender.startsWith(`${name} `)) return false;
+      const suffix = sender.slice(name.length).trim();
+      return isPhoneLike(suffix);
+    });
+  });
   if (workspaceMatches.length > 0) return new Set(workspaceMatches);
 
   // Compatibilidade quando o perfil ainda não tem nome nem telefone: mantém a

@@ -41,7 +41,7 @@ export function useActivityEditing(
     const uploaded =
       !userId || newFiles.length === 0 ? [] : await uploadTimelineFiles(userId, newFiles);
     const patch: Record<string, unknown> = {
-      body: (body ? maybeConvertWhatsAppPaste(body, whatsappIdentity) : null) ?? body || null,
+      body: (body ? maybeConvertWhatsAppPaste(body, whatsappIdentity) : null) ?? (body || null),
       attachments: [...attachments, ...uploaded],
     };
     if (a.type === "task") {
