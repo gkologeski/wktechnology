@@ -142,9 +142,9 @@ export function DealsToolbar({
 
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center">
         <Select value={selectedPipelineId ?? ""} onValueChange={onSelectPipeline}>
-          <SelectTrigger className="h-9 w-[220px] font-medium">
+          <SelectTrigger className="h-9 w-full font-medium sm:w-[220px]">
             <SelectValue placeholder="Selecione pipeline" />
           </SelectTrigger>
           <SelectContent>
@@ -187,15 +187,15 @@ export function DealsToolbar({
           </Button>
         )}
 
-        <div className="flex-1" />
+        <div className="hidden flex-1 lg:block" />
 
-        <div className="relative">
+        <div className="relative w-full sm:w-auto">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             value={filters.search}
             onChange={(e) => setF("search", e.target.value)}
             placeholder="Buscar negócios…"
-            className="pl-8 h-9 w-[240px]"
+            className="h-9 w-full pl-8 sm:w-[240px]"
           />
         </div>
 
@@ -203,7 +203,7 @@ export function DealsToolbar({
           value={filters.ownerId || "all"}
           onValueChange={(v) => setF("ownerId", v === "all" ? "" : v)}
         >
-          <SelectTrigger className="h-9 w-[160px]">
+          <SelectTrigger className="h-9 w-full sm:w-[160px]">
             <SelectValue placeholder="Responsável" />
           </SelectTrigger>
           <SelectContent>
@@ -217,7 +217,7 @@ export function DealsToolbar({
         </Select>
 
         <Select value={filters.period} onValueChange={(v) => setF("period", v as DealPeriod)}>
-          <SelectTrigger className="h-9 w-[160px]">
+          <SelectTrigger className="h-9 w-full sm:w-[160px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -233,7 +233,10 @@ export function DealsToolbar({
           value={filters.closedPeriod}
           onValueChange={(v) => setF("closedPeriod", v as DatePreset)}
         >
-          <SelectTrigger className="h-9 w-[190px]" aria-label="Filtrar por data de fechamento">
+          <SelectTrigger
+            className="h-9 w-full sm:w-[190px]"
+            aria-label="Filtrar por data de fechamento"
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -279,7 +282,7 @@ export function DealsToolbar({
           value={filters.minValue}
           onChange={(e) => setF("minValue", e.target.value.replace(/[^0-9.]/g, ""))}
           placeholder="Valor mínimo"
-          className="h-9 w-[140px]"
+          className="h-9 w-full sm:w-[140px]"
         />
 
         {substatusOptions && substatusOptions.length > 0 && (
