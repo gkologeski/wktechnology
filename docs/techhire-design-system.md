@@ -237,3 +237,7 @@ Veja [`new-screen-ux-ui-checklist.md`](./new-screen-ux-ui-checklist.md).
 - **Wave 1.2 (oficialização)** — esta entrega: camada `techhire/ui`, checklist, template, correções de a11y de fundação.
 - **Wave 2 (TechERP)** — fundação global de listas e detalhes, integração com Destaque do White Label e aplicação completa em Negócios.
 - **Próximas Waves** — rollout em Pipeline, Detalhe da vaga, Perfil do candidato, Scorecards, Entrevistas, Ofertas, Configurações, Carreiras.
+
+## Superfícies operacionais configuráveis (White Label)
+
+Em Configurações → White Label → Superfícies é possível ajustar, para claro e escuro: Canvas operacional (`--product-canvas`), Cabeçalho operacional (`--product-header`), Faixa de filtros e abas (`--product-toolbar`), Painel (`--product-panel`), Painel suave (`--product-panel-muted`), Painel forte (`--product-panel-strong`) e Divisória operacional (`--product-divider`). Módulos herdam do workspace e podem sobrescrever. Sem personalização, valem os padrões de `src/styles.css`.
