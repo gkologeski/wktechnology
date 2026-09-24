@@ -107,6 +107,11 @@ canvas cinza-azulado, superfícies de comando e divisórias sem acoplar dados.
 - Conteúdo: painel branco apenas para tabela, quadro ou lista; o entorno usa `product-canvas`.
 - Tabela: cabeçalho `product-panel-strong`, ferramentas `product-panel-muted` e divisórias `product-divider`.
 - Ações de ênfase usam `action-accent`, alimentado pelo Destaque do White Label; cores de status permanecem semânticas.
+- Densidade alta, mas com respiro: `py-3` por linha mínimo.
+- Busca com **debounce 300ms**. Nunca trigger só por Enter.
+- Filtros visíveis (chips), nunca escondidos em "Mais filtros" por default.
+- Empty state diferenciado para "nunca teve dados" vs "filtro vazio".
+- Skeleton com o **mesmo grid** do conteúdo final.
 
 ### 4.3 Detalhes
 
@@ -121,13 +126,6 @@ Cabeçalho do registro
 
 O contraste vem de superfícies e divisórias, sem sombras fortes. Em telas estreitas,
 as três áreas empilham preservando a ordem propriedades → atividades → associações.
-
-- Densidade alta, mas com respiro: `py-3` por linha mínimo.
-- Busca com **debounce 300ms**. Nunca trigger só por Enter.
-- Filtros visíveis (chips), nunca escondidos em "Mais filtros" por default.
-- Empty state diferenciado para "nunca teve dados" vs "filtro vazio".
-- Skeleton com o **mesmo grid** do conteúdo final.
-
 - Drawer (`Sheet`) para **preview rápido sem perder contexto** da lista.
 - Rota dedicada (`/jobs/$id`) para edição/profundidade.
 - Header da rota usa `PageHeader` com `eyebrow` para breadcrumb implícito.

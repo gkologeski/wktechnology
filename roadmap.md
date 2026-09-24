@@ -10,4 +10,4 @@
       Observação: nenhum fluxo de importação HubSpot cria deal_line_items diretamente hoje, então a
       prevenção de recaída ficou apenas na UI do editor de itens (aviso + seletor inline).
 
-- [ ] Criar fundação visual global e aplicar integralmente em Negócios, usando o Destaque do White Label.
+- [x] Criar fundação visual global e aplicar integralmente em Negócios, usando o Destaque do White Label.
