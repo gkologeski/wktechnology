@@ -49,9 +49,15 @@ export const Route = createFileRoute("/_authenticated/deals/$id")({
   head: () => ({
     meta: [
       { title: "Detalhe do negócio | TechERP" },
-      { name: "description", content: "Consulte atividades, propriedades e associações do negócio." },
+      {
+        name: "description",
+        content: "Consulte atividades, propriedades e associações do negócio.",
+      },
       { property: "og:title", content: "Detalhe do negócio | TechERP" },
-      { property: "og:description", content: "Consulte atividades, propriedades e associações do negócio." },
+      {
+        property: "og:description",
+        content: "Consulte atividades, propriedades e associações do negócio.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -67,7 +73,12 @@ function DealDetail() {
   const { user } = useAuth();
   const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techsales.deals");
 
-  const { data: deal, isLoading, isError, refetch } = useQuery({
+  const {
+    data: deal,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: qk.deal(id),
     queryFn: async () => {
       const { data, error } = await supabase.from("deals").select("*").eq("id", id).maybeSingle();
@@ -114,9 +125,39 @@ function DealDetail() {
     [dealPipeline],
   );
 
-  if (isLoading) return <div className="-m-4 space-y-3 p-6 md:-m-6"><div className="h-36 animate-pulse rounded-md bg-surface-3" /><div className="grid gap-3 xl:grid-cols-3"><div className="h-96 animate-pulse rounded-md bg-surface-3" /><div className="h-96 animate-pulse rounded-md bg-surface-3" /><div className="h-96 animate-pulse rounded-md bg-surface-3" /></div></div>;
-  if (isError) return <div className="grid min-h-72 place-items-center text-center"><div><p className="font-medium">Não foi possível carregar este negócio.</p><Button variant="outline" size="sm" className="mt-3" onClick={() => void refetch()}>Tentar novamente</Button></div></div>;
-  if (!deal) return <div className="grid min-h-72 place-items-center text-center"><div><p className="font-medium">Negócio não encontrado.</p><Button asChild variant="outline" size="sm" className="mt-3"><Link to="/deals">Voltar para negócios</Link></Button></div></div>;
+  if (isLoading)
+    return (
+      <div className="-m-4 space-y-3 p-6 md:-m-6">
+        <div className="h-36 animate-pulse rounded-md bg-surface-3" />
+        <div className="grid gap-3 xl:grid-cols-3">
+          <div className="h-96 animate-pulse rounded-md bg-surface-3" />
+          <div className="h-96 animate-pulse rounded-md bg-surface-3" />
+          <div className="h-96 animate-pulse rounded-md bg-surface-3" />
+        </div>
+      </div>
+    );
+  if (isError)
+    return (
+      <div className="grid min-h-72 place-items-center text-center">
+        <div>
+          <p className="font-medium">Não foi possível carregar este negócio.</p>
+          <Button variant="outline" size="sm" className="mt-3" onClick={() => void refetch()}>
+            Tentar novamente
+          </Button>
+        </div>
+      </div>
+    );
+  if (!deal)
+    return (
+      <div className="grid min-h-72 place-items-center text-center">
+        <div>
+          <p className="font-medium">Negócio não encontrado.</p>
+          <Button asChild variant="outline" size="sm" className="mt-3">
+            <Link to="/deals">Voltar para negócios</Link>
+          </Button>
+        </div>
+      </div>
+    );
 
   const currentStage = deal.stage_id || (deal.stage as string);
 
@@ -198,7 +239,13 @@ function DealDetail() {
     <header className="bg-surface-2 px-4 py-4 md:px-6">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 sm:flex sm:flex-wrap sm:justify-between">
         <div className="flex min-w-0 items-center gap-3">
-          <Button variant="ghost" size="icon" asChild className="shrink-0" aria-label="Voltar para negócios">
+          <Button
+            variant="ghost"
+            size="icon"
+            asChild
+            className="shrink-0"
+            aria-label="Voltar para negócios"
+          >
             <Link to="/deals">
               <ArrowLeft className="h-4 w-4" />
             </Link>
@@ -218,9 +265,22 @@ function DealDetail() {
               </Badge>
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-text-secondary">
-              <span className="inline-flex items-center gap-1"><DollarSign className="h-3.5 w-3.5" />{formatCurrency(deal.value, deal.currency)}</span>
-              {deal.expected_close_date && <span className="inline-flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />Fechamento {formatDateTime(deal.expected_close_date)}</span>}
-              {deal.company_id && <span className="inline-flex items-center gap-1"><Building2 className="h-3.5 w-3.5" />Empresa associada</span>}
+              <span className="inline-flex items-center gap-1">
+                <DollarSign className="h-3.5 w-3.5" />
+                {formatCurrency(deal.value, deal.currency)}
+              </span>
+              {deal.expected_close_date && (
+                <span className="inline-flex items-center gap-1">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  Fechamento {formatDateTime(deal.expected_close_date)}
+                </span>
+              )}
+              {deal.company_id && (
+                <span className="inline-flex items-center gap-1">
+                  <Building2 className="h-3.5 w-3.5" />
+                  Empresa associada
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -268,7 +328,13 @@ function DealDetail() {
       <div className="mt-4 border-t border-border-subtle pt-4">
         <StageTracker stages={stages} current={currentStage} onChange={setStage} />
         <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] md:items-start">
-          <SubstatusSelect pipelineId={dealPipeline?.id ?? null} stageValue={currentStage} value={(deal as unknown as { stage_substatus_id?: string | null }).stage_substatus_id} onChange={setSubstatus} className="space-y-1" />
+          <SubstatusSelect
+            pipelineId={dealPipeline?.id ?? null}
+            stageValue={currentStage}
+            value={(deal as unknown as { stage_substatus_id?: string | null }).stage_substatus_id}
+            onChange={setSubstatus}
+            className="space-y-1"
+          />
           <SubstatusHistory entity="deals" entityId={deal.id} className="max-w-xl" />
         </div>
       </div>

@@ -25,9 +25,13 @@ export function RecordLayout({
     <div className="-m-4 min-h-full bg-surface-1 md:-m-6">
       {header}
       <div className="grid grid-cols-1 border-t border-border-subtle xl:grid-cols-[260px_minmax(0,1fr)_300px] 2xl:grid-cols-[280px_minmax(0,1fr)_320px]">
-        <aside className="min-w-0 space-y-4 border-b border-border-subtle bg-surface-2 p-4 xl:border-b-0 xl:border-r">{left}</aside>
+        <aside className="min-w-0 space-y-4 border-b border-border-subtle bg-surface-2 p-4 xl:border-b-0 xl:border-r">
+          {left}
+        </aside>
         <div className="min-w-0 space-y-4 bg-surface-1 p-4 md:p-6">{center}</div>
-        <aside className="min-w-0 space-y-4 border-t border-border-subtle bg-surface-2 p-4 xl:border-l xl:border-t-0">{right}</aside>
+        <aside className="min-w-0 space-y-4 border-t border-border-subtle bg-surface-2 p-4 xl:border-l xl:border-t-0">
+          {right}
+        </aside>
       </div>
     </div>
   );

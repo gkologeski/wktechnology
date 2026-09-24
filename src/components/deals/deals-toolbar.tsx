@@ -233,7 +233,10 @@ export function DealsToolbar({
           value={filters.closedPeriod}
           onValueChange={(v) => setF("closedPeriod", v as DatePreset)}
         >
-          <SelectTrigger className="h-9 w-full sm:w-[190px]" aria-label="Filtrar por data de fechamento">
+          <SelectTrigger
+            className="h-9 w-full sm:w-[190px]"
+            aria-label="Filtrar por data de fechamento"
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

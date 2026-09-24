@@ -152,7 +152,9 @@ export function DealsForecast({ pipeline, deals }: { pipeline: Pipeline; deals: 
 
 function KPI({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
-    <div className={`rounded-md border bg-surface-2 p-3 shadow-xs ${accent ? "border-[var(--hs-orange)]" : "border-border-subtle"}`}>
+    <div
+      className={`rounded-md border bg-surface-2 p-3 shadow-xs ${accent ? "border-[var(--hs-orange)]" : "border-border-subtle"}`}
+    >
       <div className="text-[11px] uppercase tracking-wide text-[var(--hs-text-muted)]">{label}</div>
       <div className="mt-1 text-lg font-semibold tabular-nums">{value}</div>
     </div>
