@@ -117,21 +117,47 @@ export function LivePreview({
       className={`${selectable("product-canvas").className} rounded-md border overflow-hidden text-[11px]`}
       style={{ background: op.canvas, borderColor: op.divider }}
     >
-      <div {...selectable("product-header", ["heading_font", "product-divider"])} className={`${selectable("product-header").className} px-3 py-2 border-b font-bold`} style={{ background: op.header, borderColor: op.divider, fontFamily: headingFont }}>
+      <div
+        {...selectable("product-header", ["heading_font", "product-divider"])}
+        className={`${selectable("product-header").className} px-3 py-2 border-b font-bold`}
+        style={{ background: op.header, borderColor: op.divider, fontFamily: headingFont }}
+      >
         Negócios
       </div>
-      <div {...selectable("product-toolbar", ["product-divider", "muted-foreground"])} className={`${selectable("product-toolbar").className} px-3 py-1.5 border-b flex gap-2`} style={{ background: op.toolbar, borderColor: op.divider, color: muted }}>
+      <div
+        {...selectable("product-toolbar", ["product-divider", "muted-foreground"])}
+        className={`${selectable("product-toolbar").className} px-3 py-1.5 border-b flex gap-2`}
+        style={{ background: op.toolbar, borderColor: op.divider, color: muted }}
+      >
         <span>Filtros</span>
-        <span className="font-semibold" style={{ color: text, borderBottom: `2px solid ${accent}` }}>Tabela</span>
+        <span
+          className="font-semibold"
+          style={{ color: text, borderBottom: `2px solid ${accent}` }}
+        >
+          Tabela
+        </span>
         <span>Quadro</span>
       </div>
       <div className="p-2">
-        <div {...selectable("product-panel", ["product-divider"])} className={`${selectable("product-panel").className} rounded border`} style={{ background: op.panel, borderColor: op.divider }}>
-          <div {...selectable("product-panel-muted", ["product-divider"])} className={`${selectable("product-panel-muted").className} px-2 py-1 border-b font-semibold`} style={{ background: op.muted, borderColor: op.divider }}>
+        <div
+          {...selectable("product-panel", ["product-divider"])}
+          className={`${selectable("product-panel").className} rounded border`}
+          style={{ background: op.panel, borderColor: op.divider }}
+        >
+          <div
+            {...selectable("product-panel-muted", ["product-divider"])}
+            className={`${selectable("product-panel-muted").className} px-2 py-1 border-b font-semibold`}
+            style={{ background: op.muted, borderColor: op.divider }}
+          >
             Nome · Etapa · Valor
           </div>
           {["Projeto Alfa", "Outsourcing Beta"].map((n) => (
-              <div key={n} {...selectable("product-divider")} className={`${selectable("product-divider").className} px-2 py-1 border-b last:border-b-0`} style={{ borderColor: op.divider }}>
+            <div
+              key={n}
+              {...selectable("product-divider")}
+              className={`${selectable("product-divider").className} px-2 py-1 border-b last:border-b-0`}
+              style={{ borderColor: op.divider }}
+            >
               {n}
             </div>
           ))}
@@ -139,7 +165,6 @@ export function LivePreview({
       </div>
     </section>
   );
-
 
   return (
     <div className="h-full flex flex-col">
@@ -192,9 +217,18 @@ export function LivePreview({
         >
           <div className="flex items-center gap-3">
             {logo ? (
-              <img {...selectable(dark ? "logo_dark" : "logo_light")} src={logo} alt="" className={`${selectable(dark ? "logo_dark" : "logo_light").className} h-6 w-6 rounded object-contain`} />
+              <img
+                {...selectable(dark ? "logo_dark" : "logo_light")}
+                src={logo}
+                alt=""
+                className={`${selectable(dark ? "logo_dark" : "logo_light").className} h-6 w-6 rounded object-contain`}
+              />
             ) : (
-              <div {...selectable("primary")} className={`${selectable("primary").className} h-6 w-6 rounded`} style={{ background: primary }} />
+              <div
+                {...selectable("primary")}
+                className={`${selectable("primary").className} h-6 w-6 rounded`}
+                style={{ background: primary }}
+              />
             )}
             <span
               {...selectable("brand_name", ["heading_font", "foreground"])}
@@ -205,7 +239,10 @@ export function LivePreview({
             </span>
           </div>
           <div className="flex items-center gap-3" style={{ color: muted }}>
-            <Search {...selectable("icon-size", ["icon-stroke", "muted-foreground"])} style={{ width: iconSize, height: iconSize, strokeWidth: iconStroke }} />
+            <Search
+              {...selectable("icon-size", ["icon-stroke", "muted-foreground"])}
+              style={{ width: iconSize, height: iconSize, strokeWidth: iconStroke }}
+            />
             <Bell style={{ width: iconSize, height: iconSize, strokeWidth: iconStroke }} />
             <span
               className="h-6 w-6 rounded-full text-[10px] font-bold flex items-center justify-center"
@@ -302,7 +339,13 @@ export function LivePreview({
                     {card.value}
                   </div>
                   <span
-                    {...selectable(card.label === "Conversão" ? "accent" : card.label === "Pipeline" ? "primary" : "surface-3")}
+                    {...selectable(
+                      card.label === "Conversão"
+                        ? "accent"
+                        : card.label === "Pipeline"
+                          ? "primary"
+                          : "surface-3",
+                    )}
                     className={`${selectable(card.label === "Conversão" ? "accent" : card.label === "Pipeline" ? "primary" : "surface-3").className} inline-block px-2 py-0.5 text-[10px] font-bold`}
                     style={{ background: card.badgeBg, color: card.badgeFg, borderRadius: radius }}
                   >
@@ -363,7 +406,25 @@ export function LivePreview({
                 {[...statuses, ...stages].map((s) => (
                   <span
                     key={s.label}
-                    {...selectable(s.label === "Sucesso" ? "success" : s.label === "Aviso" ? "warning" : s.label === "Erro" ? "destructive" : s.label === "Info" ? "dei-accent" : stages.findIndex((stage) => stage.label === s.label) === 0 ? "hs-stage-1" : stages.findIndex((stage) => stage.label === s.label) === 1 ? "hs-stage-2" : stages.findIndex((stage) => stage.label === s.label) === 2 ? "hs-stage-4" : s.label === "Ganho" ? "hs-stage-won" : "hs-stage-lost")}
+                    {...selectable(
+                      s.label === "Sucesso"
+                        ? "success"
+                        : s.label === "Aviso"
+                          ? "warning"
+                          : s.label === "Erro"
+                            ? "destructive"
+                            : s.label === "Info"
+                              ? "dei-accent"
+                              : stages.findIndex((stage) => stage.label === s.label) === 0
+                                ? "hs-stage-1"
+                                : stages.findIndex((stage) => stage.label === s.label) === 1
+                                  ? "hs-stage-2"
+                                  : stages.findIndex((stage) => stage.label === s.label) === 2
+                                    ? "hs-stage-4"
+                                    : s.label === "Ganho"
+                                      ? "hs-stage-won"
+                                      : "hs-stage-lost",
+                    )}
                     className={`${selectable(s.label === "Sucesso" ? "success" : s.label === "Aviso" ? "warning" : s.label === "Erro" ? "destructive" : s.label === "Info" ? "dei-accent" : stages.findIndex((stage) => stage.label === s.label) === 0 ? "hs-stage-1" : stages.findIndex((stage) => stage.label === s.label) === 1 ? "hs-stage-2" : stages.findIndex((stage) => stage.label === s.label) === 2 ? "hs-stage-4" : s.label === "Ganho" ? "hs-stage-won" : "hs-stage-lost").className} px-2 py-0.5 text-[10px] font-bold`}
                     style={{
                       borderRadius: radius,
@@ -389,7 +450,11 @@ export function LivePreview({
                 >
                   Formulário
                 </div>
-                <label {...selectable("foreground")} className={`${selectable("foreground").className} block text-[10px] font-semibold`} style={{ color: text }}>
+                <label
+                  {...selectable("foreground")}
+                  className={`${selectable("foreground").className} block text-[10px] font-semibold`}
+                  style={{ color: text }}
+                >
                   Nome da empresa
                 </label>
                 <div
@@ -421,7 +486,10 @@ export function LivePreview({
                     className={`${selectable("empty_illustration").className} h-12 object-contain`}
                   />
                 ) : (
-                  <Inbox {...selectable("icon-stroke", ["icon-size", "muted-foreground"])} style={{ width: 28, height: 28, strokeWidth: iconStroke, color: muted }} />
+                  <Inbox
+                    {...selectable("icon-stroke", ["icon-size", "muted-foreground"])}
+                    style={{ width: 28, height: 28, strokeWidth: iconStroke, color: muted }}
+                  />
                 )}
                 <div className="text-[11px] font-bold" style={{ color: text }}>
                   Nenhum registro
@@ -443,7 +511,11 @@ export function LivePreview({
               >
                 Tipografia
               </div>
-              <div {...selectable("heading_font", ["foreground"])} style={{ fontFamily: headingFont, color: text }} className={`${selectable("heading_font").className} text-base font-bold`}>
+              <div
+                {...selectable("heading_font", ["foreground"])}
+                style={{ fontFamily: headingFont, color: text }}
+                className={`${selectable("heading_font").className} text-base font-bold`}
+              >
                 Heading — {headingFont.split(",")[0].replace(/['"]/g, "")}
               </div>
               <div

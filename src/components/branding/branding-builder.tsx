@@ -163,7 +163,11 @@ export function BrandingBuilder() {
       {/* Body */}
       <div className="flex-1 flex min-h-0">
         <aside className="w-80 border-r overflow-y-auto bg-muted/30 shrink-0">
-          <Tabs value={editorTab} onValueChange={(value) => setEditorTab(value as PreviewEditorTab)} className="w-full">
+          <Tabs
+            value={editorTab}
+            onValueChange={(value) => setEditorTab(value as PreviewEditorTab)}
+            className="w-full"
+          >
             <div className="px-4 pt-4">
               <TabsList className="w-full grid grid-cols-2">
                 <TabsTrigger value="basics">Marca</TabsTrigger>

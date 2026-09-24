@@ -297,28 +297,28 @@ export function ThemeEditor({
             data-branding-control={field.key}
             className={`rounded-md ${activeTargetId === field.key ? "bg-accent/40 p-2 ring-2 ring-action-accent" : ""}`}
           >
-          <ImageInput
-            label={field.label}
-            helperText={field.helper}
-            value={assets[field.key] ?? ""}
-            maxBytes={field.maxBytes}
-            allowedMimes={field.allowedMimes}
-            aspectHint={field.aspectHint}
-            folder="branding"
-            inheritedValue={inheritedAssets[field.key] ?? null}
-            onResetInherit={
-              inheritedAssets[field.key] && assets[field.key]
-                ? () => {
-                    const nextAssets = { ...(theme.assets ?? {}) };
-                    delete nextAssets[field.key];
-                    onChange({ ...theme, assets: nextAssets });
-                  }
-                : undefined
-            }
-            onChange={(url) =>
-              onChange({ ...theme, assets: { ...theme.assets, [field.key]: url ?? "" } })
-            }
-          />
+            <ImageInput
+              label={field.label}
+              helperText={field.helper}
+              value={assets[field.key] ?? ""}
+              maxBytes={field.maxBytes}
+              allowedMimes={field.allowedMimes}
+              aspectHint={field.aspectHint}
+              folder="branding"
+              inheritedValue={inheritedAssets[field.key] ?? null}
+              onResetInherit={
+                inheritedAssets[field.key] && assets[field.key]
+                  ? () => {
+                      const nextAssets = { ...(theme.assets ?? {}) };
+                      delete nextAssets[field.key];
+                      onChange({ ...theme, assets: nextAssets });
+                    }
+                  : undefined
+              }
+              onChange={(url) =>
+                onChange({ ...theme, assets: { ...theme.assets, [field.key]: url ?? "" } })
+              }
+            />
           </div>
         ))}
       </section>

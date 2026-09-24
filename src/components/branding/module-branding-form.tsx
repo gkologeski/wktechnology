@@ -143,7 +143,10 @@ export function ModuleBrandingForm({ moduleId }: { moduleId: ModuleId }) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs value={editorTab} onValueChange={(value) => setEditorTab(value as "identity" | "theme")}>
+        <Tabs
+          value={editorTab}
+          onValueChange={(value) => setEditorTab(value as "identity" | "theme")}
+        >
           <TabsList>
             <TabsTrigger value="identity">Identidade</TabsTrigger>
             <TabsTrigger value="theme">Tema do módulo</TabsTrigger>
