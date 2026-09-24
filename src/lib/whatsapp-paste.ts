@@ -101,10 +101,8 @@ export function identifyWhatsAppUserSenders(
   });
   if (workspaceMatches.length > 0) return new Set(workspaceMatches);
 
-  // Compatibilidade quando o perfil ainda não tem nome nem telefone: mantém a
-  // heurística histórica, sem transformar um número do cliente em usuário.
-  const firstNamedSender = senders.find((sender) => !isPhoneLike(sender));
-  return new Set(firstNamedSender ? [firstNamedSender] : []);
+  // Sem uma correspondência segura, todas as mensagens permanecem como cliente.
+  return new Set();
 }
 
 export function renderWhatsAppHtml(
