@@ -4,6 +4,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Attachment, RelatedKey, TeamMember } from "@/components/activity/timeline-shared";
+import type { WhatsAppIdentity } from "@/lib/whatsapp-paste";
 
 export type TimelineTarget = {
   email?: string;
@@ -136,13 +137,17 @@ export async function resolveTimelineAutoLinks(
 export async function fetchTimelineTeam(user: { id: string; email?: string | null }): Promise<{
   team: TeamMember[];
   workspaceId: string | null;
+  whatsappIdentity: WhatsAppIdentity;
 }> {
   const list: TeamMember[] = [{ id: user.id, name: user.email ?? "Você" }];
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("active_workspace_id")
-    .eq("id", user.id)
-    .maybeSingle();
+  const [{ data: profile }, { data: ownPhone }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("active_workspace_id, full_name")
+      .eq("id", user.id)
+      .maybeSingle(),
+    supabase.rpc("get_my_phone"),
+  ]);
   const wsId = (profile as { active_workspace_id?: string } | null)?.active_workspace_id ?? null;
   if (wsId) {
     const { data: wm } = await supabase
@@ -157,7 +162,15 @@ export async function fetchTimelineTeam(user: { id: string; email?: string | nul
       }
     }
   }
-  return { team: list, workspaceId: wsId };
+  return {
+    team: list,
+    workspaceId: wsId,
+    whatsappIdentity: {
+      currentUserName: profile?.full_name ?? null,
+      currentUserPhone: ownPhone ?? null,
+      workspaceUserNames: list.map((member) => member.name),
+    },
+  };
 }
 
 function safeFileName(name: string) {

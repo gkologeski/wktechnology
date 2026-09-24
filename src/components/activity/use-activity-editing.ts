@@ -6,8 +6,13 @@ import type { Activity } from "@/lib/db-types";
 import type { Attachment } from "@/components/activity/timeline-shared";
 import { uploadTimelineFiles } from "@/lib/timeline/activity-entities";
 import { activityAttachments, updateActivity } from "@/lib/timeline/activity-mutations";
+import { maybeConvertWhatsAppPaste, type WhatsAppIdentity } from "@/lib/whatsapp-paste";
 
-export function useActivityEditing(userId: string | undefined, onSaved: () => void) {
+export function useActivityEditing(
+  userId: string | undefined,
+  whatsappIdentity: WhatsAppIdentity,
+  onSaved: () => void,
+) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [body, setBody] = useState("");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
@@ -36,7 +41,7 @@ export function useActivityEditing(userId: string | undefined, onSaved: () => vo
     const uploaded =
       !userId || newFiles.length === 0 ? [] : await uploadTimelineFiles(userId, newFiles);
     const patch: Record<string, unknown> = {
-      body: body || null,
+      body: (body ? maybeConvertWhatsAppPaste(body, whatsappIdentity) : null) ?? body || null,
       attachments: [...attachments, ...uploaded],
     };
     if (a.type === "task") {

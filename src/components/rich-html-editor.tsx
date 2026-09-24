@@ -62,6 +62,8 @@ const SANITIZE_CONFIG = {
     "style",
     "data-user-id",
     "data-mention",
+    "data-whatsapp-chat",
+    "data-whatsapp-message",
     "contenteditable",
     "src",
     "alt",

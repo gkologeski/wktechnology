@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { useServerFn } from "@tanstack/react-start";
 import { signMeetingRecording } from "@/lib/meetings.functions";
 import { notifyActivityEvent } from "@/lib/notifications.functions";
-import { maybeConvertWhatsAppPaste } from "@/lib/whatsapp-paste";
+import { maybeConvertWhatsAppPaste, type WhatsAppIdentity } from "@/lib/whatsapp-paste";
 import { useHasMessageDraft } from "@/hooks/use-has-message-draft";
 import {
   type Attachment,
@@ -79,9 +79,10 @@ export function ActivityTimeline({
   const [assigneeId, setAssigneeId] = useState<string>("");
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [team, setTeam] = useState<TeamMember[]>([]);
+  const [whatsappIdentity, setWhatsappIdentity] = useState<WhatsAppIdentity>({});
   const [currentWorkspaceId, setCurrentWorkspaceId] = useState<string | null>(null);
   const [mentions, setMentions] = useState<TeamMember[]>([]);
-  const editing = useActivityEditing(user?.id, () => afterChange());
+  const editing = useActivityEditing(user?.id, whatsappIdentity, () => afterChange());
 
   const notifyActivityEventFn = useServerFn(notifyActivityEvent);
 
@@ -129,9 +130,10 @@ export function ActivityTimeline({
   // Load workspace members for @mentions and task assignment
   useEffect(() => {
     if (!user) return;
-    void fetchTimelineTeam(user).then(({ team: list, workspaceId }) => {
+    void fetchTimelineTeam(user).then(({ team: list, workspaceId, whatsappIdentity: identity }) => {
       setCurrentWorkspaceId(workspaceId);
       setTeam(list);
+      setWhatsappIdentity(identity);
     });
   }, [user]);
 
@@ -148,7 +150,7 @@ export function ActivityTimeline({
     }
     const attachments = await uploadFiles();
     const autoLinks = await resolveAutoLinks();
-    const waHtml = body ? maybeConvertWhatsAppPaste(body) : null;
+    const waHtml = body ? maybeConvertWhatsAppPaste(body, whatsappIdentity) : null;
     const finalBody = waHtml ?? (body || null);
     const schedulable = type === "task" || type === "call" || type === "meeting";
     const payload: Record<string, unknown> = {

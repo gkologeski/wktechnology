@@ -46,6 +46,12 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-row-hover: var(--row-hover);
+  --color-whatsapp-canvas: var(--whatsapp-canvas);
+  --color-whatsapp-user: var(--whatsapp-user);
+  --color-whatsapp-client: var(--whatsapp-client);
+  --color-whatsapp-ink: var(--whatsapp-ink);
+  --color-whatsapp-meta: var(--whatsapp-meta);
+  --color-whatsapp-check: var(--whatsapp-check);
 
   /* ATS Design System — semantic surfaces, borders & text */
   --color-surface-1: var(--surface-1);
@@ -87,6 +93,12 @@
 
 :root {
   --row-hover: color-mix(in oklab, var(--primary) 8%, transparent);
+  --whatsapp-canvas: oklch(0.94 0.015 105);
+  --whatsapp-user: oklch(0.93 0.08 135);
+  --whatsapp-client: oklch(1 0 0);
+  --whatsapp-ink: oklch(0.25 0.015 170);
+  --whatsapp-meta: oklch(0.52 0.012 170);
+  --whatsapp-check: oklch(0.67 0.14 220);
   --radius: 0.5rem;
   --background: oklch(0.99 0.003 250);
   --foreground: oklch(0.22 0.03 250);
@@ -544,6 +556,110 @@
 .prose hr {
   border-color: var(--border);
   margin-block: 0.8em;
+}
+
+/* Conversas coladas do WhatsApp na timeline. O canvas permanece claro, como
+   no aplicativo, inclusive quando o restante do TechERP está em modo escuro. */
+.prose .whatsapp-chat {
+  width: min(100%, 520px);
+  margin: 0.5rem 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in oklab, var(--whatsapp-ink) 14%, transparent);
+  border-radius: var(--radius-lg);
+  background-color: var(--whatsapp-canvas);
+  background-image: url("./assets/whatsapp-chat-pattern.jpg");
+  background-position: center;
+  background-size: 420px 420px;
+  color: var(--whatsapp-ink);
+  box-shadow: 0 1px 3px color-mix(in oklab, var(--whatsapp-ink) 12%, transparent);
+}
+.prose .whatsapp-chat-header {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-height: 3.25rem;
+  padding: 0.625rem 0.875rem;
+  background: color-mix(in oklab, var(--whatsapp-client) 96%, transparent);
+  border-bottom: 1px solid color-mix(in oklab, var(--whatsapp-ink) 10%, transparent);
+}
+.prose .whatsapp-chat-avatar {
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 2rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--whatsapp-meta) 24%, var(--whatsapp-client));
+}
+.prose .whatsapp-chat-contact {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--whatsapp-ink);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.prose .whatsapp-chat-label {
+  margin-left: auto;
+  color: var(--whatsapp-meta);
+  font-size: 0.6875rem;
+}
+.prose .whatsapp-messages {
+  width: 100%;
+  margin: 0;
+  padding: 0.75rem;
+  border-collapse: separate;
+  border-spacing: 0 0.25rem;
+}
+.prose .whatsapp-message-cell {
+  padding: 0;
+  line-height: 0;
+}
+.prose .whatsapp-bubble {
+  display: inline-table;
+  width: auto;
+  max-width: 78%;
+  margin: 0;
+  border: 0;
+  border-radius: 0.4375rem;
+  color: var(--whatsapp-ink);
+  box-shadow: 0 1px 1px color-mix(in oklab, var(--whatsapp-ink) 16%, transparent);
+}
+.prose .whatsapp-bubble--mine {
+  background: var(--whatsapp-user);
+  border-top-right-radius: 0.125rem;
+}
+.prose .whatsapp-bubble--client {
+  background: var(--whatsapp-client);
+  border-top-left-radius: 0.125rem;
+}
+.prose .whatsapp-bubble-content {
+  padding: 0.42rem 0.55rem 0.32rem;
+  border: 0;
+  color: var(--whatsapp-ink);
+  font-family: system-ui, sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.32;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.prose .whatsapp-message-time {
+  display: inline-block;
+  margin-left: 0.5rem;
+  color: var(--whatsapp-meta);
+  font-size: 0.625rem;
+  line-height: 1;
+  vertical-align: -0.08rem;
+  white-space: nowrap;
+}
+.prose .whatsapp-read-check {
+  color: var(--whatsapp-check);
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .prose .whatsapp-bubble {
+    max-width: 88%;
+  }
 }
 
 /* Impressão — dashboard exportado em PDF via window.print(). */
