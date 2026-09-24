@@ -261,6 +261,9 @@ export function LivePreview({ settings }: { settings: PreviewSettings }) {
               ))}
             </div>
 
+            {/* Lista operacional */}
+            {operationalScene}
+
             {/* Tabela */}
             <div
               className="border overflow-hidden"
