@@ -694,6 +694,101 @@
   }
 }
 
+/* Authenticated product shell — shared visual language for every ERP module. */
+.authenticated-content {
+  color: var(--text-primary);
+}
+.authenticated-content :where(.text-muted-foreground) {
+  color: var(--text-secondary);
+}
+.authenticated-content :where(.bg-background) {
+  background-color: var(--product-panel);
+}
+.authenticated-content :where(.bg-muted\/20, .bg-muted\/30, .bg-muted\/40, .bg-muted\/50) {
+  background-color: var(--product-panel-muted);
+}
+.authenticated-content :where(.border, .border-b, .border-t, .border-l, .border-r) {
+  border-color: var(--product-divider);
+}
+.authenticated-content [data-slot="card"] {
+  border-color: var(--product-divider);
+  border-radius: var(--radius-md);
+  background-color: var(--product-panel);
+  box-shadow: var(--shadow-xs);
+}
+.authenticated-content [data-slot="card-header"] {
+  padding: 1.25rem;
+}
+.authenticated-content [data-slot="card-description"] {
+  color: var(--text-secondary);
+}
+.authenticated-content [data-slot="card-content"] {
+  padding-right: 1.25rem;
+  padding-bottom: 1.25rem;
+  padding-left: 1.25rem;
+}
+.authenticated-content [data-slot="card-footer"] {
+  padding-right: 1.25rem;
+  padding-bottom: 1.25rem;
+  padding-left: 1.25rem;
+}
+.authenticated-content [data-slot="table-header"] {
+  background-color: var(--product-panel-strong);
+}
+.authenticated-content [data-slot="table-header"] tr,
+.authenticated-content [data-slot="table-row"] {
+  border-color: var(--product-divider);
+}
+.authenticated-content [data-slot="table-body"] {
+  background-color: var(--product-panel);
+}
+.authenticated-content [data-slot="table-head"] {
+  padding-right: 0.75rem;
+  padding-left: 0.75rem;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.authenticated-content [data-slot="table-cell"] {
+  padding: 0.625rem 0.75rem;
+}
+.authenticated-content [data-slot="tabs-list"] {
+  border: 1px solid var(--product-divider);
+  border-radius: var(--radius-md);
+  background-color: var(--product-panel-muted);
+  color: var(--text-secondary);
+}
+.authenticated-content [data-slot="tabs-trigger"][data-state="active"] {
+  background-color: var(--product-panel);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-xs);
+}
+.authenticated-content [data-slot="tabs-trigger"]:focus-visible {
+  --tw-ring-color: var(--action-accent);
+}
+.authenticated-content [data-slot="button"][data-variant="default"] {
+  background-color: var(--action-accent);
+  color: var(--action-accent-foreground);
+}
+.authenticated-content [data-slot="button"][data-variant="default"]:hover {
+  background-color: color-mix(in oklab, var(--action-accent) 88%, var(--text-primary));
+}
+.authenticated-content :where(input, textarea, select):focus-visible {
+  outline: 2px solid var(--action-accent);
+  outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .authenticated-content *,
+  .authenticated-content *::before,
+  .authenticated-content *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
 /* Impressão — dashboard exportado em PDF via window.print(). */
 @media print {
   @page {

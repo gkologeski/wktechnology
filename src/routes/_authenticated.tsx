@@ -138,10 +138,10 @@ function AuthenticatedLayout() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-muted/20">
+      <div className="min-h-screen flex w-full bg-product-canvas">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-14 flex min-w-0 items-center gap-2 border-b bg-background px-3">
+          <header className="h-14 flex min-w-0 items-center gap-2 border-b border-product-divider bg-product-header px-3">
             <SidebarTrigger className="shrink-0" />
             <ModuleSwitcher className="min-w-0 shrink" />
             <GlobalSearchTrigger />
@@ -156,11 +156,14 @@ function AuthenticatedLayout() {
           </header>
 
           {!blocked && <RouteBreadcrumbs />}
-          <main className="flex-1 p-6 overflow-auto">
+          <main
+            className="authenticated-content flex-1 overflow-auto bg-product-canvas p-4 md:p-6"
+            data-product-surface="authenticated"
+          >
             <FocusQueueBar />
             {!blocked && <CrossModuleBanner />}
             {blocked ? (
-              <div className="max-w-md mx-auto mt-24 text-center space-y-3 border rounded-lg p-8 bg-background">
+              <div className="mx-auto mt-24 max-w-md space-y-3 rounded-md border border-product-divider bg-product-panel p-8 text-center shadow-xs">
                 <ShieldAlert className="h-10 w-10 mx-auto text-muted-foreground" />
                 <h2 className="text-lg font-semibold">
                   {licenseBlocked && !roleBlocked
