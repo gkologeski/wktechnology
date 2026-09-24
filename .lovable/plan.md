@@ -8,7 +8,7 @@ Aumentar a separação visual entre fundo, colunas e blocos da área de Negócio
 ### 1. Paleta específica para o CRM
 - Criar tokens semânticos próprios para o fundo geral, cabeçalho, colunas laterais, área central, blocos e divisórias.
 - Usar um fundo cinza-azulado suave no canvas, branco apenas nas áreas de conteúdo e divisórias mais perceptíveis.
-- Manter o laranja como acento pontual de ação, sem transformar toda a interface em uma cópia da marca HubSpot.
+- Manter a cor **Destaque (accent)** definida em **Configurações → White Label** como acento pontual de ação, sem transformar toda a interface em uma cópia da marca HubSpot.
 - Definir equivalentes coerentes para o modo escuro.
 
 ### 2. Detalhe do negócio
