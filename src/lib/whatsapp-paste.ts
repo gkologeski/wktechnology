@@ -63,6 +63,13 @@ function normalizedPhone(value: string | null | undefined): string {
   return digits.length >= 8 ? digits.slice(-11) : "";
 }
 
+function phonesMatch(left: string, right: string): boolean {
+  if (!left || !right) return false;
+  const comparableLength = Math.min(left.length, right.length);
+  if (comparableLength < 8) return false;
+  return left.slice(-comparableLength) === right.slice(-comparableLength);
+}
+
 export function identifyWhatsAppUserSenders(
   messages: WhatsAppMessage[],
   identity: WhatsAppIdentity = {},
@@ -80,7 +87,7 @@ export function identifyWhatsAppUserSenders(
   if (exactNameMatches.length > 0) return new Set(exactNameMatches);
 
   const phoneMatches = senders.filter(
-    (sender) => currentPhone && normalizedPhone(sender) === currentPhone,
+    (sender) => currentPhone && phonesMatch(normalizedPhone(sender), currentPhone),
   );
   if (phoneMatches.length > 0) return new Set(phoneMatches);
 
