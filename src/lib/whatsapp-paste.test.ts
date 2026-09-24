@@ -73,7 +73,12 @@ describe("whatsapp paste", () => {
 
   it("recognizes a workspace user followed by their phone", () => {
     const messages = [
-      { time: "10:00", date: "17/06/2026", sender: "Guilherme Kologeski +55 47 9999-0000", text: "Olá" },
+      {
+        time: "10:00",
+        date: "17/06/2026",
+        sender: "Guilherme Kologeski +55 47 9999-0000",
+        text: "Olá",
+      },
       { time: "10:01", date: "17/06/2026", sender: "Cliente", text: "Oi" },
     ];
     const mine = identifyWhatsAppUserSenders(messages, {
