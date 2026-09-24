@@ -58,6 +58,45 @@ export function LivePreview({ settings }: { settings: PreviewSettings }) {
     { label: "Info", color: c("dei-accent") },
   ];
 
+  const op = {
+    canvas: c("product-canvas"),
+    header: c("product-header"),
+    toolbar: c("product-toolbar"),
+    panel: c("product-panel"),
+    muted: c("product-panel-muted"),
+    divider: c("product-divider"),
+  };
+
+  const operationalScene = (
+    <section
+      aria-label="Prévia da lista operacional"
+      className="rounded-md border overflow-hidden text-[11px]"
+      style={{ background: op.canvas, borderColor: op.divider }}
+    >
+      <div className="px-3 py-2 border-b font-bold" style={{ background: op.header, borderColor: op.divider, fontFamily: headingFont }}>
+        Negócios
+      </div>
+      <div className="px-3 py-1.5 border-b flex gap-2" style={{ background: op.toolbar, borderColor: op.divider, color: muted }}>
+        <span>Filtros</span>
+        <span className="font-semibold" style={{ color: text, borderBottom: `2px solid ${accent}` }}>Tabela</span>
+        <span>Quadro</span>
+      </div>
+      <div className="p-2">
+        <div className="rounded border" style={{ background: op.panel, borderColor: op.divider }}>
+          <div className="px-2 py-1 border-b font-semibold" style={{ background: op.muted, borderColor: op.divider }}>
+            Nome · Etapa · Valor
+          </div>
+          {["Projeto Alfa", "Outsourcing Beta"].map((n) => (
+            <div key={n} className="px-2 py-1 border-b last:border-b-0" style={{ borderColor: op.divider }}>
+              {n}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-3">
@@ -221,6 +260,9 @@ export function LivePreview({ settings }: { settings: PreviewSettings }) {
                 </div>
               ))}
             </div>
+
+            {/* Lista operacional */}
+            {operationalScene}
 
             {/* Tabela */}
             <div
