@@ -62,12 +62,12 @@ describe("whatsapp paste", () => {
     expect([...mine]).toEqual(["+55 47 9786-9780"]);
   });
 
-  it("recognizes another workspace user and leaves all remaining senders as clients", () => {
+  it("does not classify another workspace user without a phone suffix", () => {
     const messages = parseWhatsAppPaste(sample) ?? [];
     const mine = identifyWhatsAppUserSenders(messages, {
       workspaceUserNames: ["Guilherme Kologeski"],
     });
-    expect(mine.has("Guilherme Kologeski")).toBe(true);
+    expect(mine.has("Guilherme Kologeski")).toBe(false);
     expect(mine.has("+55 47 9786-9780")).toBe(false);
   });
 

@@ -93,10 +93,9 @@ export function identifyWhatsAppUserSenders(
 
   const workspaceMatches = senders.filter((sender) => {
     const normalizedSender = normalizedName(sender);
-    if (workspaceNames.has(normalizedSender)) return true;
     return [...workspaceNames].some((name) => {
       if (!normalizedSender.startsWith(`${name} `)) return false;
-      const suffix = sender.slice(name.length).trim();
+      const suffix = normalizedSender.slice(name.length).trim();
       return isPhoneLike(suffix);
     });
   });
