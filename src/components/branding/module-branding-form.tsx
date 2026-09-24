@@ -97,17 +97,6 @@ export function ModuleBrandingForm({ moduleId }: { moduleId: ModuleId }) {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center text-sm text-muted-foreground p-8">
-        <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Carregando…
-      </div>
-    );
-  }
-
-  const effectiveColor = form.primary_color || def.defaultColor;
-  const effectiveName = form.product_name || def.productName;
-
   useEffect(() => {
     if (!selectedTarget) return;
     const frame = window.requestAnimationFrame(() => {
@@ -123,6 +112,17 @@ export function ModuleBrandingForm({ moduleId }: { moduleId: ModuleId }) {
     });
     return () => window.cancelAnimationFrame(frame);
   }, [editorTab, previewMode, selectedTarget]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center text-sm text-muted-foreground p-8">
+        <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Carregando…
+      </div>
+    );
+  }
+
+  const effectiveColor = form.primary_color || def.defaultColor;
+  const effectiveName = form.product_name || def.productName;
 
   const selectPreviewTarget = (target: PreviewTarget) => {
     setSelectedTarget(target);

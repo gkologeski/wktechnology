@@ -113,7 +113,6 @@ export function LivePreview({
 
   const operationalScene = (
     <section
-      aria-label="Prévia da lista operacional"
       {...selectable("product-canvas")}
       className={`${selectable("product-canvas").className} rounded-md border overflow-hidden text-[11px]`}
       style={{ background: op.canvas, borderColor: op.divider }}
