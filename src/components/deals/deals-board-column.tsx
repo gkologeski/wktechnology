@@ -29,11 +29,11 @@ export function DealsBoardColumn({
     <div
       ref={setNodeRef}
       data-kanban-column-root={stage.value}
-      className={`flex flex-col w-[280px] shrink-0 rounded-md bg-[var(--hs-surface)] border border-[var(--hs-divider)] ${
-        isOver ? "ring-2 ring-[var(--hs-orange)]" : ""
+      className={`flex w-[280px] shrink-0 flex-col rounded-md border border-product-divider bg-product-panel-muted ${
+        isOver ? "ring-2 ring-action-accent" : ""
       }`}
     >
-      <div className="px-3 pt-2.5 pb-2 border-b border-[var(--hs-divider)] sticky top-0 bg-[var(--hs-surface)] z-10 rounded-t-md">
+      <div className="sticky top-0 z-10 rounded-t-md border-b border-product-divider bg-product-panel-strong px-3 pb-2 pt-2.5">
         <div className="flex items-baseline justify-between gap-2">
           <div className="flex items-center gap-1.5 min-w-0">
             {headerExtra}
@@ -47,8 +47,7 @@ export function DealsBoardColumn({
             <span className="text-[11px] text-[var(--hs-text-muted)] tabular-nums">({count})</span>
             {hotCount && hotCount > 0 ? (
               <span
-                className="text-[10px] tabular-nums inline-flex items-center gap-0.5"
-                style={{ color: "var(--hs-orange)" }}
+                className="inline-flex items-center gap-0.5 text-[10px] tabular-nums text-action-accent"
                 title={`${hotCount} negócio(s) com alto score de fechamento`}
               >
                 · {hotCount} quente{hotCount > 1 ? "s" : ""}

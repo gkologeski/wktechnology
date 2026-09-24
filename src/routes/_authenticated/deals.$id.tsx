@@ -127,12 +127,12 @@ function DealDetail() {
 
   if (isLoading)
     return (
-      <div className="-m-4 space-y-3 p-6 md:-m-6">
-        <div className="h-36 animate-pulse rounded-md bg-surface-3" />
+      <div className="-m-4 space-y-3 bg-product-canvas p-6 md:-m-6">
+        <div className="h-36 animate-pulse rounded-md bg-product-panel-strong" />
         <div className="grid gap-3 xl:grid-cols-3">
-          <div className="h-96 animate-pulse rounded-md bg-surface-3" />
-          <div className="h-96 animate-pulse rounded-md bg-surface-3" />
-          <div className="h-96 animate-pulse rounded-md bg-surface-3" />
+          <div className="h-96 animate-pulse rounded-md bg-product-panel-strong" />
+          <div className="h-96 animate-pulse rounded-md bg-product-panel-strong" />
+          <div className="h-96 animate-pulse rounded-md bg-product-panel-strong" />
         </div>
       </div>
     );

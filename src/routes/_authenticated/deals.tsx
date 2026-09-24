@@ -460,11 +460,11 @@ function DealsPage() {
           {dealsLoading ? (
             <div className="space-y-2" aria-label="Carregando negócios">
               {[1, 2, 3, 4, 5].map((row) => (
-                <div key={row} className="h-12 animate-pulse rounded-md bg-surface-3" />
+                <div key={row} className="h-12 animate-pulse rounded-md bg-product-panel-strong" />
               ))}
             </div>
           ) : dealsError ? (
-            <div className="grid min-h-52 place-items-center rounded-md border border-border-subtle bg-surface-2 p-6 text-center">
+            <div className="grid min-h-52 place-items-center rounded-md border border-product-divider bg-product-panel p-6 text-center">
               <div>
                 <p className="font-medium text-text-primary">
                   Não foi possível carregar os negócios.

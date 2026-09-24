@@ -99,14 +99,18 @@ Para telas operacionais densas, componha `ProductCanvas`, `ProductPageHeader`,
 `ProductToolbarBand`, `ProductTabsBand` e `ProductContent`. Eles estabelecem o
 canvas cinza-azulado, superfícies de comando e divisórias sem acoplar dados.
 
-### 4.2.1 Padrão de lista operacional
+### 4.2 Listas
+
+#### Padrão operacional
 
 - Canvas: `ProductCanvas`; cabeçalho, filtros e abas ocupam faixas contínuas.
 - Conteúdo: painel branco apenas para tabela, quadro ou lista; o entorno usa `product-canvas`.
 - Tabela: cabeçalho `product-panel-strong`, ferramentas `product-panel-muted` e divisórias `product-divider`.
 - Ações de ênfase usam `action-accent`, alimentado pelo Destaque do White Label; cores de status permanecem semânticas.
 
-### 4.3.1 Padrão de detalhe em três áreas
+### 4.3 Detalhes
+
+#### Padrão em três áreas
 
 ```text
 Cabeçalho do registro
@@ -118,15 +122,11 @@ Cabeçalho do registro
 O contraste vem de superfícies e divisórias, sem sombras fortes. Em telas estreitas,
 as três áreas empilham preservando a ordem propriedades → atividades → associações.
 
-### 4.2 Listas
-
 - Densidade alta, mas com respiro: `py-3` por linha mínimo.
 - Busca com **debounce 300ms**. Nunca trigger só por Enter.
 - Filtros visíveis (chips), nunca escondidos em "Mais filtros" por default.
 - Empty state diferenciado para "nunca teve dados" vs "filtro vazio".
 - Skeleton com o **mesmo grid** do conteúdo final.
-
-### 4.3 Detalhes
 
 - Drawer (`Sheet`) para **preview rápido sem perder contexto** da lista.
 - Rota dedicada (`/jobs/$id`) para edição/profundidade.
