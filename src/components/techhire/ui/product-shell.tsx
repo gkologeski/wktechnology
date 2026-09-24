@@ -77,13 +77,7 @@ export function ProductContent({
   return <div className={cn("bg-product-canvas p-4 md:p-6", className)}>{children}</div>;
 }
 
-export function ProductPanel({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
+export function ProductPanel({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <section
       className={cn(

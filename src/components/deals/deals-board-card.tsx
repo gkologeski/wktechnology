@@ -89,8 +89,7 @@ export function DealsBoardCard({
   const borderStyle: React.CSSProperties = {};
   if (isHot && isHighValue) {
     borderStyle.borderLeft = "2px solid transparent";
-    borderStyle.borderImage =
-      "linear-gradient(180deg, var(--action-accent), var(--hs-stage-4)) 1";
+    borderStyle.borderImage = "linear-gradient(180deg, var(--action-accent), var(--hs-stage-4)) 1";
   } else if (isHot) {
     borderStyle.borderLeftWidth = "2px";
     borderStyle.borderLeftColor = "var(--action-accent)";
@@ -143,12 +142,7 @@ export function DealsBoardCard({
                     className="flex items-center gap-0.5"
                     aria-label={isHot ? "Negócio quente" : "Alto valor"}
                   >
-                    {isHot && (
-                      <Flame
-                        className="h-3.5 w-3.5 text-action-accent"
-                        aria-hidden
-                      />
-                    )}
+                    {isHot && <Flame className="h-3.5 w-3.5 text-action-accent" aria-hidden />}
                     {isHighValue && (
                       <Gem
                         className="h-3.5 w-3.5"
