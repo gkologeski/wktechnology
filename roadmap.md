@@ -13,4 +13,4 @@
 - [x] Criar fundação visual global e aplicar integralmente em Negócios, usando o Destaque do White Label.
 - [x] Aplicar a fundação do Design System em toda a área autenticada, com canvas e componentes compartilhados.
 - [x] Inventariar as exceções visuais locais por rota em `docs/qa/design-system-rollout.md` para refinamentos incrementais futuros.
-- [ ] Permitir selecionar objetos da prévia do White Label e focar diretamente seus controles de estilo.
+- [x] Permitir selecionar objetos da prévia do White Label e focar diretamente seus controles de estilo.

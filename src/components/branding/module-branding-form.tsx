@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -49,6 +49,7 @@ export function ModuleBrandingForm({ moduleId }: { moduleId: ModuleId }) {
   const [editorTab, setEditorTab] = useState<"identity" | "theme">("identity");
   const [previewMode, setPreviewMode] = useState<PreviewMode>("light");
   const [selectedTarget, setSelectedTarget] = useState<PreviewTarget | null>(null);
+  const moduleFormRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -100,7 +101,7 @@ export function ModuleBrandingForm({ moduleId }: { moduleId: ModuleId }) {
   useEffect(() => {
     if (!selectedTarget) return;
     const frame = window.requestAnimationFrame(() => {
-      const control = document.querySelector<HTMLElement>(
+      const control = moduleFormRef.current?.querySelector<HTMLElement>(
         `[data-branding-control="${selectedTarget.id}"]`,
       );
       if (!control) return;
@@ -130,7 +131,7 @@ export function ModuleBrandingForm({ moduleId }: { moduleId: ModuleId }) {
   };
 
   return (
-    <Card>
+    <Card ref={moduleFormRef}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <span className="h-5 w-5 rounded-full border" style={{ background: effectiveColor }} />

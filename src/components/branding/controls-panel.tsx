@@ -63,7 +63,11 @@ export function ControlsPanel({ form, set, activeTargetId }: Props) {
       <Section title="Identidade visual">
         <div className={targetClass("brand_name")} data-branding-control="brand_name">
           <Label className="text-[11px] font-bold uppercase tracking-wide">Nome da marca</Label>
-          <Input value={form.brand_name} onChange={(e) => set("brand_name", e.target.value)} />
+          <Input
+            data-branding-focus="true"
+            value={form.brand_name}
+            onChange={(e) => set("brand_name", e.target.value)}
+          />
         </div>
         <ImageInput
           label="Logo"

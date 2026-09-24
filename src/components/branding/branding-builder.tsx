@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Palette } from "lucide-react";
 import { toast } from "sonner";
@@ -39,6 +39,7 @@ export function BrandingBuilder() {
   const [editorTab, setEditorTab] = useState<PreviewEditorTab>("basics");
   const [previewMode, setPreviewMode] = useState<PreviewMode>("light");
   const [selectedTarget, setSelectedTarget] = useState<PreviewTarget | null>(null);
+  const builderRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     (async () => {
@@ -111,7 +112,7 @@ export function BrandingBuilder() {
   useEffect(() => {
     if (!selectedTarget) return;
     const frame = window.requestAnimationFrame(() => {
-      const control = document.querySelector<HTMLElement>(
+      const control = builderRef.current?.querySelector<HTMLElement>(
         `[data-branding-control="${selectedTarget.id}"]`,
       );
       if (!control) return;
@@ -138,7 +139,10 @@ export function BrandingBuilder() {
   }
 
   return (
-    <div className="bg-card border rounded-2xl shadow-sm overflow-hidden flex flex-col h-[calc(100vh-180px)] min-h-[600px]">
+    <div
+      ref={builderRef}
+      className="bg-card border rounded-2xl shadow-sm overflow-hidden flex flex-col h-[calc(100vh-180px)] min-h-[600px]"
+    >
       {/* Header */}
       <header className="h-14 border-b px-5 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
