@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Palette } from "lucide-react";
 import { toast } from "sonner";
@@ -10,6 +10,7 @@ import { sanitizeTheme, EMPTY_THEME, type BrandTheme } from "@/lib/branding/toke
 import { ControlsPanel, type BuilderForm } from "./controls-panel";
 import { ThemeEditor } from "./theme-editor";
 import { LivePreview } from "./live-preview";
+import type { PreviewEditorTab, PreviewMode, PreviewTarget } from "./preview-targets";
 
 const DEFAULT_FORM: BuilderForm = {
   brand_name: "",
@@ -35,6 +36,10 @@ export function BrandingBuilder() {
   const [saved, setSaved] = useState<State>({ form: DEFAULT_FORM, theme: EMPTY_THEME });
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [editorTab, setEditorTab] = useState<PreviewEditorTab>("basics");
+  const [previewMode, setPreviewMode] = useState<PreviewMode>("light");
+  const [selectedTarget, setSelectedTarget] = useState<PreviewTarget | null>(null);
+  const builderRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     (async () => {
@@ -104,6 +109,27 @@ export function BrandingBuilder() {
 
   const discard = () => setState(saved);
 
+  useEffect(() => {
+    if (!selectedTarget) return;
+    const frame = window.requestAnimationFrame(() => {
+      const control = builderRef.current?.querySelector<HTMLElement>(
+        `[data-branding-control="${selectedTarget.id}"]`,
+      );
+      if (!control) return;
+      control.scrollIntoView({ behavior: "smooth", block: "center" });
+      const focusable = control.querySelector<HTMLElement>(
+        '[data-branding-focus="true"], input, select, button, textarea',
+      );
+      window.setTimeout(() => focusable?.focus({ preventScroll: true }), 250);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [editorTab, previewMode, selectedTarget]);
+
+  const selectPreviewTarget = (target: PreviewTarget) => {
+    setSelectedTarget(target);
+    setEditorTab(target.tab);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[60vh] text-muted-foreground text-sm">
@@ -113,7 +139,10 @@ export function BrandingBuilder() {
   }
 
   return (
-    <div className="bg-card border rounded-2xl shadow-sm overflow-hidden flex flex-col h-[calc(100vh-180px)] min-h-[600px]">
+    <div
+      ref={builderRef}
+      className="bg-card border rounded-2xl shadow-sm overflow-hidden flex flex-col h-[calc(100vh-180px)] min-h-[600px]"
+    >
       {/* Header */}
       <header className="h-14 border-b px-5 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
@@ -134,7 +163,11 @@ export function BrandingBuilder() {
       {/* Body */}
       <div className="flex-1 flex min-h-0">
         <aside className="w-80 border-r overflow-y-auto bg-muted/30 shrink-0">
-          <Tabs defaultValue="basics" className="w-full">
+          <Tabs
+            value={editorTab}
+            onValueChange={(value) => setEditorTab(value as PreviewEditorTab)}
+            className="w-full"
+          >
             <div className="px-4 pt-4">
               <TabsList className="w-full grid grid-cols-2">
                 <TabsTrigger value="basics">Marca</TabsTrigger>
@@ -142,10 +175,16 @@ export function BrandingBuilder() {
               </TabsList>
             </div>
             <TabsContent value="basics" className="mt-0">
-              <ControlsPanel form={form} set={set} />
+              <ControlsPanel form={form} set={set} activeTargetId={selectedTarget?.id} />
             </TabsContent>
             <TabsContent value="theme" className="mt-0 p-5">
-              <ThemeEditor theme={theme} onChange={setTheme} />
+              <ThemeEditor
+                theme={theme}
+                onChange={setTheme}
+                mode={previewMode}
+                onModeChange={setPreviewMode}
+                activeTargetId={selectedTarget?.id}
+              />
             </TabsContent>
           </Tabs>
         </aside>
@@ -162,6 +201,10 @@ export function BrandingBuilder() {
               brandName: form.brand_name,
               theme,
             }}
+            mode={previewMode}
+            onModeChange={setPreviewMode}
+            selectedTargetId={selectedTarget?.id}
+            onSelectTarget={selectPreviewTarget}
           />
         </main>
       </div>

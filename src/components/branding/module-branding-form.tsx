@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -16,6 +16,7 @@ import { MODULES, type ModuleId } from "@/lib/modules/registry";
 import { sanitizeTheme, EMPTY_THEME, mergeThemes, type BrandTheme } from "@/lib/branding/tokens";
 import { ThemeEditor } from "./theme-editor";
 import { LivePreview } from "./live-preview";
+import type { PreviewMode, PreviewTarget } from "./preview-targets";
 
 type Form = {
   product_name: string;
@@ -45,6 +46,10 @@ export function ModuleBrandingForm({ moduleId }: { moduleId: ModuleId }) {
   const [inherited, setInherited] = useState<BrandTheme>(EMPTY_THEME);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [editorTab, setEditorTab] = useState<"identity" | "theme">("identity");
+  const [previewMode, setPreviewMode] = useState<PreviewMode>("light");
+  const [selectedTarget, setSelectedTarget] = useState<PreviewTarget | null>(null);
+  const moduleFormRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -93,6 +98,22 @@ export function ModuleBrandingForm({ moduleId }: { moduleId: ModuleId }) {
     }
   };
 
+  useEffect(() => {
+    if (!selectedTarget) return;
+    const frame = window.requestAnimationFrame(() => {
+      const control = moduleFormRef.current?.querySelector<HTMLElement>(
+        `[data-branding-control="${selectedTarget.id}"]`,
+      );
+      if (!control) return;
+      control.scrollIntoView({ behavior: "smooth", block: "center" });
+      const focusable = control.querySelector<HTMLElement>(
+        '[data-branding-focus="true"], input, select, button, textarea',
+      );
+      window.setTimeout(() => focusable?.focus({ preventScroll: true }), 250);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [editorTab, previewMode, selectedTarget]);
+
   if (loading) {
     return (
       <div className="flex items-center text-sm text-muted-foreground p-8">
@@ -104,8 +125,13 @@ export function ModuleBrandingForm({ moduleId }: { moduleId: ModuleId }) {
   const effectiveColor = form.primary_color || def.defaultColor;
   const effectiveName = form.product_name || def.productName;
 
+  const selectPreviewTarget = (target: PreviewTarget) => {
+    setSelectedTarget(target);
+    setEditorTab(target.tab === "basics" ? "identity" : "theme");
+  };
+
   return (
-    <Card>
+    <Card ref={moduleFormRef}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <span className="h-5 w-5 rounded-full border" style={{ background: effectiveColor }} />
@@ -117,14 +143,17 @@ export function ModuleBrandingForm({ moduleId }: { moduleId: ModuleId }) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="identity">
+        <Tabs
+          value={editorTab}
+          onValueChange={(value) => setEditorTab(value as "identity" | "theme")}
+        >
           <TabsList>
             <TabsTrigger value="identity">Identidade</TabsTrigger>
             <TabsTrigger value="theme">Tema do módulo</TabsTrigger>
           </TabsList>
 
           <TabsContent value="identity" className="mt-4 grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
+            <div className="space-y-2" data-branding-control="brand_name">
               <Label htmlFor={`mb-name-${moduleId}`}>Nome do produto</Label>
               <Input
                 id={`mb-name-${moduleId}`}
@@ -133,7 +162,7 @@ export function ModuleBrandingForm({ moduleId }: { moduleId: ModuleId }) {
                 onChange={(e) => set("product_name", e.target.value)}
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2" data-branding-control="primary_color">
               <Label htmlFor={`mb-domain-${moduleId}`}>Domínio customizado</Label>
               <Input
                 id={`mb-domain-${moduleId}`}
@@ -142,7 +171,7 @@ export function ModuleBrandingForm({ moduleId }: { moduleId: ModuleId }) {
                 onChange={(e) => set("custom_domain", e.target.value)}
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2" data-branding-control="accent_color">
               <Label htmlFor={`mb-primary-${moduleId}`}>Cor primária</Label>
               <div className="flex items-center gap-2">
                 <Input
@@ -206,7 +235,14 @@ export function ModuleBrandingForm({ moduleId }: { moduleId: ModuleId }) {
           <TabsContent value="theme" className="mt-4">
             <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
               <div className="max-h-[70vh] overflow-y-auto pr-1">
-                <ThemeEditor theme={theme} onChange={setTheme} inherited={inherited} />
+                <ThemeEditor
+                  theme={theme}
+                  onChange={setTheme}
+                  inherited={inherited}
+                  mode={previewMode}
+                  onModeChange={setPreviewMode}
+                  activeTargetId={selectedTarget?.id}
+                />
               </div>
               <div className="min-w-0 h-[70vh] bg-muted/40 rounded-xl p-4">
                 <LivePreview
@@ -221,6 +257,10 @@ export function ModuleBrandingForm({ moduleId }: { moduleId: ModuleId }) {
                     brandName: effectiveName,
                     theme: previewTheme,
                   }}
+                  mode={previewMode}
+                  onModeChange={setPreviewMode}
+                  selectedTargetId={selectedTarget?.id}
+                  onSelectTarget={selectPreviewTarget}
                 />
               </div>
             </div>
