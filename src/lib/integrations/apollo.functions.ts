@@ -4,7 +4,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const APOLLO_BASE = "https://api.apollo.io";
+import { apolloRawRequest } from "./apollo-gateway.server";
 
 type ApolloPerson = {
   email?: string | null;
