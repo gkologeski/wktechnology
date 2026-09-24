@@ -55,3 +55,13 @@ export type { AIInsightCardProps } from "@/components/ats/ui/ai-insight-card";
 // Promovidos
 export { MetaPill } from "./meta-pill";
 export type { MetaPillProps } from "./meta-pill";
+
+// Estrutura global para listas e detalhes densos do TechERP
+export {
+  ProductCanvas,
+  ProductPageHeader,
+  ProductToolbarBand,
+  ProductTabsBand,
+  ProductContent,
+  ProductPanel,
+} from "./product-shell";

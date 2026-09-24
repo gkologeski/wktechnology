@@ -89,10 +89,10 @@ export function DealsBoardCard({
   const borderStyle: React.CSSProperties = {};
   if (isHot && isHighValue) {
     borderStyle.borderLeft = "2px solid transparent";
-    borderStyle.borderImage = "linear-gradient(180deg, var(--hs-orange), var(--hs-stage-4)) 1";
+    borderStyle.borderImage = "linear-gradient(180deg, var(--action-accent), var(--hs-stage-4)) 1";
   } else if (isHot) {
     borderStyle.borderLeftWidth = "2px";
-    borderStyle.borderLeftColor = "var(--hs-orange)";
+    borderStyle.borderLeftColor = "var(--action-accent)";
   } else if (isHighValue) {
     borderStyle.borderLeftWidth = "2px";
     borderStyle.borderLeftColor = "var(--hs-stage-4)";
@@ -122,7 +122,7 @@ export function DealsBoardCard({
       data-kanban-column={columnId}
       data-hot={isHot ? "1" : undefined}
       data-high-value={isHighValue ? "1" : undefined}
-      className={`group rounded-md border bg-card p-2.5 text-sm cursor-grab active:cursor-grabbing hover:border-[var(--hs-orange)] hover:shadow-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--hs-orange)] ${dimmed ? "opacity-60" : ""} ${selected ? "ring-2 ring-primary" : ""}`}
+      className={`group cursor-grab rounded-md border border-product-divider bg-product-panel p-2.5 text-sm transition-all hover:border-action-accent hover:shadow-sm focus:outline-hidden focus-visible:ring-2 focus-visible:ring-action-accent active:cursor-grabbing ${dimmed ? "opacity-60" : ""} ${selected ? "ring-2 ring-action-accent" : ""}`}
     >
       <div className="flex items-start justify-between gap-2">
         {selectable && onToggleSelect && (
@@ -142,13 +142,7 @@ export function DealsBoardCard({
                     className="flex items-center gap-0.5"
                     aria-label={isHot ? "Negócio quente" : "Alto valor"}
                   >
-                    {isHot && (
-                      <Flame
-                        className="h-3.5 w-3.5"
-                        style={{ color: "var(--hs-orange)" }}
-                        aria-hidden
-                      />
-                    )}
+                    {isHot && <Flame className="h-3.5 w-3.5 text-action-accent" aria-hidden />}
                     {isHighValue && (
                       <Gem
                         className="h-3.5 w-3.5"
@@ -181,8 +175,7 @@ export function DealsBoardCard({
 
       {has("value") && (
         <div
-          className="mt-1 text-[13px] font-semibold tabular-nums"
-          style={isHighValue ? { color: "var(--hs-orange)" } : undefined}
+          className={`mt-1 text-[13px] font-semibold tabular-nums ${isHighValue ? "text-action-accent" : ""}`}
         >
           {formatCurrency(Number(deal.value), deal.currency)}
         </div>

@@ -65,6 +65,15 @@
   --color-text-secondary: var(--text-secondary);
   --color-text-tertiary: var(--text-tertiary);
   --color-text-disabled: var(--text-disabled);
+  --color-product-canvas: var(--product-canvas);
+  --color-product-header: var(--product-header);
+  --color-product-toolbar: var(--product-toolbar);
+  --color-product-panel: var(--product-panel);
+  --color-product-panel-muted: var(--product-panel-muted);
+  --color-product-panel-strong: var(--product-panel-strong);
+  --color-product-divider: var(--product-divider);
+  --color-action-accent: var(--action-accent);
+  --color-action-accent-foreground: var(--action-accent-foreground);
 
   /* ATS — status / stage / score / risk / ai / dei */
   --color-status-open: var(--status-open);
@@ -137,9 +146,18 @@
   --sidebar-border: oklch(0.92 0.01 250);
   --sidebar-ring: oklch(0.58 0.18 255);
 
-  /* HubSpot-like deals palette */
-  --hs-orange: oklch(0.68 0.18 45);
-  --hs-orange-foreground: oklch(0.99 0.003 250);
+  /* Product foundation — global list/detail structure */
+  --product-canvas: oklch(0.955 0.012 240);
+  --product-header: oklch(0.985 0.006 240);
+  --product-toolbar: oklch(0.975 0.008 240);
+  --product-panel: oklch(1 0 0);
+  --product-panel-muted: oklch(0.97 0.009 240);
+  --product-panel-strong: oklch(0.935 0.016 240);
+  --product-divider: oklch(0.865 0.018 240);
+  --action-accent: var(--accent);
+  --action-accent-foreground: var(--foreground);
+
+  /* CRM pipeline semantics */
   --hs-surface: oklch(0.975 0.005 250);
   --hs-divider: oklch(0.9 0.01 250);
   --hs-text-muted: oklch(0.5 0.02 250);
@@ -233,8 +251,16 @@
   --sidebar-border: oklch(1 0 0 / 12%);
   --sidebar-ring: oklch(0.68 0.17 255);
 
-  --hs-orange: oklch(0.72 0.18 45);
-  --hs-orange-foreground: oklch(0.18 0.02 250);
+  --product-canvas: oklch(0.145 0.018 250);
+  --product-header: oklch(0.205 0.024 250);
+  --product-toolbar: oklch(0.185 0.022 250);
+  --product-panel: oklch(0.22 0.025 250);
+  --product-panel-muted: oklch(0.255 0.026 250);
+  --product-panel-strong: oklch(0.29 0.03 250);
+  --product-divider: oklch(1 0 0 / 16%);
+  --action-accent: var(--accent);
+  --action-accent-foreground: var(--foreground);
+
   --hs-surface: oklch(0.2 0.02 250);
   --hs-divider: oklch(1 0 0 / 10%);
   --hs-text-muted: oklch(0.72 0.02 250);

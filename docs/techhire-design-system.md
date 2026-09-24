@@ -1,6 +1,6 @@
-# TechHire Design System — Padrão Oficial
+# TechERP Design System — Padrão Oficial
 
-Este documento institucionaliza a **Design Foundation** como padrão visual e de experiência **oficial** do TechHire — para todos os módulos atuais (ATS) e futuros. O piloto foi validado em `/insights` e na lista de vagas (`/jobs`).
+Este documento institucionaliza a **Design Foundation** como padrão visual e de experiência **oficial** do TechERP — para os módulos TechSales, TechHire, TechPeople, TechContracts, TechService, TechFinance e TechProjects. Os padrões de lista e detalhe foram consolidados em Negócios (`/deals`).
 
 > Direção: **quiet premium**, SaaS B2B enterprise. Referências de qualidade (não de marca): Linear, Stripe Dashboard, Attio, Ashby, Greenhouse, GitHub, Shopify Admin, Atlassian.
 
@@ -24,6 +24,8 @@ Definidos em `:root` (light) e `.dark`, expostos como classes Tailwind via `@the
 | Família     | Tokens (resumo)                                                                               | Classe exemplo         |
 | ----------- | --------------------------------------------------------------------------------------------- | ---------------------- |
 | Superfícies | `--surface-1`, `--surface-2`, `--surface-3`, `--surface-sunken`                               | `bg-surface-2`         |
+| Produto     | `--product-canvas/header/toolbar/panel/panel-muted/panel-strong/divider`                     | `bg-product-canvas`    |
+| Destaque    | `--action-accent`, derivado de Configurações → White Label → Destaque                       | `border-action-accent` |
 | Bordas      | `--border-subtle`, `--border-default`, `--border-strong`                                      | `border-border-subtle` |
 | Texto       | `--text-primary`, `--text-secondary`, `--text-tertiary`, `--text-disabled`                    | `text-text-secondary`  |
 | Status      | `--status-open`, `--status-onhold`, `--status-closed`, `--status-draft`                       | `bg-status-open`       |
@@ -93,8 +95,18 @@ Conteúdo principal
   └─ Empty / Loading / Error states (sempre os três)
 ```
 
+Para telas operacionais densas, componha `ProductCanvas`, `ProductPageHeader`,
+`ProductToolbarBand`, `ProductTabsBand` e `ProductContent`. Eles estabelecem o
+canvas cinza-azulado, superfícies de comando e divisórias sem acoplar dados.
+
 ### 4.2 Listas
 
+#### Padrão operacional
+
+- Canvas: `ProductCanvas`; cabeçalho, filtros e abas ocupam faixas contínuas.
+- Conteúdo: painel branco apenas para tabela, quadro ou lista; o entorno usa `product-canvas`.
+- Tabela: cabeçalho `product-panel-strong`, ferramentas `product-panel-muted` e divisórias `product-divider`.
+- Ações de ênfase usam `action-accent`, alimentado pelo Destaque do White Label; cores de status permanecem semânticas.
 - Densidade alta, mas com respiro: `py-3` por linha mínimo.
 - Busca com **debounce 300ms**. Nunca trigger só por Enter.
 - Filtros visíveis (chips), nunca escondidos em "Mais filtros" por default.
@@ -103,6 +115,17 @@ Conteúdo principal
 
 ### 4.3 Detalhes
 
+#### Padrão em três áreas
+
+```text
+Cabeçalho do registro
+├─ Propriedades      (product-panel-muted)
+├─ Atividades        (product-canvas)
+└─ Associações       (product-panel-muted)
+```
+
+O contraste vem de superfícies e divisórias, sem sombras fortes. Em telas estreitas,
+as três áreas empilham preservando a ordem propriedades → atividades → associações.
 - Drawer (`Sheet`) para **preview rápido sem perder contexto** da lista.
 - Rota dedicada (`/jobs/$id`) para edição/profundidade.
 - Header da rota usa `PageHeader` com `eyebrow` para breadcrumb implícito.
@@ -212,4 +235,5 @@ Veja [`new-screen-ux-ui-checklist.md`](./new-screen-ux-ui-checklist.md).
 - **Wave 1** — piloto `/insights`.
 - **Wave 1.1** — lista de vagas `/jobs`.
 - **Wave 1.2 (oficialização)** — esta entrega: camada `techhire/ui`, checklist, template, correções de a11y de fundação.
+- **Wave 2 (TechERP)** — fundação global de listas e detalhes, integração com Destaque do White Label e aplicação completa em Negócios.
 - **Próximas Waves** — rollout em Pipeline, Detalhe da vaga, Perfil do candidato, Scorecards, Entrevistas, Ofertas, Configurações, Carreiras.
