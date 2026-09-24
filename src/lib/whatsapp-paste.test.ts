@@ -71,6 +71,24 @@ describe("whatsapp paste", () => {
     expect(mine.has("+55 47 9786-9780")).toBe(false);
   });
 
+  it("recognizes a workspace user followed by their phone", () => {
+    const messages = [
+      { time: "10:00", date: "17/06/2026", sender: "Guilherme Kologeski +55 47 9999-0000", text: "Olá" },
+      { time: "10:01", date: "17/06/2026", sender: "Cliente", text: "Oi" },
+    ];
+    const mine = identifyWhatsAppUserSenders(messages, {
+      workspaceUserNames: ["Guilherme Kologeski"],
+    });
+    expect([...mine]).toEqual(["Guilherme Kologeski +55 47 9999-0000"]);
+  });
+
+  it("escapes unsafe message content", () => {
+    const unsafe = `${sample}\n[11:39, 17/06/2026] Guilherme Kologeski: <img src=x onerror=alert(1)>`;
+    const html = maybeConvertWhatsAppPaste(unsafe, { currentUserName: "Guilherme Kologeski" });
+    expect(html).toContain("&lt;img src=x onerror=alert(1)&gt;");
+    expect(html).not.toContain("<img src=x");
+  });
+
   it("modernizes legacy html without changing message alignment", () => {
     const legacy = `<div style="background:#0B141A;border-radius:14px;padding:14px 12px;max-width:520px;margin:4px 0;border:1px solid #1f2c33;"><div style="font:11px -apple-system,Segoe UI,Roboto,sans-serif;color:#8696a0;margin-left:6px;">WhatsApp</div><table role="presentation" cellpadding="0" cellspacing="0" style="display:inline-table;max-width:78%;background:#075E54;color:#ffffff;border-radius:6px;"><tr><td align="right" style="padding:0;line-height:0;">Oi</td></tr></table></div>`;
     const modern = modernizeLegacyWhatsAppHtml(legacy);
