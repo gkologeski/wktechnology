@@ -24,15 +24,16 @@ async function apolloMatch(payload: Record<string, unknown>) {
   const key = process.env.APOLLO_API_KEY;
   if (!key)
     throw new Error("Apollo não conectado: configure a APOLLO_API_KEY na tela de integrações.");
-  const res = await fetch(`${APOLLO_BASE}/api/v1/people/match`, {
+  const res = await apolloRawRequest("/api/v1/people/match", key, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "X-Api-Key": key, accept: "application/json" },
-    body: JSON.stringify(payload),
+    body: payload,
   });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok)
-    throw new Error(`Apollo erro [${res.status}]: ${JSON.stringify(data).slice(0, 300)}`);
-  return data as { person?: ApolloPerson };
+  if (!res.ok) throw new Error(`Apollo erro [${res.status}]: ${res.text.slice(0, 300)}`);
+  try {
+    return JSON.parse(res.text) as { person?: ApolloPerson };
+  } catch {
+    return {} as { person?: ApolloPerson };
+  }
 }
 
 function mapApolloToLead(p: ApolloPerson) {
