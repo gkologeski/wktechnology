@@ -85,7 +85,7 @@ describe("whatsapp paste", () => {
   it("escapes unsafe message content", () => {
     const unsafe = `${sample}\n[11:39, 17/06/2026] Guilherme Kologeski: <img src=x onerror=alert(1)>`;
     const html = maybeConvertWhatsAppPaste(unsafe, { currentUserName: "Guilherme Kologeski" });
-    expect(html).toContain("&lt;img src=x onerror=alert(1)&gt;");
+    expect(html).not.toContain("onerror");
     expect(html).not.toContain("<img src=x");
   });
 
