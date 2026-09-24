@@ -20,7 +20,7 @@ export type EnrichedPerson = {
   linkedin_url?: string | null;
 };
 
-const APOLLO_BASE = "https://api.apollo.io";
+import { apolloRawRequest } from "./apollo-gateway.server";
 const LUSHA_BASE = "https://api.lusha.com";
 
 type ApolloPerson = {
