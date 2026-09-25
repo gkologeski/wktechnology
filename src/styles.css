@@ -707,8 +707,10 @@
 .authenticated-content :where(.bg-muted\/20, .bg-muted\/30, .bg-muted\/40, .bg-muted\/50) {
   background-color: var(--product-panel-muted);
 }
-.authenticated-content :where(.border, .border-b, .border-t, .border-l, .border-r) {
-  border-color: var(--product-divider);
+@layer components {
+  .authenticated-content :where(.border, .border-b, .border-t, .border-l, .border-r) {
+    border-color: var(--product-divider);
+  }
 }
 .authenticated-content [data-slot="card"] {
   border-color: var(--product-divider);
@@ -765,13 +767,6 @@
 }
 .authenticated-content [data-slot="tabs-trigger"]:focus-visible {
   --tw-ring-color: var(--action-accent);
-}
-.authenticated-content [data-slot="button"][data-variant="default"] {
-  background-color: var(--action-accent);
-  color: var(--action-accent-foreground);
-}
-.authenticated-content [data-slot="button"][data-variant="default"]:hover {
-  background-color: color-mix(in oklab, var(--action-accent) 88%, var(--text-primary));
 }
 .authenticated-content :where(input, textarea, select):focus-visible {
   outline: 2px solid var(--action-accent);
