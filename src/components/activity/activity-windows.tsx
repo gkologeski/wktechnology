@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { useQuery } from "@tanstack/react-query";
@@ -32,11 +32,13 @@ export function ActivityWindows({ children }: { children: React.ReactNode }) {
   });
   const workspaceId = data?.active_workspace_id;
   const [windows, setWindows] = useState<WindowEntry[]>([]);
+  const closeBlocked = useRef(new Set<string>());
   const [identity, setIdentity] = useState<string | null>(null);
   const currentIdentity = user && workspaceId ? `${user.id}:${workspaceId}` : null;
   useEffect(() => {
     if (identity !== currentIdentity) {
       setWindows([]);
+      closeBlocked.current.clear();
       setIdentity(currentIdentity);
     }
   }, [identity, currentIdentity]);
@@ -63,6 +65,7 @@ export function ActivityWindows({ children }: { children: React.ReactNode }) {
     [currentIdentity],
   );
   const close = (id: string) => {
+    closeBlocked.current.delete(id);
     setWindows((ws) => ws.filter((w) => w.id !== id));
     window.dispatchEvent(new CustomEvent("activities:changed"));
   };
@@ -95,9 +98,17 @@ export function ActivityWindows({ children }: { children: React.ReactNode }) {
                 ws.map((item) => (item.id === w.id ? { ...item, expanded: !item.expanded } : item)),
               ),
             onClose: () => {
+              if (closeBlocked.current.has(w.id)) {
+                toast.error("Encerre a ligação antes de fechar a janela.");
+                return;
+              }
               if (!window.confirm("Fechar esta janela? Alterações não salvas podem ser perdidas."))
                 return;
               close(w.id);
+            },
+            setCloseBlocked: (blocked: boolean) => {
+              if (blocked) closeBlocked.current.add(w.id);
+              else closeBlocked.current.delete(w.id);
             },
           };
           return (
