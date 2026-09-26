@@ -131,7 +131,12 @@ function EmailSettings() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => openActivity?.({ action: ACTIONS_BY_KEY["create:email"] })}>Novo email</Button>
+            <Button
+              variant="outline"
+              onClick={() => openActivity?.({ action: ACTIONS_BY_KEY["create:email"] })}
+            >
+              Novo email
+            </Button>
             <Button onClick={connect}>
               <Plug className="h-4 w-4 mr-1" /> Conectar Gmail
             </Button>

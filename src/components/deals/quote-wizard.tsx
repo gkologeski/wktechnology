@@ -120,7 +120,6 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
     templateId: existingQuote?.template_id ?? "",
   });
 
-
   // Reset when dialog opens/closes or existingQuote changes
   useEffect(() => {
     if (!open) return;
@@ -369,10 +368,24 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
   async function handlePublishAndSend() {
     await publishMut.mutateAsync();
     if (!deal) return;
-    openActivity?.({ action: ACTIONS_BY_KEY["create:email"], to: contact?.email ?? "", subject: emailDefaults.subject,
-      body: emailDefaults.body, contactId: contact?.id, dealId, companyId: deal.company_id ?? undefined,
-      contactName: contact ? [contact.first_name, contact.last_name].filter(Boolean).join(" ").trim() || undefined : undefined,
-      onSent: async () => { try { await markAsSentMut.mutateAsync(); } catch { /* toast already shown */ } },
+    openActivity?.({
+      action: ACTIONS_BY_KEY["create:email"],
+      to: contact?.email ?? "",
+      subject: emailDefaults.subject,
+      body: emailDefaults.body,
+      contactId: contact?.id,
+      dealId,
+      companyId: deal.company_id ?? undefined,
+      contactName: contact
+        ? [contact.first_name, contact.last_name].filter(Boolean).join(" ").trim() || undefined
+        : undefined,
+      onSent: async () => {
+        try {
+          await markAsSentMut.mutateAsync();
+        } catch {
+          /* toast already shown */
+        }
+      },
     });
     onOpenChange(false);
   }
@@ -637,7 +650,6 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
     </>
   );
 }

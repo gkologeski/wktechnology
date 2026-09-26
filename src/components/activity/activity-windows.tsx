@@ -54,14 +54,17 @@ export function ActivityWindows({ children }: { children: React.ReactNode }) {
       if (!currentIdentity) return;
       if (request.action.kind === "create" && request.action.disabled) return;
       setWindows((previous) => {
-        const match = request.relatedId || request.threadId ? previous.find(
-          (w) =>
-            w.request.action.kind === request.action.kind &&
-            w.request.action.value === request.action.value &&
-            w.request.relatedKey === request.relatedKey &&
-            w.request.relatedId === request.relatedId &&
-            w.request.threadId === request.threadId,
-        ) : undefined;
+        const match =
+          request.relatedId || request.threadId
+            ? previous.find(
+                (w) =>
+                  w.request.action.kind === request.action.kind &&
+                  w.request.action.value === request.action.value &&
+                  w.request.relatedKey === request.relatedKey &&
+                  w.request.relatedId === request.relatedId &&
+                  w.request.threadId === request.threadId,
+              )
+            : undefined;
         if (match)
           return [...previous.filter((w) => w.id !== match.id), { ...match, minimized: false }];
         return [
@@ -122,14 +125,38 @@ export function ActivityWindows({ children }: { children: React.ReactNode }) {
             <WindowChromeContext.Provider key={w.id} value={chrome}>
               <div className={w.minimized || chrome.position > 1 ? "hidden" : "contents"}>
                 {w.request.editingActivity ? (
-                  <ActivityWindowFrame><ActivityEditWindow activity={w.request.editingActivity} onSaved={() => close(w.id)} onCancel={chrome.onClose} /></ActivityWindowFrame>
+                  <ActivityWindowFrame>
+                    <ActivityEditWindow
+                      activity={w.request.editingActivity}
+                      onSaved={() => close(w.id)}
+                      onCancel={chrome.onClose}
+                    />
+                  </ActivityWindowFrame>
                 ) : w.request.bulk ? (
-                  <BulkCreateActivityDialog open setOpen={(value) => { if (!value) close(w.id); }} ids={w.request.bulk.ids} entity={w.request.bulk.entity} onDone={w.request.bulk.onDone} />
-                ) : !w.request.relatedKey && w.request.action.kind === "create" && w.request.action.value === "whatsapp" ? (
-                  <SendWhatsAppDialog open onOpenChange={(value) => { if (!value) close(w.id); }} defaultTo={w.request.to} contactId={w.request.contactId} contactName={w.request.contactName} />
+                  <BulkCreateActivityDialog
+                    open
+                    setOpen={(value) => {
+                      if (!value) close(w.id);
+                    }}
+                    ids={w.request.bulk.ids}
+                    entity={w.request.bulk.entity}
+                    onDone={w.request.bulk.onDone}
+                  />
                 ) : !w.request.relatedKey &&
-                w.request.action.kind === "log" &&
-                w.request.action.value === "task" ? (
+                  w.request.action.kind === "create" &&
+                  w.request.action.value === "whatsapp" ? (
+                  <SendWhatsAppDialog
+                    open
+                    onOpenChange={(value) => {
+                      if (!value) close(w.id);
+                    }}
+                    defaultTo={w.request.to}
+                    contactId={w.request.contactId}
+                    contactName={w.request.contactName}
+                  />
+                ) : !w.request.relatedKey &&
+                  w.request.action.kind === "log" &&
+                  w.request.action.value === "task" ? (
                   <QuickCreateTaskDialog
                     open
                     onOpenChange={(value) => {

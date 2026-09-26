@@ -17,7 +17,11 @@ export type ActivityWindowRequest = {
   contactName?: string;
   onSent?: (threadId: string) => void;
   editingActivity?: Activity;
-  bulk?: { ids: string[]; entity: "leads" | "contacts" | "deals" | "companies"; onDone?: () => void };
+  bulk?: {
+    ids: string[];
+    entity: "leads" | "contacts" | "deals" | "companies";
+    onDone?: () => void;
+  };
 };
 
 export type WindowChrome = {
