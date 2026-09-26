@@ -51,11 +51,19 @@ export function useMessageDraft(options: {
 
   const hydratedRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingRef = useRef<Parameters<typeof save>[0] | null>(null);
   const lastPayloadRef = useRef<string>("");
   const onRestoreRef = useRef(onRestore);
   onRestoreRef.current = onRestore;
   const valueRef = useRef(value);
   valueRef.current = value;
+
+  // Flush the latest debounced edit when a composer is closed before the timer fires.
+  useEffect(() => () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    if (pendingRef.current) void save(pendingRef.current).catch(() => {});
+    pendingRef.current = null;
+  }, [save, channel, scopeKey]);
 
   // Carrega o rascunho ao abrir/trocar de composição.
   useEffect(() => {
@@ -121,8 +129,10 @@ export function useMessageDraft(options: {
     if (serialized === lastPayloadRef.current) return;
     lastPayloadRef.current = serialized;
     if (timerRef.current) clearTimeout(timerRef.current);
+    pendingRef.current = { data: payload };
     setStatus("saving");
     timerRef.current = setTimeout(() => {
+      pendingRef.current = null;
       save({ data: payload })
         .then((res) => {
           setStatus(res.saved ? "saved" : "idle");
@@ -149,6 +159,7 @@ export function useMessageDraft(options: {
 
   const discard = useCallback(async () => {
     if (timerRef.current) clearTimeout(timerRef.current);
+    pendingRef.current = null;
     lastPayloadRef.current = "";
     setStatus("idle");
     setSavedAt(null);
@@ -159,6 +170,7 @@ export function useMessageDraft(options: {
 
   const clearAfterSend = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
+    pendingRef.current = null;
     lastPayloadRef.current = "";
     hydratedRef.current = false;
     setStatus("idle");
