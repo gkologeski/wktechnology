@@ -88,6 +88,7 @@ export function ActivityWindows({ children }: { children: React.ReactNode }) {
       return w ? [...ws.filter((item) => item.id !== id), { ...w, minimized: false }] : ws;
     });
   const visible = windows.filter((w) => !w.minimized);
+  const showWindowTaskbar = windows.length > 1 || windows.some((w) => w.minimized);
   return (
     <ActivityWindowsProvider open={open}>
       {children}
@@ -196,7 +197,7 @@ export function ActivityWindows({ children }: { children: React.ReactNode }) {
             </WindowChromeContext.Provider>
           );
         })}
-      {currentIdentity && windows.length > 1 && (
+      {currentIdentity && showWindowTaskbar && (
         <nav
           aria-label="Janelas de atividades"
           className="fixed bottom-2 left-2 z-[130] flex max-w-[calc(100vw-1rem)] gap-1 overflow-x-auto rounded-md border border-product-divider bg-product-panel p-1 shadow-lg max-sm:bottom-0 max-sm:left-0 max-sm:w-full max-sm:max-w-full max-sm:rounded-none"
