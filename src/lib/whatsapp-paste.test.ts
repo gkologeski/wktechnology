@@ -4,6 +4,7 @@ import {
   modernizeLegacyWhatsAppHtml,
   parseWhatsAppPaste,
   maybeConvertWhatsAppPaste,
+  renderWhatsAppHtml,
 } from "./whatsapp-paste";
 
 const sample = `[10:00, 17/06/2026] Guilherme Kologeski: Fala Gustavo
@@ -85,6 +86,40 @@ describe("whatsapp paste", () => {
       workspaceUserNames: ["Guilherme Kologeski"],
     });
     expect([...mine]).toEqual(["Guilherme Kologeski +55 47 9999-0000"]);
+  });
+
+  it("recognizes a unique abbreviated member opposite a phone", () => {
+    const messages = [
+      { time: "16:17", date: "25/09/2026", sender: "Andressa Wolf", text: "Até segunda" },
+      { time: "16:18", date: "25/09/2026", sender: "+55 61 8412-2205", text: "Oi" },
+    ];
+    const identity = {
+      currentUserName: "Guilherme Kologeski",
+      workspaceUserNames: ["Guilherme Kologeski", "Andressa Wolf Kologeski"],
+    };
+    expect([...identifyWhatsAppUserSenders(messages, identity)]).toEqual(["Andressa Wolf"]);
+    const html = renderWhatsAppHtml(messages, identity);
+    expect(html).toContain('data-whatsapp-message="outbound"');
+    expect(html).toContain('data-whatsapp-message="inbound"');
+    expect(html).toContain("whatsapp-bubble--mine");
+    expect(html).toContain("whatsapp-bubble--client");
+  });
+
+  it("keeps ambiguous or phone-less abbreviated names as clients", () => {
+    const messages = [
+      { time: "16:17", date: "25/09/2026", sender: "Andressa Wolf", text: "Oi" },
+      { time: "16:18", date: "25/09/2026", sender: "+55 61 8412-2205", text: "Oi" },
+    ];
+    expect(
+      identifyWhatsAppUserSenders(messages, {
+        workspaceUserNames: ["Andressa Wolf Kologeski", "Andressa Wolf Silva"],
+      }).size,
+    ).toBe(0);
+    expect(
+      identifyWhatsAppUserSenders([{ ...messages[0] }, { ...messages[1], sender: "Cliente" }], {
+        workspaceUserNames: ["Andressa Wolf Kologeski"],
+      }).size,
+    ).toBe(0);
   });
 
   it("escapes unsafe message content", () => {
