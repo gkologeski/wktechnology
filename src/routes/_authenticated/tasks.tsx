@@ -49,7 +49,8 @@ import {
 import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 import { useGridProjection } from "@/hooks/use-grid-projection";
 import { buildGridSelect } from "@/lib/grid/dynamic-select";
-import { QuickCreateTaskDialog } from "@/components/record/quick-create-dialogs";
+import { useActivityWindows } from "@/components/activity/activity-window-context";
+import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
 import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
 import { exportRowsToCsv } from "@/lib/csv-export";
 import { useSavedViews } from "@/lib/saved-views";
@@ -172,9 +173,13 @@ function TasksHubspotView() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(50);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [createOpen, setCreateOpen] = useState(false);
+  const openActivityWindow = useActivityWindows();
+  const openTask = () => {
+    const action = ACTIONS_BY_KEY["log:task"];
+    if (action) openActivityWindow?.({ action });
+  };
   const [isSelectingAll, setIsSelectingAll] = useState(false);
-  useAutoCreateParam(() => setCreateOpen(true));
+  useAutoCreateParam(openTask);
 
   const savedViews = useSavedViews("tasks");
   const [activeSavedId, setActiveSavedId] = useState<string | null>(null);
@@ -764,7 +769,7 @@ function TasksHubspotView() {
             <Link to="/tasks/queues">Queues</Link>
           </Button>
           <ExportMenuButton onExport={(f) => exportData(f)} />
-          <Button size="sm" onClick={() => setCreateOpen(true)}>
+          <Button size="sm" onClick={openTask}>
             <Plus className="mr-1.5 h-4 w-4" /> Criar tarefa
           </Button>
         </div>
@@ -1121,12 +1126,6 @@ function TasksHubspotView() {
         </div>
       </div>
       <ColumnsEditor />
-      <QuickCreateTaskDialog
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-        onCreated={() => qc.invalidateQueries({ queryKey: ["tasks"] })}
-      />
-
       <BulkEditFieldsDialog
         open={bulkEditOpen}
         setOpen={setBulkEditOpen}

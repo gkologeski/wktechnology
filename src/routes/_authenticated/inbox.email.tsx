@@ -11,6 +11,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { listEmailThreads, getEmailThread } from "@/lib/email-inbox.functions";
 import { syncMyEmailAccounts } from "@/lib/gmail-sync.functions";
 import { SendEmailDialog } from "@/components/email/send-email-dialog";
+import { useActivityWindows } from "@/components/activity/activity-window-context";
+import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
 import { formatDateTime } from "@/lib/crm";
 import { toast } from "sonner";
 
@@ -19,6 +21,11 @@ export const Route = createFileRoute("/_authenticated/inbox/email")({
 });
 
 function EmailInbox() {
+  const openActivityWindow = useActivityWindows();
+  const openEmail = (to?: string, threadId?: string) => {
+    const action = ACTIONS_BY_KEY["create:email"];
+    if (action) openActivityWindow?.({ action, to, threadId });
+  };
   const qc = useQueryClient();
   const listFn = useServerFn(listEmailThreads);
   const getFn = useServerFn(getEmailThread);
@@ -69,13 +76,9 @@ function EmailInbox() {
           <Button variant="outline" onClick={handleSync}>
             <RefreshCw className="mr-2 h-4 w-4" /> Sincronizar
           </Button>
-          <SendEmailDialog
-            trigger={
-              <Button>
-                <Mail className="mr-2 h-4 w-4" /> Novo email
-              </Button>
-            }
-          />
+          <Button onClick={() => openEmail()}>
+            <Mail className="mr-2 h-4 w-4" /> Novo email
+          </Button>
         </div>
       </div>
 
@@ -140,15 +143,9 @@ function EmailInbox() {
                     {current.messages.length} mensagem(ns)
                   </div>
                 </div>
-                <SendEmailDialog
-                  threadId={current.thread.id}
-                  defaultTo={lastMsg?.from_email ?? ""}
-                  trigger={
-                    <Button size="sm" variant="outline">
-                      <Reply className="mr-2 h-4 w-4" /> Responder
-                    </Button>
-                  }
-                />
+                <Button size="sm" variant="outline" onClick={() => openEmail(lastMsg?.from_email ?? "", current.thread.id)}>
+                  <Reply className="mr-2 h-4 w-4" /> Responder
+                </Button>
               </div>
               <ScrollArea className="flex-1 p-4">
                 <div className="space-y-4">
