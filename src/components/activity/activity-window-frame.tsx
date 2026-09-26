@@ -2,6 +2,8 @@ import { Maximize2, Minimize2, Minus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useWindowChrome, type WindowChrome } from "./activity-window-context";
 import { cn } from "@/lib/utils";
+import { useEffect, useRef } from "react";
+import { beginAuditSession, endAuditSession, touchAuditSession } from "@/lib/audit-session";
 
 export function WindowControls({ chrome }: { chrome: WindowChrome }) {
   return (
@@ -54,6 +56,17 @@ export function WindowHeader({ chrome }: { chrome: WindowChrome }) {
 
 export function ActivityWindowFrame({ children }: { children: React.ReactNode }) {
   const chrome = useWindowChrome();
+  const session = useRef<string | null>(null);
+  useEffect(() => {
+    session.current = beginAuditSession();
+    return () => {
+      endAuditSession(session.current);
+      session.current = null;
+    };
+  }, []);
+  useEffect(() => {
+    if (chrome?.position === 0 && !chrome.minimized) touchAuditSession(session.current);
+  }, [chrome?.position, chrome?.minimized]);
   if (!chrome) return null;
   return (
     <section

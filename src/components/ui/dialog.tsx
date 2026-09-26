@@ -6,7 +6,7 @@ import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { notifyDialogClosed } from "@/lib/dialog-refresh";
-import { beginAuditSession, endAuditSession } from "@/lib/audit-session";
+import { beginAuditSession, endAuditSession, touchAuditSession } from "@/lib/audit-session";
 import {
   useWindowChrome,
   WindowChromeContext,
@@ -37,6 +37,10 @@ const Dialog = ({
   }, [isOpen]);
 
   React.useEffect(() => () => endAuditSession(sessionRef.current), []);
+
+  React.useEffect(() => {
+    if (dock?.position === 0 && !dock.minimized) touchAuditSession(sessionRef.current);
+  }, [dock?.position, dock?.minimized]);
 
   return (
     <DockContext.Provider value={dock}>
