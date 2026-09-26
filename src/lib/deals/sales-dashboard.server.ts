@@ -166,96 +166,104 @@ export async function loadSalesDashboard(
     .gte("created_at", periodStart.toISOString())
     .lte("created_at", now.toISOString())
     .limit(10000);
-  if (selectedLeadPipeline) journeyLeadsQ = journeyLeadsQ.eq("pipeline_id", selectedLeadPipeline.id);
+  if (selectedLeadPipeline)
+    journeyLeadsQ = journeyLeadsQ.eq("pipeline_id", selectedLeadPipeline.id);
   journeyLeadsQ = mine(journeyLeadsQ);
 
-  const [dealsRes, acts14Res, acts30Res, meetingsRes, bookingsRes, tasksRes, goalsRes, leadsRes, journeyLeadsRes] =
-    await Promise.all([
-      dealsQ,
-      safe(
-        mine(
-          supabase
-            .from("activities")
-            .select("id, type, created_at")
-            .eq("workspace_id", workspaceId)
-            .gte("created_at", d14.toISOString())
-            .limit(5000),
-        ),
-      ),
-      safe(
-        mine(
-          supabase
-            .from("activities")
-            .select("related_deal_id, created_at")
-            .eq("workspace_id", workspaceId)
-            .not("related_deal_id", "is", null)
-            .gte("created_at", d30.toISOString())
-            .limit(10000),
-        ),
-      ),
-      safe(
-        mine(
-          supabase
-            .from("meetings")
-            .select("id, title, scheduled_at, status, public_token, related_deal_id")
-            .eq("workspace_id", workspaceId)
-            .gte("scheduled_at", now.toISOString())
-            .lte("scheduled_at", in7.toISOString())
-            .not("status", "in", '("cancelled","canceled")')
-            .order("scheduled_at", { ascending: true })
-            .limit(10),
-        ),
-      ),
-      safe(
-        mine(
-          supabase
-            .from("bookings")
-            .select("id, invitee_name, invitee_email, start_at, meet_link, status")
-            .eq("workspace_id", workspaceId)
-            .eq("status", "confirmed")
-            .gte("start_at", now.toISOString())
-            .lte("start_at", in7.toISOString())
-            .order("start_at", { ascending: true })
-            .limit(10),
-        ),
-      ),
-      safe(
+  const [
+    dealsRes,
+    acts14Res,
+    acts30Res,
+    meetingsRes,
+    bookingsRes,
+    tasksRes,
+    goalsRes,
+    leadsRes,
+    journeyLeadsRes,
+  ] = await Promise.all([
+    dealsQ,
+    safe(
+      mine(
         supabase
           .from("activities")
-          .select("id, subject, due_date, type, completed")
+          .select("id, type, created_at")
           .eq("workspace_id", workspaceId)
-          .eq("owner_id", userId)
-          .eq("completed", false)
-          .not("due_date", "is", null)
-          .order("due_date", { ascending: true })
-          .limit(12),
+          .gte("created_at", d14.toISOString())
+          .limit(5000),
       ),
-      safe(
-        mine(
-          supabase
-            .from("goals")
-            .select(
-              "id, metric, target_value, period_start, period_end, pipeline_id, target_user_id",
-            )
-            .eq("workspace_id", workspaceId)
-            .eq("metric", "deals_won_value")
-            .lte("period_start", isoDay(monthEnd))
-            .gte("period_end", isoDay(monthStart)),
-        ),
+    ),
+    safe(
+      mine(
+        supabase
+          .from("activities")
+          .select("related_deal_id, created_at")
+          .eq("workspace_id", workspaceId)
+          .not("related_deal_id", "is", null)
+          .gte("created_at", d30.toISOString())
+          .limit(10000),
       ),
-      safe(
-        mine(
-          supabase
-            .from("leads")
-            .select("id, first_name, last_name, company_name, status, updated_at")
-            .eq("workspace_id", workspaceId)
-            .in("status", ["new", "contacted", "nurturing"])
-            .order("updated_at", { ascending: true })
-            .limit(500),
-        ),
+    ),
+    safe(
+      mine(
+        supabase
+          .from("meetings")
+          .select("id, title, scheduled_at, status, public_token, related_deal_id")
+          .eq("workspace_id", workspaceId)
+          .gte("scheduled_at", now.toISOString())
+          .lte("scheduled_at", in7.toISOString())
+          .not("status", "in", '("cancelled","canceled")')
+          .order("scheduled_at", { ascending: true })
+          .limit(10),
       ),
-      safe(journeyLeadsQ),
-    ]);
+    ),
+    safe(
+      mine(
+        supabase
+          .from("bookings")
+          .select("id, invitee_name, invitee_email, start_at, meet_link, status")
+          .eq("workspace_id", workspaceId)
+          .eq("status", "confirmed")
+          .gte("start_at", now.toISOString())
+          .lte("start_at", in7.toISOString())
+          .order("start_at", { ascending: true })
+          .limit(10),
+      ),
+    ),
+    safe(
+      supabase
+        .from("activities")
+        .select("id, subject, due_date, type, completed")
+        .eq("workspace_id", workspaceId)
+        .eq("owner_id", userId)
+        .eq("completed", false)
+        .not("due_date", "is", null)
+        .order("due_date", { ascending: true })
+        .limit(12),
+    ),
+    safe(
+      mine(
+        supabase
+          .from("goals")
+          .select("id, metric, target_value, period_start, period_end, pipeline_id, target_user_id")
+          .eq("workspace_id", workspaceId)
+          .eq("metric", "deals_won_value")
+          .lte("period_start", isoDay(monthEnd))
+          .gte("period_end", isoDay(monthStart)),
+      ),
+    ),
+    safe(
+      mine(
+        supabase
+          .from("leads")
+          .select("id, first_name, last_name, company_name, status, updated_at")
+          .eq("workspace_id", workspaceId)
+          .in("status", ["new", "contacted", "nurturing"])
+          .order("updated_at", { ascending: true })
+          .limit(500),
+      ),
+    ),
+    safe(journeyLeadsQ),
+  ]);
 
   if (dealsRes.error) throw new Error(dealsRes.error.message);
 
@@ -565,7 +573,9 @@ export async function loadSalesDashboard(
   const rate = (part: number, total: number) => (total > 0 ? (part / total) * 100 : 0);
   const channelRows = LEAD_CHANNELS.map((key) => {
     const rows = journeyLeads.filter((lead) => normalizeLeadChannel(lead.source) === key);
-    const convertedRows = rows.filter((lead) => lead.converted_at !== null || lead.status === "qualified");
+    const convertedRows = rows.filter(
+      (lead) => lead.converted_at !== null || lead.status === "qualified",
+    );
     const opportunityRows = rows.filter(
       (lead) => lead.converted_deal_id !== null && linkedDealById.has(lead.converted_deal_id),
     );
@@ -582,10 +592,14 @@ export async function loadSalesDashboard(
       opportunities: opportunityRows.length,
       sales: salesRows.length,
       revenue: salesRows.reduce((total, lead) => {
-        const deal = lead.converted_deal_id ? linkedDealById.get(lead.converted_deal_id) : undefined;
+        const deal = lead.converted_deal_id
+          ? linkedDealById.get(lead.converted_deal_id)
+          : undefined;
         return total + (deal?.value ?? 0);
       }, 0),
-      sources: Array.from(new Set(rows.map((lead) => lead.source).filter(Boolean) as string[])).sort(),
+      sources: Array.from(
+        new Set(rows.map((lead) => lead.source).filter(Boolean) as string[]),
+      ).sort(),
     };
   })
     .filter((row) => row.leads > 0)

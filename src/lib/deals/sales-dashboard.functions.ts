@@ -12,7 +12,17 @@ const InputSchema = z.object({
   pipelineId: z.string().uuid().nullable().default(null),
   leadPipelineId: z.string().uuid().nullable().default(null),
   channel: z
-    .enum(["prospecting", "website", "paid", "organic", "referral", "offline", "import", "other", "unknown"])
+    .enum([
+      "prospecting",
+      "website",
+      "paid",
+      "organic",
+      "referral",
+      "offline",
+      "import",
+      "other",
+      "unknown",
+    ])
     .nullable()
     .default(null),
   scope: z.enum(["me", "team"]).default("me"),

@@ -25,7 +25,9 @@ describe("normalizeLeadChannel", () => {
 
 describe("resolveJourneyStage", () => {
   it("prioriza stage_id configurado", () => {
-    expect(resolveJourneyStage({ stage_id: "contact", status: "new" }, stages)?.value).toBe("contact");
+    expect(resolveJourneyStage({ stage_id: "contact", status: "new" }, stages)?.value).toBe(
+      "contact",
+    );
   });
   it("mapeia status legado qualificado para etapa ganha", () => {
     expect(resolveJourneyStage({ stage_id: null, status: "qualified" }, stages)?.value).toBe("won");

@@ -22,14 +22,31 @@ import { FunnelPanel } from "@/components/deals/dashboard/funnel-panel";
 import { TasksPanel, LeadsToWorkPanel } from "@/components/deals/dashboard/tasks-and-leads";
 import { ClosingsByMonthCard } from "@/components/deals/dashboard/closings-by-month-card";
 import { DashboardFilters } from "@/components/deals/dashboard/dashboard-filters";
-import { LeadChannelsPanel, LeadFunnelPanel, LeadJourneyKpis, LeadJourneyOverview } from "@/components/deals/dashboard/lead-journey-panels";
+import {
+  LeadChannelsPanel,
+  LeadFunnelPanel,
+  LeadJourneyKpis,
+  LeadJourneyOverview,
+} from "@/components/deals/dashboard/lead-journey-panels";
 import type { LeadChannel } from "@/lib/deals/sales-dashboard.types";
 
 const SearchSchema = z.object({
   period: z.union([z.literal(7), z.literal(30), z.literal(90)]).optional(),
   pipeline: z.string().uuid().optional(),
   leadPipeline: z.string().uuid().optional(),
-  channel: z.enum(["prospecting", "website", "paid", "organic", "referral", "offline", "import", "other", "unknown"]).optional(),
+  channel: z
+    .enum([
+      "prospecting",
+      "website",
+      "paid",
+      "organic",
+      "referral",
+      "offline",
+      "import",
+      "other",
+      "unknown",
+    ])
+    .optional(),
   scope: z.enum(["me", "team"]).optional(),
 });
 
@@ -53,7 +70,9 @@ function DashboardPage() {
   const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: ["sales-dashboard", periodDays, pipelineId, leadPipelineId, channel, scope],
     queryFn: async () => {
-      const result = await fetchDashboard({ data: { periodDays, pipelineId, leadPipelineId, channel, scope } });
+      const result = await fetchDashboard({
+        data: { periodDays, pipelineId, leadPipelineId, channel, scope },
+      });
       if (!result) {
         throw new Error(
           "Sessão expirada ou indisponível. Entre novamente ou tente atualizar o painel.",
@@ -122,7 +141,9 @@ function DashboardPage() {
         onPipelineChange={(v) => navigate({ search: (s) => ({ ...s, pipeline: v ?? undefined }) })}
         leadPipelines={data?.leadPipelines ?? []}
         leadPipelineId={leadPipelineId}
-        onLeadPipelineChange={(v) => navigate({ search: (s) => ({ ...s, leadPipeline: v ?? undefined }) })}
+        onLeadPipelineChange={(v) =>
+          navigate({ search: (s) => ({ ...s, leadPipeline: v ?? undefined }) })
+        }
         channel={channel}
         onChannelChange={(v) => navigate({ search: (s) => ({ ...s, channel: v ?? undefined }) })}
         scope={data?.effectiveScope ?? scope}
@@ -161,11 +182,18 @@ function DashboardPage() {
           <LeadJourneyOverview journey={data.leadJourney} />
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <LeadChannelsPanel journey={data.leadJourney} onSelect={(v) => navigate({ search: (s) => ({ ...s, channel: v ?? undefined }) })} />
+            <LeadChannelsPanel
+              journey={data.leadJourney}
+              onSelect={(v) => navigate({ search: (s) => ({ ...s, channel: v ?? undefined }) })}
+            />
             <LeadFunnelPanel journey={data.leadJourney} />
           </div>
 
-          <div className="flex items-center gap-3 pt-2"><div className="h-px flex-1 bg-border-subtle" /><h2 className="text-sm font-semibold text-text-primary">Operação comercial</h2><div className="h-px flex-1 bg-border-subtle" /></div>
+          <div className="flex items-center gap-3 pt-2">
+            <div className="h-px flex-1 bg-border-subtle" />
+            <h2 className="text-sm font-semibold text-text-primary">Operação comercial</h2>
+            <div className="h-px flex-1 bg-border-subtle" />
+          </div>
 
           <SalesKpiStrip kpis={data.kpis} />
 
