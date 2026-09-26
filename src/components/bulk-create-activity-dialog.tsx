@@ -78,7 +78,7 @@ export function BulkCreateActivityDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={setOpen} docked>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Criar atividade em massa ({ids.length})</DialogTitle>

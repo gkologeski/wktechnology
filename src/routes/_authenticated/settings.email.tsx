@@ -14,7 +14,8 @@ import {
   disconnectEmailAccount,
 } from "@/lib/email-accounts.functions";
 import { syncMyEmailAccounts } from "@/lib/gmail-sync.functions";
-import { SendEmailDialog } from "@/components/email/send-email-dialog";
+import { useActivityWindows } from "@/components/activity/activity-window-context";
+import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { EmailSignatureEditor } from "@/components/email/email-signature-editor";
 
@@ -31,6 +32,7 @@ export const Route = createFileRoute("/_authenticated/settings/email")({
 });
 
 function EmailSettings() {
+  const openActivity = useActivityWindows();
   const qc = useQueryClient();
   const search = useSearch({ from: "/_authenticated/settings/email" });
   const start = useServerFn(startGmailOAuth);
@@ -129,7 +131,12 @@ function EmailSettings() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <SendEmailDialog />
+            <Button
+              variant="outline"
+              onClick={() => openActivity?.({ action: ACTIONS_BY_KEY["create:email"] })}
+            >
+              Novo email
+            </Button>
             <Button onClick={connect}>
               <Plug className="h-4 w-4 mr-1" /> Conectar Gmail
             </Button>

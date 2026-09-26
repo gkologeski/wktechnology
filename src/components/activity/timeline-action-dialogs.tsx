@@ -2,7 +2,6 @@
 // ligação, WhatsApp, pesquisa).
 // Extraído de `activity-timeline.tsx` sem mudança de comportamento.
 import { lazy, Suspense } from "react";
-import { toast } from "sonner";
 import { MeetingDialog } from "@/components/meetings/meeting-dialog";
 import { SendEmailDialog } from "@/components/email/send-email-dialog";
 import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
@@ -36,12 +35,6 @@ export function TimelineActionDialogs({
   const close = (v: boolean) => {
     if (!v) onClose();
   };
-
-  const missingPhone = (openAction === "call" || openAction === "whatsapp") && !target.phone;
-  if (missingPhone) {
-    toast.error("Sem telefone disponível para esta entidade.");
-    setTimeout(onClose, 0);
-  }
 
   return (
     <>
@@ -89,7 +82,10 @@ export function TimelineActionDialogs({
         onOpenChange={close}
         relatedKey={relatedKey}
         relatedId={relatedId}
-        onSaved={onRefresh}
+        onSaved={() => {
+          onRefresh();
+          onClose();
+        }}
       />
     </>
   );

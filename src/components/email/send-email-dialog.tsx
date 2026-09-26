@@ -314,7 +314,7 @@ export function SendEmailDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={setOpen} docked={openProp !== undefined}>
       {trigger !== undefined ? (
         <MessageDraftPin show={draftIndicator && hasDraft}>
           <DialogTrigger asChild>{trigger}</DialogTrigger>

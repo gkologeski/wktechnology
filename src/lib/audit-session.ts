@@ -44,6 +44,16 @@ export function beginAuditSession() {
   return id;
 }
 
+/** Reprioriza a janela ativa quando mais de uma sessão de auditoria está aberta. */
+export function touchAuditSession(id: string | null) {
+  if (!id) return;
+  const index = sessions.lastIndexOf(id);
+  if (index < 0 || index === sessions.length - 1) return;
+  sessions.splice(index, 1);
+  sessions.push(id);
+  syncSupabaseHeader();
+}
+
 /** Encerra uma correlação, restaurando a sessão do modal pai quando aninhado. */
 export function endAuditSession(id: string | null) {
   if (!id) return;

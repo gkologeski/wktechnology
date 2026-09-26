@@ -110,9 +110,11 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
       }, 150);
     };
     window.addEventListener("timeline:refresh", handler);
+    window.addEventListener("activities:changed", handler);
     return () => {
       if (timer) clearTimeout(timer);
       window.removeEventListener("timeline:refresh", handler);
+      window.removeEventListener("activities:changed", handler);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [relatedId, datePreset, dateCustom.start, dateCustom.end]);

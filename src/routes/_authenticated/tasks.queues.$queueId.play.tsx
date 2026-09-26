@@ -9,13 +9,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { RichHtmlEditor } from "@/components/rich-html-editor";
 import { Badge } from "@/components/ui/badge";
 import { getQueueWithItems, updateQueueItem } from "@/lib/task-queues.functions";
-import { SendEmailDialog } from "@/components/email/send-email-dialog";
+import { useActivityWindows } from "@/components/activity/activity-window-context";
+import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
 
 export const Route = createFileRoute("/_authenticated/tasks/queues/$queueId/play")({
   component: PlayQueue,
 });
 
 function PlayQueue() {
+  const openActivity = useActivityWindows();
   const { queueId } = Route.useParams();
   const nav = useNavigate();
   const qc = useQueryClient();
@@ -118,18 +120,9 @@ function PlayQueue() {
 
             <div className="flex flex-wrap gap-2">
               {email && (
-                <SendEmailDialog
-                  defaultTo={email}
-                  contactId={current.contact_id ?? undefined}
-                  leadId={current.lead_id ?? undefined}
-                  dealId={current.deal_id ?? undefined}
-                  contactName={subject}
-                  trigger={
-                    <Button variant="outline" size="sm">
-                      <Mail className="mr-1 h-4 w-4" /> Email
-                    </Button>
-                  }
-                />
+                <Button variant="outline" size="sm" onClick={() => openActivity?.({ action: ACTIONS_BY_KEY["create:email"], to: email, contactId: current.contact_id ?? undefined, leadId: current.lead_id ?? undefined, dealId: current.deal_id ?? undefined, contactName: subject })}>
+                  <Mail className="mr-1 h-4 w-4" /> Email
+                </Button>
               )}
               {phone && (
                 <Button variant="outline" size="sm" asChild>

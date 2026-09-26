@@ -31,6 +31,7 @@ import { listWorkspaceTeam } from "@/lib/workspace-invites.functions";
 import { Building2, User } from "lucide-react";
 import { isCNPJ, formatCNPJ } from "@/lib/validators";
 import { OnboardingGuidedEntry } from "@/components/onboarding/onboarding-guided-entry";
+import { useWindowChrome } from "@/components/activity/activity-window-context";
 
 const LEGACY_ENUM = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
 
@@ -577,6 +578,7 @@ export function QuickCreateTaskDialog({
   defaultDealId?: string | null;
   defaultLeadId?: string | null;
 }) {
+  const dock = useWindowChrome();
   const { user } = useAuth();
   const toastCreated = useToastCreated();
   const [subject, setSubject] = useState("");
@@ -629,6 +631,7 @@ export function QuickCreateTaskDialog({
 
   return (
     <Dialog
+      docked={!!dock}
       open={open}
       onOpenChange={(v) => {
         if (!saving) onOpenChange(v);

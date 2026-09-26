@@ -41,7 +41,8 @@ import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog"
 import { isBulkEditEntity } from "@/lib/grid/bulk-edit-fields";
 
 import { ConfirmCountDialog } from "@/components/confirm-count-dialog";
-import { BulkCreateActivityDialog } from "@/components/bulk-create-activity-dialog";
+import { useActivityWindows } from "@/components/activity/activity-window-context";
+import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
 import { FilterBuilderDialog } from "@/components/filter-builder-dialog";
 import { ColumnEditorDialog } from "@/components/column-editor-dialog";
 import { EntityBoard, type BoardStage } from "@/components/entity-board";
@@ -145,6 +146,7 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   } = props;
   const { user } = useAuth();
   const qc = useQueryClient();
+  const openActivityWindow = useActivityWindows();
   const navigate = useNavigate();
   const savedViews = useSavedViews(table);
   const presets = PRESET_VIEWS[table] ?? [];
@@ -158,7 +160,6 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
-  const [bulkActivityOpen, setBulkActivityOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [columnOpen, setColumnOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"table" | "board">("table");
@@ -596,7 +597,7 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
           )}
 
           {table !== "activities" && (
-            <Button variant="outline" size="sm" onClick={() => setBulkActivityOpen(true)}>
+             <Button variant="outline" size="sm" onClick={() => openActivityWindow?.({ action: ACTIONS_BY_KEY["log:task"], bulk: { ids: [...ids], entity: table as "leads" | "contacts" | "deals" | "companies", onDone: () => { clearSel(); void qc.invalidateQueries({ queryKey: ["activities"] }); } } })}>
               <ListTodo className="h-4 w-4 mr-1" /> Criar atividade
             </Button>
           )}
@@ -970,18 +971,6 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
           await bulkDelete();
         }}
       />
-      {table !== "activities" && (
-        <BulkCreateActivityDialog
-          open={bulkActivityOpen}
-          setOpen={setBulkActivityOpen}
-          ids={ids}
-          entity={table}
-          onDone={() => {
-            clearSel();
-            qc.invalidateQueries({ queryKey: ["activities"] });
-          }}
-        />
-      )}
 
       <FilterBuilderDialog
         open={filterOpen}

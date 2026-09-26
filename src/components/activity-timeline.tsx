@@ -1,38 +1,23 @@
 import { useEffect, useState } from "react";
-import { FileCenterPickerDialog } from "@/components/files/file-center-picker";
-import { extractMentionIds } from "@/components/rich-html-editor";
 import type { Activity } from "@/lib/db-types";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { useServerFn } from "@tanstack/react-start";
 import { signMeetingRecording } from "@/lib/meetings.functions";
-import { notifyActivityEvent } from "@/lib/notifications.functions";
-import { maybeConvertWhatsAppPaste, type WhatsAppIdentity } from "@/lib/whatsapp-paste";
+import type { WhatsAppIdentity } from "@/lib/whatsapp-paste";
 import { useHasMessageDraft } from "@/hooks/use-has-message-draft";
 import {
-  type Attachment,
   type BarAction,
-  type CreateAction,
-  LOG_LABEL,
-  type LogKind,
+  ACTIONS_BY_KEY,
   type RelatedKey,
   type TeamMember,
 } from "./activity/timeline-shared";
 import { TimelineActionBar } from "./activity/timeline-action-bar";
 import { TimelineEntriesList } from "./activity/timeline-entries-list";
-import {
-  fetchTimelineTarget,
-  fetchTimelineTeam,
-  resolveTimelineAutoLinks,
-  uploadTimelineFiles,
-} from "@/lib/timeline/activity-entities";
-import { TimelineComposer } from "./activity/timeline-composer";
-import { TimelineActionDialogs } from "./activity/timeline-action-dialogs";
+import { fetchTimelineTarget, fetchTimelineTeam } from "@/lib/timeline/activity-entities";
 import { TimelineRail } from "./activity/timeline-rail";
 import { useTimelineFeed } from "./activity/use-timeline-feed";
 import {
-  activityAttachments,
-  insertActivity,
   removeActivity,
   toggleActivityDone,
   updateActivity,
@@ -40,9 +25,7 @@ import {
 import { InstantRoomButton } from "./activity/instant-room-button";
 import { useActivityEditing } from "./activity/use-activity-editing";
 import { useMeetingSummary } from "./activity/use-meeting-summary";
-import { nowLocalInput, type ComposerExtrasState } from "./activity/timeline-composer-extras";
-import { DEFAULT_FOLLOW_UP } from "./activity/follow-up-task-control";
-import { followUpDate } from "@/lib/activity-task-options";
+import { useActivityWindows } from "./activity/activity-window-context";
 
 export function ActivityTimeline({
   relatedKey,
@@ -70,47 +53,11 @@ export function ActivityTimeline({
     resolveHistoryActor,
   } = useTimelineFeed(relatedKey, relatedId);
 
-  const [composerOpen, setComposerOpen] = useState(false);
-  const [type, setType] = useState<LogKind>("note");
-  const [moreOpen, setMoreOpen] = useState(false);
-
-  const [subject, setSubject] = useState("");
-  const [body, setBody] = useState("");
-  const [dueDate, setDueDate] = useState("");
-  const [remindBefore, setRemindBefore] = useState("0");
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const [assigneeId, setAssigneeId] = useState<string>("");
-  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const openWindow = useActivityWindows();
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [whatsappIdentity, setWhatsappIdentity] = useState<WhatsAppIdentity>({});
   const [currentWorkspaceId, setCurrentWorkspaceId] = useState<string | null>(null);
-  const [mentions, setMentions] = useState<TeamMember[]>([]);
-  const freshExtras = (): ComposerExtrasState => ({
-    contactedIds: [],
-    activityDate: nowLocalInput(),
-    taskType: "todo",
-    priority: "none",
-    status: "not_started",
-    recurrence: null,
-    followUp: DEFAULT_FOLLOW_UP,
-  });
-  const [extras, setExtras] = useState<ComposerExtrasState>(freshExtras);
-  const patchExtras = (p: Partial<ComposerExtrasState>) => setExtras((e) => ({ ...e, ...p }));
-  const [autoLinkCount, setAutoLinkCount] = useState(1);
   const editing = useActivityEditing(user?.id, whatsappIdentity, () => afterChange());
-
-  const notifyActivityEventFn = useServerFn(notifyActivityEvent);
-
-  // Action dialogs open state
-  const [openAction, setOpenAction] = useState<CreateAction | null>(null);
-  // Mantém o discador montado após a primeira abertura (preserva chamada em
-  // andamento ao fechar o modal), mas evita baixar o SDK de voz antes disso.
-  const [dialerMounted, setDialerMounted] = useState(false);
-  useEffect(() => {
-    if (openAction === "call") setDialerMounted(true);
-  }, [openAction]);
-
-  // Contact info resolved from parent entity for action dialogs
   const [target, setTarget] = useState<{
     email?: string;
     phone?: string;
@@ -152,109 +99,6 @@ export function ActivityTimeline({
     });
   }, [user]);
 
-  const uploadFiles = async (): Promise<Attachment[]> =>
-    !user || pendingFiles.length === 0 ? [] : uploadTimelineFiles(user.id, pendingFiles);
-
-  const resolveAutoLinks = () => resolveTimelineAutoLinks(relatedKey, relatedId);
-
-  useEffect(() => {
-    if (!composerOpen) return;
-    void resolveAutoLinks().then((l) =>
-      setAutoLinkCount(Object.values(l ?? {}).filter(Boolean).length || 1),
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [composerOpen, relatedKey, relatedId]);
-
-  const add = async () => {
-    if (!user) return;
-    if (!body.trim() && !subject.trim() && pendingFiles.length === 0) {
-      toast.error("Adicione um assunto, texto ou anexo.");
-      return;
-    }
-    const attachments = await uploadFiles();
-    const autoLinks = await resolveAutoLinks();
-    const waHtml = body ? maybeConvertWhatsAppPaste(body, whatsappIdentity) : null;
-    const finalBody = waHtml ?? (body || null);
-    const schedulable = type === "task" || type === "call" || type === "meeting";
-    const isTask = type === "task";
-    const payload: Record<string, unknown> = {
-      // O dono é sempre quem cria (exigência das políticas de acesso);
-      // a pessoa escolhida entra como responsável.
-      owner_id: user.id,
-      assigned_to: isTask && assigneeId ? assigneeId : user.id,
-      created_by: user.id,
-      type,
-      subject: subject || (waHtml ? "Conversa de WhatsApp" : null),
-      body: finalBody,
-      due_date: schedulable && dueDate ? new Date(dueDate).toISOString() : null,
-      remind_before_minutes:
-        schedulable && dueDate && remindBefore !== "none" ? Number(remindBefore) : null,
-      mentions: waHtml ? [] : extractMentionIds(body),
-      attachments,
-      activity_date:
-        !isTask && extras.activityDate
-          ? new Date(extras.activityDate).toISOString()
-          : new Date().toISOString(),
-      contacted_contact_ids: isTask ? [] : extras.contactedIds,
-      ...(isTask
-        ? {
-            task_type: extras.taskType,
-            task_priority: extras.priority === "none" ? null : extras.priority,
-            task_status: extras.status,
-            completed: extras.status === "completed",
-            recurrence:
-              extras.recurrence && dueDate ? { ...extras.recurrence, occurrence: 1 } : null,
-          }
-        : {}),
-      ...autoLinks,
-    };
-    if (isTask && extras.recurrence && !dueDate) {
-      toast.error("Defina a data de vencimento para repetir a tarefa.");
-      return;
-    }
-    const res = await insertActivity(payload);
-    if (!res.ok) {
-      if (res.error?.includes("row-level security")) {
-        toast.error("Você não tem permissão para criar esta atividade", {
-          description:
-            "Peça ao administrador do workspace para revisar seu perfil de acesso em Atividades.",
-        });
-        return;
-      }
-      return toast.error(res.error);
-    }
-    if (res.insertedId) {
-      void notifyActivityEventFn({ data: { activityId: res.insertedId } }).catch(() => {});
-    }
-    if (!isTask && extras.followUp.enabled) {
-      const due = followUpDate(extras.followUp.preset, new Date(), extras.followUp.custom);
-      const fu = await insertActivity({
-        owner_id: user.id,
-        assigned_to: user.id,
-        created_by: user.id,
-        type: "task",
-        task_type: extras.followUp.taskType,
-        task_status: "not_started",
-        subject: `Acompanhar: ${subject || currentLogLabel}`,
-        due_date: due ? due.toISOString() : null,
-        follow_up_of: res.insertedId ?? null,
-        ...autoLinks,
-      });
-      if (fu.ok) toast.success("Tarefa de acompanhamento criada");
-      else toast.error(`Atividade salva, mas a tarefa de acompanhamento falhou: ${fu.error}`);
-    }
-    setSubject("");
-    setBody("");
-    setDueDate("");
-    setRemindBefore("0");
-    setAssigneeId("");
-    setPendingFiles([]);
-    setMentions([]);
-    setExtras(freshExtras());
-    void load();
-    window.dispatchEvent(new CustomEvent("activities:changed"));
-  };
-
   /** Recarrega a timeline e avisa os demais componentes da mudança. */
   const afterChange = () => {
     void load();
@@ -276,31 +120,17 @@ export function ActivityTimeline({
   const signMeetingRec = useServerFn(signMeetingRecording);
   const onSummarizeMeeting = useMeetingSummary(items, () => void load());
 
-  const handleBarClick = (a: BarAction) => {
-    if (a.kind === "log") {
-      setType(a.value);
-      setComposerOpen(true);
-    } else setOpenAction(a.value);
+  const handleBarClick = (action: BarAction) => {
+    openWindow?.({ action, relatedKey, relatedId });
   };
-
-  const currentLogLabel = LOG_LABEL[type] ?? "Atividade";
 
   return (
     <div className="space-y-6">
-      {/* Composer */}
-      <div
-        className="bg-card rounded-2xl shadow-sm border border-border/60 overflow-hidden"
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => {
-          e.preventDefault();
-          const files = Array.from(e.dataTransfer.files);
-          if (files.length) setPendingFiles((p) => [...p, ...files]);
-        }}
-      >
+      <div className="bg-card rounded-md border border-border/60 overflow-hidden">
         <TimelineActionBar
           relatedKey={relatedKey}
-          composerOpen={composerOpen}
-          activeLogType={type}
+          composerOpen={false}
+          activeLogType="note"
           hasEmailDraft={hasEmailDraft}
           hasWhatsAppDraft={hasWhatsAppDraft}
           onAction={handleBarClick}
@@ -313,71 +143,7 @@ export function ActivityTimeline({
             />
           }
         />
-
-        {/* Inline composer (only when a "log" action is selected) */}
-        {composerOpen && (
-          <TimelineComposer
-            type={type}
-            label={currentLogLabel}
-            currentUserId={user?.id}
-            team={team}
-            subject={subject}
-            onSubjectChange={setSubject}
-            body={body}
-            onBodyChange={setBody}
-            onMentionAdd={(m) => {
-              if (!mentions.find((x) => x.id === m.id)) setMentions((prev) => [...prev, m]);
-            }}
-            dueDate={dueDate}
-            onDueDateChange={setDueDate}
-            remindBefore={remindBefore}
-            onRemindBeforeChange={setRemindBefore}
-            assigneeId={assigneeId}
-            onAssigneeChange={setAssigneeId}
-            pendingFiles={pendingFiles}
-            onPendingFilesChange={setPendingFiles}
-            onOpenFileCenter={() => setPickerOpen(true)}
-            onClose={() => {
-              setComposerOpen(false);
-              setSubject("");
-              setBody("");
-              setDueDate("");
-              setRemindBefore("0");
-              setPendingFiles([]);
-              setExtras(freshExtras());
-            }}
-            extras={extras}
-            onExtrasChange={patchExtras}
-            associationsCount={autoLinkCount}
-            defaultContactId={target.contactId}
-            onSave={() => {
-              void add().then(() => setComposerOpen(false));
-            }}
-          />
-        )}
       </div>
-
-      <FileCenterPickerDialog
-        open={pickerOpen}
-        onOpenChange={setPickerOpen}
-        onPicked={(files) => setPendingFiles((p) => [...p, ...files])}
-      />
-      <FileCenterPickerDialog
-        open={editing.pickerOpen}
-        onOpenChange={editing.setPickerOpen}
-        onPicked={(files) => editing.setNewFiles((p) => [...p, ...files])}
-      />
-
-      {/* Action dialogs */}
-      <TimelineActionDialogs
-        openAction={openAction}
-        onClose={() => setOpenAction(null)}
-        relatedKey={relatedKey}
-        relatedId={relatedId}
-        target={target}
-        dialerMounted={dialerMounted}
-        onRefresh={() => void load()}
-      />
 
       {/* Timeline rail */}
       <TimelineRail
@@ -401,10 +167,14 @@ export function ActivityTimeline({
           afterChange();
         }}
         onFollowUp={(a) => {
-          setType("task");
-          setSubject(`Acompanhar: ${a.subject || "atividade"}`);
-          setComposerOpen(true);
-          window.scrollTo({ top: 0, behavior: "smooth" });
+          const action = ACTIONS_BY_KEY["log:task"];
+          if (action)
+            openWindow?.({
+              action,
+              relatedKey,
+              relatedId,
+              subject: `Acompanhar: ${a.subject || "atividade"}`,
+            });
         }}
         loading={loading}
         entries={timelineEntries}
@@ -415,7 +185,9 @@ export function ActivityTimeline({
         resolveHistoryValue={resolveHistoryValue}
         resolveHistoryActor={resolveHistoryActor}
         onToggleDone={(row) => void toggleDone(row)}
-        onStartEdit={editing.startEdit}
+        onStartEdit={(activity) =>
+          openWindow?.({ action: ACTIONS_BY_KEY["log:task"], editingActivity: activity })
+        }
         onRemove={(id) => void remove(id)}
         onSummarizeMeeting={(id) => void onSummarizeMeeting(id)}
         signRecording={async (path) => {

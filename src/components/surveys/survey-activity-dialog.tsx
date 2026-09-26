@@ -279,7 +279,7 @@ export function SurveyActivityDialog({
   const blocksAfter = fieldLayout.filter((b) => b.position === "after");
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange} docked>
       <DialogContent className={useQualificationScreen ? "max-w-4xl" : "max-w-2xl"}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

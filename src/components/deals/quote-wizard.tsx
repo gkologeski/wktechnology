@@ -25,7 +25,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { LineItemsEditorBody } from "@/components/deals/deal-line-items";
-import { SendEmailDialog } from "@/components/email/send-email-dialog";
+import { useActivityWindows } from "@/components/activity/activity-window-context";
+import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/crm";
 import { cn } from "@/lib/utils";
@@ -82,6 +83,7 @@ function SnippetHint() {
 }
 
 export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props) {
+  const openActivity = useActivityWindows();
   const qc = useQueryClient();
   const createFn = useServerFn(createQuoteFromDeal);
   const updateFn = useServerFn(updateQuote);
@@ -117,8 +119,6 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
     terms: existingQuote?.terms ?? "",
     templateId: existingQuote?.template_id ?? "",
   });
-
-  const [showSend, setShowSend] = useState(false);
 
   // Reset when dialog opens/closes or existingQuote changes
   useEffect(() => {
@@ -367,7 +367,27 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
 
   async function handlePublishAndSend() {
     await publishMut.mutateAsync();
-    setShowSend(true);
+    if (!deal) return;
+    openActivity?.({
+      action: ACTIONS_BY_KEY["create:email"],
+      to: contact?.email ?? "",
+      subject: emailDefaults.subject,
+      body: emailDefaults.body,
+      contactId: contact?.id,
+      dealId,
+      companyId: deal.company_id ?? undefined,
+      contactName: contact
+        ? [contact.first_name, contact.last_name].filter(Boolean).join(" ").trim() || undefined
+        : undefined,
+      onSent: async () => {
+        try {
+          await markAsSentMut.mutateAsync();
+        } catch {
+          /* toast already shown */
+        }
+      },
+    });
+    onOpenChange(false);
   }
 
   const publicUrl = useMemo(
@@ -630,37 +650,6 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {showSend && deal && (
-        <SendEmailDialog
-          open={showSend}
-          onOpenChange={(v) => {
-            setShowSend(v);
-            if (!v) onOpenChange(false);
-          }}
-          defaultTo={contact?.email ?? ""}
-          defaultSubject={emailDefaults.subject}
-          defaultBody={emailDefaults.body}
-          contactId={contact?.id}
-          dealId={dealId}
-          companyId={deal.company_id ?? undefined}
-          contactName={
-            contact
-              ? [contact.first_name, contact.last_name].filter(Boolean).join(" ").trim() ||
-                undefined
-              : undefined
-          }
-          onSent={async () => {
-            try {
-              await markAsSentMut.mutateAsync();
-            } catch {
-              /* toast already shown */
-            }
-            setShowSend(false);
-            onOpenChange(false);
-          }}
-        />
-      )}
     </>
   );
 }

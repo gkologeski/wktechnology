@@ -55,13 +55,15 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { formatDateTime } from "@/lib/crm";
 import { useAuth } from "@/lib/auth";
-import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
+import { useActivityWindows } from "@/components/activity/activity-window-context";
+import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
 
 export const Route = createFileRoute("/_authenticated/inbox/whatsapp")({
   component: WhatsAppInbox,
 });
 
 function WhatsAppInbox() {
+  const openActivity = useActivityWindows();
   const qc = useQueryClient();
   const { user } = useAuth();
   const listFn = useServerFn(listWhatsAppConversations);
@@ -227,14 +229,9 @@ function WhatsAppInbox() {
         </div>
         <div className="flex gap-2">
           <WhatsAppSettingsButton />
-          <SendWhatsAppDialog
-            onSent={(id) => setSelected(id)}
-            trigger={
-              <Button>
-                <MessageCircle className="mr-2 h-4 w-4" /> Nova conversa
-              </Button>
-            }
-          />
+          <Button onClick={() => openActivity?.({ action: ACTIONS_BY_KEY["create:whatsapp"] })}>
+            <MessageCircle className="mr-2 h-4 w-4" /> Nova conversa
+          </Button>
         </div>
       </div>
 
