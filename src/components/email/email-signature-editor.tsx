@@ -33,7 +33,9 @@ export function EmailSignatureEditor({
 
   const mut = useMutation({
     mutationFn: () =>
-      save({ data: { id: accountId, signature_html: normalizeHtmlField(cleanEmailSignatureHtml(html)) } }),
+      save({
+        data: { id: accountId, signature_html: normalizeHtmlField(cleanEmailSignatureHtml(html)) },
+      }),
     onSuccess: () => {
       setHtml((current) => cleanEmailSignatureHtml(current));
       toast.success("Assinatura salva");
@@ -95,7 +97,9 @@ export function EmailSignatureEditor({
             <div
               className="prose prose-sm dark:prose-invert max-w-none"
               // Conteúdo é sanitizado ao salvar e ao renderizar via normalizeHtmlField.
-              dangerouslySetInnerHTML={{ __html: normalizeHtmlField(cleanEmailSignatureHtml(html)) ?? "" }}
+              dangerouslySetInnerHTML={{
+                __html: normalizeHtmlField(cleanEmailSignatureHtml(html)) ?? "",
+              }}
             />
           ) : (
             <p className="text-sm text-muted-foreground">Nenhuma assinatura definida.</p>

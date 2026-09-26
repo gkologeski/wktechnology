@@ -46,7 +46,9 @@ export const saveEmailSignature = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
       .from("email_accounts")
-      .update({ signature_html: data.signature_html ? cleanEmailSignatureHtml(data.signature_html) : null })
+      .update({
+        signature_html: data.signature_html ? cleanEmailSignatureHtml(data.signature_html) : null,
+      })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
