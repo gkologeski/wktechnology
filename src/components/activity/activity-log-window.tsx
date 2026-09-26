@@ -21,6 +21,7 @@ import { LOG_LABEL, type Attachment, type LogKind, type TeamMember } from "./tim
 import type { ActivityWindowRequest } from "./activity-window-context";
 import { activityDraftKey, useActivityDraft } from "@/hooks/use-activity-draft";
 import { DraftBar } from "./activity-draft-bar";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 function freshExtras(): ComposerExtrasState {
   return {
@@ -73,16 +74,32 @@ export function ActivityLogWindow({
       if (v.extras) setExtras(v.extras);
     },
   });
-  const discard = () => {
-    if (!window.confirm("Descartar este rascunho?")) return;
-    draft.clear();
+  const discard = async () => {
+    if (
+      !(await confirmDialog({
+        title: "Descartar rascunho?",
+        description: "O conteúdo redigido e os anexos deste rascunho serão removidos.",
+        confirmLabel: "Descartar",
+        variant: "destructive",
+      }))
+    )
+      return;
+    const resetExtras = freshExtras();
+    draft.clear({
+      subject: request.subject ?? "",
+      body: "",
+      dueDate: "",
+      remindBefore: "0",
+      assigneeId: "",
+      extras: resetExtras,
+    });
     setSubject(request.subject ?? "");
     setBody("");
     setDueDate("");
     setRemindBefore("0");
     setAssigneeId("");
     setPendingFiles([]);
-    setExtras(freshExtras());
+    setExtras(resetExtras);
   };
   useEffect(() => {
     if (!relatedKey || !relatedId) return;

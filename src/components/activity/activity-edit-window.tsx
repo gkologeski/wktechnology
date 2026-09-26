@@ -10,6 +10,7 @@ import { maybeConvertWhatsAppPaste, type WhatsAppIdentity } from "@/lib/whatsapp
 import { useEffect } from "react";
 import { activityDraftKey, useActivityDraft } from "@/hooks/use-activity-draft";
 import { DraftBar } from "./activity-draft-bar";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export function ActivityEditWindow({
   activity,
@@ -47,11 +48,32 @@ export function ActivityEditWindow({
       setDueDate(v.dueDate ?? null);
     },
   });
-  const discard = () => {
-    if (!window.confirm("Descartar este rascunho?")) return;
-    draft.clear();
+  const discard = async () => {
+    if (
+      !(await confirmDialog({
+        title: "Descartar rascunho?",
+        description: "O conteúdo redigido e os anexos deste rascunho serão removidos.",
+        confirmLabel: "Descartar",
+        variant: "destructive",
+      }))
+    )
+      return;
+    const originalAssignee =
+      activity.type === "task"
+        ? ((activity as Activity & { assigned_to?: string | null }).assigned_to ??
+          activity.owner_id)
+        : null;
+    const originalDueDate = activity.type === "task" ? activity.due_date : null;
+    draft.clear({
+      body: activity.body ?? "",
+      assigneeId: originalAssignee,
+      dueDate: originalDueDate,
+    });
     setBody(activity.body ?? "");
-    setDueDate(activity.type === "task" ? activity.due_date : null);
+    setAssigneeId(originalAssignee);
+    setDueDate(originalDueDate);
+    setAttachments(activityAttachments(activity));
+    setNewFiles([]);
   };
   useEffect(() => {
     if (!user) return;
