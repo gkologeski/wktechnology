@@ -15,6 +15,7 @@ import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { ACTIVITY_TYPES, type ActivityType } from "@/lib/crm";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
+import { ActivityDueDatePicker } from "@/components/activity/activity-date-time-picker";
 
 type Entity = "leads" | "contacts" | "deals" | "companies";
 
@@ -123,7 +124,11 @@ export function BulkCreateActivityDialog({
           </div>
           <div className="space-y-1.5">
             <Label>Data limite</Label>
-            <Input type="datetime-local" value={due} onChange={(e) => setDue(e.target.value)} />
+            <ActivityDueDatePicker
+              value={due}
+              onChange={(value) => setDue(value ?? "")}
+              ariaLabel="Data limite"
+            />
           </div>
         </div>
         <DialogFooter>

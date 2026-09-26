@@ -21,6 +21,7 @@ import { listCalendarAccounts, pushActivityToCalendar } from "@/lib/calendar.fun
 import { createMeeting } from "@/lib/meetings.functions";
 import { CalendarDays, ExternalLink } from "lucide-react";
 import { AttendeePicker, type Attendee } from "./attendee-picker";
+import { ActivityDateTimePicker } from "@/components/activity/activity-date-time-picker";
 
 type Props = {
   trigger?: ReactNode;
@@ -201,15 +202,21 @@ export function MeetingDialog({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Início *</Label>
-              <Input
-                type="datetime-local"
+               <ActivityDateTimePicker
                 value={start}
-                onChange={(e) => setStart(e.target.value)}
+                 onChange={(value) => setStart(value ?? "")}
+                 optional={false}
+                 ariaLabel="Início da reunião"
               />
             </div>
             <div>
               <Label>Fim *</Label>
-              <Input type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} />
+               <ActivityDateTimePicker
+                 value={end}
+                 onChange={(value) => setEnd(value ?? "")}
+                 optional={false}
+                 ariaLabel="Fim da reunião"
+               />
             </div>
           </div>
           <div>

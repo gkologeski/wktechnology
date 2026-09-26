@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { CalendarDays, Check, Clock3, X } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -161,49 +161,6 @@ export function ActivityDateTimePicker({
           </PopoverContent>
         </Popover>
       )}
-    </div>
-  );
-}
-
-type RelativeDuePickerProps = Omit<ActivityDateTimePickerProps, "dateOnly"> & {
-  presets: readonly { value: string; label: string; date: Date | null }[];
-  onPreset: (preset: string) => void;
-};
-
-export function RelativeDuePicker({ presets, onPreset, ...pickerProps }: RelativeDuePickerProps) {
-  const [open, setOpen] = useState(false);
-  const selectedLabel = useMemo(
-    () => presets.find((preset) => preset.date && pickerProps.value && preset.date.getTime() === new Date(pickerProps.value).getTime())?.label,
-    [pickerProps.value, presets],
-  );
-
-  return (
-    <div className="space-y-1.5">
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button type="button" variant="outline" className="h-9 w-full justify-between font-normal">
-            <span className="truncate">{selectedLabel ?? "Escolher vencimento"}</span>
-            <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent align="start" className="z-[180] w-80 max-w-[calc(100vw-1rem)] p-1">
-          {presets.map((preset) => (
-            <Button
-              key={preset.value}
-              type="button"
-              variant="ghost"
-              className="h-auto w-full justify-start whitespace-normal px-3 py-2 text-left"
-              onClick={() => {
-                onPreset(preset.value);
-                setOpen(false);
-              }}
-            >
-              {preset.label}
-            </Button>
-          ))}
-        </PopoverContent>
-      </Popover>
-      <ActivityDateTimePicker {...pickerProps} />
     </div>
   );
 }

@@ -73,7 +73,7 @@ export function FollowUpTaskControl({
             value={value.custom}
             onChange={(custom) => set({ custom: custom ?? "" })}
             className="w-64"
-            aria-label="Data personalizada do acompanhamento"
+            ariaLabel="Data personalizada do acompanhamento"
           />
         )}
       </div>
