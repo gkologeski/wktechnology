@@ -14,10 +14,7 @@ import {
 } from "@/components/ui/select";
 import { RichHtmlEditor } from "@/components/rich-html-editor";
 import type { Activity } from "@/lib/db-types";
-import {
-  type Attachment,
-  type TeamMember,
-} from "@/components/activity/timeline-shared";
+import { type Attachment, type TeamMember } from "@/components/activity/timeline-shared";
 
 export function ActivityEditForm({
   activity: a,

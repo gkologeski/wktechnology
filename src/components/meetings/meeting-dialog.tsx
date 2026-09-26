@@ -203,21 +203,21 @@ export function MeetingDialog({
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label>Início *</Label>
-               <ActivityDateTimePicker
+              <ActivityDateTimePicker
                 value={start}
-                 onChange={(value) => setStart(value ?? "")}
-                 optional={false}
-                 ariaLabel="Início da reunião"
+                onChange={(value) => setStart(value ?? "")}
+                optional={false}
+                ariaLabel="Início da reunião"
               />
             </div>
             <div>
               <Label>Fim *</Label>
-               <ActivityDateTimePicker
-                 value={end}
-                 onChange={(value) => setEnd(value ?? "")}
-                 optional={false}
-                 ariaLabel="Fim da reunião"
-               />
+              <ActivityDateTimePicker
+                value={end}
+                onChange={(value) => setEnd(value ?? "")}
+                optional={false}
+                ariaLabel="Fim da reunião"
+              />
             </div>
           </div>
           <div>

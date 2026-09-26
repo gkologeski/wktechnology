@@ -49,7 +49,8 @@ export function ActivityDateTimePicker({
 }: ActivityDateTimePickerProps) {
   const [dateOpen, setDateOpen] = useState(false);
   const [timeOpen, setTimeOpen] = useState(false);
-  const local = valueFormat === "date" ? (value ? `${value}T${defaultTime}` : "") : toLocalDateTimeValue(value);
+  const local =
+    valueFormat === "date" ? (value ? `${value}T${defaultTime}` : "") : toLocalDateTimeValue(value);
   const datePart = activityDatePart(local);
   const timePart = activityTimePart(local, defaultTime);
   const selectedDate = datePart ? new Date(`${datePart}T12:00:00`) : undefined;
@@ -60,7 +61,12 @@ export function ActivityDateTimePicker({
   };
 
   return (
-    <div className={cn("flex min-w-0 flex-col items-stretch gap-1.5 min-[420px]:flex-row min-[420px]:items-center", className)}>
+    <div
+      className={cn(
+        "flex min-w-0 flex-col items-stretch gap-1.5 min-[420px]:flex-row min-[420px]:items-center",
+        className,
+      )}
+    >
       <Popover open={dateOpen} onOpenChange={setDateOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -77,7 +83,11 @@ export function ActivityDateTimePicker({
             <span className="truncate">{formatActivityDateLabel(local)}</span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" sideOffset={6} className="z-[180] w-auto max-w-[calc(100vw-1rem)] p-0">
+        <PopoverContent
+          align="start"
+          sideOffset={6}
+          className="z-[180] w-auto max-w-[calc(100vw-1rem)] p-0"
+        >
           <Calendar
             mode="single"
             locale={ptBR}
@@ -165,9 +175,7 @@ export function ActivityDateTimePicker({
   );
 }
 
-export function ActivityDueDatePicker(
-  props: Omit<ActivityDateTimePickerProps, "dateOnly">,
-) {
+export function ActivityDueDatePicker(props: Omit<ActivityDateTimePickerProps, "dateOnly">) {
   const [open, setOpen] = useState(false);
   const applyPreset = (preset: FollowUpPreset) => {
     if (preset === "custom") {
@@ -188,12 +196,21 @@ export function ActivityDueDatePicker(
     <div className="space-y-1.5">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button type="button" variant="outline" disabled={props.disabled} className="h-9 w-full justify-between font-normal">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={props.disabled}
+            className="h-9 w-full justify-between font-normal"
+          >
             <span className="truncate">Atalhos de vencimento</span>
             <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" sideOffset={6} className="z-[180] w-80 max-w-[calc(100vw-1rem)] p-1">
+        <PopoverContent
+          align="start"
+          sideOffset={6}
+          className="z-[180] w-80 max-w-[calc(100vw-1rem)] p-1"
+        >
           {FOLLOW_UP_PRESETS.map((preset) => (
             <Button
               key={preset.value}

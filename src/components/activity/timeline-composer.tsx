@@ -5,7 +5,10 @@ import { FolderOpen, Paperclip, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ActivityDateTimePicker, ActivityDueDatePicker } from "@/components/activity/activity-date-time-picker";
+import {
+  ActivityDateTimePicker,
+  ActivityDueDatePicker,
+} from "@/components/activity/activity-date-time-picker";
 import { RichHtmlEditor } from "@/components/rich-html-editor";
 import { REMINDER_OPTIONS } from "@/lib/activity-reminders";
 import { ICONS, type LogKind, type TeamMember } from "@/components/activity/timeline-shared";
