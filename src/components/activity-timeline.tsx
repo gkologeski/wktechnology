@@ -40,6 +40,12 @@ import {
 import { InstantRoomButton } from "./activity/instant-room-button";
 import { useActivityEditing } from "./activity/use-activity-editing";
 import { useMeetingSummary } from "./activity/use-meeting-summary";
+import {
+  nowLocalInput,
+  type ComposerExtrasState,
+} from "./activity/timeline-composer-extras";
+import { DEFAULT_FOLLOW_UP } from "./activity/follow-up-task-control";
+import { followUpDate } from "@/lib/activity-task-options";
 
 export function ActivityTimeline({
   relatedKey,
@@ -82,6 +88,18 @@ export function ActivityTimeline({
   const [whatsappIdentity, setWhatsappIdentity] = useState<WhatsAppIdentity>({});
   const [currentWorkspaceId, setCurrentWorkspaceId] = useState<string | null>(null);
   const [mentions, setMentions] = useState<TeamMember[]>([]);
+  const freshExtras = (): ComposerExtrasState => ({
+    contactedIds: [],
+    activityDate: nowLocalInput(),
+    taskType: "todo",
+    priority: "none",
+    status: "not_started",
+    recurrence: null,
+    followUp: DEFAULT_FOLLOW_UP,
+  });
+  const [extras, setExtras] = useState<ComposerExtrasState>(freshExtras);
+  const patchExtras = (p: Partial<ComposerExtrasState>) => setExtras((e) => ({ ...e, ...p }));
+  const [autoLinkCount, setAutoLinkCount] = useState(1);
   const editing = useActivityEditing(user?.id, whatsappIdentity, () => afterChange());
 
   const notifyActivityEventFn = useServerFn(notifyActivityEvent);
@@ -142,6 +160,14 @@ export function ActivityTimeline({
 
   const resolveAutoLinks = () => resolveTimelineAutoLinks(relatedKey, relatedId);
 
+  useEffect(() => {
+    if (!composerOpen) return;
+    void resolveAutoLinks().then((l) =>
+      setAutoLinkCount(Object.values(l ?? {}).filter(Boolean).length || 1),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [composerOpen, relatedKey, relatedId]);
+
   const add = async () => {
     if (!user) return;
     if (!body.trim() && !subject.trim() && pendingFiles.length === 0) {
@@ -153,11 +179,12 @@ export function ActivityTimeline({
     const waHtml = body ? maybeConvertWhatsAppPaste(body, whatsappIdentity) : null;
     const finalBody = waHtml ?? (body || null);
     const schedulable = type === "task" || type === "call" || type === "meeting";
+    const isTask = type === "task";
     const payload: Record<string, unknown> = {
       // O dono é sempre quem cria (exigência das políticas de acesso);
       // a pessoa escolhida entra como responsável.
       owner_id: user.id,
-      assigned_to: type === "task" && assigneeId ? assigneeId : user.id,
+      assigned_to: isTask && assigneeId ? assigneeId : user.id,
       created_by: user.id,
       type,
       subject: subject || (waHtml ? "Conversa de WhatsApp" : null),
@@ -167,8 +194,24 @@ export function ActivityTimeline({
         schedulable && dueDate && remindBefore !== "none" ? Number(remindBefore) : null,
       mentions: waHtml ? [] : extractMentionIds(body),
       attachments,
+      activity_date:
+        !isTask && extras.activityDate ? new Date(extras.activityDate).toISOString() : new Date().toISOString(),
+      contacted_contact_ids: isTask ? [] : extras.contactedIds,
+      ...(isTask
+        ? {
+            task_type: extras.taskType,
+            task_priority: extras.priority === "none" ? null : extras.priority,
+            task_status: extras.status,
+            completed: extras.status === "completed",
+            recurrence: extras.recurrence && dueDate ? { ...extras.recurrence, occurrence: 1 } : null,
+          }
+        : {}),
       ...autoLinks,
     };
+    if (isTask && extras.recurrence && !dueDate) {
+      toast.error("Defina a data de vencimento para repetir a tarefa.");
+      return;
+    }
     const res = await insertActivity(payload);
     if (!res.ok) {
       if (res.error?.includes("row-level security")) {
@@ -183,6 +226,23 @@ export function ActivityTimeline({
     if (res.insertedId) {
       void notifyActivityEventFn({ data: { activityId: res.insertedId } }).catch(() => {});
     }
+    if (!isTask && extras.followUp.enabled) {
+      const due = followUpDate(extras.followUp.preset, new Date(), extras.followUp.custom);
+      const fu = await insertActivity({
+        owner_id: user.id,
+        assigned_to: user.id,
+        created_by: user.id,
+        type: "task",
+        task_type: extras.followUp.taskType,
+        task_status: "not_started",
+        subject: `Acompanhar: ${subject || currentLogLabel}`,
+        due_date: due ? due.toISOString() : null,
+        follow_up_of: res.insertedId ?? null,
+        ...autoLinks,
+      });
+      if (fu.ok) toast.success("Tarefa de acompanhamento criada");
+      else toast.error(`Atividade salva, mas a tarefa de acompanhamento falhou: ${fu.error}`);
+    }
     setSubject("");
     setBody("");
     setDueDate("");
@@ -190,6 +250,7 @@ export function ActivityTimeline({
     setAssigneeId("");
     setPendingFiles([]);
     setMentions([]);
+    setExtras(freshExtras());
     void load();
     window.dispatchEvent(new CustomEvent("activities:changed"));
   };
@@ -283,7 +344,12 @@ export function ActivityTimeline({
               setDueDate("");
               setRemindBefore("0");
               setPendingFiles([]);
+              setExtras(freshExtras());
             }}
+            extras={extras}
+            onExtrasChange={patchExtras}
+            associationsCount={autoLinkCount}
+            defaultContactId={target.contactId}
             onSave={() => {
               void add().then(() => setComposerOpen(false));
             }}
