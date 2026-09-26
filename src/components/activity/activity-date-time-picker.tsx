@@ -211,7 +211,7 @@ export function ActivityDueDatePicker(props: Omit<ActivityDateTimePickerProps, "
             disabled={props.disabled}
             className="h-9 w-full justify-between font-normal"
           >
-            <span className="truncate">Atalhos de vencimento</span>
+            <span className="truncate">Quando você fará?</span>
             <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
           </Button>
         </PopoverTrigger>
