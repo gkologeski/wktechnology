@@ -395,6 +395,17 @@ export function ActivityTimeline({
       />
 
       <TimelineEntriesList
+        onPatch={async (a, patch) => {
+          const res = await updateActivity(a.id, patch);
+          if (!res.ok) return toast.error(res.error);
+          afterChange();
+        }}
+        onFollowUp={(a) => {
+          setType("task");
+          setSubject(`Acompanhar: ${a.subject || "atividade"}`);
+          setComposerOpen(true);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }}
         loading={loading}
         entries={timelineEntries}
         emailMeta={emailMeta}

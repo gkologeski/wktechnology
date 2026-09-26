@@ -20,7 +20,10 @@ export async function insertActivity(payload: Record<string, unknown>): Promise<
 export async function toggleActivityDone(a: Activity): Promise<MutationResult> {
   const { error } = await supabase
     .from("activities")
-    .update({ completed: !a.completed })
+    .update({
+      completed: !a.completed,
+      ...(a.type === "task" ? { task_status: a.completed ? "not_started" : "completed" } : {}),
+    })
     .eq("id", a.id);
   return error ? { ok: false, error: error.message } : { ok: true };
 }
