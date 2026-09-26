@@ -19,6 +19,7 @@ import { SendEmailDialog } from "@/components/email/send-email-dialog";
 import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
 import { BulkCreateActivityDialog } from "@/components/bulk-create-activity-dialog";
 import { useQueryClient } from "@tanstack/react-query";
+import { ActivityEditWindow } from "./activity-edit-window";
 
 interface WindowEntry {
   id: string;
@@ -120,7 +121,9 @@ export function ActivityWindows({ children }: { children: React.ReactNode }) {
           return (
             <WindowChromeContext.Provider key={w.id} value={chrome}>
               <div className={w.minimized || chrome.position > 1 ? "hidden" : "contents"}>
-                {w.request.bulk ? (
+                {w.request.editingActivity ? (
+                  <ActivityWindowFrame><ActivityEditWindow activity={w.request.editingActivity} onSaved={() => close(w.id)} onCancel={chrome.onClose} /></ActivityWindowFrame>
+                ) : w.request.bulk ? (
                   <BulkCreateActivityDialog open setOpen={(value) => { if (!value) close(w.id); }} ids={w.request.bulk.ids} entity={w.request.bulk.entity} onDone={w.request.bulk.onDone} />
                 ) : !w.request.relatedKey && w.request.action.kind === "create" && w.request.action.value === "whatsapp" ? (
                   <SendWhatsAppDialog open onOpenChange={(value) => { if (!value) close(w.id); }} defaultTo={w.request.to} contactId={w.request.contactId} contactName={w.request.contactName} />

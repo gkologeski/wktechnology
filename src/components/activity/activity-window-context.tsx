@@ -1,5 +1,6 @@
 import { createContext, useContext, type ReactNode } from "react";
 import type { BarAction, RelatedKey } from "./timeline-shared";
+import type { Activity } from "@/lib/db-types";
 
 export type ActivityWindowRequest = {
   action: BarAction;
@@ -15,6 +16,7 @@ export type ActivityWindowRequest = {
   companyId?: string;
   contactName?: string;
   onSent?: (threadId: string) => void;
+  editingActivity?: Activity;
   bulk?: { ids: string[]; entity: "leads" | "contacts" | "deals" | "companies"; onDone?: () => void };
 };
 
