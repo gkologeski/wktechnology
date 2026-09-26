@@ -23,7 +23,8 @@ import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { supabase } from "@/integrations/supabase/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { QuoteWizard } from "@/components/deals/quote-wizard";
-import { SendEmailDialog } from "@/components/email/send-email-dialog";
+import { useActivityWindows } from "@/components/activity/activity-window-context";
+import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 type QuoteStatus = "draft" | "published" | "sent" | "accepted" | "declined" | "expired";
@@ -49,6 +50,7 @@ const STATUS_DOT: Record<string, string> = {
 type QuoteListItem = Awaited<ReturnType<typeof listDealQuotes>>[number];
 
 export function DealQuotes({ dealId }: { dealId: string }) {
+  const openActivity = useActivityWindows();
   const qc = useQueryClient();
   const list = useServerFn(listDealQuotes);
   const update = useServerFn(updateQuote);
@@ -58,7 +60,6 @@ export function DealQuotes({ dealId }: { dealId: string }) {
 
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editingQuote, setEditingQuote] = useState<QuoteListItem | null>(null);
-  const [sendingQuote, setSendingQuote] = useState<QuoteListItem | null>(null);
 
   const { data: deal } = useQuery({
     queryKey: ["deal-quotes-context", dealId],
@@ -245,7 +246,18 @@ export function DealQuotes({ dealId }: { dealId: string }) {
                         <DropdownMenuItem onSelect={() => openEdit(q)}>Editar</DropdownMenuItem>
                       )}
                       {(status === "draft" || status === "published") && contactHasEmail && (
-                        <DropdownMenuItem onSelect={() => setSendingQuote(q)}>
+                        <DropdownMenuItem onSelect={() => {
+                          if (!primaryContact?.email) return;
+                          const name = [primaryContact.first_name, primaryContact.last_name].filter(Boolean).join(" ").trim();
+                          const title = q.title || deal?.name || "Cotação";
+                          const link = publicUrl(q.public_token);
+                          openActivity?.({ action: ACTIONS_BY_KEY["create:email"], to: primaryContact.email,
+                            subject: `Cotação ${q.number ? `${q.number} · ` : ""}${title}`,
+                            body: `<p>${name ? `Olá ${name.split(" ")[0]},` : "Olá,"}</p><p>Segue nossa cotação <strong>${title}</strong>${q.number ? ` (${q.number})` : ""}.</p><p>Acesse pelo link: <a href="${link}">${link}</a></p><p>Qualquer dúvida, estou à disposição.</p>`,
+                            contactId: primaryContact.id, dealId, companyId: deal?.company_id ?? undefined, contactName: name || undefined,
+                            onSent: async () => { try { await update({ data: { id: q.id, patch: { status: "sent", sent_at: new Date().toISOString() } } }); void qc.invalidateQueries({ queryKey: ["deal-quotes", dealId] }); } catch (e) { toast.error((e as Error).message); } },
+                          });
+                        }}>
                           Enviar por e-mail
                         </DropdownMenuItem>
                       )}
@@ -307,54 +319,6 @@ export function DealQuotes({ dealId }: { dealId: string }) {
         existingQuote={editingQuote}
       />
 
-      {sendingQuote && primaryContact?.email && (
-        <SendEmailDialog
-          open={Boolean(sendingQuote)}
-          onOpenChange={(v) => {
-            if (!v) setSendingQuote(null);
-          }}
-          defaultTo={primaryContact.email}
-          defaultSubject={`Cotação ${sendingQuote.number ? `${sendingQuote.number} · ` : ""}${sendingQuote.title || deal?.name || ""}`}
-          defaultBody={(() => {
-            const contactName = [primaryContact.first_name, primaryContact.last_name]
-              .filter(Boolean)
-              .join(" ")
-              .trim();
-            const greeting = contactName ? `Olá ${contactName.split(" ")[0]},` : "Olá,";
-            const title = sendingQuote.title || deal?.name || "Cotação";
-            const link = publicUrl(sendingQuote.public_token);
-            return [
-              `<p>${greeting}</p>`,
-              `<p>Segue nossa cotação <strong>${title}</strong>${sendingQuote.number ? ` (${sendingQuote.number})` : ""}.</p>`,
-              `<p>Acesse pelo link: <a href="${link}">${link}</a></p>`,
-              `<p>Qualquer dúvida, estou à disposição.</p>`,
-            ].join("");
-          })()}
-          contactId={primaryContact.id}
-          dealId={dealId}
-          companyId={deal?.company_id ?? undefined}
-          contactName={
-            [primaryContact.first_name, primaryContact.last_name]
-              .filter(Boolean)
-              .join(" ")
-              .trim() || undefined
-          }
-          onSent={async () => {
-            try {
-              await update({
-                data: {
-                  id: sendingQuote.id,
-                  patch: { status: "sent", sent_at: new Date().toISOString() },
-                },
-              });
-              qc.invalidateQueries({ queryKey: ["deal-quotes", dealId] });
-            } catch (e) {
-              toast.error((e as Error).message);
-            }
-            setSendingQuote(null);
-          }}
-        />
-      )}
     </div>
   );
 }
