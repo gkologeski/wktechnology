@@ -101,6 +101,20 @@ export function identifyWhatsAppUserSenders(
   });
   if (workspaceMatches.length > 0) return new Set(workspaceMatches);
 
+  // Exportações podem omitir o último sobrenome do membro. Só assumir o
+  // remetente quando o prefixo identifica um único membro do workspace e a
+  // conversa também contém um participante identificado por telefone.
+  if (senders.some(isPhoneLike)) {
+    const abbreviatedMatches = senders.filter((sender) => {
+      if (isPhoneLike(sender)) return false;
+      const candidate = normalizedName(sender);
+      const parts = candidate.split(" ");
+      if (parts.length < 2 || parts.some((part) => part.length < 2)) return false;
+      return [...workspaceNames].filter((name) => name.startsWith(`${candidate} `)).length === 1;
+    });
+    if (abbreviatedMatches.length === 1) return new Set(abbreviatedMatches);
+  }
+
   // Sem uma correspondência segura, todas as mensagens permanecem como cliente.
   return new Set();
 }
