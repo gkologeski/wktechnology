@@ -97,9 +97,9 @@ function DockedDialogContent({ className, children, forwardedRef, ...props }: Re
         dock && (dock.minimized || position > 1) && "!hidden",
         className,
       )}
+      {...props}
       onPointerDown={(event) => { dock?.onFocus(); props.onPointerDown?.(event); }}
       onEscapeKeyDown={(event) => { if (dock) { event.preventDefault(); dock.onMinimize(); } else props.onEscapeKeyDown?.(event); }}
-      {...props}
     >
       {children}
       {dock && <div className="absolute inset-x-0 top-0 flex h-10 items-center justify-between gap-2 border-b border-product-divider bg-product-header px-3"><span className="truncate text-sm font-semibold">{dock.title}</span><WindowControls chrome={dock} /></div>}

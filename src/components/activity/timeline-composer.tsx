@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { RichHtmlEditor } from "@/components/rich-html-editor";
 import { REMINDER_OPTIONS } from "@/lib/activity-reminders";
 import { ICONS, type LogKind, type TeamMember } from "@/components/activity/timeline-shared";
+import { useWindowChrome } from "@/components/activity/activity-window-context";
 import {
   ComposerFollowUp,
   ComposerTaskFields,
@@ -66,6 +67,7 @@ export function TimelineComposer({
   associationsCount: number;
   defaultContactId?: string;
 }) {
+  const dock = useWindowChrome();
   const schedulable = type === "task" || type === "call" || type === "meeting";
   const hasContent = !!(
     body.replace(/<[^>]*>/g, "").trim() ||
@@ -75,7 +77,7 @@ export function TimelineComposer({
 
   return (
     <div className="border-t border-border/60 p-4 space-y-3 bg-muted/10">
-      <div className="flex items-center justify-between gap-2">
+      {!dock && <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <span className="text-primary">{ICONS[type]}</span>
           {type === "task" || type === "note" ? label : `Registrar ${label.toLowerCase()}`}
@@ -83,7 +85,7 @@ export function TimelineComposer({
         <Button variant="ghost" size="sm" onClick={onClose} aria-label="Fechar compositor">
           <X className="h-4 w-4" />
         </Button>
-      </div>
+      </div>}
       <ComposerTopFields
         type={type}
         value={extras}

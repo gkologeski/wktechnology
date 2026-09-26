@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RichHtmlEditor } from "@/components/rich-html-editor";
 import { toast } from "sonner";
+import { useWindowChrome } from "@/components/activity/activity-window-context";
 import { getVoiceAccessToken, logCallActivity } from "@/lib/twilio-voice.functions";
 import type { Device as DeviceType, Call as CallType } from "@twilio/voice-sdk";
 
@@ -50,6 +51,7 @@ export function CallDialer({
   open: openProp,
   onOpenChange,
 }: CallDialerProps) {
+  const dock = useWindowChrome();
   const [openState, setOpenState] = useState(false);
   const open = openProp ?? openState;
   const setOpen = onOpenChange ?? setOpenState;
@@ -220,7 +222,13 @@ export function CallDialer({
     `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} docked={openProp !== undefined} onOpenChange={(value) => {
+      if (!value && (status === "connecting" || status === "ringing" || status === "in-call")) {
+        toast.error("Encerre a ligação antes de fechar a janela.");
+        return;
+      }
+      setOpen(value);
+    }}>
       {trigger !== undefined ? (
         <DialogTrigger asChild>{trigger}</DialogTrigger>
       ) : openProp === undefined ? (
