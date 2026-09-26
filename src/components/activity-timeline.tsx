@@ -185,7 +185,7 @@ export function ActivityTimeline({
         resolveHistoryValue={resolveHistoryValue}
         resolveHistoryActor={resolveHistoryActor}
         onToggleDone={(row) => void toggleDone(row)}
-        onStartEdit={editing.startEdit}
+        onStartEdit={(activity) => openWindow?.({ action: ACTIONS_BY_KEY["log:task"], editingActivity: activity })}
         onRemove={(id) => void remove(id)}
         onSummarizeMeeting={(id) => void onSummarizeMeeting(id)}
         signRecording={async (path) => {
