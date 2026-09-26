@@ -1,7 +1,7 @@
 // Campos adicionais do compositor no padrão HubSpot: Contatado, Data da atividade,
 // campos de tarefa (tipo, prioridade, fase, repetição) e acompanhamento.
-import { Input } from "@/components/ui/input";
 import { ContactedPicker } from "@/components/activity/contacted-picker";
+import { ActivityDateTimePicker } from "@/components/activity/activity-date-time-picker";
 import { RecurrenceControl } from "@/components/activity/recurrence-control";
 import {
   FollowUpTaskControl,
@@ -54,11 +54,12 @@ export function ComposerTopFields({
       />
       <label className="flex flex-col gap-1">
         <span className="text-xs text-muted-foreground">Data da atividade</span>
-        <Input
-          type="datetime-local"
+        <ActivityDateTimePicker
           value={value.activityDate}
-          onChange={(e) => onChange({ activityDate: e.target.value })}
-          className="w-56"
+          onChange={(activityDate) => onChange({ activityDate: activityDate ?? "" })}
+          optional={false}
+          ariaLabel="Data da atividade"
+          className="w-[18rem]"
         />
       </label>
     </div>

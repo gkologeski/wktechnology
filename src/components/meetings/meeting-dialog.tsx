@@ -21,6 +21,8 @@ import { listCalendarAccounts, pushActivityToCalendar } from "@/lib/calendar.fun
 import { createMeeting } from "@/lib/meetings.functions";
 import { CalendarDays, ExternalLink } from "lucide-react";
 import { AttendeePicker, type Attendee } from "./attendee-picker";
+import { ActivityDateTimePicker } from "@/components/activity/activity-date-time-picker";
+import { roundActivityTime } from "@/lib/activity-date-time";
 
 type Props = {
   trigger?: ReactNode;
@@ -63,7 +65,7 @@ export function MeetingDialog({
   const [attendees, setAttendees] = useState<Attendee[]>(
     defaultAttendee ? [{ email: defaultAttendee }] : [],
   );
-  const start0 = new Date(Date.now() + 60 * 60 * 1000);
+  const start0 = roundActivityTime(new Date(Date.now() + 60 * 60 * 1000), "next");
   const end0 = new Date(start0.getTime() + 30 * 60 * 1000);
   const [start, setStart] = useState(toLocalInput(start0));
   const [end, setEnd] = useState(toLocalInput(end0));
@@ -198,18 +200,24 @@ export function MeetingDialog({
               placeholder="Reunião de descoberta"
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label>Início *</Label>
-              <Input
-                type="datetime-local"
+              <ActivityDateTimePicker
                 value={start}
-                onChange={(e) => setStart(e.target.value)}
+                onChange={(value) => setStart(value ?? "")}
+                optional={false}
+                ariaLabel="Início da reunião"
               />
             </div>
             <div>
               <Label>Fim *</Label>
-              <Input type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} />
+              <ActivityDateTimePicker
+                value={end}
+                onChange={(value) => setEnd(value ?? "")}
+                optional={false}
+                ariaLabel="Fim da reunião"
+              />
             </div>
           </div>
           <div>

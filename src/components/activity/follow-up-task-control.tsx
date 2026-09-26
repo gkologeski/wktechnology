@@ -1,6 +1,6 @@
 // "Criar uma tarefa de [tipo] para acompanhar [quando]".
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
+import { ActivityDateTimePicker } from "@/components/activity/activity-date-time-picker";
 import {
   FOLLOW_UP_PRESETS,
   followUpLabel,
@@ -69,12 +69,11 @@ export function FollowUpTaskControl({
           ))}
         </select>
         {value.preset === "custom" && (
-          <Input
-            type="datetime-local"
+          <ActivityDateTimePicker
             value={value.custom}
-            onChange={(e) => set({ custom: e.target.value })}
-            className="h-8 w-52"
-            aria-label="Data personalizada do acompanhamento"
+            onChange={(custom) => set({ custom: custom ?? "" })}
+            className="w-64"
+            ariaLabel="Data personalizada do acompanhamento"
           />
         )}
       </div>

@@ -32,6 +32,7 @@ import { Building2, User } from "lucide-react";
 import { isCNPJ, formatCNPJ } from "@/lib/validators";
 import { OnboardingGuidedEntry } from "@/components/onboarding/onboarding-guided-entry";
 import { useWindowChrome } from "@/components/activity/activity-window-context";
+import { ActivityDueDatePicker } from "@/components/activity/activity-date-time-picker";
 
 const LEGACY_ENUM = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
 
@@ -666,12 +667,11 @@ export function QuickCreateTaskDialog({
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="qc-ta-due">Vencimento</Label>
-            <Input
-              id="qc-ta-due"
-              type="datetime-local"
+            <Label>Vencimento</Label>
+            <ActivityDueDatePicker
               value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
+              onChange={(value) => setDueDate(value ?? "")}
+              ariaLabel="Vencimento"
             />
           </div>
           <div className="space-y-1.5">

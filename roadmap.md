@@ -1,6 +1,7 @@
 # Roadmap
 
 - [ ] Migrar todas as ações manuais de atividades para janelas flutuantes persistentes (timeline compartilhada, edição, tarefas, Inbox, filas, reuniões, cotações e ações em massa); validar fluxos e acessibilidade.
+- [x] Padronizar todos os seletores de data e hora das atividades com calendário PT-BR, atalhos de vencimento e horários de 15 minutos; validar desktop e celular.
 
 - [x] Revisar finding de monitoramento "gravações de reunião nunca anexadas" (calendar-recordings-tick)
 - [x] Nova aba "Base" em /prospecting: extrair listas de clientes a partir de entidades já cadastradas
