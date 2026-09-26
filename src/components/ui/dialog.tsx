@@ -120,7 +120,8 @@ function DockedDialogContent({
             dock && position === 1 && "lg:!right-[500px]",
             dock?.expanded && "lg:!right-3 lg:!w-[min(860px,calc(100vw-1.5rem))]",
             dock && (dock.minimized || position > 1) && "!hidden",
-            dock && position > 0 && "max-sm:!hidden",
+             dock && position > 0 && "max-sm:!hidden",
+             dock && "max-sm:!pb-14",
             className,
           )}
           {...props}

@@ -75,7 +75,6 @@ export function ActivityWindows({ children }: { children: React.ReactNode }) {
       return w ? [...ws.filter((item) => item.id !== id), { ...w, minimized: false }] : ws;
     });
   const visible = windows.filter((w) => !w.minimized);
-  const minimized = windows.filter((w) => w.minimized);
   return (
     <ActivityWindowsProvider open={open}>
       {children}

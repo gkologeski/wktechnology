@@ -82,7 +82,7 @@ export function ActivityWindowFrame({ children }: { children: React.ReactNode })
       )}
     >
       <WindowHeader chrome={chrome} />
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain max-sm:pb-12">{children}</div>
     </section>
   );
 }
