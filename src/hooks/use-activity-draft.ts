@@ -32,6 +32,7 @@ export function useActivityDraft<T>(options: {
   const hydrated = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pending = useRef<(() => void) | null>(null);
+  const discardedBaseline = useRef<string | null>(null);
   const onRestore = useRef(options.onRestore);
   onRestore.current = options.onRestore;
 
@@ -56,6 +57,7 @@ export function useActivityDraft<T>(options: {
 
   useEffect(() => {
     hydrated.current = false;
+    discardedBaseline.current = null;
     if (!key) return;
     const stored = read<T>(key);
     if (stored) {
@@ -76,6 +78,11 @@ export function useActivityDraft<T>(options: {
   useEffect(() => {
     if (!key || !hydrated.current) return;
     if (timer.current) clearTimeout(timer.current);
+    if (serialized === discardedBaseline.current) {
+      pending.current = null;
+      return;
+    }
+    discardedBaseline.current = null;
     const v = value;
     pending.current = () => write(v);
     timer.current = setTimeout(() => {
@@ -85,9 +92,10 @@ export function useActivityDraft<T>(options: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, serialized]);
 
-  const clear = useCallback(() => {
+  const clear = useCallback((resetValue?: T) => {
     if (timer.current) clearTimeout(timer.current);
     pending.current = null;
+    discardedBaseline.current = resetValue === undefined ? null : JSON.stringify(resetValue);
     if (key) window.localStorage.removeItem(key);
     setSavedAt(null);
     setRestored(false);
