@@ -7,6 +7,7 @@ import { Code2, Pencil } from "lucide-react";
 import { saveEmailSignature } from "@/lib/email-accounts.functions";
 import { RichHtmlEditor } from "@/components/rich-html-editor";
 import { normalizeHtmlField } from "@/lib/html-field";
+import { cleanEmailSignatureHtml } from "@/lib/email-signature-html";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,8 +32,10 @@ export function EmailSignatureEditor({
   }, [initialHtml]);
 
   const mut = useMutation({
-    mutationFn: () => save({ data: { id: accountId, signature_html: normalizeHtmlField(html) } }),
+    mutationFn: () =>
+      save({ data: { id: accountId, signature_html: normalizeHtmlField(cleanEmailSignatureHtml(html)) } }),
     onSuccess: () => {
+      setHtml((current) => cleanEmailSignatureHtml(current));
       toast.success("Assinatura salva");
       qc.invalidateQueries({ queryKey: ["email_accounts"] });
     },
@@ -92,7 +95,7 @@ export function EmailSignatureEditor({
             <div
               className="prose prose-sm dark:prose-invert max-w-none"
               // Conteúdo é sanitizado ao salvar e ao renderizar via normalizeHtmlField.
-              dangerouslySetInnerHTML={{ __html: normalizeHtmlField(html) ?? "" }}
+              dangerouslySetInnerHTML={{ __html: normalizeHtmlField(cleanEmailSignatureHtml(html)) ?? "" }}
             />
           ) : (
             <p className="text-sm text-muted-foreground">Nenhuma assinatura definida.</p>
