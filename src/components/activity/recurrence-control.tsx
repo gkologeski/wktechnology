@@ -1,6 +1,7 @@
 // "Definido para repetir" — regra de repetição de tarefas.
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { ActivityDateTimePicker } from "@/components/activity/activity-date-time-picker";
 import {
   RECURRENCE_FREQUENCIES,
   type RecurrenceFrequency,
@@ -66,11 +67,12 @@ export function RecurrenceControl({
             <option value="after">Após N ocorrências</option>
           </select>
           {r.ends === "on_date" && (
-            <Input
-              type="date"
+            <ActivityDateTimePicker
               value={r.end_date ?? ""}
-              onChange={(e) => set({ end_date: e.target.value || null })}
-              className="h-9 w-40"
+              onChange={(endDate) => set({ end_date: endDate || null })}
+              valueFormat="date"
+              dateOnly
+              className="w-44"
               aria-label="Data de término"
             />
           )}

@@ -5,6 +5,7 @@ import { FolderOpen, Paperclip, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ActivityDateTimePicker, ActivityDueDatePicker } from "@/components/activity/activity-date-time-picker";
 import { RichHtmlEditor } from "@/components/rich-html-editor";
 import { REMINDER_OPTIONS } from "@/lib/activity-reminders";
 import { ICONS, type LogKind, type TeamMember } from "@/components/activity/timeline-shared";
@@ -103,14 +104,21 @@ export function TimelineComposer({
         />
         {schedulable && (
           <>
-            <Input
-              type="datetime-local"
-              value={dueDate}
-              onChange={(e) => onDueDateChange(e.target.value)}
-              className="w-56"
-              aria-label={type === "task" ? "Vencimento" : "Data e hora"}
-              title={type === "task" ? "Vencimento" : "Data e hora"}
-            />
+            <div className="min-w-[17rem] flex-1">
+              {type === "task" ? (
+                <ActivityDueDatePicker
+                  value={dueDate}
+                  onChange={(value) => onDueDateChange(value ?? "")}
+                  ariaLabel="Vencimento"
+                />
+              ) : (
+                <ActivityDateTimePicker
+                  value={dueDate}
+                  onChange={(value) => onDueDateChange(value ?? "")}
+                  ariaLabel="Data e hora"
+                />
+              )}
+            </div>
             <select
               value={remindBefore}
               onChange={(e) => onRemindBeforeChange(e.target.value)}

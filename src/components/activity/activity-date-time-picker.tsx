@@ -17,6 +17,12 @@ import {
   toLocalDateTimeValue,
   type ActivityDateValueFormat,
 } from "@/lib/activity-date-time";
+import {
+  FOLLOW_UP_PRESETS,
+  followUpDate,
+  followUpLabel,
+  type FollowUpPreset,
+} from "@/lib/activity-task-options";
 
 type ActivityDateTimePickerProps = {
   value?: string | null;
@@ -198,6 +204,53 @@ export function RelativeDuePicker({ presets, onPreset, ...pickerProps }: Relativ
         </PopoverContent>
       </Popover>
       <ActivityDateTimePicker {...pickerProps} />
+    </div>
+  );
+}
+
+export function ActivityDueDatePicker(
+  props: Omit<ActivityDateTimePickerProps, "dateOnly">,
+) {
+  const [open, setOpen] = useState(false);
+  const applyPreset = (preset: FollowUpPreset) => {
+    if (preset === "custom") {
+      setOpen(false);
+      return;
+    }
+    const due = followUpDate(preset);
+    if (!due) return;
+    const currentTime = activityTimePart(props.value, props.defaultTime ?? "08:00");
+    const [hours, minutes] = currentTime.split(":").map(Number);
+    due.setHours(hours || 0, minutes || 0, 0, 0);
+    const localValue = toLocalDateTimeValue(due.toISOString());
+    props.onChange(fromLocalDateTimeValue(localValue, props.valueFormat ?? "local"));
+    setOpen(false);
+  };
+
+  return (
+    <div className="space-y-1.5">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button type="button" variant="outline" disabled={props.disabled} className="h-9 w-full justify-between font-normal">
+            <span className="truncate">Atalhos de vencimento</span>
+            <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="start" sideOffset={6} className="z-[180] w-80 max-w-[calc(100vw-1rem)] p-1">
+          {FOLLOW_UP_PRESETS.map((preset) => (
+            <Button
+              key={preset.value}
+              type="button"
+              variant="ghost"
+              className="h-auto w-full justify-start whitespace-normal px-3 py-2 text-left font-normal"
+              onClick={() => applyPreset(preset.value)}
+            >
+              {followUpLabel(preset.value)}
+            </Button>
+          ))}
+        </PopoverContent>
+      </Popover>
+      <ActivityDateTimePicker {...props} />
     </div>
   );
 }

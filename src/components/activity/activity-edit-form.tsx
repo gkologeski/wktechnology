@@ -1,11 +1,10 @@
 // Formulário de edição inline de uma atividade da timeline: corpo, responsável
 // e vencimento (tarefas) e anexos.
 // Extraído de `activity-timeline.tsx` sem mudança de comportamento.
-import { CalendarDays, Check, FolderOpen, Paperclip, X } from "lucide-react";
+import { Check, FolderOpen, Paperclip, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ActivityDueDatePicker } from "@/components/activity/activity-date-time-picker";
 import {
   Select,
   SelectContent,
@@ -14,14 +13,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RichHtmlEditor } from "@/components/rich-html-editor";
-import { formatDateTime } from "@/lib/crm";
-import { cn } from "@/lib/utils";
 import type { Activity } from "@/lib/db-types";
 import {
   type Attachment,
-  computeDuePreset,
-  TASK_DUE_PRESET_LABELS,
-  type TaskDuePreset,
   type TeamMember,
 } from "@/components/activity/timeline-shared";
 
@@ -81,66 +75,12 @@ export function ActivityEditForm({
 
           <div className="space-y-1">
             <label className="text-xs font-medium text-muted-foreground">Data de vencimento</label>
-            <div className="flex items-center gap-1.5">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={cn(
-                      "h-9 text-xs justify-start font-normal flex-1 min-w-0",
-                      !dueDate && "text-muted-foreground",
-                    )}
-                  >
-                    <CalendarDays className="h-3.5 w-3.5 mr-1.5 shrink-0" />
-                    <span className="truncate">
-                      {dueDate ? formatDateTime(dueDate) : "Definir vencimento"}
-                    </span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end" sideOffset={8}>
-                  <Calendar
-                    mode="single"
-                    selected={dueDate ? new Date(dueDate) : undefined}
-                    onSelect={(d) => {
-                      if (!d) return;
-                      const base = dueDate ? new Date(dueDate) : new Date();
-                      d.setHours(base.getHours(), base.getMinutes(), 0, 0);
-                      onDueDateChange(d.toISOString());
-                    }}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-              {dueDate && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
-                  onClick={() => onDueDateChange(null)}
-                  aria-label="Limpar data"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {(Object.keys(TASK_DUE_PRESET_LABELS) as TaskDuePreset[])
-                .filter((k) => k !== "custom")
-                .map((k) => (
-                  <Button
-                    key={k}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs px-2.5 rounded-full font-normal"
-                    onClick={() => onDueDateChange(computeDuePreset(k, dueDate))}
-                  >
-                    {TASK_DUE_PRESET_LABELS[k]}
-                  </Button>
-                ))}
-            </div>
+            <ActivityDueDatePicker
+              value={dueDate}
+              valueFormat="iso"
+              onChange={onDueDateChange}
+              ariaLabel="Data de vencimento"
+            />
           </div>
         </div>
       )}

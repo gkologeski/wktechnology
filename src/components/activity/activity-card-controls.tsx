@@ -21,6 +21,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { RecurrenceControl } from "@/components/activity/recurrence-control";
+import { ActivityDueDatePicker } from "@/components/activity/activity-date-time-picker";
 import { reminderLabel, REMINDER_OPTIONS } from "@/lib/activity-reminders";
 import {
   describeRecurrence,
@@ -107,13 +108,6 @@ export function PinnedMark({ activity }: { activity: Activity }) {
 const inlineSel =
   "h-8 rounded-md border-0 bg-transparent px-1 text-sm font-semibold text-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60";
 
-function toLocalInput(iso: string | null) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-  return d.toISOString().slice(0, 16);
-}
-
 export function TaskFieldsGrid({
   activity: a,
   team,
@@ -140,16 +134,14 @@ export function TaskFieldsGrid({
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {field(
           "Data de vencimento",
-          <input
-            type="datetime-local"
+          <ActivityDueDatePicker
             disabled={disabled}
-            className="h-8 rounded-md border bg-background px-2 text-sm"
-            defaultValue={toLocalInput(a.due_date)}
-            onBlur={(e) => {
-              const v = e.target.value ? new Date(e.target.value).toISOString() : null;
-              if (v !== a.due_date) onPatch({ due_date: v });
+            value={a.due_date}
+            valueFormat="iso"
+            onChange={(dueDate) => {
+              if (dueDate !== a.due_date) onPatch({ due_date: dueDate });
             }}
-            aria-label="Data de vencimento"
+            ariaLabel="Data de vencimento"
           />,
         )}
         {field(
