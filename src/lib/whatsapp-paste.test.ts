@@ -116,10 +116,9 @@ describe("whatsapp paste", () => {
       }).size,
     ).toBe(0);
     expect(
-      identifyWhatsAppUserSenders(
-        [{ ...messages[0] }, { ...messages[1], sender: "Cliente" }],
-        { workspaceUserNames: ["Andressa Wolf Kologeski"] },
-      ).size,
+      identifyWhatsAppUserSenders([{ ...messages[0] }, { ...messages[1], sender: "Cliente" }], {
+        workspaceUserNames: ["Andressa Wolf Kologeski"],
+      }).size,
     ).toBe(0);
   });
 
