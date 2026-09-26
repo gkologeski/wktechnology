@@ -116,8 +116,6 @@ export function ActivityWindows({ children }: { children: React.ReactNode }) {
                 toast.error("Encerre a ligação antes de fechar a janela.");
                 return;
               }
-              if (!window.confirm("Fechar esta janela? Alterações não salvas podem ser perdidas."))
-                return;
               close(w.id);
             },
             setCloseBlocked: (blocked: boolean) => {
