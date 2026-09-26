@@ -269,10 +269,12 @@ export type Database = {
       }
       activities: {
         Row: {
+          activity_date: string | null
           assigned_to: string | null
           attachments: Json
           body: string | null
           completed: boolean
+          contacted_contact_ids: string[] | null
           created_at: string
           created_by: string | null
           custom_fields: Json
@@ -283,6 +285,7 @@ export type Database = {
           email_direction: string | null
           email_status: string | null
           external_ids: Json
+          follow_up_of: string | null
           hs_createdate: string | null
           hs_lastmodifieddate: string | null
           hs_object_id: string | null
@@ -296,10 +299,13 @@ export type Database = {
           outcome: string | null
           outcome_set_at: string | null
           owner_id: string
+          pinned_at: string | null
           recording_channels: number | null
           recording_duration_seconds: number | null
           recording_sid: string | null
           recording_url: string | null
+          recurrence: Json | null
+          recurrence_parent_id: string | null
           related_company_id: string | null
           related_contact_id: string | null
           related_deal_id: string | null
@@ -311,6 +317,7 @@ export type Database = {
           subject: string | null
           task_priority: string | null
           task_status: string | null
+          task_type: string | null
           transcription: string | null
           transcription_model: string | null
           transcription_status: string | null
@@ -319,10 +326,12 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          activity_date?: string | null
           assigned_to?: string | null
           attachments?: Json
           body?: string | null
           completed?: boolean
+          contacted_contact_ids?: string[] | null
           created_at?: string
           created_by?: string | null
           custom_fields?: Json
@@ -333,6 +342,7 @@ export type Database = {
           email_direction?: string | null
           email_status?: string | null
           external_ids?: Json
+          follow_up_of?: string | null
           hs_createdate?: string | null
           hs_lastmodifieddate?: string | null
           hs_object_id?: string | null
@@ -346,10 +356,13 @@ export type Database = {
           outcome?: string | null
           outcome_set_at?: string | null
           owner_id: string
+          pinned_at?: string | null
           recording_channels?: number | null
           recording_duration_seconds?: number | null
           recording_sid?: string | null
           recording_url?: string | null
+          recurrence?: Json | null
+          recurrence_parent_id?: string | null
           related_company_id?: string | null
           related_contact_id?: string | null
           related_deal_id?: string | null
@@ -361,6 +374,7 @@ export type Database = {
           subject?: string | null
           task_priority?: string | null
           task_status?: string | null
+          task_type?: string | null
           transcription?: string | null
           transcription_model?: string | null
           transcription_status?: string | null
@@ -369,10 +383,12 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          activity_date?: string | null
           assigned_to?: string | null
           attachments?: Json
           body?: string | null
           completed?: boolean
+          contacted_contact_ids?: string[] | null
           created_at?: string
           created_by?: string | null
           custom_fields?: Json
@@ -383,6 +399,7 @@ export type Database = {
           email_direction?: string | null
           email_status?: string | null
           external_ids?: Json
+          follow_up_of?: string | null
           hs_createdate?: string | null
           hs_lastmodifieddate?: string | null
           hs_object_id?: string | null
@@ -396,10 +413,13 @@ export type Database = {
           outcome?: string | null
           outcome_set_at?: string | null
           owner_id?: string
+          pinned_at?: string | null
           recording_channels?: number | null
           recording_duration_seconds?: number | null
           recording_sid?: string | null
           recording_url?: string | null
+          recurrence?: Json | null
+          recurrence_parent_id?: string | null
           related_company_id?: string | null
           related_contact_id?: string | null
           related_deal_id?: string | null
@@ -411,6 +431,7 @@ export type Database = {
           subject?: string | null
           task_priority?: string | null
           task_status?: string | null
+          task_type?: string | null
           transcription?: string | null
           transcription_model?: string | null
           transcription_status?: string | null
