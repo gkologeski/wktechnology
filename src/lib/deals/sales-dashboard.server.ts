@@ -19,7 +19,6 @@ import type {
   MeetingItem,
   SalesDashboardData,
   SalesDashboardInput,
-  
   TaskItem,
 } from "./sales-dashboard.types";
 

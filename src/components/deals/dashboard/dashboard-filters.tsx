@@ -1,4 +1,7 @@
-// Filtros do painel: período, pipeline e escopo (meus / equipe).
+// Filtros do painel: período, pipelines, canal e responsável.
+import { DateRangePicker } from "@/components/date-range-picker";
+import { AssigneeFilter, ASSIGNEE_ME } from "@/components/entity/assignee-filter";
+import type { DateRange, PresetKey } from "@/lib/date-presets";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -7,16 +10,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type {
-  PipelineOption,
-  LeadChannel,
-  SalesDashboardPeriodDays,
-  SalesDashboardScope,
-} from "@/lib/deals/sales-dashboard.types";
+import type { PipelineOption, LeadChannel } from "@/lib/deals/sales-dashboard.types";
 
 export interface DashboardFiltersProps {
-  periodDays: SalesDashboardPeriodDays;
-  onPeriodChange: (v: SalesDashboardPeriodDays) => void;
+  range: DateRange;
+  onRangeChange: (range: DateRange, presetKey?: PresetKey) => void;
   pipelines: PipelineOption[];
   pipelineId: string | null;
   onPipelineChange: (v: string | null) => void;
@@ -25,15 +23,15 @@ export interface DashboardFiltersProps {
   onLeadPipelineChange: (v: string | null) => void;
   channel: LeadChannel | null;
   onChannelChange: (v: LeadChannel | null) => void;
-  scope: SalesDashboardScope;
-  onScopeChange: (v: SalesDashboardScope) => void;
+  assignee: string;
+  onAssigneeChange: (v: string) => void;
   canViewTeam: boolean;
   disabled?: boolean;
 }
 
 export function DashboardFilters({
-  periodDays,
-  onPeriodChange,
+  range,
+  onRangeChange,
   pipelines,
   pipelineId,
   onPipelineChange,
@@ -42,31 +40,25 @@ export function DashboardFilters({
   onLeadPipelineChange,
   channel,
   onChannelChange,
-  scope,
-  onScopeChange,
+  assignee,
+  onAssigneeChange,
   canViewTeam,
   disabled = false,
 }: DashboardFiltersProps) {
   return (
     <div className="flex flex-wrap items-end gap-3 rounded-md border border-product-divider bg-product-toolbar p-3">
-      <div className="min-w-[9rem]">
-        <Label htmlFor="dash-period" className="text-xs text-text-secondary">
-          Período
-        </Label>
-        <Select
-          value={String(periodDays)}
-          onValueChange={(v) => onPeriodChange(Number(v) as SalesDashboardPeriodDays)}
-          disabled={disabled}
-        >
-          <SelectTrigger id="dash-period" className="mt-1 h-9 w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="7">Últimos 7 dias</SelectItem>
-            <SelectItem value="30">Últimos 30 dias</SelectItem>
-            <SelectItem value="90">Últimos 90 dias</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="min-w-[14rem]">
+        <span className="text-xs text-text-secondary">Período</span>
+        <div className="mt-1">
+          <DateRangePicker
+            value={range}
+            onChange={onRangeChange}
+            defaultPreset="last30"
+            align="start"
+            ariaLabel="Período do painel"
+            className="h-9 w-full justify-start"
+          />
+        </div>
       </div>
 
       <div className="min-w-[12rem]">
@@ -142,25 +134,17 @@ export function DashboardFilters({
         </Select>
       </div>
 
-      <div className="min-w-[9rem]">
-        <Label htmlFor="dash-scope" className="text-xs text-text-secondary">
-          Escopo
-        </Label>
-        <Select
-          value={scope}
-          onValueChange={(v) => onScopeChange(v as SalesDashboardScope)}
-          disabled={disabled || !canViewTeam}
-        >
-          <SelectTrigger id="dash-scope" className="mt-1 h-9 w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="me">Meus registros</SelectItem>
-            <SelectItem value="team" disabled={!canViewTeam}>
-              Equipe
-            </SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="min-w-[12rem]">
+        <span className="text-xs text-text-secondary">Responsável</span>
+        <div className="mt-1">
+          <AssigneeFilter
+            value={canViewTeam ? assignee : ASSIGNEE_ME}
+            onChange={onAssigneeChange}
+            allowAll={canViewTeam}
+            disabled={disabled || !canViewTeam}
+            className="w-full"
+          />
+        </div>
       </div>
     </div>
   );

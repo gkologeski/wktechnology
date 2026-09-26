@@ -56,6 +56,7 @@ export function AssigneeFilter({
   label = "Responsável",
   allowedUserIds = null,
   allowAll = true,
+  disabled = false,
 }: {
   value: AssigneeFilterValue;
   onChange: (next: AssigneeFilterValue) => void;
@@ -65,6 +66,7 @@ export function AssigneeFilter({
   allowedUserIds?: string[] | null;
   /** Quando falso, oculta "Todos os responsáveis" (escopo limitado). */
   allowAll?: boolean;
+  disabled?: boolean;
 }) {
   const { data: members = [], isLoading } = useWorkspaceMembers();
   const meId = useCurrentUserId();
@@ -79,7 +81,7 @@ export function AssigneeFilter({
   );
 
   return (
-    <Select value={value} onValueChange={onChange}>
+    <Select value={value} onValueChange={onChange} disabled={disabled}>
       <SelectTrigger className={cn("h-9 w-56", className)} aria-label={label}>
         <UserCircle2 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
         <SelectValue placeholder={label} />

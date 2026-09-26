@@ -12,7 +12,10 @@ describe("resolveDashboardRange", () => {
     expect(resolveDashboardRange({ period: 90 }, now).preset).toBe("last90");
   });
   it("aceita intervalo personalizado e ordena datas", () => {
-    const r = resolveDashboardRange({ preset: "custom", from: "2026-09-10", to: "2026-09-01" }, now);
+    const r = resolveDashboardRange(
+      { preset: "custom", from: "2026-09-10", to: "2026-09-01" },
+      now,
+    );
     expect(r.preset).toBe("custom");
     expect(r.range.from.getDate()).toBe(1);
     expect(r.range.to.getDate()).toBe(10);
