@@ -23,8 +23,16 @@ export type WindowChrome = {
 export const WindowChromeContext = createContext<WindowChrome | null>(null);
 export const useWindowChrome = () => useContext(WindowChromeContext);
 
-const ActivityWindowsContext = createContext<((request: ActivityWindowRequest) => void) | null>(null);
-export function ActivityWindowsProvider({ open, children }: { open: (request: ActivityWindowRequest) => void; children: ReactNode }) {
+const ActivityWindowsContext = createContext<((request: ActivityWindowRequest) => void) | null>(
+  null,
+);
+export function ActivityWindowsProvider({
+  open,
+  children,
+}: {
+  open: (request: ActivityWindowRequest) => void;
+  children: ReactNode;
+}) {
   return <ActivityWindowsContext.Provider value={open}>{children}</ActivityWindowsContext.Provider>;
 }
 export function useActivityWindows() {

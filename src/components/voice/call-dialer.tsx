@@ -222,13 +222,17 @@ export function CallDialer({
     `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
   return (
-    <Dialog open={open} docked={openProp !== undefined} onOpenChange={(value) => {
-      if (!value && (status === "connecting" || status === "ringing" || status === "in-call")) {
-        toast.error("Encerre a ligação antes de fechar a janela.");
-        return;
-      }
-      setOpen(value);
-    }}>
+    <Dialog
+      open={open}
+      docked={openProp !== undefined}
+      onOpenChange={(value) => {
+        if (!value && (status === "connecting" || status === "ringing" || status === "in-call")) {
+          toast.error("Encerre a ligação antes de fechar a janela.");
+          return;
+        }
+        setOpen(value);
+      }}
+    >
       {trigger !== undefined ? (
         <DialogTrigger asChild>{trigger}</DialogTrigger>
       ) : openProp === undefined ? (

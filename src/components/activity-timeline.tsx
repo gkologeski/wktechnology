@@ -14,10 +14,7 @@ import {
 } from "./activity/timeline-shared";
 import { TimelineActionBar } from "./activity/timeline-action-bar";
 import { TimelineEntriesList } from "./activity/timeline-entries-list";
-import {
-  fetchTimelineTarget,
-  fetchTimelineTeam,
-} from "@/lib/timeline/activity-entities";
+import { fetchTimelineTarget, fetchTimelineTeam } from "@/lib/timeline/activity-entities";
 import { TimelineRail } from "./activity/timeline-rail";
 import { useTimelineFeed } from "./activity/use-timeline-feed";
 import {
@@ -171,7 +168,13 @@ export function ActivityTimeline({
         }}
         onFollowUp={(a) => {
           const action = ACTIONS_BY_KEY["log:task"];
-          if (action) openWindow?.({ action, relatedKey, relatedId, subject: `Acompanhar: ${a.subject || "atividade"}` });
+          if (action)
+            openWindow?.({
+              action,
+              relatedKey,
+              relatedId,
+              subject: `Acompanhar: ${a.subject || "atividade"}`,
+            });
         }}
         loading={loading}
         entries={timelineEntries}
