@@ -40,10 +40,7 @@ import {
 import { InstantRoomButton } from "./activity/instant-room-button";
 import { useActivityEditing } from "./activity/use-activity-editing";
 import { useMeetingSummary } from "./activity/use-meeting-summary";
-import {
-  nowLocalInput,
-  type ComposerExtrasState,
-} from "./activity/timeline-composer-extras";
+import { nowLocalInput, type ComposerExtrasState } from "./activity/timeline-composer-extras";
 import { DEFAULT_FOLLOW_UP } from "./activity/follow-up-task-control";
 import { followUpDate } from "@/lib/activity-task-options";
 
@@ -195,7 +192,9 @@ export function ActivityTimeline({
       mentions: waHtml ? [] : extractMentionIds(body),
       attachments,
       activity_date:
-        !isTask && extras.activityDate ? new Date(extras.activityDate).toISOString() : new Date().toISOString(),
+        !isTask && extras.activityDate
+          ? new Date(extras.activityDate).toISOString()
+          : new Date().toISOString(),
       contacted_contact_ids: isTask ? [] : extras.contactedIds,
       ...(isTask
         ? {
@@ -203,7 +202,8 @@ export function ActivityTimeline({
             task_priority: extras.priority === "none" ? null : extras.priority,
             task_status: extras.status,
             completed: extras.status === "completed",
-            recurrence: extras.recurrence && dueDate ? { ...extras.recurrence, occurrence: 1 } : null,
+            recurrence:
+              extras.recurrence && dueDate ? { ...extras.recurrence, occurrence: 1 } : null,
           }
         : {}),
       ...autoLinks,

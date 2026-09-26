@@ -67,7 +67,11 @@ export function TimelineComposer({
   defaultContactId?: string;
 }) {
   const schedulable = type === "task" || type === "call" || type === "meeting";
-  const hasContent = !!(body.replace(/<[^>]*>/g, "").trim() || subject.trim() || pendingFiles.length);
+  const hasContent = !!(
+    body.replace(/<[^>]*>/g, "").trim() ||
+    subject.trim() ||
+    pendingFiles.length
+  );
 
   return (
     <div className="border-t border-border/60 p-4 space-y-3 bg-muted/10">
@@ -200,7 +204,9 @@ export function TimelineComposer({
           disabled={!hasContent}
           className="rounded-xl shadow-md shadow-primary/20 font-semibold"
         >
-          {type === "task" || type === "note" ? `Salvar ${label}` : `Registrar ${label.toLowerCase()}`}
+          {type === "task" || type === "note"
+            ? `Salvar ${label}`
+            : `Registrar ${label.toLowerCase()}`}
         </Button>
       </div>
     </div>

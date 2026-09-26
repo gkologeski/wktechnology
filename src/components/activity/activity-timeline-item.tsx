@@ -100,7 +100,8 @@ export function ActivityTimelineItem({
       ? ((a as { assigned_to?: string | null }).assigned_to ?? a.owner_id)
       : ((a as { created_by?: string | null }).created_by ?? a.owner_id);
   const actor = team.find((m) => m.id === actorId)?.name;
-  const when = (a as { activity_date?: string | null }).activity_date ?? a.hs_createdate ?? a.created_at;
+  const when =
+    (a as { activity_date?: string | null }).activity_date ?? a.hs_createdate ?? a.created_at;
   const contacted = (a as { contacted_contact_ids?: string[] | null }).contacted_contact_ids ?? [];
   const assocCount = [
     a.related_contact_id,

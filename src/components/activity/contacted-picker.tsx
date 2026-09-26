@@ -38,7 +38,9 @@ export function ContactedPicker({
   }, [defaultContactId]);
 
   useEffect(() => {
-    void fetchContactOptions(value).then(setSelected).catch(() => {});
+    void fetchContactOptions(value)
+      .then(setSelected)
+      .catch(() => {});
   }, [value]);
 
   useEffect(() => {
@@ -86,7 +88,9 @@ export function ContactedPicker({
                   <Loader2 className="h-3 w-3 animate-spin" /> Buscando...
                 </div>
               )}
-              {error && <div className="p-3 text-xs text-destructive">Falha ao buscar contatos.</div>}
+              {error && (
+                <div className="p-3 text-xs text-destructive">Falha ao buscar contatos.</div>
+              )}
               {!loading && !error && <CommandEmpty>Nenhum contato encontrado.</CommandEmpty>}
               <CommandGroup>
                 {[...selected, ...options.filter((o) => !value.includes(o.id))].map((o) => (

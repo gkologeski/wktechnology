@@ -42,7 +42,10 @@ export const RECURRENCE_FREQUENCIES: { value: RecurrenceFrequency; label: string
     { value: "yearly", label: "Anualmente", unit: "ano(s)" },
   ];
 
-export function labelOf(list: readonly { value: string; label: string }[], v: string | null | undefined) {
+export function labelOf(
+  list: readonly { value: string; label: string }[],
+  v: string | null | undefined,
+) {
   return list.find((o) => o.value === v)?.label ?? null;
 }
 
@@ -67,7 +70,8 @@ export function nextOccurrence(rule: RecurrenceRule, from: Date): Date | null {
       d.setFullYear(d.getFullYear() + n);
       break;
   }
-  if (rule.ends === "on_date" && rule.end_date && d > new Date(`${rule.end_date}T23:59:59`)) return null;
+  if (rule.ends === "on_date" && rule.end_date && d > new Date(`${rule.end_date}T23:59:59`))
+    return null;
   if (rule.ends === "after" && (rule.occurrence ?? 1) >= (rule.count ?? 1)) return null;
   return d;
 }
@@ -107,7 +111,11 @@ export const FOLLOW_UP_PRESETS = [
 export type FollowUpPreset = (typeof FOLLOW_UP_PRESETS)[number]["value"];
 
 /** Data de vencimento (08:00 local) para o atalho escolhido. */
-export function followUpDate(preset: FollowUpPreset, now = new Date(), custom?: string): Date | null {
+export function followUpDate(
+  preset: FollowUpPreset,
+  now = new Date(),
+  custom?: string,
+): Date | null {
   let d: Date;
   switch (preset) {
     case "today":

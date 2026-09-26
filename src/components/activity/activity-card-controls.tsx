@@ -181,9 +181,16 @@ export function TaskFieldsGrid({
           <RecurrenceControl
             idPrefix={`rec-${a.id}`}
             value={rec}
-            onChange={(r) => onPatch({ recurrence: r ? { ...r, occurrence: rec?.occurrence ?? 1 } : null })}
+            onChange={(r) =>
+              onPatch({ recurrence: r ? { ...r, occurrence: rec?.occurrence ?? 1 } : null })
+            }
           />
-          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setEditRec(false)}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => setEditRec(false)}
+          >
             Concluir
           </Button>
         </div>
