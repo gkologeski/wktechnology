@@ -118,10 +118,27 @@ export function ActivityWindows({ children }: { children: React.ReactNode }) {
           return (
             <WindowChromeContext.Provider key={w.id} value={chrome}>
               <div className={w.minimized || chrome.position > 1 ? "hidden" : "contents"}>
-                {!w.request.relatedKey && w.request.action.kind === "log" && w.request.action.value === "task" ? (
-                  <QuickCreateTaskDialog open onOpenChange={(value) => { if (!value) close(w.id); }} onCreated={() => void queryClient.invalidateQueries({ queryKey: ["tasks"] })} />
-                ) : !w.request.relatedKey && w.request.action.kind === "create" && w.request.action.value === "email" ? (
-                  <SendEmailDialog open onOpenChange={(value) => { if (!value) close(w.id); }} defaultTo={w.request.to} threadId={w.request.threadId} />
+                {!w.request.relatedKey &&
+                w.request.action.kind === "log" &&
+                w.request.action.value === "task" ? (
+                  <QuickCreateTaskDialog
+                    open
+                    onOpenChange={(value) => {
+                      if (!value) close(w.id);
+                    }}
+                    onCreated={() => void queryClient.invalidateQueries({ queryKey: ["tasks"] })}
+                  />
+                ) : !w.request.relatedKey &&
+                  w.request.action.kind === "create" &&
+                  w.request.action.value === "email" ? (
+                  <SendEmailDialog
+                    open
+                    onOpenChange={(value) => {
+                      if (!value) close(w.id);
+                    }}
+                    defaultTo={w.request.to}
+                    threadId={w.request.threadId}
+                  />
                 ) : w.request.relatedKey && w.request.action.kind === "log" ? (
                   <ActivityWindowFrame>
                     <ActivityLogWindow request={w.request} onSaved={() => close(w.id)} />

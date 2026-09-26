@@ -143,7 +143,11 @@ function EmailInbox() {
                     {current.messages.length} mensagem(ns)
                   </div>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => openEmail(lastMsg?.from_email ?? "", current.thread.id)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => openEmail(lastMsg?.from_email ?? "", current.thread.id)}
+                >
                   <Reply className="mr-2 h-4 w-4" /> Responder
                 </Button>
               </div>
