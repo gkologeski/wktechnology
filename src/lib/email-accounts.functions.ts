@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildGmailAuthUrl, callbackRedirectUri, signState } from "@/lib/email-oauth.server";
+import { cleanEmailSignatureHtml } from "@/lib/email-signature-html";
 
 // Start Gmail OAuth — returns an authorize URL the client should redirect to.
 export const startGmailOAuth = createServerFn({ method: "POST" })
@@ -45,7 +46,9 @@ export const saveEmailSignature = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
       .from("email_accounts")
-      .update({ signature_html: data.signature_html })
+      .update({
+        signature_html: data.signature_html ? cleanEmailSignatureHtml(data.signature_html) : null,
+      })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
