@@ -100,7 +100,7 @@ export function TimelineComposer({
       />
       <div className="flex flex-wrap gap-2">
         <Input
-          placeholder="Assunto (opcional)"
+          placeholder="O que você vai fazer?"
           value={subject}
           onChange={(e) => onSubjectChange(e.target.value)}
           className="flex-1 min-w-[200px]"
