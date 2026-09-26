@@ -531,8 +531,8 @@ export async function loadSalesDashboard(
     ? allJourneyLeads.filter((lead) => normalizeLeadChannel(lead.source) === input.channel)
     : allJourneyLeads;
   // Reutiliza os negócios já carregados para evitar uma consulta sequencial extra.
-  // `dealsRows` já respeita workspace, permissão, pipeline e exclusão lógica.
-  const linkedDealById = new Map(dealsRows.map((deal) => [deal.id, deal]));
+  // `deals` já respeita workspace, permissão, pipeline e exclusão lógica.
+  const linkedDealById = new Map(deals.map((deal) => [deal.id, deal]));
   const journeyQualified = journeyLeads.filter((lead) => {
     const stage = resolveJourneyStage(lead, leadStages);
     return lead.converted_at !== null || stage?.type === "won" || lead.status === "qualified";
