@@ -10,6 +10,11 @@ import type { SalesDashboardData } from "./sales-dashboard.types";
 const InputSchema = z.object({
   periodDays: z.union([z.literal(7), z.literal(30), z.literal(90)]).default(30),
   pipelineId: z.string().uuid().nullable().default(null),
+  leadPipelineId: z.string().uuid().nullable().default(null),
+  channel: z
+    .enum(["prospecting", "website", "paid", "organic", "referral", "offline", "import", "other", "unknown"])
+    .nullable()
+    .default(null),
   scope: z.enum(["me", "team"]).default("me"),
 });
 

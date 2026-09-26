@@ -2,11 +2,25 @@
 
 export type SalesDashboardPeriodDays = 7 | 30 | 90;
 export type SalesDashboardScope = "me" | "team";
+export type LeadChannel =
+  | "prospecting"
+  | "website"
+  | "paid"
+  | "organic"
+  | "referral"
+  | "offline"
+  | "import"
+  | "other"
+  | "unknown";
 
 export interface SalesDashboardInput {
   periodDays: SalesDashboardPeriodDays;
   /** null = pipeline padrão do workspace */
   pipelineId: string | null;
+  /** null = funil de Leads padrão do workspace */
+  leadPipelineId: string | null;
+  /** null = todos os canais agrupados */
+  channel: LeadChannel | null;
   scope: SalesDashboardScope;
 }
 
@@ -84,13 +98,53 @@ export interface SalesDashboardKpis {
   avgTicket: number | null;
 }
 
+export interface LeadChannelRow {
+  key: LeadChannel;
+  label: string;
+  leads: number;
+  share: number;
+  qualified: number;
+  opportunities: number;
+  sales: number;
+  revenue: number;
+  sources: string[];
+}
+
+export interface LeadStageRow {
+  value: string;
+  label: string;
+  color: string | null;
+  type: "open" | "won" | "lost";
+  count: number;
+  share: number;
+}
+
+export interface LeadJourneyData {
+  totalLeads: number;
+  qualified: number;
+  opportunities: number;
+  sales: number;
+  revenue: number;
+  leadToQualifiedRate: number;
+  qualifiedToOpportunityRate: number;
+  opportunityToSaleRate: number;
+  attributionCoverage: number;
+  linkedOpportunities: number;
+  selectedChannel: LeadChannel | null;
+  leadPipelineName: string | null;
+  channels: LeadChannelRow[];
+  stages: LeadStageRow[];
+}
+
 export interface SalesDashboardData {
   pipelines: PipelineOption[];
+  leadPipelines: PipelineOption[];
   selectedPipelineId: string | null;
   selectedPipelineName: string | null;
   canViewTeam: boolean;
   effectiveScope: SalesDashboardScope;
   kpis: SalesDashboardKpis;
+  leadJourney: LeadJourneyData;
   advancedDeals: DealListItem[];
   attentionDeals: DealListItem[];
   meetings: MeetingItem[];
