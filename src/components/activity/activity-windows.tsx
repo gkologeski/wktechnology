@@ -114,19 +114,19 @@ export function ActivityWindows({ children }: { children: React.ReactNode }) {
             </WindowChromeContext.Provider>
           );
         })}
-      {currentIdentity && (minimized.length > 0 || visible.length > 2) && (
+      {currentIdentity && windows.length > 1 && (
         <nav
           aria-label="Janelas de atividades"
           className="fixed bottom-2 left-2 z-[130] flex max-w-[calc(100vw-1rem)] gap-1 overflow-x-auto rounded-md border border-product-divider bg-product-panel p-1 shadow-lg max-sm:bottom-0 max-sm:left-0 max-sm:w-full max-sm:max-w-full max-sm:rounded-none"
         >
-          {[...minimized, ...visible.slice(0, -2)].map((w) => (
+          {windows.map((w) => (
             <Button
               key={w.id}
-              variant="ghost"
+              variant={visible.at(-1)?.id === w.id ? "secondary" : "ghost"}
               size="sm"
               className="shrink-0"
               onClick={() => focus(w.id)}
-              aria-label={`Restaurar ${w.request.action.label}`}
+              aria-label={`${w.minimized ? "Restaurar" : "Alternar para"} ${w.request.action.label}`}
             >
               {w.request.action.label}
             </Button>
@@ -160,7 +160,9 @@ function ActivityActionWindow({
       toast.error("Sem telefone disponível para esta entidade.");
       onClose();
     }
-  }, [action, target, onClose]);
+    // Only act on a completed target lookup, not on the changing close callback.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [action, target]);
   return (
     <TimelineActionDialogs
       openAction={action}

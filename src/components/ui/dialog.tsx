@@ -115,7 +115,8 @@ function DockedDialogContent({
               "!fixed !top-auto !bottom-3 !left-auto !right-3 !z-[120] !w-[min(480px,calc(100vw-1.5rem))] !max-w-none !max-h-[min(680px,calc(100dvh-1.5rem))] !translate-x-0 !translate-y-0 !rounded-md !border-product-divider !bg-product-panel !p-4 !pt-12 !shadow-xl !gap-3 max-sm:!inset-0 max-sm:!h-dvh max-sm:!w-screen max-sm:!max-h-dvh max-sm:!rounded-none",
             dock && position === 1 && "lg:!right-[500px]",
             dock?.expanded && "lg:!right-3 lg:!w-[min(860px,calc(100vw-1.5rem))]",
-            dock && (dock.minimized || position > 1) && "!hidden",
+             dock && (dock.minimized || position > 1) && "!hidden",
+             dock && position > 0 && "max-sm:!hidden",
             className,
           )}
           {...props}

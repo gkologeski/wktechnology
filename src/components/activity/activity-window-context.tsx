@@ -18,6 +18,7 @@ export type WindowChrome = {
   onMinimize: () => void;
   onExpand: () => void;
   onClose: () => void;
+  setCloseBlocked?: (blocked: boolean) => void;
 };
 
 export const WindowChromeContext = createContext<WindowChrome | null>(null);

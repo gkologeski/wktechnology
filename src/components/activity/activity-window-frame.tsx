@@ -65,6 +65,7 @@ export function ActivityWindowFrame({ children }: { children: React.ReactNode })
         chrome.position === 0 ? "right-3" : "right-[min(500px,calc(100vw-500px))]",
         chrome.expanded &&
           "!right-3 !w-[min(860px,calc(100vw-1.5rem))] max-sm:!right-0 max-sm:!w-screen",
+        chrome.position > 0 && "max-sm:hidden",
       )}
     >
       <WindowHeader chrome={chrome} />

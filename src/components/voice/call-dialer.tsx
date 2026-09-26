@@ -64,6 +64,14 @@ export function CallDialer({
   const [outcome, setOutcome] = useState("");
   const [showLog, setShowLog] = useState(false);
 
+  useEffect(() => {
+    if (!dock) return;
+    if (status === "connecting" || status === "ringing" || status === "in-call") {
+      dock.setCloseBlocked?.(true);
+      return () => dock.setCloseBlocked?.(false);
+    }
+  }, [dock, status]);
+
   const deviceRef = useRef<DeviceType | null>(null);
   const callRef = useRef<CallType | null>(null);
   const startedAtRef = useRef<number | null>(null);
