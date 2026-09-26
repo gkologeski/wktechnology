@@ -16,6 +16,7 @@ import { ActivityLogWindow } from "./activity-log-window";
 import { TimelineActionDialogs } from "./timeline-action-dialogs";
 import { QuickCreateTaskDialog } from "@/components/record/quick-create-dialogs";
 import { SendEmailDialog } from "@/components/email/send-email-dialog";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface WindowEntry {
   id: string;
@@ -26,6 +27,7 @@ interface WindowEntry {
 
 export function ActivityWindows({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const listWorkspaces = useServerFn(listMyWorkspaces);
   const { data } = useQuery({
     queryKey: ["my-workspaces", user?.id],
@@ -117,9 +119,9 @@ export function ActivityWindows({ children }: { children: React.ReactNode }) {
             <WindowChromeContext.Provider key={w.id} value={chrome}>
               <div className={w.minimized || chrome.position > 1 ? "hidden" : "contents"}>
                 {!w.request.relatedKey && w.request.action.kind === "log" && w.request.action.value === "task" ? (
-                  <QuickCreateTaskDialog open onOpenChange={(value) => { if (!value) chrome.onClose(); }} />
+                  <QuickCreateTaskDialog open onOpenChange={(value) => { if (!value) close(w.id); }} onCreated={() => void queryClient.invalidateQueries({ queryKey: ["tasks"] })} />
                 ) : !w.request.relatedKey && w.request.action.kind === "create" && w.request.action.value === "email" ? (
-                  <SendEmailDialog open onOpenChange={(value) => { if (!value) chrome.onClose(); }} defaultTo={w.request.to} threadId={w.request.threadId} />
+                  <SendEmailDialog open onOpenChange={(value) => { if (!value) close(w.id); }} defaultTo={w.request.to} threadId={w.request.threadId} />
                 ) : w.request.relatedKey && w.request.action.kind === "log" ? (
                   <ActivityWindowFrame>
                     <ActivityLogWindow request={w.request} onSaved={() => close(w.id)} />
