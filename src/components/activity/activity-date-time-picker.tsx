@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CalendarDays, Check, Clock3, X } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -49,11 +49,19 @@ export function ActivityDateTimePicker({
 }: ActivityDateTimePickerProps) {
   const [dateOpen, setDateOpen] = useState(false);
   const [timeOpen, setTimeOpen] = useState(false);
+  const selectedTimeRef = useRef<HTMLButtonElement>(null);
   const local =
     valueFormat === "date" ? (value ? `${value}T${defaultTime}` : "") : toLocalDateTimeValue(value);
   const datePart = activityDatePart(local);
   const timePart = activityTimePart(local, defaultTime);
   const selectedDate = datePart ? new Date(`${datePart}T12:00:00`) : undefined;
+
+  useEffect(() => {
+    if (!timeOpen) return;
+    window.requestAnimationFrame(() =>
+      selectedTimeRef.current?.scrollIntoView({ block: "center" }),
+    );
+  }, [timeOpen]);
 
   const commit = (date: string, time = timePart) => {
     const next = combineActivityDateTime(date, time);
@@ -152,6 +160,7 @@ export function ActivityDateTimePicker({
                 {ACTIVITY_TIME_OPTIONS.map((time) => (
                   <Button
                     key={time}
+                    ref={timePart === time ? selectedTimeRef : undefined}
                     type="button"
                     variant={timePart === time ? "secondary" : "ghost"}
                     size="sm"
