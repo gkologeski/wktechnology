@@ -10,7 +10,6 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { listEmailThreads, getEmailThread } from "@/lib/email-inbox.functions";
 import { syncMyEmailAccounts } from "@/lib/gmail-sync.functions";
-import { SendEmailDialog } from "@/components/email/send-email-dialog";
 import { useActivityWindows } from "@/components/activity/activity-window-context";
 import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
 import { formatDateTime } from "@/lib/crm";
