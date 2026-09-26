@@ -17,6 +17,7 @@ export const Route = createFileRoute("/_authenticated/tasks/queues/$queueId/play
 });
 
 function PlayQueue() {
+  const openActivity = useActivityWindows();
   const { queueId } = Route.useParams();
   const nav = useNavigate();
   const qc = useQueryClient();
