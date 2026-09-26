@@ -26,6 +26,7 @@ import { FocusQueueBar } from "@/components/focus-queue-bar";
 import { ModuleSwitcher } from "@/components/module-switcher";
 
 import { TimerWidget } from "@/components/timer-widget";
+import { ActivityWindows } from "@/components/activity/activity-windows";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
@@ -137,6 +138,7 @@ function AuthenticatedLayout() {
   const blocked = roleBlocked || licenseBlocked || moduleBlocked;
 
   return (
+    <ActivityWindows>
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-product-canvas">
         <AppSidebar />
@@ -191,5 +193,6 @@ function AuthenticatedLayout() {
       {showTimer && <TimerWidget />}
       <GlobalSearch />
     </SidebarProvider>
+    </ActivityWindows>
   );
 }
