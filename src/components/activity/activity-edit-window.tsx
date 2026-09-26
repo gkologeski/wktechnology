@@ -95,24 +95,26 @@ export function ActivityEditWindow({
     <div aria-busy={saving}>
       <DraftBar savedAt={draft.savedAt} onDiscard={discard} />
       <div className="p-4">
-      <h2 className="font-semibold">Editar {activity.type === "task" ? "tarefa" : "atividade"}</h2>
-      <ActivityEditForm
-        activity={activity}
-        team={team}
-        body={body}
-        onBodyChange={setBody}
-        assigneeId={assigneeId}
-        onAssigneeChange={setAssigneeId}
-        dueDate={dueDate}
-        onDueDateChange={setDueDate}
-        attachments={attachments}
-        onAttachmentsChange={setAttachments}
-        newFiles={newFiles}
-        onNewFilesChange={setNewFiles}
-        onOpenFileCenter={() => toast.info("Use Anexar para escolher arquivos.")}
-        onSave={() => void save()}
-        onCancel={onCancel}
-      />
+        <h2 className="font-semibold">
+          Editar {activity.type === "task" ? "tarefa" : "atividade"}
+        </h2>
+        <ActivityEditForm
+          activity={activity}
+          team={team}
+          body={body}
+          onBodyChange={setBody}
+          assigneeId={assigneeId}
+          onAssigneeChange={setAssigneeId}
+          dueDate={dueDate}
+          onDueDateChange={setDueDate}
+          attachments={attachments}
+          onAttachmentsChange={setAttachments}
+          newFiles={newFiles}
+          onNewFilesChange={setNewFiles}
+          onOpenFileCenter={() => toast.info("Use Anexar para escolher arquivos.")}
+          onSave={() => void save()}
+          onCancel={onCancel}
+        />
       </div>
     </div>
   );
