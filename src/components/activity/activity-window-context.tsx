@@ -14,6 +14,7 @@ export type ActivityWindowRequest = {
   dealId?: string;
   companyId?: string;
   contactName?: string;
+  onSent?: (threadId: string) => void;
   bulk?: { ids: string[]; entity: "leads" | "contacts" | "deals" | "companies"; onDone?: () => void };
 };
 

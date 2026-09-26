@@ -151,6 +151,7 @@ export function ActivityWindows({ children }: { children: React.ReactNode }) {
                     dealId={w.request.dealId}
                     companyId={w.request.companyId}
                     contactName={w.request.contactName}
+                    onSent={w.request.onSent}
                   />
                 ) : w.request.relatedKey && w.request.action.kind === "log" ? (
                   <ActivityWindowFrame>
