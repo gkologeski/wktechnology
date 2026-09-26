@@ -82,7 +82,7 @@ export function TimelineActionDialogs({
         onOpenChange={close}
         relatedKey={relatedKey}
         relatedId={relatedId}
-        onSaved={onRefresh}
+        onSaved={() => { onRefresh(); onClose(); }}
       />
     </>
   );

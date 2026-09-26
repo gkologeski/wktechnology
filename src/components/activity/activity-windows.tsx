@@ -246,7 +246,7 @@ function ActivityActionWindow({
     // Only act on a completed target lookup, not on the changing close callback.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [action, target]);
-  if (!relatedKey || !relatedId) return null;
+  if (!relatedKey || !relatedId || !target) return null;
   return (
     <TimelineActionDialogs
       openAction={action}
