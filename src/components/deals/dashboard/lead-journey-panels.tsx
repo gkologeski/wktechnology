@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, BadgeDollarSign, CircleCheck, ContactRound, Target } from "lucide-react";
-import { MetricCard, SectionHeader } from "@/components/techhire/ui";
+import { EmptyState, MetricCard, SectionHeader } from "@/components/techhire/ui";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/crm";
 import type { LeadChannel, LeadJourneyData } from "@/lib/deals/sales-dashboard.types";
@@ -51,19 +51,21 @@ export function LeadChannelsPanel({ journey, onSelect }: { journey: LeadJourneyD
   return (
     <section className="rounded-lg border border-border-subtle bg-surface-1 p-4">
       <SectionHeader title="Leads por canal" description="Quantidade e participação nas entradas do período." action={journey.selectedChannel ? <Button type="button" variant="ghost" size="sm" onClick={() => onSelect(null)}>Limpar canal</Button> : undefined} />
-      <ul className="mt-4 space-y-3">
+      {journey.channels.length === 0 ? (
+        <EmptyState compact title="Nenhum lead no período" description="Amplie o período ou remova os filtros para comparar os canais." />
+      ) : <ul className="mt-4 space-y-3">
         {journey.channels.map((channel) => (
           <li key={channel.key}>
-            <button type="button" onClick={() => onSelect(channel.key)} className="group w-full rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`Filtrar pelo canal ${channel.label}, ${channel.leads} leads`}>
+            <Button type="button" variant="ghost" onClick={() => onSelect(channel.key)} className="group h-auto w-full flex-col items-stretch rounded-sm px-1 py-1.5 text-left" aria-label={`Filtrar pelo canal ${channel.label}, ${channel.leads} leads`}>
               <div className="flex items-baseline justify-between gap-3 text-xs">
                 <span className="truncate font-medium text-text-primary group-hover:text-primary">{channel.label}</span>
                 <span className="shrink-0 tabular-nums text-text-secondary">{channel.leads} · {pct(channel.share)}</span>
               </div>
               <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-surface-sunken"><div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${Math.max(2, (channel.leads / max) * 100)}%` }} /></div>
-            </button>
+            </Button>
           </li>
         ))}
-      </ul>
+      </ul>}
     </section>
   );
 }
@@ -73,14 +75,16 @@ export function LeadFunnelPanel({ journey }: { journey: LeadJourneyData }) {
   return (
     <section className="rounded-lg border border-border-subtle bg-surface-1 p-4">
       <SectionHeader title="Funil de Leads" description={journey.leadPipelineName ? `Funil: ${journey.leadPipelineName}` : "Etapas atuais dos leads criados no período."} action={<Link to="/leads" className="text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Ver leads</Link>} />
-      <ul className="mt-4 space-y-3">
+      {journey.stages.length === 0 ? (
+        <EmptyState compact title="Nenhuma etapa configurada" description="Configure um funil de Leads para visualizar as etapas." />
+      ) : <ul className="mt-4 space-y-3">
         {journey.stages.map((stage) => (
           <li key={stage.value}>
             <div className="flex items-baseline justify-between gap-3 text-xs"><span className="truncate font-medium text-text-primary">{stage.label}</span><span className="shrink-0 tabular-nums text-text-secondary">{stage.count} · {pct(stage.share)}</span></div>
             <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-surface-sunken"><div className="h-full rounded-full" style={{ width: `${Math.max(2, (stage.count / max) * 100)}%`, backgroundColor: stage.color ?? "var(--color-chart-2)" }} /></div>
           </li>
         ))}
-      </ul>
+      </ul>}
     </section>
   );
 }

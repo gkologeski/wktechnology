@@ -54,7 +54,9 @@ export function resolveJourneyStage(
   lead: Pick<LeadJourneyRow, "stage_id" | "status">,
   stages: PipelineStage[],
 ): PipelineStage | undefined {
-  const direct = stages.find((stage) => stage.value === lead.stage_id || stage.value === lead.status);
+  const direct = lead.stage_id
+    ? stages.find((stage) => stage.value === lead.stage_id)
+    : stages.find((stage) => stage.value === lead.status);
   if (direct) return direct;
   if (lead.status === "qualified") return stages.find((stage) => stage.type === "won") ?? stages.filter((stage) => stage.type !== "lost").at(-1);
   if (lead.status === "disqualified") return stages.find((stage) => stage.type === "lost");

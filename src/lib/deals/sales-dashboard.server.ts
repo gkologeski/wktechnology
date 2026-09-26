@@ -543,7 +543,10 @@ export async function loadSalesDashboard(
     pipeline_id: string | null;
     closed_at: string | null;
   }>;
-  const linkedDealById = new Map(linkedDeals.map((deal) => [deal.id, deal]));
+  const pipelineLinkedDeals = selected
+    ? linkedDeals.filter((deal) => deal.pipeline_id === selected.id)
+    : linkedDeals;
+  const linkedDealById = new Map(pipelineLinkedDeals.map((deal) => [deal.id, deal]));
   const journeyQualified = journeyLeads.filter((lead) => {
     const stage = resolveJourneyStage(lead, leadStages);
     return lead.converted_at !== null || stage?.type === "won" || lead.status === "qualified";
