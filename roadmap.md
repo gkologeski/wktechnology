@@ -15,3 +15,4 @@
 - [x] Inventariar as exceções visuais locais por rota em `docs/qa/design-system-rollout.md` para refinamentos incrementais futuros.
 - [x] Permitir selecionar objetos da prévia do White Label e focar diretamente seus controles de estilo.
 - [x] Corrigir regressões do Design System em botões principais e bordas coloridas na área autenticada.
+- [ ] Implementar no /dashboard a jornada de Leads até vendas, canais agrupados, reconciliação conservadora e validação UX/UI ≥ 9.
