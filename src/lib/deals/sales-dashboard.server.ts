@@ -530,31 +530,9 @@ export async function loadSalesDashboard(
   const journeyLeads = input.channel
     ? allJourneyLeads.filter((lead) => normalizeLeadChannel(lead.source) === input.channel)
     : allJourneyLeads;
-  const journeyDealIds = Array.from(
-    new Set(journeyLeads.map((lead) => lead.converted_deal_id).filter(Boolean) as string[]),
-  );
-  const linkedDealsRes = journeyDealIds.length
-    ? await safe(
-        supabase
-          .from("deals")
-          .select("id, value, stage, stage_id, pipeline_id, closed_at")
-          .eq("workspace_id", workspaceId)
-          .in("id", journeyDealIds)
-          .is("deleted_at", null),
-      )
-    : { data: [] };
-  const linkedDeals = (linkedDealsRes.data ?? []) as Array<{
-    id: string;
-    value: number | null;
-    stage: string;
-    stage_id: string | null;
-    pipeline_id: string | null;
-    closed_at: string | null;
-  }>;
-  const pipelineLinkedDeals = selected
-    ? linkedDeals.filter((deal) => deal.pipeline_id === selected.id)
-    : linkedDeals;
-  const linkedDealById = new Map(pipelineLinkedDeals.map((deal) => [deal.id, deal]));
+  // Reutiliza os negócios já carregados para evitar uma consulta sequencial extra.
+  // `dealsRows` já respeita workspace, permissão, pipeline e exclusão lógica.
+  const linkedDealById = new Map(dealsRows.map((deal) => [deal.id, deal]));
   const journeyQualified = journeyLeads.filter((lead) => {
     const stage = resolveJourneyStage(lead, leadStages);
     return lead.converted_at !== null || stage?.type === "won" || lead.status === "qualified";
@@ -566,13 +544,17 @@ export async function loadSalesDashboard(
     const deal = lead.converted_deal_id ? linkedDealById.get(lead.converted_deal_id) : undefined;
     return deal ? isWon(deal as DealRow, stages) : false;
   });
+  const convertedJourneyLeads = journeyLeads.filter(
+    (lead) => lead.converted_at !== null || lead.converted_deal_id !== null,
+  );
   const journeyRevenue = journeySales.reduce((total, lead) => {
     const deal = lead.converted_deal_id ? linkedDealById.get(lead.converted_deal_id) : undefined;
     return total + (deal?.value ?? 0);
   }, 0);
   const rate = (part: number, total: number) => (total > 0 ? (part / total) * 100 : 0);
   const channelRows = LEAD_CHANNELS.map((key) => {
-    const rows = journeyLeads.filter((lead) => normalizeLeadChannel(lead.source) === key);
+    // O ranking permanece comparativo mesmo quando um canal filtra os demais painéis.
+    const rows = allJourneyLeads.filter((lead) => normalizeLeadChannel(lead.source) === key);
     const convertedRows = rows.filter(
       (lead) => lead.converted_at !== null || lead.status === "qualified",
     );
@@ -587,7 +569,7 @@ export async function loadSalesDashboard(
       key,
       label: LEAD_CHANNEL_LABELS[key],
       leads: rows.length,
-      share: rate(rows.length, journeyLeads.length),
+      share: rate(rows.length, allJourneyLeads.length),
       qualified: convertedRows.length,
       opportunities: opportunityRows.length,
       sales: salesRows.length,
@@ -650,7 +632,7 @@ export async function loadSalesDashboard(
       leadToQualifiedRate: rate(journeyQualified.length, journeyLeads.length),
       qualifiedToOpportunityRate: rate(journeyOpportunities.length, journeyQualified.length),
       opportunityToSaleRate: rate(journeySales.length, journeyOpportunities.length),
-      attributionCoverage: rate(journeyOpportunities.length, journeyQualified.length),
+      attributionCoverage: rate(journeyOpportunities.length, convertedJourneyLeads.length),
       linkedOpportunities: journeyOpportunities.length,
       selectedChannel: input.channel,
       leadPipelineName: selectedLeadPipeline?.name ?? null,
