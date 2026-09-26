@@ -13,7 +13,8 @@ import { BulkEditDialog, type BulkField } from "@/components/bulk-edit-dialog";
 import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
 import { BulkAssignDialog } from "@/components/bulk-assign-dialog";
 import { ConfirmCountDialog } from "@/components/confirm-count-dialog";
-import { BulkCreateActivityDialog } from "@/components/bulk-create-activity-dialog";
+import { useActivityWindows } from "@/components/activity/activity-window-context";
+import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
 import { reportBulkDelete } from "@/lib/access-control/bulk-delete-report";
 import { isBulkEditEntity } from "@/lib/grid/bulk-edit-fields";
 
@@ -67,7 +68,7 @@ export function GridBulkBar<T extends { id: string }>({
   const dynamicEntity = isBulkEditEntity(table) ? table : null;
   const canBulkEdit = canUpdate && (!!dynamicEntity || (bulkEditFields?.length ?? 0) > 0);
   const [assignOpen, setAssignOpen] = useState(false);
-  const [activityOpen, setActivityOpen] = useState(false);
+  const openActivity = useActivityWindows();
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   /** Busca as linhas completas dos ids selecionados (em lotes). */
@@ -160,7 +161,7 @@ export function GridBulkBar<T extends { id: string }>({
           </Button>
         )}
         {activityEntity && (
-          <Button variant="outline" size="sm" onClick={() => setActivityOpen(true)}>
+          <Button variant="outline" size="sm" onClick={() => openActivity?.({ action: ACTIONS_BY_KEY["log:task"], bulk: { ids: [...ids], entity: activityEntity, onDone: () => { onClear(); onDone(); } } })}>
             <ListTodo className="mr-1 h-4 w-4" /> Criar atividade
           </Button>
         )}
@@ -209,19 +210,6 @@ export function GridBulkBar<T extends { id: string }>({
           table={table}
           ids={ids}
           column={assignColumn}
-          onDone={() => {
-            onClear();
-            onDone();
-          }}
-        />
-      )}
-
-      {activityEntity && (
-        <BulkCreateActivityDialog
-          open={activityOpen}
-          setOpen={setActivityOpen}
-          ids={ids}
-          entity={activityEntity}
           onDone={() => {
             onClear();
             onDone();

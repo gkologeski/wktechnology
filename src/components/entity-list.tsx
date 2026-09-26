@@ -41,7 +41,8 @@ import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog"
 import { isBulkEditEntity } from "@/lib/grid/bulk-edit-fields";
 
 import { ConfirmCountDialog } from "@/components/confirm-count-dialog";
-import { BulkCreateActivityDialog } from "@/components/bulk-create-activity-dialog";
+import { useActivityWindows } from "@/components/activity/activity-window-context";
+import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
 import { FilterBuilderDialog } from "@/components/filter-builder-dialog";
 import { ColumnEditorDialog } from "@/components/column-editor-dialog";
 import { EntityBoard, type BoardStage } from "@/components/entity-board";
@@ -970,18 +971,6 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
           await bulkDelete();
         }}
       />
-      {table !== "activities" && (
-        <BulkCreateActivityDialog
-          open={bulkActivityOpen}
-          setOpen={setBulkActivityOpen}
-          ids={ids}
-          entity={table}
-          onDone={() => {
-            clearSel();
-            qc.invalidateQueries({ queryKey: ["activities"] });
-          }}
-        />
-      )}
 
       <FilterBuilderDialog
         open={filterOpen}
