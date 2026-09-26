@@ -49,17 +49,26 @@ export function ActivityEditWindow({
     },
   });
   const discard = async () => {
-    if (!(await confirmDialog({
-      title: "Descartar rascunho?",
-      description: "O conteúdo redigido e os anexos deste rascunho serão removidos.",
-      confirmLabel: "Descartar",
-      variant: "destructive",
-    }))) return;
-    const originalAssignee = activity.type === "task"
-      ? ((activity as Activity & { assigned_to?: string | null }).assigned_to ?? activity.owner_id)
-      : null;
+    if (
+      !(await confirmDialog({
+        title: "Descartar rascunho?",
+        description: "O conteúdo redigido e os anexos deste rascunho serão removidos.",
+        confirmLabel: "Descartar",
+        variant: "destructive",
+      }))
+    )
+      return;
+    const originalAssignee =
+      activity.type === "task"
+        ? ((activity as Activity & { assigned_to?: string | null }).assigned_to ??
+          activity.owner_id)
+        : null;
     const originalDueDate = activity.type === "task" ? activity.due_date : null;
-    draft.clear({ body: activity.body ?? "", assigneeId: originalAssignee, dueDate: originalDueDate });
+    draft.clear({
+      body: activity.body ?? "",
+      assigneeId: originalAssignee,
+      dueDate: originalDueDate,
+    });
     setBody(activity.body ?? "");
     setAssigneeId(originalAssignee);
     setDueDate(originalDueDate);

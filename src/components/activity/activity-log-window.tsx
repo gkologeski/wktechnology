@@ -75,12 +75,15 @@ export function ActivityLogWindow({
     },
   });
   const discard = async () => {
-    if (!(await confirmDialog({
-      title: "Descartar rascunho?",
-      description: "O conteúdo redigido e os anexos deste rascunho serão removidos.",
-      confirmLabel: "Descartar",
-      variant: "destructive",
-    }))) return;
+    if (
+      !(await confirmDialog({
+        title: "Descartar rascunho?",
+        description: "O conteúdo redigido e os anexos deste rascunho serão removidos.",
+        confirmLabel: "Descartar",
+        variant: "destructive",
+      }))
+    )
+      return;
     const resetExtras = freshExtras();
     draft.clear({
       subject: request.subject ?? "",

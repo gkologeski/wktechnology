@@ -92,14 +92,17 @@ export function useActivityDraft<T>(options: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, serialized]);
 
-  const clear = useCallback((resetValue?: T) => {
-    if (timer.current) clearTimeout(timer.current);
-    pending.current = null;
-    discardedBaseline.current = resetValue === undefined ? null : JSON.stringify(resetValue);
-    if (key) window.localStorage.removeItem(key);
-    setSavedAt(null);
-    setRestored(false);
-  }, [key]);
+  const clear = useCallback(
+    (resetValue?: T) => {
+      if (timer.current) clearTimeout(timer.current);
+      pending.current = null;
+      discardedBaseline.current = resetValue === undefined ? null : JSON.stringify(resetValue);
+      if (key) window.localStorage.removeItem(key);
+      setSavedAt(null);
+      setRestored(false);
+    },
+    [key],
+  );
 
   return { savedAt, restored, clear };
 }
