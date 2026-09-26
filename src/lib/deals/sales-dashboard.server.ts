@@ -5,6 +5,13 @@ import type { Database } from "@/integrations/supabase/types";
 import type { Deal } from "@/lib/db-types";
 import type { Pipeline, PipelineStage } from "@/lib/pipelines";
 import { computeHotScore } from "@/lib/deals/hot-score";
+import {
+  LEAD_CHANNEL_LABELS,
+  LEAD_CHANNELS,
+  normalizeLeadChannel,
+  resolveJourneyStage,
+  type LeadJourneyRow,
+} from "@/lib/deals/lead-journey";
 import type {
   ContactsByDay,
   DealListItem,
@@ -109,6 +116,22 @@ export async function loadSalesDashboard(
     null;
   const stages: PipelineStage[] = selected?.stages ?? [];
 
+  const leadPipesRes = await supabase
+    .from("pipelines")
+    .select("id, name, entity, stages, is_default")
+    .eq("workspace_id", workspaceId)
+    .eq("entity", "lead")
+    .order("is_default", { ascending: false })
+    .order("created_at", { ascending: true });
+  if (leadPipesRes.error) throw new Error(leadPipesRes.error.message);
+  const leadPipelines = (leadPipesRes.data ?? []) as unknown as Pipeline[];
+  const selectedLeadPipeline =
+    leadPipelines.find((p) => p.id === input.leadPipelineId) ??
+    leadPipelines.find((p) => p.is_default) ??
+    leadPipelines[0] ??
+    null;
+  const leadStages = selectedLeadPipeline?.stages ?? [];
+
   // Filtro de responsável quando o escopo é "me"
   const mine = <T extends { eq: (c: string, v: string) => T }>(q: T): T =>
     effectiveScope === "me" ? q.eq("owner_id", userId) : q;
@@ -135,7 +158,18 @@ export async function loadSalesDashboard(
     );
 
   // 3) Demais consultas em paralelo
-  const [dealsRes, acts14Res, acts30Res, meetingsRes, bookingsRes, tasksRes, goalsRes, leadsRes] =
+  let journeyLeadsQ = supabase
+    .from("leads")
+    .select("id, source, status, stage_id, converted_at, converted_deal_id")
+    .eq("workspace_id", workspaceId)
+    .is("deleted_at", null)
+    .gte("created_at", periodStart.toISOString())
+    .lte("created_at", now.toISOString())
+    .limit(10000);
+  if (selectedLeadPipeline) journeyLeadsQ = journeyLeadsQ.eq("pipeline_id", selectedLeadPipeline.id);
+  journeyLeadsQ = mine(journeyLeadsQ);
+
+  const [dealsRes, acts14Res, acts30Res, meetingsRes, bookingsRes, tasksRes, goalsRes, leadsRes, journeyLeadsRes] =
     await Promise.all([
       dealsQ,
       safe(
@@ -220,6 +254,7 @@ export async function loadSalesDashboard(
             .limit(500),
         ),
       ),
+      safe(journeyLeadsQ),
     ]);
 
   if (dealsRes.error) throw new Error(dealsRes.error.message);
@@ -483,8 +518,92 @@ export async function loadSalesDashboard(
     status: string;
   }>;
 
+  const allJourneyLeads = (journeyLeadsRes.data ?? []) as LeadJourneyRow[];
+  const journeyLeads = input.channel
+    ? allJourneyLeads.filter((lead) => normalizeLeadChannel(lead.source) === input.channel)
+    : allJourneyLeads;
+  const journeyDealIds = Array.from(
+    new Set(journeyLeads.map((lead) => lead.converted_deal_id).filter(Boolean) as string[]),
+  );
+  const linkedDealsRes = journeyDealIds.length
+    ? await safe(
+        supabase
+          .from("deals")
+          .select("id, value, stage, stage_id, pipeline_id, closed_at")
+          .eq("workspace_id", workspaceId)
+          .in("id", journeyDealIds)
+          .is("deleted_at", null),
+      )
+    : { data: [] };
+  const linkedDeals = (linkedDealsRes.data ?? []) as Array<{
+    id: string;
+    value: number | null;
+    stage: string;
+    stage_id: string | null;
+    pipeline_id: string | null;
+    closed_at: string | null;
+  }>;
+  const linkedDealById = new Map(linkedDeals.map((deal) => [deal.id, deal]));
+  const journeyQualified = journeyLeads.filter((lead) => {
+    const stage = resolveJourneyStage(lead, leadStages);
+    return lead.converted_at !== null || stage?.type === "won" || lead.status === "qualified";
+  });
+  const journeyOpportunities = journeyLeads.filter(
+    (lead) => lead.converted_deal_id !== null && linkedDealById.has(lead.converted_deal_id),
+  );
+  const journeySales = journeyOpportunities.filter((lead) => {
+    const deal = lead.converted_deal_id ? linkedDealById.get(lead.converted_deal_id) : undefined;
+    return deal ? isWon(deal as DealRow, stages) : false;
+  });
+  const journeyRevenue = journeySales.reduce((total, lead) => {
+    const deal = lead.converted_deal_id ? linkedDealById.get(lead.converted_deal_id) : undefined;
+    return total + (deal?.value ?? 0);
+  }, 0);
+  const rate = (part: number, total: number) => (total > 0 ? (part / total) * 100 : 0);
+  const channelRows = LEAD_CHANNELS.map((key) => {
+    const rows = journeyLeads.filter((lead) => normalizeLeadChannel(lead.source) === key);
+    const convertedRows = rows.filter((lead) => lead.converted_at !== null || lead.status === "qualified");
+    const opportunityRows = rows.filter(
+      (lead) => lead.converted_deal_id !== null && linkedDealById.has(lead.converted_deal_id),
+    );
+    const salesRows = opportunityRows.filter((lead) => {
+      const deal = lead.converted_deal_id ? linkedDealById.get(lead.converted_deal_id) : undefined;
+      return deal ? isWon(deal as DealRow, stages) : false;
+    });
+    return {
+      key,
+      label: LEAD_CHANNEL_LABELS[key],
+      leads: rows.length,
+      share: rate(rows.length, journeyLeads.length),
+      qualified: convertedRows.length,
+      opportunities: opportunityRows.length,
+      sales: salesRows.length,
+      revenue: salesRows.reduce((total, lead) => {
+        const deal = lead.converted_deal_id ? linkedDealById.get(lead.converted_deal_id) : undefined;
+        return total + (deal?.value ?? 0);
+      }, 0),
+      sources: Array.from(new Set(rows.map((lead) => lead.source).filter(Boolean) as string[])).sort(),
+    };
+  })
+    .filter((row) => row.leads > 0)
+    .sort((a, b) => b.leads - a.leads);
+  const leadStageRows = leadStages.map((stage) => {
+    const count = journeyLeads.filter(
+      (lead) => resolveJourneyStage(lead, leadStages)?.value === stage.value,
+    ).length;
+    return {
+      value: stage.value,
+      label: stage.label,
+      color: stage.color ?? null,
+      type: stage.type ?? "open",
+      count,
+      share: rate(count, journeyLeads.length),
+    };
+  });
+
   return {
     pipelines: pipelines.map((p) => ({ id: p.id, name: p.name, isDefault: p.is_default })),
+    leadPipelines: leadPipelines.map((p) => ({ id: p.id, name: p.name, isDefault: p.is_default })),
     selectedPipelineId: selected?.id ?? null,
     selectedPipelineName: selected?.name ?? null,
     canViewTeam,
@@ -504,6 +623,22 @@ export async function loadSalesDashboard(
           : null,
       wonDeltaPct: sum(wonPrev) > 0 ? ((sum(wonPeriod) - sum(wonPrev)) / sum(wonPrev)) * 100 : null,
       avgTicket: wonPeriod.length > 0 ? sum(wonPeriod) / wonPeriod.length : null,
+    },
+    leadJourney: {
+      totalLeads: journeyLeads.length,
+      qualified: journeyQualified.length,
+      opportunities: journeyOpportunities.length,
+      sales: journeySales.length,
+      revenue: journeyRevenue,
+      leadToQualifiedRate: rate(journeyQualified.length, journeyLeads.length),
+      qualifiedToOpportunityRate: rate(journeyOpportunities.length, journeyQualified.length),
+      opportunityToSaleRate: rate(journeySales.length, journeyOpportunities.length),
+      attributionCoverage: rate(journeyOpportunities.length, journeyQualified.length),
+      linkedOpportunities: journeyOpportunities.length,
+      selectedChannel: input.channel,
+      leadPipelineName: selectedLeadPipeline?.name ?? null,
+      channels: channelRows,
+      stages: leadStageRows,
     },
     advancedDeals,
     attentionDeals,
