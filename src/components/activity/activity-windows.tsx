@@ -54,10 +54,12 @@ export function ActivityWindows({ children }: { children: React.ReactNode }) {
       if (!currentIdentity) return;
       if (request.action.kind === "create" && request.action.disabled) return;
       setWindows((previous) => {
-        const match =
-          request.relatedId || request.threadId
+        const match = request.editingActivity
+          ? previous.find((w) => w.request.editingActivity?.id === request.editingActivity?.id)
+          : request.relatedId || request.threadId
             ? previous.find(
                 (w) =>
+                  !w.request.editingActivity &&
                   w.request.action.kind === request.action.kind &&
                   w.request.action.value === request.action.value &&
                   w.request.relatedKey === request.relatedKey &&
@@ -94,7 +96,9 @@ export function ActivityWindows({ children }: { children: React.ReactNode }) {
           const position = visible.findIndex((item) => item.id === w.id);
           const chrome = {
             id: w.id,
-            title: `${w.request.action.label}`,
+            title: w.request.editingActivity
+              ? `Editar ${w.request.editingActivity.type === "task" ? "tarefa" : "atividade"}`
+              : w.request.action.label,
             position: Math.max(0, visible.length - 1 - position),
             minimized: w.minimized,
             expanded: w.expanded,
