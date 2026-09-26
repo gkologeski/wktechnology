@@ -10,10 +10,7 @@ import { OnboardingChecklist } from "@/components/onboarding-checklist";
 import { useCurrentUserId } from "@/hooks/use-current-user-id";
 import { EmptyState, PageHeader, Skeletons } from "@/components/techhire/ui";
 import { getSalesDashboard } from "@/lib/deals/sales-dashboard.functions";
-import type {
-  SalesDashboardPeriodDays,
-  SalesDashboardScope,
-} from "@/lib/deals/sales-dashboard.types";
+import { resolveAssignee, resolveDashboardRange, toIsoDay } from "@/lib/deals/dashboard-period";
 import { SalesKpiStrip } from "@/components/deals/dashboard/kpi-strip";
 import { AdvancedDealsPanel, AttentionDealsPanel } from "@/components/deals/dashboard/deal-panels";
 import { MeetingsAgenda } from "@/components/deals/dashboard/meetings-agenda";
@@ -31,7 +28,17 @@ import {
 import type { LeadChannel } from "@/lib/deals/sales-dashboard.types";
 
 const SearchSchema = z.object({
-  period: z.union([z.literal(7), z.literal(30), z.literal(90)]).optional(),
+  preset: z.string().max(20).optional(),
+  from: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  to: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  /** Legado */
+  period: z.coerce.number().optional(),
   pipeline: z.string().uuid().optional(),
   leadPipeline: z.string().uuid().optional(),
   channel: z
@@ -47,6 +54,8 @@ const SearchSchema = z.object({
       "unknown",
     ])
     .optional(),
+  assignee: z.union([z.enum(["__all__", "__me__", "__none__"]), z.string().uuid()]).optional(),
+  /** Legado */
   scope: z.enum(["me", "team"]).optional(),
 });
 
@@ -59,19 +68,21 @@ function DashboardPage() {
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
 
-  const periodDays: SalesDashboardPeriodDays = search.period ?? 30;
+  const { range } = resolveDashboardRange(search);
+  const fromIso = range.from.toISOString();
+  const toIso = range.to.toISOString();
   const pipelineId = search.pipeline ?? null;
   const leadPipelineId = search.leadPipeline ?? null;
   const channel: LeadChannel | null = search.channel ?? null;
-  const scope: SalesDashboardScope = search.scope ?? "me";
+  const assignee = resolveAssignee(search.assignee, search.scope);
 
   const userId = useCurrentUserId();
   const fetchDashboard = useServerFn(getSalesDashboard);
   const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
-    queryKey: ["sales-dashboard", periodDays, pipelineId, leadPipelineId, channel, scope],
+    queryKey: ["sales-dashboard", fromIso, toIso, pipelineId, leadPipelineId, channel, assignee],
     queryFn: async () => {
       const result = await fetchDashboard({
-        data: { periodDays, pipelineId, leadPipelineId, channel, scope },
+        data: { from: fromIso, to: toIso, pipelineId, leadPipelineId, channel, assignee },
       });
       if (!result) {
         throw new Error(
@@ -134,8 +145,18 @@ function DashboardPage() {
       {header}
 
       <DashboardFilters
-        periodDays={periodDays}
-        onPeriodChange={(v) => navigate({ search: (s) => ({ ...s, period: v }) })}
+        range={range}
+        onRangeChange={(r, key) =>
+          navigate({
+            search: (s) => ({
+              ...s,
+              period: undefined,
+              preset: key ?? "custom",
+              from: key ? undefined : toIsoDay(r.from),
+              to: key ? undefined : toIsoDay(r.to),
+            }),
+          })
+        }
         pipelines={data?.pipelines ?? []}
         pipelineId={pipelineId}
         onPipelineChange={(v) => navigate({ search: (s) => ({ ...s, pipeline: v ?? undefined }) })}
@@ -146,8 +167,10 @@ function DashboardPage() {
         }
         channel={channel}
         onChannelChange={(v) => navigate({ search: (s) => ({ ...s, channel: v ?? undefined }) })}
-        scope={data?.effectiveScope ?? scope}
-        onScopeChange={(v) => navigate({ search: (s) => ({ ...s, scope: v }) })}
+        assignee={data?.effectiveAssignee ?? assignee}
+        onAssigneeChange={(v) =>
+          navigate({ search: (s) => ({ ...s, scope: undefined, assignee: v }) })
+        }
         canViewTeam={data?.canViewTeam ?? false}
         disabled={loading}
       />
