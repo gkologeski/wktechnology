@@ -36,6 +36,10 @@ import {
   type SurveyResponseSummary,
 } from "@/components/surveys/survey-timeline-card";
 import { modernizeLegacyWhatsAppHtml } from "@/lib/whatsapp-paste";
+import {
+  ActivityAssociationsMenu,
+  type ActivityAssociationIds,
+} from "@/components/activity/activity-associations-menu";
 
 /** Atividades vindas de integrações não podem ser editadas na timeline. */
 function externalNotice(a: Activity): string | null {
@@ -103,13 +107,14 @@ export function ActivityTimelineItem({
   const when =
     (a as { activity_date?: string | null }).activity_date ?? a.hs_createdate ?? a.created_at;
   const contacted = (a as { contacted_contact_ids?: string[] | null }).contacted_contact_ids ?? [];
-  const assocCount = [
-    a.related_contact_id,
-    a.related_company_id,
-    a.related_deal_id,
-    a.related_lead_id,
-    (a as { related_ticket_id?: string | null }).related_ticket_id,
-  ].filter(Boolean).length;
+  const one = (v: string | null | undefined) => (v ? [v] : []);
+  const assocIds: ActivityAssociationIds = {
+    contacts: [...new Set([...one(a.related_contact_id), ...contacted])],
+    companies: one(a.related_company_id),
+    deals: one(a.related_deal_id),
+    leads: one(a.related_lead_id),
+    tickets: one((a as { related_ticket_id?: string | null }).related_ticket_id),
+  };
 
   return (
     <li className="relative pl-10" id={`activity-${a.id}`}>
@@ -234,9 +239,7 @@ export function ActivityTimelineItem({
                 <Pencil className="h-3 w-3 mr-1" /> Editar
               </Button>
             </div>
-            <span className="text-xs font-semibold text-foreground">
-              {assocCount} {assocCount === 1 ? "associação" : "associações"}
-            </span>
+            <ActivityAssociationsMenu activityId={a.id} ids={assocIds} />
           </div>
         )}
 
