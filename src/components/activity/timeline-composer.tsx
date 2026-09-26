@@ -36,6 +36,10 @@ export function TimelineComposer({
   onOpenFileCenter,
   onClose,
   onSave,
+  extras,
+  onExtrasChange,
+  associationsCount,
+  defaultContactId,
 }: {
   type: LogKind;
   label: string;
