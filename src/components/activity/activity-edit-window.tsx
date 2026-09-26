@@ -8,6 +8,8 @@ import { fetchTimelineTeam, uploadTimelineFiles } from "@/lib/timeline/activity-
 import { activityAttachments, updateActivity } from "@/lib/timeline/activity-mutations";
 import { maybeConvertWhatsAppPaste, type WhatsAppIdentity } from "@/lib/whatsapp-paste";
 import { useEffect } from "react";
+import { activityDraftKey, useActivityDraft } from "@/hooks/use-activity-draft";
+import { DraftBar } from "./activity-draft-bar";
 
 export function ActivityEditWindow({
   activity,
@@ -33,6 +35,24 @@ export function ActivityEditWindow({
   const [attachments, setAttachments] = useState<Attachment[]>(() => activityAttachments(activity));
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
+  const draft = useActivityDraft({
+    key: activityDraftKey(user?.id, ["edit", activity.id]),
+    value: { body, assigneeId, dueDate },
+    isEmpty: (v) =>
+      v.body === (activity.body ?? "") &&
+      v.dueDate === (activity.type === "task" ? activity.due_date : null),
+    onRestore: (v) => {
+      setBody(v.body ?? "");
+      setAssigneeId(v.assigneeId ?? null);
+      setDueDate(v.dueDate ?? null);
+    },
+  });
+  const discard = () => {
+    if (!window.confirm("Descartar este rascunho?")) return;
+    draft.clear();
+    setBody(activity.body ?? "");
+    setDueDate(activity.type === "task" ? activity.due_date : null);
+  };
   useEffect(() => {
     if (!user) return;
     let active = true;
@@ -62,6 +82,7 @@ export function ActivityEditWindow({
       }
       const res = await updateActivity(activity.id, patch);
       if (!res.ok) return toast.error(res.error);
+      draft.clear();
       window.dispatchEvent(new CustomEvent("activities:changed"));
       onSaved();
     } catch (error) {
@@ -71,25 +92,30 @@ export function ActivityEditWindow({
     }
   };
   return (
-    <div className="p-4" aria-busy={saving}>
-      <h2 className="font-semibold">Editar {activity.type === "task" ? "tarefa" : "atividade"}</h2>
-      <ActivityEditForm
-        activity={activity}
-        team={team}
-        body={body}
-        onBodyChange={setBody}
-        assigneeId={assigneeId}
-        onAssigneeChange={setAssigneeId}
-        dueDate={dueDate}
-        onDueDateChange={setDueDate}
-        attachments={attachments}
-        onAttachmentsChange={setAttachments}
-        newFiles={newFiles}
-        onNewFilesChange={setNewFiles}
-        onOpenFileCenter={() => toast.info("Use Anexar para escolher arquivos.")}
-        onSave={() => void save()}
-        onCancel={onCancel}
-      />
+    <div aria-busy={saving}>
+      <DraftBar savedAt={draft.savedAt} onDiscard={discard} />
+      <div className="p-4">
+        <h2 className="font-semibold">
+          Editar {activity.type === "task" ? "tarefa" : "atividade"}
+        </h2>
+        <ActivityEditForm
+          activity={activity}
+          team={team}
+          body={body}
+          onBodyChange={setBody}
+          assigneeId={assigneeId}
+          onAssigneeChange={setAssigneeId}
+          dueDate={dueDate}
+          onDueDateChange={setDueDate}
+          attachments={attachments}
+          onAttachmentsChange={setAttachments}
+          newFiles={newFiles}
+          onNewFilesChange={setNewFiles}
+          onOpenFileCenter={() => toast.info("Use Anexar para escolher arquivos.")}
+          onSave={() => void save()}
+          onCancel={onCancel}
+        />
+      </div>
     </div>
   );
 }

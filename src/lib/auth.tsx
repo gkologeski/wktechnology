@@ -39,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         loading,
         signOut: async () => {
+          (await import("@/hooks/use-activity-draft")).clearAllActivityDrafts();
           await supabase.auth.signOut();
         },
       }}

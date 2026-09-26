@@ -19,6 +19,8 @@ import { nowLocalInput, type ComposerExtrasState } from "./timeline-composer-ext
 import { TimelineComposer } from "./timeline-composer";
 import { LOG_LABEL, type Attachment, type LogKind, type TeamMember } from "./timeline-shared";
 import type { ActivityWindowRequest } from "./activity-window-context";
+import { activityDraftKey, useActivityDraft } from "@/hooks/use-activity-draft";
+import { DraftBar } from "./activity-draft-bar";
 
 function freshExtras(): ComposerExtrasState {
   return {
@@ -58,6 +60,30 @@ export function ActivityLogWindow({
   const [contactId, setContactId] = useState<string | undefined>();
   const [saving, setSaving] = useState(false);
   const notify = useServerFn(notifyActivityEvent);
+  const draft = useActivityDraft({
+    key: activityDraftKey(user?.id, ["log", type, relatedKey, relatedId]),
+    value: { subject, body, dueDate, remindBefore, assigneeId, extras },
+    isEmpty: (v) => !v.subject.trim() && !v.body.trim() && !v.dueDate,
+    onRestore: (v) => {
+      setSubject(v.subject ?? "");
+      setBody(v.body ?? "");
+      setDueDate(v.dueDate ?? "");
+      setRemindBefore(v.remindBefore ?? "0");
+      setAssigneeId(v.assigneeId ?? "");
+      if (v.extras) setExtras(v.extras);
+    },
+  });
+  const discard = () => {
+    if (!window.confirm("Descartar este rascunho?")) return;
+    draft.clear();
+    setSubject(request.subject ?? "");
+    setBody("");
+    setDueDate("");
+    setRemindBefore("0");
+    setAssigneeId("");
+    setPendingFiles([]);
+    setExtras(freshExtras());
+  };
   useEffect(() => {
     if (!relatedKey || !relatedId) return;
     let active = true;
@@ -147,6 +173,7 @@ export function ActivityLogWindow({
         if (fu.ok) toast.success("Tarefa de acompanhamento criada");
         else toast.error(`Atividade salva, mas a tarefa de acompanhamento falhou: ${fu.error}`);
       }
+      draft.clear();
       window.dispatchEvent(new CustomEvent("activities:changed"));
       onSaved();
     } catch (error) {
@@ -164,6 +191,7 @@ export function ActivityLogWindow({
         setPendingFiles((p) => [...p, ...Array.from(e.dataTransfer.files)]);
       }}
     >
+      <DraftBar savedAt={draft.savedAt} onDiscard={discard} />
       <TimelineComposer
         type={type}
         label={label}
