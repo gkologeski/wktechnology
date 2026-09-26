@@ -1,7 +1,5 @@
 // Tipos do painel inicial do TechSales (client-safe: sem imports de servidor).
 
-export type SalesDashboardPeriodDays = 7 | 30 | 90;
-export type SalesDashboardScope = "me" | "team";
 export type LeadChannel =
   | "prospecting"
   | "website"
@@ -14,14 +12,18 @@ export type LeadChannel =
   | "unknown";
 
 export interface SalesDashboardInput {
-  periodDays: SalesDashboardPeriodDays;
+  /** Início do período (ISO) */
+  from: string;
+  /** Fim do período (ISO) */
+  to: string;
   /** null = pipeline padrão do workspace */
   pipelineId: string | null;
   /** null = funil de Leads padrão do workspace */
   leadPipelineId: string | null;
   /** null = todos os canais agrupados */
   channel: LeadChannel | null;
-  scope: SalesDashboardScope;
+  /** "__all__" | "__me__" | "__none__" | uuid do responsável */
+  assignee: string;
 }
 
 export interface PipelineOption {
@@ -142,7 +144,8 @@ export interface SalesDashboardData {
   selectedPipelineId: string | null;
   selectedPipelineName: string | null;
   canViewTeam: boolean;
-  effectiveScope: SalesDashboardScope;
+  /** Responsável efetivamente aplicado (forçado ao próprio usuário sem permissão de equipe). */
+  effectiveAssignee: string;
   kpis: SalesDashboardKpis;
   leadJourney: LeadJourneyData;
   advancedDeals: DealListItem[];

@@ -19,7 +19,7 @@ import type {
   MeetingItem,
   SalesDashboardData,
   SalesDashboardInput,
-  SalesDashboardScope,
+  
   TaskItem,
 } from "./sales-dashboard.types";
 
@@ -84,9 +84,11 @@ export async function loadSalesDashboard(
   const d30 = new Date(today.getTime() - 30 * DAY_MS);
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-  const periodStart = new Date(today.getTime() - (input.periodDays - 1) * DAY_MS);
-  const prevPeriodStart = new Date(periodStart.getTime() - input.periodDays * DAY_MS);
+  const periodStart = new Date(input.from);
+  const periodEnd = new Date(input.to);
+  const periodLen = periodEnd.getTime() - periodStart.getTime();
   const prevPeriodEnd = new Date(periodStart.getTime() - 1);
+  const prevPeriodStart = new Date(prevPeriodEnd.getTime() - periodLen);
 
   // Escopo "equipe" exige permissão granular de visualização além do próprio usuário.
   const permsRes = await supabase
@@ -97,7 +99,9 @@ export async function loadSalesDashboard(
     );
   const perms: string[] = Array.isArray(permsRes.data) ? (permsRes.data as string[]) : [];
   const canViewTeam = perms.some((p) => /^techsales\.dashboard\.view\.(team|workspace)$/.test(p));
-  const effectiveScope: SalesDashboardScope = input.scope === "team" && canViewTeam ? "team" : "me";
+  // Sem permissão de equipe, o servidor força o próprio usuário.
+  const requested = input.assignee === "__me__" ? userId : input.assignee;
+  const effectiveAssignee: string = canViewTeam ? requested : userId;
 
   // 1) Pipelines de negócio (para o filtro e metadados de etapa)
   const pipesRes = await supabase
@@ -133,8 +137,14 @@ export async function loadSalesDashboard(
   const leadStages = selectedLeadPipeline?.stages ?? [];
 
   // Filtro de responsável quando o escopo é "me"
-  const mine = <T extends { eq: (c: string, v: string) => T }>(q: T): T =>
-    effectiveScope === "me" ? q.eq("owner_id", userId) : q;
+  const mine = <T extends { eq: (c: string, v: string) => T; is: (c: string, v: null) => T }>(
+    q: T,
+  ): T =>
+    effectiveAssignee === "__all__"
+      ? q
+      : effectiveAssignee === "__none__"
+        ? q.is("owner_id", null)
+        : q.eq("owner_id", effectiveAssignee);
 
   // 2) Negócios do pipeline selecionado
   let dealsQ = supabase
@@ -164,7 +174,7 @@ export async function loadSalesDashboard(
     .eq("workspace_id", workspaceId)
     .is("deleted_at", null)
     .gte("created_at", periodStart.toISOString())
-    .lte("created_at", now.toISOString())
+    .lte("created_at", periodEnd.toISOString())
     .limit(10000);
   if (selectedLeadPipeline)
     journeyLeadsQ = journeyLeadsQ.eq("pipeline_id", selectedLeadPipeline.id);
@@ -278,10 +288,10 @@ export async function loadSalesDashboard(
   };
 
   const wonPeriod = closed.filter(
-    (d) => isWon(d, stages) && inRange(d.closed_at, periodStart, now),
+    (d) => isWon(d, stages) && inRange(d.closed_at, periodStart, periodEnd),
   );
   const lostPeriod = closed.filter(
-    (d) => !isWon(d, stages) && inRange(d.closed_at, periodStart, now),
+    (d) => !isWon(d, stages) && inRange(d.closed_at, periodStart, periodEnd),
   );
   const wonPrev = closed.filter(
     (d) => isWon(d, stages) && inRange(d.closed_at, prevPeriodStart, prevPeriodEnd),
@@ -606,7 +616,7 @@ export async function loadSalesDashboard(
     selectedPipelineId: selected?.id ?? null,
     selectedPipelineName: selected?.name ?? null,
     canViewTeam,
-    effectiveScope,
+    effectiveAssignee: effectiveAssignee === userId ? "__me__" : effectiveAssignee,
     kpis: {
       pipelineValue: sum(openDeals),
       openDeals: openDeals.length,
