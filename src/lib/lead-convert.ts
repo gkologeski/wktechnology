@@ -82,6 +82,8 @@ export async function convertLead(lead: Lead, ownerId: string): Promise<ConvertR
       stage: "qualified",
       company_id: companyId,
       primary_contact_id: contact?.id,
+      lead_id: lead.id,
+      source: lead.source ?? null,
     })
     .select("id")
     .single();
@@ -109,8 +111,8 @@ export async function convertLead(lead: Lead, ownerId: string): Promise<ConvertR
 
   return {
     companyId,
-    contactId: contact!.id,
-    dealId: deal!.id,
+    contactId: contact.id,
+    dealId: deal.id,
     reusedCompany,
   };
 }

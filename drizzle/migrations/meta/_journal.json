@@ -169,6 +169,13 @@
       "when": 1790205147135,
       "tag": "0023_entity_field_catalog_sample_rows",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1790381943478,
+      "tag": "0024_preserve_lead_attribution_on_deals",
+      "breakpoints": true
     }
   ]
 }

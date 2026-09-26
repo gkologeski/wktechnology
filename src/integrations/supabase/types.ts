@@ -6684,6 +6684,7 @@ export type Database = {
           hs_raw: Json | null
           hubspot_owner_id: string | null
           id: string
+          lead_id: string | null
           lost_at: string | null
           name: string
           notes: string | null
@@ -6691,6 +6692,7 @@ export type Database = {
           owner_id: string
           pipeline_id: string | null
           primary_contact_id: string | null
+          source: string | null
           stage: Database["public"]["Enums"]["deal_stage"]
           stage_id: string | null
           stage_substatus_id: string | null
@@ -6721,6 +6723,7 @@ export type Database = {
           hs_raw?: Json | null
           hubspot_owner_id?: string | null
           id?: string
+          lead_id?: string | null
           lost_at?: string | null
           name: string
           notes?: string | null
@@ -6728,6 +6731,7 @@ export type Database = {
           owner_id: string
           pipeline_id?: string | null
           primary_contact_id?: string | null
+          source?: string | null
           stage?: Database["public"]["Enums"]["deal_stage"]
           stage_id?: string | null
           stage_substatus_id?: string | null
@@ -6758,6 +6762,7 @@ export type Database = {
           hs_raw?: Json | null
           hubspot_owner_id?: string | null
           id?: string
+          lead_id?: string | null
           lost_at?: string | null
           name?: string
           notes?: string | null
@@ -6765,6 +6770,7 @@ export type Database = {
           owner_id?: string
           pipeline_id?: string | null
           primary_contact_id?: string | null
+          source?: string | null
           stage?: Database["public"]["Enums"]["deal_stage"]
           stage_id?: string | null
           stage_substatus_id?: string | null
@@ -6778,6 +6784,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
             referencedColumns: ["id"]
           },
           {
