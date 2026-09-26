@@ -1,12 +1,9 @@
 import { createContext, useContext, type ReactNode } from "react";
 import type { BarAction, RelatedKey } from "./timeline-shared";
 
-export type ActivityWindowRequest = {
-  action: BarAction;
-  relatedKey: RelatedKey;
-  relatedId: string;
-  subject?: string;
-};
+export type ActivityWindowRequest =
+  | { action: BarAction; relatedKey: RelatedKey; relatedId: string; subject?: string }
+  | { action: BarAction; relatedKey?: never; relatedId?: never; subject?: string; to?: string; threadId?: string };
 
 export type WindowChrome = {
   id: string;

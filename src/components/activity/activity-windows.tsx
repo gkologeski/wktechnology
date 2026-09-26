@@ -14,6 +14,8 @@ import {
 import { ActivityWindowFrame } from "./activity-window-frame";
 import { ActivityLogWindow } from "./activity-log-window";
 import { TimelineActionDialogs } from "./timeline-action-dialogs";
+import { QuickCreateTaskDialog } from "@/components/record/quick-create-dialogs";
+import { SendEmailDialog } from "@/components/email/send-email-dialog";
 
 interface WindowEntry {
   id: string;
@@ -52,7 +54,8 @@ export function ActivityWindows({ children }: { children: React.ReactNode }) {
             w.request.action.kind === request.action.kind &&
             w.request.action.value === request.action.value &&
             w.request.relatedKey === request.relatedKey &&
-            w.request.relatedId === request.relatedId,
+            w.request.relatedId === request.relatedId &&
+            w.request.threadId === request.threadId,
         );
         if (match)
           return [...previous.filter((w) => w.id !== match.id), { ...match, minimized: false }];
@@ -113,13 +116,17 @@ export function ActivityWindows({ children }: { children: React.ReactNode }) {
           return (
             <WindowChromeContext.Provider key={w.id} value={chrome}>
               <div className={w.minimized || chrome.position > 1 ? "hidden" : "contents"}>
-                {w.request.action.kind === "log" ? (
+                {!w.request.relatedKey && w.request.action.kind === "log" && w.request.action.value === "task" ? (
+                  <QuickCreateTaskDialog open onOpenChange={(value) => { if (!value) chrome.onClose(); }} />
+                ) : !w.request.relatedKey && w.request.action.kind === "create" && w.request.action.value === "email" ? (
+                  <SendEmailDialog open onOpenChange={(value) => { if (!value) chrome.onClose(); }} defaultTo={w.request.to} threadId={w.request.threadId} />
+                ) : w.request.relatedKey && w.request.action.kind === "log" ? (
                   <ActivityWindowFrame>
                     <ActivityLogWindow request={w.request} onSaved={() => close(w.id)} />
                   </ActivityWindowFrame>
-                ) : (
+                ) : w.request.relatedKey ? (
                   <ActivityActionWindow request={w.request} onClose={() => close(w.id)} />
-                )}
+                ) : null}
               </div>
             </WindowChromeContext.Provider>
           );
@@ -155,15 +162,18 @@ function ActivityActionWindow({
   onClose: () => void;
 }) {
   const [target, setTarget] = useState<Awaited<ReturnType<typeof fetchTimelineTarget>>>(null);
+  const relatedKey = request.relatedKey;
+  const relatedId = request.relatedId;
   useEffect(() => {
+    if (!relatedKey || !relatedId) return;
     let active = true;
-    void fetchTimelineTarget(request.relatedKey, request.relatedId).then((value) => {
+    void fetchTimelineTarget(relatedKey, relatedId).then((value) => {
       if (active) setTarget(value);
     });
     return () => {
       active = false;
     };
-  }, [request.relatedKey, request.relatedId]);
+  }, [relatedKey, relatedId]);
   const action = request.action.kind === "create" ? request.action.value : null;
   useEffect(() => {
     if ((action === "call" || action === "whatsapp") && target && !target.phone) {
@@ -173,12 +183,13 @@ function ActivityActionWindow({
     // Only act on a completed target lookup, not on the changing close callback.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [action, target]);
+  if (!relatedKey || !relatedId) return null;
   return (
     <TimelineActionDialogs
       openAction={action}
       onClose={onClose}
-      relatedKey={request.relatedKey}
-      relatedId={request.relatedId}
+      relatedKey={relatedKey}
+      relatedId={relatedId}
       target={target ?? {}}
       dialerMounted={action === "call"}
       onRefresh={() => window.dispatchEvent(new CustomEvent("activities:changed"))}

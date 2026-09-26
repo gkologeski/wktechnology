@@ -40,6 +40,8 @@ export function ActivityLogWindow({
   onSaved: () => void;
 }) {
   const { user } = useAuth();
+  const relatedKey = request.relatedKey;
+  const relatedId = request.relatedId;
   const type: LogKind = request.action.kind === "log" ? request.action.value : "note";
   const label = LOG_LABEL[type] ?? "Atividade";
   const [subject, setSubject] = useState(request.subject ?? "");
@@ -57,17 +59,18 @@ export function ActivityLogWindow({
   const [saving, setSaving] = useState(false);
   const notify = useServerFn(notifyActivityEvent);
   useEffect(() => {
+    if (!relatedKey || !relatedId) return;
     let active = true;
-    void resolveTimelineAutoLinks(request.relatedKey, request.relatedId).then((links) => {
+    void resolveTimelineAutoLinks(relatedKey, relatedId).then((links) => {
       if (active) setAutoLinkCount(Object.values(links ?? {}).filter(Boolean).length || 1);
     });
-    void fetchTimelineTarget(request.relatedKey, request.relatedId).then((target) => {
+    void fetchTimelineTarget(relatedKey, relatedId).then((target) => {
       if (active) setContactId(target?.contactId);
     });
     return () => {
       active = false;
     };
-  }, [request.relatedKey, request.relatedId]);
+  }, [relatedKey, relatedId]);
   useEffect(() => {
     if (!user) return;
     let active = true;
@@ -82,7 +85,7 @@ export function ActivityLogWindow({
     };
   }, [user]);
   const save = async () => {
-    if (!user || saving) return;
+    if (!user || saving || !relatedKey || !relatedId) return;
     if (!body.trim() && !subject.trim() && !pendingFiles.length)
       return toast.error("Adicione um assunto, texto ou anexo.");
     if (type === "task" && extras.recurrence && !dueDate)
@@ -92,7 +95,7 @@ export function ActivityLogWindow({
       const attachments: Attachment[] = pendingFiles.length
         ? await uploadTimelineFiles(user.id, pendingFiles)
         : [];
-      const autoLinks = await resolveTimelineAutoLinks(request.relatedKey, request.relatedId);
+      const autoLinks = await resolveTimelineAutoLinks(relatedKey, relatedId);
       const waHtml = body ? maybeConvertWhatsAppPaste(body, identity) : null;
       const isTask = type === "task";
       const schedulable = isTask || type === "call" || type === "meeting";
