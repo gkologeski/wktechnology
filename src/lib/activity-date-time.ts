@@ -40,6 +40,15 @@ export function combineActivityDateTime(date: string, time: string): string {
   return date ? `${date}T${time || "08:00"}` : "";
 }
 
+export function roundActivityTime(date: Date, direction: "nearest" | "next" = "nearest"): Date {
+  const rounded = new Date(date);
+  const minutes = rounded.getMinutes();
+  const nextMinutes =
+    direction === "next" ? Math.ceil(minutes / 15) * 15 : Math.round(minutes / 15) * 15;
+  rounded.setMinutes(nextMinutes, 0, 0);
+  return rounded;
+}
+
 export function formatActivityDateLabel(value: string | null | undefined): string {
   const local = toLocalDateTimeValue(value);
   if (!local) return "Selecionar data";

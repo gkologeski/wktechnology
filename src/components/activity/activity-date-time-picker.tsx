@@ -60,7 +60,7 @@ export function ActivityDateTimePicker({
   };
 
   return (
-    <div className={cn("flex min-w-0 items-center gap-1.5", className)}>
+    <div className={cn("flex min-w-0 flex-col items-stretch gap-1.5 min-[420px]:flex-row min-[420px]:items-center", className)}>
       <Popover open={dateOpen} onOpenChange={setDateOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -130,7 +130,7 @@ export function ActivityDateTimePicker({
               variant="outline"
               disabled={disabled}
               aria-label={`${ariaLabel}: hora`}
-              className="h-9 w-[7.25rem] shrink-0 justify-start gap-2 px-3 font-normal"
+              className="h-9 w-full shrink-0 justify-start gap-2 px-3 font-normal min-[420px]:w-[7.25rem]"
             >
               <Clock3 className="h-4 w-4 shrink-0" aria-hidden />
               {timePart}
