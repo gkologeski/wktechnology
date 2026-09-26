@@ -16,6 +16,7 @@ import { ActivityLogWindow } from "./activity-log-window";
 import { TimelineActionDialogs } from "./timeline-action-dialogs";
 import { QuickCreateTaskDialog } from "@/components/record/quick-create-dialogs";
 import { SendEmailDialog } from "@/components/email/send-email-dialog";
+import { BulkCreateActivityDialog } from "@/components/bulk-create-activity-dialog";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface WindowEntry {
@@ -51,14 +52,14 @@ export function ActivityWindows({ children }: { children: React.ReactNode }) {
       if (!currentIdentity) return;
       if (request.action.kind === "create" && request.action.disabled) return;
       setWindows((previous) => {
-        const match = previous.find(
+        const match = request.relatedId || request.threadId ? previous.find(
           (w) =>
             w.request.action.kind === request.action.kind &&
             w.request.action.value === request.action.value &&
             w.request.relatedKey === request.relatedKey &&
             w.request.relatedId === request.relatedId &&
             w.request.threadId === request.threadId,
-        );
+        ) : undefined;
         if (match)
           return [...previous.filter((w) => w.id !== match.id), { ...match, minimized: false }];
         return [
@@ -118,7 +119,9 @@ export function ActivityWindows({ children }: { children: React.ReactNode }) {
           return (
             <WindowChromeContext.Provider key={w.id} value={chrome}>
               <div className={w.minimized || chrome.position > 1 ? "hidden" : "contents"}>
-                {!w.request.relatedKey &&
+                {w.request.bulk ? (
+                  <BulkCreateActivityDialog open setOpen={(value) => { if (!value) close(w.id); }} ids={w.request.bulk.ids} entity={w.request.bulk.entity} onDone={w.request.bulk.onDone} />
+                ) : !w.request.relatedKey &&
                 w.request.action.kind === "log" &&
                 w.request.action.value === "task" ? (
                   <QuickCreateTaskDialog
@@ -137,7 +140,14 @@ export function ActivityWindows({ children }: { children: React.ReactNode }) {
                       if (!value) close(w.id);
                     }}
                     defaultTo={w.request.to}
+                    defaultSubject={w.request.subject}
+                    defaultBody={w.request.body}
                     threadId={w.request.threadId}
+                    contactId={w.request.contactId}
+                    leadId={w.request.leadId}
+                    dealId={w.request.dealId}
+                    companyId={w.request.companyId}
+                    contactName={w.request.contactName}
                   />
                 ) : w.request.relatedKey && w.request.action.kind === "log" ? (
                   <ActivityWindowFrame>

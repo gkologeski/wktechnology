@@ -8,6 +8,13 @@ export type ActivityWindowRequest = {
   subject?: string;
   to?: string;
   threadId?: string;
+  body?: string;
+  contactId?: string;
+  leadId?: string;
+  dealId?: string;
+  companyId?: string;
+  contactName?: string;
+  bulk?: { ids: string[]; entity: "leads" | "contacts" | "deals" | "companies"; onDone?: () => void };
 };
 
 export type WindowChrome = {
