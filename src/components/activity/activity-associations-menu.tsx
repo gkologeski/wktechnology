@@ -27,11 +27,20 @@ const GROUPS: { kind: Kind; title: string; to: string }[] = [
   { kind: "tickets", title: "Tickets", to: "/tickets/$id" },
 ];
 
-const personName = (r: { first_name?: string | null; last_name?: string | null; email?: string | null }) =>
-  [r.first_name, r.last_name].filter(Boolean).join(" ").trim() || r.email || "Sem nome";
+const personName = (r: {
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+}) => [r.first_name, r.last_name].filter(Boolean).join(" ").trim() || r.email || "Sem nome";
 
 async function fetchNames(ids: ActivityAssociationIds): Promise<Record<Kind, Item[]>> {
-  const out: Record<Kind, Item[]> = { contacts: [], companies: [], deals: [], leads: [], tickets: [] };
+  const out: Record<Kind, Item[]> = {
+    contacts: [],
+    companies: [],
+    deals: [],
+    leads: [],
+    tickets: [],
+  };
   const jobs: Promise<void>[] = [];
   if (ids.contacts.length)
     jobs.push(
@@ -58,7 +67,10 @@ async function fetchNames(ids: ActivityAssociationIds): Promise<Record<Kind, Ite
   if (ids.companies.length)
     jobs.push(
       (async () => {
-        const { data, error } = await supabase.from("companies").select("id, name").in("id", ids.companies);
+        const { data, error } = await supabase
+          .from("companies")
+          .select("id, name")
+          .in("id", ids.companies);
         if (error) throw error;
         out.companies = (data ?? []).map((r) => ({ id: r.id, label: r.name || "Sem nome" }));
       })(),
@@ -74,7 +86,10 @@ async function fetchNames(ids: ActivityAssociationIds): Promise<Record<Kind, Ite
   if (ids.tickets.length)
     jobs.push(
       (async () => {
-        const { data, error } = await supabase.from("tickets").select("id, subject").in("id", ids.tickets);
+        const { data, error } = await supabase
+          .from("tickets")
+          .select("id, subject")
+          .in("id", ids.tickets);
         if (error) throw error;
         out.tickets = (data ?? []).map((r) => ({ id: r.id, label: r.subject || "Sem assunto" }));
       })(),
@@ -116,7 +131,10 @@ export function ActivityAssociationsMenu({
         {count === 0 ? (
           <p className="px-2 py-3 text-sm text-muted-foreground">Sem associações.</p>
         ) : q.isLoading ? (
-          <div className="flex items-center gap-2 px-2 py-3 text-sm text-muted-foreground" aria-live="polite">
+          <div
+            className="flex items-center gap-2 px-2 py-3 text-sm text-muted-foreground"
+            aria-live="polite"
+          >
             <Loader2 className="h-4 w-4 animate-spin" /> Carregando…
           </div>
         ) : q.isError ? (
