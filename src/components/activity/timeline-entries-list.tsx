@@ -41,6 +41,8 @@ export function TimelineEntriesList({
   onSummarizeMeeting,
   signRecording,
   editing,
+  onPatch,
+  onFollowUp,
 }: {
   loading: boolean;
   entries: TimelineEntry[];
@@ -56,6 +58,8 @@ export function TimelineEntriesList({
   onSummarizeMeeting: (id: string) => void;
   signRecording: (path: string) => Promise<string>;
   editing: TimelineEditingState;
+  onPatch: (a: Activity, patch: Record<string, unknown>) => void;
+  onFollowUp: (a: Activity) => void;
 }) {
   if (loading) return <div className="text-sm text-muted-foreground">Carregando...</div>;
   if (entries.length === 0) {
@@ -92,6 +96,8 @@ export function TimelineEntriesList({
             onRemove={onRemove}
             onSummarizeMeeting={onSummarizeMeeting}
             signRecording={signRecording}
+            onPatch={onPatch}
+            onFollowUp={onFollowUp}
             editForm={
               <ActivityEditForm
                 activity={a}

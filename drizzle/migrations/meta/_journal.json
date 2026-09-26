@@ -176,6 +176,13 @@
       "when": 1790381943478,
       "tag": "0024_preserve_lead_attribution_on_deals",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1790388517532,
+      "tag": "0025_activities_hubspot_fields",
+      "breakpoints": true
     }
   ]
 }
