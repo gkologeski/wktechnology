@@ -1,7 +1,8 @@
 // Painel lateral de escolha de ação do workflow builder.
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Sparkles, X } from "lucide-react";
+import { Sparkles, X, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import {
   ACTION_CATEGORIES,
   ACTION_LABELS,
@@ -23,6 +24,8 @@ export function ActionLibraryPanel({
 }) {
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
   const [expandedEntity, setExpandedEntity] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const query = search.trim().toLocaleLowerCase("pt-BR");
 
   return (
     <div className="space-y-4">
@@ -32,13 +35,14 @@ export function ActionLibraryPanel({
           <X className="h-4 w-4" />
         </Button>
       </div>
-      {ACTION_CATEGORIES.map((cat) => (
+      <div className="relative"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" aria-hidden="true" /><Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Pesquisar ação..." aria-label="Pesquisar ação" className="pl-9" /></div>
+      {ACTION_CATEGORIES.filter((cat) => !query || cat.label.toLocaleLowerCase("pt-BR").includes(query) || cat.actions.some((t) => ACTION_LABELS[t].toLocaleLowerCase("pt-BR").includes(query))).map((cat) => (
         <div key={cat.label}>
           <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold mb-2">
             {cat.label}
           </p>
           <div className="space-y-1">
-            {cat.actions.map((t) => {
+            {cat.actions.filter((t) => !query || cat.label.toLocaleLowerCase("pt-BR").includes(query) || ACTION_LABELS[t].toLocaleLowerCase("pt-BR").includes(query)).map((t) => {
               const Icon = ACTION_ICONS[t] ?? Sparkles;
               return (
                 <button
