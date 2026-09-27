@@ -8,7 +8,7 @@ import { createContext, forwardRef, useContext, useImperativeHandle, useRef } fr
 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { TokenPills } from "@/components/ui/token-pills";
+import { VariablePicker } from "./variable-picker";
 import { WORKFLOW_TOKENS, type MessageToken } from "@/lib/message-tokens-catalog";
 import { insertAtCursor } from "@/lib/token-insert";
 import { cn } from "@/lib/utils";
@@ -93,9 +93,10 @@ export const TokenInput = forwardRef<
         {...rest}
       />
       {!hidePills && (
-        <TokenPills
+        <VariablePicker
           tokens={list}
           label={pickerLabel}
+          value={value ?? ""}
           onInsert={(t) => insertAtCursor(inner.current, value ?? "", t, onValueChange)}
         />
       )}
@@ -134,9 +135,10 @@ export const TokenTextarea = forwardRef<
         {...rest}
       />
       {!hidePills && (
-        <TokenPills
+        <VariablePicker
           tokens={list}
           label={pickerLabel}
+          value={value ?? ""}
           onInsert={(t) => insertAtCursor(inner.current, value ?? "", t, onValueChange)}
         />
       )}

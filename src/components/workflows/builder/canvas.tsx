@@ -11,6 +11,7 @@ import {
   Filter,
   GitBranch,
   GripVertical,
+  MoreHorizontal,
   Plus,
   Repeat,
   Sparkles,
@@ -36,6 +37,13 @@ import {
   type StepPath,
 } from "./step-tree";
 import { useReferenceLabels } from "../use-reference-labels";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 // ============================================================================
 // Canvas primitives
@@ -303,7 +311,65 @@ function DragHandle({
 
 function StepCardDescription({ action }: { action: WorkflowAction }) {
   const labels = useReferenceLabels();
-  return <p className="text-xs text-muted-foreground truncate">{describeAction(action, labels)}</p>;
+  const description = describeAction(action, labels)
+    .replace(
+      /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi,
+      "registro selecionado",
+    )
+    .replace(/\{\{[^}]+\}\}/g, "valor dinâmico");
+  return <p className="text-xs text-muted-foreground truncate">{description}</p>;
+}
+
+function StepActions({
+  onMoveUp,
+  onMoveDown,
+  onRemove,
+  canMoveUp,
+  canMoveDown,
+}: {
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onRemove: () => void;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0"
+          aria-label="Opções do passo"
+        >
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="pointer-events-auto z-[180]">
+        <DropdownMenuItem disabled={!canMoveUp} onSelect={onMoveUp}>
+          <ArrowUp className="h-4 w-4" /> Mover para cima
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled={!canMoveDown} onSelect={onMoveDown}>
+          <ArrowDown className="h-4 w-4" /> Mover para baixo
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          className="text-destructive"
+          onSelect={() => {
+            void confirmDialog({
+              title: "Remover passo?",
+              description: "Este passo e suas configurações serão removidos do rascunho.",
+              confirmLabel: "Remover passo",
+              variant: "destructive",
+            }).then((ok) => {
+              if (ok) onRemove();
+            });
+          }}
+        >
+          <Trash2 className="h-4 w-4" /> Remover passo
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }
 
 function StepCard({
@@ -370,36 +436,14 @@ function StepCard({
           </div>
         </button>
       </div>
-      <div className="absolute top-1 right-1 flex items-center opacity-0 group-hover:opacity-100 focus-within:opacity-100">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onClick={() => onMove(stepPath, -1)}
-          disabled={!canMoveUp}
-          aria-label="Mover passo para cima"
-        >
-          <ArrowUp className="h-3.5 w-3.5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onClick={() => onMove(stepPath, 1)}
-          disabled={!canMoveDown}
-          aria-label="Mover passo para baixo"
-        >
-          <ArrowDown className="h-3.5 w-3.5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onClick={onRemove}
-          aria-label="Remover passo"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+      <div className="absolute top-1 right-1">
+        <StepActions
+          onMoveUp={() => onMove(stepPath, -1)}
+          onMoveDown={() => onMove(stepPath, 1)}
+          onRemove={onRemove}
+          canMoveUp={canMoveUp}
+          canMoveDown={canMoveDown}
+        />
       </div>
     </div>
   );
@@ -464,7 +508,7 @@ function BranchCard({
           aria-pressed={selected}
           className="flex-1 min-w-0 text-left flex items-center gap-3"
         >
-          <div className="h-8 w-8 rounded-md bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
+          <div className="h-8 w-8 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
             <GitBranch className="h-4 w-4" />
           </div>
           <div className="flex-1 min-w-0">
@@ -475,48 +519,15 @@ function BranchCard({
             <p className="text-xs text-muted-foreground">{conditionsSummary(action.filters)}</p>
           </div>
         </button>
-        <div className="flex items-center opacity-0 group-hover:opacity-100 focus-within:opacity-100">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={(e) => {
-              e.stopPropagation();
-              onMove(stepPath, -1);
-            }}
-            disabled={!canMoveUp}
-            aria-label="Mover ramificação para cima"
-          >
-            <ArrowUp className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={(e) => {
-              e.stopPropagation();
-              onMove(stepPath, 1);
-            }}
-            disabled={!canMoveDown}
-            aria-label="Mover ramificação para baixo"
-          >
-            <ArrowDown className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={(e) => {
-              e.stopPropagation();
-              onRemove();
-            }}
-            aria-label="Remover ramificação"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
+        <StepActions
+          onMoveUp={() => onMove(stepPath, -1)}
+          onMoveDown={() => onMove(stepPath, 1)}
+          onRemove={onRemove}
+          canMoveUp={canMoveUp}
+          canMoveDown={canMoveDown}
+        />
       </div>
-      <div className="grid grid-cols-2 gap-3 p-3 pt-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 pt-0">
         {(["then", "else"] as const).map((branch) => (
           <BranchColumn
             key={branch}
@@ -578,6 +589,9 @@ function BranchColumn({
         <div className="min-w-0">
           <p className="text-[11px] uppercase tracking-wide font-semibold truncate" title={title}>
             {title}
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            {actions.length} {actions.length === 1 ? "ação" : "ações"}
           </p>
           {subtitle && (
             <p className="text-[11px] text-muted-foreground truncate" title={subtitle}>
@@ -644,33 +658,14 @@ function BranchColumn({
                     </div>
                   </button>
                 </div>
-                <div className="absolute top-0.5 right-0.5 flex items-center opacity-0 group-hover/step:opacity-100 focus-within:opacity-100">
-                  <button
-                    type="button"
-                    onClick={() => onMove(childPath, -1)}
-                    disabled={ci === 0}
-                    className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:pointer-events-none"
-                    aria-label="Mover para cima"
-                  >
-                    <ArrowUp className="h-3 w-3" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onMove(childPath, 1)}
-                    disabled={ci === actions.length - 1}
-                    className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:pointer-events-none"
-                    aria-label="Mover para baixo"
-                  >
-                    <ArrowDown className="h-3 w-3" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onRemovePath(childPath)}
-                    className="p-0.5 text-muted-foreground hover:text-destructive"
-                    aria-label="Remover"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
+                <div className="absolute top-0.5 right-0.5">
+                  <StepActions
+                    onMoveUp={() => onMove(childPath, -1)}
+                    onMoveDown={() => onMove(childPath, 1)}
+                    onRemove={() => onRemovePath(childPath)}
+                    canMoveUp={ci > 0}
+                    canMoveDown={ci < actions.length - 1}
+                  />
                 </div>
               </div>
               <DropSlot
@@ -682,18 +677,20 @@ function BranchColumn({
             </div>
           );
         })}
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           onClick={() => onAddAt(parentPath)}
           className={cn(
-            "w-full rounded border border-dashed text-xs py-1.5 text-muted-foreground hover:text-primary hover:border-primary",
+            "w-full border-dashed text-xs text-muted-foreground hover:text-primary hover:border-primary",
             library && JSON.stringify(library.parentPath) === JSON.stringify(parentPath)
               ? "border-primary text-primary"
               : "",
           )}
         >
-          + Adicionar
-        </button>
+          <Plus className="mr-1 h-3 w-3" /> Adicionar passo
+        </Button>
       </div>
     </div>
   );
@@ -797,7 +794,7 @@ function SwitchCard({
             </p>
           </div>
         </button>
-        <div className="flex items-center opacity-0 group-hover:opacity-100 focus-within:opacity-100">
+        <div className="flex items-center">
           <Button
             variant="ghost"
             size="sm"
@@ -807,55 +804,24 @@ function SwitchCard({
               addCase();
             }}
           >
-            <Plus className="h-3.5 w-3.5 mr-1" /> Case
+            <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar ramo
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={(e) => {
-              e.stopPropagation();
-              onMove(stepPath, -1);
-            }}
-            disabled={!canMoveUp}
-            aria-label="Mover ramificação para cima"
-          >
-            <ArrowUp className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={(e) => {
-              e.stopPropagation();
-              onMove(stepPath, 1);
-            }}
-            disabled={!canMoveDown}
-            aria-label="Mover ramificação para baixo"
-          >
-            <ArrowDown className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={(e) => {
-              e.stopPropagation();
-              onRemove();
-            }}
-            aria-label="Remover ramificação"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <StepActions
+            onMoveUp={() => onMove(stepPath, -1)}
+            onMoveDown={() => onMove(stepPath, 1)}
+            onRemove={onRemove}
+            canMoveUp={canMoveUp}
+            canMoveDown={canMoveDown}
+          />
         </div>
       </div>
-      <div className="p-3 pt-0 overflow-x-auto">
-        <div className="flex gap-3 min-w-max items-start">
+      <div className="p-3 pt-0">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4 items-start">
           {cases.map((c, ci) => {
             const valueText = valueLabel(c.value);
 
             return (
-              <div key={ci} className="w-64 shrink-0">
+              <div key={ci} className="min-w-0">
                 <BranchColumn
                   title={c.label?.trim() ? c.label : valueText}
                   subtitle={c.label?.trim() ? valueText : undefined}
@@ -872,20 +838,30 @@ function SwitchCard({
                   onDropAt={onDropAt}
                   onMove={onMove}
                   headerExtra={
-                    <button
-                      type="button"
-                      onClick={() => removeCase(ci)}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => {
+                        void confirmDialog({
+                          title: "Remover ramo?",
+                          description: "O ramo e todas as ações nele serão removidos do rascunho.",
+                          confirmLabel: "Remover ramo",
+                          variant: "destructive",
+                        }).then((ok) => {
+                          if (ok) removeCase(ci);
+                        });
+                      }}
                       aria-label="Remover case"
-                      className="p-0.5 text-muted-foreground hover:text-destructive shrink-0"
                     >
                       <X className="h-3.5 w-3.5" />
-                    </button>
+                    </Button>
                   }
                 />
               </div>
             );
           })}
-          <div className="w-64 shrink-0">
+          <div className="min-w-0">
             <BranchColumn
               title="Padrão"
               subtitle="Quando nenhum valor bate"
@@ -913,18 +889,20 @@ export function Connector({ onAdd, active }: { onAdd: () => void; active?: boole
   return (
     <div className="flex flex-col items-center py-1">
       <div className="w-px h-3 bg-border" />
-      <button
+      <Button
         type="button"
+        variant="outline"
+        size="sm"
         onClick={onAdd}
-        aria-label="Adicionar ação"
+        aria-label="Adicionar passo"
         className={cn(
-          "h-6 w-6 rounded-full border bg-background flex items-center justify-center text-muted-foreground",
+          "h-7 gap-1 border-dashed bg-background text-xs text-muted-foreground",
           "hover:border-primary hover:text-primary transition",
           active && "border-primary text-primary ring-2 ring-primary/20",
         )}
       >
-        <Plus className="h-3.5 w-3.5" />
-      </button>
+        <Plus className="h-3.5 w-3.5" /> Adicionar passo
+      </Button>
       <div className="w-px h-3 bg-border" />
     </div>
   );
