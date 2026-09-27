@@ -100,13 +100,39 @@ export function GenericRecordForm({ action, onChange, triggerEntity }: Props) {
             <section aria-label="Resumo da ação" className="border-b pb-3 text-sm">
               <div className="flex items-center justify-between gap-2">
                 <div>
-                  <p className="text-xs font-semibold text-muted-foreground">CRIAR {tableLabel(action.table).toLocaleUpperCase("pt-BR")}</p>
-                  <p className="text-muted-foreground">{Object.values(values).filter((value) => value !== null && value !== undefined && value !== "").length} campos configurados</p>
+                  <p className="text-xs font-semibold text-muted-foreground">
+                    CRIAR {tableLabel(action.table).toLocaleUpperCase("pt-BR")}
+                  </p>
+                  <p className="text-muted-foreground">
+                    {
+                      Object.values(values).filter(
+                        (value) => value !== null && value !== undefined && value !== "",
+                      ).length
+                    }{" "}
+                    campos configurados
+                  </p>
                 </div>
-                <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById("wf-generic-fields-toggle")?.click()}>Editar campos</Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => document.getElementById("wf-generic-fields-toggle")?.click()}
+                >
+                  Editar campos
+                </Button>
               </div>
               <dl className="mt-2 grid gap-1 sm:grid-cols-2">
-                {Object.entries(values).filter(([, value]) => value !== null && value !== undefined && value !== "").slice(0, 6).map(([key, value]) => <div key={key} className="flex gap-2 min-w-0"><dt className="text-muted-foreground truncate">{key}:</dt><dd className="truncate font-medium">{typeof value === "object" ? "Configurado" : String(value)}</dd></div>)}
+                {Object.entries(values)
+                  .filter(([, value]) => value !== null && value !== undefined && value !== "")
+                  .slice(0, 6)
+                  .map(([key, value]) => (
+                    <div key={key} className="flex gap-2 min-w-0">
+                      <dt className="text-muted-foreground truncate">{key}:</dt>
+                      <dd className="truncate font-medium">
+                        {typeof value === "object" ? "Configurado" : String(value)}
+                      </dd>
+                    </div>
+                  ))}
               </dl>
             </section>
           )}

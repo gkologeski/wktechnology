@@ -789,16 +789,16 @@ function SwitchCard({
           </div>
         </button>
         <div className="flex items-center">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7"
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7"
             onClick={(e) => {
               e.stopPropagation();
               addCase();
             }}
           >
-                <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar ramo
+            <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar ramo
           </Button>
           <StepActions
             onMoveUp={() => onMove(stepPath, -1)}
