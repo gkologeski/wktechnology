@@ -1334,13 +1334,15 @@ export function ExtraFieldsEditor({
                   pinned.has(f.name) ||
                   fieldErrors.has(f.name),
               )
-              .map((f, i) =>
-                <div key={f.name} id={`wf-field-${f.name}`}>{renderRow(f, f.name, values[f.name], {
-                  draggable: true,
-                  groupId: g.id,
-                  index: i,
-                })}</div>,
-              )}
+              .map((f, i) => (
+                <div key={f.name} id={`wf-field-${f.name}`}>
+                  {renderRow(f, f.name, values[f.name], {
+                    draggable: true,
+                    groupId: g.id,
+                    index: i,
+                  })}
+                </div>
+              ))}
           </div>
         )}
       </div>
