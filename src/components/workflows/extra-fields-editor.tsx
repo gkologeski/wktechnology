@@ -1353,6 +1353,7 @@ export function ExtraFieldsEditor({
     <div className="mt-3 rounded-md border border-border/60 bg-muted/20">
       <button
         type="button"
+        id={entity === "contracts" && title === "Mais campos do contrato" ? "wf-contract-fields-toggle" : undefined}
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center justify-between px-3 py-2 text-left text-xs font-medium text-muted-foreground hover:text-foreground"
         aria-expanded={open}
@@ -1580,11 +1581,11 @@ export function ExtraFieldsEditor({
                   )}
                   {filled.length > 0 || orphanKeys.length > 0 || layout.groups.length > 0
                     ? "Outros campos"
-                    : "Todos os campos"}
+                    : "Campos obrigatórios"}
                   <span className="text-[10px] text-muted-foreground">({empty.length})</span>
                 </button>
 
-                {showEmpty && (
+                {showEmpty && (advanced || customizeMode || empty.some((f) => fieldErrors.has(f.name))) && (
                   <div className="space-y-2">
                     {empty
                       .filter((f) => advanced || customizeMode || fieldErrors.has(f.name))

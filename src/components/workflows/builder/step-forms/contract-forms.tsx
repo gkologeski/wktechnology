@@ -79,11 +79,7 @@ export function CreateContractFromDealForm({
             type="button"
             variant="outline"
             size="sm"
-            onClick={() =>
-              document
-                .getElementById("wf-contract-fields")
-                ?.scrollIntoView({ behavior: "smooth", block: "start" })
-            }
+            onClick={() => document.getElementById("wf-contract-fields-toggle")?.click()}
           >
             Editar campos
           </Button>

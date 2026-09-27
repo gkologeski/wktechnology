@@ -521,7 +521,7 @@ function BranchCard({
           canMoveDown={canMoveDown}
         />
       </div>
-      <div className="grid grid-cols-2 gap-3 p-3 pt-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 pt-0">
         {(["then", "else"] as const).map((branch) => (
           <BranchColumn
             key={branch}
@@ -789,16 +789,16 @@ function SwitchCard({
           </div>
         </button>
         <div className="flex items-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7"
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7"
             onClick={(e) => {
               e.stopPropagation();
               addCase();
             }}
           >
-            <Plus className="h-3.5 w-3.5 mr-1" /> Case
+                <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar ramo
           </Button>
           <StepActions
             onMoveUp={() => onMove(stepPath, -1)}
