@@ -91,7 +91,7 @@ export function CreateContractFromDealForm({
         <dl className="mt-3 grid gap-x-6 gap-y-1 text-xs sm:grid-cols-2">
           {summaryFields.map(([key, value]) => (
             <div key={String(key)} className="flex min-w-0 gap-2">
-              <dt className="text-muted-foreground shrink-0">{key}:</dt>
+              <dt className="text-muted-foreground shrink-0">{String(key)}:</dt>
               <dd className="truncate font-medium" title={String(value)}>
                 {String(value)}
               </dd>
