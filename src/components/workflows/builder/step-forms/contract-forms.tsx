@@ -36,23 +36,67 @@ export function CreateContractFromDealForm({
   action: Action;
   onChange: (a: Action) => void;
 }) {
-  const configured = Object.entries(action.extra_fields ?? {}).filter(([, value]) => value !== null && value !== undefined && value !== "");
+  const configured = Object.entries(action.extra_fields ?? {}).filter(
+    ([, value]) => value !== null && value !== undefined && value !== "",
+  );
   const summaryFields = [
-    ["Tipo", CONTRACT_KIND_LABEL[normalizeKind(action.document_kind) as keyof typeof CONTRACT_KIND_LABEL] ?? "Contrato"],
+    [
+      "Tipo",
+      CONTRACT_KIND_LABEL[
+        normalizeKind(action.document_kind) as keyof typeof CONTRACT_KIND_LABEL
+      ] ?? "Contrato",
+    ],
     ["Título", action.title],
     ["Moeda", action.extra_fields?.currency],
-    ["Reajuste", [action.extra_fields?.adjustment_index, action.extra_fields?.adjustment_frequency].filter(Boolean).join(" / ")],
-    ["Renovação", typeof action.extra_fields?.auto_renew === "boolean" ? (action.extra_fields.auto_renew ? "Sim" : "Não") : undefined],
+    [
+      "Reajuste",
+      [action.extra_fields?.adjustment_index, action.extra_fields?.adjustment_frequency]
+        .filter(Boolean)
+        .join(" / "),
+    ],
+    [
+      "Renovação",
+      typeof action.extra_fields?.auto_renew === "boolean"
+        ? action.extra_fields.auto_renew
+          ? "Sim"
+          : "Não"
+        : undefined,
+    ],
   ].filter((entry) => entry[1] !== undefined && entry[1] !== null && entry[1] !== "");
   return (
     <div className="space-y-3">
       <section aria-label="Resumo da ação" className="border-b pb-4 mb-4">
         <div className="flex items-center justify-between gap-3">
-          <div><p className="text-xs font-semibold text-muted-foreground">CRIAR CONTRATO</p><p className="text-sm text-muted-foreground">{configured.length + [action.title, action.starts_at, action.template_id].filter(Boolean).length} campos configurados</p></div>
-          <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById("wf-contract-fields")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Editar campos</Button>
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground">CRIAR CONTRATO</p>
+            <p className="text-sm text-muted-foreground">
+              {configured.length +
+                [action.title, action.starts_at, action.template_id].filter(Boolean).length}{" "}
+              campos configurados
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              document
+                .getElementById("wf-contract-fields")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" })
+            }
+          >
+            Editar campos
+          </Button>
         </div>
         <dl className="mt-3 grid gap-x-6 gap-y-1 text-xs sm:grid-cols-2">
-          {summaryFields.map(([key, value]) => <div key={String(key)} className="flex min-w-0 gap-2"><dt className="text-muted-foreground shrink-0">{key}:</dt><dd className="truncate font-medium" title={String(value)}>{String(value)}</dd></div>)}
+          {summaryFields.map(([key, value]) => (
+            <div key={String(key)} className="flex min-w-0 gap-2">
+              <dt className="text-muted-foreground shrink-0">{key}:</dt>
+              <dd className="truncate font-medium" title={String(value)}>
+                {String(value)}
+              </dd>
+            </div>
+          ))}
         </dl>
       </section>
       <div className="grid grid-cols-2 gap-2">
@@ -146,24 +190,26 @@ export function CreateContractFromDealForm({
         />
       </div>
 
-      <div id="wf-contract-fields"><ExtraFieldsEditor
-        entity="contracts"
-        title="Mais campos do contrato"
-        extraFields={action.extra_fields}
-        hiddenKeys={[
-          "title",
-          "starts_at",
-          "deal_id",
-          "document_kind",
-          "role",
-          "status",
-          "body_html",
-          "number",
-          "public_token",
-        ]}
-        triggerEntity="deals"
-        onChange={(next) => onChange({ ...action, extra_fields: next })}
-      /></div>
+      <div id="wf-contract-fields">
+        <ExtraFieldsEditor
+          entity="contracts"
+          title="Mais campos do contrato"
+          extraFields={action.extra_fields}
+          hiddenKeys={[
+            "title",
+            "starts_at",
+            "deal_id",
+            "document_kind",
+            "role",
+            "status",
+            "body_html",
+            "number",
+            "public_token",
+          ]}
+          triggerEntity="deals"
+          onChange={(next) => onChange({ ...action, extra_fields: next })}
+        />
+      </div>
 
       <p className="text-xs text-muted-foreground">
         O contrato é criado com os dados do negócio no momento em que o workflow roda: empresa,

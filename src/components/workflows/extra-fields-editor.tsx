@@ -76,7 +76,12 @@ import { useReferenceLabels } from "./use-reference-labels";
 import type { WorkflowEntity, WorkflowWritableTable } from "@/lib/workflows/types";
 import { sortFieldsByCanonicalOrder } from "@/lib/workflows/entity-field-order";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type EntityName = WorkflowWritableTable;
 
@@ -930,16 +935,47 @@ export function ExtraFieldsEditor({
     orphanKeys.length +
     layout.groups.reduce((acc, g) => acc + g.fieldNames.filter((n) => hasValue(n)).length, 0);
 
-  const dynamicCount = Object.values(values).filter((v) => typeof v === "string" && isToken(v)).length;
+  const dynamicCount = Object.values(values).filter(
+    (v) => typeof v === "string" && isToken(v),
+  ).length;
   const availableFields = visibleFields.filter((f) => !hasValue(f.name) && !pinned.has(f.name));
-  const fieldCategories = entity === "contracts" ? [
-    { label: "Informações principais", names: ["document_kind", "service_type", "status", "company_id", "deal_id", "title", "role"] },
-    { label: "Condições comerciais", names: ["currency", "payment_method", "amount", "adjustment_index", "adjustment_frequency"] },
-    { label: "Vigência", names: ["auto_renew", "starts_at", "ends_at"] },
-    { label: "Relacionamentos", names: ["parent_contract_id", "amendment_of_id", "counterparty_company_id"] },
-    { label: "Assinatura", names: ["signature_provider", "signer_id"] },
-  ] : [];
-  const categoryFor = (name: string, system?: boolean) => system ? "Configurações avançadas" : fieldCategories.find((group) => group.names.includes(name))?.label ?? "Outros campos";
+  const fieldCategories =
+    entity === "contracts"
+      ? [
+          {
+            label: "Informações principais",
+            names: [
+              "document_kind",
+              "service_type",
+              "status",
+              "company_id",
+              "deal_id",
+              "title",
+              "role",
+            ],
+          },
+          {
+            label: "Condições comerciais",
+            names: [
+              "currency",
+              "payment_method",
+              "amount",
+              "adjustment_index",
+              "adjustment_frequency",
+            ],
+          },
+          { label: "Vigência", names: ["auto_renew", "starts_at", "ends_at"] },
+          {
+            label: "Relacionamentos",
+            names: ["parent_contract_id", "amendment_of_id", "counterparty_company_id"],
+          },
+          { label: "Assinatura", names: ["signature_provider", "signer_id"] },
+        ]
+      : [];
+  const categoryFor = (name: string, system?: boolean) =>
+    system
+      ? "Configurações avançadas"
+      : (fieldCategories.find((group) => group.names.includes(name))?.label ?? "Outros campos");
 
   function setKey(key: string, value: unknown) {
     const next: Record<string, unknown> = { ...values };
@@ -1134,12 +1170,29 @@ export function ExtraFieldsEditor({
           {hasValue(key) && !customizeMode && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button type="button" variant="ghost" size="icon" className="h-6 w-6 -mt-1 -mr-1" aria-label={`Opções de ${field?.label ?? key}`}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 -mt-1 -mr-1"
+                  aria-label={`Opções de ${field?.label ?? key}`}
+                >
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="pointer-events-auto z-[180]">
-                <DropdownMenuItem onSelect={() => { void confirmDialog({ title: `Limpar ${field?.label ?? key}?`, description: "O valor configurado será removido deste rascunho.", confirmLabel: "Limpar campo", variant: "destructive" }).then((ok) => { if (ok) removeKey(key); }); }}>
+                <DropdownMenuItem
+                  onSelect={() => {
+                    void confirmDialog({
+                      title: `Limpar ${field?.label ?? key}?`,
+                      description: "O valor configurado será removido deste rascunho.",
+                      confirmLabel: "Limpar campo",
+                      variant: "destructive",
+                    }).then((ok) => {
+                      if (ok) removeKey(key);
+                    });
+                  }}
+                >
                   <Trash2 className="h-4 w-4" /> Limpar valor
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -1273,13 +1326,21 @@ export function ExtraFieldsEditor({
                   : "Nenhum campo neste grupo."}
               </div>
             )}
-            {fields.filter((f) => customizeMode || hasValue(f.name) || pinned.has(f.name) || fieldErrors.has(f.name)).map((f, i) =>
-              renderRow(f, f.name, values[f.name], {
-                draggable: true,
-                groupId: g.id,
-                index: i,
-              }),
-            )}
+            {fields
+              .filter(
+                (f) =>
+                  customizeMode ||
+                  hasValue(f.name) ||
+                  pinned.has(f.name) ||
+                  fieldErrors.has(f.name),
+              )
+              .map((f, i) =>
+                renderRow(f, f.name, values[f.name], {
+                  draggable: true,
+                  groupId: g.id,
+                  index: i,
+                }),
+              )}
           </div>
         )}
       </div>
@@ -1324,25 +1385,63 @@ export function ExtraFieldsEditor({
       {open && (
         <div className="space-y-2 border-t border-border/60 px-3 py-2.5">
           <div className="flex flex-wrap items-center gap-2 border-b pb-3 text-xs text-muted-foreground">
-            <span>{filledCount} configurado{filledCount === 1 ? "" : "s"}</span>
-            {errorCount > 0 && <span className="text-destructive">{errorCount} pendência{errorCount === 1 ? "" : "s"}</span>}
-            {dynamicCount > 0 && <span>{dynamicCount} dinâmico{dynamicCount === 1 ? "" : "s"}</span>}
+            <span>
+              {filledCount} configurado{filledCount === 1 ? "" : "s"}
+            </span>
+            {errorCount > 0 && (
+              <span className="text-destructive">
+                {errorCount} pendência{errorCount === 1 ? "" : "s"}
+              </span>
+            )}
+            {dynamicCount > 0 && (
+              <span>
+                {dynamicCount} dinâmico{dynamicCount === 1 ? "" : "s"}
+              </span>
+            )}
             <Popover open={fieldPickerOpen} onOpenChange={setFieldPickerOpen}>
-              <PopoverTrigger asChild><Button type="button" variant="outline" size="sm" className="ml-auto h-8"><Plus className="mr-1 h-3.5 w-3.5" /> Adicionar campo</Button></PopoverTrigger>
-              <PopoverContent align="end" className="pointer-events-auto z-[180] w-[min(24rem,calc(100vw-2rem))] p-0">
+              <PopoverTrigger asChild>
+                <Button type="button" variant="outline" size="sm" className="ml-auto h-8">
+                  <Plus className="mr-1 h-3.5 w-3.5" /> Adicionar campo
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="end"
+                className="pointer-events-auto z-[180] w-[min(24rem,calc(100vw-2rem))] p-0"
+              >
                 <Command>
                   <CommandInput placeholder="Pesquisar campo..." aria-label="Pesquisar campo" />
                   <CommandList className="max-h-72">
                     <CommandEmpty>Nenhum campo encontrado.</CommandEmpty>
-                    {[...new Set(availableFields.map((f) => categoryFor(f.name, f.system)))].map((category) => (
-                      <CommandGroup key={category} heading={category}>
-                        {availableFields.filter((f) => categoryFor(f.name, f.system) === category).map((f) => (
-                          <CommandItem key={f.name} value={`${f.label} ${f.name}`} onSelect={() => { setPinned((prev) => new Set(prev).add(f.name)); setShowEmpty(true); if (f.system) setShowSystem(true); setFieldPickerOpen(false); requestAnimationFrame(() => document.getElementById(`wf-field-${f.name}`)?.scrollIntoView({ block: "center", behavior: "smooth" })); }}>
-                            {f.label}{f.required && <span className="ml-auto text-destructive">Obrigatório</span>}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    ))}
+                    {[...new Set(availableFields.map((f) => categoryFor(f.name, f.system)))].map(
+                      (category) => (
+                        <CommandGroup key={category} heading={category}>
+                          {availableFields
+                            .filter((f) => categoryFor(f.name, f.system) === category)
+                            .map((f) => (
+                              <CommandItem
+                                key={f.name}
+                                value={`${f.label} ${f.name}`}
+                                onSelect={() => {
+                                  setPinned((prev) => new Set(prev).add(f.name));
+                                  setShowEmpty(true);
+                                  if (f.system) setShowSystem(true);
+                                  setFieldPickerOpen(false);
+                                  requestAnimationFrame(() =>
+                                    document
+                                      .getElementById(`wf-field-${f.name}`)
+                                      ?.scrollIntoView({ block: "center", behavior: "smooth" }),
+                                  );
+                                }}
+                              >
+                                {f.label}
+                                {f.required && (
+                                  <span className="ml-auto text-destructive">Obrigatório</span>
+                                )}
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
+                      ),
+                    )}
                   </CommandList>
                 </Command>
               </PopoverContent>
@@ -1451,7 +1550,11 @@ export function ExtraFieldsEditor({
 
             {(filled.length > 0 || orphanKeys.length > 0) && (
               <div className="space-y-2">
-                {filled.map((f) => <div key={f.name} id={`wf-field-${f.name}`}>{renderRow(f, f.name, values[f.name], { draggable: true })}</div>)}
+                {filled.map((f) => (
+                  <div key={f.name} id={`wf-field-${f.name}`}>
+                    {renderRow(f, f.name, values[f.name], { draggable: true })}
+                  </div>
+                ))}
                 {orphanKeys.map((k) => renderRow(undefined, k, values[k]))}
               </div>
             )}
@@ -1477,7 +1580,13 @@ export function ExtraFieldsEditor({
 
                 {showEmpty && (
                   <div className="space-y-2">
-                    {empty.filter((f) => advanced || customizeMode || fieldErrors.has(f.name)).map((f) => <div key={f.name} id={`wf-field-${f.name}`}>{renderRow(f, f.name, values[f.name], { draggable: true })}</div>)}
+                    {empty
+                      .filter((f) => advanced || customizeMode || fieldErrors.has(f.name))
+                      .map((f) => (
+                        <div key={f.name} id={`wf-field-${f.name}`}>
+                          {renderRow(f, f.name, values[f.name], { draggable: true })}
+                        </div>
+                      ))}
                   </div>
                 )}
               </div>
@@ -1505,17 +1614,39 @@ export function ExtraFieldsEditor({
                       Normalmente preenchidos automaticamente. Informe apenas se precisar
                       sobrescrever.
                     </p>
-                    {systemFields.filter((f) => advanced || hasValue(f.name) || pinned.has(f.name) || fieldErrors.has(f.name)).map((f) =>
-                      <div key={f.name} id={`wf-field-${f.name}`}>{renderRow(f, f.name, values[f.name], { draggable: true })}</div>,
-                    )}
+                    {systemFields
+                      .filter(
+                        (f) =>
+                          advanced ||
+                          hasValue(f.name) ||
+                          pinned.has(f.name) ||
+                          fieldErrors.has(f.name),
+                      )
+                      .map((f) => (
+                        <div key={f.name} id={`wf-field-${f.name}`}>
+                          {renderRow(f, f.name, values[f.name], { draggable: true })}
+                        </div>
+                      ))}
                   </div>
                 )}
               </div>
             )}
           </div>
 
-          <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={() => { setAdvanced((v) => !v); setShowEmpty(true); setShowSystem(true); }}>
-            {advanced ? "Ocultar configurações avançadas" : "Configurações avançadas · ver todos os campos"}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => {
+              setAdvanced((v) => !v);
+              setShowEmpty(true);
+              setShowSystem(true);
+            }}
+          >
+            {advanced
+              ? "Ocultar configurações avançadas"
+              : "Configurações avançadas · ver todos os campos"}
           </Button>
 
           {autofillableCount > 0 && !customizeMode && (

@@ -37,7 +37,12 @@ import {
   type StepPath,
 } from "./step-tree";
 import { useReferenceLabels } from "../use-reference-labels";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 // ============================================================================
@@ -309,18 +314,56 @@ function StepCardDescription({ action }: { action: WorkflowAction }) {
   return <p className="text-xs text-muted-foreground truncate">{describeAction(action, labels)}</p>;
 }
 
-function StepActions({ onMoveUp, onMoveDown, onRemove, canMoveUp, canMoveDown }: {
-  onMoveUp: () => void; onMoveDown: () => void; onRemove: () => void;
-  canMoveUp: boolean; canMoveDown: boolean;
+function StepActions({
+  onMoveUp,
+  onMoveDown,
+  onRemove,
+  canMoveUp,
+  canMoveDown,
+}: {
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onRemove: () => void;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
 }) {
-  return <DropdownMenu>
-    <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" aria-label="Opções do passo"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
-    <DropdownMenuContent align="end" className="pointer-events-auto z-[180]">
-      <DropdownMenuItem disabled={!canMoveUp} onSelect={onMoveUp}><ArrowUp className="h-4 w-4" /> Mover para cima</DropdownMenuItem>
-      <DropdownMenuItem disabled={!canMoveDown} onSelect={onMoveDown}><ArrowDown className="h-4 w-4" /> Mover para baixo</DropdownMenuItem>
-      <DropdownMenuItem className="text-destructive" onSelect={() => { void confirmDialog({ title: "Remover passo?", description: "Este passo e suas configurações serão removidos do rascunho.", confirmLabel: "Remover passo", variant: "destructive" }).then((ok) => { if (ok) onRemove(); }); }}><Trash2 className="h-4 w-4" /> Remover passo</DropdownMenuItem>
-    </DropdownMenuContent>
-  </DropdownMenu>;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0"
+          aria-label="Opções do passo"
+        >
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="pointer-events-auto z-[180]">
+        <DropdownMenuItem disabled={!canMoveUp} onSelect={onMoveUp}>
+          <ArrowUp className="h-4 w-4" /> Mover para cima
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled={!canMoveDown} onSelect={onMoveDown}>
+          <ArrowDown className="h-4 w-4" /> Mover para baixo
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          className="text-destructive"
+          onSelect={() => {
+            void confirmDialog({
+              title: "Remover passo?",
+              description: "Este passo e suas configurações serão removidos do rascunho.",
+              confirmLabel: "Remover passo",
+              variant: "destructive",
+            }).then((ok) => {
+              if (ok) onRemove();
+            });
+          }}
+        >
+          <Trash2 className="h-4 w-4" /> Remover passo
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }
 
 function StepCard({
@@ -387,7 +430,15 @@ function StepCard({
           </div>
         </button>
       </div>
-      <div className="absolute top-1 right-1"><StepActions onMoveUp={() => onMove(stepPath, -1)} onMoveDown={() => onMove(stepPath, 1)} onRemove={onRemove} canMoveUp={canMoveUp} canMoveDown={canMoveDown} /></div>
+      <div className="absolute top-1 right-1">
+        <StepActions
+          onMoveUp={() => onMove(stepPath, -1)}
+          onMoveDown={() => onMove(stepPath, 1)}
+          onRemove={onRemove}
+          canMoveUp={canMoveUp}
+          canMoveDown={canMoveDown}
+        />
+      </div>
     </div>
   );
 }
@@ -462,7 +513,13 @@ function BranchCard({
             <p className="text-xs text-muted-foreground">{conditionsSummary(action.filters)}</p>
           </div>
         </button>
-        <StepActions onMoveUp={() => onMove(stepPath, -1)} onMoveDown={() => onMove(stepPath, 1)} onRemove={onRemove} canMoveUp={canMoveUp} canMoveDown={canMoveDown} />
+        <StepActions
+          onMoveUp={() => onMove(stepPath, -1)}
+          onMoveDown={() => onMove(stepPath, 1)}
+          onRemove={onRemove}
+          canMoveUp={canMoveUp}
+          canMoveDown={canMoveDown}
+        />
       </div>
       <div className="grid grid-cols-2 gap-3 p-3 pt-0">
         {(["then", "else"] as const).map((branch) => (
@@ -527,7 +584,9 @@ function BranchColumn({
           <p className="text-[11px] uppercase tracking-wide font-semibold truncate" title={title}>
             {title}
           </p>
-          <p className="text-[11px] text-muted-foreground">{actions.length} {actions.length === 1 ? "ação" : "ações"}</p>
+          <p className="text-[11px] text-muted-foreground">
+            {actions.length} {actions.length === 1 ? "ação" : "ações"}
+          </p>
           {subtitle && (
             <p className="text-[11px] text-muted-foreground truncate" title={subtitle}>
               {subtitle}
@@ -593,7 +652,15 @@ function BranchColumn({
                     </div>
                   </button>
                 </div>
-                <div className="absolute top-0.5 right-0.5"><StepActions onMoveUp={() => onMove(childPath, -1)} onMoveDown={() => onMove(childPath, 1)} onRemove={() => onRemovePath(childPath)} canMoveUp={ci > 0} canMoveDown={ci < actions.length - 1} /></div>
+                <div className="absolute top-0.5 right-0.5">
+                  <StepActions
+                    onMoveUp={() => onMove(childPath, -1)}
+                    onMoveDown={() => onMove(childPath, 1)}
+                    onRemove={() => onRemovePath(childPath)}
+                    canMoveUp={ci > 0}
+                    canMoveDown={ci < actions.length - 1}
+                  />
+                </div>
               </div>
               <DropSlot
                 parentPath={parentPath}
@@ -605,7 +672,9 @@ function BranchColumn({
           );
         })}
         <Button
-          type="button" variant="outline" size="sm"
+          type="button"
+          variant="outline"
+          size="sm"
           onClick={() => onAddAt(parentPath)}
           className={cn(
             "w-full border-dashed text-xs text-muted-foreground hover:text-primary hover:border-primary",
@@ -731,7 +800,13 @@ function SwitchCard({
           >
             <Plus className="h-3.5 w-3.5 mr-1" /> Case
           </Button>
-          <StepActions onMoveUp={() => onMove(stepPath, -1)} onMoveDown={() => onMove(stepPath, 1)} onRemove={onRemove} canMoveUp={canMoveUp} canMoveDown={canMoveDown} />
+          <StepActions
+            onMoveUp={() => onMove(stepPath, -1)}
+            onMoveDown={() => onMove(stepPath, 1)}
+            onRemove={onRemove}
+            canMoveUp={canMoveUp}
+            canMoveDown={canMoveDown}
+          />
         </div>
       </div>
       <div className="p-3 pt-0">
@@ -757,7 +832,24 @@ function SwitchCard({
                   onDropAt={onDropAt}
                   onMove={onMove}
                   headerExtra={
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { void confirmDialog({ title: "Remover ramo?", description: "O ramo e todas as ações nele serão removidos do rascunho.", confirmLabel: "Remover ramo", variant: "destructive" }).then((ok) => { if (ok) removeCase(ci); }); }} aria-label="Remover case"><X className="h-3.5 w-3.5" /></Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => {
+                        void confirmDialog({
+                          title: "Remover ramo?",
+                          description: "O ramo e todas as ações nele serão removidos do rascunho.",
+                          confirmLabel: "Remover ramo",
+                          variant: "destructive",
+                        }).then((ok) => {
+                          if (ok) removeCase(ci);
+                        });
+                      }}
+                      aria-label="Remover case"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
                   }
                 />
               </div>
@@ -792,7 +884,9 @@ export function Connector({ onAdd, active }: { onAdd: () => void; active?: boole
     <div className="flex flex-col items-center py-1">
       <div className="w-px h-3 bg-border" />
       <Button
-        type="button" variant="outline" size="sm"
+        type="button"
+        variant="outline"
+        size="sm"
         onClick={onAdd}
         aria-label="Adicionar passo"
         className={cn(

@@ -366,27 +366,52 @@ export function WorkflowBuilder({
             </div>
           )}
 
-          <nav aria-label="Localização no workflow" className="flex min-h-11 items-center gap-2 border-b px-4 text-xs text-muted-foreground">
-            <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => { setView("canvas"); setLibrary(null); }}>
+          <nav
+            aria-label="Localização no workflow"
+            className="flex min-h-11 items-center gap-2 border-b px-4 text-xs text-muted-foreground"
+          >
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2"
+              onClick={() => {
+                setView("canvas");
+                setLibrary(null);
+              }}
+            >
               Canvas
             </Button>
             {view === "details" && (
               <>
                 <span aria-hidden="true">/</span>
                 <span className="truncate font-medium text-foreground">
-                  {library ? "Adicionar passo" : selection === "trigger" ? "Configurar gatilho" : selectedAction ? ACTION_LABELS[selectedAction.type] : "Configurar passo"}
+                  {library
+                    ? "Adicionar passo"
+                    : selection === "trigger"
+                      ? "Configurar gatilho"
+                      : selectedAction
+                        ? ACTION_LABELS[selectedAction.type]
+                        : "Configurar passo"}
                 </span>
               </>
             )}
             {view === "canvas" && (
-              <span className="ml-auto flex items-center gap-1"><GitBranch className="h-3.5 w-3.5" /> {countSteps(state.actions)} passos</span>
+              <span className="ml-auto flex items-center gap-1">
+                <GitBranch className="h-3.5 w-3.5" /> {countSteps(state.actions)} passos
+              </span>
             )}
           </nav>
 
           {/* Canvas e editor de etapa compartilham o mesmo rascunho. */}
           <div className="flex-1 flex overflow-hidden">
             {/* Sidebar esquerda */}
-            <aside className={view === "canvas" ? "hidden lg:flex flex-col w-48 border-r bg-muted/20 p-4 gap-4 shrink-0" : "hidden"}>
+            <aside
+              className={
+                view === "canvas"
+                  ? "hidden lg:flex flex-col w-48 border-r bg-muted/20 p-4 gap-4 shrink-0"
+                  : "hidden"
+              }
+            >
               <div>
                 <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">
                   Tipo
@@ -427,7 +452,11 @@ export function WorkflowBuilder({
             </aside>
 
             {/* Canvas central */}
-            <main className={view === "canvas" ? "flex-1 min-w-0 overflow-y-auto bg-muted/10" : "hidden"}>
+            <main
+              className={
+                view === "canvas" ? "flex-1 min-w-0 overflow-y-auto bg-muted/10" : "hidden"
+              }
+            >
               <div className="max-w-6xl mx-auto py-8 px-4 sm:px-8">
                 {/* Trigger card */}
                 <TriggerCard
@@ -441,7 +470,10 @@ export function WorkflowBuilder({
                   }}
                 />
                 <Connector
-                  onAdd={() => { setLibrary({ parentPath: [] }); setView("details"); }}
+                  onAdd={() => {
+                    setLibrary({ parentPath: [] });
+                    setView("details");
+                  }}
                   active={library?.parentPath.length === 0}
                 />
 
@@ -466,7 +498,10 @@ export function WorkflowBuilder({
                       setSelection("trigger");
                     }
                   }}
-                  onAddAt={(parentPath) => { setLibrary({ parentPath }); setView("details"); }}
+                  onAddAt={(parentPath) => {
+                    setLibrary({ parentPath });
+                    setView("details");
+                  }}
                   onChangeAction={(p, na) => setActions((prev) => updateStep(prev, p, () => na))}
                   dragging={dragging}
                   onDragStartStep={(p) => setDragging(p)}
@@ -485,10 +520,22 @@ export function WorkflowBuilder({
             </main>
 
             {/* Painel direito */}
-            <aside className={view === "details" ? "flex-1 min-w-0 bg-background flex flex-col" : "hidden"}>
+            <aside
+              className={
+                view === "details" ? "flex-1 min-w-0 bg-background flex flex-col" : "hidden"
+              }
+            >
               <ScrollArea className="flex-1">
                 <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-8" aria-live="polite">
-                  <Button variant="ghost" size="sm" className="mb-5 -ml-2" onClick={() => { setView("canvas"); setLibrary(null); }}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mb-5 -ml-2"
+                    onClick={() => {
+                      setView("canvas");
+                      setLibrary(null);
+                    }}
+                  >
                     <ChevronLeft className="mr-1 h-4 w-4" /> Voltar ao canvas
                   </Button>
                   {library ? (
