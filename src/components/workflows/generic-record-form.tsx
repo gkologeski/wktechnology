@@ -134,7 +134,10 @@ export function GenericRecordForm({ action, onChange, triggerEntity }: Props) {
                       <dt className="text-muted-foreground truncate" title={key}>
                         {key.replaceAll("_", " ")}:
                       </dt>
-                      <dd className="truncate font-medium" title={typeof value === "object" ? undefined : String(value)}>
+                      <dd
+                        className="truncate font-medium"
+                        title={typeof value === "object" ? undefined : String(value)}
+                      >
                         {typeof value === "object" ? "Configurado" : String(value)}
                       </dd>
                     </div>
