@@ -116,7 +116,11 @@ export function GenericRecordForm({ action, onChange, triggerEntity }: Props) {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => document.getElementById("wf-generic-fields-toggle")?.click()}
+                  onClick={() => {
+                    const toggle = document.getElementById("wf-generic-fields-toggle");
+                    if (toggle?.getAttribute("aria-expanded") === "false") toggle.click();
+                    toggle?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
                 >
                   Editar campos
                 </Button>

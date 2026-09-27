@@ -79,7 +79,11 @@ export function CreateContractFromDealForm({
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => document.getElementById("wf-contract-fields-toggle")?.click()}
+            onClick={() => {
+              const toggle = document.getElementById("wf-contract-fields-toggle");
+              if (toggle?.getAttribute("aria-expanded") === "false") toggle.click();
+              toggle?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
           >
             Editar campos
           </Button>
