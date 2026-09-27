@@ -63,3 +63,9 @@ export function presetSummary(preset: PresetOption): string {
 
 export const presetsForServiceQueryKey = (serviceCatalogId: string | null | undefined) =>
   ["contracting_presets", "for-service", serviceCatalogId ?? "none"] as const;
+
+/** Margem bruta estimada (%) a partir de preço e custo sugeridos. */
+export function marginPercent(price: number, cost: number): number | null {
+  if (!(price > 0) || !(cost > 0)) return null;
+  return ((price - cost) / price) * 100;
+}
