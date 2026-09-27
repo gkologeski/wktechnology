@@ -421,10 +421,7 @@ export function ContractingPresetsPanel() {
                 {catalogName.get(r.service_catalog_id) ?? "Linha de serviço"}
               </Badge>
             ) : null}
-            <MarginBadge
-              price={Number(r.default_unit_price)}
-              cost={Number(r.default_unit_cost)}
-            />
+            <MarginBadge price={Number(r.default_unit_price)} cost={Number(r.default_unit_cost)} />
             {!r.active ? (
               <Badge variant="secondary" className="text-xs">
                 Inativo
@@ -670,11 +667,7 @@ export function ContractingPresetsPanel() {
                             Sem cargo
                           </CommandItem>
                           {profileMatches.map((p) => (
-                            <CommandItem
-                              key={p.id}
-                              value={p.id}
-                              onSelect={() => pickProfile(p.id)}
-                            >
+                            <CommandItem key={p.id} value={p.id} onSelect={() => pickProfile(p.id)}>
                               <Check
                                 aria-hidden="true"
                                 className={cn(
