@@ -94,7 +94,7 @@ export function ActivityDateTimePicker({
         <PopoverContent
           align="start"
           sideOffset={6}
-          className="z-[180] w-auto max-w-[calc(100vw-1rem)] p-0"
+          className="pointer-events-auto z-[180] w-auto max-w-[calc(100vw-1rem)] p-0"
         >
           <Calendar
             mode="single"
@@ -154,7 +154,11 @@ export function ActivityDateTimePicker({
               {timePart}
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="end" sideOffset={6} className="z-[180] w-32 p-1">
+          <PopoverContent
+            align="end"
+            sideOffset={6}
+            className="pointer-events-auto z-[180] w-32 p-1"
+          >
             <ScrollArea className="h-64">
               <div className="space-y-0.5 pr-2">
                 {ACTIVITY_TIME_OPTIONS.map((time) => (
@@ -218,7 +222,7 @@ export function ActivityDueDatePicker(props: Omit<ActivityDateTimePickerProps, "
         <PopoverContent
           align="start"
           sideOffset={6}
-          className="z-[180] w-80 max-w-[calc(100vw-1rem)] p-1"
+          className="pointer-events-auto z-[180] w-80 max-w-[calc(100vw-1rem)] p-1"
         >
           {FOLLOW_UP_PRESETS.map((preset) => (
             <Button

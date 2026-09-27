@@ -27,7 +27,8 @@ export function resolveDashboardRange(
   s: DashboardPeriodSearch,
   now: Date = new Date(),
 ): { range: DateRange; preset: PresetKey | "custom" } {
-  if (s.preset === "custom" && s.from && s.to) {
+  // Links anteriores enviavam timestamps completos sem `preset`.
+  if (s.from && s.to && (s.preset === "custom" || !s.preset)) {
     const a = parseISO(s.from);
     const b = parseISO(s.to);
     if (isValid(a) && isValid(b)) {

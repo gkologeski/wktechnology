@@ -20,6 +20,21 @@ describe("resolveDashboardRange", () => {
     expect(r.range.from.getDate()).toBe(1);
     expect(r.range.to.getDate()).toBe(10);
   });
+  it("preserva o período de links antigos com timestamps completos", () => {
+    const r = resolveDashboardRange(
+      {
+        from: "2026-08-29T00:00:00.000Z",
+        to: "2026-09-27T23:59:59.999Z",
+      },
+      now,
+    );
+    expect(r.preset).toBe("custom");
+    expect(r.range.from.getFullYear()).toBe(2026);
+    expect(r.range.from.getMonth()).toBe(7);
+    expect(r.range.from.getDate()).toBe(29);
+    expect(r.range.to.getMonth()).toBe(8);
+    expect(r.range.to.getDate()).toBe(27);
+  });
   it("personalizado inválido cai no padrão", () => {
     expect(resolveDashboardRange({ preset: "custom", from: "x" }, now).preset).toBe("last30");
   });
