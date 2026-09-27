@@ -64,9 +64,15 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
       { title: "Painel de vendas | TechSales" },
-      { name: "description", content: "Acompanhe a jornada dos leads, canais e resultados de vendas no TechSales." },
+      {
+        name: "description",
+        content: "Acompanhe a jornada dos leads, canais e resultados de vendas no TechSales.",
+      },
       { property: "og:title", content: "Painel de vendas | TechSales" },
-      { property: "og:description", content: "Acompanhe a jornada dos leads, canais e resultados de vendas no TechSales." },
+      {
+        property: "og:description",
+        content: "Acompanhe a jornada dos leads, canais e resultados de vendas no TechSales.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
