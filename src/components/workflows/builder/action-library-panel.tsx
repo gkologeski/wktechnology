@@ -61,13 +61,13 @@ export function ActionLibraryPanel({
       ))}
 
       {/* Registros por módulo → entidade → operação */}
-      <div>
+      {(!query || RECORD_ACTION_MODULES.some((mod) => mod.label.toLocaleLowerCase("pt-BR").includes(query) || mod.entities.some((ent) => ent.singular.toLocaleLowerCase("pt-BR").includes(query)))) && <div>
         <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold mb-2">
           Registros
         </p>
         <div className="space-y-1">
-          {RECORD_ACTION_MODULES.map((mod) => {
-            const modOpen = expandedModule === mod.key;
+          {RECORD_ACTION_MODULES.filter((mod) => !query || mod.label.toLocaleLowerCase("pt-BR").includes(query) || mod.entities.some((ent) => ent.singular.toLocaleLowerCase("pt-BR").includes(query))).map((mod) => {
+            const modOpen = expandedModule === mod.key || !!query;
             return (
               <div key={mod.key} className="rounded-md border bg-card">
                 <button
@@ -84,9 +84,9 @@ export function ActionLibraryPanel({
                 </button>
                 {modOpen && (
                   <div className="border-t bg-muted/20 px-2 py-1.5 space-y-1">
-                    {mod.entities.map((ent) => {
+                    {mod.entities.filter((ent) => !query || mod.label.toLocaleLowerCase("pt-BR").includes(query) || ent.singular.toLocaleLowerCase("pt-BR").includes(query)).map((ent) => {
                       const entKey = `${mod.key}:${ent.table}`;
-                      const entOpen = expandedEntity === entKey;
+                      const entOpen = expandedEntity === entKey || !!query;
                       return (
                         <div
                           key={ent.table}
@@ -138,7 +138,7 @@ export function ActionLibraryPanel({
             );
           })}
         </div>
-      </div>
+      </div>}
     </div>
   );
 }
