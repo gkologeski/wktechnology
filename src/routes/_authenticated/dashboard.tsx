@@ -31,11 +31,11 @@ const SearchSchema = z.object({
   preset: z.string().max(20).optional(),
   from: z
     .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .regex(/^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2}))?$/)
     .optional(),
   to: z
     .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .regex(/^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2}))?$/)
     .optional(),
   /** Legado */
   period: z.coerce.number().optional(),
@@ -61,6 +61,22 @@ const SearchSchema = z.object({
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   validateSearch: (s) => SearchSchema.parse(s),
+  head: () => ({
+    meta: [
+      { title: "Painel de vendas | TechSales" },
+      {
+        name: "description",
+        content: "Acompanhe a jornada dos leads, canais e resultados de vendas no TechSales.",
+      },
+      { property: "og:title", content: "Painel de vendas | TechSales" },
+      {
+        property: "og:description",
+        content: "Acompanhe a jornada dos leads, canais e resultados de vendas no TechSales.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: DashboardPage,
 });
 
