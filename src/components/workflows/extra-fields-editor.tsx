@@ -919,8 +919,8 @@ export function ExtraFieldsEditor({
   }
   const bucketOf = (name: string) => bucketRef.current.map.get(name) ?? "empty";
 
-  const filled = mainFields.filter((f) => bucketOf(f.name) === "filled");
-  const empty = mainFields.filter((f) => bucketOf(f.name) === "empty");
+  const filled = mainFields.filter((f) => bucketOf(f.name) === "filled" || pinned.has(f.name));
+  const empty = mainFields.filter((f) => bucketOf(f.name) === "empty" && !pinned.has(f.name));
   const orphanKeys = Object.keys(values).filter(
     (k) => !hidden.has(k) && !visibleFields.some((f) => f.name === k),
   );
@@ -1451,7 +1451,7 @@ export function ExtraFieldsEditor({
 
             {(filled.length > 0 || orphanKeys.length > 0) && (
               <div className="space-y-2">
-                {filled.map((f) => renderRow(f, f.name, values[f.name], { draggable: true }))}
+                {filled.map((f) => <div key={f.name} id={`wf-field-${f.name}`}>{renderRow(f, f.name, values[f.name], { draggable: true })}</div>)}
                 {orphanKeys.map((k) => renderRow(undefined, k, values[k]))}
               </div>
             )}
@@ -1475,9 +1475,9 @@ export function ExtraFieldsEditor({
                   <span className="text-[10px] text-muted-foreground">({empty.length})</span>
                 </button>
 
-                {showEmpty && (advanced || hasMissingRequired) && (
+                {showEmpty && (
                   <div className="space-y-2">
-                    {empty.map((f) => <div key={f.name} id={`wf-field-${f.name}`}>{renderRow(f, f.name, values[f.name], { draggable: true })}</div>)}
+                    {empty.filter((f) => advanced || customizeMode || fieldErrors.has(f.name)).map((f) => <div key={f.name} id={`wf-field-${f.name}`}>{renderRow(f, f.name, values[f.name], { draggable: true })}</div>)}
                   </div>
                 )}
               </div>
