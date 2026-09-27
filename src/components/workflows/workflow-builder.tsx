@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-import { X, ChevronLeft, Upload, Info, GitBranch } from "lucide-react";
+import { ChevronLeft, Upload, Info, GitBranch, Save } from "lucide-react";
 
 import { WorkflowTokensProvider } from "./token-input";
 import { buildIdTokens, buildTextTokens, buildVarTokens } from "@/lib/workflows/token-catalog";
@@ -305,7 +305,7 @@ export function WorkflowBuilder({
           </DialogDescription>
 
           {/* Header */}
-          <header className="flex items-center gap-3 border-b bg-background px-4 h-14 shrink-0">
+          <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-background px-2 sm:gap-3 sm:px-4">
             <Button
               variant="ghost"
               size="icon"
@@ -331,7 +331,7 @@ export function WorkflowBuilder({
                 checked={state.enabled}
                 onCheckedChange={(v) => setState((s) => ({ ...s, enabled: v }))}
               />
-              <Label htmlFor="wf-enabled" className="text-sm">
+              <Label htmlFor="wf-enabled" className="hidden text-sm sm:inline">
                 {state.enabled ? "Ativo" : "Pausado"}
               </Label>
             </div>
@@ -342,16 +342,32 @@ export function WorkflowBuilder({
                   ? `Rascunho pendente (v${publishedVersion} no ar)`
                   : "Rascunho"}
             </Badge>
-            <Button variant="ghost" onClick={() => void requestClose()}>
+            <Button variant="ghost" className="hidden sm:inline-flex" onClick={() => void requestClose()}>
               Cancelar
             </Button>
-            <Button variant="outline" onClick={handleSave} disabled={!canSubmit}>
-              {saving ? "Salvando…" : "Salvar rascunho"}
+            <Button
+              variant="outline"
+              className="w-9 shrink-0 px-0 sm:w-auto sm:px-4"
+              onClick={handleSave}
+              disabled={!canSubmit}
+              aria-label={saving ? "Salvando rascunho" : "Salvar rascunho"}
+              title="Salvar rascunho"
+            >
+              <Save className="h-4 w-4 sm:mr-1.5" />
+              <span className="hidden sm:inline">{saving ? "Salvando…" : "Salvar rascunho"}</span>
             </Button>
             {onSaveAndPublish && (
-              <Button onClick={handleSaveAndPublish} disabled={!canSubmit}>
-                <Upload className="h-4 w-4 mr-1.5" />
-                {publishing ? "Publicando…" : "Salvar e publicar"}
+              <Button
+                className="w-9 shrink-0 px-0 sm:w-auto sm:px-4"
+                onClick={handleSaveAndPublish}
+                disabled={!canSubmit}
+                aria-label={publishing ? "Publicando workflow" : "Salvar e publicar"}
+                title="Salvar e publicar"
+              >
+                <Upload className="h-4 w-4 sm:mr-1.5" />
+                <span className="hidden sm:inline">
+                  {publishing ? "Publicando…" : "Salvar e publicar"}
+                </span>
               </Button>
             )}
           </header>
