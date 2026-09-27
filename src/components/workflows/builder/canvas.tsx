@@ -311,7 +311,10 @@ function DragHandle({
 
 function StepCardDescription({ action }: { action: WorkflowAction }) {
   const labels = useReferenceLabels();
-  return <p className="text-xs text-muted-foreground truncate">{describeAction(action, labels)}</p>;
+  const description = describeAction(action, labels)
+    .replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi, "registro selecionado")
+    .replace(/\{\{[^}]+\}\}/g, "valor dinâmico");
+  return <p className="text-xs text-muted-foreground truncate">{description}</p>;
 }
 
 function StepActions({

@@ -1576,7 +1576,10 @@ export function ExtraFieldsEditor({
               <div className="space-y-2 pt-1">
                 <button
                   type="button"
-                  onClick={() => setShowEmpty((v) => !v)}
+                  onClick={() => {
+                    setShowEmpty((v) => !v);
+                    setAdvanced(true);
+                  }}
                   className="flex w-full items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground"
                   aria-expanded={showEmpty}
                 >
@@ -1585,9 +1588,7 @@ export function ExtraFieldsEditor({
                   ) : (
                     <ChevronRight className="h-3 w-3" />
                   )}
-                  {filled.length > 0 || orphanKeys.length > 0 || layout.groups.length > 0
-                    ? "Outros campos"
-                    : "Campos obrigatórios"}
+                  Outros campos
                   <span className="text-[10px] text-muted-foreground">({empty.length})</span>
                 </button>
 

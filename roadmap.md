@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Concluir a revisão do editor visual de Workflows (Option C): validar o fluxo sem publicar uma automação de teste; publicação real depende de aprovação para criar dados ativos.
+
 - [ ] Migrar todas as ações manuais de atividades para janelas flutuantes persistentes (timeline compartilhada, edição, tarefas, Inbox, filas, reuniões, cotações e ações em massa); validar fluxos e acessibilidade.
 - [x] Padronizar todos os seletores de data e hora das atividades com calendário PT-BR, atalhos de vencimento e horários de 15 minutos; validar desktop e celular.
 - [x] Manter uma barra de restauração acessível quando a única janela de atividade estiver minimizada.

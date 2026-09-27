@@ -127,8 +127,10 @@ export function GenericRecordForm({ action, onChange, triggerEntity }: Props) {
                   .slice(0, 6)
                   .map(([key, value]) => (
                     <div key={key} className="flex gap-2 min-w-0">
-                      <dt className="text-muted-foreground truncate">{key}:</dt>
-                      <dd className="truncate font-medium">
+                      <dt className="text-muted-foreground truncate" title={key}>
+                        {key.replaceAll("_", " ")}:
+                      </dt>
+                      <dd className="truncate font-medium" title={typeof value === "object" ? undefined : String(value)}>
                         {typeof value === "object" ? "Configurado" : String(value)}
                       </dd>
                     </div>
