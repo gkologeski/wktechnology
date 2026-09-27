@@ -45,6 +45,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/crm";
+import { marginPercent } from "@/lib/contracting-presets-shared";
 import { SENIORITY_LABEL, SENIORITY_OPTIONS } from "@/lib/job-profiles-shared";
 import {
   createContractingPreset,
@@ -122,11 +123,6 @@ const UNIT_OPTIONS = [
   { value: "projeto", label: "Projeto" },
   { value: "unidade", label: "Unidade" },
 ];
-
-export function marginPercent(price: number, cost: number): number | null {
-  if (!(price > 0) || !(cost > 0)) return null;
-  return ((price - cost) / price) * 100;
-}
 
 function MarginBadge({ price, cost }: { price: number; cost: number }) {
   const pct = marginPercent(price, cost);

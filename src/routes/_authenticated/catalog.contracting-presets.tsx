@@ -12,10 +12,8 @@ import { BriefcaseBusiness, Layers, Percent, Wrench } from "lucide-react";
 
 import { MetricCard } from "@/components/techhire/ui";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  ContractingPresetsPanel,
-  marginPercent,
-} from "@/components/catalog/contracting-presets-panel";
+import { ContractingPresetsPanel } from "@/components/catalog/contracting-presets-panel";
+import { marginPercent } from "@/lib/contracting-presets-shared";
 import { JobProfilesPanel } from "@/components/catalog/job-profiles-panel";
 import { listContractingPresets } from "@/lib/contracting-presets.functions";
 
