@@ -52,6 +52,7 @@ const StepConfigPanel = lazy(() =>
 );
 
 import {
+  ACTION_LABELS,
   ENTITY_LABELS,
   EVENT_LABELS,
   type WorkflowEntity,
