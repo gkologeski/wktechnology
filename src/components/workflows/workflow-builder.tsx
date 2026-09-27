@@ -342,7 +342,11 @@ export function WorkflowBuilder({
                   ? `Rascunho pendente (v${publishedVersion} no ar)`
                   : "Rascunho"}
             </Badge>
-            <Button variant="ghost" className="hidden sm:inline-flex" onClick={() => void requestClose()}>
+            <Button
+              variant="ghost"
+              className="hidden sm:inline-flex"
+              onClick={() => void requestClose()}
+            >
               Cancelar
             </Button>
             <Button
