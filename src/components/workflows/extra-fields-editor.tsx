@@ -931,8 +931,8 @@ export function ExtraFieldsEditor({
   );
 
   const filledCount =
-    filled.length +
-    orphanKeys.length +
+    filled.filter((f) => hasValue(f.name)).length +
+    orphanKeys.filter(hasValue).length +
     layout.groups.reduce((acc, g) => acc + g.fieldNames.filter((n) => hasValue(n)).length, 0);
 
   const dynamicCount = Object.values(values).filter(
@@ -1335,11 +1335,11 @@ export function ExtraFieldsEditor({
                   fieldErrors.has(f.name),
               )
               .map((f, i) =>
-                renderRow(f, f.name, values[f.name], {
+                <div key={f.name} id={`wf-field-${f.name}`}>{renderRow(f, f.name, values[f.name], {
                   draggable: true,
                   groupId: g.id,
                   index: i,
-                }),
+                })}</div>,
               )}
           </div>
         )}
@@ -1425,11 +1425,11 @@ export function ExtraFieldsEditor({
                                   setPinned((prev) => new Set(prev).add(f.name));
                                   setShowEmpty(true);
                                   if (f.system) setShowSystem(true);
+                                  const group = layout.groups.find((item) => item.fieldNames.includes(f.name));
+                                  if (group?.collapsed) toggleGroupCollapsed(group.id);
                                   setFieldPickerOpen(false);
                                   requestAnimationFrame(() =>
-                                    document
-                                      .getElementById(`wf-field-${f.name}`)
-                                      ?.scrollIntoView({ block: "center", behavior: "smooth" }),
+                                    document.getElementById(`wf-field-${f.name}`)?.scrollIntoView({ block: "center", behavior: "smooth" }),
                                   );
                                 }}
                               >
