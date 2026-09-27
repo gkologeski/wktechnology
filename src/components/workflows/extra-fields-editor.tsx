@@ -1353,7 +1353,7 @@ export function ExtraFieldsEditor({
     <div className="mt-3 rounded-md border border-border/60 bg-muted/20">
       <button
         type="button"
-        id={entity === "contracts" && title === "Mais campos do contrato" ? "wf-contract-fields-toggle" : undefined}
+        id={title === "Mais campos do contrato" ? "wf-contract-fields-toggle" : title === "Campos do registro" ? "wf-generic-fields-toggle" : undefined}
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center justify-between px-3 py-2 text-left text-xs font-medium text-muted-foreground hover:text-foreground"
         aria-expanded={open}
