@@ -60,6 +60,16 @@ export const WORKSPACE_ROUTE_PREFIXES: readonly string[] = [
   "/files",
 ];
 
+/** Rotas de automação sob /settings que preservam o menu do módulo ativo. */
+export const MODULE_PRESERVING_PREFIXES: readonly string[] = [
+  "/settings/workflows",
+  "/settings/sequences",
+];
+
+const matchesPrefix = (pathname: string, p: string) =>
+  pathname === p || pathname.startsWith(p + "/");
+
 export function isWorkspacePathname(pathname: string): boolean {
-  return WORKSPACE_ROUTE_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"));
+  if (MODULE_PRESERVING_PREFIXES.some((p) => matchesPrefix(pathname, p))) return false;
+  return WORKSPACE_ROUTE_PREFIXES.some((p) => matchesPrefix(pathname, p));
 }
