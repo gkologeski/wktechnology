@@ -1427,11 +1427,15 @@ export function ExtraFieldsEditor({
                                   setPinned((prev) => new Set(prev).add(f.name));
                                   setShowEmpty(true);
                                   if (f.system) setShowSystem(true);
-                                  const group = layout.groups.find((item) => item.fieldNames.includes(f.name));
+                                  const group = layout.groups.find((item) =>
+                                    item.fieldNames.includes(f.name),
+                                  );
                                   if (group?.collapsed) toggleGroupCollapsed(group.id);
                                   setFieldPickerOpen(false);
                                   requestAnimationFrame(() =>
-                                    document.getElementById(`wf-field-${f.name}`)?.scrollIntoView({ block: "center", behavior: "smooth" }),
+                                    document
+                                      .getElementById(`wf-field-${f.name}`)
+                                      ?.scrollIntoView({ block: "center", behavior: "smooth" }),
                                   );
                                 }}
                               >
