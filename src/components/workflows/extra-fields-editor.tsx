@@ -75,6 +75,7 @@ import { useReferenceLabels } from "./use-reference-labels";
 
 import type { WorkflowEntity, WorkflowWritableTable } from "@/lib/workflows/types";
 import { sortFieldsByCanonicalOrder } from "@/lib/workflows/entity-field-order";
+import { localizeWorkflowTokenPath } from "@/lib/workflows/token-aliases";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   DropdownMenu,
@@ -1001,12 +1002,12 @@ export function ExtraFieldsEditor({
   }
 
   const TOKEN_ALIAS: Record<string, string> = {
-    counterparty_company_id: "{{company_id}}",
-    primary_contact_id: "{{contact_id}}",
-    assigned_user_id: "{{owner_id}}",
-    assignee_id: "{{owner_id}}",
-    hiring_manager_id: "{{owner_id}}",
-    approver_user_id: "{{owner_id}}",
+    counterparty_company_id: "{{id_empresa}}",
+    primary_contact_id: "{{id_contato}}",
+    assigned_user_id: "{{id_criador}}",
+    assignee_id: "{{id_criador}}",
+    hiring_manager_id: "{{id_criador}}",
+    approver_user_id: "{{id_criador}}",
     // Vínculo contextual: quando o workflow dispara de um negócio, o contrato
     // criado deve apontar para o próprio registro origem ({{id}}).
     ...(triggerEntity === "deals" ? { deal_id: "{{id}}" } : {}),
@@ -1020,7 +1021,7 @@ export function ExtraFieldsEditor({
     if (field.type === "boolean" || field.type === "date" || field.type === "select") {
       return null;
     }
-    return TOKEN_ALIAS[field.name] ?? `{{${field.name}}}`;
+    return TOKEN_ALIAS[field.name] ?? `{{${localizeWorkflowTokenPath(field.name, field.label)}}}`;
   }
 
   function autofillFromWorkflow() {
