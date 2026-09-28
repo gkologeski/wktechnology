@@ -1,6 +1,7 @@
 // Barra de ações em lote da grid de contratos.
 // As gravações reutilizam as server functions de contrato, que continuam
 // validando permissão, escopo e workspace no backend.
+import { withClientSession } from "@/lib/session-guard";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -66,7 +67,7 @@ export function ContractsBulkBar({
   const listTeam = useServerFn(listWorkspaceTeam);
   const teamQuery = useQuery({
     queryKey: ["workspace-team", "contracts-bulk"],
-    queryFn: () => listTeam(),
+    queryFn: () => withClientSession(() => listTeam()),
     staleTime: 60_000,
   });
   const [busy, setBusy] = useState(false);
