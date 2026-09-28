@@ -4560,6 +4560,30 @@ export type Database = {
           },
         ]
       }
+      channel_health_checks: {
+        Row: {
+          channel: string
+          checked_at: string
+          ready: boolean
+          reason: string | null
+          transient: boolean
+        }
+        Insert: {
+          channel: string
+          checked_at?: string
+          ready: boolean
+          reason?: string | null
+          transient?: boolean
+        }
+        Update: {
+          channel?: string
+          checked_at?: string
+          ready?: boolean
+          reason?: string | null
+          transient?: boolean
+        }
+        Relationships: []
+      }
       charging_templates: {
         Row: {
           active: boolean

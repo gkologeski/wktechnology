@@ -316,6 +316,7 @@ import { Route as ApiPublicHooksEmailSyncTickRouteImport } from './routes/api/pu
 import { Route as ApiPublicHooksEmailBroadcastTickRouteImport } from './routes/api/public/hooks/email-broadcast-tick'
 import { Route as ApiPublicHooksDunningTickRouteImport } from './routes/api/public/hooks/dunning-tick'
 import { Route as ApiPublicHooksContaazulTickRouteImport } from './routes/api/public/hooks/contaazul-tick'
+import { Route as ApiPublicHooksChannelHealthRouteImport } from './routes/api/public/hooks/channel-health'
 import { Route as ApiPublicHooksCalendarTickRouteImport } from './routes/api/public/hooks/calendar-tick'
 import { Route as ApiPublicHooksCalendarRecordingsTickRouteImport } from './routes/api/public/hooks/calendar-recordings-tick'
 import { Route as ApiPublicHooksBugReportAnalyzeRouteImport } from './routes/api/public/hooks/bug-report-analyze'
@@ -2133,6 +2134,12 @@ const ApiPublicHooksContaazulTickRoute =
     path: '/api/public/hooks/contaazul-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksChannelHealthRoute =
+  ApiPublicHooksChannelHealthRouteImport.update({
+    id: '/api/public/hooks/channel-health',
+    path: '/api/public/hooks/channel-health',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksCalendarTickRoute =
   ApiPublicHooksCalendarTickRouteImport.update({
     id: '/api/public/hooks/calendar-tick',
@@ -2839,6 +2846,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-recordings-tick': typeof ApiPublicHooksCalendarRecordingsTickRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
+  '/api/public/hooks/channel-health': typeof ApiPublicHooksChannelHealthRoute
   '/api/public/hooks/contaazul-tick': typeof ApiPublicHooksContaazulTickRoute
   '/api/public/hooks/dunning-tick': typeof ApiPublicHooksDunningTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
@@ -3211,6 +3219,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-recordings-tick': typeof ApiPublicHooksCalendarRecordingsTickRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
+  '/api/public/hooks/channel-health': typeof ApiPublicHooksChannelHealthRoute
   '/api/public/hooks/contaazul-tick': typeof ApiPublicHooksContaazulTickRoute
   '/api/public/hooks/dunning-tick': typeof ApiPublicHooksDunningTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
@@ -3591,6 +3600,7 @@ export interface FileRoutesById {
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-recordings-tick': typeof ApiPublicHooksCalendarRecordingsTickRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
+  '/api/public/hooks/channel-health': typeof ApiPublicHooksChannelHealthRoute
   '/api/public/hooks/contaazul-tick': typeof ApiPublicHooksContaazulTickRoute
   '/api/public/hooks/dunning-tick': typeof ApiPublicHooksDunningTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
@@ -3971,6 +3981,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-recordings-tick'
     | '/api/public/hooks/calendar-tick'
+    | '/api/public/hooks/channel-health'
     | '/api/public/hooks/contaazul-tick'
     | '/api/public/hooks/dunning-tick'
     | '/api/public/hooks/email-broadcast-tick'
@@ -4343,6 +4354,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-recordings-tick'
     | '/api/public/hooks/calendar-tick'
+    | '/api/public/hooks/channel-health'
     | '/api/public/hooks/contaazul-tick'
     | '/api/public/hooks/dunning-tick'
     | '/api/public/hooks/email-broadcast-tick'
@@ -4722,6 +4734,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-recordings-tick'
     | '/api/public/hooks/calendar-tick'
+    | '/api/public/hooks/channel-health'
     | '/api/public/hooks/contaazul-tick'
     | '/api/public/hooks/dunning-tick'
     | '/api/public/hooks/email-broadcast-tick'
@@ -4861,6 +4874,7 @@ export interface RootRouteChildren {
   ApiPublicHooksBugReportAnalyzeRoute: typeof ApiPublicHooksBugReportAnalyzeRoute
   ApiPublicHooksCalendarRecordingsTickRoute: typeof ApiPublicHooksCalendarRecordingsTickRoute
   ApiPublicHooksCalendarTickRoute: typeof ApiPublicHooksCalendarTickRoute
+  ApiPublicHooksChannelHealthRoute: typeof ApiPublicHooksChannelHealthRoute
   ApiPublicHooksContaazulTickRoute: typeof ApiPublicHooksContaazulTickRoute
   ApiPublicHooksDunningTickRoute: typeof ApiPublicHooksDunningTickRoute
   ApiPublicHooksEmailBroadcastTickRoute: typeof ApiPublicHooksEmailBroadcastTickRoute
@@ -7076,6 +7090,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksContaazulTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/channel-health': {
+      id: '/api/public/hooks/channel-health'
+      path: '/api/public/hooks/channel-health'
+      fullPath: '/api/public/hooks/channel-health'
+      preLoaderRoute: typeof ApiPublicHooksChannelHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/calendar-tick': {
       id: '/api/public/hooks/calendar-tick'
       path: '/api/public/hooks/calendar-tick'
@@ -8462,6 +8483,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksCalendarRecordingsTickRoute:
     ApiPublicHooksCalendarRecordingsTickRoute,
   ApiPublicHooksCalendarTickRoute: ApiPublicHooksCalendarTickRoute,
+  ApiPublicHooksChannelHealthRoute: ApiPublicHooksChannelHealthRoute,
   ApiPublicHooksContaazulTickRoute: ApiPublicHooksContaazulTickRoute,
   ApiPublicHooksDunningTickRoute: ApiPublicHooksDunningTickRoute,
   ApiPublicHooksEmailBroadcastTickRoute: ApiPublicHooksEmailBroadcastTickRoute,
