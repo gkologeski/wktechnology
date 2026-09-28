@@ -10,7 +10,15 @@ import { sanitizeTheme, EMPTY_THEME, type BrandTheme } from "@/lib/branding/toke
 import { ControlsPanel, type BuilderForm } from "./controls-panel";
 import { ThemeEditor } from "./theme-editor";
 import { LivePreview } from "./live-preview";
+import { ArchetypeSelector } from "./archetype-selector";
 import type { PreviewEditorTab, PreviewMode, PreviewTarget } from "./preview-targets";
+import {
+  applyBrandArchetype,
+  BRAND_ARCHETYPES,
+  identifyBrandArchetype,
+  type BrandArchetype,
+  type BrandArchetypeId,
+} from "@/lib/branding/archetypes";
 
 const DEFAULT_FORM: BuilderForm = {
   brand_name: "",
@@ -36,9 +44,10 @@ export function BrandingBuilder() {
   const [saved, setSaved] = useState<State>({ form: DEFAULT_FORM, theme: EMPTY_THEME });
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [editorTab, setEditorTab] = useState<PreviewEditorTab>("basics");
+  const [editorTab, setEditorTab] = useState<PreviewEditorTab | "models">("models");
   const [previewMode, setPreviewMode] = useState<PreviewMode>("light");
   const [selectedTarget, setSelectedTarget] = useState<PreviewTarget | null>(null);
+  const [selectedArchetypeId, setSelectedArchetypeId] = useState<BrandArchetypeId | null>(null);
   const builderRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -83,6 +92,21 @@ export function BrandingBuilder() {
   const setTheme = (next: BrandTheme) => setState((s) => ({ ...s, theme: next }));
 
   const dirty = useMemo(() => JSON.stringify(state) !== JSON.stringify(saved), [state, saved]);
+  const archetypeStyle = useMemo(
+    () => ({
+      primary_color: form.primary_color,
+      accent_color: form.accent_color,
+      radius: form.radius,
+      density: form.density,
+      heading_font: form.heading_font,
+      body_font: form.body_font,
+    }),
+    [form],
+  );
+  const activeArchetypeId = useMemo(
+    () => identifyBrandArchetype(archetypeStyle, theme),
+    [archetypeStyle, theme],
+  );
 
   const submit = async () => {
     setBusy(true);
@@ -109,6 +133,24 @@ export function BrandingBuilder() {
 
   const discard = () => setState(saved);
 
+  const selectArchetype = (archetype: BrandArchetype) => {
+    setSelectedArchetypeId(archetype.id);
+    const applied = applyBrandArchetype(archetype, theme);
+    setState((current) => ({
+      form: { ...current.form, ...applied.style },
+      theme: applied.theme,
+    }));
+  };
+
+  const applyArchetype = (archetype: BrandArchetype) => {
+    const applied = applyBrandArchetype(archetype, theme);
+    setState((current) => ({
+      form: { ...current.form, ...applied.style },
+      theme: applied.theme,
+    }));
+    setSelectedArchetypeId(archetype.id);
+  };
+
   useEffect(() => {
     if (!selectedTarget) return;
     const frame = window.requestAnimationFrame(() => {
@@ -128,6 +170,7 @@ export function BrandingBuilder() {
   const selectPreviewTarget = (target: PreviewTarget) => {
     setSelectedTarget(target);
     setEditorTab(target.tab);
+    setSelectedArchetypeId(null);
   };
 
   if (loading) {
@@ -169,11 +212,20 @@ export function BrandingBuilder() {
             className="w-full"
           >
             <div className="px-4 pt-4">
-              <TabsList className="w-full grid grid-cols-2">
+              <TabsList className="w-full grid grid-cols-3">
+                <TabsTrigger value="models">Modelos</TabsTrigger>
                 <TabsTrigger value="basics">Marca</TabsTrigger>
                 <TabsTrigger value="theme">Tema</TabsTrigger>
               </TabsList>
             </div>
+            <TabsContent value="models" className="mt-0">
+              <ArchetypeSelector
+                activeId={activeArchetypeId}
+                selectedId={selectedArchetypeId ?? activeArchetypeId}
+                onSelect={selectArchetype}
+                onApply={applyArchetype}
+              />
+            </TabsContent>
             <TabsContent value="basics" className="mt-0">
               <ControlsPanel form={form} set={set} activeTargetId={selectedTarget?.id} />
             </TabsContent>

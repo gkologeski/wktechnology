@@ -9,6 +9,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
   BRAND_ARCHETYPES,
@@ -119,9 +120,9 @@ export function ArchetypeSelector({ activeId, selectedId, onSelect, onApply }: P
 
       <AlertDialog>
         <Button asChild disabled={!selected || selected.id === activeId} className="w-full">
-          <AlertDialogPrimitiveTrigger>
+          <AlertDialogTrigger>
             <Sparkles className="h-4 w-4" /> Aplicar modelo
-          </AlertDialogPrimitiveTrigger>
+          </AlertDialogTrigger>
         </Button>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -140,6 +141,3 @@ export function ArchetypeSelector({ activeId, selectedId, onSelect, onApply }: P
     </div>
   );
 }
-
-// `Button asChild` preserva o padrão visual oficial no gatilho do diálogo.
-import { AlertDialogTrigger as AlertDialogPrimitiveTrigger } from "@/components/ui/alert-dialog";
