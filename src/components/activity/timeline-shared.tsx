@@ -20,6 +20,7 @@ import {
   Archive,
   File as FileIcon,
 } from "lucide-react";
+import { WhatsAppIcon } from "@/components/whatsapp/whatsapp-icon";
 
 export type EmailMeta = {
   direction: "inbound" | "outbound" | null;
@@ -253,7 +254,7 @@ export const ALL_ACTIONS: BarAction[] = [
     kind: "create",
     value: "whatsapp",
     label: "Enviar WhatsApp",
-    icon: <MessageCircle className="h-5 w-5" />,
+    icon: <WhatsAppIcon className="h-5 w-5" />,
   },
   {
     kind: "create",
@@ -280,8 +281,8 @@ export const ALL_ACTIONS: BarAction[] = [
   {
     kind: "log",
     value: "whatsapp",
-    label: "Registrar conversa do WhatsApp",
-    icon: <MessageCircle className="h-5 w-5" />,
+    label: "Registrar WhatsApp",
+    icon: <WhatsAppIcon className="h-5 w-5" />,
   },
   {
     kind: "log",
