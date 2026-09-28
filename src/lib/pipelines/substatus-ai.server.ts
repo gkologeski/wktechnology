@@ -4,7 +4,6 @@
 import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { z } from "zod";
 
-
 export const SubstatusSuggestionSchema = z.object({
   name: z.string().min(1).max(60),
   description: z.string().max(160).nullable(),

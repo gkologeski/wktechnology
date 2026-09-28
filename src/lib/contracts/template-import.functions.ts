@@ -9,7 +9,6 @@ import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { assertAnyPermission } from "@/lib/access-control/enforce.server";
 import { CONTRACT_TEMPLATE_TOKENS } from "@/lib/contracts/template-tokens";
 
-
 const CREATE = [
   "techcontracts.contract_templates.create.own",
   "techcontracts.contract_templates.create.workspace",

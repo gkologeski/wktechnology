@@ -178,7 +178,6 @@ export const setCustomFieldValue = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-
 export const computeAiProperty = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>

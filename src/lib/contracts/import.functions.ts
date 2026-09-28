@@ -15,7 +15,6 @@ import {
 } from "@/lib/contracts/import-schemas";
 import { buildContractTitle } from "@/lib/contracts/title";
 
-
 const SYSTEM_PROMPT = `Você é um analista jurídico especialista em contratos brasileiros de prestação de serviços de TI (outsourcing, desenvolvimento, manutenção, consultoria). Sua tarefa é extrair variáveis-chave do contrato fornecido.
 
 REGRAS OBRIGATÓRIAS:

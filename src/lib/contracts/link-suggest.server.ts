@@ -3,7 +3,6 @@ import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { z } from "zod";
 import { normalizeEntityName, type ContractLinkMeta } from "@/lib/contracts/link-suggest";
 
-
 export const AiSuggestionSchema = z.object({
   pending_id: z.string(),
   target_id: z.string(),
