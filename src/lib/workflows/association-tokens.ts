@@ -11,6 +11,7 @@
 import type { RefKind } from "@/lib/entity-fields-refs";
 import type { MessageToken } from "@/lib/message-tokens-catalog";
 import { ENTITY_ASSOCIATIONS, type AssociationDef } from "./associations";
+import { localizeWorkflowTokenPath } from "./token-aliases";
 import type { WorkflowEntity } from "./types";
 
 /** Tabela alvo da associação → tipo de referência do seletor. */
@@ -123,7 +124,11 @@ export function buildAssociationTextTokens(entity: WorkflowEntity): MessageToken
   for (const assoc of associationsWithFields(entity)) {
     const group = `${assoc.label} (do gatilho)`;
     for (const f of ASSOCIATION_FIELDS[assoc.target_table] ?? []) {
-      out.push({ token: `{{${assoc.key}.${f.name}}}`, label: f.label, group });
+      out.push({
+        token: `{{${localizeWorkflowTokenPath(`${assoc.key}.${f.name}`, f.label)}}}`,
+        label: f.label,
+        group,
+      });
     }
   }
   return out;
@@ -150,15 +155,15 @@ export function triggerRefOptions(
   for (const assoc of ENTITY_ASSOCIATIONS[entity] ?? []) {
     if (TARGET_REF_KIND[assoc.target_table] !== kind) continue;
     out.push({
-      token: `{{${assoc.fk_column}}}`,
+      token: `{{${localizeWorkflowTokenPath(assoc.fk_column, assoc.label)}}}`,
       label: `${assoc.label} do gatilho`,
       group: GROUP_TRIGGER,
     });
   }
   if (kind === "user") {
     out.push(
-      { token: "{{assigned_to}}", label: "Responsável do gatilho", group: GROUP_TRIGGER },
-      { token: "{{owner_id}}", label: "Criador do registro", group: GROUP_TRIGGER },
+      { token: "{{responsavel}}", label: "Responsável do gatilho", group: GROUP_TRIGGER },
+      { token: "{{id_criado_por}}", label: "Criador do registro", group: GROUP_TRIGGER },
     );
   }
   // dedupe por token
@@ -179,7 +184,7 @@ export function priorStepRefOptions(
   return priorSteps
     .filter((s) => byType[s.type] === kind)
     .map((s) => ({
-      token: `{{steps.${s.index}.id}}`,
+      token: `{{passos.${s.index}.id}}`,
       label: `Passo ${s.index + 1} · ${s.label}`,
       group: GROUP_STEPS,
     }));

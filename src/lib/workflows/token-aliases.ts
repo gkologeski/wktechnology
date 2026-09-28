@@ -17,6 +17,12 @@ const STRUCTURAL_ALIASES: Record<string, string[]> = {
   resumo_itens: ["line_items_summary"],
 };
 
+const PREFERRED_STRUCTURAL_ALIAS: Record<string, string> = Object.fromEntries(
+  Object.entries(STRUCTURAL_ALIASES).flatMap(([alias, canonicals]) =>
+    canonicals.map((canonical) => [canonical, alias]),
+  ),
+);
+
 const EXPLICIT_FIELD_ALIASES: Record<string, string> = {
   signature_document_id: "id_documento_assinatura",
   metadata: "metadados_tecnicos",
@@ -60,7 +66,7 @@ export function localizeWorkflowTokenPath(path: string, leafLabel?: string): str
     .map((part, index) =>
       index === parts.length - 1
         ? workflowFieldAlias(part, leafLabel ?? LABELS[part] ?? part)
-        : normalizeWorkflowTokenName(part),
+        : (PREFERRED_STRUCTURAL_ALIAS[part] ?? normalizeWorkflowTokenName(part)),
     )
     .join(".");
 }

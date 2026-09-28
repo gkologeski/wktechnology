@@ -2,3 +2,4 @@
 - Ações manuais de atividades abertas na timeline usam o gerenciador global na área autenticada para preservar janelas e rascunhos durante a navegação, sem alterar as mutações existentes.
 - Datas e horários de atividades usam seletores controlados compartilhados com adaptadores local/ISO e intervalos de 15 minutos, para manter consistência visual sem alterar formatos persistidos.
 - O editor visual de Workflows separa canvas e configuração detalhada sobre o mesmo rascunho, mantendo as ações e a publicação existentes sem alterar a execução.
+- Variáveis novas de Workflows usam aliases PT-BR sem acentos em snake_case; o motor mantém aliases técnicos antigos para compatibilidade com fluxos salvos.

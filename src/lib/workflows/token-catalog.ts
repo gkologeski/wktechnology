@@ -7,6 +7,7 @@
 
 import type { MessageToken } from "@/lib/message-tokens-catalog";
 import { LINE_ITEM_TOKENS } from "./line-items";
+import { localizeWorkflowTokenPath } from "./token-aliases";
 
 export type TokenFieldOpt = {
   name: string;
@@ -34,7 +35,7 @@ export function buildVarTokens(varNames: string[]): MessageToken[] {
     const key = name.trim();
     if (!key || seen.has(key)) continue;
     seen.add(key);
-    out.push({ token: `{{vars.${key}}}`, label: key, group: GROUP_VARS });
+    out.push({ token: `{{variaveis.${key}}}`, label: key, group: GROUP_VARS });
   }
   return out;
 }
@@ -55,7 +56,11 @@ export function buildTextTokens(
   for (const f of entityFields) {
     if (f.ref || f.system || SKIP.has(f.name)) continue;
     if (f.name.endsWith("_id")) continue;
-    out.push({ token: `{{${f.name}}}`, label: f.label, group: GROUP_RECORD });
+    out.push({
+      token: `{{${localizeWorkflowTokenPath(f.name, f.label)}}}`,
+      label: f.label,
+      group: GROUP_RECORD,
+    });
   }
   // Itens de linha do negócio (tabela relacionada, hidratada sob demanda).
   if (entity === "deals") {
@@ -64,7 +69,11 @@ export function buildTextTokens(
     }
   }
   for (const f of priorFields) {
-    out.push({ token: `{{${f.name}}}`, label: f.label, group: GROUP_STEPS });
+    out.push({
+      token: `{{${localizeWorkflowTokenPath(f.name, f.label)}}}`,
+      label: f.label,
+      group: GROUP_STEPS,
+    });
   }
   return out;
 }
@@ -83,11 +92,19 @@ export function buildIdTokens(
   for (const f of entityFields) {
     if (!f.ref && !f.name.endsWith("_id")) continue;
     if (f.name === "id" || SKIP.has(f.name)) continue;
-    out.push({ token: `{{${f.name}}}`, label: f.label, group: GROUP_REFS });
+    out.push({
+      token: `{{${localizeWorkflowTokenPath(f.name, f.label)}}}`,
+      label: f.label,
+      group: GROUP_REFS,
+    });
   }
   for (const f of priorFields) {
     if (!f.name.endsWith(".id") && !f.name.endsWith("_id")) continue;
-    out.push({ token: `{{${f.name}}}`, label: f.label, group: GROUP_STEPS });
+    out.push({
+      token: `{{${localizeWorkflowTokenPath(f.name, f.label)}}}`,
+      label: f.label,
+      group: GROUP_STEPS,
+    });
   }
   return out;
 }
