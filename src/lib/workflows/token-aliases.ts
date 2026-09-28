@@ -24,6 +24,7 @@ const PREFERRED_STRUCTURAL_ALIAS: Record<string, string> = Object.fromEntries(
 );
 
 const EXPLICIT_FIELD_ALIASES: Record<string, string> = {
+  email: "email",
   first_name: "primeiro_nome",
   full_name: "nome_completo",
   title: "titulo",
