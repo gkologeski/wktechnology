@@ -90,9 +90,9 @@ type ContractSearch = {
   startsTo: string;
   endsFrom: string;
   endsTo: string;
-  tab: ContractTab;
-  sort: string;
-  dir: "asc" | "desc";
+  tab?: ContractTab;
+  sort?: string;
+  dir?: "asc" | "desc";
 };
 
 type ContractTab = "all" | "active" | "signature" | "expiring" | "ended";
@@ -288,8 +288,8 @@ function ContractsPage() {
 
   const queryInput = {
     statuses: (tabFilter as { statuses?: string[] }).statuses,
-    sortBy: sp.sort as ContractSortKey,
-    sortDir: sp.dir,
+    sortBy: (sp.sort ?? "created_at") as ContractSortKey,
+    sortDir: sp.dir ?? "desc",
     role: sp.role ? (sp.role as "provider" | "client") : undefined,
     status: sp.status ? (sp.status as keyof typeof STATUS_LABEL) : undefined,
     search: sp.q || undefined,
@@ -494,7 +494,7 @@ function ContractsPage() {
 
       <ViewsTabs
         views={CONTRACT_TABS}
-        active={sp.tab}
+        active={sp.tab ?? "all"}
         onChange={(tab) => {
           setSelectedMap(new Map());
           setFilter({ tab });
@@ -835,7 +835,7 @@ function ContractsPage() {
                 editable
                 nestLinks={nestLinks}
                 columnKeys={columnKeys}
-                sort={{ key: sp.sort, dir: sp.dir, onSort }}
+                sort={{ key: sp.sort ?? "created_at", dir: sp.dir ?? "desc", onSort }}
               />
             </div>
           ) : (
