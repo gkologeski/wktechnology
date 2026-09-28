@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { buildIdTokens, buildTextTokens, buildVarTokens, type TokenFieldOpt } from "./token-catalog";
+import {
+  buildIdTokens,
+  buildTextTokens,
+  buildVarTokens,
+  type TokenFieldOpt,
+} from "./token-catalog";
 
 const fields: TokenFieldOpt[] = [
   { name: "id", label: "ID" },

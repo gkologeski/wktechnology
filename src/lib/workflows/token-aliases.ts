@@ -117,12 +117,11 @@ export function resolveWorkflowTokenPath(root: unknown, path: string): string {
       continue;
     }
 
-    const available = cursor && typeof cursor === "object" ? (cursor as Record<string, unknown>) : null;
+    const available =
+      cursor && typeof cursor === "object" ? (cursor as Record<string, unknown>) : null;
     const candidates = aliasCandidates.get(part) ?? [];
     const matchingAvailableKey = available
-      ? Object.keys(available).find(
-          (key) => workflowFieldAlias(key, LABELS[key] ?? key) === part,
-        )
+      ? Object.keys(available).find((key) => workflowFieldAlias(key, LABELS[key] ?? key) === part)
       : undefined;
     const resolved =
       (available && part in available ? part : undefined) ??
