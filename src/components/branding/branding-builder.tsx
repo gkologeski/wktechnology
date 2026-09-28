@@ -14,7 +14,6 @@ import { ArchetypeSelector } from "./archetype-selector";
 import type { PreviewEditorTab, PreviewMode, PreviewTarget } from "./preview-targets";
 import {
   applyBrandArchetype,
-  BRAND_ARCHETYPES,
   identifyBrandArchetype,
   type BrandArchetype,
   type BrandArchetypeId,
@@ -131,15 +130,13 @@ export function BrandingBuilder() {
     }
   };
 
-  const discard = () => setState(saved);
+  const discard = () => {
+    setState(saved);
+    setSelectedArchetypeId(null);
+  };
 
   const selectArchetype = (archetype: BrandArchetype) => {
     setSelectedArchetypeId(archetype.id);
-    const applied = applyBrandArchetype(archetype, theme);
-    setState((current) => ({
-      form: { ...current.form, ...applied.style },
-      theme: applied.theme,
-    }));
   };
 
   const applyArchetype = (archetype: BrandArchetype) => {
@@ -150,6 +147,15 @@ export function BrandingBuilder() {
     }));
     setSelectedArchetypeId(archetype.id);
   };
+
+  const selectedArchetype = selectedArchetypeId
+    ? BRAND_ARCHETYPES.find((archetype) => archetype.id === selectedArchetypeId)
+    : null;
+  const previewArchetype = selectedArchetype
+    ? applyBrandArchetype(selectedArchetype, theme)
+    : null;
+  const previewForm = previewArchetype ? { ...form, ...previewArchetype.style } : form;
+  const previewTheme = previewArchetype?.theme ?? theme;
 
   useEffect(() => {
     if (!selectedTarget) return;
@@ -184,7 +190,7 @@ export function BrandingBuilder() {
   return (
     <div
       ref={builderRef}
-      className="bg-card border rounded-2xl shadow-sm overflow-hidden flex flex-col h-[calc(100vh-180px)] min-h-[600px]"
+       className="bg-card border rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-[600px] lg:h-[calc(100vh-180px)]"
     >
       {/* Header */}
       <header className="h-14 border-b px-5 flex items-center justify-between shrink-0">
@@ -204,8 +210,8 @@ export function BrandingBuilder() {
       </header>
 
       {/* Body */}
-      <div className="flex-1 flex min-h-0">
-        <aside className="w-80 border-r overflow-y-auto bg-muted/30 shrink-0">
+       <div className="flex-1 flex flex-col min-h-0 lg:flex-row">
+         <aside className="w-full border-b overflow-y-auto bg-muted/30 shrink-0 lg:w-80 lg:border-b-0 lg:border-r">
           <Tabs
             value={editorTab}
             onValueChange={(value) => setEditorTab(value as PreviewEditorTab)}
@@ -240,18 +246,18 @@ export function BrandingBuilder() {
             </TabsContent>
           </Tabs>
         </aside>
-        <main className="flex-1 bg-muted/40 p-6 min-w-0">
+         <main className="min-h-[560px] flex-1 bg-muted/40 p-4 min-w-0 sm:p-6">
           <LivePreview
             settings={{
-              primary: form.primary_color,
-              accent: form.accent_color,
-              radius: parseInt(form.radius || "8", 10) || 8,
-              headingFont: form.heading_font,
-              bodyFont: form.body_font,
-              density: form.density,
+               primary: previewForm.primary_color,
+               accent: previewForm.accent_color,
+               radius: parseInt(previewForm.radius || "8", 10) || 8,
+               headingFont: previewForm.heading_font,
+               bodyFont: previewForm.body_font,
+               density: previewForm.density,
               logoUrl: form.logo_url,
               brandName: form.brand_name,
-              theme,
+               theme: previewTheme,
             }}
             mode={previewMode}
             onModeChange={setPreviewMode}
