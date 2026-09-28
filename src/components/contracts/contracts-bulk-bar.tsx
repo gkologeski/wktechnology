@@ -47,7 +47,13 @@ export function ContractsBulkBar({
   onClear,
   canDelete,
   canDeleteLoading = false,
+  totalMatching,
+  onSelectAll,
+  isSelectingAll,
 }: {
+  totalMatching?: number;
+  onSelectAll?: () => void;
+  isSelectingAll?: boolean;
   selected: ContractRow[];
   onClear: () => void;
   canDelete: (row: ContractRow) => boolean;
@@ -95,7 +101,13 @@ export function ContractsBulkBar({
 
   return (
     <>
-      <BulkActionBar count={count} onClear={onClear}>
+      <BulkActionBar
+        count={count}
+        onClear={onClear}
+        totalMatching={totalMatching}
+        onSelectAll={onSelectAll}
+        isSelectingAll={isSelectingAll}
+      >
         <Select
           disabled={busy}
           onValueChange={(next) =>

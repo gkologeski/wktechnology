@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, Eye, FileText, Trash2, Save } from "lucide-react";
+import { ArrowLeft, Eye, FileText, Trash2, Save, GitBranch } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -245,6 +245,11 @@ function ContractDetail() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" asChild>
+              <Link to="/contracts/$id/flow" params={{ id: contract.id }}>
+                <GitBranch className="h-4 w-4 mr-1" aria-hidden="true" /> Fluxo do contrato
+              </Link>
+            </Button>
             {contract.source_file_path ? (
               <Button variant="outline" onClick={() => setViewerOpen(true)}>
                 <Eye className="h-4 w-4 mr-1" /> Visualizar

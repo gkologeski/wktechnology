@@ -91,25 +91,33 @@ export function DealContracts({
       ) : rows.length === 0 ? null : (
         <div className="space-y-2">
           {rows.map((c) => (
-            <Link
-              key={c.id}
-              to="/contracts/$id"
-              params={{ id: c.id }}
-              className="block rounded-md border p-3 hover:border-primary/40 transition-colors group"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 flex items-center gap-1 text-primary group-hover:underline">
-                  <span className="font-semibold truncate">{c.title}</span>
-                  <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+            <div key={c.id} className="space-y-1">
+              <Link
+                to="/contracts/$id"
+                params={{ id: c.id }}
+                className="block rounded-md border p-3 hover:border-primary/40 transition-colors group"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex items-center gap-1 text-primary group-hover:underline">
+                    <span className="font-semibold truncate">{c.title}</span>
+                    <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                  </div>
+                  <Badge variant="outline" className="shrink-0">
+                    {STATUS_LABEL[c.status] ?? c.status}
+                  </Badge>
                 </div>
-                <Badge variant="outline" className="shrink-0">
-                  {STATUS_LABEL[c.status] ?? c.status}
-                </Badge>
-              </div>
-              <div className="mt-1 text-xs text-muted-foreground tabular-nums">
-                {c.number} · {formatCurrency(Number(c.total_value), c.currency)}
-              </div>
-            </Link>
+                <div className="mt-1 text-xs text-muted-foreground tabular-nums">
+                  {c.number} · {formatCurrency(Number(c.total_value), c.currency)}
+                </div>
+              </Link>
+              <Link
+                to="/contracts/$id/flow"
+                params={{ id: c.id }}
+                className="inline-block text-xs text-muted-foreground hover:text-foreground hover:underline"
+              >
+                Ver fluxo do contrato
+              </Link>
+            </div>
           ))}
         </div>
       )}

@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
 import { formatCompactDateTime } from "@/lib/format/compact-date";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -63,7 +64,7 @@ import {
 import { ContractsBulkBar } from "@/components/contracts/contracts-bulk-bar";
 import { useCanDelete } from "@/lib/access-control/use-can-delete";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ViewsTabs } from "@/components/crm/hubspot-shell";
+import { FiltersSidebar, ViewsTabs } from "@/components/crm/hubspot-shell";
 import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { ViewModeToggle, type ListViewMode } from "@/components/kanban/view-mode-toggle";
@@ -356,6 +357,26 @@ function ContractsPage() {
 
   const selectedRows = useMemo(() => Array.from(selectedMap.values()), [selectedMap]);
 
+  // Seleciona todos os contratos que atendem aos filtros (todas as páginas).
+  const [selectingAll, setSelectingAll] = useState(false);
+  const selectAllMatching = async () => {
+    setSelectingAll(true);
+    try {
+      const next = new Map<string, ContractRow>();
+      const size = 200;
+      for (let page = 1; page <= Math.ceil(total / size); page++) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const res = await list({ data: { ...queryInput, page, pageSize: size } as any });
+        for (const r of (res.rows ?? []) as ContractRow[]) next.set(r.id, r);
+      }
+      setSelectedMap(next);
+    } catch (e) {
+      toast.error((e as Error).message || "Falha ao selecionar todos os contratos");
+    } finally {
+      setSelectingAll(false);
+    }
+  };
+
   const activeChips: { key: string; label: string; clear: () => void }[] = [];
   if (sp.role)
     activeChips.push({
@@ -438,85 +459,15 @@ function ContractsPage() {
       }),
     });
 
-  const firstIndex = total === 0 ? 0 : (sp.page - 1) * sp.pageSize + 1;
-  const lastIndex = Math.min(sp.page * sp.pageSize, total);
-
-  return (
-    <div className="p-6 space-y-5">
-      <PageHeader
-        title="Contratos"
-        description="Ciclo de vida de contratos com clientes e fornecedores."
-        count={total}
-        countLabel={total === 1 ? "contrato" : "contratos"}
-        actions={
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => setOpenTemplate(true)}>
-              <FileStack className="h-4 w-4 mr-1" /> Gerar de modelo
-            </Button>
-            <Button variant="outline" onClick={() => setOpenImport(true)}>
-              <Upload className="h-4 w-4 mr-1" /> Importar contrato
-            </Button>
-            <Button variant="outline" onClick={() => setOpenBatch(true)}>
-              <Upload className="h-4 w-4 mr-1" /> Importar em lote
-            </Button>
-            <Button variant="outline" onClick={() => setOpenStandardize(true)}>
-              <Type className="h-4 w-4 mr-1" /> Padronizar títulos
-            </Button>
-            <Button variant="outline" onClick={() => setOpenDocKind(true)}>
-              <FileDiff className="h-4 w-4 mr-1" /> Revisar tipo de documento
-            </Button>
-
-            <Button
-              variant="outline"
-              asChild
-              aria-label={
-                pendingCount > 0
-                  ? `Vincular contratos, ${pendingCount} pendentes`
-                  : "Vincular contratos"
-              }
-            >
-              <Link to="/contracts/links">
-                <Link2 className="h-4 w-4 mr-1" /> Vincular contratos
-                {pendingCount > 0 && (
-                  <Badge variant="destructive" className="ml-2 px-1.5">
-                    {pendingCount > 99 ? "99+" : pendingCount}
-                  </Badge>
-                )}
-              </Link>
-            </Button>
-
-            <Button onClick={() => setOpenNew(true)}>
-              <Plus className="h-4 w-4 mr-1" /> Novo contrato
-            </Button>
-          </div>
-        }
-      />
-
-      <ViewsTabs
-        views={CONTRACT_TABS}
-        active={sp.tab ?? "all"}
-        onChange={(tab) => {
-          setSelectedMap(new Map());
-          setFilter({ tab });
-        }}
-      />
-
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 min-w-64">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por título ou número…"
-            value={searchDraft}
-            onChange={(e) => setSearchDraft(e.target.value)}
-            className="pl-8"
-            aria-label="Buscar contratos"
-          />
-        </div>
+  const filterPanel = (
+    <div className="space-y-4">
+      <div className="space-y-1.5">
+        <Label htmlFor="filter-role">Tipo</Label>
         <Select
           value={sp.role || "all"}
           onValueChange={(v) => setFilter({ role: v === "all" ? "" : v })}
         >
-          <SelectTrigger className="w-40" aria-label="Tipo">
+          <SelectTrigger id="filter-role" aria-label="Tipo">
             <SelectValue placeholder="Tipo" />
           </SelectTrigger>
           <SelectContent>
@@ -525,11 +476,14 @@ function ContractsPage() {
             <SelectItem value="client">Compra</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="filter-status">Status</Label>
         <Select
           value={sp.status || "all"}
           onValueChange={(v) => setFilter({ status: v === "all" ? "" : v })}
         >
-          <SelectTrigger className="w-52" aria-label="Status">
+          <SelectTrigger id="filter-status" aria-label="Status">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -541,424 +495,511 @@ function ContractsPage() {
             ))}
           </SelectContent>
         </Select>
-        <AssigneeFilter
-          value={sp.assignee || ASSIGNEE_ALL}
-          onChange={(next) => setFilter({ assignee: next })}
+      </div>
+      <div className="space-y-1.5">
+        <Label>Empresa (contraparte)</Label>
+        <CompanyPicker
+          mode="pick"
+          hydrateById={false}
+          value={{ id: sp.companyId || null, name: sp.companyName }}
+          onChange={(v) => setFilter({ companyId: v.id ?? "", companyName: v.name })}
+          placeholder="Buscar empresa"
         />
-        <ViewModeToggle
-          value={sp.view ?? "table"}
-          onChange={(v) => navigate({ search: (prev) => ({ ...prev, view: v }) })}
-        />
-        {(sp.view ?? "table") === "table" ? <ColumnsButton size="default" /> : null}
+      </div>
 
-        <Popover open={openFilters} onOpenChange={setOpenFilters}>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className="gap-1">
-              <Filter className="h-4 w-4" /> Filtros
-              {advancedCount > 0 && (
-                <Badge variant="secondary" className="ml-1 px-1.5">
-                  {advancedCount}
-                </Badge>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="end" className="w-96 space-y-4">
-            <div className="space-y-1.5">
-              <Label>Empresa (contraparte)</Label>
-              <CompanyPicker
-                mode="pick"
-                hydrateById={false}
-                value={{ id: sp.companyId || null, name: sp.companyName }}
-                onChange={(v) => setFilter({ companyId: v.id ?? "", companyName: v.name })}
-                placeholder="Buscar empresa"
-              />
-            </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="filter-legal-entity">Contratante</Label>
+        <Select
+          value={sp.legalEntityId || "all"}
+          onValueChange={(v) => setFilter({ legalEntityId: v === "all" ? "" : v })}
+        >
+          <SelectTrigger id="filter-legal-entity">
+            <SelectValue placeholder="Todos os contratantes" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os contratantes</SelectItem>
+            {(legalEntitiesQuery.data ?? []).map((e) => (
+              <SelectItem key={e.id} value={e.id}>
+                {e.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="filter-legal-entity">Contratante</Label>
-              <Select
-                value={sp.legalEntityId || "all"}
-                onValueChange={(v) => setFilter({ legalEntityId: v === "all" ? "" : v })}
-              >
-                <SelectTrigger id="filter-legal-entity">
-                  <SelectValue placeholder="Todos os contratantes" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os contratantes</SelectItem>
-                  {(legalEntitiesQuery.data ?? []).map((e) => (
-                    <SelectItem key={e.id} value={e.id}>
-                      {e.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Vigência</Label>
-              <div className="flex flex-wrap gap-1.5">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => setFilter({ endsFrom: iso(new Date()), endsTo: plusDays(30) })}
-                >
-                  Vencendo em 30 dias
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => setFilter({ endsFrom: iso(new Date()), endsTo: plusDays(60) })}
-                >
-                  60 dias
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => setFilter({ endsFrom: iso(new Date()), endsTo: plusDays(90) })}
-                >
-                  90 dias
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  onClick={() =>
-                    setFilter({
-                      startsTo: iso(new Date()),
-                      endsFrom: iso(new Date()),
-                      endsTo: "",
-                      startsFrom: "",
-                    })
-                  }
-                >
-                  Vigentes hoje
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  onClick={() =>
-                    setFilter({
-                      endsTo: iso(new Date()),
-                      endsFrom: "",
-                      startsFrom: "",
-                      startsTo: "",
-                    })
-                  }
-                >
-                  Já encerrados
-                </Button>
-              </div>
-              <div className="space-y-2">
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Período de início</Label>
-                  <IsoDateRangePicker
-                    className="w-full"
-                    ariaLabel="Período de início do contrato"
-                    placeholder="Qualquer data de início"
-                    from={sp.startsFrom}
-                    to={sp.startsTo}
-                    onChange={({ from, to }) => setFilter({ startsFrom: from, startsTo: to })}
-                    onClear={() => setFilter({ startsFrom: "", startsTo: "" })}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Período de término</Label>
-                  <IsoDateRangePicker
-                    className="w-full"
-                    ariaLabel="Período de término do contrato"
-                    placeholder="Qualquer data de término"
-                    from={sp.endsFrom}
-                    to={sp.endsTo}
-                    onChange={({ from, to }) => setFilter({ endsFrom: from, endsTo: to })}
-                    onClear={() => setFilter({ endsFrom: "", endsTo: "" })}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end">
-              <Button type="button" variant="ghost" size="sm" onClick={clearAll}>
-                Limpar filtros
-              </Button>
-            </div>
-          </PopoverContent>
-        </Popover>
-
-        <div className="flex items-center gap-2">
-          <Label htmlFor="contracts-group-by" className="text-sm text-muted-foreground">
-            Agrupar por
-          </Label>
-          <Select
-            value={sp.groupBy}
-            onValueChange={(next) =>
-              navigate({
-                search: (prev: ContractSearch) => ({ ...prev, groupBy: next as GroupBy }),
+      <div className="space-y-2">
+        <Label>Vigência</Label>
+        <div className="flex flex-wrap gap-1.5">
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={() => setFilter({ endsFrom: iso(new Date()), endsTo: plusDays(30) })}
+          >
+            Vencendo em 30 dias
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={() => setFilter({ endsFrom: iso(new Date()), endsTo: plusDays(60) })}
+          >
+            60 dias
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={() => setFilter({ endsFrom: iso(new Date()), endsTo: plusDays(90) })}
+          >
+            90 dias
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={() =>
+              setFilter({
+                startsTo: iso(new Date()),
+                endsFrom: iso(new Date()),
+                endsTo: "",
+                startsFrom: "",
               })
             }
           >
-            <SelectTrigger id="contracts-group-by" className="w-44">
-              <SelectValue placeholder="Nenhum" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">Nenhum</SelectItem>
-              <SelectItem value="company">Empresa</SelectItem>
-              <SelectItem value="service">Serviço</SelectItem>
-              <SelectItem value="job_profile">Cargo</SelectItem>
-              <SelectItem value="seniority">Senioridade</SelectItem>
-            </SelectContent>
-          </Select>
+            Vigentes hoje
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={() =>
+              setFilter({
+                endsTo: iso(new Date()),
+                endsFrom: "",
+                startsFrom: "",
+                startsTo: "",
+              })
+            }
+          >
+            Já encerrados
+          </Button>
         </div>
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id="nest-links"
-            checked={nestLinks}
-            onCheckedChange={(v) => setNestLinks(v === true)}
-          />
-          <Label htmlFor="nest-links" className="text-sm text-muted-foreground">
-            Aninhar vínculos
-          </Label>
+        <div className="space-y-2">
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Período de início</Label>
+            <IsoDateRangePicker
+              className="w-full"
+              ariaLabel="Período de início do contrato"
+              placeholder="Qualquer data de início"
+              from={sp.startsFrom}
+              to={sp.startsTo}
+              onChange={({ from, to }) => setFilter({ startsFrom: from, startsTo: to })}
+              onClear={() => setFilter({ startsFrom: "", startsTo: "" })}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Período de término</Label>
+            <IsoDateRangePicker
+              className="w-full"
+              ariaLabel="Período de término do contrato"
+              placeholder="Qualquer data de término"
+              from={sp.endsFrom}
+              to={sp.endsTo}
+              onChange={({ from, to }) => setFilter({ endsFrom: from, endsTo: to })}
+              onClear={() => setFilter({ endsFrom: "", endsTo: "" })}
+            />
+          </div>
         </div>
       </div>
 
-      {activeChips.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          {activeChips.map((chip) => (
-            <Badge key={chip.key} variant="secondary" className="gap-1 pr-1">
-              {chip.label}
-              <button
-                type="button"
-                aria-label={`Remover filtro ${chip.label}`}
-                onClick={chip.clear}
-                className="rounded p-0.5 hover:bg-background/60"
+      <div className="flex justify-end">
+        <Button type="button" variant="ghost" size="sm" onClick={clearAll}>
+          Limpar filtros
+        </Button>
+      </div>
+    </div>
+  );
+
+  const firstIndex = total === 0 ? 0 : (sp.page - 1) * sp.pageSize + 1;
+  const lastIndex = Math.min(sp.page * sp.pageSize, total);
+
+  return (
+    <div className="flex min-h-full">
+      <FiltersSidebar hasActiveFilters={activeChips.length > 0} onClear={clearAll}>
+        <div className="px-1 py-2">{filterPanel}</div>
+      </FiltersSidebar>
+      <div className="min-w-0 flex-1 p-6 space-y-5">
+        <PageHeader
+          title="Contratos"
+          description="Ciclo de vida de contratos com clientes e fornecedores."
+          count={total}
+          countLabel={total === 1 ? "contrato" : "contratos"}
+          actions={
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => setOpenTemplate(true)}>
+                <FileStack className="h-4 w-4 mr-1" /> Gerar de modelo
+              </Button>
+              <Button variant="outline" onClick={() => setOpenImport(true)}>
+                <Upload className="h-4 w-4 mr-1" /> Importar contrato
+              </Button>
+              <Button variant="outline" onClick={() => setOpenBatch(true)}>
+                <Upload className="h-4 w-4 mr-1" /> Importar em lote
+              </Button>
+              <Button variant="outline" onClick={() => setOpenStandardize(true)}>
+                <Type className="h-4 w-4 mr-1" /> Padronizar títulos
+              </Button>
+              <Button variant="outline" onClick={() => setOpenDocKind(true)}>
+                <FileDiff className="h-4 w-4 mr-1" /> Revisar tipo de documento
+              </Button>
+
+              <Button
+                variant="outline"
+                asChild
+                aria-label={
+                  pendingCount > 0
+                    ? `Vincular contratos, ${pendingCount} pendentes`
+                    : "Vincular contratos"
+                }
               >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          ))}
-          <Button variant="ghost" size="sm" onClick={clearAll}>
-            Limpar filtros
-          </Button>
-        </div>
-      )}
+                <Link to="/contracts/links">
+                  <Link2 className="h-4 w-4 mr-1" /> Vincular contratos
+                  {pendingCount > 0 && (
+                    <Badge variant="destructive" className="ml-2 px-1.5">
+                      {pendingCount > 99 ? "99+" : pendingCount}
+                    </Badge>
+                  )}
+                </Link>
+              </Button>
 
-      {selectedRows.length > 0 ? (
-        <ContractsBulkBar
-          selected={selectedRows}
-          onClear={() => setSelectedMap(new Map())}
-          canDelete={(row) => canDeleteRecord(row)}
-          canDeleteLoading={deletePermLoading}
+              <Button onClick={() => setOpenNew(true)}>
+                <Plus className="h-4 w-4 mr-1" /> Novo contrato
+              </Button>
+            </div>
+          }
         />
-      ) : null}
 
-      {isLoading ? (
-        <div className="space-y-2 rounded-lg border bg-card p-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} className="h-10 w-full" />
-          ))}
-        </div>
-      ) : rows.length === 0 && hasFilters ? (
-        <div className="rounded-lg border bg-card p-12 text-center">
-          <SearchX className="mx-auto h-10 w-10 text-muted-foreground" />
-          <h3 className="mt-4 text-lg font-medium">Nenhum resultado para os filtros</h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Ajuste ou limpe os filtros para ver mais contratos.
-          </p>
-          <Button className="mt-4" variant="outline" onClick={clearAll}>
-            Limpar filtros
-          </Button>
-        </div>
-      ) : rows.length === 0 ? (
-        <div className="rounded-lg border bg-card p-12 text-center">
-          <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
-          <h3 className="mt-4 text-lg font-medium">Nenhum contrato ainda</h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Comece criando um contrato ou gere um a partir de um negócio ganho.
-          </p>
-          <Button className="mt-4" onClick={() => setOpenNew(true)}>
-            <Plus className="h-4 w-4 mr-1" /> Novo contrato
-          </Button>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {(sp.groupBy !== "none" || nestLinks) && total > rows.length && (
-            <p className="text-xs text-muted-foreground">
-              O agrupamento e o aninhamento de aditivos consideram apenas os contratos da página
-              exibida.
-            </p>
-          )}
+        <ViewsTabs
+          views={CONTRACT_TABS}
+          active={sp.tab ?? "all"}
+          onChange={(tab) => {
+            setSelectedMap(new Map());
+            setFilter({ tab });
+          }}
+        />
 
-          {(sp.view ?? "table") === "kanban" ? (
-            <KanbanBoard
-              rows={rows as Array<ContractRow & { id: string }>}
-              table="contracts"
-              stageField="status"
-              selectable
-              entityLabel="contrato"
-              canDelete={false}
-              readOnly
-              ariaLabel="Quadro de contratos por status"
-              columns={Object.entries(STATUS_LABEL).map(([value, label]) => ({
-                value,
-                label,
-                tone: CONTRACT_KANBAN_TONE[value],
-              }))}
-              renderCard={(c) => (
-                <div className="space-y-1">
-                  <Link
-                    to="/contracts/$id"
-                    params={{ id: c.id }}
-                    className="block text-sm font-medium hover:underline"
-                  >
-                    {c.title}
-                  </Link>
-                  <p className="text-xs text-muted-foreground">
-                    {ROLE_LABEL[c.role as string] ?? c.role}
-                    {c.number ? ` · ${c.number}` : ""}
-                  </p>
-                  {c.starts_at ? (
-                    <p className="text-xs text-muted-foreground">
-                      Início {formatCompactDateTime(c.starts_at as string)}
-                    </p>
-                  ) : null}
-                </div>
-              )}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-64">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por título ou número…"
+              value={searchDraft}
+              onChange={(e) => setSearchDraft(e.target.value)}
+              className="pl-8"
+              aria-label="Buscar contratos"
             />
-          ) : sp.groupBy === "none" ? (
-            <div className="rounded-lg border bg-card">
-              <ContractsTable
+          </div>
+          <AssigneeFilter
+            value={sp.assignee || ASSIGNEE_ALL}
+            onChange={(next) => setFilter({ assignee: next })}
+          />
+          <ViewModeToggle
+            value={sp.view ?? "table"}
+            onChange={(v) => navigate({ search: (prev) => ({ ...prev, view: v }) })}
+          />
+          {(sp.view ?? "table") === "table" ? <ColumnsButton size="default" /> : null}
+
+          <Popover open={openFilters} onOpenChange={setOpenFilters}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="gap-1 lg:hidden">
+                <Filter className="h-4 w-4" /> Filtros
+                {advancedCount + (sp.role ? 1 : 0) + (sp.status ? 1 : 0) > 0 && (
+                  <Badge variant="secondary" className="ml-1 px-1.5">
+                    {advancedCount + (sp.role ? 1 : 0) + (sp.status ? 1 : 0)}
+                  </Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-96 space-y-4">
+              {filterPanel}
+            </PopoverContent>
+          </Popover>
+
+          <div className="flex items-center gap-2">
+            <Label htmlFor="contracts-group-by" className="text-sm text-muted-foreground">
+              Agrupar por
+            </Label>
+            <Select
+              value={sp.groupBy}
+              onValueChange={(next) =>
+                navigate({
+                  search: (prev: ContractSearch) => ({ ...prev, groupBy: next as GroupBy }),
+                })
+              }
+            >
+              <SelectTrigger id="contracts-group-by" className="w-44">
+                <SelectValue placeholder="Nenhum" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nenhum</SelectItem>
+                <SelectItem value="company">Empresa</SelectItem>
+                <SelectItem value="service">Serviço</SelectItem>
+                <SelectItem value="job_profile">Cargo</SelectItem>
+                <SelectItem value="seniority">Senioridade</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="nest-links"
+              checked={nestLinks}
+              onCheckedChange={(v) => setNestLinks(v === true)}
+            />
+            <Label htmlFor="nest-links" className="text-sm text-muted-foreground">
+              Aninhar vínculos
+            </Label>
+          </div>
+        </div>
+
+        {activeChips.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            {activeChips.map((chip) => (
+              <Badge key={chip.key} variant="secondary" className="gap-1 pr-1">
+                {chip.label}
+                <button
+                  type="button"
+                  aria-label={`Remover filtro ${chip.label}`}
+                  onClick={chip.clear}
+                  className="rounded p-0.5 hover:bg-background/60"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            ))}
+            <Button variant="ghost" size="sm" onClick={clearAll}>
+              Limpar filtros
+            </Button>
+          </div>
+        )}
+
+        {selectedRows.length > 0 ? (
+          <ContractsBulkBar
+            selected={selectedRows}
+            totalMatching={total}
+            onSelectAll={() => void selectAllMatching()}
+            isSelectingAll={selectingAll}
+            onClear={() => setSelectedMap(new Map())}
+            canDelete={(row) => canDeleteRecord(row)}
+            canDeleteLoading={deletePermLoading}
+          />
+        ) : null}
+
+        {isLoading ? (
+          <div className="space-y-2 rounded-lg border bg-card p-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="h-10 w-full" />
+            ))}
+          </div>
+        ) : rows.length === 0 && hasFilters ? (
+          <div className="rounded-lg border bg-card p-12 text-center">
+            <SearchX className="mx-auto h-10 w-10 text-muted-foreground" />
+            <h3 className="mt-4 text-lg font-medium">Nenhum resultado para os filtros</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Ajuste ou limpe os filtros para ver mais contratos.
+            </p>
+            <Button className="mt-4" variant="outline" onClick={clearAll}>
+              Limpar filtros
+            </Button>
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="rounded-lg border bg-card p-12 text-center">
+            <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
+            <h3 className="mt-4 text-lg font-medium">Nenhum contrato ainda</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Comece criando um contrato ou gere um a partir de um negócio ganho.
+            </p>
+            <Button className="mt-4" onClick={() => setOpenNew(true)}>
+              <Plus className="h-4 w-4 mr-1" /> Novo contrato
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {(sp.groupBy !== "none" || nestLinks) && total > rows.length && (
+              <p className="text-xs text-muted-foreground">
+                O agrupamento e o aninhamento de aditivos consideram apenas os contratos da página
+                exibida.
+              </p>
+            )}
+
+            {(sp.view ?? "table") === "kanban" ? (
+              <KanbanBoard
+                rows={rows as Array<ContractRow & { id: string }>}
+                table="contracts"
+                stageField="status"
+                selectable
+                entityLabel="contrato"
+                canDelete={false}
+                readOnly
+                ariaLabel="Quadro de contratos por status"
+                columns={Object.entries(STATUS_LABEL).map(([value, label]) => ({
+                  value,
+                  label,
+                  tone: CONTRACT_KANBAN_TONE[value],
+                }))}
+                renderCard={(c) => (
+                  <div className="space-y-1">
+                    <Link
+                      to="/contracts/$id"
+                      params={{ id: c.id }}
+                      className="block text-sm font-medium hover:underline"
+                    >
+                      {c.title}
+                    </Link>
+                    <p className="text-xs text-muted-foreground">
+                      {ROLE_LABEL[c.role as string] ?? c.role}
+                      {c.number ? ` · ${c.number}` : ""}
+                    </p>
+                    {c.starts_at ? (
+                      <p className="text-xs text-muted-foreground">
+                        Início {formatCompactDateTime(c.starts_at as string)}
+                      </p>
+                    ) : null}
+                  </div>
+                )}
+              />
+            ) : sp.groupBy === "none" ? (
+              <div className="rounded-lg border bg-card">
+                <ContractsTable
+                  rows={rows}
+                  selection={selection}
+                  editable
+                  nestLinks={nestLinks}
+                  columnKeys={columnKeys}
+                  sort={{ key: sp.sort ?? "created_at", dir: sp.dir ?? "desc", onSort }}
+                />
+              </div>
+            ) : (
+              <ContractsGroupedList
                 rows={rows}
+                groupBy={sp.groupBy}
+                groupings={groupQuery.data}
+                isLoading={groupQuery.isLoading}
+                isError={groupQuery.isError}
+                onRetry={() => groupQuery.refetch()}
                 selection={selection}
                 editable
                 nestLinks={nestLinks}
                 columnKeys={columnKeys}
-                sort={{ key: sp.sort ?? "created_at", dir: sp.dir ?? "desc", onSort }}
               />
-            </div>
-          ) : (
-            <ContractsGroupedList
-              rows={rows}
-              groupBy={sp.groupBy}
-              groupings={groupQuery.data}
-              isLoading={groupQuery.isLoading}
-              isError={groupQuery.isError}
-              onRetry={() => groupQuery.refetch()}
-              selection={selection}
-              editable
-              nestLinks={nestLinks}
-              columnKeys={columnKeys}
-            />
-          )}
+            )}
 
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card px-3 py-2">
-            <p className="text-sm text-muted-foreground" aria-live="polite">
-              Exibindo {firstIndex}–{lastIndex} de {total} contratos
-              {isFetching ? " · atualizando…" : ""}
-            </p>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="page-size" className="text-sm text-muted-foreground">
-                  Por página
-                </Label>
-                <Select
-                  value={String(sp.pageSize)}
-                  onValueChange={(v) => setFilter({ pageSize: Number(v) })}
-                >
-                  <SelectTrigger id="page-size" className="h-9 w-20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PAGE_SIZES.map((s) => (
-                      <SelectItem key={s} value={String(s)}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  aria-label="Primeira página"
-                  disabled={sp.page <= 1}
-                  onClick={() => setPage(1)}
-                >
-                  <ChevronsLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  aria-label="Página anterior"
-                  disabled={sp.page <= 1}
-                  onClick={() => setPage(sp.page - 1)}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="px-2 text-sm">
-                  {sp.page} / {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  aria-label="Próxima página"
-                  disabled={sp.page >= totalPages}
-                  onClick={() => setPage(sp.page + 1)}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  aria-label="Última página"
-                  disabled={sp.page >= totalPages}
-                  onClick={() => setPage(totalPages)}
-                >
-                  <ChevronsRight className="h-4 w-4" />
-                </Button>
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card px-3 py-2">
+              <p className="text-sm text-muted-foreground" aria-live="polite">
+                Exibindo {firstIndex}–{lastIndex} de {total} contratos
+                {isFetching ? " · atualizando…" : ""}
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="page-size" className="text-sm text-muted-foreground">
+                    Por página
+                  </Label>
+                  <Select
+                    value={String(sp.pageSize)}
+                    onValueChange={(v) => setFilter({ pageSize: Number(v) })}
+                  >
+                    <SelectTrigger id="page-size" className="h-9 w-20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAGE_SIZES.map((s) => (
+                        <SelectItem key={s} value={String(s)}>
+                          {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label="Primeira página"
+                    disabled={sp.page <= 1}
+                    onClick={() => setPage(1)}
+                  >
+                    <ChevronsLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label="Página anterior"
+                    disabled={sp.page <= 1}
+                    onClick={() => setPage(sp.page - 1)}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="px-2 text-sm">
+                    {sp.page} / {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label="Próxima página"
+                    disabled={sp.page >= totalPages}
+                    onClick={() => setPage(sp.page + 1)}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label="Última página"
+                    disabled={sp.page >= totalPages}
+                    onClick={() => setPage(totalPages)}
+                  >
+                    <ChevronsRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <QuickCreateContractDialog
-        open={openNew}
-        onOpenChange={setOpenNew}
-        onCreated={() => qc.invalidateQueries({ queryKey: ["contracts"] })}
-      />
+        <QuickCreateContractDialog
+          open={openNew}
+          onOpenChange={setOpenNew}
+          onCreated={() => qc.invalidateQueries({ queryKey: ["contracts"] })}
+        />
 
-      <ApplyContractTemplateDialog
-        open={openTemplate}
-        onOpenChange={(next) => {
-          setOpenTemplate(next);
-          if (!next) qc.invalidateQueries({ queryKey: ["contracts"] });
-        }}
-      />
+        <ApplyContractTemplateDialog
+          open={openTemplate}
+          onOpenChange={(next) => {
+            setOpenTemplate(next);
+            if (!next) qc.invalidateQueries({ queryKey: ["contracts"] });
+          }}
+        />
 
-      <BatchImportContractsDialog
-        open={openBatch}
-        onOpenChange={setOpenBatch}
-        onImported={() => qc.invalidateQueries({ queryKey: ["contracts"] })}
-      />
+        <BatchImportContractsDialog
+          open={openBatch}
+          onOpenChange={setOpenBatch}
+          onImported={() => qc.invalidateQueries({ queryKey: ["contracts"] })}
+        />
 
-      <ImportContractFileDialog
-        open={openImport}
-        onOpenChange={(next) => {
-          setOpenImport(next);
-          if (!next) qc.invalidateQueries({ queryKey: ["contracts"] });
-        }}
-      />
+        <ImportContractFileDialog
+          open={openImport}
+          onOpenChange={(next) => {
+            setOpenImport(next);
+            if (!next) qc.invalidateQueries({ queryKey: ["contracts"] });
+          }}
+        />
 
-      {openStandardize ? (
-        <ContractTitlesStandardizeDialog onOpenChange={setOpenStandardize} />
-      ) : null}
+        {openStandardize ? (
+          <ContractTitlesStandardizeDialog onOpenChange={setOpenStandardize} />
+        ) : null}
 
-      {openDocKind ? <ContractDocKindReviewDialog onOpenChange={setOpenDocKind} /> : null}
-      <ColumnsEditor />
+        {openDocKind ? <ContractDocKindReviewDialog onOpenChange={setOpenDocKind} /> : null}
+        <ColumnsEditor />
+      </div>
     </div>
   );
 }

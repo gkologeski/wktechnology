@@ -3,7 +3,7 @@
 // A tabela suporta seleção múltipla e edição inline dos campos operacionais
 // (status, responsável, vigência e valor). A gravação usa as server functions
 // existentes, que continuam validando permissão e workspace.
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   ArrowDown,
@@ -248,10 +248,11 @@ export function ContractsTable({
   /** Ordenação por cabeçalho (servidor). */
   sort?: ContractsSort;
 }) {
-  const visibleSet = useMemo(
-    () => new Set(columnKeys ?? CONTRACT_COLUMNS.map((c) => c.key)),
-    [columnKeys],
-  );
+  const orderedKeys = useMemo(() => {
+    const known = new Set(CONTRACT_COLUMNS.map((c) => c.key));
+    const keys = (columnKeys ?? CONTRACT_COLUMNS.map((c) => c.key)).filter((k) => known.has(k));
+    return keys.length ? keys : CONTRACT_COLUMNS.map((c) => c.key);
+  }, [columnKeys]);
   const arranged = useMemo(() => arrangeContractLinks(rows, nestLinks), [rows, nestLinks]);
 
   const ids = useMemo(() => rows.map((r) => r.id), [rows]);
@@ -273,38 +274,40 @@ export function ContractsTable({
               />
             </TableHead>
           ) : null}
-          {CONTRACT_COLUMNS.filter((col) => visibleSet.has(col.key)).map((col) => {
-            const align = col.key === "total_value" ? "text-right" : undefined;
-            if (!sort || !col.sortKey) {
+          {orderedKeys
+            .map((k) => CONTRACT_COLUMNS.find((col) => col.key === k)!)
+            .map((col) => {
+              const align = col.key === "total_value" ? "text-right" : undefined;
+              if (!sort || !col.sortKey) {
+                return (
+                  <TableHead key={col.key} className={align}>
+                    {col.label}
+                  </TableHead>
+                );
+              }
+              const active = sort.key === col.sortKey;
+              const Icon = !active ? ArrowUpDown : sort.dir === "asc" ? ArrowUp : ArrowDown;
               return (
-                <TableHead key={col.key} className={align}>
-                  {col.label}
+                <TableHead
+                  key={col.key}
+                  className={align}
+                  aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}
+                >
+                  <button
+                    type="button"
+                    onClick={() => sort.onSort(col.sortKey!)}
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      active && "text-foreground",
+                    )}
+                    aria-label={`Ordenar por ${col.label}`}
+                  >
+                    {col.label}
+                    <Icon className="h-3.5 w-3.5 opacity-70" aria-hidden="true" />
+                  </button>
                 </TableHead>
               );
-            }
-            const active = sort.key === col.sortKey;
-            const Icon = !active ? ArrowUpDown : sort.dir === "asc" ? ArrowUp : ArrowDown;
-            return (
-              <TableHead
-                key={col.key}
-                className={align}
-                aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}
-              >
-                <button
-                  type="button"
-                  onClick={() => sort.onSort(col.sortKey!)}
-                  className={cn(
-                    "inline-flex items-center gap-1 rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                    active && "text-foreground",
-                  )}
-                  aria-label={`Ordenar por ${col.label}`}
-                >
-                  {col.label}
-                  <Icon className="h-3.5 w-3.5 opacity-70" aria-hidden="true" />
-                </button>
-              </TableHead>
-            );
-          })}
+            })}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -318,7 +321,7 @@ export function ContractsTable({
             selection={selection}
             editable={editable}
             onChanged={onChanged}
-            visible={visibleSet}
+            visible={orderedKeys}
           />
         ))}
       </TableBody>
@@ -336,7 +339,7 @@ function ContractTableRow({
   onChanged,
   visible,
 }: {
-  visible?: Set<string>;
+  visible?: string[];
   contract: ContractRow;
   depth: number;
   linkKind: ArrangedContract["linkKind"];
@@ -367,7 +370,169 @@ function ContractTableRow({
     }
   }
 
-  const show = (key: string) => !visible || visible.has(key);
+  const cells: Record<string, ReactNode> = {
+    number: (
+      <TableCell className="font-mono text-xs">
+        <Link to="/contracts/$id" params={{ id: c.id }} className="hover:underline">
+          {c.number ?? "—"}
+        </Link>
+      </TableCell>
+    ),
+    title: (
+      <TableCell>
+        <div
+          className="flex items-center gap-2"
+          style={depth > 0 ? { paddingLeft: depth * 20 } : undefined}
+        >
+          {depth > 0 ? (
+            <CornerDownRight
+              className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+              aria-hidden="true"
+            />
+          ) : null}
+          {path ? (
+            <span className="shrink-0 font-mono text-xs text-muted-foreground">{path}</span>
+          ) : null}
+          <Link
+            to="/contracts/$id"
+            params={{ id: c.id }}
+            className="max-w-[22rem] truncate font-medium hover:underline"
+            title={c.title}
+          >
+            {c.title}
+          </Link>
+          {isAmendment ? (
+            <Badge variant="outline" className="h-4 shrink-0 px-1.5 py-0 text-[10px]">
+              Aditivo{c.amendment_number ? ` ${c.amendment_number}` : ""}
+            </Badge>
+          ) : null}
+          {linkKind === "purchase" ? (
+            <Badge variant="outline" className="h-4 shrink-0 px-1.5 py-0 text-[10px]">
+              Compra
+            </Badge>
+          ) : null}
+
+          {c.imported_from ? (
+            <Badge variant="outline" className="h-4 shrink-0 px-1.5 py-0 text-[10px]">
+              Importado
+            </Badge>
+          ) : null}
+        </div>
+      </TableCell>
+    ),
+    role: <TableCell className="text-sm">{ROLE_LABEL[c.role] ?? c.role}</TableCell>,
+    status: (
+      <TableCell>
+        {editable ? (
+          <Select
+            value={c.status}
+            disabled={saving}
+            onValueChange={(next) => void patch({ status: next }, "Status")}
+          >
+            <SelectTrigger className="h-8 w-40" aria-label={`Status do contrato ${c.title}`}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUS_VALUES.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {STATUS_LABEL[s]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <Badge variant="outline" className={STATUS_TONE[c.status] ?? ""}>
+            {STATUS_LABEL[c.status] ?? c.status}
+          </Badge>
+        )}
+      </TableCell>
+    ),
+    total_value: (
+      <TableCell className="text-right tabular-nums">
+        {editable ? (
+          <Input
+            type="number"
+            min={0}
+            step="0.01"
+            defaultValue={Number(c.total_value ?? 0)}
+            disabled={saving}
+            aria-label={`Valor total do contrato ${c.title}`}
+            className="h-8 w-32 text-right"
+            onBlur={(e) => {
+              const next = Number(e.target.value);
+              if (Number.isNaN(next) || next < 0) return;
+              if (next === Number(c.total_value ?? 0)) return;
+              void patch({ total_value: next }, "Valor");
+            }}
+          />
+        ) : (
+          formatCurrency(Number(c.total_value ?? 0), c.currency)
+        )}
+      </TableCell>
+    ),
+    validity: (
+      <TableCell className="text-xs text-muted-foreground">
+        {editable ? (
+          <div className="flex items-center gap-1">
+            <Input
+              type="date"
+              defaultValue={dateOnly(c.starts_at)}
+              disabled={saving}
+              aria-label={`Início da vigência do contrato ${c.title}`}
+              className="h-8 w-32"
+              onBlur={(e) => {
+                const next = e.target.value || null;
+                if (next === (dateOnly(c.starts_at) || null)) return;
+                void patch({ starts_at: next }, "Início da vigência");
+              }}
+            />
+            <span aria-hidden="true">→</span>
+            <Input
+              type="date"
+              defaultValue={dateOnly(c.ends_at)}
+              disabled={saving}
+              aria-label={`Fim da vigência do contrato ${c.title}`}
+              className="h-8 w-32"
+              onBlur={(e) => {
+                const next = e.target.value || null;
+                if (next === (dateOnly(c.ends_at) || null)) return;
+                void patch({ ends_at: next }, "Fim da vigência");
+              }}
+            />
+          </div>
+        ) : (
+          <>
+            {c.starts_at ? formatDateTime(c.starts_at).split(" ")[0] : "—"}
+            {c.ends_at ? ` → ${formatDateTime(c.ends_at).split(" ")[0]}` : ""}
+          </>
+        )}
+      </TableCell>
+    ),
+    assigned_to: (
+      <TableCell>
+        {editable ? (
+          <AssigneeField
+            table="contracts"
+            rowId={c.id}
+            assignedTo={c.assigned_to}
+            compact
+            onChanged={() => {
+              void qc.invalidateQueries({ queryKey: ["contracts"] });
+              onChanged?.();
+            }}
+          />
+        ) : (
+          <AssigneeCell assignedTo={c.assigned_to} />
+        )}
+      </TableCell>
+    ),
+    created_at: (
+      <TableCell className="text-xs text-muted-foreground">
+        {formatDateTime(c.created_at)}
+      </TableCell>
+    ),
+  };
+  const order = visible ?? CONTRACT_COLUMNS.map((col) => col.key);
 
   return (
     <TableRow data-state={selected ? "selected" : undefined}>
@@ -380,167 +545,7 @@ function ContractTableRow({
           />
         </TableCell>
       ) : null}
-      {show("number") ? (
-        <TableCell className="font-mono text-xs">
-          <Link to="/contracts/$id" params={{ id: c.id }} className="hover:underline">
-            {c.number ?? "—"}
-          </Link>
-        </TableCell>
-      ) : null}
-      {show("title") ? (
-        <TableCell>
-          <div
-            className="flex items-center gap-2"
-            style={depth > 0 ? { paddingLeft: depth * 20 } : undefined}
-          >
-            {depth > 0 ? (
-              <CornerDownRight
-                className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
-                aria-hidden="true"
-              />
-            ) : null}
-            {path ? (
-              <span className="shrink-0 font-mono text-xs text-muted-foreground">{path}</span>
-            ) : null}
-            <Link
-              to="/contracts/$id"
-              params={{ id: c.id }}
-              className="font-medium hover:underline truncate"
-            >
-              {c.title}
-            </Link>
-            {isAmendment ? (
-              <Badge variant="outline" className="h-4 shrink-0 px-1.5 py-0 text-[10px]">
-                Aditivo{c.amendment_number ? ` ${c.amendment_number}` : ""}
-              </Badge>
-            ) : null}
-            {linkKind === "purchase" ? (
-              <Badge variant="outline" className="h-4 shrink-0 px-1.5 py-0 text-[10px]">
-                Compra
-              </Badge>
-            ) : null}
-
-            {c.imported_from ? (
-              <Badge variant="outline" className="h-4 shrink-0 px-1.5 py-0 text-[10px]">
-                Importado
-              </Badge>
-            ) : null}
-          </div>
-        </TableCell>
-      ) : null}
-      {show("role") ? (
-        <TableCell className="text-sm">{ROLE_LABEL[c.role] ?? c.role}</TableCell>
-      ) : null}
-      {show("status") ? (
-        <TableCell>
-          {editable ? (
-            <Select
-              value={c.status}
-              disabled={saving}
-              onValueChange={(next) => void patch({ status: next }, "Status")}
-            >
-              <SelectTrigger className="h-8 w-40" aria-label={`Status do contrato ${c.title}`}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUS_VALUES.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {STATUS_LABEL[s]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            <Badge variant="outline" className={STATUS_TONE[c.status] ?? ""}>
-              {STATUS_LABEL[c.status] ?? c.status}
-            </Badge>
-          )}
-        </TableCell>
-      ) : null}
-      {show("total_value") ? (
-        <TableCell className="text-right tabular-nums">
-          {editable ? (
-            <Input
-              type="number"
-              min={0}
-              step="0.01"
-              defaultValue={Number(c.total_value ?? 0)}
-              disabled={saving}
-              aria-label={`Valor total do contrato ${c.title}`}
-              className="h-8 w-32 text-right"
-              onBlur={(e) => {
-                const next = Number(e.target.value);
-                if (Number.isNaN(next) || next < 0) return;
-                if (next === Number(c.total_value ?? 0)) return;
-                void patch({ total_value: next }, "Valor");
-              }}
-            />
-          ) : (
-            formatCurrency(Number(c.total_value ?? 0), c.currency)
-          )}
-        </TableCell>
-      ) : null}
-      {show("validity") ? (
-        <TableCell className="text-xs text-muted-foreground">
-          {editable ? (
-            <div className="flex items-center gap-1">
-              <Input
-                type="date"
-                defaultValue={dateOnly(c.starts_at)}
-                disabled={saving}
-                aria-label={`Início da vigência do contrato ${c.title}`}
-                className="h-8 w-32"
-                onBlur={(e) => {
-                  const next = e.target.value || null;
-                  if (next === (dateOnly(c.starts_at) || null)) return;
-                  void patch({ starts_at: next }, "Início da vigência");
-                }}
-              />
-              <span aria-hidden="true">→</span>
-              <Input
-                type="date"
-                defaultValue={dateOnly(c.ends_at)}
-                disabled={saving}
-                aria-label={`Fim da vigência do contrato ${c.title}`}
-                className="h-8 w-32"
-                onBlur={(e) => {
-                  const next = e.target.value || null;
-                  if (next === (dateOnly(c.ends_at) || null)) return;
-                  void patch({ ends_at: next }, "Fim da vigência");
-                }}
-              />
-            </div>
-          ) : (
-            <>
-              {c.starts_at ? formatDateTime(c.starts_at).split(" ")[0] : "—"}
-              {c.ends_at ? ` → ${formatDateTime(c.ends_at).split(" ")[0]}` : ""}
-            </>
-          )}
-        </TableCell>
-      ) : null}
-      {show("assigned_to") ? (
-        <TableCell>
-          {editable ? (
-            <AssigneeField
-              table="contracts"
-              rowId={c.id}
-              assignedTo={c.assigned_to}
-              compact
-              onChanged={() => {
-                void qc.invalidateQueries({ queryKey: ["contracts"] });
-                onChanged?.();
-              }}
-            />
-          ) : (
-            <AssigneeCell assignedTo={c.assigned_to} />
-          )}
-        </TableCell>
-      ) : null}
-      {show("created_at") ? (
-        <TableCell className="text-xs text-muted-foreground">
-          {formatDateTime(c.created_at)}
-        </TableCell>
-      ) : null}
+      {order.map((key) => (cells[key] ? <Fragment key={key}>{cells[key]}</Fragment> : null))}
     </TableRow>
   );
 }

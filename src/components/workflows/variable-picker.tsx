@@ -1,4 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Braces, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -12,6 +14,9 @@ import {
 } from "@/components/ui/command";
 import type { MessageToken } from "@/lib/message-tokens-catalog";
 
+const ADVANCED_KEY = "wf-variable-picker-advanced";
+const ID_GROUP = "Identificadores (ID)";
+
 export function VariablePicker({
   tokens,
   value,
@@ -24,15 +29,27 @@ export function VariablePicker({
   onInsert: (token: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  // Modo avançado: mostra identificadores (IDs) e o nome técnico da variável.
+  const [advanced, setAdvanced] = useState(false);
+  useEffect(() => {
+    setAdvanced(window.localStorage.getItem(ADVANCED_KEY) === "1");
+  }, []);
+  const toggleAdvanced = (next: boolean) => {
+    setAdvanced(next);
+    window.localStorage.setItem(ADVANCED_KEY, next ? "1" : "0");
+  };
   const selected = tokens.find((token) => token.token === value.trim());
+  // Esconde IDs no modo simples, exceto quando só existem IDs (campos de referência).
+  const onlyIds = tokens.every((t) => t.group === ID_GROUP);
+  const visibleTokens = advanced || onlyIds ? tokens : tokens.filter((t) => t.group !== ID_GROUP);
   const groups = useMemo(() => {
     const map = new Map<string, MessageToken[]>();
-    for (const token of tokens) {
+    for (const token of visibleTokens) {
       const group = token.group || "Outras variáveis";
       map.set(group, [...(map.get(group) ?? []), token]);
     }
     return [...map.entries()];
-  }, [tokens]);
+  }, [visibleTokens]);
   if (!tokens.length) return null;
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -76,13 +93,29 @@ export function VariablePicker({
                     }}
                   >
                     <span className="flex-1 truncate">{item.label}</span>
-                    <span className="sr-only">{item.token}</span>
+                    {advanced ? (
+                      <span className="ml-2 shrink-0 font-mono text-[10px] text-muted-foreground">
+                        {item.token}
+                      </span>
+                    ) : (
+                      <span className="sr-only">{item.token}</span>
+                    )}
                   </CommandItem>
                 ))}
               </CommandGroup>
             ))}
           </CommandList>
         </Command>
+        <div className="flex items-center justify-between gap-2 border-t px-3 py-2">
+          <Label htmlFor="variable-picker-advanced" className="text-xs text-muted-foreground">
+            Modo avançado (IDs e nomes técnicos)
+          </Label>
+          <Switch
+            id="variable-picker-advanced"
+            checked={advanced}
+            onCheckedChange={toggleAdvanced}
+          />
+        </div>
       </PopoverContent>
     </Popover>
   );
