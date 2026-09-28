@@ -61,6 +61,7 @@ export function ContactsChart({ data }: { data: ContactsByDay[] }) {
             Tooltip,
             Legend,
             CartesianGrid,
+            LabelList,
           }) => (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
