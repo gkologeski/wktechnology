@@ -68,6 +68,22 @@ export const listContractsPaged = createServerFn({ method: "POST" })
       .object({
         role: roleEnum.optional(),
         status: statusEnum.optional(),
+        /** Vários status (visões rápidas). Aditivo ao filtro `status`. */
+        statuses: z.array(statusEnum).max(8).optional(),
+        sortBy: z
+          .enum([
+            "number",
+            "title",
+            "role",
+            "status",
+            "total_value",
+            "starts_at",
+            "ends_at",
+            "assigned_to",
+            "created_at",
+          ])
+          .optional(),
+        sortDir: z.enum(["asc", "desc"]).optional(),
         search: z.string().max(200).optional(),
         companyId: z.string().uuid().optional(),
         legalEntityId: z.string().uuid().optional(),
@@ -90,11 +106,18 @@ export const listContractsPaged = createServerFn({ method: "POST" })
     let q = supabase
       .from("contracts")
       .select("*", { count: "exact" })
-      .order("created_at", { ascending: false })
-      .range(from, to);
+      .order(data.sortBy ?? "created_at", {
+        ascending: (data.sortDir ?? "desc") === "asc",
+        nullsFirst: false,
+      });
+    if (data.sortBy && data.sortBy !== "created_at") {
+      q = q.order("created_at", { ascending: false });
+    }
+    q = q.range(from, to);
 
     if (data.role) q = q.eq("role", data.role);
     if (data.status) q = q.eq("status", data.status);
+    if (data.statuses?.length) q = q.in("status", data.statuses);
     if (data.companyId) q = q.eq("counterparty_company_id", data.companyId);
     if (data.assignedTo === "__none__") q = q.is("assigned_to", null);
     else if (data.assignedTo) q = q.eq("assigned_to", data.assignedTo);
