@@ -21,7 +21,13 @@ export function ChatTrigger() {
 
   const { data } = useQuery({
     queryKey: ["chat", "conversations"],
-    queryFn: () => listFn(),
+    queryFn: async () => {
+      // Evita chamar o servidor sem sessão (ex.: durante o logout ou sessão expirada).
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data: s } = await supabase.auth.getSession();
+      if (!s.session) return [];
+      return listFn();
+    },
     enabled: !!user?.id,
     staleTime: 15_000,
     retry: false,

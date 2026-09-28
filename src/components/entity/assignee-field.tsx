@@ -1,3 +1,4 @@
+import { withClientSession } from "@/lib/session-guard";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -45,7 +46,7 @@ export function AssigneeField({
   const listFn = useServerFn(listWorkspaceTeam);
   const q = useQuery({
     queryKey: ["workspace-team", "assignee-field"],
-    queryFn: () => listFn(),
+    queryFn: () => withClientSession(() => listFn()),
     staleTime: 60_000,
   });
 

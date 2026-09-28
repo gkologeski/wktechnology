@@ -1,3 +1,4 @@
+import { withClientSession } from "@/lib/session-guard";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -191,7 +192,7 @@ export function QuickCreateDealDialog({
   const listTeamFn = useServerFn(listWorkspaceTeam);
   const team = useQuery({
     queryKey: ["workspace-team", "quick-create-deal"],
-    queryFn: () => listTeamFn(),
+    queryFn: () => withClientSession(() => listTeamFn()),
     staleTime: 60_000,
     enabled: open,
   });
