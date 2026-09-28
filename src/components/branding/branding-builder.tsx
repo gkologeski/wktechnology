@@ -213,10 +213,10 @@ export function BrandingBuilder() {
         <aside className="w-full border-b overflow-y-auto bg-muted/30 shrink-0 lg:w-80 lg:border-b-0 lg:border-r">
           <Tabs
             value={editorTab}
-             onValueChange={(value) => {
-               setEditorTab(value as PreviewEditorTab | "models");
-               if (value !== "models") setSelectedArchetypeId(null);
-             }}
+            onValueChange={(value) => {
+              setEditorTab(value as PreviewEditorTab | "models");
+              if (value !== "models") setSelectedArchetypeId(null);
+            }}
             className="w-full"
           >
             <div className="px-4 pt-4">
