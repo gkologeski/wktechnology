@@ -8,8 +8,9 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-const fmtDate = (d: string) => new Date(d).toLocaleDateString("pt-BR");
 import { cn } from "@/lib/utils";
+
+const fmtDate = (d: string) => new Date(d).toLocaleDateString("pt-BR");
 
 export const Route = createFileRoute("/_authenticated/contracts/$id_/flow")({
   head: () => ({
