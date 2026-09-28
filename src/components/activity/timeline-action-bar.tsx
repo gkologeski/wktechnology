@@ -248,14 +248,18 @@ export function TimelineActionBar({
                     if (!disabled) handleBarClick(a);
                   }}
                   className={`flex items-center gap-3 px-3 py-2 mx-1 rounded cursor-grab active:cursor-grabbing hover:bg-muted ${
-                    disabled ? "opacity-50 cursor-not-allowed" : ""
+                    disabled ? "cursor-not-allowed" : ""
                   } ${isDragging ? "opacity-40" : ""}`}
                   title={
                     blocked ? unconfiguredTitle(blocked) : "Arraste para reordenar ou para a barra"
                   }
                 >
-                  <span className="text-muted-foreground">{a.icon}</span>
-                  <span className="flex-1 text-sm">{a.label}</span>
+                  <span className={`text-muted-foreground ${disabled ? "opacity-50" : ""}`}>
+                    {a.icon}
+                  </span>
+                  <span className={`flex-1 text-sm ${disabled ? "opacity-50" : ""}`}>
+                    {a.label}
+                  </span>
                   {blocked ? (
                     <ChannelSetupGear channel={blocked} />
                   ) : (
