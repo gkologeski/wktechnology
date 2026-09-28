@@ -163,7 +163,7 @@ export function triggerRefOptions(
   if (kind === "user") {
     out.push(
       { token: "{{responsavel}}", label: "Responsável do gatilho", group: GROUP_TRIGGER },
-      { token: "{{id_criado_por}}", label: "Criador do registro", group: GROUP_TRIGGER },
+      { token: "{{id_criador}}", label: "Criador do registro", group: GROUP_TRIGGER },
     );
   }
   // dedupe por token
