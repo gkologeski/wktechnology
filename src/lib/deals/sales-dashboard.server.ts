@@ -45,6 +45,20 @@ function isoDay(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
+// Horário comercial do Brasil (GMT-3, sem horário de verão desde 2019).
+// O servidor roda em UTC, então agrupamos por dia local para que um contato
+// registrado às 23h não caia no dia seguinte.
+const BR_OFFSET_MS = 3 * 60 * 60 * 1000;
+
+function brDayKey(d: Date): string {
+  return new Date(d.getTime() - BR_OFFSET_MS).toISOString().slice(0, 10);
+}
+
+function brDayStart(dayKey: string): Date {
+  return new Date(Date.parse(`${dayKey}T00:00:00.000Z`) + BR_OFFSET_MS);
+}
+
+
 function startOfDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
@@ -79,7 +93,7 @@ export async function loadSalesDashboard(
   const now = new Date();
   const today = startOfDay(now);
   const in7 = new Date(today.getTime() + 7 * DAY_MS);
-  const d14 = new Date(today.getTime() - 13 * DAY_MS);
+  const d14 = new Date(brDayStart(brDayKey(now)).getTime() - 13 * DAY_MS);
   const d30 = new Date(today.getTime() - 30 * DAY_MS);
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
@@ -473,10 +487,11 @@ export async function loadSalesDashboard(
   const byDay = new Map<string, ContactsByDay>();
   for (let i = 0; i < 14; i++) {
     const d = new Date(d14.getTime() + i * DAY_MS);
-    const day = isoDay(d);
+    const day = brDayKey(d);
+    const [, month = "", dayOfMonth = ""] = day.split("-");
     const row: ContactsByDay = {
       day,
-      label: `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`,
+      label: `${dayOfMonth}/${month}`,
       calls: 0,
       emails: 0,
       whatsapp: 0,
@@ -492,8 +507,9 @@ export async function loadSalesDashboard(
     created_at: string | null;
   }>) {
     if (!a.created_at) continue;
-    const row = byDay.get(a.created_at.slice(0, 10));
+    const row = byDay.get(brDayKey(new Date(a.created_at)));
     if (!row) continue;
+
     const key =
       a.type === "call"
         ? "calls"
