@@ -100,9 +100,7 @@ export function ContactsChart({ data }: { data: ContactsByDay[] }) {
                     fill={s.color}
                     radius={s.key === "other" ? [3, 3, 0, 0] : undefined}
                   >
-                    {s.key === "other" && (
-                      <LabelList dataKey="other" content={TotalLabel(data)} />
-                    )}
+                    {s.key === "other" && <LabelList dataKey="other" content={TotalLabel(data)} />}
                   </Bar>
                 ))}
               </BarChart>
