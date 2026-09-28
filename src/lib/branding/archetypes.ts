@@ -40,7 +40,7 @@ export const BRAND_ARCHETYPES: BrandArchetype[] = [
     description: "Sóbrio, preciso e equilibrado para grande volume de informações.",
     recommendedFor: "SaaS B2B, CRM e operações financeiras",
     style: {
-      primary_color: "#1779E1",
+      primary_color: "#1672D4",
       accent_color: "#E2ECF9",
       radius: "6px",
       density: "compact",

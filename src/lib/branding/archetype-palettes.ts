@@ -1,5 +1,5 @@
 export const quietLight = {
-  primary: "#1779E1",
+  primary: "#1672D4",
   "primary-foreground": "#FAFCFE",
   accent: "#E2ECF9",
   "accent-foreground": "#192A3C",
