@@ -11,6 +11,37 @@ const SERIES = [
   { key: "other", label: "Outros", color: "var(--color-chart-5)" },
 ] as const;
 
+/**
+ * Rótulo do total diário no topo de cada barra empilhada.
+ * Usa `dataKey="total"` (o valor recebido é o total do dia) posicionado acima
+ * do último segmento da pilha ("Outros"), que fecha a barra. Dias sem
+ * interações não exibem rótulo.
+ */
+function TotalLabel(props: {
+  x?: number | string;
+  y?: number | string;
+  width?: number | string;
+  value?: number | string;
+}) {
+  const total = Number(props.value ?? 0);
+  if (!total) return null;
+  const x = Number(props.x ?? 0);
+  const y = Number(props.y ?? 0);
+  const width = Number(props.width ?? 0);
+  return (
+    <text
+      x={x + width / 2}
+      y={y - 6}
+      textAnchor="middle"
+      fontSize={11}
+      fill="var(--color-text-tertiary)"
+      aria-hidden="true"
+    >
+      {total}
+    </text>
+  );
+}
+
 export function ContactsChart({ data }: { data: ContactsByDay[] }) {
   const total = data.reduce((acc, d) => acc + d.total, 0);
 
@@ -31,9 +62,10 @@ export function ContactsChart({ data }: { data: ContactsByDay[] }) {
             Tooltip,
             Legend,
             CartesianGrid,
+            LabelList,
           }) => (
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
+              <BarChart data={data} margin={{ top: 16, right: 8, bottom: 0, left: -16 }}>
                 <CartesianGrid
                   strokeDasharray="3 3"
                   stroke="var(--color-border-subtle)"
@@ -68,7 +100,11 @@ export function ContactsChart({ data }: { data: ContactsByDay[] }) {
                     stackId="contacts"
                     fill={s.color}
                     radius={s.key === "other" ? [3, 3, 0, 0] : undefined}
-                  />
+                  >
+                    {s.key === "other" && (
+                      <LabelList dataKey="total" position="top" content={TotalLabel} />
+                    )}
+                  </Bar>
                 ))}
               </BarChart>
             </ResponsiveContainer>
