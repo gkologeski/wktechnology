@@ -237,4 +237,3 @@ export const classicDark = {
   "hs-stage-won": "#4BC182",
   "hs-stage-lost": "#EE6A70",
 };
-
