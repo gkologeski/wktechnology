@@ -51,7 +51,7 @@ function DealRow({ deal, showHot }: { deal: DealListItem; showHot?: boolean }) {
           ) : (
             <span className="inline-flex items-center gap-1 text-[11px] text-status-onhold">
               <AlertTriangle className="h-3 w-3" aria-hidden />
-              Sem atividade há 7+ dias
+              Sem interação há 7+ dias
             </span>
           )}
         </div>
@@ -112,10 +112,10 @@ export function AttentionDealsPanel({ deals }: { deals: DealListItem[] }) {
   return (
     <Panel
       title="Precisa de atenção"
-      description="Fechamento previsto vencido ou sem atividade recente."
+      description="Fechamento previsto vencido ou sem interação recente."
       deals={deals}
       emptyTitle="Tudo em dia"
-      emptyDescription="Nenhum negócio aberto com fechamento vencido ou parado há mais de 7 dias."
+      emptyDescription="Nenhum negócio aberto com fechamento vencido ou sem interação há mais de 7 dias."
     />
   );
 }

@@ -1,17 +1,18 @@
 import * as React from "react";
 
+import { HorizontalScrollRegion } from "@/components/ui/horizontal-scroll-region";
 import { cn } from "@/lib/utils";
 
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
   ({ className, ...props }, ref) => (
-    <div data-slot="table-container" className="relative w-full overflow-auto overscroll-x-contain">
+    <HorizontalScrollRegion data-slot="table-scroll-root">
       <table
         data-slot="table"
         ref={ref}
         className={cn("w-full caption-bottom text-sm", className)}
         {...props}
       />
-    </div>
+    </HorizontalScrollRegion>
   ),
 );
 Table.displayName = "Table";

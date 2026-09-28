@@ -432,6 +432,37 @@
   background-clip: padding-box;
   border: 2px solid transparent;
 }
+
+/* Grids: horizontal scrollbar kept visible while a long table crosses the viewport. */
+.grid-floating-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
+  overscroll-behavior-x: contain;
+  background: var(--background);
+  border-top: 1px solid var(--border);
+}
+.grid-floating-scrollbar::-webkit-scrollbar {
+  height: 12px;
+  width: 12px;
+  -webkit-appearance: none;
+  display: block;
+}
+.grid-floating-scrollbar::-webkit-scrollbar-track {
+  background: color-mix(in oklab, var(--muted) 60%, transparent);
+  border-radius: 8px;
+}
+.grid-floating-scrollbar::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--foreground) 35%, transparent);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background-clip: padding-box;
+  min-width: 40px;
+}
+.grid-floating-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklab, var(--foreground) 55%, transparent);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
 /* Hide the bottom (content) horizontal scrollbar — top one is the source of truth */
 .kanban-content-scroll {
   scrollbar-width: none;

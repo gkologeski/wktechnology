@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
+import { useMirroredHorizontalScroll } from "@/hooks/use-mirrored-horizontal-scroll";
 
 /**
  * Wraps a horizontally scrollable Kanban board with:
@@ -17,69 +18,10 @@ export function KanbanScrollContainer({
   children: ReactNode;
   ariaLabel?: string;
 }) {
-  const topRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const topInnerRef = useRef<HTMLDivElement>(null);
-  const syncingRef = useRef<"top" | "content" | null>(null);
-  const [overflows, setOverflows] = useState(false);
-
-  // Keep the top mirror width in sync with the actual scrollWidth.
-  useEffect(() => {
-    const content = contentRef.current;
-    const inner = topInnerRef.current;
-    if (!content || !inner) return;
-    const sync = () => {
-      inner.style.width = `${content.scrollWidth}px`;
-      setOverflows(content.scrollWidth > content.clientWidth + 1);
-    };
-    sync();
-    const ro = new ResizeObserver(sync);
-    ro.observe(content);
-    const observeDescendants = () => {
-      content.querySelectorAll("*").forEach((el) => {
-        try {
-          ro.observe(el);
-        } catch {
-          /* ignore */
-        }
-      });
-    };
-    observeDescendants();
-    const mo = new MutationObserver(() => {
-      observeDescendants();
-      sync();
-    });
-    mo.observe(content, { childList: true, subtree: true });
-    window.addEventListener("resize", sync);
-    // Re-check after async layout/data settles
-    const timeouts = [50, 200, 600, 1500].map((ms) => window.setTimeout(sync, ms));
-    return () => {
-      ro.disconnect();
-      mo.disconnect();
-      window.removeEventListener("resize", sync);
-      timeouts.forEach((t) => window.clearTimeout(t));
-    };
-  }, []);
-
-  const onTopScroll = () => {
-    if (syncingRef.current === "content") return;
-    syncingRef.current = "top";
-    if (contentRef.current && topRef.current) {
-      contentRef.current.scrollLeft = topRef.current.scrollLeft;
-    }
-    requestAnimationFrame(() => (syncingRef.current = null));
-  };
-  const onContentScroll = () => {
-    if (syncingRef.current === "top") return;
-    syncingRef.current = "content";
-    if (contentRef.current && topRef.current) {
-      topRef.current.scrollLeft = contentRef.current.scrollLeft;
-    }
-    requestAnimationFrame(() => (syncingRef.current = null));
-  };
+  const scroll = useMirroredHorizontalScroll();
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    const root = contentRef.current;
+    const root = scroll.contentRef.current;
     if (!root) return;
     const active = document.activeElement as HTMLElement | null;
     const isCard = active?.hasAttribute("data-kanban-card");
@@ -135,17 +77,17 @@ export function KanbanScrollContainer({
       onKeyDown={onKeyDown}
     >
       <div
-        ref={topRef}
-        onScroll={onTopScroll}
+        ref={scroll.mirrorRef}
+        onScroll={scroll.onMirrorScroll}
         className="kanban-top-scroll sticky top-0 z-20 overflow-x-scroll overflow-y-hidden bg-background"
-        style={{ height: 14, visibility: overflows ? "visible" : "hidden" }}
+        style={{ height: 14, visibility: scroll.overflows ? "visible" : "hidden" }}
         aria-hidden="true"
       >
-        <div ref={topInnerRef} style={{ height: 1 }} />
+        <div ref={scroll.mirrorInnerRef} style={{ height: 1 }} />
       </div>
       <div
-        ref={contentRef}
-        onScroll={onContentScroll}
+        ref={scroll.contentRef}
+        onScroll={scroll.onContentScroll}
         className="kanban-content-scroll overflow-x-auto overscroll-x-contain"
       >
         {children}
