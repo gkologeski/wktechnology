@@ -53,6 +53,12 @@ export function ActivityWindows({ children }: { children: React.ReactNode }) {
     (request: ActivityWindowRequest) => {
       if (!currentIdentity) return;
       if (request.action.kind === "create" && request.action.disabled) return;
+      if (
+        request.action.kind === "create" &&
+        isSendChannel(request.action.value) &&
+        isChannelBlocked(availability, request.action.value)
+      )
+        return;
       setWindows((previous) => {
         const match = request.editingActivity
           ? previous.find((w) => w.request.editingActivity?.id === request.editingActivity?.id)

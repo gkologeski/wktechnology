@@ -13,6 +13,14 @@ import {
   actionKey,
   loadOrder,
 } from "./timeline-shared";
+import { ChannelSetupGear } from "./channel-setup-gear";
+import { useChannelAvailability } from "@/hooks/use-channel-availability";
+import {
+  CHANNEL_SETUP,
+  isChannelBlocked,
+  isSendChannel,
+  type SendChannel,
+} from "@/lib/channel-availability";
 
 /**
  * Barra de ações da timeline (estilo HubSpot).
@@ -44,6 +52,15 @@ export function TimelineActionBar({
   const [dragKey, setDragKey] = useState<string | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
   const [moreQuery, setMoreQuery] = useState("");
+  const { data: availability } = useChannelAvailability();
+
+  /** Canal de envio bloqueado por falta de configuração (null = liberado). */
+  const blockedChannel = (a: BarAction): SendChannel | null =>
+    a.kind === "create" && isSendChannel(a.value) && isChannelBlocked(availability, a.value)
+      ? a.value
+      : null;
+  const unconfiguredTitle = (c: SendChannel) =>
+    `${CHANNEL_SETUP[c].label} não configurado — clique na engrenagem para configurar`;
 
   const persistOrder = (next: OrderState) => {
     setOrder(next);
@@ -102,9 +119,11 @@ export function TimelineActionBar({
   const renderCircleButton = (a: BarAction, active: boolean, index: number) => {
     const key = actionKey(a);
     const isDragging = dragKey === key;
+    const blocked = blockedChannel(a);
+    const soon = a.kind === "create" && a.disabled;
     return (
+      <div key={key} className="relative shrink-0" title={blocked ? unconfiguredTitle(blocked) : undefined}>
       <button
-        key={key}
         type="button"
         draggable
         onDragStart={(e) => onDragStart(e, key)}
@@ -112,12 +131,17 @@ export function TimelineActionBar({
         onDragOver={allowDrop}
         onDrop={(e) => dropOnItem(e, "pinned", index)}
         onClick={() => handleBarClick(a)}
-        disabled={a.kind === "create" && a.disabled}
+        disabled={soon || !!blocked}
+        aria-disabled={soon || !!blocked}
         title={
-          a.kind === "create" && a.disabled ? "Em breve" : `${a.label} (arraste para reordenar)`
+          blocked
+            ? undefined
+            : soon
+              ? "Em breve"
+              : `${a.label} (arraste para reordenar)`
         }
         className={`flex flex-col items-center gap-1.5 w-16 shrink-0 group cursor-grab active:cursor-grabbing ${
-          a.kind === "create" && a.disabled ? "opacity-50 cursor-not-allowed" : ""
+          soon || blocked ? "opacity-50 cursor-not-allowed" : ""
         } ${isDragging ? "opacity-40" : ""}`}
       >
         <MessageDraftPin
@@ -140,6 +164,8 @@ export function TimelineActionBar({
           {a.label}
         </span>
       </button>
+      {blocked && <ChannelSetupGear channel={blocked} className="absolute left-10 top-0" />}
+      </div>
     );
   };
 
@@ -208,7 +234,8 @@ export function TimelineActionBar({
             )}
             {moreFiltered.map(({ a, i }) => {
               const key = actionKey(a);
-              const disabled = a.kind === "create" && a.disabled;
+              const blocked = blockedChannel(a);
+              const disabled = (a.kind === "create" && a.disabled) || !!blocked;
               const isDragging = dragKey === key;
               return (
                 <div
@@ -224,11 +251,15 @@ export function TimelineActionBar({
                   className={`flex items-center gap-3 px-3 py-2 mx-1 rounded cursor-grab active:cursor-grabbing hover:bg-muted ${
                     disabled ? "opacity-50 cursor-not-allowed" : ""
                   } ${isDragging ? "opacity-40" : ""}`}
-                  title="Arraste para reordenar ou para a barra"
+                  title={
+                    blocked ? unconfiguredTitle(blocked) : "Arraste para reordenar ou para a barra"
+                  }
                 >
                   <span className="text-muted-foreground">{a.icon}</span>
                   <span className="flex-1 text-sm">{a.label}</span>
-                  {disabled && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
+                  {blocked ? (
+                    <ChannelSetupGear channel={blocked} />
+                  ) : disabled && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
                 </div>
               );
             })}
