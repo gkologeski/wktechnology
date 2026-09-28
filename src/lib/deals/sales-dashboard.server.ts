@@ -59,7 +59,6 @@ function brDayStart(dayKey: string): Date {
   return new Date(Date.parse(`${dayKey}T00:00:00.000Z`) + BR_OFFSET_MS);
 }
 
-
 function startOfDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
