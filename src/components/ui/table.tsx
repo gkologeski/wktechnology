@@ -1,18 +1,47 @@
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
+import { useMirroredHorizontalScroll } from "@/hooks/use-mirrored-horizontal-scroll";
 
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
-  ({ className, ...props }, ref) => (
-    <div data-slot="table-container" className="relative w-full overflow-auto overscroll-x-contain">
-      <table
-        data-slot="table"
-        ref={ref}
-        className={cn("w-full caption-bottom text-sm", className)}
-        {...props}
-      />
-    </div>
-  ),
+  ({ className, ...props }, ref) => {
+    const scroll = useMirroredHorizontalScroll({ floating: true });
+
+    return (
+      <div data-slot="table-scroll-root" className="relative w-full min-w-0">
+        <div
+          ref={scroll.contentRef}
+          data-slot="table-container"
+          className="w-full overflow-auto overscroll-x-contain"
+          onScroll={scroll.onContentScroll}
+        >
+          <table
+            data-slot="table"
+            ref={ref}
+            className={cn("w-full caption-bottom text-sm", className)}
+            {...props}
+          />
+        </div>
+        <div
+          ref={scroll.mirrorRef}
+          onScroll={scroll.onMirrorScroll}
+          className={cn(
+            "grid-floating-scrollbar fixed z-30 overflow-x-scroll overflow-y-hidden",
+            !scroll.geometry.visible && "pointer-events-none invisible",
+          )}
+          style={{
+            left: scroll.geometry.left,
+            top: scroll.geometry.top,
+            width: scroll.geometry.width,
+            height: 14,
+          }}
+          aria-hidden="true"
+        >
+          <div ref={scroll.mirrorInnerRef} className="h-px" />
+        </div>
+      </div>
+    );
+  },
 );
 Table.displayName = "Table";
 

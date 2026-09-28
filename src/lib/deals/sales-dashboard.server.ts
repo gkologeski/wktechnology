@@ -5,6 +5,7 @@ import type { Database } from "@/integrations/supabase/types";
 import type { Deal } from "@/lib/db-types";
 import type { Pipeline, PipelineStage } from "@/lib/pipelines";
 import { computeHotScore } from "@/lib/deals/hot-score";
+import { activityEffectiveDate } from "@/lib/deals/activity-effective-date";
 import {
   LEAD_CHANNEL_LABELS,
   LEAD_CHANNELS,
@@ -219,10 +220,12 @@ export async function loadSalesDashboard(
       mine(
         supabase
           .from("activities")
-          .select("related_deal_id, created_at")
+          .select("id, related_deal_id, type, due_date, activity_date, created_at")
           .eq("workspace_id", workspaceId)
           .not("related_deal_id", "is", null)
-          .gte("created_at", d30.toISOString())
+          .or(
+            `created_at.gte.${d30.toISOString()},activity_date.gte.${d30.toISOString()},and(type.eq.task,due_date.gte.${d30.toISOString()})`,
+          )
           .limit(10000),
       ),
     ),
@@ -363,14 +366,21 @@ export async function loadSalesDashboard(
     ]),
   );
 
-  // Última atividade por negócio (janela de 30 dias)
+  // Última atividade por negócio (janela de 30 dias pela data efetiva).
+  // Tarefas usam o vencimento; demais interações usam a data em que ocorreram.
   const lastActivityByDeal = new Map<string, number>();
   for (const a of (acts30Res.data ?? []) as Array<{
     related_deal_id: string | null;
+    type: string;
+    due_date: string | null;
+    activity_date: string | null;
     created_at: string | null;
   }>) {
-    if (!a.related_deal_id || !a.created_at) continue;
-    const t = new Date(a.created_at).getTime();
+    if (!a.related_deal_id) continue;
+    const effectiveDate = activityEffectiveDate(a);
+    if (!effectiveDate) continue;
+    const t = new Date(effectiveDate).getTime();
+    if (!Number.isFinite(t) || t < d30.getTime()) continue;
     const prev = lastActivityByDeal.get(a.related_deal_id) ?? 0;
     if (t > prev) lastActivityByDeal.set(a.related_deal_id, t);
   }

@@ -4,3 +4,4 @@
 - O editor visual de Workflows separa canvas e configuração detalhada sobre o mesmo rascunho, mantendo as ações e a publicação existentes sem alterar a execução.
 - Variáveis novas de Workflows usam aliases PT-BR sem acentos em snake_case; o motor mantém aliases técnicos antigos para compatibilidade com fluxos salvos.
 - Arquétipos do White Label são catálogos estáticos completos aplicados somente no workspace; substituem estilo, preservam identidade/assets e continuam usando o `theme` existente para evitar estado persistido duplicado.
+- Grades baseadas em `Table` usam uma barra horizontal espelhada e persistente no componente compartilhado, evitando wrappers concorrentes e mantendo a navegação lateral acessível em listas longas.

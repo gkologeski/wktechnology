@@ -59,7 +59,7 @@ export function CandidatesTableView({
           ]}
         />
       )}
-      <div className="rounded-lg border border-border-subtle bg-surface-1 overflow-x-auto">
+      <div className="overflow-hidden rounded-lg border border-border-subtle bg-surface-1">
         <Table>
           <TableHeader>
             <TableRow>

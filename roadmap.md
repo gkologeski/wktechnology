@@ -24,3 +24,4 @@
 - [x] Disponibilizar três arquétipos visuais completos no White Label do workspace, com prévia, confirmação e preservação da identidade.
 - [x] Corrigir regressões do Design System em botões principais e bordas coloridas na área autenticada.
 - [x] Implementar no /dashboard a jornada de Leads até vendas, canais agrupados, reconciliação conservadora e validação UX/UI ≥ 9 (avaliação final: 9,2/10).
+- [x] Corrigir o alerta de negócios sem interação usando a data efetiva por tipo de atividade e manter a rolagem horizontal visível nas grades longas.
