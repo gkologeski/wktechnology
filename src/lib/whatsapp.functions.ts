@@ -53,7 +53,13 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
 
     const toBare = normalizePhone(data.to);
     const existing = await findConversationNumber(supabase, workspaceId, toBare);
-    const num = await resolveWaNumber(workspaceId, existing?.phoneNumberId ?? null);
+    let num: Awaited<ReturnType<typeof resolveWaNumber>>;
+    try {
+      num = await resolveWaNumber(workspaceId, existing?.phoneNumberId ?? null);
+    } catch (e) {
+      // Estado esperado (sem número conectado): resultado tipado em vez de erro de runtime.
+      return { ok: false as const, error: (e as Error).message, sid: "", conversationId: "" };
+    }
 
     const { wamid, raw } = await metaSend(num, {
       to: toBare,
@@ -137,7 +143,7 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
       });
     }
 
-    return { ok: true, sid: wamid ?? "", conversationId: conv.id as string };
+    return { ok: true as const, error: null, sid: wamid ?? "", conversationId: conv.id as string };
   });
 
 // ---------- list conversations ----------

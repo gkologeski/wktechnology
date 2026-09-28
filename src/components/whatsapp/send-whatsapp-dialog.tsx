@@ -8,6 +8,7 @@ import {
   listWhatsAppTemplates,
   applyTemplate,
 } from "@/lib/whatsapp.functions";
+import { listPhoneNumbers } from "@/lib/whatsapp-meta.functions";
 import { uploadWhatsAppMedia } from "@/lib/whatsapp-media";
 import { WhatsAppMediaBubble } from "@/components/whatsapp/whatsapp-media-bubble";
 import { Button } from "@/components/ui/button";
@@ -170,6 +171,13 @@ export function SendWhatsAppDialog({
   const listTpl = useServerFn(listWhatsAppTemplates);
   const sendFn = useServerFn(sendWhatsAppMessage);
   const tplQ = useQuery({ queryKey: ["wa", "templates"], queryFn: () => listTpl(), enabled: open });
+  const listNumbers = useServerFn(listPhoneNumbers);
+  const numbersQ = useQuery({
+    queryKey: ["wa", "phone-numbers"],
+    queryFn: () => listNumbers(),
+    enabled: open,
+  });
+  const notConnected = numbersQ.isSuccess && numbersQ.data.length === 0;
 
   useEffect(() => {
     if (open) setTo(defaultTo);
@@ -188,12 +196,12 @@ export function SendWhatsAppDialog({
   const isOfficialHsm = !!selectedTpl;
 
   const sendMut = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       const templateVariables =
         isOfficialHsm && varCount > 0
           ? Array.from({ length: varCount }, (_, i) => vars[i] ?? "")
           : undefined;
-      return sendFn({
+      const res = await sendFn({
         data: {
           to,
           body: isOfficialHsm ? "" : previewBody,
@@ -205,6 +213,8 @@ export function SendWhatsAppDialog({
           mediaContentType: isOfficialHsm ? undefined : media?.contentType,
         },
       });
+      if (!res.ok) throw new Error(res.error);
+      return res;
     },
     onSuccess: (res) => {
       toast.success("Mensagem enviada");
@@ -437,9 +447,16 @@ export function SendWhatsAppDialog({
             </AlertDialogContent>
           </AlertDialog>
 
+          {notConnected ? (
+            <p role="alert" className="mr-auto text-sm text-destructive">
+              Nenhum número do WhatsApp Business conectado. Conecte em Configurações › WhatsApp
+              (Meta).
+            </p>
+          ) : null}
           <Button
             onClick={() => sendMut.mutate()}
             disabled={
+              notConnected ||
               !to ||
               (!isOfficialHsm && !previewBody.trim() && !media) ||
               sendMut.isPending ||

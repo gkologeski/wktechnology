@@ -211,13 +211,14 @@ function UnifiedInboxPage() {
           } as never,
         });
       } else {
-        await sendWa({
+        const res = await sendWa({
           data: {
             to: current.replyTo!,
             body: draft,
             contactId: current.contactId ?? undefined,
           } as never,
         });
+        if (!res.ok) throw new Error(res.error);
       }
     },
     onSuccess: () => {
