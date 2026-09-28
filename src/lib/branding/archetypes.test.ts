@@ -14,8 +14,10 @@ describe("arquétipos de branding", () => {
       expect(archetypeHasCompletePalette(archetype)).toBe(true);
       expect(Object.keys(archetype.theme.light)).toHaveLength(BRAND_TOKEN_KEYS.length);
       expect(Object.keys(archetype.theme.dark)).toHaveLength(BRAND_TOKEN_KEYS.length);
-      for (const value of Object.values(archetype.theme.light)) expect(value).toMatch(/^#[0-9A-F]{6}$/);
-      for (const value of Object.values(archetype.theme.dark)) expect(value).toMatch(/^#[0-9A-F]{6}$/);
+      for (const value of Object.values(archetype.theme.light))
+        expect(value).toMatch(/^#[0-9A-F]{6}$/);
+      for (const value of Object.values(archetype.theme.dark))
+        expect(value).toMatch(/^#[0-9A-F]{6}$/);
       expect(archetype.theme.icons.stroke).toBeGreaterThanOrEqual(1);
       expect(archetype.theme.icons.stroke).toBeLessThanOrEqual(3);
       expect(archetype.theme.icons.size).toBeGreaterThanOrEqual(12);
@@ -30,7 +32,10 @@ describe("arquétipos de branding", () => {
     const applied = applyBrandArchetype(archetype, {
       light: { primary: "#000000" },
       icons: { stroke: 3 },
-      assets: { logo_light: "https://example.com/logo.svg", empty_illustration: "https://example.com/empty.svg" },
+      assets: {
+        logo_light: "https://example.com/logo.svg",
+        empty_illustration: "https://example.com/empty.svg",
+      },
     });
     expect(applied.style).toEqual(archetype.style);
     expect(applied.theme.light).toEqual(archetype.theme.light);
