@@ -3,3 +3,4 @@
 - Datas e horários de atividades usam seletores controlados compartilhados com adaptadores local/ISO e intervalos de 15 minutos, para manter consistência visual sem alterar formatos persistidos.
 - O editor visual de Workflows separa canvas e configuração detalhada sobre o mesmo rascunho, mantendo as ações e a publicação existentes sem alterar a execução.
 - Variáveis novas de Workflows usam aliases PT-BR sem acentos em snake_case; o motor mantém aliases técnicos antigos para compatibilidade com fluxos salvos.
+- Arquétipos do White Label são catálogos estáticos completos aplicados somente no workspace; substituem estilo, preservam identidade/assets e continuam usando o `theme` existente para evitar estado persistido duplicado.

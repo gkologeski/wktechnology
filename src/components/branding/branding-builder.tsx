@@ -10,7 +10,15 @@ import { sanitizeTheme, EMPTY_THEME, type BrandTheme } from "@/lib/branding/toke
 import { ControlsPanel, type BuilderForm } from "./controls-panel";
 import { ThemeEditor } from "./theme-editor";
 import { LivePreview } from "./live-preview";
+import { ArchetypeSelector } from "./archetype-selector";
 import type { PreviewEditorTab, PreviewMode, PreviewTarget } from "./preview-targets";
+import {
+  applyBrandArchetype,
+  BRAND_ARCHETYPES,
+  identifyBrandArchetype,
+  type BrandArchetype,
+  type BrandArchetypeId,
+} from "@/lib/branding/archetypes";
 
 const DEFAULT_FORM: BuilderForm = {
   brand_name: "",
@@ -36,9 +44,10 @@ export function BrandingBuilder() {
   const [saved, setSaved] = useState<State>({ form: DEFAULT_FORM, theme: EMPTY_THEME });
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [editorTab, setEditorTab] = useState<PreviewEditorTab>("basics");
+  const [editorTab, setEditorTab] = useState<PreviewEditorTab | "models">("models");
   const [previewMode, setPreviewMode] = useState<PreviewMode>("light");
   const [selectedTarget, setSelectedTarget] = useState<PreviewTarget | null>(null);
+  const [selectedArchetypeId, setSelectedArchetypeId] = useState<BrandArchetypeId | null>(null);
   const builderRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -72,7 +81,7 @@ export function BrandingBuilder() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [load]);
 
   const form = state.form;
   const theme = state.theme;
@@ -83,6 +92,21 @@ export function BrandingBuilder() {
   const setTheme = (next: BrandTheme) => setState((s) => ({ ...s, theme: next }));
 
   const dirty = useMemo(() => JSON.stringify(state) !== JSON.stringify(saved), [state, saved]);
+  const archetypeStyle = useMemo(
+    () => ({
+      primary_color: form.primary_color,
+      accent_color: form.accent_color,
+      radius: form.radius,
+      density: form.density,
+      heading_font: form.heading_font,
+      body_font: form.body_font,
+    }),
+    [form],
+  );
+  const activeArchetypeId = useMemo(
+    () => identifyBrandArchetype(archetypeStyle, theme),
+    [archetypeStyle, theme],
+  );
 
   const submit = async () => {
     setBusy(true);
@@ -107,7 +131,30 @@ export function BrandingBuilder() {
     }
   };
 
-  const discard = () => setState(saved);
+  const discard = () => {
+    setState(saved);
+    setSelectedArchetypeId(null);
+  };
+
+  const selectArchetype = (archetype: BrandArchetype) => {
+    setSelectedArchetypeId(archetype.id);
+  };
+
+  const applyArchetype = (archetype: BrandArchetype) => {
+    const applied = applyBrandArchetype(archetype, theme);
+    setState((current) => ({
+      form: { ...current.form, ...applied.style },
+      theme: applied.theme,
+    }));
+    setSelectedArchetypeId(archetype.id);
+  };
+
+  const selectedArchetype = selectedArchetypeId
+    ? BRAND_ARCHETYPES.find((archetype) => archetype.id === selectedArchetypeId)
+    : null;
+  const previewArchetype = selectedArchetype ? applyBrandArchetype(selectedArchetype, theme) : null;
+  const previewForm = previewArchetype ? { ...form, ...previewArchetype.style } : form;
+  const previewTheme = previewArchetype?.theme ?? theme;
 
   useEffect(() => {
     if (!selectedTarget) return;
@@ -128,6 +175,7 @@ export function BrandingBuilder() {
   const selectPreviewTarget = (target: PreviewTarget) => {
     setSelectedTarget(target);
     setEditorTab(target.tab);
+    setSelectedArchetypeId(null);
   };
 
   if (loading) {
@@ -141,7 +189,7 @@ export function BrandingBuilder() {
   return (
     <div
       ref={builderRef}
-      className="bg-card border rounded-2xl shadow-sm overflow-hidden flex flex-col h-[calc(100vh-180px)] min-h-[600px]"
+      className="bg-card border rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-[600px] lg:h-[calc(100vh-180px)]"
     >
       {/* Header */}
       <header className="h-14 border-b px-5 flex items-center justify-between shrink-0">
@@ -161,19 +209,31 @@ export function BrandingBuilder() {
       </header>
 
       {/* Body */}
-      <div className="flex-1 flex min-h-0">
-        <aside className="w-80 border-r overflow-y-auto bg-muted/30 shrink-0">
+      <div className="flex-1 flex flex-col min-h-0 lg:flex-row">
+        <aside className="w-full border-b overflow-y-auto bg-muted/30 shrink-0 lg:w-80 lg:border-b-0 lg:border-r">
           <Tabs
             value={editorTab}
-            onValueChange={(value) => setEditorTab(value as PreviewEditorTab)}
+            onValueChange={(value) => {
+              setEditorTab(value as PreviewEditorTab | "models");
+              if (value !== "models") setSelectedArchetypeId(null);
+            }}
             className="w-full"
           >
             <div className="px-4 pt-4">
-              <TabsList className="w-full grid grid-cols-2">
+              <TabsList className="w-full grid grid-cols-3">
+                <TabsTrigger value="models">Modelos</TabsTrigger>
                 <TabsTrigger value="basics">Marca</TabsTrigger>
                 <TabsTrigger value="theme">Tema</TabsTrigger>
               </TabsList>
             </div>
+            <TabsContent value="models" className="mt-0">
+              <ArchetypeSelector
+                activeId={activeArchetypeId}
+                selectedId={selectedArchetypeId ?? activeArchetypeId}
+                onSelect={selectArchetype}
+                onApply={applyArchetype}
+              />
+            </TabsContent>
             <TabsContent value="basics" className="mt-0">
               <ControlsPanel form={form} set={set} activeTargetId={selectedTarget?.id} />
             </TabsContent>
@@ -188,18 +248,18 @@ export function BrandingBuilder() {
             </TabsContent>
           </Tabs>
         </aside>
-        <main className="flex-1 bg-muted/40 p-6 min-w-0">
+        <main className="min-h-[560px] flex-1 bg-muted/40 p-4 min-w-0 sm:p-6">
           <LivePreview
             settings={{
-              primary: form.primary_color,
-              accent: form.accent_color,
-              radius: parseInt(form.radius || "8", 10) || 8,
-              headingFont: form.heading_font,
-              bodyFont: form.body_font,
-              density: form.density,
+              primary: previewForm.primary_color,
+              accent: previewForm.accent_color,
+              radius: parseInt(previewForm.radius || "8", 10) || 8,
+              headingFont: previewForm.heading_font,
+              bodyFont: previewForm.body_font,
+              density: previewForm.density,
               logoUrl: form.logo_url,
               brandName: form.brand_name,
-              theme,
+              theme: previewTheme,
             }}
             mode={previewMode}
             onModeChange={setPreviewMode}
