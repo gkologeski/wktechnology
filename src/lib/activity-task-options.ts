@@ -155,10 +155,7 @@ export function followUpLabel(preset: FollowUpPreset, now = new Date()): string 
   const base = FOLLOW_UP_PRESETS.find((p) => p.value === preset)?.label ?? "";
   const d = followUpDate(preset, now);
   if (!d || preset === "custom") return base;
-  const wd = d
-    .toLocaleDateString("pt-BR", { weekday: "short" })
-    .replace(".", "")
-    .toLowerCase();
-  const wdShort = wd.charAt(0).toUpperCase() + wd.slice(1);
+  const wdRaw = d.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "").toLowerCase();
+  const wdShort = wdRaw.charAt(0).toUpperCase() + wdRaw.slice(1);
   return `${base} (${wdShort}, ${d.toLocaleDateString("pt-BR")})`;
 }
