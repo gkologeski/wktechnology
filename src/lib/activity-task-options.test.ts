@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { describeRecurrence, followUpDate, nextOccurrence } from "./activity-task-options";
+import {
+  describeRecurrence,
+  followUpDate,
+  followUpLabel,
+  nextOccurrence,
+} from "./activity-task-options";
 
 describe("nextOccurrence", () => {
   const from = new Date(2026, 0, 31, 9);
