@@ -87,6 +87,11 @@ export const getVoiceAccessToken = createServerFn({ method: "POST" })
       `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Keys/${apiKeySid}.json`,
       { headers: { Authorization: `Basic ${btoa(`${apiKeySid}:${apiKeySecret}`)}` } },
     );
+    {
+      const { saveCallHealth } = await import("@/lib/twilio-voice-probe.server");
+      const { mapProbeStatus } = await import("@/lib/twilio-voice-probe");
+      await saveCallHealth(mapProbeStatus(probe.status));
+    }
     if (!probe.ok) {
       const body = await probe.text();
       console.error("[twilio-voice] credential probe failed", probe.status, body);
