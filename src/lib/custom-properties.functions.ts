@@ -178,7 +178,6 @@ export const setCustomFieldValue = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 export const computeAiProperty = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

@@ -3,7 +3,6 @@ import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { z } from "zod";
 import { normalizeEntityName, type ContractLinkMeta } from "@/lib/contracts/link-suggest";
 
-const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 export const AiSuggestionSchema = z.object({
   pending_id: z.string(),

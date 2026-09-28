@@ -4,7 +4,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 export const generateJobDescription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

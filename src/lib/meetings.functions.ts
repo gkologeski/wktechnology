@@ -345,7 +345,6 @@ export const attachRecording = createServerFn({ method: "POST" })
  * AI: transcribe + summarize the uploaded recording
  *   Uses Lovable AI Gateway (Gemini 2.5 Flash for audio).
  * ============================================================ */
-const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 export const generateMeetingSummary = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

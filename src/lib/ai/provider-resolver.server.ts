@@ -1,6 +1,5 @@
 // Resolve qual provedor de IA atende o workspace e executa a chamada de chat.
 // A chave do provedor externo fica cifrada (AES-GCM) e só é lida aqui, no servidor.
-import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { getRequest } from "@tanstack/react-start/server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";

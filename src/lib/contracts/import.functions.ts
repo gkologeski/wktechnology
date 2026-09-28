@@ -15,7 +15,6 @@ import {
 } from "@/lib/contracts/import-schemas";
 import { buildContractTitle } from "@/lib/contracts/title";
 
-const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 const SYSTEM_PROMPT = `Você é um analista jurídico especialista em contratos brasileiros de prestação de serviços de TI (outsourcing, desenvolvimento, manutenção, consultoria). Sua tarefa é extrair variáveis-chave do contrato fornecido.
 

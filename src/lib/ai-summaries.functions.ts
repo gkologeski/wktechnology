@@ -7,7 +7,6 @@ import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 const ENTITY = z.enum(["lead", "contact", "deal", "ticket"]);
 const KIND = z.enum(["conversation", "call", "meeting", "email", "notes", "tasks", "all"]);
 
-const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const DEFAULT_MODEL = "google/gemini-2.5-flash";
 
 const MAX_MSGS = 400;

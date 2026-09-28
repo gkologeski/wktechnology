@@ -3,7 +3,6 @@ import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { BUG_CATEGORIES, BUG_KINDS } from "@/lib/bug-report-taxonomy";
 
-const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const DEFAULT_MODEL = "google/gemini-2.5-flash";
 
 function catLabel(value: string) {

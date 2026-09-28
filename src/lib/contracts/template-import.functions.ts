@@ -9,7 +9,6 @@ import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { assertAnyPermission } from "@/lib/access-control/enforce.server";
 import { CONTRACT_TEMPLATE_TOKENS } from "@/lib/contracts/template-tokens";
 
-const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 const CREATE = [
   "techcontracts.contract_templates.create.own",

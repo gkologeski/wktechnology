@@ -4,7 +4,6 @@
 import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-2.5-flash";
 
 type Entity = "lead" | "contact" | "deal" | "ticket";
