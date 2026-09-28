@@ -666,7 +666,9 @@ export function ContractsGroupedList({
   selection,
   editable = false,
   nestLinks = false,
+  columnKeys,
 }: {
+  columnKeys?: string[];
   rows: ContractRow[];
   groupBy: ContractGroupBy;
   groupings: ContractGroupings | undefined;
@@ -718,6 +720,7 @@ export function ContractsGroupedList({
           {...(selection ? { selection } : {})}
           editable={editable}
           nestLinks={nestLinks}
+          columnKeys={columnKeys}
         />
       ))}
     </div>
@@ -737,7 +740,9 @@ function GroupSection({
   selection,
   editable = false,
   nestLinks = false,
+  columnKeys,
 }: {
+  columnKeys?: string[];
   group: Group;
   groupBy: ContractGroupBy;
   selection?: ContractsSelection;
@@ -776,6 +781,7 @@ function GroupSection({
             {...(selection ? { selection } : {})}
             editable={editable}
             nestLinks={nestLinks}
+            columnKeys={columnKeys}
           />
         </div>
       </CollapsibleContent>
