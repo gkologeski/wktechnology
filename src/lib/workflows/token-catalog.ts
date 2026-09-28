@@ -69,8 +69,9 @@ export function buildTextTokens(
     }
   }
   for (const f of priorFields) {
+    const outputLabel = f.label.split(" · ").at(-1) ?? f.label;
     out.push({
-      token: `{{${localizeWorkflowTokenPath(f.name, f.label)}}}`,
+      token: `{{${localizeWorkflowTokenPath(f.name, outputLabel)}}}`,
       label: f.label,
       group: GROUP_STEPS,
     });
@@ -100,8 +101,9 @@ export function buildIdTokens(
   }
   for (const f of priorFields) {
     if (!f.name.endsWith(".id") && !f.name.endsWith("_id")) continue;
+    const outputLabel = f.label.split(" · ").at(-1) ?? f.label;
     out.push({
-      token: `{{${localizeWorkflowTokenPath(f.name, f.label)}}}`,
+      token: `{{${localizeWorkflowTokenPath(f.name, outputLabel)}}}`,
       label: f.label,
       group: GROUP_STEPS,
     });

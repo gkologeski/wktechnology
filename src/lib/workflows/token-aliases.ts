@@ -24,6 +24,12 @@ const PREFERRED_STRUCTURAL_ALIAS: Record<string, string> = Object.fromEntries(
 );
 
 const EXPLICIT_FIELD_ALIASES: Record<string, string> = {
+  first_name: "primeiro_nome",
+  full_name: "nome_completo",
+  title: "titulo",
+  owner_id: "id_criador",
+  assigned_to: "responsavel",
+  user_id: "id_usuario",
   signature_document_id: "id_documento_assinatura",
   metadata: "metadados_tecnicos",
 };
@@ -113,9 +119,15 @@ export function resolveWorkflowTokenPath(root: unknown, path: string): string {
 
     const available = cursor && typeof cursor === "object" ? (cursor as Record<string, unknown>) : null;
     const candidates = aliasCandidates.get(part) ?? [];
+    const matchingAvailableKey = available
+      ? Object.keys(available).find(
+          (key) => workflowFieldAlias(key, LABELS[key] ?? key) === part,
+        )
+      : undefined;
     const resolved =
       (available && part in available ? part : undefined) ??
       candidates.find((candidate) => available && candidate in available) ??
+      matchingAvailableKey ??
       candidates[0] ??
       part;
     canonical.push(resolved);

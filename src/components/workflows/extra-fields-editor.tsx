@@ -154,7 +154,7 @@ function CustomFieldsEditor({
           />
           <TokenInput
             value={v}
-            placeholder="valor (aceita {{tokens}})"
+            placeholder="valor (aceita {{variaveis.nome}})"
             onValueChange={(nv) => {
               const next = { ...obj, [k]: nv };
               onChange(next);
@@ -407,7 +407,7 @@ function FieldInput({
         value={strVal}
         onChange={(html) => onChange(html)}
         minHeight={220}
-        placeholder="Escreva o conteúdo. Aceita {{tokens}} do workflow."
+        placeholder="Escreva o conteúdo. Aceita variáveis do workflow."
       />
     );
   }
@@ -418,13 +418,13 @@ function FieldInput({
         rows={2}
         value={strVal}
         onValueChange={(v) => onChange(v)}
-        placeholder="Aceita {{tokens}}"
+        placeholder="Aceita variáveis"
       />
     );
   }
 
   return (
-    <TokenInput value={strVal} onValueChange={(v) => onChange(v)} placeholder="Aceita {{tokens}}" />
+    <TokenInput value={strVal} onValueChange={(v) => onChange(v)} placeholder="Aceita variáveis" />
   );
 }
 
@@ -603,7 +603,7 @@ export function FkPicker({
           value={value}
           onValueChange={(v) => onChange(v)}
           tokenKind="id"
-          placeholder="{{token}}"
+          placeholder="{{variavel}}"
         />
         <button
           type="button"
@@ -1672,7 +1672,7 @@ export function ExtraFieldsEditor({
                 size="sm"
                 className="h-7 text-xs"
                 onClick={autofillFromWorkflow}
-                title="Preenche os campos vazios com variáveis do workflow, ex.: {{title}}"
+                title="Preenche os campos vazios com variáveis do workflow, ex.: {{titulo}}"
               >
                 <Wand2 className="mr-1 h-3 w-3" />
                 Preencher com variáveis do workflow ({autofillableCount})

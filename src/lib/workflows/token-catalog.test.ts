@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildIdTokens, buildTextTokens, type TokenFieldOpt } from "./token-catalog";
+import { buildIdTokens, buildTextTokens, buildVarTokens, type TokenFieldOpt } from "./token-catalog";
 
 const fields: TokenFieldOpt[] = [
   { name: "id", label: "ID" },
@@ -28,6 +28,10 @@ describe("token-catalog", () => {
       (x) => x.token,
     );
     expect(t).toContain("{{passos.1.titulo}}");
+  });
+
+  it("usa prefixo em português sem alterar o nome criado pelo usuário", () => {
+    expect(buildVarTokens(["score_pct"])[0]?.token).toBe("{{variaveis.score_pct}}");
   });
 
   it("expõe somente identificadores nos campos de referência", () => {

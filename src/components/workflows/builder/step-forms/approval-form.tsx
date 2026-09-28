@@ -58,7 +58,7 @@ export function ApprovalStepForm({
         <TokenInput
           value={action.title}
           onValueChange={(v) => onChange({ ...action, title: v })}
-          placeholder="Aprovar desconto de {{name}}"
+          placeholder="Aprovar desconto de {{nome}}"
         />
       </div>
       <div className="space-y-1">

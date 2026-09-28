@@ -107,7 +107,7 @@ export function AssociateRecordsForm({
         <TokenInput
           value={action.target_id}
           onValueChange={(v) => onChange({ ...action, target_id: v })}
-          placeholder="uuid ou {{company_id}}"
+          placeholder="ID ou {{id_empresa}}"
         />
       </div>
     </div>
