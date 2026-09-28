@@ -188,12 +188,12 @@ export function SendWhatsAppDialog({
   const isOfficialHsm = !!selectedTpl;
 
   const sendMut = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       const templateVariables =
         isOfficialHsm && varCount > 0
           ? Array.from({ length: varCount }, (_, i) => vars[i] ?? "")
           : undefined;
-      return sendFn({
+      const res = await sendFn({
         data: {
           to,
           body: isOfficialHsm ? "" : previewBody,
@@ -205,6 +205,8 @@ export function SendWhatsAppDialog({
           mediaContentType: isOfficialHsm ? undefined : media?.contentType,
         },
       });
+      if (!res.ok) throw new Error(res.error);
+      return res;
     },
     onSuccess: (res) => {
       toast.success("Mensagem enviada");

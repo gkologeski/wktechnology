@@ -135,7 +135,11 @@ function WhatsAppInbox() {
       contactId?: string;
       mediaUrl?: string;
       mediaContentType?: string;
-    }) => sendFn({ data: input }),
+    }) =>
+      sendFn({ data: input }).then((res) => {
+        if (!res.ok) throw new Error(res.error);
+        return res;
+      }),
     onSuccess: (res) => {
       toast.success("Mensagem enviada");
       setDraft("");
