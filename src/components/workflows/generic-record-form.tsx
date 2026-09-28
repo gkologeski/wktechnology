@@ -85,7 +85,7 @@ export function GenericRecordForm({ action, onChange, triggerEntity }: Props) {
 
       {(action.type === "update_record" || action.type === "delete_record") && (
         <div>
-          <Label className="text-xs">ID do registro (aceita tokens, ex.: {"{{id}}"})</Label>
+          <Label className="text-xs">ID do registro (aceita variáveis, ex.: {"{{id}}"})</Label>
           <TokenInput
             value={action.target_id ?? ""}
             onValueChange={(v) => onChange({ ...action, target_id: v })}
@@ -219,7 +219,7 @@ function FreeKeyValueEditor({
           <TokenInput
             value={typeof v === "string" ? v : String(v ?? "")}
             onValueChange={(nv) => setVal(k, nv)}
-            placeholder="valor (aceita {{tokens}})"
+            placeholder="valor (aceita {{variaveis.nome}})"
           />
         </div>
       ))}

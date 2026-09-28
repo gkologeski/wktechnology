@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { buildIdTokens, buildTextTokens, type TokenFieldOpt } from "./token-catalog";
+import {
+  buildIdTokens,
+  buildTextTokens,
+  buildVarTokens,
+  type TokenFieldOpt,
+} from "./token-catalog";
 
 const fields: TokenFieldOpt[] = [
   { name: "id", label: "ID" },
@@ -15,8 +20,8 @@ const fields: TokenFieldOpt[] = [
 describe("token-catalog", () => {
   it("expõe apenas colunas de texto úteis do gatilho", () => {
     const t = buildTextTokens(fields).map((x) => x.token);
-    expect(t).toContain("{{title}}");
-    expect(t).toContain("{{amount}}");
+    expect(t).toContain("{{titulo}}");
+    expect(t).toContain("{{valor}}");
     expect(t).not.toContain("{{id}}");
     expect(t).not.toContain("{{company_id}}");
     expect(t).not.toContain("{{created_at}}");
@@ -27,13 +32,17 @@ describe("token-catalog", () => {
     const t = buildTextTokens(fields, [{ name: "steps.1.title", label: "Passo 1 · Título" }]).map(
       (x) => x.token,
     );
-    expect(t).toContain("{{steps.1.title}}");
+    expect(t).toContain("{{passos.1.titulo}}");
+  });
+
+  it("usa prefixo em português sem alterar o nome criado pelo usuário", () => {
+    expect(buildVarTokens(["score_pct"])[0]?.token).toBe("{{variaveis.score_pct}}");
   });
 
   it("expõe somente identificadores nos campos de referência", () => {
     const t = buildIdTokens(fields).map((x) => x.token);
     expect(t).toContain("{{id}}");
-    expect(t).toContain("{{company_id}}");
+    expect(t).toContain("{{id_empresa}}");
     expect(t).not.toContain("{{title}}");
     expect(t).not.toContain("{{owner_id}}");
   });

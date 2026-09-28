@@ -140,7 +140,7 @@ export function CreateContractFromDealForm({
         <TokenInput
           value={action.title ?? ""}
           onValueChange={(v) => onChange({ ...action, title: v })}
-          placeholder="Contrato — {{name}}"
+          placeholder="Contrato — {{nome}}"
         />
       </div>
 
@@ -150,7 +150,7 @@ export function CreateContractFromDealForm({
           <TokenInput
             value={action.starts_at ?? ""}
             onValueChange={(v) => onChange({ ...action, starts_at: v })}
-            placeholder="{{closed_at}} ou 2026-01-01"
+            placeholder="{{fechado_em}} ou 2026-01-01"
           />
         </div>
         <div>

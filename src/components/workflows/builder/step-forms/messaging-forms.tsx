@@ -66,7 +66,7 @@ export function SendSlackForm({
           value={action.text}
           onValueChange={(v) => onChange({ ...action, text: v })}
           rows={4}
-          placeholder="Aceita tokens {{campo}} e {{vars.NOME}}"
+          placeholder="Aceita variáveis {{campo}} e {{variaveis.nome}}"
         />
       </div>
       <p className="text-xs text-muted-foreground">
@@ -109,7 +109,7 @@ export function SendTeamsForm({
           value={action.text}
           onValueChange={(v) => onChange({ ...action, text: v })}
           rows={4}
-          placeholder="Aceita tokens {{campo}} e {{vars.NOME}}"
+          placeholder="Aceita variáveis {{campo}} e {{variaveis.nome}}"
         />
       </div>
     </div>

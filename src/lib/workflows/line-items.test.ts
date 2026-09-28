@@ -71,6 +71,7 @@ describe("line items — campos virtuais", () => {
   it("detecta uso no JSON do workflow", () => {
     expect(workflowUsesLineItems('{"field":"line_items.seniority"}')).toBe(true);
     expect(workflowUsesLineItems('{"body":"{{deal.services}}"}')).toBe(true);
+    expect(workflowUsesLineItems('{"body":"{{negocio.servicos}}"}')).toBe(true);
     expect(workflowUsesLineItems('{"field":"stage"}')).toBe(false);
   });
 });

@@ -105,9 +105,9 @@ export function lineItemsSummary(items: LineItemRow[]): string {
 
 /** Tokens de texto disponíveis quando o gatilho é Negócios. */
 export const LINE_ITEM_TOKENS = [
-  { token: "{{deal.services}}", label: "Serviços do negócio" },
-  { token: "{{deal.line_items_count}}", label: "Quantidade de itens do negócio" },
-  { token: "{{deal.line_items_summary}}", label: "Resumo dos itens do negócio" },
+  { token: "{{negocio.servicos}}", label: "Serviços do negócio" },
+  { token: "{{negocio.quantidade_itens}}", label: "Quantidade de itens do negócio" },
+  { token: "{{negocio.resumo_itens}}", label: "Resumo dos itens do negócio" },
 ] as const;
 
 /** Bloco `deal.*` anexado ao registro avaliado para resolver os tokens acima. */
@@ -147,6 +147,9 @@ export function workflowUsesLineItems(workflowJson: string): boolean {
     workflowJson.includes(LINE_ITEM_PREFIX) ||
     workflowJson.includes("{{deal.services}}") ||
     workflowJson.includes("{{deal.line_items_count}}") ||
-    workflowJson.includes("{{deal.line_items_summary}}")
+    workflowJson.includes("{{deal.line_items_summary}}") ||
+    workflowJson.includes("{{negocio.servicos}}") ||
+    workflowJson.includes("{{negocio.quantidade_itens}}") ||
+    workflowJson.includes("{{negocio.resumo_itens}}")
   );
 }

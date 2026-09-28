@@ -149,7 +149,7 @@ export function FormatDataForm({
           <TokenTextarea
             value={action.template ?? ""}
             onValueChange={(v) => onChange({ ...action, template: v })}
-            placeholder="Ex: {{first_name}} <{{email}}> — score {{vars.score_pct}}"
+            placeholder="Ex: {{nome}} <{{email}}> — pontuação {{variaveis.score_pct}}"
             rows={3}
           />
         </div>
@@ -202,7 +202,7 @@ export function FormatDataForm({
         />
         <p className="text-xs text-muted-foreground">
           Use nas ações seguintes como{" "}
-          <code>{"{{vars." + (action.target_var || "nome") + "}}"}</code>.
+          <code>{"{{variaveis." + (action.target_var || "nome") + "}}"}</code>.
         </p>
       </div>
     </div>
