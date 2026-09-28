@@ -64,7 +64,7 @@ export function ContactsChart({ data }: { data: ContactsByDay[] }) {
             LabelList,
           }) => (
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
+              <BarChart data={data} margin={{ top: 16, right: 8, bottom: 0, left: -16 }}>
                 <CartesianGrid
                   strokeDasharray="3 3"
                   stroke="var(--color-border-subtle)"
