@@ -14,6 +14,7 @@ import { ArchetypeSelector } from "./archetype-selector";
 import type { PreviewEditorTab, PreviewMode, PreviewTarget } from "./preview-targets";
 import {
   applyBrandArchetype,
+  BRAND_ARCHETYPES,
   identifyBrandArchetype,
   type BrandArchetype,
   type BrandArchetypeId,

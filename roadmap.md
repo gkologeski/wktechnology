@@ -21,6 +21,6 @@
 - [x] Aplicar a fundação do Design System em toda a área autenticada, com canvas e componentes compartilhados.
 - [x] Inventariar as exceções visuais locais por rota em `docs/qa/design-system-rollout.md` para refinamentos incrementais futuros.
 - [x] Permitir selecionar objetos da prévia do White Label e focar diretamente seus controles de estilo.
-- [ ] Disponibilizar três arquétipos visuais completos no White Label do workspace, com prévia, confirmação e preservação da identidade.
+- [x] Disponibilizar três arquétipos visuais completos no White Label do workspace, com prévia, confirmação e preservação da identidade.
 - [x] Corrigir regressões do Design System em botões principais e bordas coloridas na área autenticada.
 - [x] Implementar no /dashboard a jornada de Leads até vendas, canais agrupados, reconciliação conservadora e validação UX/UI ≥ 9 (avaliação final: 9,2/10).

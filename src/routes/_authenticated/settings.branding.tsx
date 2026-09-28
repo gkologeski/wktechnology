@@ -7,6 +7,22 @@ import { MODULES, type ModuleId } from "@/lib/modules/registry";
 
 export const Route = createFileRoute("/_authenticated/settings/branding")({
   component: BrandingPage,
+  head: () => ({
+    meta: [
+      { title: "White Label | TechERP" },
+      {
+        name: "description",
+        content: "Personalize a identidade e os modelos visuais do workspace no TechERP.",
+      },
+      { property: "og:title", content: "White Label | TechERP" },
+      {
+        property: "og:description",
+        content: "Personalize a identidade e os modelos visuais do workspace no TechERP.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
 });
 
 // Services é consolidado dentro de Contratos — não tem branding próprio.
