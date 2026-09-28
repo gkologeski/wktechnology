@@ -84,7 +84,7 @@ export function ActivityWindows({ children }: { children: React.ReactNode }) {
         ];
       });
     },
-    [currentIdentity],
+    [currentIdentity, availability],
   );
   const close = (id: string) => {
     closeBlocked.current.delete(id);

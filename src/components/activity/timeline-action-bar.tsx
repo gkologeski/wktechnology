@@ -122,49 +122,48 @@ export function TimelineActionBar({
     const blocked = blockedChannel(a);
     const soon = a.kind === "create" && a.disabled;
     return (
-      <div key={key} className="relative shrink-0" title={blocked ? unconfiguredTitle(blocked) : undefined}>
-      <button
-        type="button"
-        draggable
-        onDragStart={(e) => onDragStart(e, key)}
-        onDragEnd={onDragEnd}
-        onDragOver={allowDrop}
-        onDrop={(e) => dropOnItem(e, "pinned", index)}
-        onClick={() => handleBarClick(a)}
-        disabled={soon || !!blocked}
-        aria-disabled={soon || !!blocked}
-        title={
-          blocked
-            ? undefined
-            : soon
-              ? "Em breve"
-              : `${a.label} (arraste para reordenar)`
-        }
-        className={`flex flex-col items-center gap-1.5 w-16 shrink-0 group cursor-grab active:cursor-grabbing ${
-          soon || blocked ? "opacity-50 cursor-not-allowed" : ""
-        } ${isDragging ? "opacity-40" : ""}`}
+      <div
+        key={key}
+        className="relative shrink-0"
+        title={blocked ? unconfiguredTitle(blocked) : undefined}
       >
-        <MessageDraftPin
-          show={
-            a.kind === "create" &&
-            ((a.value === "email" && hasEmailDraft) || (a.value === "whatsapp" && hasWhatsAppDraft))
-          }
+        <button
+          type="button"
+          draggable
+          onDragStart={(e) => onDragStart(e, key)}
+          onDragEnd={onDragEnd}
+          onDragOver={allowDrop}
+          onDrop={(e) => dropOnItem(e, "pinned", index)}
+          onClick={() => handleBarClick(a)}
+          disabled={soon || !!blocked}
+          aria-disabled={soon || !!blocked}
+          title={blocked ? undefined : soon ? "Em breve" : `${a.label} (arraste para reordenar)`}
+          className={`flex flex-col items-center gap-1.5 w-16 shrink-0 group cursor-grab active:cursor-grabbing ${
+            soon || blocked ? "opacity-50 cursor-not-allowed" : ""
+          } ${isDragging ? "opacity-40" : ""}`}
         >
-          <span
-            className={`flex items-center justify-center h-12 w-12 rounded-full border transition-all ${
-              active
-                ? "bg-primary/10 border-primary text-primary ring-2 ring-primary/30"
-                : "bg-muted/60 border-border/60 text-foreground/80 group-hover:bg-muted group-hover:border-primary/40 group-hover:text-primary"
-            }`}
+          <MessageDraftPin
+            show={
+              a.kind === "create" &&
+              ((a.value === "email" && hasEmailDraft) ||
+                (a.value === "whatsapp" && hasWhatsAppDraft))
+            }
           >
-            {a.icon}
+            <span
+              className={`flex items-center justify-center h-12 w-12 rounded-full border transition-all ${
+                active
+                  ? "bg-primary/10 border-primary text-primary ring-2 ring-primary/30"
+                  : "bg-muted/60 border-border/60 text-foreground/80 group-hover:bg-muted group-hover:border-primary/40 group-hover:text-primary"
+              }`}
+            >
+              {a.icon}
+            </span>
+          </MessageDraftPin>
+          <span className="text-[11px] font-medium text-foreground/80 text-center leading-tight line-clamp-2">
+            {a.label}
           </span>
-        </MessageDraftPin>
-        <span className="text-[11px] font-medium text-foreground/80 text-center leading-tight line-clamp-2">
-          {a.label}
-        </span>
-      </button>
-      {blocked && <ChannelSetupGear channel={blocked} className="absolute left-10 top-0" />}
+        </button>
+        {blocked && <ChannelSetupGear channel={blocked} className="absolute left-10 top-0" />}
       </div>
     );
   };
@@ -259,7 +258,9 @@ export function TimelineActionBar({
                   <span className="flex-1 text-sm">{a.label}</span>
                   {blocked ? (
                     <ChannelSetupGear channel={blocked} />
-                  ) : disabled && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
+                  ) : (
+                    disabled && <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                  )}
                 </div>
               );
             })}
