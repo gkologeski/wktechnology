@@ -14,6 +14,7 @@ import { ptBR } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { HorizontalScrollRegion } from "@/components/ui/horizontal-scroll-region";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 
 type Task = {
@@ -190,7 +191,7 @@ export function TimelineView({
   const cellCount = Math.ceil(totalDays / cellDays);
 
   return (
-    <div className="rounded-lg border bg-card overflow-x-auto">
+    <HorizontalScrollRegion className="overflow-hidden rounded-lg border bg-card">
       <div className="min-w-[900px]">
         {/* Header */}
         <div
@@ -259,7 +260,7 @@ export function TimelineView({
           );
         })}
       </div>
-    </div>
+    </HorizontalScrollRegion>
   );
 }
 
