@@ -50,3 +50,15 @@ describe("followUpDate", () => {
     expect(followUpDate("bd3", fri)?.getHours()).toBe(8);
   });
 });
+
+describe("followUpLabel", () => {
+  const now = new Date(2026, 8, 28, 14); // segunda-feira
+  it("mostra dia abreviado e data", () => {
+    expect(followUpLabel("today", now)).toBe("Hoje (Seg, 28/09/2026)");
+    expect(followUpLabel("w2", now)).toBe("Em 2 semanas (Seg, 12/10/2026)");
+    expect(followUpLabel("m1", now)).toBe("Em 1 mês (Qua, 28/10/2026)");
+  });
+  it("não acrescenta sufixo na data personalizada", () => {
+    expect(followUpLabel("custom", now)).toBe("Data personalizada");
+  });
+});
