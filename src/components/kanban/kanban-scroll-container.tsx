@@ -146,7 +146,7 @@ export function KanbanScrollContainer({
       <div
         ref={contentRef}
         onScroll={onContentScroll}
-        className="kanban-content-scroll overflow-x-auto"
+        className="kanban-content-scroll overflow-x-auto overscroll-x-contain"
       >
         {children}
       </div>

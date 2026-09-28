@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
   ({ className, ...props }, ref) => (
-    <div data-slot="table-container" className="relative w-full overflow-auto">
+    <div data-slot="table-container" className="relative w-full overflow-auto overscroll-x-contain">
       <table
         data-slot="table"
         ref={ref}
