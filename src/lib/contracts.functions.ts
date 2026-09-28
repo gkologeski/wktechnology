@@ -6,8 +6,6 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { assertAnyPermission } from "@/lib/access-control/enforce.server";
 
-
-
 const roleEnum = z.enum(["provider", "client"]);
 const statusEnum = z.enum([
   "draft",
@@ -868,9 +866,8 @@ export const createContractFromDeal = createServerFn({ method: "POST" })
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techcontracts.contracts.create.own",
     ]);
-    const { createContractShared, loadDealForContract } = await import(
-      "@/lib/contracts/contract-create.server"
-    );
+    const { createContractShared, loadDealForContract } =
+      await import("@/lib/contracts/contract-create.server");
     const { deal } = await loadDealForContract(supabase, data.dealId);
     const { contract } = await createContractShared(supabase, {
       workspaceId,

@@ -57,6 +57,7 @@ import { useCurrentUserId } from "@/hooks/use-current-user-id";
 import {
   ContractsTable,
   ContractsGroupedList,
+  CONTRACT_COLUMNS,
   type ContractRow,
 } from "@/components/contracts/contracts-grouped-list";
 import { ContractsBulkBar } from "@/components/contracts/contracts-bulk-bar";
@@ -421,11 +422,7 @@ function ContractsPage() {
       }),
     });
 
-  const {
-    columnKeys,
-    ColumnsButton,
-    ColumnsEditor,
-  } = useGridColumns<ContractRow>({
+  const { columnKeys, ColumnsButton, ColumnsEditor } = useGridColumns<ContractRow>({
     gridKey: "contracts",
     columns: CONTRACT_GRID_COLUMNS,
     defaults: DEFAULT_CONTRACT_COLS,
@@ -961,6 +958,7 @@ function ContractsPage() {
       ) : null}
 
       {openDocKind ? <ContractDocKindReviewDialog onOpenChange={setOpenDocKind} /> : null}
+      <ColumnsEditor />
     </div>
   );
 }
