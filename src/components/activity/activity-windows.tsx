@@ -20,6 +20,8 @@ import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
 import { BulkCreateActivityDialog } from "@/components/bulk-create-activity-dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { ActivityEditWindow } from "./activity-edit-window";
+import { useChannelAvailability } from "@/hooks/use-channel-availability";
+import { isChannelBlocked, isSendChannel } from "@/lib/channel-availability";
 
 interface WindowEntry {
   id: string;
@@ -49,10 +51,17 @@ export function ActivityWindows({ children }: { children: React.ReactNode }) {
       setIdentity(currentIdentity);
     }
   }, [identity, currentIdentity]);
+  const { data: availability } = useChannelAvailability();
   const open = useCallback(
     (request: ActivityWindowRequest) => {
       if (!currentIdentity) return;
       if (request.action.kind === "create" && request.action.disabled) return;
+      if (
+        request.action.kind === "create" &&
+        isSendChannel(request.action.value) &&
+        isChannelBlocked(availability, request.action.value)
+      )
+        return;
       setWindows((previous) => {
         const match = request.editingActivity
           ? previous.find((w) => w.request.editingActivity?.id === request.editingActivity?.id)
@@ -75,7 +84,7 @@ export function ActivityWindows({ children }: { children: React.ReactNode }) {
         ];
       });
     },
-    [currentIdentity],
+    [currentIdentity, availability],
   );
   const close = (id: string) => {
     closeBlocked.current.delete(id);
