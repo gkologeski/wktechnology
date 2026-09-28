@@ -1,6 +1,7 @@
 // Server functions para importar contratos a partir de arquivos .pdf ou .docx.
 // A extração é feita via Lovable AI Gateway (Gemini 2.5 Flash) e devolve JSON estruturado.
 // A criação em `public.contracts` acontece apenas após revisão humana no wizard.
+import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { randomBytes } from "crypto";
@@ -82,7 +83,7 @@ async function callGeminiExtract(
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY ausente");
 
-  const resp = await fetch(AI_URL, {
+  const resp = await aiChatFetch({
     method: "POST",
     headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
     body: JSON.stringify({

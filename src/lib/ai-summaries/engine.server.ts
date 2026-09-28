@@ -1,6 +1,7 @@
 // Engine que gera AI summaries automaticamente após nova atividade.
 // Roda via cron tick. Detecta entidades com atividades novas desde o último
 // summary e dispara geração com debounce.
+import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
@@ -160,7 +161,7 @@ ${lines.join("\n")}`;
 async function callAi(prompt: string) {
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
-  const res = await fetch(AI_URL, {
+  const res = await aiChatFetch({
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({

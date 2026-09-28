@@ -1,4 +1,5 @@
 // AI Job Description generator (Fase 3)
+import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -24,7 +25,7 @@ export const generateJobDescription = createServerFn({ method: "POST" })
     if (!key) throw new Error("LOVABLE_API_KEY ausente");
     const sys = `Você é um recrutador especialista. Gere uma descrição de vaga atraente, inclusiva e estruturada no idioma ${data.language}. Responda APENAS JSON: {"description":"markdown completo","requirements":["..."],"benefits":["..."],"tags":["..."]}`;
     const usr = `Cargo: ${data.title}\nSenioridade: ${data.seniority ?? "-"}\nLocal: ${data.location ?? "-"}\nModalidade: ${data.modality ?? "-"}\nContexto extra: ${data.notes ?? "-"}`;
-    const r = await fetch(AI_URL, {
+    const r = await aiChatFetch({
       method: "POST",
       headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
       body: JSON.stringify({

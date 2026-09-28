@@ -1,3 +1,4 @@
+import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -95,7 +96,7 @@ export const askCopilot = createServerFn({ method: "POST" })
 Quando citar dados, use marcações como [1], [2] que se referem às fontes. Se não houver dado, diga claramente "não encontrei nessa base".`;
     const user = `Pergunta: ${q}\n\nContexto:\n${ctx || "(sem resultados)"}`;
 
-    const res = await fetch(AI_URL, {
+    const res = await aiChatFetch({
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({

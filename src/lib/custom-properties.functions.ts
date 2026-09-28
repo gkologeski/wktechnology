@@ -1,4 +1,5 @@
 // Server functions para Custom Properties (definições).
+import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -224,7 +225,7 @@ export const computeAiProperty = createServerFn({ method: "POST" })
               : prop.type === "date"
                 ? "Retorne APENAS uma data no formato YYYY-MM-DD."
                 : "Retorne APENAS o texto final, sem aspas nem explicação.";
-    const res = await fetch(AI_URL, {
+    const res = await aiChatFetch({
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({

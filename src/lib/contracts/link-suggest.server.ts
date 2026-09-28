@@ -1,4 +1,5 @@
 // Helpers server-only da sugestão de vínculos de contratos (prompt + chamada de IA + mapeamento).
+import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { z } from "zod";
 import { normalizeEntityName, type ContractLinkMeta } from "@/lib/contracts/link-suggest";
 
@@ -65,7 +66,7 @@ export async function requestAiLinkSuggestions(prompt: string): Promise<AiSugges
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY ausente");
 
-  const resp = await fetch(AI_URL, {
+  const resp = await aiChatFetch({
     method: "POST",
     headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
     body: JSON.stringify({

@@ -1,6 +1,7 @@
 // Server functions para importar MODELOS de contrato a partir de .docx/.pdf.
 // Diferente da importação de contratos firmados: aqui o objetivo é obter o corpo
 // do documento em HTML e substituir os trechos variáveis por tokens ({{...}}).
+import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -62,7 +63,7 @@ async function callAi(userContent: Array<Record<string, unknown>>): Promise<Impo
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY ausente");
 
-  const resp = await fetch(AI_URL, {
+  const resp = await aiChatFetch({
     method: "POST",
     headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
     body: JSON.stringify({

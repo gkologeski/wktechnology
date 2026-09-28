@@ -1,6 +1,7 @@
 // Parsing de currículo com IA: recebe texto bruto do CV (colado pelo usuário ou
 // extraído externamente) e retorna dados estruturados; opcionalmente salva no
 // candidato (`ats_candidates`).
+import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -55,7 +56,7 @@ Retorne JSON estrito no formato:
 }
 Nunca invente dados. Se um campo não estiver no texto, use null ou [].`;
 
-    const res = await fetch(AI_URL, {
+    const res = await aiChatFetch({
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,

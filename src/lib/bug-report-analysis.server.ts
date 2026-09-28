@@ -1,4 +1,5 @@
 // Server-only helpers for AI analysis of user-submitted bug reports.
+import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { BUG_CATEGORIES, BUG_KINDS } from "@/lib/bug-report-taxonomy";
 
@@ -190,7 +191,7 @@ type AiResult = {
 async function callAi(prompt: string, model: string): Promise<AiResult> {
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
-  const res = await fetch(AI_URL, {
+  const res = await aiChatFetch({
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
