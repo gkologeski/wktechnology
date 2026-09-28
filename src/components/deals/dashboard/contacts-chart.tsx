@@ -13,33 +13,34 @@ const SERIES = [
 
 /**
  * Rótulo do total diário no topo de cada barra empilhada.
- * Renderizado sobre a última série da pilha ("Outros"), que fecha a barra.
+ * Usa `dataKey="total"` (o valor recebido é o total do dia) posicionado acima
+ * do último segmento da pilha ("Outros"), que fecha a barra. Dias sem
+ * interações não exibem rótulo.
  */
-const TotalLabel = (data: ContactsByDay[]) =>
-  function TotalLabelList(props: {
-    x?: number | string;
-    y?: number | string;
-    width?: number | string;
-    index?: number;
-  }) {
-    const entry = typeof props.index === "number" ? data[props.index] : undefined;
-    if (!entry || entry.total === 0) return null;
-    const x = typeof props.x === "number" ? props.x : Number(props.x ?? 0);
-    const y = typeof props.y === "number" ? props.y : Number(props.y ?? 0);
-    const width = typeof props.width === "number" ? props.width : Number(props.width ?? 0);
-    return (
-      <text
-        x={x + width / 2}
-        y={y - 6}
-        textAnchor="middle"
-        fontSize={11}
-        fill="var(--color-text-tertiary)"
-        aria-hidden="true"
-      >
-        {entry.total}
-      </text>
-    );
-  };
+function TotalLabel(props: {
+  x?: number | string;
+  y?: number | string;
+  width?: number | string;
+  value?: number | string;
+}) {
+  const total = Number(props.value ?? 0);
+  if (!total) return null;
+  const x = Number(props.x ?? 0);
+  const y = Number(props.y ?? 0);
+  const width = Number(props.width ?? 0);
+  return (
+    <text
+      x={x + width / 2}
+      y={y - 6}
+      textAnchor="middle"
+      fontSize={11}
+      fill="var(--color-text-tertiary)"
+      aria-hidden="true"
+    >
+      {total}
+    </text>
+  );
+}
 
 export function ContactsChart({ data }: { data: ContactsByDay[] }) {
   const total = data.reduce((acc, d) => acc + d.total, 0);
@@ -100,7 +101,9 @@ export function ContactsChart({ data }: { data: ContactsByDay[] }) {
                     fill={s.color}
                     radius={s.key === "other" ? [3, 3, 0, 0] : undefined}
                   >
-                    {s.key === "other" && <LabelList dataKey="other" content={TotalLabel(data)} />}
+                    {s.key === "other" && (
+                      <LabelList dataKey="total" position="top" content={TotalLabel} />
+                    )}
                   </Bar>
                 ))}
               </BarChart>
