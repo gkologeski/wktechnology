@@ -25,6 +25,9 @@ import {
 } from "@/lib/contracts.functions";
 import { listWorkspaceTeam } from "@/lib/workspace-invites.functions";
 import { DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
+import { ExportMenuButton } from "@/components/export-menu-button";
+import { exportRows } from "@/lib/export/export-rows";
+import { formatCurrency } from "@/lib/crm";
 import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
 import type { ContractRow } from "@/components/contracts/contracts-grouped-list";
 
@@ -168,6 +171,36 @@ export function ContractsBulkBar({
         >
           <Type className="mr-1 h-4 w-4" aria-hidden="true" /> Padronizar títulos
         </Button>
+
+        <ExportMenuButton
+          disabled={busy}
+          onExport={(format) =>
+            exportRows(selected, {
+              filename: "contratos",
+              format,
+              columns: [
+                { header: "Número", value: (r) => r.number ?? "" },
+                { header: "Título", value: (r) => r.title },
+                {
+                  header: "Tipo",
+                  value: (r) =>
+                    r.role === "provider" ? "Prestação" : r.role === "client" ? "Compra" : r.role,
+                },
+                {
+                  header: "Status",
+                  value: (r) => STATUS_OPTIONS.find((o) => o.value === r.status)?.label ?? r.status,
+                },
+                {
+                  header: "Valor",
+                  value: (r) => formatCurrency(Number(r.total_value ?? 0), r.currency),
+                },
+                { header: "Início", value: (r) => r.starts_at?.slice(0, 10) ?? "" },
+                { header: "Término", value: (r) => r.ends_at?.slice(0, 10) ?? "" },
+                { header: "Criado em", value: (r) => r.created_at?.slice(0, 10) ?? "" },
+              ],
+            })
+          }
+        />
 
         <Tooltip>
           <TooltipTrigger asChild>

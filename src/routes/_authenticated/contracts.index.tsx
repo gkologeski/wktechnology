@@ -57,11 +57,14 @@ import { useCurrentUserId } from "@/hooks/use-current-user-id";
 import {
   ContractsTable,
   ContractsGroupedList,
+  CONTRACT_COLUMNS,
   type ContractRow,
 } from "@/components/contracts/contracts-grouped-list";
 import { ContractsBulkBar } from "@/components/contracts/contracts-bulk-bar";
 import { useCanDelete } from "@/lib/access-control/use-can-delete";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ViewsTabs } from "@/components/crm/hubspot-shell";
+import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { ViewModeToggle, type ListViewMode } from "@/components/kanban/view-mode-toggle";
 
@@ -87,7 +90,39 @@ type ContractSearch = {
   startsTo: string;
   endsFrom: string;
   endsTo: string;
+  tab?: ContractTab;
+  sort?: string;
+  dir?: "asc" | "desc";
 };
+
+type ContractTab = "all" | "active" | "signature" | "expiring" | "ended";
+const CONTRACT_TABS: readonly { id: ContractTab; label: string }[] = [
+  { id: "all", label: "Todos" },
+  { id: "active", label: "Ativos" },
+  { id: "signature", label: "Em assinatura" },
+  { id: "expiring", label: "Vencendo em 30 dias" },
+  { id: "ended", label: "Encerrados" },
+];
+const TAB_IDS = CONTRACT_TABS.map((t) => t.id) as string[];
+const SORT_KEYS = [
+  "number",
+  "title",
+  "role",
+  "status",
+  "total_value",
+  "starts_at",
+  "ends_at",
+  "assigned_to",
+  "created_at",
+] as const;
+type ContractSortKey = (typeof SORT_KEYS)[number];
+const DEFAULT_CONTRACT_COLS = CONTRACT_COLUMNS.map((c) => c.key);
+const CONTRACT_GRID_COLUMNS: GridColumnDef<ContractRow>[] = CONTRACT_COLUMNS.map((c) => ({
+  key: c.key,
+  label: c.label,
+  // A renderização das células fica em ContractsTable.
+  render: () => null,
+}));
 
 const str = (v: unknown) => (typeof v === "string" ? v : "");
 const num = (v: unknown, fallback: number) => {
@@ -117,6 +152,11 @@ export const Route = createFileRoute("/_authenticated/contracts/")({
       startsTo: str(search["startsTo"]),
       endsFrom: str(search["endsFrom"]),
       endsTo: str(search["endsTo"]),
+      tab: TAB_IDS.includes(str(search["tab"])) ? (str(search["tab"]) as ContractTab) : "all",
+      sort: (SORT_KEYS as readonly string[]).includes(str(search["sort"]))
+        ? str(search["sort"])
+        : "created_at",
+      dir: search["dir"] === "asc" ? "asc" : "desc",
     };
   },
   head: () => ({
@@ -227,7 +267,29 @@ function ContractsPage() {
   });
   const pendingCount = pendingQuery.data?.count ?? 0;
 
+  const tabFilter = useMemo(() => {
+    switch (sp.tab) {
+      case "active":
+        return { statuses: ["active", "renewing"] };
+      case "signature":
+        return { statuses: ["awaiting_signature"] };
+      case "ended":
+        return { statuses: ["ended", "terminated"] };
+      case "expiring":
+        return {
+          statuses: ["active", "renewing"],
+          endsFrom: iso(new Date()),
+          endsTo: plusDays(30),
+        };
+      default:
+        return {};
+    }
+  }, [sp.tab]);
+
   const queryInput = {
+    statuses: (tabFilter as { statuses?: string[] }).statuses,
+    sortBy: (sp.sort ?? "created_at") as ContractSortKey,
+    sortDir: sp.dir ?? "desc",
     role: sp.role ? (sp.role as "provider" | "client") : undefined,
     status: sp.status ? (sp.status as keyof typeof STATUS_LABEL) : undefined,
     search: sp.q || undefined,
@@ -237,8 +299,8 @@ function ContractsPage() {
     assignedTo: assigneeParam,
     startsFrom: sp.startsFrom || undefined,
     startsTo: sp.startsTo || undefined,
-    endsFrom: sp.endsFrom || undefined,
-    endsTo: sp.endsTo || undefined,
+    endsFrom: sp.endsFrom || (tabFilter as { endsFrom?: string }).endsFrom || undefined,
+    endsTo: sp.endsTo || (tabFilter as { endsTo?: string }).endsTo || undefined,
     page: sp.page,
     pageSize: sp.pageSize,
   };
@@ -360,6 +422,22 @@ function ContractsPage() {
       }),
     });
 
+  const { columnKeys, ColumnsButton, ColumnsEditor } = useGridColumns<ContractRow>({
+    gridKey: "contracts",
+    columns: CONTRACT_GRID_COLUMNS,
+    defaults: DEFAULT_CONTRACT_COLS,
+  });
+
+  const onSort = (key: string) =>
+    navigate({
+      search: (prev: ContractSearch) => ({
+        ...prev,
+        sort: key,
+        dir: prev.sort === key && prev.dir === "asc" ? "desc" : "asc",
+        page: 1,
+      }),
+    });
+
   const firstIndex = total === 0 ? 0 : (sp.page - 1) * sp.pageSize + 1;
   const lastIndex = Math.min(sp.page * sp.pageSize, total);
 
@@ -414,6 +492,15 @@ function ContractsPage() {
         }
       />
 
+      <ViewsTabs
+        views={CONTRACT_TABS}
+        active={sp.tab ?? "all"}
+        onChange={(tab) => {
+          setSelectedMap(new Map());
+          setFilter({ tab });
+        }}
+      />
+
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-64">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -462,6 +549,7 @@ function ContractsPage() {
           value={sp.view ?? "table"}
           onChange={(v) => navigate({ search: (prev) => ({ ...prev, view: v }) })}
         />
+        {(sp.view ?? "table") === "table" ? <ColumnsButton size="default" /> : null}
 
         <Popover open={openFilters} onOpenChange={setOpenFilters}>
           <PopoverTrigger asChild>
@@ -741,7 +829,14 @@ function ContractsPage() {
             />
           ) : sp.groupBy === "none" ? (
             <div className="rounded-lg border bg-card">
-              <ContractsTable rows={rows} selection={selection} editable nestLinks={nestLinks} />
+              <ContractsTable
+                rows={rows}
+                selection={selection}
+                editable
+                nestLinks={nestLinks}
+                columnKeys={columnKeys}
+                sort={{ key: sp.sort ?? "created_at", dir: sp.dir ?? "desc", onSort }}
+              />
             </div>
           ) : (
             <ContractsGroupedList
@@ -754,6 +849,7 @@ function ContractsPage() {
               selection={selection}
               editable
               nestLinks={nestLinks}
+              columnKeys={columnKeys}
             />
           )}
 
@@ -862,6 +958,7 @@ function ContractsPage() {
       ) : null}
 
       {openDocKind ? <ContractDocKindReviewDialog onOpenChange={setOpenDocKind} /> : null}
+      <ColumnsEditor />
     </div>
   );
 }
