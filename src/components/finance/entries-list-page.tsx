@@ -161,25 +161,76 @@ export function EntriesListPage({
                   {entry.installment_number ?? "?"}/{entry.installment_total}
                 </Badge>
               ) : null}
-              {entry.contracts ? <span>Contrato {entry.contracts.number ?? entry.contracts.title}</span> : null}
+              {entry.contracts ? (
+                <span>Contrato {entry.contracts.number ?? entry.contracts.title}</span>
+              ) : null}
             </div>
           </>
         ),
       },
-      { key: "counterparty", label: "Contraparte", render: (entry) => entry.companies?.name ?? "—" },
-      { key: "category", label: "Categoria", render: (entry) => entry.financial_categories?.name ?? "—" },
-      { key: "status", label: "Status", render: (entry) => <Badge variant="outline" className={STATUS_TONE[entry.status] ?? ""}>{STATUS_LABEL[entry.status] ?? entry.status}</Badge> },
-      { key: "amount", label: "Valor", className: "text-right tabular-nums", headerClassName: "text-right", render: (entry) => formatCurrency(Number(entry.amount), entry.currency) },
-      { key: "outstanding", label: "Em aberto", className: "text-right tabular-nums", headerClassName: "text-right", render: (entry) => formatCurrency(Number(entry.amount) - Number(entry.paid_amount ?? 0), entry.currency) },
-      { key: "due", label: "Vencimento", className: "text-xs text-muted-foreground", render: (entry) => formatDateTime(entry.due_date).split(" ")[0] },
-      { key: "assignee", label: "Responsável", render: (entry) => <AssigneeCell assignedTo={(entry as { assigned_to?: string | null }).assigned_to} /> },
+      {
+        key: "counterparty",
+        label: "Contraparte",
+        render: (entry) => entry.companies?.name ?? "—",
+      },
+      {
+        key: "category",
+        label: "Categoria",
+        render: (entry) => entry.financial_categories?.name ?? "—",
+      },
+      {
+        key: "status",
+        label: "Status",
+        render: (entry) => (
+          <Badge variant="outline" className={STATUS_TONE[entry.status] ?? ""}>
+            {STATUS_LABEL[entry.status] ?? entry.status}
+          </Badge>
+        ),
+      },
+      {
+        key: "amount",
+        label: "Valor",
+        className: "text-right tabular-nums",
+        headerClassName: "text-right",
+        render: (entry) => formatCurrency(Number(entry.amount), entry.currency),
+      },
+      {
+        key: "outstanding",
+        label: "Em aberto",
+        className: "text-right tabular-nums",
+        headerClassName: "text-right",
+        render: (entry) =>
+          formatCurrency(Number(entry.amount) - Number(entry.paid_amount ?? 0), entry.currency),
+      },
+      {
+        key: "due",
+        label: "Vencimento",
+        className: "text-xs text-muted-foreground",
+        render: (entry) => formatDateTime(entry.due_date).split(" ")[0],
+      },
+      {
+        key: "assignee",
+        label: "Responsável",
+        render: (entry) => (
+          <AssigneeCell assignedTo={(entry as { assigned_to?: string | null }).assigned_to} />
+        ),
+      },
     ],
     [],
   );
   const financeGrid = useGridColumns<Entry>({
     gridKey: `finance-entries-${direction}`,
     columns: financeColumns,
-    defaults: ["description", "counterparty", "category", "status", "amount", "outstanding", "due", "assignee"],
+    defaults: [
+      "description",
+      "counterparty",
+      "category",
+      "status",
+      "amount",
+      "outstanding",
+      "due",
+      "assignee",
+    ],
   });
 
   const invalidate = () => {
@@ -389,7 +440,11 @@ export function EntriesListPage({
                     onReorder={financeGrid.reorderColumns}
                   >
                     {financeGrid.columns.map((column) => (
-                      <SortableColumnHeader key={column.key} columnKey={column.key} label={column.label}>
+                      <SortableColumnHeader
+                        key={column.key}
+                        columnKey={column.key}
+                        label={column.label}
+                      >
                         <TableHead className={column.headerClassName}>{column.label}</TableHead>
                       </SortableColumnHeader>
                     ))}

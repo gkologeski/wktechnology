@@ -67,14 +67,42 @@ export function CandidatesTableView({
           c.current_position ? (
             <span className="text-sm">
               {c.current_position}
-              {c.current_company ? <span className="text-text-tertiary"> @ {c.current_company}</span> : null}
+              {c.current_company ? (
+                <span className="text-text-tertiary"> @ {c.current_company}</span>
+              ) : null}
             </span>
-          ) : <span className="text-text-tertiary">—</span>,
+          ) : (
+            <span className="text-text-tertiary">—</span>
+          ),
       },
-      { key: "location", label: "Localização", render: (c) => c.location ? String(c.location) : <span className="text-text-tertiary">—</span> },
-      { key: "status", label: "Status", render: (c) => <CandidateStatusPill status={statuses[c.id as string] ?? "new"} /> },
-      { key: "assignee", label: "Responsável", render: (c) => <AssigneeCell assignedTo={(c as { assigned_to?: string | null }).assigned_to} /> },
-      { key: "source", label: "Origem", render: (c) => c.source ? <SourceBadge source={c.source as string} /> : <span className="text-text-tertiary">—</span> },
+      {
+        key: "location",
+        label: "Localização",
+        render: (c) =>
+          c.location ? String(c.location) : <span className="text-text-tertiary">—</span>,
+      },
+      {
+        key: "status",
+        label: "Status",
+        render: (c) => <CandidateStatusPill status={statuses[c.id as string] ?? "new"} />,
+      },
+      {
+        key: "assignee",
+        label: "Responsável",
+        render: (c) => (
+          <AssigneeCell assignedTo={(c as { assigned_to?: string | null }).assigned_to} />
+        ),
+      },
+      {
+        key: "source",
+        label: "Origem",
+        render: (c) =>
+          c.source ? (
+            <SourceBadge source={c.source as string} />
+          ) : (
+            <span className="text-text-tertiary">—</span>
+          ),
+      },
     ],
     [statuses],
   );
@@ -130,7 +158,11 @@ export function CandidatesTableView({
               </TableHead>
               <SortableColumns keys={grid.columnKeys} onReorder={grid.reorderColumns}>
                 {grid.columns.map((column) => (
-                  <SortableColumnHeader key={column.key} columnKey={column.key} label={column.label}>
+                  <SortableColumnHeader
+                    key={column.key}
+                    columnKey={column.key}
+                    label={column.label}
+                  >
                     <TableHead>{column.label}</TableHead>
                   </SortableColumnHeader>
                 ))}
