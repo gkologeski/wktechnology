@@ -3,6 +3,19 @@
 // front-end possa funcionar sem um round-trip ao banco para metadados estáticos
 // (cor, ícone, rota inicial, menu). Branding por workspace ainda vem do banco
 // via `module_branding`.
+//
+// ─── Fonte de verdade sobre "quais módulos existem" ─────────────────────────
+// Existem SEIS módulos verticais: crm (TechSales), ats (TechHire),
+// people (TechPeople), contracts (TechContracts), projects (TechProjects) e
+// finance (TechFinance). O núcleo compartilhado é o Core ERP (TechERP) e
+// inclui atendimento (tickets/SLA/base de conhecimento) — não existe módulo
+// "TechService"/"TechServices".
+//
+// `services` é um id LEGADO: existe em `public.modules` /`workspace_modules`
+// apenas por compatibilidade de licenciamento. `/services` é a visão
+// operacional/faturamento do TechContracts. Ele NUNCA deve aparecer como
+// módulo selecionável na interface — use `VERTICAL_MODULE_IDS` /
+// `VERTICAL_MODULE_LIST` ao listar módulos para o usuário.
 
 import {
   Briefcase,
@@ -26,7 +39,28 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+/**
+ * Ids aceitos pelo front-end. Inclui o legado `services` porque o banco ainda
+ * possui esse registro; para listas voltadas ao usuário use `VERTICAL_MODULE_IDS`.
+ */
 export type ModuleId = "crm" | "ats" | "contracts" | "services" | "projects" | "finance" | "people";
+
+/** Módulo legado, absorvido pelo TechContracts. Nunca exibir como módulo. */
+export const LEGACY_MODULE_IDS = ["services"] as const satisfies readonly ModuleId[];
+
+/** Os seis módulos verticais reais do produto, na ordem de exibição. */
+export const VERTICAL_MODULE_IDS = [
+  "crm",
+  "ats",
+  "people",
+  "contracts",
+  "projects",
+  "finance",
+] as const satisfies readonly ModuleId[];
+
+export function isLegacyModuleId(id: ModuleId): boolean {
+  return (LEGACY_MODULE_IDS as readonly ModuleId[]).includes(id);
+}
 
 export type ModuleMenuItem = {
   title: string;
@@ -104,6 +138,9 @@ export const MODULES: Record<ModuleId, ModuleDefinition> = {
       { title: "Contratos", url: "/contracts", icon: FileText },
     ],
   },
+  // LEGADO — não é um módulo do produto. Mantido apenas para resolver o
+  // registro `services` de `public.modules`/`workspace_modules` sem quebrar
+  // licenciamento. `/services` pertence ao TechContracts.
   services: {
     id: "services",
     name: "Serviços",
@@ -161,7 +198,13 @@ export const MODULES: Record<ModuleId, ModuleDefinition> = {
   },
 };
 
+/** Todas as definições, incluindo ids legados. Prefira `VERTICAL_MODULE_LIST`. */
 export const MODULE_LIST: ModuleDefinition[] = Object.values(MODULES);
+
+/** Apenas os módulos reais do produto — use em switchers, grids e menus. */
+export const VERTICAL_MODULE_LIST: ModuleDefinition[] = VERTICAL_MODULE_IDS.map(
+  (id) => MODULES[id],
+);
 
 export function getModule(id: ModuleId): ModuleDefinition {
   return MODULES[id];
