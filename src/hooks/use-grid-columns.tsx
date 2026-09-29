@@ -12,6 +12,7 @@ import {
 } from "@/lib/grid-preferences.functions";
 import { listCustomProperties, type CustomEntity } from "@/lib/custom-properties.functions";
 import { useAutoGridColumns, type CatalogEntity } from "@/hooks/use-auto-grid-columns";
+import { arrayMove } from "@dnd-kit/sortable";
 
 export type GridColumnDef<T> = ColumnDef & {
   /** Render function for the cell. Receives the row. */
@@ -194,6 +195,16 @@ export function useGridColumns<T extends object>({
     onSuccess: () => toast.success("Colunas atualizadas"),
   });
 
+  const reorderColumns = useCallback(
+    (activeKey: string, overKey: string) => {
+      const from = visibleKeys.indexOf(activeKey);
+      const to = visibleKeys.indexOf(overKey);
+      if (from < 0 || to < 0 || from === to) return;
+      saveMut.mutate(arrayMove(visibleKeys, from, to));
+    },
+    [saveMut, visibleKeys],
+  );
+
   const resetMut = useMutation({
     mutationFn: () => resetPrefFn({ data: { gridKey } }),
     onSuccess: () => {
@@ -260,6 +271,7 @@ export function useGridColumns<T extends object>({
     catalogKeys,
     savedSort,
     persistSort,
+    reorderColumns,
     allColumns,
     openEditor,
     ColumnsButton,

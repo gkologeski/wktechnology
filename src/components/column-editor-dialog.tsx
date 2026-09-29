@@ -11,6 +11,8 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { ChevronDown, ChevronUp, RotateCcw, Search } from "lucide-react";
+import { arrayMove } from "@dnd-kit/sortable";
+import { SortableColumns, SortableListItem } from "@/components/grid/sortable-columns";
 
 export type ColumnDef = { key: string; label: string; group?: string };
 
@@ -67,6 +69,12 @@ export function ColumnEditorDialog({
     const next = [...fullOrder];
     [next[idx], next[swap]] = [next[swap], next[idx]];
     setOrder(next);
+  };
+  const reorder = (activeKey: string, overKey: string) => {
+    const from = fullOrder.indexOf(activeKey);
+    const to = fullOrder.indexOf(overKey);
+    if (from < 0 || to < 0 || from === to) return;
+    setOrder(arrayMove(fullOrder, from, to));
   };
   const toggle = (key: string) => {
     const next = new Set(visible);
@@ -127,13 +135,15 @@ export function ColumnEditorDialog({
             <span>
               {visibleCount} de {allColumns.length} visíveis
             </span>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={resetToDefault}
-              className="inline-flex items-center gap-1 hover:text-foreground"
+              className="h-7 gap-1 px-2"
             >
               <RotateCcw className="h-3 w-3" /> Restaurar padrão
-            </button>
+            </Button>
           </div>
 
           <div className="space-y-0.5 max-h-[55vh] overflow-y-auto rounded border bg-muted/30 p-1">
@@ -142,40 +152,45 @@ export function ColumnEditorDialog({
                 Nenhum campo encontrado.
               </div>
             ) : (
-              filtered.map((key) => {
-                const col = allColumns.find((c) => c.key === key);
-                if (!col) return null;
-                return (
-                  <div
-                    key={key}
-                    className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-background"
-                  >
-                    <Checkbox checked={visible.has(key)} onCheckedChange={() => toggle(key)} />
-                    <span className="flex-1 text-sm truncate">
-                      {col.label}
-                      {col.group ? (
-                        <span className="ml-2 text-[10px] text-muted-foreground">{col.group}</span>
-                      ) : null}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => move(key, -1)}
-                    >
-                      <ChevronUp className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => move(key, 1)}
-                    >
-                      <ChevronDown className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                );
-              })
+              <SortableColumns keys={filtered} axis="vertical" onReorder={reorder}>
+                {filtered.map((key) => {
+                  const col = allColumns.find((c) => c.key === key);
+                  if (!col) return null;
+                  return (
+                    <SortableListItem key={key} itemKey={key} label={col.label}>
+                      <Checkbox
+                        checked={visible.has(key)}
+                        onCheckedChange={() => toggle(key)}
+                        aria-label={`Exibir coluna ${col.label}`}
+                      />
+                      <span className="flex-1 truncate text-sm">
+                        {col.label}
+                        {col.group ? (
+                          <span className="ml-2 text-[10px] text-muted-foreground">{col.group}</span>
+                        ) : null}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => move(key, -1)}
+                        aria-label={`Mover ${col.label} para cima`}
+                      >
+                        <ChevronUp className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => move(key, 1)}
+                        aria-label={`Mover ${col.label} para baixo`}
+                      >
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      </Button>
+                    </SortableListItem>
+                  );
+                })}
+              </SortableColumns>
             )}
           </div>
         </div>
