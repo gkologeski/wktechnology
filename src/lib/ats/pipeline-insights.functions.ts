@@ -2,12 +2,12 @@
 // Deriva métricas determinísticas do funil (conversão stage→stage, dwell time,
 // dropoff) a partir de ats_applications + ats_application_events e usa Lovable AI
 // para sintetizar gargalos e recomendações em PT-BR.
+import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { DEFAULT_ATS_STAGES } from "@/lib/ats/stages";
 
-const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-2.5-flash";
 
 type StageMetric = {
@@ -24,7 +24,7 @@ type StageMetric = {
 async function callAi(messages: Array<{ role: string; content: string }>) {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY ausente");
-  const r = await fetch(AI_URL, {
+  const r = await aiChatFetch({
     method: "POST",
     headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
     body: JSON.stringify({

@@ -18,7 +18,8 @@ export type ProviderSlug =
   | "viacep"
   | "contaazul"
   | "clickup"
-  | "linkedin";
+  | "linkedin"
+  | "ai";
 
 export type Entity = "lead" | "contact" | "company" | "deal";
 
@@ -26,7 +27,7 @@ export type ProviderDef = {
   slug: ProviderSlug;
   name: string;
   description: string;
-  category: "crm" | "enrichment" | "address" | "finance" | "tasks" | "sourcing";
+  category: "crm" | "enrichment" | "address" | "finance" | "tasks" | "sourcing" | "ai";
   icon: LucideIcon;
   color: string; // tailwind bg class
   authMode: "connector_gateway" | "api_key" | "oauth" | "personal_token_or_oauth" | "none";
@@ -141,6 +142,20 @@ export const PROVIDERS: ProviderDef[] = [
     docs: "https://developer.unipile.com/docs/linkedin",
     href: "/settings/integrations/linkedin",
   },
+  {
+    slug: "ai",
+    name: "Inteligência Artificial",
+    description:
+      "Escolha o provedor de IA do workspace: Lovable AI (padrão), OpenAI, Anthropic, Google, xAI, DeepSeek ou OpenRouter.",
+    category: "ai",
+    icon: Sparkles,
+    color: "bg-primary",
+    authMode: "api_key",
+    entities: [],
+    supports: {},
+    docs: "https://docs.lovable.dev/features/ai",
+    href: "/settings/integrations/ai",
+  },
 ];
 
 export function getProvider(slug: string): ProviderDef | undefined {
@@ -154,6 +169,7 @@ export const CATEGORY_LABELS: Record<ProviderDef["category"], string> = {
   finance: "Financeiro / ERP",
   tasks: "Tarefas",
   sourcing: "Sourcing & Mensageria",
+  ai: "Inteligência Artificial",
 };
 
 // re-export icon for convenience

@@ -19554,6 +19554,85 @@ export type Database = {
           },
         ]
       }
+      workspace_ai_credentials: {
+        Row: {
+          key_ciphertext: string
+          key_last4: string | null
+          model: string | null
+          provider: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        Insert: {
+          key_ciphertext: string
+          key_last4?: string | null
+          model?: string | null
+          provider: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id: string
+        }
+        Update: {
+          key_ciphertext?: string
+          key_last4?: string | null
+          model?: string | null
+          provider?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_ai_credentials_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspace_ai_settings: {
+        Row: {
+          last_error: string | null
+          last_tested_at: string | null
+          model: string | null
+          provider: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        Insert: {
+          last_error?: string | null
+          last_tested_at?: string | null
+          model?: string | null
+          provider?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id: string
+        }
+        Update: {
+          last_error?: string | null
+          last_tested_at?: string | null
+          model?: string | null
+          provider?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_ai_settings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workspace_branding: {
         Row: {
           accent_color: string | null

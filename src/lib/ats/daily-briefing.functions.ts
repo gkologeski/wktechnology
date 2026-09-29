@@ -2,17 +2,17 @@
 // Briefing diário gerado por IA com prioridades, riscos e recomendações,
 // usando métricas agregadas das últimas 24h/7d. Persistido em
 // `ats_daily_briefings` (RLS por owner_id).
+import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-2.5-flash";
 
 async function callAiJson(messages: Array<{ role: string; content: string }>) {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY ausente");
-  const r = await fetch(AI_URL, {
+  const r = await aiChatFetch({
     method: "POST",
     headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
     body: JSON.stringify({

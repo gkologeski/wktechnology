@@ -4,12 +4,12 @@
 //
 // Vantagem sobre o caminho text-only: dispensa pdfjs no browser, lida com
 // layouts complexos (colunas, tabelas) e faz OCR em PDFs digitalizados.
+import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
-const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-2.5-flash";
 
 const InputSchema = z.object({
@@ -68,7 +68,7 @@ Retorne JSON estrito no formato:
 }
 Nunca invente dados. Se um campo não estiver no PDF, use null ou [].`;
 
-    const aiRes = await fetch(AI_URL, {
+    const aiRes = await aiChatFetch({
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,

@@ -1,17 +1,17 @@
 // Wave 8 — Slice 2: Job Copilot
 // IA grounded em uma vaga: rankeia candidatos da pipeline, sugere perguntas
 // para entrevista e drafta outreach personalizado. Sem efeitos colaterais.
+import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-2.5-flash";
 
 async function callAi(messages: Array<{ role: string; content: string }>, json = false) {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY ausente");
-  const r = await fetch(AI_URL, {
+  const r = await aiChatFetch({
     method: "POST",
     headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
     body: JSON.stringify({

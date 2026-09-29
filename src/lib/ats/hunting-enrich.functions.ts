@@ -1,3 +1,4 @@
+import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 /**
  * Hunter v0.4 — Slice 5.6.
  * Enriquece um capture (ats_hunting_captures) com IA: extrai skills,
@@ -31,7 +32,7 @@ Devolva SOMENTE um JSON válido neste formato:
 - headline: 1 linha curta (até 120 chars), em português.`;
   const user = `Dados brutos do perfil:\n${JSON.stringify(payload, null, 2)}`;
 
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const res = await aiChatFetch({
     method: "POST",
     headers: {
       "Content-Type": "application/json",

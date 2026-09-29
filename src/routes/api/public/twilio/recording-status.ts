@@ -1,3 +1,4 @@
+import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { createFileRoute } from "@tanstack/react-router";
 import { verifyTwilioSignature } from "@/lib/twilio-signature.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -108,7 +109,7 @@ export const Route = createFileRoute("/api/public/twilio/recording-status")({
           const b64 = btoa(bin);
 
           const model = "google/gemini-2.5-flash";
-          const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          const aiRes = await aiChatFetch({
             method: "POST",
             headers: { Authorization: `Bearer ${aiKey}`, "Content-Type": "application/json" },
             body: JSON.stringify({

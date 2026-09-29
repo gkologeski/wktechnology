@@ -1,3 +1,4 @@
+import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -344,7 +345,6 @@ export const attachRecording = createServerFn({ method: "POST" })
  * AI: transcribe + summarize the uploaded recording
  *   Uses Lovable AI Gateway (Gemini 2.5 Flash for audio).
  * ============================================================ */
-const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 export const generateMeetingSummary = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -392,7 +392,7 @@ Gere:
 - sentiment: positive | neutral | negative
 Responda APENAS com JSON válido.`;
 
-      const res = await fetch(AI_URL, {
+      const res = await aiChatFetch({
         method: "POST",
         headers: {
           Authorization: `Bearer ${apiKey}`,
@@ -659,7 +659,7 @@ Responda APENAS com JSON válido.`;
         ];
       }
 
-      const aiRes = await fetch(AI_URL, {
+      const aiRes = await aiChatFetch({
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -1,8 +1,8 @@
+import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const DEFAULT_MODEL = "google/gemini-2.5-flash";
 
 const Mode = z.enum([
@@ -72,7 +72,7 @@ Retorne APENAS o texto final, sem aspas, sem prefixos do tipo "Aqui está".`;
     if (data.prompt) userParts.push(`Instrução do usuário: ${data.prompt}`);
     if (data.input_text) userParts.push(`Texto base:\n${data.input_text}`);
     if (!data.input_text && !data.prompt) userParts.push("Redija uma mensagem útil de follow-up.");
-    const res = await fetch(AI_URL, {
+    const res = await aiChatFetch({
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({

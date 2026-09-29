@@ -1,9 +1,8 @@
 // Sugestão de substatus por etapa via Lovable AI Gateway (Responses API).
 // Server-only: a chave nunca sai do handler. A resposta é apenas uma
 // proposta — quem grava é o gestor, depois de revisar na interface.
+import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { z } from "zod";
-
-const AI_URL = "https://ai.gateway.lovable.dev/v1/responses";
 
 export const SubstatusSuggestionSchema = z.object({
   name: z.string().min(1).max(60),
@@ -128,7 +127,7 @@ export async function requestSubstatusSuggestions(
   const key = process.env["LOVABLE_API_KEY"];
   if (!key) throw new Error("A IA não está configurada neste ambiente (LOVABLE_API_KEY ausente).");
 
-  const res = await fetch(AI_URL, {
+  const res = await aiChatFetch({
     method: "POST",
     headers: {
       "Content-Type": "application/json",
