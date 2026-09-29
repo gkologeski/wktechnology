@@ -46,6 +46,7 @@ import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
 import { exportRowsToCsv } from "@/lib/csv-export";
 import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
+import { SortableColumnHeader, SortableColumns } from "@/components/grid/sortable-columns";
 
 import { getDateRange, type CustomRange, type DatePreset } from "@/lib/date-presets";
 import { DateRangeFilter } from "@/components/date-range-filter";
@@ -498,6 +499,7 @@ function CompaniesHubspotView() {
     ColumnsButton,
     ColumnsEditor,
     persistSort,
+    reorderColumns,
   } = useGridColumns<CompanyRow>({
     gridKey: "companies",
     columns: companyColumns,
@@ -858,14 +860,16 @@ function CompaniesHubspotView() {
                       onToggle={toggleAll}
                     />
                   </th>
-                  {visibleColumns.map(
-                    (col) =>
-                      col.header ?? (
-                        <Th key={col.key} className={col.headerClassName}>
-                          {col.label}
-                        </Th>
-                      ),
-                  )}
+                  <SortableColumns
+                    keys={visibleColumns.map((col) => col.key)}
+                    onReorder={reorderColumns}
+                  >
+                    {visibleColumns.map((col) => (
+                      <SortableColumnHeader key={col.key} columnKey={col.key} label={col.label}>
+                        {col.header ?? <Th className={col.headerClassName}>{col.label}</Th>}
+                      </SortableColumnHeader>
+                    ))}
+                  </SortableColumns>
                   <th className="w-10 border-b px-3 py-2.5" />
                 </tr>
               </thead>

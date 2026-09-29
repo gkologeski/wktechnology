@@ -63,6 +63,7 @@ import {
 } from "@/components/entity/assignee-filter";
 import { useResourceScope } from "@/lib/access-control/use-resource-scope";
 import { TablePagination } from "@/components/table-pagination";
+import { SortableColumnHeader, SortableColumns } from "@/components/grid/sortable-columns";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { deleteRowGuarded, deleteRowsGuarded, partialDeleteMessage } from "@/lib/delete-guard";
 import {
@@ -746,6 +747,7 @@ function TasksHubspotView() {
     ColumnsButton,
     ColumnsEditor,
     persistSort,
+    reorderColumns,
   } = useGridColumns<TaskRow>({
     gridKey: "tasks",
     columns: taskColumns,
@@ -992,14 +994,16 @@ function TasksHubspotView() {
                     />
                   </th>
                   <th className="w-10 border-b px-3 py-2.5" />
-                  {visibleColumns.map(
-                    (col) =>
-                      col.header ?? (
-                        <Th key={col.key} className={col.headerClassName}>
-                          {col.label}
-                        </Th>
-                      ),
-                  )}
+                  <SortableColumns
+                    keys={visibleColumns.map((col) => col.key)}
+                    onReorder={reorderColumns}
+                  >
+                    {visibleColumns.map((col) => (
+                      <SortableColumnHeader key={col.key} columnKey={col.key} label={col.label}>
+                        {col.header ?? <Th className={col.headerClassName}>{col.label}</Th>}
+                      </SortableColumnHeader>
+                    ))}
+                  </SortableColumns>
                   <th className="w-10 border-b px-3 py-2.5" />
                 </tr>
               </thead>
