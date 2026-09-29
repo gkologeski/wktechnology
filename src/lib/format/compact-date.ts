@@ -1,8 +1,9 @@
+import { DEFAULT_TIME_ZONE } from "@/lib/time-zone";
 // Datas compactas para cards de Kanban.
 // Reduz "31 de Ago de 2026 21:00 GMT-3" para "Hoje às 21h", sem diminuir a fonte.
 // As demais telas continuam usando `formatDate`/`formatDateTime` de `@/lib/crm`.
 
-const BR_TZ = "America/Sao_Paulo";
+const BR_TZ = DEFAULT_TIME_ZONE;
 
 const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
 

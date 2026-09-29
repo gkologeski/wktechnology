@@ -1,9 +1,10 @@
+import { STORAGE_QUOTA_BYTES } from "@/lib/limits";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
-const QUOTA_BYTES = 100 * 1024 * 1024;
+const QUOTA_BYTES = STORAGE_QUOTA_BYTES;
 
 function randomToken() {
   const bytes = new Uint8Array(24);

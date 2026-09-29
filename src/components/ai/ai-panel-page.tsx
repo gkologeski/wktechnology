@@ -1,3 +1,5 @@
+import { AI_PANEL_PAGE_SIZE, DB_PAGE_MAX_ROWS } from "@/lib/limits";
+import { DEFAULT_TIME_ZONE } from "@/lib/time-zone";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
@@ -32,11 +34,11 @@ import { DateRangePicker } from "@/components/date-range-picker";
 import { getPresetRange, type DateRange } from "@/lib/date-presets";
 
 const ALL = "__all";
-const PAGE_SIZE = 25;
+const PAGE_SIZE = AI_PANEL_PAGE_SIZE;
 
 const usd = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "USD", maximumFractionDigits: 4 });
-const dt = (s: string) => new Date(s).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+const dt = (s: string) => new Date(s).toLocaleString("pt-BR", { timeZone: DEFAULT_TIME_ZONE });
 const providerName = (id: string) => getAiProvider(id)?.name ?? id;
 const STATUS_LABEL: Record<string, string> = {
   configured: "Configurado",
@@ -87,8 +89,15 @@ export function AiPanelPage() {
 
   async function exportCsv() {
     try {
-      const all = await logsFn({ data: { ...filters, page: 0, pageSize: 5000 } });
-      const csv = toCsv(all.rows, [
+      // Exporta todas as páginas do filtro, sem teto fixo de registros.
+      type Row = Awaited<ReturnType<typeof logsFn>>["rows"][number];
+      const rows: Row[] = [];
+      for (let p = 0; ; p++) {
+        const res = await logsFn({ data: { ...filters, page: p, pageSize: DB_PAGE_MAX_ROWS } });
+        rows.push(...res.rows);
+        if (res.rows.length < DB_PAGE_MAX_ROWS || rows.length >= res.total) break;
+      }
+      const csv = toCsv(rows, [
         { header: "Data", value: (r) => dt(r.created_at) },
         { header: "Recurso", value: (r) => featureLabel(r.feature) },
         {

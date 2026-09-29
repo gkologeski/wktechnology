@@ -1,3 +1,4 @@
+import { DEFAULT_UTC_OFFSET_MS } from "@/lib/time-zone";
 // Agregação do painel inicial do TechSales (server-only).
 // Toda a lógica vive aqui; `sales-dashboard.functions.ts` é só o wrapper RPC.
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -49,7 +50,7 @@ function isoDay(d: Date): string {
 // Horário comercial do Brasil (GMT-3, sem horário de verão desde 2019).
 // O servidor roda em UTC, então agrupamos por dia local para que um contato
 // registrado às 23h não caia no dia seguinte.
-const BR_OFFSET_MS = 3 * 60 * 60 * 1000;
+const BR_OFFSET_MS = DEFAULT_UTC_OFFSET_MS;
 
 function brDayKey(d: Date): string {
   return new Date(d.getTime() - BR_OFFSET_MS).toISOString().slice(0, 10);

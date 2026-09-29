@@ -1,3 +1,4 @@
+import { DB_PAGE_MAX_ROWS } from "@/lib/limits";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
@@ -33,15 +34,22 @@ export async function loadUsageSummary(
   };
   if (!isAdmin) return { isAdmin, active, metrics: null };
 
-  const { data, error } = await supabase
-    .from("ai_call_logs")
-    .select("status, estimated_cost_usd, prompt_tokens, completion_tokens")
-    .eq("workspace_id", workspaceId)
-    .gte("created_at", from)
-    .lte("created_at", to)
-    .limit(50000);
-  if (error) throw new Error(error.message);
-  const rows = data ?? [];
+  // Lê em páginas para não truncar silenciosamente no limite de linhas do banco.
+  const rows: { status: string; estimated_cost_usd: number | null; prompt_tokens: number | null; completion_tokens: number | null }[] = [];
+  for (let offset = 0; ; offset += DB_PAGE_MAX_ROWS) {
+    const { data, error } = await supabase
+      .from("ai_call_logs")
+      .select("status, estimated_cost_usd, prompt_tokens, completion_tokens")
+      .eq("workspace_id", workspaceId)
+      .gte("created_at", from)
+      .lte("created_at", to)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(offset, offset + DB_PAGE_MAX_ROWS - 1);
+    if (error) throw new Error(error.message);
+    rows.push(...(data ?? []));
+    if (!data || data.length < DB_PAGE_MAX_ROWS) break;
+  }
   const total = rows.length;
   const failed = rows.filter((r) => r.status === "failed").length;
   const priced = rows.filter((r) => r.estimated_cost_usd != null);

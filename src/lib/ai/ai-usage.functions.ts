@@ -1,3 +1,4 @@
+import { AI_PANEL_PAGE_SIZE, DB_PAGE_MAX_ROWS } from "@/lib/limits";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -11,7 +12,7 @@ export const Filters = z.object({
   status: z.enum(["success", "failed"]).optional(),
   search: z.string().max(100).optional(),
   page: z.number().int().min(0).max(10000).default(0),
-  pageSize: z.number().int().min(10).max(5000).default(25),
+  pageSize: z.number().int().min(10).max(DB_PAGE_MAX_ROWS).default(AI_PANEL_PAGE_SIZE),
 });
 
 export type AiUsageFilters = z.infer<typeof Filters>;
