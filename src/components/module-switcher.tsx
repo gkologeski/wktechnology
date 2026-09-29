@@ -7,7 +7,7 @@ import { Check, ChevronsUpDown, LayoutGrid, Home, Lock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { MODULE_LIST } from "@/lib/modules/registry";
+import { MODULE_LIST, VERTICAL_MODULE_LIST } from "@/lib/modules/registry";
 import { useModuleLicenses } from "@/hooks/use-module-licenses";
 import { useModuleAccess } from "@/hooks/use-module-access";
 import { useActiveModule, setStoredActiveModule } from "@/lib/modules/active-module";
@@ -96,7 +96,7 @@ export function ModuleSwitcher({ className }: { className?: string }) {
           Módulos do ERP
         </div>
 
-        {MODULE_LIST.filter((m) => m.id !== "services" && isLicensed(m.id)).map((m) => {
+        {VERTICAL_MODULE_LIST.filter((m) => isLicensed(m.id)).map((m) => {
           const Icon = m.icon;
           const isActive = !isWorkspaceContext && m.id === active;
           const allowed = canAccessModule(m.id);

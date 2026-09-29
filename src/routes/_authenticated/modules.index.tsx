@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { listWorkspaceModules, type WorkspaceModuleRow } from "@/lib/workspace/modules.functions";
 import { buildModuleUrl } from "@/lib/hosts";
-import { MODULES, type ModuleId } from "@/lib/modules/registry";
+import { MODULES, isLegacyModuleId, type ModuleId } from "@/lib/modules/registry";
 import { setStoredActiveModule } from "@/lib/modules/active-module";
 import { useModuleAccess } from "@/hooks/use-module-access";
 import { PageHeader, SectionHeader, MetricCard, StatusBadge } from "@/components/techhire/ui";
@@ -102,7 +102,10 @@ function ModulesGrid() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {data.map((m: WorkspaceModuleRow) => {
+      {/* Ids legados (ex.: `services`) existem no banco, mas não são módulos do produto. */}
+      {data
+        .filter((m: WorkspaceModuleRow) => !isLegacyModuleId(m.id as ModuleId))
+        .map((m: WorkspaceModuleRow) => {
         const Icon = resolveModuleIcon(m.icon);
         const product = m.default_product_name ?? m.name;
         const isRegisteredModule = (MODULES as Record<string, unknown>)[m.id] !== undefined;
