@@ -60,13 +60,13 @@ export function SortableColumnHeader({
 }: {
   columnKey: string;
   label: string;
-  children: ReactElement;
+  children: ReactNode;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: columnKey,
   });
 
-  if (!isValidElement(children)) return null;
+  if (!isValidElement(children)) return <>{children}</>;
 
   return cloneElement(children as ReactElement<Record<string, unknown>>, {
     ref: setNodeRef,
