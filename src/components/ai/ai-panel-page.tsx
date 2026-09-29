@@ -22,12 +22,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { getAiUsageSummary, listAiCallLogs } from "@/lib/ai/ai-usage.functions";
 import { AI_FEATURES, featureLabel } from "@/lib/ai/features";
 import { AI_PROVIDERS, getAiProvider } from "@/lib/ai/providers";
 import { downloadCsv, toCsv } from "@/lib/csv-export";
+import { DateRangePicker } from "@/components/date-range-picker";
+import { getPresetRange, type DateRange } from "@/lib/date-presets";
 
-type Days = 7 | 30 | 90;
 const ALL = "__all";
 const PAGE_SIZE = 25;
 

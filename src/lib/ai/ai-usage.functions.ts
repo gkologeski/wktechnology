@@ -3,7 +3,8 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const Filters = z.object({
-  days: z.union([z.literal(7), z.literal(30), z.literal(90)]).default(30),
+  from: z.string().datetime(),
+  to: z.string().datetime(),
   feature: z.string().max(60).optional(),
   triggerSource: z.enum(["user", "automatic"]).optional(),
   provider: z.string().max(40).optional(),
@@ -17,10 +18,12 @@ export type AiUsageFilters = z.infer<typeof Filters>;
 
 export const getAiUsageSummary = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ days: Filters.shape.days }).parse(d))
+  .inputValidator((d) =>
+    z.object({ from: Filters.shape.from, to: Filters.shape.to }).parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { loadUsageSummary } = await import("./ai-usage.server");
-    return loadUsageSummary(context.supabase, context.userId, data.days);
+    return loadUsageSummary(context.supabase, context.userId, data.from, data.to);
   });
 
 export const listAiCallLogs = createServerFn({ method: "POST" })

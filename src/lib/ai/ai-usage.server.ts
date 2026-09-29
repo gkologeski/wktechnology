@@ -13,9 +13,12 @@ async function ctxFor(supabase: SupabaseClient, userId: string) {
   return { workspaceId, isAdmin: Boolean(data) };
 }
 
-const since = (days: number) => new Date(Date.now() - days * 86400000).toISOString();
-
-export async function loadUsageSummary(supabase: SupabaseClient, userId: string, days: number) {
+export async function loadUsageSummary(
+  supabase: SupabaseClient,
+  userId: string,
+  from: string,
+  to: string,
+) {
   const { workspaceId, isAdmin } = await ctxFor(supabase, userId);
   const { data: s } = await supabase
     .from("workspace_ai_settings")
@@ -34,7 +37,8 @@ export async function loadUsageSummary(supabase: SupabaseClient, userId: string,
     .from("ai_call_logs")
     .select("status, estimated_cost_usd, prompt_tokens, completion_tokens")
     .eq("workspace_id", workspaceId)
-    .gte("created_at", since(days))
+    .gte("created_at", from)
+    .lte("created_at", to)
     .limit(50000);
   if (error) throw new Error(error.message);
   const rows = data ?? [];
@@ -66,7 +70,8 @@ export async function loadCallLogs(supabase: SupabaseClient, userId: string, f: 
       { count: "exact" },
     )
     .eq("workspace_id", workspaceId)
-    .gte("created_at", since(f.days))
+    .gte("created_at", f.from)
+    .lte("created_at", f.to)
     .order("created_at", { ascending: false })
     .range(f.page * f.pageSize, f.page * f.pageSize + f.pageSize - 1);
   if (f.feature) q = q.eq("feature", f.feature);
