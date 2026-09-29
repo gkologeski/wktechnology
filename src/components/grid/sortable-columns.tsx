@@ -81,7 +81,7 @@ export function SortableColumnHeader({
     },
     className: cn(
       (children.props as { className?: string }).className,
-      "touch-pan-y select-none",
+      "touch-pan-y select-none cursor-grab active:cursor-grabbing",
       isDragging && "bg-muted opacity-80 shadow-sm",
     ),
     "data-column-key": columnKey,

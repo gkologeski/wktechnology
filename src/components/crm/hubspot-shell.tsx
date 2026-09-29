@@ -1,4 +1,4 @@
-import { forwardRef, useState, type ReactNode } from "react";
+import { forwardRef, useState, type ReactNode, type ThHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -179,7 +179,7 @@ export type SortDir = "asc" | "desc";
 
 export const Th = forwardRef<
   HTMLTableCellElement,
-  {
+  Omit<ThHTMLAttributes<HTMLTableCellElement>, "onClick"> & {
     children?: ReactNode;
     sortable?: boolean;
     active?: boolean;
@@ -187,9 +187,10 @@ export const Th = forwardRef<
     onClick?: () => void;
     className?: string;
   }
->(function Th({ children, sortable, active, dir, onClick, className }, ref) {
+>(function Th({ children, sortable, active, dir, onClick, className, ...rest }, ref) {
   return (
     <th
+      {...rest}
       ref={ref}
       className={cn(
         "whitespace-nowrap border-b px-3 py-2.5 font-semibold",

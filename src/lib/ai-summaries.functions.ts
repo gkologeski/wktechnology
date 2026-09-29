@@ -542,6 +542,11 @@ export const deleteAiSummary = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    await deleteByIdGuarded(supabase, "ai_summaries", data.id);
-    return { ok: true };
+    try {
+      await deleteByIdGuarded(supabase, "ai_summaries", data.id);
+      return { ok: true as const };
+    } catch (e) {
+      // Permissão negada é um resultado esperado, não uma falha do servidor.
+      return { ok: false as const, reason: (e as Error).message };
+    }
   });

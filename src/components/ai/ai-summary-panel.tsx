@@ -116,7 +116,12 @@ export function AiSummaryPanel({ entity, entityId }: { entity: Entity; entityId:
   const remove = async (id: string) => {
     if (!(await confirmDialog("Excluir este resumo?"))) return;
     try {
-      await del({ data: { id } });
+      const res = await del({ data: { id } });
+      if (!res.ok) {
+        toast.error(res.reason);
+        return;
+      }
+      toast.success("Resumo excluído");
       await load();
     } catch (e) {
       toast.error((e as Error).message);
