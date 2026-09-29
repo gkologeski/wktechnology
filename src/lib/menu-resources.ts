@@ -151,12 +151,14 @@ export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
   "/compliance": ["techhire.compliance"],
 
   // --- TechContracts / TechServices -----------------------------------------
+  "/contracts/dashboard": ["techcontracts.contracts"],
   "/contracts": ["techcontracts.contracts"],
   "/contracts/templates": ["techcontracts.contract_templates"],
   "/settings/contract-defaults": ["techcontracts.contracts"],
   "/services": ["techservice.services"],
 
   // --- TechProjects ----------------------------------------------------------
+  "/projects/dashboard": ["techprojects.projects", "techprojects.tasks"],
   "/projects": ["techprojects.projects"],
   "/projects/$id/entrega": ["techprojects.project_updates", "techsales.deal_delivery"],
   "/projects/my-work": ["techprojects.my_work"],
@@ -186,6 +188,7 @@ export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
   "/settings/charging-templates": ["techfinance.charging_templates"],
 
   // --- TechPeople ------------------------------------------------------------
+  "/people/dashboard": ["techpeople.people"],
   "/people": ["techpeople.people"],
   "/people/my-team": ["techpeople.my_team"],
   "/people/onboarding": ["techpeople.onboarding"],
