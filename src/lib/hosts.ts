@@ -9,8 +9,9 @@
 // arquivo é o único ponto de mudança.
 
 import type { ModuleId } from "./modules/registry";
+import { CANONICAL_APP_HOST } from "@/lib/platform-domains";
 
-export const CANONICAL_HOST = "app.wktechnology.com.br";
+export const CANONICAL_HOST = CANONICAL_APP_HOST;
 export const WORKSPACE_HOST = CANONICAL_HOST;
 
 // Mantido apenas para retro-compat de imports. Todos apontam para o host único.

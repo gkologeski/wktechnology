@@ -7,9 +7,10 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { TEMPLATES } from "@/lib/email-templates/registry";
 import { getOrCreateEmailUnsubscribeToken } from "@/lib/email-unsubscribe.server";
+import { EMAIL_SENDER_DOMAIN } from "@/lib/platform-domains";
 
-const SENDER_DOMAIN = "notify.crm.wktechnology.com.br";
-const FROM_DOMAIN = "notify.crm.wktechnology.com.br";
+const SENDER_DOMAIN = EMAIL_SENDER_DOMAIN;
+const FROM_DOMAIN = EMAIL_SENDER_DOMAIN;
 const FROM_NAME = "WK Technology";
 
 async function sendWorkspaceInviteEmail(args: {

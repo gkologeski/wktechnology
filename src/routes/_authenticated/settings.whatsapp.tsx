@@ -20,6 +20,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { WhatsAppSetupGuide } from "@/components/whatsapp/whatsapp-setup-guide";
 import {
+import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
   listWabas,
   connectWaba,
   listPhoneNumbers,
@@ -47,7 +48,7 @@ export const Route = createFileRoute("/_authenticated/settings/whatsapp")({
   component: WhatsAppSettings,
 });
 
-const WEBHOOK_URL = "https://app.wktechnology.com.br/api/public/meta/whatsapp-webhook";
+const WEBHOOK_URL = `${CANONICAL_APP_ORIGIN}/api/public/meta/whatsapp-webhook`;
 
 function WhatsAppSettings() {
   const fetchWabas = useServerFn(listWabas);

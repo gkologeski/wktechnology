@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
+import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
   listZapierSubscriptions,
   deleteZapierSubscription,
   ZAPIER_TRIGGERS,
@@ -25,7 +26,7 @@ function ZapierSettingsPage() {
   const { data, isLoading, refetch } = useQuery({ queryKey: ["zapier-subs"], queryFn: list });
   const [busy, setBusy] = useState(false);
 
-  const baseUrl = "https://app.wktechnology.com.br";
+  const baseUrl = CANONICAL_APP_ORIGIN;
 
   async function remove(id: string) {
     setBusy(true);

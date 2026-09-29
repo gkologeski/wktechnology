@@ -3,6 +3,7 @@ import { z } from "zod";
 import { randomBytes } from "crypto";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
+import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 
 function token() {
   return randomBytes(24).toString("hex");
@@ -310,7 +311,7 @@ export const regenerateQuoteToken = createServerFn({ method: "POST" })
 
 function siteOrigin() {
   return (
-    process.env.SITE_URL || process.env.LOVABLE_PROJECT_URL || "https://app.wktechnology.com.br"
+    process.env.SITE_URL || process.env.LOVABLE_PROJECT_URL || CANONICAL_APP_ORIGIN
   );
 }
 

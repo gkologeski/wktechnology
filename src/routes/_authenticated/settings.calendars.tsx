@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
+import { GOOGLE_OAUTH_ORIGIN } from "@/lib/platform-domains";
   listCalendarAccounts,
   startCalendarOAuth,
   disconnectCalendarAccount,
@@ -33,7 +34,7 @@ import {
 } from "@/lib/calendar.functions";
 
 const searchSchema = z.object({ calendar: z.string().optional() });
-const GOOGLE_OAUTH_MESSAGE_ORIGINS = new Set(["https://crm.wktechnology.com.br"]);
+const GOOGLE_OAUTH_MESSAGE_ORIGINS = new Set([GOOGLE_OAUTH_ORIGIN]);
 
 function isTrustedGoogleOAuthMessageOrigin(origin: string) {
   return origin === window.location.origin || GOOGLE_OAUTH_MESSAGE_ORIGINS.has(origin);

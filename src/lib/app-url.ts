@@ -1,10 +1,11 @@
+import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 // URL canônica da aplicação. Em runtime (cliente) preferimos o host
 // atual; no SSR/build usamos VITE_APP_URL ou o domínio publicado padrão.
-const FALLBACK = "https://app.wktechnology.com.br";
+const FALLBACK = CANONICAL_APP_ORIGIN;
 
 // Host público canônico para todo link entregue a terceiros (cotação,
 // portal, formulário, arquivo compartilhado, convite, reunião, etc.).
-export const CANONICAL_PUBLIC_URL = "https://app.wktechnology.com.br";
+export const CANONICAL_PUBLIC_URL = CANONICAL_APP_ORIGIN;
 
 // Hosts de produção conhecidos. Se o navegador estiver em um destes, o
 // link público mantém o host atual; qualquer outro host (preview,

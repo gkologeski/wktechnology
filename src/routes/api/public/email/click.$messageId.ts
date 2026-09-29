@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { recordTrackingEvent, verifyTrackedUrl } from "@/lib/email-tracking.server";
+import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 
-const FALLBACK = "https://app.wktechnology.com.br";
+const FALLBACK = CANONICAL_APP_ORIGIN;
 
 function parseTarget(raw: string | null): string | null {
   if (!raw) return null;

@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
+import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 
-const BASE_URL = "https://app.wktechnology.com.br";
+const BASE_URL = CANONICAL_APP_ORIGIN;
 
 interface SitemapEntry {
   path: string;

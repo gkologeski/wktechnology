@@ -8,10 +8,11 @@ import { renderTokens as renderTemplate } from "@/lib/message-tokens";
 import { sendLovableEmail } from "@lovable.dev/email-js";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { getOrCreateEmailUnsubscribeToken } from "@/lib/email-unsubscribe.server";
+import { EMAIL_SENDER_DOMAIN } from "@/lib/platform-domains";
 
 // Sender padrão do projeto — coincide com o utilizado em transactional/send.ts.
-const SENDER_DOMAIN = "notify.crm.wktechnology.com.br";
-const FROM_DOMAIN = "notify.crm.wktechnology.com.br";
+const SENDER_DOMAIN = EMAIL_SENDER_DOMAIN;
+const FROM_DOMAIN = EMAIL_SENDER_DOMAIN;
 const FROM_NAME_DEFAULT = "TechHire ATS";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

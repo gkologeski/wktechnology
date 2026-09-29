@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { deleteWhereGuarded } from "@/lib/db/delete-guarded";
+import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 
 const TeamRole = z.enum(["admin", "manager", "member"]);
 export type TeamRole = z.infer<typeof TeamRole>;
@@ -10,7 +11,7 @@ export type TeamRole = z.infer<typeof TeamRole>;
 type ActiveWorkspace = { id: string; created_by: string | null };
 
 /** URL canônica de produção do CRM — usada para links de convite por email. */
-const CANONICAL_APP_URL = "https://app.wktechnology.com.br";
+const CANONICAL_APP_URL = CANONICAL_APP_ORIGIN;
 
 /**
  * Resolve o origin para o link do convite. Se vier de um host do Lovable

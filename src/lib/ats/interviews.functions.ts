@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { recordAtsEvent } from "./audit.server";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 
 const KindEnum = z.enum(["phone", "video", "onsite", "async"]);
 const StatusEnum = z.enum([
@@ -189,7 +190,7 @@ export const scheduleInterview = createServerFn({ method: "POST" })
         if (mErr) throw new Error(mErr.message);
 
         meetingId = meeting.id as string;
-        const publicLink = `${process.env.APP_URL || process.env.VITE_APP_URL || "https://app.wktechnology.com.br"}/meet/${meeting.public_token}`;
+        const publicLink = `${process.env.APP_URL || process.env.VITE_APP_URL || CANONICAL_APP_ORIGIN}/meet/${meeting.public_token}`;
         // Respeita meet_url manual; senão usa o link da sala Jitsi
         if (!meetUrlFinal) meetUrlFinal = publicLink;
 

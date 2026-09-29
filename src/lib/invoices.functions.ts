@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 
 const GatewayZ = z.enum(["asaas", "pagarme", "mercadopago", "manual"]);
 const MethodZ = z.enum(["boleto", "pix", "credit_card", "manual"]);
@@ -178,7 +179,7 @@ export const generateCharge = createServerFn({ method: "POST" })
     // Deterministic sandbox stub. Real adapters would POST to the gateway API
     // and store the returned ids/links.
     const externalId = `${gateway}_${inv.id.slice(0, 8)}`;
-    const baseUrl = process.env.PUBLIC_APP_URL || "https://app.wktechnology.com.br";
+    const baseUrl = process.env.PUBLIC_APP_URL || CANONICAL_APP_ORIGIN;
     const patch = {
       gateway,
       gateway_mode: mode,

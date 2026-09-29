@@ -18,9 +18,10 @@ import { useActivityWindows } from "@/components/activity/activity-window-contex
 import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { EmailSignatureEditor } from "@/components/email/email-signature-editor";
+import { GOOGLE_OAUTH_ORIGIN } from "@/lib/platform-domains";
 
 const searchSchema = z.object({ gmail: z.string().optional() });
-const GOOGLE_OAUTH_MESSAGE_ORIGINS = new Set(["https://crm.wktechnology.com.br"]);
+const GOOGLE_OAUTH_MESSAGE_ORIGINS = new Set([GOOGLE_OAUTH_ORIGIN]);
 
 function isTrustedGoogleOAuthMessageOrigin(origin: string) {
   return origin === window.location.origin || GOOGLE_OAUTH_MESSAGE_ORIGINS.has(origin);
