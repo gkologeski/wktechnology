@@ -150,7 +150,7 @@ export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
   "/dei-analytics": ["techhire.dei_analytics"],
   "/compliance": ["techhire.compliance"],
 
-  // --- TechContracts / TechServices -----------------------------------------
+  // --- TechContracts (inclui /services, visão operacional/faturamento) ------
   "/contracts/dashboard": ["techcontracts.contracts"],
   "/contracts": ["techcontracts.contracts"],
   "/contracts/templates": ["techcontracts.contract_templates"],
