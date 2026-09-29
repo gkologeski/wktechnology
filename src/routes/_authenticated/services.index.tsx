@@ -34,6 +34,7 @@ import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { ViewModeToggle } from "@/components/kanban/view-mode-toggle";
+import { SortableColumnHeader, SortableColumns } from "@/components/grid/sortable-columns";
 
 export const Route = createFileRoute("/_authenticated/services/")({
   validateSearch: (search: Record<string, unknown>): { view?: "table" | "kanban" } => ({
@@ -369,11 +370,16 @@ function ServicesPage() {
                     onCheckedChange={selection.toggleAllOnPage}
                   />
                 </TableHead>
-                {grid.columns.map((c) => (
-                  <TableHead key={c.key} className={c.headerClassName}>
-                    {c.header ?? c.label}
-                  </TableHead>
-                ))}
+                <SortableColumns
+                  keys={grid.columns.map((column) => column.key)}
+                  onReorder={grid.reorderColumns}
+                >
+                  {grid.columns.map((c) => (
+                    <SortableColumnHeader key={c.key} columnKey={c.key} label={c.label}>
+                      <TableHead className={c.headerClassName}>{c.header ?? c.label}</TableHead>
+                    </SortableColumnHeader>
+                  ))}
+                </SortableColumns>
               </TableRow>
             </TableHeader>
             <TableBody>

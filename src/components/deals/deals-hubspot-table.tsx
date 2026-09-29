@@ -38,6 +38,7 @@ import { ConfirmCountDialog } from "@/components/confirm-count-dialog";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
 import { reportBulkDelete } from "@/lib/access-control/bulk-delete-report";
 import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
+import { SortableColumnHeader, SortableColumns } from "@/components/grid/sortable-columns";
 
 type SortKey = "name" | "value" | "expected_close_date" | "created_at";
 
@@ -371,6 +372,7 @@ export function DealsHubspotTable({
     columns: visibleColumns,
     ColumnsButton,
     ColumnsEditor,
+    reorderColumns,
   } = useGridColumns<DealRow>({
     gridKey: "deals",
     columns: dealColumns,
@@ -428,14 +430,16 @@ export function DealsHubspotTable({
                   onToggle={toggleAll}
                 />
               </th>
-              {visibleColumns.map(
-                (col) =>
-                  col.header ?? (
-                    <Th key={col.key} className={col.headerClassName}>
-                      {col.label}
-                    </Th>
-                  ),
-              )}
+              <SortableColumns
+                keys={visibleColumns.map((col) => col.key)}
+                onReorder={reorderColumns}
+              >
+                {visibleColumns.map((col) => (
+                  <SortableColumnHeader key={col.key} columnKey={col.key} label={col.label}>
+                    {col.header ?? <Th className={col.headerClassName}>{col.label}</Th>}
+                  </SortableColumnHeader>
+                ))}
+              </SortableColumns>
               <th className="w-10 border-b px-3 py-2.5" />
             </tr>
           </thead>
