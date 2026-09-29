@@ -343,6 +343,7 @@ import { Route as AuthenticatedSettingsNotificationsSlackRouteImport } from './r
 import { Route as AuthenticatedSettingsMarketplaceSlugRouteImport } from './routes/_authenticated/settings.marketplace.$slug'
 import { Route as AuthenticatedSettingsIntegrationsLinkedinRouteImport } from './routes/_authenticated/settings.integrations.linkedin'
 import { Route as AuthenticatedSettingsIntegrationsContaazulRouteImport } from './routes/_authenticated/settings.integrations.contaazul'
+import { Route as AuthenticatedSettingsIntegrationsAiRouteImport } from './routes/_authenticated/settings.integrations.ai'
 import { Route as AuthenticatedSettingsIntegrationsSlugRouteImport } from './routes/_authenticated/settings.integrations.$slug'
 import { Route as AuthenticatedProspectingCampaignsIdRouteImport } from './routes/_authenticated/prospecting.campaigns.$id'
 import { Route as AuthenticatedProjectsIdEntregaRouteImport } from './routes/_authenticated/projects_.$id.entrega'
@@ -2292,6 +2293,12 @@ const AuthenticatedSettingsIntegrationsContaazulRoute =
     path: '/integrations/contaazul',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsIntegrationsAiRoute =
+  AuthenticatedSettingsIntegrationsAiRouteImport.update({
+    id: '/integrations/ai',
+    path: '/integrations/ai',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsIntegrationsSlugRoute =
   AuthenticatedSettingsIntegrationsSlugRouteImport.update({
     id: '/integrations/$slug',
@@ -2820,6 +2827,7 @@ export interface FileRoutesByFullPath {
   '/projects/$id/entrega': typeof AuthenticatedProjectsIdEntregaRoute
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/settings/integrations/$slug': typeof AuthenticatedSettingsIntegrationsSlugRoute
+  '/settings/integrations/ai': typeof AuthenticatedSettingsIntegrationsAiRoute
   '/settings/integrations/contaazul': typeof AuthenticatedSettingsIntegrationsContaazulRoute
   '/settings/integrations/linkedin': typeof AuthenticatedSettingsIntegrationsLinkedinRoute
   '/settings/marketplace/$slug': typeof AuthenticatedSettingsMarketplaceSlugRoute
@@ -3193,6 +3201,7 @@ export interface FileRoutesByTo {
   '/projects/$id/entrega': typeof AuthenticatedProjectsIdEntregaRoute
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/settings/integrations/$slug': typeof AuthenticatedSettingsIntegrationsSlugRoute
+  '/settings/integrations/ai': typeof AuthenticatedSettingsIntegrationsAiRoute
   '/settings/integrations/contaazul': typeof AuthenticatedSettingsIntegrationsContaazulRoute
   '/settings/integrations/linkedin': typeof AuthenticatedSettingsIntegrationsLinkedinRoute
   '/settings/marketplace/$slug': typeof AuthenticatedSettingsMarketplaceSlugRoute
@@ -3574,6 +3583,7 @@ export interface FileRoutesById {
   '/_authenticated/projects_/$id/entrega': typeof AuthenticatedProjectsIdEntregaRoute
   '/_authenticated/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/_authenticated/settings/integrations/$slug': typeof AuthenticatedSettingsIntegrationsSlugRoute
+  '/_authenticated/settings/integrations/ai': typeof AuthenticatedSettingsIntegrationsAiRoute
   '/_authenticated/settings/integrations/contaazul': typeof AuthenticatedSettingsIntegrationsContaazulRoute
   '/_authenticated/settings/integrations/linkedin': typeof AuthenticatedSettingsIntegrationsLinkedinRoute
   '/_authenticated/settings/marketplace/$slug': typeof AuthenticatedSettingsMarketplaceSlugRoute
@@ -3955,6 +3965,7 @@ export interface FileRouteTypes {
     | '/projects/$id/entrega'
     | '/prospecting/campaigns/$id'
     | '/settings/integrations/$slug'
+    | '/settings/integrations/ai'
     | '/settings/integrations/contaazul'
     | '/settings/integrations/linkedin'
     | '/settings/marketplace/$slug'
@@ -4328,6 +4339,7 @@ export interface FileRouteTypes {
     | '/projects/$id/entrega'
     | '/prospecting/campaigns/$id'
     | '/settings/integrations/$slug'
+    | '/settings/integrations/ai'
     | '/settings/integrations/contaazul'
     | '/settings/integrations/linkedin'
     | '/settings/marketplace/$slug'
@@ -4708,6 +4720,7 @@ export interface FileRouteTypes {
     | '/_authenticated/projects_/$id/entrega'
     | '/_authenticated/prospecting/campaigns/$id'
     | '/_authenticated/settings/integrations/$slug'
+    | '/_authenticated/settings/integrations/ai'
     | '/_authenticated/settings/integrations/contaazul'
     | '/_authenticated/settings/integrations/linkedin'
     | '/_authenticated/settings/marketplace/$slug'
@@ -7279,6 +7292,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsIntegrationsContaazulRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/integrations/ai': {
+      id: '/_authenticated/settings/integrations/ai'
+      path: '/integrations/ai'
+      fullPath: '/settings/integrations/ai'
+      preLoaderRoute: typeof AuthenticatedSettingsIntegrationsAiRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/integrations/$slug': {
       id: '/_authenticated/settings/integrations/$slug'
       path: '/integrations/$slug'
@@ -7833,6 +7853,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsZapierRoute: typeof AuthenticatedSettingsZapierRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
   AuthenticatedSettingsIntegrationsSlugRoute: typeof AuthenticatedSettingsIntegrationsSlugRoute
+  AuthenticatedSettingsIntegrationsAiRoute: typeof AuthenticatedSettingsIntegrationsAiRoute
   AuthenticatedSettingsIntegrationsContaazulRoute: typeof AuthenticatedSettingsIntegrationsContaazulRoute
   AuthenticatedSettingsIntegrationsLinkedinRoute: typeof AuthenticatedSettingsIntegrationsLinkedinRoute
   AuthenticatedSettingsMarketplaceSlugRoute: typeof AuthenticatedSettingsMarketplaceSlugRoute
@@ -7952,6 +7973,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
   AuthenticatedSettingsIntegrationsSlugRoute:
     AuthenticatedSettingsIntegrationsSlugRoute,
+  AuthenticatedSettingsIntegrationsAiRoute:
+    AuthenticatedSettingsIntegrationsAiRoute,
   AuthenticatedSettingsIntegrationsContaazulRoute:
     AuthenticatedSettingsIntegrationsContaazulRoute,
   AuthenticatedSettingsIntegrationsLinkedinRoute:
