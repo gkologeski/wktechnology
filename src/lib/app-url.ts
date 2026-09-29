@@ -1,4 +1,4 @@
-import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
+import { CANONICAL_APP_ORIGIN, PRODUCTION_APP_HOSTS } from "@/lib/platform-domains";
 // URL canônica da aplicação. Em runtime (cliente) preferimos o host
 // atual; no SSR/build usamos VITE_APP_URL ou o domínio publicado padrão.
 const FALLBACK = CANONICAL_APP_ORIGIN;
@@ -10,12 +10,7 @@ export const CANONICAL_PUBLIC_URL = CANONICAL_APP_ORIGIN;
 // Hosts de produção conhecidos. Se o navegador estiver em um destes, o
 // link público mantém o host atual; qualquer outro host (preview,
 // localhost, custom domain novo) é normalizado para o canônico.
-const PROD_HOSTS = new Set([
-  "app.wktechnology.com.br",
-  "crm.wktechnology.com.br",
-  "ats.wktechnology.com.br",
-  "wktechnology.lovable.app",
-]);
+const PROD_HOSTS = PRODUCTION_APP_HOSTS;
 
 export function getAppUrl(): string {
   if (typeof window !== "undefined" && window.location?.origin) {

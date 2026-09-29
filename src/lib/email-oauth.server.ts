@@ -1,6 +1,7 @@
 // Server-only helpers for Gmail OAuth (per-user).
 // Never import from client code.
 import { createHmac, timingSafeEqual } from "crypto";
+import { PRODUCTION_APP_HOSTS, GOOGLE_OAUTH_ORIGIN } from "@/lib/platform-domains";
 
 export const GMAIL_SCOPES = [
   "openid",
@@ -25,13 +26,8 @@ const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo";
 const GOOGLE_OAUTH_CALLBACK_PATH = "/api/public/oauth/google-callback";
-const WK_CANONICAL_GOOGLE_OAUTH_ORIGIN = "https://crm.wktechnology.com.br";
-const WK_ALLOWED_APP_HOSTS = new Set([
-  "app.wktechnology.com.br",
-  "crm.wktechnology.com.br",
-  "ats.wktechnology.com.br",
-  "wktechnology.lovable.app",
-]);
+const WK_CANONICAL_GOOGLE_OAUTH_ORIGIN = GOOGLE_OAUTH_ORIGIN;
+const WK_ALLOWED_APP_HOSTS = PRODUCTION_APP_HOSTS;
 
 function b64url(buf: Buffer | string) {
   return Buffer.from(buf)
