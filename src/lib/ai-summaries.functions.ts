@@ -1,4 +1,5 @@
 import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -398,21 +399,33 @@ type AiResult = {
   sentiment: string;
 };
 
-async function callAi(prompt: string, model: string): Promise<AiResult> {
+async function callAi(
+  prompt: string,
+  model: string,
+  ctx: { workspaceId: string | null; userId: string },
+): Promise<AiResult> {
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
-  const res = await aiChatFetch({
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: "system", content: "Responda apenas com JSON válido, sem markdown." },
-        { role: "user", content: prompt },
-      ],
-      temperature: 0.2,
-    }),
-  }, { feature: "resumo" });
+  const res = await aiChatFetch(
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: "system", content: "Responda apenas com JSON válido, sem markdown." },
+          { role: "user", content: prompt },
+        ],
+        temperature: 0.2,
+      }),
+    },
+    {
+      feature: "resumo",
+      triggerSource: "user",
+      workspaceId: ctx.workspaceId,
+      userId: ctx.userId,
+    },
+  );
   if (!res.ok) {
     const t = await res.text();
     throw new Error(`AI Gateway ${res.status}: ${t.slice(0, 200)}`);
@@ -469,7 +482,13 @@ export const generateAiSummary = createServerFn({ method: "POST" })
       };
     }
     const prompt = buildPrompt(msgs, data.kind);
-    const ai = await callAi(prompt, DEFAULT_MODEL);
+    let workspaceId: string | null = null;
+    try {
+      workspaceId = await resolveActiveWorkspace(userId);
+    } catch {
+      workspaceId = null;
+    }
+    const ai = await callAi(prompt, DEFAULT_MODEL, { workspaceId, userId });
     const windowFrom = msgs[0].at;
     const windowTo = msgs[msgs.length - 1].at;
     const { data: row, error } = await supabase
