@@ -108,6 +108,9 @@ export function CandidatesTableView({
           ]}
         />
       )}
+      <div className="mb-2 flex justify-end">
+        <grid.ColumnsButton />
+      </div>
       <div className="overflow-hidden rounded-lg border border-border-subtle bg-surface-1">
         <Table>
           <TableHeader>
@@ -137,7 +140,6 @@ export function CandidatesTableView({
           </TableHeader>
           <TableBody>
             {visibleRows.map((c) => {
-              const status = statuses[c.id as string] ?? "new";
               return (
                 <TableRow
                   key={c.id as string}
