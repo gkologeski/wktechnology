@@ -18,9 +18,7 @@ export type AiUsageFilters = z.infer<typeof Filters>;
 
 export const getAiUsageSummary = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) =>
-    z.object({ from: Filters.shape.from, to: Filters.shape.to }).parse(d),
-  )
+  .inputValidator((d) => z.object({ from: Filters.shape.from, to: Filters.shape.to }).parse(d))
   .handler(async ({ data, context }) => {
     const { loadUsageSummary } = await import("./ai-usage.server");
     return loadUsageSummary(context.supabase, context.userId, data.from, data.to);
