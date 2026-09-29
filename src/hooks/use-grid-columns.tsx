@@ -12,6 +12,7 @@ import {
 } from "@/lib/grid-preferences.functions";
 import { listCustomProperties, type CustomEntity } from "@/lib/custom-properties.functions";
 import { useAutoGridColumns, type CatalogEntity } from "@/hooks/use-auto-grid-columns";
+import { moveColumn, reconcileColumnOrder } from "@/lib/grid/column-order";
 
 export type GridColumnDef<T> = ColumnDef & {
   /** Render function for the cell. Receives the row. */
@@ -113,12 +114,11 @@ export function useGridColumns<T extends object>({
   );
 
   const visibleKeys = useMemo(() => {
-    const saved = prefQuery.data?.visibleColumns;
-    if (saved && saved.length) {
-      const present = new Set(allColumns.map((c) => c.key));
-      return saved.filter((k) => present.has(k));
-    }
-    return defaults.filter((k) => allColumns.some((c) => c.key === k));
+    return reconcileColumnOrder(
+      prefQuery.data?.visibleColumns,
+      allColumns.map((column) => column.key),
+      defaults,
+    );
   }, [prefQuery.data, defaults, allColumns]);
 
   const visibleColumns = useMemo(
@@ -194,6 +194,15 @@ export function useGridColumns<T extends object>({
     onSuccess: () => toast.success("Colunas atualizadas"),
   });
 
+  const reorderColumns = useCallback(
+    (activeKey: string, overKey: string) => {
+      const next = moveColumn(visibleKeys, activeKey, overKey);
+      if (next === visibleKeys) return;
+      saveMut.mutate(next);
+    },
+    [saveMut, visibleKeys],
+  );
+
   const resetMut = useMutation({
     mutationFn: () => resetPrefFn({ data: { gridKey } }),
     onSuccess: () => {
@@ -260,6 +269,7 @@ export function useGridColumns<T extends object>({
     catalogKeys,
     savedSort,
     persistSort,
+    reorderColumns,
     allColumns,
     openEditor,
     ColumnsButton,

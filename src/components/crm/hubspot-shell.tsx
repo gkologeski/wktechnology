@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { forwardRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -177,23 +177,20 @@ export function ViewsTabs<T extends string>({
 
 export type SortDir = "asc" | "desc";
 
-export function Th({
-  children,
-  sortable,
-  active,
-  dir,
-  onClick,
-  className,
-}: {
-  children?: ReactNode;
-  sortable?: boolean;
-  active?: boolean;
-  dir?: SortDir;
-  onClick?: () => void;
-  className?: string;
-}) {
+export const Th = forwardRef<
+  HTMLTableCellElement,
+  {
+    children?: ReactNode;
+    sortable?: boolean;
+    active?: boolean;
+    dir?: SortDir;
+    onClick?: () => void;
+    className?: string;
+  }
+>(function Th({ children, sortable, active, dir, onClick, className }, ref) {
   return (
     <th
+      ref={ref}
       className={cn(
         "whitespace-nowrap border-b px-3 py-2.5 font-semibold",
         sortable && "cursor-pointer select-none hover:text-foreground",
@@ -216,7 +213,7 @@ export function Th({
       </span>
     </th>
   );
-}
+});
 
 export function Td({ children, className }: { children?: ReactNode; className?: string }) {
   return (

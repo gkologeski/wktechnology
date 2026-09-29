@@ -563,6 +563,7 @@ function LeadsHubspotView() {
     ColumnsButton,
     ColumnsEditor,
     persistSort,
+    reorderColumns,
   } = useLeadColumns({
     sortKey,
     sortDir,
@@ -863,6 +864,7 @@ function LeadsHubspotView() {
                 onOpenLead={(id) => navigate({ to: "/leads/$id", params: { id } })}
                 onConvertLead={convert}
                 onRemoveLead={removeOne}
+                onReorderColumns={reorderColumns}
               />
             </div>
           )}

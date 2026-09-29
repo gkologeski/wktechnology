@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { Trash2, ExternalLink } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,8 @@ import type { useGridSelection } from "@/components/grid/use-grid-selection";
 import type { DerivedCandidateStatus } from "@/lib/ats/candidate-status.functions";
 import { CandidateStatusPill } from "./candidate-status-pill";
 import type { Cand } from "./types";
+import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
+import { SortableColumnHeader, SortableColumns } from "@/components/grid/sortable-columns";
 
 export function CandidatesTableView({
   visibleRows,
@@ -34,6 +37,80 @@ export function CandidatesTableView({
   canAny: (perms: string[]) => boolean;
   onDelete: (id: string) => void;
 }) {
+  const columns = useMemo<GridColumnDef<Cand>[]>(
+    () => [
+      {
+        key: "name",
+        label: "Nome",
+        render: (c) => (
+          <>
+            <Link
+              to="/candidates/$id"
+              params={{ id: c.id as string }}
+              className="inline-flex items-center gap-1 font-medium text-text-primary hover:underline"
+            >
+              {c.full_name as string}
+              <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-60" aria-hidden />
+            </Link>
+            {c.email ? (
+              <div className="max-w-[240px] truncate text-xs text-text-tertiary">
+                {c.email as string}
+              </div>
+            ) : null}
+          </>
+        ),
+      },
+      {
+        key: "position",
+        label: "Cargo",
+        render: (c) =>
+          c.current_position ? (
+            <span className="text-sm">
+              {c.current_position}
+              {c.current_company ? (
+                <span className="text-text-tertiary"> @ {c.current_company}</span>
+              ) : null}
+            </span>
+          ) : (
+            <span className="text-text-tertiary">—</span>
+          ),
+      },
+      {
+        key: "location",
+        label: "Localização",
+        render: (c) =>
+          c.location ? String(c.location) : <span className="text-text-tertiary">—</span>,
+      },
+      {
+        key: "status",
+        label: "Status",
+        render: (c) => <CandidateStatusPill status={statuses[c.id as string] ?? "new"} />,
+      },
+      {
+        key: "assignee",
+        label: "Responsável",
+        render: (c) => (
+          <AssigneeCell assignedTo={(c as { assigned_to?: string | null }).assigned_to} />
+        ),
+      },
+      {
+        key: "source",
+        label: "Origem",
+        render: (c) =>
+          c.source ? (
+            <SourceBadge source={c.source as string} />
+          ) : (
+            <span className="text-text-tertiary">—</span>
+          ),
+      },
+    ],
+    [statuses],
+  );
+  const grid = useGridColumns<Cand>({
+    gridKey: "ats-candidates",
+    columns,
+    defaults: ["name", "position", "location", "status", "assignee", "source"],
+  });
   const selectAllFiltered = () =>
     selection.setSelectedIds(new Set(visibleRows.map((r) => r.id as string)));
 
@@ -59,6 +136,9 @@ export function CandidatesTableView({
           ]}
         />
       )}
+      <div className="mb-2 flex justify-end">
+        <grid.ColumnsButton />
+      </div>
       <div className="overflow-hidden rounded-lg border border-border-subtle bg-surface-1">
         <Table>
           <TableHeader>
@@ -76,18 +156,22 @@ export function CandidatesTableView({
                   onCheckedChange={selection.toggleAllOnPage}
                 />
               </TableHead>
-              <TableHead>Nome</TableHead>
-              <TableHead>Cargo</TableHead>
-              <TableHead>Localização</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Responsável</TableHead>
-              <TableHead>Origem</TableHead>
+              <SortableColumns keys={grid.columnKeys} onReorder={grid.reorderColumns}>
+                {grid.columns.map((column) => (
+                  <SortableColumnHeader
+                    key={column.key}
+                    columnKey={column.key}
+                    label={column.label}
+                  >
+                    <TableHead>{column.label}</TableHead>
+                  </SortableColumnHeader>
+                ))}
+              </SortableColumns>
               <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {visibleRows.map((c) => {
-              const status = statuses[c.id as string] ?? "new";
               return (
                 <TableRow
                   key={c.id as string}
@@ -101,56 +185,9 @@ export function CandidatesTableView({
                       onCheckedChange={() => selection.toggleOne(c.id as string)}
                     />
                   </TableCell>
-                  <TableCell className="font-medium">
-                    <Link
-                      to="/candidates/$id"
-                      params={{ id: c.id as string }}
-                      className="text-text-primary hover:underline inline-flex items-center gap-1"
-                    >
-                      {c.full_name as string}
-                      <ExternalLink
-                        className="h-3 w-3 opacity-0 group-hover:opacity-60"
-                        aria-hidden
-                      />
-                    </Link>
-                    {c.email ? (
-                      <div className="text-xs text-text-tertiary truncate max-w-[240px]">
-                        {c.email as string}
-                      </div>
-                    ) : null}
-                  </TableCell>
-                  <TableCell className="text-text-secondary">
-                    {c.current_position ? (
-                      <span className="text-sm">
-                        {c.current_position}
-                        {c.current_company ? (
-                          <span className="text-text-tertiary"> @ {c.current_company}</span>
-                        ) : null}
-                      </span>
-                    ) : (
-                      <span className="text-text-tertiary">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-text-secondary">
-                    {c.location ? (
-                      (c.location as string)
-                    ) : (
-                      <span className="text-text-tertiary">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <CandidateStatusPill status={status} />
-                  </TableCell>
-                  <TableCell>
-                    <AssigneeCell assignedTo={(c as { assigned_to?: string | null }).assigned_to} />
-                  </TableCell>
-                  <TableCell>
-                    {c.source ? (
-                      <SourceBadge source={c.source as string} />
-                    ) : (
-                      <span className="text-text-tertiary">—</span>
-                    )}
-                  </TableCell>
+                  {grid.columns.map((column) => (
+                    <TableCell key={column.key}>{column.render(c)}</TableCell>
+                  ))}
                   <TableCell>
                     <Button
                       variant="ghost"
@@ -168,6 +205,7 @@ export function CandidatesTableView({
           </TableBody>
         </Table>
       </div>
+      <grid.ColumnsEditor />
     </>
   );
 }

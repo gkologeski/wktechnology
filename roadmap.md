@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Permitir reordenar colunas por drag-and-drop no cabeçalho e no seletor “Colunas” em todas as tabelas, com persistência por usuário e tabela.
+
 - [x] Revisar o editor visual de Workflows (Option C) e validar criação, configuração de campos/variáveis e navegação sem gravar ou publicar uma automação de teste. Publicação real não foi exercitada.
 - [x] Apresentar novas variáveis de Workflows em PT-BR, minúsculas, sem acentos e com `_`, mantendo os nomes técnicos antigos compatíveis no motor.
 

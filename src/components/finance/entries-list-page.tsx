@@ -44,6 +44,8 @@ import { usePermissions } from "@/lib/access-control/use-permissions";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { ViewModeToggle } from "@/components/kanban/view-mode-toggle";
 import { useViewMode } from "@/components/kanban/use-view-mode";
+import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
+import { SortableColumnHeader, SortableColumns } from "@/components/grid/sortable-columns";
 
 const STATUS_LABEL: Record<string, string> = {
   open: "Em aberto",
@@ -139,6 +141,97 @@ export function EntriesListPage({
     "techfinance.entries.update.team",
     "techfinance.entries.update.own",
   ]);
+  const financeColumns = useMemo<GridColumnDef<Entry>[]>(
+    () => [
+      {
+        key: "description",
+        label: "Descrição",
+        render: (entry) => (
+          <>
+            <Link
+              to="/finance/entries/$id"
+              params={{ id: entry.id }}
+              className="font-medium hover:underline"
+            >
+              {entry.description}
+            </Link>
+            <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+              {entry.installment_total && entry.installment_total > 1 ? (
+                <Badge variant="outline" className="px-1.5 py-0 text-[10px]">
+                  {entry.installment_number ?? "?"}/{entry.installment_total}
+                </Badge>
+              ) : null}
+              {entry.contracts ? (
+                <span>Contrato {entry.contracts.number ?? entry.contracts.title}</span>
+              ) : null}
+            </div>
+          </>
+        ),
+      },
+      {
+        key: "counterparty",
+        label: "Contraparte",
+        render: (entry) => entry.companies?.name ?? "—",
+      },
+      {
+        key: "category",
+        label: "Categoria",
+        render: (entry) => entry.financial_categories?.name ?? "—",
+      },
+      {
+        key: "status",
+        label: "Status",
+        render: (entry) => (
+          <Badge variant="outline" className={STATUS_TONE[entry.status] ?? ""}>
+            {STATUS_LABEL[entry.status] ?? entry.status}
+          </Badge>
+        ),
+      },
+      {
+        key: "amount",
+        label: "Valor",
+        className: "text-right tabular-nums",
+        headerClassName: "text-right",
+        render: (entry) => formatCurrency(Number(entry.amount), entry.currency),
+      },
+      {
+        key: "outstanding",
+        label: "Em aberto",
+        className: "text-right tabular-nums",
+        headerClassName: "text-right",
+        render: (entry) =>
+          formatCurrency(Number(entry.amount) - Number(entry.paid_amount ?? 0), entry.currency),
+      },
+      {
+        key: "due",
+        label: "Vencimento",
+        className: "text-xs text-muted-foreground",
+        render: (entry) => formatDateTime(entry.due_date).split(" ")[0],
+      },
+      {
+        key: "assignee",
+        label: "Responsável",
+        render: (entry) => (
+          <AssigneeCell assignedTo={(entry as { assigned_to?: string | null }).assigned_to} />
+        ),
+      },
+    ],
+    [],
+  );
+  const financeGrid = useGridColumns<Entry>({
+    gridKey: `finance-entries-${direction}`,
+    columns: financeColumns,
+    defaults: [
+      "description",
+      "counterparty",
+      "category",
+      "status",
+      "amount",
+      "outstanding",
+      "due",
+      "assignee",
+    ],
+  });
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["finance-entries", direction] });
@@ -211,6 +304,7 @@ export function EntriesListPage({
         <LegalEntitySelect value={legalEntityId} onChange={setLegalEntityId} />
         <AssigneeFilter value={assignee} onChange={setAssignee} />
         <ViewModeToggle value={view} onChange={setView} />
+        {view === "table" ? <financeGrid.ColumnsButton /> : null}
         <div className="ml-auto text-sm text-muted-foreground">
           Total em aberto:{" "}
           <span className="font-semibold tabular-nums text-foreground">
@@ -341,14 +435,20 @@ export function EntriesListPage({
                       onCheckedChange={selection.toggleAllOnPage}
                     />
                   </TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead>Contraparte</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
-                  <TableHead className="text-right">Em aberto</TableHead>
-                  <TableHead>Vencimento</TableHead>
-                  <TableHead>Responsável</TableHead>
+                  <SortableColumns
+                    keys={financeGrid.columnKeys}
+                    onReorder={financeGrid.reorderColumns}
+                  >
+                    {financeGrid.columns.map((column) => (
+                      <SortableColumnHeader
+                        key={column.key}
+                        columnKey={column.key}
+                        label={column.label}
+                      >
+                        <TableHead className={column.headerClassName}>{column.label}</TableHead>
+                      </SortableColumnHeader>
+                    ))}
+                  </SortableColumns>
                   <TableHead className="w-32" />
                 </TableRow>
               </TableHeader>
@@ -365,48 +465,11 @@ export function EntriesListPage({
                           onCheckedChange={() => selection.toggleOne(e.id)}
                         />
                       </TableCell>
-                      <TableCell>
-                        <Link
-                          to="/finance/entries/$id"
-                          params={{ id: e.id }}
-                          className="font-medium hover:underline"
-                        >
-                          {e.description}
-                        </Link>
-                        <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                          {e.installment_total && e.installment_total > 1 && (
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                              {e.installment_number ?? "?"}/{e.installment_total}
-                            </Badge>
-                          )}
-                          {e.contracts && (
-                            <span>Contrato {e.contracts.number ?? e.contracts.title}</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm">{e.companies?.name ?? "—"}</TableCell>
-                      <TableCell className="text-sm">
-                        {e.financial_categories?.name ?? "—"}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={STATUS_TONE[e.status] ?? ""}>
-                          {STATUS_LABEL[e.status] ?? e.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {formatCurrency(Number(e.amount), e.currency)}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {formatCurrency(outstanding, e.currency)}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {formatDateTime(e.due_date).split(" ")[0]}
-                      </TableCell>
-                      <TableCell>
-                        <AssigneeCell
-                          assignedTo={(e as { assigned_to?: string | null }).assigned_to}
-                        />
-                      </TableCell>
+                      {financeGrid.columns.map((column) => (
+                        <TableCell key={column.key} className={column.className}>
+                          {column.render(e)}
+                        </TableCell>
+                      ))}
                       <TableCell className="text-right">
                         {!paid && (
                           <Button size="sm" variant="outline" onClick={() => setPayFor(e)}>
@@ -434,6 +497,7 @@ export function EntriesListPage({
         onOpenChange={(open) => !open && setPayFor(null)}
         onDone={invalidate}
       />
+      <financeGrid.ColumnsEditor />
     </div>
   );
 }

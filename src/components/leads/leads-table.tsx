@@ -15,6 +15,7 @@ import type { GridColumnDef } from "@/hooks/use-grid-columns";
 import type { Lead } from "@/lib/db-types";
 import type { LeadGridRow } from "@/lib/leads/constants";
 import { Td, Th } from "@/components/leads/table-primitives";
+import { SortableColumnHeader, SortableColumns } from "@/components/grid/sortable-columns";
 
 export function LeadsTable({
   visibleColumns,
@@ -31,6 +32,7 @@ export function LeadsTable({
   onOpenLead,
   onConvertLead,
   onRemoveLead,
+  onReorderColumns,
 }: {
   visibleColumns: GridColumnDef<LeadGridRow>[];
   rows: LeadGridRow[];
@@ -46,6 +48,7 @@ export function LeadsTable({
   onOpenLead: (id: string) => void;
   onConvertLead: (lead: Lead) => void;
   onRemoveLead: (id: string) => void;
+  onReorderColumns: (activeKey: string, overKey: string) => void;
 }) {
   return (
     <table className="w-full border-separate border-spacing-0 text-sm">
@@ -62,11 +65,15 @@ export function LeadsTable({
               onCheckedChange={toggleAll}
             />
           </th>
-          {visibleColumns.map((col) => (
-            <Fragment key={col.key}>
-              {col.header ?? <Th className={col.headerClassName}>{col.label}</Th>}
-            </Fragment>
-          ))}
+          <SortableColumns keys={visibleColumns.map((col) => col.key)} onReorder={onReorderColumns}>
+            {visibleColumns.map((col) => (
+              <Fragment key={col.key}>
+                <SortableColumnHeader columnKey={col.key} label={col.label}>
+                  {col.header ?? <Th className={col.headerClassName}>{col.label}</Th>}
+                </SortableColumnHeader>
+              </Fragment>
+            ))}
+          </SortableColumns>
           <th className="w-10 border-b px-3 py-2.5" />
         </tr>
       </thead>
