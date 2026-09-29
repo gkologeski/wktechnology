@@ -46,7 +46,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export function AiPanelPage() {
-  const [days, setDays] = useState<Days>(30);
+  const [range, setRange] = useState<DateRange>(() => getPresetRange("last30"));
   const [search, setSearch] = useState("");
   const [feature, setFeature] = useState(ALL);
   const [source, setSource] = useState(ALL);
@@ -57,7 +57,8 @@ export function AiPanelPage() {
   const summaryFn = useServerFn(getAiUsageSummary);
   const logsFn = useServerFn(listAiCallLogs);
   const filters = {
-    days,
+    from: range.from.toISOString(),
+    to: range.to.toISOString(),
     search: search.trim() || undefined,
     feature: feature === ALL ? undefined : feature,
     triggerSource: source === ALL ? undefined : (source as "user" | "automatic"),
@@ -66,8 +67,8 @@ export function AiPanelPage() {
   };
 
   const summary = useQuery({
-    queryKey: ["ai-usage-summary", days],
-    queryFn: () => summaryFn({ data: { days } }),
+    queryKey: ["ai-usage-summary", filters.from, filters.to],
+    queryFn: () => summaryFn({ data: { from: filters.from, to: filters.to } }),
   });
   const isAdmin = summary.data?.isAdmin ?? false;
   const logs = useQuery({
@@ -103,7 +104,10 @@ export function AiPanelPage() {
         { header: "Duração (ms)", value: (r) => r.duration_ms ?? "" },
         { header: "Resultado", value: (r) => (r.status === "success" ? "Sucesso" : "Falha") },
       ]);
-      downloadCsv(`historico-ia-${days}d.csv`, csv);
+      downloadCsv(
+        `historico-ia-${format(range.from, "yyyyMMdd")}-a-${format(range.to, "yyyyMMdd")}.csv`,
+        csv,
+      );
     } catch (e) {
       toast.error((e as Error).message);
     }
@@ -120,16 +124,13 @@ export function AiPanelPage() {
         title="Painel de IA"
         description="Modelo em uso, custo estimado por chamada e histórico de gatilhos do workspace."
         primaryAction={
-          <Select value={String(days)} onValueChange={(v) => reset(setDays)(Number(v) as Days)}>
-            <SelectTrigger className="w-[160px]" aria-label="Período">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7">Últimos 7 dias</SelectItem>
-              <SelectItem value="30">Últimos 30 dias</SelectItem>
-              <SelectItem value="90">Últimos 90 dias</SelectItem>
-            </SelectContent>
-          </Select>
+          <DateRangePicker
+            value={range}
+            defaultPreset="last30"
+            ariaLabel="Período"
+            align="end"
+            onChange={(r) => reset(setRange)(r)}
+          />
         }
       />
 
