@@ -72,7 +72,7 @@ async function callAi(userContent: Array<Record<string, unknown>>): Promise<Impo
       ],
       response_format: { type: "json_object" },
     }),
-  });
+  }, { feature: "importacao_modelo" });
 
   if (!resp.ok) {
     const body = await resp.text();

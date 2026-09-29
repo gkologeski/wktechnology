@@ -20,7 +20,7 @@ async function callAiJson(messages: Array<{ role: string; content: string }>) {
       messages,
       response_format: { type: "json_object" },
     }),
-  });
+  }, { feature: "briefing_diario" });
   if (r.status === 429)
     throw new Error("AI Gateway: limite de requisições. Tente novamente em instantes.");
   if (r.status === 402)

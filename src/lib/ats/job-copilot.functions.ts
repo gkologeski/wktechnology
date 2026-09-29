@@ -19,7 +19,7 @@ async function callAi(messages: Array<{ role: string; content: string }>, json =
       messages,
       ...(json ? { response_format: { type: "json_object" } } : {}),
     }),
-  });
+  }, { feature: "copiloto_vaga" });
   if (r.status === 429)
     throw new Error("Limite de uso da IA atingido. Tente novamente em alguns instantes.");
   if (r.status === 402)

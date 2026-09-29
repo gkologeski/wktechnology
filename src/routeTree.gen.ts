@@ -172,6 +172,7 @@ import { Route as AuthenticatedSettingsBillingRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsAuditLogRouteImport } from './routes/_authenticated/settings.audit-log'
 import { Route as AuthenticatedSettingsAuditExportRouteImport } from './routes/_authenticated/settings.audit-export'
 import { Route as AuthenticatedSettingsApiKeysRouteImport } from './routes/_authenticated/settings.api-keys'
+import { Route as AuthenticatedSettingsAiPanelRouteImport } from './routes/_authenticated/settings.ai-panel'
 import { Route as AuthenticatedSettingsAdsSyncRouteImport } from './routes/_authenticated/settings.ads-sync'
 import { Route as AuthenticatedSettingsAccessPolicyRouteImport } from './routes/_authenticated/settings.access-policy'
 import { Route as AuthenticatedServicesIdRouteImport } from './routes/_authenticated/services.$id'
@@ -1302,6 +1303,12 @@ const AuthenticatedSettingsApiKeysRoute =
   AuthenticatedSettingsApiKeysRouteImport.update({
     id: '/api-keys',
     path: '/api-keys',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsAiPanelRoute =
+  AuthenticatedSettingsAiPanelRouteImport.update({
+    id: '/ai-panel',
+    path: '/ai-panel',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsAdsSyncRoute =
@@ -2704,6 +2711,7 @@ export interface FileRoutesByFullPath {
   '/services/$id': typeof AuthenticatedServicesIdRoute
   '/settings/access-policy': typeof AuthenticatedSettingsAccessPolicyRoute
   '/settings/ads-sync': typeof AuthenticatedSettingsAdsSyncRoute
+  '/settings/ai-panel': typeof AuthenticatedSettingsAiPanelRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/audit-export': typeof AuthenticatedSettingsAuditExportRoute
   '/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
@@ -3079,6 +3087,7 @@ export interface FileRoutesByTo {
   '/services/$id': typeof AuthenticatedServicesIdRoute
   '/settings/access-policy': typeof AuthenticatedSettingsAccessPolicyRoute
   '/settings/ads-sync': typeof AuthenticatedSettingsAdsSyncRoute
+  '/settings/ai-panel': typeof AuthenticatedSettingsAiPanelRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/audit-export': typeof AuthenticatedSettingsAuditExportRoute
   '/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
@@ -3460,6 +3469,7 @@ export interface FileRoutesById {
   '/_authenticated/services/$id': typeof AuthenticatedServicesIdRoute
   '/_authenticated/settings/access-policy': typeof AuthenticatedSettingsAccessPolicyRoute
   '/_authenticated/settings/ads-sync': typeof AuthenticatedSettingsAdsSyncRoute
+  '/_authenticated/settings/ai-panel': typeof AuthenticatedSettingsAiPanelRoute
   '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/_authenticated/settings/audit-export': typeof AuthenticatedSettingsAuditExportRoute
   '/_authenticated/settings/audit-log': typeof AuthenticatedSettingsAuditLogRoute
@@ -3842,6 +3852,7 @@ export interface FileRouteTypes {
     | '/services/$id'
     | '/settings/access-policy'
     | '/settings/ads-sync'
+    | '/settings/ai-panel'
     | '/settings/api-keys'
     | '/settings/audit-export'
     | '/settings/audit-log'
@@ -4217,6 +4228,7 @@ export interface FileRouteTypes {
     | '/services/$id'
     | '/settings/access-policy'
     | '/settings/ads-sync'
+    | '/settings/ai-panel'
     | '/settings/api-keys'
     | '/settings/audit-export'
     | '/settings/audit-log'
@@ -4597,6 +4609,7 @@ export interface FileRouteTypes {
     | '/_authenticated/services/$id'
     | '/_authenticated/settings/access-policy'
     | '/_authenticated/settings/ads-sync'
+    | '/_authenticated/settings/ai-panel'
     | '/_authenticated/settings/api-keys'
     | '/_authenticated/settings/audit-export'
     | '/_authenticated/settings/audit-log'
@@ -6093,6 +6106,13 @@ declare module '@tanstack/react-router' {
       path: '/api-keys'
       fullPath: '/settings/api-keys'
       preLoaderRoute: typeof AuthenticatedSettingsApiKeysRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/ai-panel': {
+      id: '/_authenticated/settings/ai-panel'
+      path: '/ai-panel'
+      fullPath: '/settings/ai-panel'
+      preLoaderRoute: typeof AuthenticatedSettingsAiPanelRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/ads-sync': {
@@ -7773,6 +7793,7 @@ const AuthenticatedSettingsRolesRouteWithChildren =
 interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsAccessPolicyRoute: typeof AuthenticatedSettingsAccessPolicyRoute
   AuthenticatedSettingsAdsSyncRoute: typeof AuthenticatedSettingsAdsSyncRoute
+  AuthenticatedSettingsAiPanelRoute: typeof AuthenticatedSettingsAiPanelRoute
   AuthenticatedSettingsApiKeysRoute: typeof AuthenticatedSettingsApiKeysRoute
   AuthenticatedSettingsAuditExportRoute: typeof AuthenticatedSettingsAuditExportRoute
   AuthenticatedSettingsAuditLogRoute: typeof AuthenticatedSettingsAuditLogRoute
@@ -7870,6 +7891,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsAccessPolicyRoute:
     AuthenticatedSettingsAccessPolicyRoute,
   AuthenticatedSettingsAdsSyncRoute: AuthenticatedSettingsAdsSyncRoute,
+  AuthenticatedSettingsAiPanelRoute: AuthenticatedSettingsAiPanelRoute,
   AuthenticatedSettingsApiKeysRoute: AuthenticatedSettingsApiKeysRoute,
   AuthenticatedSettingsAuditExportRoute: AuthenticatedSettingsAuditExportRoute,
   AuthenticatedSettingsAuditLogRoute: AuthenticatedSettingsAuditLogRoute,

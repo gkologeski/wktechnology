@@ -424,7 +424,7 @@ Responda APENAS com JSON válido.`;
             },
           ],
         }),
-      });
+      }, { feature: "reunioes" });
 
       if (!res.ok) {
         const txt = await res.text();
@@ -670,7 +670,7 @@ Responda APENAS com JSON válido.`;
             { role: "user", content: userContent },
           ],
         }),
-      });
+      }, { feature: "reunioes" });
       if (!aiRes.ok) {
         const txt = await aiRes.text();
         throw new Error(`AI gateway ${aiRes.status}: ${txt.slice(0, 400)}`);

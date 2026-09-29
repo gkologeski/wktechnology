@@ -50,7 +50,7 @@ async function callAi(prompt: string, model: string): Promise<AiNotes> {
       ],
       temperature: 0.2,
     }),
-  });
+  }, { feature: "anotacoes_entrevista" });
   if (res.status === 429)
     throw new Error("Limite de uso da IA atingido. Tente novamente em alguns minutos.");
   if (res.status === 402)

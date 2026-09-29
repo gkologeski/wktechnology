@@ -237,6 +237,8 @@ const sections: Section[] = [
       { to: "/settings/integrations", label: "Conectores", icon: Plug, need: "admin" },
       { to: "/settings/marketplace", label: "Marketplace", icon: ShoppingBag, need: "admin" },
       { to: "/settings/import", label: "Importar dados", icon: Upload, need: "admin" },
+      { to: "/settings/integrations/ai", label: "Inteligência Artificial", icon: Sparkles, need: "admin" },
+      { to: "/settings/ai-panel", label: "Painel de IA", icon: Sparkles },
       { to: "/settings/integrations/linkedin", label: "LinkedIn (Unipile)", icon: Briefcase },
       { to: "/settings/webhooks", label: "Webhooks", icon: Webhook, need: "admin" },
       { to: "/settings/zapier", label: "Zapier", icon: Zap, need: "admin" },

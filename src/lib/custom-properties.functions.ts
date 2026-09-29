@@ -240,7 +240,7 @@ export const computeAiProperty = createServerFn({ method: "POST" })
         ],
         temperature: 0.2,
       }),
-    });
+    }, { feature: "propriedades" });
     if (!res.ok) throw new Error(`AI Gateway ${res.status}: ${(await res.text()).slice(0, 200)}`);
     const j = (await res.json()) as { choices?: { message?: { content?: string } }[] };
     const raw = (j.choices?.[0]?.message?.content ?? "").trim();

@@ -83,7 +83,7 @@ Retorne APENAS o texto final, sem aspas, sem prefixos do tipo "Aqui está".`;
         ],
         temperature: 0.6,
       }),
-    });
+    }, { feature: "redacao" });
     if (!res.ok) {
       const t = await res.text();
       throw new Error(`AI Gateway ${res.status}: ${t.slice(0, 200)}`);

@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
-import { encryptApiKey, routeForProvider } from "./provider-resolver.server";
+import { encryptApiKey, routeForProvider, writeLog } from "./provider-resolver.server";
 import { adaptBody, getAiProvider, type AiProviderId } from "./providers";
 
 type Ctx = { workspaceId: string; isAdmin: boolean };
@@ -101,6 +101,8 @@ export async function testProvider(
     },
     route,
   );
+  const started = Date.now();
+  let raw = "";
   let ok = false;
   let message = "";
   try {
@@ -111,11 +113,24 @@ export async function testProvider(
       signal: AbortSignal.timeout(20000),
     });
     const text = await res.text();
+    raw = text;
     ok = res.ok;
     message = res.ok ? "Conexão funcionando." : `Erro ${res.status}: ${text.slice(0, 200)}`;
   } catch (e) {
     message = `Falha de rede: ${(e as Error).message}`;
   }
+  await writeLog({
+    workspace_id: workspaceId,
+    provider: route.provider,
+    model: (body.model as string | undefined) ?? null,
+    feature: "teste_conexao",
+    trigger_source: "user",
+    triggered_by: userId,
+    duration_ms: Date.now() - started,
+    status: ok ? "success" : "failed",
+    error: ok ? null : message.slice(0, 300),
+    text: raw,
+  }).catch(() => undefined);
   const now = new Date().toISOString();
   await supabaseAdmin
     .from("workspace_ai_settings")

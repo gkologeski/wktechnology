@@ -19,7 +19,7 @@ async function callAi(messages: Array<{ role: string; content: string }>, json =
       messages,
       ...(json ? { response_format: { type: "json_object" } } : {}),
     }),
-  });
+  }, { feature: "copiloto_ats" });
   if (!r.ok) throw new Error(`AI Gateway ${r.status}: ${await r.text().catch(() => "")}`);
   const j = await r.json();
   return j.choices?.[0]?.message?.content ?? "";

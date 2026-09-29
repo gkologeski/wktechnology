@@ -94,7 +94,7 @@ Nunca invente dados. Se um campo não estiver no PDF, use null ou [].`;
         ],
         response_format: { type: "json_object" },
       }),
-    });
+    }, { feature: "leitura_curriculo" });
     if (!aiRes.ok) {
       const txt = await aiRes.text();
       if (aiRes.status === 402)

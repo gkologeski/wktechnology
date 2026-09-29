@@ -46,7 +46,7 @@ Devolva SOMENTE um JSON válido neste formato:
       ],
       response_format: { type: "json_object" },
     }),
-  });
+  }, { feature: "enriquecimento_hunting" });
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
     throw new Error(`Gateway ${res.status}: ${txt.slice(0, 200)}`);
