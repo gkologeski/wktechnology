@@ -1122,6 +1122,10 @@ export const simulateChargePayment = createServerFn({ method: "POST" })
     z.object({ charge_id: z.string().uuid() }).parse(data),
   )
   .handler(async ({ data, context }) => {
+    const { internalMocksEnabled } = await import("./runtime-config.server");
+    if (!internalMocksEnabled()) {
+      throw new Error("A simulação bancária está desativada neste ambiente.");
+    }
     const { supabase, userId } = context;
     const workspaceId = await getCurrentWorkspace(supabase, userId);
     await assertAdmin(supabase, workspaceId, userId);

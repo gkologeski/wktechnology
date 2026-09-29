@@ -10,8 +10,14 @@ type WorkspaceRole = keyof typeof DEFAULT_ROLE_NAME;
 type JobRoleClient = {
   from: (table: "job_roles") => {
     select: (columns: "id") => {
-      eq: (column: "is_system", value: true) => {
-        eq: (column: "name", value: string) => {
+      eq: (
+        column: "is_system",
+        value: true,
+      ) => {
+        eq: (
+          column: "name",
+          value: string,
+        ) => {
           maybeSingle: () => Promise<{
             data: { id: string } | null;
             error: { message: string } | null;
@@ -26,7 +32,8 @@ export async function resolveDefaultJobRoleId(
   client: JobRoleClient,
   role: string,
 ): Promise<string> {
-  const roleName = DEFAULT_ROLE_NAME[(role in DEFAULT_ROLE_NAME ? role : "member") as WorkspaceRole];
+  const roleName =
+    DEFAULT_ROLE_NAME[(role in DEFAULT_ROLE_NAME ? role : "member") as WorkspaceRole];
   const { data, error } = await client
     .from("job_roles")
     .select("id")

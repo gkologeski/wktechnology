@@ -717,7 +717,10 @@ export const consumeInvite = createServerFn({ method: "POST" })
     const { resolveDefaultJobRoleId } = await import(
       "@/lib/access-control/default-job-role.server"
     );
-    const jobRoleId = await resolveDefaultJobRoleId(supabaseAdmin, inv.role);
+    const jobRoleId = await resolveDefaultJobRoleId(
+      supabaseAdmin as unknown as Parameters<typeof resolveDefaultJobRoleId>[0],
+      inv.role,
+    );
 
     // Convenção do RBAC: owner_id nessas tabelas é o auth.uid do criador do
     // workspace (é o que as policies exigem para escrita/gestão).

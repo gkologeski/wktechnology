@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { resolveDefaultJobRoleId } from "./default-job-role.server";
 
-function client(result: { data: { id: string } | null; error: { message: string } | null }) {
+function client(result: {
+  data: { id: string } | null;
+  error: { message: string } | null;
+}) {
   const maybeSingle = vi.fn().mockResolvedValue(result);
   const byName = vi.fn(() => ({ maybeSingle }));
   const bySystem = vi.fn(() => ({ eq: byName }));
