@@ -131,6 +131,7 @@ function BankingPage() {
   });
 
   const conn = q.data?.connection ?? null;
+  const mockEnabled = q.data?.mockEnabled ?? false;
   const status = (conn?.status ?? "disconnected") as StatusKind;
   const events = q.data?.events ?? [];
 
@@ -427,13 +428,17 @@ function BankingPage() {
                 </Button>
               </>
             ) : (
-              <Button onClick={() => startMut.mutate()} disabled={startMut.isPending}>
+              <Button
+                onClick={() => startMut.mutate()}
+                disabled={!mockEnabled || startMut.isPending}
+                title={mockEnabled ? undefined : "Simulação indisponível neste ambiente"}
+              >
                 {startMut.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <Zap className="h-4 w-4" />
                 )}
-                Conectar (mock)
+                {mockEnabled ? "Conectar simulação" : "Integração não configurada"}
               </Button>
             )}
           </div>
@@ -624,7 +629,7 @@ function BankingPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => simulateSettleMut.mutate(p.id)}
-                              disabled={simulateSettleMut.isPending}
+                              disabled={!mockEnabled || simulateSettleMut.isPending}
                               title="Simular confirmação (mock)"
                             >
                               <CheckCircle2 className="h-3.5 w-3.5" /> Liquidar
@@ -635,7 +640,7 @@ function BankingPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => simulateSettleMut.mutate(p.id)}
-                              disabled={simulateSettleMut.isPending}
+                              disabled={!mockEnabled || simulateSettleMut.isPending}
                             >
                               <CheckCircle2 className="h-3.5 w-3.5" /> Liquidar
                             </Button>

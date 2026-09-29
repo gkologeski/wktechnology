@@ -55,10 +55,12 @@ export const getBankConnection = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false })
       .limit(10);
 
+    const { internalMocksEnabled } = await import("./runtime-config.server");
     return {
       connection: conn,
       events: events ?? [],
       workspaceId,
+      mockEnabled: internalMocksEnabled(),
     };
   });
 
@@ -1390,6 +1392,10 @@ export const simulatePaymentSettlement = createServerFn({ method: "POST" })
     z.object({ payment_id: z.string().uuid() }).parse(data),
   )
   .handler(async ({ data, context }) => {
+    const { internalMocksEnabled } = await import("./runtime-config.server");
+    if (!internalMocksEnabled()) {
+      throw new Error("A simulação bancária está desativada neste ambiente.");
+    }
     const { supabase, userId } = context;
     const workspaceId = await getCurrentWorkspace(supabase, userId);
     await assertAdmin(supabase, workspaceId, userId);
