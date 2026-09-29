@@ -11,6 +11,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { PipelineOption, LeadChannel } from "@/lib/deals/sales-dashboard.types";
+import {
+  buildDashboardPipelineOptions,
+  DEFAULT_PIPELINE_VALUE,
+  resolveDashboardPipelineValue,
+} from "@/lib/deals/dashboard-pipeline-options";
 
 export interface DashboardFiltersProps {
   range: DateRange;
@@ -45,6 +50,9 @@ export function DashboardFilters({
   canViewTeam,
   disabled = false,
 }: DashboardFiltersProps) {
+  const pipelineOptions = buildDashboardPipelineOptions(pipelines);
+  const leadPipelineOptions = buildDashboardPipelineOptions(leadPipelines);
+
   return (
     <div className="flex flex-wrap items-end gap-3 rounded-md border border-product-divider bg-product-toolbar p-3">
       <div className="min-w-[14rem]">
@@ -66,18 +74,17 @@ export function DashboardFilters({
           Pipeline de Negócios
         </Label>
         <Select
-          value={pipelineId ?? "__default__"}
-          onValueChange={(v) => onPipelineChange(v === "__default__" ? null : v)}
-          disabled={disabled || pipelines.length === 0}
+          value={resolveDashboardPipelineValue(pipelineId, pipelineOptions)}
+          onValueChange={(v) => onPipelineChange(v === DEFAULT_PIPELINE_VALUE ? null : v)}
+          disabled={disabled || pipelineOptions.length <= 1}
         >
           <SelectTrigger id="dash-pipeline" className="mt-1 h-9 w-full">
-            <SelectValue placeholder="Pipeline padrão" />
+            <SelectValue placeholder="Nenhum pipeline disponível" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="__default__">Pipeline padrão</SelectItem>
-            {pipelines.map((p) => (
-              <SelectItem key={p.id} value={p.id}>
-                {p.name}
+            {pipelineOptions.map((option) => (
+              <SelectItem key={option.pipelineId} value={option.value}>
+                {option.label}
               </SelectItem>
             ))}
           </SelectContent>
@@ -89,18 +96,17 @@ export function DashboardFilters({
           Funil de Leads
         </Label>
         <Select
-          value={leadPipelineId ?? "__default__"}
-          onValueChange={(v) => onLeadPipelineChange(v === "__default__" ? null : v)}
-          disabled={disabled || leadPipelines.length === 0}
+          value={resolveDashboardPipelineValue(leadPipelineId, leadPipelineOptions)}
+          onValueChange={(v) => onLeadPipelineChange(v === DEFAULT_PIPELINE_VALUE ? null : v)}
+          disabled={disabled || leadPipelineOptions.length <= 1}
         >
           <SelectTrigger id="dash-lead-pipeline" className="mt-1 h-9 w-full">
-            <SelectValue placeholder="Funil padrão" />
+            <SelectValue placeholder="Nenhum funil disponível" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="__default__">Funil padrão</SelectItem>
-            {leadPipelines.map((p) => (
-              <SelectItem key={p.id} value={p.id}>
-                {p.name}
+            {leadPipelineOptions.map((option) => (
+              <SelectItem key={option.pipelineId} value={option.value}>
+                {option.label}
               </SelectItem>
             ))}
           </SelectContent>

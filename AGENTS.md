@@ -1,11 +1,12 @@
-- O painel de vendas usa a origem principal do Lead e explicita a cobertura de atribuição; nunca presume vínculos históricos ambíguos — evita atribuir receita ao canal errado.
-- Ações manuais de atividades abertas na timeline usam o gerenciador global na área autenticada para preservar janelas e rascunhos durante a navegação, sem alterar as mutações existentes.
-- Datas e horários de atividades usam seletores controlados compartilhados com adaptadores local/ISO e intervalos de 15 minutos, para manter consistência visual sem alterar formatos persistidos.
+- O painel de vendas usa a origem principal do Lead e explicita a cobertura; nunca presume vínculos históricos ambíguos.
+- Ações manuais da timeline usam o gerenciador global autenticado para preservar janelas e rascunhos na navegação.
+- Datas e horários de atividades usam seletores compartilhados, adaptadores local/ISO e intervalos de 15 minutos.
 - O editor visual de Workflows separa canvas e configuração detalhada sobre o mesmo rascunho, mantendo as ações e a publicação existentes sem alterar a execução.
 - Variáveis novas de Workflows usam aliases PT-BR sem acentos em snake_case; o motor mantém aliases técnicos antigos para compatibilidade com fluxos salvos.
-- Arquétipos do White Label são catálogos estáticos completos aplicados somente no workspace; substituem estilo, preservam identidade/assets e continuam usando o `theme` existente para evitar estado persistido duplicado.
+- Arquétipos White Label são catálogos do workspace; substituem estilo, preservam identidade/assets e usam o `theme` existente.
 - Grades baseadas em `Table` usam uma barra horizontal espelhada e persistente no componente compartilhado, evitando wrappers concorrentes e mantendo a navegação lateral acessível em listas longas.
 - Chamadas de chat de IA passam por `aiChatFetch` (src/lib/ai/provider-resolver.server.ts), que usa o provedor configurado no workspace (Lovable AI por padrão) sem fallback automático em erro — permite IA própria por workspace com chaves cifradas só no servidor.
 - Tabelas reordenáveis usam a fundação compartilhada `SortableColumns` e persistem a ordem por `gridKey`, preservando colunas estruturais fixas — evita implementações DnD divergentes.
 - Cada módulo principal usa um primeiro grupo “Visão geral” com “Dashboard”; listagens permanecem em rotas próprias — separa acompanhamento executivo da operação.
 - Existem seis módulos verticais (crm, ats, people, contracts, projects, finance) sobre o Core ERP; `services` é id legado absorvido pelo TechContracts e listas de interface usam `VERTICAL_MODULE_LIST` — evita reintroduzir um módulo "TechServices" inexistente.
+- Novas telas e redesigns relevantes exigem mockup renderizado e aprovação antes do código; correções pontuais sem decisão visual não.

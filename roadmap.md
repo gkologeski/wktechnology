@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Corrigir a duplicação visual dos funis no Dashboard de Vendas e formalizar mockups prévios para novas telas e redesenhos.
+
 - [x] Criar dashboards de TechContracts, TechProjects e TechPeople; padronizar “Visão geral > Dashboard” no topo de TechSales, TechHire, TechFinance e TechERP.
 
 - [ ] Permitir reordenar colunas por drag-and-drop no cabeçalho e no seletor “Colunas” em todas as tabelas, com persistência por usuário e tabela.

@@ -12,6 +12,17 @@ registra o achado e abre um plano novo do tipo `refactor` ou `feature`.
 Bugs de UI acumulados entram em **um único plano semanal de polimento**, não um
 documento por alteração.
 
+## Mockup antes da implementação
+
+Toda nova tela ou redesign relevante começa com um mockup/protótipo renderizado
+para revisão e aprovação explícita antes do código definitivo. Quando a direção
+visual estiver aberta, apresentar de duas a três alternativas comparáveis;
+quando o padrão já estiver definido, apresentar ao menos uma proposta fiel ao
+design system.
+
+Correções pontuais de texto, dados, acessibilidade ou comportamento não exigem
+mockup, salvo quando envolverem uma decisão visual relevante.
+
 ## Template — bug
 
 ```text
@@ -43,6 +54,7 @@ typecheck, lint, teste manual da rota afetada.
 # [feature] <nome>
 
 ## Objetivo de produto
+## Mockup aprovado (referência da direção escolhida)
 ## Telas e rotas afetadas
 ## Dados (tabelas, campos novos, GRANT + RLS quando houver tabela nova)
 ## Permissões (chaves RBAC usadas)
