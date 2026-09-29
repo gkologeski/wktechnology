@@ -412,7 +412,7 @@ async function callAi(prompt: string, model: string): Promise<AiResult> {
       ],
       temperature: 0.2,
     }),
-  });
+  }, { feature: "resumo" });
   if (!res.ok) {
     const t = await res.text();
     throw new Error(`AI Gateway ${res.status}: ${t.slice(0, 200)}`);

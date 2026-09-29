@@ -34,7 +34,7 @@ export const generateJobDescription = createServerFn({ method: "POST" })
         ],
         response_format: { type: "json_object" },
       }),
-    });
+    }, { feature: "descricao_vaga" });
     if (!r.ok) throw new Error(`AI Gateway ${r.status}`);
     const j = await r.json();
     try {

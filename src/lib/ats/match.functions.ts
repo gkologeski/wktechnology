@@ -18,7 +18,7 @@ async function callAi(systemPrompt: string, userPrompt: string) {
       ],
       response_format: { type: "json_object" },
     }),
-  });
+  }, { feature: "match_vaga" });
   if (!r.ok) throw new Error(`AI Gateway ${r.status}: ${await r.text().catch(() => "")}`);
   const j = await r.json();
   const txt = j.choices?.[0]?.message?.content ?? "{}";

@@ -1,4 +1,4 @@
-import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
+import { aiChatFetch, workspaceForRecord } from "@/lib/ai/provider-resolver.server";
 import { createFileRoute } from "@tanstack/react-router";
 import { verifyTwilioSignature } from "@/lib/twilio-signature.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -133,7 +133,7 @@ export const Route = createFileRoute("/api/public/twilio/recording-status")({
               ],
               temperature: 0.1,
             }),
-          });
+          }, { workspaceId: await workspaceForRecord(null, activity?.owner_id), feature: "transcricao_ligacao", triggerSource: "automatic" });
           if (!aiRes.ok) {
             const t = await aiRes.text();
             throw new Error(`AI Gateway ${aiRes.status}: ${t.slice(0, 200)}`);

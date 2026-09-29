@@ -1,5 +1,5 @@
 // Server-only helpers for AI analysis of user-submitted bug reports.
-import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
+import { aiChatFetch, workspaceForRecord } from "@/lib/ai/provider-resolver.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { BUG_CATEGORIES, BUG_KINDS } from "@/lib/bug-report-taxonomy";
 
@@ -187,7 +187,7 @@ type AiResult = {
   lovable_prompt: string;
 };
 
-async function callAi(prompt: string, model: string): Promise<AiResult> {
+async function callAi(prompt: string, model: string, aiWs?: string | null): Promise<AiResult> {
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
   const res = await aiChatFetch({
@@ -201,7 +201,7 @@ async function callAi(prompt: string, model: string): Promise<AiResult> {
       ],
       temperature: 0.2,
     }),
-  });
+  }, { workspaceId: aiWs ?? null, feature: "analise_chamado", triggerSource: "automatic" });
   if (!res.ok) {
     const t = await res.text();
     throw new Error(`AI Gateway ${res.status}: ${t.slice(0, 300)}`);
@@ -261,7 +261,7 @@ export async function analyzeBugReportById(bugReportId: string) {
   }
 
   try {
-    const ai = await callAi(buildPrompt(report, reporter), DEFAULT_MODEL);
+    const ai = await callAi(buildPrompt(report, reporter), DEFAULT_MODEL, await workspaceForRecord(null, report.owner_id));
     const { data: inserted, error: insErr } = await supabaseAdmin
       .from("bug_report_analyses")
       .insert({

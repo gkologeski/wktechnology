@@ -1,5 +1,5 @@
 // Engine de análise de sentimento de mensagens (WhatsApp/email/atividades).
-import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
+import { aiChatFetch, workspaceForRecord } from "@/lib/ai/provider-resolver.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const MODEL = "google/gemini-2.5-flash-lite";
@@ -19,7 +19,7 @@ function clampScore(n: unknown): number {
   return Math.max(-1, Math.min(1, v));
 }
 
-async function classify(text: string): Promise<{
+async function classify(text: string, aiWs?: string | null): Promise<{
   label: "positive" | "neutral" | "negative";
   score: number;
   emotion: string | null;
@@ -42,7 +42,7 @@ async function classify(text: string): Promise<{
       ],
       temperature: 0.1,
     }),
-  });
+  }, { workspaceId: aiWs, feature: "sentimento", triggerSource: aiWs === undefined ? undefined : "automatic" });
   if (!res.ok) return null;
   const j = (await res.json()) as { choices?: { message?: { content?: string } }[] };
   const raw = (j.choices?.[0]?.message?.content ?? "")
@@ -127,7 +127,7 @@ export async function tickSentiment(batch = 20): Promise<{ processed: number; er
     errors = 0;
   for (const p of pending) {
     try {
-      const cls = await classify(p.text);
+      const cls = await classify(p.text, await workspaceForRecord(null, p.owner_id));
       if (!cls) {
         errors++;
         continue;

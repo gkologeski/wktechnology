@@ -106,7 +106,7 @@ Quando citar dados, use marcações como [1], [2] que se referem às fontes. Se 
         ],
         temperature: 0.3,
       }),
-    });
+    }, { feature: "copiloto" });
     if (!res.ok) {
       const t = await res.text();
       throw new Error(`AI Gateway ${res.status}: ${t.slice(0, 200)}`);

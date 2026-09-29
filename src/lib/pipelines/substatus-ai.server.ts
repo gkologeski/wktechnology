@@ -150,7 +150,7 @@ export async function requestSubstatusSuggestions(
         },
       },
     }),
-  });
+  }, { feature: "subetapa_pipeline" });
 
   if (!res.ok) {
     const body = await res.text();

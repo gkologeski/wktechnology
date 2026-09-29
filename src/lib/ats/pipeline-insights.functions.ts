@@ -32,7 +32,7 @@ async function callAi(messages: Array<{ role: string; content: string }>) {
       messages,
       response_format: { type: "json_object" },
     }),
-  });
+  }, { feature: "insights_pipeline" });
   if (r.status === 429)
     throw new Error("Limite de uso da IA atingido. Tente novamente em alguns instantes.");
   if (r.status === 402)

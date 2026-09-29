@@ -15,7 +15,7 @@ async function callAi(messages: Array<{ role: string; content: string }>) {
     method: "POST",
     headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
     body: JSON.stringify({ model: MODEL, messages }),
-  });
+  }, { feature: "copiloto_global" });
   if (r.status === 429)
     throw new Error("AI Gateway: limite de requisições. Tente novamente em instantes.");
   if (r.status === 402)

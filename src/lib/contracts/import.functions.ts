@@ -92,7 +92,7 @@ async function callGeminiExtract(
       ],
       response_format: { type: "json_object" },
     }),
-  });
+  }, { feature: "importacao_contrato" });
 
   if (!resp.ok) {
     const body = await resp.text();

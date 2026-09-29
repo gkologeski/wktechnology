@@ -69,7 +69,7 @@ Nunca invente dados. Se um campo não estiver no texto, use null ou [].`;
         ],
         response_format: { type: "json_object" },
       }),
-    });
+    }, { feature: "leitura_curriculo" });
     if (!res.ok) {
       const txt = await res.text();
       if (res.status === 402)

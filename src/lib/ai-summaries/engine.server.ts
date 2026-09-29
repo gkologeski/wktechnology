@@ -1,7 +1,7 @@
 // Engine que gera AI summaries automaticamente após nova atividade.
 // Roda via cron tick. Detecta entidades com atividades novas desde o último
 // summary e dispara geração com debounce.
-import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
+import { aiChatFetch, workspaceForRecord } from "@/lib/ai/provider-resolver.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const MODEL = "google/gemini-2.5-flash";
@@ -157,7 +157,7 @@ Mensagens (ordem cronológica):
 ${lines.join("\n")}`;
 }
 
-async function callAi(prompt: string) {
+async function callAi(prompt: string, aiWs?: string | null) {
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
   const res = await aiChatFetch({
@@ -171,7 +171,7 @@ async function callAi(prompt: string) {
       ],
       temperature: 0.2,
     }),
-  });
+  }, { workspaceId: aiWs ?? null, feature: "resumo_automatico", triggerSource: "automatic" });
   if (!res.ok) throw new Error(`AI Gateway ${res.status}`);
   const j = (await res.json()) as { choices?: { message?: { content?: string } }[] };
   const raw = j.choices?.[0]?.message?.content ?? "";
@@ -263,7 +263,7 @@ async function summarizeOne(c: Candidate): Promise<"ok" | "skipped" | "error"> {
     const msgs = await collectMessages(c.entity, c.entity_id, "conversation", 60);
     if (msgs.length === 0) return "skipped";
     const prompt = buildPrompt(msgs, "conversation");
-    const ai = await callAi(prompt);
+    const ai = await callAi(prompt, await workspaceForRecord(null, c.owner_id));
     const { error } = await supabaseAdmin.from("ai_summaries").insert({
       owner_id: c.owner_id,
       entity: c.entity,

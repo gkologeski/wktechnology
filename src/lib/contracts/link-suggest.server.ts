@@ -75,7 +75,7 @@ export async function requestAiLinkSuggestions(prompt: string): Promise<AiSugges
       ],
       response_format: { type: "json_object" },
     }),
-  });
+  }, { feature: "vinculo_contrato" });
 
   if (!resp.ok) {
     const body = await resp.text();
