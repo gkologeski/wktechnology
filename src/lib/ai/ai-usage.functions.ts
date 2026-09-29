@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const Filters = z.object({
+export const Filters = z.object({
   from: z.string().datetime(),
   to: z.string().datetime(),
   feature: z.string().max(60).optional(),

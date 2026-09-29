@@ -714,14 +714,12 @@ export const consumeInvite = createServerFn({ method: "POST" })
 
     // Atribui o job_role padrão para que user_has_permission retorne true.
     // Sem isso, RLS bloqueia inserts em activities/deals/etc. para membros novos.
-    const jobRoleId =
-      inv.role === "owner"
-        ? "aaaaaaaa-0000-4000-8000-000000000009"
-        : inv.role === "admin"
-          ? "aaaaaaaa-0000-4000-8000-000000000008"
-          : inv.role === "manager"
-            ? "aaaaaaaa-0000-4000-8000-000000000002"
-            : "aaaaaaaa-0000-4000-8000-000000000001"; // member -> Vendedor
+    const { resolveDefaultJobRoleId } =
+      await import("@/lib/access-control/default-job-role.server");
+    const jobRoleId = await resolveDefaultJobRoleId(
+      supabaseAdmin as unknown as Parameters<typeof resolveDefaultJobRoleId>[0],
+      inv.role,
+    );
 
     // Convenção do RBAC: owner_id nessas tabelas é o auth.uid do criador do
     // workspace (é o que as policies exigem para escrita/gestão).

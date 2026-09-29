@@ -31,3 +31,10 @@
 - [x] Corrigir regressões do Design System em botões principais e bordas coloridas na área autenticada.
 - [x] Implementar no /dashboard a jornada de Leads até vendas, canais agrupados, reconciliação conservadora e validação UX/UI ≥ 9 (avaliação final: 9,2/10).
 - [x] Corrigir o alerta de negócios sem interação usando a data efetiva por tipo de atividade e manter a rolagem horizontal visível nas grades longas.
+
+## Valores chumbados por fases
+- [ ] Fase 1: inventário e exceções verificáveis
+- [ ] Fase 2: URLs, mocks de produção e cargos padrão
+- [ ] Fase 3: fuso, limites e exportações
+- [ ] Fase 4: interface e branding
+- [ ] Fase 5: prevenção, testes e documentação

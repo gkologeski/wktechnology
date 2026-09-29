@@ -581,9 +581,8 @@ export async function startVapiCall(opts: {
   }
 
   const webhookSecret = process.env.VAPI_WEBHOOK_SECRET;
-  const baseUrl =
-    process.env.LOVABLE_APP_URL ??
-    "https://project--68dcfa85-b6da-4030-a825-b896ca621e0c.lovable.app";
+  const { publicAppOrigin } = await import("@/lib/runtime-config.server");
+  const baseUrl = publicAppOrigin();
 
   // Body actually sent to Vapi (includes the real secret).
   const outgoingAssistant: Record<string, unknown> = { ...assistant };

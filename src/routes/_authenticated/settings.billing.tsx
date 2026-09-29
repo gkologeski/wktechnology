@@ -1,12 +1,9 @@
 // /settings/billing — usuário visualiza plano atual, uso e tabela comparativa.
 import { createFileRoute } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { toast } from "sonner";
 import { Check, Lock, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
-import { Can } from "@/lib/access-control/use-permissions";
-import { BILLING_MANAGE } from "@/lib/access-control/admin-permission-keys";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,8 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getMyPlan, listPlansWithEntitlements, requestSelfUpgrade } from "@/lib/billing.functions";
-import { PLAN_LABELS, type PlanCode } from "@/lib/entitlements";
+import { getMyPlan, listPlansWithEntitlements } from "@/lib/billing.functions";
 import { useEntitlements } from "@/lib/use-entitlements";
 import { ModulePlansSection } from "@/components/billing/module-plans-section";
 
@@ -111,8 +107,6 @@ function BillingPage() {
   const ent = useEntitlements();
   const planFetcher = useServerFn(getMyPlan);
   const listFetcher = useServerFn(listPlansWithEntitlements);
-  const upgradeFn = useServerFn(requestSelfUpgrade);
-  const qc = useQueryClient();
 
   const planQuery = useQuery({
     queryKey: ["billing", "my-plan"],
@@ -121,15 +115,6 @@ function BillingPage() {
   const plansQuery = useQuery({
     queryKey: ["billing", "plans-compare"],
     queryFn: () => listFetcher(),
-  });
-
-  const upgrade = useMutation({
-    mutationFn: (plan_code: PlanCode) => upgradeFn({ data: { plan_code } }),
-    onSuccess: () => {
-      toast.success("Plano alterado. Pagamento será integrado em breve.");
-      qc.invalidateQueries({ queryKey: ["billing"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
   });
 
   const plan = planQuery.data?.plan;
@@ -226,7 +211,7 @@ function BillingPage() {
         <CardHeader>
           <CardTitle>Comparativo de planos</CardTitle>
           <CardDescription>
-            Escolha um plano abaixo. A cobrança real será integrada em breve.
+            Consulte os recursos disponíveis. Alterações de plano são feitas pelo atendimento.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -240,25 +225,9 @@ function BillingPage() {
                     <CardDescription>R$ {Number(p.price_monthly).toFixed(2)} / mês</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <Can
-                      any={BILLING_MANAGE}
-                      fallback={
-                        <Button className="w-full" variant="secondary" disabled>
-                          {isCurrent ? "Plano atual" : "Sem permissão"}
-                        </Button>
-                      }
-                    >
-                      <Button
-                        className="w-full"
-                        variant={isCurrent ? "secondary" : "default"}
-                        disabled={isCurrent || upgrade.isPending}
-                        onClick={() => upgrade.mutate(p.code as PlanCode)}
-                      >
-                        {isCurrent
-                          ? "Plano atual"
-                          : `Mudar para ${PLAN_LABELS[p.code as PlanCode]}`}
-                      </Button>
-                    </Can>
+                    <Button className="w-full" variant="secondary" disabled>
+                      {isCurrent ? "Plano atual" : "Fale com o atendimento"}
+                    </Button>
                   </CardContent>
                 </Card>
               );

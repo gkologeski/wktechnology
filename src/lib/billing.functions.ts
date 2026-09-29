@@ -243,25 +243,12 @@ export const setWorkspacePlan = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** Auto-upgrade do próprio usuário (mock — sem cobrança real). */
+/** Alteração self-service permanece bloqueada até existir cobrança real. */
 export const requestSelfUpgrade = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ plan_code: PlanCodeZ }).parse(i))
-  .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const owner = await resolveWorkspaceOwner(context.userId);
-    if (owner !== context.userId) {
-      throw new Error("Apenas o dono do workspace pode alterar o plano.");
-    }
-    const { error } = await supabaseAdmin.from("workspace_subscriptions").upsert(
-      {
-        workspace_owner_id: owner,
-        plan_code: data.plan_code,
-        status: "active",
-        current_period_start: new Date().toISOString(),
-      } as never,
-      { onConflict: "workspace_owner_id" },
+  .handler(async () => {
+    throw new Error(
+      "A alteração online de plano ainda não está disponível. Entre em contato com o atendimento.",
     );
-    if (error) throw new Error(error.message);
-    return { ok: true, mock: true };
   });
