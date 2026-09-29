@@ -131,7 +131,7 @@ Enums: `contract_status`, `contract_role`, `contract_approval_stage`,
 `contract_approval_status`. Verificação de integridade da assinatura:
 `esign_verify_hash`, `esign_check_completion`, `ats_offers_sync_on_esign`.
 
-### 2.6 TechService
+### 2.6 Atendimento (Core ERP — não é um módulo vertical)
 
 `tickets`, `sla_policies`, `macros`, `kb_articles`, `kb_categories`,
 `live_chat_sessions`, `live_chat_messages`, `playbooks`, `playbook_responses`,

@@ -65,7 +65,7 @@ const MENU_AREAS: Array<{ area: string; groups: SidebarGroup[] }> = [
   { area: "Workspace / ERP", groups: ERP_SIDEBAR_GROUPS },
   { area: "TechHire", groups: ATS_SIDEBAR_GROUPS },
   { area: "TechContracts", groups: CONTRACTS_SIDEBAR_GROUPS },
-  { area: "TechServices", groups: SERVICES_SIDEBAR_GROUPS },
+  { area: "Serviços (legado — TechContracts)", groups: SERVICES_SIDEBAR_GROUPS },
   { area: "TechProjects", groups: PROJECTS_SIDEBAR_GROUPS },
   { area: "TechFinance", groups: FINANCE_SIDEBAR_GROUPS },
   { area: "TechPeople", groups: PEOPLE_SIDEBAR_GROUPS },

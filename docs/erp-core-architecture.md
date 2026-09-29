@@ -2,8 +2,9 @@
 
 ## Camadas
 
-- **Core ERP (globais)** — entidades e configurações compartilhadas por todos os módulos: Empresas, Contatos, Produtos, Serviços (catálogo), Usuários/Times, Permissões, Pipelines.
-- **Módulos verticais** — TechSales (crm), TechHire (ats), TechContracts (contracts), TechServices (services), TechProjects (projects), TechFinance (finance).
+- **Core ERP (globais)** — entidades e configurações compartilhadas por todos os módulos: Empresas, Contatos, Produtos, Serviços (catálogo), Usuários/Times, Permissões, Pipelines. Inclui também o atendimento (tickets, SLA, base de conhecimento), que não é um módulo vertical.
+- **Módulos verticais (seis)** — TechSales (crm), TechHire (ats), TechPeople (people), TechContracts (contracts), TechProjects (projects), TechFinance (finance).
+- **Não existe módulo TechServices.** `/services` é a visão operacional/faturamento do TechContracts; o id legado `services` permanece em `public.modules` apenas por compatibilidade de licenciamento.
 
 Cada módulo consome o Core e adiciona seu próprio menu, telas e regras de negócio.
 

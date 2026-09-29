@@ -2,12 +2,18 @@
 
 ## 1. Arquitetura em duas camadas
 
-- **Core ERP** — entidades e configurações compartilhadas: Empresas, Contatos,
-  Produtos, Catálogo de Serviços, Usuários/Times, Permissões, Pipelines,
-  Arquivos, Workflows, Integrações, Branding.
-- **Módulos verticais** — TechSales (`crm`), TechHire (`ats`), TechPeople
-  (`people`), TechContracts (`contracts`), TechService (`service`), TechFinance
-  (`finance`), TechProjects (`projects`).
+- **Core ERP (TechERP)** — entidades e configurações compartilhadas: Empresas,
+  Contatos, Produtos, Catálogo de Serviços, Usuários/Times, Permissões,
+  Pipelines, Arquivos, Workflows, Integrações, Branding. Também abriga o
+  atendimento (tickets, SLA, base de conhecimento, chat, macros), que **não** é
+  um módulo vertical.
+- **Módulos verticais (seis)** — TechSales (`crm`), TechHire (`ats`), TechPeople
+  (`people`), TechContracts (`contracts`), TechFinance (`finance`), TechProjects
+  (`projects`).
+
+Não existe módulo "TechService"/"TechServices". O id legado `services` continua
+em `public.modules` por compatibilidade de licenciamento, mas `/services` é a
+visão operacional/faturamento do **TechContracts**.
 
 Cada módulo consome o Core e adiciona menu, telas e regras próprias. O menu
 lateral é montado como `CORE_SIDEBAR_GROUPS → <MODULE>_SIDEBAR_GROUPS →
@@ -63,9 +69,9 @@ templates, install, observability).
 `/contracts/templates`, `/catalog/contracting-presets`, `/settings/clauses`,
 `/settings/esign`.
 
-**TechService** — `/tickets`, `/tickets/$id`, `/settings/sla`,
-`/settings/macros`, `/settings/kb`, `/settings/playbooks`, `/my-bug-reports`,
-`/admin/bug-reports`.
+**Atendimento (Core ERP, não é módulo)** — `/tickets`, `/tickets/$id`,
+`/settings/sla`, `/settings/macros`, `/settings/kb`, `/settings/playbooks`,
+`/my-bug-reports`, `/admin/bug-reports`.
 
 **TechFinance** — `/finance`, `/finance/payable`, `/finance/receivable`,
 `/finance/entries/$id`, `/finance/recurrences`, `/finance/nfse`, `/invoices`,

@@ -25,7 +25,7 @@ function PermissionsPage() {
       <PageHeader
         eyebrow="Controle de acesso"
         title="Permissões"
-        description="Configure quem pode ver, criar, editar e gerenciar recursos em cada módulo (TechSales, TechHire, TechPeople, TechContracts, TechService, TechFinance e TechProjects)."
+        description="Configure quem pode ver, criar, editar e gerenciar recursos em cada módulo (TechSales, TechHire, TechPeople, TechContracts, TechFinance e TechProjects), além de atendimento e serviços."
       />
       <PermissionsMatrix />
     </div>

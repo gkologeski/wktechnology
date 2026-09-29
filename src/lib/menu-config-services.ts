@@ -1,5 +1,6 @@
-// Menu lateral do módulo TechServices.
-// Renderizado pelo AppSidebar quando `activeModule === 'services'`.
+// Menu lateral do id legado `services` (não existe módulo "TechServices").
+// `/services` é a visão operacional/faturamento do TechContracts; este grupo só
+// é renderizado pelo AppSidebar se o id legado ainda estiver ativo no banco.
 import { Package } from "lucide-react";
 import { MENU_PERMISSIONS, type SidebarGroup } from "@/lib/menu-config";
 

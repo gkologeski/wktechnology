@@ -82,7 +82,13 @@ export const MODULE_META: Record<string, { label: string; tone: string }> = {
     label: "TechContracts",
     tone: "bg-amber-500/10 text-amber-600 border-amber-500/20",
   },
-  techservice: { label: "TechService", tone: "bg-rose-500/10 text-rose-600 border-rose-500/20" },
+  // Prefixo de permissão legado `techservice.*` — não é um módulo do produto.
+  // Agrupa atendimento (tickets, SLA, base de conhecimento) e o catálogo de
+  // serviços operacionais. As chaves persistidas no banco não mudam.
+  techservice: {
+    label: "Atendimento e serviços",
+    tone: "bg-rose-500/10 text-rose-600 border-rose-500/20",
+  },
   techfinance: { label: "TechFinance", tone: "bg-cyan-500/10 text-cyan-600 border-cyan-500/20" },
   techprojects: {
     label: "TechProjects",

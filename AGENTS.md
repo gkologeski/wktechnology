@@ -8,3 +8,4 @@
 - Chamadas de chat de IA passam por `aiChatFetch` (src/lib/ai/provider-resolver.server.ts), que usa o provedor configurado no workspace (Lovable AI por padrão) sem fallback automático em erro — permite IA própria por workspace com chaves cifradas só no servidor.
 - Tabelas reordenáveis usam a fundação compartilhada `SortableColumns` e persistem a ordem por `gridKey`, preservando colunas estruturais fixas — evita implementações DnD divergentes.
 - Cada módulo principal usa um primeiro grupo “Visão geral” com “Dashboard”; listagens permanecem em rotas próprias — separa acompanhamento executivo da operação.
+- Existem seis módulos verticais (crm, ats, people, contracts, projects, finance) sobre o Core ERP; `services` é id legado absorvido pelo TechContracts e listas de interface usam `VERTICAL_MODULE_LIST` — evita reintroduzir um módulo "TechServices" inexistente.

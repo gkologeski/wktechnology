@@ -57,6 +57,9 @@ export function detectModuleFromPath(pathname: string): ModuleId | null {
 // ────────────────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = "erp.activeModule";
+// Inclui o id legado `services` apenas para não invalidar preferências antigas
+// já persistidas em localStorage. Não existe módulo "TechServices" — ver
+// `src/lib/modules/registry.ts`.
 const VALID_IDS: readonly ModuleId[] = [
   "crm",
   "ats",

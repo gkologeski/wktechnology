@@ -92,7 +92,7 @@ export const getAccessBundle = createServerFn({ method: "GET" })
 
     // Todas as leituras de catálogo são paginadas: `permissions` e
     // `permission_set_items` já passam de 1.000 linhas e eram truncadas pelo
-    // Data API, fazendo módulos inteiros (TechSales, TechService, TechProjects)
+    // Data API, fazendo módulos inteiros (TechSales, TechProjects, atendimento)
     // desaparecerem da matriz.
     const [permRows, setRows, itemRows, roleRows, roleSetRows, ruleRows, memberRows] =
       await Promise.all([

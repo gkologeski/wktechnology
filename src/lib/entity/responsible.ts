@@ -47,7 +47,7 @@ export const RESPONSIBLE_COLUMNS_FULL: ResponsibleColumns = [
   "owner_id",
 ];
 export const RESPONSIBLE_COLUMNS_BASIC: ResponsibleColumns = ["assigned_to", "owner_id"];
-/** Chamados (TechService) usam `assignee_id` como coluna de responsável. */
+/** Chamados (atendimento) usam `assignee_id` como coluna de responsável. */
 export const RESPONSIBLE_COLUMNS_TICKET: ResponsibleColumns = ["assignee_id"];
 
 /**
