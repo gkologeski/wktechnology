@@ -7,3 +7,4 @@
 - Grades baseadas em `Table` usam uma barra horizontal espelhada e persistente no componente compartilhado, evitando wrappers concorrentes e mantendo a navegação lateral acessível em listas longas.
 - Chamadas de chat de IA passam por `aiChatFetch` (src/lib/ai/provider-resolver.server.ts), que usa o provedor configurado no workspace (Lovable AI por padrão) sem fallback automático em erro — permite IA própria por workspace com chaves cifradas só no servidor.
 - Tabelas reordenáveis usam a fundação compartilhada `SortableColumns` e persistem a ordem por `gridKey`, preservando colunas estruturais fixas — evita implementações DnD divergentes.
+- Cada módulo principal usa um primeiro grupo “Visão geral” com “Dashboard”; listagens permanecem em rotas próprias — separa acompanhamento executivo da operação.

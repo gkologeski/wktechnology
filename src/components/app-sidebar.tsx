@@ -68,9 +68,9 @@ export function AppSidebar() {
                     : effectiveModuleId === "people"
                       ? PEOPLE_SIDEBAR_GROUPS
                       : SIDEBAR_GROUPS;
-        // Prepend "Cadastros" (Core ERP) para módulos consumidores.
+        // O Dashboard permanece no topo; Cadastros entra logo após a Visão geral.
         return shouldInjectCoreGroups(effectiveModuleId)
-          ? [...CORE_SIDEBAR_GROUPS, ...moduleGroups]
+          ? [moduleGroups[0], ...CORE_SIDEBAR_GROUPS, ...moduleGroups.slice(1)].filter(Boolean)
           : moduleGroups;
       })();
 

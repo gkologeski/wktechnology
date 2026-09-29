@@ -19,9 +19,12 @@ import type { SidebarGroup } from "@/lib/menu-config";
 
 export const ERP_SIDEBAR_GROUPS: SidebarGroup[] = [
   {
+    label: "Visão geral",
+    items: [{ title: "Dashboard", url: "/home", icon: Home }],
+  },
+  {
     label: "ERP",
     items: [
-      { title: "Home", url: "/home", icon: Home },
       { title: "Módulos", url: "/modules", icon: Boxes },
       { title: "Arquivos", url: "/files", icon: FolderOpen },
       { title: "Marketplace", url: "/settings/marketplace", icon: Store },

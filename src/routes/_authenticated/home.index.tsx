@@ -27,6 +27,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export const Route = createFileRoute("/_authenticated/home/")({
+  head: () => ({
+    meta: [
+      { title: "Dashboard | TechERP" },
+      { name: "description", content: "Visão consolidada dos módulos ativos do TechERP." },
+      { property: "og:title", content: "Dashboard | TechERP" },
+      { property: "og:description", content: "Visão consolidada dos módulos ativos do TechERP." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: ErpHomeDashboard,
 });
 

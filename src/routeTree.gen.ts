@@ -184,6 +184,7 @@ import { Route as AuthenticatedProjectsSpacesRouteImport } from './routes/_authe
 import { Route as AuthenticatedProjectsMyWorkRouteImport } from './routes/_authenticated/projects.my-work'
 import { Route as AuthenticatedProjectsMyHoursRouteImport } from './routes/_authenticated/projects.my-hours'
 import { Route as AuthenticatedProjectsHoursReviewRouteImport } from './routes/_authenticated/projects.hours-review'
+import { Route as AuthenticatedProjectsDashboardRouteImport } from './routes/_authenticated/projects.dashboard'
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedPeoplePsychosocialRouteImport } from './routes/_authenticated/people.psychosocial'
 import { Route as AuthenticatedPeopleOnboardingTemplatesRouteImport } from './routes/_authenticated/people.onboarding-templates'
@@ -193,6 +194,7 @@ import { Route as AuthenticatedPeopleMyTeamRouteImport } from './routes/_authent
 import { Route as AuthenticatedPeopleIncidentsRouteImport } from './routes/_authenticated/people.incidents'
 import { Route as AuthenticatedPeopleImportFormsRouteImport } from './routes/_authenticated/people.import-forms'
 import { Route as AuthenticatedPeopleDocumentsRouteImport } from './routes/_authenticated/people.documents'
+import { Route as AuthenticatedPeopleDashboardRouteImport } from './routes/_authenticated/people.dashboard'
 import { Route as AuthenticatedPeopleContractMarginRouteImport } from './routes/_authenticated/people.contract-margin'
 import { Route as AuthenticatedPeopleBillingRouteImport } from './routes/_authenticated/people.billing'
 import { Route as AuthenticatedPeopleBenefitsRouteImport } from './routes/_authenticated/people.benefits'
@@ -225,6 +227,7 @@ import { Route as AuthenticatedFinanceBankAccountsRouteImport } from './routes/_
 import { Route as AuthenticatedFinanceAuditRouteImport } from './routes/_authenticated/finance.audit'
 import { Route as AuthenticatedDealsIdRouteImport } from './routes/_authenticated/deals.$id'
 import { Route as AuthenticatedContractsLinksRouteImport } from './routes/_authenticated/contracts.links'
+import { Route as AuthenticatedContractsDashboardRouteImport } from './routes/_authenticated/contracts.dashboard'
 import { Route as AuthenticatedContractsIdRouteImport } from './routes/_authenticated/contracts.$id'
 import { Route as AuthenticatedContactsIdRouteImport } from './routes/_authenticated/contacts.$id'
 import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenticated/companies.$id'
@@ -1376,6 +1379,12 @@ const AuthenticatedProjectsHoursReviewRoute =
     path: '/projects/hours-review',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedProjectsDashboardRoute =
+  AuthenticatedProjectsDashboardRouteImport.update({
+    id: '/projects/dashboard',
+    path: '/projects/dashboard',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProjectsIdRoute = AuthenticatedProjectsIdRouteImport.update({
   id: '/projects/$id',
   path: '/projects/$id',
@@ -1427,6 +1436,12 @@ const AuthenticatedPeopleDocumentsRoute =
   AuthenticatedPeopleDocumentsRouteImport.update({
     id: '/people/documents',
     path: '/people/documents',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPeopleDashboardRoute =
+  AuthenticatedPeopleDashboardRouteImport.update({
+    id: '/people/dashboard',
+    path: '/people/dashboard',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedPeopleContractMarginRoute =
@@ -1611,6 +1626,12 @@ const AuthenticatedContractsLinksRoute =
   AuthenticatedContractsLinksRouteImport.update({
     id: '/contracts/links',
     path: '/contracts/links',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedContractsDashboardRoute =
+  AuthenticatedContractsDashboardRouteImport.update({
+    id: '/contracts/dashboard',
+    path: '/contracts/dashboard',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedContractsIdRoute =
@@ -2659,6 +2680,7 @@ export interface FileRoutesByFullPath {
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/contracts/$id': typeof AuthenticatedContractsIdRoute
+  '/contracts/dashboard': typeof AuthenticatedContractsDashboardRoute
   '/contracts/links': typeof AuthenticatedContractsLinksRoute
   '/deals/$id': typeof AuthenticatedDealsIdRoute
   '/finance/audit': typeof AuthenticatedFinanceAuditRoute
@@ -2691,6 +2713,7 @@ export interface FileRoutesByFullPath {
   '/people/benefits': typeof AuthenticatedPeopleBenefitsRoute
   '/people/billing': typeof AuthenticatedPeopleBillingRoute
   '/people/contract-margin': typeof AuthenticatedPeopleContractMarginRoute
+  '/people/dashboard': typeof AuthenticatedPeopleDashboardRoute
   '/people/documents': typeof AuthenticatedPeopleDocumentsRoute
   '/people/import-forms': typeof AuthenticatedPeopleImportFormsRoute
   '/people/incidents': typeof AuthenticatedPeopleIncidentsRoute
@@ -2700,6 +2723,7 @@ export interface FileRoutesByFullPath {
   '/people/onboarding-templates': typeof AuthenticatedPeopleOnboardingTemplatesRoute
   '/people/psychosocial': typeof AuthenticatedPeoplePsychosocialRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/projects/dashboard': typeof AuthenticatedProjectsDashboardRoute
   '/projects/hours-review': typeof AuthenticatedProjectsHoursReviewRoute
   '/projects/my-hours': typeof AuthenticatedProjectsMyHoursRoute
   '/projects/my-work': typeof AuthenticatedProjectsMyWorkRoute
@@ -3035,6 +3059,7 @@ export interface FileRoutesByTo {
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/contracts/$id': typeof AuthenticatedContractsIdRoute
+  '/contracts/dashboard': typeof AuthenticatedContractsDashboardRoute
   '/contracts/links': typeof AuthenticatedContractsLinksRoute
   '/deals/$id': typeof AuthenticatedDealsIdRoute
   '/finance/audit': typeof AuthenticatedFinanceAuditRoute
@@ -3067,6 +3092,7 @@ export interface FileRoutesByTo {
   '/people/benefits': typeof AuthenticatedPeopleBenefitsRoute
   '/people/billing': typeof AuthenticatedPeopleBillingRoute
   '/people/contract-margin': typeof AuthenticatedPeopleContractMarginRoute
+  '/people/dashboard': typeof AuthenticatedPeopleDashboardRoute
   '/people/documents': typeof AuthenticatedPeopleDocumentsRoute
   '/people/import-forms': typeof AuthenticatedPeopleImportFormsRoute
   '/people/incidents': typeof AuthenticatedPeopleIncidentsRoute
@@ -3076,6 +3102,7 @@ export interface FileRoutesByTo {
   '/people/onboarding-templates': typeof AuthenticatedPeopleOnboardingTemplatesRoute
   '/people/psychosocial': typeof AuthenticatedPeoplePsychosocialRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/projects/dashboard': typeof AuthenticatedProjectsDashboardRoute
   '/projects/hours-review': typeof AuthenticatedProjectsHoursReviewRoute
   '/projects/my-hours': typeof AuthenticatedProjectsMyHoursRoute
   '/projects/my-work': typeof AuthenticatedProjectsMyWorkRoute
@@ -3417,6 +3444,7 @@ export interface FileRoutesById {
   '/_authenticated/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/_authenticated/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/_authenticated/contracts/$id': typeof AuthenticatedContractsIdRoute
+  '/_authenticated/contracts/dashboard': typeof AuthenticatedContractsDashboardRoute
   '/_authenticated/contracts/links': typeof AuthenticatedContractsLinksRoute
   '/_authenticated/deals/$id': typeof AuthenticatedDealsIdRoute
   '/_authenticated/finance/audit': typeof AuthenticatedFinanceAuditRoute
@@ -3449,6 +3477,7 @@ export interface FileRoutesById {
   '/_authenticated/people/benefits': typeof AuthenticatedPeopleBenefitsRoute
   '/_authenticated/people/billing': typeof AuthenticatedPeopleBillingRoute
   '/_authenticated/people/contract-margin': typeof AuthenticatedPeopleContractMarginRoute
+  '/_authenticated/people/dashboard': typeof AuthenticatedPeopleDashboardRoute
   '/_authenticated/people/documents': typeof AuthenticatedPeopleDocumentsRoute
   '/_authenticated/people/import-forms': typeof AuthenticatedPeopleImportFormsRoute
   '/_authenticated/people/incidents': typeof AuthenticatedPeopleIncidentsRoute
@@ -3458,6 +3487,7 @@ export interface FileRoutesById {
   '/_authenticated/people/onboarding-templates': typeof AuthenticatedPeopleOnboardingTemplatesRoute
   '/_authenticated/people/psychosocial': typeof AuthenticatedPeoplePsychosocialRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/_authenticated/projects/dashboard': typeof AuthenticatedProjectsDashboardRoute
   '/_authenticated/projects/hours-review': typeof AuthenticatedProjectsHoursReviewRoute
   '/_authenticated/projects/my-hours': typeof AuthenticatedProjectsMyHoursRoute
   '/_authenticated/projects/my-work': typeof AuthenticatedProjectsMyWorkRoute
@@ -3800,6 +3830,7 @@ export interface FileRouteTypes {
     | '/companies/$id'
     | '/contacts/$id'
     | '/contracts/$id'
+    | '/contracts/dashboard'
     | '/contracts/links'
     | '/deals/$id'
     | '/finance/audit'
@@ -3832,6 +3863,7 @@ export interface FileRouteTypes {
     | '/people/benefits'
     | '/people/billing'
     | '/people/contract-margin'
+    | '/people/dashboard'
     | '/people/documents'
     | '/people/import-forms'
     | '/people/incidents'
@@ -3841,6 +3873,7 @@ export interface FileRouteTypes {
     | '/people/onboarding-templates'
     | '/people/psychosocial'
     | '/projects/$id'
+    | '/projects/dashboard'
     | '/projects/hours-review'
     | '/projects/my-hours'
     | '/projects/my-work'
@@ -4176,6 +4209,7 @@ export interface FileRouteTypes {
     | '/companies/$id'
     | '/contacts/$id'
     | '/contracts/$id'
+    | '/contracts/dashboard'
     | '/contracts/links'
     | '/deals/$id'
     | '/finance/audit'
@@ -4208,6 +4242,7 @@ export interface FileRouteTypes {
     | '/people/benefits'
     | '/people/billing'
     | '/people/contract-margin'
+    | '/people/dashboard'
     | '/people/documents'
     | '/people/import-forms'
     | '/people/incidents'
@@ -4217,6 +4252,7 @@ export interface FileRouteTypes {
     | '/people/onboarding-templates'
     | '/people/psychosocial'
     | '/projects/$id'
+    | '/projects/dashboard'
     | '/projects/hours-review'
     | '/projects/my-hours'
     | '/projects/my-work'
@@ -4557,6 +4593,7 @@ export interface FileRouteTypes {
     | '/_authenticated/companies/$id'
     | '/_authenticated/contacts/$id'
     | '/_authenticated/contracts/$id'
+    | '/_authenticated/contracts/dashboard'
     | '/_authenticated/contracts/links'
     | '/_authenticated/deals/$id'
     | '/_authenticated/finance/audit'
@@ -4589,6 +4626,7 @@ export interface FileRouteTypes {
     | '/_authenticated/people/benefits'
     | '/_authenticated/people/billing'
     | '/_authenticated/people/contract-margin'
+    | '/_authenticated/people/dashboard'
     | '/_authenticated/people/documents'
     | '/_authenticated/people/import-forms'
     | '/_authenticated/people/incidents'
@@ -4598,6 +4636,7 @@ export interface FileRouteTypes {
     | '/_authenticated/people/onboarding-templates'
     | '/_authenticated/people/psychosocial'
     | '/_authenticated/projects/$id'
+    | '/_authenticated/projects/dashboard'
     | '/_authenticated/projects/hours-review'
     | '/_authenticated/projects/my-hours'
     | '/_authenticated/projects/my-work'
@@ -6192,6 +6231,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsHoursReviewRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/projects/dashboard': {
+      id: '/_authenticated/projects/dashboard'
+      path: '/projects/dashboard'
+      fullPath: '/projects/dashboard'
+      preLoaderRoute: typeof AuthenticatedProjectsDashboardRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/projects/$id': {
       id: '/_authenticated/projects/$id'
       path: '/projects/$id'
@@ -6253,6 +6299,13 @@ declare module '@tanstack/react-router' {
       path: '/people/documents'
       fullPath: '/people/documents'
       preLoaderRoute: typeof AuthenticatedPeopleDocumentsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/people/dashboard': {
+      id: '/_authenticated/people/dashboard'
+      path: '/people/dashboard'
+      fullPath: '/people/dashboard'
+      preLoaderRoute: typeof AuthenticatedPeopleDashboardRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/people/contract-margin': {
@@ -6477,6 +6530,13 @@ declare module '@tanstack/react-router' {
       path: '/contracts/links'
       fullPath: '/contracts/links'
       preLoaderRoute: typeof AuthenticatedContractsLinksRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/contracts/dashboard': {
+      id: '/_authenticated/contracts/dashboard'
+      path: '/contracts/dashboard'
+      fullPath: '/contracts/dashboard'
+      preLoaderRoute: typeof AuthenticatedContractsDashboardRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/contracts/$id': {
@@ -8159,6 +8219,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCatalogJobProfilesRoute: typeof AuthenticatedCatalogJobProfilesRoute
   AuthenticatedCatalogServicesRoute: typeof AuthenticatedCatalogServicesRoute
   AuthenticatedContractsIdRoute: typeof AuthenticatedContractsIdRoute
+  AuthenticatedContractsDashboardRoute: typeof AuthenticatedContractsDashboardRoute
   AuthenticatedContractsLinksRoute: typeof AuthenticatedContractsLinksRoute
   AuthenticatedFinanceAuditRoute: typeof AuthenticatedFinanceAuditRoute
   AuthenticatedFinanceBankAccountsRoute: typeof AuthenticatedFinanceBankAccountsRoute
@@ -8185,6 +8246,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPeopleBenefitsRoute: typeof AuthenticatedPeopleBenefitsRoute
   AuthenticatedPeopleBillingRoute: typeof AuthenticatedPeopleBillingRoute
   AuthenticatedPeopleContractMarginRoute: typeof AuthenticatedPeopleContractMarginRoute
+  AuthenticatedPeopleDashboardRoute: typeof AuthenticatedPeopleDashboardRoute
   AuthenticatedPeopleDocumentsRoute: typeof AuthenticatedPeopleDocumentsRoute
   AuthenticatedPeopleImportFormsRoute: typeof AuthenticatedPeopleImportFormsRoute
   AuthenticatedPeopleIncidentsRoute: typeof AuthenticatedPeopleIncidentsRoute
@@ -8194,6 +8256,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPeopleOnboardingTemplatesRoute: typeof AuthenticatedPeopleOnboardingTemplatesRoute
   AuthenticatedPeoplePsychosocialRoute: typeof AuthenticatedPeoplePsychosocialRoute
   AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
+  AuthenticatedProjectsDashboardRoute: typeof AuthenticatedProjectsDashboardRoute
   AuthenticatedProjectsHoursReviewRoute: typeof AuthenticatedProjectsHoursReviewRoute
   AuthenticatedProjectsMyHoursRoute: typeof AuthenticatedProjectsMyHoursRoute
   AuthenticatedProjectsMyWorkRoute: typeof AuthenticatedProjectsMyWorkRoute
@@ -8298,6 +8361,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCatalogJobProfilesRoute: AuthenticatedCatalogJobProfilesRoute,
   AuthenticatedCatalogServicesRoute: AuthenticatedCatalogServicesRoute,
   AuthenticatedContractsIdRoute: AuthenticatedContractsIdRoute,
+  AuthenticatedContractsDashboardRoute: AuthenticatedContractsDashboardRoute,
   AuthenticatedContractsLinksRoute: AuthenticatedContractsLinksRoute,
   AuthenticatedFinanceAuditRoute: AuthenticatedFinanceAuditRoute,
   AuthenticatedFinanceBankAccountsRoute: AuthenticatedFinanceBankAccountsRoute,
@@ -8328,6 +8392,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPeopleBillingRoute: AuthenticatedPeopleBillingRoute,
   AuthenticatedPeopleContractMarginRoute:
     AuthenticatedPeopleContractMarginRoute,
+  AuthenticatedPeopleDashboardRoute: AuthenticatedPeopleDashboardRoute,
   AuthenticatedPeopleDocumentsRoute: AuthenticatedPeopleDocumentsRoute,
   AuthenticatedPeopleImportFormsRoute: AuthenticatedPeopleImportFormsRoute,
   AuthenticatedPeopleIncidentsRoute: AuthenticatedPeopleIncidentsRoute,
@@ -8338,6 +8403,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedPeopleOnboardingTemplatesRoute,
   AuthenticatedPeoplePsychosocialRoute: AuthenticatedPeoplePsychosocialRoute,
   AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRoute,
+  AuthenticatedProjectsDashboardRoute: AuthenticatedProjectsDashboardRoute,
   AuthenticatedProjectsHoursReviewRoute: AuthenticatedProjectsHoursReviewRoute,
   AuthenticatedProjectsMyHoursRoute: AuthenticatedProjectsMyHoursRoute,
   AuthenticatedProjectsMyWorkRoute: AuthenticatedProjectsMyWorkRoute,
