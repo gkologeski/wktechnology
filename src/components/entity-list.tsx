@@ -607,7 +607,23 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
           )}
 
           {table !== "activities" && (
-             <Button variant="outline" size="sm" onClick={() => openActivityWindow?.({ action: ACTIONS_BY_KEY["log:task"], bulk: { ids: [...ids], entity: table as "leads" | "contacts" | "deals" | "companies", onDone: () => { clearSel(); void qc.invalidateQueries({ queryKey: ["activities"] }); } } })}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                openActivityWindow?.({
+                  action: ACTIONS_BY_KEY["log:task"],
+                  bulk: {
+                    ids: [...ids],
+                    entity: table as "leads" | "contacts" | "deals" | "companies",
+                    onDone: () => {
+                      clearSel();
+                      void qc.invalidateQueries({ queryKey: ["activities"] });
+                    },
+                  },
+                })
+              }
+            >
               <ListTodo className="h-4 w-4 mr-1" /> Criar atividade
             </Button>
           )}

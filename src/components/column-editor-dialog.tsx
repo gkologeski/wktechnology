@@ -166,7 +166,9 @@ export function ColumnEditorDialog({
                       <span className="flex-1 truncate text-sm">
                         {col.label}
                         {col.group ? (
-                          <span className="ml-2 text-[10px] text-muted-foreground">{col.group}</span>
+                          <span className="ml-2 text-[10px] text-muted-foreground">
+                            {col.group}
+                          </span>
                         ) : null}
                       </span>
                       <Button

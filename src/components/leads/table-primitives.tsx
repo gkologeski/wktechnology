@@ -33,14 +33,17 @@ export function FilterGroup({
   );
 }
 
-export const Th = forwardRef<HTMLTableCellElement, {
-  children: React.ReactNode;
-  sortable?: boolean;
-  active?: boolean;
-  dir?: SortDir;
-  onClick?: () => void;
-  className?: string;
-}>(function Th({ children, sortable, active, dir, onClick, className }, ref) {
+export const Th = forwardRef<
+  HTMLTableCellElement,
+  {
+    children: React.ReactNode;
+    sortable?: boolean;
+    active?: boolean;
+    dir?: SortDir;
+    onClick?: () => void;
+    className?: string;
+  }
+>(function Th({ children, sortable, active, dir, onClick, className }, ref) {
   return (
     <th
       ref={ref}

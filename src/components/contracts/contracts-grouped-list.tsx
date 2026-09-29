@@ -295,7 +295,9 @@ export function ContractsTable({
                   <SortableColumnHeader key={col.key} columnKey={col.key} label={col.label}>
                     <TableHead
                       className={align}
-                      aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}
+                      aria-sort={
+                        active ? (sort.dir === "asc" ? "ascending" : "descending") : "none"
+                      }
                     >
                       <button
                         type="button"

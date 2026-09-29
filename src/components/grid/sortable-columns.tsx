@@ -45,7 +45,9 @@ export function SortableColumns({
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
       <SortableContext
         items={keys}
-        strategy={axis === "horizontal" ? horizontalListSortingStrategy : verticalListSortingStrategy}
+        strategy={
+          axis === "horizontal" ? horizontalListSortingStrategy : verticalListSortingStrategy
+        }
       >
         {children}
       </SortableContext>
