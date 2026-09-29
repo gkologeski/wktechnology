@@ -35,6 +35,6 @@
 ## Valores chumbados por fases
 - [x] Fase 1: inventário e exceções verificáveis
 - [x] Fase 2: URLs, mocks de produção e cargos padrão
-- [ ] Fase 3: fuso, limites e exportações
+- [x] Fase 3: fuso, limites e exportações
 - [ ] Fase 4: interface e branding
 - [ ] Fase 5: prevenção, testes e documentação
