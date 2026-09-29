@@ -35,7 +35,7 @@ export function FilterGroup({
 
 export const Th = forwardRef<
   HTMLTableCellElement,
-  {
+  Omit<React.ThHTMLAttributes<HTMLTableCellElement>, "onClick"> & {
     children: React.ReactNode;
     sortable?: boolean;
     active?: boolean;
@@ -43,9 +43,10 @@ export const Th = forwardRef<
     onClick?: () => void;
     className?: string;
   }
->(function Th({ children, sortable, active, dir, onClick, className }, ref) {
+>(function Th({ children, sortable, active, dir, onClick, className, ...rest }, ref) {
   return (
     <th
+      {...rest}
       ref={ref}
       className={cn(
         "whitespace-nowrap border-b px-3 py-2.5 font-semibold",
