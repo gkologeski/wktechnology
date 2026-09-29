@@ -153,7 +153,7 @@ function ProjectsDashboard() {
                         <Link
                           to="/projects/$id"
                           params={{ id: row.id }}
-                          className="truncate text-sm font-medium text-text-primary hover:underline"
+                          className="block truncate text-sm font-medium text-text-primary hover:underline"
                         >
                           {row.name}
                         </Link>
@@ -190,11 +190,11 @@ function ProjectsDashboard() {
                 <OverviewList>
                   {data.attention.map((row) => (
                     <OverviewListItem key={row.id}>
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <Link
                           to="/projects/$id"
                           params={{ id: row.id }}
-                          className="truncate text-sm font-medium text-text-primary hover:underline"
+                          className="block truncate text-sm font-medium text-text-primary hover:underline"
                         >
                           {row.name}
                         </Link>
