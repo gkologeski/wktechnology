@@ -5,3 +5,4 @@
 - Variáveis novas de Workflows usam aliases PT-BR sem acentos em snake_case; o motor mantém aliases técnicos antigos para compatibilidade com fluxos salvos.
 - Arquétipos do White Label são catálogos estáticos completos aplicados somente no workspace; substituem estilo, preservam identidade/assets e continuam usando o `theme` existente para evitar estado persistido duplicado.
 - Grades baseadas em `Table` usam uma barra horizontal espelhada e persistente no componente compartilhado, evitando wrappers concorrentes e mantendo a navegação lateral acessível em listas longas.
+- Chamadas de chat de IA passam por `aiChatFetch` (src/lib/ai/provider-resolver.server.ts), que usa o provedor configurado no workspace (Lovable AI por padrão) sem fallback automático em erro — permite IA própria por workspace com chaves cifradas só no servidor.
