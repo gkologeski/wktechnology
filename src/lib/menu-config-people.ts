@@ -13,10 +13,15 @@ import {
   ClipboardList,
   UserMinus,
   FileUp,
+  LayoutDashboard,
 } from "lucide-react";
 import { MENU_PERMISSIONS, type SidebarGroup } from "@/lib/menu-config";
 
 export const PEOPLE_SIDEBAR_GROUPS: SidebarGroup[] = [
+  {
+    label: "Visão geral",
+    items: [{ title: "Dashboard", url: "/people/dashboard", icon: LayoutDashboard }],
+  },
   {
     label: "Pessoas",
     items: [

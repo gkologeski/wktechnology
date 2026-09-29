@@ -28,6 +28,22 @@ import {
 } from "@/components/ats/ui";
 
 export const Route = createFileRoute("/_authenticated/(ats)/ats-dashboard")({
+  head: () => ({
+    meta: [
+      { title: "Dashboard | TechHire" },
+      {
+        name: "description",
+        content: "Acompanhe o funil, entrevistas, vagas e contratações no TechHire.",
+      },
+      { property: "og:title", content: "Dashboard | TechHire" },
+      {
+        property: "og:description",
+        content: "Acompanhe o funil, entrevistas, vagas e contratações no TechHire.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: AtsDashboardPage,
 });
 

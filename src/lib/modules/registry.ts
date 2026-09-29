@@ -98,8 +98,11 @@ export const MODULES: Record<ModuleId, ModuleDefinition> = {
     icon: FileText,
     // Sem subdomínio próprio ainda — reutiliza o host do TechSales.
     hostSuffix: "crm",
-    defaultRoute: "/contracts",
-    menu: [{ title: "Contratos", url: "/contracts", icon: FileText }],
+    defaultRoute: "/contracts/dashboard",
+    menu: [
+      { title: "Dashboard", url: "/contracts/dashboard", icon: LayoutDashboard },
+      { title: "Contratos", url: "/contracts", icon: FileText },
+    ],
   },
   services: {
     id: "services",
@@ -120,8 +123,11 @@ export const MODULES: Record<ModuleId, ModuleDefinition> = {
     defaultColor: "#2563eb",
     icon: Kanban,
     hostSuffix: "crm",
-    defaultRoute: "/projects",
-    menu: [{ title: "Projetos", url: "/projects", icon: Kanban }],
+    defaultRoute: "/projects/dashboard",
+    menu: [
+      { title: "Dashboard", url: "/projects/dashboard", icon: LayoutDashboard },
+      { title: "Projetos", url: "/projects", icon: Kanban },
+    ],
   },
   finance: {
     id: "finance",
@@ -133,7 +139,7 @@ export const MODULES: Record<ModuleId, ModuleDefinition> = {
     hostSuffix: "crm",
     defaultRoute: "/finance",
     menu: [
-      { title: "Visão geral", url: "/finance", icon: Wallet },
+      { title: "Dashboard", url: "/finance", icon: Wallet },
       { title: "A receber", url: "/finance/receivable", icon: ArrowDownCircle },
       { title: "A pagar", url: "/finance/payable", icon: ArrowUpCircle },
     ],
@@ -146,8 +152,9 @@ export const MODULES: Record<ModuleId, ModuleDefinition> = {
     defaultColor: "#059669",
     icon: UserCog,
     hostSuffix: "crm",
-    defaultRoute: "/people",
+    defaultRoute: "/people/dashboard",
     menu: [
+      { title: "Dashboard", url: "/people/dashboard", icon: LayoutDashboard },
       { title: "Pessoas", url: "/people", icon: Users },
       { title: "Meu time", url: "/people/my-team", icon: UserCog },
     ],

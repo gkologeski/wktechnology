@@ -1,9 +1,36 @@
 // Menu lateral do módulo TechProjects.
 // Renderizado pelo AppSidebar quando `activeModule === 'projects'`.
-import { Kanban, ListTodo, LayoutGrid, Clock, Sparkles, Timer, CheckCheck } from "lucide-react";
+import {
+  Kanban,
+  ListTodo,
+  LayoutGrid,
+  Clock,
+  Sparkles,
+  Timer,
+  CheckCheck,
+  LayoutDashboard,
+} from "lucide-react";
 import type { SidebarGroup } from "@/lib/menu-config";
 
 export const PROJECTS_SIDEBAR_GROUPS: SidebarGroup[] = [
+  {
+    label: "Visão geral",
+    items: [
+      {
+        title: "Dashboard",
+        url: "/projects/dashboard",
+        icon: LayoutDashboard,
+        permissionAny: [
+          "techprojects.projects.view.own",
+          "techprojects.projects.view.team",
+          "techprojects.projects.view.workspace",
+          "techprojects.tasks.view.own",
+          "techprojects.tasks.view.team",
+          "techprojects.tasks.view.workspace",
+        ],
+      },
+    ],
+  },
   {
     label: "Projetos",
     items: [

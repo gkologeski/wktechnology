@@ -45,7 +45,8 @@ export function AppSidebar() {
   const activeModuleId = useActiveModule();
 
   const perms: Perms = { isAdmin, isManager, isPlatformAdmin, permissions: grantedPermissions };
-  const isActive = (url: string) => path === url || path.startsWith(url + "/");
+  const isActive = (url: string) =>
+    path === url || (!path.endsWith("/dashboard") && path.startsWith(url + "/"));
 
   // Neutro no Workspace/ERP Home: exibe shell "ERP" independente do módulo.
   const workspaceShell = isWorkspacePathname(path);
@@ -68,9 +69,9 @@ export function AppSidebar() {
                     : effectiveModuleId === "people"
                       ? PEOPLE_SIDEBAR_GROUPS
                       : SIDEBAR_GROUPS;
-        // Prepend "Cadastros" (Core ERP) para módulos consumidores.
+        // O Dashboard permanece no topo; Cadastros entra logo após a Visão geral.
         return shouldInjectCoreGroups(effectiveModuleId)
-          ? [...CORE_SIDEBAR_GROUPS, ...moduleGroups]
+          ? [moduleGroups[0], ...CORE_SIDEBAR_GROUPS, ...moduleGroups.slice(1)].filter(Boolean)
           : moduleGroups;
       })();
 

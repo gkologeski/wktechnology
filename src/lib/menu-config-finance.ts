@@ -19,15 +19,20 @@ import { MENU_PERMISSIONS, adminAny, type SidebarGroup } from "@/lib/menu-config
 
 export const FINANCE_SIDEBAR_GROUPS: SidebarGroup[] = [
   {
-    label: "Financeiro",
+    label: "Visão geral",
     items: [
       {
-        title: "Visão geral",
+        title: "Dashboard",
         url: "/finance",
         icon: DollarSign,
         need: "manager",
         permissionAny: MENU_PERMISSIONS.financeOverview,
       },
+    ],
+  },
+  {
+    label: "Financeiro",
+    items: [
       {
         title: "A receber",
         url: "/finance/receivable",

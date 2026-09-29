@@ -23,6 +23,13 @@ export const Route = createFileRoute("/_authenticated/finance/")({
     meta: [
       { title: "Financeiro" },
       { name: "description", content: "Contas a receber e a pagar unificadas." },
+      { property: "og:title", content: "Dashboard | TechFinance" },
+      {
+        property: "og:description",
+        content: "Acompanhe contas, saldos previstos, vencimentos e alertas financeiros.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: FinanceDashboard,
@@ -91,7 +98,7 @@ function FinanceDashboard() {
   return (
     <div className="p-6 space-y-6">
       <PageHeader
-        title="Financeiro"
+        title="Dashboard"
         description="Contas a receber e a pagar, fluxo de caixa e categorias."
         actions={
           <div className="flex flex-wrap gap-2">

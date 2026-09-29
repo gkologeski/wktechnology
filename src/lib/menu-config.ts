@@ -224,6 +224,10 @@ export function adminAny(resource: string): readonly string[] {
 
 export const SIDEBAR_GROUPS: SidebarGroup[] = [
   {
+    label: "Visão geral",
+    items: [{ title: "Dashboard", url: "/dashboard", icon: LayoutDashboard }],
+  },
+  {
     label: "Captar",
     items: [
       {
@@ -360,7 +364,6 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     label: "Otimizar",
     items: [
-      { title: "Painel", url: "/dashboard", icon: LayoutDashboard },
       {
         title: "Dashboards",
         url: "/dashboards",
