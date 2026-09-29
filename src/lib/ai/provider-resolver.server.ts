@@ -218,3 +218,5 @@ export async function aiChatFetch(init: RequestInit, ctx: AiCallContext = {}): P
   if (!parsed.stream) await done;
   return res;
 }
+import type { AiFeature } from "./features";
+import { estimateCostUsd, parseUsage } from "./pricing";
