@@ -293,9 +293,8 @@ async function processBroadcast(broadcastId: string): Promise<{ sent: number; fa
     return { sent: 0, failed: 0 };
   }
 
-  const baseUrl =
-    process.env.PUBLIC_APP_URL ||
-    "https://project--68dcfa85-b6da-4030-a825-b896ca621e0c.lovable.app";
+  const { publicAppOrigin } = await import("@/lib/runtime-config.server");
+  const baseUrl = publicAppOrigin();
 
   let accessToken: string;
   try {

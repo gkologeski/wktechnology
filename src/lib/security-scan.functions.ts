@@ -52,8 +52,8 @@ export const runSecurityScanNow = createServerFn({ method: "POST" })
     await assertPlatformAdmin(context.supabase as any, context.userId);
     const secret = process.env.CRON_SECRET;
     if (!secret) throw new Error("CRON_SECRET não configurado");
-    const url =
-      "https://project--68dcfa85-b6da-4030-a825-b896ca621e0c.lovable.app/api/public/hooks/security-scan-tick";
+    const { publicAppOrigin } = await import("@/lib/runtime-config.server");
+    const url = `${publicAppOrigin()}/api/public/hooks/security-scan-tick`;
     const r = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${secret}` },
