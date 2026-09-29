@@ -1,9 +1,9 @@
+import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 // Server functions para faturas de clientes (Release 15 — Cobrança BR).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
-import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 
 const GatewayZ = z.enum(["asaas", "pagarme", "mercadopago", "manual"]);
 const MethodZ = z.enum(["boleto", "pix", "credit_card", "manual"]);

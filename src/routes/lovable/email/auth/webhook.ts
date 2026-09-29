@@ -1,3 +1,4 @@
+import { EMAIL_SENDER_DOMAIN } from "@/lib/platform-domains";
 import * as React from "react";
 import { createAuthEmailHandler } from "@lovable.dev/email-js";
 import { createFileRoute } from "@tanstack/react-router";
@@ -7,7 +8,6 @@ import { MagicLinkEmail } from "@/lib/email-templates/magic-link";
 import { RecoveryEmail } from "@/lib/email-templates/recovery";
 import { EmailChangeEmail } from "@/lib/email-templates/email-change";
 import { ReauthenticationEmail } from "@/lib/email-templates/reauthentication";
-import { EMAIL_SENDER_DOMAIN } from "@/lib/platform-domains";
 
 // Configuration
 const SITE_NAME = "TechERP";

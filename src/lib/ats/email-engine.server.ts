@@ -1,3 +1,4 @@
+import { EMAIL_SENDER_DOMAIN } from "@/lib/platform-domains";
 import { renderTokens as renderTemplate } from "@/lib/message-tokens";
 // Engine de envio de e-mails do ATS (Fase 1).
 // Processa duas filas:
@@ -8,7 +9,6 @@ import { renderTokens as renderTemplate } from "@/lib/message-tokens";
 import { sendLovableEmail } from "@lovable.dev/email-js";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { getOrCreateEmailUnsubscribeToken } from "@/lib/email-unsubscribe.server";
-import { EMAIL_SENDER_DOMAIN } from "@/lib/platform-domains";
 
 // Sender padrão do projeto — coincide com o utilizado em transactional/send.ts.
 const SENDER_DOMAIN = EMAIL_SENDER_DOMAIN;

@@ -1,9 +1,9 @@
+import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 // Server functions para Teams (gerenciar membros do workspace).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { deleteWhereGuarded } from "@/lib/db/delete-guarded";
-import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 
 const TeamRole = z.enum(["admin", "manager", "member"]);
 export type TeamRole = z.infer<typeof TeamRole>;

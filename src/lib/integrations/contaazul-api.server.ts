@@ -1,9 +1,9 @@
+import { PRODUCTION_APP_HOSTS } from "@/lib/platform-domains";
 // Cliente HTTP server-only do Conta Azul: OAuth (authorize/token/refresh),
 // paginação e retry com backoff. Segredos lidos apenas aqui, em runtime.
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { CANONICAL_PUBLIC_URL } from "@/lib/app-url";
-import { PRODUCTION_APP_HOSTS } from "@/lib/platform-domains";
 
 const DEFAULT_API_BASE = "https://api-v2.contaazul.com";
 const DEFAULT_AUTH_URL = "https://login.contaazul.com/#/oauth/authorize";

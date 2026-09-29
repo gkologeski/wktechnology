@@ -1,3 +1,4 @@
+import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -9,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
-import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
   listZapierSubscriptions,
   deleteZapierSubscription,
   ZAPIER_TRIGGERS,

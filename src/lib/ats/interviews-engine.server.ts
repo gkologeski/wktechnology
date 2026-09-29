@@ -1,8 +1,8 @@
+import { EMAIL_SENDER_DOMAIN } from "@/lib/platform-domains";
 // Engine de lembretes de entrevista (D-1 e 1h antes).
 import { sendLovableEmail } from "@lovable.dev/email-js";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { getOrCreateEmailUnsubscribeToken } from "@/lib/email-unsubscribe.server";
-import { EMAIL_SENDER_DOMAIN } from "@/lib/platform-domains";
 
 const SENDER_DOMAIN = EMAIL_SENDER_DOMAIN;
 const FROM_DOMAIN = EMAIL_SENDER_DOMAIN;

@@ -1,7 +1,7 @@
+import { PRODUCTION_APP_HOSTS, GOOGLE_OAUTH_ORIGIN } from "@/lib/platform-domains";
 // Server-only helpers for Gmail OAuth (per-user).
 // Never import from client code.
 import { createHmac, timingSafeEqual } from "crypto";
-import { PRODUCTION_APP_HOSTS, GOOGLE_OAUTH_ORIGIN } from "@/lib/platform-domains";
 
 export const GMAIL_SCOPES = [
   "openid",

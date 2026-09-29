@@ -1,10 +1,10 @@
+import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 // Server functions de Entrevistas do ATS (Fase 2 — Onda A).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { recordAtsEvent } from "./audit.server";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
-import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 
 const KindEnum = z.enum(["phone", "video", "onsite", "async"]);
 const StatusEnum = z.enum([

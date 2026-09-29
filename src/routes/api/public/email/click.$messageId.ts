@@ -1,6 +1,6 @@
+import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 import { createFileRoute } from "@tanstack/react-router";
 import { recordTrackingEvent, verifyTrackedUrl } from "@/lib/email-tracking.server";
-import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 
 const FALLBACK = CANONICAL_APP_ORIGIN;
 

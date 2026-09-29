@@ -1,14 +1,13 @@
+import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 // Server-only helpers for email open/click tracking.
 import { createHmac, timingSafeEqual } from "crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 
 export function trackingBaseUrl(): string {
-  return (
-    process.env.APP_BASE_URL ||
-    process.env.PUBLIC_APP_URL ||
-    CANONICAL_APP_ORIGIN
-  ).replace(/\/+$/, "");
+  return (process.env.APP_BASE_URL || process.env.PUBLIC_APP_URL || CANONICAL_APP_ORIGIN).replace(
+    /\/+$/,
+    "",
+  );
 }
 
 function trackingSecret(): string {

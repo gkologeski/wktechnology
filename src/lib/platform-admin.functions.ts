@@ -1,10 +1,10 @@
+import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 // Server functions para o Super-Admin da plataforma (gerencia workspaces e seus admins).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 
 let supabaseAdmin: SupabaseClient<Database>;
 async function getSupabaseAdmin(): Promise<SupabaseClient<Database>> {

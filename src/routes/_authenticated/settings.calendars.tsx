@@ -1,3 +1,4 @@
+import { GOOGLE_OAUTH_ORIGIN } from "@/lib/platform-domains";
 import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -20,7 +21,6 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
-import { GOOGLE_OAUTH_ORIGIN } from "@/lib/platform-domains";
   listCalendarAccounts,
   startCalendarOAuth,
   disconnectCalendarAccount,

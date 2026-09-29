@@ -1,3 +1,4 @@
+import { EMAIL_SENDER_DOMAIN } from "@/lib/platform-domains";
 // Server fns para convites do workspace (token-based, gerenciados pelo admin do workspace).
 import * as React from "react";
 import { render as renderEmail } from "@react-email/render";
@@ -7,7 +8,6 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { TEMPLATES } from "@/lib/email-templates/registry";
 import { getOrCreateEmailUnsubscribeToken } from "@/lib/email-unsubscribe.server";
-import { EMAIL_SENDER_DOMAIN } from "@/lib/platform-domains";
 
 const SENDER_DOMAIN = EMAIL_SENDER_DOMAIN;
 const FROM_DOMAIN = EMAIL_SENDER_DOMAIN;

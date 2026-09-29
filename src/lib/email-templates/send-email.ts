@@ -1,8 +1,8 @@
+import { EMAIL_SENDER_DOMAIN } from "@/lib/platform-domains";
 import * as React from "react";
 import { render } from "@react-email/render";
 import { EmailAPIError, sendLovableEmail } from "@lovable.dev/email-js";
 import { TEMPLATES } from "./registry";
-import { EMAIL_SENDER_DOMAIN } from "@/lib/platform-domains";
 
 // Server-only: reads LOVABLE_API_KEY. Never import from client components.
 

@@ -1,3 +1,4 @@
+import { GOOGLE_OAUTH_ORIGIN } from "@/lib/platform-domains";
 import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -18,7 +19,6 @@ import { useActivityWindows } from "@/components/activity/activity-window-contex
 import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { EmailSignatureEditor } from "@/components/email/email-signature-editor";
-import { GOOGLE_OAUTH_ORIGIN } from "@/lib/platform-domains";
 
 const searchSchema = z.object({ gmail: z.string().optional() });
 const GOOGLE_OAUTH_MESSAGE_ORIGINS = new Set([GOOGLE_OAUTH_ORIGIN]);
