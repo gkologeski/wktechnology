@@ -188,7 +188,9 @@ export function AiPanelPage() {
             <MetricCard
               label="Custo estimado"
               value={usd(m.costUsd)}
-              hint={m.unpricedCalls ? `${m.unpricedCalls} sem preço (ex.: Créditos Lovable)` : undefined}
+              hint={
+                m.unpricedCalls ? `${m.unpricedCalls} sem preço (ex.: Créditos Lovable)` : undefined
+              }
               icon={Coins}
             />
             <MetricCard

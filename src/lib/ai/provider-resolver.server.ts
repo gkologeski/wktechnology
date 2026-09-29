@@ -83,7 +83,10 @@ export async function resolveAiRoute(workspaceId: string | null): Promise<AiRout
 }
 
 /** Descobre usuário/workspace a partir do token da requisição atual, quando houver. */
-async function identityFromRequest(): Promise<{ userId: string | null; workspaceId: string | null }> {
+async function identityFromRequest(): Promise<{
+  userId: string | null;
+  workspaceId: string | null;
+}> {
   try {
     const req = getRequest();
     const auth = req?.headers.get("authorization") ?? "";
