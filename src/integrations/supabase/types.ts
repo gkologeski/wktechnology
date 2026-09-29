@@ -760,6 +760,65 @@ export type Database = {
           },
         ]
       }
+      ai_call_logs: {
+        Row: {
+          completion_tokens: number | null
+          created_at: string
+          duration_ms: number | null
+          error: string | null
+          estimated_cost_usd: number | null
+          feature: string
+          id: string
+          model: string | null
+          prompt_tokens: number | null
+          provider: string
+          status: string
+          trigger_source: string
+          triggered_by: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          completion_tokens?: number | null
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          estimated_cost_usd?: number | null
+          feature?: string
+          id?: string
+          model?: string | null
+          prompt_tokens?: number | null
+          provider: string
+          status: string
+          trigger_source?: string
+          triggered_by?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          completion_tokens?: number | null
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          estimated_cost_usd?: number | null
+          feature?: string
+          id?: string
+          model?: string | null
+          prompt_tokens?: number | null
+          provider?: string
+          status?: string
+          trigger_source?: string
+          triggered_by?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_call_logs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_summaries: {
         Row: {
           created_at: string
