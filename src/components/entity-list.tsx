@@ -45,8 +45,8 @@ import { useActivityWindows } from "@/components/activity/activity-window-contex
 import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
 import { FilterBuilderDialog } from "@/components/filter-builder-dialog";
 import { ColumnEditorDialog } from "@/components/column-editor-dialog";
-import { arrayMove } from "@dnd-kit/sortable";
 import { SortableColumnHeader, SortableColumns } from "@/components/grid/sortable-columns";
+import { moveColumn } from "@/lib/grid/column-order";
 import { EntityBoard, type BoardStage } from "@/components/entity-board";
 import {
   applyFilters,
@@ -472,10 +472,9 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
 
   const reorderColumns = (activeKey: string, overKey: string) => {
     const order = visibleColumns.map((column) => String(column.key));
-    const from = order.indexOf(activeKey);
-    const to = order.indexOf(overKey);
-    if (from < 0 || to < 0 || from === to) return;
-    setView((current) => ({ ...current, columnOrder: arrayMove(order, from, to) }));
+    const next = moveColumn(order, activeKey, overKey);
+    if (next === order) return;
+    setView((current) => ({ ...current, columnOrder: next }));
   };
 
   const filterFieldList =

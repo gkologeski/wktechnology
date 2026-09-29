@@ -11,8 +11,8 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { ChevronDown, ChevronUp, RotateCcw, Search } from "lucide-react";
-import { arrayMove } from "@dnd-kit/sortable";
 import { SortableColumns, SortableListItem } from "@/components/grid/sortable-columns";
+import { moveColumn } from "@/lib/grid/column-order";
 
 export type ColumnDef = { key: string; label: string; group?: string };
 
@@ -71,10 +71,7 @@ export function ColumnEditorDialog({
     setOrder(next);
   };
   const reorder = (activeKey: string, overKey: string) => {
-    const from = fullOrder.indexOf(activeKey);
-    const to = fullOrder.indexOf(overKey);
-    if (from < 0 || to < 0 || from === to) return;
-    setOrder(arrayMove(fullOrder, from, to));
+    setOrder(moveColumn(fullOrder, activeKey, overKey));
   };
   const toggle = (key: string) => {
     const next = new Set(visible);
