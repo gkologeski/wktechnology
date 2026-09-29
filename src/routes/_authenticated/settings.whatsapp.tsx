@@ -1,3 +1,4 @@
+import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -47,7 +48,7 @@ export const Route = createFileRoute("/_authenticated/settings/whatsapp")({
   component: WhatsAppSettings,
 });
 
-const WEBHOOK_URL = "https://app.wktechnology.com.br/api/public/meta/whatsapp-webhook";
+const WEBHOOK_URL = `${CANONICAL_APP_ORIGIN}/api/public/meta/whatsapp-webhook`;
 
 function WhatsAppSettings() {
   const fetchWabas = useServerFn(listWabas);

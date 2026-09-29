@@ -1,3 +1,4 @@
+import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { randomBytes } from "crypto";
@@ -309,9 +310,7 @@ export const regenerateQuoteToken = createServerFn({ method: "POST" })
 // ============= STRIPE PAYMENT LINK =============
 
 function siteOrigin() {
-  return (
-    process.env.SITE_URL || process.env.LOVABLE_PROJECT_URL || "https://app.wktechnology.com.br"
-  );
+  return process.env.SITE_URL || process.env.LOVABLE_PROJECT_URL || CANONICAL_APP_ORIGIN;
 }
 
 export const createQuotePaymentLink = createServerFn({ method: "POST" })

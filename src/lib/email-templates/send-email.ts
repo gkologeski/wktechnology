@@ -1,3 +1,4 @@
+import { EMAIL_SENDER_DOMAIN } from "@/lib/platform-domains";
 import * as React from "react";
 import { render } from "@react-email/render";
 import { EmailAPIError, sendLovableEmail } from "@lovable.dev/email-js";
@@ -9,10 +10,10 @@ import { TEMPLATES } from "./registry";
 const SITE_NAME = "TechERP";
 // SENDER_DOMAIN is the verified sender subdomain FQDN (e.g., "notify.example.com").
 // It MUST match the subdomain delegated to Lovable's nameservers. NEVER use the root domain.
-const SENDER_DOMAIN = "notify.crm.wktechnology.com.br";
+const SENDER_DOMAIN = EMAIL_SENDER_DOMAIN;
 // FROM_DOMAIN is the domain shown in the From: header (e.g., "example.com").
 // Can be the root domain when display_from_root is enabled — this is cosmetic only.
-const FROM_DOMAIN = "notify.crm.wktechnology.com.br";
+const FROM_DOMAIN = EMAIL_SENDER_DOMAIN;
 
 export type SendTemplateEmailResult =
   | { sent: true }

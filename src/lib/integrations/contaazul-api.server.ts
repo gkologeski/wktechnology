@@ -1,3 +1,4 @@
+import { PRODUCTION_APP_HOSTS } from "@/lib/platform-domains";
 // Cliente HTTP server-only do Conta Azul: OAuth (authorize/token/refresh),
 // paginação e retry com backoff. Segredos lidos apenas aqui, em runtime.
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -68,12 +69,7 @@ export function contaAzulRedirectUri(_origin?: string): string {
   return base.replace(/\/$/, "");
 }
 
-const ALLOWED_RETURN_HOSTS = new Set([
-  "app.wktechnology.com.br",
-  "crm.wktechnology.com.br",
-  "ats.wktechnology.com.br",
-  "wktechnology.lovable.app",
-]);
+const ALLOWED_RETURN_HOSTS = PRODUCTION_APP_HOSTS;
 
 export function normalizeContaAzulReturnOrigin(origin: string): string {
   try {

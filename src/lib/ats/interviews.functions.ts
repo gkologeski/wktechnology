@@ -1,3 +1,4 @@
+import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 // Server functions de Entrevistas do ATS (Fase 2 — Onda A).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -189,7 +190,7 @@ export const scheduleInterview = createServerFn({ method: "POST" })
         if (mErr) throw new Error(mErr.message);
 
         meetingId = meeting.id as string;
-        const publicLink = `${process.env.APP_URL || process.env.VITE_APP_URL || "https://app.wktechnology.com.br"}/meet/${meeting.public_token}`;
+        const publicLink = `${process.env.APP_URL || process.env.VITE_APP_URL || CANONICAL_APP_ORIGIN}/meet/${meeting.public_token}`;
         // Respeita meet_url manual; senão usa o link da sala Jitsi
         if (!meetUrlFinal) meetUrlFinal = publicLink;
 

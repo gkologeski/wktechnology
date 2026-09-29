@@ -1,3 +1,4 @@
+import { EMAIL_SENDER_DOMAIN } from "@/lib/platform-domains";
 import * as React from "react";
 import { createAuthEmailHandler } from "@lovable.dev/email-js";
 import { createFileRoute } from "@tanstack/react-router";
@@ -10,9 +11,9 @@ import { ReauthenticationEmail } from "@/lib/email-templates/reauthentication";
 
 // Configuration
 const SITE_NAME = "TechERP";
-const SENDER_DOMAIN = "notify.crm.wktechnology.com.br";
+const SENDER_DOMAIN = EMAIL_SENDER_DOMAIN;
 const ROOT_DOMAIN = "crm.wktechnology.com.br";
-const FROM_DOMAIN = "notify.crm.wktechnology.com.br";
+const FROM_DOMAIN = EMAIL_SENDER_DOMAIN;
 const SITE_URL = `https://${ROOT_DOMAIN}`;
 
 // The SDK handler owns verification, dispatch, and retry semantics; this file

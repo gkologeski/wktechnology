@@ -1,3 +1,4 @@
+import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -25,7 +26,7 @@ function ZapierSettingsPage() {
   const { data, isLoading, refetch } = useQuery({ queryKey: ["zapier-subs"], queryFn: list });
   const [busy, setBusy] = useState(false);
 
-  const baseUrl = "https://app.wktechnology.com.br";
+  const baseUrl = CANONICAL_APP_ORIGIN;
 
   async function remove(id: string) {
     setBusy(true);

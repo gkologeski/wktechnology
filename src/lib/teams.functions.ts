@@ -1,3 +1,4 @@
+import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 // Server functions para Teams (gerenciar membros do workspace).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -10,7 +11,7 @@ export type TeamRole = z.infer<typeof TeamRole>;
 type ActiveWorkspace = { id: string; created_by: string | null };
 
 /** URL canônica de produção do CRM — usada para links de convite por email. */
-const CANONICAL_APP_URL = "https://app.wktechnology.com.br";
+const CANONICAL_APP_URL = CANONICAL_APP_ORIGIN;
 
 /**
  * Resolve o origin para o link do convite. Se vier de um host do Lovable

@@ -1,3 +1,4 @@
+import { GOOGLE_OAUTH_ORIGIN } from "@/lib/platform-domains";
 import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -20,7 +21,7 @@ import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { EmailSignatureEditor } from "@/components/email/email-signature-editor";
 
 const searchSchema = z.object({ gmail: z.string().optional() });
-const GOOGLE_OAUTH_MESSAGE_ORIGINS = new Set(["https://crm.wktechnology.com.br"]);
+const GOOGLE_OAUTH_MESSAGE_ORIGINS = new Set([GOOGLE_OAUTH_ORIGIN]);
 
 function isTrustedGoogleOAuthMessageOrigin(origin: string) {
   return origin === window.location.origin || GOOGLE_OAUTH_MESSAGE_ORIGINS.has(origin);

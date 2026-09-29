@@ -1,3 +1,4 @@
+import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 // Catálogo de provedores de IA configuráveis por workspace (seguro para o cliente).
 export type AiProviderId =
   | "lovable"
@@ -126,7 +127,7 @@ export function buildExternalRoute(id: AiProviderId, apiKey: string, model: stri
     "Content-Type": "application/json",
   };
   if (id === "openrouter") {
-    headers["HTTP-Referer"] = "https://app.wktechnology.com.br";
+    headers["HTTP-Referer"] = CANONICAL_APP_ORIGIN;
     headers["X-Title"] = "TechERP";
   }
   return {

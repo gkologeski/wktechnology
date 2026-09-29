@@ -1,3 +1,4 @@
+import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 // Server functions para o Super-Admin da plataforma (gerencia workspaces e seus admins).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -16,7 +17,7 @@ async function getSupabaseAdmin(): Promise<SupabaseClient<Database>> {
 
 const WsRole = z.enum(["admin", "member"]);
 
-const CANONICAL_APP_URL = "https://app.wktechnology.com.br";
+const CANONICAL_APP_URL = CANONICAL_APP_ORIGIN;
 function resolveInviteOrigin(origin: string | undefined): string {
   if (!origin) return CANONICAL_APP_URL;
   try {

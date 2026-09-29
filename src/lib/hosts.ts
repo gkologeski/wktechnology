@@ -1,3 +1,4 @@
+import { CANONICAL_APP_HOST } from "@/lib/platform-domains";
 // Single-host mode: a aplicação roda em um único domínio (canonical
 // `app.wktechnology.com.br`). As funções deste módulo eram usadas para
 // construir URLs cross-host em uma arquitetura antiga multi-subdomínio.
@@ -10,7 +11,7 @@
 
 import type { ModuleId } from "./modules/registry";
 
-export const CANONICAL_HOST = "app.wktechnology.com.br";
+export const CANONICAL_HOST = CANONICAL_APP_HOST;
 export const WORKSPACE_HOST = CANONICAL_HOST;
 
 // Mantido apenas para retro-compat de imports. Todos apontam para o host único.
