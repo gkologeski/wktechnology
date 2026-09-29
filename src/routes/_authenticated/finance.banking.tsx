@@ -740,7 +740,7 @@ function BankingPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => simulatePayMut.mutate(c.id)}
-                          disabled={!mockEnabled || simulatePayMut.isPending}
+                                disabled={!mockEnabled || simulatePayMut.isPending}
                                 title="Simular liquidação (mock)"
                               >
                                 <CheckCircle2 className="h-3.5 w-3.5" /> Liquidar
