@@ -1,4 +1,4 @@
-import { forwardRef, useState, type ReactNode } from "react";
+import { forwardRef, useState, type ReactNode, type ThHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -179,7 +179,7 @@ export type SortDir = "asc" | "desc";
 
 export const Th = forwardRef<
   HTMLTableCellElement,
-  Omit<React.ThHTMLAttributes<HTMLTableCellElement>, "onClick"> & {
+  Omit<ThHTMLAttributes<HTMLTableCellElement>, "onClick"> & {
     children?: ReactNode;
     sortable?: boolean;
     active?: boolean;
