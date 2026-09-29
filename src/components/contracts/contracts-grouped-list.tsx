@@ -281,36 +281,37 @@ export function ContractsTable({
             {orderedKeys
               .map((k) => CONTRACT_COLUMNS.find((col) => col.key === k)!)
               .map((col) => {
-              const align = col.key === "total_value" ? "text-right" : undefined;
-              if (!sort || !col.sortKey) {
+                const align = col.key === "total_value" ? "text-right" : undefined;
+                if (!sort || !col.sortKey) {
+                  return (
+                    <SortableColumnHeader key={col.key} columnKey={col.key} label={col.label}>
+                      <TableHead className={align}>{col.label}</TableHead>
+                    </SortableColumnHeader>
+                  );
+                }
+                const active = sort.key === col.sortKey;
+                const Icon = !active ? ArrowUpDown : sort.dir === "asc" ? ArrowUp : ArrowDown;
                 return (
-                  <TableHead key={col.key} className={align}>
-                    {col.label}
-                  </TableHead>
+                  <SortableColumnHeader key={col.key} columnKey={col.key} label={col.label}>
+                    <TableHead
+                      className={align}
+                      aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => sort.onSort(col.sortKey!)}
+                        className={cn(
+                          "inline-flex items-center gap-1 rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                          active && "text-foreground",
+                        )}
+                        aria-label={`Ordenar por ${col.label}`}
+                      >
+                        {col.label}
+                        <Icon className="h-3.5 w-3.5 opacity-70" aria-hidden="true" />
+                      </button>
+                    </TableHead>
+                  </SortableColumnHeader>
                 );
-              }
-              const active = sort.key === col.sortKey;
-              const Icon = !active ? ArrowUpDown : sort.dir === "asc" ? ArrowUp : ArrowDown;
-              return (
-                <TableHead
-                  key={col.key}
-                  className={align}
-                  aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}
-                >
-                  <button
-                    type="button"
-                    onClick={() => sort.onSort(col.sortKey!)}
-                    className={cn(
-                      "inline-flex items-center gap-1 rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                      active && "text-foreground",
-                    )}
-                    aria-label={`Ordenar por ${col.label}`}
-                  >
-                    {col.label}
-                    <Icon className="h-3.5 w-3.5 opacity-70" aria-hidden="true" />
-                  </button>
-                </TableHead>
-              );
               })}
           </SortableColumns>
         </TableRow>
