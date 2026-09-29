@@ -33,8 +33,8 @@
 - [x] Corrigir o alerta de negócios sem interação usando a data efetiva por tipo de atividade e manter a rolagem horizontal visível nas grades longas.
 
 ## Valores chumbados por fases
-- [ ] Fase 1: inventário e exceções verificáveis
-- [ ] Fase 2: URLs, mocks de produção e cargos padrão
+- [x] Fase 1: inventário e exceções verificáveis
+- [x] Fase 2: URLs, mocks de produção e cargos padrão
 - [ ] Fase 3: fuso, limites e exportações
 - [ ] Fase 4: interface e branding
 - [ ] Fase 5: prevenção, testes e documentação
