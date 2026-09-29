@@ -7,9 +7,10 @@ import { convertToModelMessages, streamText, tool, stepCountIs, type UIMessage }
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import { AGENT_SYSTEM_PROMPT } from "@/lib/ai-agent/system-prompt";
 import { searchEntityImpl, listPipelinesImpl, lookupUserImpl } from "@/lib/ai-agent/tools-impl";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { resolveAgentModel, logAgentCall } from "@/lib/ai/agent-route.server";
 
 function extractMessageText(message: UIMessage) {
   return message.parts
@@ -105,11 +106,21 @@ export const Route = createFileRoute("/api/agent/chat")({
 
         await persistMessages(messages);
 
-        const key = process.env.LOVABLE_API_KEY;
-        if (!key) return new Response("Missing LOVABLE_API_KEY", { status: 500 });
-
-        const gateway = createLovableAiGatewayProvider(key);
-        const model = gateway("google/gemini-3.5-flash");
+        // Usa a IA escolhida no workspace (Lovable AI por padrão).
+        let workspaceId: string | null = null;
+        try {
+          workspaceId = await resolveActiveWorkspace(userId);
+        } catch {
+          workspaceId = null;
+        }
+        let agent: Awaited<ReturnType<typeof resolveAgentModel>>;
+        try {
+          agent = await resolveAgentModel(workspaceId);
+        } catch (e) {
+          return new Response((e as Error).message, { status: 500 });
+        }
+        const model = agent.model;
+        const startedAt = Date.now();
 
         // Helper: envelopa execução para nunca lançar dentro do stream.
         const safe = async <T>(fn: () => Promise<T>) => {
@@ -155,6 +166,29 @@ export const Route = createFileRoute("/api/agent/chat")({
           system: `${AGENT_SYSTEM_PROMPT}\n\nContexto da tela atual: ${pagePath || "não informado"}. Use esse contexto para preferir atualizar o registro aberto quando a intenção do usuário for edição.`,
           messages: await convertToModelMessages(messages),
           stopWhen: stepCountIs(50),
+          onFinish: async ({ usage }) => {
+            await logAgentCall({
+              workspaceId,
+              userId,
+              provider: agent.provider,
+              modelId: agent.modelId,
+              feature: "copiloto",
+              startedAt,
+              promptTokens: usage?.inputTokens ?? null,
+              completionTokens: usage?.outputTokens ?? null,
+            });
+          },
+          onError: async ({ error }) => {
+            await logAgentCall({
+              workspaceId,
+              userId,
+              provider: agent.provider,
+              modelId: agent.modelId,
+              feature: "copiloto",
+              startedAt,
+              error: error instanceof Error ? error.message : String(error),
+            });
+          },
           tools: {
             search: searchTool,
             listPipelines: listPipelinesTool,
