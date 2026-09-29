@@ -7,14 +7,14 @@ describe("AI Usage Limits Audit", () => {
       from: new Date().toISOString(),
       to: new Date().toISOString(),
       page: 0,
-      pageSize: 5000
+      pageSize: 1000
     });
     expect(valid.success).toBe(true);
 
     const tooLarge = Filters.safeParse({
       from: new Date().toISOString(),
       to: new Date().toISOString(),
-      pageSize: 5001
+      pageSize: 1001
     });
     expect(tooLarge.success).toBe(false);
   });
