@@ -2,7 +2,7 @@ const DEFAULT_PUBLIC_APP_URL = "https://app.wktechnology.com.br";
 
 function normalizeOrigin(value: string): string {
   const url = new URL(value);
-  if (!['http:', 'https:'].includes(url.protocol)) {
+  if (!["http:", "https:"].includes(url.protocol)) {
     throw new Error("A URL pública deve usar HTTP ou HTTPS.");
   }
   return url.origin;

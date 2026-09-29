@@ -714,9 +714,8 @@ export const consumeInvite = createServerFn({ method: "POST" })
 
     // Atribui o job_role padrão para que user_has_permission retorne true.
     // Sem isso, RLS bloqueia inserts em activities/deals/etc. para membros novos.
-    const { resolveDefaultJobRoleId } = await import(
-      "@/lib/access-control/default-job-role.server"
-    );
+    const { resolveDefaultJobRoleId } =
+      await import("@/lib/access-control/default-job-role.server");
     const jobRoleId = await resolveDefaultJobRoleId(
       supabaseAdmin as unknown as Parameters<typeof resolveDefaultJobRoleId>[0],
       inv.role,
