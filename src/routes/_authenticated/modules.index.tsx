@@ -106,66 +106,66 @@ function ModulesGrid() {
       {data
         .filter((m: WorkspaceModuleRow) => !isLegacyModuleId(m.id as ModuleId))
         .map((m: WorkspaceModuleRow) => {
-        const Icon = resolveModuleIcon(m.icon);
-        const product = m.default_product_name ?? m.name;
-        const isRegisteredModule = (MODULES as Record<string, unknown>)[m.id] !== undefined;
-        const status: "Ativo" | "Disponível" | "Não contratado" = m.enabled
-          ? "Ativo"
-          : m.is_contracted
-            ? "Disponível"
-            : "Não contratado";
-        const hasModuleAccess = canAccessModule(m.id);
-        const canEnter = m.enabled && isRegisteredModule && hasModuleAccess;
-        return (
-          <Card
-            key={m.id}
-            className={cn(
-              "h-full flex flex-col transition-all",
-              canEnter && "hover:border-primary/40 hover:shadow-sm",
-              !hasModuleAccess && "opacity-60",
-            )}
-          >
-            <CardHeader>
-              <div className="flex items-start justify-between gap-3">
-                <div className="size-10 rounded-md bg-primary/10 text-primary flex items-center justify-center">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <span
-                  className={cn(
-                    "text-[11px] font-medium rounded-full px-2 py-0.5",
-                    status === "Ativo" &&
-                      "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-                    status === "Disponível" && "bg-muted text-muted-foreground",
-                    status === "Não contratado" &&
-                      "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-                  )}
-                >
-                  {status}
-                </span>
-              </div>
-              <CardTitle className="text-base mt-3">{product}</CardTitle>
-              <CardDescription className="text-xs">{m.name}</CardDescription>
-            </CardHeader>
-            <CardContent className="mt-auto flex items-center justify-between pt-0">
-              <div className="text-xs text-muted-foreground">
-                {m.plan_code ? `Plano ${m.plan_code}` : "Sem plano ativo"}
-              </div>
-              {canEnter ? (
-                <Button size="sm" onClick={() => openModule(m.id as ModuleId)}>
-                  Entrar
-                  <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                </Button>
-              ) : !hasModuleAccess ? (
-                <span className="text-xs text-muted-foreground">Sem acesso</span>
-              ) : (
-                <Button size="sm" variant="outline" asChild>
-                  <Link to="/workspace/modules">Configurar</Link>
-                </Button>
+          const Icon = resolveModuleIcon(m.icon);
+          const product = m.default_product_name ?? m.name;
+          const isRegisteredModule = (MODULES as Record<string, unknown>)[m.id] !== undefined;
+          const status: "Ativo" | "Disponível" | "Não contratado" = m.enabled
+            ? "Ativo"
+            : m.is_contracted
+              ? "Disponível"
+              : "Não contratado";
+          const hasModuleAccess = canAccessModule(m.id);
+          const canEnter = m.enabled && isRegisteredModule && hasModuleAccess;
+          return (
+            <Card
+              key={m.id}
+              className={cn(
+                "h-full flex flex-col transition-all",
+                canEnter && "hover:border-primary/40 hover:shadow-sm",
+                !hasModuleAccess && "opacity-60",
               )}
-            </CardContent>
-          </Card>
-        );
-      })}
+            >
+              <CardHeader>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="size-10 rounded-md bg-primary/10 text-primary flex items-center justify-center">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <span
+                    className={cn(
+                      "text-[11px] font-medium rounded-full px-2 py-0.5",
+                      status === "Ativo" &&
+                        "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+                      status === "Disponível" && "bg-muted text-muted-foreground",
+                      status === "Não contratado" &&
+                        "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+                    )}
+                  >
+                    {status}
+                  </span>
+                </div>
+                <CardTitle className="text-base mt-3">{product}</CardTitle>
+                <CardDescription className="text-xs">{m.name}</CardDescription>
+              </CardHeader>
+              <CardContent className="mt-auto flex items-center justify-between pt-0">
+                <div className="text-xs text-muted-foreground">
+                  {m.plan_code ? `Plano ${m.plan_code}` : "Sem plano ativo"}
+                </div>
+                {canEnter ? (
+                  <Button size="sm" onClick={() => openModule(m.id as ModuleId)}>
+                    Entrar
+                    <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                  </Button>
+                ) : !hasModuleAccess ? (
+                  <span className="text-xs text-muted-foreground">Sem acesso</span>
+                ) : (
+                  <Button size="sm" variant="outline" asChild>
+                    <Link to="/workspace/modules">Configurar</Link>
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
 
       {/* Marketplace / explorar mais */}
       <Card className="border-dashed h-full flex flex-col">
