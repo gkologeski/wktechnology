@@ -144,40 +144,44 @@ export function JobApplicationsTable({
       </div>
       <div className="rounded-lg border border-border-subtle bg-surface-1">
         <Table className="min-w-[680px]">
-        <TableHeader>
-          <TableRow>
-            <SortableColumns keys={grid.columnKeys} onReorder={grid.reorderColumns}>
-              {grid.columns.map((column) => (
-                <SortableColumnHeader key={column.key} columnKey={column.key} label={column.label}>
-                  {column.header ?? <TableHead>{column.label}</TableHead>}
-                </SortableColumnHeader>
-              ))}
-            </SortableColumns>
-            <TableHead className="text-right">Ações</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {apps.map((a) => (
-            <TableRow key={a.id as string}>
-              {grid.columns.map((column) => (
-                <TableCell key={column.key} className={column.className}>
-                  {column.render(a)}
-                </TableCell>
-              ))}
-              <TableCell className="text-right">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-7 px-2 text-[11px]"
-                  onClick={() => onEvaluate(a)}
-                >
-                  <ClipboardCheck className="h-3 w-3 mr-1" aria-hidden />
-                  Avaliar
-                </Button>
-              </TableCell>
+          <TableHeader>
+            <TableRow>
+              <SortableColumns keys={grid.columnKeys} onReorder={grid.reorderColumns}>
+                {grid.columns.map((column) => (
+                  <SortableColumnHeader
+                    key={column.key}
+                    columnKey={column.key}
+                    label={column.label}
+                  >
+                    {column.header ?? <TableHead>{column.label}</TableHead>}
+                  </SortableColumnHeader>
+                ))}
+              </SortableColumns>
+              <TableHead className="text-right">Ações</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
+          </TableHeader>
+          <TableBody>
+            {apps.map((a) => (
+              <TableRow key={a.id as string}>
+                {grid.columns.map((column) => (
+                  <TableCell key={column.key} className={column.className}>
+                    {column.render(a)}
+                  </TableCell>
+                ))}
+                <TableCell className="text-right">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-[11px]"
+                    onClick={() => onEvaluate(a)}
+                  >
+                    <ClipboardCheck className="h-3 w-3 mr-1" aria-hidden />
+                    Avaliar
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
         </Table>
       </div>
       <grid.ColumnsEditor />
