@@ -9,8 +9,8 @@ regras invioláveis e onde cada coisa vive. Detalhes por tema estão em
 ## 1. O que é o produto
 
 **TechERP** (WK Technology) é um ERP/CRM multi-módulo, multi-tenant, em
-português do Brasil. Um único código-base serve sete módulos verticais sobre um
-núcleo comum (Core ERP):
+português do Brasil. Um único código-base serve **seis módulos verticais** sobre
+um núcleo comum (Core ERP / TechERP):
 
 | Módulo        | Id interno  | Domínio                                                                 |
 | ------------- | ----------- | ----------------------------------------------------------------------- |
@@ -18,12 +18,25 @@ núcleo comum (Core ERP):
 | TechHire      | `ats`       | Vagas, candidatos, candidaturas, entrevistas, ofertas, sourcing/hunting |
 | TechPeople    | `people`    | Pessoas, alocações, documentos, benefícios, onboarding, incidentes      |
 | TechContracts | `contracts` | Contratos (prestação, compra, aditivos), modelos, assinatura eletrônica |
-| TechService   | `service`   | Tickets, SLA, base de conhecimento, chat ao vivo, macros                |
 | TechFinance   | `finance`   | Contas a pagar/receber, NFS-e, faturas, bancos, DRE, fluxo de caixa     |
 | TechProjects  | `projects`  | Projetos, listas, tarefas, marcos, timesheet, entregas                  |
 
-Core ERP (compartilhado): Empresas, Contatos, Produtos, Catálogo de Serviços,
-Usuários/Times, Permissões, Pipelines, Arquivos, Workflows, Integrações.
+Core ERP / TechERP (compartilhado): Empresas, Contatos, Produtos, Catálogo de
+Serviços, Usuários/Times, Permissões, Pipelines, Arquivos, Workflows,
+Integrações.
+
+**Não existem outros módulos.** Dois pontos são fonte recorrente de confusão e
+não devem ser tratados como módulos verticais:
+
+- **Não existe módulo "TechService"/"TechServices".** Tickets, SLA, base de
+  conhecimento, chat ao vivo e macros (`/tickets`, `/settings/sla`,
+  `/settings/kb`, `/settings/macros`) são recursos de atendimento do Core ERP.
+- **`/services` pertence ao TechContracts.** É a visão operacional e de
+  faturamento do catálogo de serviços, não um módulo próprio. O id `services`
+  sobrevive apenas como registro legado em `public.modules` /
+  `workspace_modules`, mantido por compatibilidade de licenciamento; no
+  front-end ele nunca aparece como módulo selecionável
+  (ver `src/lib/modules/registry.ts`).
 
 Domínios de produção: `app.wktechnology.com.br`, `crm.wktechnology.com.br`,
 `ats.wktechnology.com.br` (o subdomínio define o módulo ativo).
