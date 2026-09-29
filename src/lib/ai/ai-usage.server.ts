@@ -35,7 +35,12 @@ export async function loadUsageSummary(
   if (!isAdmin) return { isAdmin, active, metrics: null };
 
   // Lê em páginas para não truncar silenciosamente no limite de linhas do banco.
-  const rows: { status: string; estimated_cost_usd: number | null; prompt_tokens: number | null; completion_tokens: number | null }[] = [];
+  const rows: {
+    status: string;
+    estimated_cost_usd: number | null;
+    prompt_tokens: number | null;
+    completion_tokens: number | null;
+  }[] = [];
   for (let offset = 0; ; offset += DB_PAGE_MAX_ROWS) {
     const { data, error } = await supabase
       .from("ai_call_logs")
