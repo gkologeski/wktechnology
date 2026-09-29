@@ -45,6 +45,8 @@ import { useActivityWindows } from "@/components/activity/activity-window-contex
 import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
 import { FilterBuilderDialog } from "@/components/filter-builder-dialog";
 import { ColumnEditorDialog } from "@/components/column-editor-dialog";
+import { arrayMove } from "@dnd-kit/sortable";
+import { SortableColumnHeader, SortableColumns } from "@/components/grid/sortable-columns";
 import { EntityBoard, type BoardStage } from "@/components/entity-board";
 import {
   applyFilters,
@@ -468,6 +470,14 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
       : savedViews.data?.find((v) => v.id === view.viewId)?.name
     : "Todos";
 
+  const reorderColumns = (activeKey: string, overKey: string) => {
+    const order = visibleColumns.map((column) => String(column.key));
+    const from = order.indexOf(activeKey);
+    const to = order.indexOf(overKey);
+    if (from < 0 || to < 0 || from === to) return;
+    setView((current) => ({ ...current, columnOrder: arrayMove(order, from, to) }));
+  };
+
   const filterFieldList =
     filterFields ??
     fields.map((f) => ({ name: f.name, label: f.label, type: f.type, options: f.options }));
@@ -781,14 +791,22 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
                     onCheckedChange={toggleAll}
                   />
                 </TableHead>
-                {visibleColumns.map((c) => (
-                  <TableHead
-                    key={String(c.key)}
-                    className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
-                  >
-                    {c.label}
-                  </TableHead>
-                ))}
+                <SortableColumns
+                  keys={visibleColumns.map((column) => String(column.key))}
+                  onReorder={reorderColumns}
+                >
+                  {visibleColumns.map((c) => (
+                    <SortableColumnHeader
+                      key={String(c.key)}
+                      columnKey={String(c.key)}
+                      label={c.label}
+                    >
+                      <TableHead className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        {c.label}
+                      </TableHead>
+                    </SortableColumnHeader>
+                  ))}
+                </SortableColumns>
                 <TableHead className="w-32 text-right whitespace-nowrap text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                   Ações
                 </TableHead>

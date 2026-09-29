@@ -443,7 +443,7 @@ function ContractsPage() {
       }),
     });
 
-  const { columnKeys, ColumnsButton, ColumnsEditor } = useGridColumns<ContractRow>({
+  const { columnKeys, ColumnsButton, ColumnsEditor, reorderColumns } = useGridColumns<ContractRow>({
     gridKey: "contracts",
     columns: CONTRACT_GRID_COLUMNS,
     defaults: DEFAULT_CONTRACT_COLS,
@@ -876,6 +876,7 @@ function ContractsPage() {
                   nestLinks={nestLinks}
                   columnKeys={columnKeys}
                   sort={{ key: sp.sort ?? "created_at", dir: sp.dir ?? "desc", onSort }}
+                  onReorderColumns={reorderColumns}
                 />
               </div>
             ) : (

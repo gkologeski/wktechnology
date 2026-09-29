@@ -46,6 +46,7 @@ import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { SENIORITY_LABEL, SENIORITY_OPTIONS } from "@/lib/job-profiles-shared";
 import { updateContract } from "@/lib/contracts.functions";
 import { cn } from "@/lib/utils";
+import { SortableColumnHeader, SortableColumns } from "@/components/grid/sortable-columns";
 
 export type ContractRow = {
   id: string;
@@ -237,6 +238,7 @@ export function ContractsTable({
   onChanged,
   columnKeys,
   sort,
+  onReorderColumns,
 }: {
   rows: ContractRow[];
   selection?: ContractsSelection;
@@ -247,6 +249,7 @@ export function ContractsTable({
   columnKeys?: string[];
   /** Ordenação por cabeçalho (servidor). */
   sort?: ContractsSort;
+  onReorderColumns?: (activeKey: string, overKey: string) => void;
 }) {
   const orderedKeys = useMemo(() => {
     const known = new Set(CONTRACT_COLUMNS.map((c) => c.key));
@@ -274,9 +277,10 @@ export function ContractsTable({
               />
             </TableHead>
           ) : null}
-          {orderedKeys
-            .map((k) => CONTRACT_COLUMNS.find((col) => col.key === k)!)
-            .map((col) => {
+          <SortableColumns keys={orderedKeys} onReorder={onReorderColumns ?? (() => undefined)}>
+            {orderedKeys
+              .map((k) => CONTRACT_COLUMNS.find((col) => col.key === k)!)
+              .map((col) => {
               const align = col.key === "total_value" ? "text-right" : undefined;
               if (!sort || !col.sortKey) {
                 return (
@@ -307,7 +311,8 @@ export function ContractsTable({
                   </button>
                 </TableHead>
               );
-            })}
+              })}
+          </SortableColumns>
         </TableRow>
       </TableHeader>
       <TableBody>
