@@ -218,8 +218,56 @@ function ServicesPage() {
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["services"] });
 
+  const hasActiveFilters = status !== "all" || type !== "all" || assignee !== ASSIGNEE_ALL;
+  const clearFilters = () => {
+    setStatus("all");
+    setType("all");
+    setAssignee(ASSIGNEE_ALL);
+  };
+
   return (
-    <div className="p-6 space-y-5">
+    <div className="flex min-h-full">
+      <FiltersSidebar hasActiveFilters={hasActiveFilters} onClear={clearFilters}>
+        <div className="space-y-4 px-1 py-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="services-filter-type">Tipo</Label>
+            <Select value={type} onValueChange={setType}>
+              <SelectTrigger id="services-filter-type">
+                <SelectValue placeholder="Tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os tipos</SelectItem>
+                {Object.entries(TYPE_LABEL).map(([k, v]) => (
+                  <SelectItem key={k} value={k}>
+                    {v}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="services-filter-status">Status</Label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger id="services-filter-status">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os status</SelectItem>
+                {Object.entries(STATUS_LABEL).map(([k, v]) => (
+                  <SelectItem key={k} value={k}>
+                    {v}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Responsável</Label>
+            <AssigneeFilter value={assignee} onChange={setAssignee} className="w-full" />
+          </div>
+        </div>
+      </FiltersSidebar>
+      <div className="min-w-0 flex-1 p-6 space-y-5">
       <PageHeader
         title="Serviços em execução"
         description="Visão operacional dos serviços vinculados a contratos, com cadência de faturamento e entrega. Novos serviços nascem dentro de um contrato."
@@ -241,36 +289,14 @@ function ServicesPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-8"
+            aria-label="Buscar serviços"
           />
         </div>
-        <Select value={type} onValueChange={setType}>
-          <SelectTrigger className="w-44">
-            <SelectValue placeholder="Tipo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os tipos</SelectItem>
-            {Object.entries(TYPE_LABEL).map(([k, v]) => (
-              <SelectItem key={k} value={k}>
-                {v}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="w-44">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os status</SelectItem>
-            {Object.entries(STATUS_LABEL).map(([k, v]) => (
-              <SelectItem key={k} value={k}>
-                {v}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <AssigneeFilter value={assignee} onChange={setAssignee} />
+        <div className="lg:hidden">
+          <AssigneeFilter value={assignee} onChange={setAssignee} />
+        </div>
       </div>
+
 
       {view === "table" && selection.hasSelection && (
         <GridBulkBar
