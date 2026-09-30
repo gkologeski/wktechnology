@@ -1,24 +1,27 @@
-// Filtro reutilizável de "Responsável" — lista checkboxes com todos os membros do workspace
-// + responsáveis vindos de integrações (HubSpot) + opção "Sem responsável".
+// Filtro reutilizável de "Responsável" — uma linha por pessoa (usuário do workspace
+// + responsáveis do HubSpot correspondentes), agrupadas em Ativos e Inativos.
 // Use dentro de um <FilterGroup title="Responsável">.
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { ChevronRight } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { listWorkspaceMembers } from "@/lib/rotation.functions";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  buildOwnerOptions,
+  selectionState,
+  type OwnerFilterHubspot,
+  type OwnerOption,
+} from "@/lib/owner-filter-options";
+import { cn } from "@/lib/utils";
 
 export type OwnerFilterValue = {
   /** IDs podem ser uuid (usuário do workspace) ou prefixados com "hs:" (hubspot_owner_id). */
   ownerIds: string[];
   includeUnassigned: boolean;
-};
-
-type Option = {
-  id: string; // já com prefixo quando necessário ("hs:<id>")
-  label: string;
-  kind: "user" | "hubspot";
-  is_me?: boolean;
-  archived?: boolean;
 };
 
 export function OwnerFilter({
@@ -35,56 +38,29 @@ export function OwnerFilter({
     staleTime: 60_000,
   });
 
-  // Responsáveis de integrações (ex.: HubSpot) que ainda não estão mapeados para um usuário.
-  // Vão aparecer no filtro para permitir filtrar leads que vieram com esse "owner" externo.
   const { data: hsOwners = [], isLoading: loadingHs } = useQuery({
-    queryKey: ["owner-filter", "hubspot-owners"],
+    queryKey: ["owner-filter", "hubspot-owners", "all"],
     staleTime: 60_000,
     queryFn: async () => {
       const { data } = await supabase
         .from("hubspot_owners")
-        .select("id, first_name, last_name, email, status, mapped_user_id")
-        .is("mapped_user_id", null);
-      return (data ?? []) as Array<{
-        id: string;
-        first_name: string | null;
-        last_name: string | null;
-        email: string | null;
-        status: string | null;
-        mapped_user_id: string | null;
-      }>;
+        .select("id, first_name, last_name, email, status, mapped_user_id");
+      return (data ?? []) as OwnerFilterHubspot[];
     },
   });
 
   const isLoading = loadingMembers || loadingHs;
+  const options = useMemo(() => buildOwnerOptions(members, hsOwners), [members, hsOwners]);
+  const active = options.filter((o) => o.active);
+  const inactive = options.filter((o) => !o.active);
 
-  const userOptions: Option[] = members.map((m) => ({
-    id: m.user_id,
-    label: m.full_name || m.user_id.slice(0, 8),
-    kind: "user",
-    is_me: m.is_me,
-  }));
-  const hsOptions: Option[] = hsOwners.map((o) => {
-    const full = `${o.first_name ?? ""} ${o.last_name ?? ""}`.trim();
-    return {
-      id: `hs:${o.id}`,
-      label: full || o.email || `HubSpot ${o.id}`,
-      kind: "hubspot",
-      archived: (o.status ?? "").toLowerCase() === "archived",
-    };
-  });
-  const options: Option[] = [...userOptions, ...hsOptions].sort((a, b) => {
-    if (!!a.is_me !== !!b.is_me) return a.is_me ? -1 : 1;
-    return a.label.localeCompare(b.label);
-  });
-
-  const toggleOwner = (id: string, checked: boolean) => {
-    onChange({
-      ...value,
-      ownerIds: checked
-        ? Array.from(new Set([...value.ownerIds, id]))
-        : value.ownerIds.filter((x) => x !== id),
-    });
+  const toggle = (opt: OwnerOption, checked: boolean) => {
+    const set = new Set(value.ownerIds);
+    for (const id of opt.ids) {
+      if (checked) set.add(id);
+      else set.delete(id);
+    }
+    onChange({ ...value, ownerIds: [...set] });
   };
 
   return (
@@ -102,30 +78,85 @@ export function OwnerFilter({
       ) : options.length === 0 ? (
         <p className="px-2 py-1 text-xs text-muted-foreground">Nenhum membro</p>
       ) : (
-        options.map((opt) => {
-          const checked = value.ownerIds.includes(opt.id);
-          return (
-            <label
-              key={opt.id}
-              className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
-            >
-              <Checkbox checked={checked} onCheckedChange={(v) => toggleOwner(opt.id, !!v)} />
-              <span
-                className={
-                  "h-1.5 w-1.5 rounded-full " +
-                  (opt.kind === "hubspot" ? "bg-orange-500" : "bg-primary")
-                }
-              />
-              <span className="truncate">
-                {opt.label}
-                {opt.is_me ? " (eu)" : ""}
-                {opt.archived ? " (arquivado)" : ""}
-              </span>
-            </label>
-          );
-        })
+        <TooltipProvider>
+          <OwnerGroup title="Ativos" items={active} selected={value.ownerIds} onToggle={toggle} defaultOpen />
+          <OwnerGroup title="Inativos" items={inactive} selected={value.ownerIds} onToggle={toggle} />
+        </TooltipProvider>
       )}
     </div>
+  );
+}
+
+function OwnerGroup({
+  title,
+  items,
+  selected,
+  onToggle,
+  defaultOpen = false,
+}: {
+  title: string;
+  items: OwnerOption[];
+  selected: string[];
+  onToggle: (opt: OwnerOption, checked: boolean) => void;
+  defaultOpen?: boolean;
+}) {
+  const selectedCount = items.filter((o) => selectionState(o.ids, selected) !== false).length;
+  const [open, setOpen] = useState(defaultOpen);
+  useEffect(() => {
+    if (selectedCount > 0) setOpen(true);
+  }, [selectedCount]);
+  if (items.length === 0) return null;
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <ChevronRight
+          className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-90")}
+          aria-hidden="true"
+        />
+        <span>
+          {title} ({items.length})
+        </span>
+        {selectedCount > 0 && (
+          <span className="ml-auto text-primary">· {selectedCount} selecionado(s)</span>
+        )}
+      </CollapsibleTrigger>
+      <CollapsibleContent className="space-y-0.5">
+        {items.map((opt) => (
+          <label
+            key={opt.key}
+            className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+          >
+            <Checkbox
+              checked={selectionState(opt.ids, selected)}
+              onCheckedChange={(v) => onToggle(opt, v === true)}
+            />
+            <span
+              className={cn(
+                "h-1.5 w-1.5 shrink-0 rounded-full",
+                opt.hasUser ? "bg-primary" : "bg-warning",
+              )}
+            />
+            <span className={cn("truncate", !opt.active && "text-muted-foreground")}>
+              {opt.label}
+              {opt.is_me ? " (eu)" : ""}
+            </span>
+            {opt.hasUser && opt.hasHubspot && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="ml-auto shrink-0 rounded bg-muted px-1 text-[10px] text-muted-foreground">
+                    +HubSpot
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  Inclui os registros do usuário e os importados do HubSpot em nome dele
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </label>
+        ))}
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 
