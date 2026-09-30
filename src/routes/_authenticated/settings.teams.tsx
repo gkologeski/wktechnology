@@ -917,7 +917,9 @@ function UsersPage() {
                           size="icon"
                           disabled={statusBusy === r.user_id}
                           onClick={() => void toggleStatus(r)}
-                          aria-label={r.status === "inactive" ? "Reativar usuário" : "Desativar usuário"}
+                          aria-label={
+                            r.status === "inactive" ? "Reativar usuário" : "Desativar usuário"
+                          }
                           title={r.status === "inactive" ? "Reativar usuário" : "Desativar usuário"}
                         >
                           {r.status === "inactive" ? (

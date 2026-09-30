@@ -79,8 +79,19 @@ export function OwnerFilter({
         <p className="px-2 py-1 text-xs text-muted-foreground">Nenhum membro</p>
       ) : (
         <TooltipProvider>
-          <OwnerGroup title="Ativos" items={active} selected={value.ownerIds} onToggle={toggle} defaultOpen />
-          <OwnerGroup title="Inativos" items={inactive} selected={value.ownerIds} onToggle={toggle} />
+          <OwnerGroup
+            title="Ativos"
+            items={active}
+            selected={value.ownerIds}
+            onToggle={toggle}
+            defaultOpen
+          />
+          <OwnerGroup
+            title="Inativos"
+            items={inactive}
+            selected={value.ownerIds}
+            onToggle={toggle}
+          />
         </TooltipProvider>
       )}
     </div>

@@ -21,7 +21,10 @@ describe("buildOwnerOptions", () => {
     expect(opts[0].active).toBe(true);
   });
   it("mescla pelo vínculo", () => {
-    const opts = buildOwnerOptions([{ user_id: "u1", full_name: "Ana" }], [hs("2", "Outro", "active", "u1")]);
+    const opts = buildOwnerOptions(
+      [{ user_id: "u1", full_name: "Ana" }],
+      [hs("2", "Outro", "active", "u1")],
+    );
     expect(opts[0].ids).toEqual(["u1", "hs:2"]);
   });
   it("arquivado sem usuário é inativo; membro inativo idem", () => {

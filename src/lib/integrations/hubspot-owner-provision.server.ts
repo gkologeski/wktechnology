@@ -141,4 +141,3 @@ export async function assertWorkspaceAdmin(
   if (!ok) throw new Error("Somente administradores podem gerenciar usuários.");
   return workspaceId;
 }
-

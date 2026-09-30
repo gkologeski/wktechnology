@@ -88,18 +88,18 @@ function HubspotUsersPage() {
         description="Owners importados do HubSpot. Vincule cada um a um usuário do workspace para que os registros importados apareçam atribuídos a ele. Nenhum convite por email é enviado."
         actions={
           <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            onClick={() => provision.mutate()}
-            disabled={provision.isPending}
-            title="Cria usuários inativos (sem acesso) para os responsáveis sem vínculo e liga os repetidos ao usuário existente"
-          >
-            {provision.isPending ? "Criando…" : "Criar usuários inativos"}
-          </Button>
-          <Button onClick={() => sync.mutate()} disabled={sync.isPending} className="gap-2">
-            <RefreshCw className={`h-4 w-4 ${sync.isPending ? "animate-spin" : ""}`} />
-            {sync.isPending ? "Sincronizando…" : "Sincronizar do HubSpot"}
-          </Button>
+            <Button
+              variant="outline"
+              onClick={() => provision.mutate()}
+              disabled={provision.isPending}
+              title="Cria usuários inativos (sem acesso) para os responsáveis sem vínculo e liga os repetidos ao usuário existente"
+            >
+              {provision.isPending ? "Criando…" : "Criar usuários inativos"}
+            </Button>
+            <Button onClick={() => sync.mutate()} disabled={sync.isPending} className="gap-2">
+              <RefreshCw className={`h-4 w-4 ${sync.isPending ? "animate-spin" : ""}`} />
+              {sync.isPending ? "Sincronizando…" : "Sincronizar do HubSpot"}
+            </Button>
           </div>
         }
       />

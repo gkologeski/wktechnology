@@ -165,9 +165,8 @@ export const listHubspotOwners = createServerFn({ method: "GET" })
 export const provisionHubspotOwnerUsers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { provisionHubspotOwners, assertWorkspaceAdmin } = await import(
-      "./hubspot-owner-provision.server"
-    );
+    const { provisionHubspotOwners, assertWorkspaceAdmin } =
+      await import("./hubspot-owner-provision.server");
     const workspaceId = await assertWorkspaceAdmin(context.supabase as never, context.userId);
     return provisionHubspotOwners(workspaceId);
   });
@@ -180,7 +179,8 @@ export const setWorkspaceMemberStatus = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     if (data.userId === context.userId) throw new Error("Você não pode desativar a si mesmo.");
-    const { setMemberStatus, assertWorkspaceAdmin } = await import("./hubspot-owner-provision.server");
+    const { setMemberStatus, assertWorkspaceAdmin } =
+      await import("./hubspot-owner-provision.server");
     const workspaceId = await assertWorkspaceAdmin(context.supabase as never, context.userId);
     await setMemberStatus(workspaceId, data.userId, data.status);
     return { ok: true };

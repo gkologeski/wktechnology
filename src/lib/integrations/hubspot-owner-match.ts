@@ -34,7 +34,8 @@ export function decideProvision(
   const name = hubspotOwnerName(owner);
   if (email && users.byEmail.has(email)) return { kind: "link", userId: users.byEmail.get(email)! };
   const nameKey = normalizePersonKey(name);
-  if (nameKey && users.byName.has(nameKey)) return { kind: "link", userId: users.byName.get(nameKey)! };
+  if (nameKey && users.byName.has(nameKey))
+    return { kind: "link", userId: users.byName.get(nameKey)! };
   if (!email) return { kind: "skip", reason: "sem e-mail" };
   if (isHubspotBotEmail(email)) return { kind: "skip", reason: "conta automática do HubSpot" };
   return { kind: "create", email, fullName: name || email };
