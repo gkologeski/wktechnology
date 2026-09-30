@@ -1,4 +1,6 @@
 import { formatDateTime } from "@/lib/crm";
+import { SortableTableHead } from "@/components/grid/sortable-table-head";
+import { useClientSort } from "@/lib/grid-client-sort";
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
@@ -262,6 +264,20 @@ function TicketsIndex() {
     }
     return list;
   }, [tickets, view, pipeline?.id, priorityFilter, ownerFilter, search, lookups, user?.id]);
+
+  const PRIORITY_RANK: Record<string, number> = { low: 1, medium: 2, high: 3, urgent: 4 };
+  const {
+    sorted: sortedTickets,
+    sort,
+    toggle: toggleSort,
+  } = useClientSort(filtered, {
+    subject: (t: TicketRow) => t.subject,
+    priority: (t: TicketRow) => PRIORITY_RANK[t.priority] ?? null,
+    status: (t: TicketRow) => STATUSES.find((s) => s.value === t.status)?.label ?? t.status,
+    contact: (t: TicketRow) => (t.contact_id ? lookups.contacts.get(t.contact_id) : null),
+    company: (t: TicketRow) => (t.company_id ? lookups.companies.get(t.company_id) : null),
+    created: (t: TicketRow) => t.created_at,
+  });
 
   function openNew() {
     setEditing(null);
@@ -576,13 +592,43 @@ function TicketsIndex() {
                       onCheckedChange={toggleAll}
                     />
                   </TableHead>
-                  <TableHead>Assunto</TableHead>
-                  <TableHead>Prioridade</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Contato</TableHead>
-                  <TableHead>Empresa</TableHead>
+                  <SortableTableHead
+                    label="Assunto"
+                    active={sort?.key === "subject"}
+                    dir={sort?.dir}
+                    onSort={() => toggleSort("subject")}
+                  />
+                  <SortableTableHead
+                    label="Prioridade"
+                    active={sort?.key === "priority"}
+                    dir={sort?.dir}
+                    onSort={() => toggleSort("priority")}
+                  />
+                  <SortableTableHead
+                    label="Status"
+                    active={sort?.key === "status"}
+                    dir={sort?.dir}
+                    onSort={() => toggleSort("status")}
+                  />
+                  <SortableTableHead
+                    label="Contato"
+                    active={sort?.key === "contact"}
+                    dir={sort?.dir}
+                    onSort={() => toggleSort("contact")}
+                  />
+                  <SortableTableHead
+                    label="Empresa"
+                    active={sort?.key === "company"}
+                    dir={sort?.dir}
+                    onSort={() => toggleSort("company")}
+                  />
                   <TableHead>Responsável</TableHead>
-                  <TableHead>Criado</TableHead>
+                  <SortableTableHead
+                    label="Criado"
+                    active={sort?.key === "created"}
+                    dir={sort?.dir}
+                    onSort={() => toggleSort("created")}
+                  />
                   <TableHead className="w-8" />
                 </TableRow>
               </TableHeader>
@@ -601,7 +647,7 @@ function TicketsIndex() {
                     </TableCell>
                   </TableRow>
                 )}
-                {filtered.map((t) => {
+                {sortedTickets.map((t) => {
                   const responsible = ticketResponsibleId(t);
 
                   return (
