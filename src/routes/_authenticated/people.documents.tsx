@@ -143,7 +143,7 @@ function DocumentsPage() {
             </div>
           ) : (
             <>
-              <GridListToolbar
+              <GridListToolbar exportValue={{ status: (d) => (d.status === "expired" ? "Vencido" : d.status === "expiring" ? "A vencer" : "Válido") }}
                 grid={sortGrid}
                 filename="documentos"
                 labels={{

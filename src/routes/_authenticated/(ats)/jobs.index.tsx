@@ -864,7 +864,7 @@ function AtsJobsPage() {
             />
           )}
           <div className="rounded-lg border border-border-subtle bg-surface-1 overflow-x-auto">
-            <GridListToolbar
+            <GridListToolbar exportValue={{ seniority: (j) => (j.seniority ? (SENIORITY_LABEL[j.seniority] ?? j.seniority) : null), mode: (j) => (j.remote_mode ? (REMOTE_LABEL[j.remote_mode] ?? j.remote_mode) : null) }}
               grid={sortGrid}
               filename="vagas"
               labels={{

@@ -260,7 +260,7 @@ function OffersPage() {
         />
       ) : (
         <section className="overflow-hidden rounded-lg border border-border-subtle bg-surface-1 shadow-xs">
-          <GridListToolbar
+          <GridListToolbar exportValue={{ status: (r) => OFFER_STATUS[r.status]?.label ?? r.status }}
             grid={sortGrid}
             filename="ofertas"
             labels={{

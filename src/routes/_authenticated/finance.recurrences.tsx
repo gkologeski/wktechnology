@@ -156,7 +156,7 @@ function RecurrencesPage() {
             <p className="text-sm text-muted-foreground">Nenhuma recorrência cadastrada.</p>
           ) : (
             <>
-              <GridListToolbar
+              <GridListToolbar exportValue={{ direction: (r: any) => (r.direction === "receivable" ? "A receber" : "A pagar"), cadence: (r: any) => CADENCE_LABEL[r.cadence] ?? r.cadence }}
                 grid={sortGrid}
                 filename="recorrencias"
                 labels={{

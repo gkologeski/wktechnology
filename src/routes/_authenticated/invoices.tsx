@@ -286,7 +286,7 @@ function InvoicesPage() {
                 </p>
               ) : (
                 <>
-                  <GridListToolbar
+                  <GridListToolbar exportValue={{ status: (inv) => STATUS_LABEL[inv.status] ?? inv.status }}
                     grid={sortGrid}
                     filename="faturas"
                     labels={{

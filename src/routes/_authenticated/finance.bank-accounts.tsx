@@ -46,6 +46,13 @@ import {
   useLegalEntityFilterInput,
 } from "@/components/finance/legal-entity-select";
 
+const BANK_KIND_LABEL: Record<string, string> = {
+  checking: "Conta corrente",
+  savings: "Poupança",
+  cash: "Caixa",
+  bank: "Conta bancária",
+};
+
 export const Route = createFileRoute("/_authenticated/finance/bank-accounts")({
   head: () => ({ meta: [{ title: "Contas bancárias" }] }),
   component: BankAccountsPage,
@@ -142,7 +149,7 @@ function BankAccountsPage() {
           </div>
         ) : (
           <>
-            <GridListToolbar
+            <GridListToolbar exportValue={{ kind: (b) => BANK_KIND_LABEL[b.kind] ?? b.kind }}
               grid={sortGrid}
               filename="contas-bancarias"
               labels={{ name: "Nome", kind: "Tipo", currency: "Moeda" }}
