@@ -225,6 +225,13 @@
       "when": 1790737025453,
       "tag": "0031_workspace_members_status_inactive",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1790777724005,
+      "tag": "0032_saved_views_more_entities",
+      "breakpoints": true
     }
   ]
 }

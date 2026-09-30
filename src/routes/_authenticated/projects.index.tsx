@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useGridFilters } from "@/hooks/use-grid-filters";
+import type { GridFilterField } from "@/lib/grid-filters";
 import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
@@ -103,12 +105,40 @@ function ProjectsPage() {
   });
 
   const filteredRows = filterRows(allRows as any[]);
+  const gridFilters = useGridFilters(
+    "projects",
+    filteredRows as any[],
+    [
+      {
+        key: "status",
+        label: "Status",
+        type: "multi",
+        get: (p) => p.status,
+        options: Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label })),
+      },
+      {
+        key: "contract",
+        label: "Contrato",
+        type: "multi",
+        get: (p) => p.contracts?.number ?? p.contracts?.title,
+      },
+      { key: "owner", label: "Responsável", type: "owner", get: (p) => p.assigned_to },
+      { key: "due", label: "Prazo entre", type: "date", get: (p) => p.due_at },
+      {
+        key: "progress",
+        label: "Progresso (%)",
+        type: "number",
+        get: (p) => Number(p.progress ?? 0),
+      },
+    ] as GridFilterField<any>[],
+  );
   const {
     sorted: rows,
     sort,
     toggle,
     grid: sortGrid,
-  } = useClientSort(filteredRows as any[], {
+    setSort: setGridSort,
+  } = useClientSort(gridFilters.filtered, {
     name: (p: any) => p.name,
     contract: (p: any) => p.contracts?.number ?? p.contracts?.title,
     status: (p: any) => STATUS_LABEL[p.status] ?? p.status,
@@ -273,6 +303,9 @@ function ProjectsPage() {
           ) : (
             <>
               <GridListToolbar
+                filters={gridFilters}
+                sort={sort}
+                setSort={setGridSort}
                 grid={sortGrid}
                 filename="projetos"
                 labels={{

@@ -1,4 +1,6 @@
 import { formatDateTime } from "@/lib/crm";
+import { useGridFilters } from "@/hooks/use-grid-filters";
+import type { GridFilterField } from "@/lib/grid-filters";
 import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
@@ -267,12 +269,38 @@ function TicketsIndex() {
   }, [tickets, view, pipeline?.id, priorityFilter, ownerFilter, search, lookups, user?.id]);
 
   const PRIORITY_RANK: Record<string, number> = { low: 1, medium: 2, high: 3, urgent: 4 };
+  const gridFilters = useGridFilters("tickets", filtered, [
+    {
+      key: "status",
+      label: "Status",
+      type: "multi",
+      get: (t) => t.status,
+      options: STATUSES.map((s) => ({ value: s.value, label: s.label })),
+    },
+    {
+      key: "priority",
+      label: "Prioridade",
+      type: "multi",
+      get: (t) => t.priority,
+      options: PRIORITIES.map((p) => ({ value: p.value, label: p.label })),
+    },
+    { key: "owner", label: "Responsável", type: "owner", get: (t) => t.assignee_id },
+    {
+      key: "company",
+      label: "Empresa",
+      type: "multi",
+      get: (t) => t.company_id,
+      optionLabel: (v) => lookups.companies.get(v) ?? "Empresa",
+    },
+    { key: "created", label: "Criado entre", type: "date", get: (t) => t.created_at },
+  ] as GridFilterField<any>[]);
   const {
     sorted: sortedTickets,
     sort,
     toggle: toggleSort,
     grid: sortGrid,
-  } = useClientSort(filtered, {
+    setSort: setGridSort,
+  } = useClientSort(gridFilters.filtered, {
     subject: (t: TicketRow) => t.subject,
     priority: (t: TicketRow) => PRIORITY_RANK[t.priority] ?? null,
     status: (t: TicketRow) => STATUSES.find((s) => s.value === t.status)?.label ?? t.status,
@@ -586,6 +614,9 @@ function TicketsIndex() {
 
           <div className="rounded-md border bg-card overflow-hidden">
             <GridListToolbar
+              filters={gridFilters}
+              sort={sort}
+              setSort={setGridSort}
               grid={sortGrid}
               filename="tickets"
               labels={{

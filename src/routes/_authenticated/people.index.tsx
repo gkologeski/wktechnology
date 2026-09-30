@@ -1,5 +1,7 @@
 // /people — lista de pessoas (TechPeople).
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useGridFilters } from "@/hooks/use-grid-filters";
+import type { GridFilterField } from "@/lib/grid-filters";
 import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
@@ -153,12 +155,33 @@ function PeoplePage() {
     staleTime: 20_000,
   });
 
+  const gridFilters = useGridFilters("people", filterRows(allRows), [
+    {
+      key: "status",
+      label: "Status",
+      type: "multi",
+      get: (p) => p.status,
+      options: PEOPLE_STATUSES.map((s) => ({ value: s, label: PEOPLE_STATUS_LABELS[s] })),
+    },
+    {
+      key: "type",
+      label: "Vínculo",
+      type: "multi",
+      get: (p) => p.employment_type,
+      optionLabel: (v) => (PEOPLE_EMPLOYMENT_LABELS as Record<string, string>)[v] ?? v,
+    },
+    { key: "role", label: "Cargo", type: "multi", get: (p) => p.role_title },
+    { key: "hire", label: "Contratação entre", type: "date", get: (p) => p.hire_date },
+    { key: "owner", label: "Responsável", type: "owner", get: (p) => p.assigned_to },
+  ] as GridFilterField<any>[]);
+
   const {
     sorted: rows,
     sort,
     toggle,
     grid: sortGrid,
-  } = useClientSort(filterRows(allRows), {
+    setSort: setGridSort,
+  } = useClientSort(gridFilters.filtered, {
     name: (p) => p.full_name,
     role: (p) => p.role_title,
     type: (p) => PEOPLE_EMPLOYMENT_LABELS[p.employment_type] ?? p.employment_type,
@@ -302,6 +325,9 @@ function PeoplePage() {
       ) : (
         <div className="rounded-md border bg-card">
           <GridListToolbar
+            filters={gridFilters}
+            sort={sort}
+            setSort={setGridSort}
             grid={sortGrid}
             filename="pessoas"
             labels={{
