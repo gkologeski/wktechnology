@@ -10,3 +10,4 @@
 - Cada módulo principal usa um primeiro grupo “Visão geral” com “Dashboard”; listagens permanecem em rotas próprias — separa acompanhamento executivo da operação.
 - Existem seis módulos verticais (crm, ats, people, contracts, projects, finance) sobre o Core ERP; `services` é id legado absorvido pelo TechContracts e listas de interface usam `VERTICAL_MODULE_LIST` — evita reintroduzir um módulo "TechServices" inexistente.
 - Novas telas e redesigns relevantes exigem mockup renderizado e aprovação antes do código; correções pontuais sem decisão visual não.
+- Valores fixos seguem docs/architecture/hardcoded-values.md e são barrados por src/lib/hardcode-guard.test.ts — evita regressão da auditoria.
