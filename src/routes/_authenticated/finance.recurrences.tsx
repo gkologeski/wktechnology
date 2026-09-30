@@ -160,38 +160,38 @@ function RecurrencesPage() {
                     label="Descrição"
                     active={sort?.key === "desc"}
                     dir={sort?.dir}
-                    onSort={() => toggle("desc")}
+                    onSort={() => toggleSort("desc")}
                   />
                   <SortableTableHead
                     label="Direção"
                     active={sort?.key === "direction"}
                     dir={sort?.dir}
-                    onSort={() => toggle("direction")}
+                    onSort={() => toggleSort("direction")}
                   />
                   <SortableTableHead
                     label="Cadência"
                     active={sort?.key === "cadence"}
                     dir={sort?.dir}
-                    onSort={() => toggle("cadence")}
+                    onSort={() => toggleSort("cadence")}
                   />
                   <SortableTableHead
                     label="Próxima geração"
                     active={sort?.key === "next"}
                     dir={sort?.dir}
-                    onSort={() => toggle("next")}
+                    onSort={() => toggleSort("next")}
                   />
                   <SortableTableHead
                     label="Geradas"
                     active={sort?.key === "generated"}
                     dir={sort?.dir}
-                    onSort={() => toggle("generated")}
+                    onSort={() => toggleSort("generated")}
                   />
                   <TableHead className="text-right">Valor</TableHead>
                   <SortableTableHead
                     label="Status"
                     active={sort?.key === "status"}
                     dir={sort?.dir}
-                    onSort={() => toggle("status")}
+                    onSort={() => toggleSort("status")}
                   />
                   <TableHead className="w-40" />
                 </TableRow>

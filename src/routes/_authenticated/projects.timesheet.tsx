@@ -212,38 +212,38 @@ function TimesheetPage() {
                 label="Data"
                 active={sort?.key === "date"}
                 dir={sort?.dir}
-                onSort={() => toggle("date")}
+                onSort={() => toggleSort("date")}
               />
               <SortableTableHead
                 label="Projeto"
                 active={sort?.key === "project"}
                 dir={sort?.dir}
-                onSort={() => toggle("project")}
+                onSort={() => toggleSort("project")}
               />
               <SortableTableHead
                 label="Tarefa"
                 active={sort?.key === "task"}
                 dir={sort?.dir}
-                onSort={() => toggle("task")}
+                onSort={() => toggleSort("task")}
               />
               <SortableTableHead
                 label="Descrição"
                 active={sort?.key === "desc"}
                 dir={sort?.dir}
-                onSort={() => toggle("desc")}
+                onSort={() => toggleSort("desc")}
               />
               <TableHead className="text-right">Horas</TableHead>
               <SortableTableHead
                 label="Billable"
                 active={sort?.key === "billable"}
                 dir={sort?.dir}
-                onSort={() => toggle("billable")}
+                onSort={() => toggleSort("billable")}
               />
               <SortableTableHead
                 label="Status"
                 active={sort?.key === "status"}
                 dir={sort?.dir}
-                onSort={() => toggle("status")}
+                onSort={() => toggleSort("status")}
               />
             </TableRow>
           </TableHeader>
