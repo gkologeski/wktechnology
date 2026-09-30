@@ -100,7 +100,9 @@ function RecurrencesPage() {
   const {
     sorted: sortedRows,
     sort,
-    toggle: toggleSort, grid: sortGrid } = useClientSort(rows as any[], {
+    toggle: toggleSort,
+    grid: sortGrid,
+  } = useClientSort(rows as any[], {
     desc: (r: any) => r.template?.description,
     direction: (r: any) => r.direction,
     cadence: (r: any) => r.cadence,
@@ -153,118 +155,137 @@ function RecurrencesPage() {
           ) : rows.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhuma recorrência cadastrada.</p>
           ) : (
-            <GridListToolbar grid={sortGrid} filename="recorrencias" labels={{ desc: "Descrição", direction: "Direção", cadence: "Cadência", next: "Próxima geração", generated: "Geradas", status: "Status" }} />
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <SortableTableHead
-                    label="Descrição"
-                    active={sort?.key === "desc"}
-                    dir={sort?.dir}
-                    onSort={() => toggleSort("desc")}
-                  />
-                  <SortableTableHead
-                    label="Direção"
-                    active={sort?.key === "direction"}
-                    dir={sort?.dir}
-                    onSort={() => toggleSort("direction")}
-                  />
-                  <SortableTableHead
-                    label="Cadência"
-                    active={sort?.key === "cadence"}
-                    dir={sort?.dir}
-                    onSort={() => toggleSort("cadence")}
-                  />
-                  <SortableTableHead
-                    label="Próxima geração"
-                    active={sort?.key === "next"}
-                    dir={sort?.dir}
-                    onSort={() => toggleSort("next")}
-                  />
-                  <SortableTableHead
-                    label="Geradas"
-                    active={sort?.key === "generated"}
-                    dir={sort?.dir}
-                    onSort={() => toggleSort("generated")}
-                  />
-                  <TableHead className="text-right">Valor</TableHead>
-                  <SortableTableHead
-                    label="Status"
-                    active={sort?.key === "status"}
-                    dir={sort?.dir}
-                    onSort={() => toggleSort("status")}
-                  />
-                  <TableHead className="w-40" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedRows.map((r: any) => (
-                  <TableRow key={r.id}>
-                    <TableCell className="font-medium">{r.template?.description ?? "—"}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="text-xs">
-                        {r.direction === "receivable" ? "A receber" : "A pagar"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {CADENCE_LABEL[r.cadence] ?? r.cadence}
-                      {r.cadence === "custom_days" && r.interval_days
-                        ? ` (${r.interval_days}d)`
-                        : ""}
-                    </TableCell>
-                    <TableCell className="text-sm tabular-nums">{r.next_run_date}</TableCell>
-                    <TableCell className="text-sm tabular-nums">
-                      {r.occurrences_generated}
-                      {r.max_occurrences ? `/${r.max_occurrences}` : ""}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums text-sm">
-                      {formatCurrency(
-                        Number(r.template?.amount ?? 0),
-                        (r.template?.currency as string) ?? "BRL",
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={r.active ? "default" : "secondary"} className="text-xs">
-                        {r.active ? "Ativa" : "Parada"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={async () => {
-                            await toggle({ data: { id: r.id, active: !r.active } });
-                            invalidate();
-                          }}
-                          title={r.active ? "Pausar" : "Ativar"}
-                        >
-                          {r.active ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={async () => {
-                            if (
-                              !(await confirmDialog(
-                                "Excluir esta recorrência? Lançamentos já gerados serão mantidos.",
-                              ))
-                            )
-                              return;
-                            await del({ data: { id: r.id } });
-                            toast.success("Recorrência excluída.");
-                            invalidate();
-                          }}
-                          title="Excluir"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
+            <>
+              <GridListToolbar
+                grid={sortGrid}
+                filename="recorrencias"
+                labels={{
+                  desc: "Descrição",
+                  direction: "Direção",
+                  cadence: "Cadência",
+                  next: "Próxima geração",
+                  generated: "Geradas",
+                  status: "Status",
+                }}
+              />
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <SortableTableHead
+                      label="Descrição"
+                      active={sort?.key === "desc"}
+                      dir={sort?.dir}
+                      onSort={() => toggleSort("desc")}
+                    />
+                    <SortableTableHead
+                      label="Direção"
+                      active={sort?.key === "direction"}
+                      dir={sort?.dir}
+                      onSort={() => toggleSort("direction")}
+                    />
+                    <SortableTableHead
+                      label="Cadência"
+                      active={sort?.key === "cadence"}
+                      dir={sort?.dir}
+                      onSort={() => toggleSort("cadence")}
+                    />
+                    <SortableTableHead
+                      label="Próxima geração"
+                      active={sort?.key === "next"}
+                      dir={sort?.dir}
+                      onSort={() => toggleSort("next")}
+                    />
+                    <SortableTableHead
+                      label="Geradas"
+                      active={sort?.key === "generated"}
+                      dir={sort?.dir}
+                      onSort={() => toggleSort("generated")}
+                    />
+                    <TableHead className="text-right">Valor</TableHead>
+                    <SortableTableHead
+                      label="Status"
+                      active={sort?.key === "status"}
+                      dir={sort?.dir}
+                      onSort={() => toggleSort("status")}
+                    />
+                    <TableHead className="w-40" />
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {sortedRows.map((r: any) => (
+                    <TableRow key={r.id}>
+                      <TableCell className="font-medium">
+                        {r.template?.description ?? "—"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {r.direction === "receivable" ? "A receber" : "A pagar"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {CADENCE_LABEL[r.cadence] ?? r.cadence}
+                        {r.cadence === "custom_days" && r.interval_days
+                          ? ` (${r.interval_days}d)`
+                          : ""}
+                      </TableCell>
+                      <TableCell className="text-sm tabular-nums">{r.next_run_date}</TableCell>
+                      <TableCell className="text-sm tabular-nums">
+                        {r.occurrences_generated}
+                        {r.max_occurrences ? `/${r.max_occurrences}` : ""}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums text-sm">
+                        {formatCurrency(
+                          Number(r.template?.amount ?? 0),
+                          (r.template?.currency as string) ?? "BRL",
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={r.active ? "default" : "secondary"} className="text-xs">
+                          {r.active ? "Ativa" : "Parada"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={async () => {
+                              await toggle({ data: { id: r.id, active: !r.active } });
+                              invalidate();
+                            }}
+                            title={r.active ? "Pausar" : "Ativar"}
+                          >
+                            {r.active ? (
+                              <Pause className="h-4 w-4" />
+                            ) : (
+                              <Play className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={async () => {
+                              if (
+                                !(await confirmDialog(
+                                  "Excluir esta recorrência? Lançamentos já gerados serão mantidos.",
+                                ))
+                              )
+                                return;
+                              await del({ data: { id: r.id } });
+                              toast.success("Recorrência excluída.");
+                              invalidate();
+                            }}
+                            title="Excluir"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </>
           )}
         </CardContent>
       </Card>

@@ -140,7 +140,9 @@ function ProjectTasksPage() {
   const {
     sorted: sortedRows,
     sort,
-    toggle, grid: sortGrid } = useClientSort(rows, {
+    toggle,
+    grid: sortGrid,
+  } = useClientSort(rows, {
     title: (t) => t.title,
     status: (t) => STATUS_LABEL[t.status] ?? t.status,
     hours: (t) => (t.estimated_hours == null ? null : Number(t.estimated_hours)),
@@ -307,109 +309,116 @@ function ProjectTasksPage() {
               </Button>
             </div>
           ) : (
-            <GridListToolbar grid={sortGrid} filename="tarefas-projetos" labels={{ title: "Título", status: "Status", hours: "Horas est.", due: "Prazo" }} search={false} />
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-10">
-                    <Checkbox
-                      checked={
-                        selection.allOnPageSelected
-                          ? true
-                          : selection.someOnPageSelected
-                            ? "indeterminate"
-                            : false
-                      }
-                      onCheckedChange={() => selection.toggleAllOnPage()}
-                      aria-label="Selecionar todas as tarefas da página"
+            <>
+              <GridListToolbar
+                grid={sortGrid}
+                filename="tarefas-projetos"
+                labels={{ title: "Título", status: "Status", hours: "Horas est.", due: "Prazo" }}
+                search={false}
+              />
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={
+                          selection.allOnPageSelected
+                            ? true
+                            : selection.someOnPageSelected
+                              ? "indeterminate"
+                              : false
+                        }
+                        onCheckedChange={() => selection.toggleAllOnPage()}
+                        aria-label="Selecionar todas as tarefas da página"
+                      />
+                    </TableHead>
+                    <SortableTableHead
+                      label="Título"
+                      active={sort?.key === "title"}
+                      dir={sort?.dir}
+                      onSort={() => toggle("title")}
                     />
-                  </TableHead>
-                  <SortableTableHead
-                    label="Título"
-                    active={sort?.key === "title"}
-                    dir={sort?.dir}
-                    onSort={() => toggle("title")}
-                  />
-                  <TableHead>Projeto</TableHead>
-                  <SortableTableHead
-                    label="Status"
-                    active={sort?.key === "status"}
-                    dir={sort?.dir}
-                    onSort={() => toggle("status")}
-                  />
-                  <SortableTableHead
-                    label="Horas est."
-                    active={sort?.key === "hours"}
-                    dir={sort?.dir}
-                    onSort={() => toggle("hours")}
-                    className="text-right"
-                    align="right"
-                  />
-                  <SortableTableHead
-                    label="Prazo"
-                    active={sort?.key === "due"}
-                    dir={sort?.dir}
-                    onSort={() => toggle("due")}
-                  />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedRows.map((t) => {
-                  const project = (t as { projects?: { id: string; name: string } }).projects;
-                  return (
-                    <TableRow
-                      key={t.id}
-                      data-state={selection.isSelected(t.id) ? "selected" : undefined}
-                    >
-                      <TableCell>
-                        <Checkbox
-                          checked={selection.isSelected(t.id)}
-                          onCheckedChange={() => selection.toggleOne(t.id)}
-                          aria-label={`Selecionar tarefa ${t.title}`}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {project ? (
-                          <Link
-                            to="/projects/$id"
-                            params={{ id: project.id }}
-                            className="font-medium hover:underline"
-                          >
-                            {t.title}
-                          </Link>
-                        ) : (
-                          <span className="font-medium">{t.title}</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {project ? (
-                          <Link
-                            to="/projects/$id"
-                            params={{ id: project.id }}
-                            className="hover:underline"
-                          >
-                            {project.name}
-                          </Link>
-                        ) : (
-                          "—"
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={STATUS_TONE[t.status] ?? ""}>
-                          {STATUS_LABEL[t.status] ?? t.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {t.estimated_hours ?? "—"}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {t.due_at ? formatDateTime(t.due_at).split(" ")[0] : "—"}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                    <TableHead>Projeto</TableHead>
+                    <SortableTableHead
+                      label="Status"
+                      active={sort?.key === "status"}
+                      dir={sort?.dir}
+                      onSort={() => toggle("status")}
+                    />
+                    <SortableTableHead
+                      label="Horas est."
+                      active={sort?.key === "hours"}
+                      dir={sort?.dir}
+                      onSort={() => toggle("hours")}
+                      className="text-right"
+                      align="right"
+                    />
+                    <SortableTableHead
+                      label="Prazo"
+                      active={sort?.key === "due"}
+                      dir={sort?.dir}
+                      onSort={() => toggle("due")}
+                    />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sortedRows.map((t) => {
+                    const project = (t as { projects?: { id: string; name: string } }).projects;
+                    return (
+                      <TableRow
+                        key={t.id}
+                        data-state={selection.isSelected(t.id) ? "selected" : undefined}
+                      >
+                        <TableCell>
+                          <Checkbox
+                            checked={selection.isSelected(t.id)}
+                            onCheckedChange={() => selection.toggleOne(t.id)}
+                            aria-label={`Selecionar tarefa ${t.title}`}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          {project ? (
+                            <Link
+                              to="/projects/$id"
+                              params={{ id: project.id }}
+                              className="font-medium hover:underline"
+                            >
+                              {t.title}
+                            </Link>
+                          ) : (
+                            <span className="font-medium">{t.title}</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {project ? (
+                            <Link
+                              to="/projects/$id"
+                              params={{ id: project.id }}
+                              className="hover:underline"
+                            >
+                              {project.name}
+                            </Link>
+                          ) : (
+                            "—"
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={STATUS_TONE[t.status] ?? ""}>
+                            {STATUS_LABEL[t.status] ?? t.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {t.estimated_hours ?? "—"}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {t.due_at ? formatDateTime(t.due_at).split(" ")[0] : "—"}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </>
           )}
         </div>
       )}

@@ -106,7 +106,9 @@ function ProjectsPage() {
   const {
     sorted: rows,
     sort,
-    toggle, grid: sortGrid } = useClientSort(filteredRows as any[], {
+    toggle,
+    grid: sortGrid,
+  } = useClientSort(filteredRows as any[], {
     name: (p: any) => p.name,
     contract: (p: any) => p.contracts?.number ?? p.contracts?.title,
     status: (p: any) => STATUS_LABEL[p.status] ?? p.status,
@@ -269,106 +271,119 @@ function ProjectsPage() {
               </Button>
             </div>
           ) : (
-            <GridListToolbar grid={sortGrid} filename="projetos" labels={{ name: "Nome", contract: "Contrato", status: "Status", progress: "Progresso", due: "Prazo" }} search={false} />
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-10">
-                    <Checkbox
-                      aria-label="Selecionar todos os projetos exibidos"
-                      checked={
-                        selection.allOnPageSelected
-                          ? true
-                          : selection.someOnPageSelected
-                            ? "indeterminate"
-                            : false
-                      }
-                      onCheckedChange={selection.toggleAllOnPage}
-                    />
-                  </TableHead>
-                  <SortableTableHead
-                    label="Nome"
-                    active={sort?.key === "name"}
-                    dir={sort?.dir}
-                    onSort={() => toggle("name")}
-                  />
-                  <SortableTableHead
-                    label="Contrato"
-                    active={sort?.key === "contract"}
-                    dir={sort?.dir}
-                    onSort={() => toggle("contract")}
-                  />
-                  <SortableTableHead
-                    label="Status"
-                    active={sort?.key === "status"}
-                    dir={sort?.dir}
-                    onSort={() => toggle("status")}
-                  />
-                  <SortableTableHead
-                    label="Progresso"
-                    active={sort?.key === "progress"}
-                    dir={sort?.dir}
-                    onSort={() => toggle("progress")}
-                    className="text-right"
-                    align="right"
-                  />
-                  <SortableTableHead
-                    label="Prazo"
-                    active={sort?.key === "due"}
-                    dir={sort?.dir}
-                    onSort={() => toggle("due")}
-                  />
-                  <TableHead>Responsável</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((p: any) => (
-                  <TableRow key={p.id}>
-                    <TableCell>
+            <>
+              <GridListToolbar
+                grid={sortGrid}
+                filename="projetos"
+                labels={{
+                  name: "Nome",
+                  contract: "Contrato",
+                  status: "Status",
+                  progress: "Progresso",
+                  due: "Prazo",
+                }}
+                search={false}
+              />
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-10">
                       <Checkbox
-                        aria-label={`Selecionar projeto ${p.name}`}
-                        checked={selection.selectedIds.has(p.id)}
-                        onCheckedChange={() => selection.toggleOne(p.id)}
+                        aria-label="Selecionar todos os projetos exibidos"
+                        checked={
+                          selection.allOnPageSelected
+                            ? true
+                            : selection.someOnPageSelected
+                              ? "indeterminate"
+                              : false
+                        }
+                        onCheckedChange={selection.toggleAllOnPage}
                       />
-                    </TableCell>
-                    <TableCell>
-                      <Link
-                        to="/projects/$id"
-                        params={{ id: p.id }}
-                        className="font-medium hover:underline"
-                      >
-                        {p.name}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {p.contracts ? (
-                        <Link
-                          to="/contracts/$id"
-                          params={{ id: p.contracts.id }}
-                          className="hover:underline"
-                        >
-                          {p.contracts.number ?? p.contracts.title}
-                        </Link>
-                      ) : (
-                        "—"
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={STATUS_TONE[p.status] ?? ""}>
-                        {STATUS_LABEL[p.status] ?? p.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">{p.progress ?? 0}%</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {p.due_at ? formatDateTime(p.due_at).split(" ")[0] : "—"}
-                    </TableCell>
-                    <TableCell>
-                      <AssigneeCell assignedTo={p.assigned_to} />
-                    </TableCell>
+                    </TableHead>
+                    <SortableTableHead
+                      label="Nome"
+                      active={sort?.key === "name"}
+                      dir={sort?.dir}
+                      onSort={() => toggle("name")}
+                    />
+                    <SortableTableHead
+                      label="Contrato"
+                      active={sort?.key === "contract"}
+                      dir={sort?.dir}
+                      onSort={() => toggle("contract")}
+                    />
+                    <SortableTableHead
+                      label="Status"
+                      active={sort?.key === "status"}
+                      dir={sort?.dir}
+                      onSort={() => toggle("status")}
+                    />
+                    <SortableTableHead
+                      label="Progresso"
+                      active={sort?.key === "progress"}
+                      dir={sort?.dir}
+                      onSort={() => toggle("progress")}
+                      className="text-right"
+                      align="right"
+                    />
+                    <SortableTableHead
+                      label="Prazo"
+                      active={sort?.key === "due"}
+                      dir={sort?.dir}
+                      onSort={() => toggle("due")}
+                    />
+                    <TableHead>Responsável</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((p: any) => (
+                    <TableRow key={p.id}>
+                      <TableCell>
+                        <Checkbox
+                          aria-label={`Selecionar projeto ${p.name}`}
+                          checked={selection.selectedIds.has(p.id)}
+                          onCheckedChange={() => selection.toggleOne(p.id)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Link
+                          to="/projects/$id"
+                          params={{ id: p.id }}
+                          className="font-medium hover:underline"
+                        >
+                          {p.name}
+                        </Link>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {p.contracts ? (
+                          <Link
+                            to="/contracts/$id"
+                            params={{ id: p.contracts.id }}
+                            className="hover:underline"
+                          >
+                            {p.contracts.number ?? p.contracts.title}
+                          </Link>
+                        ) : (
+                          "—"
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={STATUS_TONE[p.status] ?? ""}>
+                          {STATUS_LABEL[p.status] ?? p.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">{p.progress ?? 0}%</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {p.due_at ? formatDateTime(p.due_at).split(" ")[0] : "—"}
+                      </TableCell>
+                      <TableCell>
+                        <AssigneeCell assignedTo={p.assigned_to} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </>
           )}
         </div>
       )}

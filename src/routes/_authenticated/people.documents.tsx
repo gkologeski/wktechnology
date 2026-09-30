@@ -71,7 +71,9 @@ function DocumentsPage() {
   const {
     sorted: data,
     sort,
-    toggle, grid: sortGrid } = useClientSort(rawData as ExpiringDocumentRow[], {
+    toggle,
+    grid: sortGrid,
+  } = useClientSort(rawData as ExpiringDocumentRow[], {
     person: (d) => d.person_name,
     doc: (d) => d.doc_type,
     expires: (d) => d.expires_at,
@@ -140,125 +142,136 @@ function DocumentsPage() {
               Nenhum documento nessa condição.
             </div>
           ) : (
-            <GridListToolbar grid={sortGrid} filename="documentos" labels={{ person: "Pessoa", doc: "Documento", expires: "Validade", status: "Status" }} />
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-10">
-                    <Checkbox
-                      aria-label="Selecionar todos os documentos exibidos"
-                      checked={
-                        selection.allOnPageSelected
-                          ? true
-                          : selection.someOnPageSelected
-                            ? "indeterminate"
-                            : false
-                      }
-                      onCheckedChange={selection.toggleAllOnPage}
-                    />
-                  </TableHead>
-                  <SortableTableHead
-                    label="Pessoa"
-                    active={sort?.key === "person"}
-                    dir={sort?.dir}
-                    onSort={() => toggle("person")}
-                  />
-                  <SortableTableHead
-                    label="Documento"
-                    active={sort?.key === "doc"}
-                    dir={sort?.dir}
-                    onSort={() => toggle("doc")}
-                  />
-                  <SortableTableHead
-                    label="Validade"
-                    active={sort?.key === "expires"}
-                    dir={sort?.dir}
-                    onSort={() => toggle("expires")}
-                  />
-                  <SortableTableHead
-                    label="Status"
-                    active={sort?.key === "status"}
-                    dir={sort?.dir}
-                    onSort={() => toggle("status")}
-                  />
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.map((d: ExpiringDocumentRow) => (
-                  <TableRow key={d.id}>
-                    <TableCell>
+            <>
+              <GridListToolbar
+                grid={sortGrid}
+                filename="documentos"
+                labels={{
+                  person: "Pessoa",
+                  doc: "Documento",
+                  expires: "Validade",
+                  status: "Status",
+                }}
+              />
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-10">
                       <Checkbox
-                        aria-label={`Selecionar documento ${d.doc_type}`}
-                        checked={selection.selectedIds.has(d.id)}
-                        onCheckedChange={() => selection.toggleOne(d.id)}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Link
-                        to="/people/$id"
-                        params={{ id: d.person_id }}
-                        className="flex items-center gap-2 hover:underline"
-                      >
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={d.person_photo_url ?? undefined} />
-                          <AvatarFallback>{initials(d.person_name)}</AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm font-medium">{d.person_name}</span>
-                      </Link>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">{d.doc_type}</div>
-                      <div className="text-xs text-muted-foreground">{d.doc_number ?? "—"}</div>
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {d.expires_at}
-                      {d.days_left != null ? (
-                        <span className="text-xs text-muted-foreground ml-2">
-                          {d.days_left < 0
-                            ? `${Math.abs(d.days_left)}d atrás`
-                            : `em ${d.days_left}d`}
-                        </span>
-                      ) : null}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="secondary"
-                        className={
-                          d.status === "expired"
-                            ? "bg-rose-500/10 text-rose-700"
-                            : d.status === "expiring"
-                              ? "bg-amber-500/10 text-amber-700"
-                              : ""
+                        aria-label="Selecionar todos os documentos exibidos"
+                        checked={
+                          selection.allOnPageSelected
+                            ? true
+                            : selection.someOnPageSelected
+                              ? "indeterminate"
+                              : false
                         }
-                      >
-                        {d.status === "expired" ? (
-                          <>
-                            <AlertTriangle className="h-3 w-3 mr-1" /> Vencido
-                          </>
-                        ) : d.status === "expiring" ? (
-                          "A vencer"
-                        ) : (
-                          "Válido"
-                        )}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {d.file_url ? (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDownload(d.id)}
-                          title="Baixar"
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
-                      ) : null}
-                    </TableCell>
+                        onCheckedChange={selection.toggleAllOnPage}
+                      />
+                    </TableHead>
+                    <SortableTableHead
+                      label="Pessoa"
+                      active={sort?.key === "person"}
+                      dir={sort?.dir}
+                      onSort={() => toggle("person")}
+                    />
+                    <SortableTableHead
+                      label="Documento"
+                      active={sort?.key === "doc"}
+                      dir={sort?.dir}
+                      onSort={() => toggle("doc")}
+                    />
+                    <SortableTableHead
+                      label="Validade"
+                      active={sort?.key === "expires"}
+                      dir={sort?.dir}
+                      onSort={() => toggle("expires")}
+                    />
+                    <SortableTableHead
+                      label="Status"
+                      active={sort?.key === "status"}
+                      dir={sort?.dir}
+                      onSort={() => toggle("status")}
+                    />
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {data.map((d: ExpiringDocumentRow) => (
+                    <TableRow key={d.id}>
+                      <TableCell>
+                        <Checkbox
+                          aria-label={`Selecionar documento ${d.doc_type}`}
+                          checked={selection.selectedIds.has(d.id)}
+                          onCheckedChange={() => selection.toggleOne(d.id)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Link
+                          to="/people/$id"
+                          params={{ id: d.person_id }}
+                          className="flex items-center gap-2 hover:underline"
+                        >
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={d.person_photo_url ?? undefined} />
+                            <AvatarFallback>{initials(d.person_name)}</AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm font-medium">{d.person_name}</span>
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">{d.doc_type}</div>
+                        <div className="text-xs text-muted-foreground">{d.doc_number ?? "—"}</div>
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {d.expires_at}
+                        {d.days_left != null ? (
+                          <span className="text-xs text-muted-foreground ml-2">
+                            {d.days_left < 0
+                              ? `${Math.abs(d.days_left)}d atrás`
+                              : `em ${d.days_left}d`}
+                          </span>
+                        ) : null}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="secondary"
+                          className={
+                            d.status === "expired"
+                              ? "bg-rose-500/10 text-rose-700"
+                              : d.status === "expiring"
+                                ? "bg-amber-500/10 text-amber-700"
+                                : ""
+                          }
+                        >
+                          {d.status === "expired" ? (
+                            <>
+                              <AlertTriangle className="h-3 w-3 mr-1" /> Vencido
+                            </>
+                          ) : d.status === "expiring" ? (
+                            "A vencer"
+                          ) : (
+                            "Válido"
+                          )}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {d.file_url ? (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDownload(d.id)}
+                            title="Baixar"
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        ) : null}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </>
           )}
         </CardContent>
       </Card>
