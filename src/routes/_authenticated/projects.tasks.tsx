@@ -136,11 +136,15 @@ function ProjectTasksPage() {
   const setView = (v: "table" | "kanban") =>
     void navigate({ to: ".", search: (prev) => ({ ...prev, view: v }) });
 
-  const { sorted: sortedRows, sort, toggle } = useClientSort(rows, {
+  const {
+    sorted: sortedRows,
+    sort,
+    toggle,
+  } = useClientSort(rows, {
     title: (t) => t.title,
     status: (t) => STATUS_LABEL[t.status] ?? t.status,
     hours: (t) => (t.estimated_hours == null ? null : Number(t.estimated_hours)),
-    due: (t) => (t as { due_date?: string | null }).due_date,
+    due: (t) => t.due_at,
   });
 
   return (
@@ -319,11 +323,33 @@ function ProjectTasksPage() {
                       aria-label="Selecionar todas as tarefas da página"
                     />
                   </TableHead>
-                  <SortableTableHead label="Título" active={sort?.key === "title"} dir={sort?.dir} onSort={() => toggle("title")} />
+                  <SortableTableHead
+                    label="Título"
+                    active={sort?.key === "title"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("title")}
+                  />
                   <TableHead>Projeto</TableHead>
-                  <SortableTableHead label="Status" active={sort?.key === "status"} dir={sort?.dir} onSort={() => toggle("status")} />
-                  <SortableTableHead label="Horas est." active={sort?.key === "hours"} dir={sort?.dir} onSort={() => toggle("hours")} className="text-right" align="right" />
-                  <SortableTableHead label="Prazo" active={sort?.key === "due"} dir={sort?.dir} onSort={() => toggle("due")} />
+                  <SortableTableHead
+                    label="Status"
+                    active={sort?.key === "status"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("status")}
+                  />
+                  <SortableTableHead
+                    label="Horas est."
+                    active={sort?.key === "hours"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("hours")}
+                    className="text-right"
+                    align="right"
+                  />
+                  <SortableTableHead
+                    label="Prazo"
+                    active={sort?.key === "due"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("due")}
+                  />
                 </TableRow>
               </TableHeader>
               <TableBody>

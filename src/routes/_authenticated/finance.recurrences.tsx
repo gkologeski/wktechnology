@@ -96,13 +96,18 @@ function RecurrencesPage() {
     qc.invalidateQueries({ queryKey: ["finance-recurrences"] });
   };
 
-  const { sorted: sortedRows, sort, toggle } = useClientSort(rows as any[], {
+  const {
+    sorted: sortedRows,
+    sort,
+    toggle,
+  } = useClientSort(rows as any[], {
     desc: (r: any) => r.template?.description,
     direction: (r: any) => r.direction,
     cadence: (r: any) => r.cadence,
     next: (r: any) => r.next_run_date,
-    generated: (r: any) => (r.occurrences_generated == null ? null : Number(r.occurrences_generated)),
-    status: (r: any) => r.active ? 1 : 0,
+    generated: (r: any) =>
+      r.occurrences_generated == null ? null : Number(r.occurrences_generated),
+    status: (r: any) => (r.active ? 1 : 0),
   });
 
   return (
@@ -151,13 +156,43 @@ function RecurrencesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <SortableTableHead label="Descrição" active={sort?.key === "desc"} dir={sort?.dir} onSort={() => toggle("desc")} />
-                  <SortableTableHead label="Direção" active={sort?.key === "direction"} dir={sort?.dir} onSort={() => toggle("direction")} />
-                  <SortableTableHead label="Cadência" active={sort?.key === "cadence"} dir={sort?.dir} onSort={() => toggle("cadence")} />
-                  <SortableTableHead label="Próxima geração" active={sort?.key === "next"} dir={sort?.dir} onSort={() => toggle("next")} />
-                  <SortableTableHead label="Geradas" active={sort?.key === "generated"} dir={sort?.dir} onSort={() => toggle("generated")} />
+                  <SortableTableHead
+                    label="Descrição"
+                    active={sort?.key === "desc"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("desc")}
+                  />
+                  <SortableTableHead
+                    label="Direção"
+                    active={sort?.key === "direction"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("direction")}
+                  />
+                  <SortableTableHead
+                    label="Cadência"
+                    active={sort?.key === "cadence"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("cadence")}
+                  />
+                  <SortableTableHead
+                    label="Próxima geração"
+                    active={sort?.key === "next"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("next")}
+                  />
+                  <SortableTableHead
+                    label="Geradas"
+                    active={sort?.key === "generated"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("generated")}
+                  />
                   <TableHead className="text-right">Valor</TableHead>
-                  <SortableTableHead label="Status" active={sort?.key === "status"} dir={sort?.dir} onSort={() => toggle("status")} />
+                  <SortableTableHead
+                    label="Status"
+                    active={sort?.key === "status"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("status")}
+                  />
                   <TableHead className="w-40" />
                 </TableRow>
               </TableHeader>

@@ -127,13 +127,17 @@ function TimesheetPage() {
   const selectableIds = rows.filter((r) => !r.approved_at).map((r) => r.id);
   const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selected.has(id));
 
-  const { sorted: sortedRows, sort, toggle } = useClientSort(rows, {
+  const {
+    sorted: sortedRows,
+    sort,
+    toggle,
+  } = useClientSort(rows, {
     date: (r) => r.entry_date,
     project: (r) => r.projects?.name,
     task: (r) => r.project_tasks?.title,
     desc: (r) => r.description,
-    billable: (r) => r.billable ? 1 : 0,
-    status: (r) => r.approved_at ? 1 : 0,
+    billable: (r) => (r.billable ? 1 : 0),
+    status: (r) => (r.approved_at ? 1 : 0),
   });
 
   return (
@@ -204,13 +208,43 @@ function TimesheetPage() {
                   }}
                 />
               </TableHead>
-              <SortableTableHead label="Data" active={sort?.key === "date"} dir={sort?.dir} onSort={() => toggle("date")} />
-              <SortableTableHead label="Projeto" active={sort?.key === "project"} dir={sort?.dir} onSort={() => toggle("project")} />
-              <SortableTableHead label="Tarefa" active={sort?.key === "task"} dir={sort?.dir} onSort={() => toggle("task")} />
-              <SortableTableHead label="Descrição" active={sort?.key === "desc"} dir={sort?.dir} onSort={() => toggle("desc")} />
+              <SortableTableHead
+                label="Data"
+                active={sort?.key === "date"}
+                dir={sort?.dir}
+                onSort={() => toggle("date")}
+              />
+              <SortableTableHead
+                label="Projeto"
+                active={sort?.key === "project"}
+                dir={sort?.dir}
+                onSort={() => toggle("project")}
+              />
+              <SortableTableHead
+                label="Tarefa"
+                active={sort?.key === "task"}
+                dir={sort?.dir}
+                onSort={() => toggle("task")}
+              />
+              <SortableTableHead
+                label="Descrição"
+                active={sort?.key === "desc"}
+                dir={sort?.dir}
+                onSort={() => toggle("desc")}
+              />
               <TableHead className="text-right">Horas</TableHead>
-              <SortableTableHead label="Billable" active={sort?.key === "billable"} dir={sort?.dir} onSort={() => toggle("billable")} />
-              <SortableTableHead label="Status" active={sort?.key === "status"} dir={sort?.dir} onSort={() => toggle("status")} />
+              <SortableTableHead
+                label="Billable"
+                active={sort?.key === "billable"}
+                dir={sort?.dir}
+                onSort={() => toggle("billable")}
+              />
+              <SortableTableHead
+                label="Status"
+                active={sort?.key === "status"}
+                dir={sort?.dir}
+                onSort={() => toggle("status")}
+              />
             </TableRow>
           </TableHeader>
           <TableBody>

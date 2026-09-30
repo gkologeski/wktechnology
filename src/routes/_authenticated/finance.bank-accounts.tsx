@@ -108,7 +108,11 @@ function BankAccountsPage() {
     }
   }
 
-  const { sorted: sortedRows, sort, toggle } = useClientSort(rows, {
+  const {
+    sorted: sortedRows,
+    sort,
+    toggle,
+  } = useClientSort(rows, {
     name: (b) => b.name,
     kind: (b) => b.kind,
     currency: (b) => b.currency,
@@ -138,10 +142,25 @@ function BankAccountsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <SortableTableHead label="Nome" active={sort?.key === "name"} dir={sort?.dir} onSort={() => toggle("name")} />
+                <SortableTableHead
+                  label="Nome"
+                  active={sort?.key === "name"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("name")}
+                />
                 <TableHead>Empresa</TableHead>
-                <SortableTableHead label="Tipo" active={sort?.key === "kind"} dir={sort?.dir} onSort={() => toggle("kind")} />
-                <SortableTableHead label="Moeda" active={sort?.key === "currency"} dir={sort?.dir} onSort={() => toggle("currency")} />
+                <SortableTableHead
+                  label="Tipo"
+                  active={sort?.key === "kind"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("kind")}
+                />
+                <SortableTableHead
+                  label="Moeda"
+                  active={sort?.key === "currency"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("currency")}
+                />
                 <TableHead className="text-right">Saldo inicial</TableHead>
               </TableRow>
             </TableHeader>

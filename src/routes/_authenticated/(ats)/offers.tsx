@@ -1,6 +1,8 @@
 // Página /offers — gerenciamento de cartas-proposta com integração eSign.
 // Lote 5 do rollout UX/UI — segue Design Foundation TechHire.
 import { createFileRoute } from "@tanstack/react-router";
+import { SortableTableHead } from "@/components/grid/sortable-table-head";
+import { useClientSort } from "@/lib/grid-client-sort";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
@@ -110,6 +112,17 @@ function OffersPage() {
   const [loading, setLoading] = useState(true);
   const { canAny } = usePermissions();
   const selection = useGridSelection(rows, { buildIdQuery: idQueryFor("ats_offers") });
+  const {
+    sorted: sortedRows,
+    sort,
+    toggle,
+  } = useClientSort(rows, {
+    candidate: (r) => r.ats_candidates?.full_name,
+    job: (r) => r.ats_jobs?.title,
+    salary: (r) => (r.salary_amount == null ? null : Number(r.salary_amount)),
+    start: (r) => r.start_date,
+    status: (r) => r.status,
+  });
 
   const view = Route.useSearch().view ?? "table";
   const navigate = Route.useNavigate();
@@ -261,16 +274,41 @@ function OffersPage() {
                     onCheckedChange={selection.toggleAllOnPage}
                   />
                 </TableHead>
-                <TableHead>Candidato</TableHead>
-                <TableHead>Vaga</TableHead>
-                <TableHead>Salário</TableHead>
-                <TableHead>Início</TableHead>
-                <TableHead>Status</TableHead>
+                <SortableTableHead
+                  label="Candidato"
+                  active={sort?.key === "candidate"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("candidate")}
+                />
+                <SortableTableHead
+                  label="Vaga"
+                  active={sort?.key === "job"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("job")}
+                />
+                <SortableTableHead
+                  label="Salário"
+                  active={sort?.key === "salary"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("salary")}
+                />
+                <SortableTableHead
+                  label="Início"
+                  active={sort?.key === "start"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("start")}
+                />
+                <SortableTableHead
+                  label="Status"
+                  active={sort?.key === "status"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("status")}
+                />
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((r) => (
+              {sortedRows.map((r) => (
                 <TableRow
                   key={r.id}
                   className="group"

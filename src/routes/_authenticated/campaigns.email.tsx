@@ -197,7 +197,11 @@ function EmailBroadcastsPage() {
       qc.invalidateQueries({ queryKey: ["email-broadcasts"] }),
     );
 
-  const { sorted: sortedRows, sort, toggle } = useClientSort(items as Broadcast[], {
+  const {
+    sorted: sortedRows,
+    sort,
+    toggle,
+  } = useClientSort(items as Broadcast[], {
     name: (b) => b.name,
     status: (b) => b.status,
     progress: (b) => (b.sent == null ? null : Number(b.sent)),
@@ -415,11 +419,36 @@ function EmailBroadcastsPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <SortableTableHead label="Nome" active={sort?.key === "name"} dir={sort?.dir} onSort={() => toggle("name")} />
-              <SortableTableHead label="Status" active={sort?.key === "status"} dir={sort?.dir} onSort={() => toggle("status")} />
-              <SortableTableHead label="Progresso" active={sort?.key === "progress"} dir={sort?.dir} onSort={() => toggle("progress")} />
-              <SortableTableHead label="Taxa" active={sort?.key === "rate"} dir={sort?.dir} onSort={() => toggle("rate")} />
-              <SortableTableHead label="Agendado" active={sort?.key === "scheduled"} dir={sort?.dir} onSort={() => toggle("scheduled")} />
+              <SortableTableHead
+                label="Nome"
+                active={sort?.key === "name"}
+                dir={sort?.dir}
+                onSort={() => toggle("name")}
+              />
+              <SortableTableHead
+                label="Status"
+                active={sort?.key === "status"}
+                dir={sort?.dir}
+                onSort={() => toggle("status")}
+              />
+              <SortableTableHead
+                label="Progresso"
+                active={sort?.key === "progress"}
+                dir={sort?.dir}
+                onSort={() => toggle("progress")}
+              />
+              <SortableTableHead
+                label="Taxa"
+                active={sort?.key === "rate"}
+                dir={sort?.dir}
+                onSort={() => toggle("rate")}
+              />
+              <SortableTableHead
+                label="Agendado"
+                active={sort?.key === "scheduled"}
+                dir={sort?.dir}
+                onSort={() => toggle("scheduled")}
+              />
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>

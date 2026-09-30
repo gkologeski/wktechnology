@@ -107,7 +107,11 @@ function ContractTemplatesPage() {
     }
   }
 
-  const { sorted: sortedRows, sort, toggle } = useClientSort(rows, {
+  const {
+    sorted: sortedRows,
+    sort,
+    toggle,
+  } = useClientSort(rows, {
     name: (t) => t.name,
     role: (t) => t.role,
     status: (t) => STATUS_LABEL[t.status] ?? t.status,
@@ -183,11 +187,36 @@ function ContractTemplatesPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <SortableTableHead label="Nome" active={sort?.key === "name"} dir={sort?.dir} onSort={() => toggle("name")} />
-                <SortableTableHead label="Tipo" active={sort?.key === "role"} dir={sort?.dir} onSort={() => toggle("role")} />
-                <SortableTableHead label="Status" active={sort?.key === "status"} dir={sort?.dir} onSort={() => toggle("status")} />
-                <SortableTableHead label="Serviços vinculados" active={sort?.key === "services"} dir={sort?.dir} onSort={() => toggle("services")} />
-                <SortableTableHead label="Atualizado em" active={sort?.key === "updated"} dir={sort?.dir} onSort={() => toggle("updated")} />
+                <SortableTableHead
+                  label="Nome"
+                  active={sort?.key === "name"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("name")}
+                />
+                <SortableTableHead
+                  label="Tipo"
+                  active={sort?.key === "role"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("role")}
+                />
+                <SortableTableHead
+                  label="Status"
+                  active={sort?.key === "status"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("status")}
+                />
+                <SortableTableHead
+                  label="Serviços vinculados"
+                  active={sort?.key === "services"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("services")}
+                />
+                <SortableTableHead
+                  label="Atualizado em"
+                  active={sort?.key === "updated"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("updated")}
+                />
                 <TableHead className="w-24 text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
