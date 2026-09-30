@@ -7,10 +7,7 @@
 - Outros cargos também não podem criar empresas: Financeiro, Auditor, Apontador de Horas, Recrutador e Gerente Técnico.
 
 ## O que fazer
-1. **Liberar a Priscila (você escolhe uma opção, sem código):**
-   - A. Em Configurações › Permissões, liberar "Criar empresas (próprias)" para o cargo Head de RH. Isso vale para todos com esse cargo.
-   - B. Dar a ela um segundo cargo que já permita criar empresas, como Gerente Comercial.
-   - Se você preferir, eu mesmo faço a opção A por você, com a sua aprovação.
+1. **Liberar a Priscila:** você mesmo fará a liberação na tela de permissões, sem código. Fica fora deste plano.
 2. **Aviso claro (código):** a janela "Criar empresa" e os outros lugares que criam empresa vão mostrar "Seu cargo não tem permissão para criar empresas. Peça a um administrador." Para isso, vou usar o tratamento de erro de permissão que o sistema já tem.
 3. **Evitar a tentativa (código):** quem não tem a permissão vai ver o botão "Criar empresa" desabilitado, com essa mesma explicação ao passar o mouse.
 
