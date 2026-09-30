@@ -109,13 +109,17 @@ export const listWorkspaceMembers = createServerFn({ method: "GET" })
     // Coleta IDs: membros do workspace ativo + legado (team_members) + o próprio usuário.
     const ids = new Set<string>([userId]);
     let workspaceOwnerId: string | null = null;
+    const inactiveIds = new Set<string>();
 
     if (activeWorkspaceId) {
       const { data: wsMembers } = await supabaseAdmin
         .from("workspace_members")
-        .select("user_id")
+        .select("user_id, status")
         .eq("workspace_id", activeWorkspaceId);
-      (wsMembers ?? []).forEach((m) => ids.add(m.user_id as string));
+      (wsMembers ?? []).forEach((m) => {
+        ids.add(m.user_id as string);
+        if (m.status === "inactive") inactiveIds.add(m.user_id as string);
+      });
 
       const { data: ws } = await supabaseAdmin
         .from("workspaces")
@@ -173,6 +177,7 @@ export const listWorkspaceMembers = createServerFn({ method: "GET" })
           (id === workspaceOwnerId ? "Workspace (admin)" : `${id.slice(0, 8)}…`),
         is_owner: id === workspaceOwnerId || id === legacyOwnerId,
         is_me: id === userId,
+        status: (inactiveIds.has(id) ? "inactive" : "active") as "active" | "inactive",
       }))
       .sort((a, b) => {
         if (a.is_me !== b.is_me) return a.is_me ? -1 : 1;

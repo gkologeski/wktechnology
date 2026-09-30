@@ -126,3 +126,19 @@ export async function setMemberStatus(
   });
   if (bErr) throw new Error(bErr.message);
 }
+
+export async function assertWorkspaceAdmin(
+  supabase: { rpc: (fn: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown }> },
+  userId: string,
+): Promise<string> {
+  const { data: ws } = await supabase.rpc("default_workspace_for_user", { _user: userId });
+  const workspaceId = ws as string | null;
+  if (!workspaceId) throw new Error("Usuário sem workspace ativo");
+  const { data: ok } = await supabase.rpc("is_workspace_admin_v2", {
+    _workspace: workspaceId,
+    _user: userId,
+  });
+  if (!ok) throw new Error("Somente administradores podem gerenciar usuários.");
+  return workspaceId;
+}
+
