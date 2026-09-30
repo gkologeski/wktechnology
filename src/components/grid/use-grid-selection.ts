@@ -18,6 +18,8 @@ export type UseGridSelectionOptions = {
    * seleção da página atual fica disponível.
    */
   buildIdQuery?: GridIdQueryBuilder;
+  /** Alternativa para grids cuja consulta filtrada é exposta por uma server function. */
+  loadAllIds?: () => Promise<string[]>;
   /** Limite de segurança para a seleção global. */
   maxIds?: number;
 };
@@ -28,7 +30,7 @@ export function useGridSelection<T extends { id: string }>(
   rows: T[],
   options: UseGridSelectionOptions = {},
 ) {
-  const { buildIdQuery, maxIds = 50_000 } = options;
+  const { buildIdQuery, loadAllIds, maxIds = 50_000 } = options;
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isSelectingAll, setIsSelectingAll] = useState(false);
 
@@ -59,26 +61,56 @@ export function useGridSelection<T extends { id: string }>(
   const clear = useCallback(() => setSelectedIds(new Set()), []);
 
   const selectAllMatching = useCallback(async () => {
-    if (!buildIdQuery) return;
+    if (!buildIdQuery && !loadAllIds) return;
     setIsSelectingAll(true);
     try {
+      if (loadAllIds) {
+        const ids = await loadAllIds();
+        const truncated = ids.length > maxIds;
+        const selected = ids.slice(0, maxIds);
+        setSelectedIds(new Set(selected));
+        if (truncated) {
+          toast.warning(
+            `${selected.length.toLocaleString("pt-BR")} registros selecionados (limite de segurança)`,
+          );
+        } else {
+          toast.success(`${selected.length.toLocaleString("pt-BR")} registros selecionados`);
+        }
+        return;
+      }
       const all: string[] = [];
+      let truncated = false;
       for (let offset = 0; ; offset += CHUNK) {
         const { data, error } = await buildIdQuery().range(offset, offset + CHUNK - 1);
         if (error) throw new Error(error.message);
         const batch = data ?? [];
-        for (const r of batch) all.push(r.id);
+        for (const r of batch) {
+          if (all.length >= maxIds) {
+            truncated = true;
+            break;
+          }
+          all.push(r.id);
+        }
         if (batch.length < CHUNK) break;
-        if (all.length >= maxIds) break;
+        if (all.length >= maxIds) {
+          truncated = true;
+          break;
+        }
       }
       setSelectedIds(new Set(all));
-      toast.success(`${all.length.toLocaleString("pt-BR")} registros selecionados`);
+      if (truncated) {
+        toast.warning(
+          `${all.length.toLocaleString("pt-BR")} registros selecionados (limite de segurança)`,
+        );
+      } else {
+        toast.success(`${all.length.toLocaleString("pt-BR")} registros selecionados`);
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao selecionar todos os registros");
     } finally {
       setIsSelectingAll(false);
     }
-  }, [buildIdQuery, maxIds]);
+  }, [buildIdQuery, loadAllIds, maxIds]);
 
   const ids = useMemo(() => Array.from(selectedIds), [selectedIds]);
   const selectedRows = useMemo(
@@ -97,7 +129,7 @@ export function useGridSelection<T extends { id: string }>(
     allOnPageSelected,
     someOnPageSelected,
     clear,
-    selectAllMatching: buildIdQuery ? selectAllMatching : undefined,
+    selectAllMatching: buildIdQuery || loadAllIds ? selectAllMatching : undefined,
     isSelectingAll,
     setSelectedIds,
   };

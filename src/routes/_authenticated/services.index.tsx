@@ -23,13 +23,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { listServices } from "@/lib/services.functions";
-import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
+import { listServiceIds, listServices } from "@/lib/services.functions";
+import {
+  ASSIGNEE_ALL,
+  ASSIGNEE_ME,
+  ASSIGNEE_NONE,
+  AssigneeFilter,
+  useAssigneeFilter,
+} from "@/components/entity/assignee-filter";
 import { AssigneeCell } from "@/components/entity/assignee-cell";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { formatLineItemIdentity } from "@/lib/line-item-display";
 import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
-import { useGridSelection, idQueryFor } from "@/components/grid/use-grid-selection";
+import { useGridSelection } from "@/components/grid/use-grid-selection";
+import { useCurrentUserId } from "@/hooks/use-current-user-id";
 import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
@@ -97,6 +104,8 @@ type ServiceRow = {
 
 function ServicesPage() {
   const list = useServerFn(listServices);
+  const listIds = useServerFn(listServiceIds);
+  const meId = useCurrentUserId();
   const qc = useQueryClient();
   const { canAny } = usePermissions();
   const [search, setSearch] = useState("");
@@ -189,9 +198,22 @@ function ServicesPage() {
   });
 
   const selection = useGridSelection(rows, {
-    buildIdQuery: idQueryFor("services", (q) =>
-      status === "all" ? q : (q as any).eq("status", status),
-    ),
+    loadAllIds: () =>
+      listIds({
+        data: {
+          status: status === "all" ? undefined : (status as keyof typeof STATUS_LABEL),
+          type: type === "all" ? undefined : (type as keyof typeof TYPE_LABEL),
+          search: search || undefined,
+          assigneeId:
+            assignee === ASSIGNEE_NONE
+              ? null
+              : assignee === ASSIGNEE_ME
+                ? (meId ?? undefined)
+                : assignee === ASSIGNEE_ALL
+                  ? undefined
+                  : assignee,
+        },
+      }),
   });
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["services"] });
@@ -258,7 +280,6 @@ function ServicesPage() {
           entityLabel="serviço(s)"
           onClear={selection.clear}
           onDone={refresh}
-          totalMatching={rows.length}
           onSelectAll={selection.selectAllMatching}
           isSelectingAll={selection.isSelectingAll}
           canUpdate={canAny([

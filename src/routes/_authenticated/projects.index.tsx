@@ -28,14 +28,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { listProjects } from "@/lib/projects.functions";
+import { listProjectIds, listProjects } from "@/lib/projects.functions";
 import { formatDateTime } from "@/lib/crm";
 import { formatCompactDateTime } from "@/lib/format/compact-date";
 import { QuickCreateProjectDialog } from "@/components/projects/quick-create-project-dialog";
-import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
+import {
+  ASSIGNEE_ALL,
+  ASSIGNEE_ME,
+  ASSIGNEE_NONE,
+  AssigneeFilter,
+  useAssigneeFilter,
+} from "@/components/entity/assignee-filter";
 import { AssigneeCell } from "@/components/entity/assignee-cell";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useGridSelection } from "@/components/grid/use-grid-selection";
+import { useCurrentUserId } from "@/hooks/use-current-user-id";
 import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
@@ -83,6 +90,8 @@ const KANBAN_TONE: Record<string, string> = {
 
 function ProjectsPage() {
   const list = useServerFn(listProjects);
+  const listIds = useServerFn(listProjectIds);
+  const meId = useCurrentUserId();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
@@ -148,9 +157,23 @@ function ProjectsPage() {
 
   // Seleção múltipla / ações em massa (padrão de grids).
   const { canAny } = usePermissions();
-  const selection = useGridSelection(rows as Array<{ id: string }>);
-  const selectAllFiltered = () =>
-    selection.setSelectedIds(new Set(rows.map((r: any) => r.id as string)));
+  const selection = useGridSelection(rows as Array<{ id: string }>, {
+    loadAllIds: () =>
+      listIds({
+        data: {
+          status: status === "all" ? undefined : (status as keyof typeof STATUS_LABEL),
+          search: search || undefined,
+          assigneeId:
+            assignee === ASSIGNEE_NONE
+              ? null
+              : assignee === ASSIGNEE_ME
+                ? (meId ?? undefined)
+                : assignee === ASSIGNEE_ALL
+                  ? undefined
+                  : assignee,
+        },
+      }),
+  });
 
   return (
     <div className="p-6 space-y-5">
@@ -204,8 +227,8 @@ function ProjectsPage() {
             selection.clear();
             void qc.invalidateQueries({ queryKey: ["projects"] });
           }}
-          totalMatching={rows.length}
-          onSelectAll={selectAllFiltered}
+          onSelectAll={selection.selectAllMatching}
+          isSelectingAll={selection.isSelectingAll}
           canUpdate={canAny([
             "techprojects.projects.update.workspace",
             "techprojects.projects.update.team",

@@ -6,7 +6,7 @@
 - Arquétipos White Label são catálogos do workspace; substituem estilo, preservam identidade/assets e usam o `theme` existente.
 - Grades baseadas em `Table` usam uma barra horizontal espelhada e persistente no componente compartilhado, evitando wrappers concorrentes e mantendo a navegação lateral acessível em listas longas.
 - Chamadas de chat de IA passam por `aiChatFetch` (src/lib/ai/provider-resolver.server.ts), que usa o provedor configurado no workspace (Lovable AI por padrão) sem fallback automático em erro — permite IA própria por workspace com chaves cifradas só no servidor.
-- Tabelas reordenáveis usam a fundação compartilhada `SortableColumns` e persistem a ordem por `gridKey`, preservando colunas estruturais fixas — evita implementações DnD divergentes.
+- Grids usam seleção página/global com os mesmos filtros e `SortableColumns` persistido por `gridKey`; evita ações incompletas e DnD divergente.
 - Cada módulo principal usa um primeiro grupo “Visão geral” com “Dashboard”; listagens permanecem em rotas próprias — separa acompanhamento executivo da operação.
 - Existem seis módulos verticais (crm, ats, people, contracts, projects, finance) sobre o Core ERP; `services` é id legado absorvido pelo TechContracts e listas de interface usam `VERTICAL_MODULE_LIST` — evita reintroduzir um módulo "TechServices" inexistente.
 - Novas telas e redesigns relevantes exigem mockup renderizado e aprovação antes do código; correções pontuais sem decisão visual não.

@@ -37,6 +37,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
+import { idQueryFor, useGridSelection } from "@/components/grid/use-grid-selection";
 import { startFocusQueue } from "@/lib/focus-queue";
 import { BulkEnrichDialog } from "@/components/enrichment/bulk-enrich-dialog";
 
@@ -177,7 +178,6 @@ function ContactsHubspotView() {
   }, [projection.sortKey, projection.sortDir]);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(50);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [enrichIds, setEnrichIds] = useState<string[] | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   useAutoCreateParam(() => setCreateOpen(true));
@@ -294,6 +294,65 @@ function ContactsHubspotView() {
 
   const rows = useMemo(() => result?.rows ?? [], [result?.rows]);
   const total = result?.count ?? 0;
+  const selection = useGridSelection(rows, {
+    buildIdQuery: idQueryFor("contacts", (query) => {
+      let q = query;
+      if (activeView === "mine" && user?.id)
+        q = q.or(responsibleOrExpr([user.id], { columns: RESPONSIBLE_COLUMNS_FULL }));
+      if (activeView === "unassigned")
+        q = q.or(
+          responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_FULL, includeUnassigned: true }),
+        );
+      if (activeView === "new_week") {
+        const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
+        q = q.gte("created_at", since);
+      }
+      if (filters.lifecycle.length) q = q.in("lifecyclestage", filters.lifecycle);
+      if (filters.companyIds.length) q = q.in("company_id", filters.companyIds);
+      if (filters.createdPreset !== "any") {
+        const { start, end } = getDateRange(
+          filters.createdPreset,
+          new Date(),
+          filters.createdCustom,
+        );
+        if (start) q = q.gte("created_at", start.toISOString());
+        if (end) q = q.lt("created_at", end.toISOString());
+      }
+      const { userIds } = splitOwnerIds(filters.ownerIds);
+      const ownerClauses: string[] = [];
+      if (userIds.length > 0)
+        ownerClauses.push(responsibleOrExpr(userIds, { columns: RESPONSIBLE_COLUMNS_FULL }));
+      if (filters.includeUnassigned)
+        ownerClauses.push(
+          responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_FULL, includeUnassigned: true }),
+        );
+      if (ownerClauses.length > 0) q = q.or(ownerClauses.join(","));
+      const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
+      if (term) {
+        for (const token of term.split(/\s+/).filter(Boolean)) {
+          q = q.or(
+            [
+              `first_name.ilike.%${token}%`,
+              `last_name.ilike.%${token}%`,
+              `email.ilike.%${token}%`,
+              `phone.ilike.%${token}%`,
+            ].join(","),
+          );
+        }
+      }
+      return q;
+    }),
+  });
+  const {
+    selectedIds,
+    allOnPageSelected: allSelected,
+    someOnPageSelected: someSelected,
+    toggleAllOnPage: toggleAll,
+    toggleOne,
+    clear: clearSelection,
+    selectAllMatching,
+    isSelectingAll,
+  } = selection;
 
   // Busca os nomes das empresas apenas dos contatos da página atual, evitando o
   // teto de registros de uma listagem completa de empresas.
@@ -313,9 +372,6 @@ function ContactsHubspotView() {
     () => new Map(pageCompanies.map((c) => [c.id, c.name])),
     [pageCompanies],
   );
-
-  const allSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
-  const someSelected = rows.some((r) => selectedIds.has(r.id));
 
   const exportData = async (format: ExportFormat, rowsToExport?: typeof rows): Promise<void> => {
     const out = rowsToExport ?? rows;
@@ -339,21 +395,6 @@ function ContactsHubspotView() {
     });
   };
 
-  const toggleAll = () =>
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (allSelected) for (const r of rows) next.delete(r.id);
-      else for (const r of rows) next.add(r.id);
-      return next;
-    });
-  const toggleOne = (id: string) =>
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  const clearSelection = () => setSelectedIds(new Set());
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
 
   const onSort = (k: SortKey) => {
@@ -765,7 +806,13 @@ function ContactsHubspotView() {
             </div>
 
             {selectedIds.size > 0 && (
-              <BulkActionBar count={selectedIds.size} onClear={clearSelection}>
+              <BulkActionBar
+                count={selectedIds.size}
+                onClear={clearSelection}
+                totalMatching={total}
+                onSelectAll={selectAllMatching}
+                isSelectingAll={isSelectingAll}
+              >
                 <Button
                   variant="ghost"
                   size="sm"

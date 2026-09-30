@@ -108,6 +108,36 @@ export const listServices = createServerFn({ method: "POST" })
     });
   });
 
+export const listServiceIds = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        status: statusEnum.optional(),
+        type: typeEnum.optional(),
+        search: z.string().optional(),
+        assigneeId: z.string().uuid().nullable().optional(),
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techservice.services.view.workspace",
+      "techservice.services.view.own",
+    ]);
+    let q = supabase.from("services").select("id").order("id");
+    if (data.status) q = q.eq("status", data.status);
+    if (data.type) q = q.eq("type", data.type);
+    if (data.search?.trim()) q = q.ilike("name", `%${data.search.trim()}%`);
+    if (data.assigneeId === null) q = q.is("assigned_to", null);
+    else if (data.assigneeId) q = q.eq("assigned_to", data.assigneeId);
+    const { data: rows, error } = await q.limit(50_001);
+    if (error) throw error;
+    return (rows ?? []).map((row) => row.id);
+  });
+
 export const getService = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))

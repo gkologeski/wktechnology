@@ -19,6 +19,7 @@ import { BulkActionBar } from "@/components/bulk-action-bar";
 import { ExportMenuButton } from "@/components/export-menu-button";
 import { exportRows, type ExportFormat } from "@/lib/export/export-rows";
 import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
+import { idQueryFor, useGridSelection } from "@/components/grid/use-grid-selection";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -183,7 +184,6 @@ function CompaniesHubspotView() {
   }, [projection.sortKey, projection.sortDir]);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(50);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   useAutoCreateParam(() => setCreateOpen(true));
@@ -302,8 +302,60 @@ function CompaniesHubspotView() {
 
   const rows = result?.rows ?? [];
   const total = result?.count ?? 0;
-  const allSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
-  const someSelected = rows.some((r) => selectedIds.has(r.id));
+  const selection = useGridSelection(rows, {
+    buildIdQuery: idQueryFor("companies", (query) => {
+      let q = query;
+      if (activeView === "mine" && user?.id)
+        q = q.or(responsibleOrExpr([user.id], { columns: RESPONSIBLE_COLUMNS_FULL }));
+      if (activeView === "unassigned")
+        q = q.or(
+          responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_FULL, includeUnassigned: true }),
+        );
+      if (activeView === "new_week") {
+        const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
+        q = q.gte("created_at", since);
+      }
+      if (filters.industry.length) q = q.in("industry", filters.industry);
+      if (filters.size.length) q = q.in("size", filters.size);
+      if (filters.state.length) q = q.in("state", filters.state);
+      if (filters.targetOnly) q = q.eq("is_target_account", true);
+      if (filters.createdPreset !== "any") {
+        const { start, end } = getDateRange(
+          filters.createdPreset,
+          new Date(),
+          filters.createdCustom,
+        );
+        if (start) q = q.gte("created_at", start.toISOString());
+        if (end) q = q.lt("created_at", end.toISOString());
+      }
+      if (filters.ownerIds.length > 0 || filters.includeUnassigned) {
+        q = q.or(
+          ownerFilterOrExpr(
+            { ownerIds: filters.ownerIds, includeUnassigned: filters.includeUnassigned },
+            RESPONSIBLE_COLUMNS_FULL,
+          ),
+        );
+      }
+      const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
+      if (term) {
+        q = q.or(
+          [`name.ilike.%${term}%`, `domain.ilike.%${term}%`, `website.ilike.%${term}%`].join(","),
+        );
+      }
+      return q;
+    }),
+  });
+  const {
+    selectedIds,
+    setSelectedIds,
+    allOnPageSelected: allSelected,
+    someOnPageSelected: someSelected,
+    toggleAllOnPage: toggleAll,
+    toggleOne,
+    clear: clearSelection,
+    selectAllMatching,
+    isSelectingAll,
+  } = selection;
 
   const exportData = async (format: ExportFormat, rowsToExport?: typeof rows): Promise<void> => {
     const out = rowsToExport ?? rows;
@@ -328,21 +380,6 @@ function CompaniesHubspotView() {
     });
   };
 
-  const toggleAll = () =>
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (allSelected) for (const r of rows) next.delete(r.id);
-      else for (const r of rows) next.add(r.id);
-      return next;
-    });
-  const toggleOne = (id: string) =>
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  const clearSelection = () => setSelectedIds(new Set());
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
 
   const onSort = (k: SortKey) => {
@@ -792,7 +829,13 @@ function CompaniesHubspotView() {
             </div>
 
             {selectedIds.size > 0 && (
-              <BulkActionBar count={selectedIds.size} onClear={clearSelection}>
+              <BulkActionBar
+                count={selectedIds.size}
+                onClear={clearSelection}
+                totalMatching={total}
+                onSelectAll={selectAllMatching}
+                isSelectingAll={isSelectingAll}
+              >
                 <Button
                   variant="ghost"
                   size="sm"

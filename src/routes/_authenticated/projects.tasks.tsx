@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/table";
 import { formatDateTime } from "@/lib/crm";
 import { formatCompactDateTime } from "@/lib/format/compact-date";
-import { listAllProjectTasks, listProjects } from "@/lib/projects.functions";
+import { listAllProjectTaskIds, listAllProjectTasks, listProjects } from "@/lib/projects.functions";
 import { useGridSelection } from "@/components/grid/use-grid-selection";
 import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
 import { usePermissions } from "@/lib/access-control/use-permissions";
@@ -83,6 +83,7 @@ type OwnerFilter = "all" | "mine";
 function ProjectTasksPage() {
   const qc = useQueryClient();
   const listTasksFn = useServerFn(listAllProjectTasks);
+  const listTaskIdsFn = useServerFn(listAllProjectTaskIds);
   const listProjectsFn = useServerFn(listProjects);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
@@ -120,8 +121,17 @@ function ProjectTasksPage() {
 
   // Seleção múltipla / ações em massa (padrão de grids — Fase 4).
   const { canAny } = usePermissions();
-  const selection = useGridSelection(rows as Array<(typeof rows)[number] & { id: string }>);
-  const selectAllFiltered = () => selection.setSelectedIds(new Set(rows.map((t) => t.id)));
+  const selection = useGridSelection(rows as Array<(typeof rows)[number] & { id: string }>, {
+    loadAllIds: () =>
+      listTaskIdsFn({
+        data: {
+          status: status === "all" ? undefined : status,
+          projectId: projectId === "all" ? undefined : projectId,
+          mineOnly: owner === "mine" ? true : undefined,
+          search: search || undefined,
+        },
+      }),
+  });
   const canUpdate = canAny([
     "techprojects.tasks.update.workspace",
     "techprojects.tasks.update.team",
@@ -214,8 +224,8 @@ function ProjectTasksPage() {
           entityLabel="tarefa(s)"
           onClear={selection.clear}
           onDone={() => void qc.invalidateQueries({ queryKey: ["project_tasks"] })}
-          totalMatching={rows.length}
-          onSelectAll={selectAllFiltered}
+          onSelectAll={selection.selectAllMatching}
+          isSelectingAll={selection.isSelectingAll}
           assignColumn={canUpdate ? "assignee_id" : null}
           canUpdate={canUpdate}
           canDelete={canDelete}
