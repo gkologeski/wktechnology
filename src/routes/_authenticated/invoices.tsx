@@ -119,14 +119,18 @@ function InvoicesPage() {
     queryKey: ["invoices", status, search],
     queryFn: () =>
       list({ data: { status, search: search || undefined, limit: 200, gateway: "all" } }),
-  });  const { sorted: sortedInvoices, sort, toggle } = useClientSort(data?.invoices ?? [], {
+  });
+  const {
+    sorted: sortedInvoices,
+    sort,
+    toggle,
+  } = useClientSort(data?.invoices ?? [], {
     number: (inv) => inv.invoice_number,
     status: (inv) => inv.status,
     amount: (inv) => (inv.amount == null ? null : Number(inv.amount)),
     due: (inv) => inv.due_date,
     gateway: (inv) => inv.gateway,
   });
-
 
   function invalidate() {
     qc.invalidateQueries({ queryKey: ["invoices"] });
@@ -282,11 +286,36 @@ function InvoicesPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <SortableTableHead label="Número" active={sort?.key === "number"} dir={sort?.dir} onSort={() => toggle("number")} />
-                      <SortableTableHead label="Status" active={sort?.key === "status"} dir={sort?.dir} onSort={() => toggle("status")} />
-                      <SortableTableHead label="Valor" active={sort?.key === "amount"} dir={sort?.dir} onSort={() => toggle("amount")} />
-                      <SortableTableHead label="Vencimento" active={sort?.key === "due"} dir={sort?.dir} onSort={() => toggle("due")} />
-                      <SortableTableHead label="Gateway" active={sort?.key === "gateway"} dir={sort?.dir} onSort={() => toggle("gateway")} />
+                      <SortableTableHead
+                        label="Número"
+                        active={sort?.key === "number"}
+                        dir={sort?.dir}
+                        onSort={() => toggle("number")}
+                      />
+                      <SortableTableHead
+                        label="Status"
+                        active={sort?.key === "status"}
+                        dir={sort?.dir}
+                        onSort={() => toggle("status")}
+                      />
+                      <SortableTableHead
+                        label="Valor"
+                        active={sort?.key === "amount"}
+                        dir={sort?.dir}
+                        onSort={() => toggle("amount")}
+                      />
+                      <SortableTableHead
+                        label="Vencimento"
+                        active={sort?.key === "due"}
+                        dir={sort?.dir}
+                        onSort={() => toggle("due")}
+                      />
+                      <SortableTableHead
+                        label="Gateway"
+                        active={sort?.key === "gateway"}
+                        dir={sort?.dir}
+                        onSort={() => toggle("gateway")}
+                      />
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>

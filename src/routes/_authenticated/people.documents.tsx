@@ -66,13 +66,17 @@ function DocumentsPage() {
     queryKey: ["people-docs-expiring", filter],
     queryFn: () => listFn({ data: { status: filter, limit: 200 } }),
     staleTime: 30_000,
-  });  const { sorted: data, sort, toggle } = useClientSort(rawData as ExpiringDocumentRow[], {
+  });
+  const {
+    sorted: data,
+    sort,
+    toggle,
+  } = useClientSort(rawData as ExpiringDocumentRow[], {
     person: (d) => d.person_name,
     doc: (d) => d.doc_type,
     expires: (d) => d.expires_at,
     status: (d) => d.status,
   });
-
 
   // Seleção múltipla / ações em massa (padrão de grids).
   const qc = useQueryClient();
@@ -152,10 +156,30 @@ function DocumentsPage() {
                       onCheckedChange={selection.toggleAllOnPage}
                     />
                   </TableHead>
-                  <SortableTableHead label="Pessoa" active={sort?.key === "person"} dir={sort?.dir} onSort={() => toggle("person")} />
-                  <SortableTableHead label="Documento" active={sort?.key === "doc"} dir={sort?.dir} onSort={() => toggle("doc")} />
-                  <SortableTableHead label="Validade" active={sort?.key === "expires"} dir={sort?.dir} onSort={() => toggle("expires")} />
-                  <SortableTableHead label="Status" active={sort?.key === "status"} dir={sort?.dir} onSort={() => toggle("status")} />
+                  <SortableTableHead
+                    label="Pessoa"
+                    active={sort?.key === "person"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("person")}
+                  />
+                  <SortableTableHead
+                    label="Documento"
+                    active={sort?.key === "doc"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("doc")}
+                  />
+                  <SortableTableHead
+                    label="Validade"
+                    active={sort?.key === "expires"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("expires")}
+                  />
+                  <SortableTableHead
+                    label="Status"
+                    active={sort?.key === "status"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("status")}
+                  />
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>

@@ -152,7 +152,11 @@ function PeoplePage() {
     staleTime: 20_000,
   });
 
-  const { sorted: rows, sort, toggle } = useClientSort(filterRows(allRows), {
+  const {
+    sorted: rows,
+    sort,
+    toggle,
+  } = useClientSort(filterRows(allRows), {
     name: (p) => p.full_name,
     role: (p) => p.role_title,
     type: (p) => PEOPLE_EMPLOYMENT_LABELS[p.employment_type] ?? p.employment_type,
@@ -311,11 +315,36 @@ function PeoplePage() {
                     onCheckedChange={selection.toggleAllOnPage}
                   />
                 </TableHead>
-                <SortableTableHead label="Pessoa" active={sort?.key === "name"} dir={sort?.dir} onSort={() => toggle("name")} />
-                <SortableTableHead label="Cargo" active={sort?.key === "role"} dir={sort?.dir} onSort={() => toggle("role")} />
-                <SortableTableHead label="Vínculo" active={sort?.key === "type"} dir={sort?.dir} onSort={() => toggle("type")} />
-                <SortableTableHead label="Status" active={sort?.key === "status"} dir={sort?.dir} onSort={() => toggle("status")} />
-                <SortableTableHead label="Contratação" active={sort?.key === "hire"} dir={sort?.dir} onSort={() => toggle("hire")} />
+                <SortableTableHead
+                  label="Pessoa"
+                  active={sort?.key === "name"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("name")}
+                />
+                <SortableTableHead
+                  label="Cargo"
+                  active={sort?.key === "role"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("role")}
+                />
+                <SortableTableHead
+                  label="Vínculo"
+                  active={sort?.key === "type"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("type")}
+                />
+                <SortableTableHead
+                  label="Status"
+                  active={sort?.key === "status"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("status")}
+                />
+                <SortableTableHead
+                  label="Contratação"
+                  active={sort?.key === "hire"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("hire")}
+                />
                 <TableHead>Responsável</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>

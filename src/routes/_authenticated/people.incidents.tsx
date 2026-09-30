@@ -101,18 +101,18 @@ function IncidentsListPage() {
     staleTime: 30_000,
   });
 
-  const SEVERITY_RANK: Record<string, number> = { low: 1, medium: 2, high: 3, critical: 4 };
-  const { sorted: filtered, sort, toggle } = useClientSort(
-    sev === "all" ? data : data.filter((i) => i.severity === sev),
-    {
-      date: (i) => i.occurred_at,
-      title: (i) => i.title,
-      category: (i) =>
-        (INCIDENT_CATEGORY_LABELS as Record<string, string>)[i.category] ?? i.category,
-      severity: (i) => SEVERITY_RANK[i.severity] ?? null,
-      status: (i) => (INCIDENT_STATUS_LABELS as Record<string, string>)[i.status] ?? i.status,
-    },
-  );
+  const SEVERITY_RANK: Record<string, number> = { low: 1, moderate: 2, high: 3, critical: 4 };
+  const {
+    sorted: filtered,
+    sort,
+    toggle,
+  } = useClientSort(sev === "all" ? data : data.filter((i) => i.severity === sev), {
+    date: (i) => i.occurred_at,
+    title: (i) => i.title,
+    category: (i) => (INCIDENT_CATEGORY_LABELS as Record<string, string>)[i.category] ?? i.category,
+    severity: (i) => SEVERITY_RANK[i.severity] ?? null,
+    status: (i) => (INCIDENT_STATUS_LABELS as Record<string, string>)[i.status] ?? i.status,
+  });
 
   // Seleção múltipla / ações em massa (padrão de grids).
   const { canAny } = usePermissions();
@@ -245,11 +245,36 @@ function IncidentsListPage() {
                     onCheckedChange={selection.toggleAllOnPage}
                   />
                 </TableHead>
-                <SortableTableHead label="Data" active={sort?.key === "date"} dir={sort?.dir} onSort={() => toggle("date")} />
-                <SortableTableHead label="Título" active={sort?.key === "title"} dir={sort?.dir} onSort={() => toggle("title")} />
-                <SortableTableHead label="Categoria" active={sort?.key === "category"} dir={sort?.dir} onSort={() => toggle("category")} />
-                <SortableTableHead label="Severidade" active={sort?.key === "severity"} dir={sort?.dir} onSort={() => toggle("severity")} />
-                <SortableTableHead label="Status" active={sort?.key === "status"} dir={sort?.dir} onSort={() => toggle("status")} />
+                <SortableTableHead
+                  label="Data"
+                  active={sort?.key === "date"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("date")}
+                />
+                <SortableTableHead
+                  label="Título"
+                  active={sort?.key === "title"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("title")}
+                />
+                <SortableTableHead
+                  label="Categoria"
+                  active={sort?.key === "category"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("category")}
+                />
+                <SortableTableHead
+                  label="Severidade"
+                  active={sort?.key === "severity"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("severity")}
+                />
+                <SortableTableHead
+                  label="Status"
+                  active={sort?.key === "status"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("status")}
+                />
                 <TableHead>Pessoa</TableHead>
               </TableRow>
             </TableHeader>

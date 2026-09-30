@@ -77,7 +77,11 @@ function BenefitsListPage() {
     queryFn: () => fn({ data: { only_active: true } }),
     staleTime: 60_000,
   });
-  const { sorted: data, sort, toggle } = useClientSort(rawData, {
+  const {
+    sorted: data,
+    sort,
+    toggle,
+  } = useClientSort(rawData, {
     person: (b) => b.people?.full_name,
     type: (b) => BENEFIT_TYPE_LABELS[b.benefit_type as BenefitType] ?? b.benefit_type,
     provider: (b) => b.provider ?? b.plan_name,
@@ -150,12 +154,46 @@ function BenefitsListPage() {
                   onCheckedChange={selection.toggleAllOnPage}
                 />
               </TableHead>
-              <SortableTableHead label="Pessoa" active={sort?.key === "person"} dir={sort?.dir} onSort={() => toggle("person")} />
-              <SortableTableHead label="Tipo" active={sort?.key === "type"} dir={sort?.dir} onSort={() => toggle("type")} />
-              <SortableTableHead label="Provedor / Plano" active={sort?.key === "provider"} dir={sort?.dir} onSort={() => toggle("provider")} />
-              <SortableTableHead label="Valor mensal" active={sort?.key === "value"} dir={sort?.dir} onSort={() => toggle("value")} className="text-right" align="right" />
-              <SortableTableHead label="Cota empregado" active={sort?.key === "share"} dir={sort?.dir} onSort={() => toggle("share")} className="text-right" align="right" />
-              <SortableTableHead label="Início" active={sort?.key === "start"} dir={sort?.dir} onSort={() => toggle("start")} />
+              <SortableTableHead
+                label="Pessoa"
+                active={sort?.key === "person"}
+                dir={sort?.dir}
+                onSort={() => toggle("person")}
+              />
+              <SortableTableHead
+                label="Tipo"
+                active={sort?.key === "type"}
+                dir={sort?.dir}
+                onSort={() => toggle("type")}
+              />
+              <SortableTableHead
+                label="Provedor / Plano"
+                active={sort?.key === "provider"}
+                dir={sort?.dir}
+                onSort={() => toggle("provider")}
+              />
+              <SortableTableHead
+                label="Valor mensal"
+                active={sort?.key === "value"}
+                dir={sort?.dir}
+                onSort={() => toggle("value")}
+                className="text-right"
+                align="right"
+              />
+              <SortableTableHead
+                label="Cota empregado"
+                active={sort?.key === "share"}
+                dir={sort?.dir}
+                onSort={() => toggle("share")}
+                className="text-right"
+                align="right"
+              />
+              <SortableTableHead
+                label="Início"
+                active={sort?.key === "start"}
+                dir={sort?.dir}
+                onSort={() => toggle("start")}
+              />
             </TableRow>
           </TableHeader>
           <TableBody>
