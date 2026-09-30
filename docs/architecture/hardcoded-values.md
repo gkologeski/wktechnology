@@ -9,14 +9,14 @@ A verificação `src/lib/hardcode-guard.test.ts` roda em `bun run test` (e no CI
 
 ## Fontes canônicas
 
-| Tipo | Arquivo |
-| --- | --- |
-| Domínios, hosts, OAuth, remetente | `src/lib/platform-domains.ts` |
-| Origem pública em runtime, mocks internos | `src/lib/runtime-config.server.ts` |
-| Fuso padrão | `src/lib/time-zone.ts` |
-| Quotas, paginação, lotes | `src/lib/limits.ts` |
-| Cor neutra persistida | `src/lib/ui/default-colors.ts` |
-| Cargos padrão (por nome estável) | `src/lib/access-control/default-job-role.server.ts` |
+| Tipo                                      | Arquivo                                             |
+| ----------------------------------------- | --------------------------------------------------- |
+| Domínios, hosts, OAuth, remetente         | `src/lib/platform-domains.ts`                       |
+| Origem pública em runtime, mocks internos | `src/lib/runtime-config.server.ts`                  |
+| Fuso padrão                               | `src/lib/time-zone.ts`                              |
+| Quotas, paginação, lotes                  | `src/lib/limits.ts`                                 |
+| Cor neutra persistida                     | `src/lib/ui/default-colors.ts`                      |
+| Cargos padrão (por nome estável)          | `src/lib/access-control/default-job-role.server.ts` |
 
 ## Regras
 

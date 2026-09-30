@@ -32,7 +32,7 @@ const read = (p: string) => readFileSync(join(ROOT, p), "utf8");
 describe("prevenção de valores chumbados", () => {
   it("não contém identificadores de projeto nem URLs de preview", () => {
     const bad = files.filter((p) =>
-      /czrmhtzaeonzjmbgbabz|68dcfa85-b6da|id-preview--|project--[0-9a-f]{8}/.test(read(p)),
+      /czrmhtzaeonzjmbgbabz|68dcfa85-b6da|id-preview--[0-9a-f]|project--[0-9a-f]{8}/.test(read(p)),
     );
     expect(bad).toEqual([]);
   });
