@@ -44,6 +44,29 @@ export const listProjects = createServerFn({ method: "POST" })
     return rows ?? [];
   });
 
+export const listProjectIds = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        status: projectStatusEnum.optional(),
+        search: z.string().optional(),
+        assigneeId: z.string().uuid().nullable().optional(),
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    let q = supabase.from("projects").select("id").order("id");
+    if (data.status) q = q.eq("status", data.status);
+    if (data.search?.trim()) q = q.ilike("name", `%${data.search.trim()}%`);
+    if (data.assigneeId === null) q = q.is("assigned_to", null);
+    else if (data.assigneeId) q = q.eq("assigned_to", data.assigneeId);
+    const { data: rows, error } = await q.limit(50_001);
+    if (error) throw error;
+    return (rows ?? []).map((row) => row.id);
+  });
+
 export const getProject = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
@@ -321,6 +344,32 @@ export const listAllProjectTasks = createServerFn({ method: "POST" })
     const { data: rows, error } = await q;
     if (error) throw error;
     return rows ?? [];
+  });
+
+export const listAllProjectTaskIds = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        status: taskStatusEnum.optional(),
+        projectId: z.string().uuid().optional(),
+        assigneeId: z.string().uuid().optional(),
+        mineOnly: z.boolean().optional(),
+        search: z.string().optional(),
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    let q = supabase.from("project_tasks").select("id").order("id");
+    if (data.status) q = q.eq("status", data.status);
+    if (data.projectId) q = q.eq("project_id", data.projectId);
+    if (data.assigneeId) q = q.eq("assignee_id", data.assigneeId);
+    if (data.mineOnly) q = q.eq("assignee_id", userId);
+    if (data.search?.trim()) q = q.ilike("title", `%${data.search.trim()}%`);
+    const { data: rows, error } = await q.limit(50_001);
+    if (error) throw error;
+    return (rows ?? []).map((row) => row.id);
   });
 
 // ============= MILESTONES =============

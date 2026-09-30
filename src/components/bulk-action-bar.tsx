@@ -47,7 +47,8 @@ export function BulkActionBar({
   onSelectAll,
   isSelectingAll,
 }: BulkActionBarProps) {
-  const showSelectAll = typeof totalMatching === "number" && totalMatching > count && !!onSelectAll;
+  const showSelectAll =
+    !!onSelectAll && (typeof totalMatching !== "number" || totalMatching > count);
   const barRef = useRef<HTMLDivElement>(null);
   // `null` = posição padrão (rodapé centralizado).
   const [position, setPosition] = useState<BarPosition | null>(null);
@@ -186,7 +187,9 @@ export function BulkActionBar({
         >
           {isSelectingAll
             ? "Selecionando…"
-            : `Selecionar todos os ${totalMatching!.toLocaleString("pt-BR")} registros`}
+            : typeof totalMatching === "number"
+              ? `Selecionar todos os ${totalMatching.toLocaleString("pt-BR")} registros`
+              : "Selecionar todos os resultados"}
         </Button>
       )}
       <div className="ml-auto flex flex-wrap gap-2">{children}</div>

@@ -33,6 +33,7 @@
 - [x] Corrigir o alerta de negócios sem interação usando a data efetiva por tipo de atividade e manter a rolagem horizontal visível nas grades longas.
 
 ## Valores chumbados por fases
+
 - [x] Fase 1: inventário e exceções verificáveis
 - [x] Fase 2: URLs, mocks de produção e cargos padrão
 - [x] Fase 3: fuso, limites e exportações
@@ -40,3 +41,12 @@
 - [x] Fase 5: prevenção, testes e documentação
 - [x] Filtro de Responsável com Ativos/Inativos e mesclagem de repetidos
 - [x] Usuários inativos vinculados aos responsáveis do HubSpot (botão em Configurações › Usuários do HubSpot)
+
+## Padronização completa dos grids
+
+- [x] Auditar famílias atuais e lacunas de seleção global, filtros, paginação, colunas e ações em massa.
+- [x] Corrigir seleção global em Empresas e Contatos com a base compartilhada.
+- [ ] Criar a fundação única `DataGrid` orientada pelo catálogo e migrar referências centrais.
+- [ ] Criar e aprovar o mockup de Tickets antes da migração visual.
+- [ ] Executar a Fase 4 em Projetos, Tarefas de projeto, Serviços e Contratos.
+- [ ] Migrar os grids operacionais restantes por módulo e validar conformidade.
