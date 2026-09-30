@@ -1,5 +1,6 @@
 // /people/benefits — visão agregada de benefícios ativos do workspace.
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -81,6 +82,7 @@ function BenefitsListPage() {
     sorted: data,
     sort,
     toggle,
+    grid: sortGrid,
   } = useClientSort(rawData, {
     person: (b) => b.people?.full_name,
     type: (b) => BENEFIT_TYPE_LABELS[b.benefit_type as BenefitType] ?? b.benefit_type,
@@ -138,6 +140,18 @@ function BenefitsListPage() {
       )}
 
       <div className="rounded-md border bg-card">
+        <GridListToolbar
+          grid={sortGrid}
+          filename="beneficios"
+          labels={{
+            person: "Pessoa",
+            type: "Tipo",
+            provider: "Provedor / Plano",
+            value: "Valor mensal",
+            share: "Cota empregado",
+            start: "Início",
+          }}
+        />
         <Table>
           <TableHeader>
             <TableRow>

@@ -161,7 +161,23 @@ export function GridBulkBar<T extends { id: string }>({
           </Button>
         )}
         {activityEntity && (
-          <Button variant="outline" size="sm" onClick={() => openActivity?.({ action: ACTIONS_BY_KEY["log:task"], bulk: { ids: [...ids], entity: activityEntity, onDone: () => { onClear(); onDone(); } } })}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              openActivity?.({
+                action: ACTIONS_BY_KEY["log:task"],
+                bulk: {
+                  ids: [...ids],
+                  entity: activityEntity,
+                  onDone: () => {
+                    onClear();
+                    onDone();
+                  },
+                },
+              })
+            }
+          >
             <ListTodo className="mr-1 h-4 w-4" /> Criar atividade
           </Button>
         )}

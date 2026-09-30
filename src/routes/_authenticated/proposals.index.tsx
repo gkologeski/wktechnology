@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -95,6 +96,7 @@ function ProposalsPage() {
     sorted: rows,
     sort,
     toggle,
+    grid: sortGrid,
   } = useClientSort(filteredRows, {
     title: (r: ProposalRow) => r.title,
     version: (r: ProposalRow) => Number(r.version),
@@ -278,6 +280,11 @@ function ProposalsPage() {
             </div>
           ) : (
             <div className="overflow-x-auto rounded-md border">
+              <GridListToolbar
+                grid={sortGrid}
+                filename="propostas"
+                labels={{ title: "Título", version: "Versão", amount: "Valor", status: "Status" }}
+              />
               <Table>
                 <TableHeader>
                   <TableRow>

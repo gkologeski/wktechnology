@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -112,6 +113,7 @@ function BankAccountsPage() {
     sorted: sortedRows,
     sort,
     toggle,
+    grid: sortGrid,
   } = useClientSort(rows, {
     name: (b) => b.name,
     kind: (b) => b.kind,
@@ -139,56 +141,63 @@ function BankAccountsPage() {
             Nenhuma conta cadastrada.
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <SortableTableHead
-                  label="Nome"
-                  active={sort?.key === "name"}
-                  dir={sort?.dir}
-                  onSort={() => toggle("name")}
-                />
-                <TableHead>Empresa</TableHead>
-                <SortableTableHead
-                  label="Tipo"
-                  active={sort?.key === "kind"}
-                  dir={sort?.dir}
-                  onSort={() => toggle("kind")}
-                />
-                <SortableTableHead
-                  label="Moeda"
-                  active={sort?.key === "currency"}
-                  dir={sort?.dir}
-                  onSort={() => toggle("currency")}
-                />
-                <TableHead className="text-right">Saldo inicial</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedRows.map((b) => {
-                const le = b.legal_entity_id ? leById.get(b.legal_entity_id) : null;
-                return (
-                  <TableRow key={b.id}>
-                    <TableCell className="font-medium">{b.name}</TableCell>
-                    <TableCell className="text-sm">
-                      {le ? (
-                        <Badge variant="outline" className="text-xs">
-                          {le.code ?? le.name}
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-sm">{b.kind}</TableCell>
-                    <TableCell className="text-sm">{b.currency}</TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {formatCurrency(Number(b.initial_balance), b.currency)}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+          <>
+            <GridListToolbar
+              grid={sortGrid}
+              filename="contas-bancarias"
+              labels={{ name: "Nome", kind: "Tipo", currency: "Moeda" }}
+            />
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <SortableTableHead
+                    label="Nome"
+                    active={sort?.key === "name"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("name")}
+                  />
+                  <TableHead>Empresa</TableHead>
+                  <SortableTableHead
+                    label="Tipo"
+                    active={sort?.key === "kind"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("kind")}
+                  />
+                  <SortableTableHead
+                    label="Moeda"
+                    active={sort?.key === "currency"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("currency")}
+                  />
+                  <TableHead className="text-right">Saldo inicial</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedRows.map((b) => {
+                  const le = b.legal_entity_id ? leById.get(b.legal_entity_id) : null;
+                  return (
+                    <TableRow key={b.id}>
+                      <TableCell className="font-medium">{b.name}</TableCell>
+                      <TableCell className="text-sm">
+                        {le ? (
+                          <Badge variant="outline" className="text-xs">
+                            {le.code ?? le.name}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm">{b.kind}</TableCell>
+                      <TableCell className="text-sm">{b.currency}</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {formatCurrency(Number(b.initial_balance), b.currency)}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </>
         )}
       </div>
 

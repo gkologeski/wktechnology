@@ -1,4 +1,5 @@
 import { formatDateTime } from "@/lib/crm";
+import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
 import { formatCompactDateTime } from "@/lib/format/compact-date";
@@ -124,6 +125,7 @@ function InvoicesPage() {
     sorted: sortedInvoices,
     sort,
     toggle,
+    grid: sortGrid,
   } = useClientSort(data?.invoices ?? [], {
     number: (inv) => inv.invoice_number,
     status: (inv) => inv.status,
@@ -283,145 +285,159 @@ function InvoicesPage() {
                   Nenhuma fatura encontrada.
                 </p>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <SortableTableHead
-                        label="Número"
-                        active={sort?.key === "number"}
-                        dir={sort?.dir}
-                        onSort={() => toggle("number")}
-                      />
-                      <SortableTableHead
-                        label="Status"
-                        active={sort?.key === "status"}
-                        dir={sort?.dir}
-                        onSort={() => toggle("status")}
-                      />
-                      <SortableTableHead
-                        label="Valor"
-                        active={sort?.key === "amount"}
-                        dir={sort?.dir}
-                        onSort={() => toggle("amount")}
-                      />
-                      <SortableTableHead
-                        label="Vencimento"
-                        active={sort?.key === "due"}
-                        dir={sort?.dir}
-                        onSort={() => toggle("due")}
-                      />
-                      <SortableTableHead
-                        label="Gateway"
-                        active={sort?.key === "gateway"}
-                        dir={sort?.dir}
-                        onSort={() => toggle("gateway")}
-                      />
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sortedInvoices.map((inv) => (
-                      <TableRow key={inv.id}>
-                        <TableCell className="font-medium">{inv.invoice_number}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              (statusColor[inv.status] ?? "secondary") as
-                                | "default"
-                                | "secondary"
-                                | "destructive"
-                                | "outline"
-                            }
-                          >
-                            {inv.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {Number(inv.amount).toLocaleString("pt-BR", {
-                            style: "currency",
-                            currency: inv.currency || "BRL",
-                          })}
-                        </TableCell>
-                        <TableCell>{formatDateTime(inv.due_date)}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                          {inv.gateway ?? "—"}{" "}
-                          {inv.gateway_mode === "sandbox" && (
-                            <Badge variant="outline" className="ml-1">
-                              sandbox
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            {inv.payment_url && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(inv.payment_url!);
-                                  toast.success("Link copiado");
-                                }}
-                              >
-                                <Copy className="h-4 w-4" />
-                              </Button>
-                            )}
-                            {inv.payment_url && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => window.open(inv.payment_url!, "_blank")}
-                              >
-                                <ExternalLink className="h-4 w-4" />
-                              </Button>
-                            )}
-                            {!inv.payment_url && inv.status !== "paid" && (
-                              <>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => onGenerate(inv.id, "pix")}
-                                >
-                                  Pix
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => onGenerate(inv.id, "boleto")}
-                                >
-                                  Boleto
-                                </Button>
-                              </>
-                            )}
-                            {inv.status !== "paid" && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => onPaid(inv.id)}
-                                title="Marcar como paga"
-                              >
-                                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                              </Button>
-                            )}
-                            {inv.status === "paid" && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => onIssueNfse(inv.id)}
-                                title="Emitir NFS-e"
-                              >
-                                NFS-e
-                              </Button>
-                            )}
-
-                            <Button variant="ghost" size="icon" onClick={() => onDelete(inv.id)}>
-                              <Trash2 className="h-4 w-4 text-muted-foreground" />
-                            </Button>
-                          </div>
-                        </TableCell>
+                <>
+                  <GridListToolbar
+                    grid={sortGrid}
+                    filename="faturas"
+                    labels={{
+                      number: "Número",
+                      status: "Status",
+                      amount: "Valor",
+                      due: "Vencimento",
+                      gateway: "Gateway",
+                    }}
+                    search={false}
+                  />
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <SortableTableHead
+                          label="Número"
+                          active={sort?.key === "number"}
+                          dir={sort?.dir}
+                          onSort={() => toggle("number")}
+                        />
+                        <SortableTableHead
+                          label="Status"
+                          active={sort?.key === "status"}
+                          dir={sort?.dir}
+                          onSort={() => toggle("status")}
+                        />
+                        <SortableTableHead
+                          label="Valor"
+                          active={sort?.key === "amount"}
+                          dir={sort?.dir}
+                          onSort={() => toggle("amount")}
+                        />
+                        <SortableTableHead
+                          label="Vencimento"
+                          active={sort?.key === "due"}
+                          dir={sort?.dir}
+                          onSort={() => toggle("due")}
+                        />
+                        <SortableTableHead
+                          label="Gateway"
+                          active={sort?.key === "gateway"}
+                          dir={sort?.dir}
+                          onSort={() => toggle("gateway")}
+                        />
+                        <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {sortedInvoices.map((inv) => (
+                        <TableRow key={inv.id}>
+                          <TableCell className="font-medium">{inv.invoice_number}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                (statusColor[inv.status] ?? "secondary") as
+                                  | "default"
+                                  | "secondary"
+                                  | "destructive"
+                                  | "outline"
+                              }
+                            >
+                              {inv.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {Number(inv.amount).toLocaleString("pt-BR", {
+                              style: "currency",
+                              currency: inv.currency || "BRL",
+                            })}
+                          </TableCell>
+                          <TableCell>{formatDateTime(inv.due_date)}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {inv.gateway ?? "—"}{" "}
+                            {inv.gateway_mode === "sandbox" && (
+                              <Badge variant="outline" className="ml-1">
+                                sandbox
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-1">
+                              {inv.payment_url && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(inv.payment_url!);
+                                    toast.success("Link copiado");
+                                  }}
+                                >
+                                  <Copy className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {inv.payment_url && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => window.open(inv.payment_url!, "_blank")}
+                                >
+                                  <ExternalLink className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {!inv.payment_url && inv.status !== "paid" && (
+                                <>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => onGenerate(inv.id, "pix")}
+                                  >
+                                    Pix
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => onGenerate(inv.id, "boleto")}
+                                  >
+                                    Boleto
+                                  </Button>
+                                </>
+                              )}
+                              {inv.status !== "paid" && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => onPaid(inv.id)}
+                                  title="Marcar como paga"
+                                >
+                                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                </Button>
+                              )}
+                              {inv.status === "paid" && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => onIssueNfse(inv.id)}
+                                  title="Emitir NFS-e"
+                                >
+                                  NFS-e
+                                </Button>
+                              )}
+
+                              <Button variant="ghost" size="icon" onClick={() => onDelete(inv.id)}>
+                                <Trash2 className="h-4 w-4 text-muted-foreground" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </>
               )}
             </>
           )}

@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
 import { useQuery } from "@tanstack/react-query";
@@ -113,6 +114,7 @@ function NfseListPage() {
     sorted: sortedRows,
     sort,
     toggle,
+    grid: sortGrid,
   } = useClientSort(items, {
     invoice: (n) => n.customer_invoices?.invoice_number,
     status: (n) => STATUS_LABEL[n.status] ?? n.status,
@@ -229,107 +231,120 @@ function NfseListPage() {
                 Nenhuma NFS-e emitida. Emita a partir de uma fatura em "Faturas".
               </p>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <SortableTableHead
-                      label="Fatura"
-                      active={sort?.key === "invoice"}
-                      dir={sort?.dir}
-                      onSort={() => toggle("invoice")}
-                    />
-                    <SortableTableHead
-                      label="Status"
-                      active={sort?.key === "status"}
-                      dir={sort?.dir}
-                      onSort={() => toggle("status")}
-                    />
-                    <SortableTableHead
-                      label="Nº NF / RPS"
-                      active={sort?.key === "number"}
-                      dir={sort?.dir}
-                      onSort={() => toggle("number")}
-                    />
-                    <SortableTableHead
-                      label="Cód. serviço"
-                      active={sort?.key === "code"}
-                      dir={sort?.dir}
-                      onSort={() => toggle("code")}
-                    />
-                    <SortableTableHead
-                      label="Valor"
-                      active={sort?.key === "amount"}
-                      dir={sort?.dir}
-                      onSort={() => toggle("amount")}
-                    />
-                    <TableHead>Emitida em</TableHead>
-                    <TableHead className="text-right">Documentos</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sortedRows.map((n) => (
-                    <TableRow key={n.id}>
-                      <TableCell className="font-medium">
-                        {n.customer_invoices?.invoice_number ?? "—"}
-                        {n.customer_invoices?.description && (
-                          <div className="text-xs text-muted-foreground truncate max-w-[240px]">
-                            {n.customer_invoices.description}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={STATUS_VARIANT[n.status] ?? "secondary"}>
-                          {STATUS_LABEL[n.status] ?? n.status}
-                        </Badge>
-                        {n.error_message && (
-                          <div
-                            className="text-xs text-destructive mt-1 max-w-[240px] truncate"
-                            title={n.error_message}
-                          >
-                            {n.error_message}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {n.nf_number ?? n.rps_number ?? "—"}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">{n.service_code ?? "—"}</TableCell>
-                      <TableCell>
-                        {n.amount != null
-                          ? Number(n.amount).toLocaleString("pt-BR", {
-                              style: "currency",
-                              currency: "BRL",
-                            })
-                          : "—"}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {n.issued_at ? formatDateTime(n.issued_at) : formatDateTime(n.created_at)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          {n.pdf_url && (
-                            <Button size="sm" variant="ghost" asChild>
-                              <a href={n.pdf_url} target="_blank" rel="noreferrer">
-                                PDF <ExternalLink className="ml-1 h-3 w-3" />
-                              </a>
-                            </Button>
-                          )}
-                          {n.xml_url && (
-                            <Button size="sm" variant="ghost" asChild>
-                              <a href={n.xml_url} target="_blank" rel="noreferrer">
-                                XML <ExternalLink className="ml-1 h-3 w-3" />
-                              </a>
-                            </Button>
-                          )}
-                          {!n.pdf_url && !n.xml_url && (
-                            <span className="text-xs text-muted-foreground">—</span>
-                          )}
-                        </div>
-                      </TableCell>
+              <>
+                <GridListToolbar
+                  grid={sortGrid}
+                  filename="nfse"
+                  labels={{
+                    invoice: "Fatura",
+                    status: "Status",
+                    number: "Nº NF / RPS",
+                    code: "Cód. serviço",
+                    amount: "Valor",
+                  }}
+                />
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <SortableTableHead
+                        label="Fatura"
+                        active={sort?.key === "invoice"}
+                        dir={sort?.dir}
+                        onSort={() => toggle("invoice")}
+                      />
+                      <SortableTableHead
+                        label="Status"
+                        active={sort?.key === "status"}
+                        dir={sort?.dir}
+                        onSort={() => toggle("status")}
+                      />
+                      <SortableTableHead
+                        label="Nº NF / RPS"
+                        active={sort?.key === "number"}
+                        dir={sort?.dir}
+                        onSort={() => toggle("number")}
+                      />
+                      <SortableTableHead
+                        label="Cód. serviço"
+                        active={sort?.key === "code"}
+                        dir={sort?.dir}
+                        onSort={() => toggle("code")}
+                      />
+                      <SortableTableHead
+                        label="Valor"
+                        active={sort?.key === "amount"}
+                        dir={sort?.dir}
+                        onSort={() => toggle("amount")}
+                      />
+                      <TableHead>Emitida em</TableHead>
+                      <TableHead className="text-right">Documentos</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedRows.map((n) => (
+                      <TableRow key={n.id}>
+                        <TableCell className="font-medium">
+                          {n.customer_invoices?.invoice_number ?? "—"}
+                          {n.customer_invoices?.description && (
+                            <div className="text-xs text-muted-foreground truncate max-w-[240px]">
+                              {n.customer_invoices.description}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={STATUS_VARIANT[n.status] ?? "secondary"}>
+                            {STATUS_LABEL[n.status] ?? n.status}
+                          </Badge>
+                          {n.error_message && (
+                            <div
+                              className="text-xs text-destructive mt-1 max-w-[240px] truncate"
+                              title={n.error_message}
+                            >
+                              {n.error_message}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {n.nf_number ?? n.rps_number ?? "—"}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">{n.service_code ?? "—"}</TableCell>
+                        <TableCell>
+                          {n.amount != null
+                            ? Number(n.amount).toLocaleString("pt-BR", {
+                                style: "currency",
+                                currency: "BRL",
+                              })
+                            : "—"}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {n.issued_at ? formatDateTime(n.issued_at) : formatDateTime(n.created_at)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            {n.pdf_url && (
+                              <Button size="sm" variant="ghost" asChild>
+                                <a href={n.pdf_url} target="_blank" rel="noreferrer">
+                                  PDF <ExternalLink className="ml-1 h-3 w-3" />
+                                </a>
+                              </Button>
+                            )}
+                            {n.xml_url && (
+                              <Button size="sm" variant="ghost" asChild>
+                                <a href={n.xml_url} target="_blank" rel="noreferrer">
+                                  XML <ExternalLink className="ml-1 h-3 w-3" />
+                                </a>
+                              </Button>
+                            )}
+                            {!n.pdf_url && !n.xml_url && (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </>
             )}
           </CardContent>
         </Card>

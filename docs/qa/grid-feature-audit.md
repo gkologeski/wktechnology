@@ -46,3 +46,6 @@ Telas de configuração (KB, snippets, portal, segmentos, equipes, exportações
 
 ## Situação da Fase 1 (30/09/2026) — concluída
 Ordenação por coluna aplicada com `SortableTableHead` + `useClientSort` (ordena as linhas já carregadas; vazios no fim; ordem não persiste ao recarregar) em: Tickets, Projetos, Propostas, Pessoas, Benefícios, Documentos, Incidentes, Faturas, Vagas, Ofertas, Campanhas de e-mail, Modelos de contrato, NFS-e, Recorrências, Contas bancárias, Tarefas de projetos e Timesheet. Empresas usa ordenação no banco. Colunas de responsável/pessoa por código interno ficaram sem ordenação.
+
+## Fase 2 — concluída (2026-09-30)
+Exportar (CSV/JSON/XLSX) e busca local adicionados via `GridListToolbar` em Tickets, Projetos, Propostas, Pessoas, Benefícios, Documentos, Incidentes, Faturas, Vagas, Ofertas, Campanhas de e-mail, Modelos de contrato, NFS-e, Recorrências, Contas bancárias, Tarefas de projetos e Timesheet. Telas com busca própria mantêm a existente.

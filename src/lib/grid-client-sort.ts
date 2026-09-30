@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { normalizeSearch } from "@/lib/utils";
 
 export type SortDir = "asc" | "desc";
 export type SortState<K extends string> = { key: K; dir: SortDir } | null;
@@ -28,20 +29,49 @@ export function sortRows<T>(rows: readonly T[], accessor: SortAccessor<T>, dir: 
     .map((x) => x.row);
 }
 
-/** Estado de ordenação por coluna: 1º clique crescente, 2º inverte. */
+/** Filtra linhas cujo texto de alguma coluna contenha a busca (sem acento/caixa). */
+export function searchRows<T>(
+  rows: readonly T[],
+  accessors: readonly SortAccessor<T>[],
+  query: string,
+): T[] {
+  const q = normalizeSearch(query);
+  if (!q) return rows as T[];
+  return rows.filter((row) =>
+    accessors.some((acc) => {
+      const v = acc(row);
+      return v != null && normalizeSearch(String(v)).includes(q);
+    }),
+  );
+}
+
+export type ClientGrid<T, K extends string> = {
+  sorted: T[];
+  total: number;
+  query: string;
+  setQuery: (q: string) => void;
+  accessors: Record<K, SortAccessor<T>>;
+};
+
+/**
+ * Ordenação por coluna (1º clique crescente, 2º inverte) e busca textual
+ * sobre as mesmas colunas. `sorted` já vem filtrado pela busca.
+ */
 export function useClientSort<T, K extends string>(
   rows: readonly T[],
   accessors: Record<K, SortAccessor<T>>,
 ) {
   const [sort, setSort] = useState<SortState<K>>(null);
-  const sorted = useMemo(
-    () => (sort ? sortRows(rows, accessors[sort.key], sort.dir) : (rows as T[])),
+  const [query, setQuery] = useState("");
+  const sorted = useMemo(() => {
+    const found = searchRows(rows, Object.values(accessors) as SortAccessor<T>[], query);
+    return sort ? sortRows(found, accessors[sort.key], sort.dir) : found;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rows, sort],
-  );
+  }, [rows, sort, query]);
   const toggle = (key: K) =>
     setSort((prev) =>
       prev?.key === key ? { key, dir: prev.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" },
     );
-  return { sorted, sort, toggle };
+  const grid: ClientGrid<T, K> = { sorted, total: rows.length, query, setQuery, accessors };
+  return { sorted, sort, toggle, grid };
 }

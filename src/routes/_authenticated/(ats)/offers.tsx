@@ -1,6 +1,7 @@
 // Página /offers — gerenciamento de cartas-proposta com integração eSign.
 // Lote 5 do rollout UX/UI — segue Design Foundation TechHire.
 import { createFileRoute } from "@tanstack/react-router";
+import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
 import { useServerFn } from "@tanstack/react-start";
@@ -116,6 +117,7 @@ function OffersPage() {
     sorted: sortedRows,
     sort,
     toggle,
+    grid: sortGrid,
   } = useClientSort(rows, {
     candidate: (r) => r.ats_candidates?.full_name,
     job: (r) => r.ats_jobs?.title,
@@ -258,6 +260,17 @@ function OffersPage() {
         />
       ) : (
         <section className="overflow-hidden rounded-lg border border-border-subtle bg-surface-1 shadow-xs">
+          <GridListToolbar
+            grid={sortGrid}
+            filename="ofertas"
+            labels={{
+              candidate: "Candidato",
+              job: "Vaga",
+              salary: "Salário",
+              start: "Início",
+              status: "Status",
+            }}
+          />
           <Table>
             <TableHeader>
               <TableRow className="bg-surface-2/60">

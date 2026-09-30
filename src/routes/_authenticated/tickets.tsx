@@ -1,4 +1,5 @@
 import { formatDateTime } from "@/lib/crm";
+import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
@@ -270,6 +271,7 @@ function TicketsIndex() {
     sorted: sortedTickets,
     sort,
     toggle: toggleSort,
+    grid: sortGrid,
   } = useClientSort(filtered, {
     subject: (t: TicketRow) => t.subject,
     priority: (t: TicketRow) => PRIORITY_RANK[t.priority] ?? null,
@@ -583,6 +585,22 @@ function TicketsIndex() {
           )}
 
           <div className="rounded-md border bg-card overflow-hidden">
+            <GridListToolbar
+              grid={sortGrid}
+              filename="tickets"
+              labels={{
+                subject: "Assunto",
+                priority: "Prioridade",
+                status: "Status",
+                contact: "Contato",
+                company: "Empresa",
+                created: "Criado",
+              }}
+              search={false}
+              exportValue={{
+                priority: (t) => PRIORITIES.find((p) => p.value === t.priority)?.label,
+              }}
+            />
             <Table>
               <TableHeader>
                 <TableRow>
