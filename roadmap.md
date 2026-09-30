@@ -38,3 +38,5 @@
 - [x] Fase 3: fuso, limites e exportações
 - [x] Fase 4: interface e branding
 - [x] Fase 5: prevenção, testes e documentação
+- [x] Filtro de Responsável com Ativos/Inativos e mesclagem de repetidos
+- [x] Usuários inativos vinculados aos responsáveis do HubSpot (botão em Configurações › Usuários do HubSpot)
