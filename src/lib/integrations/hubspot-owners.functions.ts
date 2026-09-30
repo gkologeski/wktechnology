@@ -160,3 +160,41 @@ export const listHubspotOwners = createServerFn({ method: "GET" })
 
     return { owners: owners ?? [], counts };
   });
+
+async function assertWorkspaceAdmin(
+  supabase: { rpc: (fn: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown }> },
+  userId: string,
+): Promise<string> {
+  const { data: ws } = await supabase.rpc("default_workspace_for_user", { _user: userId });
+  const workspaceId = ws as string | null;
+  if (!workspaceId) throw new Error("Usuário sem workspace ativo");
+  const { data: ok } = await supabase.rpc("is_workspace_admin_v2", {
+    _workspace: workspaceId,
+    _user: userId,
+  });
+  if (!ok) throw new Error("Somente administradores podem gerenciar usuários.");
+  return workspaceId;
+}
+
+/** Cria usuários inativos (ou vincula existentes) para responsáveis do HubSpot sem vínculo. */
+export const provisionHubspotOwnerUsers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const workspaceId = await assertWorkspaceAdmin(context.supabase as never, context.userId);
+    const { provisionHubspotOwners } = await import("./hubspot-owner-provision.server");
+    return provisionHubspotOwners(workspaceId);
+  });
+
+/** Ativa/desativa um membro do workspace. */
+export const setWorkspaceMemberStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({ userId: z.string().uuid(), status: z.enum(["active", "inactive"]) }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    if (data.userId === context.userId) throw new Error("Você não pode desativar a si mesmo.");
+    const workspaceId = await assertWorkspaceAdmin(context.supabase as never, context.userId);
+    const { setMemberStatus } = await import("./hubspot-owner-provision.server");
+    await setMemberStatus(workspaceId, data.userId, data.status);
+    return { ok: true };
+  });

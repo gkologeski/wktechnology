@@ -111,8 +111,18 @@ export async function setMemberStatus(
     .eq("workspace_id", workspaceId)
     .eq("user_id", memberId);
   if (error) throw new Error(error.message);
+  // Só bloqueia o login se a pessoa não estiver ativa em nenhum outro workspace.
+  let ban = status === "active" ? "none" : BAN_FOREVER;
+  if (status === "inactive") {
+    const { count } = await supabaseAdmin
+      .from("workspace_members")
+      .select("user_id", { count: "exact", head: true })
+      .eq("user_id", memberId)
+      .eq("status", "active");
+    if ((count ?? 0) > 0) ban = "none";
+  }
   const { error: bErr } = await supabaseAdmin.auth.admin.updateUserById(memberId, {
-    ban_duration: status === "active" ? "none" : BAN_FOREVER,
+    ban_duration: ban,
   });
   if (bErr) throw new Error(bErr.message);
 }
