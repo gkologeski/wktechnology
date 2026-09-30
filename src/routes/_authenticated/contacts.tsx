@@ -253,12 +253,11 @@ function ContactsHubspotView() {
         if (end) q = q.lt("created_at", end.toISOString());
       }
 
-      const { userIds, hubspotIds } = splitOwnerIds(filters.ownerIds);
+      const { userIds } = splitOwnerIds(filters.ownerIds);
       const ownerClauses: string[] = [];
       if (userIds.length > 0) {
         ownerClauses.push(responsibleOrExpr(userIds, { columns: RESPONSIBLE_COLUMNS_FULL }));
       }
-      if (hubspotIds.length > 0) ownerClauses.push(`hubspot_owner_id.in.(${hubspotIds.join(",")})`);
       if (filters.includeUnassigned)
         ownerClauses.push(
           responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_FULL, includeUnassigned: true }),
@@ -618,15 +617,13 @@ function ContactsHubspotView() {
                   if (start) q = q.gte("created_at", start.toISOString());
                   if (end) q = q.lt("created_at", end.toISOString());
                 }
-                const { userIds, hubspotIds } = splitOwnerIds(filters.ownerIds);
+                const { userIds } = splitOwnerIds(filters.ownerIds);
                 const ownerClauses: string[] = [];
                 if (userIds.length > 0) {
                   ownerClauses.push(
                     responsibleOrExpr(userIds, { columns: RESPONSIBLE_COLUMNS_FULL }),
                   );
                 }
-                if (hubspotIds.length > 0)
-                  ownerClauses.push(`hubspot_owner_id.in.(${hubspotIds.join(",")})`);
                 if (filters.includeUnassigned)
                   ownerClauses.push(
                     responsibleOrExpr([], {

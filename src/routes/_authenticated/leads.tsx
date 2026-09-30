@@ -281,7 +281,6 @@ function LeadsHubspotView() {
       const parts: string[] = [];
       if (userIds.length > 0)
         parts.push(responsibleOrExpr(userIds, { columns: RESPONSIBLE_COLUMNS_FULL }));
-      if (hsIds.length > 0) parts.push(`hubspot_owner_id.in.(${hsIds.join(",")})`);
       if (filters.includeUnassigned)
         parts.push(
           responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_FULL, includeUnassigned: true }),
