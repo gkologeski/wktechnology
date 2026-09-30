@@ -130,7 +130,7 @@ function TimesheetPage() {
   const {
     sorted: sortedRows,
     sort,
-    toggle,
+    toggle: toggleSort,
   } = useClientSort(rows, {
     date: (r) => r.entry_date,
     project: (r) => r.projects?.name,

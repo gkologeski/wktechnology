@@ -99,7 +99,7 @@ function RecurrencesPage() {
   const {
     sorted: sortedRows,
     sort,
-    toggle,
+    toggle: toggleSort,
   } = useClientSort(rows as any[], {
     desc: (r: any) => r.template?.description,
     direction: (r: any) => r.direction,
