@@ -201,7 +201,7 @@ export function applyOwnerFilter<
 
 export const EMPTY_OWNER_FILTER: OwnerFilterValue = { ownerIds: [], includeUnassigned: false };
 
-/** Expressão `or` com colunas de responsável (uuids) + hubspot_owner_id (ids "hs:"). */
+/** Expressão `or` pelas colunas de responsável do TechERP (ids "hs:" antigos são ignorados). */
 export function ownerFilterOrExpr(value: OwnerFilterValue, columns: ResponsibleColumns): string {
   const { userIds } = splitOwnerIds(value.ownerIds);
   const parts: string[] = [];
