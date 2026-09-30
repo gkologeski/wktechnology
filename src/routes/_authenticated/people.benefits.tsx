@@ -1,5 +1,7 @@
 // /people/benefits — visão agregada de benefícios ativos do workspace.
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { SortableTableHead } from "@/components/grid/sortable-table-head";
+import { useClientSort } from "@/lib/grid-client-sort";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { HeartHandshake } from "lucide-react";
@@ -70,7 +72,7 @@ const brl = (n: number | null | undefined) =>
 function BenefitsListPage() {
   const qc = useQueryClient();
   const fn = useServerFn(listWorkspaceBenefits);
-  const { data = [], isLoading } = useQuery({
+  const { data: rawData = [], isLoading } = useQuery({
     queryKey: ["ws-benefits"],
     queryFn: () => fn({ data: { only_active: true } }),
     staleTime: 60_000,

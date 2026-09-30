@@ -1,5 +1,7 @@
 // /people — lista de pessoas (TechPeople).
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { SortableTableHead } from "@/components/grid/sortable-table-head";
+import { useClientSort } from "@/lib/grid-client-sort";
 import { useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -150,7 +152,13 @@ function PeoplePage() {
     staleTime: 20_000,
   });
 
-  const rows = filterRows(allRows);
+  const { sorted: rows, sort, toggle } = useClientSort(filterRows(allRows), {
+    name: (p) => p.full_name,
+    role: (p) => p.role_title,
+    type: (p) => PEOPLE_EMPLOYMENT_LABELS[p.employment_type] ?? p.employment_type,
+    status: (p) => PEOPLE_STATUS_LABELS[p.status] ?? p.status,
+    hire: (p) => p.hire_date,
+  });
 
   // Seleção múltipla / ações em massa (padrão de grids).
   const { canAny } = usePermissions();
@@ -303,11 +311,11 @@ function PeoplePage() {
                     onCheckedChange={selection.toggleAllOnPage}
                   />
                 </TableHead>
-                <TableHead>Pessoa</TableHead>
-                <TableHead>Cargo</TableHead>
-                <TableHead>Vínculo</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Contratação</TableHead>
+                <SortableTableHead label="Pessoa" active={sort?.key === "name"} dir={sort?.dir} onSort={() => toggle("name")} />
+                <SortableTableHead label="Cargo" active={sort?.key === "role"} dir={sort?.dir} onSort={() => toggle("role")} />
+                <SortableTableHead label="Vínculo" active={sort?.key === "type"} dir={sort?.dir} onSort={() => toggle("type")} />
+                <SortableTableHead label="Status" active={sort?.key === "status"} dir={sort?.dir} onSort={() => toggle("status")} />
+                <SortableTableHead label="Contratação" active={sort?.key === "hire"} dir={sort?.dir} onSort={() => toggle("hire")} />
                 <TableHead>Responsável</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
