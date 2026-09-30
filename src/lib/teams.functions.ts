@@ -157,7 +157,7 @@ export const listTeamMembers = createServerFn({ method: "GET" })
 
     const { data: members, error: membersErr } = await supabaseAdmin
       .from("workspace_members")
-      .select("workspace_id, user_id, role, joined_at")
+      .select("workspace_id, user_id, role, joined_at, status")
       .eq("workspace_id", workspace.id)
       .order("joined_at", { ascending: true });
     if (membersErr) throw new Error(membersErr.message);
@@ -242,6 +242,9 @@ export const listTeamMembers = createServerFn({ method: "GET" })
       is_owner: (m.user_id as string) === userId,
       pending: !confirmedById.get(m.user_id as string),
       created_at: m.joined_at as string,
+      status: ((m as { status?: string }).status === "inactive" ? "inactive" : "active") as
+        | "active"
+        | "inactive",
       primary_role_id: primaryRoleByUser.get(m.user_id as string) ?? null,
       role_ids: roleIdsByUser.get(m.user_id as string) ?? [],
       extra_set_ids: extraSetIdsByUser.get(m.user_id as string) ?? [],
