@@ -23,7 +23,7 @@ import {
 } from "@/lib/grid-filters";
 import type { GridFiltersController } from "@/hooks/use-grid-filters";
 
-function FieldEditor<T>({
+export function FieldEditor<T>({
   ctl,
   field,
 }: {

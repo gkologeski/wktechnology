@@ -6,6 +6,7 @@ import type { ClientGrid, SortAccessor, SortState } from "@/lib/grid-client-sort
 import type { GridFiltersController } from "@/hooks/use-grid-filters";
 import { GridFilterChips, GridFilterPanel } from "@/components/grid/grid-filter-panel";
 import { GridSavedViewsMenu } from "@/components/grid/grid-saved-views-menu";
+import { useInGridShell } from "@/components/grid/grid-list-shell";
 
 type Props<T, K extends string> = {
   grid: ClientGrid<T, K>;
@@ -36,6 +37,7 @@ export function GridListToolbar<T, K extends string>({
   sort = null,
   setSort,
 }: Props<T, K>) {
+  const inShell = useInGridShell();
   const keys = Object.keys(labels) as K[];
   const onExport = (format: "csv" | "json" | "xlsx") =>
     exportRows(grid.sorted, {
@@ -75,7 +77,11 @@ export function GridListToolbar<T, K extends string>({
           setQuery={grid.setQuery}
         />
       )}
-      {filters && <GridFilterPanel ctl={filters} />}
+      {filters && (
+        <div className={inShell ? "lg:hidden" : undefined}>
+          <GridFilterPanel ctl={filters} />
+        </div>
+      )}
       <ExportMenuButton
         className="ml-auto"
         disabled={grid.sorted.length === 0}
