@@ -428,7 +428,8 @@ function EmailBroadcastsPage() {
       </div>
 
       <Card>
-        <GridListToolbar exportValue={{ status: (b) => CAMPAIGN_STATUS_LABEL[b.status] ?? b.status }}
+        <GridListToolbar
+          exportValue={{ status: (b) => CAMPAIGN_STATUS_LABEL[b.status] ?? b.status }}
           grid={sortGrid}
           filename="campanhas-email"
           labels={{

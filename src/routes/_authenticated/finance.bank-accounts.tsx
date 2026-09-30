@@ -149,7 +149,8 @@ function BankAccountsPage() {
           </div>
         ) : (
           <>
-            <GridListToolbar exportValue={{ kind: (b) => BANK_KIND_LABEL[b.kind] ?? b.kind }}
+            <GridListToolbar
+              exportValue={{ kind: (b) => BANK_KIND_LABEL[b.kind] ?? b.kind }}
               grid={sortGrid}
               filename="contas-bancarias"
               labels={{ name: "Nome", kind: "Tipo", currency: "Moeda" }}
