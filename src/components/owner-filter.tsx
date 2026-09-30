@@ -51,8 +51,12 @@ export function OwnerFilter({
 
   const isLoading = loadingMembers || loadingHs;
   const options = useMemo(() => buildOwnerOptions(members, hsOwners), [members, hsOwners]);
-  const active = options.filter((o) => o.active);
-  const inactive = options.filter((o) => !o.active);
+  // Só o responsável do TechERP conta: opções sem usuário são descartadas.
+  const userOptions = options
+    .filter((o) => o.hasUser)
+    .map((o) => ({ ...o, ids: o.ids.filter((id) => !id.startsWith("hs:")) }));
+  const active = userOptions.filter((o) => o.active);
+  const inactive = userOptions.filter((o) => !o.active);
 
   const toggle = (opt: OwnerOption, checked: boolean) => {
     const set = new Set(value.ownerIds);
@@ -75,7 +79,7 @@ export function OwnerFilter({
       </label>
       {isLoading ? (
         <p className="px-2 py-1 text-xs text-muted-foreground">Carregando…</p>
-      ) : options.length === 0 ? (
+      ) : userOptions.length === 0 ? (
         <p className="px-2 py-1 text-xs text-muted-foreground">Nenhum membro</p>
       ) : (
         <>
@@ -199,10 +203,9 @@ export const EMPTY_OWNER_FILTER: OwnerFilterValue = { ownerIds: [], includeUnass
 
 /** Expressão `or` com colunas de responsável (uuids) + hubspot_owner_id (ids "hs:"). */
 export function ownerFilterOrExpr(value: OwnerFilterValue, columns: ResponsibleColumns): string {
-  const { userIds, hubspotIds } = splitOwnerIds(value.ownerIds);
+  const { userIds } = splitOwnerIds(value.ownerIds);
   const parts: string[] = [];
   const base = responsibleOrExpr(userIds, { columns, includeUnassigned: value.includeUnassigned });
   if (base) parts.push(base);
-  if (hubspotIds.length > 0) parts.push(`hubspot_owner_id.in.(${hubspotIds.join(",")})`);
   return parts.join(",");
 }

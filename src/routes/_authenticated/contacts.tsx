@@ -258,7 +258,6 @@ function ContactsHubspotView() {
       if (userIds.length > 0) {
         ownerClauses.push(responsibleOrExpr(userIds, { columns: RESPONSIBLE_COLUMNS_FULL }));
       }
-      if (hubspotIds.length > 0) ownerClauses.push(`hubspot_owner_id.in.(${hubspotIds.join(",")})`);
       if (filters.includeUnassigned)
         ownerClauses.push(
           responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_FULL, includeUnassigned: true }),
@@ -625,8 +624,6 @@ function ContactsHubspotView() {
                     responsibleOrExpr(userIds, { columns: RESPONSIBLE_COLUMNS_FULL }),
                   );
                 }
-                if (hubspotIds.length > 0)
-                  ownerClauses.push(`hubspot_owner_id.in.(${hubspotIds.join(",")})`);
                 if (filters.includeUnassigned)
                   ownerClauses.push(
                     responsibleOrExpr([], {
