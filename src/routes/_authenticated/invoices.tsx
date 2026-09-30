@@ -1,4 +1,6 @@
 import { formatDateTime } from "@/lib/crm";
+import { SortableTableHead } from "@/components/grid/sortable-table-head";
+import { useClientSort } from "@/lib/grid-client-sort";
 import { formatCompactDateTime } from "@/lib/format/compact-date";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
@@ -117,6 +119,17 @@ function InvoicesPage() {
     queryKey: ["invoices", status, search],
     queryFn: () =>
       list({ data: { status, search: search || undefined, limit: 200, gateway: "all" } }),
+  });
+  const {
+    sorted: sortedInvoices,
+    sort,
+    toggle,
+  } = useClientSort(data?.invoices ?? [], {
+    number: (inv) => inv.invoice_number,
+    status: (inv) => inv.status,
+    amount: (inv) => (inv.amount == null ? null : Number(inv.amount)),
+    due: (inv) => inv.due_date,
+    gateway: (inv) => inv.gateway,
   });
 
   function invalidate() {
@@ -273,16 +286,41 @@ function InvoicesPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Número</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Valor</TableHead>
-                      <TableHead>Vencimento</TableHead>
-                      <TableHead>Gateway</TableHead>
+                      <SortableTableHead
+                        label="Número"
+                        active={sort?.key === "number"}
+                        dir={sort?.dir}
+                        onSort={() => toggle("number")}
+                      />
+                      <SortableTableHead
+                        label="Status"
+                        active={sort?.key === "status"}
+                        dir={sort?.dir}
+                        onSort={() => toggle("status")}
+                      />
+                      <SortableTableHead
+                        label="Valor"
+                        active={sort?.key === "amount"}
+                        dir={sort?.dir}
+                        onSort={() => toggle("amount")}
+                      />
+                      <SortableTableHead
+                        label="Vencimento"
+                        active={sort?.key === "due"}
+                        dir={sort?.dir}
+                        onSort={() => toggle("due")}
+                      />
+                      <SortableTableHead
+                        label="Gateway"
+                        active={sort?.key === "gateway"}
+                        dir={sort?.dir}
+                        onSort={() => toggle("gateway")}
+                      />
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {data.invoices.map((inv) => (
+                    {sortedInvoices.map((inv) => (
                       <TableRow key={inv.id}>
                         <TableCell className="font-medium">{inv.invoice_number}</TableCell>
                         <TableCell>
