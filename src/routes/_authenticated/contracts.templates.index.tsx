@@ -188,6 +188,7 @@ function ContractTemplatesPage() {
         ) : (
           <>
             <GridListToolbar
+              exportValue={{ role: (t) => ROLE_LABEL[t.role] ?? t.role }}
               grid={sortGrid}
               filename="modelos-contrato"
               labels={{

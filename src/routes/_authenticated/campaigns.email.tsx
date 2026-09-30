@@ -56,6 +56,16 @@ import { CAMPAIGN_TOKENS } from "@/lib/message-tokens-catalog";
 import { useTokenInserter } from "@/lib/token-insert";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
+const CAMPAIGN_STATUS_LABEL: Record<string, string> = {
+  draft: "Rascunho",
+  scheduled: "Agendada",
+  running: "Em envio",
+  paused: "Pausada",
+  completed: "Concluída",
+  canceled: "Cancelada",
+  failed: "Falhou",
+};
+
 export const Route = createFileRoute("/_authenticated/campaigns/email")({
   component: EmailBroadcastsPage,
 });
@@ -419,6 +429,7 @@ function EmailBroadcastsPage() {
 
       <Card>
         <GridListToolbar
+          exportValue={{ status: (b) => CAMPAIGN_STATUS_LABEL[b.status] ?? b.status }}
           grid={sortGrid}
           filename="campanhas-email"
           labels={{
