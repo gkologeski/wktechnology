@@ -1,5 +1,7 @@
 // Sprint D — Timesheet semanal (Clockify-like) do TechProjects.
 import { createFileRoute } from "@tanstack/react-router";
+import { SortableTableHead } from "@/components/grid/sortable-table-head";
+import { useClientSort } from "@/lib/grid-client-sort";
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -125,6 +127,19 @@ function TimesheetPage() {
   const selectableIds = rows.filter((r) => !r.approved_at).map((r) => r.id);
   const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selected.has(id));
 
+  const {
+    sorted: sortedRows,
+    sort,
+    toggle: toggleSort,
+  } = useClientSort(rows, {
+    date: (r) => r.entry_date,
+    project: (r) => r.projects?.name,
+    task: (r) => r.project_tasks?.title,
+    desc: (r) => r.description,
+    billable: (r) => (r.billable ? 1 : 0),
+    status: (r) => (r.approved_at ? 1 : 0),
+  });
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -193,13 +208,43 @@ function TimesheetPage() {
                   }}
                 />
               </TableHead>
-              <TableHead>Data</TableHead>
-              <TableHead>Projeto</TableHead>
-              <TableHead>Tarefa</TableHead>
-              <TableHead>Descrição</TableHead>
+              <SortableTableHead
+                label="Data"
+                active={sort?.key === "date"}
+                dir={sort?.dir}
+                onSort={() => toggleSort("date")}
+              />
+              <SortableTableHead
+                label="Projeto"
+                active={sort?.key === "project"}
+                dir={sort?.dir}
+                onSort={() => toggleSort("project")}
+              />
+              <SortableTableHead
+                label="Tarefa"
+                active={sort?.key === "task"}
+                dir={sort?.dir}
+                onSort={() => toggleSort("task")}
+              />
+              <SortableTableHead
+                label="Descrição"
+                active={sort?.key === "desc"}
+                dir={sort?.dir}
+                onSort={() => toggleSort("desc")}
+              />
               <TableHead className="text-right">Horas</TableHead>
-              <TableHead>Billable</TableHead>
-              <TableHead>Status</TableHead>
+              <SortableTableHead
+                label="Billable"
+                active={sort?.key === "billable"}
+                dir={sort?.dir}
+                onSort={() => toggleSort("billable")}
+              />
+              <SortableTableHead
+                label="Status"
+                active={sort?.key === "status"}
+                dir={sort?.dir}
+                onSort={() => toggleSort("status")}
+              />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -216,7 +261,7 @@ function TimesheetPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              rows.map((r) => (
+              sortedRows.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell>
                     <Checkbox

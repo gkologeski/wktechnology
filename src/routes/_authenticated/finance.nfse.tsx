@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { SortableTableHead } from "@/components/grid/sortable-table-head";
+import { useClientSort } from "@/lib/grid-client-sort";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { FileText, Loader2, ExternalLink } from "lucide-react";
@@ -106,6 +108,18 @@ function NfseListPage() {
 
   const allItems = data?.items ?? [];
   const items = status === "all" ? allItems : allItems.filter((n) => n.status === status);
+
+  const {
+    sorted: sortedRows,
+    sort,
+    toggle,
+  } = useClientSort(items, {
+    invoice: (n) => n.customer_invoices?.invoice_number,
+    status: (n) => STATUS_LABEL[n.status] ?? n.status,
+    number: (n) => n.nf_number ?? n.rps_number,
+    code: (n) => n.service_code,
+    amount: (n) => (n.amount == null ? null : Number(n.amount)),
+  });
 
   return (
     <div className="space-y-4 p-6">
@@ -218,17 +232,42 @@ function NfseListPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Fatura</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Nº NF / RPS</TableHead>
-                    <TableHead>Cód. serviço</TableHead>
-                    <TableHead>Valor</TableHead>
+                    <SortableTableHead
+                      label="Fatura"
+                      active={sort?.key === "invoice"}
+                      dir={sort?.dir}
+                      onSort={() => toggle("invoice")}
+                    />
+                    <SortableTableHead
+                      label="Status"
+                      active={sort?.key === "status"}
+                      dir={sort?.dir}
+                      onSort={() => toggle("status")}
+                    />
+                    <SortableTableHead
+                      label="Nº NF / RPS"
+                      active={sort?.key === "number"}
+                      dir={sort?.dir}
+                      onSort={() => toggle("number")}
+                    />
+                    <SortableTableHead
+                      label="Cód. serviço"
+                      active={sort?.key === "code"}
+                      dir={sort?.dir}
+                      onSort={() => toggle("code")}
+                    />
+                    <SortableTableHead
+                      label="Valor"
+                      active={sort?.key === "amount"}
+                      dir={sort?.dir}
+                      onSort={() => toggle("amount")}
+                    />
                     <TableHead>Emitida em</TableHead>
                     <TableHead className="text-right">Documentos</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {items.map((n) => (
+                  {sortedRows.map((n) => (
                     <TableRow key={n.id}>
                       <TableCell className="font-medium">
                         {n.customer_invoices?.invoice_number ?? "—"}

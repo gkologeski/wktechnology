@@ -1,6 +1,8 @@
 // TechProjects — listagem cross-project de `project_tasks`.
 // Desacopla o menu de "Tarefas" do domínio de Sales (`activities` em /tasks).
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { SortableTableHead } from "@/components/grid/sortable-table-head";
+import { useClientSort } from "@/lib/grid-client-sort";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -133,6 +135,17 @@ function ProjectTasksPage() {
   const navigate = Route.useNavigate();
   const setView = (v: "table" | "kanban") =>
     void navigate({ to: ".", search: (prev) => ({ ...prev, view: v }) });
+
+  const {
+    sorted: sortedRows,
+    sort,
+    toggle,
+  } = useClientSort(rows, {
+    title: (t) => t.title,
+    status: (t) => STATUS_LABEL[t.status] ?? t.status,
+    hours: (t) => (t.estimated_hours == null ? null : Number(t.estimated_hours)),
+    due: (t) => t.due_at,
+  });
 
   return (
     <div className="p-6 space-y-5">
@@ -310,15 +323,37 @@ function ProjectTasksPage() {
                       aria-label="Selecionar todas as tarefas da página"
                     />
                   </TableHead>
-                  <TableHead>Título</TableHead>
+                  <SortableTableHead
+                    label="Título"
+                    active={sort?.key === "title"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("title")}
+                  />
                   <TableHead>Projeto</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Horas est.</TableHead>
-                  <TableHead>Prazo</TableHead>
+                  <SortableTableHead
+                    label="Status"
+                    active={sort?.key === "status"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("status")}
+                  />
+                  <SortableTableHead
+                    label="Horas est."
+                    active={sort?.key === "hours"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("hours")}
+                    className="text-right"
+                    align="right"
+                  />
+                  <SortableTableHead
+                    label="Prazo"
+                    active={sort?.key === "due"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("due")}
+                  />
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((t) => {
+                {sortedRows.map((t) => {
                   const project = (t as { projects?: { id: string; name: string } }).projects;
                   return (
                     <TableRow

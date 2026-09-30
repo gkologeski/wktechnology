@@ -43,3 +43,6 @@ Telas de configuração (KB, snippets, portal, segmentos, equipes, exportações
 2. **Exportar e busca** nos grids operacionais que ainda não têm.
 3. **Filtros laterais e visões salvas:** migrar Tickets, Projetos, Pessoas, Propostas e Faturas para o padrão `EntityList`.
 4. **Arrastar colunas** nos grids migrados.
+
+## Situação da Fase 1 (30/09/2026) — concluída
+Ordenação por coluna aplicada com `SortableTableHead` + `useClientSort` (ordena as linhas já carregadas; vazios no fim; ordem não persiste ao recarregar) em: Tickets, Projetos, Propostas, Pessoas, Benefícios, Documentos, Incidentes, Faturas, Vagas, Ofertas, Campanhas de e-mail, Modelos de contrato, NFS-e, Recorrências, Contas bancárias, Tarefas de projetos e Timesheet. Empresas usa ordenação no banco. Colunas de responsável/pessoa por código interno ficaram sem ordenação.

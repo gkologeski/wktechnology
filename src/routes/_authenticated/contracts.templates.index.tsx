@@ -1,4 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { SortableTableHead } from "@/components/grid/sortable-table-head";
+import { useClientSort } from "@/lib/grid-client-sort";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -105,6 +107,18 @@ function ContractTemplatesPage() {
     }
   }
 
+  const {
+    sorted: sortedRows,
+    sort,
+    toggle,
+  } = useClientSort(rows, {
+    name: (t) => t.name,
+    role: (t) => t.role,
+    status: (t) => STATUS_LABEL[t.status] ?? t.status,
+    services: (t) => t.services?.length ?? 0,
+    updated: (t) => t.updated_at,
+  });
+
   return (
     <div className="space-y-5 p-6">
       <PageHeader
@@ -173,16 +187,41 @@ function ContractTemplatesPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Serviços vinculados</TableHead>
-                <TableHead>Atualizado em</TableHead>
+                <SortableTableHead
+                  label="Nome"
+                  active={sort?.key === "name"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("name")}
+                />
+                <SortableTableHead
+                  label="Tipo"
+                  active={sort?.key === "role"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("role")}
+                />
+                <SortableTableHead
+                  label="Status"
+                  active={sort?.key === "status"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("status")}
+                />
+                <SortableTableHead
+                  label="Serviços vinculados"
+                  active={sort?.key === "services"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("services")}
+                />
+                <SortableTableHead
+                  label="Atualizado em"
+                  active={sort?.key === "updated"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("updated")}
+                />
                 <TableHead className="w-24 text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((t) => (
+              {sortedRows.map((t) => (
                 <TableRow key={t.id}>
                   <TableCell>
                     <Link

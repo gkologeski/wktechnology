@@ -1,4 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { SortableTableHead } from "@/components/grid/sortable-table-head";
+import { useClientSort } from "@/lib/grid-client-sort";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -291,6 +293,17 @@ function AtsJobsPage() {
   const rows = filterRows(allRows).filter((r) =>
     pipelineFilter === "all" ? true : r.pipeline_id === pipelineFilter,
   );
+  const {
+    sorted: sortedRows,
+    sort,
+    toggle,
+  } = useClientSort(rows, {
+    title: (j) => j.title,
+    status: (j) => STATUS_LABEL[j.status] ?? j.status,
+    seniority: (j) => j.seniority,
+    mode: (j) => j.remote_mode,
+    location: (j) => j.location,
+  });
   // Seleção múltipla / em massa (padrão de grids — visão em tabela).
   const { canAny } = usePermissions();
   const selection = useGridSelection(rows as Array<JobRow & { id: string }>);
@@ -865,18 +878,43 @@ function AtsJobsPage() {
                       onCheckedChange={selection.toggleAllOnPage}
                     />
                   </TableHead>
-                  <TableHead>Título</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Senioridade</TableHead>
-                  <TableHead>Modalidade</TableHead>
-                  <TableHead>Local</TableHead>
+                  <SortableTableHead
+                    label="Título"
+                    active={sort?.key === "title"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("title")}
+                  />
+                  <SortableTableHead
+                    label="Status"
+                    active={sort?.key === "status"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("status")}
+                  />
+                  <SortableTableHead
+                    label="Senioridade"
+                    active={sort?.key === "seniority"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("seniority")}
+                  />
+                  <SortableTableHead
+                    label="Modalidade"
+                    active={sort?.key === "mode"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("mode")}
+                  />
+                  <SortableTableHead
+                    label="Local"
+                    active={sort?.key === "location"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("location")}
+                  />
                   <TableHead>Depto</TableHead>
                   <TableHead>Responsável</TableHead>
                   <TableHead className="text-right">Ativos</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((j) => (
+                {sortedRows.map((j) => (
                   <TableRow
                     key={j.id}
                     className="group"

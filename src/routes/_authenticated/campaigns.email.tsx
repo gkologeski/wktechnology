@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { SortableTableHead } from "@/components/grid/sortable-table-head";
+import { useClientSort } from "@/lib/grid-client-sort";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -194,6 +196,18 @@ function EmailBroadcastsPage() {
     statusFn({ data: { id, status } }).then(() =>
       qc.invalidateQueries({ queryKey: ["email-broadcasts"] }),
     );
+
+  const {
+    sorted: sortedRows,
+    sort,
+    toggle,
+  } = useClientSort(items as Broadcast[], {
+    name: (b) => b.name,
+    status: (b) => b.status,
+    progress: (b) => (b.sent == null ? null : Number(b.sent)),
+    rate: (b) => (b.rate_per_minute == null ? null : Number(b.rate_per_minute)),
+    scheduled: (b) => b.scheduled_at,
+  });
 
   return (
     <div className="space-y-4 p-6">
@@ -405,16 +419,41 @@ function EmailBroadcastsPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Progresso</TableHead>
-              <TableHead>Taxa</TableHead>
-              <TableHead>Agendado</TableHead>
+              <SortableTableHead
+                label="Nome"
+                active={sort?.key === "name"}
+                dir={sort?.dir}
+                onSort={() => toggle("name")}
+              />
+              <SortableTableHead
+                label="Status"
+                active={sort?.key === "status"}
+                dir={sort?.dir}
+                onSort={() => toggle("status")}
+              />
+              <SortableTableHead
+                label="Progresso"
+                active={sort?.key === "progress"}
+                dir={sort?.dir}
+                onSort={() => toggle("progress")}
+              />
+              <SortableTableHead
+                label="Taxa"
+                active={sort?.key === "rate"}
+                dir={sort?.dir}
+                onSort={() => toggle("rate")}
+              />
+              <SortableTableHead
+                label="Agendado"
+                active={sort?.key === "scheduled"}
+                dir={sort?.dir}
+                onSort={() => toggle("scheduled")}
+              />
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {(items as Broadcast[]).map((b) => (
+            {sortedRows.map((b) => (
               <TableRow key={b.id}>
                 <TableCell className="font-medium">
                   <div>{b.name}</div>

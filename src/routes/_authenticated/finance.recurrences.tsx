@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { SortableTableHead } from "@/components/grid/sortable-table-head";
+import { useClientSort } from "@/lib/grid-client-sort";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -94,6 +96,20 @@ function RecurrencesPage() {
     qc.invalidateQueries({ queryKey: ["finance-recurrences"] });
   };
 
+  const {
+    sorted: sortedRows,
+    sort,
+    toggle: toggleSort,
+  } = useClientSort(rows as any[], {
+    desc: (r: any) => r.template?.description,
+    direction: (r: any) => r.direction,
+    cadence: (r: any) => r.cadence,
+    next: (r: any) => r.next_run_date,
+    generated: (r: any) =>
+      r.occurrences_generated == null ? null : Number(r.occurrences_generated),
+    status: (r: any) => (r.active ? 1 : 0),
+  });
+
   return (
     <div className="p-6 space-y-6">
       <PageHeader
@@ -140,18 +156,48 @@ function RecurrencesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead>Direção</TableHead>
-                  <TableHead>Cadência</TableHead>
-                  <TableHead>Próxima geração</TableHead>
-                  <TableHead>Geradas</TableHead>
+                  <SortableTableHead
+                    label="Descrição"
+                    active={sort?.key === "desc"}
+                    dir={sort?.dir}
+                    onSort={() => toggleSort("desc")}
+                  />
+                  <SortableTableHead
+                    label="Direção"
+                    active={sort?.key === "direction"}
+                    dir={sort?.dir}
+                    onSort={() => toggleSort("direction")}
+                  />
+                  <SortableTableHead
+                    label="Cadência"
+                    active={sort?.key === "cadence"}
+                    dir={sort?.dir}
+                    onSort={() => toggleSort("cadence")}
+                  />
+                  <SortableTableHead
+                    label="Próxima geração"
+                    active={sort?.key === "next"}
+                    dir={sort?.dir}
+                    onSort={() => toggleSort("next")}
+                  />
+                  <SortableTableHead
+                    label="Geradas"
+                    active={sort?.key === "generated"}
+                    dir={sort?.dir}
+                    onSort={() => toggleSort("generated")}
+                  />
                   <TableHead className="text-right">Valor</TableHead>
-                  <TableHead>Status</TableHead>
+                  <SortableTableHead
+                    label="Status"
+                    active={sort?.key === "status"}
+                    dir={sort?.dir}
+                    onSort={() => toggleSort("status")}
+                  />
                   <TableHead className="w-40" />
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((r: any) => (
+                {sortedRows.map((r: any) => (
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">{r.template?.description ?? "—"}</TableCell>
                     <TableCell>
