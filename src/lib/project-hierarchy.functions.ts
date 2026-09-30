@@ -1,6 +1,7 @@
 // Sprint C - Fase 4.2 parte 1
 // Hierarquia ClickUp para TechProjects: Espaço → Pasta → Lista → Tarefa (+ Subtarefa).
 // Status customizados por lista.
+import { DEFAULT_RECORD_COLOR } from "@/lib/ui/default-colors";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -17,7 +18,7 @@ const DEFAULT_STATUSES: Array<{
   category: "todo" | "doing" | "done";
   is_default?: boolean;
 }> = [
-  { name: "A fazer", color: "#94a3b8", category: "todo", is_default: true },
+  { name: "A fazer", color: DEFAULT_RECORD_COLOR, category: "todo", is_default: true },
   { name: "Em execução", color: "#0ea5e9", category: "doing" },
   { name: "Em revisão", color: "#f59e0b", category: "doing" },
   { name: "Concluída", color: "#10b981", category: "done" },
@@ -334,7 +335,7 @@ export const createStatus = createServerFn({ method: "POST" })
         workspace_id: workspaceId,
         list_id: data.listId,
         name: data.name,
-        color: data.color ?? "#94a3b8",
+        color: data.color ?? DEFAULT_RECORD_COLOR,
         category: data.category,
         sort_order: count ?? 0,
       })

@@ -1,3 +1,4 @@
+import { DEFAULT_RECORD_COLOR } from "@/lib/ui/default-colors";
 import { FieldSelect, AssociationSelect } from "./pickers";
 import type { FieldOpt } from "../step-tree";
 import {
@@ -84,7 +85,7 @@ export function SetSubstatusForm({
                   <span className="flex items-center gap-2">
                     <span
                       className="inline-block h-2 w-2 rounded-full"
-                      style={{ backgroundColor: s.color ?? "#94a3b8" }}
+                      style={{ backgroundColor: s.color ?? DEFAULT_RECORD_COLOR }}
                     />
                     {s.name}
                     <span className="text-muted-foreground">({s.stage_value})</span>
