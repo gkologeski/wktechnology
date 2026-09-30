@@ -46,7 +46,9 @@
 
 - [x] Auditar famílias atuais e lacunas de seleção global, filtros, paginação, colunas e ações em massa.
 - [x] Corrigir seleção global em Empresas e Contatos com a base compartilhada.
-- [ ] Criar a fundação única `DataGrid` orientada pelo catálogo e migrar referências centrais.
-- [ ] Criar e aprovar o mockup de Tickets antes da migração visual.
-- [ ] Executar a Fase 4 em Projetos, Tarefas de projeto, Serviços e Contratos.
-- [ ] Migrar os grids operacionais restantes por módulo e validar conformidade.
+- [x] Definir Empresas/Contatos como modelo único de todos os grids (pedido do usuário).
+- [x] Seleção global com filtros em Projetos, Tarefas de projeto e Serviços; painel lateral em Serviços.
+- [ ] Extrair o casco comum de Empresas/Contatos (painel, visões, barra, chips, paginação).
+- [ ] Migrar Leads, Negócios e Tickets para o casco (Tickets segue o visual de Empresas/Contatos).
+- [ ] Concluir Fase 4: painel lateral e paginação no servidor em Projetos, Tarefas de projeto e Contratos.
+- [ ] Migrar TechHire, TechPeople, TechFinance, Comunicações/Notas e Campanhas/Modelos.
