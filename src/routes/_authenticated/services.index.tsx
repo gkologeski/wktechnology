@@ -5,6 +5,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { Package, Search } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
+import { FiltersSidebar } from "@/components/crm/hubspot-shell";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -218,217 +220,243 @@ function ServicesPage() {
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["services"] });
 
+  const hasActiveFilters = status !== "all" || type !== "all" || assignee !== ASSIGNEE_ALL;
+  const clearFilters = () => {
+    setStatus("all");
+    setType("all");
+    setAssignee(ASSIGNEE_ALL);
+  };
+
   return (
-    <div className="p-6 space-y-5">
-      <PageHeader
-        title="Serviços em execução"
-        description="Visão operacional dos serviços vinculados a contratos, com cadência de faturamento e entrega. Novos serviços nascem dentro de um contrato."
-        count={rows.length}
-        countLabel={rows.length === 1 ? "serviço" : "serviços"}
-        actions={
-          <div className="flex items-center gap-2">
-            <ViewModeToggle value={view} onChange={setView} />
-            <grid.ColumnsButton />
+    <div className="flex min-h-full">
+      <FiltersSidebar hasActiveFilters={hasActiveFilters} onClear={clearFilters}>
+        <div className="space-y-4 px-1 py-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="services-filter-type">Tipo</Label>
+            <Select value={type} onValueChange={setType}>
+              <SelectTrigger id="services-filter-type">
+                <SelectValue placeholder="Tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os tipos</SelectItem>
+                {Object.entries(TYPE_LABEL).map(([k, v]) => (
+                  <SelectItem key={k} value={k}>
+                    {v}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        }
-      />
-
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 min-w-64">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nome…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-8"
-          />
+          <div className="space-y-1.5">
+            <Label htmlFor="services-filter-status">Status</Label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger id="services-filter-status">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os status</SelectItem>
+                {Object.entries(STATUS_LABEL).map(([k, v]) => (
+                  <SelectItem key={k} value={k}>
+                    {v}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Responsável</Label>
+            <AssigneeFilter value={assignee} onChange={setAssignee} className="w-full" />
+          </div>
         </div>
-        <Select value={type} onValueChange={setType}>
-          <SelectTrigger className="w-44">
-            <SelectValue placeholder="Tipo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os tipos</SelectItem>
-            {Object.entries(TYPE_LABEL).map(([k, v]) => (
-              <SelectItem key={k} value={k}>
-                {v}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="w-44">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os status</SelectItem>
-            {Object.entries(STATUS_LABEL).map(([k, v]) => (
-              <SelectItem key={k} value={k}>
-                {v}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <AssigneeFilter value={assignee} onChange={setAssignee} />
-      </div>
-
-      {view === "table" && selection.hasSelection && (
-        <GridBulkBar
-          table="services"
-          ids={selection.ids}
-          rows={selection.selectedRows}
-          entityLabel="serviço(s)"
-          onClear={selection.clear}
-          onDone={refresh}
-          onSelectAll={selection.selectAllMatching}
-          isSelectingAll={selection.isSelectingAll}
-          canUpdate={canAny([
-            "techservice.services.update.workspace",
-            "techservice.services.update.own",
-            "techsales.catalog.services.update.workspace",
-          ])}
-          canDelete={canAny([
-            "techservice.services.delete.workspace",
-            "techservice.services.delete.own",
-            "techsales.catalog.services.delete.workspace",
-          ])}
-          bulkEditFields={[
-            {
-              name: "status",
-              label: "Status",
-              type: "select",
-              options: Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label })),
-            },
-            {
-              name: "type",
-              label: "Tipo",
-              type: "select",
-              options: Object.entries(TYPE_LABEL).map(([value, label]) => ({ value, label })),
-            },
-            { name: "next_billing_at", label: "Próxima cobrança", type: "date" },
-          ]}
+      </FiltersSidebar>
+      <div className="min-w-0 flex-1 p-6 space-y-5">
+        <PageHeader
+          title="Serviços em execução"
+          description="Visão operacional dos serviços vinculados a contratos, com cadência de faturamento e entrega. Novos serviços nascem dentro de um contrato."
+          count={rows.length}
+          countLabel={rows.length === 1 ? "serviço" : "serviços"}
+          actions={
+            <div className="flex items-center gap-2">
+              <ViewModeToggle value={view} onChange={setView} />
+              <grid.ColumnsButton />
+            </div>
+          }
         />
-      )}
 
-      {view === "kanban" && (
-        <KanbanBoard
-          rows={rows}
-          table="services"
-          stageField="status"
-          selectable
-          entityLabel="serviço"
-          canDelete={canAny([
-            "techservice.services.delete.workspace",
-            "techservice.services.delete.own",
-            "techsales.catalog.services.delete.workspace",
-          ])}
-          canUpdate={canAny([
-            "techservice.services.update.workspace",
-            "techservice.services.update.own",
-            "techsales.catalog.services.update.workspace",
-          ])}
-          isLoading={isLoading}
-          invalidateKeys={[["services"]]}
-          ariaLabel="Quadro de serviços"
-          columns={Object.entries(STATUS_LABEL).map(([value, label]) => ({
-            value,
-            label,
-            tone: KANBAN_TONE[value],
-          }))}
-          emptyState={
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-64">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-8"
+              aria-label="Buscar serviços"
+            />
+          </div>
+          <div className="lg:hidden">
+            <AssigneeFilter value={assignee} onChange={setAssignee} />
+          </div>
+        </div>
+
+        {view === "table" && selection.hasSelection && (
+          <GridBulkBar
+            table="services"
+            ids={selection.ids}
+            rows={selection.selectedRows}
+            entityLabel="serviço(s)"
+            onClear={selection.clear}
+            onDone={refresh}
+            onSelectAll={selection.selectAllMatching}
+            isSelectingAll={selection.isSelectingAll}
+            canUpdate={canAny([
+              "techservice.services.update.workspace",
+              "techservice.services.update.own",
+              "techsales.catalog.services.update.workspace",
+            ])}
+            canDelete={canAny([
+              "techservice.services.delete.workspace",
+              "techservice.services.delete.own",
+              "techsales.catalog.services.delete.workspace",
+            ])}
+            bulkEditFields={[
+              {
+                name: "status",
+                label: "Status",
+                type: "select",
+                options: Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label })),
+              },
+              {
+                name: "type",
+                label: "Tipo",
+                type: "select",
+                options: Object.entries(TYPE_LABEL).map(([value, label]) => ({ value, label })),
+              },
+              { name: "next_billing_at", label: "Próxima cobrança", type: "date" },
+            ]}
+          />
+        )}
+
+        {view === "kanban" && (
+          <KanbanBoard
+            rows={rows}
+            table="services"
+            stageField="status"
+            selectable
+            entityLabel="serviço"
+            canDelete={canAny([
+              "techservice.services.delete.workspace",
+              "techservice.services.delete.own",
+              "techsales.catalog.services.delete.workspace",
+            ])}
+            canUpdate={canAny([
+              "techservice.services.update.workspace",
+              "techservice.services.update.own",
+              "techsales.catalog.services.update.workspace",
+            ])}
+            isLoading={isLoading}
+            invalidateKeys={[["services"]]}
+            ariaLabel="Quadro de serviços"
+            columns={Object.entries(STATUS_LABEL).map(([value, label]) => ({
+              value,
+              label,
+              tone: KANBAN_TONE[value],
+            }))}
+            emptyState={
+              <div className="p-12 text-center">
+                <Package className="mx-auto h-10 w-10 text-muted-foreground" />
+                <h3 className="mt-4 text-lg font-medium">Nenhum serviço ainda</h3>
+              </div>
+            }
+            renderCard={(s) => (
+              <div className="space-y-1 pr-6">
+                <Link
+                  to="/services/$id"
+                  params={{ id: s.id }}
+                  className="text-sm font-medium hover:underline"
+                >
+                  {formatLineItemIdentity(s)}
+                </Link>
+                <p className="text-xs text-muted-foreground">{TYPE_LABEL[s.type] ?? s.type}</p>
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-xs tabular-nums text-muted-foreground">
+                    {formatCurrency(Number(s.quantity) * Number(s.unit_price), s.currency)}
+                  </span>
+                  <AssigneeCell assignedTo={s.assigned_to} />
+                </div>
+              </div>
+            )}
+          />
+        )}
+
+        <div className={`rounded-lg border bg-card ${view === "kanban" ? "hidden" : ""}`}>
+          {isLoading ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">Carregando…</div>
+          ) : rows.length === 0 ? (
             <div className="p-12 text-center">
               <Package className="mx-auto h-10 w-10 text-muted-foreground" />
               <h3 className="mt-4 text-lg font-medium">Nenhum serviço ainda</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Crie serviços dentro de um contrato. O motor de billing gera automaticamente as
+                contas conforme a cadência.
+              </p>
             </div>
-          }
-          renderCard={(s) => (
-            <div className="space-y-1 pr-6">
-              <Link
-                to="/services/$id"
-                params={{ id: s.id }}
-                className="text-sm font-medium hover:underline"
-              >
-                {formatLineItemIdentity(s)}
-              </Link>
-              <p className="text-xs text-muted-foreground">{TYPE_LABEL[s.type] ?? s.type}</p>
-              <div className="flex items-center justify-between pt-1">
-                <span className="text-xs tabular-nums text-muted-foreground">
-                  {formatCurrency(Number(s.quantity) * Number(s.unit_price), s.currency)}
-                </span>
-                <AssigneeCell assignedTo={s.assigned_to} />
-              </div>
-            </div>
-          )}
-        />
-      )}
-
-      <div className={`rounded-lg border bg-card ${view === "kanban" ? "hidden" : ""}`}>
-        {isLoading ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">Carregando…</div>
-        ) : rows.length === 0 ? (
-          <div className="p-12 text-center">
-            <Package className="mx-auto h-10 w-10 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">Nenhum serviço ainda</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Crie serviços dentro de um contrato. O motor de billing gera automaticamente as contas
-              conforme a cadência.
-            </p>
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10">
-                  <Checkbox
-                    aria-label="Selecionar todos da página"
-                    checked={
-                      selection.allOnPageSelected
-                        ? true
-                        : selection.someOnPageSelected
-                          ? "indeterminate"
-                          : false
-                    }
-                    onCheckedChange={selection.toggleAllOnPage}
-                  />
-                </TableHead>
-                <SortableColumns
-                  keys={grid.columns.map((column) => column.key)}
-                  onReorder={grid.reorderColumns}
-                >
-                  {grid.columns.map((c) => (
-                    <SortableColumnHeader key={c.key} columnKey={c.key} label={c.label}>
-                      <TableHead className={c.headerClassName}>{c.header ?? c.label}</TableHead>
-                    </SortableColumnHeader>
-                  ))}
-                </SortableColumns>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((s) => (
-                <TableRow
-                  key={s.id}
-                  data-state={selection.isSelected(s.id) ? "selected" : undefined}
-                >
-                  <TableCell>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10">
                     <Checkbox
-                      aria-label="Selecionar serviço"
-                      checked={selection.isSelected(s.id)}
-                      onCheckedChange={() => selection.toggleOne(s.id)}
+                      aria-label="Selecionar todos da página"
+                      checked={
+                        selection.allOnPageSelected
+                          ? true
+                          : selection.someOnPageSelected
+                            ? "indeterminate"
+                            : false
+                      }
+                      onCheckedChange={selection.toggleAllOnPage}
                     />
-                  </TableCell>
-                  {grid.columns.map((c) => (
-                    <TableCell key={c.key} className={c.className}>
-                      {c.render(s)}
-                    </TableCell>
-                  ))}
+                  </TableHead>
+                  <SortableColumns
+                    keys={grid.columns.map((column) => column.key)}
+                    onReorder={grid.reorderColumns}
+                  >
+                    {grid.columns.map((c) => (
+                      <SortableColumnHeader key={c.key} columnKey={c.key} label={c.label}>
+                        <TableHead className={c.headerClassName}>{c.header ?? c.label}</TableHead>
+                      </SortableColumnHeader>
+                    ))}
+                  </SortableColumns>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </div>
+              </TableHeader>
+              <TableBody>
+                {rows.map((s) => (
+                  <TableRow
+                    key={s.id}
+                    data-state={selection.isSelected(s.id) ? "selected" : undefined}
+                  >
+                    <TableCell>
+                      <Checkbox
+                        aria-label="Selecionar serviço"
+                        checked={selection.isSelected(s.id)}
+                        onCheckedChange={() => selection.toggleOne(s.id)}
+                      />
+                    </TableCell>
+                    {grid.columns.map((c) => (
+                      <TableCell key={c.key} className={c.className}>
+                        {c.render(s)}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
 
-      <grid.ColumnsEditor />
+        <grid.ColumnsEditor />
+      </div>
     </div>
   );
 }

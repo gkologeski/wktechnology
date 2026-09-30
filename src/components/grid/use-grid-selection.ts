@@ -78,6 +78,7 @@ export function useGridSelection<T extends { id: string }>(
         }
         return;
       }
+      if (!buildIdQuery) return;
       const all: string[] = [];
       let truncated = false;
       for (let offset = 0; ; offset += CHUNK) {
