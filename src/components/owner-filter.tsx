@@ -7,7 +7,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { ChevronRight } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { listWorkspaceMembers } from "@/lib/rotation.functions";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -17,6 +16,7 @@ import {
   type OwnerOption,
 } from "@/lib/owner-filter-options";
 import { cn } from "@/lib/utils";
+import { responsibleOrExpr, type ResponsibleColumns } from "@/lib/entity/responsible";
 
 export type OwnerFilterValue = {
   /** IDs podem ser uuid (usuário do workspace) ou prefixados com "hs:" (hubspot_owner_id). */
@@ -78,7 +78,7 @@ export function OwnerFilter({
       ) : options.length === 0 ? (
         <p className="px-2 py-1 text-xs text-muted-foreground">Nenhum membro</p>
       ) : (
-        <TooltipProvider>
+        <>
           <OwnerGroup
             title="Ativos"
             items={active}
@@ -92,7 +92,7 @@ export function OwnerFilter({
             selected={value.ownerIds}
             onToggle={toggle}
           />
-        </TooltipProvider>
+        </>
       )}
     </div>
   );
@@ -145,25 +145,13 @@ function OwnerGroup({
             <span
               className={cn(
                 "h-1.5 w-1.5 shrink-0 rounded-full",
-                opt.hasUser ? "bg-primary" : "bg-warning",
+                opt.active ? "bg-primary" : "bg-muted-foreground",
               )}
             />
             <span className={cn("truncate", !opt.active && "text-muted-foreground")}>
               {opt.label}
               {opt.is_me ? " (eu)" : ""}
             </span>
-            {opt.hasUser && opt.hasHubspot && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="ml-auto shrink-0 rounded bg-muted px-1 text-[10px] text-muted-foreground">
-                    +HubSpot
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  Inclui os registros do usuário e os importados do HubSpot em nome dele
-                </TooltipContent>
-              </Tooltip>
-            )}
           </label>
         ))}
       </CollapsibleContent>
@@ -208,3 +196,13 @@ export function applyOwnerFilter<
 }
 
 export const EMPTY_OWNER_FILTER: OwnerFilterValue = { ownerIds: [], includeUnassigned: false };
+
+/** Expressão `or` com colunas de responsável (uuids) + hubspot_owner_id (ids "hs:"). */
+export function ownerFilterOrExpr(value: OwnerFilterValue, columns: ResponsibleColumns): string {
+  const { userIds, hubspotIds } = splitOwnerIds(value.ownerIds);
+  const parts: string[] = [];
+  const base = responsibleOrExpr(userIds, { columns, includeUnassigned: value.includeUnassigned });
+  if (base) parts.push(base);
+  if (hubspotIds.length > 0) parts.push(`hubspot_owner_id.in.(${hubspotIds.join(",")})`);
+  return parts.join(",");
+}
