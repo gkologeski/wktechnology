@@ -44,7 +44,7 @@ import { ConfirmCountDialog } from "@/components/confirm-count-dialog";
 import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialogs";
 import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
 import { exportRowsToCsv } from "@/lib/csv-export";
-import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
+import { OwnerFilter, ownerFilterOrExpr, type OwnerFilterValue } from "@/components/owner-filter";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { SortableColumnHeader, SortableColumns } from "@/components/grid/sortable-columns";
 
@@ -261,18 +261,12 @@ function CompaniesHubspotView() {
         if (end) q = q.lt("created_at", end.toISOString());
       }
 
-      if (filters.ownerIds.length > 0 && filters.includeUnassigned) {
+      if (filters.ownerIds.length > 0 || filters.includeUnassigned) {
         q = q.or(
-          responsibleOrExpr(filters.ownerIds, {
-            columns: RESPONSIBLE_COLUMNS_FULL,
-            includeUnassigned: true,
-          }),
-        );
-      } else if (filters.ownerIds.length > 0) {
-        q = q.or(responsibleOrExpr(filters.ownerIds, { columns: RESPONSIBLE_COLUMNS_FULL }));
-      } else if (filters.includeUnassigned) {
-        q = q.or(
-          responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_FULL, includeUnassigned: true }),
+          ownerFilterOrExpr(
+            { ownerIds: filters.ownerIds, includeUnassigned: filters.includeUnassigned },
+            RESPONSIBLE_COLUMNS_FULL,
+          ),
         );
       }
 
@@ -585,18 +579,12 @@ function CompaniesHubspotView() {
           if (start) q = q.gte("created_at", start.toISOString());
           if (end) q = q.lt("created_at", end.toISOString());
         }
-        if (filters.ownerIds.length > 0 && filters.includeUnassigned) {
+        if (filters.ownerIds.length > 0 || filters.includeUnassigned) {
           q = q.or(
-            responsibleOrExpr(filters.ownerIds, {
-              columns: RESPONSIBLE_COLUMNS_FULL,
-              includeUnassigned: true,
-            }),
-          );
-        } else if (filters.ownerIds.length > 0) {
-          q = q.or(responsibleOrExpr(filters.ownerIds, { columns: RESPONSIBLE_COLUMNS_FULL }));
-        } else if (filters.includeUnassigned) {
-          q = q.or(
-            responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_FULL, includeUnassigned: true }),
+            ownerFilterOrExpr(
+              { ownerIds: filters.ownerIds, includeUnassigned: filters.includeUnassigned },
+              RESPONSIBLE_COLUMNS_FULL,
+            ),
           );
         }
         const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
