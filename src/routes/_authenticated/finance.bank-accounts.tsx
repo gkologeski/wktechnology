@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { SortableTableHead } from "@/components/grid/sortable-table-head";
+import { useClientSort } from "@/lib/grid-client-sort";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -106,6 +108,12 @@ function BankAccountsPage() {
     }
   }
 
+  const { sorted: sortedRows, sort, toggle } = useClientSort(rows, {
+    name: (b) => b.name,
+    kind: (b) => b.kind,
+    currency: (b) => b.currency,
+  });
+
   return (
     <div className="p-6 space-y-5">
       <PageHeader
@@ -130,15 +138,15 @@ function BankAccountsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nome</TableHead>
+                <SortableTableHead label="Nome" active={sort?.key === "name"} dir={sort?.dir} onSort={() => toggle("name")} />
                 <TableHead>Empresa</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Moeda</TableHead>
+                <SortableTableHead label="Tipo" active={sort?.key === "kind"} dir={sort?.dir} onSort={() => toggle("kind")} />
+                <SortableTableHead label="Moeda" active={sort?.key === "currency"} dir={sort?.dir} onSort={() => toggle("currency")} />
                 <TableHead className="text-right">Saldo inicial</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((b) => {
+              {sortedRows.map((b) => {
                 const le = b.legal_entity_id ? leById.get(b.legal_entity_id) : null;
                 return (
                   <TableRow key={b.id}>
