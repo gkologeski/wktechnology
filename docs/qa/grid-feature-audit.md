@@ -49,3 +49,6 @@ Ordenação por coluna aplicada com `SortableTableHead` + `useClientSort` (orden
 
 ## Fase 2 — concluída (2026-09-30)
 Exportar (CSV/JSON/XLSX) e busca local adicionados via `GridListToolbar` em Tickets, Projetos, Propostas, Pessoas, Benefícios, Documentos, Incidentes, Faturas, Vagas, Ofertas, Campanhas de e-mail, Modelos de contrato, NFS-e, Recorrências, Contas bancárias, Tarefas de projetos e Timesheet. Telas com busca própria mantêm a existente.
+
+## Fase 3 — concluída (2026-09-30)
+Painel lateral de filtros (`GridFilterPanel`/`GridFilterChips`) e menu de visões salvas (`GridSavedViewsMenu`, tabela `saved_views`) adicionados via `GridListToolbar` em Tickets, Projetos, Pessoas, Propostas e Faturas, sem remover os filtros existentes. Visão padrão aplicada ao abrir; visões guardam filtros, busca e ordenação.

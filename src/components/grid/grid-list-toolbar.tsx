@@ -2,7 +2,10 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ExportMenuButton } from "@/components/export-menu-button";
 import { exportRows } from "@/lib/export/export-rows";
-import type { ClientGrid, SortAccessor } from "@/lib/grid-client-sort";
+import type { ClientGrid, SortAccessor, SortState } from "@/lib/grid-client-sort";
+import type { GridFiltersController } from "@/hooks/use-grid-filters";
+import { GridFilterChips, GridFilterPanel } from "@/components/grid/grid-filter-panel";
+import { GridSavedViewsMenu } from "@/components/grid/grid-saved-views-menu";
 
 type Props<T, K extends string> = {
   grid: ClientGrid<T, K>;
@@ -15,6 +18,10 @@ type Props<T, K extends string> = {
   searchPlaceholder?: string;
   /** Valor exportado diferente do usado para ordenar (ex.: rótulo de prioridade). */
   exportValue?: Partial<Record<K, SortAccessor<T>>>;
+  /** Painel lateral de filtros e visões salvas (Fase 3). */
+  filters?: GridFiltersController<T>;
+  sort?: SortState<K>;
+  setSort?: (s: SortState<K>) => void;
 };
 
 /** Barra compacta com busca local e exportação (CSV/JSON/XLSX) da lista visível. */
@@ -25,6 +32,9 @@ export function GridListToolbar<T, K extends string>({
   search = true,
   searchPlaceholder = "Buscar nesta lista…",
   exportValue,
+  filters,
+  sort = null,
+  setSort,
 }: Props<T, K>) {
   const keys = Object.keys(labels) as K[];
   const onExport = (format: "csv" | "json" | "xlsx") =>
@@ -56,11 +66,22 @@ export function GridListToolbar<T, K extends string>({
           {grid.sorted.length} de {grid.total}
         </span>
       )}
+      {filters && setSort && (
+        <GridSavedViewsMenu
+          ctl={filters}
+          sort={sort}
+          setSort={setSort}
+          query={grid.query}
+          setQuery={grid.setQuery}
+        />
+      )}
+      {filters && <GridFilterPanel ctl={filters} />}
       <ExportMenuButton
         className="ml-auto"
         disabled={grid.sorted.length === 0}
         onExport={onExport}
       />
+      {filters && <GridFilterChips ctl={filters} />}
     </div>
   );
 }

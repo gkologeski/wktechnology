@@ -1,4 +1,6 @@
 import { formatDateTime } from "@/lib/crm";
+import { useGridFilters } from "@/hooks/use-grid-filters";
+import type { GridFilterField } from "@/lib/grid-filters";
 import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
@@ -121,12 +123,30 @@ function InvoicesPage() {
     queryFn: () =>
       list({ data: { status, search: search || undefined, limit: 200, gateway: "all" } }),
   });
+  const gridFilters = useGridFilters("invoices", data?.invoices ?? [], [
+    {
+      key: "status",
+      label: "Status",
+      type: "multi",
+      get: (inv) => inv.status,
+      options: Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label })),
+    },
+    { key: "gateway", label: "Gateway", type: "multi", get: (inv) => inv.gateway },
+    { key: "due", label: "Vencimento entre", type: "date", get: (inv) => inv.due_date },
+    {
+      key: "amount",
+      label: "Valor (R$)",
+      type: "number",
+      get: (inv) => (inv.amount == null ? null : Number(inv.amount)),
+    },
+  ] as GridFilterField<any>[]);
   const {
     sorted: sortedInvoices,
     sort,
     toggle,
     grid: sortGrid,
-  } = useClientSort(data?.invoices ?? [], {
+    setSort: setGridSort,
+  } = useClientSort(gridFilters.filtered, {
     number: (inv) => inv.invoice_number,
     status: (inv) => inv.status,
     amount: (inv) => (inv.amount == null ? null : Number(inv.amount)),
@@ -287,6 +307,9 @@ function InvoicesPage() {
               ) : (
                 <>
                   <GridListToolbar
+                    filters={gridFilters}
+                    sort={sort}
+                    setSort={setGridSort}
                     exportValue={{ status: (inv) => STATUS_LABEL[inv.status] ?? inv.status }}
                     grid={sortGrid}
                     filename="faturas"

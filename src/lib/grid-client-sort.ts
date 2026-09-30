@@ -73,5 +73,5 @@ export function useClientSort<T, K extends string>(
       prev?.key === key ? { key, dir: prev.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" },
     );
   const grid: ClientGrid<T, K> = { sorted, total: rows.length, query, setQuery, accessors };
-  return { sorted, sort, toggle, grid };
+  return { sorted, sort, setSort, toggle, grid };
 }
