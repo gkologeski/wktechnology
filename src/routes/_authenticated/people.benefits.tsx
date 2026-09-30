@@ -77,6 +77,14 @@ function BenefitsListPage() {
     queryFn: () => fn({ data: { only_active: true } }),
     staleTime: 60_000,
   });
+  const { sorted: data, sort, toggle } = useClientSort(rawData, {
+    person: (b) => b.people?.full_name,
+    type: (b) => BENEFIT_TYPE_LABELS[b.benefit_type as BenefitType] ?? b.benefit_type,
+    provider: (b) => b.provider ?? b.plan_name,
+    value: (b) => (b.monthly_value == null ? null : Number(b.monthly_value)),
+    share: (b) => (b.employee_share == null ? null : Number(b.employee_share)),
+    start: (b) => b.starts_on,
+  });
 
   const totalMonthly = data.reduce((s, b) => s + Number(b.monthly_value ?? 0), 0);
 
@@ -142,12 +150,12 @@ function BenefitsListPage() {
                   onCheckedChange={selection.toggleAllOnPage}
                 />
               </TableHead>
-              <TableHead>Pessoa</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead>Provedor / Plano</TableHead>
-              <TableHead className="text-right">Valor mensal</TableHead>
-              <TableHead className="text-right">Cota empregado</TableHead>
-              <TableHead>Início</TableHead>
+              <SortableTableHead label="Pessoa" active={sort?.key === "person"} dir={sort?.dir} onSort={() => toggle("person")} />
+              <SortableTableHead label="Tipo" active={sort?.key === "type"} dir={sort?.dir} onSort={() => toggle("type")} />
+              <SortableTableHead label="Provedor / Plano" active={sort?.key === "provider"} dir={sort?.dir} onSort={() => toggle("provider")} />
+              <SortableTableHead label="Valor mensal" active={sort?.key === "value"} dir={sort?.dir} onSort={() => toggle("value")} className="text-right" align="right" />
+              <SortableTableHead label="Cota empregado" active={sort?.key === "share"} dir={sort?.dir} onSort={() => toggle("share")} className="text-right" align="right" />
+              <SortableTableHead label="Início" active={sort?.key === "start"} dir={sort?.dir} onSort={() => toggle("start")} />
             </TableRow>
           </TableHeader>
           <TableBody>
