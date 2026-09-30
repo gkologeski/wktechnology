@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -111,8 +112,7 @@ function BankAccountsPage() {
   const {
     sorted: sortedRows,
     sort,
-    toggle,
-  } = useClientSort(rows, {
+    toggle, grid: sortGrid } = useClientSort(rows, {
     name: (b) => b.name,
     kind: (b) => b.kind,
     currency: (b) => b.currency,
@@ -139,6 +139,7 @@ function BankAccountsPage() {
             Nenhuma conta cadastrada.
           </div>
         ) : (
+          <GridListToolbar grid={sortGrid} filename="contas-bancarias" labels={{ name: "Nome", kind: "Tipo", currency: "Moeda" }} />
           <Table>
             <TableHeader>
               <TableRow>

@@ -1,5 +1,6 @@
 // Sprint D — Timesheet semanal (Clockify-like) do TechProjects.
 import { createFileRoute } from "@tanstack/react-router";
+import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
 import { useMemo, useState } from "react";
@@ -131,13 +132,14 @@ function TimesheetPage() {
     sorted: sortedRows,
     sort,
     toggle: toggleSort,
+    grid: sortGrid,
   } = useClientSort(rows, {
     date: (r) => r.entry_date,
     project: (r) => r.projects?.name,
     task: (r) => r.project_tasks?.title,
     desc: (r) => r.description,
-    billable: (r) => (r.billable ? 1 : 0),
-    status: (r) => (r.approved_at ? 1 : 0),
+    billable: (r) => (r.billable ? "Sim" : "Não"),
+    status: (r) => (r.approved_at ? "Aprovado" : "Pendente"),
   });
 
   return (
@@ -196,6 +198,18 @@ function TimesheetPage() {
       </div>
 
       <div className="rounded-md border">
+        <GridListToolbar
+          grid={sortGrid}
+          filename="timesheet"
+          labels={{
+            date: "Data",
+            project: "Projeto",
+            task: "Tarefa",
+            desc: "Descrição",
+            billable: "Billable",
+            status: "Status",
+          }}
+        />
         <Table>
           <TableHeader>
             <TableRow>

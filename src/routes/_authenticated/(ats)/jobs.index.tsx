@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
 import { useServerFn } from "@tanstack/react-start";
@@ -297,6 +298,7 @@ function AtsJobsPage() {
     sorted: sortedRows,
     sort,
     toggle,
+    grid: sortGrid,
   } = useClientSort(rows, {
     title: (j) => j.title,
     status: (j) => STATUS_LABEL[j.status] ?? j.status,
@@ -862,6 +864,18 @@ function AtsJobsPage() {
             />
           )}
           <div className="rounded-lg border border-border-subtle bg-surface-1 overflow-x-auto">
+            <GridListToolbar
+              grid={sortGrid}
+              filename="vagas"
+              labels={{
+                title: "Título",
+                status: "Status",
+                seniority: "Senioridade",
+                mode: "Modalidade",
+                location: "Local",
+              }}
+              search={false}
+            />
             <Table>
               <TableHeader>
                 <TableRow>

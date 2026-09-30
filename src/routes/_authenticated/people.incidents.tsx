@@ -1,5 +1,6 @@
 // /people/incidents — visão agregada de incidentes de segurança/assédio do workspace.
 import { formatCompactDateTime } from "@/lib/format/compact-date";
+import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -106,6 +107,7 @@ function IncidentsListPage() {
     sorted: filtered,
     sort,
     toggle,
+    grid: sortGrid,
   } = useClientSort(sev === "all" ? data : data.filter((i) => i.severity === sev), {
     date: (i) => i.occurred_at,
     title: (i) => i.title,
@@ -229,6 +231,21 @@ function IncidentsListPage() {
         />
       ) : (
         <div className="rounded-md border bg-card">
+          <GridListToolbar
+            grid={sortGrid}
+            filename="incidentes"
+            labels={{
+              date: "Data",
+              title: "Título",
+              category: "Categoria",
+              severity: "Severidade",
+              status: "Status",
+            }}
+            exportValue={{
+              severity: (i) =>
+                INCIDENT_SEVERITY_LABELS[i.severity as keyof typeof INCIDENT_SEVERITY_LABELS],
+            }}
+          />
           <Table>
             <TableHeader>
               <TableRow>

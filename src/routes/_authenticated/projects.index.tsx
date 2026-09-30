@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
 import { useState } from "react";
@@ -105,8 +106,7 @@ function ProjectsPage() {
   const {
     sorted: rows,
     sort,
-    toggle,
-  } = useClientSort(filteredRows as any[], {
+    toggle, grid: sortGrid } = useClientSort(filteredRows as any[], {
     name: (p: any) => p.name,
     contract: (p: any) => p.contracts?.number ?? p.contracts?.title,
     status: (p: any) => STATUS_LABEL[p.status] ?? p.status,
@@ -269,6 +269,7 @@ function ProjectsPage() {
               </Button>
             </div>
           ) : (
+            <GridListToolbar grid={sortGrid} filename="projetos" labels={{ name: "Nome", contract: "Contrato", status: "Status", progress: "Progresso", due: "Prazo" }} search={false} />
             <Table>
               <TableHeader>
                 <TableRow>

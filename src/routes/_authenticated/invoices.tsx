@@ -1,4 +1,5 @@
 import { formatDateTime } from "@/lib/crm";
+import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
 import { formatCompactDateTime } from "@/lib/format/compact-date";
@@ -123,8 +124,7 @@ function InvoicesPage() {
   const {
     sorted: sortedInvoices,
     sort,
-    toggle,
-  } = useClientSort(data?.invoices ?? [], {
+    toggle, grid: sortGrid } = useClientSort(data?.invoices ?? [], {
     number: (inv) => inv.invoice_number,
     status: (inv) => inv.status,
     amount: (inv) => (inv.amount == null ? null : Number(inv.amount)),
@@ -283,6 +283,7 @@ function InvoicesPage() {
                   Nenhuma fatura encontrada.
                 </p>
               ) : (
+                <GridListToolbar grid={sortGrid} filename="faturas" labels={{ number: "Número", status: "Status", amount: "Valor", due: "Vencimento", gateway: "Gateway" }} search={false} />
                 <Table>
                   <TableHeader>
                     <TableRow>

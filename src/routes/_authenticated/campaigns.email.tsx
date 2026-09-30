@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
 import { useState } from "react";
@@ -201,6 +202,7 @@ function EmailBroadcastsPage() {
     sorted: sortedRows,
     sort,
     toggle,
+    grid: sortGrid,
   } = useClientSort(items as Broadcast[], {
     name: (b) => b.name,
     status: (b) => b.status,
@@ -416,6 +418,17 @@ function EmailBroadcastsPage() {
       </div>
 
       <Card>
+        <GridListToolbar
+          grid={sortGrid}
+          filename="campanhas-email"
+          labels={{
+            name: "Nome",
+            status: "Status",
+            progress: "Progresso",
+            rate: "Taxa",
+            scheduled: "Agendado",
+          }}
+        />
         <Table>
           <TableHeader>
             <TableRow>

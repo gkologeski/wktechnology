@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
 import { useState } from "react";
@@ -110,8 +111,7 @@ function ContractTemplatesPage() {
   const {
     sorted: sortedRows,
     sort,
-    toggle,
-  } = useClientSort(rows, {
+    toggle, grid: sortGrid } = useClientSort(rows, {
     name: (t) => t.name,
     role: (t) => t.role,
     status: (t) => STATUS_LABEL[t.status] ?? t.status,
@@ -184,6 +184,7 @@ function ContractTemplatesPage() {
             </div>
           </div>
         ) : (
+          <GridListToolbar grid={sortGrid} filename="modelos-contrato" labels={{ name: "Nome", role: "Tipo", status: "Status", services: "Serviços vinculados", updated: "Atualizado em" }} search={false} />
           <Table>
             <TableHeader>
               <TableRow>

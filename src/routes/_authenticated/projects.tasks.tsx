@@ -1,6 +1,7 @@
 // TechProjects — listagem cross-project de `project_tasks`.
 // Desacopla o menu de "Tarefas" do domínio de Sales (`activities` em /tasks).
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
 import { useMemo, useState } from "react";
@@ -139,8 +140,7 @@ function ProjectTasksPage() {
   const {
     sorted: sortedRows,
     sort,
-    toggle,
-  } = useClientSort(rows, {
+    toggle, grid: sortGrid } = useClientSort(rows, {
     title: (t) => t.title,
     status: (t) => STATUS_LABEL[t.status] ?? t.status,
     hours: (t) => (t.estimated_hours == null ? null : Number(t.estimated_hours)),
@@ -307,6 +307,7 @@ function ProjectTasksPage() {
               </Button>
             </div>
           ) : (
+            <GridListToolbar grid={sortGrid} filename="tarefas-projetos" labels={{ title: "Título", status: "Status", hours: "Horas est.", due: "Prazo" }} search={false} />
             <Table>
               <TableHeader>
                 <TableRow>

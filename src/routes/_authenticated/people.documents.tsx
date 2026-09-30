@@ -1,5 +1,6 @@
 // /people/documents — visão global de documentos a vencer/vencidos.
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
 import { useState } from "react";
@@ -70,8 +71,7 @@ function DocumentsPage() {
   const {
     sorted: data,
     sort,
-    toggle,
-  } = useClientSort(rawData as ExpiringDocumentRow[], {
+    toggle, grid: sortGrid } = useClientSort(rawData as ExpiringDocumentRow[], {
     person: (d) => d.person_name,
     doc: (d) => d.doc_type,
     expires: (d) => d.expires_at,
@@ -140,6 +140,7 @@ function DocumentsPage() {
               Nenhum documento nessa condição.
             </div>
           ) : (
+            <GridListToolbar grid={sortGrid} filename="documentos" labels={{ person: "Pessoa", doc: "Documento", expires: "Validade", status: "Status" }} />
             <Table>
               <TableHeader>
                 <TableRow>

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -99,15 +100,14 @@ function RecurrencesPage() {
   const {
     sorted: sortedRows,
     sort,
-    toggle: toggleSort,
-  } = useClientSort(rows as any[], {
+    toggle: toggleSort, grid: sortGrid } = useClientSort(rows as any[], {
     desc: (r: any) => r.template?.description,
     direction: (r: any) => r.direction,
     cadence: (r: any) => r.cadence,
     next: (r: any) => r.next_run_date,
     generated: (r: any) =>
       r.occurrences_generated == null ? null : Number(r.occurrences_generated),
-    status: (r: any) => (r.active ? 1 : 0),
+    status: (r: any) => (r.active ? "Ativa" : "Inativa"),
   });
 
   return (
@@ -153,6 +153,7 @@ function RecurrencesPage() {
           ) : rows.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhuma recorrência cadastrada.</p>
           ) : (
+            <GridListToolbar grid={sortGrid} filename="recorrencias" labels={{ desc: "Descrição", direction: "Direção", cadence: "Cadência", next: "Próxima geração", generated: "Geradas", status: "Status" }} />
             <Table>
               <TableHeader>
                 <TableRow>

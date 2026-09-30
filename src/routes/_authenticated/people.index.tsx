@@ -1,5 +1,6 @@
 // /people — lista de pessoas (TechPeople).
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
 import { useState } from "react";
@@ -156,6 +157,7 @@ function PeoplePage() {
     sorted: rows,
     sort,
     toggle,
+    grid: sortGrid,
   } = useClientSort(filterRows(allRows), {
     name: (p) => p.full_name,
     role: (p) => p.role_title,
@@ -299,6 +301,18 @@ function PeoplePage() {
         />
       ) : (
         <div className="rounded-md border bg-card">
+          <GridListToolbar
+            grid={sortGrid}
+            filename="pessoas"
+            labels={{
+              name: "Pessoa",
+              role: "Cargo",
+              type: "Vínculo",
+              status: "Status",
+              hire: "Contratação",
+            }}
+            search={false}
+          />
           <Table>
             <TableHeader>
               <TableRow>

@@ -41,10 +41,7 @@ export function GridListToolbar<T, K extends string>({
     <div className="flex flex-wrap items-center gap-2 pb-3">
       {search && (
         <div className="relative min-w-56 flex-1 sm:max-w-sm">
-          <Search
-            className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"
-            aria-hidden
-          />
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" aria-hidden />
           <Input
             value={grid.query}
             onChange={(e) => grid.setQuery(e.target.value)}

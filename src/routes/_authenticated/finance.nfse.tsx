@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
 import { useQuery } from "@tanstack/react-query";
@@ -112,8 +113,7 @@ function NfseListPage() {
   const {
     sorted: sortedRows,
     sort,
-    toggle,
-  } = useClientSort(items, {
+    toggle, grid: sortGrid } = useClientSort(items, {
     invoice: (n) => n.customer_invoices?.invoice_number,
     status: (n) => STATUS_LABEL[n.status] ?? n.status,
     number: (n) => n.nf_number ?? n.rps_number,
@@ -229,6 +229,7 @@ function NfseListPage() {
                 Nenhuma NFS-e emitida. Emita a partir de uma fatura em "Faturas".
               </p>
             ) : (
+              <GridListToolbar grid={sortGrid} filename="nfse" labels={{ invoice: "Fatura", status: "Status", number: "Nº NF / RPS", code: "Cód. serviço", amount: "Valor" }} />
               <Table>
                 <TableHeader>
                   <TableRow>
