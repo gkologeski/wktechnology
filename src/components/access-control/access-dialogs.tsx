@@ -1,4 +1,5 @@
 // Dialogs for TechERP Access Control (Phase 2 CRUD).
+import { DEFAULT_RECORD_COLOR } from "@/lib/ui/default-colors";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -67,7 +68,7 @@ export function RoleEditorDialog({
   const fn = useServerFn(upsertJobRole);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [color, setColor] = useState("#94a3b8");
+  const [color, setColor] = useState(DEFAULT_RECORD_COLOR);
   const [dataScope, setDataScope] = useState<"own" | "team" | "workspace" | "custom">("workspace");
   const [selectedSets, setSelectedSets] = useState<Set<string>>(new Set());
 
@@ -75,7 +76,7 @@ export function RoleEditorDialog({
     if (!open) return;
     setName(role?.name ?? "");
     setDescription(role?.description ?? "");
-    setColor(role?.color ?? "#94a3b8");
+    setColor(role?.color ?? DEFAULT_RECORD_COLOR);
     setDataScope((role?.data_scope as "own" | "team" | "workspace" | "custom") ?? "workspace");
     setSelectedSets(new Set(role?.set_ids ?? []));
   }, [open, role]);

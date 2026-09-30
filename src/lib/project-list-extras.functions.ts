@@ -1,4 +1,5 @@
 // Refinos Sprint E: Custom Fields por lista + List Templates.
+import { DEFAULT_RECORD_COLOR } from "@/lib/ui/default-colors";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -207,7 +208,7 @@ export const createListFromTemplate = createServerFn({ method: "POST" })
           workspace_id: workspaceId,
           list_id: list.id,
           name: s.name,
-          color: s.color ?? "#94a3b8",
+          color: s.color ?? DEFAULT_RECORD_COLOR,
           category: s.category ?? "todo",
           sort_order: s.sort_order ?? i,
           is_default: !!s.is_default,
