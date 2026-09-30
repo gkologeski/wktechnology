@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { SortableTableHead } from "@/components/grid/sortable-table-head";
+import { useClientSort } from "@/lib/grid-client-sort";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -99,7 +101,18 @@ function ProjectsPage() {
       }),
   });
 
-  const rows = filterRows(allRows as any[]);
+  const filteredRows = filterRows(allRows as any[]);
+  const {
+    sorted: rows,
+    sort,
+    toggle,
+  } = useClientSort(filteredRows as any[], {
+    name: (p: any) => p.name,
+    contract: (p: any) => p.contracts?.number ?? p.contracts?.title,
+    status: (p: any) => STATUS_LABEL[p.status] ?? p.status,
+    progress: (p: any) => Number(p.progress ?? 0),
+    due: (p: any) => p.due_at,
+  });
 
   // Seleção múltipla / ações em massa (padrão de grids).
   const { canAny } = usePermissions();
@@ -272,11 +285,38 @@ function ProjectsPage() {
                       onCheckedChange={selection.toggleAllOnPage}
                     />
                   </TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Contrato</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Progresso</TableHead>
-                  <TableHead>Prazo</TableHead>
+                  <SortableTableHead
+                    label="Nome"
+                    active={sort?.key === "name"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("name")}
+                  />
+                  <SortableTableHead
+                    label="Contrato"
+                    active={sort?.key === "contract"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("contract")}
+                  />
+                  <SortableTableHead
+                    label="Status"
+                    active={sort?.key === "status"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("status")}
+                  />
+                  <SortableTableHead
+                    label="Progresso"
+                    active={sort?.key === "progress"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("progress")}
+                    className="text-right"
+                    align="right"
+                  />
+                  <SortableTableHead
+                    label="Prazo"
+                    active={sort?.key === "due"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("due")}
+                  />
                   <TableHead>Responsável</TableHead>
                 </TableRow>
               </TableHeader>

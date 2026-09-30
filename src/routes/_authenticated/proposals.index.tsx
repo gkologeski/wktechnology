@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { SortableTableHead } from "@/components/grid/sortable-table-head";
+import { useClientSort } from "@/lib/grid-client-sort";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -88,7 +90,17 @@ function ProposalsPage() {
   const [amount, setAmount] = useState("");
 
   const { canAny } = usePermissions();
-  const rows = filterRows((data ?? []) as unknown as ProposalRow[]) as ProposalRow[];
+  const filteredRows = filterRows((data ?? []) as unknown as ProposalRow[]) as ProposalRow[];
+  const {
+    sorted: rows,
+    sort,
+    toggle,
+  } = useClientSort(filteredRows, {
+    title: (r: ProposalRow) => r.title,
+    version: (r: ProposalRow) => Number(r.version),
+    amount: (r: ProposalRow) => (r.total_amount == null ? null : Number(r.total_amount)),
+    status: (r: ProposalRow) => STATUS_LABEL[r.status] ?? r.status,
+  });
   const selection = useGridSelection(rows);
   const selectAllFiltered = () => selection.setSelectedIds(new Set(rows.map((r) => r.id)));
   const refresh = () => qc.invalidateQueries({ queryKey: ["proposals"] });
@@ -282,10 +294,30 @@ function ProposalsPage() {
                         onCheckedChange={selection.toggleAllOnPage}
                       />
                     </TableHead>
-                    <TableHead>Título</TableHead>
-                    <TableHead>Versão</TableHead>
-                    <TableHead>Valor</TableHead>
-                    <TableHead>Status</TableHead>
+                    <SortableTableHead
+                      label="Título"
+                      active={sort?.key === "title"}
+                      dir={sort?.dir}
+                      onSort={() => toggle("title")}
+                    />
+                    <SortableTableHead
+                      label="Versão"
+                      active={sort?.key === "version"}
+                      dir={sort?.dir}
+                      onSort={() => toggle("version")}
+                    />
+                    <SortableTableHead
+                      label="Valor"
+                      active={sort?.key === "amount"}
+                      dir={sort?.dir}
+                      onSort={() => toggle("amount")}
+                    />
+                    <SortableTableHead
+                      label="Status"
+                      active={sort?.key === "status"}
+                      dir={sort?.dir}
+                      onSort={() => toggle("status")}
+                    />
                     <TableHead>Responsável</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
