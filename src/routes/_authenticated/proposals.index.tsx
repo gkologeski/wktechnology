@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useGridFilters } from "@/hooks/use-grid-filters";
 import type { GridFilterField } from "@/lib/grid-filters";
+import { GridListShell } from "@/components/grid/grid-list-shell";
 import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
@@ -300,6 +301,7 @@ function ProposalsPage() {
             </div>
           ) : (
             <div className="overflow-x-auto rounded-md border">
+              <GridListShell filters={gridFilters}>
               <GridListToolbar
                 filters={gridFilters}
                 sort={sort}
@@ -400,6 +402,7 @@ function ProposalsPage() {
                   ))}
                 </TableBody>
               </Table>
+              </GridListShell>
             </div>
           )}
         </CardContent>

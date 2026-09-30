@@ -1,6 +1,7 @@
 import { formatDateTime } from "@/lib/crm";
 import { useGridFilters } from "@/hooks/use-grid-filters";
 import type { GridFilterField } from "@/lib/grid-filters";
+import { GridListShell } from "@/components/grid/grid-list-shell";
 import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
@@ -613,6 +614,7 @@ function TicketsIndex() {
           )}
 
           <div className="rounded-md border bg-card overflow-hidden">
+            <GridListShell filters={gridFilters}>
             <GridListToolbar
               filters={gridFilters}
               sort={sort}
@@ -791,6 +793,7 @@ function TicketsIndex() {
                 })}
               </TableBody>
             </Table>
+            </GridListShell>
           </div>
         </TabsContent>
 
