@@ -19866,6 +19866,7 @@ export type Database = {
           invited_by: string | null
           joined_at: string
           role: string
+          status: string
           user_id: string
           workspace_id: string
         }
@@ -19873,6 +19874,7 @@ export type Database = {
           invited_by?: string | null
           joined_at?: string
           role?: string
+          status?: string
           user_id: string
           workspace_id: string
         }
@@ -19880,6 +19882,7 @@ export type Database = {
           invited_by?: string | null
           joined_at?: string
           role?: string
+          status?: string
           user_id?: string
           workspace_id?: string
         }

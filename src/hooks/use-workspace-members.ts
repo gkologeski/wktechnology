@@ -35,5 +35,9 @@ export function useWorkspaceMembers() {
     return id.slice(0, 2).toUpperCase();
   };
 
-  return { ...query, byId, nameFor, initialsFor };
+  // Inativos continuam resolvendo nome (byId/nameFor), mas não aparecem para
+  // escolha como responsável.
+  const data = useMemo(() => query.data?.filter((m) => m.status !== "inactive"), [query.data]);
+
+  return { ...query, data, allMembers: query.data, byId, nameFor, initialsFor };
 }

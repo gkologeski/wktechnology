@@ -218,6 +218,13 @@
       "when": 1790643138428,
       "tag": "0030_ai_call_logs",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1790737025453,
+      "tag": "0031_workspace_members_status_inactive",
+      "breakpoints": true
     }
   ]
 }

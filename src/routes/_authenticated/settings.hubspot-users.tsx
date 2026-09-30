@@ -20,6 +20,7 @@ import { RefreshCw } from "lucide-react";
 import {
   listHubspotOwners,
   syncHubspotOwners,
+  provisionHubspotOwnerUsers,
   setHubspotOwnerMapping,
 } from "@/lib/integrations/hubspot-owners.functions";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
@@ -32,6 +33,25 @@ function HubspotUsersPage() {
   const listFn = useServerFn(listHubspotOwners);
   const syncFn = useServerFn(syncHubspotOwners);
   const mapFn = useServerFn(setHubspotOwnerMapping);
+  const provisionFn = useServerFn(provisionHubspotOwnerUsers);
+  const provision = useMutation({
+    mutationFn: () => provisionFn(),
+    onSuccess: (r) => {
+      const ignored = r.skipped.length + r.failed.length;
+      toast.success(
+        `${r.linked} vinculado(s) a usuários existentes, ${r.created} usuário(s) inativo(s) criado(s)` +
+          (ignored ? `, ${ignored} ignorado(s).` : "."),
+        {
+          description: [...r.skipped, ...r.failed]
+            .slice(0, 6)
+            .map((x) => `${x.name}: ${x.reason}`)
+            .join(" · "),
+        },
+      );
+      void qc.invalidateQueries();
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao criar usuários"),
+  });
   const qc = useQueryClient();
 
   const q = useQuery({ queryKey: ["hubspot-owners-admin"], queryFn: () => listFn() });
@@ -67,10 +87,20 @@ function HubspotUsersPage() {
         title="Usuários do HubSpot"
         description="Owners importados do HubSpot. Vincule cada um a um usuário do workspace para que os registros importados apareçam atribuídos a ele. Nenhum convite por email é enviado."
         actions={
-          <Button onClick={() => sync.mutate()} disabled={sync.isPending} className="gap-2">
-            <RefreshCw className={`h-4 w-4 ${sync.isPending ? "animate-spin" : ""}`} />
-            {sync.isPending ? "Sincronizando…" : "Sincronizar do HubSpot"}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              onClick={() => provision.mutate()}
+              disabled={provision.isPending}
+              title="Cria usuários inativos (sem acesso) para os responsáveis sem vínculo e liga os repetidos ao usuário existente"
+            >
+              {provision.isPending ? "Criando…" : "Criar usuários inativos"}
+            </Button>
+            <Button onClick={() => sync.mutate()} disabled={sync.isPending} className="gap-2">
+              <RefreshCw className={`h-4 w-4 ${sync.isPending ? "animate-spin" : ""}`} />
+              {sync.isPending ? "Sincronizando…" : "Sincronizar do HubSpot"}
+            </Button>
+          </div>
         }
       />
 

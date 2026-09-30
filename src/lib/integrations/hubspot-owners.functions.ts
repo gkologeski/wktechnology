@@ -160,3 +160,28 @@ export const listHubspotOwners = createServerFn({ method: "GET" })
 
     return { owners: owners ?? [], counts };
   });
+
+/** Cria usuários inativos (ou vincula existentes) para responsáveis do HubSpot sem vínculo. */
+export const provisionHubspotOwnerUsers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { provisionHubspotOwners, assertWorkspaceAdmin } =
+      await import("./hubspot-owner-provision.server");
+    const workspaceId = await assertWorkspaceAdmin(context.supabase as never, context.userId);
+    return provisionHubspotOwners(workspaceId);
+  });
+
+/** Ativa/desativa um membro do workspace. */
+export const setWorkspaceMemberStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({ userId: z.string().uuid(), status: z.enum(["active", "inactive"]) }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    if (data.userId === context.userId) throw new Error("Você não pode desativar a si mesmo.");
+    const { setMemberStatus, assertWorkspaceAdmin } =
+      await import("./hubspot-owner-provision.server");
+    const workspaceId = await assertWorkspaceAdmin(context.supabase as never, context.userId);
+    await setMemberStatus(workspaceId, data.userId, data.status);
+    return { ok: true };
+  });

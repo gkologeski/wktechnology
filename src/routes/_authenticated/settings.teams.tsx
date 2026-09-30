@@ -66,7 +66,10 @@ import {
   Send,
   Copy,
   Link as LinkIcon,
+  UserCheck,
+  UserX,
 } from "lucide-react";
+import { setWorkspaceMemberStatus } from "@/lib/integrations/hubspot-owners.functions";
 import {
   listTeamMembers,
   listPendingTeamInvites,
@@ -139,6 +142,8 @@ function UsersPage() {
   const updateFn = useServerFn(updateTeamMemberRole);
   const updateMemberFn = useServerFn(updateTeamMember);
   const removeFn = useServerFn(removeTeamMember);
+  const setStatusFn = useServerFn(setWorkspaceMemberStatus);
+  const [statusBusy, setStatusBusy] = useState<string | null>(null);
   const listRolesFn = useServerFn(listWorkspaceJobRoles);
   const listSetsFn = useServerFn(listWorkspacePermissionSets);
   const setMemberRolesFn = useServerFn(setMemberJobRoles);
@@ -400,6 +405,20 @@ function UsersPage() {
       toast.success("Papel atualizado");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  };
+
+  const toggleStatus = async (r: { user_id: string; status: "active" | "inactive" }) => {
+    const next = r.status === "inactive" ? "active" : "inactive";
+    setStatusBusy(r.user_id);
+    try {
+      await setStatusFn({ data: { userId: r.user_id, status: next } });
+      await refresh();
+      toast.success(next === "active" ? "Usuário reativado" : "Usuário desativado");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao alterar situação");
+    } finally {
+      setStatusBusy(null);
     }
   };
 
@@ -802,6 +821,11 @@ function UsersPage() {
                               owner
                             </Badge>
                           )}
+                          {r.status === "inactive" && (
+                            <Badge variant="outline" className="text-muted-foreground">
+                              Inativo
+                            </Badge>
+                          )}
                           {r.pending && !r.is_owner && (
                             <Badge
                               variant="outline"
@@ -887,6 +911,24 @@ function UsersPage() {
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
+                      {!r.is_owner && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={statusBusy === r.user_id}
+                          onClick={() => void toggleStatus(r)}
+                          aria-label={
+                            r.status === "inactive" ? "Reativar usuário" : "Desativar usuário"
+                          }
+                          title={r.status === "inactive" ? "Reativar usuário" : "Desativar usuário"}
+                        >
+                          {r.status === "inactive" ? (
+                            <UserCheck className="h-4 w-4" />
+                          ) : (
+                            <UserX className="h-4 w-4" />
+                          )}
+                        </Button>
+                      )}
                       {!r.is_owner && (
                         <Button
                           variant="ghost"
