@@ -290,6 +290,7 @@ function TicketsIndex() {
       key: "company",
       label: "Empresa",
       type: "multi",
+      searchable: true,
       get: (t) => t.company_id,
       optionLabel: (v) => lookups.companies.get(v) ?? "Empresa",
     },
