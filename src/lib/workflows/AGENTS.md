@@ -1,0 +1,3 @@
+- O editor visual separa canvas e configuração sobre o mesmo rascunho, sem alterar ações, publicação ou execução.
+- Variáveis novas usam aliases PT-BR sem acentos em snake_case; o motor mantém aliases técnicos antigos para fluxos salvos.
+- Contratação/desligamento usa ações idempotentes em `engine/actions-hiring.server.ts` e eventos canônicos como gatilhos pré-configurados (`hiring-events.ts`) — fluxos seguem configuráveis por workspace.
