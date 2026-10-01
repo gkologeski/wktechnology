@@ -303,6 +303,7 @@ function UnifiedInboxPage() {
                 {items.map((it) => (
                   <li key={it.id}>
                     <button
+                      data-inbox-conversation
                       onClick={() => {
                         setSelected(it.id);
                         setDraft("");

@@ -110,6 +110,7 @@ function EmailInbox() {
             {threads.map((t) => (
               <button
                 key={t.id}
+                data-inbox-conversation
                 onClick={() => setSelected(t.id)}
                 className={`flex w-full flex-col gap-1 border-b border-border-subtle p-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring ${
                   selected === t.id ? "border-l-2 border-l-primary bg-accent" : ""

@@ -113,6 +113,7 @@ function LiveChatInbox() {
             {sessions.map((s) => (
               <button
                 key={s.id}
+                data-inbox-conversation
                 onClick={() => setSelected(s.id)}
                 className={`w-full border-b border-border-subtle p-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring ${selected === s.id ? "border-l-2 border-l-primary bg-accent" : ""}`}
               >
