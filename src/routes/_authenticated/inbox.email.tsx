@@ -14,7 +14,7 @@ import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
 import { formatDateTime } from "@/lib/crm";
 import { toast } from "sonner";
 import {
-  InboxConversationList,
+  InboxConversationItem, InboxConversationList,
   InboxContext,
   InboxEmpty,
   InboxListHeader,
@@ -107,31 +107,18 @@ function EmailInbox() {
                 e clique em <b>Sincronizar</b>.
               </div></InboxEmpty>
             )}
-            {threads.map((t) => (
-              <button
+            <div className="space-y-0.5 p-2">{threads.map((t) => (
+              <InboxConversationItem
                 key={t.id}
-                data-inbox-conversation
+                label={t.subject || "(sem assunto)"}
+                preview={t.snippet || "—"}
+                when={t.last_message_at}
+                whenTitle={t.last_message_at ? formatDateTime(t.last_message_at) : undefined}
+                selected={selected === t.id}
                 onClick={() => setSelected(t.id)}
-                className={`flex w-full flex-col gap-1 border-b border-border-subtle p-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring ${
-                  selected === t.id ? "border-l-2 border-l-primary bg-accent" : ""
-                }`}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="truncate text-sm font-medium">
-                    {t.subject || "(sem assunto)"}
-                  </span>
-                  {t.message_count > 1 && (
-                    <Badge variant="outline" className="text-[10px]">
-                      {t.message_count}
-                    </Badge>
-                  )}
-                </div>
-                <div className="truncate text-xs text-muted-foreground">{t.snippet || "—"}</div>
-                <div className="text-[10px] text-muted-foreground">
-                  {t.last_message_at ? formatDateTime(t.last_message_at) : ""}
-                </div>
-              </button>
-            ))}
+                badge={t.message_count > 1 ? <Badge variant="outline" className="text-[10px]">{t.message_count}</Badge> : null}
+              />
+            ))}</div>
           </InboxConversationList>
         </>
       }
