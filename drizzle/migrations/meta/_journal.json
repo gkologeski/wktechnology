@@ -267,6 +267,13 @@
       "when": 1790862592771,
       "tag": "0037_restricted_sales_visibility_setbased",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1790862918261,
+      "tag": "0038_notify_company_owner_on_foreign_lead",
+      "breakpoints": true
     }
   ]
 }
