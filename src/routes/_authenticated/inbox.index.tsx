@@ -141,7 +141,7 @@ function UnifiedInboxPage() {
         channel: "email" as const,
         title: t.subject || "(sem assunto)",
         snippet: t.snippet ?? "",
-        contactLabel: t.contact_id ? (m.get(t.contact_id) ?? "—") : "—",
+        contactLabel: (t.contact_id ? m.get(t.contact_id) : undefined) ?? last?.from_email ?? "Remetente desconhecido",
         lastAt: t.last_message_at,
         href: `/inbox/email`,
         replyTo: last?.from_email ?? null,

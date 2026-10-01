@@ -47,14 +47,14 @@ export function InboxWorkspace({
   return (
     <div className="flex h-[calc(100dvh-4rem)] min-h-[36rem] flex-col bg-product-canvas">
       <header className="flex flex-col gap-2 border-b border-border bg-product-header px-3 py-2 sm:px-4 lg:flex-row lg:items-center lg:gap-4">
-        <div className="flex min-w-0 items-center gap-3">
+        <div className="flex min-w-0 shrink items-center gap-3 lg:max-w-[16rem]">
           <div className="min-w-0">
             <h1 className="truncate text-base font-semibold text-foreground">{title}</h1>
             <p className="hidden truncate text-xs text-muted-foreground xl:block">{description}</p>
           </div>
         </div>
         <InboxChannelTabs />
-        <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
+        <div className="flex shrink-0 items-center gap-2 lg:ml-auto [&>*]:shrink-0">
           {actions}
           {context ? (
             <Button
@@ -113,7 +113,7 @@ function InboxChannelTabs() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   return (
     <nav
-      className="flex max-w-full gap-1 overflow-x-auto rounded-[var(--radius)] bg-muted p-1"
+      className="flex min-w-0 max-w-full gap-1 overflow-x-auto rounded-[var(--radius)] bg-muted p-1"
       aria-label="Canais da Inbox"
     >
       {CHANNELS.map(({ to, label, icon: Icon }) => {
@@ -142,7 +142,7 @@ export function InboxListHeader({ children }: { children: ReactNode }) {
 }
 
 export function InboxConversationList({ children }: { children: ReactNode }) {
-  return <ScrollArea className="min-h-0 flex-1">{children}</ScrollArea>;
+  return <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden">{children}</div>;
 }
 
 export function InboxEmpty({ children }: { children: ReactNode }) {
