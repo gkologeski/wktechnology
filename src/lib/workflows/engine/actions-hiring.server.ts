@@ -351,7 +351,7 @@ export async function handleHiringAction(
         .from("financial_entries")
         .select("id", { count: "exact", head: true })
         .eq("workspace_id", ctx.workspaceId)
-        .eq("external_ref", ref);
+        .like("external_ref", `${ref}:%`);
       if (exErr) throw new Error(exErr.message);
       if ((count ?? 0) > 0) {
         return { at, ok: true, action: action.type, detail: { skipped: true, entries: count } };
@@ -374,7 +374,6 @@ export async function handleHiringAction(
         currency: "BRL",
         status: "open",
         installment_total: installments,
-        external_ref: ref,
         metadata: {
           person_id: personId,
           origin: "workflow_hiring",
@@ -385,6 +384,8 @@ export async function handleHiringAction(
         const due = nthDue(start, day, i);
         return {
           ...base,
+          // Único por parcela (a constraint é única por workspace).
+          external_ref: `${ref}:${i + 1}`,
           description: installments > 1 ? `${description} (${i + 1}/${installments})` : description,
           competence_date: due,
           due_date: due,
