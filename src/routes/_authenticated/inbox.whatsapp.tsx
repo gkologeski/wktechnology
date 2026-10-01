@@ -24,8 +24,6 @@ import {
   listWhatsAppMessages,
   sendWhatsAppMessage,
   markWhatsAppRead,
-  getWhatsAppConfig,
-  saveWhatsAppConfig,
   listAssignableMembers,
   assignWhatsAppConversation,
   setWhatsAppConversationStatus,
@@ -36,14 +34,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -229,7 +219,9 @@ function WhatsAppInbox() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Inbox WhatsApp</h1>
-          <p className="text-sm text-muted-foreground">Conversas via Twilio</p>
+          <p className="text-sm text-muted-foreground">
+            Conversas pelo número conectado do WhatsApp
+          </p>
         </div>
         <div className="flex gap-2">
           <WhatsAppSettingsButton />
@@ -400,7 +392,9 @@ function WhatsAppInbox() {
                                 <CheckCheck className="h-3 w-3 text-sky-300" />
                               ) : m.status === "delivered" ? (
                                 <CheckCheck className="h-3 w-3" />
-                              ) : m.status === "sent" || m.status === "queued" ? (
+                              ) : m.status === "sent" ||
+                                m.status === "accepted" ||
+                                m.status === "queued" ? (
                                 <Check className="h-3 w-3" />
                               ) : (
                                 <span>{m.status}</span>
@@ -506,100 +500,11 @@ function WhatsAppInbox() {
 }
 
 function WhatsAppSettingsButton() {
-  const qc = useQueryClient();
-  const getCfg = useServerFn(getWhatsAppConfig);
-  const saveCfg = useServerFn(saveWhatsAppConfig);
-  const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState("");
-  const cfgQ = useQuery({ queryKey: ["wa", "config"], queryFn: () => getCfg(), enabled: open });
-
-  useEffect(() => {
-    if (cfgQ.data?.default_phone_number_id) setSelected(cfgQ.data.default_phone_number_id);
-  }, [cfgQ.data]);
-
-  const saveMut = useMutation({
-    mutationFn: () => saveCfg({ data: { default_phone_number_id: selected } }),
-    onSuccess: () => {
-      toast.success("Número padrão atualizado");
-      setOpen(false);
-      qc.invalidateQueries({ queryKey: ["wa", "config"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const numbers = cfgQ.data?.numbers ?? [];
-
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">
-          <SettingsIcon className="mr-2 h-4 w-4" /> Configurar
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="overflow-y-auto sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>WhatsApp Business (API oficial da Meta)</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-3">
-          {cfgQ.isLoading ? (
-            <p className="text-sm text-muted-foreground">Carregando números conectados…</p>
-          ) : numbers.length === 0 ? (
-            <div className="rounded-md border bg-muted/40 p-3 text-sm space-y-2">
-              <p className="font-medium">Nenhum número conectado</p>
-              <p className="text-muted-foreground">
-                Conecte sua conta do WhatsApp Business em Configurações › WhatsApp (Meta) para
-                enviar e receber mensagens.
-              </p>
-              <Button asChild size="sm" variant="outline">
-                <Link to="/settings/whatsapp">Abrir configurações do WhatsApp</Link>
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <span className="text-sm font-medium">Número padrão de envio</span>
-              <div className="space-y-2">
-                {numbers.map((n) => (
-                  <label
-                    key={n.phone_number_id}
-                    className="flex cursor-pointer items-center gap-3 rounded-md border p-3 text-sm focus-within:ring-2 focus-within:ring-ring"
-                  >
-                    <input
-                      type="radio"
-                      name="wa-default-number"
-                      className="h-4 w-4"
-                      checked={selected === n.phone_number_id}
-                      onChange={() => setSelected(n.phone_number_id)}
-                    />
-                    <span>
-                      <span className="font-medium">{n.display_phone_number}</span>
-                      {n.verified_name ? (
-                        <span className="text-muted-foreground"> · {n.verified_name}</span>
-                      ) : null}
-                      {n.quality_rating ? (
-                        <span className="block text-xs text-muted-foreground">
-                          Qualidade: {n.quality_rating}
-                        </span>
-                      ) : null}
-                    </span>
-                  </label>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Conversas já iniciadas continuam usando o número original. Templates aprovados são
-                gerenciados em Configurações › Templates do WhatsApp.
-              </p>
-            </div>
-          )}
-        </div>
-        <DialogFooter>
-          <Button
-            onClick={() => saveMut.mutate()}
-            disabled={saveMut.isPending || !selected || numbers.length === 0}
-          >
-            Salvar
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <Button asChild variant="outline">
+      <Link to="/settings/whatsapp">
+        <SettingsIcon className="mr-2 h-4 w-4" /> Configurar
+      </Link>
+    </Button>
   );
 }

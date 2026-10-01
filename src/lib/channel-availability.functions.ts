@@ -11,8 +11,17 @@ export const getChannelAvailability = createServerFn({ method: "GET" })
     const ws = await resolveActiveWorkspace(userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    const { gatewayConfigured, getConnectedPhone } =
+      await import("@/lib/whatsapp/gateway-channel.server");
+    const waCheck = gatewayConfigured()
+      ? getConnectedPhone().then(
+          () => ({ ready: true }),
+          () => ({ ready: false, reason: "Conexão do WhatsApp com falha" }),
+        )
+      : Promise.resolve({ ready: false, reason: "WhatsApp não configurado" });
+
     const [wa, mail, cal, health] = await Promise.all([
-      supabase.from("wa_phone_numbers").select("id").eq("workspace_id", ws).limit(1),
+      waCheck,
       supabase.from("email_accounts").select("status"),
       supabaseAdmin.from("calendar_accounts").select("id").eq("workspace_id", ws).limit(1),
       supabase
@@ -38,9 +47,7 @@ export const getChannelAvailability = createServerFn({ method: "GET" })
 
     // Em caso de erro de consulta, libera o canal (o envio mantém seu próprio aviso).
     return {
-      whatsapp: wa.error
-        ? { ready: true }
-        : { ready: (wa.data ?? []).length > 0, reason: "WhatsApp não configurado" },
+      whatsapp: wa,
       email: mail.error
         ? { ready: true }
         : {

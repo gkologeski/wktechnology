@@ -8,7 +8,7 @@ import {
   listWhatsAppTemplates,
   applyTemplate,
 } from "@/lib/whatsapp.functions";
-import { listPhoneNumbers } from "@/lib/whatsapp-meta.functions";
+import { useChannelAvailability } from "@/hooks/use-channel-availability";
 import { uploadWhatsAppMedia } from "@/lib/whatsapp-media";
 import { WhatsAppMediaBubble } from "@/components/whatsapp/whatsapp-media-bubble";
 import { Button } from "@/components/ui/button";
@@ -171,13 +171,8 @@ export function SendWhatsAppDialog({
   const listTpl = useServerFn(listWhatsAppTemplates);
   const sendFn = useServerFn(sendWhatsAppMessage);
   const tplQ = useQuery({ queryKey: ["wa", "templates"], queryFn: () => listTpl(), enabled: open });
-  const listNumbers = useServerFn(listPhoneNumbers);
-  const numbersQ = useQuery({
-    queryKey: ["wa", "phone-numbers"],
-    queryFn: () => listNumbers(),
-    enabled: open,
-  });
-  const notConnected = numbersQ.isSuccess && numbersQ.data.length === 0;
+  const availabilityQ = useChannelAvailability();
+  const notConnected = availabilityQ.isSuccess && !availabilityQ.data.whatsapp.ready;
 
   useEffect(() => {
     if (open) setTo(defaultTo);

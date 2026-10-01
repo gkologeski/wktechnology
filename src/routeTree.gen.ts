@@ -99,11 +99,8 @@ import { Route as AuthenticatedSettingsWorkspaceTeamRouteImport } from './routes
 import { Route as AuthenticatedSettingsWorkflowsRouteImport } from './routes/_authenticated/settings.workflows'
 import { Route as AuthenticatedSettingsWorkflowSubscriptionsRouteImport } from './routes/_authenticated/settings.workflow-subscriptions'
 import { Route as AuthenticatedSettingsWidgetRouteImport } from './routes/_authenticated/settings.widget'
-import { Route as AuthenticatedSettingsWhatsappTemplatesRouteImport } from './routes/_authenticated/settings.whatsapp-templates'
-import { Route as AuthenticatedSettingsWhatsappCatalogsRouteImport } from './routes/_authenticated/settings.whatsapp-catalogs'
 import { Route as AuthenticatedSettingsWhatsappRouteImport } from './routes/_authenticated/settings.whatsapp'
 import { Route as AuthenticatedSettingsWebhooksRouteImport } from './routes/_authenticated/settings.webhooks'
-import { Route as AuthenticatedSettingsWaAdsRouteImport } from './routes/_authenticated/settings.wa-ads'
 import { Route as AuthenticatedSettingsVoiceAgentRouteImport } from './routes/_authenticated/settings.voice-agent'
 import { Route as AuthenticatedSettingsVideoRouteImport } from './routes/_authenticated/settings.video'
 import { Route as AuthenticatedSettingsUserGroupsRouteImport } from './routes/_authenticated/settings.user-groups'
@@ -276,6 +273,7 @@ import { Route as ApiPublicZapierSubscribeRouteImport } from './routes/api/publi
 import { Route as ApiPublicWidgetSessionRouteImport } from './routes/api/public/widget/session'
 import { Route as ApiPublicWidgetScriptRouteImport } from './routes/api/public/widget/script'
 import { Route as ApiPublicWidgetMessagesRouteImport } from './routes/api/public/widget/messages'
+import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 import { Route as ApiPublicV1TimeEntriesRouteImport } from './routes/api/public/v1/time-entries'
 import { Route as ApiPublicV1MeetingsRouteImport } from './routes/api/public/v1/meetings'
 import { Route as ApiPublicV1LeadsRouteImport } from './routes/api/public/v1/leads'
@@ -288,7 +286,6 @@ import { Route as ApiPublicReferSlugRouteImport } from './routes/api/public/refe
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicOauthGoogleCallbackRouteImport } from './routes/api/public/oauth/google-callback'
 import { Route as ApiPublicOauthContaazulCallbackRouteImport } from './routes/api/public/oauth/contaazul-callback'
-import { Route as ApiPublicMetaWhatsappWebhookRouteImport } from './routes/api/public/meta/whatsapp-webhook'
 import { Route as ApiPublicInterviewTokenRouteImport } from './routes/api/public/interview/$token'
 import { Route as ApiPublicHuntingTemplatesRouteImport } from './routes/api/public/hunting/templates'
 import { Route as ApiPublicHuntingRenderTemplateRouteImport } from './routes/api/public/hunting/render-template'
@@ -871,18 +868,6 @@ const AuthenticatedSettingsWidgetRoute =
     path: '/widget',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
-const AuthenticatedSettingsWhatsappTemplatesRoute =
-  AuthenticatedSettingsWhatsappTemplatesRouteImport.update({
-    id: '/whatsapp-templates',
-    path: '/whatsapp-templates',
-    getParentRoute: () => AuthenticatedSettingsRoute,
-  } as any)
-const AuthenticatedSettingsWhatsappCatalogsRoute =
-  AuthenticatedSettingsWhatsappCatalogsRouteImport.update({
-    id: '/whatsapp-catalogs',
-    path: '/whatsapp-catalogs',
-    getParentRoute: () => AuthenticatedSettingsRoute,
-  } as any)
 const AuthenticatedSettingsWhatsappRoute =
   AuthenticatedSettingsWhatsappRouteImport.update({
     id: '/whatsapp',
@@ -893,12 +878,6 @@ const AuthenticatedSettingsWebhooksRoute =
   AuthenticatedSettingsWebhooksRouteImport.update({
     id: '/webhooks',
     path: '/webhooks',
-    getParentRoute: () => AuthenticatedSettingsRoute,
-  } as any)
-const AuthenticatedSettingsWaAdsRoute =
-  AuthenticatedSettingsWaAdsRouteImport.update({
-    id: '/wa-ads',
-    path: '/wa-ads',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsVoiceAgentRoute =
@@ -1911,6 +1890,12 @@ const ApiPublicWidgetMessagesRoute = ApiPublicWidgetMessagesRouteImport.update({
   path: '/api/public/widget/messages',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicWhatsappWebhookRoute =
+  ApiPublicWhatsappWebhookRouteImport.update({
+    id: '/api/public/whatsapp/webhook',
+    path: '/api/public/whatsapp/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicV1TimeEntriesRoute = ApiPublicV1TimeEntriesRouteImport.update({
   id: '/api/public/v1/time-entries',
   path: '/api/public/v1/time-entries',
@@ -1973,12 +1958,6 @@ const ApiPublicOauthContaazulCallbackRoute =
   ApiPublicOauthContaazulCallbackRouteImport.update({
     id: '/api/public/oauth/contaazul-callback',
     path: '/api/public/oauth/contaazul-callback',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicMetaWhatsappWebhookRoute =
-  ApiPublicMetaWhatsappWebhookRouteImport.update({
-    id: '/api/public/meta/whatsapp-webhook',
-    path: '/api/public/meta/whatsapp-webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicInterviewTokenRoute = ApiPublicInterviewTokenRouteImport.update({
@@ -2804,11 +2783,8 @@ export interface FileRoutesByFullPath {
   '/settings/user-groups': typeof AuthenticatedSettingsUserGroupsRoute
   '/settings/video': typeof AuthenticatedSettingsVideoRoute
   '/settings/voice-agent': typeof AuthenticatedSettingsVoiceAgentRoute
-  '/settings/wa-ads': typeof AuthenticatedSettingsWaAdsRoute
   '/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
-  '/settings/whatsapp-catalogs': typeof AuthenticatedSettingsWhatsappCatalogsRoute
-  '/settings/whatsapp-templates': typeof AuthenticatedSettingsWhatsappTemplatesRoute
   '/settings/widget': typeof AuthenticatedSettingsWidgetRoute
   '/settings/workflow-subscriptions': typeof AuthenticatedSettingsWorkflowSubscriptionsRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
@@ -2918,7 +2894,6 @@ export interface FileRoutesByFullPath {
   '/api/public/hunting/render-template': typeof ApiPublicHuntingRenderTemplateRoute
   '/api/public/hunting/templates': typeof ApiPublicHuntingTemplatesRoute
   '/api/public/interview/$token': typeof ApiPublicInterviewTokenRoute
-  '/api/public/meta/whatsapp-webhook': typeof ApiPublicMetaWhatsappWebhookRoute
   '/api/public/oauth/contaazul-callback': typeof ApiPublicOauthContaazulCallbackRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -2931,6 +2906,7 @@ export interface FileRoutesByFullPath {
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
   '/api/public/v1/meetings': typeof ApiPublicV1MeetingsRouteWithChildren
   '/api/public/v1/time-entries': typeof ApiPublicV1TimeEntriesRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/public/widget/messages': typeof ApiPublicWidgetMessagesRoute
   '/api/public/widget/script': typeof ApiPublicWidgetScriptRoute
   '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
@@ -3182,11 +3158,8 @@ export interface FileRoutesByTo {
   '/settings/user-groups': typeof AuthenticatedSettingsUserGroupsRoute
   '/settings/video': typeof AuthenticatedSettingsVideoRoute
   '/settings/voice-agent': typeof AuthenticatedSettingsVoiceAgentRoute
-  '/settings/wa-ads': typeof AuthenticatedSettingsWaAdsRoute
   '/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
-  '/settings/whatsapp-catalogs': typeof AuthenticatedSettingsWhatsappCatalogsRoute
-  '/settings/whatsapp-templates': typeof AuthenticatedSettingsWhatsappTemplatesRoute
   '/settings/widget': typeof AuthenticatedSettingsWidgetRoute
   '/settings/workflow-subscriptions': typeof AuthenticatedSettingsWorkflowSubscriptionsRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
@@ -3296,7 +3269,6 @@ export interface FileRoutesByTo {
   '/api/public/hunting/render-template': typeof ApiPublicHuntingRenderTemplateRoute
   '/api/public/hunting/templates': typeof ApiPublicHuntingTemplatesRoute
   '/api/public/interview/$token': typeof ApiPublicInterviewTokenRoute
-  '/api/public/meta/whatsapp-webhook': typeof ApiPublicMetaWhatsappWebhookRoute
   '/api/public/oauth/contaazul-callback': typeof ApiPublicOauthContaazulCallbackRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -3309,6 +3281,7 @@ export interface FileRoutesByTo {
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
   '/api/public/v1/meetings': typeof ApiPublicV1MeetingsRouteWithChildren
   '/api/public/v1/time-entries': typeof ApiPublicV1TimeEntriesRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/public/widget/messages': typeof ApiPublicWidgetMessagesRoute
   '/api/public/widget/script': typeof ApiPublicWidgetScriptRoute
   '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
@@ -3568,11 +3541,8 @@ export interface FileRoutesById {
   '/_authenticated/settings/user-groups': typeof AuthenticatedSettingsUserGroupsRoute
   '/_authenticated/settings/video': typeof AuthenticatedSettingsVideoRoute
   '/_authenticated/settings/voice-agent': typeof AuthenticatedSettingsVoiceAgentRoute
-  '/_authenticated/settings/wa-ads': typeof AuthenticatedSettingsWaAdsRoute
   '/_authenticated/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/_authenticated/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
-  '/_authenticated/settings/whatsapp-catalogs': typeof AuthenticatedSettingsWhatsappCatalogsRoute
-  '/_authenticated/settings/whatsapp-templates': typeof AuthenticatedSettingsWhatsappTemplatesRoute
   '/_authenticated/settings/widget': typeof AuthenticatedSettingsWidgetRoute
   '/_authenticated/settings/workflow-subscriptions': typeof AuthenticatedSettingsWorkflowSubscriptionsRoute
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
@@ -3682,7 +3652,6 @@ export interface FileRoutesById {
   '/api/public/hunting/render-template': typeof ApiPublicHuntingRenderTemplateRoute
   '/api/public/hunting/templates': typeof ApiPublicHuntingTemplatesRoute
   '/api/public/interview/$token': typeof ApiPublicInterviewTokenRoute
-  '/api/public/meta/whatsapp-webhook': typeof ApiPublicMetaWhatsappWebhookRoute
   '/api/public/oauth/contaazul-callback': typeof ApiPublicOauthContaazulCallbackRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -3695,6 +3664,7 @@ export interface FileRoutesById {
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
   '/api/public/v1/meetings': typeof ApiPublicV1MeetingsRouteWithChildren
   '/api/public/v1/time-entries': typeof ApiPublicV1TimeEntriesRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/public/widget/messages': typeof ApiPublicWidgetMessagesRoute
   '/api/public/widget/script': typeof ApiPublicWidgetScriptRoute
   '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
@@ -3954,11 +3924,8 @@ export interface FileRouteTypes {
     | '/settings/user-groups'
     | '/settings/video'
     | '/settings/voice-agent'
-    | '/settings/wa-ads'
     | '/settings/webhooks'
     | '/settings/whatsapp'
-    | '/settings/whatsapp-catalogs'
-    | '/settings/whatsapp-templates'
     | '/settings/widget'
     | '/settings/workflow-subscriptions'
     | '/settings/workflows'
@@ -4068,7 +4035,6 @@ export interface FileRouteTypes {
     | '/api/public/hunting/render-template'
     | '/api/public/hunting/templates'
     | '/api/public/interview/$token'
-    | '/api/public/meta/whatsapp-webhook'
     | '/api/public/oauth/contaazul-callback'
     | '/api/public/oauth/google-callback'
     | '/api/public/payments/webhook'
@@ -4081,6 +4047,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/leads'
     | '/api/public/v1/meetings'
     | '/api/public/v1/time-entries'
+    | '/api/public/whatsapp/webhook'
     | '/api/public/widget/messages'
     | '/api/public/widget/script'
     | '/api/public/widget/session'
@@ -4332,11 +4299,8 @@ export interface FileRouteTypes {
     | '/settings/user-groups'
     | '/settings/video'
     | '/settings/voice-agent'
-    | '/settings/wa-ads'
     | '/settings/webhooks'
     | '/settings/whatsapp'
-    | '/settings/whatsapp-catalogs'
-    | '/settings/whatsapp-templates'
     | '/settings/widget'
     | '/settings/workflow-subscriptions'
     | '/settings/workflows'
@@ -4446,7 +4410,6 @@ export interface FileRouteTypes {
     | '/api/public/hunting/render-template'
     | '/api/public/hunting/templates'
     | '/api/public/interview/$token'
-    | '/api/public/meta/whatsapp-webhook'
     | '/api/public/oauth/contaazul-callback'
     | '/api/public/oauth/google-callback'
     | '/api/public/payments/webhook'
@@ -4459,6 +4422,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/leads'
     | '/api/public/v1/meetings'
     | '/api/public/v1/time-entries'
+    | '/api/public/whatsapp/webhook'
     | '/api/public/widget/messages'
     | '/api/public/widget/script'
     | '/api/public/widget/session'
@@ -4717,11 +4681,8 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/user-groups'
     | '/_authenticated/settings/video'
     | '/_authenticated/settings/voice-agent'
-    | '/_authenticated/settings/wa-ads'
     | '/_authenticated/settings/webhooks'
     | '/_authenticated/settings/whatsapp'
-    | '/_authenticated/settings/whatsapp-catalogs'
-    | '/_authenticated/settings/whatsapp-templates'
     | '/_authenticated/settings/widget'
     | '/_authenticated/settings/workflow-subscriptions'
     | '/_authenticated/settings/workflows'
@@ -4831,7 +4792,6 @@ export interface FileRouteTypes {
     | '/api/public/hunting/render-template'
     | '/api/public/hunting/templates'
     | '/api/public/interview/$token'
-    | '/api/public/meta/whatsapp-webhook'
     | '/api/public/oauth/contaazul-callback'
     | '/api/public/oauth/google-callback'
     | '/api/public/payments/webhook'
@@ -4844,6 +4804,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/leads'
     | '/api/public/v1/meetings'
     | '/api/public/v1/time-entries'
+    | '/api/public/whatsapp/webhook'
     | '/api/public/widget/messages'
     | '/api/public/widget/script'
     | '/api/public/widget/session'
@@ -4971,7 +4932,6 @@ export interface RootRouteChildren {
   ApiPublicHuntingRenderTemplateRoute: typeof ApiPublicHuntingRenderTemplateRoute
   ApiPublicHuntingTemplatesRoute: typeof ApiPublicHuntingTemplatesRoute
   ApiPublicInterviewTokenRoute: typeof ApiPublicInterviewTokenRoute
-  ApiPublicMetaWhatsappWebhookRoute: typeof ApiPublicMetaWhatsappWebhookRoute
   ApiPublicOauthContaazulCallbackRoute: typeof ApiPublicOauthContaazulCallbackRoute
   ApiPublicOauthGoogleCallbackRoute: typeof ApiPublicOauthGoogleCallbackRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
@@ -4984,6 +4944,7 @@ export interface RootRouteChildren {
   ApiPublicV1LeadsRoute: typeof ApiPublicV1LeadsRoute
   ApiPublicV1MeetingsRoute: typeof ApiPublicV1MeetingsRouteWithChildren
   ApiPublicV1TimeEntriesRoute: typeof ApiPublicV1TimeEntriesRoute
+  ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
   ApiPublicWidgetMessagesRoute: typeof ApiPublicWidgetMessagesRoute
   ApiPublicWidgetScriptRoute: typeof ApiPublicWidgetScriptRoute
   ApiPublicWidgetSessionRoute: typeof ApiPublicWidgetSessionRoute
@@ -5636,20 +5597,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsWidgetRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
-    '/_authenticated/settings/whatsapp-templates': {
-      id: '/_authenticated/settings/whatsapp-templates'
-      path: '/whatsapp-templates'
-      fullPath: '/settings/whatsapp-templates'
-      preLoaderRoute: typeof AuthenticatedSettingsWhatsappTemplatesRouteImport
-      parentRoute: typeof AuthenticatedSettingsRoute
-    }
-    '/_authenticated/settings/whatsapp-catalogs': {
-      id: '/_authenticated/settings/whatsapp-catalogs'
-      path: '/whatsapp-catalogs'
-      fullPath: '/settings/whatsapp-catalogs'
-      preLoaderRoute: typeof AuthenticatedSettingsWhatsappCatalogsRouteImport
-      parentRoute: typeof AuthenticatedSettingsRoute
-    }
     '/_authenticated/settings/whatsapp': {
       id: '/_authenticated/settings/whatsapp'
       path: '/whatsapp'
@@ -5662,13 +5609,6 @@ declare module '@tanstack/react-router' {
       path: '/webhooks'
       fullPath: '/settings/webhooks'
       preLoaderRoute: typeof AuthenticatedSettingsWebhooksRouteImport
-      parentRoute: typeof AuthenticatedSettingsRoute
-    }
-    '/_authenticated/settings/wa-ads': {
-      id: '/_authenticated/settings/wa-ads'
-      path: '/wa-ads'
-      fullPath: '/settings/wa-ads'
-      preLoaderRoute: typeof AuthenticatedSettingsWaAdsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/voice-agent': {
@@ -6875,6 +6815,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWidgetMessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/whatsapp/webhook': {
+      id: '/api/public/whatsapp/webhook'
+      path: '/api/public/whatsapp/webhook'
+      fullPath: '/api/public/whatsapp/webhook'
+      preLoaderRoute: typeof ApiPublicWhatsappWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/v1/time-entries': {
       id: '/api/public/v1/time-entries'
       path: '/api/public/v1/time-entries'
@@ -6957,13 +6904,6 @@ declare module '@tanstack/react-router' {
       path: '/api/public/oauth/contaazul-callback'
       fullPath: '/api/public/oauth/contaazul-callback'
       preLoaderRoute: typeof ApiPublicOauthContaazulCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/meta/whatsapp-webhook': {
-      id: '/api/public/meta/whatsapp-webhook'
-      path: '/api/public/meta/whatsapp-webhook'
-      fullPath: '/api/public/meta/whatsapp-webhook'
-      preLoaderRoute: typeof ApiPublicMetaWhatsappWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/interview/$token': {
@@ -7922,11 +7862,8 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsUserGroupsRoute: typeof AuthenticatedSettingsUserGroupsRoute
   AuthenticatedSettingsVideoRoute: typeof AuthenticatedSettingsVideoRoute
   AuthenticatedSettingsVoiceAgentRoute: typeof AuthenticatedSettingsVoiceAgentRoute
-  AuthenticatedSettingsWaAdsRoute: typeof AuthenticatedSettingsWaAdsRoute
   AuthenticatedSettingsWebhooksRoute: typeof AuthenticatedSettingsWebhooksRoute
   AuthenticatedSettingsWhatsappRoute: typeof AuthenticatedSettingsWhatsappRoute
-  AuthenticatedSettingsWhatsappCatalogsRoute: typeof AuthenticatedSettingsWhatsappCatalogsRoute
-  AuthenticatedSettingsWhatsappTemplatesRoute: typeof AuthenticatedSettingsWhatsappTemplatesRoute
   AuthenticatedSettingsWidgetRoute: typeof AuthenticatedSettingsWidgetRoute
   AuthenticatedSettingsWorkflowSubscriptionsRoute: typeof AuthenticatedSettingsWorkflowSubscriptionsRoute
   AuthenticatedSettingsWorkflowsRoute: typeof AuthenticatedSettingsWorkflowsRoute
@@ -8038,13 +7975,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsUserGroupsRoute: AuthenticatedSettingsUserGroupsRoute,
   AuthenticatedSettingsVideoRoute: AuthenticatedSettingsVideoRoute,
   AuthenticatedSettingsVoiceAgentRoute: AuthenticatedSettingsVoiceAgentRoute,
-  AuthenticatedSettingsWaAdsRoute: AuthenticatedSettingsWaAdsRoute,
   AuthenticatedSettingsWebhooksRoute: AuthenticatedSettingsWebhooksRoute,
   AuthenticatedSettingsWhatsappRoute: AuthenticatedSettingsWhatsappRoute,
-  AuthenticatedSettingsWhatsappCatalogsRoute:
-    AuthenticatedSettingsWhatsappCatalogsRoute,
-  AuthenticatedSettingsWhatsappTemplatesRoute:
-    AuthenticatedSettingsWhatsappTemplatesRoute,
   AuthenticatedSettingsWidgetRoute: AuthenticatedSettingsWidgetRoute,
   AuthenticatedSettingsWorkflowSubscriptionsRoute:
     AuthenticatedSettingsWorkflowSubscriptionsRoute,
@@ -8633,7 +8565,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHuntingRenderTemplateRoute: ApiPublicHuntingRenderTemplateRoute,
   ApiPublicHuntingTemplatesRoute: ApiPublicHuntingTemplatesRoute,
   ApiPublicInterviewTokenRoute: ApiPublicInterviewTokenRoute,
-  ApiPublicMetaWhatsappWebhookRoute: ApiPublicMetaWhatsappWebhookRoute,
   ApiPublicOauthContaazulCallbackRoute: ApiPublicOauthContaazulCallbackRoute,
   ApiPublicOauthGoogleCallbackRoute: ApiPublicOauthGoogleCallbackRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
@@ -8646,6 +8577,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicV1LeadsRoute: ApiPublicV1LeadsRoute,
   ApiPublicV1MeetingsRoute: ApiPublicV1MeetingsRouteWithChildren,
   ApiPublicV1TimeEntriesRoute: ApiPublicV1TimeEntriesRoute,
+  ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
   ApiPublicWidgetMessagesRoute: ApiPublicWidgetMessagesRoute,
   ApiPublicWidgetScriptRoute: ApiPublicWidgetScriptRoute,
   ApiPublicWidgetSessionRoute: ApiPublicWidgetSessionRoute,

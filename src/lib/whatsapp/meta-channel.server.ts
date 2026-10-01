@@ -1,18 +1,20 @@
-// Canal único de WhatsApp: API oficial da Meta (Cloud API).
+// Canal único de WhatsApp: conexão WhatsApp Business do Lovable.
 // Resolve o número conectado do workspace, envia texto/mídia/template e
 // marca mensagens como lidas. Não há mais envio via Twilio.
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-const GRAPH_VERSION = process.env.META_GRAPH_API_VERSION || "v21.0";
+import {
+  WA_NOT_CONNECTED_MESSAGE,
+  gatewayConfigured,
+  gatewayFetch,
+  getConnectedPhone,
+} from "@/lib/whatsapp/gateway-channel.server";
 
-export const WA_NOT_CONNECTED_MESSAGE =
-  "Nenhum número do WhatsApp Business (Meta) conectado neste workspace. " +
-  "Conecte em Configurações › WhatsApp (Meta) para enviar mensagens.";
+export { WA_NOT_CONNECTED_MESSAGE };
 
 export type WaNumber = {
   phoneNumberId: string;
   displayPhoneNumber: string;
-  token: string;
 };
 
 export function normalizePhone(raw: string): string {
@@ -29,66 +31,19 @@ export function applyPositionalTemplate(body: string, vars: string[]): string {
   return body.replace(/\{\{(\d+)\}\}/g, (_, n) => vars[Number(n) - 1] ?? "");
 }
 
-async function graphFetch(token: string, path: string, init: RequestInit = {}) {
-  const res = await fetch(`https://graph.facebook.com/${GRAPH_VERSION}${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      ...(init.headers || {}),
-    },
-  });
-  const text = await res.text();
-  let json: any = null;
-  try {
-    json = text ? JSON.parse(text) : null;
-  } catch {
-    json = { raw: text };
-  }
-  if (!res.ok) {
-    const msg = json?.error?.message || `Meta API ${res.status}`;
-    throw new Error(`WhatsApp (Meta) erro [${res.status}]: ${msg}`);
-  }
-  return json;
-}
-
 /**
- * Resolve o número da Meta que o workspace deve usar.
- * Prioriza `preferredPhoneNumberId` (conversa existente), depois o número padrão.
+ * Resolve o número conectado pela conexão WhatsApp Business do Lovable.
+ * Parâmetros mantidos por compatibilidade com os chamadores.
  */
 export async function resolveWaNumber(
-  workspaceId: string,
-  preferredPhoneNumberId?: string | null,
+  _workspaceId?: string,
+  _preferredPhoneNumberId?: string | null,
 ): Promise<WaNumber> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: numbers } = await supabaseAdmin
-    .from("wa_phone_numbers")
-    .select("phone_number_id, display_phone_number, is_default, waba_id")
-    .eq("workspace_id", workspaceId)
-    .order("is_default", { ascending: false })
-    .order("created_at", { ascending: true });
-
-  const list = numbers ?? [];
-  if (list.length === 0) throw new Error(WA_NOT_CONNECTED_MESSAGE);
-
-  const chosen =
-    (preferredPhoneNumberId
-      ? list.find((n: any) => n.phone_number_id === preferredPhoneNumberId)
-      : null) ?? list[0];
-
-  const { data: waba } = await supabaseAdmin
-    .from("wa_business_accounts")
-    .select("access_token")
-    .eq("workspace_id", workspaceId)
-    .eq("id", chosen.waba_id)
-    .maybeSingle();
-  const token = waba?.access_token as string | undefined;
-  if (!token) throw new Error("Token da conta WhatsApp Business indisponível. Reconecte a conta.");
-
+  if (!gatewayConfigured()) throw new Error(WA_NOT_CONNECTED_MESSAGE);
+  const info = await getConnectedPhone();
   return {
-    phoneNumberId: chosen.phone_number_id as string,
-    displayPhoneNumber: normalizePhone(chosen.display_phone_number as string),
-    token,
+    phoneNumberId: info.id,
+    displayPhoneNumber: normalizePhone(info.display_phone_number),
   };
 }
 
@@ -154,16 +109,15 @@ export async function metaSend(
 
   if (payload.contextMessageId) body.context = { message_id: payload.contextMessageId };
 
-  const res = await graphFetch(num.token, `/${num.phoneNumberId}/messages`, {
-    method: "POST",
-    body: JSON.stringify(body),
-  });
+  void num;
+  const res = await gatewayFetch("/messages", { method: "POST", body: JSON.stringify(body) });
   return { wamid: (res?.messages?.[0]?.id as string) ?? null, raw: res };
 }
 
 /** Marca uma mensagem recebida como lida na Meta (métricas corretas). */
 export async function metaMarkRead(num: WaNumber, wamid: string): Promise<void> {
-  await graphFetch(num.token, `/${num.phoneNumberId}/messages`, {
+  void num;
+  await gatewayFetch("/messages", {
     method: "POST",
     body: JSON.stringify({ messaging_product: "whatsapp", status: "read", message_id: wamid }),
   });

@@ -119,7 +119,7 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
       provider: "meta",
       wa_message_id: wamid,
       context_message_id: data.contextMessageId ?? null,
-      status: "sent",
+      status: "accepted",
       template_name: data.templateName ?? null,
       is_template: !!data.templateName,
       sent_by: userId,
