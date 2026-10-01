@@ -25,6 +25,22 @@ function brandedErrorResponse(): Response {
   });
 }
 
+function isRequestAbort(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const value = error as { name?: unknown; message?: unknown; cause?: unknown };
+  return (
+    value.name === "AbortError" ||
+    value.message === "This operation was aborted" ||
+    (value.cause !== error && isRequestAbort(value.cause))
+  );
+}
+
+function abortedRequestResponse(): Response {
+  // The browser closed the connection during navigation/HMR. This is not an
+  // application failure and must not be promoted to the global error screen.
+  return new Response(null, { status: 204 });
+}
+
 function isCatastrophicSsrErrorBody(body: string, responseStatus: number): boolean {
   let payload: unknown;
   try {
@@ -62,7 +78,10 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
     return response;
   }
 
-  console.error(consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`));
+  const capturedError = consumeLastCapturedError();
+  if (isRequestAbort(capturedError)) return abortedRequestResponse();
+
+  console.error(capturedError ?? new Error(`h3 swallowed SSR error: ${body}`));
   return brandedErrorResponse();
 }
 
@@ -73,6 +92,7 @@ export default {
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);
     } catch (error) {
+      if (isRequestAbort(error)) return abortedRequestResponse();
       console.error(error);
       return brandedErrorResponse();
     }

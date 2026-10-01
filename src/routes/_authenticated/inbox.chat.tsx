@@ -11,8 +11,6 @@ import {
   convertChatSessionToTicket,
 } from "@/lib/live-chat.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { PageHeader } from "@/components/page-header";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { SnippetTextarea } from "@/components/snippets/snippet-textarea";
@@ -20,8 +18,17 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Send, X, Ticket as TicketIcon } from "lucide-react";
 import { toast } from "sonner";
+import { InboxConversationList, InboxContext, InboxEmpty, InboxListHeader, InboxLoading, InboxWorkspace } from "@/components/inbox/inbox-workspace";
 
 export const Route = createFileRoute("/_authenticated/inbox/chat")({
+  head: () => ({ meta: [
+    { title: "Chat ao vivo — Inbox TechERP" },
+    { name: "description", content: "Atendimento em tempo real pelo chat do workspace." },
+    { property: "og:title", content: "Chat ao vivo — Inbox TechERP" },
+    { property: "og:description", content: "Atendimento em tempo real pelo chat do workspace." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: LiveChatInbox,
 });
 
@@ -95,22 +102,20 @@ function LiveChatInbox() {
   const current = sessions.find((s) => s.id === selected);
 
   return (
-    <div className="space-y-4">
-      <PageHeader title="Chat ao vivo" description="Conversas iniciadas pelo widget no seu site." />
-      <div className="grid grid-cols-[300px_1fr] gap-3 h-[calc(100vh-12rem)]">
-        <Card className="overflow-hidden flex flex-col">
-          <div className="p-2 border-b text-xs text-muted-foreground">
-            {sessions.length} sessão(ões)
-          </div>
-          <ScrollArea className="flex-1">
+    <InboxWorkspace
+      title="Chat ao vivo"
+      description="Conversas iniciadas pelo widget no seu site."
+      list={<><InboxListHeader><p className="text-xs text-muted-foreground">{sessions.length} sessão(ões)</p></InboxListHeader><InboxConversationList>
+            {sessionsQ.isLoading && <InboxLoading />}
             {sessions.length === 0 && (
-              <div className="p-4 text-sm text-muted-foreground">Nenhuma sessão ainda.</div>
+              <InboxEmpty>Nenhuma sessão ainda.</InboxEmpty>
             )}
             {sessions.map((s) => (
               <button
                 key={s.id}
+                data-inbox-conversation
                 onClick={() => setSelected(s.id)}
-                className={`w-full text-left p-3 border-b hover:bg-muted/50 ${selected === s.id ? "bg-muted" : ""}`}
+                className={`w-full border-b border-border-subtle p-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring ${selected === s.id ? "border-l-2 border-l-primary bg-accent" : ""}`}
               >
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <span className="truncate flex-1">
@@ -130,14 +135,10 @@ function LiveChatInbox() {
                 </div>
               </button>
             ))}
-          </ScrollArea>
-        </Card>
-
-        <Card className="overflow-hidden flex flex-col">
+          </InboxConversationList></>}
+      conversation={<>
           {!current ? (
-            <div className="flex-1 grid place-items-center text-sm text-muted-foreground">
-              Selecione uma sessão
-            </div>
+            <InboxEmpty>Selecione uma sessão para iniciar o atendimento.</InboxEmpty>
           ) : (
             <>
               <div className="p-3 border-b flex items-center justify-between gap-2">
@@ -167,7 +168,7 @@ function LiveChatInbox() {
                   </div>
                 )}
               </div>
-              <ScrollArea className="flex-1 p-3">
+              <ScrollArea className="flex-1 bg-product-panel-muted p-3" aria-live="polite">
                 <div className="space-y-2">
                   {messages.map((m) => (
                     <div
@@ -211,8 +212,8 @@ function LiveChatInbox() {
               )}
             </>
           )}
-        </Card>
-      </div>
-    </div>
+      </>}
+      context={current ? <InboxContext initials={(current.visitor_name || current.visitor_email || "VA").slice(0, 2).toUpperCase()} title={current.visitor_name || "Visitante"} subtitle={current.visitor_email || "Visitante anônimo"}><div className="space-y-3 border-t border-border pt-4 text-sm"><div><p className="text-xs text-muted-foreground">Página de origem</p><p className="mt-1 break-all font-medium">{current.visitor_url || "Não informada"}</p></div><div><p className="text-xs text-muted-foreground">Status</p><p className="mt-1 font-medium">{current.status === "closed" ? "Encerrada" : "Em atendimento"}</p></div></div></InboxContext> : undefined}
+    />
   );
 }

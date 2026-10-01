@@ -4,8 +4,6 @@ import { useMemo, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { PageHeader } from "@/components/page-header";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,8 +23,17 @@ import { smartCompose } from "@/lib/ai-compose.functions";
 import { toast } from "sonner";
 import { useMessageDraft } from "@/hooks/use-message-draft";
 import { MessageDraftStatus } from "@/components/message-draft-status";
+import { InboxConversationList, InboxContext, InboxEmpty, InboxListHeader, InboxLoading, InboxWorkspace } from "@/components/inbox/inbox-workspace";
 
 export const Route = createFileRoute("/_authenticated/inbox/")({
+  head: () => ({ meta: [
+    { title: "Inbox unificada — TechERP" },
+    { name: "description", content: "Email, WhatsApp e atendimento do workspace em uma única central." },
+    { property: "og:title", content: "Inbox unificada — TechERP" },
+    { property: "og:description", content: "Email, WhatsApp e atendimento do workspace em uma única central." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: UnifiedInboxPage,
 });
 
@@ -248,13 +255,11 @@ function UnifiedInboxPage() {
   });
 
   return (
-    <div className="space-y-4">
-      <PageHeader
-        title="Inbox unificada"
-        description="Conversas de e-mail e WhatsApp em um só lugar. Responda inline."
-      />
-
-      <div className="flex flex-wrap items-center gap-2">
+    <InboxWorkspace
+      title="Inbox unificada"
+      description="Conversas de email e WhatsApp em um só lugar. Responda inline."
+      list={<>
+        <InboxListHeader>
         <div className="relative flex-1 min-w-[220px] max-w-md">
           <Search className="h-4 w-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -287,25 +292,23 @@ function UnifiedInboxPage() {
             <MessageCircle className="h-4 w-4 mr-1" /> WhatsApp
           </Button>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-4">
-        <Card>
-          <CardContent className="p-0">
+        </InboxListHeader>
+        <InboxConversationList>
             {emailQ.isLoading || waQ.isLoading ? (
-              <p className="p-6 text-sm text-muted-foreground">Carregando…</p>
+              <InboxLoading />
             ) : items.length === 0 ? (
-              <p className="p-6 text-sm text-muted-foreground">Nenhuma conversa encontrada.</p>
+              <InboxEmpty>Nenhuma conversa encontrada.</InboxEmpty>
             ) : (
               <ul className="divide-y">
                 {items.map((it) => (
                   <li key={it.id}>
                     <button
+                      data-inbox-conversation
                       onClick={() => {
                         setSelected(it.id);
                         setDraft("");
                       }}
-                      className={`flex items-start gap-3 p-3 hover:bg-muted/40 transition-colors w-full text-left ${selected === it.id ? "bg-muted/60" : ""}`}
+                      className={`flex w-full items-start gap-3 border-b border-border-subtle p-3 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring ${selected === it.id ? "border-l-2 border-l-primary bg-accent" : ""}`}
                     >
                       <div className="shrink-0 mt-0.5">
                         {it.channel === "email" ? (
@@ -335,18 +338,14 @@ function UnifiedInboxPage() {
                 ))}
               </ul>
             )}
-          </CardContent>
-        </Card>
-
-        <Card className="h-fit sticky top-4">
-          <CardContent className="p-4 space-y-3">
+        </InboxConversationList>
+      </>}
+      conversation={<div className="flex min-h-0 flex-1 flex-col">
             {!current ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">
-                Selecione uma conversa para responder inline.
-              </p>
+              <InboxEmpty>Selecione uma conversa para responder inline.</InboxEmpty>
             ) : (
-              <>
-                <div className="space-y-1">
+              <div className="flex min-h-0 flex-1 flex-col">
+                <div className="space-y-1 border-b border-border p-4">
                   <div className="flex items-center gap-2">
                     {current.channel === "email" ? (
                       <Mail className="h-4 w-4 text-primary" />
@@ -360,7 +359,8 @@ function UnifiedInboxPage() {
                     <div className="text-xs text-muted-foreground">Para: {current.replyTo}</div>
                   )}
                 </div>
-                <Textarea
+                <div className="grid flex-1 place-items-center bg-product-panel-muted p-6 text-center"><div className="max-w-md"><p className="text-sm font-medium">{current.title}</p>{current.snippet ? <p className="mt-2 text-sm text-muted-foreground">{current.snippet}</p> : null}</div></div>
+                <div className="space-y-3 border-t border-border p-3"><Textarea
                   rows={6}
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
@@ -414,11 +414,11 @@ function UnifiedInboxPage() {
                     {reply.isPending ? "Enviando…" : "Enviar"}
                   </Button>
                 </div>
-              </>
+                </div>
+              </div>
             )}
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+      </div>}
+      context={current ? <InboxContext initials={current.contactLabel.slice(0, 2).toUpperCase()} title={current.contactLabel} subtitle={current.replyTo || undefined}><div className="space-y-3 border-t border-border pt-4 text-sm"><div><p className="text-xs text-muted-foreground">Canal</p><p className="mt-1 font-medium capitalize">{current.channel}</p></div><Button asChild className="w-full" variant="outline"><Link to={current.href}>Abrir conversa <ExternalLink className="ml-2 h-3.5 w-3.5" /></Link></Button></div></InboxContext> : undefined}
+    />
   );
 }
