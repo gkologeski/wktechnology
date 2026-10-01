@@ -7,32 +7,41 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Mail,
-  MessageCircle,
-  Search,
-  Send,
-  ExternalLink,
-  Sparkles,
-} from "lucide-react";
+import { Mail, MessageCircle, Search, Send, ExternalLink, Sparkles } from "lucide-react";
 import { sendGmailEmail } from "@/lib/email-send.functions";
 import { sendWhatsAppMessage } from "@/lib/whatsapp.functions";
 import { smartCompose } from "@/lib/ai-compose.functions";
 import { toast } from "sonner";
 import { useMessageDraft } from "@/hooks/use-message-draft";
 import { MessageDraftStatus } from "@/components/message-draft-status";
-import { InboxAvatar, InboxConversationList, InboxContext, InboxEmpty, InboxListHeader, InboxLoading, InboxWorkspace } from "@/components/inbox/inbox-workspace";
+import {
+  InboxAvatar,
+  InboxConversationList,
+  InboxContext,
+  InboxEmpty,
+  InboxListHeader,
+  InboxLoading,
+  InboxWorkspace,
+} from "@/components/inbox/inbox-workspace";
 import { WhatsAppIcon } from "@/components/whatsapp/whatsapp-icon";
 
 export const Route = createFileRoute("/_authenticated/inbox/")({
-  head: () => ({ meta: [
-    { title: "Inbox unificada — TechERP" },
-    { name: "description", content: "Email, WhatsApp e atendimento do workspace em uma única central." },
-    { property: "og:title", content: "Inbox unificada — TechERP" },
-    { property: "og:description", content: "Email, WhatsApp e atendimento do workspace em uma única central." },
-    { property: "og:type", content: "website" },
-    { name: "twitter:card", content: "summary" },
-  ] }),
+  head: () => ({
+    meta: [
+      { title: "Inbox unificada — TechERP" },
+      {
+        name: "description",
+        content: "Email, WhatsApp e atendimento do workspace em uma única central.",
+      },
+      { property: "og:title", content: "Inbox unificada — TechERP" },
+      {
+        property: "og:description",
+        content: "Email, WhatsApp e atendimento do workspace em uma única central.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: UnifiedInboxPage,
 });
 
@@ -141,7 +150,10 @@ function UnifiedInboxPage() {
         channel: "email" as const,
         title: t.subject || "(sem assunto)",
         snippet: t.snippet ?? "",
-        contactLabel: (t.contact_id ? m.get(t.contact_id) : undefined) ?? last?.from_email ?? "Remetente desconhecido",
+        contactLabel:
+          (t.contact_id ? m.get(t.contact_id) : undefined) ??
+          last?.from_email ??
+          "Remetente desconhecido",
         lastAt: t.last_message_at,
         href: `/inbox/email`,
         replyTo: last?.from_email ?? null,
@@ -257,42 +269,43 @@ function UnifiedInboxPage() {
     <InboxWorkspace
       title="Inbox unificada"
       description="Conversas de email e WhatsApp em um só lugar. Responda inline."
-      list={<>
-        <InboxListHeader>
-        <div className="relative flex-1 min-w-[220px] max-w-md">
-          <Search className="h-4 w-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por contato, assunto ou texto…"
-            className="pl-8"
-          />
-        </div>
-        <div className="flex gap-1">
-          <Button
-            size="sm"
-            variant={channel === "all" ? "default" : "outline"}
-            onClick={() => setChannel("all")}
-          >
-            Todos
-          </Button>
-          <Button
-            size="sm"
-            variant={channel === "email" ? "default" : "outline"}
-            onClick={() => setChannel("email")}
-          >
-            <Mail className="h-4 w-4 mr-1" /> E-mail
-          </Button>
-          <Button
-            size="sm"
-            variant={channel === "whatsapp" ? "default" : "outline"}
-            onClick={() => setChannel("whatsapp")}
-          >
-            <MessageCircle className="h-4 w-4 mr-1" /> WhatsApp
-          </Button>
-        </div>
-        </InboxListHeader>
-        <InboxConversationList>
+      list={
+        <>
+          <InboxListHeader>
+            <div className="relative flex-1 min-w-[220px] max-w-md">
+              <Search className="h-4 w-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar por contato, assunto ou texto…"
+                className="pl-8"
+              />
+            </div>
+            <div className="flex gap-1">
+              <Button
+                size="sm"
+                variant={channel === "all" ? "default" : "outline"}
+                onClick={() => setChannel("all")}
+              >
+                Todos
+              </Button>
+              <Button
+                size="sm"
+                variant={channel === "email" ? "default" : "outline"}
+                onClick={() => setChannel("email")}
+              >
+                <Mail className="h-4 w-4 mr-1" /> E-mail
+              </Button>
+              <Button
+                size="sm"
+                variant={channel === "whatsapp" ? "default" : "outline"}
+                onClick={() => setChannel("whatsapp")}
+              >
+                <MessageCircle className="h-4 w-4 mr-1" /> WhatsApp
+              </Button>
+            </div>
+          </InboxListHeader>
+          <InboxConversationList>
             {emailQ.isLoading || waQ.isLoading ? (
               <InboxLoading />
             ) : items.length === 0 ? (
@@ -322,8 +335,13 @@ function UnifiedInboxPage() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-baseline justify-between gap-2">
-                          <span className="truncate text-sm font-semibold text-foreground">{it.contactLabel}</span>
-                          <span className="shrink-0 text-[11px] text-muted-foreground" title={it.lastAt ? formatDateTime(it.lastAt) : undefined}>
+                          <span className="truncate text-sm font-semibold text-foreground">
+                            {it.contactLabel}
+                          </span>
+                          <span
+                            className="shrink-0 text-[11px] text-muted-foreground"
+                            title={it.lastAt ? formatDateTime(it.lastAt) : undefined}
+                          >
                             {it.lastAt ? shortWhen(it.lastAt) : ""}
                           </span>
                         </div>
@@ -337,34 +355,45 @@ function UnifiedInboxPage() {
                 ))}
               </ul>
             )}
-        </InboxConversationList>
-      </>}
-      conversation={<div className="flex min-h-0 flex-1 flex-col">
-            {!current ? (
-              <InboxEmpty>Selecione uma conversa para responder inline.</InboxEmpty>
-            ) : (
-              <div className="flex min-h-0 flex-1 flex-col">
-                <div className="flex items-center gap-3 border-b border-border bg-product-panel px-4 py-3">
-                  <InboxAvatar label={current.contactLabel} className="h-9 w-9" />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate font-semibold text-foreground">{current.contactLabel}</div>
-                    <div className="truncate text-xs text-muted-foreground">
-                      {current.channel === "email" ? "Email" : "WhatsApp"}
-                      {current.replyTo ? ` · ${current.replyTo}` : ""}
-                    </div>
+          </InboxConversationList>
+        </>
+      }
+      conversation={
+        <div className="flex min-h-0 flex-1 flex-col">
+          {!current ? (
+            <InboxEmpty>Selecione uma conversa para responder inline.</InboxEmpty>
+          ) : (
+            <div className="flex min-h-0 flex-1 flex-col">
+              <div className="flex items-center gap-3 border-b border-border bg-product-panel px-4 py-3">
+                <InboxAvatar label={current.contactLabel} className="h-9 w-9" />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-semibold text-foreground">
+                    {current.contactLabel}
                   </div>
-                  <Button asChild size="sm" variant="outline">
-                    <Link to={current.href}>Abrir no canal <ExternalLink className="ml-1 h-3.5 w-3.5" /></Link>
-                  </Button>
-                </div>
-                <div className="min-h-0 flex-1 overflow-y-auto p-6">
-                  <div className="max-w-[75%] rounded-[var(--radius)] rounded-tl-sm border border-border bg-card px-4 py-3 shadow-sm">
-                    <p className="text-sm font-medium text-foreground">{current.title}</p>
-                    {current.snippet && current.snippet !== current.title ? <p className="mt-1 text-sm text-text-secondary">{current.snippet}</p> : null}
-                    <p className="mt-2 text-[11px] text-muted-foreground">{current.lastAt ? formatDateTime(current.lastAt) : ""}</p>
+                  <div className="truncate text-xs text-muted-foreground">
+                    {current.channel === "email" ? "Email" : "WhatsApp"}
+                    {current.replyTo ? ` · ${current.replyTo}` : ""}
                   </div>
                 </div>
-                <div className="m-3 space-y-2 rounded-[var(--radius)] border border-border bg-card p-2 shadow-sm focus-within:ring-2 focus-within:ring-ring"><Textarea
+                <Button asChild size="sm" variant="outline">
+                  <Link to={current.href}>
+                    Abrir no canal <ExternalLink className="ml-1 h-3.5 w-3.5" />
+                  </Link>
+                </Button>
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto p-6">
+                <div className="max-w-[75%] rounded-[var(--radius)] rounded-tl-sm border border-border bg-card px-4 py-3 shadow-sm">
+                  <p className="text-sm font-medium text-foreground">{current.title}</p>
+                  {current.snippet && current.snippet !== current.title ? (
+                    <p className="mt-1 text-sm text-text-secondary">{current.snippet}</p>
+                  ) : null}
+                  <p className="mt-2 text-[11px] text-muted-foreground">
+                    {current.lastAt ? formatDateTime(current.lastAt) : ""}
+                  </p>
+                </div>
+              </div>
+              <div className="m-3 space-y-2 rounded-[var(--radius)] border border-border bg-card p-2 shadow-sm focus-within:ring-2 focus-within:ring-ring">
+                <Textarea
                   className="min-h-24 resize-none border-0 shadow-none focus-visible:ring-0"
                   rows={6}
                   value={draft}
@@ -419,11 +448,32 @@ function UnifiedInboxPage() {
                     {reply.isPending ? "Enviando…" : "Enviar"}
                   </Button>
                 </div>
-                </div>
               </div>
-            )}
-      </div>}
-      context={current ? <InboxContext initials={current.contactLabel.slice(0, 2).toUpperCase()} title={current.contactLabel} subtitle={current.replyTo || undefined}><div className="space-y-3 border-t border-border pt-4 text-sm"><div><p className="text-xs text-muted-foreground">Canal</p><p className="mt-1 font-medium capitalize">{current.channel}</p></div><Button asChild className="w-full" variant="outline"><Link to={current.href}>Abrir conversa <ExternalLink className="ml-2 h-3.5 w-3.5" /></Link></Button></div></InboxContext> : undefined}
+            </div>
+          )}
+        </div>
+      }
+      context={
+        current ? (
+          <InboxContext
+            initials={current.contactLabel.slice(0, 2).toUpperCase()}
+            title={current.contactLabel}
+            subtitle={current.replyTo || undefined}
+          >
+            <div className="space-y-3 border-t border-border pt-4 text-sm">
+              <div>
+                <p className="text-xs text-muted-foreground">Canal</p>
+                <p className="mt-1 font-medium capitalize">{current.channel}</p>
+              </div>
+              <Button asChild className="w-full" variant="outline">
+                <Link to={current.href}>
+                  Abrir conversa <ExternalLink className="ml-2 h-3.5 w-3.5" />
+                </Link>
+              </Button>
+            </div>
+          </InboxContext>
+        ) : undefined
+      }
     />
   );
 }

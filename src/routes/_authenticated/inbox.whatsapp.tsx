@@ -9,8 +9,6 @@ import {
   Settings as SettingsIcon,
   UserCheck,
   CheckCircle2,
-  Check,
-  CheckCheck,
   Paperclip,
   X,
 } from "lucide-react";
@@ -46,17 +44,35 @@ import { formatDateTime } from "@/lib/crm";
 import { useAuth } from "@/lib/auth";
 import { useActivityWindows } from "@/components/activity/activity-window-context";
 import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
-import { InboxConversationItem, InboxConversationList, InboxContext, InboxEmpty, InboxListHeader, InboxLoading, InboxWorkspace } from "@/components/inbox/inbox-workspace";
+import {
+  InboxConversationHeader,
+  InboxConversationItem,
+  InboxConversationList,
+  InboxContext,
+  InboxEmpty,
+  InboxListHeader,
+  InboxLoading,
+  InboxMessageBubble,
+  InboxWorkspace,
+} from "@/components/inbox/inbox-workspace";
 
 export const Route = createFileRoute("/_authenticated/inbox/whatsapp")({
-  head: () => ({ meta: [
-    { title: "WhatsApp — Inbox TechERP" },
-    { name: "description", content: "Conversas de WhatsApp do workspace em uma central organizada." },
-    { property: "og:title", content: "WhatsApp — Inbox TechERP" },
-    { property: "og:description", content: "Conversas de WhatsApp do workspace em uma central organizada." },
-    { property: "og:type", content: "website" },
-    { name: "twitter:card", content: "summary" },
-  ] }),
+  head: () => ({
+    meta: [
+      { title: "WhatsApp — Inbox TechERP" },
+      {
+        name: "description",
+        content: "Conversas de WhatsApp do workspace em uma central organizada.",
+      },
+      { property: "og:title", content: "WhatsApp — Inbox TechERP" },
+      {
+        property: "og:description",
+        content: "Conversas de WhatsApp do workspace em uma central organizada.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: WhatsAppInbox,
 });
 
@@ -226,13 +242,16 @@ function WhatsAppInbox() {
     <InboxWorkspace
       title="Inbox WhatsApp"
       description="Conversas pelo número conectado do WhatsApp"
-      actions={<>
+      actions={
+        <>
           <WhatsAppSettingsButton />
           <Button onClick={() => openActivity?.({ action: ACTIONS_BY_KEY["create:whatsapp"] })}>
             <MessageCircle className="mr-2 h-4 w-4" /> Nova conversa
           </Button>
-        </>}
-      list={<>
+        </>
+      }
+      list={
+        <>
           <InboxListHeader>
             <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
               <TabsList className="grid w-full grid-cols-3">
@@ -250,127 +269,122 @@ function WhatsAppInbox() {
             {!conversationsQ.isLoading && conversations.length === 0 && (
               <InboxEmpty>Nenhuma conversa ainda. Envie uma mensagem para começar.</InboxEmpty>
             )}
-            <div className="space-y-0.5 p-2">{conversations.map((c) => (
-              <InboxConversationItem
-                key={c.id}
-                label={c.contact_phone}
-                preview={c.last_message_preview || "—"}
-                when={c.last_message_at}
-                whenTitle={c.last_message_at ? formatDateTime(c.last_message_at) : undefined}
-                selected={selected === c.id}
-                onClick={() => setSelected(c.id)}
-                unread={c.unread_count}
-                badge={c.status === "closed" ? <Badge variant="secondary" className="text-[10px]">fechada</Badge> : null}
-                meta={c.assigned_to ? <span className="inline-flex items-center gap-1"><UserCheck className="h-3 w-3" />{memberMap.get(c.assigned_to) ?? "atribuída"}</span> : <span className="italic">sem dono</span>}
-              />
-            ))}</div>
+            <div className="space-y-0.5 p-2">
+              {conversations.map((c) => (
+                <InboxConversationItem
+                  key={c.id}
+                  label={c.contact_phone}
+                  preview={c.last_message_preview || "—"}
+                  when={c.last_message_at}
+                  whenTitle={c.last_message_at ? formatDateTime(c.last_message_at) : undefined}
+                  selected={selected === c.id}
+                  onClick={() => setSelected(c.id)}
+                  unread={c.unread_count}
+                  badge={
+                    c.status === "closed" ? (
+                      <Badge variant="secondary" className="text-[10px]">
+                        fechada
+                      </Badge>
+                    ) : null
+                  }
+                  meta={
+                    c.assigned_to ? (
+                      <span className="inline-flex items-center gap-1">
+                        <UserCheck className="h-3 w-3" />
+                        {memberMap.get(c.assigned_to) ?? "atribuída"}
+                      </span>
+                    ) : (
+                      <span className="italic">sem dono</span>
+                    )
+                  }
+                />
+              ))}
+            </div>
           </InboxConversationList>
-        </>}
-      conversation={<>
+        </>
+      }
+      conversation={
+        <>
           {!current ? (
             <InboxEmpty>Selecione uma conversa para visualizar o histórico.</InboxEmpty>
           ) : (
             <>
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b p-3">
-                <div>
-                  <div className="text-sm font-medium">{current.contact_phone}</div>
-                  <div className="text-xs text-muted-foreground">via {current.twilio_number}</div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Select
-                    value={current.assigned_to ?? "_none"}
-                    onValueChange={(v) =>
-                      assignMut.mutate({
-                        conversationId: current.id,
-                        assignedTo: v === "_none" ? null : v,
-                      })
-                    }
-                  >
-                    <SelectTrigger className="h-8 w-[180px] text-xs">
-                      <SelectValue placeholder="Atribuir a…" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="_none">Sem dono</SelectItem>
-                      {user?.id && (
-                        <SelectItem value={user.id}>
-                          Eu ({memberMap.get(user.id) ?? "—"})
-                        </SelectItem>
-                      )}
-                      {(membersQ.data ?? [])
-                        .filter((m) => m.id !== user?.id)
-                        .map((m) => (
-                          <SelectItem key={m.id} value={m.id}>
-                            {m.full_name || m.id.slice(0, 6)}
+              <InboxConversationHeader
+                label={current.contact_phone}
+                subtitle={`WhatsApp · via ${current.twilio_number}`}
+                actions={
+                  <>
+                    <Select
+                      value={current.assigned_to ?? "_none"}
+                      onValueChange={(v) =>
+                        assignMut.mutate({
+                          conversationId: current.id,
+                          assignedTo: v === "_none" ? null : v,
+                        })
+                      }
+                    >
+                      <SelectTrigger className="h-8 w-[180px] text-xs">
+                        <SelectValue placeholder="Atribuir a…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="_none">Sem dono</SelectItem>
+                        {user?.id && (
+                          <SelectItem value={user.id}>
+                            Eu ({memberMap.get(user.id) ?? "—"})
                           </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                  {current.status === "closed" ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        statusMut.mutate({ conversationId: current.id, status: "open" })
-                      }
-                    >
-                      Reabrir
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        statusMut.mutate({ conversationId: current.id, status: "closed" })
-                      }
-                    >
-                      <CheckCircle2 className="mr-1 h-3 w-3" /> Fechar
-                    </Button>
-                  )}
-                </div>
-              </div>
-              <ScrollArea className="flex-1 bg-product-panel-muted p-4" aria-live="polite">
-                <div className="space-y-2">
-                  {messages.map((m) => (
-                    <div
-                      key={m.id}
-                      className={`flex ${m.direction === "outbound" ? "justify-end" : "justify-start"}`}
-                    >
-                      <div
-                        className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${
-                          m.direction === "outbound"
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted"
-                        }`}
-                      >
-                        {m.media_url && (
-                          <div className="mb-1">
-                            <WhatsAppMediaBubble
-                              url={m.media_url}
-                              contentType={m.media_content_type}
-                            />
-                          </div>
                         )}
-                        {m.body && <div className="whitespace-pre-wrap">{m.body}</div>}
-                        <div className="mt-1 flex items-center gap-1 text-[10px] opacity-70">
-                          <span>{formatDateTime(m.created_at)}</span>
-                          {m.direction === "outbound" && (
-                            <span className="ml-auto inline-flex items-center gap-0.5">
-                              {m.status === "read" ? (
-                                <CheckCheck className="h-3 w-3 text-sky-300" />
-                              ) : m.status === "delivered" ? (
-                                <CheckCheck className="h-3 w-3" />
-                              ) : m.status === "sent" ||
-                                m.status === "accepted" ||
-                                m.status === "queued" ? (
-                                <Check className="h-3 w-3" />
-                              ) : (
-                                <span>{m.status}</span>
-                              )}
-                            </span>
-                          )}
+                        {(membersQ.data ?? [])
+                          .filter((m) => m.id !== user?.id)
+                          .map((m) => (
+                            <SelectItem key={m.id} value={m.id}>
+                              {m.full_name || m.id.slice(0, 6)}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    {current.status === "closed" ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          statusMut.mutate({ conversationId: current.id, status: "open" })
+                        }
+                      >
+                        Reabrir
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          statusMut.mutate({ conversationId: current.id, status: "closed" })
+                        }
+                      >
+                        <CheckCircle2 className="mr-1 h-3 w-3" /> Fechar
+                      </Button>
+                    )}
+                  </>
+                }
+              />
+              <ScrollArea className="flex-1 bg-product-panel-muted p-4" aria-live="polite">
+                <div className="space-y-3">
+                  {messages.map((m) => (
+                    <InboxMessageBubble
+                      key={m.id}
+                      outbound={m.direction === "outbound"}
+                      when={m.created_at}
+                      status={m.direction === "outbound" ? m.status : null}
+                    >
+                      {m.media_url && (
+                        <div className="mb-1">
+                          <WhatsAppMediaBubble
+                            url={m.media_url}
+                            contentType={m.media_content_type}
+                          />
                         </div>
-                      </div>
-                    </div>
+                      )}
+                      {m.body && <div className="whitespace-pre-wrap">{m.body}</div>}
+                    </InboxMessageBubble>
                   ))}
                   <div ref={bottomRef} />
                 </div>
@@ -460,8 +474,34 @@ function WhatsAppInbox() {
               </div>
             </>
           )}
-      </>}
-      context={current ? <InboxContext initials={current.contact_phone.slice(-2)} title={current.contact_phone} subtitle={`via ${current.twilio_number}`}><div className="space-y-3 border-t border-border pt-4 text-sm"><div><p className="text-xs text-muted-foreground">Responsável</p><p className="mt-1 font-medium">{current.assigned_to ? memberMap.get(current.assigned_to) ?? "Atribuída" : "Sem dono"}</p></div><div><p className="text-xs text-muted-foreground">Status</p><p className="mt-1 font-medium">{current.status === "closed" ? "Fechada" : "Aberta"}</p></div></div></InboxContext> : undefined}
+        </>
+      }
+      context={
+        current ? (
+          <InboxContext
+            initials={current.contact_phone.slice(-2)}
+            title={current.contact_phone}
+            subtitle={`via ${current.twilio_number}`}
+          >
+            <div className="space-y-3 border-t border-border pt-4 text-sm">
+              <div>
+                <p className="text-xs text-muted-foreground">Responsável</p>
+                <p className="mt-1 font-medium">
+                  {current.assigned_to
+                    ? (memberMap.get(current.assigned_to) ?? "Atribuída")
+                    : "Sem dono"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Status</p>
+                <p className="mt-1 font-medium">
+                  {current.status === "closed" ? "Fechada" : "Aberta"}
+                </p>
+              </div>
+            </div>
+          </InboxContext>
+        ) : undefined
+      }
     />
   );
 }
