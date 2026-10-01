@@ -312,106 +312,108 @@ function ProposalsPage() {
           ) : (
             <div className="overflow-x-auto rounded-md border">
               <GridListShell filters={gridFilters}>
-              <GridListToolbar
-                filters={gridFilters}
-                sort={sort}
-                setSort={setGridSort}
-                grid={sortGrid}
-                filename="propostas"
-                labels={{ title: "Título", version: "Versão", amount: "Valor", status: "Status" }}
-              />
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-10">
-                      <Checkbox
-                        aria-label="Selecionar todas as propostas exibidas"
-                        checked={
-                          selection.allOnPageSelected
-                            ? true
-                            : selection.someOnPageSelected
-                              ? "indeterminate"
-                              : false
-                        }
-                        onCheckedChange={selection.toggleAllOnPage}
-                      />
-                    </TableHead>
-                    <SortableTableHead
-                      label="Título"
-                      active={sort?.key === "title"}
-                      dir={sort?.dir}
-                      onSort={() => toggle("title")}
-                    />
-                    <SortableTableHead
-                      label="Versão"
-                      active={sort?.key === "version"}
-                      dir={sort?.dir}
-                      onSort={() => toggle("version")}
-                    />
-                    <SortableTableHead
-                      label="Valor"
-                      active={sort?.key === "amount"}
-                      dir={sort?.dir}
-                      onSort={() => toggle("amount")}
-                    />
-                    <SortableTableHead
-                      label="Status"
-                      active={sort?.key === "status"}
-                      dir={sort?.dir}
-                      onSort={() => toggle("status")}
-                    />
-                    <TableHead>Responsável</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rows.map((p) => (
-                    <TableRow key={p.id} className="hover:bg-muted/40">
-                      <TableCell>
+                <GridListToolbar
+                  filters={gridFilters}
+                  sort={sort}
+                  setSort={setGridSort}
+                  grid={sortGrid}
+                  filename="propostas"
+                  labels={{ title: "Título", version: "Versão", amount: "Valor", status: "Status" }}
+                />
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-10">
                         <Checkbox
-                          aria-label={`Selecionar ${p.title}`}
-                          checked={selection.selectedIds.has(p.id)}
-                          onCheckedChange={() => selection.toggleOne(p.id)}
+                          aria-label="Selecionar todas as propostas exibidas"
+                          checked={
+                            selection.allOnPageSelected
+                              ? true
+                              : selection.someOnPageSelected
+                                ? "indeterminate"
+                                : false
+                          }
+                          onCheckedChange={selection.toggleAllOnPage}
                         />
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          <Link
-                            to="/proposals/$id"
-                            params={{ id: p.id }}
-                            className="font-medium hover:underline"
-                          >
-                            {p.title}
-                          </Link>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">v{p.version}</TableCell>
-                      <TableCell className="text-sm">{money(p)}</TableCell>
-                      <TableCell>
-                        <Badge variant={STATUS_VARIANT[p.status] ?? "outline"}>
-                          {STATUS_LABEL[p.status] ?? p.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <AssigneeCell assignedTo={p.assigned_to} className="text-xs" />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          aria-label={`Remover ${p.title}`}
-                          onClick={async () => {
-                            if (await confirmDialog("Remover proposta?")) delM.mutate(p.id);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
+                      </TableHead>
+                      <SortableTableHead
+                        label="Título"
+                        active={sort?.key === "title"}
+                        dir={sort?.dir}
+                        onSort={() => toggle("title")}
+                      />
+                      <SortableTableHead
+                        label="Versão"
+                        active={sort?.key === "version"}
+                        dir={sort?.dir}
+                        onSort={() => toggle("version")}
+                      />
+                      <SortableTableHead
+                        label="Valor"
+                        active={sort?.key === "amount"}
+                        dir={sort?.dir}
+                        onSort={() => toggle("amount")}
+                      />
+                      <SortableTableHead
+                        label="Status"
+                        active={sort?.key === "status"}
+                        dir={sort?.dir}
+                        onSort={() => toggle("status")}
+                      />
+                      <TableHead>Responsável</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map((p) => (
+                      <TableRow key={p.id} className="hover:bg-muted/40">
+                        <TableCell>
+                          <Checkbox
+                            aria-label={`Selecionar ${p.title}`}
+                            checked={selection.selectedIds.has(p.id)}
+                            onCheckedChange={() => selection.toggleOne(p.id)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            <Link
+                              to="/proposals/$id"
+                              params={{ id: p.id }}
+                              className="font-medium hover:underline"
+                            >
+                              {p.title}
+                            </Link>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          v{p.version}
+                        </TableCell>
+                        <TableCell className="text-sm">{money(p)}</TableCell>
+                        <TableCell>
+                          <Badge variant={STATUS_VARIANT[p.status] ?? "outline"}>
+                            {STATUS_LABEL[p.status] ?? p.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <AssigneeCell assignedTo={p.assigned_to} className="text-xs" />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            aria-label={`Remover ${p.title}`}
+                            onClick={async () => {
+                              if (await confirmDialog("Remover proposta?")) delM.mutate(p.id);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </GridListShell>
             </div>
           )}

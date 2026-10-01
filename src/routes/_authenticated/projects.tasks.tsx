@@ -131,37 +131,41 @@ function ProjectTasksPage() {
   ]);
 
   // Painel lateral padronizado (filtros no cliente sobre as tarefas carregadas).
-  const gridFilters = useGridFilters("project_tasks", rows as any[], [
-    {
-      key: "project",
-      label: "Projeto",
-      type: "multi",
-      searchable: true,
-      get: (t) => t.project_id,
-      optionLabel: (_v, t) => t.projects?.name ?? "Projeto",
-    },
-    {
-      key: "status",
-      label: "Status",
-      type: "multi",
-      get: (t) => t.status,
-      options: Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label })),
-    },
-    {
-      key: "priority",
-      label: "Prioridade",
-      type: "multi",
-      get: (t) => t.priority,
-      options: [
-        { value: "low", label: "Baixa" },
-        { value: "normal", label: "Normal" },
-        { value: "high", label: "Alta" },
-        { value: "urgent", label: "Urgente" },
-      ],
-    },
-    { key: "owner", label: "Responsável", type: "owner", get: (t) => t.assignee_id },
-    { key: "due", label: "Prazo entre", type: "date", get: (t) => t.due_at },
-  ] as GridFilterField<any>[]);
+  const gridFilters = useGridFilters(
+    "project_tasks",
+    rows as any[],
+    [
+      {
+        key: "project",
+        label: "Projeto",
+        type: "multi",
+        searchable: true,
+        get: (t) => t.project_id,
+        optionLabel: (_v, t) => t.projects?.name ?? "Projeto",
+      },
+      {
+        key: "status",
+        label: "Status",
+        type: "multi",
+        get: (t) => t.status,
+        options: Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label })),
+      },
+      {
+        key: "priority",
+        label: "Prioridade",
+        type: "multi",
+        get: (t) => t.priority,
+        options: [
+          { value: "low", label: "Baixa" },
+          { value: "normal", label: "Normal" },
+          { value: "high", label: "Alta" },
+          { value: "urgent", label: "Urgente" },
+        ],
+      },
+      { key: "owner", label: "Responsável", type: "owner", get: (t) => t.assignee_id },
+      { key: "due", label: "Prazo entre", type: "date", get: (t) => t.due_at },
+    ] as GridFilterField<any>[],
+  );
 
   const view = Route.useSearch().view ?? "table";
   const navigate = Route.useNavigate();

@@ -169,7 +169,9 @@ function InvoicesPage() {
 
   // Seleção por linha e global (todos os filtrados) — padrão de grids.
   const { canAny } = usePermissions();
-  const selection = useGridSelection(sortedInvoices as Array<{ id: string } & (typeof sortedInvoices)[number]>);
+  const selection = useGridSelection(
+    sortedInvoices as Array<{ id: string } & (typeof sortedInvoices)[number]>,
+  );
   const selectAllFiltered = () =>
     selection.setSelectedIds(new Set(sortedInvoices.map((inv) => inv.id)));
   const canUpdateInvoice = canAny([
@@ -340,196 +342,200 @@ function InvoicesPage() {
               ) : (
                 <>
                   <GridListShell filters={gridFilters}>
-                  <GridListToolbar
-                    filters={gridFilters}
-                    sort={sort}
-                    setSort={setGridSort}
-                    exportValue={{ status: (inv) => STATUS_LABEL[inv.status] ?? inv.status }}
-                    grid={sortGrid}
-                    filename="faturas"
-                    labels={{
-                      number: "Número",
-                      status: "Status",
-                      amount: "Valor",
-                      due: "Vencimento",
-                      gateway: "Gateway",
-                    }}
-                    search={false}
-                  />
-                  {selection.hasSelection && (
-                    <GridBulkBar
-                      table="customer_invoices"
-                      ids={selection.ids}
-                      rows={selection.selectedRows}
-                      entityLabel="fatura(s)"
-                      onClear={selection.clear}
-                      onDone={invalidate}
-                      totalMatching={sortedInvoices.length}
-                      onSelectAll={selectAllFiltered}
-                      canUpdate={canUpdateInvoice}
-                      canDelete={canDeleteInvoice}
-                      bulkEditFields={[{ name: "due_date", label: "Vencimento", type: "date" }]}
+                    <GridListToolbar
+                      filters={gridFilters}
+                      sort={sort}
+                      setSort={setGridSort}
+                      exportValue={{ status: (inv) => STATUS_LABEL[inv.status] ?? inv.status }}
+                      grid={sortGrid}
+                      filename="faturas"
+                      labels={{
+                        number: "Número",
+                        status: "Status",
+                        amount: "Valor",
+                        due: "Vencimento",
+                        gateway: "Gateway",
+                      }}
+                      search={false}
                     />
-                  )}
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-10">
-                          <Checkbox
-                            aria-label="Selecionar todas as faturas exibidas"
-                            checked={
-                              selection.allOnPageSelected
-                                ? true
-                                : selection.someOnPageSelected
-                                  ? "indeterminate"
-                                  : false
-                            }
-                            onCheckedChange={selection.toggleAllOnPage}
-                          />
-                        </TableHead>
-                        <SortableTableHead
-                          label="Número"
-                          active={sort?.key === "number"}
-                          dir={sort?.dir}
-                          onSort={() => toggle("number")}
-                        />
-                        <SortableTableHead
-                          label="Status"
-                          active={sort?.key === "status"}
-                          dir={sort?.dir}
-                          onSort={() => toggle("status")}
-                        />
-                        <SortableTableHead
-                          label="Valor"
-                          active={sort?.key === "amount"}
-                          dir={sort?.dir}
-                          onSort={() => toggle("amount")}
-                        />
-                        <SortableTableHead
-                          label="Vencimento"
-                          active={sort?.key === "due"}
-                          dir={sort?.dir}
-                          onSort={() => toggle("due")}
-                        />
-                        <SortableTableHead
-                          label="Gateway"
-                          active={sort?.key === "gateway"}
-                          dir={sort?.dir}
-                          onSort={() => toggle("gateway")}
-                        />
-                        <TableHead className="text-right">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {sortedInvoices.map((inv) => (
-                        <TableRow key={inv.id}>
-                          <TableCell>
+                    {selection.hasSelection && (
+                      <GridBulkBar
+                        table="customer_invoices"
+                        ids={selection.ids}
+                        rows={selection.selectedRows}
+                        entityLabel="fatura(s)"
+                        onClear={selection.clear}
+                        onDone={invalidate}
+                        totalMatching={sortedInvoices.length}
+                        onSelectAll={selectAllFiltered}
+                        canUpdate={canUpdateInvoice}
+                        canDelete={canDeleteInvoice}
+                        bulkEditFields={[{ name: "due_date", label: "Vencimento", type: "date" }]}
+                      />
+                    )}
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-10">
                             <Checkbox
-                              aria-label={`Selecionar fatura ${inv.invoice_number}`}
-                              checked={selection.selectedIds.has(inv.id)}
-                              onCheckedChange={() => selection.toggleOne(inv.id)}
-                            />
-                          </TableCell>
-                          <TableCell className="font-medium">{inv.invoice_number}</TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                (statusColor[inv.status] ?? "secondary") as
-                                  | "default"
-                                  | "secondary"
-                                  | "destructive"
-                                  | "outline"
+                              aria-label="Selecionar todas as faturas exibidas"
+                              checked={
+                                selection.allOnPageSelected
+                                  ? true
+                                  : selection.someOnPageSelected
+                                    ? "indeterminate"
+                                    : false
                               }
-                            >
-                              {inv.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {Number(inv.amount).toLocaleString("pt-BR", {
-                              style: "currency",
-                              currency: inv.currency || "BRL",
-                            })}
-                          </TableCell>
-                          <TableCell>{formatDateTime(inv.due_date)}</TableCell>
-                          <TableCell className="text-xs text-muted-foreground">
-                            {inv.gateway ?? "—"}{" "}
-                            {inv.gateway_mode === "sandbox" && (
-                              <Badge variant="outline" className="ml-1">
-                                sandbox
-                              </Badge>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-1">
-                              {inv.payment_url && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(inv.payment_url!);
-                                    toast.success("Link copiado");
-                                  }}
-                                >
-                                  <Copy className="h-4 w-4" />
-                                </Button>
-                              )}
-                              {inv.payment_url && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => window.open(inv.payment_url!, "_blank")}
-                                >
-                                  <ExternalLink className="h-4 w-4" />
-                                </Button>
-                              )}
-                              {!inv.payment_url && inv.status !== "paid" && (
-                                <>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => onGenerate(inv.id, "pix")}
-                                  >
-                                    Pix
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => onGenerate(inv.id, "boleto")}
-                                  >
-                                    Boleto
-                                  </Button>
-                                </>
-                              )}
-                              {inv.status !== "paid" && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => onPaid(inv.id)}
-                                  title="Marcar como paga"
-                                >
-                                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                                </Button>
-                              )}
-                              {inv.status === "paid" && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => onIssueNfse(inv.id)}
-                                  title="Emitir NFS-e"
-                                >
-                                  NFS-e
-                                </Button>
-                              )}
-
-                              <Button variant="ghost" size="icon" onClick={() => onDelete(inv.id)}>
-                                <Trash2 className="h-4 w-4 text-muted-foreground" />
-                              </Button>
-                            </div>
-                          </TableCell>
+                              onCheckedChange={selection.toggleAllOnPage}
+                            />
+                          </TableHead>
+                          <SortableTableHead
+                            label="Número"
+                            active={sort?.key === "number"}
+                            dir={sort?.dir}
+                            onSort={() => toggle("number")}
+                          />
+                          <SortableTableHead
+                            label="Status"
+                            active={sort?.key === "status"}
+                            dir={sort?.dir}
+                            onSort={() => toggle("status")}
+                          />
+                          <SortableTableHead
+                            label="Valor"
+                            active={sort?.key === "amount"}
+                            dir={sort?.dir}
+                            onSort={() => toggle("amount")}
+                          />
+                          <SortableTableHead
+                            label="Vencimento"
+                            active={sort?.key === "due"}
+                            dir={sort?.dir}
+                            onSort={() => toggle("due")}
+                          />
+                          <SortableTableHead
+                            label="Gateway"
+                            active={sort?.key === "gateway"}
+                            dir={sort?.dir}
+                            onSort={() => toggle("gateway")}
+                          />
+                          <TableHead className="text-right">Ações</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {sortedInvoices.map((inv) => (
+                          <TableRow key={inv.id}>
+                            <TableCell>
+                              <Checkbox
+                                aria-label={`Selecionar fatura ${inv.invoice_number}`}
+                                checked={selection.selectedIds.has(inv.id)}
+                                onCheckedChange={() => selection.toggleOne(inv.id)}
+                              />
+                            </TableCell>
+                            <TableCell className="font-medium">{inv.invoice_number}</TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  (statusColor[inv.status] ?? "secondary") as
+                                    | "default"
+                                    | "secondary"
+                                    | "destructive"
+                                    | "outline"
+                                }
+                              >
+                                {inv.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {Number(inv.amount).toLocaleString("pt-BR", {
+                                style: "currency",
+                                currency: inv.currency || "BRL",
+                              })}
+                            </TableCell>
+                            <TableCell>{formatDateTime(inv.due_date)}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {inv.gateway ?? "—"}{" "}
+                              {inv.gateway_mode === "sandbox" && (
+                                <Badge variant="outline" className="ml-1">
+                                  sandbox
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-1">
+                                {inv.payment_url && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(inv.payment_url!);
+                                      toast.success("Link copiado");
+                                    }}
+                                  >
+                                    <Copy className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {inv.payment_url && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => window.open(inv.payment_url!, "_blank")}
+                                  >
+                                    <ExternalLink className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {!inv.payment_url && inv.status !== "paid" && (
+                                  <>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => onGenerate(inv.id, "pix")}
+                                    >
+                                      Pix
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => onGenerate(inv.id, "boleto")}
+                                    >
+                                      Boleto
+                                    </Button>
+                                  </>
+                                )}
+                                {inv.status !== "paid" && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => onPaid(inv.id)}
+                                    title="Marcar como paga"
+                                  >
+                                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                  </Button>
+                                )}
+                                {inv.status === "paid" && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => onIssueNfse(inv.id)}
+                                    title="Emitir NFS-e"
+                                  >
+                                    NFS-e
+                                  </Button>
+                                )}
+
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => onDelete(inv.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </GridListShell>
                 </>
               )}
