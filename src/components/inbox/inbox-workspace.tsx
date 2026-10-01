@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import type { ReactNode } from "react";
-import { Inbox, Mail, MessageCircle, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { ArrowLeft, Inbox, Mail, MessageCircle, PanelRightClose, PanelRightOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,6 +33,11 @@ export function InboxWorkspace({
   contextOpen?: boolean;
   onContextOpenChange?: (open: boolean) => void;
 }) {
+  const [mobilePane, setMobilePane] = useState<"list" | "conversation">("list");
+  const [localContextOpen, setLocalContextOpen] = useState(true);
+  const resolvedContextOpen = onContextOpenChange ? contextOpen : localContextOpen;
+  const setContextOpen = onContextOpenChange ?? setLocalContextOpen;
+
   return (
     <div className="flex h-[calc(100dvh-4rem)] min-h-[36rem] flex-col gap-3 p-3 sm:p-4">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -45,49 +50,60 @@ export function InboxWorkspace({
       <div
         className={cn(
           "relative grid min-h-0 flex-1 overflow-hidden rounded-[var(--radius)] border border-border bg-card shadow-sm",
-          context && contextOpen
-            ? "grid-cols-1 lg:grid-cols-[10.5rem_19rem_minmax(24rem,1fr)] 2xl:grid-cols-[11rem_20rem_minmax(25rem,1fr)_17rem]"
+          context && resolvedContextOpen
+            ? "grid-cols-1 lg:grid-cols-[10.5rem_19rem_minmax(24rem,1fr)] xl:grid-cols-[10.5rem_19rem_minmax(24rem,1fr)_16rem] 2xl:grid-cols-[11rem_20rem_minmax(25rem,1fr)_17rem]"
             : "grid-cols-1 lg:grid-cols-[10.5rem_19rem_minmax(24rem,1fr)]",
         )}
       >
         <InboxChannelRail />
-        <section className="hidden min-h-0 flex-col border-r border-border bg-card lg:flex" aria-label="Conversas">
+        <section
+          className={cn("min-h-0 flex-col border-r border-border bg-card lg:flex", mobilePane === "list" ? "flex" : "hidden")}
+          aria-label="Conversas"
+          onClickCapture={(event) => {
+            if ((event.target as HTMLElement).closest("[data-inbox-conversation]")) setMobilePane("conversation");
+          }}
+        >
+          <div className="lg:hidden"><InboxChannelRail mobile /></div>
           {list}
         </section>
-        <section className="flex min-h-0 min-w-0 flex-col bg-product-panel" aria-label="Conversa selecionada">
-          {context && onContextOpenChange ? (
-            <div className="absolute right-2 top-2 z-20 hidden 2xl:block">
-              <Button type="button" size="icon" variant="ghost" onClick={() => onContextOpenChange(!contextOpen)} aria-label={contextOpen ? "Ocultar contexto" : "Mostrar contexto"} title={contextOpen ? "Ocultar contexto" : "Mostrar contexto"}>
-                {contextOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
+        <section className={cn("min-h-0 min-w-0 flex-col bg-product-panel lg:flex", mobilePane === "conversation" ? "flex" : "hidden")} aria-label="Conversa selecionada">
+          <div className="flex items-center justify-between border-b border-border p-2 lg:hidden">
+            <Button type="button" size="sm" variant="ghost" onClick={() => setMobilePane("list")}><ArrowLeft className="mr-1.5 h-4 w-4" /> Conversas</Button>
+            <InboxChannelRail mobile compact />
+          </div>
+          {context ? (
+            <div className="absolute right-2 top-2 z-20 hidden xl:block">
+              <Button type="button" size="icon" variant="ghost" onClick={() => setContextOpen(!resolvedContextOpen)} aria-label={resolvedContextOpen ? "Ocultar contexto" : "Mostrar contexto"} title={resolvedContextOpen ? "Ocultar contexto" : "Mostrar contexto"}>
+                {resolvedContextOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
               </Button>
             </div>
           ) : null}
           {conversation}
         </section>
-        {context && contextOpen ? (
-          <aside className="hidden min-h-0 border-l border-border bg-product-panel-muted 2xl:flex 2xl:flex-col" aria-label="Contexto do contato">{context}</aside>
+        {context && resolvedContextOpen ? (
+          <aside className="hidden min-h-0 border-l border-border bg-product-panel-muted xl:flex xl:flex-col" aria-label="Contexto do contato">{context}</aside>
         ) : null}
       </div>
     </div>
   );
 }
 
-function InboxChannelRail() {
+function InboxChannelRail({ mobile = false, compact = false }: { mobile?: boolean; compact?: boolean }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   return (
-    <aside className="hidden min-h-0 flex-col border-r border-border bg-product-panel-muted lg:flex">
-      <div className="border-b border-border px-3 py-4"><p className="text-xs font-semibold uppercase text-muted-foreground">Canais</p></div>
-      <nav className="space-y-1 p-2" aria-label="Canais da Inbox">
+    <aside className={cn("min-h-0 bg-product-panel-muted", mobile ? "block border-b border-border" : "hidden flex-col border-r border-border lg:flex")}>
+      {!mobile ? <div className="border-b border-border px-3 py-4"><p className="text-xs font-semibold uppercase text-muted-foreground">Canais</p></div> : null}
+      <nav className={cn(mobile ? "flex gap-1 overflow-x-auto p-2" : "space-y-1 p-2")} aria-label="Canais da Inbox">
         {CHANNELS.map(({ to, label, icon: Icon }) => {
           const active = to === "/inbox" ? pathname === "/inbox" || pathname === "/inbox/" : pathname === to;
           return (
-            <Button key={to} asChild variant={active ? "secondary" : "ghost"} className={cn("w-full justify-start gap-2 px-2", active && "text-primary")}>
-              <Link to={to} aria-current={active ? "page" : undefined}><Icon className="h-4 w-4 shrink-0" /><span className="truncate">{label}</span></Link>
+            <Button key={to} asChild size={mobile ? "sm" : "default"} variant={active ? "secondary" : "ghost"} className={cn(!mobile && "w-full justify-start", "gap-2 px-2", active && "text-primary")}>
+              <Link to={to} aria-current={active ? "page" : undefined}><Icon className="h-4 w-4 shrink-0" />{!compact ? <span className="truncate">{label}</span> : null}</Link>
             </Button>
           );
         })}
       </nav>
-      <div className="mt-auto border-t border-border p-3 text-xs text-muted-foreground">Canais do workspace</div>
+      {!mobile ? <div className="mt-auto border-t border-border p-3 text-xs text-muted-foreground">Canais do workspace</div> : null}
     </aside>
   );
 }
