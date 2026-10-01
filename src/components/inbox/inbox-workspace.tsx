@@ -427,7 +427,7 @@ export function InboxMessageBubble({
     <div className={cn("flex", outbound ? "justify-end" : "justify-start")}>
       <div
         className={cn(
-          "max-w-[78%] rounded-[var(--radius)] border px-3.5 py-2.5 text-sm shadow-sm",
+          "min-w-0 max-w-[78%] overflow-hidden rounded-[var(--radius)] border px-3.5 py-2.5 text-sm shadow-sm [overflow-wrap:anywhere]",
           outbound
             ? "rounded-tr-sm border-primary/20 bg-primary/10 text-foreground"
             : "rounded-tl-sm border-border bg-card text-foreground",
