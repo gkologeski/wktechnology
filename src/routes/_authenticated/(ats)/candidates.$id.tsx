@@ -60,7 +60,7 @@ function CandidateLoading() {
   return <div className="p-8 text-sm text-text-tertiary">Carregando candidato...</div>;
 }
 
-function CandidateError({ error, reset }: { error: Error; reset: () => void }) {
+function CandidateError({ error, reset }: { error: unknown; reset: () => void }) {
   const router = useRouter();
   console.error(error);
   return (
@@ -69,7 +69,7 @@ function CandidateError({ error, reset }: { error: Error; reset: () => void }) {
         <h2 className="text-base font-semibold text-text-primary">
           Não foi possível abrir este candidato
         </h2>
-        <p className="mt-2 text-sm text-text-secondary">{error.message}</p>
+        <p className="mt-2 text-sm text-text-secondary">{error instanceof Error ? error.message : String(error)}</p>
         <div className="mt-4 flex items-center justify-center gap-2">
           <Button
             size="sm"

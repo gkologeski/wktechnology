@@ -61,6 +61,50 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
       return { ok: false as const, error: (e as Error).message, sid: "", conversationId: "" };
     }
 
+    // Resolve contato pelo telefone se não informado
+    let contactId = data.contactId ?? null;
+    if (!contactId) {
+      contactId = await findContactByPhone(supabase, toBare);
+    }
+
+    const preview =
+      (data.body && data.body.slice(0, 120)) ||
+      (data.mediaUrl ? "[mídia]" : data.templateName ? `[template ${data.templateName}]` : "");
+
+    // Grava/atualiza a conversa ANTES do envio. Conversas criadas pelo sistema
+    // (webhook) são atualizadas por id; novas são criadas com o usuário como dono (RLS).
+    const nowIso = new Date().toISOString();
+    const { data: found, error: fErr } = await supabase
+      .from("whatsapp_conversations")
+      .select("id, contact_id")
+      .eq("workspace_id", workspaceId)
+      .eq("contact_phone", toBare)
+      .eq("twilio_number", num.displayPhoneNumber)
+      .maybeSingle();
+    if (fErr) throw new Error("Não foi possível localizar a conversa do WhatsApp.");
+    let conversationId = found?.id as string | undefined;
+    if (!conversationId) {
+      const { data: created, error: iErr } = await supabase
+        .from("whatsapp_conversations")
+        .insert({
+          owner_id: userId,
+          workspace_id: workspaceId,
+          contact_id: contactId,
+          contact_phone: toBare,
+          twilio_number: num.displayPhoneNumber,
+          provider: "meta",
+          wa_phone_number_id: num.phoneNumberId,
+          last_message_at: nowIso,
+          last_message_preview: preview,
+        })
+        .select("id")
+        .single();
+      if (iErr || !created)
+        throw new Error("Não foi possível registrar a conversa do WhatsApp. Mensagem não enviada.");
+      conversationId = created.id as string;
+    }
+    const conv = { id: conversationId };
+
     const { wamid, raw } = await metaSend(num, {
       to: toBare,
       body: data.body,
@@ -76,39 +120,22 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
       contextMessageId: data.contextMessageId,
     });
 
-    // Resolve contato pelo telefone se não informado
-    let contactId = data.contactId ?? null;
-    if (!contactId) {
-      contactId = await findContactByPhone(supabase, toBare);
-    }
-
-    const preview =
-      (data.body && data.body.slice(0, 120)) ||
-      (data.mediaUrl ? "[mídia]" : data.templateName ? `[template ${data.templateName}]` : "");
-
-    const { data: conv, error: cErr } = await supabase
-      .from("whatsapp_conversations")
-      .upsert(
-        {
-          owner_id: workspaceId,
-          workspace_id: workspaceId,
-          contact_id: contactId,
-          contact_phone: toBare,
-          twilio_number: num.displayPhoneNumber,
-          provider: "meta",
-          wa_phone_number_id: num.phoneNumberId,
-          last_message_at: new Date().toISOString(),
+    if (found) {
+      // Melhor esforço: membros sem permissão de edição não bloqueiam o envio já feito.
+      const { error: uErr } = await supabase
+        .from("whatsapp_conversations")
+        .update({
+          last_message_at: nowIso,
           last_message_preview: preview,
-        },
-        { onConflict: "contact_phone,twilio_number" },
-      )
-      .select("id")
-      .single();
-    if (cErr) throw cErr;
+          ...(found.contact_id ? {} : { contact_id: contactId }),
+        })
+        .eq("id", conv.id);
+      if (uErr) console.warn("[whatsapp] atualização da conversa ignorada", uErr.code);
+    }
 
     const { error: mErr } = await supabase.from("whatsapp_messages").insert({
       conversation_id: conv.id,
-      owner_id: workspaceId,
+      owner_id: userId,
       workspace_id: workspaceId,
       direction: "outbound",
       body: data.body,
@@ -123,10 +150,13 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
       template_name: data.templateName ?? null,
       is_template: !!data.templateName,
       sent_by: userId,
-      sent_at: new Date().toISOString(),
+      sent_at: nowIso,
       raw,
     });
-    if (mErr) throw mErr;
+    if (mErr)
+      throw new Error(
+        "Mensagem enviada ao WhatsApp, mas não foi possível registrá-la no histórico.",
+      );
 
     if (contactId) {
       await supabase.from("activities").insert({
