@@ -313,7 +313,7 @@ function ProjectsPage() {
         <div className="rounded-lg border bg-card">
           {isLoading ? (
             <div className="p-8 text-center text-sm text-muted-foreground">Carregando…</div>
-          ) : rows.length === 0 ? (
+          ) : allRows.length === 0 && status === "all" && !search ? (
             <div className="p-12 text-center">
               <Kanban className="mx-auto h-10 w-10 text-muted-foreground" />
               <h3 className="mt-4 text-lg font-medium">Nenhum projeto ainda</h3>
@@ -394,6 +394,13 @@ function ProjectsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
+                  {rows.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
+                        Nenhum projeto com estes filtros.
+                      </TableCell>
+                    </TableRow>
+                  )}
                   {rows.map((p: any) => (
                     <TableRow key={p.id}>
                       <TableCell>
