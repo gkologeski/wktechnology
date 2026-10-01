@@ -9,6 +9,6 @@
 - Grids usam seleção página/global com os mesmos filtros e `SortableColumns` persistido por `gridKey`; evita ações incompletas e DnD divergente.
 - Cada módulo principal usa um primeiro grupo “Visão geral” com “Dashboard”; listagens permanecem em rotas próprias — separa acompanhamento executivo da operação.
 - Existem seis módulos verticais (crm, ats, people, contracts, projects, finance) sobre o Core ERP; `services` é id legado absorvido pelo TechContracts e listas de interface usam `VERTICAL_MODULE_LIST` — evita reintroduzir um módulo "TechServices" inexistente.
-- Novas telas e redesigns relevantes exigem mockup renderizado e aprovação antes do código; correções pontuais sem decisão visual não.
+- Redesigns relevantes exigem mockup aprovado; a Inbox usa casco visual compartilhado que herda integralmente o White Label.
 - Valores fixos seguem docs/architecture/hardcoded-values.md e são barrados por src/lib/hardcode-guard.test.ts — evita regressão da auditoria.
 - Membros têm `workspace_members.status` (active/inactive); inativos perdem acesso via is_workspace_member e banimento de login, mas seguem resolvendo nome — permite importar responsáveis do HubSpot sem liberar acesso.
