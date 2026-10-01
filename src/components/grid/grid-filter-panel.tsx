@@ -193,16 +193,16 @@ export function FieldEditor<T>({
     <div className="grid grid-cols-2 gap-2">
       <Input
         type={type}
-        aria-label={`${field.label}: ${type === "date" ? "de" : "mínimo"}`}
-        placeholder={type === "date" ? "De" : "Mínimo"}
+        aria-label={`${field.label}: mínimo`}
+        placeholder="Mínimo"
         value={r.from ?? ""}
         onChange={(e) => set(e.target.value, r.to)}
         className="h-9"
       />
       <Input
         type={type}
-        aria-label={`${field.label}: ${type === "date" ? "até" : "máximo"}`}
-        placeholder={type === "date" ? "Até" : "Máximo"}
+        aria-label={`${field.label}: máximo`}
+        placeholder="Máximo"
         value={r.to ?? ""}
         onChange={(e) => set(r.from, e.target.value)}
         className="h-9"
