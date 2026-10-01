@@ -81,7 +81,7 @@ export async function sendWhatsAppFromServer(params: {
         to_number: toBare,
         provider: "meta",
         wa_message_id: wamid,
-        status: "sent",
+        status: "accepted",
         template_name: params.templateName ?? null,
         is_template: !!params.metaTemplate,
         sent_at: new Date().toISOString(),

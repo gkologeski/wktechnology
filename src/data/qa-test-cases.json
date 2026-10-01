@@ -1,28 +1,120 @@
 {
   "modules": [
-    { "code": "AUTH", "name": "1. Autenticação & Onboarding", "count": 25 },
-    { "code": "CRM", "name": "2. CRM Core (Leads/Contatos/Empresas/Negócios)", "count": 48 },
-    { "code": "PIPE", "name": "3. Pipelines & Deals", "count": 25 },
-    { "code": "TASK", "name": "4. Tarefas, Atividades & Filas", "count": 20 },
-    { "code": "INBOX", "name": "5. Inbox Unificada", "count": 30 },
-    { "code": "CAMP", "name": "6. Campanhas (Email/WhatsApp/Prospecting)", "count": 30 },
-    { "code": "COMM", "name": "7. Comunicação & Telefonia (Twilio/WhatsApp/Vapi)", "count": 20 },
-    { "code": "MEET", "name": "8. Reuniões / Calendário / Booking", "count": 25 },
-    { "code": "MKT", "name": "9. Marketing & Captação (Forms/LP/Survey/Widget/Ads)", "count": 25 },
-    { "code": "SALES", "name": "10. Vendas Avançadas (Quotes/E-sign/Payments/NFSe)", "count": 25 },
-    { "code": "HELP", "name": "11. Atendimento (Tickets/SLA/Macros/KB)", "count": 15 },
-    { "code": "KB", "name": "12. Knowledge Base & Portal", "count": 10 },
-    { "code": "AUTO", "name": "13. Automação (Workflows/Sequences/Scoring/AI)", "count": 25 },
-    { "code": "INTEG", "name": "14. Integrações & Marketplace", "count": 25 },
-    { "code": "SET", "name": "15. Settings", "count": 80 },
-    { "code": "BILL", "name": "16. Billing & Entitlements", "count": 20 },
-    { "code": "ADMIN", "name": "17. Admin de Plataforma", "count": 25 },
-    { "code": "BUG", "name": "18. Bug Reports (Usuário)", "count": 5 },
-    { "code": "PUB", "name": "19. Rotas Públicas / Webhooks", "count": 25 },
-    { "code": "CRON", "name": "20. Cron / Hooks Agendados", "count": 42 },
-    { "code": "SEC", "name": "21. Segurança & Compliance", "count": 25 },
-    { "code": "UX", "name": "22. UX Transversal & Acessibilidade", "count": 15 },
-    { "code": "PERF", "name": "23. Performance & Resiliência", "count": 10 }
+    {
+      "code": "AUTH",
+      "name": "1. Autenticação & Onboarding",
+      "count": 25
+    },
+    {
+      "code": "CRM",
+      "name": "2. CRM Core (Leads/Contatos/Empresas/Negócios)",
+      "count": 48
+    },
+    {
+      "code": "PIPE",
+      "name": "3. Pipelines & Deals",
+      "count": 25
+    },
+    {
+      "code": "TASK",
+      "name": "4. Tarefas, Atividades & Filas",
+      "count": 20
+    },
+    {
+      "code": "INBOX",
+      "name": "5. Inbox Unificada",
+      "count": 30
+    },
+    {
+      "code": "CAMP",
+      "name": "6. Campanhas (Email/WhatsApp/Prospecting)",
+      "count": 30
+    },
+    {
+      "code": "COMM",
+      "name": "7. Comunicação & Telefonia (Twilio/WhatsApp/Vapi)",
+      "count": 20
+    },
+    {
+      "code": "MEET",
+      "name": "8. Reuniões / Calendário / Booking",
+      "count": 25
+    },
+    {
+      "code": "MKT",
+      "name": "9. Marketing & Captação (Forms/LP/Survey/Widget/Ads)",
+      "count": 25
+    },
+    {
+      "code": "SALES",
+      "name": "10. Vendas Avançadas (Quotes/E-sign/Payments/NFSe)",
+      "count": 25
+    },
+    {
+      "code": "HELP",
+      "name": "11. Atendimento (Tickets/SLA/Macros/KB)",
+      "count": 15
+    },
+    {
+      "code": "KB",
+      "name": "12. Knowledge Base & Portal",
+      "count": 10
+    },
+    {
+      "code": "AUTO",
+      "name": "13. Automação (Workflows/Sequences/Scoring/AI)",
+      "count": 25
+    },
+    {
+      "code": "INTEG",
+      "name": "14. Integrações & Marketplace",
+      "count": 25
+    },
+    {
+      "code": "SET",
+      "name": "15. Settings",
+      "count": 80
+    },
+    {
+      "code": "BILL",
+      "name": "16. Billing & Entitlements",
+      "count": 20
+    },
+    {
+      "code": "ADMIN",
+      "name": "17. Admin de Plataforma",
+      "count": 25
+    },
+    {
+      "code": "BUG",
+      "name": "18. Bug Reports (Usuário)",
+      "count": 5
+    },
+    {
+      "code": "PUB",
+      "name": "19. Rotas Públicas / Webhooks",
+      "count": 25
+    },
+    {
+      "code": "CRON",
+      "name": "20. Cron / Hooks Agendados",
+      "count": 42
+    },
+    {
+      "code": "SEC",
+      "name": "21. Segurança & Compliance",
+      "count": 25
+    },
+    {
+      "code": "UX",
+      "name": "22. UX Transversal & Acessibilidade",
+      "count": 15
+    },
+    {
+      "code": "PERF",
+      "name": "23. Performance & Resiliência",
+      "count": 10
+    }
   ],
   "cases": [
     {
@@ -4304,30 +4396,6 @@
       "smoke": false
     },
     {
-      "id": "QA-SET-007",
-      "modulo": "15. Settings",
-      "submod": "whatsapp-templates",
-      "titulo": "Acessar /settings/whatsapp-templates",
-      "pre": "Admin",
-      "passos": ["Navegar até /settings/whatsapp-templates"],
-      "expected": "Página carrega sem erros; CTA principal visível",
-      "prio": "P1",
-      "tipo": "Funcional",
-      "smoke": false
-    },
-    {
-      "id": "QA-SET-008",
-      "modulo": "15. Settings",
-      "submod": "whatsapp-catalogs",
-      "titulo": "Acessar /settings/whatsapp-catalogs",
-      "pre": "Admin",
-      "passos": ["Navegar até /settings/whatsapp-catalogs"],
-      "expected": "Página carrega sem erros; CTA principal visível",
-      "prio": "P1",
-      "tipo": "Funcional",
-      "smoke": false
-    },
-    {
       "id": "QA-SET-009",
       "modulo": "15. Settings",
       "submod": "forms",
@@ -4754,18 +4822,6 @@
       "titulo": "Acessar /settings/ads-sync",
       "pre": "Admin",
       "passos": ["Navegar até /settings/ads-sync"],
-      "expected": "Página carrega sem erros; CTA principal visível",
-      "prio": "P1",
-      "tipo": "Funcional",
-      "smoke": false
-    },
-    {
-      "id": "QA-SET-045",
-      "modulo": "15. Settings",
-      "submod": "wa-ads",
-      "titulo": "Acessar /settings/wa-ads",
-      "pre": "Admin",
-      "passos": ["Navegar até /settings/wa-ads"],
       "expected": "Página carrega sem erros; CTA principal visível",
       "prio": "P1",
       "tipo": "Funcional",

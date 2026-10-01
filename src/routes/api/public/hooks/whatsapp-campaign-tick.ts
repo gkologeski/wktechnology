@@ -140,7 +140,7 @@ async function processCampaign(camp: Campaign) {
           to_number: toBare,
           provider: "meta",
           wa_message_id: wamid,
-          status: "sent",
+          status: "accepted",
           template_name: camp.template_name,
           is_template: !!camp.template_name,
           sent_by: camp.owner_id,
