@@ -10,6 +10,7 @@ import { type RunResult, runActions } from "./engine-actions.server";
 export interface EventRow {
   id: string;
   owner_id: string;
+  workspace_id?: string | null;
   entity: WorkflowEntity;
   entity_id: string;
   event_type: string;
@@ -28,6 +29,9 @@ interface WorkflowRow {
   actions: WorkflowAction[];
   goal_filters?: WorkflowCondition[] | null;
 }
+
+/** Entidades cujos workflows valem para todo o workspace (ciclo de contratação). */
+const WORKSPACE_SCOPED_ENTITIES = new Set<WorkflowEntity>(["ats_applications", "people"]);
 
 async function alreadyEnrolled(
   supabase: SupabaseClient,
@@ -86,7 +90,7 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
           {
             entity: event.entity,
             entityId: event.entity_id,
-            ownerId: event.owner_id,
+            ownerId: WORKSPACE_SCOPED_ENTITIES.has(event.entity) ? wfr.owner_id : event.owner_id,
             workspaceId: wfr.workspace_id,
             after: hydratedAfter,
             before: event.before,
@@ -106,13 +110,19 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
   }
 
   // Caso 2: evento normal (created/updated/stage_changed).
-  const { data: workflows } = await supabase
+  // Contratação/desligamento valem para o workspace inteiro (qualquer recrutador
+  // ou gestor dispara o fluxo do admin); demais entidades mantêm o escopo por dono.
+  const byWorkspace = WORKSPACE_SCOPED_ENTITIES.has(event.entity) && !!event.workspace_id;
+  let wfQuery = supabase
     .from("workflows")
     .select("id, owner_id, workspace_id, entity, trigger, actions, goal_filters")
-    .eq("owner_id", event.owner_id)
     .eq("entity", event.entity)
     .eq("enabled", true)
     .eq("status", "published");
+  wfQuery = byWorkspace
+    ? wfQuery.eq("workspace_id", event.workspace_id as string)
+    : wfQuery.eq("owner_id", event.owner_id);
+  const { data: workflows } = await wfQuery;
 
   for (const wf of (workflows ?? []) as WorkflowRow[]) {
     const trig = wf.trigger ?? ({} as WorkflowTrigger);
@@ -173,7 +183,8 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
     const res = await runActions(supabase, wf.actions ?? [], {
       entity: event.entity,
       entityId: event.entity_id,
-      ownerId: event.owner_id,
+      // Passos rodam com o dono do workflow (permissões do admin que o publicou).
+      ownerId: byWorkspace ? wf.owner_id : event.owner_id,
       workspaceId: wf.workspace_id,
       after: hydratedAfter,
       before: event.before,
@@ -247,7 +258,7 @@ export async function tickWorkflows(supabase: SupabaseClient, limit = 50) {
   const { data: events, error } = await supabase
     .from("workflow_events")
     .select(
-      "id, owner_id, entity, entity_id, event_type, before, after, resume_workflow_id, resume_cursor",
+      "id, owner_id, workspace_id, entity, entity_id, event_type, before, after, resume_workflow_id, resume_cursor",
     )
     .is("processed_at", null)
     .lte("run_at", nowIso)

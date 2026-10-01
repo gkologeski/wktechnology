@@ -1,6 +1,10 @@
 import { LINE_ITEM_COUNT_FIELD, LINE_ITEM_FIELDS } from "@/lib/workflows/line-items";
 import {
   Zap,
+  FileX2,
+  BriefcaseBusiness,
+  KeySquare,
+  CalendarX2,
   Clock,
   GitBranch,
   Mail,
@@ -96,6 +100,10 @@ export const ACTION_ICONS: Record<WorkflowActionType, typeof Zap> = {
   create_payable_schedule: CalendarClock,
   create_receivable_invoice: Receipt,
   provision_workspace_user: KeyRound,
+  terminate_contracts: FileX2,
+  close_allocations: BriefcaseBusiness,
+  revoke_access: KeySquare,
+  cancel_payable_schedules: CalendarX2,
 };
 
 export function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
@@ -208,6 +216,11 @@ export function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
       return { type, amount: "", due_in_days: 15, description: "Honorários de hunting" };
     case "provision_workspace_user":
       return { type, role: "member", permission_set_id: "" };
+    case "terminate_contracts":
+    case "close_allocations":
+    case "revoke_access":
+    case "cancel_payable_schedules":
+      return { type };
   }
 }
 
@@ -701,6 +714,14 @@ export function describeAction(a: WorkflowAction, labels?: DescribeLabels): stri
       return `${a.amount || "—"} · vence em ${a.due_in_days ?? 15} dias`;
     case "provision_workspace_user":
       return a.permission_set_id ? `convite como ${a.role ?? "member"}` : "Selecione as permissões";
+    case "terminate_contracts":
+      return "contratos vigentes da pessoa";
+    case "close_allocations":
+      return "alocações ativas da pessoa";
+    case "revoke_access":
+      return "membro do workspace fica inativo";
+    case "cancel_payable_schedules":
+      return "parcelas após a data de desligamento";
     default:
       return "";
   }

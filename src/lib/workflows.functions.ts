@@ -22,6 +22,7 @@ const EntityTableEnum = z.enum([
   "ats_candidates",
   "ats_applications",
   "ats_interviews",
+  "people",
 ]);
 
 // Aplica um filtro simples no snapshot do registro (subset do evalFilter do engine,

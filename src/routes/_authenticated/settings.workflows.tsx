@@ -1,3 +1,11 @@
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { UserPlus } from "lucide-react";
+import { HIRING_TEMPLATES } from "@/lib/workflows/hiring-templates";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -276,6 +284,34 @@ function WorkflowsPage() {
             </Button>
           </Can>
           <Can any={WORKFLOWS_PERMS.create}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <UserPlus className="h-4 w-4 mr-1" /> Modelos de contratação
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80">
+                {HIRING_TEMPLATES.map((t) => (
+                  <DropdownMenuItem
+                    key={t.key}
+                    className="flex flex-col items-start gap-0.5"
+                    onSelect={() =>
+                      setDraft({
+                        ...EMPTY_DRAFT,
+                        name: t.name,
+                        entity: t.entity,
+                        enabled: false,
+                        trigger: structuredClone(t.trigger),
+                        actions: structuredClone(t.actions),
+                      })
+                    }
+                  >
+                    <span className="text-sm font-medium">{t.name}</span>
+                    <span className="text-xs text-muted-foreground">{t.description}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button onClick={() => setDraft({ ...EMPTY_DRAFT })}>
               <Plus className="h-4 w-4 mr-1" /> Novo workflow
             </Button>

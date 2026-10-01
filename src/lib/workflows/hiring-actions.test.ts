@@ -18,10 +18,21 @@ describe("ações de contratação (Fase 1)", () => {
   });
 
   it("valida configuração mínima", () => {
-    expect(parseActionAtDepth({ type: "create_person_from_candidate", department: "Comercial" }, 0)).toMatchObject({ type: "create_person_from_candidate" });
-    expect(parseActionAtDepth({ type: "create_payable_schedule", amount: "8000", installments: 12, day_of_month: 10 }, 0)).toMatchObject({ amount: "8000" });
-    expect(() => parseActionAtDepth({ type: "create_payable_schedule", amount: "", installments: 30 }, 0)).toThrow();
-    expect(() => parseActionAtDepth({ type: "provision_workspace_user", permission_set_id: "x" }, 0)).toThrow();
+    expect(
+      parseActionAtDepth({ type: "create_person_from_candidate", department: "Comercial" }, 0),
+    ).toMatchObject({ type: "create_person_from_candidate" });
+    expect(
+      parseActionAtDepth(
+        { type: "create_payable_schedule", amount: "8000", installments: 12, day_of_month: 10 },
+        0,
+      ),
+    ).toMatchObject({ amount: "8000" });
+    expect(() =>
+      parseActionAtDepth({ type: "create_payable_schedule", amount: "", installments: 30 }, 0),
+    ).toThrow();
+    expect(() =>
+      parseActionAtDepth({ type: "provision_workspace_user", permission_set_id: "x" }, 0),
+    ).toThrow();
   });
 
   it("evento de contratação usa a etapa Contratado das candidaturas", () => {

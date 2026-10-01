@@ -1030,6 +1030,10 @@ function StepConfigForm({
     case "create_payable_schedule":
     case "create_receivable_invoice":
     case "provision_workspace_user":
+    case "terminate_contracts":
+    case "close_allocations":
+    case "revoke_access":
+    case "cancel_payable_schedules":
       return <HiringActionForm action={action} onChange={onChange} />;
     default: {
       const _exhaustive: never = action;

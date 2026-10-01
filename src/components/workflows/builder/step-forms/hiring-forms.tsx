@@ -25,9 +25,26 @@ type HiringAction = Extract<
       | "create_allocation"
       | "create_payable_schedule"
       | "create_receivable_invoice"
-      | "provision_workspace_user";
+      | "provision_workspace_user"
+      | "terminate_contracts"
+      | "close_allocations"
+      | "revoke_access"
+      | "cancel_payable_schedules";
   }
 >;
+
+const OFFBOARDING_HINTS: Record<
+  "terminate_contracts" | "close_allocations" | "revoke_access" | "cancel_payable_schedules",
+  string
+> = {
+  terminate_contracts:
+    "Encerra os contratos vigentes ligados à pessoa na data de desligamento e marca o distrato como pendente de documento.",
+  close_allocations: "Encerra as alocações ativas da pessoa na data de desligamento.",
+  revoke_access:
+    "Deixa o usuário da pessoa inativo no workspace: perde o acesso, mas o nome continua no histórico. Exige dono do workflow administrador.",
+  cancel_payable_schedules:
+    "Cancela as parcelas em aberto com vencimento depois da data de desligamento. Acertos finais continuam manuais.",
+};
 
 const AREAS = ["Comercial", "Técnica", "RH", "Financeiro", "Administrativo"];
 
@@ -380,6 +397,19 @@ export function HiringActionForm({
               />
             </Field>
           </div>
+        </div>
+      );
+
+    case "terminate_contracts":
+    case "close_allocations":
+    case "revoke_access":
+    case "cancel_payable_schedules":
+      return (
+        <div className="space-y-3">
+          <p className="text-xs text-muted-foreground">{OFFBOARDING_HINTS[action.type]}</p>
+          <Field label="Pessoa" hint="Vazio = pessoa do gatilho (Pessoas) ou criada no fluxo.">
+            <Tok value={action.person_id} onChange={(v) => set({ person_id: v })} />
+          </Field>
         </div>
       );
   }

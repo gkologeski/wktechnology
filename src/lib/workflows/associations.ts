@@ -150,6 +150,7 @@ export const ENTITY_ASSOCIATIONS: Record<WorkflowEntity, AssociationDef[]> = {
     { key: "company", label: "Empresa", fk_column: "company_id", target_table: "companies" },
   ],
   services: [],
+  people: [],
   recurring_plans: [
     { key: "company", label: "Empresa", fk_column: "company_id", target_table: "companies" },
   ],

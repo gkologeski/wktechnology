@@ -31,6 +31,24 @@ function hiringVars(ctx: RunCtx): HiringVars {
   return h;
 }
 
+/** Dados do desfecho de contratação coletados no TechHire (Fase 2). */
+type HiringDetails = {
+  model?: "internal" | "outsourcing" | "hunting";
+  department?: string;
+  modality?: string;
+  employment_type?: "pj" | "clt" | "contractor" | "intern" | "other";
+  role_title?: string;
+  start_date?: string;
+  monthly_amount?: number | string;
+  hourly_rate?: number | string;
+  fee_amount?: number | string;
+};
+
+function hiringDetails(ctx: RunCtx): HiringDetails {
+  const raw = (ctx.after as AnyRow | null)?.hiring_details;
+  return raw && typeof raw === "object" ? (raw as HiringDetails) : {};
+}
+
 function txt(ctx: RunCtx, raw: string | undefined | null): string {
   if (!raw || !raw.trim()) return "";
   return String(renderTokens(raw, ctx.after, ctx.vars) ?? "").trim();
@@ -131,6 +149,16 @@ export async function handleHiringAction(
         throw new Error("Use esta ação em workflows de Candidaturas ou Candidatos do TechHire.");
       }
       h.candidate_id = candidateId;
+      const hd = hiringDetails(ctx);
+      // Hunting/placement não gera pessoa nem headcount interno.
+      if (hd.model === "hunting") {
+        return {
+          at,
+          ok: true,
+          action: action.type,
+          detail: { skipped: true, reason: "contratação por hunting não cria pessoa interna" },
+        };
+      }
       const { data: existing, error: exErr } = await supabase
         .from("people")
         .select("id")
@@ -169,7 +197,8 @@ export async function handleHiringAction(
         job = (data as AnyRow | null) ?? null;
       }
 
-      const department = txt(ctx, action.department);
+      const department = txt(ctx, action.department) || String(hd.department ?? "");
+      const employment = action.employment_type ?? hd.employment_type ?? "pj";
       const payload = {
         workspace_id: ctx.workspaceId,
         owner_id: ctx.ownerId,
@@ -179,13 +208,17 @@ export async function handleHiringAction(
         email: c.email ?? null,
         phone: c.phone ?? null,
         location: c.location ?? null,
-        employment_type: action.employment_type ?? "pj",
+        employment_type: employment,
         status: "active",
-        role_title: txt(ctx, action.role_title) || ((job?.title as string) ?? null),
+        role_title:
+          txt(ctx, action.role_title) || hd.role_title || ((job?.title as string) ?? null),
         seniority: (job?.seniority as string) ?? null,
-        hire_date: isoDate(ctx, action.hire_date) ?? new Date().toISOString().slice(0, 10),
-        monthly_cost: num(ctx, action.monthly_cost),
-        cost_hour: num(ctx, action.cost_hour),
+        hire_date:
+          isoDate(ctx, action.hire_date) ??
+          isoDate(ctx, hd.start_date) ??
+          new Date().toISOString().slice(0, 10),
+        monthly_cost: num(ctx, action.monthly_cost) ?? num(ctx, hd.monthly_amount),
+        cost_hour: num(ctx, action.cost_hour) ?? num(ctx, hd.hourly_rate),
         currency: "BRL",
         tags: department ? [department] : [],
       };

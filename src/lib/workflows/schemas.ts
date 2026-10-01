@@ -25,6 +25,7 @@ export const EntityEnum = z.enum([
   "recurring_plans",
   "subscription_invoices",
   "customer_invoices",
+  "people",
 ]);
 
 const WritableTableEnum = z.enum([
@@ -423,6 +424,13 @@ export const SimpleActionSchema = z.discriminatedUnion("type", [
     email: z.string().max(300).optional(),
     role: z.enum(["admin", "manager", "member"]).optional(),
     permission_set_id: z.string().uuid(),
+  }),
+  z.object({ type: z.literal("terminate_contracts"), person_id: z.string().max(200).optional() }),
+  z.object({ type: z.literal("close_allocations"), person_id: z.string().max(200).optional() }),
+  z.object({ type: z.literal("revoke_access"), person_id: z.string().max(200).optional() }),
+  z.object({
+    type: z.literal("cancel_payable_schedules"),
+    person_id: z.string().max(200).optional(),
   }),
 ]);
 

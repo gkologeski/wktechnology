@@ -16,6 +16,7 @@ import { handleAtsAction } from "./engine/actions-ats.server";
 import { handleRecordAction } from "./engine/actions-records.server";
 import { handleContractAction } from "./engine/actions-contracts.server";
 import { handleHiringAction } from "./engine/actions-hiring.server";
+import { handleOffboardingAction } from "./engine/actions-offboarding.server";
 
 export type { RunCtx, RunResult };
 
@@ -29,6 +30,7 @@ const HANDLERS: ActionHandler[] = [
   handleRecordAction,
   handleContractAction,
   handleHiringAction,
+  handleOffboardingAction,
 ];
 
 export async function runActions(

@@ -878,6 +878,26 @@ export const moveApplication = createServerFn({ method: "POST" })
         applicationId: z.string().uuid(),
         toStage: z.string().min(1).max(50),
         position: z.number().int().min(0).max(10_000).default(0),
+        // Fase 2: desfecho de contratação coletado no TechHire. Fica gravado na
+        // candidatura e é lido pelos Workflows do workspace (sem cascata aqui).
+        hiring: z
+          .object({
+            model: z.enum(["internal", "outsourcing", "hunting"]),
+            department: z.string().max(80).optional(),
+            modality: z.enum(["monthly", "hourly", "mixed"]).optional(),
+            employment_type: z.enum(["pj", "clt", "contractor", "intern", "other"]).optional(),
+            role_title: z.string().max(200).optional(),
+            start_date: z
+              .string()
+              .regex(/^\d{4}-\d{2}-\d{2}$/)
+              .optional(),
+            monthly_amount: z.number().min(0).max(10_000_000).optional(),
+            hourly_rate: z.number().min(0).max(100_000).optional(),
+            fee_amount: z.number().min(0).max(10_000_000).optional(),
+            client_company_id: z.string().uuid().optional(),
+            notes: z.string().max(2000).optional(),
+          })
+          .optional(),
       })
       .parse(d),
   )
@@ -902,8 +922,16 @@ export const moveApplication = createServerFn({ method: "POST" })
     // com fallback para os slugs conhecidos.
     const moveStages = await loadJobPipelineStages(supabase as never, prev.job_id as string);
     const outcome = atsStageOutcome(moveStages, data.toStage);
-    if (outcome === "won") patch.status = "hired";
-    else if (outcome === "lost") patch.status = "rejected";
+    if (outcome === "won") {
+      patch.status = "hired";
+      if (data.hiring) {
+        patch.hiring_details = {
+          ...data.hiring,
+          recorded_by: userId,
+          recorded_at: new Date().toISOString(),
+        };
+      }
+    } else if (outcome === "lost") patch.status = "rejected";
     else patch.status = "active";
 
     const { data: upd, error } = await supabase
@@ -960,6 +988,7 @@ export const moveApplication = createServerFn({ method: "POST" })
             applicationId: data.applicationId,
             jobId: prev.job_id,
             candidateId: prev.candidate_id,
+            hiringModel: data.hiring?.model ?? null,
           },
         }).catch(() => undefined);
       }
