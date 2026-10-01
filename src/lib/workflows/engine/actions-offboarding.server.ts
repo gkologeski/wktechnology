@@ -172,7 +172,8 @@ export async function handleOffboardingAction(
           detail: { skipped: true, reason: "pessoa sem usuário vinculado na ficha" },
         };
       }
-      if (userId === ctx.ownerId) throw new Error("O dono do workflow não pode revogar o próprio acesso.");
+      if (userId === ctx.ownerId)
+        throw new Error("O dono do workflow não pode revogar o próprio acesso.");
       const { data: member } = await supabase
         .from("workspace_members")
         .select("role, status")
@@ -181,11 +182,22 @@ export async function handleOffboardingAction(
         .maybeSingle();
       const m = member as { role?: string; status?: string } | null;
       if (!m) {
-        return { at, ok: true, action: action.type, detail: { skipped: true, reason: "não é membro" } };
+        return {
+          at,
+          ok: true,
+          action: action.type,
+          detail: { skipped: true, reason: "não é membro" },
+        };
       }
-      if (m.role === "owner") throw new Error("O proprietário do workspace não pode ser desativado.");
+      if (m.role === "owner")
+        throw new Error("O proprietário do workspace não pode ser desativado.");
       if (m.status === "inactive") {
-        return { at, ok: true, action: action.type, detail: { skipped: true, reason: "já inativo" } };
+        return {
+          at,
+          ok: true,
+          action: action.type,
+          detail: { skipped: true, reason: "já inativo" },
+        };
       }
       const { error } = await supabase
         .from("workspace_members")

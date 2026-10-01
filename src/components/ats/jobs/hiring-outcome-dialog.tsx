@@ -157,7 +157,11 @@ export function HiringOutcomeDialog({
         </DialogHeader>
 
         <FormSection title="Modelo" description="Para quem o profissional vai trabalhar.">
-          <div role="radiogroup" aria-label="Modelo de contratação" className="grid gap-2 sm:grid-cols-3">
+          <div
+            role="radiogroup"
+            aria-label="Modelo de contratação"
+            className="grid gap-2 sm:grid-cols-3"
+          >
             {MODELS.map((m) => {
               const Icon = m.icon;
               const active = model === m.value;
@@ -238,10 +242,7 @@ export function HiringOutcomeDialog({
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="hire-modality">Modalidade</Label>
-                  <Select
-                    value={modality}
-                    onValueChange={(v) => setModality(v as HiringModality)}
-                  >
+                  <Select value={modality} onValueChange={(v) => setModality(v as HiringModality)}>
                     <SelectTrigger id="hire-modality">
                       <SelectValue />
                     </SelectTrigger>
