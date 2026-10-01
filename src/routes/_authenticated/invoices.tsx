@@ -140,6 +140,14 @@ function InvoicesPage() {
       type: "number",
       get: (inv) => (inv.amount == null ? null : Number(inv.amount)),
     },
+    {
+      key: "company",
+      label: "Empresa",
+      type: "multi",
+      searchable: true,
+      get: (inv) => inv.company_id,
+      optionLabel: (_v, inv) => inv.companies?.name ?? "Empresa",
+    },
   ] as GridFilterField<any>[]);
   const {
     sorted: sortedInvoices,
@@ -154,6 +162,26 @@ function InvoicesPage() {
     due: (inv) => inv.due_date,
     gateway: (inv) => inv.gateway,
   });
+
+  // Seleção por linha e global (todos os filtrados) — padrão de grids.
+  const { canAny } = usePermissions();
+  const selection = useGridSelection(sortedInvoices as Array<{ id: string } & (typeof sortedInvoices)[number]>);
+  const selectAllFiltered = () =>
+    selection.setSelectedIds(new Set(sortedInvoices.map((inv) => inv.id)));
+  const canUpdateInvoice = canAny([
+    "techsales.invoices.update.workspace",
+    "techsales.invoices.update.team",
+    "techsales.invoices.update.own",
+    "techfinance.invoices.update.workspace",
+    "techfinance.invoices.update.team",
+    "techfinance.invoices.update.own",
+  ]);
+  const canDeleteInvoice = canAny([
+    "techsales.invoices.delete.workspace",
+    "techsales.invoices.delete.own",
+    "techfinance.invoices.delete.workspace",
+    "techfinance.invoices.delete.own",
+  ]);
 
   function invalidate() {
     qc.invalidateQueries({ queryKey: ["invoices"] });
@@ -324,9 +352,37 @@ function InvoicesPage() {
                     }}
                     search={false}
                   />
+                  {selection.hasSelection && (
+                    <GridBulkBar
+                      table="customer_invoices"
+                      ids={selection.ids}
+                      rows={selection.selectedRows}
+                      entityLabel="fatura(s)"
+                      onClear={selection.clear}
+                      onDone={invalidate}
+                      totalMatching={sortedInvoices.length}
+                      onSelectAll={selectAllFiltered}
+                      canUpdate={canUpdateInvoice}
+                      canDelete={canDeleteInvoice}
+                      bulkEditFields={[{ name: "due_date", label: "Vencimento", type: "date" }]}
+                    />
+                  )}
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-10">
+                          <Checkbox
+                            aria-label="Selecionar todas as faturas exibidas"
+                            checked={
+                              selection.allOnPageSelected
+                                ? true
+                                : selection.someOnPageSelected
+                                  ? "indeterminate"
+                                  : false
+                            }
+                            onCheckedChange={selection.toggleAllOnPage}
+                          />
+                        </TableHead>
                         <SortableTableHead
                           label="Número"
                           active={sort?.key === "number"}
