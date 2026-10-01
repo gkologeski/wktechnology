@@ -17,6 +17,7 @@ import {
   denormalizeTopGroup,
 } from "./conditions-editor";
 import { EntityPickerDialog } from "./entity-picker-dialog";
+import { HiringActionForm } from "./step-forms/hiring-forms";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1023,6 +1024,13 @@ function StepConfigForm({
       return <GenericRecordForm action={action} onChange={onChange} triggerEntity={entity} />;
     case "create_contract_from_deal":
       return <CreateContractFromDealForm action={action} onChange={onChange} />;
+    case "create_person_from_candidate":
+    case "create_contract_document":
+    case "create_allocation":
+    case "create_payable_schedule":
+    case "create_receivable_invoice":
+    case "provision_workspace_user":
+      return <HiringActionForm action={action} onChange={onChange} />;
     default: {
       const _exhaustive: never = action;
       void _exhaustive;
