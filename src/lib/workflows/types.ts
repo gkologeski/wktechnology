@@ -20,7 +20,9 @@ export type WorkflowEntity =
   | "services"
   | "recurring_plans"
   | "subscription_invoices"
-  | "customer_invoices";
+  | "customer_invoices"
+  // Contratação e desligamento (Fase 4)
+  | "people";
 
 /**
  * Tabelas permitidas em ações genéricas create_record / update_record / delete_record.
@@ -462,7 +464,12 @@ export type WorkflowAction =
       email?: string;
       role?: "admin" | "manager" | "member";
       permission_set_id: string;
-    };
+    }
+  // Desligamento — Fase 4 (atuam na pessoa do gatilho ou de {{vars.contratacao.person_id}})
+  | { type: "terminate_contracts"; person_id?: string }
+  | { type: "close_allocations"; person_id?: string }
+  | { type: "revoke_access"; person_id?: string }
+  | { type: "cancel_payable_schedules"; person_id?: string };
 
 export type WorkflowActionType = WorkflowAction["type"];
 
@@ -488,6 +495,7 @@ export const ENTITY_LABELS: Record<WorkflowEntity, string> = {
   recurring_plans: "Planos recorrentes",
   subscription_invoices: "Faturas de assinatura",
   customer_invoices: "Faturas de clientes",
+  people: "Pessoas (TechPeople)",
 };
 
 // Grupos por módulo (para dropdown do builder).
@@ -498,6 +506,7 @@ export const ENTITY_GROUPS: Array<{ label: string; entities: WorkflowEntity[] }>
     label: "Recrutamento",
     entities: ["ats_jobs", "ats_candidates", "ats_applications", "ats_interviews"],
   },
+  { label: "Pessoas", entities: ["people"] },
   { label: "Projetos", entities: ["projects", "project_tasks", "project_milestones"] },
   { label: "Contratos e catálogo", entities: ["contracts", "services"] },
   {
@@ -565,6 +574,10 @@ export const ACTION_LABELS: Record<WorkflowActionType, string> = {
   create_payable_schedule: "Programar contas a pagar",
   create_receivable_invoice: "Lançar conta a receber",
   provision_workspace_user: "Provisionar acesso de usuário",
+  terminate_contracts: "Encerrar contratos (distrato)",
+  close_allocations: "Encerrar alocações",
+  revoke_access: "Revogar acesso de usuário",
+  cancel_payable_schedules: "Cancelar parcelas futuras",
 };
 
 // Categorias exibidas na biblioteca de ações do builder (estilo HubSpot).
@@ -641,6 +654,10 @@ export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionTy
       "create_payable_schedule",
       "create_receivable_invoice",
       "provision_workspace_user",
+      "terminate_contracts",
+      "close_allocations",
+      "revoke_access",
+      "cancel_payable_schedules",
     ],
   },
   { label: "Utilitários", actions: ["format_data"] },
@@ -898,6 +915,16 @@ export const ENTITY_FIELDS: Record<WorkflowEntity, string[]> = {
   recurring_plans: ["name", "amount", "currency", "interval", "active", "owner_id"],
   subscription_invoices: ["number", "status", "amount", "due_date", "paid_at", "subscription_id"],
   customer_invoices: ["number", "status", "amount", "due_date", "paid_at", "company_id"],
+  people: [
+    "full_name",
+    "email",
+    "status",
+    "employment_type",
+    "role_title",
+    "hire_date",
+    "termination_date",
+    "candidate_id",
+  ],
 };
 
 export const FILTER_OPS: Array<{ value: FilterOp; label: string }> = [

@@ -40,6 +40,10 @@ import { JobPropertiesPanel } from "@/components/ats/jobs/job-properties-panel";
 import { JobEvalDialog } from "@/components/ats/jobs/job-eval-dialog";
 import { SENIORITY_LABEL, REMOTE_LABEL, EMPLOYMENT_LABEL } from "@/components/ats/jobs/job-labels";
 import type { App, Candidate, Job } from "@/components/ats/jobs/job-detail.types";
+import {
+  HiringOutcomeDialog,
+  type HiringOutcome,
+} from "@/components/ats/jobs/hiring-outcome-dialog";
 
 export const Route = createFileRoute("/_authenticated/(ats)/jobs/$id")({
   component: JobDetailPage,
@@ -76,6 +80,9 @@ function JobDetailPage() {
   const [evalApp, setEvalApp] = useState<App | null>(null);
   const [tab, setTab] = useState<string>("pipeline");
   const [scheduleApp, setScheduleApp] = useState<App | null>(null);
+  // Fase 2: mover para etapa de desfecho "ganho" abre o diálogo de contratação.
+  const [hiringMove, setHiringMove] = useState<{ app: App; toStage: string } | null>(null);
+  const [hiringSaving, setHiringSaving] = useState(false);
   // Candidaturas: filtro por responsável, alternância de visualização e ordenação
   const {
     assignee: appsAssignee,
@@ -199,12 +206,40 @@ function JobDetailPage() {
     const app = apps.find((a) => a.id === dragging);
     setDragging(null);
     if (!app || app.stage_value === toStage) return;
+    if (stages.find((st) => st.value === toStage)?.type === "won") {
+      setHiringMove({ app, toStage });
+      return;
+    }
     setApps((prev) => prev.map((a) => (a.id === app.id ? { ...a, stage_value: toStage } : a)));
     try {
       await moveApp({ data: { applicationId: app.id, toStage, position: 0 } });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao mover");
       refresh();
+    }
+  };
+
+  const confirmHiring = async (outcome: HiringOutcome) => {
+    if (!hiringMove) return;
+    const { app, toStage } = hiringMove;
+    setHiringSaving(true);
+    try {
+      await moveApp({ data: { applicationId: app.id, toStage, position: 0, hiring: outcome } });
+      setApps((prev) => prev.map((a) => (a.id === app.id ? { ...a, stage_value: toStage } : a)));
+      setHiringMove(null);
+      toast.success("Contratação registrada", {
+        description: "Os workflows do workspace vão processar em instantes.",
+        action: {
+          label: "Ver execuções",
+          onClick: () => {
+            window.location.assign("/settings/workflows");
+          },
+        },
+      });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao registrar contratação");
+    } finally {
+      setHiringSaving(false);
     }
   };
 
@@ -454,6 +489,18 @@ function JobDetailPage() {
         jobId={id}
         onClose={() => setEvalApp(null)}
         refresh={refresh}
+      />
+      <HiringOutcomeDialog
+        open={!!hiringMove}
+        candidateName={
+          (hiringMove?.app as unknown as { candidate?: { full_name?: string | null } | null })
+            ?.candidate?.full_name ?? "Candidato"
+        }
+        defaultRoleTitle={job?.title ?? null}
+        defaultDepartment={department ?? null}
+        submitting={hiringSaving}
+        onCancel={() => setHiringMove(null)}
+        onConfirm={confirmHiring}
       />
       {scheduleApp && (
         <ScheduleInterviewDialog

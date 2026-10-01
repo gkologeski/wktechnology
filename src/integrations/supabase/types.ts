@@ -1074,6 +1074,7 @@ export type Database = {
           assigned_to: string | null
           candidate_id: string
           created_at: string
+          hiring_details: Json | null
           id: string
           job_id: string
           moved_at: string
@@ -1095,6 +1096,7 @@ export type Database = {
           assigned_to?: string | null
           candidate_id: string
           created_at?: string
+          hiring_details?: Json | null
           id?: string
           job_id: string
           moved_at?: string
@@ -1116,6 +1118,7 @@ export type Database = {
           assigned_to?: string | null
           candidate_id?: string
           created_at?: string
+          hiring_details?: Json | null
           id?: string
           job_id?: string
           moved_at?: string

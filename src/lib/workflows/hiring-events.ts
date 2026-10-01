@@ -5,7 +5,10 @@
 // sem fluxo fixo no código: cada workspace monta (ou desativa) os passos.
 import type { WorkflowEntity, WorkflowTrigger } from "./types";
 
-export type HiringEventKey = "ats.candidate.hired" | "contracts.contract.signed";
+export type HiringEventKey =
+  | "ats.candidate.hired"
+  | "contracts.contract.signed"
+  | "people.person.terminated";
 
 export interface HiringEventPreset {
   key: HiringEventKey;
@@ -23,7 +26,20 @@ export const HIRING_EVENT_PRESETS: Record<HiringEventKey, HiringEventPreset> = {
     entity: "ats_applications",
     trigger: {
       event: "stage_changed",
-      filters: [{ field: "stage_value", op: "changed_to", value: "hired" }],
+      // Status "hired" é aplicado em qualquer etapa de desfecho "ganho" do
+      // pipeline da vaga (o slug da etapa varia por workspace).
+      filters: [{ field: "status", op: "changed_to", value: "hired" }],
+    },
+  },
+  "people.person.terminated": {
+    key: "people.person.terminated",
+    label: "Pessoa desligada",
+    description: "A pessoa passa para o status Desligado no TechPeople.",
+    entity: "people",
+    trigger: {
+      event: "stage_changed",
+      filters: [{ field: "status", op: "changed_to", value: "terminated" }],
+      reenroll: { enabled: false },
     },
   },
   "contracts.contract.signed": {

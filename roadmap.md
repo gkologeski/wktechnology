@@ -1,63 +1,7 @@
-# Roadmap
+# Roadmap — Ciclo de contratação/desligamento via Workflows
 
-- [x] Corrigir a duplicação visual dos funis no Dashboard de Vendas e formalizar mockups prévios para novas telas e redesenhos.
-
-- [x] Criar dashboards de TechContracts, TechProjects e TechPeople; padronizar “Visão geral > Dashboard” no topo de TechSales, TechHire, TechFinance e TechERP.
-
-- [ ] Permitir reordenar colunas por drag-and-drop no cabeçalho e no seletor “Colunas” em todas as tabelas, com persistência por usuário e tabela.
-
-- [x] Revisar o editor visual de Workflows (Option C) e validar criação, configuração de campos/variáveis e navegação sem gravar ou publicar uma automação de teste. Publicação real não foi exercitada.
-- [x] Apresentar novas variáveis de Workflows em PT-BR, minúsculas, sem acentos e com `_`, mantendo os nomes técnicos antigos compatíveis no motor.
-
-- [ ] Migrar todas as ações manuais de atividades para janelas flutuantes persistentes (timeline compartilhada, edição, tarefas, Inbox, filas, reuniões, cotações e ações em massa); validar fluxos e acessibilidade.
-- [x] Padronizar todos os seletores de data e hora das atividades com calendário PT-BR, atalhos de vencimento e horários de 15 minutos; validar desktop e celular.
-- [x] Manter uma barra de restauração acessível quando a única janela de atividade estiver minimizada.
-
-- [x] Revisar finding de monitoramento "gravações de reunião nunca anexadas" (calendar-recordings-tick)
-- [x] Nova aba "Base" em /prospecting: extrair listas de clientes a partir de entidades já cadastradas
-      (ex.: clientes de negócios ganhos por serviço; clientes de negócios perdidos de um serviço
-      nos últimos 180 dias), com exportação CSV/cópia de nomes.
-- [x] Migração assistida de itens de linha de Negócios (texto livre) para linhas de serviço do
-      catálogo, com cargo e senioridade: tela /catalog/line-item-migration, classificador puro,
-      aplicação idempotente (só itens sem service_catalog_id) e enriquecimento de cargos.
-      Observação: nenhum fluxo de importação HubSpot cria deal_line_items diretamente hoje, então a
-      prevenção de recaída ficou apenas na UI do editor de itens (aviso + seletor inline).
-
-- [x] Criar fundação visual global e aplicar integralmente em Negócios, usando o Destaque do White Label.
-- [x] Aplicar a fundação do Design System em toda a área autenticada, com canvas e componentes compartilhados.
-- [x] Inventariar as exceções visuais locais por rota em `docs/qa/design-system-rollout.md` para refinamentos incrementais futuros.
-- [x] Permitir selecionar objetos da prévia do White Label e focar diretamente seus controles de estilo.
-- [x] Disponibilizar três arquétipos visuais completos no White Label do workspace, com prévia, confirmação e preservação da identidade.
-- [x] Corrigir regressões do Design System em botões principais e bordas coloridas na área autenticada.
-- [x] Implementar no /dashboard a jornada de Leads até vendas, canais agrupados, reconciliação conservadora e validação UX/UI ≥ 9 (avaliação final: 9,2/10).
-- [x] Corrigir o alerta de negócios sem interação usando a data efetiva por tipo de atividade e manter a rolagem horizontal visível nas grades longas.
-
-## Valores chumbados por fases
-
-- [x] Fase 1: inventário e exceções verificáveis
-- [x] Fase 2: URLs, mocks de produção e cargos padrão
-- [x] Fase 3: fuso, limites e exportações
-- [x] Fase 4: interface e branding
-- [x] Fase 5: prevenção, testes e documentação
-- [x] Filtro de Responsável com Ativos/Inativos e mesclagem de repetidos
-- [x] Usuários inativos vinculados aos responsáveis do HubSpot (botão em Configurações › Usuários do HubSpot)
-
-## Padronização completa dos grids
-
-- [x] Auditar famílias atuais e lacunas de seleção global, filtros, paginação, colunas e ações em massa.
-- [x] Corrigir seleção global em Empresas e Contatos com a base compartilhada.
-- [x] Definir Empresas/Contatos como modelo único de todos os grids (pedido do usuário).
-- [x] Seleção global com filtros em Projetos, Tarefas de projeto e Serviços; painel lateral em Serviços.
-- [ ] Extrair o casco comum de Empresas/Contatos (painel, visões, barra, chips, paginação).
-- [ ] Migrar Leads, Negócios e Tickets para o casco (Tickets segue o visual de Empresas/Contatos).
-- [ ] Concluir Fase 4: painel lateral e paginação no servidor em Projetos, Tarefas de projeto e Contratos.
-- [ ] Migrar TechHire, TechPeople, TechFinance, Comunicações/Notas e Campanhas/Modelos.
-
-## WhatsApp — conexão Lovable como canal único
-
-- [x] Envio pela conexão (texto, mídia, template, leitura) e disponibilidade do botão
-- [x] Recebimento com caixa durável (migração aplicada ao aceitar o rascunho)
-- [x] Painel em Configurações › WhatsApp
-- [x] Remover configuração antiga (formulário, guia, webhook antigo)
-- [x] Remover telas legadas de modelos, catálogos e anúncios CTWA da conta antiga
-- [ ] Ativar recebimento: escolher este projeto em Conectores › WhatsApp › Mensagens recebidas
+- [x] Fase 1 — ações de contratação no motor (validada com candidata de teste)
+- [ ] Fase 2 — diálogo de desfecho de contratação no TechHire (interna/outsourcing/hunting)
+- [ ] Fase 3 — modelos nativos (Vendedor PJ, Freelancer, Outsourcing, Hunting, Desligamento)
+- [ ] Fase 4 — desligamento: gatilho Pessoa desligada + encerrar contratos, alocações, acesso e parcelas
+- [ ] Fase 5 — specs Playwright em tests/e2e + validação real dos cenários
