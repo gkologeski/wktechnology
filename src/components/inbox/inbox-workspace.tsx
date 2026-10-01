@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
-import { ArrowLeft, Inbox, Mail, MessageCircle, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { ArrowLeft, Inbox, Mail, MessageCircle, PanelRightClose, PanelRightOpen, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -175,10 +175,10 @@ export function InboxLoading() {
 }
 
 export function InboxAvatar({ label, className }: { label: string; className?: string }) {
-  const initials = label.replace(/[^\p{L}\p{N} ]/gu, "").split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]).join("").toUpperCase() || "?";
+  const initials = label.replace(/[^\p{L} ]/gu, "").split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]).join("").toUpperCase();
   return (
     <div className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent text-sm font-semibold text-accent-foreground", className)} aria-hidden>
-      {initials}
+      {initials || <User className="h-4 w-4" />}
     </div>
   );
 }
