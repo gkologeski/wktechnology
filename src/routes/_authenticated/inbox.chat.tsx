@@ -11,8 +11,6 @@ import {
   convertChatSessionToTicket,
 } from "@/lib/live-chat.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { PageHeader } from "@/components/page-header";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { SnippetTextarea } from "@/components/snippets/snippet-textarea";
