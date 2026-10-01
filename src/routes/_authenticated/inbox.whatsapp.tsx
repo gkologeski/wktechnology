@@ -292,6 +292,24 @@ function WhatsAppInbox() {
                           Eu ({memberMap.get(user.id) ?? "—"})
                         </SelectItem>
                       )}
+                      {(membersQ.data ?? [])
+                        .filter((m) => m.id !== user?.id)
+                        .map((m) => (
+                          <SelectItem key={m.id} value={m.id}>
+                            {m.full_name || m.id.slice(0, 6)}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  {current.status === "closed" ? (
+                    <Button size="sm" variant="outline" onClick={() => statusMut.mutate({ conversationId: current.id, status: "open" })}>
+                      Reabrir
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="outline" onClick={() => statusMut.mutate({ conversationId: current.id, status: "closed" })}>
+                      <CheckCircle2 className="mr-1 h-3 w-3" /> Fechar
+                    </Button>
+                  )}
                 </>}
               />
               <ScrollArea className="flex-1 bg-product-panel-muted p-4" aria-live="polite">
