@@ -13,7 +13,7 @@
 | Leads | só os dela | sim | só os dela | não | não |
 | Negócios | só os dela | sim | só os dela | não | não |
 | Contatos / Empresas | os dela + os "vinculados" (abaixo) | sim | só os dela | não | não |
-| Atividades (tarefas, ligações, e-mails, notas) | só dos registros dela | sim | só as dela | só as dela | não |
+| Atividades (tarefas, ligações, e-mails, notas) | todas, nas entidades dela | sim | só as dela | só as dela | não |
 | Cotações / propostas | só dos negócios dela | sim | rascunhos dela | não | não |
 | Catálogo de produtos e preços | leitura | — | — | — | — |
 | Dashboards | só os números dela | — | — | — | — |
