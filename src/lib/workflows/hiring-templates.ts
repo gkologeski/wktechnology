@@ -22,7 +22,7 @@ function hiredAs(model: "internal" | "outsourcing" | "hunting"): WorkflowTrigger
     ...hired.trigger,
     filters: [
       ...(hired.trigger.filters ?? []),
-      { field: "hiring_details.model", op: "equals", value: model },
+      { field: "hiring_details.model", op: "eq", value: model },
     ],
   } as WorkflowTrigger;
 }
@@ -57,7 +57,7 @@ export const HIRING_TEMPLATES: HiringTemplate[] = [
       ...hiredAs("internal"),
       filters: [
         ...(hiredAs("internal").filters ?? []),
-        { field: "hiring_details.modality", op: "equals", value: "hourly" },
+        { field: "hiring_details.modality", op: "eq", value: "hourly" },
       ],
     } as WorkflowTrigger,
     actions: [
