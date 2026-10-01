@@ -7,7 +7,7 @@ import { useGridFilters } from "@/hooks/use-grid-filters";
 import type { GridFilterField } from "@/lib/grid-filters";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ListTodo, Search } from "lucide-react";
@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/table";
 import { formatDateTime } from "@/lib/crm";
 import { formatCompactDateTime } from "@/lib/format/compact-date";
-import { listAllProjectTaskIds, listAllProjectTasks, listProjects } from "@/lib/projects.functions";
+import { listAllProjectTaskIds, listAllProjectTasks } from "@/lib/projects.functions";
 import { useGridSelection } from "@/components/grid/use-grid-selection";
 import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
 import { usePermissions } from "@/lib/access-control/use-permissions";
@@ -87,17 +87,11 @@ function ProjectTasksPage() {
   const qc = useQueryClient();
   const listTasksFn = useServerFn(listAllProjectTasks);
   const listTaskIdsFn = useServerFn(listAllProjectTaskIds);
-  const listProjectsFn = useServerFn(listProjects);
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<StatusFilter>("all");
-  const [projectId, setProjectId] = useState<string>("all");
+  // Status e projeto agora são filtrados pelo painel lateral.
+  const status: StatusFilter = "all";
+  const projectId: string = "all";
   const [owner, setOwner] = useState<OwnerFilter>("all");
-
-  const projectsQ = useQuery({
-    queryKey: ["projects", "picker"],
-    queryFn: () => listProjectsFn({ data: {} }),
-    staleTime: 60_000,
-  });
 
   const tasksKey = ["project_tasks", "all", { status, projectId, owner, search }] as const;
   const { data: rows = [], isLoading } = useQuery({
@@ -112,15 +106,6 @@ function ProjectTasksPage() {
         },
       }),
   });
-
-  const projectOptions = useMemo(
-    () =>
-      (projectsQ.data ?? []).map((p: { id: string; name: string }) => ({
-        id: p.id,
-        name: p.name,
-      })),
-    [projectsQ.data],
-  );
 
   // Seleção múltipla / ações em massa (padrão de grids — Fase 4).
   const { canAny } = usePermissions();
