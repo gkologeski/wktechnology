@@ -14,8 +14,10 @@ import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
 import { formatDateTime } from "@/lib/crm";
 import { toast } from "sonner";
 import {
-  InboxConversationItem, InboxConversationList,
-  InboxConversationHeader, InboxMessageBubble,
+  InboxConversationItem,
+  InboxConversationList,
+  InboxConversationHeader,
+  InboxMessageBubble,
   InboxContext,
   InboxEmpty,
   InboxListHeader,
@@ -27,9 +29,15 @@ export const Route = createFileRoute("/_authenticated/inbox/email")({
   head: () => ({
     meta: [
       { title: "Email — Inbox TechERP" },
-      { name: "description", content: "Conversas de email do workspace em uma central organizada." },
+      {
+        name: "description",
+        content: "Conversas de email do workspace em uma central organizada.",
+      },
       { property: "og:title", content: "Email — Inbox TechERP" },
-      { property: "og:description", content: "Conversas de email do workspace em uma central organizada." },
+      {
+        property: "og:description",
+        content: "Conversas de email do workspace em uma central organizada.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -96,30 +104,42 @@ function EmailInbox() {
       }
       list={
         <>
-          <InboxListHeader><p className="text-xs text-muted-foreground">{threads.length} conversa(s)</p></InboxListHeader>
+          <InboxListHeader>
+            <p className="text-xs text-muted-foreground">{threads.length} conversa(s)</p>
+          </InboxListHeader>
           <InboxConversationList>
             {threadsQ.isLoading && <InboxLoading />}
             {!threadsQ.isLoading && threads.length === 0 && (
-              <InboxEmpty><div className="space-y-2">
-                Nenhuma thread ainda. Conecte uma conta Gmail em{" "}
-                <Link to="/settings/email" className="underline">
-                  Configurações
-                </Link>{" "}
-                e clique em <b>Sincronizar</b>.
-              </div></InboxEmpty>
+              <InboxEmpty>
+                <div className="space-y-2">
+                  Nenhuma thread ainda. Conecte uma conta Gmail em{" "}
+                  <Link to="/settings/email" className="underline">
+                    Configurações
+                  </Link>{" "}
+                  e clique em <b>Sincronizar</b>.
+                </div>
+              </InboxEmpty>
             )}
-            <div className="space-y-0.5 p-2">{threads.map((t) => (
-              <InboxConversationItem
-                key={t.id}
-                label={t.subject || "(sem assunto)"}
-                preview={t.snippet || "—"}
-                when={t.last_message_at}
-                whenTitle={t.last_message_at ? formatDateTime(t.last_message_at) : undefined}
-                selected={selected === t.id}
-                onClick={() => setSelected(t.id)}
-                badge={t.message_count > 1 ? <Badge variant="outline" className="text-[10px]">{t.message_count}</Badge> : null}
-              />
-            ))}</div>
+            <div className="space-y-0.5 p-2">
+              {threads.map((t) => (
+                <InboxConversationItem
+                  key={t.id}
+                  label={t.subject || "(sem assunto)"}
+                  preview={t.snippet || "—"}
+                  when={t.last_message_at}
+                  whenTitle={t.last_message_at ? formatDateTime(t.last_message_at) : undefined}
+                  selected={selected === t.id}
+                  onClick={() => setSelected(t.id)}
+                  badge={
+                    t.message_count > 1 ? (
+                      <Badge variant="outline" className="text-[10px]">
+                        {t.message_count}
+                      </Badge>
+                    ) : null
+                  }
+                />
+              ))}
+            </div>
           </InboxConversationList>
         </>
       }
@@ -130,10 +150,19 @@ function EmailInbox() {
           ) : (
             <>
               <InboxConversationHeader
-                label={lastMsg?.from_name || lastMsg?.from_email || current.thread.subject || "Contato por email"}
+                label={
+                  lastMsg?.from_name ||
+                  lastMsg?.from_email ||
+                  current.thread.subject ||
+                  "Contato por email"
+                }
                 subtitle={`Email · ${current.thread.subject || "(sem assunto)"} · ${current.messages.length} mensagem(ns)`}
                 actions={
-                  <Button size="sm" variant="outline" onClick={() => openEmail(lastMsg?.from_email ?? "", current.thread.id)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openEmail(lastMsg?.from_email ?? "", current.thread.id)}
+                  >
                     <Reply className="mr-2 h-4 w-4" /> Responder
                   </Button>
                 }
@@ -149,7 +178,26 @@ function EmailInbox() {
           )}
         </>
       }
-      context={current ? <InboxContext initials={(lastMsg?.from_name || lastMsg?.from_email || "E").slice(0, 2).toUpperCase()} title={lastMsg?.from_name || lastMsg?.from_email || "Contato por email"} subtitle={lastMsg?.from_email || undefined}><div className="space-y-3 border-t border-border pt-4 text-sm"><div><p className="text-xs text-muted-foreground">Assunto</p><p className="mt-1 font-medium">{current.thread.subject || "(sem assunto)"}</p></div><div><p className="text-xs text-muted-foreground">Mensagens</p><p className="mt-1 font-medium">{current.messages.length}</p></div></div></InboxContext> : undefined}
+      context={
+        current ? (
+          <InboxContext
+            initials={(lastMsg?.from_name || lastMsg?.from_email || "E").slice(0, 2).toUpperCase()}
+            title={lastMsg?.from_name || lastMsg?.from_email || "Contato por email"}
+            subtitle={lastMsg?.from_email || undefined}
+          >
+            <div className="space-y-3 border-t border-border pt-4 text-sm">
+              <div>
+                <p className="text-xs text-muted-foreground">Assunto</p>
+                <p className="mt-1 font-medium">{current.thread.subject || "(sem assunto)"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Mensagens</p>
+                <p className="mt-1 font-medium">{current.messages.length}</p>
+              </div>
+            </div>
+          </InboxContext>
+        ) : undefined
+      }
     />
   );
 }
@@ -169,25 +217,40 @@ function MessageCard({ message: m }: { message: Msg }) {
       outbound={isOut}
       when={(m.sent_at ?? m.received_at ?? m.created_at) as string}
       status={isOut ? ((m.open_count ?? 0) > 0 ? "read" : "sent") : null}
-      author={<>{m.from_name || m.from_email || "—"}<span className="font-normal text-muted-foreground"> → {(m.to_emails ?? []).join(", ")}</span></>}
-      footer={<>
-        {isOut && (m.open_count ?? 0) > 0 && (
-          <Badge variant="outline" className="gap-1 px-1.5 py-0 text-[10px]" title="Aberturas">
-            <Eye className="h-3 w-3" /> {m.open_count}
-          </Badge>
-        )}
-        {isOut && (m.click_count ?? 0) > 0 && (
-          <Badge variant="outline" className="gap-1 px-1.5 py-0 text-[10px]" title="Cliques">
-            <MousePointerClick className="h-3 w-3" /> {m.click_count}
-          </Badge>
-        )}
-        {m.has_attachments && <Paperclip className="h-3 w-3" aria-label="Com anexo" />}
-      </>}
+      author={
+        <>
+          {m.from_name || m.from_email || "—"}
+          <span className="font-normal text-muted-foreground">
+            {" "}
+            → {(m.to_emails ?? []).join(", ")}
+          </span>
+        </>
+      }
+      footer={
+        <>
+          {isOut && (m.open_count ?? 0) > 0 && (
+            <Badge variant="outline" className="gap-1 px-1.5 py-0 text-[10px]" title="Aberturas">
+              <Eye className="h-3 w-3" /> {m.open_count}
+            </Badge>
+          )}
+          {isOut && (m.click_count ?? 0) > 0 && (
+            <Badge variant="outline" className="gap-1 px-1.5 py-0 text-[10px]" title="Cliques">
+              <MousePointerClick className="h-3 w-3" /> {m.click_count}
+            </Badge>
+          )}
+          {m.has_attachments && <Paperclip className="h-3 w-3" aria-label="Com anexo" />}
+        </>
+      }
     >
       {html ? (
-        <div className="prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: html }} />
+        <div
+          className="prose prose-sm max-w-none dark:prose-invert"
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
       ) : (
-        <pre className="whitespace-pre-wrap font-sans text-sm">{m.body_text || m.snippet || ""}</pre>
+        <pre className="whitespace-pre-wrap font-sans text-sm">
+          {m.body_text || m.snippet || ""}
+        </pre>
       )}
     </InboxMessageBubble>
   );
