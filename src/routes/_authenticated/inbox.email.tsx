@@ -14,8 +14,26 @@ import { useActivityWindows } from "@/components/activity/activity-window-contex
 import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
 import { formatDateTime } from "@/lib/crm";
 import { toast } from "sonner";
+import {
+  InboxConversationList,
+  InboxContext,
+  InboxEmpty,
+  InboxListHeader,
+  InboxLoading,
+  InboxWorkspace,
+} from "@/components/inbox/inbox-workspace";
 
 export const Route = createFileRoute("/_authenticated/inbox/email")({
+  head: () => ({
+    meta: [
+      { title: "Email — Inbox TechERP" },
+      { name: "description", content: "Conversas de email do workspace em uma central organizada." },
+      { property: "og:title", content: "Email — Inbox TechERP" },
+      { property: "og:description", content: "Conversas de email do workspace em uma central organizada." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: EmailInbox,
 });
 
@@ -63,48 +81,39 @@ function EmailInbox() {
   }, [current?.messages]);
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col gap-3 p-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Inbox Email</h1>
-          <p className="text-sm text-muted-foreground">
-            Threads sincronizadas via Gmail. Sincronização automática a cada 1 min.
-          </p>
-        </div>
-        <div className="flex gap-2">
+    <InboxWorkspace
+      title="Inbox Email"
+      description="Threads sincronizadas via Gmail. Sincronização automática a cada 1 min."
+      actions={
+        <>
           <Button variant="outline" onClick={handleSync}>
             <RefreshCw className="mr-2 h-4 w-4" /> Sincronizar
           </Button>
           <Button onClick={() => openEmail()}>
             <Mail className="mr-2 h-4 w-4" /> Novo email
           </Button>
-        </div>
-      </div>
-
-      <div className="grid flex-1 grid-cols-[320px_1fr] gap-3 overflow-hidden">
-        <Card className="flex flex-col overflow-hidden">
-          <div className="border-b p-2 text-xs text-muted-foreground">
-            {threads.length} thread(s)
-          </div>
-          <ScrollArea className="flex-1">
-            {threadsQ.isLoading && (
-              <div className="p-4 text-sm text-muted-foreground">Carregando…</div>
-            )}
+        </>
+      }
+      list={
+        <>
+          <InboxListHeader><p className="text-xs text-muted-foreground">{threads.length} conversa(s)</p></InboxListHeader>
+          <InboxConversationList>
+            {threadsQ.isLoading && <InboxLoading />}
             {!threadsQ.isLoading && threads.length === 0 && (
-              <div className="space-y-2 p-4 text-sm text-muted-foreground">
+              <InboxEmpty><div className="space-y-2">
                 Nenhuma thread ainda. Conecte uma conta Gmail em{" "}
                 <Link to="/settings/email" className="underline">
                   Configurações
                 </Link>{" "}
                 e clique em <b>Sincronizar</b>.
-              </div>
+              </div></InboxEmpty>
             )}
             {threads.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setSelected(t.id)}
-                className={`flex w-full flex-col gap-1 border-b p-3 text-left transition hover:bg-muted/50 ${
-                  selected === t.id ? "bg-muted" : ""
+                className={`flex w-full flex-col gap-1 border-b border-border-subtle p-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring ${
+                  selected === t.id ? "border-l-2 border-l-primary bg-accent" : ""
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
@@ -123,14 +132,13 @@ function EmailInbox() {
                 </div>
               </button>
             ))}
-          </ScrollArea>
-        </Card>
-
-        <Card className="flex flex-col overflow-hidden">
+          </InboxConversationList>
+        </>
+      }
+      conversation={
+        <>
           {!current ? (
-            <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-              Selecione uma thread
-            </div>
+            <InboxEmpty>Selecione uma conversa de email para visualizar o histórico.</InboxEmpty>
           ) : (
             <>
               <div className="flex flex-wrap items-center justify-between gap-2 border-b p-3">
@@ -150,7 +158,7 @@ function EmailInbox() {
                   <Reply className="mr-2 h-4 w-4" /> Responder
                 </Button>
               </div>
-              <ScrollArea className="flex-1 p-4">
+              <ScrollArea className="flex-1 bg-product-panel-muted p-4" aria-live="polite">
                 <div className="space-y-4">
                   {current.messages.map((m) => (
                     <MessageCard key={m.id} message={m} />
@@ -159,9 +167,10 @@ function EmailInbox() {
               </ScrollArea>
             </>
           )}
-        </Card>
-      </div>
-    </div>
+        </>
+      }
+      context={current ? <InboxContext initials={(lastMsg?.from_name || lastMsg?.from_email || "E").slice(0, 2).toUpperCase()} title={lastMsg?.from_name || lastMsg?.from_email || "Contato por email"} subtitle={lastMsg?.from_email || undefined}><div className="space-y-3 border-t border-border pt-4 text-sm"><div><p className="text-xs text-muted-foreground">Assunto</p><p className="mt-1 font-medium">{current.thread.subject || "(sem assunto)"}</p></div><div><p className="text-xs text-muted-foreground">Mensagens</p><p className="mt-1 font-medium">{current.messages.length}</p></div></div></InboxContext> : undefined}
+    />
   );
 }
 
