@@ -6,14 +6,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Mail,
   MessageCircle,
   Search,
   Send,
-  ChevronRight,
   ExternalLink,
   Sparkles,
 } from "lucide-react";
