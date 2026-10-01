@@ -439,7 +439,7 @@ function ProjectTasksPage() {
                   })}
                 </TableBody>
               </Table>
-            </>
+            </GridListShell>
           )}
         </div>
       )}
