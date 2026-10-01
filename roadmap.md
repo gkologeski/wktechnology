@@ -52,3 +52,12 @@
 - [ ] Migrar Leads, Negócios e Tickets para o casco (Tickets segue o visual de Empresas/Contatos).
 - [ ] Concluir Fase 4: painel lateral e paginação no servidor em Projetos, Tarefas de projeto e Contratos.
 - [ ] Migrar TechHire, TechPeople, TechFinance, Comunicações/Notas e Campanhas/Modelos.
+
+## WhatsApp — conexão Lovable como canal único
+
+- [x] Envio pela conexão (texto, mídia, template, leitura) e disponibilidade do botão
+- [x] Recebimento com caixa durável (migração aplicada ao aceitar o rascunho)
+- [x] Painel em Configurações › WhatsApp
+- [x] Remover configuração antiga (formulário, guia, webhook antigo)
+- [x] Remover telas legadas de modelos, catálogos e anúncios CTWA da conta antiga
+- [ ] Ativar recebimento: escolher este projeto em Conectores › WhatsApp › Mensagens recebidas
