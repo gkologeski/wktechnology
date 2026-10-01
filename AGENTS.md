@@ -1,14 +1,13 @@
-- O painel de vendas usa a origem principal do Lead e explicita a cobertura; nunca presume vínculos históricos ambíguos.
-- Ações manuais da timeline usam o gerenciador global autenticado para preservar janelas e rascunhos na navegação.
-- Datas e horários de atividades usam seletores compartilhados, adaptadores local/ISO e intervalos de 15 minutos.
-- O editor visual de Workflows separa canvas e configuração detalhada sobre o mesmo rascunho, mantendo as ações e a publicação existentes sem alterar a execução.
-- Variáveis novas de Workflows usam aliases PT-BR sem acentos em snake_case; o motor mantém aliases técnicos antigos para compatibilidade com fluxos salvos.
-- Arquétipos White Label são catálogos do workspace; substituem estilo, preservam identidade/assets e usam o `theme` existente.
-- Grades baseadas em `Table` usam uma barra horizontal espelhada e persistente no componente compartilhado, evitando wrappers concorrentes e mantendo a navegação lateral acessível em listas longas.
-- Chamadas de chat de IA passam por `aiChatFetch` (src/lib/ai/provider-resolver.server.ts), que usa o provedor configurado no workspace (Lovable AI por padrão) sem fallback automático em erro — permite IA própria por workspace com chaves cifradas só no servidor.
-- Grids usam seleção página/global com os mesmos filtros e `SortableColumns` persistido por `gridKey`; evita ações incompletas e DnD divergente.
-- Cada módulo principal usa um primeiro grupo “Visão geral” com “Dashboard”; listagens permanecem em rotas próprias — separa acompanhamento executivo da operação.
-- Existem seis módulos verticais (crm, ats, people, contracts, projects, finance) sobre o Core ERP; `services` é id legado absorvido pelo TechContracts e listas de interface usam `VERTICAL_MODULE_LIST` — evita reintroduzir um módulo "TechServices" inexistente.
-- Redesigns relevantes exigem mockup aprovado; a Inbox usa casco visual compartilhado que herda integralmente o White Label.
-- Valores fixos seguem docs/architecture/hardcoded-values.md e são barrados por src/lib/hardcode-guard.test.ts — evita regressão da auditoria.
-- Membros têm `workspace_members.status` (active/inactive); inativos perdem acesso via is_workspace_member e banimento de login, mas seguem resolvendo nome — permite importar responsáveis do HubSpot sem liberar acesso.
+- Painel de vendas usa a origem principal do Lead e explicita a cobertura; nunca presume vínculos ambíguos.
+- Ações manuais da timeline usam o gerenciador global autenticado para preservar janelas e rascunhos.
+- Datas/horários de atividades usam seletores compartilhados, adaptadores local/ISO e passos de 15 min.
+- Regras de Workflows ficam em src/lib/workflows/AGENTS.md.
+- Arquétipos White Label são catálogos do workspace; trocam estilo, preservam identidade/assets e usam o `theme`.
+- Grades `Table` usam barra horizontal espelhada no componente compartilhado, sem wrappers concorrentes.
+- IA de chat passa por `aiChatFetch` (provedor do workspace, Lovable AI padrão, sem fallback; chaves cifradas no servidor).
+- Grids: seleção página/global com os mesmos filtros e `SortableColumns` persistido por `gridKey`.
+- Cada módulo abre com grupo "Visão geral" › "Dashboard"; listagens ficam em rotas próprias.
+- Seis módulos verticais (crm, ats, people, contracts, projects, finance); `services` é id legado do TechContracts; UI usa `VERTICAL_MODULE_LIST`.
+- Redesigns relevantes exigem mockup aprovado; a Inbox usa casco compartilhado que herda o White Label.
+- Valores fixos seguem docs/architecture/hardcoded-values.md, barrados por src/lib/hardcode-guard.test.ts.
+- `workspace_members.status` inactive tira acesso (is_workspace_member + banimento) mas preserva o nome — importa responsáveis HubSpot sem liberar acesso.
