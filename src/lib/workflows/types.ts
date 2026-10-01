@@ -407,6 +407,61 @@ export type WorkflowAction =
        * Aceitam tokens do negócio; resolvidos e convertidos na execução.
        */
       extra_fields?: Record<string, unknown>;
+    }
+  // Contratação e desligamento — Fase 1 (valores aceitam tokens)
+  | {
+      type: "create_person_from_candidate";
+      employment_type?: "pj" | "clt" | "contractor" | "intern" | "other";
+      /** Área: Comercial, Técnica, RH, Financeiro, Administrativo… */
+      department?: string;
+      role_title?: string;
+      hire_date?: string;
+      monthly_cost?: string;
+      cost_hour?: string;
+    }
+  | {
+      type: "create_contract_document";
+      /** client = compra (contratamos a PJ); provider = prestação. Padrão: client. */
+      kind?: "client" | "provider";
+      person_id?: string;
+      title?: string;
+      starts_at?: string;
+      monthly_value?: string;
+      template_id?: string;
+      status?: string;
+      skip_if_exists?: boolean;
+    }
+  | {
+      type: "create_allocation";
+      person_id?: string;
+      project_id?: string;
+      role_title?: string;
+      allocation_pct?: string;
+      billable_rate?: string;
+      cost_rate?: string;
+      starts_at?: string;
+    }
+  | {
+      type: "create_payable_schedule";
+      person_id?: string;
+      amount: string;
+      description?: string;
+      installments?: number;
+      day_of_month?: number;
+      starts_at?: string;
+    }
+  | {
+      type: "create_receivable_invoice";
+      amount: string;
+      description?: string;
+      company_id?: string;
+      due_in_days?: number;
+    }
+  | {
+      type: "provision_workspace_user";
+      email?: string;
+      role?: "admin" | "manager" | "member";
+      permission_set_id: string;
     };
 
 export type WorkflowActionType = WorkflowAction["type"];
@@ -504,6 +559,12 @@ export const ACTION_LABELS: Record<WorkflowActionType, string> = {
   update_record: "Atualizar registro (qualquer módulo)",
   delete_record: "Excluir registro (qualquer módulo)",
   create_contract_from_deal: "Criar contrato a partir do negócio",
+  create_person_from_candidate: "Criar pessoa a partir do candidato",
+  create_contract_document: "Gerar contrato do profissional",
+  create_allocation: "Criar alocação",
+  create_payable_schedule: "Programar contas a pagar",
+  create_receivable_invoice: "Lançar conta a receber",
+  provision_workspace_user: "Provisionar acesso de usuário",
 };
 
 // Categorias exibidas na biblioteca de ações do builder (estilo HubSpot).
@@ -571,6 +632,17 @@ export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionTy
     ],
   },
   { label: "Contratos", actions: ["create_contract_from_deal"] },
+  {
+    label: "Contratação e desligamento",
+    actions: [
+      "create_person_from_candidate",
+      "create_contract_document",
+      "create_allocation",
+      "create_payable_schedule",
+      "create_receivable_invoice",
+      "provision_workspace_user",
+    ],
+  },
   { label: "Utilitários", actions: ["format_data"] },
   { label: "Externo", actions: ["webhook"] },
 ];

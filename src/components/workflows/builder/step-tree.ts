@@ -31,6 +31,8 @@ import {
   MessageSquare,
   ClipboardList,
   FileSignature,
+  Receipt,
+  KeyRound,
 } from "lucide-react";
 import { ACTION_LABELS, type WorkflowAction, type WorkflowActionType } from "@/lib/workflows/types";
 import { conditionsSummary } from "@/lib/workflows/conditions";
@@ -88,6 +90,12 @@ export const ACTION_ICONS: Record<WorkflowActionType, typeof Zap> = {
   update_record: Sparkles,
   delete_record: Eraser,
   create_contract_from_deal: FileSignature,
+  create_person_from_candidate: UserPlus,
+  create_contract_document: FileSignature,
+  create_allocation: Briefcase,
+  create_payable_schedule: CalendarClock,
+  create_receivable_invoice: Receipt,
+  provision_workspace_user: KeyRound,
 };
 
 export function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
@@ -176,6 +184,18 @@ export function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
       return { type, table: "activities", target_id: "{{id}}" };
     case "create_contract_from_deal":
       return { type, role: "provider", document_kind: "contract", copy_line_items: true, skip_if_exists: true };
+    case "create_person_from_candidate":
+      return { type, employment_type: "pj", department: "" };
+    case "create_contract_document":
+      return { type, kind: "client", skip_if_exists: true };
+    case "create_allocation":
+      return { type, allocation_pct: "100" };
+    case "create_payable_schedule":
+      return { type, amount: "", installments: 12, day_of_month: 10, description: "Honorários mensais" };
+    case "create_receivable_invoice":
+      return { type, amount: "", due_in_days: 15, description: "Honorários de hunting" };
+    case "provision_workspace_user":
+      return { type, role: "member", permission_set_id: "" };
   }
 }
 
@@ -656,6 +676,16 @@ export function describeAction(a: WorkflowAction, labels?: DescribeLabels): stri
       return `${a.branches.length} ramo(s) + senão`;
     case "delay_until_date":
       return `até ${a.field}${a.offset_amount ? ` ${a.offset_amount > 0 ? "+" : ""}${a.offset_amount}${(a.offset_unit ?? "days")[0]}` : ""}`;
+    case "create_person_from_candidate":
+      return [a.department, a.employment_type?.toUpperCase()].filter(Boolean).join(" · ") || "pessoa no TechPeople";
+    case "create_contract_document":
+      return a.kind === "provider" ? "contrato de prestação" : "contrato de compra (PJ)";
+    case "create_payable_schedule":
+      return `${a.installments ?? 12}x ${a.amount || "—"} · dia ${a.day_of_month ?? 10}`;
+    case "create_receivable_invoice":
+      return `${a.amount || "—"} · vence em ${a.due_in_days ?? 15} dias`;
+    case "provision_workspace_user":
+      return a.permission_set_id ? `convite como ${a.role ?? "member"}` : "Selecione as permissões";
     default:
       return "";
   }
