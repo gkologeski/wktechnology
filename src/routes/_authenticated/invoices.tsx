@@ -62,6 +62,10 @@ import { issueNfse } from "@/lib/nfse.functions";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { ViewModeToggle } from "@/components/kanban/view-mode-toggle";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useGridSelection } from "@/components/grid/use-grid-selection";
+import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 
 const INVOICE_STATUSES = ["draft", "open", "paid", "overdue", "cancelled", "refunded"] as const;
 
@@ -419,6 +423,13 @@ function InvoicesPage() {
                     <TableBody>
                       {sortedInvoices.map((inv) => (
                         <TableRow key={inv.id}>
+                          <TableCell>
+                            <Checkbox
+                              aria-label={`Selecionar fatura ${inv.invoice_number}`}
+                              checked={selection.selectedIds.has(inv.id)}
+                              onCheckedChange={() => selection.toggleOne(inv.id)}
+                            />
+                          </TableCell>
                           <TableCell className="font-medium">{inv.invoice_number}</TableCell>
                           <TableCell>
                             <Badge
