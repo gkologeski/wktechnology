@@ -685,12 +685,14 @@ export const consumeInvite = createServerFn({ method: "POST" })
       if (cErr || !created.user) throw new Error(cErr?.message ?? "Falha ao criar usuário.");
       userId = created.user.id;
     } else {
-      // Atualiza senha + metadata para garantir login
-      await supabaseAdmin.auth.admin.updateUserById(userId, {
+      // Atualiza senha + metadata e remove bloqueio (ex.: usuário inativo vindo do HubSpot)
+      const { error: uErr } = await supabaseAdmin.auth.admin.updateUserById(userId, {
         password: data.password,
         email_confirm: true,
+        ban_duration: "none",
         user_metadata: { full_name: data.full_name, phone: data.phone },
       });
+      if (uErr) throw new Error(`Não foi possível liberar o acesso: ${uErr.message}`);
     }
 
     // Garante profile
@@ -712,6 +714,15 @@ export const consumeInvite = createServerFn({ method: "POST" })
       invited_by: null,
     } as never);
     if (mErr && mErr.code !== "23505") throw new Error(mErr.message);
+    if (mErr?.code === "23505") {
+      // Já era membro (ex.: inativo importado do HubSpot): ativa.
+      const { error: sErr } = await supabaseAdmin
+        .from("workspace_members")
+        .update({ status: "active" } as never)
+        .eq("workspace_id", inv.workspace_id as string)
+        .eq("user_id", userId);
+      if (sErr) throw new Error(sErr.message);
+    }
 
     // Atribui o job_role padrão para que user_has_permission retorne true.
     // Sem isso, RLS bloqueia inserts em activities/deals/etc. para membros novos.
