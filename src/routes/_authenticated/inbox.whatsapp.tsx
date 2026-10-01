@@ -47,8 +47,17 @@ import { formatDateTime } from "@/lib/crm";
 import { useAuth } from "@/lib/auth";
 import { useActivityWindows } from "@/components/activity/activity-window-context";
 import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
+import { InboxConversationList, InboxContext, InboxEmpty, InboxListHeader, InboxLoading, InboxWorkspace } from "@/components/inbox/inbox-workspace";
 
 export const Route = createFileRoute("/_authenticated/inbox/whatsapp")({
+  head: () => ({ meta: [
+    { title: "WhatsApp — Inbox TechERP" },
+    { name: "description", content: "Conversas de WhatsApp do workspace em uma central organizada." },
+    { property: "og:title", content: "WhatsApp — Inbox TechERP" },
+    { property: "og:description", content: "Conversas de WhatsApp do workspace em uma central organizada." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: WhatsAppInbox,
 });
 
@@ -215,26 +224,17 @@ function WhatsAppInbox() {
   }, [messages.length]);
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col gap-3 p-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Inbox WhatsApp</h1>
-          <p className="text-sm text-muted-foreground">
-            Conversas pelo número conectado do WhatsApp
-          </p>
-        </div>
-        <div className="flex gap-2">
+    <InboxWorkspace
+      title="Inbox WhatsApp"
+      description="Conversas pelo número conectado do WhatsApp"
+      actions={<>
           <WhatsAppSettingsButton />
           <Button onClick={() => openActivity?.({ action: ACTIONS_BY_KEY["create:whatsapp"] })}>
             <MessageCircle className="mr-2 h-4 w-4" /> Nova conversa
           </Button>
-        </div>
-      </div>
-
-      <div className="grid flex-1 grid-cols-[320px_1fr] gap-3 overflow-hidden">
-        {/* Lista de conversas */}
-        <Card className="flex flex-col overflow-hidden">
-          <div className="border-b p-2">
+        </>}
+      list={<>
+          <InboxListHeader>
             <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="mine">Minhas</TabsTrigger>
@@ -245,22 +245,18 @@ function WhatsAppInbox() {
             <div className="mt-2 px-1 text-xs text-muted-foreground">
               {conversations.length} conversa(s)
             </div>
-          </div>
-          <ScrollArea className="flex-1">
-            {conversationsQ.isLoading && (
-              <div className="p-4 text-sm text-muted-foreground">Carregando…</div>
-            )}
+          </InboxListHeader>
+          <InboxConversationList>
+            {conversationsQ.isLoading && <InboxLoading />}
             {!conversationsQ.isLoading && conversations.length === 0 && (
-              <div className="p-4 text-sm text-muted-foreground">
-                Nenhuma conversa ainda. Envie uma mensagem para começar.
-              </div>
+              <InboxEmpty>Nenhuma conversa ainda. Envie uma mensagem para começar.</InboxEmpty>
             )}
             {conversations.map((c) => (
               <button
                 key={c.id}
                 onClick={() => setSelected(c.id)}
-                className={`flex w-full flex-col gap-1 border-b p-3 text-left transition hover:bg-muted/50 ${
-                  selected === c.id ? "bg-muted" : ""
+                className={`flex w-full flex-col gap-1 border-b border-border-subtle p-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring ${
+                  selected === c.id ? "border-l-2 border-l-primary bg-accent" : ""
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
@@ -293,15 +289,11 @@ function WhatsAppInbox() {
                 </div>
               </button>
             ))}
-          </ScrollArea>
-        </Card>
-
-        {/* Painel de mensagens */}
-        <Card className="flex flex-col overflow-hidden">
+          </InboxConversationList>
+        </>}
+      conversation={<>
           {!current ? (
-            <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-              Selecione uma conversa
-            </div>
+            <InboxEmpty>Selecione uma conversa para visualizar o histórico.</InboxEmpty>
           ) : (
             <>
               <div className="flex flex-wrap items-center justify-between gap-2 border-b p-3">
@@ -361,7 +353,7 @@ function WhatsAppInbox() {
                   )}
                 </div>
               </div>
-              <ScrollArea className="flex-1 p-4">
+              <ScrollArea className="flex-1 bg-product-panel-muted p-4" aria-live="polite">
                 <div className="space-y-2">
                   {messages.map((m) => (
                     <div
@@ -493,9 +485,9 @@ function WhatsAppInbox() {
               </div>
             </>
           )}
-        </Card>
-      </div>
-    </div>
+      </>}
+      context={current ? <InboxContext initials={current.contact_phone.slice(-2)} title={current.contact_phone} subtitle={`via ${current.twilio_number}`}><div className="space-y-3 border-t border-border pt-4 text-sm"><div><p className="text-xs text-muted-foreground">Responsável</p><p className="mt-1 font-medium">{current.assigned_to ? memberMap.get(current.assigned_to) ?? "Atribuída" : "Sem dono"}</p></div><div><p className="text-xs text-muted-foreground">Status</p><p className="mt-1 font-medium">{current.status === "closed" ? "Fechada" : "Aberta"}</p></div></div></InboxContext> : undefined}
+    />
   );
 }
 
