@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
-import { ArrowLeft, Inbox, Mail, MessageCircle, PanelRightClose, PanelRightOpen, User } from "lucide-react";
+import { AlertCircle, ArrowLeft, Check, CheckCheck, Inbox, Mail, MessageCircle, PanelRightClose, PanelRightOpen, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -240,5 +240,58 @@ export function InboxConversationItem({
         {meta ? <div className="mt-1 truncate text-[11px] text-muted-foreground">{meta}</div> : null}
       </div>
     </button>
+  );
+}
+
+/** Topo padrão da conversa aberta (avatar grande, nome, canal/subtítulo e ações). */
+export function InboxConversationHeader({ label, subtitle, actions }: { label: string; subtitle?: ReactNode; actions?: ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center gap-3 border-b border-border bg-product-panel px-4 py-3">
+      <InboxAvatar label={label} className="h-9 w-9" />
+      <div className="min-w-0 flex-1">
+        <div className="truncate font-semibold text-foreground">{label}</div>
+        {subtitle ? <div className="truncate text-xs text-muted-foreground">{subtitle}</div> : null}
+      </div>
+      {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+    </div>
+  );
+}
+
+export type InboxDeliveryStatus = "queued" | "sending" | "sent" | "delivered" | "read" | "failed" | string | null | undefined;
+
+const STATUS_LABEL: Record<string, string> = {
+  queued: "Na fila", accepted: "Na fila", sending: "Enviando", sent: "Enviada",
+  delivered: "Entregue", read: "Lida", failed: "Falhou", undelivered: "Não entregue",
+};
+
+/** Indicador de envio/leitura (✓ enviada, ✓✓ entregue, ✓✓ destacado = lida). */
+export function InboxMessageStatus({ status }: { status: InboxDeliveryStatus }) {
+  if (!status) return null;
+  const label = STATUS_LABEL[status] ?? status;
+  const failed = status === "failed" || status === "undelivered";
+  return (
+    <span className="inline-flex items-center gap-0.5" title={label} aria-label={label}>
+      {failed ? <AlertCircle className="h-3 w-3 text-destructive" /> : status === "read" ? <CheckCheck className="h-3.5 w-3.5 text-primary" /> : status === "delivered" ? <CheckCheck className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
+    </span>
+  );
+}
+
+/** Balão de mensagem padrão: recebidas à esquerda, enviadas à direita. */
+export function InboxMessageBubble({ outbound, author, when, status, footer, children }: { outbound?: boolean; author?: ReactNode; when?: string | null; status?: InboxDeliveryStatus; footer?: ReactNode; children: ReactNode }) {
+  return (
+    <div className={cn("flex", outbound ? "justify-end" : "justify-start")}>
+      <div className={cn(
+        "max-w-[78%] rounded-[var(--radius)] border px-3.5 py-2.5 text-sm shadow-sm",
+        outbound ? "rounded-tr-sm border-primary/20 bg-primary/10 text-foreground" : "rounded-tl-sm border-border bg-card text-foreground",
+      )}>
+        {author ? <div className="mb-1 text-xs font-medium text-text-secondary">{author}</div> : null}
+        {children}
+        <div className="mt-1.5 flex items-center justify-end gap-1.5 text-[11px] text-muted-foreground">
+          {footer}
+          {when ? <time dateTime={when} title={new Date(when).toLocaleString("pt-BR")}>{new Date(when).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</time> : null}
+          {outbound ? <InboxMessageStatus status={status} /> : null}
+        </div>
+      </div>
+    </div>
   );
 }
