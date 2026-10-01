@@ -330,6 +330,7 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
     label: "Vender",
     items: [
       { title: "Negócios", url: "/deals", icon: Briefcase },
+      { title: "Propostas", url: "/proposals", icon: FileText },
       { title: "Cotações", url: "/settings/quotes", icon: FileText },
       { title: "Faturas", url: "/invoices", icon: FileText },
       {

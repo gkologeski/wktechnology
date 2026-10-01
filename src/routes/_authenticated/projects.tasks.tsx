@@ -2,9 +2,12 @@
 // Desacopla o menu de "Tarefas" do domínio de Sales (`activities` em /tasks).
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
+import { GridListShell } from "@/components/grid/grid-list-shell";
+import { useGridFilters } from "@/hooks/use-grid-filters";
+import type { GridFilterField } from "@/lib/grid-filters";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ListTodo, Search } from "lucide-react";
@@ -31,7 +34,7 @@ import {
 } from "@/components/ui/table";
 import { formatDateTime } from "@/lib/crm";
 import { formatCompactDateTime } from "@/lib/format/compact-date";
-import { listAllProjectTaskIds, listAllProjectTasks, listProjects } from "@/lib/projects.functions";
+import { listAllProjectTaskIds, listAllProjectTasks } from "@/lib/projects.functions";
 import { useGridSelection } from "@/components/grid/use-grid-selection";
 import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
 import { usePermissions } from "@/lib/access-control/use-permissions";
@@ -84,17 +87,11 @@ function ProjectTasksPage() {
   const qc = useQueryClient();
   const listTasksFn = useServerFn(listAllProjectTasks);
   const listTaskIdsFn = useServerFn(listAllProjectTaskIds);
-  const listProjectsFn = useServerFn(listProjects);
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<StatusFilter>("all");
-  const [projectId, setProjectId] = useState<string>("all");
+  // Status e projeto agora são filtrados pelo painel lateral.
+  const status: StatusFilter = "all";
+  const projectId: string = "all";
   const [owner, setOwner] = useState<OwnerFilter>("all");
-
-  const projectsQ = useQuery({
-    queryKey: ["projects", "picker"],
-    queryFn: () => listProjectsFn({ data: {} }),
-    staleTime: 60_000,
-  });
 
   const tasksKey = ["project_tasks", "all", { status, projectId, owner, search }] as const;
   const { data: rows = [], isLoading } = useQuery({
@@ -109,15 +106,6 @@ function ProjectTasksPage() {
         },
       }),
   });
-
-  const projectOptions = useMemo(
-    () =>
-      (projectsQ.data ?? []).map((p: { id: string; name: string }) => ({
-        id: p.id,
-        name: p.name,
-      })),
-    [projectsQ.data],
-  );
 
   // Seleção múltipla / ações em massa (padrão de grids — Fase 4).
   const { canAny } = usePermissions();
@@ -142,6 +130,43 @@ function ProjectTasksPage() {
     "techprojects.tasks.delete.own",
   ]);
 
+  // Painel lateral padronizado (filtros no cliente sobre as tarefas carregadas).
+  const gridFilters = useGridFilters(
+    "project_tasks",
+    rows as any[],
+    [
+      {
+        key: "project",
+        label: "Projeto",
+        type: "multi",
+        searchable: true,
+        get: (t) => t.project_id,
+        optionLabel: (_v, t) => t.projects?.name ?? "Projeto",
+      },
+      {
+        key: "status",
+        label: "Status",
+        type: "multi",
+        get: (t) => t.status,
+        options: Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label })),
+      },
+      {
+        key: "priority",
+        label: "Prioridade",
+        type: "multi",
+        get: (t) => t.priority,
+        options: [
+          { value: "low", label: "Baixa" },
+          { value: "normal", label: "Normal" },
+          { value: "high", label: "Alta" },
+          { value: "urgent", label: "Urgente" },
+        ],
+      },
+      { key: "owner", label: "Responsável", type: "owner", get: (t) => t.assignee_id },
+      { key: "due", label: "Prazo entre", type: "date", get: (t) => t.due_at },
+    ] as GridFilterField<any>[],
+  );
+
   const view = Route.useSearch().view ?? "table";
   const navigate = Route.useNavigate();
   const setView = (v: "table" | "kanban") =>
@@ -152,7 +177,7 @@ function ProjectTasksPage() {
     sort,
     toggle,
     grid: sortGrid,
-  } = useClientSort(rows, {
+  } = useClientSort(gridFilters.filtered, {
     title: (t) => t.title,
     status: (t) => STATUS_LABEL[t.status] ?? t.status,
     hours: (t) => (t.estimated_hours == null ? null : Number(t.estimated_hours)),
@@ -178,32 +203,6 @@ function ProjectTasksPage() {
             className="pl-8"
           />
         </div>
-        <Select value={status} onValueChange={(v) => setStatus(v as StatusFilter)}>
-          <SelectTrigger className="w-44">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os status</SelectItem>
-            {Object.entries(STATUS_LABEL).map(([k, v]) => (
-              <SelectItem key={k} value={k}>
-                {v}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={projectId} onValueChange={setProjectId}>
-          <SelectTrigger className="w-56">
-            <SelectValue placeholder="Projeto" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os projetos</SelectItem>
-            {projectOptions.map((p) => (
-              <SelectItem key={p.id} value={p.id}>
-                {p.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
         <Select value={owner} onValueChange={(v) => setOwner(v as OwnerFilter)}>
           <SelectTrigger className="w-44">
             <SelectValue placeholder="Responsável" />
@@ -254,7 +253,7 @@ function ProjectTasksPage() {
 
       {view === "kanban" ? (
         <KanbanBoard
-          rows={rows as Array<(typeof rows)[number] & { id: string }>}
+          rows={gridFilters.filtered as Array<(typeof rows)[number] & { id: string }>}
           table="project_tasks"
           stageField="status"
           selectable
@@ -319,8 +318,9 @@ function ProjectTasksPage() {
               </Button>
             </div>
           ) : (
-            <>
+            <GridListShell filters={gridFilters}>
               <GridListToolbar
+                filters={gridFilters}
                 grid={sortGrid}
                 filename="tarefas-projetos"
                 labels={{ title: "Título", status: "Status", hours: "Horas est.", due: "Prazo" }}
@@ -428,7 +428,7 @@ function ProjectTasksPage() {
                   })}
                 </TableBody>
               </Table>
-            </>
+            </GridListShell>
           )}
         </div>
       )}

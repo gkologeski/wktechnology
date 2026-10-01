@@ -132,6 +132,14 @@ function ProjectsPage() {
         type: "multi",
         get: (p) => p.contracts?.number ?? p.contracts?.title,
       },
+      {
+        key: "company",
+        label: "Empresa",
+        type: "multi",
+        searchable: true,
+        get: (p) => p.contracts?.counterparty_company_id ?? null,
+        optionLabel: (_v, p) => p.contracts?.companies?.name ?? "Empresa",
+      },
       { key: "owner", label: "Responsável", type: "owner", get: (p) => p.assigned_to },
       { key: "due", label: "Prazo entre", type: "date", get: (p) => p.due_at },
       {
@@ -327,127 +335,132 @@ function ProjectsPage() {
           ) : (
             <>
               <GridListShell filters={gridFilters}>
-              <GridListToolbar
-                filters={gridFilters}
-                sort={sort}
-                setSort={setGridSort}
-                grid={sortGrid}
-                filename="projetos"
-                labels={{
-                  name: "Nome",
-                  contract: "Contrato",
-                  status: "Status",
-                  progress: "Progresso",
-                  due: "Prazo",
-                }}
-                search={false}
-              />
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-10">
-                      <Checkbox
-                        aria-label="Selecionar todos os projetos exibidos"
-                        checked={
-                          selection.allOnPageSelected
-                            ? true
-                            : selection.someOnPageSelected
-                              ? "indeterminate"
-                              : false
-                        }
-                        onCheckedChange={selection.toggleAllOnPage}
-                      />
-                    </TableHead>
-                    <SortableTableHead
-                      label="Nome"
-                      active={sort?.key === "name"}
-                      dir={sort?.dir}
-                      onSort={() => toggle("name")}
-                    />
-                    <SortableTableHead
-                      label="Contrato"
-                      active={sort?.key === "contract"}
-                      dir={sort?.dir}
-                      onSort={() => toggle("contract")}
-                    />
-                    <SortableTableHead
-                      label="Status"
-                      active={sort?.key === "status"}
-                      dir={sort?.dir}
-                      onSort={() => toggle("status")}
-                    />
-                    <SortableTableHead
-                      label="Progresso"
-                      active={sort?.key === "progress"}
-                      dir={sort?.dir}
-                      onSort={() => toggle("progress")}
-                      className="text-right"
-                      align="right"
-                    />
-                    <SortableTableHead
-                      label="Prazo"
-                      active={sort?.key === "due"}
-                      dir={sort?.dir}
-                      onSort={() => toggle("due")}
-                    />
-                    <TableHead>Responsável</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rows.length === 0 && (
+                <GridListToolbar
+                  filters={gridFilters}
+                  sort={sort}
+                  setSort={setGridSort}
+                  grid={sortGrid}
+                  filename="projetos"
+                  labels={{
+                    name: "Nome",
+                    contract: "Contrato",
+                    status: "Status",
+                    progress: "Progresso",
+                    due: "Prazo",
+                  }}
+                  search={false}
+                />
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
-                        Nenhum projeto com estes filtros.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {rows.map((p: any) => (
-                    <TableRow key={p.id}>
-                      <TableCell>
+                      <TableHead className="w-10">
                         <Checkbox
-                          aria-label={`Selecionar projeto ${p.name}`}
-                          checked={selection.selectedIds.has(p.id)}
-                          onCheckedChange={() => selection.toggleOne(p.id)}
+                          aria-label="Selecionar todos os projetos exibidos"
+                          checked={
+                            selection.allOnPageSelected
+                              ? true
+                              : selection.someOnPageSelected
+                                ? "indeterminate"
+                                : false
+                          }
+                          onCheckedChange={selection.toggleAllOnPage}
                         />
-                      </TableCell>
-                      <TableCell>
-                        <Link
-                          to="/projects/$id"
-                          params={{ id: p.id }}
-                          className="font-medium hover:underline"
-                        >
-                          {p.name}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {p.contracts ? (
-                          <Link
-                            to="/contracts/$id"
-                            params={{ id: p.contracts.id }}
-                            className="hover:underline"
-                          >
-                            {p.contracts.number ?? p.contracts.title}
-                          </Link>
-                        ) : (
-                          "—"
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={STATUS_TONE[p.status] ?? ""}>
-                          {STATUS_LABEL[p.status] ?? p.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">{p.progress ?? 0}%</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {p.due_at ? formatDateTime(p.due_at).split(" ")[0] : "—"}
-                      </TableCell>
-                      <TableCell>
-                        <AssigneeCell assignedTo={p.assigned_to} />
-                      </TableCell>
+                      </TableHead>
+                      <SortableTableHead
+                        label="Nome"
+                        active={sort?.key === "name"}
+                        dir={sort?.dir}
+                        onSort={() => toggle("name")}
+                      />
+                      <SortableTableHead
+                        label="Contrato"
+                        active={sort?.key === "contract"}
+                        dir={sort?.dir}
+                        onSort={() => toggle("contract")}
+                      />
+                      <SortableTableHead
+                        label="Status"
+                        active={sort?.key === "status"}
+                        dir={sort?.dir}
+                        onSort={() => toggle("status")}
+                      />
+                      <SortableTableHead
+                        label="Progresso"
+                        active={sort?.key === "progress"}
+                        dir={sort?.dir}
+                        onSort={() => toggle("progress")}
+                        className="text-right"
+                        align="right"
+                      />
+                      <SortableTableHead
+                        label="Prazo"
+                        active={sort?.key === "due"}
+                        dir={sort?.dir}
+                        onSort={() => toggle("due")}
+                      />
+                      <TableHead>Responsável</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.length === 0 && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={8}
+                          className="py-10 text-center text-sm text-muted-foreground"
+                        >
+                          Nenhum projeto com estes filtros.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {rows.map((p: any) => (
+                      <TableRow key={p.id}>
+                        <TableCell>
+                          <Checkbox
+                            aria-label={`Selecionar projeto ${p.name}`}
+                            checked={selection.selectedIds.has(p.id)}
+                            onCheckedChange={() => selection.toggleOne(p.id)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Link
+                            to="/projects/$id"
+                            params={{ id: p.id }}
+                            className="font-medium hover:underline"
+                          >
+                            {p.name}
+                          </Link>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {p.contracts ? (
+                            <Link
+                              to="/contracts/$id"
+                              params={{ id: p.contracts.id }}
+                              className="hover:underline"
+                            >
+                              {p.contracts.number ?? p.contracts.title}
+                            </Link>
+                          ) : (
+                            "—"
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={STATUS_TONE[p.status] ?? ""}>
+                            {STATUS_LABEL[p.status] ?? p.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {p.progress ?? 0}%
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {p.due_at ? formatDateTime(p.due_at).split(" ")[0] : "—"}
+                        </TableCell>
+                        <TableCell>
+                          <AssigneeCell assignedTo={p.assigned_to} />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </GridListShell>
             </>
           )}

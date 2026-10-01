@@ -35,7 +35,7 @@ export const listInvoices = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     let q = context.supabase
       .from("customer_invoices")
-      .select("*")
+      .select("*, companies(id, name)")
       .order("created_at", { ascending: false })
       .limit(data.limit);
     if (data.status !== "all") q = q.eq("status", data.status);
