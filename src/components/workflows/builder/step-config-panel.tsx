@@ -17,7 +17,7 @@ import {
   denormalizeTopGroup,
 } from "./conditions-editor";
 import { EntityPickerDialog } from "./entity-picker-dialog";
-import { HiringActionForm } from "./step-forms/hiring-forms";
+import { HiringActionForm } from "@/components/workflows/builder/step-forms/hiring-forms";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
