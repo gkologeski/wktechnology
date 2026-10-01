@@ -32,7 +32,9 @@ export const listProjects = createServerFn({ method: "POST" })
     const { supabase } = context;
     let q = supabase
       .from("projects")
-      .select("*, contracts(id, number, title), services(id, name)")
+      .select(
+        "*, contracts(id, number, title, counterparty_company_id, companies:counterparty_company_id(id, name)), services(id, name)",
+      )
       .order("created_at", { ascending: false })
       .limit(300);
     if (data.status) q = q.eq("status", data.status);
