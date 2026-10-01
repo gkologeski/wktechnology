@@ -323,8 +323,8 @@ function UnifiedInboxPage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-baseline justify-between gap-2">
                           <span className="truncate text-sm font-semibold text-foreground">{it.contactLabel}</span>
-                          <span className="shrink-0 text-[11px] text-muted-foreground">
-                            {it.lastAt ? formatDateTime(it.lastAt) : ""}
+                          <span className="shrink-0 text-[11px] text-muted-foreground" title={it.lastAt ? formatDateTime(it.lastAt) : undefined}>
+                            {it.lastAt ? shortWhen(it.lastAt) : ""}
                           </span>
                         </div>
                         <div className="truncate text-sm text-text-secondary">{it.title}</div>
@@ -426,4 +426,12 @@ function UnifiedInboxPage() {
       context={current ? <InboxContext initials={current.contactLabel.slice(0, 2).toUpperCase()} title={current.contactLabel} subtitle={current.replyTo || undefined}><div className="space-y-3 border-t border-border pt-4 text-sm"><div><p className="text-xs text-muted-foreground">Canal</p><p className="mt-1 font-medium capitalize">{current.channel}</p></div><Button asChild className="w-full" variant="outline"><Link to={current.href}>Abrir conversa <ExternalLink className="ml-2 h-3.5 w-3.5" /></Link></Button></div></InboxContext> : undefined}
     />
   );
+}
+
+function shortWhen(iso: string) {
+  const d = new Date(iso);
+  const sameDay = d.toDateString() === new Date().toDateString();
+  return sameDay
+    ? d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+    : d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 }
