@@ -59,7 +59,11 @@ function uuidOrNull(v: string): string | null {
 }
 
 /** Candidato e vaga de origem a partir do registro que disparou o workflow. */
-function sourceIds(ctx: RunCtx): { candidateId: string | null; jobId: string | null; applicationId: string | null } {
+function sourceIds(ctx: RunCtx): {
+  candidateId: string | null;
+  jobId: string | null;
+  applicationId: string | null;
+} {
   const after = (ctx.after ?? {}) as AnyRow;
   if (ctx.entity === "ats_applications") {
     return {
@@ -137,7 +141,12 @@ export async function handleHiringAction(
       if (exErr) throw new Error(exErr.message);
       if (existing) {
         h.person_id = (existing as { id: string }).id;
-        return { at, ok: true, action: action.type, detail: { skipped: true, person_id: h.person_id } };
+        return {
+          at,
+          ok: true,
+          action: action.type,
+          detail: { skipped: true, person_id: h.person_id },
+        };
       }
 
       const { data: cand, error: cErr } = await supabase
@@ -197,7 +206,10 @@ export async function handleHiringAction(
 
     case "create_contract_document": {
       const personId = await resolvePersonId(supabase, ctx, action.person_id);
-      if (!personId) throw new Error("Pessoa não encontrada. Inclua antes o passo “Criar pessoa a partir do candidato”.");
+      if (!personId)
+        throw new Error(
+          "Pessoa não encontrada. Inclua antes o passo “Criar pessoa a partir do candidato”.",
+        );
       const kind: ContractKind = isContractKind(action.kind) ? action.kind : "client";
       const { document_kind, role } = kindToColumns(kind, null);
 
@@ -214,7 +226,12 @@ export async function handleHiringAction(
         if (exErr) throw new Error(exErr.message);
         if (existing && existing.length > 0) {
           h.contract_id = (existing[0] as { id: string }).id;
-          return { at, ok: true, action: action.type, detail: { skipped: true, contract_id: h.contract_id } };
+          return {
+            at,
+            ok: true,
+            action: action.type,
+            detail: { skipped: true, contract_id: h.contract_id },
+          };
         }
       }
 
@@ -288,7 +305,12 @@ export async function handleHiringAction(
       if (exErr) throw new Error(exErr.message);
       if (existing && existing.length > 0) {
         h.allocation_id = (existing[0] as { id: string }).id;
-        return { at, ok: true, action: action.type, detail: { skipped: true, allocation_id: h.allocation_id } };
+        return {
+          at,
+          ok: true,
+          action: action.type,
+          detail: { skipped: true, allocation_id: h.allocation_id },
+        };
       }
       const pct = num(ctx, action.allocation_pct);
       const { data: inserted, error } = await supabase
@@ -311,7 +333,12 @@ export async function handleHiringAction(
         .single();
       if (error) throw new Error(error.message);
       h.allocation_id = (inserted as { id: string }).id;
-      return { at, ok: true, action: action.type, detail: { allocation_id: h.allocation_id, project_id: projectId } };
+      return {
+        at,
+        ok: true,
+        action: action.type,
+        detail: { allocation_id: h.allocation_id, project_id: projectId },
+      };
     }
 
     case "create_payable_schedule": {
@@ -331,7 +358,9 @@ export async function handleHiringAction(
       }
       const installments = Math.min(Math.max(Math.trunc(action.installments ?? 12), 1), 24);
       const day = Math.min(Math.max(Math.trunc(action.day_of_month ?? 10), 1), 28);
-      const start = new Date(isoDate(ctx, action.starts_at) ?? new Date().toISOString().slice(0, 10));
+      const start = new Date(
+        isoDate(ctx, action.starts_at) ?? new Date().toISOString().slice(0, 10),
+      );
       const description = txt(ctx, action.description) || "Honorários mensais";
       const contractId = h.contract_id ?? null;
       const base = {
@@ -346,7 +375,11 @@ export async function handleHiringAction(
         status: "open",
         installment_total: installments,
         external_ref: ref,
-        metadata: { person_id: personId, origin: "workflow_hiring", workflow_id: ctx.workflowId ?? null },
+        metadata: {
+          person_id: personId,
+          origin: "workflow_hiring",
+          workflow_id: ctx.workflowId ?? null,
+        },
       };
       const rows = Array.from({ length: installments }, (_, i) => {
         const due = nthDue(start, day, i);
@@ -376,7 +409,12 @@ export async function handleHiringAction(
         at,
         ok: true,
         action: action.type,
-        detail: { parent_entry_id: parentId, entries: installments, amount, first_due: first.due_date },
+        detail: {
+          parent_entry_id: parentId,
+          entries: installments,
+          amount,
+          first_due: first.due_date,
+        },
       };
     }
 
@@ -392,13 +430,23 @@ export async function handleHiringAction(
         .limit(1);
       if (exErr) throw new Error(exErr.message);
       if (existing && existing.length > 0) {
-        return { at, ok: true, action: action.type, detail: { skipped: true, entry_id: (existing[0] as { id: string }).id } };
+        return {
+          at,
+          ok: true,
+          action: action.type,
+          detail: { skipped: true, entry_id: (existing[0] as { id: string }).id },
+        };
       }
       let companyId = uuidOrNull(txt(ctx, action.company_id));
       const { jobId } = sourceIds(ctx);
       if (!companyId && jobId) {
-        const { data } = await supabase.from("ats_jobs").select("company_id").eq("id", jobId).maybeSingle();
-        companyId = ((data as { company_id?: string | null } | null)?.company_id as string | null) ?? null;
+        const { data } = await supabase
+          .from("ats_jobs")
+          .select("company_id")
+          .eq("id", jobId)
+          .maybeSingle();
+        companyId =
+          ((data as { company_id?: string | null } | null)?.company_id as string | null) ?? null;
       }
       const dueInDays = Math.min(Math.max(Math.trunc(action.due_in_days ?? 15), 0), 365);
       const due = new Date(Date.now() + dueInDays * 86_400_000).toISOString().slice(0, 10);
@@ -417,7 +465,11 @@ export async function handleHiringAction(
           due_date: due,
           status: "open",
           external_ref: ref,
-          metadata: { origin: "workflow_hiring", source_entity: ctx.entity, source_id: ctx.entityId },
+          metadata: {
+            origin: "workflow_hiring",
+            source_entity: ctx.entity,
+            source_id: ctx.entityId,
+          },
         } as never)
         .select("id")
         .single();
@@ -426,21 +478,32 @@ export async function handleHiringAction(
         at,
         ok: true,
         action: action.type,
-        detail: { entry_id: (inserted as { id: string }).id, amount, due_date: due, company_id: companyId },
+        detail: {
+          entry_id: (inserted as { id: string }).id,
+          amount,
+          due_date: due,
+          company_id: companyId,
+        },
       };
     }
 
     case "provision_workspace_user": {
-      if (!action.permission_set_id) throw new Error("Selecione o conjunto de permissões do novo usuário.");
+      if (!action.permission_set_id)
+        throw new Error("Selecione o conjunto de permissões do novo usuário.");
       let email = txt(ctx, action.email).toLowerCase();
       if (!email) {
         const personId = await resolvePersonId(supabase, ctx, undefined);
         if (personId) {
-          const { data } = await supabase.from("people").select("email").eq("id", personId).maybeSingle();
+          const { data } = await supabase
+            .from("people")
+            .select("email")
+            .eq("id", personId)
+            .maybeSingle();
           email = String((data as { email?: string | null } | null)?.email ?? "").toLowerCase();
         }
       }
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Email do novo usuário ausente ou inválido.");
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+        throw new Error("Email do novo usuário ausente ou inválido.");
 
       // Só administradores do workspace podem conceder acesso por workflow.
       const { data: ownerMember } = await supabase
@@ -451,7 +514,9 @@ export async function handleHiringAction(
         .maybeSingle();
       const om = ownerMember as { role?: string; status?: string } | null;
       if (!om || om.status === "inactive" || !["owner", "admin"].includes(om.role ?? "")) {
-        throw new Error("Somente administradores do workspace podem provisionar usuários por workflow.");
+        throw new Error(
+          "Somente administradores do workspace podem provisionar usuários por workflow.",
+        );
       }
 
       const { data: pending } = await supabase
@@ -462,7 +527,12 @@ export async function handleHiringAction(
         .is("accepted_at", null)
         .limit(1);
       if (pending && pending.length > 0) {
-        return { at, ok: true, action: action.type, detail: { skipped: true, reason: "convite pendente", email } };
+        return {
+          at,
+          ok: true,
+          action: action.type,
+          detail: { skipped: true, reason: "convite pendente", email },
+        };
       }
 
       const { data: ws } = await supabase
@@ -482,7 +552,10 @@ export async function handleHiringAction(
       }
 
       const [{ data: limitRow }, { count: members }] = await Promise.all([
-        supabase.rpc("get_entitlement_limit", { _workspace: ctx.workspaceId, _key: "users.max" } as never),
+        supabase.rpc("get_entitlement_limit", {
+          _workspace: ctx.workspaceId,
+          _key: "users.max",
+        } as never),
         supabase
           .from("workspace_members")
           .select("workspace_id", { count: "exact", head: true })

@@ -183,7 +183,13 @@ export function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
     case "delete_record":
       return { type, table: "activities", target_id: "{{id}}" };
     case "create_contract_from_deal":
-      return { type, role: "provider", document_kind: "contract", copy_line_items: true, skip_if_exists: true };
+      return {
+        type,
+        role: "provider",
+        document_kind: "contract",
+        copy_line_items: true,
+        skip_if_exists: true,
+      };
     case "create_person_from_candidate":
       return { type, employment_type: "pj", department: "" };
     case "create_contract_document":
@@ -191,7 +197,13 @@ export function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
     case "create_allocation":
       return { type, allocation_pct: "100" };
     case "create_payable_schedule":
-      return { type, amount: "", installments: 12, day_of_month: 10, description: "Honorários mensais" };
+      return {
+        type,
+        amount: "",
+        installments: 12,
+        day_of_month: 10,
+        description: "Honorários mensais",
+      };
     case "create_receivable_invoice":
       return { type, amount: "", due_in_days: 15, description: "Honorários de hunting" };
     case "provision_workspace_user":
@@ -677,7 +689,10 @@ export function describeAction(a: WorkflowAction, labels?: DescribeLabels): stri
     case "delay_until_date":
       return `até ${a.field}${a.offset_amount ? ` ${a.offset_amount > 0 ? "+" : ""}${a.offset_amount}${(a.offset_unit ?? "days")[0]}` : ""}`;
     case "create_person_from_candidate":
-      return [a.department, a.employment_type?.toUpperCase()].filter(Boolean).join(" · ") || "pessoa no TechPeople";
+      return (
+        [a.department, a.employment_type?.toUpperCase()].filter(Boolean).join(" · ") ||
+        "pessoa no TechPeople"
+      );
     case "create_contract_document":
       return a.kind === "provider" ? "contrato de prestação" : "contrato de compra (PJ)";
     case "create_payable_schedule":

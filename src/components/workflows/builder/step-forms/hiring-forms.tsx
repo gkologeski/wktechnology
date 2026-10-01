@@ -5,7 +5,13 @@ import type { ReactNode } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { TokenInput } from "@/components/workflows/token-input";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
 import type { WorkflowAction } from "@/lib/workflows/types";
@@ -35,11 +41,31 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
-function Tok({ value, onChange, placeholder }: { value?: string; onChange: (v: string) => void; placeholder?: string }) {
+function Tok({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value?: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
   return <TokenInput value={value ?? ""} onValueChange={onChange} placeholder={placeholder} />;
 }
 
-function NumberInput({ value, onChange, min, max, label }: { value?: number; onChange: (v: number) => void; min: number; max: number; label: string }) {
+function NumberInput({
+  value,
+  onChange,
+  min,
+  max,
+  label,
+}: {
+  value?: number;
+  onChange: (v: number) => void;
+  min: number;
+  max: number;
+  label: string;
+}) {
   return (
     <Input
       type="number"
@@ -57,8 +83,15 @@ function NumberInput({ value, onChange, min, max, label }: { value?: number; onC
 
 const PERSON_HINT = "Vazio = pessoa criada no passo anterior ou vinculada ao candidato.";
 
-export function HiringActionForm({ action, onChange }: { action: HiringAction; onChange: (a: HiringAction) => void }) {
-  const set = <K extends string>(patch: Record<K, unknown>) => onChange({ ...action, ...patch } as HiringAction);
+export function HiringActionForm({
+  action,
+  onChange,
+}: {
+  action: HiringAction;
+  onChange: (a: HiringAction) => void;
+}) {
+  const set = <K extends string>(patch: Record<K, unknown>) =>
+    onChange({ ...action, ...patch } as HiringAction);
 
   switch (action.type) {
     case "create_person_from_candidate":
@@ -69,17 +102,31 @@ export function HiringActionForm({ action, onChange }: { action: HiringAction; o
           </p>
           <div className="grid grid-cols-2 gap-2">
             <Field label="Área">
-              <Select value={action.department || "_none"} onValueChange={(v) => set({ department: v === "_none" ? "" : v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={action.department || "_none"}
+                onValueChange={(v) => set({ department: v === "_none" ? "" : v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="_none">Não definida</SelectItem>
-                  {AREAS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                  {AREAS.map((a) => (
+                    <SelectItem key={a} value={a}>
+                      {a}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </Field>
             <Field label="Vínculo">
-              <Select value={action.employment_type ?? "pj"} onValueChange={(v) => set({ employment_type: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={action.employment_type ?? "pj"}
+                onValueChange={(v) => set({ employment_type: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="pj">PJ</SelectItem>
                   <SelectItem value="clt">CLT</SelectItem>
@@ -91,12 +138,34 @@ export function HiringActionForm({ action, onChange }: { action: HiringAction; o
             </Field>
           </div>
           <Field label="Cargo" hint="Vazio = título da vaga.">
-            <Tok value={action.role_title} onChange={(v) => set({ role_title: v })} placeholder="Vendedor / Closer" />
+            <Tok
+              value={action.role_title}
+              onChange={(v) => set({ role_title: v })}
+              placeholder="Vendedor / Closer"
+            />
           </Field>
           <div className="grid grid-cols-3 gap-2">
-            <Field label="Admissão"><Tok value={action.hire_date} onChange={(v) => set({ hire_date: v })} placeholder="hoje" /></Field>
-            <Field label="Custo mensal"><Tok value={action.monthly_cost} onChange={(v) => set({ monthly_cost: v })} placeholder="8000" /></Field>
-            <Field label="Custo/hora"><Tok value={action.cost_hour} onChange={(v) => set({ cost_hour: v })} placeholder="120" /></Field>
+            <Field label="Admissão">
+              <Tok
+                value={action.hire_date}
+                onChange={(v) => set({ hire_date: v })}
+                placeholder="hoje"
+              />
+            </Field>
+            <Field label="Custo mensal">
+              <Tok
+                value={action.monthly_cost}
+                onChange={(v) => set({ monthly_cost: v })}
+                placeholder="8000"
+              />
+            </Field>
+            <Field label="Custo/hora">
+              <Tok
+                value={action.cost_hour}
+                onChange={(v) => set({ cost_hour: v })}
+                placeholder="120"
+              />
+            </Field>
           </div>
         </div>
       );
@@ -106,7 +175,9 @@ export function HiringActionForm({ action, onChange }: { action: HiringAction; o
         <div className="space-y-3">
           <Field label="Tipo de contrato">
             <Select value={action.kind ?? "client"} onValueChange={(v) => set({ kind: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="client">Compra — contratamos a PJ do profissional</SelectItem>
                 <SelectItem value="provider">Prestação — prestamos serviço ao cliente</SelectItem>
@@ -117,8 +188,20 @@ export function HiringActionForm({ action, onChange }: { action: HiringAction; o
             <Tok value={action.title} onChange={(v) => set({ title: v })} />
           </Field>
           <div className="grid grid-cols-2 gap-2">
-            <Field label="Início da vigência"><Tok value={action.starts_at} onChange={(v) => set({ starts_at: v })} placeholder="2026-01-01" /></Field>
-            <Field label="Valor mensal"><Tok value={action.monthly_value} onChange={(v) => set({ monthly_value: v })} placeholder="8000" /></Field>
+            <Field label="Início da vigência">
+              <Tok
+                value={action.starts_at}
+                onChange={(v) => set({ starts_at: v })}
+                placeholder="2026-01-01"
+              />
+            </Field>
+            <Field label="Valor mensal">
+              <Tok
+                value={action.monthly_value}
+                onChange={(v) => set({ monthly_value: v })}
+                placeholder="8000"
+              />
+            </Field>
           </div>
           <Field label="Modelo de contrato">
             <EntityCombobox
@@ -136,8 +219,14 @@ export function HiringActionForm({ action, onChange }: { action: HiringAction; o
             <Tok value={action.person_id} onChange={(v) => set({ person_id: v })} />
           </Field>
           <div className="flex items-center justify-between rounded-md border p-2">
-            <Label className="text-xs" htmlFor="wf-contract-doc-skip">Não recriar se a pessoa já tem contrato vigente</Label>
-            <Switch id="wf-contract-doc-skip" checked={action.skip_if_exists !== false} onCheckedChange={(v) => set({ skip_if_exists: v })} />
+            <Label className="text-xs" htmlFor="wf-contract-doc-skip">
+              Não recriar se a pessoa já tem contrato vigente
+            </Label>
+            <Switch
+              id="wf-contract-doc-skip"
+              checked={action.skip_if_exists !== false}
+              onCheckedChange={(v) => set({ skip_if_exists: v })}
+            />
           </div>
         </div>
       );
@@ -148,14 +237,34 @@ export function HiringActionForm({ action, onChange }: { action: HiringAction; o
           <Field label="Projeto do cliente" hint="ID ou variável. Vazio = alocação sem projeto.">
             <Tok value={action.project_id} onChange={(v) => set({ project_id: v })} />
           </Field>
-          <Field label="Papel na alocação"><Tok value={action.role_title} onChange={(v) => set({ role_title: v })} /></Field>
+          <Field label="Papel na alocação">
+            <Tok value={action.role_title} onChange={(v) => set({ role_title: v })} />
+          </Field>
           <div className="grid grid-cols-3 gap-2">
-            <Field label="Dedicação (%)"><Tok value={action.allocation_pct} onChange={(v) => set({ allocation_pct: v })} placeholder="100" /></Field>
-            <Field label="Taxa faturada/h"><Tok value={action.billable_rate} onChange={(v) => set({ billable_rate: v })} /></Field>
-            <Field label="Custo/h"><Tok value={action.cost_rate} onChange={(v) => set({ cost_rate: v })} /></Field>
+            <Field label="Dedicação (%)">
+              <Tok
+                value={action.allocation_pct}
+                onChange={(v) => set({ allocation_pct: v })}
+                placeholder="100"
+              />
+            </Field>
+            <Field label="Taxa faturada/h">
+              <Tok value={action.billable_rate} onChange={(v) => set({ billable_rate: v })} />
+            </Field>
+            <Field label="Custo/h">
+              <Tok value={action.cost_rate} onChange={(v) => set({ cost_rate: v })} />
+            </Field>
           </div>
-          <Field label="Início"><Tok value={action.starts_at} onChange={(v) => set({ starts_at: v })} placeholder="hoje" /></Field>
-          <Field label="Pessoa" hint={PERSON_HINT}><Tok value={action.person_id} onChange={(v) => set({ person_id: v })} /></Field>
+          <Field label="Início">
+            <Tok
+              value={action.starts_at}
+              onChange={(v) => set({ starts_at: v })}
+              placeholder="hoje"
+            />
+          </Field>
+          <Field label="Pessoa" hint={PERSON_HINT}>
+            <Tok value={action.person_id} onChange={(v) => set({ person_id: v })} />
+          </Field>
         </div>
       );
 
@@ -163,16 +272,45 @@ export function HiringActionForm({ action, onChange }: { action: HiringAction; o
       return (
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground">
-            Gera parcelas mensais no Contas a Pagar, vinculadas ao contrato criado no fluxo. Não duplica ao reexecutar.
+            Gera parcelas mensais no Contas a Pagar, vinculadas ao contrato criado no fluxo. Não
+            duplica ao reexecutar.
           </p>
-          <Field label="Valor da parcela"><Tok value={action.amount} onChange={(v) => set({ amount: v })} placeholder="8000" /></Field>
-          <Field label="Descrição"><Tok value={action.description} onChange={(v) => set({ description: v })} /></Field>
+          <Field label="Valor da parcela">
+            <Tok value={action.amount} onChange={(v) => set({ amount: v })} placeholder="8000" />
+          </Field>
+          <Field label="Descrição">
+            <Tok value={action.description} onChange={(v) => set({ description: v })} />
+          </Field>
           <div className="grid grid-cols-3 gap-2">
-            <Field label="Parcelas"><NumberInput label="Parcelas" min={1} max={24} value={action.installments ?? 12} onChange={(n) => set({ installments: n })} /></Field>
-            <Field label="Dia do vencimento"><NumberInput label="Dia do vencimento" min={1} max={28} value={action.day_of_month ?? 10} onChange={(n) => set({ day_of_month: n })} /></Field>
-            <Field label="A partir de"><Tok value={action.starts_at} onChange={(v) => set({ starts_at: v })} placeholder="hoje" /></Field>
+            <Field label="Parcelas">
+              <NumberInput
+                label="Parcelas"
+                min={1}
+                max={24}
+                value={action.installments ?? 12}
+                onChange={(n) => set({ installments: n })}
+              />
+            </Field>
+            <Field label="Dia do vencimento">
+              <NumberInput
+                label="Dia do vencimento"
+                min={1}
+                max={28}
+                value={action.day_of_month ?? 10}
+                onChange={(n) => set({ day_of_month: n })}
+              />
+            </Field>
+            <Field label="A partir de">
+              <Tok
+                value={action.starts_at}
+                onChange={(v) => set({ starts_at: v })}
+                placeholder="hoje"
+              />
+            </Field>
           </div>
-          <Field label="Pessoa" hint={PERSON_HINT}><Tok value={action.person_id} onChange={(v) => set({ person_id: v })} /></Field>
+          <Field label="Pessoa" hint={PERSON_HINT}>
+            <Tok value={action.person_id} onChange={(v) => set({ person_id: v })} />
+          </Field>
         </div>
       );
 
@@ -180,13 +318,28 @@ export function HiringActionForm({ action, onChange }: { action: HiringAction; o
       return (
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground">
-            Lança no Contas a Receber contra a empresa da vaga (ex.: honorários de hunting). Não cria pessoa interna.
+            Lança no Contas a Receber contra a empresa da vaga (ex.: honorários de hunting). Não
+            cria pessoa interna.
           </p>
-          <Field label="Valor"><Tok value={action.amount} onChange={(v) => set({ amount: v })} placeholder="15000" /></Field>
-          <Field label="Descrição"><Tok value={action.description} onChange={(v) => set({ description: v })} /></Field>
+          <Field label="Valor">
+            <Tok value={action.amount} onChange={(v) => set({ amount: v })} placeholder="15000" />
+          </Field>
+          <Field label="Descrição">
+            <Tok value={action.description} onChange={(v) => set({ description: v })} />
+          </Field>
           <div className="grid grid-cols-2 gap-2">
-            <Field label="Vence em (dias)"><NumberInput label="Vence em dias" min={0} max={365} value={action.due_in_days ?? 15} onChange={(n) => set({ due_in_days: n })} /></Field>
-            <Field label="Empresa" hint="Vazio = empresa da vaga."><Tok value={action.company_id} onChange={(v) => set({ company_id: v })} /></Field>
+            <Field label="Vence em (dias)">
+              <NumberInput
+                label="Vence em dias"
+                min={0}
+                max={365}
+                value={action.due_in_days ?? 15}
+                onChange={(n) => set({ due_in_days: n })}
+              />
+            </Field>
+            <Field label="Empresa" hint="Vazio = empresa da vaga.">
+              <Tok value={action.company_id} onChange={(v) => set({ company_id: v })} />
+            </Field>
           </div>
         </div>
       );
@@ -195,7 +348,8 @@ export function HiringActionForm({ action, onChange }: { action: HiringAction; o
       return (
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground">
-            Cria um convite pendente em Configurações › Usuários. Só funciona quando o dono do workflow é administrador; respeita o limite de usuários do plano.
+            Cria um convite pendente em Configurações › Usuários. Só funciona quando o dono do
+            workflow é administrador; respeita o limite de usuários do plano.
           </p>
           <Field label="Email" hint="Vazio = email da pessoa contratada.">
             <Tok value={action.email} onChange={(v) => set({ email: v })} />
@@ -203,7 +357,9 @@ export function HiringActionForm({ action, onChange }: { action: HiringAction; o
           <div className="grid grid-cols-2 gap-2">
             <Field label="Papel">
               <Select value={action.role ?? "member"} onValueChange={(v) => set({ role: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="member">Membro</SelectItem>
                   <SelectItem value="manager">Gestor</SelectItem>
