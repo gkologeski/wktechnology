@@ -404,7 +404,11 @@ export async function handleHiringAction(
         const { error: rErr } = await supabase
           .from("financial_entries")
           .insert(rest.map((r) => ({ ...r, parent_entry_id: parentId })) as never);
-        if (rErr) throw new Error(rErr.message);
+        if (rErr) {
+          // Desfaz a 1ª parcela para não deixar agenda incompleta (e liberar o reprocesso).
+          await supabase.from("financial_entries").delete().eq("id", parentId);
+          throw new Error(rErr.message);
+        }
       }
       return {
         at,
