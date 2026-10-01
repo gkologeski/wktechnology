@@ -92,6 +92,16 @@ Antipadrões já corrigidos no projeto — não reintroduzir:
 - gate de RBAC que falha aberto (_fail-open_) quando a checagem de permissão
   dá erro — deve falhar fechado.
 
+## 4.1 Cargo com visibilidade restrita
+
+`job_roles.restricted_visibility = true` (ex.: "Representante de Vendas
+(externa)") aplica políticas RESTRITIVAS `rep_scope_*` em leads, deals,
+companies, contacts, activities e quotes: lê só o que é do usuário
+(criador ou responsável) e o vinculado (empresas/contatos ligados aos seus
+leads/negócios; atividades dessas entidades); edita só o seu; exclui só o
+que criou. Funções em conjunto (`rep_*_ids()`) mantêm a consulta rápida.
+Cargos sem a flag não mudam. Workflows rodam com o dono do workflow.
+
 ## 5. Exclusão barrada por RLS
 
 `DELETE` negado por RLS retorna 0 linhas **sem erro**. Sempre usar:

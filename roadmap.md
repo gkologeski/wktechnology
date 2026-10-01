@@ -5,3 +5,10 @@
 - [x] Fase 3 — modelos nativos (Vendedor PJ, Freelancer, Outsourcing, Hunting, Desligamento)
 - [x] Fase 4 — desligamento: gatilho Pessoa desligada + encerrar contratos, alocações, acesso e parcelas
 - [x] Fase 5 — specs Playwright em tests/e2e + validação real dos cenários
+
+# Roadmap — Papel Representante de Vendas (externa)
+- [x] Fase 1 — leitura no banco respeita escopo do cargo (leads, contatos, empresas, negócios, atividades, cotações)
+- [x] Fase 2 — leitura vinculada (empresa/contatos ligados aos registros dela)
+- [x] Fase 3 — cargo "Representante de Vendas (externa)" só TechSales
+- [x] Fase 4 — aviso ao responsável da empresa (notificação); exportação oculta por permissão
+- [x] Fase 5 — validação por papel

@@ -9467,6 +9467,7 @@ export type Database = {
           is_system: boolean
           name: string
           owner_id: string | null
+          restricted_visibility: boolean
           updated_at: string
           workspace_id: string | null
         }
@@ -9480,6 +9481,7 @@ export type Database = {
           is_system?: boolean
           name: string
           owner_id?: string | null
+          restricted_visibility?: boolean
           updated_at?: string
           workspace_id?: string | null
         }
@@ -9493,6 +9495,7 @@ export type Database = {
           is_system?: boolean
           name?: string
           owner_id?: string | null
+          restricted_visibility?: boolean
           updated_at?: string
           workspace_id?: string | null
         }
@@ -20479,6 +20482,11 @@ export type Database = {
         Args: { _ids: string[] }
         Returns: number
       }
+      rep_my_deal_ids: { Args: never; Returns: string[] }
+      rep_my_lead_ids: { Args: never; Returns: string[] }
+      rep_restricted_workspaces: { Args: never; Returns: string[] }
+      rep_visible_company_ids: { Args: never; Returns: string[] }
+      rep_visible_contact_ids: { Args: never; Returns: string[] }
       request_audit_session_id: { Args: never; Returns: string }
       reschedule_lovable_cron: { Args: { p_secret: string }; Returns: Json }
       resolve_workspace_id: { Args: { _owner: string }; Returns: string }
