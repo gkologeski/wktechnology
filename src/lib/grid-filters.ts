@@ -13,6 +13,8 @@ export type GridFilterField<T> = {
   options?: GridFilterOption[];
   /** Rótulo de um valor quando as opções são geradas a partir das linhas. */
   optionLabel?: (value: string, row: T) => string;
+  /** Multi com busca digitável e seleção em pills (ex.: Empresa). */
+  searchable?: boolean;
 };
 
 export type GridFilterValue =

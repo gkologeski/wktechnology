@@ -45,6 +45,19 @@ export function FieldEditor<T>({
       />
     );
   }
+  if (field.type === "multi" && field.searchable) {
+    const selected = v?.kind === "in" ? v.values : [];
+    return (
+      <SearchablePills
+        label={field.label}
+        options={fieldOptions(field, ctl.rows)}
+        selected={selected}
+        onChange={(next) =>
+          ctl.setField(field.key, next.length ? { kind: "in", values: next } : undefined)
+        }
+      />
+    );
+  }
   if (field.type === "multi") {
     const selected = v?.kind === "in" ? v.values : [];
     const opts = fieldOptions(field, ctl.rows);
@@ -81,6 +94,20 @@ export function FieldEditor<T>({
       field.key,
       from || to ? { kind: "range", from: from || undefined, to: to || undefined } : undefined,
     );
+  if (type === "date") {
+    return (
+      <IsoDateRangePicker
+        from={r.from}
+        to={r.to}
+        size="sm"
+        className="w-full justify-start"
+        ariaLabel={field.label}
+        placeholder="Qualquer data"
+        onChange={(x) => set(x.from, x.to)}
+        onClear={() => set(undefined, undefined)}
+      />
+    );
+  }
   return (
     <div className="grid grid-cols-2 gap-2">
       <Input
