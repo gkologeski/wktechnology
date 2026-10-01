@@ -31,6 +31,8 @@ function isRequestAbort(error: unknown): boolean {
   return (
     value.name === "AbortError" ||
     value.message === "This operation was aborted" ||
+    value.message === "aborted" ||
+    (value as { code?: unknown }).code === "ECONNRESET" ||
     (value.cause !== error && isRequestAbort(value.cause))
   );
 }

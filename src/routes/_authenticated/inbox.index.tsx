@@ -6,14 +6,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Mail,
   MessageCircle,
   Search,
   Send,
-  ChevronRight,
   ExternalLink,
   Sparkles,
 } from "lucide-react";
@@ -23,7 +21,8 @@ import { smartCompose } from "@/lib/ai-compose.functions";
 import { toast } from "sonner";
 import { useMessageDraft } from "@/hooks/use-message-draft";
 import { MessageDraftStatus } from "@/components/message-draft-status";
-import { InboxConversationList, InboxContext, InboxEmpty, InboxListHeader, InboxLoading, InboxWorkspace } from "@/components/inbox/inbox-workspace";
+import { InboxAvatar, InboxConversationList, InboxContext, InboxEmpty, InboxListHeader, InboxLoading, InboxWorkspace } from "@/components/inbox/inbox-workspace";
+import { WhatsAppIcon } from "@/components/whatsapp/whatsapp-icon";
 
 export const Route = createFileRoute("/_authenticated/inbox/")({
   head: () => ({ meta: [
@@ -142,7 +141,7 @@ function UnifiedInboxPage() {
         channel: "email" as const,
         title: t.subject || "(sem assunto)",
         snippet: t.snippet ?? "",
-        contactLabel: t.contact_id ? (m.get(t.contact_id) ?? "—") : "—",
+        contactLabel: (t.contact_id ? m.get(t.contact_id) : undefined) ?? last?.from_email ?? "Remetente desconhecido",
         lastAt: t.last_message_at,
         href: `/inbox/email`,
         replyTo: last?.from_email ?? null,
@@ -299,7 +298,7 @@ function UnifiedInboxPage() {
             ) : items.length === 0 ? (
               <InboxEmpty>Nenhuma conversa encontrada.</InboxEmpty>
             ) : (
-              <ul className="divide-y">
+              <ul className="space-y-0.5 p-2">
                 {items.map((it) => (
                   <li key={it.id}>
                     <button
@@ -308,31 +307,31 @@ function UnifiedInboxPage() {
                         setSelected(it.id);
                         setDraft("");
                       }}
-                      className={`flex w-full items-start gap-3 border-b border-border-subtle p-3 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring ${selected === it.id ? "border-l-2 border-l-primary bg-accent" : ""}`}
+                      aria-current={selected === it.id ? "true" : undefined}
+                      className={`flex w-full items-start gap-3 rounded-[var(--radius)] p-2.5 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${selected === it.id ? "bg-accent" : ""}`}
                     >
-                      <div className="shrink-0 mt-0.5">
-                        {it.channel === "email" ? (
-                          <Mail className="h-4 w-4 text-primary" />
-                        ) : (
-                          <MessageCircle className="h-4 w-4 text-emerald-500" />
-                        )}
+                      <div className="relative">
+                        <InboxAvatar label={it.contactLabel} />
+                        <span className="absolute -bottom-0.5 -right-0.5 grid h-5 w-5 place-items-center rounded-full border-2 border-product-panel bg-card">
+                          {it.channel === "email" ? (
+                            <Mail className="h-3 w-3 text-primary" />
+                          ) : (
+                            <WhatsAppIcon className="h-3 w-3 text-success" />
+                          )}
+                        </span>
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium truncate">{it.contactLabel}</span>
-                          <Badge variant="outline" className="text-[10px] capitalize">
-                            {it.channel}
-                          </Badge>
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="truncate text-sm font-semibold text-foreground">{it.contactLabel}</span>
+                          <span className="shrink-0 text-[11px] text-muted-foreground" title={it.lastAt ? formatDateTime(it.lastAt) : undefined}>
+                            {it.lastAt ? shortWhen(it.lastAt) : ""}
+                          </span>
                         </div>
-                        <div className="text-sm truncate text-foreground/80">{it.title}</div>
-                        {it.snippet && (
-                          <div className="text-xs text-muted-foreground truncate">{it.snippet}</div>
+                        <div className="truncate text-sm text-text-secondary">{it.title}</div>
+                        {it.snippet && it.snippet !== it.title && (
+                          <div className="truncate text-xs text-muted-foreground">{it.snippet}</div>
                         )}
                       </div>
-                      <div className="text-xs text-muted-foreground shrink-0 whitespace-nowrap">
-                        {it.lastAt ? formatDateTime(it.lastAt) : ""}
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground self-center" />
                     </button>
                   </li>
                 ))}
@@ -345,22 +344,28 @@ function UnifiedInboxPage() {
               <InboxEmpty>Selecione uma conversa para responder inline.</InboxEmpty>
             ) : (
               <div className="flex min-h-0 flex-1 flex-col">
-                <div className="space-y-1 border-b border-border p-4">
-                  <div className="flex items-center gap-2">
-                    {current.channel === "email" ? (
-                      <Mail className="h-4 w-4 text-primary" />
-                    ) : (
-                      <MessageCircle className="h-4 w-4 text-emerald-500" />
-                    )}
-                    <span className="font-medium truncate">{current.contactLabel}</span>
+                <div className="flex items-center gap-3 border-b border-border bg-product-panel px-4 py-3">
+                  <InboxAvatar label={current.contactLabel} className="h-9 w-9" />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-semibold text-foreground">{current.contactLabel}</div>
+                    <div className="truncate text-xs text-muted-foreground">
+                      {current.channel === "email" ? "Email" : "WhatsApp"}
+                      {current.replyTo ? ` · ${current.replyTo}` : ""}
+                    </div>
                   </div>
-                  <div className="text-sm text-muted-foreground truncate">{current.title}</div>
-                  {current.replyTo && (
-                    <div className="text-xs text-muted-foreground">Para: {current.replyTo}</div>
-                  )}
+                  <Button asChild size="sm" variant="outline">
+                    <Link to={current.href}>Abrir no canal <ExternalLink className="ml-1 h-3.5 w-3.5" /></Link>
+                  </Button>
                 </div>
-                <div className="grid flex-1 place-items-center bg-product-panel-muted p-6 text-center"><div className="max-w-md"><p className="text-sm font-medium">{current.title}</p>{current.snippet ? <p className="mt-2 text-sm text-muted-foreground">{current.snippet}</p> : null}</div></div>
-                <div className="space-y-3 border-t border-border p-3"><Textarea
+                <div className="min-h-0 flex-1 overflow-y-auto p-6">
+                  <div className="max-w-[75%] rounded-[var(--radius)] rounded-tl-sm border border-border bg-card px-4 py-3 shadow-sm">
+                    <p className="text-sm font-medium text-foreground">{current.title}</p>
+                    {current.snippet && current.snippet !== current.title ? <p className="mt-1 text-sm text-text-secondary">{current.snippet}</p> : null}
+                    <p className="mt-2 text-[11px] text-muted-foreground">{current.lastAt ? formatDateTime(current.lastAt) : ""}</p>
+                  </div>
+                </div>
+                <div className="m-3 space-y-2 rounded-[var(--radius)] border border-border bg-card p-2 shadow-sm focus-within:ring-2 focus-within:ring-ring"><Textarea
+                  className="min-h-24 resize-none border-0 shadow-none focus-visible:ring-0"
                   rows={6}
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
@@ -421,4 +426,12 @@ function UnifiedInboxPage() {
       context={current ? <InboxContext initials={current.contactLabel.slice(0, 2).toUpperCase()} title={current.contactLabel} subtitle={current.replyTo || undefined}><div className="space-y-3 border-t border-border pt-4 text-sm"><div><p className="text-xs text-muted-foreground">Canal</p><p className="mt-1 font-medium capitalize">{current.channel}</p></div><Button asChild className="w-full" variant="outline"><Link to={current.href}>Abrir conversa <ExternalLink className="ml-2 h-3.5 w-3.5" /></Link></Button></div></InboxContext> : undefined}
     />
   );
+}
+
+function shortWhen(iso: string) {
+  const d = new Date(iso);
+  const sameDay = d.toDateString() === new Date().toDateString();
+  return sameDay
+    ? d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+    : d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 }
