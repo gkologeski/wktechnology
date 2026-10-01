@@ -11,3 +11,4 @@
 - Redesigns relevantes exigem mockup aprovado; a Inbox usa casco compartilhado que herda o White Label.
 - Valores fixos seguem docs/architecture/hardcoded-values.md, barrados por src/lib/hardcode-guard.test.ts.
 - `workspace_members.status` inactive tira acesso (is_workspace_member + banimento) mas preserva o nome — importa responsáveis HubSpot sem liberar acesso.
+- Visibilidade restrita por cargo usa políticas RESTRITIVAS rep_scope_* + job_roles.restricted_visibility; por quê: não altera cargos existentes e protege no banco.
