@@ -9,8 +9,6 @@ import {
   Settings as SettingsIcon,
   UserCheck,
   CheckCircle2,
-  Check,
-  CheckCheck,
   Paperclip,
   X,
 } from "lucide-react";
@@ -271,12 +269,10 @@ function WhatsAppInbox() {
             <InboxEmpty>Selecione uma conversa para visualizar o histórico.</InboxEmpty>
           ) : (
             <>
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b p-3">
-                <div>
-                  <div className="text-sm font-medium">{current.contact_phone}</div>
-                  <div className="text-xs text-muted-foreground">via {current.twilio_number}</div>
-                </div>
-                <div className="flex items-center gap-2">
+              <InboxConversationHeader
+                label={current.contact_phone}
+                subtitle={`WhatsApp · via ${current.twilio_number}`}
+                actions={<>
                   <Select
                     value={current.assigned_to ?? "_none"}
                     onValueChange={(v) =>
@@ -296,81 +292,15 @@ function WhatsAppInbox() {
                           Eu ({memberMap.get(user.id) ?? "—"})
                         </SelectItem>
                       )}
-                      {(membersQ.data ?? [])
-                        .filter((m) => m.id !== user?.id)
-                        .map((m) => (
-                          <SelectItem key={m.id} value={m.id}>
-                            {m.full_name || m.id.slice(0, 6)}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                  {current.status === "closed" ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        statusMut.mutate({ conversationId: current.id, status: "open" })
-                      }
-                    >
-                      Reabrir
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        statusMut.mutate({ conversationId: current.id, status: "closed" })
-                      }
-                    >
-                      <CheckCircle2 className="mr-1 h-3 w-3" /> Fechar
-                    </Button>
-                  )}
-                </div>
-              </div>
+                </>}
+              />
               <ScrollArea className="flex-1 bg-product-panel-muted p-4" aria-live="polite">
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {messages.map((m) => (
-                    <div
-                      key={m.id}
-                      className={`flex ${m.direction === "outbound" ? "justify-end" : "justify-start"}`}
-                    >
-                      <div
-                        className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${
-                          m.direction === "outbound"
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted"
-                        }`}
-                      >
-                        {m.media_url && (
-                          <div className="mb-1">
-                            <WhatsAppMediaBubble
-                              url={m.media_url}
-                              contentType={m.media_content_type}
-                            />
-                          </div>
-                        )}
-                        {m.body && <div className="whitespace-pre-wrap">{m.body}</div>}
-                        <div className="mt-1 flex items-center gap-1 text-[10px] opacity-70">
-                          <span>{formatDateTime(m.created_at)}</span>
-                          {m.direction === "outbound" && (
-                            <span className="ml-auto inline-flex items-center gap-0.5">
-                              {m.status === "read" ? (
-                                <CheckCheck className="h-3 w-3 text-sky-300" />
-                              ) : m.status === "delivered" ? (
-                                <CheckCheck className="h-3 w-3" />
-                              ) : m.status === "sent" ||
-                                m.status === "accepted" ||
-                                m.status === "queued" ? (
-                                <Check className="h-3 w-3" />
-                              ) : (
-                                <span>{m.status}</span>
-                              )}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                    <InboxMessageBubble key={m.id} outbound={m.direction === "outbound"} when={m.created_at} status={m.direction === "outbound" ? m.status : null}>
+                      {m.media_url && (<div className="mb-1"><WhatsAppMediaBubble url={m.media_url} contentType={m.media_content_type} /></div>)}
+                      {m.body && <div className="whitespace-pre-wrap">{m.body}</div>}
+                    </InboxMessageBubble>
                   ))}
                   <div ref={bottomRef} />
                 </div>
