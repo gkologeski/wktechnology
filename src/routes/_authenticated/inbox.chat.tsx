@@ -18,7 +18,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Send, X, Ticket as TicketIcon } from "lucide-react";
 import { toast } from "sonner";
-import { InboxConversationItem, InboxConversationList, InboxContext, InboxEmpty, InboxListHeader, InboxLoading, InboxWorkspace } from "@/components/inbox/inbox-workspace";
+import { InboxConversationHeader, InboxConversationItem, InboxConversationList, InboxContext, InboxEmpty, InboxListHeader, InboxLoading, InboxMessageBubble, InboxWorkspace } from "@/components/inbox/inbox-workspace";
 
 export const Route = createFileRoute("/_authenticated/inbox/chat")({
   head: () => ({ meta: [
@@ -128,52 +128,26 @@ function LiveChatInbox() {
             <InboxEmpty>Selecione uma sessão para iniciar o atendimento.</InboxEmpty>
           ) : (
             <>
-              <div className="p-3 border-b flex items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <div className="text-sm font-medium truncate">
-                    {current.visitor_name || "Visitante"}
-                  </div>
-                  <div className="text-xs text-muted-foreground truncate">
-                    {current.visitor_email || "—"}
-                    {current.visitor_url ? ` · ${current.visitor_url}` : ""}
-                  </div>
-                </div>
-                {current.status !== "closed" && (
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => convert.mutate(current.id)}
-                      disabled={convert.isPending}
-                    >
-                      <TicketIcon className="h-4 w-4 mr-1" />{" "}
-                      {convert.isPending ? "Criando…" : "Virar ticket"}
+              <InboxConversationHeader
+                label={current.visitor_name || current.visitor_email || "Visitante anônimo"}
+                subtitle={`Chat ao vivo${current.visitor_email ? ` · ${current.visitor_email}` : ""}${current.visitor_url ? ` · ${current.visitor_url}` : ""}`}
+                actions={current.status !== "closed" ? (
+                  <>
+                    <Button size="sm" variant="outline" onClick={() => convert.mutate(current.id)} disabled={convert.isPending}>
+                      <TicketIcon className="mr-1 h-4 w-4" /> {convert.isPending ? "Criando…" : "Virar ticket"}
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => close.mutate(current.id)}>
-                      <X className="h-4 w-4 mr-1" /> Encerrar
+                      <X className="mr-1 h-4 w-4" /> Encerrar
                     </Button>
-                  </div>
-                )}
-              </div>
-              <ScrollArea className="flex-1 bg-product-panel-muted p-3" aria-live="polite">
-                <div className="space-y-2">
+                  </>
+                ) : <Badge variant="outline">Encerrada</Badge>}
+              />
+              <ScrollArea className="flex-1 bg-product-panel-muted p-4" aria-live="polite">
+                <div className="space-y-3">
                   {messages.map((m) => (
-                    <div
-                      key={m.id}
-                      className={`flex ${m.direction === "inbound" ? "justify-start" : "justify-end"}`}
-                    >
-                      <div
-                        className={`rounded-2xl px-3 py-2 max-w-[75%] text-sm ${m.direction === "inbound" ? "bg-muted" : "bg-primary text-primary-foreground"}`}
-                      >
-                        {m.body}
-                        <div className="text-[10px] opacity-70 mt-1">
-                          {new Date(m.created_at).toLocaleTimeString("pt-BR", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </div>
-                      </div>
-                    </div>
+                    <InboxMessageBubble key={m.id} outbound={m.direction !== "inbound"} when={m.created_at} status={m.direction !== "inbound" ? "sent" : null}>
+                      <div className="whitespace-pre-wrap">{m.body}</div>
+                    </InboxMessageBubble>
                   ))}
                 </div>
               </ScrollArea>

@@ -46,7 +46,7 @@ import { formatDateTime } from "@/lib/crm";
 import { useAuth } from "@/lib/auth";
 import { useActivityWindows } from "@/components/activity/activity-window-context";
 import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
-import { InboxConversationItem, InboxConversationList, InboxContext, InboxEmpty, InboxListHeader, InboxLoading, InboxWorkspace } from "@/components/inbox/inbox-workspace";
+import { InboxConversationHeader, InboxConversationItem, InboxConversationList, InboxContext, InboxEmpty, InboxListHeader, InboxLoading, InboxMessageBubble, InboxWorkspace } from "@/components/inbox/inbox-workspace";
 
 export const Route = createFileRoute("/_authenticated/inbox/whatsapp")({
   head: () => ({ meta: [

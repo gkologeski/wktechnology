@@ -15,6 +15,7 @@ import { formatDateTime } from "@/lib/crm";
 import { toast } from "sonner";
 import {
   InboxConversationItem, InboxConversationList,
+  InboxConversationHeader, InboxMessageBubble,
   InboxContext,
   InboxEmpty,
   InboxListHeader,
@@ -128,23 +129,15 @@ function EmailInbox() {
             <InboxEmpty>Selecione uma conversa de email para visualizar o histórico.</InboxEmpty>
           ) : (
             <>
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b p-3">
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-medium">
-                    {current.thread.subject || "(sem assunto)"}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {current.messages.length} mensagem(ns)
-                  </div>
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => openEmail(lastMsg?.from_email ?? "", current.thread.id)}
-                >
-                  <Reply className="mr-2 h-4 w-4" /> Responder
-                </Button>
-              </div>
+              <InboxConversationHeader
+                label={lastMsg?.from_name || lastMsg?.from_email || current.thread.subject || "Contato por email"}
+                subtitle={`Email · ${current.thread.subject || "(sem assunto)"} · ${current.messages.length} mensagem(ns)`}
+                actions={
+                  <Button size="sm" variant="outline" onClick={() => openEmail(lastMsg?.from_email ?? "", current.thread.id)}>
+                    <Reply className="mr-2 h-4 w-4" /> Responder
+                  </Button>
+                }
+              />
               <ScrollArea className="flex-1 bg-product-panel-muted p-4" aria-live="polite">
                 <div className="space-y-4">
                   {current.messages.map((m) => (
@@ -172,41 +165,30 @@ function MessageCard({ message: m }: { message: Msg }) {
       ? DOMPurify.sanitize(m.body_html, { USE_PROFILES: { html: true } })
       : null;
   return (
-    <div
-      className={`rounded-md border p-3 text-sm ${
-        isOut ? "border-primary/30 bg-primary/5" : "bg-card"
-      }`}
+    <InboxMessageBubble
+      outbound={isOut}
+      when={(m.sent_at ?? m.received_at ?? m.created_at) as string}
+      status={isOut ? ((m.open_count ?? 0) > 0 ? "read" : "sent") : null}
+      author={<>{m.from_name || m.from_email || "—"}<span className="font-normal text-muted-foreground"> → {(m.to_emails ?? []).join(", ")}</span></>}
+      footer={<>
+        {isOut && (m.open_count ?? 0) > 0 && (
+          <Badge variant="outline" className="gap-1 px-1.5 py-0 text-[10px]" title="Aberturas">
+            <Eye className="h-3 w-3" /> {m.open_count}
+          </Badge>
+        )}
+        {isOut && (m.click_count ?? 0) > 0 && (
+          <Badge variant="outline" className="gap-1 px-1.5 py-0 text-[10px]" title="Cliques">
+            <MousePointerClick className="h-3 w-3" /> {m.click_count}
+          </Badge>
+        )}
+        {m.has_attachments && <Paperclip className="h-3 w-3" aria-label="Com anexo" />}
+      </>}
     >
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
-        <div>
-          <span className="font-medium">{m.from_name || m.from_email || "—"}</span>
-          <span className="text-muted-foreground"> → {(m.to_emails ?? []).join(", ")}</span>
-        </div>
-        <div className="flex items-center gap-2 text-muted-foreground">
-          {isOut && (m.open_count ?? 0) > 0 && (
-            <Badge variant="outline" className="gap-1">
-              <Eye className="h-3 w-3" /> {m.open_count}
-            </Badge>
-          )}
-          {isOut && (m.click_count ?? 0) > 0 && (
-            <Badge variant="outline" className="gap-1">
-              <MousePointerClick className="h-3 w-3" /> {m.click_count}
-            </Badge>
-          )}
-          {m.has_attachments && <Paperclip className="h-3 w-3" />}
-          <span>{formatDateTime((m.sent_at ?? m.received_at ?? m.created_at) as string)}</span>
-        </div>
-      </div>
       {html ? (
-        <div
-          className="prose prose-sm max-w-none dark:prose-invert"
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
+        <div className="prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: html }} />
       ) : (
-        <pre className="whitespace-pre-wrap font-sans text-sm">
-          {m.body_text || m.snippet || ""}
-        </pre>
+        <pre className="whitespace-pre-wrap font-sans text-sm">{m.body_text || m.snippet || ""}</pre>
       )}
-    </div>
+    </InboxMessageBubble>
   );
 }
