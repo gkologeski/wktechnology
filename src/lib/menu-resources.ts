@@ -53,6 +53,7 @@ export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
   "/meetings": ["techsales.meetings"],
   "/settings/email": ["techsales.email_accounts"],
   "/deals": ["techsales.deals"],
+  "/proposals": ["techcontracts.contracts"],
   "/settings/quotes": ["techsales.quotes"],
   "/invoices": ["techsales.invoices"],
   "/tickets": ["techsales.tickets"],

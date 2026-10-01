@@ -80,6 +80,8 @@ type ProposalRow = {
   currency: string;
   total_amount: number | string | null;
   assigned_to: string | null;
+  company_id: string | null;
+  companies: { id: string; name: string } | null;
 };
 
 function ProposalsPage() {
@@ -110,6 +112,14 @@ function ProposalsPage() {
       get: (r) => (r.total_amount == null ? null : Number(r.total_amount)),
     },
     { key: "version", label: "Versão", type: "number", get: (r) => Number(r.version) },
+    {
+      key: "company",
+      label: "Empresa",
+      type: "multi",
+      searchable: true,
+      get: (r) => r.company_id,
+      optionLabel: (_v, r) => r.companies?.name ?? "Empresa",
+    },
     { key: "owner", label: "Responsável", type: "owner", get: (r) => r.assigned_to },
   ] as GridFilterField<any>[]);
   const {

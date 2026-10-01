@@ -132,6 +132,14 @@ function ProjectsPage() {
         type: "multi",
         get: (p) => p.contracts?.number ?? p.contracts?.title,
       },
+      {
+        key: "company",
+        label: "Empresa",
+        type: "multi",
+        searchable: true,
+        get: (p) => p.contracts?.counterparty_company_id ?? null,
+        optionLabel: (_v, p) => p.contracts?.companies?.name ?? "Empresa",
+      },
       { key: "owner", label: "Responsável", type: "owner", get: (p) => p.assigned_to },
       { key: "due", label: "Prazo entre", type: "date", get: (p) => p.due_at },
       {
