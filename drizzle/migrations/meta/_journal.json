@@ -232,6 +232,13 @@
       "when": 1790777724005,
       "tag": "0032_saved_views_more_entities",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1790816327832,
+      "tag": "0033_whatsapp_webhook_events",
+      "breakpoints": true
     }
   ]
 }
