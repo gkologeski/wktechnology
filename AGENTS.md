@@ -12,3 +12,4 @@
 - Redesigns relevantes exigem mockup aprovado; a Inbox usa casco visual compartilhado que herda integralmente o White Label.
 - Valores fixos seguem docs/architecture/hardcoded-values.md e são barrados por src/lib/hardcode-guard.test.ts — evita regressão da auditoria.
 - Membros têm `workspace_members.status` (active/inactive); inativos perdem acesso via is_workspace_member e banimento de login, mas seguem resolvendo nome — permite importar responsáveis do HubSpot sem liberar acesso.
+- Contratação/desligamento usa ações idempotentes em `engine/actions-hiring.server.ts` e eventos canônicos como gatilhos pré-configurados (`hiring-events.ts`) — mantém os fluxos configuráveis por workspace (White Label).
