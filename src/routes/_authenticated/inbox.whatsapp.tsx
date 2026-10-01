@@ -46,7 +46,7 @@ import { formatDateTime } from "@/lib/crm";
 import { useAuth } from "@/lib/auth";
 import { useActivityWindows } from "@/components/activity/activity-window-context";
 import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
-import { InboxConversationList, InboxContext, InboxEmpty, InboxListHeader, InboxLoading, InboxWorkspace } from "@/components/inbox/inbox-workspace";
+import { InboxConversationItem, InboxConversationList, InboxContext, InboxEmpty, InboxListHeader, InboxLoading, InboxWorkspace } from "@/components/inbox/inbox-workspace";
 
 export const Route = createFileRoute("/_authenticated/inbox/whatsapp")({
   head: () => ({ meta: [
@@ -250,45 +250,20 @@ function WhatsAppInbox() {
             {!conversationsQ.isLoading && conversations.length === 0 && (
               <InboxEmpty>Nenhuma conversa ainda. Envie uma mensagem para começar.</InboxEmpty>
             )}
-            {conversations.map((c) => (
-              <button
+            <div className="space-y-0.5 p-2">{conversations.map((c) => (
+              <InboxConversationItem
                 key={c.id}
-                data-inbox-conversation
+                label={c.contact_phone}
+                preview={c.last_message_preview || "—"}
+                when={c.last_message_at}
+                whenTitle={c.last_message_at ? formatDateTime(c.last_message_at) : undefined}
+                selected={selected === c.id}
                 onClick={() => setSelected(c.id)}
-                className={`flex w-full flex-col gap-1 border-b border-border-subtle p-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring ${
-                  selected === c.id ? "border-l-2 border-l-primary bg-accent" : ""
-                }`}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 truncate text-sm font-medium">
-                    <Phone className="h-3 w-3 text-muted-foreground" />
-                    <span className="truncate">{c.contact_phone}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {c.status === "closed" && (
-                      <Badge variant="secondary" className="text-[10px]">
-                        fechada
-                      </Badge>
-                    )}
-                    {c.unread_count > 0 && <Badge variant="default">{c.unread_count}</Badge>}
-                  </div>
-                </div>
-                <div className="truncate text-xs text-muted-foreground">
-                  {c.last_message_preview || "—"}
-                </div>
-                <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                  <span>{c.last_message_at ? formatDateTime(c.last_message_at) : ""}</span>
-                  {c.assigned_to ? (
-                    <span className="flex items-center gap-1">
-                      <UserCheck className="h-3 w-3" />
-                      {memberMap.get(c.assigned_to) ?? "atribuída"}
-                    </span>
-                  ) : (
-                    <span className="italic">sem dono</span>
-                  )}
-                </div>
-              </button>
-            ))}
+                unread={c.unread_count}
+                badge={c.status === "closed" ? <Badge variant="secondary" className="text-[10px]">fechada</Badge> : null}
+                meta={c.assigned_to ? <span className="inline-flex items-center gap-1"><UserCheck className="h-3 w-3" />{memberMap.get(c.assigned_to) ?? "atribuída"}</span> : <span className="italic">sem dono</span>}
+              />
+            ))}</div>
           </InboxConversationList>
         </>}
       conversation={<>

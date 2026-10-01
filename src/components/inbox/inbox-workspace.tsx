@@ -195,3 +195,50 @@ export function InboxContext({ initials, title, subtitle, children }: { initials
     </div></ScrollArea>
   );
 }
+
+export function inboxShortWhen(iso: string | null | undefined) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return d.toDateString() === new Date().toDateString()
+    ? d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+    : d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+}
+
+/** Linha padrão da lista de conversas (avatar, nome, horário, prévia, metadados). */
+export function InboxConversationItem({
+  label, title, preview, when, whenTitle, selected, onClick, badge, meta, channelIcon, unread,
+}: {
+  label: string; title?: string; preview?: string; when?: string | null; whenTitle?: string;
+  selected?: boolean; onClick: () => void; badge?: ReactNode; meta?: ReactNode; channelIcon?: ReactNode; unread?: number;
+}) {
+  return (
+    <button
+      type="button"
+      data-inbox-conversation
+      onClick={onClick}
+      aria-current={selected ? "true" : undefined}
+      className={cn(
+        "flex w-full items-start gap-3 rounded-[var(--radius)] p-2.5 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        selected && "bg-accent",
+      )}
+    >
+      <div className="relative">
+        <InboxAvatar label={label} />
+        {channelIcon ? <span className="absolute -bottom-0.5 -right-0.5 grid h-5 w-5 place-items-center rounded-full border-2 border-product-panel bg-card">{channelIcon}</span> : null}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className={cn("truncate text-sm text-foreground", unread ? "font-bold" : "font-semibold")}>{label}</span>
+          <span className="shrink-0 text-[11px] text-muted-foreground" title={whenTitle}>{inboxShortWhen(when)}</span>
+        </div>
+        {title ? <div className="truncate text-sm text-text-secondary">{title}</div> : null}
+        <div className="flex items-center gap-2">
+          <div className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{preview || "—"}</div>
+          {badge}
+          {unread ? <span className="grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">{unread}</span> : null}
+        </div>
+        {meta ? <div className="mt-1 truncate text-[11px] text-muted-foreground">{meta}</div> : null}
+      </div>
+    </button>
+  );
+}

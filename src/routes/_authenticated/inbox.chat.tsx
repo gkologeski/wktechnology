@@ -18,7 +18,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Send, X, Ticket as TicketIcon } from "lucide-react";
 import { toast } from "sonner";
-import { InboxConversationList, InboxContext, InboxEmpty, InboxListHeader, InboxLoading, InboxWorkspace } from "@/components/inbox/inbox-workspace";
+import { InboxConversationItem, InboxConversationList, InboxContext, InboxEmpty, InboxListHeader, InboxLoading, InboxWorkspace } from "@/components/inbox/inbox-workspace";
 
 export const Route = createFileRoute("/_authenticated/inbox/chat")({
   head: () => ({ meta: [
@@ -110,31 +110,18 @@ function LiveChatInbox() {
             {sessions.length === 0 && (
               <InboxEmpty>Nenhuma sessão ainda.</InboxEmpty>
             )}
-            {sessions.map((s) => (
-              <button
+            <div className="space-y-0.5 p-2">{sessions.map((s) => (
+              <InboxConversationItem
                 key={s.id}
-                data-inbox-conversation
+                label={s.visitor_name || s.visitor_email || "Visitante anônimo"}
+                preview={s.visitor_email || "Sem email informado"}
+                when={s.last_message_at}
+                whenTitle={s.last_message_at ? formatDateTime(s.last_message_at) : undefined}
+                selected={selected === s.id}
                 onClick={() => setSelected(s.id)}
-                className={`w-full border-b border-border-subtle p-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring ${selected === s.id ? "border-l-2 border-l-primary bg-accent" : ""}`}
-              >
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <span className="truncate flex-1">
-                    {s.visitor_name || s.visitor_email || "Visitante anônimo"}
-                  </span>
-                  {s.status === "closed" && (
-                    <Badge variant="outline" className="text-[10px]">
-                      fechada
-                    </Badge>
-                  )}
-                </div>
-                {s.visitor_email && (
-                  <div className="text-xs text-muted-foreground truncate">{s.visitor_email}</div>
-                )}
-                <div className="text-[10px] text-muted-foreground">
-                  {s.last_message_at ? formatDateTime(s.last_message_at) : ""}
-                </div>
-              </button>
-            ))}
+                badge={s.status === "closed" ? <Badge variant="outline" className="text-[10px]">fechada</Badge> : null}
+              />
+            ))}</div>
           </InboxConversationList></>}
       conversation={<>
           {!current ? (
