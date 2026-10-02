@@ -135,7 +135,7 @@ function QuotesPage() {
         </CardContent>
       </Card>
       <ProposalWizard
-        quoteId={proposalQuoteId}
+        source={proposalQuoteId ? { quoteId: proposalQuoteId } : null}
         onOpenChange={(o) => !o && setProposalQuoteId(null)}
       />
     </div>

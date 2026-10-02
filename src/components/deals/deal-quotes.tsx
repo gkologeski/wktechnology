@@ -349,7 +349,7 @@ export function DealQuotes({ dealId }: { dealId: string }) {
       )}
 
       <ProposalWizard
-        quoteId={proposalQuoteId}
+        source={proposalQuoteId ? { quoteId: proposalQuoteId } : null}
         onOpenChange={(o) => !o && setProposalQuoteId(null)}
       />
       <QuoteWizard
