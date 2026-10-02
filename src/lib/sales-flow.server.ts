@@ -280,7 +280,7 @@ export async function contractFromSales(
       role: m.role === "client" ? "client" : "provider",
       fields: {
         ...common,
-        title: `${n}º Termo Aditivo — ${m.title ?? baseTitle}`,
+        title: `Termo aditivo — ${baseTitle}`,
         amendment_of_id: m.id,
         amendment_number: String(n),
       },
