@@ -116,32 +116,85 @@ function proposalBodyFromQuote(
   ].join("");
 }
 
-export async function proposalFromQuote(supabase: SupabaseClient, userId: string, quoteId: string) {
-  const workspaceId = await resolveActiveWorkspace(userId);
-  const { quote, items, line } = await loadQuote(supabase, quoteId);
+export type ProposalOverrides = {
+  title?: string;
+  body?: string;
+  total_amount?: number | null;
+  expires_at?: string | null;
+  assigned_to?: string | null;
+};
 
-  const { data: existing } = await supabase
+async function existingProposalId(supabase: SupabaseClient, quoteId: string) {
+  const { data } = await supabase
     .from("proposals")
     .select("id")
     .eq("quote_id", quoteId)
     .limit(1)
     .maybeSingle();
-  if (existing) return { id: (existing as { id: string }).id, reused: true };
+  return (data as { id: string } | null)?.id ?? null;
+}
+
+/** Monta o rascunho da proposta a partir da cotação, sem gravar nada. */
+export async function proposalDraftFromQuote(supabase: SupabaseClient, quoteId: string) {
+  const existingId = await existingProposalId(supabase, quoteId);
+  if (existingId) return { reused: true as const, existingId };
+  const { quote, items, line } = await loadQuote(supabase, quoteId);
+  const currency = quote.currency ?? "BRL";
+  const fmt = (v: number) => money(v, currency);
+  return {
+    reused: false as const,
+    existingId: null,
+    draft: {
+      title: quote.title || `Proposta — ${quote.number ?? "cotação"}`,
+      body: proposalBodyFromQuote(quote, items, line),
+      total_amount: quote.total != null ? Number(quote.total) : null,
+      currency,
+      expires_at: quote.valid_until,
+      assigned_to: quote.assigned_to,
+      company_id: quote.company_id,
+      contact_id: quote.contact_id,
+      deal_id: quote.deal_id,
+      quote_number: quote.number,
+      service_line: line ? serviceLineLabel(line) : null,
+      items: items.map((li) => ({
+        id: li.id,
+        name: li.name ?? "Item",
+        billing: describeBilling(li, fmt),
+      })),
+    },
+  };
+}
+
+export async function proposalFromQuote(
+  supabase: SupabaseClient,
+  userId: string,
+  quoteId: string,
+  overrides: ProposalOverrides = {},
+) {
+  const workspaceId = await resolveActiveWorkspace(userId);
+  const existingId = await existingProposalId(supabase, quoteId);
+  if (existingId) return { id: existingId, reused: true };
+  const { quote, items, line } = await loadQuote(supabase, quoteId);
 
   const { data: prop, error } = await supabase
     .from("proposals")
     .insert({
       owner_id: userId,
       workspace_id: workspaceId,
-      title: quote.title || `Proposta — ${quote.number ?? "cotação"}`,
-      body: proposalBodyFromQuote(quote, items, line),
+      title: overrides.title?.trim() || quote.title || `Proposta — ${quote.number ?? "cotação"}`,
+      body: overrides.body ?? proposalBodyFromQuote(quote, items, line),
       deal_id: quote.deal_id,
       contact_id: quote.contact_id,
       company_id: quote.company_id,
-      total_amount: quote.total != null ? Number(quote.total) : null,
+      total_amount:
+        overrides.total_amount !== undefined
+          ? overrides.total_amount
+          : quote.total != null
+            ? Number(quote.total)
+            : null,
       currency: quote.currency ?? "BRL",
-      expires_at: quote.valid_until,
-      assigned_to: quote.assigned_to,
+      expires_at: overrides.expires_at !== undefined ? overrides.expires_at : quote.valid_until,
+      assigned_to: overrides.assigned_to !== undefined ? overrides.assigned_to : quote.assigned_to,
       quote_id: quote.id,
       variables: {},
     } as never)

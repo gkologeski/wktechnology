@@ -7,10 +7,30 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const createProposalFromQuote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ quoteId: z.string().uuid() }).parse(d))
+  .inputValidator((d) =>
+    z
+      .object({
+        quoteId: z.string().uuid(),
+        title: z.string().max(300).optional(),
+        body: z.string().max(500_000).optional(),
+        total_amount: z.number().nonnegative().nullable().optional(),
+        expires_at: z.string().nullable().optional(),
+        assigned_to: z.string().uuid().nullable().optional(),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { proposalFromQuote } = await import("./sales-flow.server");
-    return proposalFromQuote(context.supabase, context.userId, data.quoteId);
+    const { quoteId, ...overrides } = data;
+    return proposalFromQuote(context.supabase, context.userId, quoteId, overrides);
+  });
+
+export const getProposalDraftFromQuote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ quoteId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { proposalDraftFromQuote } = await import("./sales-flow.server");
+    return proposalDraftFromQuote(context.supabase, data.quoteId);
   });
 
 export const createContractFromSales = createServerFn({ method: "POST" })
