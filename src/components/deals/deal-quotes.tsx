@@ -17,7 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, ExternalLink, MoreHorizontal, FileText } from "lucide-react";
+import { Plus, ExternalLink, MoreHorizontal } from "lucide-react";
 import { ProposalWizard } from "@/components/proposals/proposal-wizard";
 import { ContractWizard, type ContractWizardSource } from "@/components/contracts/contract-wizard";
 import { toast } from "sonner";
