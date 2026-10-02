@@ -16,6 +16,7 @@ export const createProposalFromQuote = createServerFn({ method: "POST" })
         total_amount: z.number().nonnegative().nullable().optional(),
         expires_at: z.string().nullable().optional(),
         assigned_to: z.string().uuid().nullable().optional(),
+        proposal_template_id: z.string().uuid().nullable().optional(),
       })
       .parse(d),
   )
@@ -25,12 +26,20 @@ export const createProposalFromQuote = createServerFn({ method: "POST" })
     return proposalFromQuote(context.supabase, context.userId, quoteId, overrides);
   });
 
-export const getProposalDraftFromQuote = createServerFn({ method: "POST" })
+export const getProposalDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ quoteId: z.string().uuid() }).parse(d))
+  .inputValidator((d) =>
+    z
+      .object({
+        quoteId: z.string().uuid().optional(),
+        dealId: z.string().uuid().optional(),
+        proposalId: z.string().uuid().optional(),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
-    const { proposalDraftFromQuote } = await import("./sales-flow.server");
-    return proposalDraftFromQuote(context.supabase, data.quoteId);
+    const { buildProposalDraft } = await import("./proposals/proposal-draft.server");
+    return buildProposalDraft(context.supabase, data);
   });
 
 export const createContractFromSales = createServerFn({ method: "POST" })

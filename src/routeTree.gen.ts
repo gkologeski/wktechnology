@@ -64,6 +64,7 @@ import { Route as LpSlugRouteImport } from './routes/lp.$slug'
 import { Route as MeetTokenRouteImport } from './routes/meet.$token'
 import { Route as OfferTokenRouteImport } from './routes/offer.$token'
 import { Route as PortalTokenRouteImport } from './routes/portal.$token'
+import { Route as ProposalTokenRouteImport } from './routes/proposal.$token'
 import { Route as QuoteTokenRouteImport } from './routes/quote.$token'
 import { Route as ReferSlugRouteImport } from './routes/refer.$slug'
 import { Route as ScheduleTokenRouteImport } from './routes/schedule.$token'
@@ -220,6 +221,7 @@ import { Route as AuthenticatedSettingsPlaybooksRouteImport } from './routes/_au
 import { Route as AuthenticatedSettingsPortalRouteImport } from './routes/_authenticated/settings.portal'
 import { Route as AuthenticatedSettingsPrivacyRouteImport } from './routes/_authenticated/settings.privacy'
 import { Route as AuthenticatedSettingsPropertyGroupsRouteImport } from './routes/_authenticated/settings.property-groups'
+import { Route as AuthenticatedSettingsProposalTemplatesRouteImport } from './routes/_authenticated/settings.proposal-templates'
 import { Route as AuthenticatedSettingsProspectingRouteImport } from './routes/_authenticated/settings.prospecting'
 import { Route as AuthenticatedSettingsProspectingScriptsRouteImport } from './routes/_authenticated/settings.prospecting-scripts'
 import { Route as AuthenticatedSettingsQuoteTemplatesRouteImport } from './routes/_authenticated/settings.quote-templates'
@@ -378,6 +380,7 @@ import { Route as ApiPublicEmailPixelMessageIdRouteImport } from './routes/api/p
 import { Route as ApiPublicEmailUnsubscribeTokenRouteImport } from './routes/api/public/email/unsubscribe.$token'
 import { Route as ApiPublicFormsSlugSubmitRouteImport } from './routes/api/public/forms/$slug.submit'
 import { Route as ApiPublicPaymentsBrWebhookProviderRouteImport } from './routes/api/public/payments/br-webhook.$provider'
+import { Route as ApiPublicProposalsTokenPdfRouteImport } from './routes/api/public/proposals/$token.pdf'
 import { Route as ApiPublicQuotesTokenPdfRouteImport } from './routes/api/public/quotes/$token.pdf'
 import { Route as ApiPublicReferSlugSubmitRouteImport } from './routes/api/public/refer/$slug.submit'
 import { Route as ApiPublicScimV2GroupsRouteImport } from './routes/api/public/scim/v2/Groups'
@@ -672,6 +675,11 @@ const OfferTokenRoute = OfferTokenRouteImport.update({
 const PortalTokenRoute = PortalTokenRouteImport.update({
   id: '/portal/$token',
   path: '/portal/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProposalTokenRoute = ProposalTokenRouteImport.update({
+  id: '/proposal/$token',
+  path: '/proposal/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const QuoteTokenRoute = QuoteTokenRouteImport.update({
@@ -1580,6 +1588,12 @@ const AuthenticatedSettingsPropertyGroupsRoute =
   AuthenticatedSettingsPropertyGroupsRouteImport.update({
     id: '/property-groups',
     path: '/property-groups',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsProposalTemplatesRoute =
+  AuthenticatedSettingsProposalTemplatesRouteImport.update({
+    id: '/proposal-templates',
+    path: '/proposal-templates',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsProspectingRoute =
@@ -2503,6 +2517,12 @@ const ApiPublicPaymentsBrWebhookProviderRoute =
     path: '/api/public/payments/br-webhook/$provider',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicProposalsTokenPdfRoute =
+  ApiPublicProposalsTokenPdfRouteImport.update({
+    id: '/api/public/proposals/$token/pdf',
+    path: '/api/public/proposals/$token/pdf',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicQuotesTokenPdfRoute = ApiPublicQuotesTokenPdfRouteImport.update({
   id: '/api/public/quotes/$token/pdf',
   path: '/api/public/quotes/$token/pdf',
@@ -2623,6 +2643,7 @@ export interface FileRoutesByFullPath {
   '/meet/$token': typeof MeetTokenRoute
   '/offer/$token': typeof OfferTokenRoute
   '/portal/$token': typeof PortalTokenRoute
+  '/proposal/$token': typeof ProposalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
   '/refer/$slug': typeof ReferSlugRoute
   '/schedule/$token': typeof ScheduleTokenRoute
@@ -2767,6 +2788,7 @@ export interface FileRoutesByFullPath {
   '/settings/portal': typeof AuthenticatedSettingsPortalRoute
   '/settings/privacy': typeof AuthenticatedSettingsPrivacyRoute
   '/settings/property-groups': typeof AuthenticatedSettingsPropertyGroupsRoute
+  '/settings/proposal-templates': typeof AuthenticatedSettingsProposalTemplatesRoute
   '/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
   '/settings/prospecting-scripts': typeof AuthenticatedSettingsProspectingScriptsRoute
   '/settings/quote-templates': typeof AuthenticatedSettingsQuoteTemplatesRoute
@@ -2940,6 +2962,7 @@ export interface FileRoutesByFullPath {
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
   '/api/public/payments/br-webhook/$provider': typeof ApiPublicPaymentsBrWebhookProviderRoute
+  '/api/public/proposals/$token/pdf': typeof ApiPublicProposalsTokenPdfRoute
   '/api/public/quotes/$token/pdf': typeof ApiPublicQuotesTokenPdfRoute
   '/api/public/refer/$slug/submit': typeof ApiPublicReferSlugSubmitRoute
   '/api/public/scim/v2/Groups': typeof ApiPublicScimV2GroupsRoute
@@ -3000,6 +3023,7 @@ export interface FileRoutesByTo {
   '/meet/$token': typeof MeetTokenRoute
   '/offer/$token': typeof OfferTokenRoute
   '/portal/$token': typeof PortalTokenRoute
+  '/proposal/$token': typeof ProposalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
   '/refer/$slug': typeof ReferSlugRoute
   '/schedule/$token': typeof ScheduleTokenRoute
@@ -3144,6 +3168,7 @@ export interface FileRoutesByTo {
   '/settings/portal': typeof AuthenticatedSettingsPortalRoute
   '/settings/privacy': typeof AuthenticatedSettingsPrivacyRoute
   '/settings/property-groups': typeof AuthenticatedSettingsPropertyGroupsRoute
+  '/settings/proposal-templates': typeof AuthenticatedSettingsProposalTemplatesRoute
   '/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
   '/settings/prospecting-scripts': typeof AuthenticatedSettingsProspectingScriptsRoute
   '/settings/quote-templates': typeof AuthenticatedSettingsQuoteTemplatesRoute
@@ -3316,6 +3341,7 @@ export interface FileRoutesByTo {
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
   '/api/public/payments/br-webhook/$provider': typeof ApiPublicPaymentsBrWebhookProviderRoute
+  '/api/public/proposals/$token/pdf': typeof ApiPublicProposalsTokenPdfRoute
   '/api/public/quotes/$token/pdf': typeof ApiPublicQuotesTokenPdfRoute
   '/api/public/refer/$slug/submit': typeof ApiPublicReferSlugSubmitRoute
   '/api/public/scim/v2/Groups': typeof ApiPublicScimV2GroupsRoute
@@ -3383,6 +3409,7 @@ export interface FileRoutesById {
   '/meet/$token': typeof MeetTokenRoute
   '/offer/$token': typeof OfferTokenRoute
   '/portal/$token': typeof PortalTokenRoute
+  '/proposal/$token': typeof ProposalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
   '/refer/$slug': typeof ReferSlugRoute
   '/schedule/$token': typeof ScheduleTokenRoute
@@ -3527,6 +3554,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/portal': typeof AuthenticatedSettingsPortalRoute
   '/_authenticated/settings/privacy': typeof AuthenticatedSettingsPrivacyRoute
   '/_authenticated/settings/property-groups': typeof AuthenticatedSettingsPropertyGroupsRoute
+  '/_authenticated/settings/proposal-templates': typeof AuthenticatedSettingsProposalTemplatesRoute
   '/_authenticated/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
   '/_authenticated/settings/prospecting-scripts': typeof AuthenticatedSettingsProspectingScriptsRoute
   '/_authenticated/settings/quote-templates': typeof AuthenticatedSettingsQuoteTemplatesRoute
@@ -3700,6 +3728,7 @@ export interface FileRoutesById {
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
   '/api/public/payments/br-webhook/$provider': typeof ApiPublicPaymentsBrWebhookProviderRoute
+  '/api/public/proposals/$token/pdf': typeof ApiPublicProposalsTokenPdfRoute
   '/api/public/quotes/$token/pdf': typeof ApiPublicQuotesTokenPdfRoute
   '/api/public/refer/$slug/submit': typeof ApiPublicReferSlugSubmitRoute
   '/api/public/scim/v2/Groups': typeof ApiPublicScimV2GroupsRoute
@@ -3767,6 +3796,7 @@ export interface FileRouteTypes {
     | '/meet/$token'
     | '/offer/$token'
     | '/portal/$token'
+    | '/proposal/$token'
     | '/quote/$token'
     | '/refer/$slug'
     | '/schedule/$token'
@@ -3911,6 +3941,7 @@ export interface FileRouteTypes {
     | '/settings/portal'
     | '/settings/privacy'
     | '/settings/property-groups'
+    | '/settings/proposal-templates'
     | '/settings/prospecting'
     | '/settings/prospecting-scripts'
     | '/settings/quote-templates'
@@ -4084,6 +4115,7 @@ export interface FileRouteTypes {
     | '/api/public/email/unsubscribe/$token'
     | '/api/public/forms/$slug/submit'
     | '/api/public/payments/br-webhook/$provider'
+    | '/api/public/proposals/$token/pdf'
     | '/api/public/quotes/$token/pdf'
     | '/api/public/refer/$slug/submit'
     | '/api/public/scim/v2/Groups'
@@ -4144,6 +4176,7 @@ export interface FileRouteTypes {
     | '/meet/$token'
     | '/offer/$token'
     | '/portal/$token'
+    | '/proposal/$token'
     | '/quote/$token'
     | '/refer/$slug'
     | '/schedule/$token'
@@ -4288,6 +4321,7 @@ export interface FileRouteTypes {
     | '/settings/portal'
     | '/settings/privacy'
     | '/settings/property-groups'
+    | '/settings/proposal-templates'
     | '/settings/prospecting'
     | '/settings/prospecting-scripts'
     | '/settings/quote-templates'
@@ -4460,6 +4494,7 @@ export interface FileRouteTypes {
     | '/api/public/email/unsubscribe/$token'
     | '/api/public/forms/$slug/submit'
     | '/api/public/payments/br-webhook/$provider'
+    | '/api/public/proposals/$token/pdf'
     | '/api/public/quotes/$token/pdf'
     | '/api/public/refer/$slug/submit'
     | '/api/public/scim/v2/Groups'
@@ -4526,6 +4561,7 @@ export interface FileRouteTypes {
     | '/meet/$token'
     | '/offer/$token'
     | '/portal/$token'
+    | '/proposal/$token'
     | '/quote/$token'
     | '/refer/$slug'
     | '/schedule/$token'
@@ -4670,6 +4706,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/portal'
     | '/_authenticated/settings/privacy'
     | '/_authenticated/settings/property-groups'
+    | '/_authenticated/settings/proposal-templates'
     | '/_authenticated/settings/prospecting'
     | '/_authenticated/settings/prospecting-scripts'
     | '/_authenticated/settings/quote-templates'
@@ -4843,6 +4880,7 @@ export interface FileRouteTypes {
     | '/api/public/email/unsubscribe/$token'
     | '/api/public/forms/$slug/submit'
     | '/api/public/payments/br-webhook/$provider'
+    | '/api/public/proposals/$token/pdf'
     | '/api/public/quotes/$token/pdf'
     | '/api/public/refer/$slug/submit'
     | '/api/public/scim/v2/Groups'
@@ -4883,6 +4921,7 @@ export interface RootRouteChildren {
   MeetTokenRoute: typeof MeetTokenRoute
   OfferTokenRoute: typeof OfferTokenRoute
   PortalTokenRoute: typeof PortalTokenRoute
+  ProposalTokenRoute: typeof ProposalTokenRoute
   QuoteTokenRoute: typeof QuoteTokenRoute
   ReferSlugRoute: typeof ReferSlugRoute
   ScheduleTokenRoute: typeof ScheduleTokenRoute
@@ -4970,6 +5009,7 @@ export interface RootRouteChildren {
   ApiPublicEmailPixelMessageIdRoute: typeof ApiPublicEmailPixelMessageIdRoute
   ApiPublicEmailUnsubscribeTokenRoute: typeof ApiPublicEmailUnsubscribeTokenRoute
   ApiPublicPaymentsBrWebhookProviderRoute: typeof ApiPublicPaymentsBrWebhookProviderRoute
+  ApiPublicProposalsTokenPdfRoute: typeof ApiPublicProposalsTokenPdfRoute
   ApiPublicQuotesTokenPdfRoute: typeof ApiPublicQuotesTokenPdfRoute
   ApiPublicScimV2GroupsRoute: typeof ApiPublicScimV2GroupsRoute
   ApiPublicScimV2UsersRoute: typeof ApiPublicScimV2UsersRouteWithChildren
@@ -5364,6 +5404,13 @@ declare module '@tanstack/react-router' {
       path: '/portal/$token'
       fullPath: '/portal/$token'
       preLoaderRoute: typeof PortalTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/proposal/$token': {
+      id: '/proposal/$token'
+      path: '/proposal/$token'
+      fullPath: '/proposal/$token'
+      preLoaderRoute: typeof ProposalTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/quote/$token': {
@@ -6456,6 +6503,13 @@ declare module '@tanstack/react-router' {
       path: '/property-groups'
       fullPath: '/settings/property-groups'
       preLoaderRoute: typeof AuthenticatedSettingsPropertyGroupsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/proposal-templates': {
+      id: '/_authenticated/settings/proposal-templates'
+      path: '/proposal-templates'
+      fullPath: '/settings/proposal-templates'
+      preLoaderRoute: typeof AuthenticatedSettingsProposalTemplatesRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/prospecting': {
@@ -7564,6 +7618,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaymentsBrWebhookProviderRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/proposals/$token/pdf': {
+      id: '/api/public/proposals/$token/pdf'
+      path: '/api/public/proposals/$token/pdf'
+      fullPath: '/api/public/proposals/$token/pdf'
+      preLoaderRoute: typeof ApiPublicProposalsTokenPdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/quotes/$token/pdf': {
       id: '/api/public/quotes/$token/pdf'
       path: '/api/public/quotes/$token/pdf'
@@ -7860,6 +7921,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsPortalRoute: typeof AuthenticatedSettingsPortalRoute
   AuthenticatedSettingsPrivacyRoute: typeof AuthenticatedSettingsPrivacyRoute
   AuthenticatedSettingsPropertyGroupsRoute: typeof AuthenticatedSettingsPropertyGroupsRoute
+  AuthenticatedSettingsProposalTemplatesRoute: typeof AuthenticatedSettingsProposalTemplatesRoute
   AuthenticatedSettingsProspectingRoute: typeof AuthenticatedSettingsProspectingRoute
   AuthenticatedSettingsProspectingScriptsRoute: typeof AuthenticatedSettingsProspectingScriptsRoute
   AuthenticatedSettingsQuoteTemplatesRoute: typeof AuthenticatedSettingsQuoteTemplatesRoute
@@ -7968,6 +8030,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsPrivacyRoute: AuthenticatedSettingsPrivacyRoute,
   AuthenticatedSettingsPropertyGroupsRoute:
     AuthenticatedSettingsPropertyGroupsRoute,
+  AuthenticatedSettingsProposalTemplatesRoute:
+    AuthenticatedSettingsProposalTemplatesRoute,
   AuthenticatedSettingsProspectingRoute: AuthenticatedSettingsProspectingRoute,
   AuthenticatedSettingsProspectingScriptsRoute:
     AuthenticatedSettingsProspectingScriptsRoute,
@@ -8514,6 +8578,7 @@ const rootRouteChildren: RootRouteChildren = {
   MeetTokenRoute: MeetTokenRoute,
   OfferTokenRoute: OfferTokenRoute,
   PortalTokenRoute: PortalTokenRoute,
+  ProposalTokenRoute: ProposalTokenRoute,
   QuoteTokenRoute: QuoteTokenRoute,
   ReferSlugRoute: ReferSlugRoute,
   ScheduleTokenRoute: ScheduleTokenRoute,
@@ -8612,6 +8677,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicEmailUnsubscribeTokenRoute: ApiPublicEmailUnsubscribeTokenRoute,
   ApiPublicPaymentsBrWebhookProviderRoute:
     ApiPublicPaymentsBrWebhookProviderRoute,
+  ApiPublicProposalsTokenPdfRoute: ApiPublicProposalsTokenPdfRoute,
   ApiPublicQuotesTokenPdfRoute: ApiPublicQuotesTokenPdfRoute,
   ApiPublicScimV2GroupsRoute: ApiPublicScimV2GroupsRoute,
   ApiPublicScimV2UsersRoute: ApiPublicScimV2UsersRouteWithChildren,

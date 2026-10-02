@@ -14,3 +14,5 @@
 - Visibilidade restrita por cargo usa políticas RESTRITIVAS rep_scope_* + job_roles.restricted_visibility; por quê: não altera cargos existentes e protege no banco.
 
 - Conversões Cotação→Proposta→Contrato ficam em `src/lib/sales-flow.server.ts` com o cliente do usuário (RLS) e gravam a origem (`proposals.quote_id`, `contracts.proposal_id/quote_id`); por quê: rastreabilidade sem redigitar e sem duplicar.
+
+- Propostas usam modelos próprios (`proposal_templates` + vínculo a serviços do catálogo), nunca cláusulas de contrato; o documento final (ficha, link público `/proposal/$token` e PDF) sai de `loadProposalDocument` e a edição é só pelo `ProposalWizard`; por quê: mesmo fluxo da cotação, uma única fonte para tela e PDF.

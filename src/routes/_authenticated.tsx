@@ -69,6 +69,7 @@ const MANAGER_PLUS = [
   "/settings/products",
   "/settings/quotes",
   "/settings/quote-templates",
+  "/settings/proposal-templates",
   "/settings/esign",
   "/settings/recurring",
   "/settings/macros",

@@ -165,6 +165,12 @@ const sections: Section[] = [
         need: "manager",
       },
       {
+        to: "/settings/proposal-templates",
+        label: "Modelos de proposta",
+        icon: LayoutTemplate,
+        need: "manager",
+      },
+      {
         to: "/settings/clauses",
         label: "Biblioteca de cláusulas",
         icon: BookOpen,

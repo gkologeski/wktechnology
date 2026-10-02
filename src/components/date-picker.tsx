@@ -24,6 +24,8 @@ export type DatePickerProps = {
   defaultPreset?: SinglePresetKey;
   placeholder?: string;
   align?: "start" | "center" | "end";
+  /** Lado preferido do calendário (padrão: abaixo do campo). */
+  side?: "top" | "bottom";
   size?: "sm" | "default";
   ariaLabel?: string;
   className?: string;
@@ -36,6 +38,7 @@ export function DatePicker({
   defaultPreset = "today",
   placeholder = "Selecionar data",
   align = "start",
+  side = "bottom",
   size = "default",
   ariaLabel,
   className,
@@ -82,7 +85,13 @@ export function DatePicker({
           <span className="truncate">{label}</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent align={align} className="w-auto max-w-[95vw] p-0">
+      <PopoverContent
+        align={align}
+        side={side}
+        sideOffset={4}
+        collisionPadding={8}
+        className="w-auto max-w-[95vw] p-0"
+      >
         <div className="flex flex-col sm:flex-row">
           <div className="flex flex-row gap-1 p-2 sm:w-40 sm:flex-col">
             {SINGLE_PRESETS.map((p) => (
