@@ -2,21 +2,14 @@ import { getPublicAppUrl } from "@/lib/app-url";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { listQuotes, deleteQuote, updateQuote } from "@/lib/quotes.functions";
-import { createProposalFromQuote, createContractFromSales } from "@/lib/sales-flow.functions";
-import { SERVICE_LINES, SERVICE_LINE_LABEL, isServiceLine } from "@/lib/sales/service-line";
+import { listQuotes, deleteQuote } from "@/lib/quotes.functions";
+import { createProposalFromQuote } from "@/lib/sales-flow.functions";
+import { GenerateContractButton } from "@/components/contracts/generate-contract-button";
 import { useNavigate } from "@tanstack/react-router";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, Copy, Trash2, FileText, FileSignature } from "lucide-react";
+import { ExternalLink, Copy, Trash2, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
@@ -38,33 +31,14 @@ function QuotesPage() {
   const qc = useQueryClient();
   const list = useServerFn(listQuotes);
   const del = useServerFn(deleteQuote);
-  const upd = useServerFn(updateQuote);
   const toProposal = useServerFn(createProposalFromQuote);
-  const toContract = useServerFn(createContractFromSales);
   const navigate = useNavigate();
 
-  async function setLine(id: string, v: string) {
-    try {
-      await upd({ data: { id, patch: { service_line: isServiceLine(v) ? v : null } } });
-      qc.invalidateQueries({ queryKey: ["quotes"] });
-    } catch (e) {
-      toast.error((e as Error).message);
-    }
-  }
   async function genProposal(id: string) {
     try {
       const r = await toProposal({ data: { quoteId: id } });
       toast.success(r.reused ? "Esta cotação já tem proposta." : "Proposta gerada.");
       void navigate({ to: "/proposals/$id", params: { id: r.id } });
-    } catch (e) {
-      toast.error((e as Error).message);
-    }
-  }
-  async function genContract(id: string) {
-    try {
-      const r = await toContract({ data: { quoteId: id } });
-      toast.success(r.reused ? "Esta cotação já tem contrato." : "Contrato gerado.");
-      void navigate({ to: "/contracts/$id", params: { id: r.contract.id } });
     } catch (e) {
       toast.error((e as Error).message);
     }
@@ -142,30 +116,11 @@ function QuotesPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end">
-                    <Select
-                      value={(q as { service_line?: string | null }).service_line ?? "none"}
-                      onValueChange={(v) => void setLine(q.id, v)}
-                    >
-                      <SelectTrigger className="h-8 w-[170px]" aria-label="Linha de serviço">
-                        <SelectValue placeholder="Linha de serviço" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Sem linha de serviço</SelectItem>
-                        {SERVICE_LINES.map((l) => (
-                          <SelectItem key={l} value={l}>
-                            {SERVICE_LINE_LABEL[l]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                     <Button variant="outline" size="sm" onClick={() => void genProposal(q.id)}>
                       <FileText className="mr-1 h-4 w-4" />
                       Gerar proposta
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => void genContract(q.id)}>
-                      <FileSignature className="mr-1 h-4 w-4" />
-                      Gerar contrato
-                    </Button>
+                    <GenerateContractButton source={{ quoteId: q.id }} />
                     <Button
                       variant="ghost"
                       size="icon"

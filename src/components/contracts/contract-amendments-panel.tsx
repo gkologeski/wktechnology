@@ -24,6 +24,7 @@ import {
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { formatCurrency } from "@/lib/crm";
 import { linkContractAmendment } from "@/lib/contracts.functions";
+import { AmendmentFromSalesButton } from "@/components/contracts/amendment-from-sales-dialog";
 import {
   MainContractPicker,
   type MainContractOption,
@@ -120,9 +121,14 @@ export function ContractAmendmentsPanel({
           </p>
         </div>
         {canEdit ? (
-          <Button size="sm" onClick={() => setOpen(true)}>
-            {isAmendment ? "Alterar contrato principal" : "Vincular aditivo"}
-          </Button>
+          <div className="flex flex-wrap justify-end gap-2">
+            {!isAmendment && contractRole !== "client" ? (
+              <AmendmentFromSalesButton contractId={contractId} />
+            ) : null}
+            <Button size="sm" onClick={() => setOpen(true)}>
+              {isAmendment ? "Alterar contrato principal" : "Vincular aditivo"}
+            </Button>
+          </div>
         ) : null}
       </CardHeader>
 
