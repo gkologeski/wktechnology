@@ -72,7 +72,11 @@ export function DatePicker({
           variant="outline"
           size={size}
           aria-label={ariaLabel ?? "Selecionar data"}
-          className={cn("justify-start gap-2 font-normal", !value && "text-muted-foreground", className)}
+          className={cn(
+            "justify-start gap-2 font-normal",
+            !value && "text-muted-foreground",
+            className,
+          )}
         >
           <CalendarIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
           <span className="truncate">{label}</span>

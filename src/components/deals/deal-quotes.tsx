@@ -18,7 +18,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Plus, ExternalLink, MoreHorizontal, FileText } from "lucide-react";
-import { useNavigate } from "@tanstack/react-router";
 import { ProposalWizard } from "@/components/proposals/proposal-wizard";
 import { GenerateContractButton } from "@/components/contracts/generate-contract-button";
 import { toast } from "sonner";
@@ -60,7 +59,6 @@ export function DealQuotes({ dealId }: { dealId: string }) {
   const del = useServerFn(deleteQuote);
   const regen = useServerFn(regenerateQuoteToken);
   const payLink = useServerFn(createQuotePaymentLink);
-  const navigate = useNavigate();
 
   const [proposalQuoteId, setProposalQuoteId] = useState<string | null>(null);
   function genProposal(id: string) {
@@ -350,6 +348,10 @@ export function DealQuotes({ dealId }: { dealId: string }) {
         </div>
       )}
 
+      <ProposalWizard
+        quoteId={proposalQuoteId}
+        onOpenChange={(o) => !o && setProposalQuoteId(null)}
+      />
       <QuoteWizard
         dealId={dealId}
         open={wizardOpen}

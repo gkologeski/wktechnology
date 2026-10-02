@@ -136,8 +136,7 @@ export function ProposalWizard({ quoteId, onOpenChange, onDone }: Props) {
     }
   }
 
-  const memberName = (id: string | null) =>
-    id ? members.nameFor(id) : "Sem responsável";
+  const memberName = (id: string | null) => (id ? members.nameFor(id) : "Sem responsável");
 
   return (
     <Dialog open={open} onOpenChange={(v) => (saving ? undefined : onOpenChange(v))}>
@@ -281,9 +280,7 @@ export function ProposalWizard({ quoteId, onOpenChange, onDone }: Props) {
                 <WordEditor ref={editorRef} value={body} onChange={setBody} minHeight={320} />
                 <div className="space-y-2">
                   <p className="text-xs font-medium text-muted-foreground">Cláusulas prontas</p>
-                  {clausesQ.isLoading && (
-                    <div className="h-8 animate-pulse rounded-md bg-muted" />
-                  )}
+                  {clausesQ.isLoading && <div className="h-8 animate-pulse rounded-md bg-muted" />}
                   {!clausesQ.isLoading && (clausesQ.data ?? []).length === 0 && (
                     <p className="text-xs text-muted-foreground">Nenhuma cláusula cadastrada.</p>
                   )}

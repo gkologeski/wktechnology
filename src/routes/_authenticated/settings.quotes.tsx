@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { getPublicAppUrl } from "@/lib/app-url";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -5,7 +6,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { listQuotes, deleteQuote } from "@/lib/quotes.functions";
 import { ProposalWizard } from "@/components/proposals/proposal-wizard";
 import { GenerateContractButton } from "@/components/contracts/generate-contract-button";
-import { useNavigate } from "@tanstack/react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,7 +31,6 @@ function QuotesPage() {
   const qc = useQueryClient();
   const list = useServerFn(listQuotes);
   const del = useServerFn(deleteQuote);
-  const navigate = useNavigate();
 
   const [proposalQuoteId, setProposalQuoteId] = useState<string | null>(null);
   function genProposal(id: string) {
@@ -135,6 +134,10 @@ function QuotesPage() {
           )}
         </CardContent>
       </Card>
+      <ProposalWizard
+        quoteId={proposalQuoteId}
+        onOpenChange={(o) => !o && setProposalQuoteId(null)}
+      />
     </div>
   );
 }
