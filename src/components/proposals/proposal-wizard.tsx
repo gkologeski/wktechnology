@@ -33,7 +33,8 @@ import { sanitizeHtml } from "@/components/rich-html-editor";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { formatCurrency } from "@/lib/crm";
 import { cn } from "@/lib/utils";
-import { listClauses } from "@/lib/proposals.functions";
+import { createProposal, listClauses, updateProposal } from "@/lib/proposals.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { createProposalFromQuote, getProposalDraftFromQuote } from "@/lib/sales-flow.functions";
 
 const STEPS = [
@@ -45,26 +46,95 @@ const STEPS = [
 
 const NONE = "__none__";
 
+export type ProposalSource = { quoteId: string } | { dealId: string } | { proposalId: string };
+
+type Draft = {
+  title: string;
+  body: string;
+  total_amount: number | null;
+  currency: string;
+  expires_at: string | null;
+  assigned_to: string | null;
+  quote_number: string | null;
+  service_line: string | null;
+  items: Array<{ id: string; name: string; billing: string }>;
+  company_id: string | null;
+  contact_id: string | null;
+  deal_id: string | null;
+};
+type Loaded = { reused: true; existingId: string } | { reused: false; draft: Draft };
+
 type Props = {
-  quoteId: string | null;
+  source: ProposalSource | null;
   onOpenChange: (open: boolean) => void;
   /** Chamado quando a proposta for criada (ou já existir). */
   onDone?: (proposalId: string) => void;
 };
 
-export function ProposalWizard({ quoteId, onOpenChange, onDone }: Props) {
-  const open = !!quoteId;
+export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
+  const open = !!source;
+  const quoteId = source && "quoteId" in source ? source.quoteId : null;
+  const editId = source && "proposalId" in source ? source.proposalId : null;
+  const blankDealId = source && "dealId" in source ? source.dealId : null;
   const navigate = useNavigate();
   const qc = useQueryClient();
   const getDraft = useServerFn(getProposalDraftFromQuote);
   const create = useServerFn(createProposalFromQuote);
+  const createBlank = useServerFn(createProposal);
+  const update = useServerFn(updateProposal);
   const lcl = useServerFn(listClauses);
   const members = useWorkspaceMembers();
   const editorRef = useRef<WordEditorHandle>(null);
 
   const draftQ = useQuery({
-    queryKey: ["proposal-draft", quoteId],
-    queryFn: () => getDraft({ data: { quoteId: quoteId! } }),
+    queryKey: ["proposal-draft", source],
+    queryFn: async (): Promise<Loaded> => {
+      if (quoteId) return (await getDraft({ data: { quoteId } })) as Loaded;
+      if (editId) {
+        const { data, error } = await supabase
+          .from("proposals")
+          .select(
+            "title, body, total_amount, currency, expires_at, assigned_to, locked, company_id, contact_id, deal_id",
+          )
+          .eq("id", editId)
+          .single();
+        if (error) throw error;
+        if (data.locked) throw new Error("Proposta travada: não pode ser editada.");
+        return {
+          reused: false,
+          draft: {
+            ...data,
+            total_amount: data.total_amount != null ? Number(data.total_amount) : null,
+            quote_number: null,
+            service_line: null,
+            items: [],
+          },
+        };
+      }
+      const { data: deal, error } = await supabase
+        .from("deals")
+        .select("name, value, currency, assigned_to, company_id, primary_contact_id")
+        .eq("id", blankDealId!)
+        .single();
+      if (error) throw error;
+      return {
+        reused: false,
+        draft: {
+          title: `Proposta — ${deal.name}`,
+          body: "<h1>Proposta</h1><h2>Escopo</h2><p></p><h2>Condições comerciais</h2><p></p>",
+          total_amount: deal.value != null ? Number(deal.value) : null,
+          currency: deal.currency ?? "BRL",
+          expires_at: null,
+          assigned_to: deal.assigned_to,
+          quote_number: null,
+          service_line: null,
+          items: [],
+          company_id: deal.company_id,
+          contact_id: deal.primary_contact_id,
+          deal_id: blankDealId,
+        },
+      };
+    },
     enabled: open,
     staleTime: 0,
     gcTime: 0,
@@ -84,7 +154,7 @@ export function ProposalWizard({ quoteId, onOpenChange, onDone }: Props) {
   const [saving, setSaving] = useState(false);
 
   const res = draftQ.data;
-  const draft = res && !res.reused ? res.draft : null;
+  const draft: Draft | null = res && !res.reused ? res.draft : null;
 
   // Cotação que já tem proposta: vai direto para a existente.
   useEffect(() => {
@@ -111,9 +181,47 @@ export function ProposalWizard({ quoteId, onOpenChange, onDone }: Props) {
   const titleOk = title.trim().length > 0;
 
   async function submit() {
-    if (!quoteId) return;
+    if (!source) return;
     setSaving(true);
     try {
+      if (editId) {
+        await update({
+          data: {
+            id: editId,
+            patch: { title: title.trim(), body, total_amount: amount, expires_at: expires },
+          },
+        });
+        await supabase.from("proposals").update({ assigned_to: assignee }).eq("id", editId);
+        toast.success("Proposta atualizada.");
+        void qc.invalidateQueries({ queryKey: ["deal-proposals"] });
+        void qc.invalidateQueries({ queryKey: ["proposal", editId] });
+        onOpenChange(false);
+        onDone?.(editId);
+        return;
+      }
+      if (blankDealId && draft) {
+        const row = await createBlank({
+          data: {
+            title: title.trim(),
+            body,
+            dealId: blankDealId,
+            companyId: draft.company_id,
+            contactId: draft.contact_id,
+            totalAmount: amount,
+            currency: draft.currency,
+            expiresAt: expires,
+          },
+        });
+        if (assignee)
+          await supabase.from("proposals").update({ assigned_to: assignee }).eq("id", row.id);
+        toast.success("Proposta criada.");
+        void qc.invalidateQueries({ queryKey: ["deal-proposals"] });
+        onOpenChange(false);
+        onDone?.(row.id);
+        void navigate({ to: "/proposals/$id", params: { id: row.id } });
+        return;
+      }
+      if (!quoteId) return;
       const r = await create({
         data: {
           quoteId,
@@ -143,7 +251,7 @@ export function ProposalWizard({ quoteId, onOpenChange, onDone }: Props) {
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            Nova proposta
+            {editId ? "Editar proposta" : "Nova proposta"}
             {draft?.quote_number ? (
               <span className="ml-2 text-sm font-normal text-muted-foreground">
                 a partir da cotação {draft.quote_number}
@@ -151,7 +259,9 @@ export function ProposalWizard({ quoteId, onOpenChange, onDone }: Props) {
             ) : null}
           </DialogTitle>
           <DialogDescription>
-            Revise cada passo. A proposta só é criada no último passo.
+            {editId
+              ? "Revise cada passo. As alterações só são gravadas no último passo."
+              : "Revise cada passo. A proposta só é criada no último passo."}
           </DialogDescription>
         </DialogHeader>
 
@@ -192,7 +302,9 @@ export function ProposalWizard({ quoteId, onOpenChange, onDone }: Props) {
           </div>
         ) : draftQ.isError ? (
           <div className="space-y-2 rounded-md border border-destructive/40 p-3 text-sm">
-            <p className="text-destructive">Não foi possível carregar a cotação.</p>
+            <p className="text-destructive">
+              {(draftQ.error as Error)?.message || "Não foi possível carregar os dados."}
+            </p>
             <Button size="sm" variant="outline" onClick={() => void draftQ.refetch()}>
               Tentar novamente
             </Button>
@@ -238,7 +350,7 @@ export function ProposalWizard({ quoteId, onOpenChange, onDone }: Props) {
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Empresa, contato e negócio vêm da cotação
+                  Empresa, contato e negócio vêm {quoteId ? "da cotação" : "do negócio"}
                   {draft.service_line ? ` · Tipo de serviço: ${draft.service_line}` : ""}.
                 </p>
               </div>
@@ -247,7 +359,9 @@ export function ProposalWizard({ quoteId, onOpenChange, onDone }: Props) {
             {step === 1 && (
               <div className="space-y-4">
                 {draft.items.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">A cotação não tem itens.</p>
+                  <p className="text-sm text-muted-foreground">
+                    {quoteId ? "A cotação não tem itens." : "Sem itens de cotação nesta proposta."}
+                  </p>
                 ) : (
                   <ul className="divide-y rounded-md border">
                     {draft.items.map((it) => (
@@ -260,9 +374,11 @@ export function ProposalWizard({ quoteId, onOpenChange, onDone }: Props) {
                     ))}
                   </ul>
                 )}
-                <p className="text-xs text-muted-foreground">
-                  Para mudar os itens, edite a cotação.
-                </p>
+                {quoteId && (
+                  <p className="text-xs text-muted-foreground">
+                    Para mudar os itens, edite a cotação.
+                  </p>
+                )}
                 <div className="space-y-1.5 sm:max-w-xs">
                   <Label htmlFor="pw-amount">Valor total da proposta</Label>
                   <CurrencyInput
@@ -353,7 +469,7 @@ export function ProposalWizard({ quoteId, onOpenChange, onDone }: Props) {
           ) : (
             <Button onClick={() => void submit()} disabled={saving || !titleOk}>
               {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-              Criar proposta
+              {editId ? "Salvar proposta" : "Criar proposta"}
             </Button>
           )}
         </DialogFooter>

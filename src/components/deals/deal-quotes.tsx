@@ -17,9 +17,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, ExternalLink, MoreHorizontal, FileText } from "lucide-react";
+import { Plus, ExternalLink, MoreHorizontal } from "lucide-react";
 import { ProposalWizard } from "@/components/proposals/proposal-wizard";
-import { GenerateContractButton } from "@/components/contracts/generate-contract-button";
+import { ContractWizard, type ContractWizardSource } from "@/components/contracts/contract-wizard";
 import { toast } from "sonner";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { supabase } from "@/integrations/supabase/client";
@@ -61,6 +61,7 @@ export function DealQuotes({ dealId }: { dealId: string }) {
   const payLink = useServerFn(createQuotePaymentLink);
 
   const [proposalQuoteId, setProposalQuoteId] = useState<string | null>(null);
+  const [contractWizard, setContractWizard] = useState<ContractWizardSource | null>(null);
   function genProposal(id: string) {
     setProposalQuoteId(id);
   }
@@ -307,6 +308,14 @@ export function DealQuotes({ dealId }: { dealId: string }) {
                             : "Gerar link de pagamento"}
                         </DropdownMenuItem>
                       )}
+                      <DropdownMenuItem onSelect={() => genProposal(q.id)}>
+                        Gerar proposta
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={() => setContractWizard({ quoteId: q.id, dealId })}
+                      >
+                        Gerar contrato
+                      </DropdownMenuItem>
                       <DropdownMenuItem onSelect={() => regenerate(q.id)}>
                         Gerar novo link público
                       </DropdownMenuItem>
@@ -335,21 +344,15 @@ export function DealQuotes({ dealId }: { dealId: string }) {
                     {q.number} · {formatCurrency(Number(q.total), q.currency)}
                   </div>
                 </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Button variant="outline" size="sm" onClick={() => genProposal(q.id)}>
-                    <FileText className="mr-1 h-4 w-4" />
-                    Gerar proposta
-                  </Button>
-                  <GenerateContractButton source={{ quoteId: q.id }} />
-                </div>
               </div>
             );
           })}
         </div>
       )}
 
+      <ContractWizard source={contractWizard} onOpenChange={(o) => !o && setContractWizard(null)} />
       <ProposalWizard
-        quoteId={proposalQuoteId}
+        source={proposalQuoteId ? { quoteId: proposalQuoteId } : null}
         onOpenChange={(o) => !o && setProposalQuoteId(null)}
       />
       <QuoteWizard

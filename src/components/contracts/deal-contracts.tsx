@@ -1,16 +1,20 @@
+// Quadro "Contratos" do negócio: cabeçalho com "+ Adicionar", cartões com menu
+// de ações e assistente passo a passo para criar.
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { FileText, FileStack, Plus, ExternalLink } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { listContracts, createContractFromDeal } from "@/lib/contracts.functions";
+import { listContracts, deleteContract } from "@/lib/contracts.functions";
 import { formatCurrency } from "@/lib/crm";
-import { QuickCreateContractDialog } from "@/components/contracts/quick-create-contract-dialog";
-import { ApplyContractTemplateDialog } from "@/components/contracts/apply-contract-template-dialog";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
+import {
+  DealDocumentCard,
+  DealDocsHeader,
+  type DocAction,
+} from "@/components/deals/deal-document-card";
+import { ContractWizard, type ContractWizardSource } from "./contract-wizard";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Rascunho",
@@ -31,118 +35,108 @@ export function DealContracts({
   companyId?: string | null;
 }) {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const list = useServerFn(listContracts);
-  const fromDeal = useServerFn(createContractFromDeal);
-  const [openNew, setOpenNew] = useState(false);
-  const [openTemplate, setOpenTemplate] = useState(false);
-  const [creating, setCreating] = useState(false);
+  const del = useServerFn(deleteContract);
+  const [wizard, setWizard] = useState<ContractWizardSource | null>(null);
 
-  const { data: rows = [], isLoading } = useQuery({
+  const {
+    data: rows = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ["deal-contracts", dealId],
     queryFn: () => list({ data: { dealId } }),
   });
 
-  async function quickFromDeal() {
-    setCreating(true);
+  const open = (id: string) => void navigate({ to: "/contracts/$id", params: { id } });
+
+  async function remove(id: string) {
+    const yes = await confirmDialog({
+      title: "Excluir contrato?",
+      description: "Esta ação não pode ser desfeita.",
+      confirmLabel: "Excluir",
+      variant: "destructive",
+    });
+    if (!yes) return;
     try {
-      await fromDeal({ data: { dealId } });
-      toast.success("Contrato criado a partir do negócio.");
-      qc.invalidateQueries({ queryKey: ["deal-contracts", dealId] });
-      qc.invalidateQueries({ queryKey: ["contracts"] });
+      await del({ data: { id } });
+      toast.success("Contrato excluído.");
+      void qc.invalidateQueries({ queryKey: ["deal-contracts", dealId] });
+      void qc.invalidateQueries({ queryKey: ["contracts"] });
     } catch (e) {
       toast.error((e as Error).message);
-    } finally {
-      setCreating(false);
     }
+  }
+
+  function actionsFor(c: (typeof rows)[number]): DocAction[] {
+    const a: DocAction[] = [
+      { kind: "item", label: "Abrir", onSelect: () => open(c.id) },
+      {
+        kind: "item",
+        label: "Ver fluxo do contrato",
+        onSelect: () => void navigate({ to: "/contracts/$id/flow", params: { id: c.id } }),
+      },
+      { kind: "item", label: "Editar", onSelect: () => open(c.id) },
+      {
+        kind: "item",
+        label: "Adicionar aditivo",
+        onSelect: () => setWizard({ dealId, companyId, mainContractId: c.id }),
+      },
+    ];
+    if (c.status === "draft" || c.status === "in_review" || c.status === "in_negotiation")
+      a.push({ kind: "item", label: "Enviar para assinatura", onSelect: () => open(c.id) });
+    a.push({ kind: "separator" });
+    a.push({
+      kind: "item",
+      label: "Excluir",
+      destructive: true,
+      onSelect: () => void remove(c.id),
+    });
+    return a;
   }
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-muted-foreground">
-          {rows.length === 0 ? "Nenhum contrato" : `${rows.length} contrato(s)`}
-        </span>
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="link"
-            className="h-auto p-0"
-            onClick={quickFromDeal}
-            disabled={creating}
-          >
-            <FileText className="h-3.5 w-3.5 mr-0.5" /> Gerar do negócio
-          </Button>
-          <Button
-            size="sm"
-            variant="link"
-            className="h-auto p-0"
-            onClick={() => setOpenTemplate(true)}
-          >
-            <FileStack className="h-3.5 w-3.5 mr-0.5" /> Gerar de modelo
-          </Button>
-          <Button size="sm" variant="link" className="h-auto p-0" onClick={() => setOpenNew(true)}>
-            <Plus className="h-3.5 w-3.5 mr-0.5" /> Adicionar
-          </Button>
-        </div>
-      </div>
-
+      <DealDocsHeader
+        count={rows.length}
+        singular="contrato"
+        plural="contratos"
+        onAdd={() => setWizard({ dealId, companyId })}
+      />
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Carregando…</p>
-      ) : rows.length === 0 ? null : (
+        <div className="h-16 animate-pulse rounded-md bg-muted" aria-busy="true" />
+      ) : isError ? (
+        <div className="text-sm">
+          <p className="text-destructive">Não foi possível carregar os contratos.</p>
+          <button
+            type="button"
+            className="text-xs text-primary hover:underline"
+            onClick={() => void refetch()}
+          >
+            Tentar novamente
+          </button>
+        </div>
+      ) : (
         <div className="space-y-2">
           {rows.map((c) => (
-            <div key={c.id} className="space-y-1">
-              <Link
-                to="/contracts/$id"
-                params={{ id: c.id }}
-                className="block rounded-md border p-3 hover:border-primary/40 transition-colors group"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 flex items-center gap-1 text-primary group-hover:underline">
-                    <span className="font-semibold truncate">{c.title}</span>
-                    <ExternalLink className="h-3.5 w-3.5 shrink-0" />
-                  </div>
-                  <Badge variant="outline" className="shrink-0">
-                    {STATUS_LABEL[c.status] ?? c.status}
-                  </Badge>
-                </div>
-                <div className="mt-1 text-xs text-muted-foreground tabular-nums">
+            <DealDocumentCard
+              key={c.id}
+              title={c.title}
+              onOpen={() => open(c.id)}
+              status={<span>{STATUS_LABEL[c.status] ?? c.status}</span>}
+              meta={
+                <>
                   {c.number} · {formatCurrency(Number(c.total_value), c.currency)}
-                </div>
-              </Link>
-              <Link
-                to="/contracts/$id/flow"
-                params={{ id: c.id }}
-                className="inline-block text-xs text-muted-foreground hover:text-foreground hover:underline"
-              >
-                Ver fluxo do contrato
-              </Link>
-            </div>
+                </>
+              }
+              actions={actionsFor(c)}
+            />
           ))}
         </div>
       )}
-
-      <ApplyContractTemplateDialog
-        open={openTemplate}
-        onOpenChange={setOpenTemplate}
-        dealId={dealId}
-        companyId={companyId ?? null}
-        onCreated={() => {
-          qc.invalidateQueries({ queryKey: ["deal-contracts", dealId] });
-          qc.invalidateQueries({ queryKey: ["contracts"] });
-        }}
-      />
-
-      <QuickCreateContractDialog
-        open={openNew}
-        onOpenChange={setOpenNew}
-        initialDealId={dealId}
-        initialCompanyId={companyId ?? null}
-        onCreated={() => {
-          qc.invalidateQueries({ queryKey: ["deal-contracts", dealId] });
-          qc.invalidateQueries({ queryKey: ["contracts"] });
-        }}
-      />
+      <ContractWizard source={wizard} onOpenChange={(o) => !o && setWizard(null)} />
     </div>
   );
 }
