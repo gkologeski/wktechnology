@@ -12,3 +12,5 @@
 - Valores fixos seguem docs/architecture/hardcoded-values.md, barrados por src/lib/hardcode-guard.test.ts.
 - `workspace_members.status` inactive tira acesso (is_workspace_member + banimento) mas preserva o nome — importa responsáveis HubSpot sem liberar acesso.
 - Visibilidade restrita por cargo usa políticas RESTRITIVAS rep_scope_* + job_roles.restricted_visibility; por quê: não altera cargos existentes e protege no banco.
+
+- Conversões Cotação→Proposta→Contrato ficam em `src/lib/sales-flow.server.ts` com o cliente do usuário (RLS) e gravam a origem (`proposals.quote_id`, `contracts.proposal_id/quote_id`); por quê: rastreabilidade sem redigitar e sem duplicar.

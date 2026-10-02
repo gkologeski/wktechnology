@@ -12,3 +12,12 @@
 - [x] Fase 3 — cargo "Representante de Vendas (externa)" só TechSales
 - [x] Fase 4 — aviso ao responsável da empresa (notificação); exportação oculta por permissão
 - [x] Fase 5 — validação por papel
+
+# Roadmap — Cotação → Proposta → Contrato
+- [x] Fase 1 — ligação entre etapas e botões de geração
+- [x] Fase 2 — campo Linha de serviço na cotação (seções sugeridas na proposta)
+- [ ] Fase 3 — modelos de proposta/contrato por linha
+- [x] Fase 4 — itens da cotação viram serviços do contrato
+- [ ] Fase 5 — atalho de aditivo para cliente com contrato ativo
+- [x] Fase 6 — textos da tela de Propostas
+- [ ] Fase 7 — teste real de conversão (aguarda autorização para gravar dados)
