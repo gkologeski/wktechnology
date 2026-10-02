@@ -178,7 +178,9 @@ async function findTemplateForServices(supabase: SupabaseClient, serviceIds: str
   if (!serviceIds.length) return null;
   const { data } = await supabase
     .from("contract_template_services")
-    .select("template:contract_templates(id, name, role, status, is_default, body_html, defaults, service_type)")
+    .select(
+      "template:contract_templates(id, name, role, status, is_default, body_html, defaults, service_type)",
+    )
     .in("service_catalog_id", serviceIds);
   type T = {
     id: string;
@@ -397,11 +399,27 @@ export async function amendmentSourcesForContract(supabase: SupabaseClient, cont
   ]);
   if (props.error) throw new Error(props.error.message);
   if (quotes.error) throw new Error(quotes.error.message);
-  const usedRows = (used.data ?? []) as Array<{ proposal_id: string | null; quote_id: string | null }>;
+  const usedRows = (used.data ?? []) as Array<{
+    proposal_id: string | null;
+    quote_id: string | null;
+  }>;
   const usedP = new Set(usedRows.map((r) => r.proposal_id).filter(Boolean));
   const usedQ = new Set(usedRows.map((r) => r.quote_id).filter(Boolean));
-  type P = { id: string; title: string; status: string; total_amount: number | null; currency: string | null };
-  type Q = { id: string; number: string | null; title: string | null; status: string; total: number | null; currency: string | null };
+  type P = {
+    id: string;
+    title: string;
+    status: string;
+    total_amount: number | null;
+    currency: string | null;
+  };
+  type Q = {
+    id: string;
+    number: string | null;
+    title: string | null;
+    status: string;
+    total: number | null;
+    currency: string | null;
+  };
   return {
     hasCompany: true,
     proposals: ((props.data ?? []) as unknown as P[]).filter((p) => !usedP.has(p.id)),

@@ -151,7 +151,13 @@ function SourcesDialog({ contractId, onClose }: { contractId: string; onClose: (
   );
 }
 
-function Option(props: { value: string; kind: string; title: string; status: string; amount: string }) {
+function Option(props: {
+  value: string;
+  kind: string;
+  title: string;
+  status: string;
+  amount: string;
+}) {
   const id = `src-${props.value}`;
   return (
     <Label

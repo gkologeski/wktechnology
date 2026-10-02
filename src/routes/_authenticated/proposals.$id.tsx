@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { createContractFromSales } from "@/lib/sales-flow.functions";
+import { GenerateContractButton } from "@/components/contracts/generate-contract-button";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
@@ -50,16 +50,6 @@ function ProposalEditor() {
   const req = useServerFn(requestProposalApproval);
   const decide = useServerFn(decideProposalApproval);
   const lcl = useServerFn(listClauses);
-  const toContract = useServerFn(createContractFromSales);
-  const navigate = useNavigate();
-  const contractM = useMutation({
-    mutationFn: () => toContract({ data: { proposalId: id } }),
-    onSuccess: (r) => {
-      toast.success(r.reused ? "Esta proposta já tem contrato." : "Contrato gerado.");
-      void navigate({ to: "/contracts/$id", params: { id: r.contract.id } });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["proposal", id],
@@ -208,14 +198,7 @@ function ProposalEditor() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              onClick={() => contractM.mutate()}
-              disabled={contractM.isPending}
-            >
-              <FileText className="mr-2 h-4 w-4" />
-              Gerar contrato
-            </Button>
+            <GenerateContractButton source={{ proposalId: id }} size="default" />
             <Button
               variant="outline"
               onClick={() => saveM.mutate()}

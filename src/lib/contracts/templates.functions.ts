@@ -34,7 +34,6 @@ const DELETE = [
 const roleEnum = z.enum(["provider", "client"]);
 const statusEnum = z.enum(["draft", "published", "archived"]);
 
-
 // ============= LIST =============
 
 export const listContractTemplates = createServerFn({ method: "POST" })
@@ -300,7 +299,6 @@ export const listTemplateServiceOptions = createServerFn({ method: "GET" })
   });
 
 // ============= CONTEXTO DE MERGE =============
-
 
 const applyInput = z.object({
   templateId: z.string().uuid(),

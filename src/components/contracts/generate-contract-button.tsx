@@ -18,10 +18,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { formatCurrency } from "@/lib/crm";
-import {
-  createContractFromSales,
-  listActiveContractsForSales,
-} from "@/lib/sales-flow.functions";
+import { createContractFromSales, listActiveContractsForSales } from "@/lib/sales-flow.functions";
 
 type Source = { proposalId?: string; quoteId?: string };
 type Active = Awaited<ReturnType<typeof listActiveContractsForSales>>[number];
@@ -124,7 +121,8 @@ export function GenerateContractButton({
                     Termo aditivo de: {c.title}
                   </span>
                   <span className="block truncate font-mono text-xs text-muted-foreground">
-                    {c.number ?? "—"} · {formatCurrency(Number(c.total_value ?? 0), c.currency ?? "BRL")}
+                    {c.number ?? "—"} ·{" "}
+                    {formatCurrency(Number(c.total_value ?? 0), c.currency ?? "BRL")}
                   </span>
                 </span>
               </Label>

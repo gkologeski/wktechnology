@@ -2,21 +2,14 @@ import { getPublicAppUrl } from "@/lib/app-url";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { listQuotes, deleteQuote, updateQuote } from "@/lib/quotes.functions";
+import { listQuotes, deleteQuote } from "@/lib/quotes.functions";
 import { createProposalFromQuote } from "@/lib/sales-flow.functions";
 import { GenerateContractButton } from "@/components/contracts/generate-contract-button";
 import { useNavigate } from "@tanstack/react-router";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, Copy, Trash2, FileText, FileSignature } from "lucide-react";
+import { ExternalLink, Copy, Trash2, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
@@ -38,7 +31,6 @@ function QuotesPage() {
   const qc = useQueryClient();
   const list = useServerFn(listQuotes);
   const del = useServerFn(deleteQuote);
-  const upd = useServerFn(updateQuote);
   const toProposal = useServerFn(createProposalFromQuote);
   const navigate = useNavigate();
 
