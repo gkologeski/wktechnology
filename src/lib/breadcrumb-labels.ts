@@ -32,6 +32,7 @@ export const SEGMENT_LABELS: Record<string, string> = {
   play: "Executar",
   "landing-pages": "Landing pages",
   "quote-templates": "Modelos de orçamento",
+  "proposal-templates": "Modelos de proposta",
   "bug-reports": "Chamados internos",
   "my-bug-reports": "Meus chamados",
   "import-hubspot": "Importar HubSpot",

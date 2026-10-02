@@ -7,6 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/crm";
+import { getPublicAppUrl } from "@/lib/app-url";
 import { deleteRowGuarded } from "@/lib/delete-guard";
 import { requestProposalApproval, sendProposal } from "@/lib/proposals.functions";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
@@ -44,7 +45,7 @@ export function DealProposals({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("proposals")
-        .select("id, title, status, total_amount, currency, version, locked")
+        .select("id, title, status, total_amount, currency, version, locked, public_token")
         .eq("deal_id", dealId)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -101,6 +102,22 @@ export function DealProposals({
         label: "Enviar ao cliente",
         onSelect: () => void run(() => send({ data: { id: p.id } }), "Proposta enviada."),
       });
+    if (p.public_token) {
+      const token = p.public_token;
+      a.push({
+        kind: "item",
+        label: "Copiar link",
+        onSelect: () => {
+          void navigator.clipboard.writeText(`${getPublicAppUrl()}/proposal/${token}`);
+          toast.success("Link copiado.");
+        },
+      });
+      a.push({
+        kind: "item",
+        label: "Baixar PDF",
+        onSelect: () => window.location.assign(`/api/public/proposals/${token}/pdf`),
+      });
+    }
     a.push({
       kind: "item",
       label: "Gerar contrato",

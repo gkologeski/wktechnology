@@ -14210,6 +14210,87 @@ export type Database = {
           },
         ]
       }
+      proposal_template_services: {
+        Row: {
+          service_catalog_id: string
+          template_id: string
+          workspace_id: string
+        }
+        Insert: {
+          service_catalog_id: string
+          template_id: string
+          workspace_id: string
+        }
+        Update: {
+          service_catalog_id?: string
+          template_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_template_services_service_catalog_id_fkey"
+            columns: ["service_catalog_id"]
+            isOneToOne: false
+            referencedRelation: "service_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposal_template_services_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "proposal_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposal_template_services_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proposal_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          html: string
+          id: string
+          is_default: boolean
+          name: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          html?: string
+          id?: string
+          is_default?: boolean
+          name: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          html?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_templates_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       proposals: {
         Row: {
           assigned_to: string | null
@@ -14225,6 +14306,8 @@ export type Database = {
           id: string
           locked: boolean
           owner_id: string
+          proposal_template_id: string | null
+          public_token: string | null
           quote_id: string | null
           sent_at: string | null
           status: Database["public"]["Enums"]["proposal_status"]
@@ -14249,6 +14332,8 @@ export type Database = {
           id?: string
           locked?: boolean
           owner_id: string
+          proposal_template_id?: string | null
+          public_token?: string | null
           quote_id?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["proposal_status"]
@@ -14273,6 +14358,8 @@ export type Database = {
           id?: string
           locked?: boolean
           owner_id?: string
+          proposal_template_id?: string | null
+          public_token?: string | null
           quote_id?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["proposal_status"]
@@ -14310,6 +14397,13 @@ export type Database = {
             columns: ["esign_document_id"]
             isOneToOne: false
             referencedRelation: "esign_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_proposal_template_id_fkey"
+            columns: ["proposal_template_id"]
+            isOneToOne: false
+            referencedRelation: "proposal_templates"
             referencedColumns: ["id"]
           },
           {

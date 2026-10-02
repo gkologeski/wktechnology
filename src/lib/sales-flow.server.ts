@@ -122,6 +122,7 @@ export type ProposalOverrides = {
   total_amount?: number | null;
   expires_at?: string | null;
   assigned_to?: string | null;
+  proposal_template_id?: string | null;
 };
 
 async function existingProposalId(supabase: SupabaseClient, quoteId: string) {
@@ -132,37 +133,6 @@ async function existingProposalId(supabase: SupabaseClient, quoteId: string) {
     .limit(1)
     .maybeSingle();
   return (data as { id: string } | null)?.id ?? null;
-}
-
-/** Monta o rascunho da proposta a partir da cotação, sem gravar nada. */
-export async function proposalDraftFromQuote(supabase: SupabaseClient, quoteId: string) {
-  const existingId = await existingProposalId(supabase, quoteId);
-  if (existingId) return { reused: true as const, existingId };
-  const { quote, items, line } = await loadQuote(supabase, quoteId);
-  const currency = quote.currency ?? "BRL";
-  const fmt = (v: number) => money(v, currency);
-  return {
-    reused: false as const,
-    existingId: null,
-    draft: {
-      title: quote.title || `Proposta — ${quote.number ?? "cotação"}`,
-      body: proposalBodyFromQuote(quote, items, line),
-      total_amount: quote.total != null ? Number(quote.total) : null,
-      currency,
-      expires_at: quote.valid_until,
-      assigned_to: quote.assigned_to,
-      company_id: quote.company_id,
-      contact_id: quote.contact_id,
-      deal_id: quote.deal_id,
-      quote_number: quote.number,
-      service_line: line ? serviceLineLabel(line) : null,
-      items: items.map((li) => ({
-        id: li.id,
-        name: li.name ?? "Item",
-        billing: describeBilling(li, fmt),
-      })),
-    },
-  };
 }
 
 export async function proposalFromQuote(
@@ -196,6 +166,7 @@ export async function proposalFromQuote(
       expires_at: overrides.expires_at !== undefined ? overrides.expires_at : quote.valid_until,
       assigned_to: overrides.assigned_to !== undefined ? overrides.assigned_to : quote.assigned_to,
       quote_id: quote.id,
+      proposal_template_id: overrides.proposal_template_id ?? null,
       variables: {},
     } as never)
     .select("id")

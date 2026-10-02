@@ -281,6 +281,13 @@
       "when": 1790902620076,
       "tag": "0039_quote_proposal_contract_links",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1790947581042,
+      "tag": "0040_proposal_templates_and_public_token",
+      "breakpoints": true
     }
   ]
 }
