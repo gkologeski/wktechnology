@@ -1,11 +1,11 @@
+import { useState } from "react";
 import { getPublicAppUrl } from "@/lib/app-url";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listQuotes, deleteQuote } from "@/lib/quotes.functions";
-import { createProposalFromQuote } from "@/lib/sales-flow.functions";
+import { ProposalWizard } from "@/components/proposals/proposal-wizard";
 import { GenerateContractButton } from "@/components/contracts/generate-contract-button";
-import { useNavigate } from "@tanstack/react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,17 +31,10 @@ function QuotesPage() {
   const qc = useQueryClient();
   const list = useServerFn(listQuotes);
   const del = useServerFn(deleteQuote);
-  const toProposal = useServerFn(createProposalFromQuote);
-  const navigate = useNavigate();
 
-  async function genProposal(id: string) {
-    try {
-      const r = await toProposal({ data: { quoteId: id } });
-      toast.success(r.reused ? "Esta cotação já tem proposta." : "Proposta gerada.");
-      void navigate({ to: "/proposals/$id", params: { id: r.id } });
-    } catch (e) {
-      toast.error((e as Error).message);
-    }
+  const [proposalQuoteId, setProposalQuoteId] = useState<string | null>(null);
+  function genProposal(id: string) {
+    setProposalQuoteId(id);
   }
   const { data: quotes = [], isLoading } = useQuery({
     queryKey: ["quotes"],
@@ -116,7 +109,7 @@ function QuotesPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end">
-                    <Button variant="outline" size="sm" onClick={() => void genProposal(q.id)}>
+                    <Button variant="outline" size="sm" onClick={() => genProposal(q.id)}>
                       <FileText className="mr-1 h-4 w-4" />
                       Gerar proposta
                     </Button>
@@ -141,6 +134,10 @@ function QuotesPage() {
           )}
         </CardContent>
       </Card>
+      <ProposalWizard
+        quoteId={proposalQuoteId}
+        onOpenChange={(o) => !o && setProposalQuoteId(null)}
+      />
     </div>
   );
 }
