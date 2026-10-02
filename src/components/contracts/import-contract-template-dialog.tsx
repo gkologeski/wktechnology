@@ -102,18 +102,18 @@ export function ImportContractTemplateDialog({
     }
     setProgress(progressFor("preparing"));
     try {
-      let result: Awaited<ReturnType<typeof parsePdf>>;
+      let result: ImportedTemplate;
       if (kind === "pdf") {
         setProgress(progressFor("text"));
         const b64 = await fileToBase64(file);
         setProgress(progressFor("ai"));
-        result = await parsePdf({ data: { filename: file.name, base64: b64 } });
+        result = await convertTemplateStreaming({ filename: file.name, kind: "pdf", base64: b64 });
       } else {
         setProgress(progressFor("text"));
         const html = await docxToHtml(file);
         if (html.trim().length < 40) throw new Error("Não foi possível extrair o texto do .docx.");
         setProgress(progressFor("ai"));
-        result = await parseHtml({ data: { filename: file.name, html } });
+        result = await convertTemplateStreaming({ filename: file.name, kind: "html", html });
       }
 
       setProgress(progressFor("draft"));
