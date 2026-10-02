@@ -17,7 +17,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, ExternalLink, MoreHorizontal } from "lucide-react";
+import { Plus, ExternalLink, MoreHorizontal, FileText } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { createProposalFromQuote } from "@/lib/sales-flow.functions";
+import { GenerateContractButton } from "@/components/contracts/generate-contract-button";
 import { toast } from "sonner";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,6 +60,19 @@ export function DealQuotes({ dealId }: { dealId: string }) {
   const del = useServerFn(deleteQuote);
   const regen = useServerFn(regenerateQuoteToken);
   const payLink = useServerFn(createQuotePaymentLink);
+  const toProposal = useServerFn(createProposalFromQuote);
+  const navigate = useNavigate();
+
+  async function genProposal(id: string) {
+    try {
+      const r = await toProposal({ data: { quoteId: id } });
+      toast.success(r.reused ? "Esta cotação já tem proposta." : "Proposta gerada.");
+      void qc.invalidateQueries({ queryKey: ["deal-proposals", dealId] });
+      void navigate({ to: "/proposals/$id", params: { id: r.id } });
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  }
 
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editingQuote, setEditingQuote] = useState<QuoteListItem | null>(null);
@@ -327,6 +343,13 @@ export function DealQuotes({ dealId }: { dealId: string }) {
                   <div className="text-xs text-muted-foreground tabular-nums pt-0.5">
                     {q.number} · {formatCurrency(Number(q.total), q.currency)}
                   </div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button variant="outline" size="sm" onClick={() => void genProposal(q.id)}>
+                    <FileText className="mr-1 h-4 w-4" />
+                    Gerar proposta
+                  </Button>
+                  <GenerateContractButton source={{ quoteId: q.id }} />
                 </div>
               </div>
             );

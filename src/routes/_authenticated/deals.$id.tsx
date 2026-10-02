@@ -29,6 +29,7 @@ import {
   DealLineItemsCount,
 } from "@/components/deals/deal-line-items";
 import { DealQuotes } from "@/components/deals/deal-quotes";
+import { DealProposals } from "@/components/deals/deal-proposals";
 import { DealContracts } from "@/components/contracts/deal-contracts";
 import { DealDeliveryPanel } from "@/components/deals/deal-delivery-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -409,6 +410,14 @@ function DealDetail() {
               </CardHeader>
               <CardContent>
                 <DealQuotes dealId={deal.id} />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Propostas</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <DealProposals dealId={deal.id} />
               </CardContent>
             </Card>
             <Card>
