@@ -92,7 +92,7 @@ function SourcesDialog({ contractId, onClose }: { contractId: string; onClose: (
             Mostra as propostas e cotações da mesma empresa que ainda não geraram contrato.
           </DialogDescription>
         </DialogHeader>
-        <div className="max-h-[50vh] overflow-y-auto py-1">
+        <div className="max-h-[50vh] overflow-y-auto px-1 py-1">
           {q.isLoading ? (
             <div className="flex justify-center py-8" role="status" aria-label="Carregando">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
