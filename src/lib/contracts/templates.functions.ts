@@ -34,10 +34,6 @@ const DELETE = [
 const roleEnum = z.enum(["provider", "client"]);
 const statusEnum = z.enum(["draft", "published", "archived"]);
 
-function generateNumber() {
-  const yearMonth = new Date().toISOString().slice(0, 7).replace("-", "");
-  return `C-${yearMonth}-${Math.floor(Math.random() * 9000 + 1000)}`;
-}
 
 // ============= LIST =============
 
