@@ -5649,7 +5649,9 @@ export type Database = {
           payment_method: string | null
           payment_terms: Json
           penalty_percent: number | null
+          proposal_id: string | null
           public_token: string | null
+          quote_id: string | null
           readjustment_index: string | null
           readjustment_period: string | null
           role: Database["public"]["Enums"]["contract_role"]
@@ -5706,7 +5708,9 @@ export type Database = {
           payment_method?: string | null
           payment_terms?: Json
           penalty_percent?: number | null
+          proposal_id?: string | null
           public_token?: string | null
+          quote_id?: string | null
           readjustment_index?: string | null
           readjustment_period?: string | null
           role?: Database["public"]["Enums"]["contract_role"]
@@ -5763,7 +5767,9 @@ export type Database = {
           payment_method?: string | null
           payment_terms?: Json
           penalty_percent?: number | null
+          proposal_id?: string | null
           public_token?: string | null
+          quote_id?: string | null
           readjustment_index?: string | null
           readjustment_period?: string | null
           role?: Database["public"]["Enums"]["contract_role"]
@@ -5819,6 +5825,20 @@ export type Database = {
             columns: ["parent_contract_id"]
             isOneToOne: false
             referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
             referencedColumns: ["id"]
           },
           {
@@ -6799,6 +6819,7 @@ export type Database = {
           owner_id: string
           pipeline_id: string | null
           primary_contact_id: string | null
+          service_line: string | null
           source: string | null
           stage: Database["public"]["Enums"]["deal_stage"]
           stage_id: string | null
@@ -6838,6 +6859,7 @@ export type Database = {
           owner_id: string
           pipeline_id?: string | null
           primary_contact_id?: string | null
+          service_line?: string | null
           source?: string | null
           stage?: Database["public"]["Enums"]["deal_stage"]
           stage_id?: string | null
@@ -6877,6 +6899,7 @@ export type Database = {
           owner_id?: string
           pipeline_id?: string | null
           primary_contact_id?: string | null
+          service_line?: string | null
           source?: string | null
           stage?: Database["public"]["Enums"]["deal_stage"]
           stage_id?: string | null
@@ -14202,6 +14225,7 @@ export type Database = {
           id: string
           locked: boolean
           owner_id: string
+          quote_id: string | null
           sent_at: string | null
           status: Database["public"]["Enums"]["proposal_status"]
           title: string
@@ -14225,6 +14249,7 @@ export type Database = {
           id?: string
           locked?: boolean
           owner_id: string
+          quote_id?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["proposal_status"]
           title: string
@@ -14248,6 +14273,7 @@ export type Database = {
           id?: string
           locked?: boolean
           owner_id?: string
+          quote_id?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["proposal_status"]
           title?: string
@@ -14284,6 +14310,13 @@ export type Database = {
             columns: ["esign_document_id"]
             isOneToOne: false
             referencedRelation: "esign_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
             referencedColumns: ["id"]
           },
           {
@@ -15531,6 +15564,7 @@ export type Database = {
           payment_session_id: string | null
           public_token: string
           sent_at: string | null
+          service_line: string | null
           signature_name: string | null
           status: Database["public"]["Enums"]["quote_status"]
           subtotal: number
@@ -15563,6 +15597,7 @@ export type Database = {
           payment_session_id?: string | null
           public_token: string
           sent_at?: string | null
+          service_line?: string | null
           signature_name?: string | null
           status?: Database["public"]["Enums"]["quote_status"]
           subtotal?: number
@@ -15595,6 +15630,7 @@ export type Database = {
           payment_session_id?: string | null
           public_token?: string
           sent_at?: string | null
+          service_line?: string | null
           signature_name?: string | null
           status?: Database["public"]["Enums"]["quote_status"]
           subtotal?: number

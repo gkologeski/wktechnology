@@ -224,6 +224,10 @@ export const updateQuote = createServerFn({ method: "POST" })
           terms: z.string().nullable().optional(),
           sent_at: z.string().nullable().optional(),
           template_id: z.string().uuid().nullable().optional(),
+          service_line: z
+            .enum(["hunting", "outsourcing", "software_factory", "consulting"])
+            .nullable()
+            .optional(),
         }),
       })
       .parse(input),

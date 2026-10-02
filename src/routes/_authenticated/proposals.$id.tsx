@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createContractFromSales } from "@/lib/sales-flow.functions";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
@@ -49,6 +50,16 @@ function ProposalEditor() {
   const req = useServerFn(requestProposalApproval);
   const decide = useServerFn(decideProposalApproval);
   const lcl = useServerFn(listClauses);
+  const toContract = useServerFn(createContractFromSales);
+  const navigate = useNavigate();
+  const contractM = useMutation({
+    mutationFn: () => toContract({ data: { proposalId: id } }),
+    onSuccess: (r) => {
+      toast.success(r.reused ? "Esta proposta já tem contrato." : "Contrato gerado.");
+      void navigate({ to: "/contracts/$id", params: { id: r.contract.id } });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["proposal", id],
@@ -94,7 +105,7 @@ function ProposalEditor() {
   const sendM = useMutation({
     mutationFn: () => send({ data: { id } }),
     onSuccess: (r) => {
-      toast.success(`Contrato enviada. Hash: ${r.contentHash?.slice(0, 12)}…`);
+      toast.success(`Proposta enviada. Hash: ${r.contentHash?.slice(0, 12)}…`);
       qc.invalidateQueries({ queryKey: ["proposal", id] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -162,7 +173,7 @@ function ProposalEditor() {
   if (!prop)
     return (
       <div className="p-6 space-y-3">
-        <p className="text-sm text-muted-foreground">Contrato não encontrada.</p>
+        <p className="text-sm text-muted-foreground">Proposta não encontrada.</p>
         <Button variant="outline" asChild>
           <Link to="/proposals">
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -196,7 +207,15 @@ function ProposalEditor() {
               </div>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              onClick={() => contractM.mutate()}
+              disabled={contractM.isPending}
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              Gerar contrato
+            </Button>
             <Button
               variant="outline"
               onClick={() => saveM.mutate()}

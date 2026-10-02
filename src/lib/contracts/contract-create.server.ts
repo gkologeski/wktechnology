@@ -142,6 +142,8 @@ export type CreateContractArgs = {
   lineItemIds?: string[] | null;
   bodyHtml?: string | null;
   status?: string;
+  /** Itens explícitos (ex.: da cotação) — substituem os itens do negócio. */
+  items?: DealLineItemRow[] | null;
 };
 
 const INSERTABLE = new Set([
@@ -181,6 +183,8 @@ const INSERTABLE = new Set([
   "unilateral_termination_notice_days",
   "confidentiality_term_months",
   "signature_provider",
+  "proposal_id",
+  "quote_id",
 ]);
 
 function pickInsertable(values: ContractDefaultsMap): ContractDefaultsMap {
@@ -217,6 +221,8 @@ export async function createContractShared(
       ? loaded.items.filter((li) => args.lineItemIds?.includes(li.id))
       : loaded.items;
   }
+
+  if (args.items) items = args.items;
 
   const bundle = await loadContractDefaults(supabase, args.workspaceId);
   const defaults = effectiveDefaults(bundle, args.kind);
@@ -278,7 +284,7 @@ export async function createContractShared(
       percent_base_amount: li.percent_base_amount,
       job_profile_id: li.job_profile_id,
       seniority: li.seniority,
-      source_deal_line_item_id: li.id,
+      source_deal_line_item_id: args.items ? null : li.id,
       starts_at: startsAt,
       metadata: {
         service_catalog_id: li.service_catalog_id,
