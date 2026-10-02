@@ -45,7 +45,8 @@ h1{font-size:22px;margin:0}.muted{color:#6b7280}.grid{display:flex;gap:40px;marg
 table{width:100%;border-collapse:collapse;margin:16px 0}th,td{text-align:left;padding:8px;border-top:1px solid #e5e7eb}
 th{background:#f9fafb}.total{text-align:right;font-weight:600;font-size:15px}
 </style>
-<div class="doc"><h1>${esc(p.title)}</h1><div class="muted">Versão ${p.version}${doc.agent ? ` · ${esc(doc.agent)}` : ""}</div>
+<div class="doc" style="padding:48px 56px;box-sizing:border-box">
+<h1>${esc(p.title)}</h1><div class="muted">Versão ${p.version}${doc.agent ? ` · ${esc(doc.agent)}` : ""}</div>
 <div class="grid"><div><div class="label">Para</div>${esc(doc.company ?? "")}<br/>${esc(doc.contact ?? "")}</div>
 <div><div class="label">Detalhes</div>Emitida em ${date(p.created_at)}${p.expires_at ? `<br/>Válida até ${date(p.expires_at)}` : ""}</div></div>
 ${rows ? `<table><thead><tr><th>Item</th><th>Cobrança</th></tr></thead><tbody>${rows}</tbody></table>` : ""}
