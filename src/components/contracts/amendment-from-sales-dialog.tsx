@@ -166,13 +166,13 @@ function Option(props: {
     >
       <RadioGroupItem id={id} value={props.value} className="mt-0.5" />
       <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-2">
+        <span className="flex items-center gap-2 pr-1">
           <Badge variant="outline">{props.kind}</Badge>
           <span className="text-xs text-muted-foreground">{props.status}</span>
+          <span className="ml-auto text-xs tabular-nums text-muted-foreground">{props.amount}</span>
         </span>
-        <span className="mt-1 block truncate text-sm font-medium">{props.title}</span>
+        <span className="mt-1 block break-words text-sm font-medium">{props.title}</span>
       </span>
-      <span className="shrink-0 whitespace-nowrap text-sm tabular-nums">{props.amount}</span>
     </Label>
   );
 }
