@@ -150,7 +150,7 @@ function ProposalsPage() {
   const createM = useMutation({
     mutationFn: () => create({ data: { title, totalAmount: amount ? Number(amount) : null } }),
     onSuccess: () => {
-      toast.success("Contrato criada");
+      toast.success("Proposta criada");
       setOpen(false);
       setTitle("");
       setAmount("");
@@ -161,7 +161,7 @@ function ProposalsPage() {
   const delM = useMutation({
     mutationFn: (id: string) => del({ data: { id } }),
     onSuccess: () => {
-      toast.success("Contrato removida");
+      toast.success("Proposta removida");
       void refresh();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -178,7 +178,7 @@ function ProposalsPage() {
     <div className="space-y-4 p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Contratos</h1>
+          <h1 className="text-2xl font-semibold">Propostas</h1>
           <p className="text-sm text-muted-foreground">
             Gere, aprove e envie propostas comerciais com selo de validade.
           </p>
@@ -189,12 +189,12 @@ function ProposalsPage() {
             <DialogTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
-                Novo contrato
+                Nova proposta
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Novo contrato</DialogTitle>
+                <DialogTitle>Nova proposta</DialogTitle>
               </DialogHeader>
               <div className="space-y-3">
                 <div className="space-y-1">
@@ -202,7 +202,7 @@ function ProposalsPage() {
                   <Input
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Contrato Acme — Setembro"
+                    placeholder="Proposta Acme — Setembro"
                   />
                 </div>
                 <div className="space-y-1">

@@ -274,6 +274,13 @@
       "when": 1790862918261,
       "tag": "0038_notify_company_owner_on_foreign_lead",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1790902620076,
+      "tag": "0039_quote_proposal_contract_links",
+      "breakpoints": true
     }
   ]
 }
