@@ -420,8 +420,9 @@ export function ContractWizard({
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Empresa, contato, valores e vigência vêm da {origin.type === "quote" ? "cotação" : "proposta"}.
-                Você pode ajustar tudo na ficha do contrato depois de criar.
+                Empresa, contato, valores e vigência vêm da{" "}
+                {origin.type === "quote" ? "cotação" : "proposta"}. Você pode ajustar tudo na ficha
+                do contrato depois de criar.
               </p>
             ))}
 

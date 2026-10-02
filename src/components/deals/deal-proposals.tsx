@@ -25,7 +25,13 @@ const STATUS_LABEL: Record<string, string> = {
   canceled: "Cancelada",
 };
 
-export function DealProposals({ dealId, companyId }: { dealId: string; companyId?: string | null }) {
+export function DealProposals({
+  dealId,
+  companyId,
+}: {
+  dealId: string;
+  companyId?: string | null;
+}) {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const reqApproval = useServerFn(requestProposalApproval);
@@ -74,14 +80,20 @@ export function DealProposals({ dealId, companyId }: { dealId: string; companyId
 
   function actionsFor(p: (typeof rows)[number]): DocAction[] {
     const a: DocAction[] = [
-      { kind: "item", label: "Abrir", onSelect: () => void navigate({ to: "/proposals/$id", params: { id: p.id } }) },
+      {
+        kind: "item",
+        label: "Abrir",
+        onSelect: () => void navigate({ to: "/proposals/$id", params: { id: p.id } }),
+      },
     ];
-    if (!p.locked) a.push({ kind: "item", label: "Editar", onSelect: () => setWizard({ proposalId: p.id }) });
+    if (!p.locked)
+      a.push({ kind: "item", label: "Editar", onSelect: () => setWizard({ proposalId: p.id }) });
     if (p.status === "draft" && !p.locked)
       a.push({
         kind: "item",
         label: "Enviar para aprovação",
-        onSelect: () => void run(() => reqApproval({ data: { proposalId: p.id } } as never), "Aprovação solicitada."),
+        onSelect: () =>
+          void run(() => reqApproval({ data: { proposalId: p.id } }), "Aprovação solicitada."),
       });
     if (p.status === "draft" || p.status === "approved")
       a.push({
@@ -95,7 +107,12 @@ export function DealProposals({ dealId, companyId }: { dealId: string; companyId
       onSelect: () => setContractWizard({ proposalId: p.id, dealId, companyId }),
     });
     a.push({ kind: "separator" });
-    a.push({ kind: "item", label: "Excluir", destructive: true, onSelect: () => void remove(p.id) });
+    a.push({
+      kind: "item",
+      label: "Excluir",
+      destructive: true,
+      onSelect: () => void remove(p.id),
+    });
     return a;
   }
 
@@ -112,7 +129,11 @@ export function DealProposals({ dealId, companyId }: { dealId: string; companyId
       ) : error ? (
         <div className="text-sm">
           <p className="text-destructive">Não foi possível carregar as propostas.</p>
-          <button type="button" className="text-xs text-primary hover:underline" onClick={() => void refetch()}>
+          <button
+            type="button"
+            className="text-xs text-primary hover:underline"
+            onClick={() => void refetch()}
+          >
             Tentar novamente
           </button>
         </div>
@@ -132,7 +153,8 @@ export function DealProposals({ dealId, companyId }: { dealId: string; companyId
               meta={
                 <>
                   v{p.version}
-                  {p.total_amount != null && ` · ${formatCurrency(Number(p.total_amount), p.currency)}`}
+                  {p.total_amount != null &&
+                    ` · ${formatCurrency(Number(p.total_amount), p.currency)}`}
                 </>
               }
               actions={actionsFor(p)}
@@ -140,7 +162,11 @@ export function DealProposals({ dealId, companyId }: { dealId: string; companyId
           ))}
         </div>
       )}
-      <ProposalWizard source={wizard} onOpenChange={(o) => !o && setWizard(null)} onDone={refresh} />
+      <ProposalWizard
+        source={wizard}
+        onOpenChange={(o) => !o && setWizard(null)}
+        onDone={refresh}
+      />
       <ContractWizard source={contractWizard} onOpenChange={(o) => !o && setContractWizard(null)} />
     </div>
   );

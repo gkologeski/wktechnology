@@ -9,7 +9,11 @@ import { toast } from "sonner";
 import { listContracts, deleteContract } from "@/lib/contracts.functions";
 import { formatCurrency } from "@/lib/crm";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
-import { DealDocumentCard, DealDocsHeader, type DocAction } from "@/components/deals/deal-document-card";
+import {
+  DealDocumentCard,
+  DealDocsHeader,
+  type DocAction,
+} from "@/components/deals/deal-document-card";
 import { ContractWizard, type ContractWizardSource } from "./contract-wizard";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -23,14 +27,25 @@ const STATUS_LABEL: Record<string, string> = {
   terminated: "Rescindido",
 };
 
-export function DealContracts({ dealId, companyId }: { dealId: string; companyId?: string | null }) {
+export function DealContracts({
+  dealId,
+  companyId,
+}: {
+  dealId: string;
+  companyId?: string | null;
+}) {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const list = useServerFn(listContracts);
   const del = useServerFn(deleteContract);
   const [wizard, setWizard] = useState<ContractWizardSource | null>(null);
 
-  const { data: rows = [], isLoading, isError, refetch } = useQuery({
+  const {
+    data: rows = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ["deal-contracts", dealId],
     queryFn: () => list({ data: { dealId } }),
   });
@@ -73,7 +88,12 @@ export function DealContracts({ dealId, companyId }: { dealId: string; companyId
     if (c.status === "draft" || c.status === "in_review" || c.status === "in_negotiation")
       a.push({ kind: "item", label: "Enviar para assinatura", onSelect: () => open(c.id) });
     a.push({ kind: "separator" });
-    a.push({ kind: "item", label: "Excluir", destructive: true, onSelect: () => void remove(c.id) });
+    a.push({
+      kind: "item",
+      label: "Excluir",
+      destructive: true,
+      onSelect: () => void remove(c.id),
+    });
     return a;
   }
 
@@ -90,7 +110,11 @@ export function DealContracts({ dealId, companyId }: { dealId: string; companyId
       ) : isError ? (
         <div className="text-sm">
           <p className="text-destructive">Não foi possível carregar os contratos.</p>
-          <button type="button" className="text-xs text-primary hover:underline" onClick={() => void refetch()}>
+          <button
+            type="button"
+            className="text-xs text-primary hover:underline"
+            onClick={() => void refetch()}
+          >
             Tentar novamente
           </button>
         </div>

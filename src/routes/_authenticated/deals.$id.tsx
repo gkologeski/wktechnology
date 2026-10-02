@@ -417,7 +417,7 @@ function DealDetail() {
                 <CardTitle className="text-base">Propostas</CardTitle>
               </CardHeader>
               <CardContent>
-                <DealProposals dealId={deal.id} />
+                <DealProposals dealId={deal.id} companyId={deal.company_id ?? null} />
               </CardContent>
             </Card>
             <Card>
