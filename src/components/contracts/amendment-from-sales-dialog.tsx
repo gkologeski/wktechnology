@@ -113,7 +113,7 @@ function SourcesDialog({ contractId, onClose }: { contractId: string; onClose: (
               Nenhuma proposta ou cotação disponível para esta empresa.
             </p>
           ) : (
-            <RadioGroup value={choice} onValueChange={setChoice} className="space-y-2">
+            <RadioGroup value={choice} onValueChange={setChoice} className="grid min-w-0 gap-2">
               {data?.proposals.map((p) => (
                 <Option
                   key={p.id}
@@ -162,7 +162,7 @@ function Option(props: {
   return (
     <Label
       htmlFor={id}
-      className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 hover:bg-muted/40"
+      className="flex w-full min-w-0 cursor-pointer items-start gap-3 rounded-lg border p-3 hover:bg-muted/40"
     >
       <RadioGroupItem id={id} value={props.value} className="mt-0.5" />
       <span className="min-w-0 flex-1">
@@ -172,7 +172,7 @@ function Option(props: {
         </span>
         <span className="mt-1 block truncate text-sm font-medium">{props.title}</span>
       </span>
-      <span className="whitespace-nowrap text-sm tabular-nums">{props.amount}</span>
+      <span className="shrink-0 whitespace-nowrap text-sm tabular-nums">{props.amount}</span>
     </Label>
   );
 }
