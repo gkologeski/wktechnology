@@ -256,6 +256,7 @@ import { Route as AuthenticatedTicketsIdRouteImport } from './routes/_authentica
 import { Route as AuthenticatedWorkspaceIndexRouteImport } from './routes/_authenticated/workspace.index'
 import { Route as AuthenticatedWorkspaceModulesRouteImport } from './routes/_authenticated/workspace.modules'
 import { Route as ApiAgentChatRouteImport } from './routes/api/agent/chat'
+import { Route as ApiContractsTemplateImportRouteImport } from './routes/api/contracts.template-import'
 import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
 import { Route as AuthenticatedatsCandidatesIndexRouteImport } from './routes/_authenticated/(ats)/candidates.index'
 import { Route as AuthenticatedatsCandidatesIdRouteImport } from './routes/_authenticated/(ats)/candidates.$id'
@@ -1794,6 +1795,12 @@ const ApiAgentChatRoute = ApiAgentChatRouteImport.update({
   path: '/api/agent/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiContractsTemplateImportRoute =
+  ApiContractsTemplateImportRouteImport.update({
+    id: '/api/contracts/template-import',
+    path: '/api/contracts/template-import',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableEmailEventsRoute = LovableEmailEventsRouteImport.update({
   id: '/lovable/email/events',
   path: '/lovable/email/events',
@@ -2795,6 +2802,7 @@ export interface FileRoutesByFullPath {
   '/tickets/$id': typeof AuthenticatedTicketsIdRoute
   '/workspace/modules': typeof AuthenticatedWorkspaceModulesRoute
   '/api/agent/chat': typeof ApiAgentChatRoute
+  '/api/contracts/template-import': typeof ApiContractsTemplateImportRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/ats/': typeof AuthenticatedAtsIndexRoute
   '/contracts/': typeof AuthenticatedContractsIndexRoute
@@ -3170,6 +3178,7 @@ export interface FileRoutesByTo {
   '/tickets/$id': typeof AuthenticatedTicketsIdRoute
   '/workspace/modules': typeof AuthenticatedWorkspaceModulesRoute
   '/api/agent/chat': typeof ApiAgentChatRoute
+  '/api/contracts/template-import': typeof ApiContractsTemplateImportRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/ats': typeof AuthenticatedAtsIndexRoute
   '/contracts': typeof AuthenticatedContractsIndexRoute
@@ -3553,6 +3562,7 @@ export interface FileRoutesById {
   '/_authenticated/tickets/$id': typeof AuthenticatedTicketsIdRoute
   '/_authenticated/workspace/modules': typeof AuthenticatedWorkspaceModulesRoute
   '/api/agent/chat': typeof ApiAgentChatRoute
+  '/api/contracts/template-import': typeof ApiContractsTemplateImportRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/_authenticated/ats/': typeof AuthenticatedAtsIndexRoute
   '/_authenticated/contracts/': typeof AuthenticatedContractsIndexRoute
@@ -3936,6 +3946,7 @@ export interface FileRouteTypes {
     | '/tickets/$id'
     | '/workspace/modules'
     | '/api/agent/chat'
+    | '/api/contracts/template-import'
     | '/lovable/email/events'
     | '/ats/'
     | '/contracts/'
@@ -4311,6 +4322,7 @@ export interface FileRouteTypes {
     | '/tickets/$id'
     | '/workspace/modules'
     | '/api/agent/chat'
+    | '/api/contracts/template-import'
     | '/lovable/email/events'
     | '/ats'
     | '/contracts'
@@ -4693,6 +4705,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tickets/$id'
     | '/_authenticated/workspace/modules'
     | '/api/agent/chat'
+    | '/api/contracts/template-import'
     | '/lovable/email/events'
     | '/_authenticated/ats/'
     | '/_authenticated/contracts/'
@@ -4884,6 +4897,7 @@ export interface RootRouteChildren {
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiAgentChatRoute: typeof ApiAgentChatRoute
+  ApiContractsTemplateImportRoute: typeof ApiContractsTemplateImportRoute
   LovableEmailEventsRoute: typeof LovableEmailEventsRoute
   ApiPublicBankingInterWebhookRoute: typeof ApiPublicBankingInterWebhookRoute
   ApiPublicBookingSlugRoute: typeof ApiPublicBookingSlugRouteWithChildren
@@ -6694,6 +6708,13 @@ declare module '@tanstack/react-router' {
       path: '/api/agent/chat'
       fullPath: '/api/agent/chat'
       preLoaderRoute: typeof ApiAgentChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/contracts/template-import': {
+      id: '/api/contracts/template-import'
+      path: '/api/contracts/template-import'
+      fullPath: '/api/contracts/template-import'
+      preLoaderRoute: typeof ApiContractsTemplateImportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lovable/email/events': {
@@ -8507,6 +8528,7 @@ const rootRouteChildren: RootRouteChildren = {
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiAgentChatRoute: ApiAgentChatRoute,
+  ApiContractsTemplateImportRoute: ApiContractsTemplateImportRoute,
   LovableEmailEventsRoute: LovableEmailEventsRoute,
   ApiPublicBankingInterWebhookRoute: ApiPublicBankingInterWebhookRoute,
   ApiPublicBookingSlugRoute: ApiPublicBookingSlugRouteWithChildren,

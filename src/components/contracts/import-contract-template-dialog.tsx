@@ -18,10 +18,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  parseContractTemplatePdf,
-  parseContractTemplateHtml,
-} from "@/lib/contracts/template-import.functions";
+import type { ImportedTemplate } from "@/lib/contracts/template-import.functions";
+import { convertTemplateStreaming } from "@/components/contracts/template-import-client";
 import { createContractTemplate } from "@/lib/contracts/templates.functions";
 import {
   IDLE_PROGRESS,
@@ -65,8 +63,6 @@ export function ImportContractTemplateDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
-  const parsePdf = useServerFn(parseContractTemplatePdf);
-  const parseHtml = useServerFn(parseContractTemplateHtml);
   const createTemplate = useServerFn(createContractTemplate);
   const navigate = useNavigate();
 
@@ -102,18 +98,18 @@ export function ImportContractTemplateDialog({
     }
     setProgress(progressFor("preparing"));
     try {
-      let result: Awaited<ReturnType<typeof parsePdf>>;
+      let result: ImportedTemplate;
       if (kind === "pdf") {
         setProgress(progressFor("text"));
         const b64 = await fileToBase64(file);
         setProgress(progressFor("ai"));
-        result = await parsePdf({ data: { filename: file.name, base64: b64 } });
+        result = await convertTemplateStreaming({ filename: file.name, kind: "pdf", base64: b64 });
       } else {
         setProgress(progressFor("text"));
         const html = await docxToHtml(file);
         if (html.trim().length < 40) throw new Error("Não foi possível extrair o texto do .docx.");
         setProgress(progressFor("ai"));
-        result = await parseHtml({ data: { filename: file.name, html } });
+        result = await convertTemplateStreaming({ filename: file.name, kind: "html", html });
       }
 
       setProgress(progressFor("draft"));
@@ -137,7 +133,7 @@ export function ImportContractTemplateDialog({
       setProgress(progressFor("error", msg));
       toast.error(msg);
     }
-  }, [file, kind, name, parsePdf, parseHtml, createTemplate, handleClose, navigate]);
+  }, [file, kind, name, createTemplate, handleClose, navigate]);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
