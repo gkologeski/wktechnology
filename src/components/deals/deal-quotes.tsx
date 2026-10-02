@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Plus, ExternalLink, MoreHorizontal, FileText } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
-import { createProposalFromQuote } from "@/lib/sales-flow.functions";
+import { ProposalWizard } from "@/components/proposals/proposal-wizard";
 import { GenerateContractButton } from "@/components/contracts/generate-contract-button";
 import { toast } from "sonner";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
@@ -60,18 +60,11 @@ export function DealQuotes({ dealId }: { dealId: string }) {
   const del = useServerFn(deleteQuote);
   const regen = useServerFn(regenerateQuoteToken);
   const payLink = useServerFn(createQuotePaymentLink);
-  const toProposal = useServerFn(createProposalFromQuote);
   const navigate = useNavigate();
 
-  async function genProposal(id: string) {
-    try {
-      const r = await toProposal({ data: { quoteId: id } });
-      toast.success(r.reused ? "Esta cotação já tem proposta." : "Proposta gerada.");
-      void qc.invalidateQueries({ queryKey: ["deal-proposals", dealId] });
-      void navigate({ to: "/proposals/$id", params: { id: r.id } });
-    } catch (e) {
-      toast.error((e as Error).message);
-    }
+  const [proposalQuoteId, setProposalQuoteId] = useState<string | null>(null);
+  function genProposal(id: string) {
+    setProposalQuoteId(id);
   }
 
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -345,7 +338,7 @@ export function DealQuotes({ dealId }: { dealId: string }) {
                   </div>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <Button variant="outline" size="sm" onClick={() => void genProposal(q.id)}>
+                  <Button variant="outline" size="sm" onClick={() => genProposal(q.id)}>
                     <FileText className="mr-1 h-4 w-4" />
                     Gerar proposta
                   </Button>
