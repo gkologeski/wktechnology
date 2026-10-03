@@ -39,6 +39,26 @@ async function resolveWorkspace(admin: Admin, contactPhone: string, ourPhone: st
   return null;
 }
 
+async function autoAssignConversation(admin: Admin, workspaceId: string, convId: string) {
+  try {
+    const { data: rule } = await admin
+      .from("rotation_rules")
+      .select("id")
+      .eq("workspace_id", workspaceId)
+      .eq("entity", "whatsapp_conversations")
+      .eq("enabled", true)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!rule) return;
+    const { applyRotation } = await import("@/lib/rotation/engine.server");
+    await applyRotation(admin, rule.id, "whatsapp_conversations", convId);
+  } catch (e) {
+    // Falha na distribuição não pode impedir o registro da mensagem.
+    console.error("[whatsapp-webhook] auto-atribuição falhou", (e as Error).message);
+  }
+}
+
 function inboundBody(m: any): string {
   if (m.type === "text") return m.text?.body ?? "";
   if (m.type === "button") return m.button?.text ?? "";
@@ -80,9 +100,11 @@ async function handleMessages(admin: Admin, value: any): Promise<string | null> 
         },
         { onConflict: "contact_phone,twilio_number" },
       )
-      .select("id")
+      .select("id, assigned_to")
       .single();
     if (cErr) throw new Retry(cErr.message);
+    // Conversa sem responsável: distribui pela regra ativa da Central de Distribuição.
+    if (!conv.assigned_to) await autoAssignConversation(admin, ws.workspace_id, conv.id);
     const media = ["image", "audio", "video", "document", "sticker"].includes(m.type)
       ? m[m.type]
       : null;
