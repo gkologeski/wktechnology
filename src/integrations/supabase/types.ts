@@ -20730,6 +20730,10 @@ export type Database = {
         }[]
       }
       workspace_for_user: { Args: { _user: string }; Returns: string }
+      workspace_member_by_email: {
+        Args: { _email: string; _workspace_id: string }
+        Returns: string
+      }
     }
     Enums: {
       access_scope: "none" | "own" | "team" | "all"
