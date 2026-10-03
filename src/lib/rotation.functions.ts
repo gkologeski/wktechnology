@@ -114,9 +114,11 @@ export const listWorkspaceMembers = createServerFn({ method: "GET" })
     if (activeWorkspaceId) {
       const { data: wsMembers } = await supabaseAdmin
         .from("workspace_members")
-        .select("user_id, status")
+        .select("user_id, status, is_test_user")
         .eq("workspace_id", activeWorkspaceId);
       (wsMembers ?? []).forEach((m) => {
+        // Usuários de teste ("Ver como" por papel) não aparecem como responsáveis.
+        if (m.is_test_user && m.user_id !== userId) return;
         ids.add(m.user_id as string);
         if (m.status === "inactive") inactiveIds.add(m.user_id as string);
       });

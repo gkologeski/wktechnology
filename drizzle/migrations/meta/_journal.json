@@ -309,6 +309,20 @@
       "when": 1791051024539,
       "tag": "0043_rotation_whatsapp_conversations",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1791053017349,
+      "tag": "0044_view_as_sessions",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1791053091316,
+      "tag": "0045_view_as_ro_ignore_expiry",
+      "breakpoints": true
     }
   ]
 }

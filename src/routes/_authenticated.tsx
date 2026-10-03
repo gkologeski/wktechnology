@@ -24,6 +24,8 @@ import { WorkspaceMenu } from "@/components/workspace-menu";
 import { RouteBreadcrumbs } from "@/components/route-breadcrumbs";
 import { FocusQueueBar } from "@/components/focus-queue-bar";
 import { ModuleSwitcher } from "@/components/module-switcher";
+import { ViewAsSwitcher } from "@/components/view-as/view-as-switcher";
+import { ViewAsBanner } from "@/components/view-as/view-as-banner";
 
 import { TimerWidget } from "@/components/timer-widget";
 import { ActivityWindows } from "@/components/activity/activity-windows";
@@ -150,6 +152,7 @@ function AuthenticatedLayout() {
               <GlobalSearchTrigger />
               <div className="flex-1" />
               <div className="flex shrink-0 items-center gap-1">
+                <ViewAsSwitcher />
                 <WorkspaceMenu />
                 <QuickCreateMenu />
                 <SettingsMenu />
@@ -157,6 +160,7 @@ function AuthenticatedLayout() {
                 <AccountMenu />
               </div>
             </header>
+            <ViewAsBanner />
 
             {!blocked && <RouteBreadcrumbs />}
             <main
