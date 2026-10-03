@@ -288,6 +288,13 @@
       "when": 1790947581042,
       "tag": "0040_proposal_templates_and_public_token",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1791034950944,
+      "tag": "0041_rep_linked_summary_and_portfolio_lookup",
+      "breakpoints": true
     }
   ]
 }

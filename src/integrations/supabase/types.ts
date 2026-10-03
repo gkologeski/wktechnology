@@ -20431,6 +20431,13 @@ export type Database = {
           value: string
         }[]
       }
+      company_portfolio_owner: {
+        Args: { _company_id: string }
+        Returns: {
+          owner_id: string
+          owner_name: string
+        }[]
+      }
       current_user_permissions: {
         Args: { _workspace_id: string }
         Returns: string[]
@@ -20612,6 +20619,17 @@ export type Database = {
         Args: { _ids: string[] }
         Returns: number
       }
+      rep_find_companies: {
+        Args: { _q: string }
+        Returns: {
+          id: string
+          name: string
+          other_owner: boolean
+        }[]
+      }
+      rep_is_restricted: { Args: never; Returns: boolean }
+      rep_my_company_ids: { Args: never; Returns: string[] }
+      rep_my_contact_ids: { Args: never; Returns: string[] }
       rep_my_deal_ids: { Args: never; Returns: string[] }
       rep_my_lead_ids: { Args: never; Returns: string[] }
       rep_restricted_workspaces: { Args: never; Returns: string[] }
