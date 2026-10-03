@@ -323,6 +323,13 @@
       "when": 1791053091316,
       "tag": "0045_view_as_ro_ignore_expiry",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1791058666677,
+      "tag": "0046_view_as_role_only_readonly",
+      "breakpoints": true
     }
   ]
 }

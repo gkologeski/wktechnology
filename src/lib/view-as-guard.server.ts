@@ -1,8 +1,8 @@
-// Bloqueia ações com efeito externo (envio de mensagens) durante o "Ver como" só leitura.
+// Bloqueia efeitos externos da conta de teste; a pessoa real usa suas permissões.
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const VIEW_AS_READ_ONLY_MESSAGE =
-  "Você está vendo o sistema como outro usuário em modo só leitura. Volte ao seu acesso para realizar esta ação.";
+  "O papel de teste não pode enviar mensagens nem alterar dados reais. Volte ao seu acesso para realizar esta ação.";
 
 export async function assertNotReadOnlyView(supabase: SupabaseClient<any>): Promise<void> {
   const { data, error } = await supabase.rpc("is_read_only_view" as never);

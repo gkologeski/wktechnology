@@ -17,4 +17,4 @@
 
 - Propostas usam modelos próprios (`proposal_templates` + vínculo a serviços do catálogo), nunca cláusulas de contrato; o documento final (ficha, link público `/proposal/$token` e PDF) sai de `loadProposalDocument` e a edição é só pelo `ProposalWizard`; por quê: mesmo fluxo da cotação, uma única fonte para tela e PDF.
 
-- "Ver como" usa sessão real do alvo (magic link gerado no servidor após checar admin) registrada em `view_as_sessions`; modo usuário é só leitura por políticas RESTRITIVAS `view_as_ro_*` + `is_read_only_view()`; por quê: mostra os dados reais sem gravar em nome da pessoa. Tabelas novas com `workspace_id` precisam das mesmas políticas.
+- "Ver como" usa sessão real do alvo após checar admin; pessoa opera com suas próprias permissões, papel de teste continua sem gravação por políticas RESTRITIVAS `view_as_ro_*` + `is_read_only_view()` até existir isolamento integral. Tabelas novas com `workspace_id` precisam das mesmas políticas; por quê: não contaminar dados reais em testes de papel.

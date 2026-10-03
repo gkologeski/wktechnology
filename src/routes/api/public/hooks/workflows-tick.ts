@@ -11,6 +11,9 @@ export const Route = createFileRoute("/api/public/hooks/workflows-tick")({
         const unauth = requireCronAuth(request);
         if (unauth) return unauth;
         const run = await runCronWithLogging("workflows-tick", async () => {
+          const { cleanupExpiredRoleViews } = await import("@/lib/view-as.server");
+          const cleanup = await cleanupExpiredRoleViews();
+          if (cleanup.blocked) console.warn("[view-as] Contas de teste desativadas aguardando revisão:", cleanup.blocked);
           const r = await tickWorkflows(supabaseAdmin, 50);
           return r as unknown as Record<string, unknown>;
         });

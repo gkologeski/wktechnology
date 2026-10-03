@@ -1,5 +1,4 @@
-// "Ver como": administradores navegam com o acesso real de um usuário (só leitura)
-// ou de um papel (usuário de teste oculto). Ver src/lib/view-as.server.ts.
+// "Ver como": pessoa real com suas permissões; papel em modo de teste sem gravação.
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";

@@ -37,8 +37,8 @@ export function ViewAsBanner() {
       <span className="font-medium">Você está vendo como {state.label}.</span>
       <span className="text-muted-foreground">
         {state.readOnly
-          ? "Modo só leitura: nenhuma alteração será gravada."
-          : "Usuário de teste: o que você gravar fica em nome dele."}
+          ? "Papel de teste: alterações e envios estão bloqueados."
+          : "Ações e envios são reais e serão feitos em nome desta pessoa, conforme seus acessos."}
       </span>
       <div className="flex-1" />
       <Button size="sm" variant="outline" onClick={leave} disabled={leaving}>
