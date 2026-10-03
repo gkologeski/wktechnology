@@ -65,7 +65,7 @@ export function ViewAsSwitcher() {
         <div className="border-b border-border px-3 py-2">
           <p className="text-sm font-medium">Ver como</p>
           <p className="text-xs text-muted-foreground">
-            Usuário: dados reais, só leitura. Papel: usuário de teste, pode gravar.
+            Usuário: ações reais com as permissões da pessoa. Papel: teste somente leitura, sem gravação.
           </p>
         </div>
         <Command>
