@@ -225,7 +225,9 @@ export async function start(
   if (link.error || !tokenHash) throw new Error("Não foi possível iniciar o Ver como.");
 
   const nonce = randomBytes(24).toString("base64url");
-  const readOnly = mode === "user";
+  // O usuário real opera com suas permissões; o papel permanece sem gravação
+  // até existir um isolamento integral de dados e efeitos externos de teste.
+  const readOnly = mode === "role";
   const expiresAt = new Date(Date.now() + TTL_MS).toISOString();
   const { data: row, error } = await admin
     .from("view_as_sessions")

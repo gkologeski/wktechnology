@@ -597,7 +597,8 @@ export async function handleHiringAction(
         supabase
           .from("workspace_members")
           .select("workspace_id", { count: "exact", head: true })
-          .eq("workspace_id", ctx.workspaceId),
+          .eq("workspace_id", ctx.workspaceId)
+          .eq("is_test_user", false),
       ]);
       const limit = (limitRow as number | null) ?? null;
       if (limit !== null && (members ?? 0) + 1 > limit) {

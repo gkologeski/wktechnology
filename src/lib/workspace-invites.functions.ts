@@ -319,7 +319,8 @@ export const createWorkspaceInvite = createServerFn({ method: "POST" })
         supabaseAdmin
           .from("workspace_members")
           .select("workspace_id", { count: "exact", head: true })
-          .eq("workspace_id", workspaceId),
+          .eq("workspace_id", workspaceId)
+          .eq("is_test_user", false),
       ]);
       const limit = (limitRow as number | null) ?? null; // null = ilimitado
       const used = currentMembers ?? 0;
