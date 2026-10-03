@@ -46,6 +46,8 @@ export const HIRING_TEMPLATES: HiringTemplate[] = [
         installments: 12,
         day_of_month: 10,
       },
+      // Acesso ao TechERP: o conjunto de permissões é escolhido ao salvar o modelo.
+      { type: "provision_workspace_user", role: "member", permission_set_id: "" },
     ] as WorkflowAction[],
   },
   {

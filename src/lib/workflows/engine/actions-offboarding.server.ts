@@ -154,7 +154,23 @@ export async function handleOffboardingAction(
         throw new Error("Somente administradores do workspace podem revogar acesso por workflow.");
       }
 
-      const userId = person.profile_id;
+      let userId = person.profile_id;
+      // Ficha sem usuário vinculado: procura o membro do workspace pelo e-mail
+      // da pessoa e grava o vínculo para as próximas execuções.
+      if (!userId && person.email) {
+        const { data: found } = await supabase.rpc("workspace_member_by_email" as never, {
+          _workspace_id: ctx.workspaceId,
+          _email: person.email,
+        } as never);
+        if (typeof found === "string") {
+          userId = found;
+          await supabase
+            .from("people")
+            .update({ profile_id: found } as never)
+            .eq("id", person.id)
+            .eq("workspace_id", ctx.workspaceId);
+        }
+      }
       // Convites pendentes do mesmo email deixam de valer.
       if (person.email) {
         await supabase
