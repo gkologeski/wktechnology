@@ -251,7 +251,20 @@ export function HiringActionForm({
     case "create_allocation":
       return (
         <div className="space-y-3">
-          <Field label="Projeto do cliente" hint="ID ou variável. Vazio = alocação sem projeto.">
+          <Field
+            label="Projeto do cliente"
+            hint="Escolha um projeto ou use uma variável abaixo. Vazio = alocação sem projeto."
+          >
+            <EntityCombobox
+              entity="projects"
+              select="id, name"
+              searchColumns={["name"]}
+              labelFrom={(r) => String((r as { name?: string }).name ?? "Projeto")}
+              value={action.project_id && !action.project_id.includes("{{") ? action.project_id : null}
+              onChange={(id) => set({ project_id: id ?? undefined })}
+              placeholder="Sem projeto"
+              emptyLabel="Nenhum projeto"
+            />
             <Tok value={action.project_id} onChange={(v) => set({ project_id: v })} />
           </Field>
           <Field label="Papel na alocação">
