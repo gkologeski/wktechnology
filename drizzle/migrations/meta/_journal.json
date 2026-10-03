@@ -330,6 +330,13 @@
       "when": 1791058666677,
       "tag": "0046_view_as_role_only_readonly",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1791063019121,
+      "tag": "0047_view_as_role_test_records",
+      "breakpoints": true
     }
   ]
 }

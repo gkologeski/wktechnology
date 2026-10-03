@@ -18493,6 +18493,41 @@ export type Database = {
           },
         ]
       }
+      view_as_test_records: {
+        Row: {
+          created_at: string
+          id: string
+          record_id: string
+          session_id: string
+          table_name: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          record_id: string
+          session_id: string
+          table_name: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          record_id?: string
+          session_id?: string
+          table_name?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "view_as_test_records_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "view_as_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       voice_agent_settings: {
         Row: {
           allowed_hours: Json
@@ -20494,6 +20529,7 @@ export type Database = {
           owner_name: string
         }[]
       }
+      current_role_test_session: { Args: never; Returns: string }
       current_user_permissions: {
         Args: { _workspace_id: string }
         Returns: string[]
@@ -20600,6 +20636,7 @@ export type Database = {
       }
       is_platform_admin: { Args: { _user: string }; Returns: boolean }
       is_read_only_view: { Args: never; Returns: boolean }
+      is_test_record: { Args: { _record_id: string }; Returns: boolean }
       is_workspace_admin: {
         Args: { _user: string; _workspace: string }
         Returns: boolean

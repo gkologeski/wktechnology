@@ -148,14 +148,69 @@ async function ensureTestUser(workspaceId: string, roleId: string, roleName: str
 }
 
 /** Executado pelo mesmo tick autenticado dos Workflows, sem expor limpeza ao navegador. */
+/** Ordem de exclusão (filhos → pais) dos registros criados no modo papel. */
+const TEST_RECORD_DELETE_ORDER = ["activities", "deals", "contacts", "leads", "companies"] as const;
+
+/**
+ * Remove uma conta de teste de papel: desativa, apaga os registros listados em
+ * `view_as_test_records` (nunca por nome/data) e só então apaga a conta.
+ * Em falha, mantém a conta desativada para nova tentativa no próximo tick.
+ */
+async function cleanupTestUser(uid: string, workspaceId: string, now: string): Promise<"removed" | "blocked" | "skip"> {
+  const { data: member } = await admin.from("workspace_members")
+    .select("user_id, is_test_user")
+    .eq("workspace_id", workspaceId).eq("user_id", uid).maybeSingle();
+  if (!member?.is_test_user) return "skip";
+  const { data: active } = await admin.from("view_as_sessions").select("id")
+    .eq("target_user_id", uid).eq("mode", "role")
+    .gt("expires_at", now).is("ended_at", null).limit(1);
+  if (active?.length) return "skip";
+  const { error: disableError } = await admin.from("workspace_members")
+    .update({ status: "inactive" }).eq("workspace_id", workspaceId)
+    .eq("user_id", uid).eq("is_test_user", true);
+  if (disableError) return "blocked";
+
+  const { data: sessions } = await admin.from("view_as_sessions").select("id")
+    .eq("target_user_id", uid).eq("mode", "role");
+  const sessionIds = (sessions ?? []).map((s: { id: string }) => s.id as string);
+  if (sessionIds.length) {
+    const { data: records, error: recErr } = await admin.from("view_as_test_records")
+      .select("table_name, record_id").in("session_id", sessionIds);
+    if (recErr) return "blocked";
+    for (const table of TEST_RECORD_DELETE_ORDER) {
+      const ids = (records ?? []).filter((r: { table_name: string }) => r.table_name === table).map((r: { record_id: string }) => r.record_id as string);
+      if (!ids.length) continue;
+      const { error: delErr } = await admin.from(table).delete().in("id", ids);
+      if (delErr) {
+        console.warn("[view-as] Falha ao apagar registros de teste", table, delErr.message);
+        return "blocked";
+      }
+    }
+    await admin.from("view_as_test_records").delete().in("session_id", sessionIds);
+  }
+
+  const { error: roleError } = await admin.from("user_job_roles").delete()
+    .eq("workspace_id", workspaceId).eq("user_id", uid);
+  if (roleError) return "blocked";
+  const { error: memberError } = await admin.from("workspace_members").delete()
+    .eq("workspace_id", workspaceId).eq("user_id", uid).eq("is_test_user", true);
+  if (memberError) return "blocked";
+  const { error: deleteError } = await admin.auth.admin.deleteUser(uid);
+  if (deleteError) return "blocked";
+  await admin.from("view_as_sessions").update({ ended_at: now })
+    .eq("target_user_id", uid).eq("mode", "role").is("ended_at", null);
+  return "removed";
+}
+
 export async function cleanupExpiredRoleViews(): Promise<{ removed: number; blocked: number }> {
   const now = new Date().toISOString();
   const { data: expired, error } = await admin
     .from("view_as_sessions")
     .select("id, target_user_id, workspace_id")
     .eq("mode", "role")
-    .lt("expires_at", now)
-    .limit(100);
+    .or(`expires_at.lt.${now},ended_at.not.is.null`)
+    .order("created_at", { ascending: false })
+    .limit(200);
   if (error) throw new Error(error.message);
   let removed = 0;
   let blocked = 0;
@@ -164,40 +219,9 @@ export async function cleanupExpiredRoleViews(): Promise<{ removed: number; bloc
     const uid = v.target_user_id as string;
     if (seen.has(uid)) continue;
     seen.add(uid);
-    const { data: member } = await admin.from("workspace_members")
-      .select("user_id, is_test_user")
-      .eq("workspace_id", v.workspace_id).eq("user_id", uid).maybeSingle();
-    if (!member?.is_test_user) continue;
-    const { data: active } = await admin.from("view_as_sessions").select("id")
-      .eq("target_user_id", uid).eq("mode", "role")
-      .gt("expires_at", now).is("ended_at", null).limit(1);
-    if (active?.length) continue;
-    // Revogar acesso ao workspace antes de qualquer tentativa de remoção.
-    const { error: disableError } = await admin.from("workspace_members")
-      .update({ status: "inactive" }).eq("workspace_id", v.workspace_id)
-      .eq("user_id", uid).eq("is_test_user", true);
-    if (disableError) { blocked++; continue; }
-    // Não apaga registros reais acidentalmente: se um caminho privilegiado
-    // escreveu como o teste, mantém a conta desativada para investigação.
-    const tables = ["companies", "contacts", "leads", "deals", "activities", "tickets"];
-    let hasRecords = false;
-    for (const table of tables) {
-      const { count, error: checkError } = await admin.from(table).select("id", { head: true, count: "exact" })
-        .eq("workspace_id", v.workspace_id).eq("owner_id", uid);
-      if (checkError || (count ?? 0) > 0) { hasRecords = true; break; }
-    }
-    if (hasRecords) { blocked++; continue; }
-    const { error: roleError } = await admin.from("user_job_roles").delete()
-      .eq("workspace_id", v.workspace_id).eq("user_id", uid);
-    if (roleError) { blocked++; continue; }
-    const { error: memberError } = await admin.from("workspace_members").delete()
-      .eq("workspace_id", v.workspace_id).eq("user_id", uid).eq("is_test_user", true);
-    if (memberError) { blocked++; continue; }
-    const { error: deleteError } = await admin.auth.admin.deleteUser(uid);
-    if (deleteError) { blocked++; continue; }
-    await admin.from("view_as_sessions").update({ ended_at: now })
-      .eq("target_user_id", uid).eq("mode", "role").is("ended_at", null);
-    removed++;
+    const r = await cleanupTestUser(uid, v.workspace_id as string, now);
+    if (r === "removed") removed++;
+    if (r === "blocked") blocked++;
   }
   return { removed, blocked };
 }
@@ -331,6 +355,10 @@ export async function end(userId: string, viewId: string, jwt: string): Promise<
   }
   // Encerra apenas a sessão criada para o Ver como (a pessoa continua conectada).
   if (jwt) await admin.auth.admin.signOut(jwt, "local").catch(() => {});
+  // Papel de teste: apaga registros e conta imediatamente (o tick repete em falha).
+  await cleanupTestUser(v.target_user_id, v.workspace_id, new Date().toISOString()).catch((e) =>
+    console.warn("[view-as] Limpeza ao sair falhou:", (e as Error).message),
+  );
   return { ok: true };
 }
 
