@@ -110,40 +110,17 @@ export async function listOptions(
 }
 
 async function ensureTestUser(workspaceId: string, roleId: string, roleName: string) {
-  const { data: existing } = await admin
-    .from("user_job_roles")
-    .select("user_id")
-    .eq("workspace_id", workspaceId)
-    .eq("role_id", roleId);
-  const candidates = (existing ?? []).map((r: { user_id: string }) => r.user_id);
-  if (candidates.length) {
-    const { data: tm } = await admin
-      .from("workspace_members")
-      .select("user_id")
-      .eq("workspace_id", workspaceId)
-      .eq("is_test_user", true)
-      .in("user_id", candidates)
-      .limit(1)
-      .maybeSingle();
-    if (tm?.user_id) return tm.user_id as string;
-  }
-  const email = `ver-como+${roleId.slice(0, 8)}-${workspaceId.slice(0, 8)}@teste.wktechnology.invalid`;
+  // Cada visita recebe uma conta exclusiva: nunca reativar sessões ou dados antigos.
+  const email = `ver-como+${randomBytes(12).toString("hex")}@teste.wktechnology.invalid`;
   const fullName = `[Teste] ${roleName}`;
-  let uid: string | null = null;
   const created = await admin.auth.admin.createUser({
     email,
     email_confirm: true,
     password: randomBytes(24).toString("base64url"),
     user_metadata: { full_name: fullName, is_test_user: true },
   });
-  if (created.error) {
-    // Já existe (ex.: membro removido manualmente): reaproveita pelo e-mail.
-    const link = await admin.auth.admin.generateLink({ type: "magiclink", email });
-    uid = link.data?.user?.id ?? null;
-    if (!uid) throw new Error("Não foi possível criar o usuário de teste.");
-  } else {
-    uid = created.data.user.id as string;
-  }
+  if (created.error || !created.data.user) throw new Error("Não foi possível criar o usuário de teste.");
+  const uid = created.data.user.id;
   await admin
     .from("profiles")
     .upsert({ id: uid, full_name: fullName, active_workspace_id: workspaceId });
@@ -168,6 +145,61 @@ async function ensureTestUser(workspaceId: string, roleId: string, roleName: str
   });
   if (rErr) throw new Error(`Falha ao aplicar o papel ao usuário de teste: ${rErr.message}`);
   return uid;
+}
+
+/** Executado pelo mesmo tick autenticado dos Workflows, sem expor limpeza ao navegador. */
+export async function cleanupExpiredRoleViews(): Promise<{ removed: number; blocked: number }> {
+  const now = new Date().toISOString();
+  const { data: expired, error } = await admin
+    .from("view_as_sessions")
+    .select("id, target_user_id, workspace_id")
+    .eq("mode", "role")
+    .lt("expires_at", now)
+    .limit(100);
+  if (error) throw new Error(error.message);
+  let removed = 0;
+  let blocked = 0;
+  const seen = new Set<string>();
+  for (const v of expired ?? []) {
+    const uid = v.target_user_id as string;
+    if (seen.has(uid)) continue;
+    seen.add(uid);
+    const { data: member } = await admin.from("workspace_members")
+      .select("user_id, is_test_user")
+      .eq("workspace_id", v.workspace_id).eq("user_id", uid).maybeSingle();
+    if (!member?.is_test_user) continue;
+    const { data: active } = await admin.from("view_as_sessions").select("id")
+      .eq("target_user_id", uid).eq("mode", "role")
+      .gt("expires_at", now).is("ended_at", null).limit(1);
+    if (active?.length) continue;
+    // Revogar acesso ao workspace antes de qualquer tentativa de remoção.
+    const { error: disableError } = await admin.from("workspace_members")
+      .update({ status: "inactive" }).eq("workspace_id", v.workspace_id)
+      .eq("user_id", uid).eq("is_test_user", true);
+    if (disableError) { blocked++; continue; }
+    // Não apaga registros reais acidentalmente: se um caminho privilegiado
+    // escreveu como o teste, mantém a conta desativada para investigação.
+    const tables = ["companies", "contacts", "leads", "deals", "activities", "tickets"];
+    let hasRecords = false;
+    for (const table of tables) {
+      const { count, error: checkError } = await admin.from(table).select("id", { head: true, count: "exact" })
+        .eq("workspace_id", v.workspace_id).eq("owner_id", uid);
+      if (checkError || (count ?? 0) > 0) { hasRecords = true; break; }
+    }
+    if (hasRecords) { blocked++; continue; }
+    const { error: roleError } = await admin.from("user_job_roles").delete()
+      .eq("workspace_id", v.workspace_id).eq("user_id", uid);
+    if (roleError) { blocked++; continue; }
+    const { error: memberError } = await admin.from("workspace_members").delete()
+      .eq("workspace_id", v.workspace_id).eq("user_id", uid).eq("is_test_user", true);
+    if (memberError) { blocked++; continue; }
+    const { error: deleteError } = await admin.auth.admin.deleteUser(uid);
+    if (deleteError) { blocked++; continue; }
+    await admin.from("view_as_sessions").update({ ended_at: now })
+      .eq("target_user_id", uid).eq("mode", "role").is("ended_at", null);
+    removed++;
+  }
+  return { removed, blocked };
 }
 
 export async function start(
