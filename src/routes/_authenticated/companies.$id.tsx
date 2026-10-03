@@ -21,6 +21,8 @@ import { deleteRowGuarded } from "@/lib/delete-guard";
 import { useCanDelete, DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { translateFieldValue } from "@/lib/i18n/hubspot-values";
+import { useIsLinkedOnly } from "@/hooks/use-rep-restricted";
+import { LinkedCompanySummary } from "@/components/record/linked-record-summary";
 
 export const Route = createFileRoute("/_authenticated/companies/$id")({
   component: CompanyDetail,
@@ -53,8 +55,15 @@ function CompanyDetail() {
   ]);
   const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techsales.companies");
   const canDelete = !deletePermLoading && canDeleteRecord(company);
+  const linkedOnly = useIsLinkedOnly(company);
 
   if (!company) return <p className="text-sm text-muted-foreground">Carregando...</p>;
+  if (linkedOnly)
+    return (
+      <LinkedCompanySummary
+        company={company as unknown as Parameters<typeof LinkedCompanySummary>[0]["company"]}
+      />
+    );
 
   const remove = async () => {
     if (!canDelete) {

@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { deleteRowGuarded } from "@/lib/delete-guard";
 import { useCanDelete, DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
+import { useIsLinkedOnly } from "@/hooks/use-rep-restricted";
+import { LinkedContactSummary } from "@/components/record/linked-record-summary";
 
 export const Route = createFileRoute("/_authenticated/contacts/$id")({
   component: ContactDetail,
@@ -64,6 +66,7 @@ function ContactDetail() {
 
   const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techsales.contacts");
   const canDelete = !deletePermLoading && canDeleteRecord(contact);
+  const linkedOnly = useIsLinkedOnly(contact);
 
   if (loading && !contact)
     return <p className="text-sm text-muted-foreground p-6">Carregando...</p>;
@@ -91,6 +94,8 @@ function ContactDetail() {
         </Button>
       </div>
     );
+  if (linkedOnly)
+    return <LinkedContactSummary contact={contact} companyName={company?.name ?? null} />;
 
   const remove = async () => {
     if (!canDelete) {
