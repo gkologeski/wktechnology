@@ -1,6 +1,8 @@
 // Processa eventos guardados em whatsapp_webhook_events (conexão Lovable).
 // Idempotente: mensagens deduplicadas por wa_message_id; status nunca regride.
 import { shouldApplyStatus } from "@/lib/whatsapp/status-rank";
+
+const STATUS_ORDER = ["accepted", "sent", "delivered", "read", "failed"];
 import { normalizePhone } from "@/lib/whatsapp/meta-channel.server";
 
 // Tabela whatsapp_webhook_events só entra nos tipos após aceitar o rascunho.
@@ -120,7 +122,6 @@ async function handleStatuses(admin: Admin, value: any): Promise<string | null> 
     const patch: Record<string, unknown> = {};
     if (s.status === "delivered" && !msg.delivered_at && at) patch.delivered_at = at;
     if (s.status === "read" && !msg.read_at && at) patch.read_at = at;
-    if (shouldApplyStatus(msg.status as string, s.status)) patch.status = s.status;
     if (s.errors?.[0]) {
       patch.error_code = String(s.errors[0].code ?? "");
       patch.error_message = s.errors[0].title ?? s.errors[0].message ?? null;
@@ -128,6 +129,17 @@ async function handleStatuses(admin: Admin, value: any): Promise<string | null> 
     if (Object.keys(patch).length) {
       const { error: uErr } = await admin.from("whatsapp_messages").update(patch).eq("id", msg.id);
       if (uErr) throw new Retry(uErr.message);
+    }
+    // Troca de status atômica: só grava se o status atual ainda for inferior,
+    // evitando que avisos simultâneos (ex.: "sent" após "delivered") regridam.
+    if (shouldApplyStatus(msg.status as string, s.status)) {
+      const lower = STATUS_ORDER.filter((st) => shouldApplyStatus(st, s.status));
+      const { error: sErr } = await admin
+        .from("whatsapp_messages")
+        .update({ status: s.status })
+        .eq("id", msg.id)
+        .or(`status.is.null,status.in.(${lower.join(",")})`);
+      if (sErr) throw new Retry(sErr.message);
     }
   }
   return workspaceId;
