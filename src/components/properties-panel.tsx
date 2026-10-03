@@ -49,6 +49,7 @@ import { OwnerField } from "@/components/entity/owner-field";
 import { AssigneeField } from "@/components/entity/assignee-field";
 import { CreatorField } from "@/components/entity/creator-field";
 import { creatorId, responsibleId } from "@/lib/entity/responsible";
+import { readViewAs } from "@/lib/view-as-client";
 
 // E.164-compliant chars only: digits, leading +, plus visual separators.
 const PHONE_INPUT_RE = /[^\d+\s\-()]/g;
@@ -150,6 +151,20 @@ function formatDisplayValue(
   return String(raw);
 }
 
+function displayCompanyDomain(raw: unknown): string {
+  if (typeof raw !== "string" || !raw.trim()) return "—";
+  const value = raw.trim();
+  // A URL completa (inclusive parâmetros de rastreamento) permanece intacta no banco.
+  // O campo Domínio mostra somente o host quando o valor é uma URL válida.
+  try {
+    const url = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`);
+    if (url.hostname.includes(".") && !/\s/.test(url.hostname)) return url.hostname;
+  } catch {
+    // Dados antigos inválidos continuam visíveis para que possam ser corrigidos.
+  }
+  return value;
+}
+
 type CustomProp = Awaited<ReturnType<typeof listCustomProperties>>[number];
 
 export function PropertiesPanel<T extends Record<string, unknown> & { id: string }>({
@@ -176,6 +191,8 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
   const [createCompanyOpen, setCreateCompanyOpen] = useState(false);
   const [pendingCompanyName, setPendingCompanyName] = useState("");
   const [pendingCompanyField, setPendingCompanyField] = useState<string | null>(null);
+  const [readOnly, setReadOnly] = useState(false);
+  useEffect(() => setReadOnly(readViewAs()?.readOnly === true), []);
   const listCustomFn = useServerFn(listCustomProperties);
   const setCustomFn = useServerFn(setCustomFieldValue);
   const getLayoutFn = useServerFn(getRecordLayout);
@@ -276,6 +293,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
   const useSections = renderableSections.length > 0;
 
   const save = async (key: string) => {
+    if (readOnly) return;
     const def = props.find((p) => p.key === key);
     let toSave: string | null = value || null;
     if (def?.type === "tel" && toSave) {
@@ -335,6 +353,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
           p.options ? (
             <div className="flex gap-1">
               <Select
+                disabled={readOnly}
                 value={value}
                 onValueChange={async (v) => {
                   setValue(v);
@@ -404,6 +423,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
             <div className="flex gap-1">
               <Input
                 autoFocus
+                disabled={readOnly}
                 type={
                   p.type === "cep" || p.type === "cnpj"
                     ? "text"
@@ -469,6 +489,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                   const optLabel = p.options.find((o) => o.value === String(v))?.label;
                   return translateFieldValue(p.key, optLabel ?? v) || String(v);
                 }
+                if (entity === "companies" && p.key === "domain") return displayCompanyDomain(v);
                 if (p.type === "tel" && v) return formatBrPhone(String(v));
                 if (p.type === "cep" && v) return formatCep(String(v));
                 if (p.type === "cnpj" && v) return formatCNPJ(String(v));
@@ -489,7 +510,11 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
               variant="ghost"
               size="icon"
               className="h-6 w-6 opacity-0 group-hover:opacity-100"
+              disabled={readOnly}
+              aria-label={`Editar ${p.label}`}
+              title={readOnly ? "Modo só leitura" : `Editar ${p.label}`}
               onClick={() => {
+                if (readOnly) return;
                 setEditing(p.key);
                 const raw = String(row[p.key] ?? "");
                 setValue(
@@ -497,7 +522,9 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                     ? formatCNPJ(raw)
                     : p.type === "currency"
                       ? raw
-                      : formatBrPhone(raw) || raw,
+                      : p.type === "tel"
+                        ? formatBrPhone(raw) || raw
+                        : raw,
                 );
               }}
             >
@@ -616,6 +643,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                 ) : p.type === "cnpj" ? (
                   <Input
                     type="text"
+                    disabled={readOnly}
                     inputMode="numeric"
                     maxLength={18}
                     placeholder="00.000.000/0000-00"
@@ -648,6 +676,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                 ) : p.type === "cep" ? (
                   <Input
                     type="text"
+                    disabled={readOnly}
                     inputMode="numeric"
                     maxLength={9}
                     placeholder="99999-999"
@@ -680,6 +709,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                 ) : p.type === "tel" ? (
                   <Input
                     type="tel"
+                    disabled={readOnly}
                     inputMode="tel"
                     placeholder="(11) 99999-8888"
                     defaultValue={
@@ -716,6 +746,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                 ) : (
                   <Input
                     type={p.type ?? "text"}
+                    disabled={readOnly}
                     defaultValue={String(row[p.key] ?? "")}
                     onBlur={async (e) => {
                       const raw = e.target.value;
