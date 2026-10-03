@@ -95,17 +95,27 @@ export function CompanyPicker({
         return;
       }
       const like = `%${term}%`;
-      const { data, error } = await supabase
-        .from("companies")
-        .select("id, name, domain, phone")
-        .or(`name.ilike.${like},domain.ilike.${like},phone.ilike.${like}`)
-        .order("name", { ascending: true })
-        .limit(500);
+      const [{ data, error }, repRes] = await Promise.all([
+        supabase
+          .from("companies")
+          .select("id, name, domain, phone")
+          .or(`name.ilike.${like},domain.ilike.${like},phone.ilike.${like}`)
+          .order("name", { ascending: true })
+          .limit(500),
+        // Cargo restrito: encontra empresas já cadastradas de outra carteira
+        // (só id e nome) para vincular sem duplicar. Vazio para os demais cargos.
+        supabase.rpc("rep_find_companies", { _q: term }),
+      ]);
       if (error) {
         setSearched(true);
         return;
       }
       const rows = (data ?? []) as Match[];
+      const seen = new Set(rows.map((r) => r.id));
+      for (const r of repRes.data ?? []) {
+        if (!seen.has(r.id))
+          rows.push({ id: r.id, name: r.name, domain: null, phone: "Empresa já cadastrada" });
+      }
       setMatches(rows);
       setSearched(true);
       if (toastOnMatches && rows.length > 0 && lastSearchedRef.current !== q) {
