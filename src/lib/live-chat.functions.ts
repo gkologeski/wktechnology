@@ -7,9 +7,9 @@ import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 export const listChatSessions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabase } = context;
     const ws = await resolveActiveWorkspace(context.userId);
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabase
       .from("live_chat_sessions")
       .select(
         "id, visitor_id, visitor_name, visitor_email, visitor_url, status, assignee_id, last_message_at, created_at",
@@ -25,9 +25,9 @@ export const listChatMessages = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ session_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabase } = context;
     const ws = await resolveActiveWorkspace(context.userId);
-    const { data: rows, error } = await supabaseAdmin
+    const { data: rows, error } = await supabase
       .from("live_chat_messages")
       .select("id, direction, author_user_id, body, created_at")
       .eq("session_id", data.session_id)
@@ -49,9 +49,9 @@ export const sendChatMessage = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await (await import("@/lib/view-as-guard.server")).assertNotReadOnlyView(context.supabase);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabase } = context;
     const ws = await resolveActiveWorkspace(context.userId);
-    const { error } = await supabaseAdmin.from("live_chat_messages").insert({
+    const { error } = await supabase.from("live_chat_messages").insert({
       session_id: data.session_id,
       owner_id: ws,
       workspace_id: ws,
@@ -60,11 +60,12 @@ export const sendChatMessage = createServerFn({ method: "POST" })
       body: data.body,
     });
     if (error) throw new Error(error.message);
-    await supabaseAdmin
+    const { error: updateError } = await supabase
       .from("live_chat_sessions")
       .update({ last_message_at: new Date().toISOString(), assignee_id: context.userId })
       .eq("id", data.session_id)
       .eq("owner_id", ws);
+    if (updateError) throw new Error(updateError.message);
     return { ok: true };
   });
 
@@ -72,13 +73,15 @@ export const closeChatSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ session_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await (await import("@/lib/view-as-guard.server")).assertNotReadOnlyView(context.supabase);
+    const { supabase } = context;
     const ws = await resolveActiveWorkspace(context.userId);
-    await supabaseAdmin
+    const { error } = await supabase
       .from("live_chat_sessions")
       .update({ status: "closed" })
       .eq("id", data.session_id)
       .eq("owner_id", ws);
+    if (error) throw new Error(error.message);
     return { ok: true };
   });
 
@@ -94,9 +97,10 @@ export const convertChatSessionToTicket = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await (await import("@/lib/view-as-guard.server")).assertNotReadOnlyView(context.supabase);
+    const { supabase } = context;
     const ws = await resolveActiveWorkspace(context.userId);
-    const { data: session, error: sErr } = await supabaseAdmin
+    const { data: session, error: sErr } = await supabase
       .from("live_chat_sessions")
       .select("id, visitor_name, visitor_email, visitor_url, status")
       .eq("id", data.session_id)
@@ -105,7 +109,7 @@ export const convertChatSessionToTicket = createServerFn({ method: "POST" })
     if (sErr) throw new Error(sErr.message);
     if (!session) throw new Error("Sessão não encontrada.");
 
-    const { data: msgs, error: mErr } = await supabaseAdmin
+    const { data: msgs, error: mErr } = await supabase
       .from("live_chat_messages")
       .select("direction, body, created_at")
       .eq("session_id", data.session_id)
@@ -135,7 +139,7 @@ export const convertChatSessionToTicket = createServerFn({ method: "POST" })
       .filter(Boolean)
       .join("\n");
 
-    const { data: ticket, error: tErr } = await supabaseAdmin
+    const { data: ticket, error: tErr } = await supabase
       .from("tickets")
       .insert({
         owner_id: ws,
@@ -151,11 +155,12 @@ export const convertChatSessionToTicket = createServerFn({ method: "POST" })
     if (tErr) throw new Error(tErr.message);
 
     if (data.close_after && session.status !== "closed") {
-      await supabaseAdmin
+      const { error: closeError } = await supabase
         .from("live_chat_sessions")
         .update({ status: "closed" })
         .eq("id", data.session_id)
         .eq("owner_id", ws);
+      if (closeError) throw new Error(closeError.message);
     }
     return { ticket_id: ticket.id };
   });
