@@ -17,6 +17,7 @@ import {
 import { EmailInput } from "@/components/ui/email-input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
+import { PortfolioConflictNotice } from "@/components/leads/portfolio-conflict-notice";
 import { SourceCombobox } from "@/components/leads/source-combobox";
 import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialogs";
 import {
@@ -512,6 +513,7 @@ export function CreateLeadDialog({
                       setCreateCompanyOpen(true);
                     }}
                   />
+                  <PortfolioConflictNotice companyId={company.id} />
                   {companyPending && (
                     <p className="text-[11px] text-amber-600 dark:text-amber-500">
                       Selecione “{company.name.trim()}” na lista ou crie a empresa para continuar.
