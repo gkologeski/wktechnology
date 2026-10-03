@@ -16,3 +16,5 @@
 - Conversões Cotação→Proposta→Contrato ficam em `src/lib/sales-flow.server.ts` com o cliente do usuário (RLS) e gravam a origem (`proposals.quote_id`, `contracts.proposal_id/quote_id`); por quê: rastreabilidade sem redigitar e sem duplicar.
 
 - Propostas usam modelos próprios (`proposal_templates` + vínculo a serviços do catálogo), nunca cláusulas de contrato; o documento final (ficha, link público `/proposal/$token` e PDF) sai de `loadProposalDocument` e a edição é só pelo `ProposalWizard`; por quê: mesmo fluxo da cotação, uma única fonte para tela e PDF.
+
+- "Ver como" usa sessão real do alvo (magic link gerado no servidor após checar admin) registrada em `view_as_sessions`; modo usuário é só leitura por políticas RESTRITIVAS `view_as_ro_*` + `is_read_only_view()`; por quê: mostra os dados reais sem gravar em nome da pessoa. Tabelas novas com `workspace_id` precisam das mesmas políticas.

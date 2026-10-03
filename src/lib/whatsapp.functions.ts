@@ -46,6 +46,7 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    await (await import("@/lib/view-as-guard.server")).assertNotReadOnlyView(context.supabase);
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     const { resolveWaNumber, metaSend, findConversationNumber } =

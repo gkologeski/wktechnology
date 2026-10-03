@@ -18440,6 +18440,59 @@ export type Database = {
         }
         Relationships: []
       }
+      view_as_sessions: {
+        Row: {
+          admin_id: string
+          created_at: string
+          ended_at: string | null
+          expires_at: string
+          id: string
+          mode: string
+          nonce: string
+          read_only: boolean
+          role_id: string | null
+          session_id: string | null
+          target_user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string
+          ended_at?: string | null
+          expires_at?: string
+          id?: string
+          mode: string
+          nonce: string
+          read_only?: boolean
+          role_id?: string | null
+          session_id?: string | null
+          target_user_id: string
+          workspace_id: string
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string
+          ended_at?: string | null
+          expires_at?: string
+          id?: string
+          mode?: string
+          nonce?: string
+          read_only?: boolean
+          role_id?: string | null
+          session_id?: string | null
+          target_user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "view_as_sessions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       voice_agent_settings: {
         Row: {
           allowed_hours: Json
@@ -20047,6 +20100,7 @@ export type Database = {
       workspace_members: {
         Row: {
           invited_by: string | null
+          is_test_user: boolean
           joined_at: string
           role: string
           status: string
@@ -20055,6 +20109,7 @@ export type Database = {
         }
         Insert: {
           invited_by?: string | null
+          is_test_user?: boolean
           joined_at?: string
           role?: string
           status?: string
@@ -20063,6 +20118,7 @@ export type Database = {
         }
         Update: {
           invited_by?: string | null
+          is_test_user?: boolean
           joined_at?: string
           role?: string
           status?: string
@@ -20543,6 +20599,7 @@ export type Database = {
         Returns: boolean
       }
       is_platform_admin: { Args: { _user: string }; Returns: boolean }
+      is_read_only_view: { Args: never; Returns: boolean }
       is_workspace_admin: {
         Args: { _user: string; _workspace: string }
         Returns: boolean

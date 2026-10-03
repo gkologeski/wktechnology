@@ -48,6 +48,7 @@ export const sendChatMessage = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    await (await import("@/lib/view-as-guard.server")).assertNotReadOnlyView(context.supabase);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
     const { error } = await supabaseAdmin.from("live_chat_messages").insert({

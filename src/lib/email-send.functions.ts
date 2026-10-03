@@ -46,6 +46,7 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => inputSchema.parse(input))
   .handler(async ({ data, context }) => {
+    await (await import("@/lib/view-as-guard.server")).assertNotReadOnlyView(context.supabase);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     // Resolve account (use specified or first connected for this user)
     let q = supabaseAdmin
