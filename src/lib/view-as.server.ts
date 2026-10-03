@@ -172,13 +172,13 @@ async function cleanupTestUser(uid: string, workspaceId: string, now: string): P
 
   const { data: sessions } = await admin.from("view_as_sessions").select("id")
     .eq("target_user_id", uid).eq("mode", "role");
-  const sessionIds = (sessions ?? []).map((s) => s.id as string);
+  const sessionIds = (sessions ?? []).map((s: { id: string }) => s.id as string);
   if (sessionIds.length) {
     const { data: records, error: recErr } = await admin.from("view_as_test_records")
       .select("table_name, record_id").in("session_id", sessionIds);
     if (recErr) return "blocked";
     for (const table of TEST_RECORD_DELETE_ORDER) {
-      const ids = (records ?? []).filter((r) => r.table_name === table).map((r) => r.record_id as string);
+      const ids = (records ?? []).filter((r: { table_name: string }) => r.table_name === table).map((r: { record_id: string }) => r.record_id as string);
       if (!ids.length) continue;
       const { error: delErr } = await admin.from(table).delete().in("id", ids);
       if (delErr) {
