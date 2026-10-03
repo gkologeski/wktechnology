@@ -355,6 +355,10 @@ export async function end(userId: string, viewId: string, jwt: string): Promise<
   }
   // Encerra apenas a sessão criada para o Ver como (a pessoa continua conectada).
   if (jwt) await admin.auth.admin.signOut(jwt, "local").catch(() => {});
+  // Papel de teste: apaga registros e conta imediatamente (o tick repete em falha).
+  await cleanupTestUser(v.target_user_id, v.workspace_id, new Date().toISOString()).catch((e) =>
+    console.warn("[view-as] Limpeza ao sair falhou:", (e as Error).message),
+  );
   return { ok: true };
 }
 

@@ -37,7 +37,7 @@ export function ViewAsBanner() {
       <span className="font-medium">Você está vendo como {state.label}.</span>
       <span className="text-muted-foreground">
         {state.readOnly
-          ? "Papel de teste: alterações e envios estão bloqueados."
+          ? "Modo teste: leads, empresas, contatos, negócios e atividades que você criar serão apagados em até 1h. Dados reais não podem ser alterados e envios estão bloqueados."
           : "Ações e envios são reais e serão feitos em nome desta pessoa, conforme seus acessos."}
       </span>
       <div className="flex-1" />
