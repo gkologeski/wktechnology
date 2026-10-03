@@ -1,8 +1,6 @@
 // Estado do "Ver como" no navegador: guarda a sessão do admin para restaurar depois.
 import { supabase } from "@/integrations/supabase/client";
 import type { ViewAsStart } from "@/lib/view-as.functions";
-import { getStoredActiveModule, setStoredActiveModule } from "@/lib/modules/active-module";
-import type { ModuleId } from "@/lib/modules/registry";
 
 const KEY = "wk.viewAs";
 
@@ -12,7 +10,6 @@ export type ViewAsState = {
   mode: "user" | "role";
   readOnly: boolean;
   expiresAt: string;
-  previousModule?: ModuleId | null;
   admin: { access_token: string; refresh_token: string };
 };
 
@@ -45,7 +42,6 @@ export async function enterViewAs(
     mode: start.mode,
     readOnly: start.readOnly,
     expiresAt: start.expiresAt,
-    previousModule: getStoredActiveModule(),
     admin: { access_token: cur.access_token, refresh_token: cur.refresh_token },
   });
   const { error } = await supabase.auth.verifyOtp({
@@ -62,9 +58,6 @@ export async function enterViewAs(
     await restoreAdmin();
     throw e;
   }
-  // A preferência do administrador (ex.: ERP) não deve esconder o módulo de
-  // vendas ao testar um papel restrito ao TechSales.
-  if (start.mode === "role") setStoredActiveModule("crm");
   window.location.assign("/");
 }
 
@@ -72,10 +65,6 @@ async function restoreAdmin() {
   const s = readViewAs();
   writeViewAs(null);
   if (!s) return;
-  if (s.mode === "role") {
-    if (s.previousModule) setStoredActiveModule(s.previousModule);
-    else window.localStorage.removeItem("erp.activeModule");
-  }
   const { error } = await supabase.auth.setSession(s.admin);
   if (error) await supabase.auth.signOut({ scope: "local" });
 }
