@@ -506,30 +506,30 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
               })()}
             </span>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 opacity-0 group-hover:opacity-100"
-              disabled={readOnly}
-              aria-label={`Editar ${p.label}`}
-              title={readOnly ? "Modo só leitura" : `Editar ${p.label}`}
-              onClick={() => {
-                if (readOnly) return;
-                setEditing(p.key);
-                const raw = String(row[p.key] ?? "");
-                setValue(
-                  p.type === "cnpj"
-                    ? formatCNPJ(raw)
-                    : p.type === "currency"
-                      ? raw
-                      : p.type === "tel"
-                        ? formatBrPhone(raw) || raw
-                        : raw,
-                );
-              }}
-            >
-              <Pencil className="h-3 w-3" />
-            </Button>
+            {!readOnly && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                aria-label={`Editar ${p.label}`}
+                title={`Editar ${p.label}`}
+                onClick={() => {
+                  setEditing(p.key);
+                  const raw = String(row[p.key] ?? "");
+                  setValue(
+                    p.type === "cnpj"
+                      ? formatCNPJ(raw)
+                      : p.type === "currency"
+                        ? raw
+                        : p.type === "tel"
+                          ? formatBrPhone(raw) || raw
+                          : raw,
+                  );
+                }}
+              >
+                <Pencil className="h-3 w-3" />
+              </Button>
+            )}
           </div>
         )}
       </div>
