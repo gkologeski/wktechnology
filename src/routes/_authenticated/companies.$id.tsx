@@ -3,13 +3,14 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Trash2, Building2, ExternalLink, Sparkles } from "lucide-react";
+import { ArrowLeft, Trash2, ExternalLink, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { PropertiesPanel } from "@/components/properties-panel";
 import { RecordLayout } from "@/components/record/record-layout";
 import { AssociationsPanel } from "@/components/record/associations-panel";
+import { CompanyAvatar } from "@/components/companies/company-avatar";
 import { CompanyHierarchy } from "@/components/companies/company-hierarchy";
 import { enrichCompanyByCNPJ } from "@/lib/integrations/brasilapi-cnpj.functions";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
@@ -111,9 +112,14 @@ function CompanyDetail() {
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
-        <div className="w-16 h-16 shrink-0 rounded-full bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center text-white shadow-lg shadow-primary/20 border-4 border-card">
-          <Building2 className="h-7 w-7" />
-        </div>
+        <CompanyAvatar
+          name={company.name}
+          seed={company.id}
+          logoUrl={company.logo_url}
+          domain={company.domain}
+          website={company.website}
+          size="xl"
+        />
         <div className="min-w-0">
           <h1 className="text-2xl font-bold text-foreground truncate">{company.name}</h1>
           <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap mt-0.5">
