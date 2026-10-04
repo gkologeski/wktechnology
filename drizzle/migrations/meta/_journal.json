@@ -365,6 +365,13 @@
       "when": 1791153996406,
       "tag": "0051_support_chat_message_drafts",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1791156892054,
+      "tag": "0052_companies_logo_url",
+      "breakpoints": true
     }
   ]
 }

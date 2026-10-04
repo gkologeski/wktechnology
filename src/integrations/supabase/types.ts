@@ -4858,6 +4858,7 @@ export type Database = {
           is_target_account: boolean
           lifecyclestage: string | null
           linkedin_company_page: string | null
+          logo_url: string | null
           name: string
           notes: string | null
           owner_id: string
@@ -4902,6 +4903,7 @@ export type Database = {
           is_target_account?: boolean
           lifecyclestage?: string | null
           linkedin_company_page?: string | null
+          logo_url?: string | null
           name: string
           notes?: string | null
           owner_id: string
@@ -4946,6 +4948,7 @@ export type Database = {
           is_target_account?: boolean
           lifecyclestage?: string | null
           linkedin_company_page?: string | null
+          logo_url?: string | null
           name?: string
           notes?: string | null
           owner_id?: string
