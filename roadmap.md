@@ -21,3 +21,9 @@
 - [ ] Fase 5 — atalho de aditivo para cliente com contrato ativo
 - [x] Fase 6 — textos da tela de Propostas
 - [ ] Fase 7 — teste real de conversão (aguarda autorização para gravar dados)
+
+# Roadmap — Redesign da Inbox multicanal
+- [x] Direção visual aprovada: cockpit multicanal com identidade White Label
+- [x] Casco compartilhado com canais, conversas, conversa ativa e contexto
+- [x] Estados, acessibilidade e responsividade das quatro rotas
+- [x] Validação visual e funcional em desktop e mobile

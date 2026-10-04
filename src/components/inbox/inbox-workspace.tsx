@@ -8,6 +8,7 @@ import {
   Inbox,
   Mail,
   MessageCircle,
+  RefreshCw,
   PanelRightClose,
   PanelRightOpen,
   User,
@@ -26,8 +27,7 @@ const CHANNELS = [
 ];
 
 /**
- * Casco "Modern unified interface": barra superior única (título + abas de canal + ações),
- * lista de conversas, conversa e contexto recolhível — sem coluna de canais redundante.
+ * Casco operacional compartilhado: canais, lista, conversa e contexto recolhível.
  * Todas as cores/tipografia vêm dos tokens do White Label.
  */
 export function InboxWorkspace({
@@ -56,47 +56,36 @@ export function InboxWorkspace({
   const showContext = !!context && resolvedContextOpen;
 
   return (
-    <div className="flex h-[calc(100dvh-4rem)] min-h-[36rem] flex-col bg-product-canvas">
-      <header className="flex flex-col gap-2 border-b border-border bg-product-header px-3 py-2 sm:px-4 lg:flex-row lg:items-center lg:gap-4">
-        <div className="flex min-w-0 shrink items-center gap-3 lg:max-w-[16rem]">
-          <div className="min-w-0">
-            <h1 className="truncate text-base font-semibold text-foreground">{title}</h1>
-            <p className="hidden truncate text-xs text-muted-foreground xl:block">{description}</p>
-          </div>
-        </div>
-        <InboxChannelTabs />
-        <div className="flex shrink-0 items-center gap-2 lg:ml-auto [&>*]:shrink-0">
-          {actions}
-          {context ? (
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              className="hidden xl:inline-flex"
-              onClick={() => setContextOpen(!resolvedContextOpen)}
-              aria-label={resolvedContextOpen ? "Ocultar contexto" : "Mostrar contexto"}
-              title={resolvedContextOpen ? "Ocultar contexto" : "Mostrar contexto"}
-            >
-              {resolvedContextOpen ? (
-                <PanelRightClose className="h-4 w-4" />
-              ) : (
-                <PanelRightOpen className="h-4 w-4" />
-              )}
-            </Button>
-          ) : null}
-        </div>
-      </header>
+    <div className="relative flex h-[calc(100dvh-4rem)] min-h-[36rem] flex-col overflow-hidden bg-product-canvas">
       <div
         className={cn(
           "grid min-h-0 flex-1 overflow-hidden",
           showContext
-            ? "grid-cols-1 lg:grid-cols-[20rem_minmax(0,1fr)] xl:grid-cols-[21rem_minmax(0,1fr)_18rem] 2xl:grid-cols-[23rem_minmax(0,1fr)_20rem]"
-            : "grid-cols-1 lg:grid-cols-[20rem_minmax(0,1fr)] 2xl:grid-cols-[23rem_minmax(0,1fr)]",
+            ? "grid-cols-1 lg:grid-cols-[9.5rem_16rem_minmax(0,1fr)] xl:grid-cols-[10rem_16rem_minmax(0,1fr)_14.5rem] 2xl:grid-cols-[11rem_19rem_minmax(0,1fr)_17rem]"
+            : "grid-cols-1 lg:grid-cols-[9.5rem_16rem_minmax(0,1fr)] 2xl:grid-cols-[11rem_19rem_minmax(0,1fr)]",
         )}
       >
+        <aside
+          className={cn(
+            "min-h-0 flex-col border-r border-product-divider bg-product-header lg:flex",
+            mobilePane === "list" ? "flex" : "hidden",
+          )}
+          aria-label="Canais e ações da Inbox"
+        >
+          <div className="border-b border-product-divider p-4">
+            <h1 className="truncate text-base font-semibold text-text-primary">{title}</h1>
+            <p className="mt-1 line-clamp-2 text-xs leading-5 text-text-tertiary">{description}</p>
+          </div>
+          <InboxChannelTabs />
+          {actions ? (
+            <div className="mt-auto grid gap-2 border-t border-product-divider p-3 [&_[data-slot=button]]:w-full [&_[data-slot=button]]:justify-start">
+              {actions}
+            </div>
+          ) : null}
+        </aside>
         <section
           className={cn(
-            "min-h-0 flex-col border-r border-border bg-product-panel lg:flex",
+            "min-h-0 flex-col border-r border-product-divider bg-product-panel lg:flex",
             mobilePane === "list" ? "flex" : "hidden",
           )}
           aria-label="Conversas"
@@ -109,7 +98,7 @@ export function InboxWorkspace({
         </section>
         <section
           className={cn(
-            "min-h-0 min-w-0 flex-col bg-background lg:flex",
+            "relative min-h-0 min-w-0 flex-col bg-background lg:flex",
             mobilePane === "conversation" ? "flex" : "hidden",
           )}
           aria-label="Conversa selecionada"
@@ -119,6 +108,23 @@ export function InboxWorkspace({
               <ArrowLeft className="mr-1.5 h-4 w-4" /> Conversas
             </Button>
           </div>
+          {context ? (
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="absolute right-3 top-3 z-20 hidden xl:inline-flex"
+              onClick={() => setContextOpen(!resolvedContextOpen)}
+              aria-label={resolvedContextOpen ? "Ocultar contexto" : "Mostrar contexto"}
+              title={resolvedContextOpen ? "Ocultar contexto" : "Mostrar contexto"}
+            >
+              {resolvedContextOpen ? (
+                <PanelRightClose className="h-4 w-4" />
+              ) : (
+                <PanelRightOpen className="h-4 w-4" />
+              )}
+            </Button>
+          ) : null}
           {conversation}
         </section>
         {showContext ? (
@@ -138,7 +144,7 @@ function InboxChannelTabs() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   return (
     <nav
-      className="flex min-w-0 max-w-full gap-1 overflow-x-auto rounded-[var(--radius)] bg-muted p-1"
+      className="grid grid-cols-4 gap-1 overflow-x-auto border-b border-product-divider p-2 lg:grid-cols-1 lg:border-b-0 lg:p-3"
       aria-label="Canais da Inbox"
     >
       {CHANNELS.map(({ to, label, icon: Icon }) => {
@@ -150,14 +156,14 @@ function InboxChannelTabs() {
             to={to}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "inline-flex shrink-0 items-center gap-1.5 rounded-[calc(var(--radius)-2px)] px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "relative inline-flex min-h-10 min-w-0 shrink-0 items-center justify-center gap-2 rounded-[var(--radius)] px-2.5 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:justify-start lg:text-sm",
               active
-                ? "bg-card text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground",
+                ? "bg-accent text-accent-foreground shadow-xs before:absolute before:bottom-0 before:left-3 before:right-3 before:h-0.5 before:rounded-full before:bg-primary lg:before:bottom-2 lg:before:left-0 lg:before:right-auto lg:before:top-2 lg:before:h-auto lg:before:w-0.5"
+                : "text-text-secondary hover:bg-product-panel-muted hover:text-text-primary",
             )}
           >
             <Icon className={cn("h-4 w-4 shrink-0", active && "text-primary")} />
-            <span>{label}</span>
+            <span className="truncate">{label}</span>
           </Link>
         );
       })}
@@ -166,7 +172,11 @@ function InboxChannelTabs() {
 }
 
 export function InboxListHeader({ children }: { children: ReactNode }) {
-  return <div className="space-y-2 border-b border-border p-3">{children}</div>;
+  return (
+    <div className="space-y-2 border-b border-product-divider bg-product-toolbar p-3">
+      {children}
+    </div>
+  );
 }
 
 export function InboxConversationList({ children }: { children: ReactNode }) {
@@ -177,7 +187,7 @@ export function InboxEmpty({ children }: { children: ReactNode }) {
   return (
     <div className="grid min-h-48 flex-1 place-items-center p-6 text-center text-sm text-muted-foreground">
       <div className="flex max-w-xs flex-col items-center gap-3">
-        <div className="grid h-12 w-12 place-items-center rounded-full bg-muted text-muted-foreground">
+        <div className="grid h-12 w-12 place-items-center rounded-[var(--radius)] border border-border-subtle bg-surface-sunken text-text-tertiary">
           <Inbox className="h-5 w-5" />
         </div>
         <div>{children}</div>
@@ -205,6 +215,30 @@ export function InboxLoading() {
   );
 }
 
+export function InboxError({
+  children = "Não foi possível carregar as conversas.",
+  onRetry,
+}: {
+  children?: ReactNode;
+  onRetry?: () => void;
+}) {
+  return (
+    <div className="grid min-h-48 flex-1 place-items-center p-6 text-center" role="alert">
+      <div className="flex max-w-xs flex-col items-center gap-3">
+        <div className="grid h-12 w-12 place-items-center rounded-[var(--radius)] bg-destructive/10 text-destructive">
+          <AlertCircle className="h-5 w-5" />
+        </div>
+        <div className="text-sm text-text-secondary">{children}</div>
+        {onRetry ? (
+          <Button type="button" size="sm" variant="outline" onClick={onRetry}>
+            <RefreshCw className="h-4 w-4" /> Tentar novamente
+          </Button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 export function InboxAvatar({ label, className }: { label: string; className?: string }) {
   const initials = label
     .replace(/[^\p{L} ]/gu, "")
@@ -217,7 +251,7 @@ export function InboxAvatar({ label, className }: { label: string; className?: s
   return (
     <div
       className={cn(
-        "grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent text-sm font-semibold text-accent-foreground",
+        "grid h-10 w-10 shrink-0 place-items-center rounded-[var(--radius)] bg-accent text-sm font-semibold text-accent-foreground",
         className,
       )}
       aria-hidden
@@ -240,9 +274,9 @@ export function InboxContext({
 }) {
   return (
     <ScrollArea className="flex-1">
-      <div className="space-y-6 p-5">
+      <div className="space-y-5 p-4">
         <div className="text-center">
-          <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-accent text-lg font-semibold text-accent-foreground">
+          <div className="mx-auto grid h-14 w-14 place-items-center rounded-[var(--radius)] bg-accent text-base font-semibold text-accent-foreground">
             {initials}
           </div>
           <h2 className="mt-3 truncate font-semibold text-foreground">{title}</h2>
@@ -297,14 +331,15 @@ export function InboxConversationItem({
       onClick={onClick}
       aria-current={selected ? "true" : undefined}
       className={cn(
-        "flex w-full items-start gap-3 rounded-[var(--radius)] p-2.5 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        selected && "bg-accent",
+        "group relative flex w-full items-start gap-3 rounded-[var(--radius)] border border-transparent p-3 text-left transition-[background-color,border-color,box-shadow] duration-150 hover:bg-product-panel-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none",
+        selected &&
+          "border-border-default bg-surface-2 shadow-xs before:absolute before:bottom-3 before:left-0 before:top-3 before:w-0.5 before:rounded-full before:bg-primary",
       )}
     >
       <div className="relative">
         <InboxAvatar label={label} />
         {channelIcon ? (
-          <span className="absolute -bottom-0.5 -right-0.5 grid h-5 w-5 place-items-center rounded-full border-2 border-product-panel bg-card">
+          <span className="absolute -bottom-0.5 -right-0.5 grid h-5 w-5 place-items-center rounded-[calc(var(--radius)-2px)] border-2 border-product-panel bg-card">
             {channelIcon}
           </span>
         ) : null}
@@ -354,13 +389,15 @@ export function InboxConversationHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-3 border-b border-border bg-product-panel px-4 py-3">
+    <div className="grid min-h-16 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-product-divider bg-product-panel px-4 py-3 sm:flex sm:flex-wrap">
       <InboxAvatar label={label} className="h-9 w-9" />
       <div className="min-w-0 flex-1">
         <div className="truncate font-semibold text-foreground">{label}</div>
         {subtitle ? <div className="truncate text-xs text-muted-foreground">{subtitle}</div> : null}
       </div>
-      {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+      {actions ? (
+        <div className="flex shrink-0 flex-wrap items-center gap-2 pr-10">{actions}</div>
+      ) : null}
     </div>
   );
 }
@@ -427,7 +464,7 @@ export function InboxMessageBubble({
     <div className={cn("flex", outbound ? "justify-end" : "justify-start")}>
       <div
         className={cn(
-          "min-w-0 max-w-[78%] overflow-hidden rounded-[var(--radius)] border px-3.5 py-2.5 text-sm shadow-sm [overflow-wrap:anywhere]",
+          "min-w-0 max-w-[82%] overflow-hidden rounded-[var(--radius)] border px-3.5 py-2.5 text-sm shadow-xs [overflow-wrap:anywhere] sm:max-w-[72%]",
           outbound
             ? "rounded-tr-sm border-primary/20 bg-primary/10 text-foreground"
             : "rounded-tl-sm border-border bg-card text-foreground",

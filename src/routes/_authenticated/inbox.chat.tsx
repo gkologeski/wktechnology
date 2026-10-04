@@ -24,6 +24,7 @@ import {
   InboxConversationList,
   InboxContext,
   InboxEmpty,
+  InboxError,
   InboxListHeader,
   InboxLoading,
   InboxMessageBubble,
@@ -123,8 +124,13 @@ function LiveChatInbox() {
             <p className="text-xs text-muted-foreground">{sessions.length} sessão(ões)</p>
           </InboxListHeader>
           <InboxConversationList>
-            {sessionsQ.isLoading && <InboxLoading />}
-            {sessions.length === 0 && <InboxEmpty>Nenhuma sessão ainda.</InboxEmpty>}
+            {sessionsQ.isError ? (
+              <InboxError onRetry={() => sessionsQ.refetch()} />
+            ) : sessionsQ.isLoading ? (
+              <InboxLoading />
+            ) : sessions.length === 0 ? (
+              <InboxEmpty>Nenhuma sessão ainda.</InboxEmpty>
+            ) : null}
             <div className="space-y-0.5 p-2">
               {sessions.map((s) => (
                 <InboxConversationItem
@@ -152,6 +158,10 @@ function LiveChatInbox() {
         <>
           {!current ? (
             <InboxEmpty>Selecione uma sessão para iniciar o atendimento.</InboxEmpty>
+          ) : messagesQ.isError ? (
+            <InboxError onRetry={() => messagesQ.refetch()}>
+              Não foi possível carregar esta conversa.
+            </InboxError>
           ) : (
             <>
               <InboxConversationHeader
@@ -207,7 +217,11 @@ function LiveChatInbox() {
                     }}
                     className="resize-none"
                   />
-                  <Button onClick={() => send.mutate()} disabled={!draft.trim() || send.isPending}>
+                  <Button
+                    onClick={() => send.mutate()}
+                    disabled={!draft.trim() || send.isPending}
+                    aria-label="Enviar mensagem"
+                  >
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
