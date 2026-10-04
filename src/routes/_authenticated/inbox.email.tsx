@@ -20,6 +20,7 @@ import {
   InboxMessageBubble,
   InboxContext,
   InboxEmpty,
+  InboxError,
   InboxListHeader,
   InboxLoading,
   InboxWorkspace,
@@ -108,8 +109,11 @@ function EmailInbox() {
             <p className="text-xs text-muted-foreground">{threads.length} conversa(s)</p>
           </InboxListHeader>
           <InboxConversationList>
-            {threadsQ.isLoading && <InboxLoading />}
-            {!threadsQ.isLoading && threads.length === 0 && (
+            {threadsQ.isError ? (
+              <InboxError onRetry={() => threadsQ.refetch()} />
+            ) : threadsQ.isLoading ? (
+              <InboxLoading />
+            ) : threads.length === 0 ? (
               <InboxEmpty>
                 <div className="space-y-2">
                   Nenhuma thread ainda. Conecte uma conta Gmail em{" "}
@@ -119,7 +123,7 @@ function EmailInbox() {
                   e clique em <b>Sincronizar</b>.
                 </div>
               </InboxEmpty>
-            )}
+            ) : null}
             <div className="space-y-0.5 p-2">
               {threads.map((t) => (
                 <InboxConversationItem
@@ -147,6 +151,10 @@ function EmailInbox() {
         <>
           {!current ? (
             <InboxEmpty>Selecione uma conversa de email para visualizar o histórico.</InboxEmpty>
+          ) : threadQ.isError ? (
+            <InboxError onRetry={() => threadQ.refetch()}>
+              Não foi possível carregar esta conversa.
+            </InboxError>
           ) : (
             <>
               <InboxConversationHeader

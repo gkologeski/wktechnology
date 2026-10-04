@@ -16,11 +16,15 @@ import { useMessageDraft } from "@/hooks/use-message-draft";
 import { MessageDraftStatus } from "@/components/message-draft-status";
 import {
   InboxAvatar,
+  InboxConversationHeader,
+  InboxConversationItem,
   InboxConversationList,
   InboxContext,
   InboxEmpty,
+  InboxError,
   InboxListHeader,
   InboxLoading,
+  InboxMessageBubble,
   InboxWorkspace,
 } from "@/components/inbox/inbox-workspace";
 import { WhatsAppIcon } from "@/components/whatsapp/whatsapp-icon";
@@ -306,7 +310,16 @@ function UnifiedInboxPage() {
             </div>
           </InboxListHeader>
           <InboxConversationList>
-            {emailQ.isLoading || waQ.isLoading ? (
+            {emailQ.isError || waQ.isError || lastEmailQ.isError || contactsQ.isError ? (
+              <InboxError
+                onRetry={() => {
+                  emailQ.refetch();
+                  waQ.refetch();
+                  lastEmailQ.refetch();
+                  contactsQ.refetch();
+                }}
+              />
+            ) : emailQ.isLoading || waQ.isLoading ? (
               <InboxLoading />
             ) : items.length === 0 ? (
               <InboxEmpty>Nenhuma conversa encontrada.</InboxEmpty>
@@ -314,43 +327,25 @@ function UnifiedInboxPage() {
               <ul className="space-y-0.5 p-2">
                 {items.map((it) => (
                   <li key={it.id}>
-                    <button
-                      data-inbox-conversation
+                    <InboxConversationItem
+                      label={it.contactLabel}
+                      title={it.title}
+                      preview={it.snippet && it.snippet !== it.title ? it.snippet : undefined}
+                      when={it.lastAt}
+                      whenTitle={it.lastAt ? formatDateTime(it.lastAt) : undefined}
+                      selected={selected === it.id}
                       onClick={() => {
                         setSelected(it.id);
                         setDraft("");
                       }}
-                      aria-current={selected === it.id ? "true" : undefined}
-                      className={`flex w-full items-start gap-3 rounded-[var(--radius)] p-2.5 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${selected === it.id ? "bg-accent" : ""}`}
-                    >
-                      <div className="relative">
-                        <InboxAvatar label={it.contactLabel} />
-                        <span className="absolute -bottom-0.5 -right-0.5 grid h-5 w-5 place-items-center rounded-full border-2 border-product-panel bg-card">
-                          {it.channel === "email" ? (
-                            <Mail className="h-3 w-3 text-primary" />
-                          ) : (
-                            <WhatsAppIcon className="h-3 w-3 text-success" />
-                          )}
-                        </span>
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-baseline justify-between gap-2">
-                          <span className="truncate text-sm font-semibold text-foreground">
-                            {it.contactLabel}
-                          </span>
-                          <span
-                            className="shrink-0 text-[11px] text-muted-foreground"
-                            title={it.lastAt ? formatDateTime(it.lastAt) : undefined}
-                          >
-                            {it.lastAt ? shortWhen(it.lastAt) : ""}
-                          </span>
-                        </div>
-                        <div className="truncate text-sm text-text-secondary">{it.title}</div>
-                        {it.snippet && it.snippet !== it.title && (
-                          <div className="truncate text-xs text-muted-foreground">{it.snippet}</div>
-                        )}
-                      </div>
-                    </button>
+                      channelIcon={
+                        it.channel === "email" ? (
+                          <Mail className="h-3 w-3 text-primary" />
+                        ) : (
+                          <WhatsAppIcon className="h-3 w-3 text-success" />
+                        )
+                      }
+                    />
                   </li>
                 ))}
               </ul>
@@ -364,33 +359,24 @@ function UnifiedInboxPage() {
             <InboxEmpty>Selecione uma conversa para responder inline.</InboxEmpty>
           ) : (
             <div className="flex min-h-0 flex-1 flex-col">
-              <div className="flex items-center gap-3 border-b border-border bg-product-panel px-4 py-3">
-                <InboxAvatar label={current.contactLabel} className="h-9 w-9" />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate font-semibold text-foreground">
-                    {current.contactLabel}
-                  </div>
-                  <div className="truncate text-xs text-muted-foreground">
-                    {current.channel === "email" ? "Email" : "WhatsApp"}
-                    {current.replyTo ? ` · ${current.replyTo}` : ""}
-                  </div>
-                </div>
-                <Button asChild size="sm" variant="outline">
-                  <Link to={current.href}>
-                    Abrir no canal <ExternalLink className="ml-1 h-3.5 w-3.5" />
-                  </Link>
-                </Button>
-              </div>
+              <InboxConversationHeader
+                label={current.contactLabel}
+                subtitle={`${current.channel === "email" ? "Email" : "WhatsApp"}${current.replyTo ? ` · ${current.replyTo}` : ""}`}
+                actions={
+                  <Button asChild size="sm" variant="outline">
+                    <Link to={current.href}>
+                      Abrir no canal <ExternalLink className="ml-1 h-3.5 w-3.5" />
+                    </Link>
+                  </Button>
+                }
+              />
               <div className="min-h-0 flex-1 overflow-y-auto p-6">
-                <div className="max-w-[75%] rounded-[var(--radius)] rounded-tl-sm border border-border bg-card px-4 py-3 shadow-sm">
+                <InboxMessageBubble outbound={false} when={current.lastAt}>
                   <p className="text-sm font-medium text-foreground">{current.title}</p>
                   {current.snippet && current.snippet !== current.title ? (
                     <p className="mt-1 text-sm text-text-secondary">{current.snippet}</p>
                   ) : null}
-                  <p className="mt-2 text-[11px] text-muted-foreground">
-                    {current.lastAt ? formatDateTime(current.lastAt) : ""}
-                  </p>
-                </div>
+                </InboxMessageBubble>
               </div>
               <div className="m-3 space-y-2 rounded-[var(--radius)] border border-border bg-card p-2 shadow-sm focus-within:ring-2 focus-within:ring-ring">
                 <Textarea
@@ -476,12 +462,4 @@ function UnifiedInboxPage() {
       }
     />
   );
-}
-
-function shortWhen(iso: string) {
-  const d = new Date(iso);
-  const sameDay = d.toDateString() === new Date().toDateString();
-  return sameDay
-    ? d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
-    : d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 }

@@ -50,6 +50,7 @@ import {
   InboxConversationList,
   InboxContext,
   InboxEmpty,
+  InboxError,
   InboxListHeader,
   InboxLoading,
   InboxMessageBubble,
@@ -265,10 +266,13 @@ function WhatsAppInbox() {
             </div>
           </InboxListHeader>
           <InboxConversationList>
-            {conversationsQ.isLoading && <InboxLoading />}
-            {!conversationsQ.isLoading && conversations.length === 0 && (
+            {conversationsQ.isError ? (
+              <InboxError onRetry={() => conversationsQ.refetch()} />
+            ) : conversationsQ.isLoading ? (
+              <InboxLoading />
+            ) : conversations.length === 0 ? (
               <InboxEmpty>Nenhuma conversa ainda. Envie uma mensagem para começar.</InboxEmpty>
-            )}
+            ) : null}
             <div className="space-y-0.5 p-2">
               {conversations.map((c) => (
                 <InboxConversationItem
@@ -307,6 +311,10 @@ function WhatsAppInbox() {
         <>
           {!current ? (
             <InboxEmpty>Selecione uma conversa para visualizar o histórico.</InboxEmpty>
+          ) : messagesQ.isError ? (
+            <InboxError onRetry={() => messagesQ.refetch()}>
+              Não foi possível carregar esta conversa.
+            </InboxError>
           ) : (
             <>
               <InboxConversationHeader
@@ -402,7 +410,12 @@ function WhatsAppInbox() {
                         {pendingMedia.contentType}
                       </div>
                     </div>
-                    <Button size="icon" variant="ghost" onClick={() => setPendingMedia(null)}>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => setPendingMedia(null)}
+                      aria-label="Remover anexo"
+                    >
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
@@ -426,6 +439,7 @@ function WhatsAppInbox() {
                     disabled={uploading}
                     onClick={() => fileRef.current?.click()}
                     title="Anexar mídia"
+                    aria-label="Anexar mídia"
                   >
                     <Paperclip className="h-4 w-4" />
                   </Button>
@@ -444,6 +458,7 @@ function WhatsAppInbox() {
                   <Button
                     onClick={submitDraft}
                     disabled={(!draft.trim() && !pendingMedia) || sendMut.isPending || uploading}
+                    aria-label="Enviar mensagem"
                   >
                     <Send className="h-4 w-4" />
                   </Button>
