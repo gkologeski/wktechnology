@@ -10,7 +10,9 @@ import { ActivityTimeline } from "@/components/activity-timeline";
 import { PropertiesPanel } from "@/components/properties-panel";
 import { RecordLayout } from "@/components/record/record-layout";
 import { AssociationsPanel } from "@/components/record/associations-panel";
-import { CompanyAvatar } from "@/components/companies/company-avatar";
+import { CompanyLogoEditor } from "@/components/companies/company-logo-editor";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { useAuth } from "@/lib/auth";
 import { CompanyHierarchy } from "@/components/companies/company-hierarchy";
 import { enrichCompanyByCNPJ } from "@/lib/integrations/brasilapi-cnpj.functions";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
@@ -57,6 +59,13 @@ function CompanyDetail() {
   const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techsales.companies");
   const canDelete = !deletePermLoading && canDeleteRecord(company);
   const linkedOnly = useIsLinkedOnly(company);
+  const { can } = usePermissions();
+  const { user } = useAuth();
+  const isOwn =
+    !!user && (company?.owner_id === user.id || company?.assigned_to === user.id);
+  const canEditLogo =
+    can("techsales.companies.manage.workspace") ||
+    (can("techsales.companies.update.own") && isOwn);
 
   if (!company) return <p className="text-sm text-muted-foreground">Carregando...</p>;
   if (linkedOnly)
@@ -112,14 +121,7 @@ function CompanyDetail() {
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
-        <CompanyAvatar
-          name={company.name}
-          seed={company.id}
-          logoUrl={company.logo_url}
-          domain={company.domain}
-          website={company.website}
-          size="xl"
-        />
+        <CompanyLogoEditor company={company} canEdit={canEditLogo} onChanged={load} />
         <div className="min-w-0">
           <h1 className="text-2xl font-bold text-foreground truncate">{company.name}</h1>
           <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap mt-0.5">

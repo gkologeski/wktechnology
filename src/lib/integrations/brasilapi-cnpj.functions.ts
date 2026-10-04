@@ -1,6 +1,7 @@
 // BrasilAPI CNPJ enrichment for companies.
 // Endpoint: GET https://brasilapi.com.br/api/cnpj/v1/{cnpj}
 // Fallback: https://receitaws.com.br/v1/cnpj/{cnpj}
+import { corporateDomainFromEmail } from "@/lib/domain-utils";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -146,7 +147,7 @@ export const enrichCompanyByCNPJ = createServerFn({ method: "POST" })
     const { supabase } = context;
     const { data: c, error } = await supabase
       .from("companies")
-      .select("id, cnpj, name, industry, size, phone, address, city, state, cep")
+      .select("id, cnpj, name, industry, size, phone, address, city, state, cep, domain")
       .eq("id", data.company_id)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -166,6 +167,8 @@ export const enrichCompanyByCNPJ = createServerFn({ method: "POST" })
     if ((overwrite || !c.city) && r.city) update.city = r.city;
     if ((overwrite || !c.state) && r.state) update.state = r.state;
     if ((overwrite || !c.cep) && r.cep) update.cep = r.cep;
+    const emailDomain = corporateDomainFromEmail(r.email);
+    if (!c.domain && emailDomain) update.domain = emailDomain;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error: uerr } = await (supabase as any).from("companies").update(update).eq("id", c.id);
