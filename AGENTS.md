@@ -18,3 +18,5 @@
 - Propostas usam modelos próprios (`proposal_templates` + vínculo a serviços do catálogo), nunca cláusulas de contrato; o documento final (ficha, link público `/proposal/$token` e PDF) sai de `loadProposalDocument` e a edição é só pelo `ProposalWizard`; por quê: mesmo fluxo da cotação, uma única fonte para tela e PDF.
 
 - "Ver como" usa sessão real do alvo após checar admin; pessoa opera com suas permissões. Papel de teste só grava em leads/companies/contacts/deals/activities: cada linha criada é registrada em `view_as_test_records` por gatilho, UPDATE/DELETE só em registros listados, vínculos a registros reais barrados, workflow_events/notifications suprimidos; registros de teste ficam ocultos fora da sessão de papel (`view_as_hide_test`); demais tabelas seguem bloqueadas por `view_as_ro_*` + `is_read_only_view()`. A limpeza apaga pela lista (filhos→pais) e depois a conta; por quê: testar papéis sem contaminar dados reais.
+
+- Identidade da Inbox é resolvida por workspace em serviço único, priorizando Contato sobre Lead e deixando duplicidades para escolha manual; por quê: impedir associação cruzada ou arbitrária entre carteiras e canais.

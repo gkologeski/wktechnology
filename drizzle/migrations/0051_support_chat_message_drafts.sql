@@ -1,0 +1,2 @@
+ALTER TABLE public.message_drafts DROP CONSTRAINT IF EXISTS message_drafts_channel_check;
+ALTER TABLE public.message_drafts ADD CONSTRAINT message_drafts_channel_check CHECK (channel IN ('email','whatsapp','chat'));

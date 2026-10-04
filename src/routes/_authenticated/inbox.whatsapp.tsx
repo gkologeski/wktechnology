@@ -44,6 +44,7 @@ import { formatDateTime } from "@/lib/crm";
 import { useAuth } from "@/lib/auth";
 import { useActivityWindows } from "@/components/activity/activity-window-context";
 import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
+import { InboxIdentityLinker } from "@/components/inbox/inbox-identity-linker";
 import {
   InboxConversationHeader,
   InboxConversationItem,
@@ -514,6 +515,14 @@ function WhatsAppInbox() {
                   {current.status === "closed" ? "Fechada" : "Aberta"}
                 </p>
               </div>
+              <InboxIdentityLinker
+                channel="whatsapp"
+                conversationId={current.id}
+                contactId={current.contact_id}
+                leadId={current.lead_id}
+                status={current.identity_status}
+                onLinked={() => qc.invalidateQueries({ queryKey: ["wa", "conversations"] })}
+              />
             </div>
           </InboxContext>
         ) : undefined

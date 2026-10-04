@@ -7,7 +7,9 @@ export const listEmailThreads = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("email_threads")
-      .select("id, subject, snippet, last_message_at, message_count, contact_id, account_id")
+      .select(
+        "id, subject, snippet, last_message_at, message_count, contact_id, lead_id, identity_status, account_id",
+      )
       .order("last_message_at", { ascending: false, nullsFirst: false })
       .limit(200);
     if (error) throw new Error(error.message);
@@ -21,7 +23,7 @@ export const getEmailThread = createServerFn({ method: "POST" })
     const { data: thread, error: tErr } = await context.supabase
       .from("email_threads")
       .select(
-        "id, subject, snippet, last_message_at, message_count, contact_id, account_id, provider_thread_id",
+        "id, subject, snippet, last_message_at, message_count, contact_id, lead_id, identity_status, account_id, provider_thread_id",
       )
       .eq("id", data.thread_id)
       .maybeSingle();

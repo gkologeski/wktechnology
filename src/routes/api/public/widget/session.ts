@@ -2,6 +2,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
+import { identityColumns, resolveInboxIdentity } from "@/lib/inbox/identity-resolution.server";
 
 const schema = z.object({
   workspace_id: z.string().uuid(),
@@ -40,14 +41,36 @@ export const Route = createFileRoute("/api/public/widget/session")({
           // Reuse open session for this visitor
           const { data: existing } = await supabaseAdmin
             .from("live_chat_sessions")
-            .select("id")
+            .select("id, contact_id, lead_id, identity_status")
             .eq("owner_id", data.workspace_id)
             .eq("visitor_id", data.visitor_id)
             .eq("status", "open")
             .order("created_at", { ascending: false })
             .limit(1)
             .maybeSingle();
-          if (existing) return Response.json({ session_id: existing.id }, { headers: CORS });
+          if (existing) {
+            if (
+              !existing.contact_id &&
+              !existing.lead_id &&
+              existing.identity_status !== "manual"
+            ) {
+              const identity = await resolveInboxIdentity({
+                supabase: supabaseAdmin,
+                workspaceId: data.workspace_id,
+                email: data.visitor_email,
+              });
+              await supabaseAdmin
+                .from("live_chat_sessions")
+                .update(identityColumns(identity))
+                .eq("id", existing.id);
+            }
+            return Response.json({ session_id: existing.id }, { headers: CORS });
+          }
+          const identity = await resolveInboxIdentity({
+            supabase: supabaseAdmin,
+            workspaceId: data.workspace_id,
+            email: data.visitor_email,
+          });
           const { data: row, error } = await supabaseAdmin
             .from("live_chat_sessions")
             .insert({
@@ -57,6 +80,7 @@ export const Route = createFileRoute("/api/public/widget/session")({
               visitor_name: data.visitor_name ?? null,
               visitor_email: data.visitor_email ?? null,
               visitor_url: data.visitor_url ?? null,
+              ...identityColumns(identity),
               status: "open",
               last_message_at: new Date().toISOString(),
             })

@@ -18,6 +18,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Send, X, Ticket as TicketIcon } from "lucide-react";
 import { toast } from "sonner";
+import { InboxIdentityLinker } from "@/components/inbox/inbox-identity-linker";
 import {
   InboxConversationHeader,
   InboxConversationItem,
@@ -254,6 +255,14 @@ function LiveChatInbox() {
                   {current.status === "closed" ? "Encerrada" : "Em atendimento"}
                 </p>
               </div>
+              <InboxIdentityLinker
+                channel="chat"
+                conversationId={current.id}
+                contactId={current.contact_id}
+                leadId={current.lead_id}
+                status={current.identity_status}
+                onLinked={() => qc.invalidateQueries({ queryKey: ["chat-sessions"] })}
+              />
             </div>
           </InboxContext>
         ) : undefined

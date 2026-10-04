@@ -2,6 +2,7 @@
 // Never import from client code.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ensureAccessToken, type EmailAccountRow } from "@/lib/gmail.server";
+import { identityColumns, resolveInboxIdentity } from "@/lib/inbox/identity-resolution.server";
 
 const GMAIL_API = "https://gmail.googleapis.com/gmail/v1/users/me";
 
@@ -296,24 +297,23 @@ async function persistInboundMessage(
   // Upsert thread by provider_thread_id.
   const { data: existingThread } = await supabaseAdmin
     .from("email_threads")
-    .select("id, contact_id")
+    .select("id, contact_id, lead_id")
     .eq("owner_id", account.owner_id)
     .eq("account_id", account.id)
     .eq("provider_thread_id", msg.threadId)
     .maybeSingle();
 
-  // Try to match a contact by the inbound 'from' email when applicable.
-  let contactId: string | null = existingThread?.contact_id ?? null;
-  if (!contactId && !isOutbound && fromEmail) {
-    const { data: c } = await supabaseAdmin
-      .from("contacts")
-      .select("id")
-      .eq("owner_id", account.owner_id)
-      .eq("email", fromEmail)
-      .limit(1)
-      .maybeSingle();
-    if (c) contactId = c.id;
-  }
+  const hasIdentity = !!existingThread?.contact_id || !!existingThread?.lead_id;
+  const identity =
+    !hasIdentity && !isOutbound && fromEmail
+      ? identityColumns(
+          await resolveInboxIdentity({
+            supabase: supabaseAdmin,
+            workspaceId: account.workspace_id,
+            email: fromEmail,
+          }),
+        )
+      : null;
 
   let threadDbId: string;
   if (existingThread) {
@@ -324,7 +324,7 @@ async function persistInboundMessage(
         last_message_at: occurredIso,
         snippet,
         subject,
-        ...(contactId && !existingThread.contact_id ? { contact_id: contactId } : {}),
+        ...(identity ?? {}),
       })
       .eq("id", threadDbId);
   } else {
@@ -337,7 +337,7 @@ async function persistInboundMessage(
         subject,
         snippet,
         last_message_at: occurredIso,
-        contact_id: contactId,
+        ...(identity ?? { contact_id: null, lead_id: null, identity_status: "unresolved" }),
       })
       .select("id")
       .single();
@@ -390,6 +390,7 @@ async function persistInboundMessage(
 
   // Mirror into activities timeline (inbound only — outbound already logs there
   // when the compose flow is upgraded; here we keep parity for inbound).
+  const contactId = existingThread?.contact_id ?? identity?.contact_id ?? null;
   if (!isOutbound && contactId) {
     await supabaseAdmin.from("activities").insert({
       owner_id: account.owner_id,
