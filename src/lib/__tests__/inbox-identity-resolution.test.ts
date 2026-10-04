@@ -51,6 +51,6 @@ describe("inbox identity resolution", () => {
   });
 
   it("mantém números internacionais como busca exata", () => {
-    expect(buildBrPhoneVariants("+1 415 555 2671")).toEqual(["14155552671"]);
+    expect(buildBrPhoneVariants("+44 20 7946 0958")).toEqual(["442079460958"]);
   });
 });
