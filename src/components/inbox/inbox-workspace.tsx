@@ -58,21 +58,21 @@ export function InboxWorkspace({
   return (
     <div className="relative flex h-[calc(100dvh-4rem)] min-h-0 flex-col overflow-hidden bg-product-canvas p-2 font-[var(--font-body)] sm:p-3">
       <header className="mb-3 shrink-0 overflow-hidden rounded-[calc(var(--radius)+1rem)] bg-product-header shadow-sm ring-1 ring-border-subtle">
-        <div className="grid min-w-0 gap-3 p-3 xl:grid-cols-[minmax(12rem,1fr)_auto_minmax(0,1fr)] xl:items-center xl:px-4">
-          <div className="min-w-0">
-            <h1 className="truncate font-[var(--font-heading)] text-base font-semibold text-text-primary">
-              {title}
-            </h1>
-            <p className="mt-0.5 truncate text-xs text-text-tertiary">{description}</p>
+        <div className="grid min-w-0 gap-3 p-3 xl:px-4">
+          <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+            <div className="min-w-0">
+              <h1 className="truncate font-[var(--font-heading)] text-base font-semibold text-text-primary">
+                {title}
+              </h1>
+              <p className="mt-0.5 truncate text-xs text-text-tertiary">{description}</p>
+            </div>
+            {actions ? (
+              <div className="grid min-w-0 grid-cols-2 items-center gap-2 sm:flex sm:justify-end [&_[data-slot=button]]:min-w-0 sm:[&_[data-slot=button]]:shrink-0">
+                {actions}
+              </div>
+            ) : null}
           </div>
           <InboxChannelTabs />
-          {actions ? (
-            <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-0.5 xl:justify-end xl:pb-0 [&_[data-slot=button]]:shrink-0">
-              {actions}
-            </div>
-          ) : (
-            <div className="hidden xl:block" aria-hidden />
-          )}
         </div>
       </header>
       <div
@@ -143,7 +143,10 @@ export function InboxWorkspace({
 function InboxChannelTabs() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   return (
-    <nav className="flex min-w-0 items-center gap-1 overflow-x-auto" aria-label="Canais da Inbox">
+    <nav
+      className="flex min-w-0 items-center gap-1 overflow-x-auto pb-0.5"
+      aria-label="Canais da Inbox"
+    >
       {CHANNELS.map(({ to, label, icon: Icon }) => {
         const active =
           to === "/inbox" ? pathname === "/inbox" || pathname === "/inbox/" : pathname === to;
