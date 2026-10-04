@@ -1,3 +1,4 @@
+import { CompanyAvatar } from "@/components/companies/company-avatar";
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
@@ -110,6 +111,7 @@ const BASE_COMPANY_KEYS = [
   "name",
   "domain",
   "website",
+  "logo_url",
   "industry",
   "size",
   "city",
@@ -414,10 +416,17 @@ function CompaniesHubspotView() {
             </Th>
           ),
           render: (c) => {
-            const initials = (c.name ?? "?").slice(0, 2).toUpperCase();
+            const lr = c as { logo_url?: string | null; website?: string | null };
             return (
               <div className="flex items-center gap-2.5">
-                <InitialsAvatar text={initials} seed={c.id} />
+                <CompanyAvatar
+                  name={c.name}
+                  seed={c.id}
+                  logoUrl={lr.logo_url}
+                  domain={c.domain}
+                  website={lr.website}
+                  size="sm"
+                />
                 <Link
                   to="/companies/$id"
                   params={{ id: c.id }}
