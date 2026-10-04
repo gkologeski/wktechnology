@@ -1,3 +1,5 @@
+import type { CompanyLogoInfo } from "@/hooks/use-company-logos";
+import { CompanyAvatarFromInfo } from "@/components/companies/company-avatar";
 import { Fragment, useMemo, useState } from "react";
 import type { Deal } from "@/lib/db-types";
 import type { Pipeline } from "@/lib/pipelines";
@@ -25,6 +27,7 @@ export function DealsList({
     companies: Map<string, string>;
     contacts: Map<string, string>;
     owners: Map<string, string>;
+    companyLogos?: Map<string, CompanyLogoInfo>;
   };
   onOpen: (d: Deal) => void;
 }) {
@@ -89,7 +92,20 @@ export function DealsList({
                     <TableRow key={d.id} className="cursor-pointer" onClick={() => onOpen(d)}>
                       <TableCell className="font-medium">{d.name}</TableCell>
                       <TableCell className="text-sm">
-                        {d.company_id ? (lookups.companies.get(d.company_id) ?? "—") : "—"}
+                        {d.company_id ? (
+                          <span className="flex items-center gap-1.5">
+                            <CompanyAvatarFromInfo
+                              id={d.company_id}
+                              name={lookups.companies.get(d.company_id)}
+                              info={lookups.companyLogos?.get(d.company_id)}
+                            />
+                            <span className="truncate">
+                              {lookups.companies.get(d.company_id) ?? "—"}
+                            </span>
+                          </span>
+                        ) : (
+                          "—"
+                        )}
                       </TableCell>
                       <TableCell className="text-sm">
                         {d.primary_contact_id

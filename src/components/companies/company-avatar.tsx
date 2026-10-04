@@ -105,3 +105,36 @@ export function CompanyAvatar({
     </span>
   );
 }
+
+/** Atalho para quem já tem os dados de logotipo carregados em lote. */
+export function CompanyAvatarFromInfo({
+  id,
+  name,
+  info,
+  size = "xs",
+  className,
+}: {
+  id: string;
+  name?: string | null;
+  info?: {
+    logo_url?: string | null;
+    logo_source?: string | null;
+    domain?: string | null;
+    website?: string | null;
+  } | null;
+  size?: Props["size"];
+  className?: string;
+}) {
+  return (
+    <CompanyAvatar
+      name={name ?? null}
+      seed={id}
+      logoUrl={info?.logo_url}
+      logoSource={info?.logo_source}
+      domain={info?.domain}
+      website={info?.website}
+      size={size}
+      className={className}
+    />
+  );
+}
