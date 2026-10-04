@@ -192,7 +192,7 @@ export const enrichCompaniesByCNPJ = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     let q = supabase
       .from("companies")
-      .select("id, cnpj, name, industry, size, phone, address, city, state, cep, cnpj_enriched_at");
+      .select("id, cnpj, name, industry, size, phone, address, city, state, cep, cnpj_enriched_at, domain");
     if (data.ids && data.ids.length) q = q.in("id", data.ids);
     else if (data.all_missing) q = q.not("cnpj", "is", null).is("cnpj_enriched_at", null);
     else q = q.in("id", []); // no-op guard
@@ -242,6 +242,8 @@ export const enrichCompaniesByCNPJ = createServerFn({ method: "POST" })
         if ((overwrite || !c.city) && r.city) update.city = r.city;
         if ((overwrite || !c.state) && r.state) update.state = r.state;
         if ((overwrite || !c.cep) && r.cep) update.cep = r.cep;
+        const emailDomain = corporateDomainFromEmail(r.email);
+        if (!c.domain && emailDomain) update.domain = emailDomain;
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await (supabase as any).from("companies").update(update).eq("id", c.id);
