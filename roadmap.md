@@ -24,6 +24,6 @@
 
 # Roadmap — Redesign da Inbox multicanal
 - [x] Direção visual aprovada: cockpit multicanal com identidade White Label
-- [ ] Casco compartilhado com canais, conversas, conversa ativa e contexto
-- [ ] Estados, acessibilidade e responsividade das quatro rotas
-- [ ] Validação visual e funcional em desktop e mobile
+- [x] Casco compartilhado com canais, conversas, conversa ativa e contexto
+- [x] Estados, acessibilidade e responsividade das quatro rotas
+- [x] Validação visual e funcional em desktop e mobile

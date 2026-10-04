@@ -61,8 +61,8 @@ export function InboxWorkspace({
         className={cn(
           "grid min-h-0 flex-1 overflow-hidden",
           showContext
-            ? "grid-cols-1 lg:grid-cols-[10.5rem_19rem_minmax(0,1fr)] xl:grid-cols-[11.5rem_20rem_minmax(0,1fr)_17rem] 2xl:grid-cols-[12.5rem_22rem_minmax(0,1fr)_19rem]"
-            : "grid-cols-1 lg:grid-cols-[10.5rem_20rem_minmax(0,1fr)] 2xl:grid-cols-[12.5rem_22rem_minmax(0,1fr)]",
+            ? "grid-cols-1 lg:grid-cols-[9.5rem_16rem_minmax(0,1fr)] xl:grid-cols-[10rem_16rem_minmax(0,1fr)_14.5rem] 2xl:grid-cols-[11rem_19rem_minmax(0,1fr)_17rem]"
+            : "grid-cols-1 lg:grid-cols-[9.5rem_16rem_minmax(0,1fr)] 2xl:grid-cols-[11rem_19rem_minmax(0,1fr)]",
         )}
       >
         <aside
