@@ -447,8 +447,8 @@ function WhatsAppInbox() {
                     value={draft}
                     onChange={(e) => setDraft(e.target.value)}
                     placeholder="Escreva uma mensagem…"
-                     rows={2}
-                     className="min-h-12 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
+                    rows={2}
+                    className="min-h-12 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
                         e.preventDefault();

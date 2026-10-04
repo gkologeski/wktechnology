@@ -205,26 +205,26 @@ function LiveChatInbox() {
               {current.status !== "closed" && (
                 <div className="flex items-end gap-2 bg-product-panel p-4">
                   <div className="flex flex-1 items-end gap-2 rounded-[calc(var(--radius)+1rem)] bg-product-panel-muted p-2 ring-1 ring-border-subtle focus-within:ring-2 focus-within:ring-ring">
-                  <SnippetTextarea
-                    value={draft}
-                    onChange={setDraft}
-                    rows={2}
-                    placeholder="Responder…"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        if (draft.trim()) send.mutate();
-                      }
-                    }}
-                    className="min-h-12 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
-                  />
-                  <Button
-                    onClick={() => send.mutate()}
-                    disabled={!draft.trim() || send.isPending}
-                    aria-label="Enviar mensagem"
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
+                    <SnippetTextarea
+                      value={draft}
+                      onChange={setDraft}
+                      rows={2}
+                      placeholder="Responder…"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          if (draft.trim()) send.mutate();
+                        }
+                      }}
+                      className="min-h-12 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
+                    />
+                    <Button
+                      onClick={() => send.mutate()}
+                      disabled={!draft.trim() || send.isPending}
+                      aria-label="Enviar mensagem"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               )}

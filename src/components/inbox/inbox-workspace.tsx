@@ -73,7 +73,9 @@ export function InboxWorkspace({
           aria-label="Canais e ações da Inbox"
         >
           <div className="px-4 pb-3 pt-5">
-            <h1 className="truncate font-[var(--font-heading)] text-base font-semibold text-text-primary">{title}</h1>
+            <h1 className="truncate font-[var(--font-heading)] text-base font-semibold text-text-primary">
+              {title}
+            </h1>
             <p className="mt-1 line-clamp-2 text-xs leading-5 text-text-tertiary">{description}</p>
           </div>
           <InboxChannelTabs />
@@ -172,11 +174,7 @@ function InboxChannelTabs() {
 }
 
 export function InboxListHeader({ children }: { children: ReactNode }) {
-  return (
-    <div className="space-y-2 bg-product-toolbar px-3 pb-3 pt-4">
-      {children}
-    </div>
-  );
+  return <div className="space-y-2 bg-product-toolbar px-3 pb-3 pt-4">{children}</div>;
 }
 
 export function InboxConversationList({ children }: { children: ReactNode }) {
@@ -279,7 +277,9 @@ export function InboxContext({
           <div className="mx-auto grid h-20 w-20 place-items-center rounded-[calc(var(--radius)+1rem)] bg-accent text-xl font-semibold text-accent-foreground shadow-inner">
             {initials}
           </div>
-          <h2 className="mt-4 truncate font-[var(--font-heading)] font-semibold text-foreground">{title}</h2>
+          <h2 className="mt-4 truncate font-[var(--font-heading)] font-semibold text-foreground">
+            {title}
+          </h2>
           {subtitle ? (
             <p className="mt-1 truncate text-xs text-muted-foreground">{subtitle}</p>
           ) : null}
@@ -392,7 +392,9 @@ export function InboxConversationHeader({
     <div className="grid min-h-20 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 bg-product-panel px-5 py-4 sm:flex sm:flex-wrap">
       <InboxAvatar label={label} className="h-11 w-11" />
       <div className="min-w-0 flex-1">
-        <div className="truncate font-[var(--font-heading)] font-semibold text-foreground">{label}</div>
+        <div className="truncate font-[var(--font-heading)] font-semibold text-foreground">
+          {label}
+        </div>
         {subtitle ? <div className="truncate text-xs text-muted-foreground">{subtitle}</div> : null}
       </div>
       {actions ? (
