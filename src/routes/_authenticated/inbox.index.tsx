@@ -15,7 +15,6 @@ import { toast } from "sonner";
 import { useMessageDraft } from "@/hooks/use-message-draft";
 import { MessageDraftStatus } from "@/components/message-draft-status";
 import {
-  InboxAvatar,
   InboxConversationHeader,
   InboxConversationItem,
   InboxConversationList,
