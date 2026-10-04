@@ -56,36 +56,38 @@ export function InboxWorkspace({
   const showContext = !!context && resolvedContextOpen;
 
   return (
-    <div className="relative flex h-[calc(100dvh-4rem)] min-h-[36rem] flex-col overflow-hidden bg-product-canvas">
+    <div className="relative flex h-[calc(100dvh-4rem)] min-h-0 flex-col overflow-hidden bg-product-canvas p-2 font-[var(--font-body)] sm:p-3">
       <div
         className={cn(
-          "grid min-h-0 flex-1 overflow-hidden",
+          "grid min-h-0 flex-1 gap-3 overflow-hidden",
           showContext
-            ? "grid-cols-1 lg:grid-cols-[9.5rem_16rem_minmax(0,1fr)] xl:grid-cols-[10rem_16rem_minmax(0,1fr)_14.5rem] 2xl:grid-cols-[11rem_19rem_minmax(0,1fr)_17rem]"
-            : "grid-cols-1 lg:grid-cols-[9.5rem_16rem_minmax(0,1fr)] 2xl:grid-cols-[11rem_19rem_minmax(0,1fr)]",
+            ? "grid-cols-1 lg:grid-cols-[10rem_17rem_minmax(0,1fr)] xl:grid-cols-[10.5rem_17rem_minmax(0,1fr)_15rem] 2xl:grid-cols-[12rem_20rem_minmax(0,1fr)_18rem]"
+            : "grid-cols-1 lg:grid-cols-[10rem_17rem_minmax(0,1fr)] 2xl:grid-cols-[12rem_20rem_minmax(0,1fr)]",
         )}
       >
         <aside
           className={cn(
-            "min-h-0 flex-col border-r border-product-divider bg-product-header lg:flex",
+            "min-h-0 flex-col overflow-hidden rounded-[calc(var(--radius)+1rem)] bg-product-header shadow-sm ring-1 ring-border-subtle lg:flex",
             mobilePane === "list" ? "flex" : "hidden",
           )}
           aria-label="Canais e ações da Inbox"
         >
-          <div className="border-b border-product-divider p-4">
-            <h1 className="truncate text-base font-semibold text-text-primary">{title}</h1>
+          <div className="px-4 pb-3 pt-5">
+            <h1 className="truncate font-[var(--font-heading)] text-base font-semibold text-text-primary">
+              {title}
+            </h1>
             <p className="mt-1 line-clamp-2 text-xs leading-5 text-text-tertiary">{description}</p>
           </div>
           <InboxChannelTabs />
           {actions ? (
-            <div className="mt-auto grid gap-2 border-t border-product-divider p-3 [&_[data-slot=button]]:w-full [&_[data-slot=button]]:justify-start">
+            <div className="mt-auto grid gap-2 p-3 pt-5 [&_[data-slot=button]]:w-full [&_[data-slot=button]]:justify-start [&_[data-slot=button]]:rounded-[calc(var(--radius)+0.5rem)]">
               {actions}
             </div>
           ) : null}
         </aside>
         <section
           className={cn(
-            "min-h-0 flex-col border-r border-product-divider bg-product-panel lg:flex",
+            "min-h-0 flex-col overflow-hidden rounded-[calc(var(--radius)+1rem)] bg-product-panel shadow-sm ring-1 ring-border-subtle lg:flex",
             mobilePane === "list" ? "flex" : "hidden",
           )}
           aria-label="Conversas"
@@ -98,12 +100,12 @@ export function InboxWorkspace({
         </section>
         <section
           className={cn(
-            "relative min-h-0 min-w-0 flex-col bg-background lg:flex",
+            "relative min-h-0 min-w-0 flex-col overflow-hidden rounded-[calc(var(--radius)+1.25rem)] bg-background shadow-md ring-1 ring-border-subtle lg:flex",
             mobilePane === "conversation" ? "flex" : "hidden",
           )}
           aria-label="Conversa selecionada"
         >
-          <div className="flex items-center border-b border-border bg-product-panel p-2 lg:hidden">
+          <div className="flex items-center bg-product-panel p-2 lg:hidden">
             <Button type="button" size="sm" variant="ghost" onClick={() => setMobilePane("list")}>
               <ArrowLeft className="mr-1.5 h-4 w-4" /> Conversas
             </Button>
@@ -113,7 +115,7 @@ export function InboxWorkspace({
               type="button"
               size="icon"
               variant="ghost"
-              className="absolute right-3 top-3 z-20 hidden xl:inline-flex"
+              className="absolute right-4 top-4 z-20 hidden rounded-full xl:inline-flex"
               onClick={() => setContextOpen(!resolvedContextOpen)}
               aria-label={resolvedContextOpen ? "Ocultar contexto" : "Mostrar contexto"}
               title={resolvedContextOpen ? "Ocultar contexto" : "Mostrar contexto"}
@@ -129,7 +131,7 @@ export function InboxWorkspace({
         </section>
         {showContext ? (
           <aside
-            className="hidden min-h-0 border-l border-border bg-product-panel xl:flex xl:flex-col"
+            className="hidden min-h-0 overflow-hidden rounded-[calc(var(--radius)+1rem)] bg-product-panel shadow-sm ring-1 ring-border-subtle xl:flex xl:flex-col"
             aria-label="Contexto do contato"
           >
             {context}
@@ -144,7 +146,7 @@ function InboxChannelTabs() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   return (
     <nav
-      className="grid grid-cols-4 gap-1 overflow-x-auto border-b border-product-divider p-2 lg:grid-cols-1 lg:border-b-0 lg:p-3"
+      className="grid grid-cols-4 gap-1 overflow-x-auto p-2 lg:grid-cols-1 lg:px-3"
       aria-label="Canais da Inbox"
     >
       {CHANNELS.map(({ to, label, icon: Icon }) => {
@@ -156,9 +158,9 @@ function InboxChannelTabs() {
             to={to}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "relative inline-flex min-h-10 min-w-0 shrink-0 items-center justify-center gap-2 rounded-[var(--radius)] px-2.5 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:justify-start lg:text-sm",
+              "relative inline-flex min-h-10 min-w-0 shrink-0 items-center justify-center gap-2 rounded-[calc(var(--radius)+0.5rem)] px-2.5 py-2 text-xs font-medium transition-[background-color,color,box-shadow,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none lg:justify-start lg:text-sm",
               active
-                ? "bg-accent text-accent-foreground shadow-xs before:absolute before:bottom-0 before:left-3 before:right-3 before:h-0.5 before:rounded-full before:bg-primary lg:before:bottom-2 lg:before:left-0 lg:before:right-auto lg:before:top-2 lg:before:h-auto lg:before:w-0.5"
+                ? "bg-surface-2 text-accent-foreground shadow-sm ring-1 ring-border-subtle"
                 : "text-text-secondary hover:bg-product-panel-muted hover:text-text-primary",
             )}
           >
@@ -172,11 +174,7 @@ function InboxChannelTabs() {
 }
 
 export function InboxListHeader({ children }: { children: ReactNode }) {
-  return (
-    <div className="space-y-2 border-b border-product-divider bg-product-toolbar p-3">
-      {children}
-    </div>
-  );
+  return <div className="space-y-2 bg-product-toolbar px-3 pb-3 pt-4">{children}</div>;
 }
 
 export function InboxConversationList({ children }: { children: ReactNode }) {
@@ -187,7 +185,7 @@ export function InboxEmpty({ children }: { children: ReactNode }) {
   return (
     <div className="grid min-h-48 flex-1 place-items-center p-6 text-center text-sm text-muted-foreground">
       <div className="flex max-w-xs flex-col items-center gap-3">
-        <div className="grid h-12 w-12 place-items-center rounded-[var(--radius)] border border-border-subtle bg-surface-sunken text-text-tertiary">
+        <div className="grid h-12 w-12 place-items-center rounded-[calc(var(--radius)+0.75rem)] bg-surface-sunken text-text-tertiary">
           <Inbox className="h-5 w-5" />
         </div>
         <div>{children}</div>
@@ -200,8 +198,8 @@ export function InboxLoading() {
   return (
     <div className="space-y-1 p-2" aria-label="Carregando conversas">
       {[0, 1, 2, 3, 4].map((item) => (
-        <div key={item} className="flex gap-3 p-3">
-          <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
+        <div key={item} className="flex gap-3 px-4 py-3">
+          <Skeleton className="h-10 w-10 shrink-0 rounded-[calc(var(--radius)+0.65rem)]" />
           <div className="flex-1 space-y-2">
             <div className="flex items-center justify-between gap-3">
               <Skeleton className="h-4 w-2/5" />
@@ -225,7 +223,7 @@ export function InboxError({
   return (
     <div className="grid min-h-48 flex-1 place-items-center p-6 text-center" role="alert">
       <div className="flex max-w-xs flex-col items-center gap-3">
-        <div className="grid h-12 w-12 place-items-center rounded-[var(--radius)] bg-destructive/10 text-destructive">
+        <div className="grid h-12 w-12 place-items-center rounded-[calc(var(--radius)+0.75rem)] bg-destructive/10 text-destructive">
           <AlertCircle className="h-5 w-5" />
         </div>
         <div className="text-sm text-text-secondary">{children}</div>
@@ -251,7 +249,7 @@ export function InboxAvatar({ label, className }: { label: string; className?: s
   return (
     <div
       className={cn(
-        "grid h-10 w-10 shrink-0 place-items-center rounded-[var(--radius)] bg-accent text-sm font-semibold text-accent-foreground",
+        "grid h-10 w-10 shrink-0 place-items-center rounded-[calc(var(--radius)+0.65rem)] bg-accent text-sm font-semibold text-accent-foreground",
         className,
       )}
       aria-hidden
@@ -274,12 +272,14 @@ export function InboxContext({
 }) {
   return (
     <ScrollArea className="flex-1">
-      <div className="space-y-5 p-4">
+      <div className="space-y-6 p-5">
         <div className="text-center">
-          <div className="mx-auto grid h-14 w-14 place-items-center rounded-[var(--radius)] bg-accent text-base font-semibold text-accent-foreground">
+          <div className="mx-auto grid h-20 w-20 place-items-center rounded-[calc(var(--radius)+1rem)] bg-accent text-xl font-semibold text-accent-foreground shadow-inner">
             {initials}
           </div>
-          <h2 className="mt-3 truncate font-semibold text-foreground">{title}</h2>
+          <h2 className="mt-4 truncate font-[var(--font-heading)] font-semibold text-foreground">
+            {title}
+          </h2>
           {subtitle ? (
             <p className="mt-1 truncate text-xs text-muted-foreground">{subtitle}</p>
           ) : null}
@@ -331,15 +331,15 @@ export function InboxConversationItem({
       onClick={onClick}
       aria-current={selected ? "true" : undefined}
       className={cn(
-        "group relative flex w-full items-start gap-3 rounded-[var(--radius)] border border-transparent p-3 text-left transition-[background-color,border-color,box-shadow] duration-150 hover:bg-product-panel-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none",
+        "group relative flex w-full items-start gap-3 rounded-[calc(var(--radius)+0.85rem)] p-3.5 text-left transition-[background-color,box-shadow,transform] duration-150 hover:bg-product-panel-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none",
         selected &&
-          "border-border-default bg-surface-2 shadow-xs before:absolute before:bottom-3 before:left-0 before:top-3 before:w-0.5 before:rounded-full before:bg-primary",
+          "bg-surface-2 shadow-sm ring-1 ring-border-subtle before:absolute before:bottom-4 before:left-0 before:top-4 before:w-0.5 before:rounded-full before:bg-primary",
       )}
     >
       <div className="relative">
         <InboxAvatar label={label} />
         {channelIcon ? (
-          <span className="absolute -bottom-0.5 -right-0.5 grid h-5 w-5 place-items-center rounded-[calc(var(--radius)-2px)] border-2 border-product-panel bg-card">
+          <span className="absolute -bottom-0.5 -right-0.5 grid h-5 w-5 place-items-center rounded-full border-2 border-product-panel bg-card">
             {channelIcon}
           </span>
         ) : null}
@@ -389,10 +389,12 @@ export function InboxConversationHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="grid min-h-16 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-product-divider bg-product-panel px-4 py-3 sm:flex sm:flex-wrap">
-      <InboxAvatar label={label} className="h-9 w-9" />
+    <div className="grid min-h-20 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 bg-product-panel px-5 py-4 sm:flex sm:flex-wrap">
+      <InboxAvatar label={label} className="h-11 w-11" />
       <div className="min-w-0 flex-1">
-        <div className="truncate font-semibold text-foreground">{label}</div>
+        <div className="truncate font-[var(--font-heading)] font-semibold text-foreground">
+          {label}
+        </div>
         {subtitle ? <div className="truncate text-xs text-muted-foreground">{subtitle}</div> : null}
       </div>
       {actions ? (
@@ -464,10 +466,10 @@ export function InboxMessageBubble({
     <div className={cn("flex", outbound ? "justify-end" : "justify-start")}>
       <div
         className={cn(
-          "min-w-0 max-w-[82%] overflow-hidden rounded-[var(--radius)] border px-3.5 py-2.5 text-sm shadow-xs [overflow-wrap:anywhere] sm:max-w-[72%]",
+          "min-w-0 max-w-[82%] overflow-hidden rounded-[calc(var(--radius)+1rem)] px-4 py-3 text-sm shadow-sm [overflow-wrap:anywhere] sm:max-w-[72%]",
           outbound
-            ? "rounded-tr-sm border-primary/20 bg-primary/10 text-foreground"
-            : "rounded-tl-sm border-border bg-card text-foreground",
+            ? "rounded-tr-sm bg-primary/10 text-foreground ring-1 ring-primary/15"
+            : "rounded-tl-sm bg-card text-foreground ring-1 ring-border-subtle",
         )}
       >
         {author ? (

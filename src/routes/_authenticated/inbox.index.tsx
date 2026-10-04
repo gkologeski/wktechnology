@@ -323,7 +323,7 @@ function UnifiedInboxPage() {
             ) : items.length === 0 ? (
               <InboxEmpty>Nenhuma conversa encontrada.</InboxEmpty>
             ) : (
-              <ul className="space-y-0.5 p-2">
+              <ul className="space-y-1 px-2 pb-3">
                 {items.map((it) => (
                   <li key={it.id}>
                     <InboxConversationItem
@@ -369,7 +369,7 @@ function UnifiedInboxPage() {
                   </Button>
                 }
               />
-              <div className="min-h-0 flex-1 overflow-y-auto p-6">
+              <div className="min-h-0 flex-1 overflow-y-auto bg-product-panel-muted px-6 py-8">
                 <InboxMessageBubble outbound={false} when={current.lastAt}>
                   <p className="text-sm font-medium text-foreground">{current.title}</p>
                   {current.snippet && current.snippet !== current.title ? (
@@ -377,7 +377,7 @@ function UnifiedInboxPage() {
                   ) : null}
                 </InboxMessageBubble>
               </div>
-              <div className="m-3 space-y-2 rounded-[var(--radius)] border border-border bg-card p-2 shadow-sm focus-within:ring-2 focus-within:ring-ring">
+              <div className="m-4 space-y-2 rounded-[calc(var(--radius)+1rem)] bg-product-panel-muted p-2 ring-1 ring-border-subtle focus-within:ring-2 focus-within:ring-ring">
                 <Textarea
                   className="min-h-24 resize-none border-0 shadow-none focus-visible:ring-0"
                   rows={6}
