@@ -124,7 +124,7 @@ function EmailInbox() {
                 </div>
               </InboxEmpty>
             ) : null}
-            <div className="space-y-0.5 p-2">
+            <div className="space-y-1 px-2 pb-3">
               {threads.map((t) => (
                 <InboxConversationItem
                   key={t.id}
@@ -175,8 +175,8 @@ function EmailInbox() {
                   </Button>
                 }
               />
-              <ScrollArea className="flex-1 bg-product-panel-muted p-4" aria-live="polite">
-                <div className="space-y-4">
+              <ScrollArea className="flex-1 bg-product-panel-muted px-5 py-6" aria-live="polite">
+                <div className="space-y-5">
                   {current.messages.map((m) => (
                     <MessageCard key={m.id} message={m} />
                   ))}

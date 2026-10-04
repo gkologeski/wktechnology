@@ -273,7 +273,7 @@ function WhatsAppInbox() {
             ) : conversations.length === 0 ? (
               <InboxEmpty>Nenhuma conversa ainda. Envie uma mensagem para começar.</InboxEmpty>
             ) : null}
-            <div className="space-y-0.5 p-2">
+            <div className="space-y-1 px-2 pb-3">
               {conversations.map((c) => (
                 <InboxConversationItem
                   key={c.id}
@@ -374,8 +374,8 @@ function WhatsAppInbox() {
                   </>
                 }
               />
-              <ScrollArea className="flex-1 bg-product-panel-muted p-4" aria-live="polite">
-                <div className="space-y-3">
+              <ScrollArea className="flex-1 bg-product-panel-muted px-5 py-6" aria-live="polite">
+                <div className="space-y-5">
                   {messages.map((m) => (
                     <InboxMessageBubble
                       key={m.id}
@@ -397,9 +397,9 @@ function WhatsAppInbox() {
                   <div ref={bottomRef} />
                 </div>
               </ScrollArea>
-              <div className="border-t p-3">
+              <div className="bg-product-panel p-4 pt-3">
                 {pendingMedia && (
-                  <div className="mb-2 flex items-start gap-2 rounded-md border p-2">
+                  <div className="mb-2 flex items-start gap-2 rounded-[calc(var(--radius)+0.75rem)] bg-product-panel-muted p-3 ring-1 ring-border-subtle">
                     <WhatsAppMediaBubble
                       url={pendingMedia.url}
                       contentType={pendingMedia.contentType}
@@ -420,7 +420,7 @@ function WhatsAppInbox() {
                     </Button>
                   </div>
                 )}
-                <div className="flex gap-2">
+                <div className="flex items-end gap-2 rounded-[calc(var(--radius)+1rem)] bg-product-panel-muted p-2 ring-1 ring-border-subtle focus-within:ring-2 focus-within:ring-ring">
                   <input
                     ref={fileRef}
                     type="file"
@@ -434,7 +434,7 @@ function WhatsAppInbox() {
                   />
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="ghost"
                     size="icon"
                     disabled={uploading}
                     onClick={() => fileRef.current?.click()}
@@ -447,7 +447,8 @@ function WhatsAppInbox() {
                     value={draft}
                     onChange={(e) => setDraft(e.target.value)}
                     placeholder="Escreva uma mensagem…"
-                    rows={2}
+                     rows={2}
+                     className="min-h-12 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
                         e.preventDefault();

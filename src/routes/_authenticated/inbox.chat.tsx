@@ -131,7 +131,7 @@ function LiveChatInbox() {
             ) : sessions.length === 0 ? (
               <InboxEmpty>Nenhuma sessão ainda.</InboxEmpty>
             ) : null}
-            <div className="space-y-0.5 p-2">
+            <div className="space-y-1 px-2 pb-3">
               {sessions.map((s) => (
                 <InboxConversationItem
                   key={s.id}
@@ -188,8 +188,8 @@ function LiveChatInbox() {
                   )
                 }
               />
-              <ScrollArea className="flex-1 bg-product-panel-muted p-4" aria-live="polite">
-                <div className="space-y-3">
+              <ScrollArea className="flex-1 bg-product-panel-muted px-5 py-6" aria-live="polite">
+                <div className="space-y-5">
                   {messages.map((m) => (
                     <InboxMessageBubble
                       key={m.id}
@@ -203,7 +203,8 @@ function LiveChatInbox() {
                 </div>
               </ScrollArea>
               {current.status !== "closed" && (
-                <div className="border-t p-2 flex items-end gap-2">
+                <div className="flex items-end gap-2 bg-product-panel p-4">
+                  <div className="flex flex-1 items-end gap-2 rounded-[calc(var(--radius)+1rem)] bg-product-panel-muted p-2 ring-1 ring-border-subtle focus-within:ring-2 focus-within:ring-ring">
                   <SnippetTextarea
                     value={draft}
                     onChange={setDraft}
@@ -215,7 +216,7 @@ function LiveChatInbox() {
                         if (draft.trim()) send.mutate();
                       }
                     }}
-                    className="resize-none"
+                    className="min-h-12 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
                   />
                   <Button
                     onClick={() => send.mutate()}
@@ -224,6 +225,7 @@ function LiveChatInbox() {
                   >
                     <Send className="h-4 w-4" />
                   </Button>
+                  </div>
                 </div>
               )}
             </>
