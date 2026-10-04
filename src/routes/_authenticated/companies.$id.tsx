@@ -61,11 +61,9 @@ function CompanyDetail() {
   const linkedOnly = useIsLinkedOnly(company);
   const { can } = usePermissions();
   const { user } = useAuth();
-  const isOwn =
-    !!user && (company?.owner_id === user.id || company?.assigned_to === user.id);
+  const isOwn = !!user && (company?.owner_id === user.id || company?.assigned_to === user.id);
   const canEditLogo =
-    can("techsales.companies.manage.workspace") ||
-    (can("techsales.companies.update.own") && isOwn);
+    can("techsales.companies.manage.workspace") || (can("techsales.companies.update.own") && isOwn);
 
   if (!company) return <p className="text-sm text-muted-foreground">Carregando...</p>;
   if (linkedOnly)

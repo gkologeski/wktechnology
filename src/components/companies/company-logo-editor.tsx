@@ -35,7 +35,8 @@ type Company = {
   website?: string | null;
 };
 
-const errMsg = (e: unknown) => (e as { message?: string })?.message ?? "Falha ao salvar o logotipo.";
+const errMsg = (e: unknown) =>
+  (e as { message?: string })?.message ?? "Falha ao salvar o logotipo.";
 
 export function CompanyLogoEditor({
   company,

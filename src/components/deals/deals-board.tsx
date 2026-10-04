@@ -273,7 +273,9 @@ export function DealsBoard({
                         columnId={s.value}
                         companyName={d.company_id ? lookups.companies.get(d.company_id) : undefined}
                         companyId={d.company_id}
-                        companyLogo={d.company_id ? lookups.companyLogos?.get(d.company_id) : undefined}
+                        companyLogo={
+                          d.company_id ? lookups.companyLogos?.get(d.company_id) : undefined
+                        }
                         contactName={
                           d.primary_contact_id
                             ? lookups.contacts.get(d.primary_contact_id)
