@@ -4,6 +4,7 @@ import { autoLogoUrls, logoDomain } from "@/lib/domain-utils";
 import { colorFromString } from "@/components/crm/hubspot-shell";
 
 const SIZES = {
+  xs: "h-4 w-4 text-[8px]",
   sm: "h-6 w-6 text-[10px]",
   md: "h-8 w-8 text-xs",
   lg: "h-12 w-12 text-sm",
@@ -14,6 +15,8 @@ type Props = {
   name: string | null | undefined;
   seed: string;
   logoUrl?: string | null;
+  /** `none` força as iniciais; `manual`/`auto` seguem a cascata. */
+  logoSource?: string | null;
   domain?: string | null;
   website?: string | null;
   size?: keyof typeof SIZES;
@@ -28,17 +31,19 @@ export function CompanyAvatar({
   name,
   seed,
   logoUrl,
+  logoSource,
   domain,
   website,
   size = "md",
   className,
 }: Props) {
   const sources = useMemo(() => {
+    if (logoSource === "none") return [];
     const list: string[] = [];
     if (logoUrl?.trim()) list.push(logoUrl.trim());
     list.push(...autoLogoUrls(logoDomain(domain, website)));
     return list;
-  }, [logoUrl, domain, website]);
+  }, [logoUrl, logoSource, domain, website]);
 
   const [index, setIndex] = useState(0);
   const [loaded, setLoaded] = useState(false);
@@ -81,13 +86,13 @@ export function CompanyAvatar({
             loaded ? "opacity-100" : "opacity-0",
           )}
           onLoad={(e) => {
-            // Favicon genérico do Google costuma ter 16px: tratar como ausente.
+            // Favicon genérico do Google tem 16px: tratar como ausente.
             const img = e.currentTarget;
-            if (img.naturalWidth > 0 && img.naturalWidth <= 16 && index < sources.length - 1) {
+            const isData = src.startsWith("data:");
+            if (!isData && img.naturalWidth <= 16) {
               setIndex((i) => i + 1);
               return;
             }
-            if (img.naturalWidth <= 16) return; // mantém iniciais
             setLoaded(true);
           }}
           onError={() => {
