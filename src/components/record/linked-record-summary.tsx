@@ -20,14 +20,15 @@ function FieldList({ fields }: { fields: Field[] }) {
 }
 
 function useOwnerName(companyId: string | null | undefined) {
+  // Mesma chave e mesmo formato (linha) do PortfolioConflictNotice; o nome sai via select.
   return useQuery({
     queryKey: ["company-portfolio-owner", companyId],
     enabled: !!companyId,
     queryFn: async () => {
       const { data } = await supabase.rpc("company_portfolio_owner", { _company_id: companyId! });
-      const row = Array.isArray(data) ? data[0] : null;
-      return (row?.owner_name as string | null) ?? null;
+      return Array.isArray(data) ? (data[0] ?? null) : null;
     },
+    select: (row) => (row?.owner_name as string | null | undefined) ?? null,
   }).data;
 }
 
