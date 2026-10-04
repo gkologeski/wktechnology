@@ -25,6 +25,6 @@
 # Roadmap — Redesign da Inbox multicanal
 - [x] Direção visual aprovada: cockpit multicanal com identidade White Label
 - [x] Direção final aprovada: Floating soft panels v3, Sora + Manrope e superfícies fluidas
-- [x] Casco compartilhado com painéis suaves para canais, conversas, conversa ativa e contexto
+- [x] Casco compartilhado com canais no topo e painéis amplos para lista, conversa ativa e contexto
 - [x] Estados, acessibilidade e responsividade das quatro rotas
 - [x] Validação visual e funcional das quatro rotas em desktop, mobile e modo escuro
