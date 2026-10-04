@@ -57,34 +57,32 @@ export function InboxWorkspace({
 
   return (
     <div className="relative flex h-[calc(100dvh-4rem)] min-h-0 flex-col overflow-hidden bg-product-canvas p-2 font-[var(--font-body)] sm:p-3">
+      <header className="mb-3 shrink-0 overflow-hidden rounded-[calc(var(--radius)+1rem)] bg-product-header shadow-sm ring-1 ring-border-subtle">
+        <div className="grid min-w-0 gap-3 p-3 xl:px-4">
+          <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+            <div className="min-w-0">
+              <h1 className="truncate font-[var(--font-heading)] text-base font-semibold text-text-primary">
+                {title}
+              </h1>
+              <p className="mt-0.5 truncate text-xs text-text-tertiary">{description}</p>
+            </div>
+            {actions ? (
+              <div className="grid min-w-0 grid-cols-2 items-center gap-2 sm:flex sm:justify-end [&_[data-slot=button]]:min-w-0 sm:[&_[data-slot=button]]:shrink-0">
+                {actions}
+              </div>
+            ) : null}
+          </div>
+          <InboxChannelTabs />
+        </div>
+      </header>
       <div
         className={cn(
           "grid min-h-0 flex-1 gap-3 overflow-hidden",
           showContext
-            ? "grid-cols-1 lg:grid-cols-[10rem_17rem_minmax(0,1fr)] xl:grid-cols-[10.5rem_17rem_minmax(0,1fr)_15rem] 2xl:grid-cols-[12rem_20rem_minmax(0,1fr)_18rem]"
-            : "grid-cols-1 lg:grid-cols-[10rem_17rem_minmax(0,1fr)] 2xl:grid-cols-[12rem_20rem_minmax(0,1fr)]",
+            ? "grid-cols-1 lg:grid-cols-[18rem_minmax(0,1fr)] xl:grid-cols-[19rem_minmax(0,1fr)_16rem] 2xl:grid-cols-[22rem_minmax(0,1fr)_18rem]"
+            : "grid-cols-1 lg:grid-cols-[18rem_minmax(0,1fr)] 2xl:grid-cols-[22rem_minmax(0,1fr)]",
         )}
       >
-        <aside
-          className={cn(
-            "min-h-0 flex-col overflow-hidden rounded-[calc(var(--radius)+1rem)] bg-product-header shadow-sm ring-1 ring-border-subtle lg:flex",
-            mobilePane === "list" ? "flex" : "hidden",
-          )}
-          aria-label="Canais e ações da Inbox"
-        >
-          <div className="px-4 pb-3 pt-5">
-            <h1 className="truncate font-[var(--font-heading)] text-base font-semibold text-text-primary">
-              {title}
-            </h1>
-            <p className="mt-1 line-clamp-2 text-xs leading-5 text-text-tertiary">{description}</p>
-          </div>
-          <InboxChannelTabs />
-          {actions ? (
-            <div className="mt-auto grid gap-2 p-3 pt-5 [&_[data-slot=button]]:w-full [&_[data-slot=button]]:justify-start [&_[data-slot=button]]:rounded-[calc(var(--radius)+0.5rem)]">
-              {actions}
-            </div>
-          ) : null}
-        </aside>
         <section
           className={cn(
             "min-h-0 flex-col overflow-hidden rounded-[calc(var(--radius)+1rem)] bg-product-panel shadow-sm ring-1 ring-border-subtle lg:flex",
@@ -146,7 +144,7 @@ function InboxChannelTabs() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   return (
     <nav
-      className="grid grid-cols-4 gap-1 overflow-x-auto p-2 lg:grid-cols-1 lg:px-3"
+      className="flex min-w-0 items-center gap-1 overflow-x-auto pb-0.5"
       aria-label="Canais da Inbox"
     >
       {CHANNELS.map(({ to, label, icon: Icon }) => {
@@ -158,7 +156,7 @@ function InboxChannelTabs() {
             to={to}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "relative inline-flex min-h-10 min-w-0 shrink-0 items-center justify-center gap-2 rounded-[calc(var(--radius)+0.5rem)] px-2.5 py-2 text-xs font-medium transition-[background-color,color,box-shadow,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none lg:justify-start lg:text-sm",
+              "relative inline-flex min-h-9 shrink-0 items-center justify-center gap-2 rounded-[calc(var(--radius)+0.5rem)] px-3 py-2 text-xs font-medium transition-[background-color,color,box-shadow,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none sm:text-sm",
               active
                 ? "bg-surface-2 text-accent-foreground shadow-sm ring-1 ring-border-subtle"
                 : "text-text-secondary hover:bg-product-panel-muted hover:text-text-primary",

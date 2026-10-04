@@ -7,6 +7,7 @@
 - [x] Fase 5 — specs Playwright em tests/e2e + validação real dos cenários
 
 # Roadmap — Papel Representante de Vendas (externa)
+
 - [x] Fase 1 — leitura no banco respeita escopo do cargo (leads, contatos, empresas, negócios, atividades, cotações)
 - [x] Fase 2 — leitura vinculada (empresa/contatos ligados aos registros dela)
 - [x] Fase 3 — cargo "Representante de Vendas (externa)" só TechSales
@@ -14,6 +15,7 @@
 - [x] Fase 5 — validação por papel
 
 # Roadmap — Cotação → Proposta → Contrato
+
 - [x] Fase 1 — ligação entre etapas e botões de geração
 - [x] Fase 2 — campo Linha de serviço na cotação (seções sugeridas na proposta)
 - [ ] Fase 3 — modelos de proposta/contrato por linha
@@ -23,8 +25,9 @@
 - [ ] Fase 7 — teste real de conversão (aguarda autorização para gravar dados)
 
 # Roadmap — Redesign da Inbox multicanal
+
 - [x] Direção visual aprovada: cockpit multicanal com identidade White Label
 - [x] Direção final aprovada: Floating soft panels v3, Sora + Manrope e superfícies fluidas
-- [x] Casco compartilhado com painéis suaves para canais, conversas, conversa ativa e contexto
+- [x] Casco compartilhado com canais no topo e painéis amplos para lista, conversa ativa e contexto
 - [x] Estados, acessibilidade e responsividade das quatro rotas
 - [x] Validação visual e funcional das quatro rotas em desktop, mobile e modo escuro
