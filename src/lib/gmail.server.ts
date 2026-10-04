@@ -7,6 +7,7 @@ const GMAIL_API = "https://gmail.googleapis.com/gmail/v1/users/me";
 export type EmailAccountRow = {
   id: string;
   owner_id: string;
+  workspace_id: string;
   email: string;
   access_token: string | null;
   refresh_token: string | null;

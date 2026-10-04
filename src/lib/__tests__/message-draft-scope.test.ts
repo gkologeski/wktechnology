@@ -28,6 +28,10 @@ describe("draftScopeKey", () => {
       "whatsapp:+551199999-0000",
     );
   });
+
+  it("usa a sessão no Chat", () => {
+    expect(draftScopeKey({ channel: "chat", conversationId: "c1" })).toBe("chat:c1");
+  });
 });
 
 describe("draftContext", () => {

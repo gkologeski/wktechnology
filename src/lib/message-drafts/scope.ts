@@ -1,6 +1,6 @@
 // Deriva a chave determinística que identifica uma composição de mensagem.
 export type DraftScopeInput = {
-  channel: "email" | "whatsapp";
+  channel: "email" | "whatsapp" | "chat";
   threadId?: string | null;
   conversationId?: string | null;
   leadId?: string | null;
@@ -15,6 +15,9 @@ export function normalizeRecipient(value: string | null | undefined): string {
 }
 
 export function draftScopeKey(input: DraftScopeInput): string {
+  if (input.channel === "chat") {
+    return `chat:${input.conversationId ?? "novo"}`;
+  }
   if (input.channel === "whatsapp") {
     const id = input.conversationId ?? normalizeRecipient(input.to);
     return `whatsapp:${id || "novo"}`;

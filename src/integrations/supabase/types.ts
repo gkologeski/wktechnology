@@ -5098,9 +5098,11 @@ export type Database = {
           linkedin_url: string | null
           marketing_status: string | null
           mobile_phone: string | null
+          mobile_phone_digits: string | null
           notes: string | null
           owner_id: string
           phone: string | null
+          phone_digits: string | null
           portal_enabled: boolean
           portal_token: string | null
           score: number
@@ -5141,9 +5143,11 @@ export type Database = {
           linkedin_url?: string | null
           marketing_status?: string | null
           mobile_phone?: string | null
+          mobile_phone_digits?: string | null
           notes?: string | null
           owner_id: string
           phone?: string | null
+          phone_digits?: string | null
           portal_enabled?: boolean
           portal_token?: string | null
           score?: number
@@ -5184,9 +5188,11 @@ export type Database = {
           linkedin_url?: string | null
           marketing_status?: string | null
           mobile_phone?: string | null
+          mobile_phone_digits?: string | null
           notes?: string | null
           owner_id?: string
           phone?: string | null
+          phone_digits?: string | null
           portal_enabled?: boolean
           portal_token?: string | null
           score?: number
@@ -7629,6 +7635,7 @@ export type Database = {
           created_at: string
           deal_id: string | null
           id: string
+          identity_status: string
           last_message_at: string | null
           lead_id: string | null
           message_count: number
@@ -7646,6 +7653,7 @@ export type Database = {
           created_at?: string
           deal_id?: string | null
           id?: string
+          identity_status?: string
           last_message_at?: string | null
           lead_id?: string | null
           message_count?: number
@@ -7663,6 +7671,7 @@ export type Database = {
           created_at?: string
           deal_id?: string | null
           id?: string
+          identity_status?: string
           last_message_at?: string | null
           lead_id?: string | null
           message_count?: number
@@ -9819,6 +9828,7 @@ export type Database = {
           last_name: string | null
           linkedin_url: string | null
           mobile_phone: string | null
+          mobile_phone_digits: string | null
           notes: string | null
           nurture_started_at: string | null
           owner_id: string
@@ -9859,6 +9869,7 @@ export type Database = {
           last_name?: string | null
           linkedin_url?: string | null
           mobile_phone?: string | null
+          mobile_phone_digits?: string | null
           notes?: string | null
           nurture_started_at?: string | null
           owner_id: string
@@ -9899,6 +9910,7 @@ export type Database = {
           last_name?: string | null
           linkedin_url?: string | null
           mobile_phone?: string | null
+          mobile_phone_digits?: string | null
           notes?: string | null
           nurture_started_at?: string | null
           owner_id?: string
@@ -10158,7 +10170,9 @@ export type Database = {
           contact_id: string | null
           created_at: string
           id: string
+          identity_status: string
           last_message_at: string | null
+          lead_id: string | null
           owner_id: string
           status: string
           ticket_id: string | null
@@ -10174,7 +10188,9 @@ export type Database = {
           contact_id?: string | null
           created_at?: string
           id?: string
+          identity_status?: string
           last_message_at?: string | null
+          lead_id?: string | null
           owner_id: string
           status?: string
           ticket_id?: string | null
@@ -10190,7 +10206,9 @@ export type Database = {
           contact_id?: string | null
           created_at?: string
           id?: string
+          identity_status?: string
           last_message_at?: string | null
+          lead_id?: string | null
           owner_id?: string
           status?: string
           ticket_id?: string | null
@@ -10202,6 +10220,13 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "live_chat_sessions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "live_chat_sessions_ticket_id_fkey"
             columns: ["ticket_id"]
@@ -19247,9 +19272,11 @@ export type Database = {
           conversation_origin: string | null
           created_at: string
           id: string
+          identity_status: string
           last_inbound_at: string | null
           last_message_at: string | null
           last_message_preview: string | null
+          lead_id: string | null
           owner_id: string
           provider: string
           status: string
@@ -19266,9 +19293,11 @@ export type Database = {
           conversation_origin?: string | null
           created_at?: string
           id?: string
+          identity_status?: string
           last_inbound_at?: string | null
           last_message_at?: string | null
           last_message_preview?: string | null
+          lead_id?: string | null
           owner_id: string
           provider?: string
           status?: string
@@ -19285,9 +19314,11 @@ export type Database = {
           conversation_origin?: string | null
           created_at?: string
           id?: string
+          identity_status?: string
           last_inbound_at?: string | null
           last_message_at?: string | null
           last_message_preview?: string | null
+          lead_id?: string | null
           owner_id?: string
           provider?: string
           status?: string
@@ -19303,6 +19334,13 @@ export type Database = {
             columns: ["contact_id"]
             isOneToOne: false
             referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_conversations_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
             referencedColumns: ["id"]
           },
           {
@@ -20624,6 +20662,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      inbox_phone_digits: { Args: { _value: string }; Returns: string }
       increment_snippet_usage: { Args: { _id: string }; Returns: undefined }
       increment_wat_usage: { Args: { _id: string }; Returns: undefined }
       is_chat_member: {

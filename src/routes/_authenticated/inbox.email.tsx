@@ -13,6 +13,7 @@ import { useActivityWindows } from "@/components/activity/activity-window-contex
 import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
 import { formatDateTime } from "@/lib/crm";
 import { toast } from "sonner";
+import { InboxIdentityLinker } from "@/components/inbox/inbox-identity-linker";
 import {
   InboxConversationItem,
   InboxConversationList,
@@ -202,6 +203,17 @@ function EmailInbox() {
                 <p className="text-xs text-muted-foreground">Mensagens</p>
                 <p className="mt-1 font-medium">{current.messages.length}</p>
               </div>
+              <InboxIdentityLinker
+                channel="email"
+                conversationId={current.thread.id}
+                contactId={current.thread.contact_id}
+                leadId={current.thread.lead_id}
+                status={current.thread.identity_status}
+                onLinked={() => {
+                  qc.invalidateQueries({ queryKey: ["email_threads"] });
+                  qc.invalidateQueries({ queryKey: ["email_thread", current.thread.id] });
+                }}
+              />
             </div>
           </InboxContext>
         ) : undefined

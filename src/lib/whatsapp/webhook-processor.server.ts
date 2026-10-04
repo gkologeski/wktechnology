@@ -4,6 +4,7 @@ import { shouldApplyStatus } from "@/lib/whatsapp/status-rank";
 
 const STATUS_ORDER = ["accepted", "sent", "delivered", "read", "failed"];
 import { normalizePhone } from "@/lib/whatsapp/meta-channel.server";
+import { identityColumns, resolveInboxIdentity } from "@/lib/inbox/identity-resolution.server";
 
 // Tabela whatsapp_webhook_events só entra nos tipos após aceitar o rascunho.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -17,14 +18,29 @@ function valueOf(payload: any): any {
   return payload?.entry?.[0]?.changes?.[0]?.value ?? {};
 }
 
-async function resolveWorkspace(admin: Admin, contactPhone: string, ourPhone: string) {
+async function resolveWorkspace(
+  admin: Admin,
+  contactPhone: string,
+  ourPhone: string,
+  phoneNumberId?: string | null,
+) {
+  if (phoneNumberId) {
+    const { data: configured } = await admin
+      .from("wa_phone_numbers")
+      .select("workspace_id")
+      .eq("phone_number_id", phoneNumberId)
+      .maybeSingle();
+    if (configured?.workspace_id) {
+      return { id: null, workspace_id: configured.workspace_id as string };
+    }
+  }
   const { data: byContact } = await admin
     .from("whatsapp_conversations")
-    .select("id, workspace_id")
+    .select("id, workspace_id, contact_id, lead_id, identity_status")
     .eq("contact_phone", contactPhone)
     .eq("twilio_number", ourPhone)
     .maybeSingle();
-  if (byContact?.workspace_id) return byContact as { id: string; workspace_id: string };
+  if (byContact?.workspace_id) return byContact;
   const { data: any1 } = await admin
     .from("whatsapp_conversations")
     .select("workspace_id")
@@ -79,11 +95,19 @@ async function handleMessages(admin: Admin, value: any): Promise<string | null> 
       .maybeSingle();
     if (dup) continue;
     const from = normalizePhone(m.from);
-    const ws = await resolveWorkspace(admin, from, ourPhone);
+    const ws = await resolveWorkspace(admin, from, ourPhone, value?.metadata?.phone_number_id);
     if (!ws) throw new Retry("Workspace da conversa não identificado");
     workspaceId = ws.workspace_id;
     const body = inboundBody(m);
     const now = new Date().toISOString();
+    const hasIdentity = !!ws.contact_id || !!ws.lead_id || ws.identity_status === "manual";
+    const identity = hasIdentity
+      ? null
+      : await resolveInboxIdentity({
+          supabase: admin,
+          workspaceId: ws.workspace_id,
+          phone: from,
+        });
     const { data: conv, error: cErr } = await admin
       .from("whatsapp_conversations")
       .upsert(
@@ -97,6 +121,7 @@ async function handleMessages(admin: Admin, value: any): Promise<string | null> 
           last_message_at: now,
           last_inbound_at: now,
           last_message_preview: body.slice(0, 120),
+          ...(identity ? identityColumns(identity) : {}),
         },
         { onConflict: "contact_phone,twilio_number" },
       )

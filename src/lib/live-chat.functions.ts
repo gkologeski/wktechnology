@@ -12,7 +12,7 @@ export const listChatSessions = createServerFn({ method: "GET" })
     const { data, error } = await supabase
       .from("live_chat_sessions")
       .select(
-        "id, visitor_id, visitor_name, visitor_email, visitor_url, status, assignee_id, last_message_at, created_at",
+        "id, visitor_id, visitor_name, visitor_email, visitor_url, contact_id, lead_id, identity_status, status, assignee_id, last_message_at, created_at",
       )
       .eq("owner_id", ws)
       .order("last_message_at", { ascending: false, nullsFirst: false })
