@@ -1,3 +1,5 @@
+import type { CompanyLogoInfo } from "@/hooks/use-company-logos";
+import { CompanyAvatarFromInfo } from "@/components/companies/company-avatar";
 import { useDraggable } from "@dnd-kit/core";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +36,8 @@ export const CARD_FIELD_OPTIONS = [
 export function DealsBoardCard({
   deal,
   companyName,
+  companyId,
+  companyLogo,
   contactName,
   ownerName,
   fields,
@@ -51,6 +55,8 @@ export function DealsBoardCard({
 }: {
   deal: Deal;
   companyName?: string;
+  companyId?: string | null;
+  companyLogo?: CompanyLogoInfo;
   contactName?: string;
   ownerName?: string;
   fields?: string[];
@@ -197,7 +203,16 @@ export function DealsBoardCard({
 
       {has("company") && companyName && (
         <div className="mt-1.5 flex items-center gap-1.5 text-xs text-[var(--hs-text-muted)] truncate">
-          <Building2 className="h-3 w-3 shrink-0" />
+          {companyId ? (
+            <CompanyAvatarFromInfo
+              id={companyId}
+              name={companyName}
+              info={companyLogo}
+              className="rounded"
+            />
+          ) : (
+            <Building2 className="h-3 w-3 shrink-0" />
+          )}
           <span className="truncate">{companyName}</span>
         </div>
       )}

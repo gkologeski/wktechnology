@@ -1,3 +1,5 @@
+import { CompanyAvatarFromInfo } from "@/components/companies/company-avatar";
+import { useLinkedCompany } from "@/hooks/use-company-logos";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -40,6 +42,7 @@ export function InboxIdentityLinker({
   });
 
   const linked = !!contactId || !!leadId;
+  const { data: linkedCompany } = useLinkedCompany(contactId, leadId);
   const label =
     status === "ambiguous"
       ? "Mais de um registro corresponde. Escolha manualmente."
@@ -56,6 +59,17 @@ export function InboxIdentityLinker({
         <p className="text-xs font-medium">Cliente associado</p>
       </div>
       <p className="text-xs text-muted-foreground">{label}</p>
+      {linkedCompany && (
+        <div className="flex items-center gap-2 rounded-md border border-border/60 p-2">
+          <CompanyAvatarFromInfo
+            id={linkedCompany.id}
+            name={linkedCompany.name}
+            info={linkedCompany}
+            size="sm"
+          />
+          <span className="min-w-0 truncate text-xs font-medium">{linkedCompany.name}</span>
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-1 rounded-md bg-muted p-1" aria-label="Tipo de registro">
         <Button
           type="button"

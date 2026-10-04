@@ -372,6 +372,13 @@
       "when": 1791156892054,
       "tag": "0052_companies_logo_url",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1791157457300,
+      "tag": "0053_companies_logo_source",
+      "breakpoints": true
     }
   ]
 }

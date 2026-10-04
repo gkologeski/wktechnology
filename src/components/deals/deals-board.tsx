@@ -1,3 +1,4 @@
+import type { CompanyLogoInfo } from "@/hooks/use-company-logos";
 import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -26,6 +27,7 @@ export type DealLookups = {
   companies: Map<string, string>;
   contacts: Map<string, string>;
   owners: Map<string, string>;
+  companyLogos?: Map<string, CompanyLogoInfo>;
 };
 
 export function DealsBoard({
@@ -270,6 +272,10 @@ export function DealsBoard({
                         deal={d}
                         columnId={s.value}
                         companyName={d.company_id ? lookups.companies.get(d.company_id) : undefined}
+                        companyId={d.company_id}
+                        companyLogo={
+                          d.company_id ? lookups.companyLogos?.get(d.company_id) : undefined
+                        }
                         contactName={
                           d.primary_contact_id
                             ? lookups.contacts.get(d.primary_contact_id)

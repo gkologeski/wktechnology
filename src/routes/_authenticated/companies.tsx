@@ -112,6 +112,7 @@ const BASE_COMPANY_KEYS = [
   "domain",
   "website",
   "logo_url",
+  "logo_source",
   "industry",
   "size",
   "city",
@@ -416,13 +417,18 @@ function CompaniesHubspotView() {
             </Th>
           ),
           render: (c) => {
-            const lr = c as { logo_url?: string | null; website?: string | null };
+            const lr = c as {
+              logo_url?: string | null;
+              logo_source?: string | null;
+              website?: string | null;
+            };
             return (
               <div className="flex items-center gap-2.5">
                 <CompanyAvatar
                   name={c.name}
                   seed={c.id}
                   logoUrl={lr.logo_url}
+                  logoSource={lr.logo_source}
                   domain={c.domain}
                   website={lr.website}
                   size="sm"

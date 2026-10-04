@@ -1,3 +1,4 @@
+import { useCompanyLogos } from "@/hooks/use-company-logos";
 import { createFileRoute, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
@@ -274,6 +275,7 @@ function DealsPage() {
       }[]) ?? [],
   });
 
+  const { data: companyLogos } = useCompanyLogos(deals.map((d) => d.company_id));
   const lookups: DealLookups = useMemo(() => {
     const c = new Map<string, string>();
     companies.forEach((x) => c.set(x.id, x.name));
@@ -282,8 +284,8 @@ function DealsPage() {
     const o = new Map<string, string>();
     profiles.forEach((x) => o.set(x.id, x.full_name ?? "—"));
     if (user) o.set(user.id, profiles.find((p) => p.id === user.id)?.full_name ?? "Você");
-    return { companies: c, contacts: ct, owners: o };
-  }, [companies, contacts, profiles, user]);
+    return { companies: c, contacts: ct, owners: o, companyLogos };
+  }, [companies, contacts, profiles, user, companyLogos]);
 
   const ownerOptions = useMemo(() => {
     const ids = new Set<string>(profiles.map((p) => p.id));

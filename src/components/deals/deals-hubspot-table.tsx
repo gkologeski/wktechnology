@@ -1,3 +1,4 @@
+import { CompanyAvatarFromInfo } from "@/components/companies/company-avatar";
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -316,10 +317,15 @@ export function DealsHubspotTable({
             <Link
               to="/companies/$id"
               params={{ id: d.company_id }}
-              className="truncate text-primary hover:underline"
+              className="flex min-w-0 items-center gap-1.5 text-primary hover:underline"
               onClick={(e) => e.stopPropagation()}
             >
-              {lookups.companies.get(d.company_id) ?? "—"}
+              <CompanyAvatarFromInfo
+                id={d.company_id}
+                name={lookups.companies.get(d.company_id)}
+                info={lookups.companyLogos?.get(d.company_id)}
+              />
+              <span className="truncate">{lookups.companies.get(d.company_id) ?? "—"}</span>
             </Link>
           ) : (
             <span className="text-muted-foreground">—</span>

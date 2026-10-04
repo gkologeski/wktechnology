@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { autoLogoUrls, extractRootDomain, logoDomain } from "./domain-utils";
+import {
+  autoLogoUrls,
+  corporateDomainFromEmail,
+  extractRootDomain,
+  logoDomain,
+} from "./domain-utils";
 
 describe("extractRootDomain", () => {
   it("limpa protocolo, www, caminho e porta", () => {
@@ -16,9 +21,18 @@ describe("extractRootDomain", () => {
 });
 
 describe("logoDomain", () => {
-  it("ignora provedores genéricos e usa o próximo candidato", () => {
+  it("ignora e-mail gratuito e usa o site", () => {
     expect(logoDomain("gmail.com", "https://acme.com.br")).toBe("acme.com.br");
     expect(logoDomain("hotmail.com")).toBeNull();
+  });
+  it("aceita portal como marca no domínio da empresa", () => {
+    expect(logoDomain("uol.com.br")).toBe("uol.com.br");
+  });
+  it("trata portal como gratuito quando vem de e-mail", () => {
+    expect(logoDomain("maria@uol.com.br")).toBeNull();
+    expect(corporateDomainFromEmail("maria@uol.com.br")).toBeNull();
+    expect(corporateDomainFromEmail("contato@acme.com.br")).toBe("acme.com.br");
+    expect(corporateDomainFromEmail("x@gmail.com")).toBeNull();
   });
   it("gera cascata Clearbit → Google", () => {
     expect(autoLogoUrls("acme.com")).toHaveLength(2);
