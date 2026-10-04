@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { chooseInboxIdentity, normalizeInboxPhone } from "@/lib/inbox/identity-resolution.server";
+import {
+  buildBrPhoneVariants,
+  chooseInboxIdentity,
+  normalizeInboxPhone,
+} from "@/lib/inbox/identity-resolution.server";
 
 describe("inbox identity resolution", () => {
   it("normaliza números formatados", () => {
@@ -29,5 +33,24 @@ describe("inbox identity resolution", () => {
       contactId: null,
       leadId: "lead-1",
     });
+  });
+
+  it("gera variantes com/sem 9º dígito e DDI para celular", () => {
+    const v = buildBrPhoneVariants("5511987654321");
+    for (const x of ["5511987654321", "551187654321", "11987654321", "1187654321"]) {
+      expect(v).toContain(x);
+    }
+    const v2 = buildBrPhoneVariants("(11) 8765-4321");
+    expect(v2).toContain("5511987654321");
+  });
+
+  it("não adiciona 9 em telefone fixo", () => {
+    const v = buildBrPhoneVariants("551133334444");
+    expect(v).toContain("1133334444");
+    expect(v).not.toContain("11933334444");
+  });
+
+  it("mantém números internacionais como busca exata", () => {
+    expect(buildBrPhoneVariants("+44 20 7946 0958")).toEqual(["442079460958"]);
   });
 });
