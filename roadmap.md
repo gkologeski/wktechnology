@@ -31,3 +31,12 @@
 - [x] Casco compartilhado com canais no topo e painéis amplos para lista, conversa ativa e contexto
 - [x] Estados, acessibilidade e responsividade das quatro rotas
 - [x] Validação visual e funcional das quatro rotas em desktop, mobile e modo escuro
+
+# Roadmap — Associação de clientes na Inbox
+
+- [x] Resolver remetentes por telefone ou e-mail dentro do workspace
+- [x] Priorizar Contato e usar Lead somente quando nenhum Contato corresponder
+- [x] Sinalizar duplicidades sem associação automática e permitir escolha manual
+- [x] Aplicar em WhatsApp, Email e Chat ao vivo, preservando associações manuais
+- [x] Incluir os três canais e nomes de Leads na Inbox unificada
+- [x] Atualizar conversas existentes com correspondências inequívocas

@@ -421,7 +421,12 @@ function UnifiedInboxPage() {
             </div>
           </InboxListHeader>
           <InboxConversationList>
-            {emailQ.isError || waQ.isError || lastEmailQ.isError || contactsQ.isError ? (
+            {emailQ.isError ||
+            waQ.isError ||
+            chatQ.isError ||
+            lastEmailQ.isError ||
+            contactsQ.isError ||
+            leadsQ.isError ? (
               <InboxError
                 onRetry={() => {
                   emailQ.refetch();
