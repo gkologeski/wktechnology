@@ -143,10 +143,7 @@ export function InboxWorkspace({
 function InboxChannelTabs() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   return (
-    <nav
-      className="flex min-w-0 items-center gap-1 overflow-x-auto"
-      aria-label="Canais da Inbox"
-    >
+    <nav className="flex min-w-0 items-center gap-1 overflow-x-auto" aria-label="Canais da Inbox">
       {CHANNELS.map(({ to, label, icon: Icon }) => {
         const active =
           to === "/inbox" ? pathname === "/inbox" || pathname === "/inbox/" : pathname === to;
