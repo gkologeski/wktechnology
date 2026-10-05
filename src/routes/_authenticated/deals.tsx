@@ -253,7 +253,7 @@ function DealsPage() {
   });
 
   const { data: companies = [] } = useQuery({
-    queryKey: ["companies", "select"],
+    queryKey: ["companies", "select", "deals"],
     queryFn: async () =>
       ((await supabase.from("companies").select("id,name").order("name")).data as Pick<
         Company,
@@ -279,6 +279,11 @@ function DealsPage() {
   const lookups: DealLookups = useMemo(() => {
     const c = new Map<string, string>();
     companies.forEach((x) => c.set(x.id, x.name));
+    // A lista acima é limitada pelo banco (1.000 linhas); o nome das empresas dos
+    // negócios exibidos vem da busca em lote por id, sem limite.
+    companyLogos?.forEach((info, id) => {
+      if (info.name) c.set(id, info.name);
+    });
     const ct = new Map<string, string>();
     contacts.forEach((x) => ct.set(x.id, `${x.first_name} ${x.last_name ?? ""}`.trim()));
     const o = new Map<string, string>();
