@@ -145,7 +145,9 @@ function EmailInbox() {
             <Tabs value={filter} onValueChange={(value) => setFilter(value as typeof filter)}>
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="mine">Minhas</TabsTrigger>
-                <TabsTrigger value="unassigned">Sem responsável</TabsTrigger>
+                <TabsTrigger value="unassigned" title="Sem responsável">
+                  Sem dono
+                </TabsTrigger>
                 <TabsTrigger value="all">Todas</TabsTrigger>
               </TabsList>
             </Tabs>
