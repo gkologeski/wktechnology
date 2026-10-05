@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Paperclip,
   X,
+  AlertCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadWhatsAppMedia } from "@/lib/whatsapp-media";
@@ -25,6 +26,8 @@ import {
   listAssignableMembers,
   assignWhatsAppConversation,
   setWhatsAppConversationStatus,
+  listWhatsAppTemplates,
+  applyTemplate,
 } from "@/lib/whatsapp.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -89,6 +92,7 @@ function WhatsAppInbox() {
   const membersFn = useServerFn(listAssignableMembers);
   const assignFn = useServerFn(assignWhatsAppConversation);
   const statusFn = useServerFn(setWhatsAppConversationStatus);
+  const templatesFn = useServerFn(listWhatsAppTemplates);
 
   const [selected, setSelected] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -99,6 +103,9 @@ function WhatsAppInbox() {
     name: string;
   } | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [templateRequired, setTemplateRequired] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [templateVars, setTemplateVars] = useState<string[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const conversationsQ = useQuery({ queryKey: ["wa", "conversations"], queryFn: () => listFn() });
@@ -108,6 +115,11 @@ function WhatsAppInbox() {
     enabled: !!selected,
   });
   const membersQ = useQuery({ queryKey: ["wa", "members"], queryFn: () => membersFn() });
+  const templatesQ = useQuery({
+    queryKey: ["wa", "templates"],
+    queryFn: () => templatesFn(),
+    enabled: templateRequired,
+  });
   const memberMap = useMemo(() => {
     const map = new Map<string, string>();
     (membersQ.data ?? []).forEach((m) => map.set(m.id, m.full_name || "—"));
@@ -151,16 +163,24 @@ function WhatsAppInbox() {
       contactId?: string;
       mediaUrl?: string;
       mediaContentType?: string;
+      templateName?: string;
+      templateLanguage?: string;
+      templateVariables?: string[];
     }) =>
       sendFn({ data: input }).then((res) => {
-        if (!res.ok) throw new Error(res.error);
+        if (!res.ok) {
+          if (res.code === "TEMPLATE_REQUIRED") setTemplateRequired(true);
+          throw new Error(res.error);
+        }
         return res;
       }),
     onSuccess: (res) => {
-      toast.success("Mensagem enviada");
       setDraft("");
       messageDraft.clearAfterSend();
       setPendingMedia(null);
+      setTemplateRequired(false);
+      setTemplateName("");
+      setTemplateVars([]);
       setSelected(res.conversationId);
       qc.invalidateQueries({ queryKey: ["wa"] });
     },
@@ -188,6 +208,25 @@ function WhatsAppInbox() {
       contactId: current.contact_id ?? undefined,
       mediaUrl: pendingMedia?.url,
       mediaContentType: pendingMedia?.contentType,
+    });
+  }
+
+  const approvedTemplates = templatesQ.data ?? [];
+  const selectedTemplate = approvedTemplates.find((template) => template.name === templateName);
+  const templateVariableCount = selectedTemplate?.variableCount ?? 0;
+
+  function submitTemplate() {
+    if (!current || !selectedTemplate) return;
+    sendMut.mutate({
+      to: current.contact_phone,
+      body: "",
+      contactId: current.contact_id ?? undefined,
+      templateName: selectedTemplate.name,
+      templateLanguage: selectedTemplate.language,
+      templateVariables: Array.from(
+        { length: templateVariableCount },
+        (_, index) => templateVars[index] ?? "",
+      ),
     });
   }
 
@@ -399,6 +438,91 @@ function WhatsAppInbox() {
                 </div>
               </ScrollArea>
               <div className="bg-product-panel p-4 pt-3">
+                {templateRequired && (
+                  <div className="mb-3 space-y-3 rounded-md border border-border bg-product-panel-muted p-3">
+                    <div className="flex gap-2 text-sm text-text-primary">
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                      <div>
+                        <p className="font-medium">Janela de 24 horas encerrada</p>
+                        <p className="text-xs text-muted-foreground">
+                          Para iniciar uma nova conversa, escolha um modelo aprovado pela Meta.
+                        </p>
+                      </div>
+                    </div>
+                    {templatesQ.isError ? (
+                      <div className="flex items-center justify-between gap-2 text-xs text-destructive">
+                        <span>Não foi possível carregar os modelos aprovados.</span>
+                        <Button size="sm" variant="outline" onClick={() => templatesQ.refetch()}>
+                          Tentar novamente
+                        </Button>
+                      </div>
+                    ) : templatesQ.isLoading ? (
+                      <p className="text-xs text-muted-foreground">Carregando modelos aprovados…</p>
+                    ) : approvedTemplates.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">
+                        Nenhum modelo aprovado está disponível. Configure um modelo na Meta antes de
+                        enviar.
+                      </p>
+                    ) : (
+                      <>
+                        <Select
+                          value={templateName}
+                          onValueChange={(value) => {
+                            setTemplateName(value);
+                            setTemplateVars([]);
+                          }}
+                        >
+                          <SelectTrigger aria-label="Modelo aprovado pela Meta">
+                            <SelectValue placeholder="Escolha um modelo aprovado" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {approvedTemplates.map((template) => (
+                              <SelectItem
+                                key={`${template.name}:${template.language}`}
+                                value={template.name}
+                              >
+                                {template.name} · {template.language}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {selectedTemplate && (
+                          <div className="space-y-2">
+                            {Array.from({ length: templateVariableCount }, (_, index) => (
+                              <Input
+                                key={index}
+                                value={templateVars[index] ?? ""}
+                                onChange={(event) =>
+                                  setTemplateVars((previous) => {
+                                    const next = [...previous];
+                                    next[index] = event.target.value;
+                                    return next;
+                                  })
+                                }
+                                placeholder={`Valor de {{${index + 1}}}`}
+                                aria-label={`Variável ${index + 1} do modelo`}
+                              />
+                            ))}
+                            <div className="whitespace-pre-wrap rounded-md border border-border bg-background p-3 text-sm">
+                              {applyTemplate(selectedTemplate.body, templateVars)}
+                            </div>
+                            <Button
+                              onClick={submitTemplate}
+                              disabled={
+                                sendMut.isPending ||
+                                templateVars
+                                  .slice(0, templateVariableCount)
+                                  .some((value) => !value?.trim())
+                              }
+                            >
+                              <Send className="mr-2 h-4 w-4" /> Enviar modelo
+                            </Button>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
                 {pendingMedia && (
                   <div className="mb-2 flex items-start gap-2 rounded-[calc(var(--radius)+0.75rem)] bg-product-panel-muted p-3 ring-1 ring-border-subtle">
                     <WhatsAppMediaBubble

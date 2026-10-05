@@ -56,8 +56,8 @@ export function InboxWorkspace({
   const showContext = !!context && resolvedContextOpen;
 
   return (
-    <div className="relative flex h-[calc(100dvh-4rem)] min-h-0 flex-col overflow-hidden bg-product-canvas p-2 font-[var(--font-body)] sm:p-3">
-      <header className="mb-3 shrink-0 overflow-hidden rounded-[calc(var(--radius)+1rem)] bg-product-header shadow-sm ring-1 ring-border-subtle">
+    <div className="relative flex h-full min-h-[32rem] flex-col overflow-hidden bg-product-canvas font-[var(--font-body)]">
+      <header className="mb-2 shrink-0 overflow-hidden rounded-md bg-product-header ring-1 ring-border-subtle">
         <div className="grid min-w-0 gap-3 p-3 xl:px-4">
           <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
             <div className="min-w-0">
@@ -77,7 +77,7 @@ export function InboxWorkspace({
       </header>
       <div
         className={cn(
-          "grid min-h-0 flex-1 gap-3 overflow-hidden",
+          "grid min-h-0 flex-1 gap-2 overflow-hidden",
           showContext
             ? "grid-cols-1 lg:grid-cols-[18rem_minmax(0,1fr)] xl:grid-cols-[19rem_minmax(0,1fr)_16rem] 2xl:grid-cols-[22rem_minmax(0,1fr)_18rem]"
             : "grid-cols-1 lg:grid-cols-[18rem_minmax(0,1fr)] 2xl:grid-cols-[22rem_minmax(0,1fr)]",
@@ -85,7 +85,7 @@ export function InboxWorkspace({
       >
         <section
           className={cn(
-            "min-h-0 flex-col overflow-hidden rounded-[calc(var(--radius)+1rem)] bg-product-panel shadow-sm ring-1 ring-border-subtle lg:flex",
+            "min-h-0 flex-col overflow-hidden rounded-md bg-product-panel ring-1 ring-border-subtle lg:flex",
             mobilePane === "list" ? "flex" : "hidden",
           )}
           aria-label="Conversas"
@@ -98,7 +98,7 @@ export function InboxWorkspace({
         </section>
         <section
           className={cn(
-            "relative min-h-0 min-w-0 flex-col overflow-hidden rounded-[calc(var(--radius)+1.25rem)] bg-background shadow-md ring-1 ring-border-subtle lg:flex",
+            "relative min-h-0 min-w-0 flex-col overflow-hidden rounded-md bg-background ring-1 ring-border-subtle lg:flex",
             mobilePane === "conversation" ? "flex" : "hidden",
           )}
           aria-label="Conversa selecionada"
@@ -129,7 +129,7 @@ export function InboxWorkspace({
         </section>
         {showContext ? (
           <aside
-            className="hidden min-h-0 overflow-hidden rounded-[calc(var(--radius)+1rem)] bg-product-panel shadow-sm ring-1 ring-border-subtle xl:flex xl:flex-col"
+            className="hidden min-h-0 overflow-hidden rounded-md bg-product-panel ring-1 ring-border-subtle xl:flex xl:flex-col"
             aria-label="Contexto do contato"
           >
             {context}

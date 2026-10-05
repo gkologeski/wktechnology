@@ -167,7 +167,7 @@ function AuthenticatedLayout() {
 
             {!blocked && <RouteBreadcrumbs />}
             <main
-              className="authenticated-content flex-1 overflow-auto bg-product-canvas p-4 md:p-6"
+              className={`authenticated-content flex-1 overflow-auto bg-product-canvas ${path.startsWith("/inbox") ? "min-h-0 p-2 md:p-3" : "p-4 md:p-6"}`}
               data-product-surface="authenticated"
             >
               <FocusQueueBar />
