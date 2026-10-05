@@ -296,7 +296,8 @@ export function SendWhatsAppDialog({
             <div role="alert" className="rounded-md border border-border bg-muted/40 p-3 text-sm">
               <p className="font-medium">Janela de 24 horas encerrada</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                A Meta permite continuar somente com um modelo aprovado. Seu rascunho foi preservado.
+                A Meta permite continuar somente com um modelo aprovado. Seu rascunho foi
+                preservado.
               </p>
               {tplQ.isLoading && (
                 <p className="mt-2 text-xs text-muted-foreground">Carregando modelos aprovados…</p>

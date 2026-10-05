@@ -1,5 +1,5 @@
-// Hook de realtime do chat: invalida queries e dispara toast em mensagens novas.
-import { useEffect, useRef } from "react";
+// Hook de realtime do chat: invalida queries; avisos ficam centralizados nas notificações.
+import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -11,13 +11,9 @@ type Opts = {
   resolveSender?: (userId: string) => string;
 };
 
-export function useChatRealtime({ activeConversationId, resolveSender }: Opts) {
+export function useChatRealtime({ activeConversationId: _activeConversationId, resolveSender: _resolveSender }: Opts) {
   const qc = useQueryClient();
   const { user } = useAuth();
-  const activeRef = useRef(activeConversationId);
-  activeRef.current = activeConversationId;
-  const resolveRef = useRef(resolveSender);
-  resolveRef.current = resolveSender;
 
   useEffect(() => {
     if (!user?.id) return;

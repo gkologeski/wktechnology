@@ -73,8 +73,11 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
         .eq("workspace_id", workspaceId)
         .eq("name", data.templateName)
         .eq("status", "APPROVED");
-      if (data.templateLanguage) templateQuery = templateQuery.eq("language", data.templateLanguage);
-      const { data: approvedTemplate, error: templateError } = await templateQuery.limit(1).maybeSingle();
+      if (data.templateLanguage)
+        templateQuery = templateQuery.eq("language", data.templateLanguage);
+      const { data: approvedTemplate, error: templateError } = await templateQuery
+        .limit(1)
+        .maybeSingle();
       if (templateError || !approvedTemplate) {
         return {
           ok: false as const,
