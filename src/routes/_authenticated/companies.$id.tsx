@@ -177,6 +177,7 @@ function CompanyDetail() {
   return (
     <>
       <RecordLayout
+        synchronizedTimeline
         header={header}
         left={
           <PropertiesPanel

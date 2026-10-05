@@ -217,6 +217,7 @@ function TicketDetail() {
 
   return (
     <RecordLayout
+      synchronizedTimeline
       header={header}
       left={
         <PropertiesPanel

@@ -40,3 +40,10 @@
 - [x] Aplicar em WhatsApp, Email e Chat ao vivo, preservando associações manuais
 - [x] Incluir os três canais e nomes de Leads na Inbox unificada
 - [x] Atualizar conversas existentes com correspondências inequívocas
+
+# Roadmap — Notificações da Inbox e timeline
+
+- [x] Notificar mensagens recebidas atribuídas em WhatsApp, E-mail e Chat ao vivo
+- [x] Atribuição manual e filtros por responsável nos três canais
+- [x] Distribuição automática opcional para os três canais
+- [x] Rolagem proporcional das laterais nas fichas de Lead, Contato, Empresa, Negócio e Ticket

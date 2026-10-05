@@ -61,9 +61,9 @@ export async function applyRotation(
   if (!pick) throw new Error("Regra não tem responsáveis configurados");
 
   const assignField =
-    entity === "tickets"
+    entity === "tickets" || entity === "live_chat_sessions"
       ? "assignee_id"
-      : entity === "whatsapp_conversations"
+      : entity === "whatsapp_conversations" || entity === "email_threads"
         ? "assigned_to"
         : "owner_id";
   const { error: upErr } = await supabase

@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
 import { identityColumns, resolveInboxIdentity } from "@/lib/inbox/identity-resolution.server";
+import { autoAssignInboxConversation } from "@/lib/inbox-auto-assignment.server";
 
 const schema = z.object({
   workspace_id: z.string().uuid(),
@@ -87,6 +88,12 @@ export const Route = createFileRoute("/api/public/widget/session")({
             .select("id")
             .single();
           if (error) throw error;
+          await autoAssignInboxConversation(
+            supabaseAdmin,
+            data.workspace_id,
+            "live_chat_sessions",
+            row.id,
+          );
           return Response.json({ session_id: row.id }, { headers: CORS });
         } catch (e) {
           return Response.json(

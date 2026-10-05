@@ -373,6 +373,7 @@ function LeadDetail() {
   return (
     <>
       <RecordLayout
+        synchronizedTimeline
         header={header}
         left={
           <PropertiesPanel

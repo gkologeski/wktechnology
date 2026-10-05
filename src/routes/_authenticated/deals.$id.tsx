@@ -358,6 +358,7 @@ function DealDetail() {
   return (
     <>
       <RecordLayout
+        synchronizedTimeline
         header={header}
         left={
           <PropertiesPanel

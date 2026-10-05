@@ -169,6 +169,7 @@ function ContactDetail() {
   return (
     <>
       <RecordLayout
+        synchronizedTimeline
         header={header}
         left={
           <PropertiesPanel
