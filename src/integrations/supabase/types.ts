@@ -7639,6 +7639,7 @@ export type Database = {
       email_threads: {
         Row: {
           account_id: string
+          assigned_to: string | null
           company_id: string | null
           contact_id: string | null
           created_at: string
@@ -7657,6 +7658,7 @@ export type Database = {
         }
         Insert: {
           account_id: string
+          assigned_to?: string | null
           company_id?: string | null
           contact_id?: string | null
           created_at?: string
@@ -7675,6 +7677,7 @@ export type Database = {
         }
         Update: {
           account_id?: string
+          assigned_to?: string | null
           company_id?: string | null
           contact_id?: string | null
           created_at?: string
@@ -11192,6 +11195,7 @@ export type Database = {
         Row: {
           body: string | null
           created_at: string
+          dedupe_key: string | null
           entity: string | null
           entity_id: string | null
           id: string
@@ -11206,6 +11210,7 @@ export type Database = {
         Insert: {
           body?: string | null
           created_at?: string
+          dedupe_key?: string | null
           entity?: string | null
           entity_id?: string | null
           id?: string
@@ -11220,6 +11225,7 @@ export type Database = {
         Update: {
           body?: string | null
           created_at?: string
+          dedupe_key?: string | null
           entity?: string | null
           entity_id?: string | null
           id?: string
