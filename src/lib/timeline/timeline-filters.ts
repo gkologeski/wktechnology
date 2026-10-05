@@ -145,23 +145,23 @@ function norm(s: string): string {
  * Aplica aba, tipos, responsável e busca. Grupos de histórico ficam só com as
  * alterações das categorias selecionadas; grupos vazios saem da lista.
  */
-export function applyTimelineFilters<E extends FilterableEntry>(
-  entries: E[],
+export function applyTimelineFilters(
+  entries: readonly FilterableEntry[],
   f: TimelineFilters,
   opts: {
-    extraText?: (a: NonNullable<E["activity"]>) => string;
+    extraText?: (a: FilterableActivity & { id?: string }) => string;
     historyText?: (g: HistoryGroup) => string;
   } = {},
-): E[] {
+): FilterableEntry[] {
   const allowed = new Set<TimelineCategory>(
     f.tab === "all" ? f.categories : f.categories.includes(f.tab) ? [f.tab] : [],
   );
   const q = norm(f.search.trim());
   const assignees = new Set(f.assignees);
-  const out: E[] = [];
+  const out: FilterableEntry[] = [];
   for (const e of entries) {
     if (e.activity) {
-      const a = e.activity as NonNullable<E["activity"]>;
+      const a = e.activity;
       if (!allowed.has(activityCategory(a.type))) continue;
       if (assignees.size) {
         const who = a.assigned_to ?? a.owner_id ?? null;
