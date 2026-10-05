@@ -619,203 +619,203 @@ function TicketsIndex() {
 
           <div className="rounded-md border bg-card overflow-hidden">
             <GridListShell filters={gridFilters}>
-            <GridListToolbar
-              filters={gridFilters}
-              sort={sort}
-              setSort={setGridSort}
-              grid={sortGrid}
-              filename="tickets"
-              labels={{
-                subject: "Assunto",
-                priority: "Prioridade",
-                status: "Status",
-                contact: "Contato",
-                company: "Empresa",
-                created: "Criado",
-              }}
-              search={false}
-              exportValue={{
-                priority: (t) => PRIORITIES.find((p) => p.value === t.priority)?.label,
-              }}
-            />
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-8">
-                    <Checkbox
-                      checked={filtered.length > 0 && selected.size === filtered.length}
-                      onCheckedChange={toggleAll}
+              <GridListToolbar
+                filters={gridFilters}
+                sort={sort}
+                setSort={setGridSort}
+                grid={sortGrid}
+                filename="tickets"
+                labels={{
+                  subject: "Assunto",
+                  priority: "Prioridade",
+                  status: "Status",
+                  contact: "Contato",
+                  company: "Empresa",
+                  created: "Criado",
+                }}
+                search={false}
+                exportValue={{
+                  priority: (t) => PRIORITIES.find((p) => p.value === t.priority)?.label,
+                }}
+              />
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-8">
+                      <Checkbox
+                        checked={filtered.length > 0 && selected.size === filtered.length}
+                        onCheckedChange={toggleAll}
+                      />
+                    </TableHead>
+                    <SortableTableHead
+                      label="Assunto"
+                      active={sort?.key === "subject"}
+                      dir={sort?.dir}
+                      onSort={() => toggleSort("subject")}
                     />
-                  </TableHead>
-                  <SortableTableHead
-                    label="Assunto"
-                    active={sort?.key === "subject"}
-                    dir={sort?.dir}
-                    onSort={() => toggleSort("subject")}
-                  />
-                  <SortableTableHead
-                    label="Prioridade"
-                    active={sort?.key === "priority"}
-                    dir={sort?.dir}
-                    onSort={() => toggleSort("priority")}
-                  />
-                  <SortableTableHead
-                    label="Status"
-                    active={sort?.key === "status"}
-                    dir={sort?.dir}
-                    onSort={() => toggleSort("status")}
-                  />
-                  <SortableTableHead
-                    label="Contato"
-                    active={sort?.key === "contact"}
-                    dir={sort?.dir}
-                    onSort={() => toggleSort("contact")}
-                  />
-                  <SortableTableHead
-                    label="Empresa"
-                    active={sort?.key === "company"}
-                    dir={sort?.dir}
-                    onSort={() => toggleSort("company")}
-                  />
-                  <TableHead>Responsável</TableHead>
-                  <SortableTableHead
-                    label="Criado"
-                    active={sort?.key === "created"}
-                    dir={sort?.dir}
-                    onSort={() => toggleSort("created")}
-                  />
-                  <TableHead className="w-8" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading && (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center text-muted-foreground py-10">
-                      Carregando…
-                    </TableCell>
+                    <SortableTableHead
+                      label="Prioridade"
+                      active={sort?.key === "priority"}
+                      dir={sort?.dir}
+                      onSort={() => toggleSort("priority")}
+                    />
+                    <SortableTableHead
+                      label="Status"
+                      active={sort?.key === "status"}
+                      dir={sort?.dir}
+                      onSort={() => toggleSort("status")}
+                    />
+                    <SortableTableHead
+                      label="Contato"
+                      active={sort?.key === "contact"}
+                      dir={sort?.dir}
+                      onSort={() => toggleSort("contact")}
+                    />
+                    <SortableTableHead
+                      label="Empresa"
+                      active={sort?.key === "company"}
+                      dir={sort?.dir}
+                      onSort={() => toggleSort("company")}
+                    />
+                    <TableHead>Responsável</TableHead>
+                    <SortableTableHead
+                      label="Criado"
+                      active={sort?.key === "created"}
+                      dir={sort?.dir}
+                      onSort={() => toggleSort("created")}
+                    />
+                    <TableHead className="w-8" />
                   </TableRow>
-                )}
-                {!isLoading && filtered.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center text-muted-foreground py-10">
-                      Nenhum ticket nesta view.
-                    </TableCell>
-                  </TableRow>
-                )}
-                {sortedTickets.map((t) => {
-                  const responsible = ticketResponsibleId(t);
-
-                  return (
-                    <TableRow key={t.id} className="cursor-pointer" onClick={() => openEdit(t)}>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <Checkbox
-                          checked={selected.has(t.id)}
-                          onCheckedChange={() => toggle(t.id)}
-                        />
-                      </TableCell>
-                      <TableCell className="font-medium max-w-[320px]">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="inline-block h-3 w-0.5 rounded-sm shrink-0"
-                            style={{ background: PRIORITY_COLOR_VAR[t.priority] }}
-                            aria-hidden
-                          />
-                          <span className="truncate">{t.subject}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          style={{
-                            background: `color-mix(in oklab, ${PRIORITY_COLOR_VAR[t.priority]} 14%, transparent)`,
-                            color: PRIORITY_COLOR_VAR[t.priority],
-                            borderColor: `color-mix(in oklab, ${PRIORITY_COLOR_VAR[t.priority]} 35%, transparent)`,
-                          }}
-                        >
-                          {PRIORITIES.find((p) => p.value === t.priority)?.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1.5">
-                          <Badge variant="secondary" className="font-normal">
-                            {STATUSES.find((s) => s.value === t.status)?.label}
-                          </Badge>
-                          <SlaBadge
-                            compact
-                            resolutionDueAt={
-                              (t as TicketRow & { sla_resolution_due_at?: string | null })
-                                .sla_resolution_due_at
-                            }
-                            resolutionBreached={
-                              (t as TicketRow & { sla_resolution_breached?: boolean })
-                                .sla_resolution_breached
-                            }
-                            resolvedAt={
-                              (t as TicketRow & { resolved_at?: string | null }).resolved_at
-                            }
-                            firstResponseDueAt={
-                              (t as TicketRow & { sla_first_response_due_at?: string | null })
-                                .sla_first_response_due_at
-                            }
-                            firstResponseAt={
-                              (t as TicketRow & { sla_first_response_at?: string | null })
-                                .sla_first_response_at
-                            }
-                            firstResponseBreached={
-                              (t as TicketRow & { sla_first_response_breached?: boolean })
-                                .sla_first_response_breached
-                            }
-                          />
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {t.contact_id ? (lookups.contacts.get(t.contact_id) ?? "—") : "—"}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {t.company_id ? (
-                          <span className="inline-flex min-w-0 items-center gap-2">
-                            <CompanyAvatarFromInfo
-                              id={t.company_id}
-                              name={
-                                ticketCompanyLogos?.get(t.company_id)?.name ??
-                                lookups.companies.get(t.company_id)
-                              }
-                              info={ticketCompanyLogos?.get(t.company_id)}
-                              size="sm"
-                            />
-                            <span className="truncate">
-                              {ticketCompanyLogos?.get(t.company_id)?.name ??
-                                lookups.companies.get(t.company_id) ??
-                                "—"}
-                            </span>
-                          </span>
-                        ) : (
-                          "—"
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <AssigneeCell assignedTo={responsible} className="text-xs" />
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground tabular-nums">
-                        {formatDateTime(t.created_at)}
-                      </TableCell>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <Can permission="techsales.tickets.manage.workspace">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => removeOne(t.id)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </Can>
+                </TableHeader>
+                <TableBody>
+                  {isLoading && (
+                    <TableRow>
+                      <TableCell colSpan={9} className="text-center text-muted-foreground py-10">
+                        Carregando…
                       </TableCell>
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                  )}
+                  {!isLoading && filtered.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={9} className="text-center text-muted-foreground py-10">
+                        Nenhum ticket nesta view.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {sortedTickets.map((t) => {
+                    const responsible = ticketResponsibleId(t);
+
+                    return (
+                      <TableRow key={t.id} className="cursor-pointer" onClick={() => openEdit(t)}>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <Checkbox
+                            checked={selected.has(t.id)}
+                            onCheckedChange={() => toggle(t.id)}
+                          />
+                        </TableCell>
+                        <TableCell className="font-medium max-w-[320px]">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="inline-block h-3 w-0.5 rounded-sm shrink-0"
+                              style={{ background: PRIORITY_COLOR_VAR[t.priority] }}
+                              aria-hidden
+                            />
+                            <span className="truncate">{t.subject}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            style={{
+                              background: `color-mix(in oklab, ${PRIORITY_COLOR_VAR[t.priority]} 14%, transparent)`,
+                              color: PRIORITY_COLOR_VAR[t.priority],
+                              borderColor: `color-mix(in oklab, ${PRIORITY_COLOR_VAR[t.priority]} 35%, transparent)`,
+                            }}
+                          >
+                            {PRIORITIES.find((p) => p.value === t.priority)?.label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1.5">
+                            <Badge variant="secondary" className="font-normal">
+                              {STATUSES.find((s) => s.value === t.status)?.label}
+                            </Badge>
+                            <SlaBadge
+                              compact
+                              resolutionDueAt={
+                                (t as TicketRow & { sla_resolution_due_at?: string | null })
+                                  .sla_resolution_due_at
+                              }
+                              resolutionBreached={
+                                (t as TicketRow & { sla_resolution_breached?: boolean })
+                                  .sla_resolution_breached
+                              }
+                              resolvedAt={
+                                (t as TicketRow & { resolved_at?: string | null }).resolved_at
+                              }
+                              firstResponseDueAt={
+                                (t as TicketRow & { sla_first_response_due_at?: string | null })
+                                  .sla_first_response_due_at
+                              }
+                              firstResponseAt={
+                                (t as TicketRow & { sla_first_response_at?: string | null })
+                                  .sla_first_response_at
+                              }
+                              firstResponseBreached={
+                                (t as TicketRow & { sla_first_response_breached?: boolean })
+                                  .sla_first_response_breached
+                              }
+                            />
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {t.contact_id ? (lookups.contacts.get(t.contact_id) ?? "—") : "—"}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {t.company_id ? (
+                            <span className="inline-flex min-w-0 items-center gap-2">
+                              <CompanyAvatarFromInfo
+                                id={t.company_id}
+                                name={
+                                  ticketCompanyLogos?.get(t.company_id)?.name ??
+                                  lookups.companies.get(t.company_id)
+                                }
+                                info={ticketCompanyLogos?.get(t.company_id)}
+                                size="sm"
+                              />
+                              <span className="truncate">
+                                {ticketCompanyLogos?.get(t.company_id)?.name ??
+                                  lookups.companies.get(t.company_id) ??
+                                  "—"}
+                              </span>
+                            </span>
+                          ) : (
+                            "—"
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <AssigneeCell assignedTo={responsible} className="text-xs" />
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground tabular-nums">
+                          {formatDateTime(t.created_at)}
+                        </TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <Can permission="techsales.tickets.manage.workspace">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => removeOne(t.id)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </Can>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             </GridListShell>
           </div>
         </TabsContent>
