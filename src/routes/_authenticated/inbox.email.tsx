@@ -82,7 +82,10 @@ function EmailInbox() {
   const assign = useMutation({
     mutationFn: (assignedTo: string | null) =>
       assignFn({ data: { conversationId: selected ?? "", assignedTo } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["email_threads"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["email_threads"] });
+      qc.invalidateQueries({ queryKey: ["email_thread", selected] });
+    },
     onError: (error: Error) => toast.error(error.message),
   });
 
