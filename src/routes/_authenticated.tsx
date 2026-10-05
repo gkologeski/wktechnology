@@ -146,7 +146,7 @@ function AuthenticatedLayout() {
   return (
     <ActivityWindows>
       <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-product-canvas">
+        <div className="flex h-screen w-full overflow-hidden bg-product-canvas">
           <AppSidebar />
           <div className="flex-1 flex flex-col min-w-0">
             <header className="h-14 flex min-w-0 items-center gap-2 border-b border-product-divider bg-product-header px-3">
@@ -167,7 +167,7 @@ function AuthenticatedLayout() {
 
             {!blocked && <RouteBreadcrumbs />}
             <main
-              className={`authenticated-content flex-1 overflow-auto bg-product-canvas ${path.startsWith("/inbox") ? "min-h-0 p-2 md:p-3" : "p-4 md:p-6"}`}
+              className={`authenticated-content flex-1 bg-product-canvas ${path.startsWith("/inbox") ? "min-h-0 overflow-hidden p-2 md:p-3" : "overflow-auto p-4 md:p-6"}`}
               data-product-surface="authenticated"
             >
               <FocusQueueBar />
