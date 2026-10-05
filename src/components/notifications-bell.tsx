@@ -89,6 +89,14 @@ export function NotificationsBell() {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
+          if (window.location.pathname.includes("/inbox")) {
+            qc.invalidateQueries({ queryKey: ["notifications"] });
+            return;
+          }
+          if (unread > 0) {
+            qc.invalidateQueries({ queryKey: ["notifications"] });
+            return;
+          }
           const n = payload.new as { title?: string; body?: string; type?: string };
           const cat = (n.type ?? "") as NotificationCategory;
           const channel = prefsRef.current?.[cat];

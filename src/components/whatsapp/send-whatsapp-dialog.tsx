@@ -212,7 +212,6 @@ export function SendWhatsAppDialog({
       if (!res.ok) {
         if (res.code === "TEMPLATE_REQUIRED") {
           setTemplateRequired(true);
-          setTemplateName("");
           setVars([]);
         }
         throw new Error(res.error);

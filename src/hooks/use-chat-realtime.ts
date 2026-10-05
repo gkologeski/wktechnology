@@ -1,10 +1,8 @@
 // Hook de realtime do chat: invalida queries e dispara toast em mensagens novas.
 import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { playMessageSound } from "@/lib/chat-sound";
 
 type Opts = {
   /** ID da conversa atualmente aberta (suprime toast pra mensagens dela). */
@@ -43,15 +41,6 @@ export function useChatRealtime({ activeConversationId, resolveSender }: Opts) {
             };
             qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
             qc.invalidateQueries({ queryKey: ["chat", "messages", row.conversation_id] });
-            if (row.sender_user_id === user.id) return;
-            if (activeRef.current === row.conversation_id) return;
-            playMessageSound();
-            const who = resolveRef.current
-              ? resolveRef.current(row.sender_user_id)
-              : "Nova mensagem";
-            toast(who, {
-              description: row.body?.slice(0, 140) ?? "(anexo)",
-            });
           },
         )
         .on("postgres_changes", { event: "*", schema: "public", table: "chat_conversations" }, () =>
