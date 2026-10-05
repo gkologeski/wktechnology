@@ -17,6 +17,14 @@ import { getActivitySurveyResponses } from "@/lib/surveys/survey-activity.functi
 import type { SurveyResponseSummary } from "@/components/surveys/survey-timeline-card";
 import type { EmailMeta, RelatedKey } from "@/components/activity/timeline-shared";
 import { useHistoryLabels } from "@/components/activity/use-history-labels";
+import { labelProperty, labelValue } from "@/lib/timeline/property-labels";
+import {
+  ALL_CATEGORIES,
+  DEFAULT_TIMELINE_FILTERS,
+  applyTimelineFilters,
+  countByCategory,
+  type TimelineFilters,
+} from "@/lib/timeline/timeline-filters";
 
 export type TimelineEntry = { t: number; activity?: Activity; history?: HistoryGroup };
 
@@ -34,7 +42,33 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
 
   // Histórico de alterações/movimentações (property_history) exibido na timeline.
   const [historyRows, setHistoryRows] = useState<PropertyChangeRow[]>([]);
-  const [showHistory, setShowHistory] = useState(true);
+  // Filtros no padrão HubSpot, salvos por tipo de ficha neste navegador.
+  const storageKey = `timeline-filters:${relatedKey}`;
+  const [filters, setFiltersState] = useState<TimelineFilters>(DEFAULT_TIMELINE_FILTERS);
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as Partial<TimelineFilters>;
+      setFiltersState({
+        ...DEFAULT_TIMELINE_FILTERS,
+        tab: saved.tab ?? "all",
+        categories: (saved.categories ?? ALL_CATEGORIES).filter((c) => ALL_CATEGORIES.includes(c)),
+        assignees: saved.assignees ?? [],
+      });
+    } catch {
+      /* preferências inválidas são ignoradas */
+    }
+  }, [storageKey]);
+  const setFilters = (f: TimelineFilters) => {
+    setFiltersState(f);
+    try {
+      const { search: _search, ...persisted } = f;
+      window.localStorage.setItem(storageKey, JSON.stringify(persisted));
+    } catch {
+      /* armazenamento indisponível */
+    }
+  };
 
   // Filtro de período da timeline (presets + datas customizadas)
   const [datePreset, setDatePreset] = useState<DatePreset>("any");
@@ -61,18 +95,38 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
     useHistoryLabels(historyRows);
 
   // Lista única, cronológica, de atividades + eventos de histórico.
-  const timelineEntries = useMemo(() => {
+  const allEntries = useMemo(() => {
     const entries: TimelineEntry[] = items.map((a) => ({
       t: new Date(a.hs_createdate ?? a.created_at ?? 0).getTime(),
       activity: a,
     }));
-    if (showHistory) {
-      for (const g of historyGroups) {
-        entries.push({ t: new Date(g.changed_at).getTime(), history: g });
-      }
+    for (const g of historyGroups) {
+      entries.push({ t: new Date(g.changed_at).getTime(), history: g });
     }
     return entries.sort((a, b) => b.t - a.t);
-  }, [items, historyGroups, showHistory]);
+  }, [items, historyGroups]);
+
+  const counts = useMemo(() => countByCategory(allEntries), [allEntries]);
+
+  const timelineEntries = useMemo(
+    () =>
+      applyTimelineFilters(allEntries, filters, {
+        extraText: (a) => {
+          const m = emailMeta.get(a.id);
+          return m
+            ? `${m.from_name ?? ""} ${m.from_email ?? ""} ${m.body_text ?? (m.body_html ?? "").replace(/<[^>]*>/g, " ")}`
+            : "";
+        },
+        historyText: (g) =>
+          g.changes
+            .map(
+              (c) =>
+                `${labelProperty(c.property)} ${resolveHistoryValue(c.property, c.old_value) ?? labelValue(c.old_value)} ${resolveHistoryValue(c.property, c.new_value) ?? labelValue(c.new_value)}`,
+            )
+            .join(" "),
+      }),
+    [allEntries, filters, emailMeta, resolveHistoryValue],
+  );
 
   // Carrega as respostas das atividades do tipo "pesquisa" exibidas na timeline.
   useEffect(() => {
@@ -191,8 +245,10 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
     loading,
     refreshing,
     load,
-    showHistory,
-    setShowHistory,
+    filters,
+    setFilters,
+    counts,
+    totalCount: items.length,
     datePreset,
     setDatePreset,
     dateCustom,

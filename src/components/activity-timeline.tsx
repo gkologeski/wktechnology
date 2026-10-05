@@ -15,7 +15,10 @@ import {
 import { TimelineActionBar } from "./activity/timeline-action-bar";
 import { TimelineEntriesList } from "./activity/timeline-entries-list";
 import { fetchTimelineTarget, fetchTimelineTeam } from "@/lib/timeline/activity-entities";
-import { TimelineRail } from "./activity/timeline-rail";
+import { TimelineFilterBar } from "./activity/timeline-filter-bar";
+import { TimelineExpandContext } from "./activity/timeline-expand-context";
+import { Button } from "@/components/ui/button";
+import { isFiltered, DEFAULT_TIMELINE_FILTERS } from "@/lib/timeline/timeline-filters";
 import { useTimelineFeed } from "./activity/use-timeline-feed";
 import {
   removeActivity,
@@ -42,8 +45,10 @@ export function ActivityTimeline({
     loading,
     refreshing,
     load,
-    showHistory,
-    setShowHistory,
+    filters,
+    setFilters,
+    counts,
+    totalCount,
     datePreset,
     setDatePreset,
     dateCustom,
@@ -54,6 +59,7 @@ export function ActivityTimeline({
   } = useTimelineFeed(relatedKey, relatedId);
 
   const openWindow = useActivityWindows();
+  const [expand, setExpand] = useState({ expanded: false, version: 0 });
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [whatsappIdentity, setWhatsappIdentity] = useState<WhatsAppIdentity>({});
   const [currentWorkspaceId, setCurrentWorkspaceId] = useState<string | null>(null);
@@ -146,71 +152,96 @@ export function ActivityTimeline({
       </div>
 
       {/* Timeline rail */}
-      <TimelineRail
+      <TimelineFilterBar
         relatedKey={relatedKey}
         relatedId={relatedId}
+        filters={filters}
+        onFiltersChange={setFilters}
+        counts={counts}
+        total={totalCount}
         datePreset={datePreset}
         dateCustom={dateCustom}
         onDateChange={(preset, custom) => {
           setDatePreset(preset);
           setDateCustom(custom);
         }}
-        showHistory={showHistory}
-        onToggleHistory={() => setShowHistory((v) => !v)}
+        team={team}
+        currentUserId={user?.id}
+        onExpandAll={(expanded) => setExpand((s) => ({ expanded, version: s.version + 1 }))}
         refreshing={refreshing && !loading}
       />
 
-      <TimelineEntriesList
-        onPatch={async (a, patch) => {
-          const res = await updateActivity(a.id, patch);
-          if (!res.ok) return toast.error(res.error);
-          afterChange();
-        }}
-        onFollowUp={(a) => {
-          const action = ACTIONS_BY_KEY["log:task"];
-          if (action)
-            openWindow?.({
-              action,
-              relatedKey,
-              relatedId,
-              subject: `Acompanhar: ${a.subject || "atividade"}`,
-            });
-        }}
-        loading={loading}
-        entries={timelineEntries}
-        emailMeta={emailMeta}
-        surveyMeta={surveyMeta}
-        team={team}
-        currentWorkspaceId={currentWorkspaceId}
-        resolveHistoryValue={resolveHistoryValue}
-        resolveHistoryActor={resolveHistoryActor}
-        onToggleDone={(row) => void toggleDone(row)}
-        onStartEdit={(activity) =>
-          openWindow?.({ action: ACTIONS_BY_KEY["log:task"], editingActivity: activity })
-        }
-        onRemove={(id) => void remove(id)}
-        onSummarizeMeeting={(id) => void onSummarizeMeeting(id)}
-        signRecording={async (path) => {
-          const { url } = await signMeetingRec({ data: { path } });
-          return url;
-        }}
-        editing={{
-          id: editing.editingId,
-          body: editing.body,
-          onBodyChange: editing.setBody,
-          assigneeId: editing.assigneeId,
-          onAssigneeChange: editing.setAssigneeId,
-          dueDate: editing.dueDate,
-          onDueDateChange: editing.setDueDate,
-          attachments: editing.attachments,
-          onAttachmentsChange: editing.setAttachments,
-          newFiles: editing.newFiles,
-          onNewFilesChange: editing.setNewFiles,
-          onOpenFileCenter: () => editing.setPickerOpen(true),
-          onSave: (a) => void editing.saveEdit(a),
-          onCancel: () => editing.setEditingId(null),
-        }}
-      />
+      {!loading && timelineEntries.length === 0 && (isFiltered(filters) || datePreset !== "any") ? (
+        <div className="rounded-md border border-dashed border-border py-8 text-center text-sm text-muted-foreground">
+          <p>Nenhum item corresponde aos filtros.</p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-3"
+            onClick={() => {
+              setFilters(DEFAULT_TIMELINE_FILTERS);
+              setDatePreset("any");
+              setDateCustom({});
+            }}
+          >
+            Limpar filtros
+          </Button>
+        </div>
+      ) : (
+        <TimelineExpandContext.Provider value={expand}>
+          <TimelineEntriesList
+            onPatch={async (a, patch) => {
+              const res = await updateActivity(a.id, patch);
+              if (!res.ok) return toast.error(res.error);
+              afterChange();
+            }}
+            onFollowUp={(a) => {
+              const action = ACTIONS_BY_KEY["log:task"];
+              if (action)
+                openWindow?.({
+                  action,
+                  relatedKey,
+                  relatedId,
+                  subject: `Acompanhar: ${a.subject || "atividade"}`,
+                });
+            }}
+            loading={loading}
+            entries={timelineEntries}
+            emailMeta={emailMeta}
+            surveyMeta={surveyMeta}
+            team={team}
+            currentWorkspaceId={currentWorkspaceId}
+            resolveHistoryValue={resolveHistoryValue}
+            resolveHistoryActor={resolveHistoryActor}
+            onToggleDone={(row) => void toggleDone(row)}
+            onStartEdit={(activity) =>
+              openWindow?.({ action: ACTIONS_BY_KEY["log:task"], editingActivity: activity })
+            }
+            onRemove={(id) => void remove(id)}
+            onSummarizeMeeting={(id) => void onSummarizeMeeting(id)}
+            signRecording={async (path) => {
+              const { url } = await signMeetingRec({ data: { path } });
+              return url;
+            }}
+            editing={{
+              id: editing.editingId,
+              body: editing.body,
+              onBodyChange: editing.setBody,
+              assigneeId: editing.assigneeId,
+              onAssigneeChange: editing.setAssigneeId,
+              dueDate: editing.dueDate,
+              onDueDateChange: editing.setDueDate,
+              attachments: editing.attachments,
+              onAttachmentsChange: editing.setAttachments,
+              newFiles: editing.newFiles,
+              onNewFilesChange: editing.setNewFiles,
+              onOpenFileCenter: () => editing.setPickerOpen(true),
+              onSave: (a) => void editing.saveEdit(a),
+              onCancel: () => editing.setEditingId(null),
+            }}
+          />
+        </TimelineExpandContext.Provider>
+      )}
     </div>
   );
 }
