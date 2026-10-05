@@ -19,11 +19,18 @@ export function useCompanyLogos(ids: Array<string | null | undefined>) {
     staleTime: 5 * 60_000,
     queryFn: async () => {
       const map = new Map<string, CompanyLogoInfo>();
-      for (let i = 0; i < unique.length; i += 200) {
-        const { data, error } = await supabase
-          .from("companies")
-          .select("id, name, logo_url, logo_source, domain, website")
-          .in("id", unique.slice(i, i + 200));
+      // Lotes em paralelo: quadros com centenas de negócios não esperam em fila.
+      const batches: string[][] = [];
+      for (let i = 0; i < unique.length; i += 200) batches.push(unique.slice(i, i + 200));
+      const results = await Promise.all(
+        batches.map((ids) =>
+          supabase
+            .from("companies")
+            .select("id, name, logo_url, logo_source, domain, website")
+            .in("id", ids),
+        ),
+      );
+      for (const { data, error } of results) {
         if (error) throw error;
         (data ?? []).forEach((c) => map.set(c.id, c as CompanyLogoInfo));
       }
