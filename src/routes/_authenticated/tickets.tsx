@@ -1,4 +1,6 @@
 import { formatDateTime } from "@/lib/crm";
+import { useCompanyLogos } from "@/hooks/use-company-logos";
+import { CompanyAvatarFromInfo } from "@/components/companies/company-avatar";
 import { useGridFilters } from "@/hooks/use-grid-filters";
 import type { GridFilterField } from "@/lib/grid-filters";
 import { GridListShell } from "@/components/grid/grid-list-shell";
@@ -232,6 +234,7 @@ function TicketsIndex() {
   });
   const { data: members = [] } = useWorkspaceMembers();
 
+  const { data: ticketCompanyLogos } = useCompanyLogos(tickets.map((t) => t.company_id));
   const lookups = useMemo(() => {
     const contactMap = new Map<string, string>();
     for (const c of contacts)
@@ -769,7 +772,26 @@ function TicketsIndex() {
                         {t.contact_id ? (lookups.contacts.get(t.contact_id) ?? "—") : "—"}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {t.company_id ? (lookups.companies.get(t.company_id) ?? "—") : "—"}
+                        {t.company_id ? (
+                          <span className="inline-flex min-w-0 items-center gap-2">
+                            <CompanyAvatarFromInfo
+                              id={t.company_id}
+                              name={
+                                ticketCompanyLogos?.get(t.company_id)?.name ??
+                                lookups.companies.get(t.company_id)
+                              }
+                              info={ticketCompanyLogos?.get(t.company_id)}
+                              size="sm"
+                            />
+                            <span className="truncate">
+                              {ticketCompanyLogos?.get(t.company_id)?.name ??
+                                lookups.companies.get(t.company_id) ??
+                                "—"}
+                            </span>
+                          </span>
+                        ) : (
+                          "—"
+                        )}
                       </TableCell>
                       <TableCell>
                         <AssigneeCell assignedTo={responsible} className="text-xs" />

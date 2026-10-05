@@ -22,6 +22,7 @@ import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog"
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { useHubspotOwners } from "@/hooks/use-hubspot-owners";
 import { useGridProjection } from "@/hooks/use-grid-projection";
+import { useCompanyLogos } from "@/hooks/use-company-logos";
 import { buildGridSelect } from "@/lib/grid/dynamic-select";
 
 import { getDateRange, type CustomRange, type DatePreset } from "@/lib/date-presets";
@@ -426,6 +427,7 @@ function LeadsHubspotView() {
   });
 
   const rows = result?.rows ?? [];
+  const { data: leadCompanyLogos } = useCompanyLogos(rows.map((r) => r.company_id));
   const total = result?.count ?? 0;
 
   /**
@@ -571,6 +573,7 @@ function LeadsHubspotView() {
     nameFor,
     initialsFor,
     hsOwners,
+    companyLogos: leadCompanyLogos,
   });
 
   const hasActiveFilters =
