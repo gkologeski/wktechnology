@@ -49,17 +49,57 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
     await (await import("@/lib/view-as-guard.server")).assertNotReadOnlyView(context.supabase);
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    const { resolveWaNumber, metaSend, findConversationNumber } =
+    const { resolveWaNumber, metaSend, findConversationNumber, isWithinServiceWindow } =
       await import("@/lib/whatsapp/meta-channel.server");
 
     const toBare = normalizePhone(data.to);
     const existing = await findConversationNumber(supabase, workspaceId, toBare);
+
+    if (!isWithinServiceWindow(existing?.lastInboundAt) && !data.templateName) {
+      return {
+        ok: false as const,
+        code: "TEMPLATE_REQUIRED" as const,
+        error:
+          "A janela de 24 horas terminou. Escolha um modelo aprovado pela Meta para continuar.",
+        sid: "",
+        conversationId: "",
+      };
+    }
+
+    if (data.templateName) {
+      let templateQuery = supabase
+        .from("wa_templates")
+        .select("name, language")
+        .eq("workspace_id", workspaceId)
+        .eq("name", data.templateName)
+        .eq("status", "APPROVED");
+      if (data.templateLanguage)
+        templateQuery = templateQuery.eq("language", data.templateLanguage);
+      const { data: approvedTemplate, error: templateError } = await templateQuery
+        .limit(1)
+        .maybeSingle();
+      if (templateError || !approvedTemplate) {
+        return {
+          ok: false as const,
+          code: "TEMPLATE_NOT_APPROVED" as const,
+          error: "Este modelo não está aprovado pela Meta. Escolha outro modelo aprovado.",
+          sid: "",
+          conversationId: "",
+        };
+      }
+    }
     let num: Awaited<ReturnType<typeof resolveWaNumber>>;
     try {
       num = await resolveWaNumber(workspaceId, existing?.phoneNumberId ?? null);
     } catch (e) {
       // Estado esperado (sem número conectado): resultado tipado em vez de erro de runtime.
-      return { ok: false as const, error: (e as Error).message, sid: "", conversationId: "" };
+      return {
+        ok: false as const,
+        code: "CHANNEL_UNAVAILABLE" as const,
+        error: (e as Error).message,
+        sid: "",
+        conversationId: "",
+      };
     }
 
     // Resolve contato pelo telefone se não informado
@@ -389,6 +429,7 @@ export const listWhatsAppTemplates = createServerFn({ method: "GET" })
       .from("wa_templates")
       .select("name, language, status, components")
       .eq("workspace_id", workspaceId)
+      .eq("status", "APPROVED")
       .order("name", { ascending: true });
     if (error) throw error;
     return (data ?? []).map((t: any) => {

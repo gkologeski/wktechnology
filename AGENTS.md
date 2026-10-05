@@ -22,5 +22,6 @@
 - Identidade da Inbox é resolvida por workspace em serviço único, priorizando Contato sobre Lead e deixando duplicidades para escolha manual; por quê: impedir associação cruzada ou arbitrária entre carteiras e canais.
 - Logotipos de empresas saem só de `CompanyAvatar` (manual em `companies.logo_url` como imagem reduzida → domínio/site → iniciais) e são carregados em lote por `useCompanyLogos`; por quê: uma fonte de verdade, sem consulta por linha e sem bucket público.
 - Troca de tela mostra `ListPageSkeleton` (pendente padrão do roteador) e listagens pesadas são pré-carregadas no ocioso por `useIdleListPreload`; por quê: estrutura fixa aparece antes dos dados.
-- Mensagens inbound notificam somente o responsável ativo no momento da entrada, com idempotência por canal/mensagem/usuário; por quê: evitar ruído e duplicidade entre provedores.
+- Mensagens inbound notificam somente o responsável ativo e apenas quando a conversa não possui aviso não lido; por quê: agrupar sequências e evitar ruído e duplicidade entre provedores.
+- WhatsApp livre exige mensagem inbound nas últimas 24 horas; fora da janela, somente template `APPROVED` validado no servidor; por quê: cumprir a política da Meta em todos os pontos de envio.
 - Fichas comerciais usam `RecordLayout` opt-in com timeline central como mestre da rolagem proporcional lateral; por quê: painéis de alturas diferentes terminam juntos sem afetar telas ATS.

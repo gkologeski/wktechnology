@@ -110,9 +110,7 @@ function EmailInbox() {
 
   async function handleSync() {
     try {
-      const r = await syncFn({ data: {} });
-      const inserted = r.results.reduce((a, x) => a + x.inserted, 0);
-      toast.success(inserted ? `${inserted} mensagem(ns) novas` : "Sem novidades");
+      await syncFn({ data: {} });
       qc.invalidateQueries({ queryKey: ["email_threads"] });
       if (selected) qc.invalidateQueries({ queryKey: ["email_thread", selected] });
     } catch (e) {

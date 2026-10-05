@@ -92,6 +92,7 @@ export function SendWhatsAppDialog({
     null,
   );
   const [uploading, setUploading] = useState(false);
+  const [templateRequired, setTemplateRequired] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const bodyInserter = useTokenInserter<HTMLTextAreaElement>(() => body, setBody);
   const { user } = useAuth();
@@ -208,17 +209,23 @@ export function SendWhatsAppDialog({
           mediaContentType: isOfficialHsm ? undefined : media?.contentType,
         },
       });
-      if (!res.ok) throw new Error(res.error);
+      if (!res.ok) {
+        if (res.code === "TEMPLATE_REQUIRED") {
+          setTemplateRequired(true);
+          setVars([]);
+        }
+        throw new Error(res.error);
+      }
       return res;
     },
     onSuccess: (res) => {
-      toast.success("Mensagem enviada");
       draft.clearAfterSend();
       setOpen(false);
       setBody("");
       setTemplateName("");
       setVars([]);
       setMedia(null);
+      setTemplateRequired(false);
       onSent?.(res.conversationId);
     },
     onError: (e: Error) => toast.error(e.message),
@@ -261,7 +268,7 @@ export function SendWhatsAppDialog({
           </div>
 
           <div>
-            <Label>Template (opcional)</Label>
+            <Label>{templateRequired ? "Modelo aprovado pela Meta" : "Template (opcional)"}</Label>
             <Select
               value={templateName || "_none"}
               onValueChange={(v) => {
@@ -274,7 +281,7 @@ export function SendWhatsAppDialog({
                 <SelectValue placeholder="Mensagem livre" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="_none">Mensagem livre</SelectItem>
+                {!templateRequired && <SelectItem value="_none">Mensagem livre</SelectItem>}
                 {templates.map((t) => (
                   <SelectItem key={`${t.name}:${t.language}`} value={t.name}>
                     {t.name}
@@ -284,6 +291,29 @@ export function SendWhatsAppDialog({
               </SelectContent>
             </Select>
           </div>
+
+          {templateRequired && (
+            <div role="alert" className="rounded-md border border-border bg-muted/40 p-3 text-sm">
+              <p className="font-medium">Janela de 24 horas encerrada</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                A Meta permite continuar somente com um modelo aprovado. Seu rascunho foi
+                preservado.
+              </p>
+              {tplQ.isLoading && (
+                <p className="mt-2 text-xs text-muted-foreground">Carregando modelos aprovados…</p>
+              )}
+              {tplQ.isError && (
+                <Button className="mt-2" size="sm" variant="outline" onClick={() => tplQ.refetch()}>
+                  Tentar carregar novamente
+                </Button>
+              )}
+              {tplQ.isSuccess && templates.length === 0 && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Nenhum modelo aprovado está disponível no momento.
+                </p>
+              )}
+            </div>
+          )}
 
           {selectedTpl ? (
             <>
@@ -453,6 +483,7 @@ export function SendWhatsAppDialog({
             disabled={
               notConnected ||
               !to ||
+              (templateRequired && !selectedTpl) ||
               (!isOfficialHsm && !previewBody.trim() && !media) ||
               sendMut.isPending ||
               uploading ||

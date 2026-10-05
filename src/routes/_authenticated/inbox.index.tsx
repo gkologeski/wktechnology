@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { sendGmailEmail } from "@/lib/email-send.functions";
 import { sendWhatsAppMessage } from "@/lib/whatsapp.functions";
+import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
 import { smartCompose } from "@/lib/ai-compose.functions";
 import { sendChatMessage } from "@/lib/live-chat.functions";
 import { toast } from "sonner";
@@ -77,6 +78,7 @@ function UnifiedInboxPage() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const sendEmail = useServerFn(sendGmailEmail);
   const sendWa = useServerFn(sendWhatsAppMessage);
   const sendChat = useServerFn(sendChatMessage);
@@ -335,20 +337,23 @@ function UnifiedInboxPage() {
           } as never,
         });
       } else if (current.channel === "whatsapp") {
+        if (!current.replyTo) throw new Error("Não foi possível identificar o número do cliente.");
         const res = await sendWa({
           data: {
-            to: current.replyTo!,
+            to: current.replyTo,
             body: draft,
             contactId: current.contactId ?? undefined,
           } as never,
         });
-        if (!res.ok) throw new Error(res.error);
+        if (!res.ok) {
+          if (res.code === "TEMPLATE_REQUIRED") setTemplateDialogOpen(true);
+          throw new Error(res.error);
+        }
       } else {
         await sendChat({ data: { session_id: current.conversationId, body: draft } });
       }
     },
     onSuccess: () => {
-      toast.success("Enviado!");
       setDraft("");
       messageDraft.clearAfterSend();
     },
@@ -498,6 +503,20 @@ function UnifiedInboxPage() {
                 </InboxMessageBubble>
               </div>
               <div className="m-4 space-y-2 rounded-[calc(var(--radius)+1rem)] bg-product-panel-muted p-2 ring-1 ring-border-subtle focus-within:ring-2 focus-within:ring-ring">
+                {current.channel === "whatsapp" && (
+                  <SendWhatsAppDialog
+                    open={templateDialogOpen}
+                    onOpenChange={setTemplateDialogOpen}
+                    defaultTo={current.replyTo ?? ""}
+                    contactId={current.contactId ?? undefined}
+                    contactName={current.contactLabel}
+                    draftIndicator={false}
+                    onSent={() => {
+                      setDraft("");
+                      messageDraft.clearAfterSend();
+                    }}
+                  />
+                )}
                 <Textarea
                   className="min-h-24 resize-none border-0 shadow-none focus-visible:ring-0"
                   rows={6}

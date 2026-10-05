@@ -92,9 +92,13 @@ export function NotificationsBell() {
           const n = payload.new as { title?: string; body?: string; type?: string };
           const cat = (n.type ?? "") as NotificationCategory;
           const channel = prefsRef.current?.[cat];
-          toast.message(n.title ?? "Nova notificação", { description: n.body ?? undefined });
-          if (channel?.sound !== false) playBeep();
-          if (channel?.shake !== false) {
+          const isInboxMessage = cat === "message";
+          const isInsideInbox = window.location.pathname.startsWith("/inbox");
+          const shouldInterrupt = !isInboxMessage || !isInsideInbox;
+          if (shouldInterrupt)
+            toast.message(n.title ?? "Nova notificação", { description: n.body ?? undefined });
+          if (shouldInterrupt && channel?.sound !== false) playBeep();
+          if (shouldInterrupt && channel?.shake !== false) {
             setShaking(true);
             setTimeout(() => setShaking(false), 850);
           }
