@@ -47,3 +47,11 @@
 - [x] Atribuição manual e filtros por responsável nos três canais
 - [x] Distribuição automática opcional para os três canais
 - [x] Rolagem proporcional das laterais nas fichas de Lead, Contato, Empresa, Negócio e Ticket
+
+# Roadmap — Inbox: janela de 24 horas, avisos e layout
+
+- [ ] Bloquear envio livre de WhatsApp fora da janela de 24 horas no servidor
+- [ ] Sugerir e enviar somente templates Meta aprovados fora da janela
+- [ ] Avisar somente na primeira mensagem não lida e fora da Inbox
+- [ ] Corrigir cortes com três painéis fluidos em desktop e mobile
+- [ ] Validar código, testes e fluxo visual
