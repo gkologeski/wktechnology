@@ -5,7 +5,10 @@ import type { RotationEntity } from "@/lib/rotation/types";
 export async function autoAssignInboxConversation(
   supabase: SupabaseClient,
   workspaceId: string,
-  entity: Extract<RotationEntity, "whatsapp_conversations" | "email_threads" | "live_chat_sessions">,
+  entity: Extract<
+    RotationEntity,
+    "whatsapp_conversations" | "email_threads" | "live_chat_sessions"
+  >,
   entityId: string,
 ) {
   const { data: rule } = await supabase

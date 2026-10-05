@@ -87,9 +87,8 @@ export const Route = createFileRoute("/api/public/widget/session")({
             .select("id")
             .single();
           if (error) throw error;
-          const { autoAssignInboxConversation } = await import(
-            "@/lib/inbox-auto-assignment.server"
-          );
+          const { autoAssignInboxConversation } =
+            await import("@/lib/inbox-auto-assignment.server");
           await autoAssignInboxConversation(
             supabaseAdmin,
             data.workspace_id,

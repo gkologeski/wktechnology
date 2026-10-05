@@ -20,7 +20,13 @@ import { Send, X, Ticket as TicketIcon } from "lucide-react";
 import { toast } from "sonner";
 import { InboxIdentityLinker } from "@/components/inbox/inbox-identity-linker";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/lib/auth";
 import { listWorkspaceMembers } from "@/lib/rotation.functions";
 import { assignChatSession } from "@/lib/inbox-assignment.functions";
@@ -137,7 +143,9 @@ function LiveChatInbox() {
   );
   const messages = messagesQ.data ?? [];
   const current = allSessions.find((s) => s.id === selected);
-  const memberNames = new Map((membersQ.data ?? []).map((member) => [member.user_id, member.full_name]));
+  const memberNames = new Map(
+    (membersQ.data ?? []).map((member) => [member.user_id, member.full_name]),
+  );
 
   return (
     <InboxWorkspace
@@ -207,12 +215,22 @@ function LiveChatInbox() {
                         value={current.assignee_id ?? "_none"}
                         onValueChange={(value) => assign.mutate(value === "_none" ? null : value)}
                       >
-                        <SelectTrigger className="h-8 w-[190px] text-xs" aria-label="Responsável pela conversa"><SelectValue placeholder="Atribuir a…" /></SelectTrigger>
+                        <SelectTrigger
+                          className="h-8 w-[190px] text-xs"
+                          aria-label="Responsável pela conversa"
+                        >
+                          <SelectValue placeholder="Atribuir a…" />
+                        </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="_none">Sem responsável</SelectItem>
-                          {(membersQ.data ?? []).filter((member) => member.status === "active").map((member) => (
-                            <SelectItem key={member.user_id} value={member.user_id}>{member.full_name}{member.user_id === user?.id ? " (eu)" : ""}</SelectItem>
-                          ))}
+                          {(membersQ.data ?? [])
+                            .filter((member) => member.status === "active")
+                            .map((member) => (
+                              <SelectItem key={member.user_id} value={member.user_id}>
+                                {member.full_name}
+                                {member.user_id === user?.id ? " (eu)" : ""}
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
                       <Button
@@ -316,5 +334,5 @@ function LiveChatInbox() {
 }
 
 function sessionAssignee(assigneeId: string | null, memberNames: Map<string, string>) {
-  return assigneeId ? memberNames.get(assigneeId) ?? "atribuída" : "sem responsável";
+  return assigneeId ? (memberNames.get(assigneeId) ?? "atribuída") : "sem responsável";
 }

@@ -15,7 +15,13 @@ import { formatDateTime } from "@/lib/crm";
 import { toast } from "sonner";
 import { InboxIdentityLinker } from "@/components/inbox/inbox-identity-linker";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/lib/auth";
 import { listWorkspaceMembers } from "@/lib/rotation.functions";
 import { assignEmailThread } from "@/lib/inbox-assignment.functions";
@@ -98,7 +104,9 @@ function EmailInbox() {
         : true,
   );
   const current = threadQ.data;
-  const memberNames = new Map((membersQ.data ?? []).map((member) => [member.user_id, member.full_name]));
+  const memberNames = new Map(
+    (membersQ.data ?? []).map((member) => [member.user_id, member.full_name]),
+  );
 
   async function handleSync() {
     try {
@@ -178,7 +186,10 @@ function EmailInbox() {
                   }
                   meta={
                     t.assigned_to ? (
-                      <span className="inline-flex items-center gap-1"><UserCheck className="h-3 w-3" />{memberNames.get(t.assigned_to) ?? "atribuída"}</span>
+                      <span className="inline-flex items-center gap-1">
+                        <UserCheck className="h-3 w-3" />
+                        {memberNames.get(t.assigned_to) ?? "atribuída"}
+                      </span>
                     ) : (
                       <span className="italic">sem responsável</span>
                     )
@@ -213,15 +224,29 @@ function EmailInbox() {
                       value={current.thread.assigned_to ?? "_none"}
                       onValueChange={(value) => assign.mutate(value === "_none" ? null : value)}
                     >
-                      <SelectTrigger className="h-8 w-[190px] text-xs" aria-label="Responsável pela conversa"><SelectValue placeholder="Atribuir a…" /></SelectTrigger>
+                      <SelectTrigger
+                        className="h-8 w-[190px] text-xs"
+                        aria-label="Responsável pela conversa"
+                      >
+                        <SelectValue placeholder="Atribuir a…" />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="_none">Sem responsável</SelectItem>
-                        {(membersQ.data ?? []).filter((member) => member.status === "active").map((member) => (
-                          <SelectItem key={member.user_id} value={member.user_id}>{member.full_name}{member.user_id === user?.id ? " (eu)" : ""}</SelectItem>
-                        ))}
+                        {(membersQ.data ?? [])
+                          .filter((member) => member.status === "active")
+                          .map((member) => (
+                            <SelectItem key={member.user_id} value={member.user_id}>
+                              {member.full_name}
+                              {member.user_id === user?.id ? " (eu)" : ""}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
-                    <Button size="sm" variant="outline" onClick={() => openEmail(lastMsg?.from_email ?? "", current.thread.id)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openEmail(lastMsg?.from_email ?? "", current.thread.id)}
+                    >
                       <Reply className="mr-2 h-4 w-4" /> Responder
                     </Button>
                   </>
