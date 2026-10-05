@@ -70,6 +70,8 @@ import { formatDateTime } from "@/lib/crm";
 import { exportRowsToCsv } from "@/lib/csv-export";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
+import { useCompanyLogos } from "@/hooks/use-company-logos";
+import { CompanyAvatar, CompanyAvatarFromInfo } from "@/components/companies/company-avatar";
 import {
   RESPONSIBLE_COLUMNS_FULL,
   responsibleId,
@@ -363,18 +365,12 @@ function ContactsHubspotView() {
     () => Array.from(new Set(rows.map((r) => r.company_id).filter(Boolean) as string[])).sort(),
     [rows],
   );
-  const { data: pageCompanies = [] } = useQuery({
-    queryKey: ["companies", "by-ids", pageCompanyIds],
-    enabled: pageCompanyIds.length > 0,
-    queryFn: async () => {
-      const { data } = await supabase.from("companies").select("id,name").in("id", pageCompanyIds);
-      return (data ?? []) as Pick<Company, "id" | "name">[];
-    },
-  });
-  const companyMap = useMemo(
-    () => new Map(pageCompanies.map((c) => [c.id, c.name])),
-    [pageCompanies],
-  );
+  const { data: pageCompanyLogos } = useCompanyLogos(pageCompanyIds);
+  const companyMap = useMemo(() => {
+    const m = new Map<string, string>();
+    pageCompanyLogos?.forEach((c, id) => m.set(id, c.name ?? ""));
+    return m;
+  }, [pageCompanyLogos]);
 
   const exportData = async (format: ExportFormat, rowsToExport?: typeof rows): Promise<void> => {
     const out = rowsToExport ?? rows;
@@ -484,13 +480,22 @@ function ContactsHubspotView() {
             <Link
               to="/companies/$id"
               params={{ id: c.company_id }}
-              className="truncate hover:underline"
+              className="inline-flex min-w-0 items-center gap-2 hover:underline"
               onClick={(e) => e.stopPropagation()}
             >
-              {label}
+              <CompanyAvatarFromInfo
+                id={c.company_id}
+                name={label}
+                info={pageCompanyLogos?.get(c.company_id)}
+                size="sm"
+              />
+              <span className="truncate">{label}</span>
             </Link>
           ) : (
-            <span className="truncate">{label}</span>
+            <span className="inline-flex min-w-0 items-center gap-2">
+              <CompanyAvatar name={label} seed={label} size="sm" />
+              <span className="truncate">{label}</span>
+            </span>
           );
         },
       },
@@ -556,7 +561,7 @@ function ContactsHubspotView() {
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [sortKey, sortDir, nameFor, initialsFor, companyMap],
+    [sortKey, sortDir, nameFor, initialsFor, companyMap, pageCompanyLogos],
   );
   const DEFAULT_CONTACT_COLS = [
     "name",

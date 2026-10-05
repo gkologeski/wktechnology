@@ -38,6 +38,8 @@ import { usePipelines } from "@/lib/pipelines";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { qk } from "@/lib/entity-queries";
 import type { Deal } from "@/lib/db-types";
+import { CompanyAvatarFromInfo } from "@/components/companies/company-avatar";
+import { useCompanyLogos } from "@/hooks/use-company-logos";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { useAuth } from "@/lib/auth";
 import { useCanDelete } from "@/lib/access-control/use-can-delete";
@@ -116,6 +118,8 @@ function DealDetail() {
     );
   }, [deal, pipelines]);
 
+  const { data: dealLogos } = useCompanyLogos([deal?.company_id]);
+  const dealCompany = deal?.company_id ? dealLogos?.get(deal.company_id) : undefined;
   const invalidateSubstatusHistory = useInvalidateSubstatusHistory();
 
   const stages = useMemo(
@@ -277,10 +281,19 @@ function DealDetail() {
                 </span>
               )}
               {deal.company_id && (
-                <span className="inline-flex items-center gap-1">
-                  <Building2 className="h-3.5 w-3.5" />
-                  Empresa associada
-                </span>
+                <Link
+                  to="/companies/$id"
+                  params={{ id: deal.company_id }}
+                  className="inline-flex min-w-0 items-center gap-1.5 rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <CompanyAvatarFromInfo
+                    id={deal.company_id}
+                    name={dealCompany?.name}
+                    info={dealCompany}
+                    size="xs"
+                  />
+                  <span className="truncate">{dealCompany?.name ?? "Empresa associada"}</span>
+                </Link>
               )}
             </div>
           </div>

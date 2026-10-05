@@ -8,6 +8,8 @@ import { toE164 } from "@/lib/validators";
 import { colorFromString, initialsOf, timeAgo } from "@/lib/leads/format";
 import type { LeadGridRow, SortDir, SortKey } from "@/lib/leads/constants";
 import { StagePill, ScoreCell, Th } from "@/components/leads/table-primitives";
+import { CompanyAvatar, CompanyAvatarFromInfo } from "@/components/companies/company-avatar";
+import type { CompanyLogoInfo } from "@/hooks/use-company-logos";
 
 /** Colunas visíveis por padrão no grid de leads. */
 const DEFAULT_LEAD_COLS = [
@@ -33,6 +35,7 @@ export function useLeadColumns({
   nameFor,
   initialsFor,
   hsOwners,
+  companyLogos,
 }: {
   sortKey: SortKey;
   sortDir: SortDir;
@@ -46,6 +49,8 @@ export function useLeadColumns({
       { first_name?: string | null; last_name?: string | null; email?: string | null }
     >;
   };
+  /** Logotipos das empresas vinculadas aos leads da página. */
+  companyLogos?: Map<string, CompanyLogoInfo>;
 }) {
   /** Cabeçalho ordenável para as colunas do catálogo dinâmico ("Outros campos"). */
   const autoSortHeader = useCallback(
@@ -135,12 +140,21 @@ export function useLeadColumns({
       {
         key: "company",
         label: "Empresa",
-        render: (lead) =>
-          lead.company_name ? (
-            <span className="truncate">{lead.company_name}</span>
-          ) : (
-            <span className="text-muted-foreground">—</span>
-          ),
+        render: (lead) => {
+          const info = lead.company_id ? companyLogos?.get(lead.company_id) : undefined;
+          const label = info?.name ?? lead.company_name;
+          if (!label) return <span className="text-muted-foreground">—</span>;
+          return (
+            <span className="inline-flex min-w-0 items-center gap-2">
+              {lead.company_id ? (
+                <CompanyAvatarFromInfo id={lead.company_id} name={label} info={info} size="sm" />
+              ) : (
+                <CompanyAvatar name={label} seed={label} size="sm" />
+              )}
+              <span className="truncate">{label}</span>
+            </span>
+          );
+        },
       },
       {
         key: "status",
@@ -252,7 +266,7 @@ export function useLeadColumns({
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [sortKey, sortDir, nameFor, initialsFor],
+    [sortKey, sortDir, nameFor, initialsFor, companyLogos],
   );
 
   return useGridColumns<LeadGridRow>({
