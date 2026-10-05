@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from "react";
+import { useTimelineExpand } from "./timeline-expand-context";
 import { sanitizeHtml as sanitizeEmailHtml } from "@/components/rich-html-editor";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { formatDateTime } from "@/lib/crm";
@@ -27,6 +28,10 @@ export function EmailTimelineItem({
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [iframeHeight, setIframeHeight] = useState<number>(160);
   const [collapsed, setCollapsed] = useState<boolean>(true);
+  const expand = useTimelineExpand();
+  useEffect(() => {
+    if (expand.version > 0) setCollapsed(!expand.expanded);
+  }, [expand.version, expand.expanded]);
   const [headerOpen, setHeaderOpen] = useState<boolean>(false);
 
   const isOut = meta.direction === "outbound";

@@ -20,7 +20,6 @@ import { AssociationsPanel } from "@/components/record/associations-panel";
 
 import { StageTracker } from "@/components/stage-tracker";
 import { SubstatusSelect } from "@/components/pipelines/substatus-select";
-import { SubstatusHistory } from "@/components/pipelines/substatus-history";
 import { useInvalidateSubstatusHistory } from "@/lib/pipelines/substatus-history";
 
 import {
@@ -186,6 +185,7 @@ function DealDetail() {
       return;
     }
     invalidateSubstatusHistory("deals", deal.id);
+    window.dispatchEvent(new CustomEvent("timeline:refresh"));
     void load();
   };
 
@@ -341,7 +341,7 @@ function DealDetail() {
       </div>
       <div className="mt-4 border-t border-product-divider pt-4">
         <StageTracker stages={stages} current={currentStage} onChange={setStage} />
-        <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] md:items-start">
+        <div className="mt-3 max-w-xs">
           <SubstatusSelect
             pipelineId={dealPipeline?.id ?? null}
             stageValue={currentStage}
@@ -349,7 +349,6 @@ function DealDetail() {
             onChange={setSubstatus}
             className="space-y-1"
           />
-          <SubstatusHistory entity="deals" entityId={deal.id} className="max-w-xl" />
         </div>
       </div>
     </header>
