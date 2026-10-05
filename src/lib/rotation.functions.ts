@@ -4,7 +4,14 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { applyRotation } from "@/lib/rotation/engine.server";
 
-const EntityEnum = z.enum(["leads", "deals", "tickets", "whatsapp_conversations"]);
+const EntityEnum = z.enum([
+  "leads",
+  "deals",
+  "tickets",
+  "whatsapp_conversations",
+  "email_threads",
+  "live_chat_sessions",
+]);
 const StrategyEnum = z.enum(["round_robin", "weighted"]);
 
 const FilterSchema = z.object({

@@ -19,6 +19,17 @@ import { Badge } from "@/components/ui/badge";
 import { Send, X, Ticket as TicketIcon } from "lucide-react";
 import { toast } from "sonner";
 import { InboxIdentityLinker } from "@/components/inbox/inbox-identity-linker";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useAuth } from "@/lib/auth";
+import { listWorkspaceMembers } from "@/lib/rotation.functions";
+import { assignChatSession } from "@/lib/inbox-assignment.functions";
 import {
   InboxConversationHeader,
   InboxConversationItem,
@@ -48,14 +59,18 @@ export const Route = createFileRoute("/_authenticated/inbox/chat")({
 
 function LiveChatInbox() {
   const qc = useQueryClient();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const listFn = useServerFn(listChatSessions);
   const msgsFn = useServerFn(listChatMessages);
   const sendFn = useServerFn(sendChatMessage);
   const closeFn = useServerFn(closeChatSession);
   const convertFn = useServerFn(convertChatSessionToTicket);
+  const membersFn = useServerFn(listWorkspaceMembers);
+  const assignFn = useServerFn(assignChatSession);
   const [selected, setSelected] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [filter, setFilter] = useState<"mine" | "unassigned" | "all">("all");
 
   const sessionsQ = useQuery({
     queryKey: ["chat-sessions"],
@@ -68,6 +83,7 @@ function LiveChatInbox() {
     enabled: !!selected,
     refetchInterval: 3000,
   });
+  const membersQ = useQuery({ queryKey: ["inbox", "members"], queryFn: () => membersFn() });
 
   useEffect(() => {
     const ch = supabase
@@ -110,10 +126,26 @@ function LiveChatInbox() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+  const assign = useMutation({
+    mutationFn: (assignedTo: string | null) =>
+      assignFn({ data: { conversationId: selected ?? "", assignedTo } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["chat-sessions"] }),
+    onError: (error: Error) => toast.error(error.message),
+  });
 
-  const sessions = sessionsQ.data ?? [];
+  const allSessions = sessionsQ.data ?? [];
+  const sessions = allSessions.filter((session) =>
+    filter === "mine"
+      ? session.assignee_id === user?.id
+      : filter === "unassigned"
+        ? !session.assignee_id
+        : true,
+  );
   const messages = messagesQ.data ?? [];
-  const current = sessions.find((s) => s.id === selected);
+  const current = allSessions.find((s) => s.id === selected);
+  const memberNames = new Map(
+    (membersQ.data ?? []).map((member) => [member.user_id, member.full_name]),
+  );
 
   return (
     <InboxWorkspace
@@ -122,6 +154,15 @@ function LiveChatInbox() {
       list={
         <>
           <InboxListHeader>
+            <Tabs value={filter} onValueChange={(value) => setFilter(value as typeof filter)}>
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="mine">Minhas</TabsTrigger>
+                <TabsTrigger value="unassigned" title="Sem responsável">
+                  Sem dono
+                </TabsTrigger>
+                <TabsTrigger value="all">Todas</TabsTrigger>
+              </TabsList>
+            </Tabs>
             <p className="text-xs text-muted-foreground">{sessions.length} sessão(ões)</p>
           </InboxListHeader>
           <InboxConversationList>
@@ -149,6 +190,7 @@ function LiveChatInbox() {
                       </Badge>
                     ) : null
                   }
+                  meta={sessionAssignee(s.assignee_id, memberNames)}
                 />
               ))}
             </div>
@@ -169,24 +211,52 @@ function LiveChatInbox() {
                 label={current.visitor_name || current.visitor_email || "Visitante anônimo"}
                 subtitle={`Chat ao vivo${current.visitor_email ? ` · ${current.visitor_email}` : ""}${current.visitor_url ? ` · ${current.visitor_url}` : ""}`}
                 actions={
-                  current.status !== "closed" ? (
-                    <>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => convert.mutate(current.id)}
-                        disabled={convert.isPending}
+                  <>
+                    <Select
+                      value={current.assignee_id ?? "_none"}
+                      onValueChange={(value) => assign.mutate(value === "_none" ? null : value)}
+                    >
+                      <SelectTrigger
+                        className="h-8 w-[190px] text-xs"
+                        aria-label="Responsável pela conversa"
                       >
-                        <TicketIcon className="mr-1 h-4 w-4" />{" "}
-                        {convert.isPending ? "Criando…" : "Virar ticket"}
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => close.mutate(current.id)}>
-                        <X className="mr-1 h-4 w-4" /> Encerrar
-                      </Button>
-                    </>
-                  ) : (
-                    <Badge variant="outline">Encerrada</Badge>
-                  )
+                        <SelectValue placeholder="Atribuir a…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="_none">Sem responsável</SelectItem>
+                        {(membersQ.data ?? [])
+                          .filter((member) => member.status === "active")
+                          .map((member) => (
+                            <SelectItem key={member.user_id} value={member.user_id}>
+                              {member.full_name}
+                              {member.user_id === user?.id ? " (eu)" : ""}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    {current.status !== "closed" ? (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => convert.mutate(current.id)}
+                          disabled={convert.isPending}
+                        >
+                          <TicketIcon className="mr-1 h-4 w-4" />{" "}
+                          {convert.isPending ? "Criando…" : "Virar ticket"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => close.mutate(current.id)}
+                        >
+                          <X className="mr-1 h-4 w-4" /> Encerrar
+                        </Button>
+                      </>
+                    ) : (
+                      <Badge variant="outline">Encerrada</Badge>
+                    )}
+                  </>
                 }
               />
               <ScrollArea className="flex-1 bg-product-panel-muted px-5 py-6" aria-live="polite">
@@ -269,4 +339,8 @@ function LiveChatInbox() {
       }
     />
   );
+}
+
+function sessionAssignee(assigneeId: string | null, memberNames: Map<string, string>) {
+  return assigneeId ? (memberNames.get(assigneeId) ?? "atribuída") : "sem responsável";
 }

@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import DOMPurify from "dompurify";
-import { Mail, RefreshCw, Reply, Eye, MousePointerClick, Paperclip } from "lucide-react";
+import { Mail, RefreshCw, Reply, Eye, MousePointerClick, Paperclip, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -14,6 +14,17 @@ import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
 import { formatDateTime } from "@/lib/crm";
 import { toast } from "sonner";
 import { InboxIdentityLinker } from "@/components/inbox/inbox-identity-linker";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useAuth } from "@/lib/auth";
+import { listWorkspaceMembers } from "@/lib/rotation.functions";
+import { assignEmailThread } from "@/lib/inbox-assignment.functions";
 import {
   InboxConversationItem,
   InboxConversationList,
@@ -54,11 +65,15 @@ function EmailInbox() {
     if (action) openActivityWindow?.({ action, to, threadId });
   };
   const qc = useQueryClient();
+  const { user } = useAuth();
   const listFn = useServerFn(listEmailThreads);
   const getFn = useServerFn(getEmailThread);
   const syncFn = useServerFn(syncMyEmailAccounts);
+  const membersFn = useServerFn(listWorkspaceMembers);
+  const assignFn = useServerFn(assignEmailThread);
 
   const [selected, setSelected] = useState<string | null>(null);
+  const [filter, setFilter] = useState<"mine" | "unassigned" | "all">("all");
 
   const threadsQ = useQuery({
     queryKey: ["email_threads"],
@@ -69,9 +84,29 @@ function EmailInbox() {
     queryFn: () => getFn({ data: { thread_id: selected! } }),
     enabled: !!selected,
   });
+  const membersQ = useQuery({ queryKey: ["inbox", "members"], queryFn: () => membersFn() });
+  const assign = useMutation({
+    mutationFn: (assignedTo: string | null) =>
+      assignFn({ data: { conversationId: selected ?? "", assignedTo } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["email_threads"] });
+      qc.invalidateQueries({ queryKey: ["email_thread", selected] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
 
-  const threads = threadsQ.data?.items ?? [];
+  const allThreads = threadsQ.data?.items ?? [];
+  const threads = allThreads.filter((thread) =>
+    filter === "mine"
+      ? thread.assigned_to === user?.id
+      : filter === "unassigned"
+        ? !thread.assigned_to
+        : true,
+  );
   const current = threadQ.data;
+  const memberNames = new Map(
+    (membersQ.data ?? []).map((member) => [member.user_id, member.full_name]),
+  );
 
   async function handleSync() {
     try {
@@ -107,6 +142,15 @@ function EmailInbox() {
       list={
         <>
           <InboxListHeader>
+            <Tabs value={filter} onValueChange={(value) => setFilter(value as typeof filter)}>
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="mine">Minhas</TabsTrigger>
+                <TabsTrigger value="unassigned" title="Sem responsável">
+                  Sem dono
+                </TabsTrigger>
+                <TabsTrigger value="all">Todas</TabsTrigger>
+              </TabsList>
+            </Tabs>
             <p className="text-xs text-muted-foreground">{threads.length} conversa(s)</p>
           </InboxListHeader>
           <InboxConversationList>
@@ -142,6 +186,16 @@ function EmailInbox() {
                       </Badge>
                     ) : null
                   }
+                  meta={
+                    t.assigned_to ? (
+                      <span className="inline-flex items-center gap-1">
+                        <UserCheck className="h-3 w-3" />
+                        {memberNames.get(t.assigned_to) ?? "atribuída"}
+                      </span>
+                    ) : (
+                      <span className="italic">sem responsável</span>
+                    )
+                  }
                 />
               ))}
             </div>
@@ -167,13 +221,37 @@ function EmailInbox() {
                 }
                 subtitle={`Email · ${current.thread.subject || "(sem assunto)"} · ${current.messages.length} mensagem(ns)`}
                 actions={
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => openEmail(lastMsg?.from_email ?? "", current.thread.id)}
-                  >
-                    <Reply className="mr-2 h-4 w-4" /> Responder
-                  </Button>
+                  <>
+                    <Select
+                      value={current.thread.assigned_to ?? "_none"}
+                      onValueChange={(value) => assign.mutate(value === "_none" ? null : value)}
+                    >
+                      <SelectTrigger
+                        className="h-8 w-[190px] text-xs"
+                        aria-label="Responsável pela conversa"
+                      >
+                        <SelectValue placeholder="Atribuir a…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="_none">Sem responsável</SelectItem>
+                        {(membersQ.data ?? [])
+                          .filter((member) => member.status === "active")
+                          .map((member) => (
+                            <SelectItem key={member.user_id} value={member.user_id}>
+                              {member.full_name}
+                              {member.user_id === user?.id ? " (eu)" : ""}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openEmail(lastMsg?.from_email ?? "", current.thread.id)}
+                    >
+                      <Reply className="mr-2 h-4 w-4" /> Responder
+                    </Button>
+                  </>
                 }
               />
               <ScrollArea className="flex-1 bg-product-panel-muted px-5 py-6" aria-live="polite">

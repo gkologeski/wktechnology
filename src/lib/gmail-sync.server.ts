@@ -3,6 +3,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ensureAccessToken, type EmailAccountRow } from "@/lib/gmail.server";
 import { identityColumns, resolveInboxIdentity } from "@/lib/inbox/identity-resolution.server";
+import { autoAssignInboxConversation } from "@/lib/inbox-auto-assignment.server";
 
 const GMAIL_API = "https://gmail.googleapis.com/gmail/v1/users/me";
 
@@ -297,7 +298,7 @@ async function persistInboundMessage(
   // Upsert thread by provider_thread_id.
   const { data: existingThread } = await supabaseAdmin
     .from("email_threads")
-    .select("id, contact_id, lead_id")
+    .select("id, contact_id, lead_id, assigned_to")
     .eq("owner_id", account.owner_id)
     .eq("account_id", account.id)
     .eq("provider_thread_id", msg.threadId)
@@ -343,6 +344,15 @@ async function persistInboundMessage(
       .single();
     if (tErr) throw new Error(tErr.message);
     threadDbId = ins.id;
+  }
+
+  if (!isOutbound && !existingThread?.assigned_to) {
+    await autoAssignInboxConversation(
+      supabaseAdmin,
+      account.workspace_id,
+      "email_threads",
+      threadDbId,
+    );
   }
 
   const messageDbId = crypto.randomUUID();

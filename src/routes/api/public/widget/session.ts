@@ -87,6 +87,14 @@ export const Route = createFileRoute("/api/public/widget/session")({
             .select("id")
             .single();
           if (error) throw error;
+          const { autoAssignInboxConversation } =
+            await import("@/lib/inbox-auto-assignment.server");
+          await autoAssignInboxConversation(
+            supabaseAdmin,
+            data.workspace_id,
+            "live_chat_sessions",
+            row.id,
+          );
           return Response.json({ session_id: row.id }, { headers: CORS });
         } catch (e) {
           return Response.json(

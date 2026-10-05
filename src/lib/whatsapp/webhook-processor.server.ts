@@ -5,6 +5,7 @@ import { shouldApplyStatus } from "@/lib/whatsapp/status-rank";
 const STATUS_ORDER = ["accepted", "sent", "delivered", "read", "failed"];
 import { normalizePhone } from "@/lib/whatsapp/meta-channel.server";
 import { identityColumns, resolveInboxIdentity } from "@/lib/inbox/identity-resolution.server";
+import { autoAssignInboxConversation } from "@/lib/inbox-auto-assignment.server";
 
 // Tabela whatsapp_webhook_events só entra nos tipos após aceitar o rascunho.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -56,23 +57,7 @@ async function resolveWorkspace(
 }
 
 async function autoAssignConversation(admin: Admin, workspaceId: string, convId: string) {
-  try {
-    const { data: rule } = await admin
-      .from("rotation_rules")
-      .select("id")
-      .eq("workspace_id", workspaceId)
-      .eq("entity", "whatsapp_conversations")
-      .eq("enabled", true)
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (!rule) return;
-    const { applyRotation } = await import("@/lib/rotation/engine.server");
-    await applyRotation(admin, rule.id, "whatsapp_conversations", convId);
-  } catch (e) {
-    // Falha na distribuição não pode impedir o registro da mensagem.
-    console.error("[whatsapp-webhook] auto-atribuição falhou", (e as Error).message);
-  }
+  await autoAssignInboxConversation(admin, workspaceId, "whatsapp_conversations", convId);
 }
 
 function inboundBody(m: any): string {

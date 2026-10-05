@@ -331,11 +331,30 @@ export const assignWhatsAppConversation = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    if (data.assignedTo) {
+      const { data: member } = await supabase
+        .from("workspace_members")
+        .select("user_id, status")
+        .eq("workspace_id", workspaceId)
+        .eq("user_id", data.assignedTo)
+        .neq("status", "inactive")
+        .maybeSingle();
+      const { data: workspace } = await supabase
+        .from("workspaces")
+        .select("created_by")
+        .eq("id", workspaceId)
+        .maybeSingle();
+      if (!member && workspace?.created_by !== data.assignedTo) {
+        throw new Error("Selecione um membro ativo deste workspace.");
+      }
+    }
     const { error } = await supabase
       .from("whatsapp_conversations")
       .update({ assigned_to: data.assignedTo })
-      .eq("id", data.conversationId);
+      .eq("id", data.conversationId)
+      .eq("workspace_id", workspaceId);
     if (error) throw error;
     return { ok: true };
   });
