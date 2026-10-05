@@ -149,7 +149,7 @@ export function useLeadColumns({
               {lead.company_id ? (
                 <CompanyAvatarFromInfo id={lead.company_id} name={label} info={info} size="sm" />
               ) : (
-                <CompanyAvatar name={label} size="sm" />
+                <CompanyAvatar name={label} seed={label} size="sm" />
               )}
               <span className="truncate">{label}</span>
             </span>

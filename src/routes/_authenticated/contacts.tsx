@@ -493,7 +493,7 @@ function ContactsHubspotView() {
             </Link>
           ) : (
             <span className="inline-flex min-w-0 items-center gap-2">
-              <CompanyAvatar name={label} size="sm" />
+              <CompanyAvatar name={label} seed={label} size="sm" />
               <span className="truncate">{label}</span>
             </span>
           );
