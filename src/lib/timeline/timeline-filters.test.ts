@@ -5,6 +5,7 @@ import {
   UNASSIGNED,
   activityCategory,
   applyTimelineFilters,
+  type FilterableEntry,
   propertyCategory,
 } from "./timeline-filters";
 
@@ -29,7 +30,7 @@ const hist = (property: string, by: string | null = "u1") => ({
   },
 });
 
-const entries = [
+const entries: FilterableEntry[] = [
   { activity: { type: "email", subject: "Proposta comercial", assigned_to: "u1" } },
   { activity: { type: "note", body: "<p>Ligação útil</p>", owner_id: "u2" } },
   { activity: { type: "sms", subject: "Oi", owner_id: null } },
