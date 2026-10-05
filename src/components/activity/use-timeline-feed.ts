@@ -112,7 +112,7 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
     () =>
       applyTimelineFilters(allEntries, filters, {
         extraText: (a) => {
-          const m = emailMeta.get(a.id);
+          const m = a.id ? emailMeta.get(a.id) : undefined;
           return m
             ? `${m.from_name ?? ""} ${m.from_email ?? ""} ${m.body_text ?? (m.body_html ?? "").replace(/<[^>]*>/g, " ")}`
             : "";
@@ -124,7 +124,7 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
                 `${labelProperty(c.property)} ${resolveHistoryValue(c.property, c.old_value) ?? labelValue(c.old_value)} ${resolveHistoryValue(c.property, c.new_value) ?? labelValue(c.new_value)}`,
             )
             .join(" "),
-      }),
+      }) as TimelineEntry[],
     [allEntries, filters, emailMeta, resolveHistoryValue],
   );
 
