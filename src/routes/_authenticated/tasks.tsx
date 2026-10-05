@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -326,6 +326,7 @@ function TasksHubspotView() {
   const {
     data: result,
     isLoading,
+    isFetching,
     isError,
     refetch,
   } = useQuery({
@@ -345,6 +346,8 @@ function TasksHubspotView() {
       projection.needsCustomFields,
     ],
     enabled: !projection.isLoading,
+    // Mantém os registros anteriores ao trocar filtro/aba/página.
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       let q = supabase.from("activities").select(
         // Projeção sob demanda: colunas base + colunas visíveis do catálogo.
@@ -763,7 +766,9 @@ function TasksHubspotView() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Tarefas</h1>
           <p className="text-sm text-muted-foreground">
-            {isLoading ? "Carregando…" : `${total.toLocaleString("pt-BR")} registros`}
+            {isLoading
+              ? "Carregando…"
+              : `${total.toLocaleString("pt-BR")} registros${isFetching ? " · atualizando…" : ""}`}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

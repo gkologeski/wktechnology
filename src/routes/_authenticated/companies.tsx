@@ -1,6 +1,6 @@
 import { CompanyAvatar } from "@/components/companies/company-avatar";
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -226,6 +226,7 @@ function CompaniesHubspotView() {
   const {
     data: result,
     isLoading,
+    isFetching,
     isError,
     refetch,
   } = useQuery({
@@ -244,6 +245,8 @@ function CompaniesHubspotView() {
       projection.needsCustomFields,
     ],
     enabled: !projection.isLoading,
+    // Mantém os registros anteriores ao trocar filtro/aba/página.
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       let q = supabase.from("companies").select(
         // Projeção sob demanda: colunas base + colunas visíveis do catálogo.
@@ -702,7 +705,9 @@ function CompaniesHubspotView() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Empresas</h1>
           <p className="text-sm text-muted-foreground">
-            {isLoading ? "Carregando…" : `${total.toLocaleString("pt-BR")} registros`}
+            {isLoading
+              ? "Carregando…"
+              : `${total.toLocaleString("pt-BR")} registros${isFetching ? " · atualizando…" : ""}`}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

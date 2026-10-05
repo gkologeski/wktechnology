@@ -9,6 +9,7 @@ import { useModuleLicenses } from "@/hooks/use-module-licenses";
 import { useModuleAccess } from "@/hooks/use-module-access";
 import { detectModuleFromPath, setStoredActiveModule } from "@/lib/modules/active-module";
 import { MODULES } from "@/lib/modules/registry";
+import { useIdleListPreload } from "@/hooks/use-idle-list-preload";
 
 import { ShieldAlert } from "lucide-react";
 
@@ -100,6 +101,8 @@ function AuthenticatedLayout() {
   const { isAdmin, isManager, loading: roleLoading } = useMyRole();
   const { isLicensed } = useModuleLicenses();
   const { canAccessModule, soleModule, loading: accessLoading } = useModuleAccess();
+
+  useIdleListPreload(!loading && !!user);
 
   useEffect(() => {
     if (!loading && !user) router.navigate({ to: "/login" });
