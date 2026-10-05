@@ -211,30 +211,31 @@ function LiveChatInbox() {
                 label={current.visitor_name || current.visitor_email || "Visitante anônimo"}
                 subtitle={`Chat ao vivo${current.visitor_email ? ` · ${current.visitor_email}` : ""}${current.visitor_url ? ` · ${current.visitor_url}` : ""}`}
                 actions={
-                  current.status !== "closed" ? (
-                    <>
-                      <Select
-                        value={current.assignee_id ?? "_none"}
-                        onValueChange={(value) => assign.mutate(value === "_none" ? null : value)}
+                  <>
+                    <Select
+                      value={current.assignee_id ?? "_none"}
+                      onValueChange={(value) => assign.mutate(value === "_none" ? null : value)}
+                    >
+                      <SelectTrigger
+                        className="h-8 w-[190px] text-xs"
+                        aria-label="Responsável pela conversa"
                       >
-                        <SelectTrigger
-                          className="h-8 w-[190px] text-xs"
-                          aria-label="Responsável pela conversa"
-                        >
-                          <SelectValue placeholder="Atribuir a…" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="_none">Sem responsável</SelectItem>
-                          {(membersQ.data ?? [])
-                            .filter((member) => member.status === "active")
-                            .map((member) => (
-                              <SelectItem key={member.user_id} value={member.user_id}>
-                                {member.full_name}
-                                {member.user_id === user?.id ? " (eu)" : ""}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
+                        <SelectValue placeholder="Atribuir a…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="_none">Sem responsável</SelectItem>
+                        {(membersQ.data ?? [])
+                          .filter((member) => member.status === "active")
+                          .map((member) => (
+                            <SelectItem key={member.user_id} value={member.user_id}>
+                              {member.full_name}
+                              {member.user_id === user?.id ? " (eu)" : ""}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    {current.status !== "closed" ? (
+                      <>
                       <Button
                         size="sm"
                         variant="outline"
@@ -247,10 +248,11 @@ function LiveChatInbox() {
                       <Button size="sm" variant="outline" onClick={() => close.mutate(current.id)}>
                         <X className="mr-1 h-4 w-4" /> Encerrar
                       </Button>
-                    </>
-                  ) : (
-                    <Badge variant="outline">Encerrada</Badge>
-                  )
+                      </>
+                    ) : (
+                      <Badge variant="outline">Encerrada</Badge>
+                    )}
+                  </>
                 }
               />
               <ScrollArea className="flex-1 bg-product-panel-muted px-5 py-6" aria-live="polite">
