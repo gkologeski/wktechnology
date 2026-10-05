@@ -195,7 +195,6 @@ function LeadDetail() {
   const canDelete = !deletePermLoading && canDeleteRecord(lead);
   const { stages, pipelineId, isLoading: stagesLoading } = useLeadStages();
 
-
   if (!lead) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
   const currentStageValue = resolveLeadStageValue(
