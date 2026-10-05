@@ -118,6 +118,8 @@ function DealDetail() {
     );
   }, [deal, pipelines]);
 
+  const { data: dealLogos } = useCompanyLogos([deal?.company_id]);
+  const dealCompany = deal?.company_id ? dealLogos?.get(deal.company_id) : undefined;
   const invalidateSubstatusHistory = useInvalidateSubstatusHistory();
 
   const stages = useMemo(
