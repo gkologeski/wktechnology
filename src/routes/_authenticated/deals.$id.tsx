@@ -20,7 +20,6 @@ import { AssociationsPanel } from "@/components/record/associations-panel";
 
 import { StageTracker } from "@/components/stage-tracker";
 import { SubstatusSelect } from "@/components/pipelines/substatus-select";
-import { useInvalidateSubstatusHistory } from "@/lib/pipelines/substatus-history";
 
 import {
   DealLineItems,
@@ -119,7 +118,6 @@ function DealDetail() {
 
   const { data: dealLogos } = useCompanyLogos([deal?.company_id]);
   const dealCompany = deal?.company_id ? dealLogos?.get(deal.company_id) : undefined;
-  const invalidateSubstatusHistory = useInvalidateSubstatusHistory();
 
   const stages = useMemo(
     () =>
@@ -184,7 +182,6 @@ function DealDetail() {
       toast.error(error.message);
       return;
     }
-    invalidateSubstatusHistory("deals", deal.id);
     window.dispatchEvent(new CustomEvent("timeline:refresh"));
     void load();
   };
