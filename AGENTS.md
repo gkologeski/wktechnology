@@ -21,3 +21,4 @@
 
 - Identidade da Inbox é resolvida por workspace em serviço único, priorizando Contato sobre Lead e deixando duplicidades para escolha manual; por quê: impedir associação cruzada ou arbitrária entre carteiras e canais.
 - Logotipos de empresas saem só de `CompanyAvatar` (manual em `companies.logo_url` como imagem reduzida → domínio/site → iniciais) e são carregados em lote por `useCompanyLogos`; por quê: uma fonte de verdade, sem consulta por linha e sem bucket público.
+- Troca de tela mostra `ListPageSkeleton` (pendente padrão do roteador) e listagens pesadas são pré-carregadas no ocioso por `useIdleListPreload`; por quê: estrutura fixa aparece antes dos dados.
