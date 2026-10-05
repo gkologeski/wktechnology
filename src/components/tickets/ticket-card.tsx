@@ -1,3 +1,5 @@
+import type { CompanyLogoInfo } from "@/hooks/use-company-logos";
+import { CompanyAvatarFromInfo } from "@/components/companies/company-avatar";
 import { useDraggable } from "@dnd-kit/core";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AlertCircle, Building2, Clock, User as UserIcon } from "lucide-react";
@@ -37,6 +39,8 @@ export function TicketCard({
   ticket,
   contactName,
   companyName,
+  companyId,
+  companyLogo,
   ownerName,
   draggable = true,
   active = false,
@@ -51,6 +55,8 @@ export function TicketCard({
   ticket: TicketRow;
   contactName?: string;
   companyName?: string;
+  companyId?: string | null;
+  companyLogo?: CompanyLogoInfo;
   ownerName?: string;
   draggable?: boolean;
   active?: boolean;
@@ -131,7 +137,11 @@ export function TicketCard({
           )}
           {companyName && (
             <div className="flex items-center gap-1.5 text-xs text-[var(--hs-text-muted)] truncate">
-              <Building2 className="h-3 w-3 shrink-0" />
+              {companyId ? (
+                <CompanyAvatarFromInfo id={companyId} name={companyName} info={companyLogo} />
+              ) : (
+                <Building2 className="h-3 w-3 shrink-0" />
+              )}
               <span className="truncate">{companyName}</span>
             </div>
           )}

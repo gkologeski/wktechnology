@@ -241,10 +241,19 @@ function TicketsIndex() {
       contactMap.set(c.id, `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "Contato");
     const companyMap = new Map<string, string>();
     for (const c of companies) companyMap.set(c.id, c.name);
+    // Nomes das empresas dos tickets exibidos, sem o limite da lista completa.
+    ticketCompanyLogos?.forEach((info, id) => {
+      if (info.name) companyMap.set(id, info.name);
+    });
     const ownerMap = new Map<string, string>();
     for (const m of members) ownerMap.set(m.user_id, m.full_name || "Usuário");
-    return { contacts: contactMap, companies: companyMap, owners: ownerMap };
-  }, [contacts, companies, members]);
+    return {
+      contacts: contactMap,
+      companies: companyMap,
+      owners: ownerMap,
+      companyLogos: ticketCompanyLogos,
+    };
+  }, [contacts, companies, members, ticketCompanyLogos]);
 
   const filtered = useMemo(() => {
     let list = filterByView(tickets, view, user?.id ?? null);

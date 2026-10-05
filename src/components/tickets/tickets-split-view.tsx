@@ -1,3 +1,4 @@
+import type { CompanyLogoInfo } from "@/hooks/use-company-logos";
 import { formatDateTime } from "@/lib/crm";
 import { useState, useEffect } from "react";
 import { TicketCard } from "./ticket-card";
@@ -16,6 +17,7 @@ export function TicketsSplitView({
   lookups: {
     contacts: Map<string, string>;
     companies: Map<string, string>;
+    companyLogos?: Map<string, CompanyLogoInfo>;
     owners: Map<string, string>;
   };
   onOpenFull: (t: TicketRow) => void;
@@ -47,6 +49,8 @@ export function TicketsSplitView({
               active={t.id === selectedId}
               contactName={t.contact_id ? lookups.contacts.get(t.contact_id) : undefined}
               companyName={t.company_id ? lookups.companies.get(t.company_id) : undefined}
+              companyId={t.company_id}
+              companyLogo={t.company_id ? lookups.companyLogos?.get(t.company_id) : undefined}
               ownerName={
                 ticketResponsibleId(t)
                   ? lookups.owners.get(ticketResponsibleId(t) as string)

@@ -1,3 +1,4 @@
+import type { CompanyLogoInfo } from "@/hooks/use-company-logos";
 import {
   DndContext,
   PointerSensor,
@@ -99,6 +100,7 @@ export function TicketsBoard({
   lookups: {
     contacts: Map<string, string>;
     companies: Map<string, string>;
+    companyLogos?: Map<string, CompanyLogoInfo>;
     owners: Map<string, string>;
   };
   focusMode?: boolean;
@@ -226,6 +228,10 @@ export function TicketsBoard({
                       columnId={s.value}
                       contactName={t.contact_id ? lookups.contacts.get(t.contact_id) : undefined}
                       companyName={t.company_id ? lookups.companies.get(t.company_id) : undefined}
+                      companyId={t.company_id}
+                      companyLogo={
+                        t.company_id ? lookups.companyLogos?.get(t.company_id) : undefined
+                      }
                       ownerName={
                         ticketResponsibleId(t)
                           ? lookups.owners.get(ticketResponsibleId(t) as string)
