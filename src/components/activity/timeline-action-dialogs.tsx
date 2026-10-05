@@ -75,6 +75,7 @@ export function TimelineActionDialogs({
           defaultTo={target.phone}
           contactId={target.contactId}
           contactName={target.name}
+          lockRecipient
         />
       )}
       <SurveyActivityDialog

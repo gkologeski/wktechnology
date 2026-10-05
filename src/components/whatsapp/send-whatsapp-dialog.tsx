@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   sendWhatsAppMessage,
   listWhatsAppTemplates,
+  getWhatsAppServiceWindow,
   applyTemplate,
 } from "@/lib/whatsapp.functions";
 import { useChannelAvailability } from "@/hooks/use-channel-availability";
@@ -67,6 +68,8 @@ type Props = {
   onOpenChange?: (v: boolean) => void;
   /** Exibe o pin de rascunho salvo sobre o gatilho. */
   draftIndicator?: boolean;
+  /** Telefone vem do registro da timeline e não pode ser editado. */
+  lockRecipient?: boolean;
 };
 
 export function SendWhatsAppDialog({
@@ -79,6 +82,7 @@ export function SendWhatsAppDialog({
   open: openProp,
   onOpenChange,
   draftIndicator = true,
+  lockRecipient = false,
 }: Props) {
   const [openState, setOpenState] = useState(false);
   const open = openProp ?? openState;
@@ -92,7 +96,7 @@ export function SendWhatsAppDialog({
     null,
   );
   const [uploading, setUploading] = useState(false);
-  const [templateRequired, setTemplateRequired] = useState(false);
+  const [templateRequiredByServer, setTemplateRequired] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const bodyInserter = useTokenInserter<HTMLTextAreaElement>(() => body, setBody);
   const { user } = useAuth();
@@ -161,7 +165,7 @@ export function SendWhatsAppDialog({
     enabled: open,
     value: { to_addr: to, body_text: body },
     onRestore: (d) => {
-      setTo(d.to_addr || defaultTo);
+      setTo(lockRecipient ? defaultTo : d.to_addr || defaultTo);
       setBody(d.body_text || d.body_html);
     },
   });
@@ -174,6 +178,16 @@ export function SendWhatsAppDialog({
   const tplQ = useQuery({ queryKey: ["wa", "templates"], queryFn: () => listTpl(), enabled: open });
   const availabilityQ = useChannelAvailability();
   const notConnected = availabilityQ.isSuccess && !availabilityQ.data.whatsapp.ready;
+  const windowFn = useServerFn(getWhatsAppServiceWindow);
+  const windowQ = useQuery({
+    queryKey: ["wa", "service-window", to],
+    queryFn: () => windowFn({ data: { to } }),
+    enabled: open && to.replace(/\D/g, "").length >= 8,
+    staleTime: 30_000,
+  });
+  const windowClosed = windowQ.isSuccess && !windowQ.data.withinWindow;
+  const templateRequired = templateRequiredByServer || windowClosed;
+  const windowChecking = windowQ.isLoading;
 
   useEffect(() => {
     if (open) setTo(defaultTo);
@@ -259,12 +273,35 @@ export function SendWhatsAppDialog({
         </DialogHeader>
         <div className="space-y-3">
           <div>
-            <Label>Para (E.164)</Label>
-            <Input
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-              placeholder="+5511999999999"
-            />
+            <Label htmlFor="wa-to">Para</Label>
+            {lockRecipient ? (
+              <p
+                id="wa-to"
+                className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-foreground"
+              >
+                {to}
+              </p>
+            ) : (
+              <Input
+                id="wa-to"
+                value={to}
+                onChange={(e) => setTo(e.target.value)}
+                placeholder="+5511999999999"
+              />
+            )}
+            {windowChecking && (
+              <p className="mt-1 text-xs text-muted-foreground" aria-live="polite">
+                Verificando janela de 24 horas…
+              </p>
+            )}
+            {windowQ.isError && (
+              <div role="alert" className="mt-1 flex items-center gap-2 text-xs text-destructive">
+                Não foi possível verificar a janela de 24 horas.
+                <Button size="sm" variant="outline" onClick={() => windowQ.refetch()}>
+                  Tentar novamente
+                </Button>
+              </div>
+            )}
           </div>
 
           <div>
@@ -296,8 +333,8 @@ export function SendWhatsAppDialog({
             <div role="alert" className="rounded-md border border-border bg-muted/40 p-3 text-sm">
               <p className="font-medium">Janela de 24 horas encerrada</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                A Meta permite continuar somente com um modelo aprovado. Seu rascunho foi
-                preservado.
+                O cliente não enviou mensagens nas últimas 24 horas. A Meta permite continuar
+                somente com um modelo aprovado.
               </p>
               {tplQ.isLoading && (
                 <p className="mt-2 text-xs text-muted-foreground">Carregando modelos aprovados…</p>
@@ -370,7 +407,7 @@ export function SendWhatsAppDialog({
                 )}
               </div>
             </>
-          ) : (
+          ) : templateRequired ? null : (
             <div>
               <div className="flex items-center justify-between">
                 <Label>Mensagem</Label>
@@ -398,46 +435,48 @@ export function SendWhatsAppDialog({
             </div>
           )}
 
-          <div>
-            <Label>Mídia (opcional)</Label>
-            <input
-              ref={fileRef}
-              type="file"
-              hidden
-              accept="image/*,audio/*,video/*,application/pdf"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) handlePickFile(f);
-                e.target.value = "";
-              }}
-            />
-            {media ? (
-              <div className="flex items-start gap-2 rounded-md border p-2">
-                <WhatsAppMediaBubble url={media.url} contentType={media.contentType} />
-                <div className="flex-1 min-w-0">
-                  <div className="truncate text-xs">{media.name}</div>
-                  <div className="text-[10px] text-muted-foreground">{media.contentType}</div>
+          {!templateRequired && !selectedTpl && (
+            <div>
+              <Label>Mídia (opcional)</Label>
+              <input
+                ref={fileRef}
+                type="file"
+                hidden
+                accept="image/*,audio/*,video/*,application/pdf"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handlePickFile(f);
+                  e.target.value = "";
+                }}
+              />
+              {media ? (
+                <div className="flex items-start gap-2 rounded-md border p-2">
+                  <WhatsAppMediaBubble url={media.url} contentType={media.contentType} />
+                  <div className="flex-1 min-w-0">
+                    <div className="truncate text-xs">{media.name}</div>
+                    <div className="text-[10px] text-muted-foreground">{media.contentType}</div>
+                  </div>
+                  <Button size="icon" variant="ghost" onClick={() => setMedia(null)}>
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
-                <Button size="icon" variant="ghost" onClick={() => setMedia(null)}>
-                  <X className="h-4 w-4" />
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={uploading}
+                  onClick={() => fileRef.current?.click()}
+                >
+                  <Paperclip className="mr-2 h-4 w-4" />
+                  {uploading ? "Enviando…" : "Anexar imagem, áudio ou PDF"}
                 </Button>
-              </div>
-            ) : (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={uploading}
-                onClick={() => fileRef.current?.click()}
-              >
-                <Paperclip className="mr-2 h-4 w-4" />
-                {uploading ? "Enviando…" : "Anexar imagem, áudio ou PDF"}
-              </Button>
-            )}
-            <p className="mt-1 text-[10px] text-muted-foreground">
-              Máx 16MB. Formatos suportados pelo WhatsApp.
-            </p>
-          </div>
+              )}
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                Máx 16MB. Formatos suportados pelo WhatsApp.
+              </p>
+            </div>
+          )}
         </div>
         <DialogFooter className="sm:justify-between">
           <AlertDialog>
@@ -483,6 +522,7 @@ export function SendWhatsAppDialog({
             disabled={
               notConnected ||
               !to ||
+              windowChecking ||
               (templateRequired && !selectedTpl) ||
               (!isOfficialHsm && !previewBody.trim() && !media) ||
               sendMut.isPending ||

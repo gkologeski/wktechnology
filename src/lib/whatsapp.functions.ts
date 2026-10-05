@@ -24,6 +24,23 @@ async function findContactByPhone(supabase: any, phoneE164: string): Promise<str
   return data?.id ?? null;
 }
 
+// ---------- janela de atendimento de 24 horas ----------
+export const getWhatsAppServiceWindow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ to: z.string().min(5) }).parse(input))
+  .handler(async ({ data, context }) => {
+    const workspaceId = await resolveActiveWorkspace(context.userId);
+    const { findConversationNumber, isWithinServiceWindow } =
+      await import("@/lib/whatsapp/meta-channel.server");
+    const existing = await findConversationNumber(
+      context.supabase,
+      workspaceId,
+      normalizePhone(data.to),
+    );
+    const lastInboundAt = existing?.lastInboundAt ?? null;
+    return { withinWindow: isWithinServiceWindow(lastInboundAt), lastInboundAt };
+  });
+
 // ---------- send (API oficial da Meta) ----------
 export const sendWhatsAppMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
