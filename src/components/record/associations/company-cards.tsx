@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRefreshCallback } from "@/hooks/use-refresh-callback";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { CompanyAvatarFromInfo } from "@/components/companies/company-avatar";
 import { Building2, User, Briefcase, X } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/crm";
@@ -43,6 +44,9 @@ export function CompanyCard({
     industry: string | null;
     domain: string | null;
     phone: string | null;
+    website: string | null;
+    logo_url: string | null;
+    logo_source: string | null;
   } | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(companyId);
@@ -54,7 +58,7 @@ export function CompanyCard({
     }
     const { data } = await supabase
       .from("companies")
-      .select("id, name, industry, domain, phone")
+      .select("id, name, industry, domain, phone, website, logo_url, logo_source")
       .eq("id", id)
       .maybeSingle();
     setC(data as never);
@@ -152,7 +156,7 @@ export function CompanyCard({
           <>
             <div className="rounded-xl border border-border/60 p-3 group hover:border-border transition-colors">
               <div className="flex items-start gap-3">
-                <EntityAvatar initials={(c.name?.[0] ?? "?").toUpperCase()} tone="primary" />
+                <CompanyAvatarFromInfo id={c.id} name={c.name} info={c} size="sm" />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <Link
