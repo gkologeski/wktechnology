@@ -236,18 +236,22 @@ function LiveChatInbox() {
                     </Select>
                     {current.status !== "closed" ? (
                       <>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => convert.mutate(current.id)}
-                        disabled={convert.isPending}
-                      >
-                        <TicketIcon className="mr-1 h-4 w-4" />{" "}
-                        {convert.isPending ? "Criando…" : "Virar ticket"}
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => close.mutate(current.id)}>
-                        <X className="mr-1 h-4 w-4" /> Encerrar
-                      </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => convert.mutate(current.id)}
+                          disabled={convert.isPending}
+                        >
+                          <TicketIcon className="mr-1 h-4 w-4" />{" "}
+                          {convert.isPending ? "Criando…" : "Virar ticket"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => close.mutate(current.id)}
+                        >
+                          <X className="mr-1 h-4 w-4" /> Encerrar
+                        </Button>
                       </>
                     ) : (
                       <Badge variant="outline">Encerrada</Badge>
