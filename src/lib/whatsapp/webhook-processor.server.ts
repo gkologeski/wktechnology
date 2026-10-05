@@ -85,7 +85,19 @@ async function handleMessages(admin: Admin, value: any): Promise<string | null> 
     workspaceId = ws.workspace_id;
     const body = inboundBody(m);
     const now = new Date().toISOString();
-    const hasIdentity = !!ws.contact_id || !!ws.lead_id || ws.identity_status === "manual";
+    // Vínculo atual da conversa, lido sempre (o workspace pode vir do número
+    // conectado, sem dados da conversa). Vínculo existente ou manual é preservado.
+    const { data: existingConv, error: exErr } = await admin
+      .from("whatsapp_conversations")
+      .select("contact_id, lead_id, identity_status")
+      .eq("contact_phone", from)
+      .eq("twilio_number", ourPhone)
+      .maybeSingle();
+    if (exErr) throw new Retry(exErr.message);
+    const hasIdentity =
+      !!existingConv?.contact_id ||
+      !!existingConv?.lead_id ||
+      existingConv?.identity_status === "manual";
     const identity = hasIdentity
       ? null
       : await resolveInboxIdentity({
