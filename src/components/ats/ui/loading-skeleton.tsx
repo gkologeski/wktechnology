@@ -63,3 +63,50 @@ export const Skeletons = {
   Card: CardSkeleton,
   Row: RowSkeleton,
 };
+
+/**
+ * Esqueleto de página de listagem exibido durante a troca de tela, enquanto o
+ * código da próxima tela ainda está chegando. Reproduz cabeçalho, abas,
+ * barra de filtros e linhas da grade para que a estrutura apareça na hora.
+ */
+export function ListPageSkeleton({ rows = 8 }: { rows?: number }) {
+  return (
+    <div className="space-y-4" role="status" aria-live="polite" aria-label="Carregando tela">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="space-y-2">
+          <Bar className="h-6 w-48" />
+          <Bar className="h-3 w-24" />
+        </div>
+        <div className="flex gap-2">
+          <Bar className="h-9 w-28" />
+          <Bar className="h-9 w-32" />
+        </div>
+      </div>
+      <div className="flex gap-2 border-b border-border-subtle pb-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Bar key={i} className="h-7 w-24" />
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Bar className="h-9 w-64" />
+        <Bar className="h-9 w-28" />
+        <Bar className="h-9 w-28" />
+      </div>
+      <div className="rounded-lg border border-border-subtle bg-surface-2">
+        {Array.from({ length: rows }).map((_, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-4 border-b border-border-subtle px-4 py-3 last:border-b-0"
+          >
+            <Bar className="h-4 w-4" />
+            <Bar className="h-7 w-7 rounded-full" />
+            <Bar className="h-4 w-48" />
+            <Bar className="hidden h-4 w-32 md:block" />
+            <Bar className="hidden h-4 w-24 lg:block" />
+          </div>
+        ))}
+      </div>
+      <span className="sr-only">Carregando…</span>
+    </div>
+  );
+}

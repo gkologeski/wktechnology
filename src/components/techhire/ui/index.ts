@@ -36,6 +36,7 @@ export {
   MetricsGridSkeleton,
   CardSkeleton,
   RowSkeleton,
+  ListPageSkeleton,
 } from "@/components/ats/ui/loading-skeleton";
 
 // Formulários / filtros

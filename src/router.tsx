@@ -1,6 +1,7 @@
 import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
 import { createRouter, Link, useRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
+import { ListPageSkeleton } from "@/components/techhire/ui";
 import { bindDialogRefreshClient } from "@/lib/dialog-refresh";
 import { handlePermissionError } from "@/lib/access-control/handle-permission-error";
 
@@ -85,6 +86,11 @@ export const getRouter = () => {
     defaultPreloadDelay: 50,
     // Query controla cache de dados; router só precisa do código da rota
     defaultPreloadStaleTime: 0,
+    // Troca de tela: mostra a estrutura (cabeçalho, filtros, linhas) enquanto o
+    // código da próxima tela chega, em vez de congelar a tela anterior.
+    defaultPendingComponent: () => <ListPageSkeleton />,
+    defaultPendingMs: 150,
+    defaultPendingMinMs: 200,
     defaultErrorComponent: DefaultErrorComponent,
     defaultNotFoundComponent: DefaultNotFoundComponent,
   });
