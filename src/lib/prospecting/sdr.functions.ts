@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertAnyPermission } from "@/lib/access-control/enforce.server";
 
 // Leituras passam pelo cliente do usuário (RLS por workspace). Ações que
 // tocam provedores leem o registro primeiro com RLS e só então usam o admin.
@@ -12,6 +13,12 @@ export const getSdrOverview = createServerFn({ method: "POST" })
     const { data: wsRaw } = await supabase.rpc("default_workspace_for_user", { _user: userId });
     if (!wsRaw) throw new Error("Workspace não identificado.");
     const wsId: string = wsRaw;
+    await assertAnyPermission(supabase, userId, wsId, [
+      "techsales.marketing.sdr_agent.view.workspace",
+      "techsales.marketing.sdr_agent.view.team",
+      "techsales.marketing.sdr_agent.view.own",
+      "techsales.marketing.sdr_agent.manage.workspace",
+    ]);
     const since = new Date(Date.now() - 30 * 86400_000).toISOString();
     const [settings, offers, materials, links, jobs, enrollments, actions, isAdmin] =
       await Promise.all([
@@ -34,7 +41,7 @@ export const getSdrOverview = createServerFn({ method: "POST" })
         supabase
           .from("sdr_enrollments")
           .select(
-            "id, status, commercial_stage, meeting_status, qualification_score, contact_phone, offers, deal_id, booking_id, conversation_id, created_at",
+            "id, status, commercial_stage, meeting_status, qualification_score, qualification_id, contact_phone, offers, deal_id, booking_id, conversation_id, created_at",
           )
           .eq("workspace_id", wsId)
           .gte("created_at", since)
@@ -52,6 +59,29 @@ export const getSdrOverview = createServerFn({ method: "POST" })
       (r) => r.error,
     )?.error;
     if (err) throw new Error(err.message);
+    // Qualificação canônica (mesma linha exibida na Prospecção).
+    const qIds = (enrollments.data ?? [])
+      .map((e) => e.qualification_id)
+      .filter((x): x is string => !!x);
+    const { data: quals } = qIds.length
+      ? await supabase
+          .from("prospecting_qualifications")
+          .select(
+            "id, total_score, decision, answers, questionnaire:prospecting_questionnaires(name)",
+          )
+          .in("id", qIds)
+      : { data: [] };
+    const qualifications = Object.fromEntries(
+      (quals ?? []).map((q) => [
+        q.id,
+        {
+          total: Number(q.total_score ?? 0),
+          decision: q.decision,
+          answered: Object.keys((q.answers as Record<string, unknown>) ?? {}).length,
+          questionnaire: (q.questionnaire as { name?: string } | null)?.name ?? null,
+        },
+      ]),
+    );
     const metrics: Record<string, number> = {};
     for (const a of actions.data ?? [])
       metrics[`${a.kind}:${a.status}`] = (metrics[`${a.kind}:${a.status}`] ?? 0) + 1;
@@ -64,6 +94,7 @@ export const getSdrOverview = createServerFn({ method: "POST" })
       links: links.data ?? [],
       jobs: jobs.data ?? [],
       enrollments: enrollments.data ?? [],
+      qualifications,
       metrics,
     };
   });
@@ -148,6 +179,8 @@ export const saveSdrMaterial = createServerFn({ method: "POST" })
       title: data.title,
       url: data.url,
       approved: data.approved,
+      approved_by: data.approved ? userId : null,
+      approved_at: data.approved ? new Date().toISOString() : null,
       active: data.active,
     };
     const { data: saved, error } = await supabase
@@ -177,7 +210,7 @@ export const saveSdrMaterial = createServerFn({ method: "POST" })
 const JobInput = z.object({ jobId: z.string().uuid() });
 
 /** Lê o trabalho com RLS (prova de acesso ao workspace) antes de qualquer ação privilegiada. */
-async function loadJobScoped(supabase: any, jobId: string) {
+async function loadJobScoped(supabase: any, userId: string, jobId: string) {
   const { data, error } = await supabase
     .from("sdr_turn_jobs")
     .select("id, workspace_id, enrollment_id, conversation_id, status")
@@ -198,7 +231,7 @@ export const approveSdrDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => JobInput.extend({ text: z.string().trim().min(1).max(4000) }).parse(i))
   .handler(async ({ data, context }) => {
-    const job = await loadJobScoped(context.supabase, data.jobId);
+    const job = await loadJobScoped(context.supabase, context.userId, data.jobId);
     if (job.status !== "drafted") throw new Error("Este rascunho não está mais pendente.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendSdrMessage } = await import("./sdr/actions.server");
@@ -227,7 +260,7 @@ export const discardSdrDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => JobInput.parse(i))
   .handler(async ({ data, context }) => {
-    const job = await loadJobScoped(context.supabase, data.jobId);
+    const job = await loadJobScoped(context.supabase, context.userId, data.jobId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin
       .from("sdr_turn_jobs")
@@ -247,7 +280,7 @@ export const takeoverSdrConversation = createServerFn({ method: "POST" })
     JobInput.extend({ reason: z.string().max(300).default("Assumido manualmente") }).parse(i),
   )
   .handler(async ({ data, context }) => {
-    const job = await loadJobScoped(context.supabase, data.jobId);
+    const job = await loadJobScoped(context.supabase, context.userId, data.jobId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { handoffToHuman } = await import("./sdr/actions.server");
     await handoffToHuman(supabaseAdmin, {
@@ -274,6 +307,10 @@ export const retrySdrMeetingSync = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { retryBookingSync } = await import("./sdr/actions.server");
     if (!enr.workspace_id) throw new Error("Workspace não identificado.");
+    await assertAnyPermission(context.supabase, context.userId, enr.workspace_id, [
+      "techsales.marketing.sdr_agent.update.workspace",
+      "techsales.marketing.sdr_agent.manage.workspace",
+    ]);
     const r = await retryBookingSync(supabaseAdmin, enr.workspace_id, enr.booking_id);
     await supabaseAdmin
       .from("sdr_enrollments")

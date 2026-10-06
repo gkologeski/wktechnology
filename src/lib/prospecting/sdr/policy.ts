@@ -164,8 +164,8 @@ export type AgentOutput = {
   intent: SdrIntent;
   offer_keys: string[];
   material_ids: string[];
-  qualification: { field: string; value: string; message_id: string; excerpt: string }[];
-  score: number;
+  /** Respostas brutas ao questionário canônico; validadas em qualification.ts. */
+  answers: unknown[];
   handoff_reason: string;
 };
 
@@ -176,13 +176,13 @@ const PRICE_RE = /R\$\s?\d|\d+[.,]?\d*\s?(reais|mil)\b/i;
 /**
  * Valida a saída do modelo contra o que o servidor autoriza.
  * Nunca confia em ids vindos do modelo: filtra pelas listas permitidas.
+ * Não existe score da IA: a nota vem do questionário canônico no servidor.
  */
 export function validateAgentOutput(
   raw: unknown,
   ctx: {
     offers: Pick<SdrOffer, "offer_key" | "name">[];
     materials: Pick<SdrMaterial, "id">[];
-    inbound: ConversationMessage[];
   },
 ): ValidatedOutput | { error: string } {
   if (!raw || typeof raw !== "object") return { error: "Saída inválida" };
@@ -211,52 +211,15 @@ export function validateAgentOutput(
     .filter((k): k is string => typeof k === "string")
     .filter((k) => allowedMaterials.has(k));
 
-  const inboundById = new Map(ctx.inbound.map((m) => [m.id, m]));
-  const qualification = (Array.isArray(r.qualification) ? r.qualification : [])
-    .map((q) => q as Record<string, unknown>)
-    .filter((q) => {
-      const msg = inboundById.get(String(q.message_id ?? ""));
-      const excerpt = String(q.excerpt ?? "").trim();
-      const ok =
-        !!msg &&
-        msg.direction === "inbound" &&
-        excerpt.length >= 2 &&
-        norm(msg.body).includes(norm(excerpt)) &&
-        typeof q.field === "string" &&
-        typeof q.value === "string";
-      if (!ok && q.field) warnings.push(`Evidência sem trecho válido: ${String(q.field)}`);
-      return ok;
-    })
-    .map((q) => ({
-      field: String(q.field).slice(0, 80),
-      value: String(q.value).slice(0, 500),
-      message_id: String(q.message_id),
-      excerpt: String(q.excerpt).slice(0, 500),
-    }));
-
-  const score = Math.max(0, Math.min(100, Math.round(Number(r.score) || 0)));
   return {
     reply,
     intent,
     offer_keys,
     material_ids,
-    qualification,
-    score,
+    answers: Array.isArray(r.answers) ? r.answers : [],
     handoff_reason: typeof r.handoff_reason === "string" ? r.handoff_reason.slice(0, 300) : "",
     warnings,
   };
-}
-
-/** Oportunidade só com critério: pontuação mínima, oferta identificada e evidência. */
-export function shouldCreateOpportunity(o: {
-  score: number;
-  minScore: number;
-  offerKeys: string[];
-  evidenceCount: number;
-  intent: SdrIntent;
-}): boolean {
-  if (o.intent === "opt_out") return false;
-  return o.score >= o.minScore && o.offerKeys.length > 0 && o.evidenceCount > 0;
 }
 
 /** Estado comercial após a decisão do agente (independe do dono da conversa). */

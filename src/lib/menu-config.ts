@@ -96,6 +96,7 @@ export type SettingsGroup = { label: string; items: SettingsItem[] };
  */
 export const PROSPECTING_VIEW_PERMISSIONS = [
   "techsales.prospecting.search.view",
+  "techsales.marketing.sdr_agent.view.workspace",
   "techsales.prospecting.queue.view",
   "techsales.prospecting.cadences.view",
   "techsales.prospecting.questionnaires.view",

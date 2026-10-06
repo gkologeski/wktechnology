@@ -31,6 +31,7 @@ import { EnrichmentHistoryPage } from "@/components/prospecting/pages/enrichment
 import { ProspectingPage } from "@/components/prospecting/pages/prospecting-page";
 import { ScriptsPage } from "@/components/prospecting/pages/scripts-page";
 import { VoiceAgentPage } from "@/components/prospecting/pages/voice-agent-page";
+import { SdrAgentPanel } from "@/components/prospecting/sdr-console";
 
 const TAB_VALUES = [
   "fila",
@@ -44,6 +45,7 @@ const TAB_VALUES = [
   "prospecting",
   "scripts",
   "voice",
+  "sdr",
 ] as const;
 
 type TabValue = (typeof TAB_VALUES)[number];
@@ -126,6 +128,12 @@ const TABS: readonly TabDef[] = [
     label: "Voice Agent",
     permission: "techsales.prospecting.voice.view",
     Component: VoiceAgentPage,
+  },
+  {
+    value: "sdr",
+    label: "Agente SDR",
+    permission: "techsales.marketing.sdr_agent.view.workspace",
+    Component: SdrAgentPanel,
   },
 ];
 
