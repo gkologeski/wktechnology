@@ -234,7 +234,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
   return { processed: recips.length, sent: sentInc, failed: failedInc };
 }
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 /**
  * Disparo espaçado: um destinatário por vez, com intervalo sorteado entre X e Y.
