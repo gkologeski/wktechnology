@@ -10,6 +10,7 @@ import {
   updateWhatsAppCampaign,
 } from "@/lib/whatsapp-campaigns.functions";
 import { listWhatsAppTemplates } from "@/lib/whatsapp.functions";
+import { listPlaybooks } from "@/lib/sdr-agent.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -79,6 +80,13 @@ function CampaignsPage() {
   const [rate, setRate] = useState(10);
   const [recipientsRaw, setRecipientsRaw] = useState("");
   const [mediaUrl, setMediaUrl] = useState("");
+  const [sdrPlaybook, setSdrPlaybook] = useState<string>("__none__");
+  const playbooksFn = useServerFn(listPlaybooks);
+  const { data: playbooksData } = useQuery({
+    queryKey: ["sdr-playbooks"],
+    queryFn: () => playbooksFn(),
+  });
+  const playbooks = (playbooksData?.items ?? []) as { id: string; name: string }[];
 
   const selectedTpl = templates.find((t) => t.name === templateName);
   const isHsm = !!selectedTpl;
@@ -92,6 +100,7 @@ function CampaignsPage() {
     setRate(10);
     setRecipientsRaw("");
     setMediaUrl("");
+    setSdrPlaybook("__none__");
   }
 
   function openEdit(c: (typeof items)[number]) {
@@ -130,6 +139,7 @@ function CampaignsPage() {
             content_variables_template,
             media_url: mediaUrl || null,
             rate_per_minute: rate,
+            sdr_playbook_id: sdrPlaybook !== "__none__" ? sdrPlaybook : null,
           },
         });
       }
@@ -155,6 +165,7 @@ function CampaignsPage() {
           media_url: mediaUrl || undefined,
           rate_per_minute: rate,
           recipients,
+          sdr_playbook_id: sdrPlaybook !== "__none__" ? sdrPlaybook : null,
         },
       });
     },
@@ -251,6 +262,29 @@ function CampaignsPage() {
                   Template oficial aprovado pela Meta. Use as colunas após o telefone para as{" "}
                   {selectedTpl?.variableCount ?? 0} variáveis.
                 </p>
+              )}
+              {isHsm && (
+                <div>
+                  <label htmlFor="camp-sdr" className="text-xs text-muted-foreground">
+                    Agente SDR após resposta (opcional)
+                  </label>
+                  <Select value={sdrPlaybook} onValueChange={setSdrPlaybook}>
+                    <SelectTrigger id="camp-sdr">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Desligado</SelectItem>
+                      {playbooks.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Quando o cliente responder, o SDR prepara a conversa para sua aprovação.
+                  </p>
+                </div>
               )}
               <div>
                 <label className="text-xs text-muted-foreground">URL de mídia (opcional)</label>

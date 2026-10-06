@@ -16331,17 +16331,95 @@ export type Database = {
           },
         ]
       }
+      sdr_actions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          enrollment_id: string | null
+          error: string | null
+          id: string
+          job_id: string | null
+          kind: string
+          payload: Json
+          provider_ref: string | null
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          enrollment_id?: string | null
+          error?: string | null
+          id?: string
+          job_id?: string | null
+          kind: string
+          payload?: Json
+          provider_ref?: string | null
+          status: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          enrollment_id?: string | null
+          error?: string | null
+          id?: string
+          job_id?: string | null
+          kind?: string
+          payload?: Json
+          provider_ref?: string | null
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sdr_actions_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "sdr_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sdr_actions_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "sdr_turn_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sdr_actions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sdr_enrollments: {
         Row: {
+          booking_id: string | null
+          campaign_id: string | null
+          cancel_reason: string | null
+          commercial_stage: string
+          company_id: string | null
           contact_id: string | null
+          contact_phone: string | null
+          conversation_id: string | null
           created_at: string
+          deal_id: string | null
+          follow_up_at: string | null
+          follow_up_count: number
           handoff_at: string | null
           handoff_reason: string | null
           id: string
           last_action_at: string | null
+          last_inbound_at: string | null
           lead_id: string | null
+          meeting_status: string
           messages_sent: number
           notes: string | null
+          offers: Json
+          opted_out_at: string | null
           owner_id: string
           playbook_id: string
           qualification_score: number | null
@@ -16350,15 +16428,29 @@ export type Database = {
           workspace_id: string | null
         }
         Insert: {
+          booking_id?: string | null
+          campaign_id?: string | null
+          cancel_reason?: string | null
+          commercial_stage?: string
+          company_id?: string | null
           contact_id?: string | null
+          contact_phone?: string | null
+          conversation_id?: string | null
           created_at?: string
+          deal_id?: string | null
+          follow_up_at?: string | null
+          follow_up_count?: number
           handoff_at?: string | null
           handoff_reason?: string | null
           id?: string
           last_action_at?: string | null
+          last_inbound_at?: string | null
           lead_id?: string | null
+          meeting_status?: string
           messages_sent?: number
           notes?: string | null
+          offers?: Json
+          opted_out_at?: string | null
           owner_id: string
           playbook_id: string
           qualification_score?: number | null
@@ -16367,15 +16459,29 @@ export type Database = {
           workspace_id?: string | null
         }
         Update: {
+          booking_id?: string | null
+          campaign_id?: string | null
+          cancel_reason?: string | null
+          commercial_stage?: string
+          company_id?: string | null
           contact_id?: string | null
+          contact_phone?: string | null
+          conversation_id?: string | null
           created_at?: string
+          deal_id?: string | null
+          follow_up_at?: string | null
+          follow_up_count?: number
           handoff_at?: string | null
           handoff_reason?: string | null
           id?: string
           last_action_at?: string | null
+          last_inbound_at?: string | null
           lead_id?: string | null
+          meeting_status?: string
           messages_sent?: number
           notes?: string | null
+          offers?: Json
+          opted_out_at?: string | null
           owner_id?: string
           playbook_id?: string
           qualification_score?: number | null
@@ -16384,6 +16490,41 @@ export type Database = {
           workspace_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "sdr_enrollments_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sdr_enrollments_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sdr_enrollments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sdr_enrollments_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sdr_enrollments_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "sdr_enrollments_playbook_id_fkey"
             columns: ["playbook_id"]
@@ -16400,60 +16541,486 @@ export type Database = {
           },
         ]
       }
+      sdr_material_offers: {
+        Row: {
+          material_id: string
+          offer_id: string
+          workspace_id: string
+        }
+        Insert: {
+          material_id: string
+          offer_id: string
+          workspace_id: string
+        }
+        Update: {
+          material_id?: string
+          offer_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sdr_material_offers_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "sdr_materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sdr_material_offers_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "sdr_offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sdr_material_offers_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sdr_materials: {
+        Row: {
+          active: boolean
+          approved: boolean
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          kind: string
+          media_asset_id: string | null
+          mime: string | null
+          title: string
+          updated_at: string
+          url: string | null
+          workspace_id: string
+        }
+        Insert: {
+          active?: boolean
+          approved?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          kind?: string
+          media_asset_id?: string | null
+          mime?: string | null
+          title: string
+          updated_at?: string
+          url?: string | null
+          workspace_id: string
+        }
+        Update: {
+          active?: boolean
+          approved?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          kind?: string
+          media_asset_id?: string | null
+          mime?: string | null
+          title?: string
+          updated_at?: string
+          url?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sdr_materials_media_asset_id_fkey"
+            columns: ["media_asset_id"]
+            isOneToOne: false
+            referencedRelation: "media_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sdr_materials_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sdr_offers: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          commercial_notes: string
+          created_at: string
+          discovery_questions: string[]
+          fit_signals: string[]
+          id: string
+          name: string
+          offer_key: string
+          parent_key: string | null
+          position: number
+          pricing_policy: string
+          service_catalog_id: string | null
+          source_excerpt: string | null
+          source_url: string | null
+          status: string
+          summary: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          commercial_notes?: string
+          created_at?: string
+          discovery_questions?: string[]
+          fit_signals?: string[]
+          id?: string
+          name: string
+          offer_key: string
+          parent_key?: string | null
+          position?: number
+          pricing_policy?: string
+          service_catalog_id?: string | null
+          source_excerpt?: string | null
+          source_url?: string | null
+          status?: string
+          summary?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          commercial_notes?: string
+          created_at?: string
+          discovery_questions?: string[]
+          fit_signals?: string[]
+          id?: string
+          name?: string
+          offer_key?: string
+          parent_key?: string | null
+          position?: number
+          pricing_policy?: string
+          service_catalog_id?: string | null
+          source_excerpt?: string | null
+          source_url?: string | null
+          status?: string
+          summary?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sdr_offers_service_catalog_id_fkey"
+            columns: ["service_catalog_id"]
+            isOneToOne: false
+            referencedRelation: "service_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sdr_offers_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sdr_playbooks: {
         Row: {
+          booking_page_id: string | null
           business_hours: Json
           channel: string
           created_at: string
           enabled: boolean
+          follow_up_hours: number
           handoff_score: number
           id: string
+          max_follow_ups: number
           max_messages: number
+          mode: string
           name: string
+          opportunity_min_score: number
           opt_out_phrases: string[]
           owner_id: string
           qualification_prompt: string | null
+          questionnaire_id: string | null
           steps: Json
           updated_at: string
           workspace_id: string | null
         }
         Insert: {
+          booking_page_id?: string | null
           business_hours?: Json
           channel?: string
           created_at?: string
           enabled?: boolean
+          follow_up_hours?: number
           handoff_score?: number
           id?: string
+          max_follow_ups?: number
           max_messages?: number
+          mode?: string
           name: string
+          opportunity_min_score?: number
           opt_out_phrases?: string[]
           owner_id: string
           qualification_prompt?: string | null
+          questionnaire_id?: string | null
           steps?: Json
           updated_at?: string
           workspace_id?: string | null
         }
         Update: {
+          booking_page_id?: string | null
           business_hours?: Json
           channel?: string
           created_at?: string
           enabled?: boolean
+          follow_up_hours?: number
           handoff_score?: number
           id?: string
+          max_follow_ups?: number
           max_messages?: number
+          mode?: string
           name?: string
+          opportunity_min_score?: number
           opt_out_phrases?: string[]
           owner_id?: string
           qualification_prompt?: string | null
+          questionnaire_id?: string | null
           steps?: Json
           updated_at?: string
           workspace_id?: string | null
         }
         Relationships: [
           {
+            foreignKeyName: "sdr_playbooks_booking_page_id_fkey"
+            columns: ["booking_page_id"]
+            isOneToOne: false
+            referencedRelation: "booking_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sdr_playbooks_questionnaire_id_fkey"
+            columns: ["questionnaire_id"]
+            isOneToOne: false
+            referencedRelation: "prospecting_questionnaires"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "sdr_playbooks_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sdr_qualification_evidence: {
+        Row: {
+          created_at: string
+          enrollment_id: string
+          excerpt: string
+          field: string
+          id: string
+          source_message_id: string
+          value: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          enrollment_id: string
+          excerpt: string
+          field: string
+          id?: string
+          source_message_id: string
+          value: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          enrollment_id?: string
+          excerpt?: string
+          field?: string
+          id?: string
+          source_message_id?: string
+          value?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sdr_qualification_evidence_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "sdr_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sdr_qualification_evidence_source_message_id_fkey"
+            columns: ["source_message_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sdr_qualification_evidence_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sdr_turn_jobs: {
+        Row: {
+          attempts: number
+          conversation_id: string
+          conversation_version: number | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          draft_payload: Json
+          draft_text: string | null
+          enrollment_id: string
+          error: string | null
+          id: string
+          idem_key: string
+          inbound_message_id: string | null
+          kind: string
+          lease_token: string | null
+          lease_until: string | null
+          status: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          attempts?: number
+          conversation_id: string
+          conversation_version?: number | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          draft_payload?: Json
+          draft_text?: string | null
+          enrollment_id: string
+          error?: string | null
+          id?: string
+          idem_key: string
+          inbound_message_id?: string | null
+          kind?: string
+          lease_token?: string | null
+          lease_until?: string | null
+          status?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          attempts?: number
+          conversation_id?: string
+          conversation_version?: number | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          draft_payload?: Json
+          draft_text?: string | null
+          enrollment_id?: string
+          error?: string | null
+          id?: string
+          idem_key?: string
+          inbound_message_id?: string | null
+          kind?: string
+          lease_token?: string | null
+          lease_until?: string | null
+          status?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sdr_turn_jobs_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sdr_turn_jobs_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "sdr_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sdr_turn_jobs_inbound_message_id_fkey"
+            columns: ["inbound_message_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sdr_turn_jobs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sdr_workspace_settings: {
+        Row: {
+          auto_send_enabled: boolean
+          daily_send_limit: number
+          default_playbook_id: string | null
+          enabled: boolean
+          quiet_hours_end: number
+          quiet_hours_start: number
+          timezone: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        Insert: {
+          auto_send_enabled?: boolean
+          daily_send_limit?: number
+          default_playbook_id?: string | null
+          enabled?: boolean
+          quiet_hours_end?: number
+          quiet_hours_start?: number
+          timezone?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id: string
+        }
+        Update: {
+          auto_send_enabled?: boolean
+          daily_send_limit?: number
+          default_playbook_id?: string | null
+          enabled?: boolean
+          quiet_hours_end?: number
+          quiet_hours_start?: number
+          timezone?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sdr_workspace_settings_default_playbook_id_fkey"
+            columns: ["default_playbook_id"]
+            isOneToOne: false
+            referencedRelation: "sdr_playbooks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sdr_workspace_settings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
             referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
@@ -19212,6 +19779,8 @@ export type Database = {
           owner_id: string
           rate_per_minute: number
           scheduled_at: string | null
+          sdr_enabled: boolean
+          sdr_playbook_id: string | null
           sent: number
           started_at: string | null
           status: string
@@ -19236,6 +19805,8 @@ export type Database = {
           owner_id: string
           rate_per_minute?: number
           scheduled_at?: string | null
+          sdr_enabled?: boolean
+          sdr_playbook_id?: string | null
           sent?: number
           started_at?: string | null
           status?: string
@@ -19260,6 +19831,8 @@ export type Database = {
           owner_id?: string
           rate_per_minute?: number
           scheduled_at?: string | null
+          sdr_enabled?: boolean
+          sdr_playbook_id?: string | null
           sent?: number
           started_at?: string | null
           status?: string
@@ -19271,6 +19844,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "whatsapp_campaigns_sdr_playbook_id_fkey"
+            columns: ["sdr_playbook_id"]
+            isOneToOne: false
+            referencedRelation: "sdr_playbooks"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "whatsapp_campaigns_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
@@ -19281,6 +19861,8 @@ export type Database = {
       }
       whatsapp_conversations: {
         Row: {
+          ai_owner: string | null
+          ai_version: number
           assigned_to: string | null
           contact_id: string | null
           contact_phone: string
@@ -19292,8 +19874,12 @@ export type Database = {
           last_message_at: string | null
           last_message_preview: string | null
           lead_id: string | null
+          origin_campaign_id: string | null
+          origin_template_name: string | null
+          origin_wa_message_id: string | null
           owner_id: string
           provider: string
+          sdr_enrollment_id: string | null
           status: string
           twilio_number: string
           unread_count: number
@@ -19302,6 +19888,8 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          ai_owner?: string | null
+          ai_version?: number
           assigned_to?: string | null
           contact_id?: string | null
           contact_phone: string
@@ -19313,8 +19901,12 @@ export type Database = {
           last_message_at?: string | null
           last_message_preview?: string | null
           lead_id?: string | null
+          origin_campaign_id?: string | null
+          origin_template_name?: string | null
+          origin_wa_message_id?: string | null
           owner_id: string
           provider?: string
+          sdr_enrollment_id?: string | null
           status?: string
           twilio_number: string
           unread_count?: number
@@ -19323,6 +19915,8 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          ai_owner?: string | null
+          ai_version?: number
           assigned_to?: string | null
           contact_id?: string | null
           contact_phone?: string
@@ -19334,8 +19928,12 @@ export type Database = {
           last_message_at?: string | null
           last_message_preview?: string | null
           lead_id?: string | null
+          origin_campaign_id?: string | null
+          origin_template_name?: string | null
+          origin_wa_message_id?: string | null
           owner_id?: string
           provider?: string
+          sdr_enrollment_id?: string | null
           status?: string
           twilio_number?: string
           unread_count?: number
@@ -19356,6 +19954,20 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_conversations_origin_campaign_id_fkey"
+            columns: ["origin_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_conversations_sdr_enrollment_id_fkey"
+            columns: ["sdr_enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "sdr_enrollments"
             referencedColumns: ["id"]
           },
           {
@@ -20791,6 +21403,40 @@ export type Database = {
         Returns: undefined
       }
       schedule_platform_alerts_cron: { Args: never; Returns: Json }
+      sdr_claim_jobs: {
+        Args: { p_lease_seconds: number; p_limit: number }
+        Returns: {
+          attempts: number
+          conversation_id: string
+          conversation_version: number | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          draft_payload: Json
+          draft_text: string | null
+          enrollment_id: string
+          error: string | null
+          id: string
+          idem_key: string
+          inbound_message_id: string | null
+          kind: string
+          lease_token: string | null
+          lease_until: string | null
+          status: string
+          updated_at: string
+          workspace_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "sdr_turn_jobs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      sdr_set_conversation_owner: {
+        Args: { p_conversation: string; p_owner: string }
+        Returns: number
+      }
       security_scan_collect: { Args: never; Returns: Json }
       seed_access_profiles: { Args: { _workspace: string }; Returns: undefined }
       seed_quote_templates: {

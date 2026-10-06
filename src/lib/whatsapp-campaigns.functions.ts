@@ -19,7 +19,26 @@ const CreateInput = z.object({
   rate_per_minute: z.number().int().min(1).max(120).default(10),
   scheduled_at: z.string().datetime().optional(),
   recipients: z.array(RecipientInput).min(1).max(5000),
+  sdr_playbook_id: z.string().uuid().nullable().optional(),
 });
+
+/** Playbook do SDR precisa existir e ser visível ao usuário (RLS). Exige template oficial. */
+async function sdrColumns(
+  supabase: any,
+  playbookId: string | null | undefined,
+  templateName: string | null | undefined,
+) {
+  if (playbookId === undefined) return {};
+  if (!playbookId) return { sdr_enabled: false, sdr_playbook_id: null };
+  if (!templateName) throw new Error("O SDR só pode ser ligado a campanhas com template aprovado.");
+  const { data, error } = await supabase
+    .from("sdr_playbooks")
+    .select("id")
+    .eq("id", playbookId)
+    .maybeSingle();
+  if (error || !data) throw new Error("Playbook do SDR não encontrado.");
+  return { sdr_enabled: true, sdr_playbook_id: playbookId };
+}
 
 export const createWhatsAppCampaign = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -41,6 +60,7 @@ export const createWhatsAppCampaign = createServerFn({ method: "POST" })
         scheduled_at: data.scheduled_at ?? new Date().toISOString(),
         status: "draft",
         total: data.recipients.length,
+        ...(await sdrColumns(supabase, data.sdr_playbook_id, data.template_name)),
       })
       .select("id")
       .single();
@@ -134,6 +154,7 @@ const UpdateInput = z.object({
   media_content_type: z.string().max(120).nullable().optional(),
   rate_per_minute: z.number().int().min(1).max(120).optional(),
   scheduled_at: z.string().datetime().nullable().optional(),
+  sdr_playbook_id: z.string().uuid().nullable().optional(),
 });
 
 export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
@@ -163,6 +184,7 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
       patch.media_content_type = data.media_content_type || null;
     if (data.rate_per_minute !== undefined) patch.rate_per_minute = data.rate_per_minute;
     if (data.scheduled_at !== undefined) patch.scheduled_at = data.scheduled_at;
+    Object.assign(patch, await sdrColumns(supabase, data.sdr_playbook_id, data.template_name));
     if (Object.keys(patch).length === 0) return { ok: true };
     const { error } = await supabase
       .from("whatsapp_campaigns")

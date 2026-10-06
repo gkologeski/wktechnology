@@ -6,6 +6,7 @@ const STATUS_ORDER = ["accepted", "sent", "delivered", "read", "failed"];
 import { normalizePhone } from "@/lib/whatsapp/meta-channel.server";
 import { identityColumns, resolveInboxIdentity } from "@/lib/inbox/identity-resolution.server";
 import { autoAssignInboxConversation } from "@/lib/inbox-auto-assignment.server";
+import { ingestInboundForSdr } from "@/lib/prospecting/sdr/ingest.server";
 
 // Tabela whatsapp_webhook_events só entra nos tipos após aceitar o rascunho.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -75,10 +76,22 @@ async function handleMessages(admin: Admin, value: any): Promise<string | null> 
   for (const m of value?.messages ?? []) {
     const { data: dup } = await admin
       .from("whatsapp_messages")
-      .select("id")
+      .select("id, conversation_id, workspace_id, body")
       .eq("wa_message_id", m.id)
       .maybeSingle();
-    if (dup) continue;
+    if (dup) {
+      // Reentrega: reenfileira de forma idempotente caso a tentativa anterior tenha parado no meio.
+      if (dup.workspace_id && dup.conversation_id)
+        await sdrIngest(admin, {
+          workspaceId: dup.workspace_id,
+          conversationId: dup.conversation_id,
+          messageId: dup.id,
+          waMessageId: m.id,
+          providerPhoneId: value?.metadata?.phone_number_id ?? null,
+          body: dup.body ?? "",
+        });
+      continue;
+    }
     const from = normalizePhone(m.from);
     const ws = await resolveWorkspace(admin, from, ourPhone, value?.metadata?.phone_number_id);
     if (!ws) throw new Retry("Workspace da conversa não identificado");
@@ -130,24 +143,55 @@ async function handleMessages(admin: Admin, value: any): Promise<string | null> 
     const media = ["image", "audio", "video", "document", "sticker"].includes(m.type)
       ? m[m.type]
       : null;
-    const { error: mErr } = await admin.from("whatsapp_messages").insert({
-      conversation_id: conv.id,
-      owner_id: ws.workspace_id,
-      workspace_id: ws.workspace_id,
-      direction: "inbound",
-      body,
-      from_number: from,
-      to_number: ourPhone,
-      provider: "meta",
-      wa_message_id: m.id,
-      context_message_id: m.context?.id ?? null,
-      media_content_type: media?.mime_type ?? null,
-      status: "received",
-      raw: m,
-    });
+    const { data: inserted, error: mErr } = await admin
+      .from("whatsapp_messages")
+      .insert({
+        conversation_id: conv.id,
+        owner_id: ws.workspace_id,
+        workspace_id: ws.workspace_id,
+        direction: "inbound",
+        body,
+        from_number: from,
+        to_number: ourPhone,
+        provider: "meta",
+        wa_message_id: m.id,
+        context_message_id: m.context?.id ?? null,
+        media_content_type: media?.mime_type ?? null,
+        status: "received",
+        raw: m,
+      })
+      .select("id")
+      .single();
     if (mErr) throw new Retry(mErr.message);
+    await sdrIngest(admin, {
+      workspaceId: ws.workspace_id,
+      conversationId: conv.id,
+      messageId: inserted.id,
+      waMessageId: m.id,
+      providerPhoneId: value?.metadata?.phone_number_id ?? null,
+      body,
+    });
   }
   return workspaceId;
+}
+
+/** SDR: fila idempotente; falha vira nova tentativa do webhook (chave impede duplicar). */
+async function sdrIngest(admin: Admin, p: Parameters<typeof ingestInboundForSdr>[1]) {
+  let r: Awaited<ReturnType<typeof ingestInboundForSdr>>;
+  try {
+    r = await ingestInboundForSdr(admin, p);
+  } catch (e) {
+    throw new Retry(`SDR: ${(e as Error).message}`);
+  }
+  // Acorda o processamento ao enfileirar (sem polling). Falha fica na fila com lease.
+  if (r === "queued") {
+    try {
+      const { tickSdr } = await import("@/lib/prospecting/sdr/worker.server");
+      await tickSdr(admin, 3);
+    } catch (e) {
+      console.error("[sdr] processamento adiado", (e as Error).message);
+    }
+  }
 }
 
 async function handleStatuses(admin: Admin, value: any): Promise<string | null> {
