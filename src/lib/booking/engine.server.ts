@@ -213,7 +213,7 @@ type GoogleSyncResult = {
   error: string | null;
 };
 
-async function pushBookingToGoogle(
+export async function pushBookingToGoogle(
   page: BookingPageRow,
   booking: {
     start_at: string;

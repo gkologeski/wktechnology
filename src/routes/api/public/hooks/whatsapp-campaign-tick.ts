@@ -158,6 +158,35 @@ async function processCampaign(camp: Campaign) {
         })
         .eq("id", r.id);
       sentInc += 1;
+      // SDR: liga template → campanha → conversa. Falha aqui não desfaz o envio.
+      if (conv) {
+        try {
+          const { data: sdrCfg } = await supabaseAdmin
+            .from("whatsapp_campaigns")
+            .select("sdr_enabled, sdr_playbook_id")
+            .eq("id", camp.id)
+            .maybeSingle();
+          if (sdrCfg?.sdr_enabled) {
+            const { linkCampaignSend } = await import("@/lib/prospecting/sdr/ingest.server");
+            await linkCampaignSend(supabaseAdmin, {
+              workspaceId: camp.owner_id,
+              ownerId: camp.owner_id,
+              campaign: {
+                id: camp.id,
+                sdr_enabled: true,
+                sdr_playbook_id: sdrCfg.sdr_playbook_id,
+                template_name: camp.template_name,
+              },
+              conversationId: conv.id,
+              phone: toBare,
+              wamid,
+              contactId: r.contact_id ?? null,
+            });
+          }
+        } catch (e) {
+          console.error("[sdr] vínculo da campanha falhou", (e as Error).message);
+        }
+      }
     } catch (e) {
       await supabaseAdmin
         .from("whatsapp_campaign_recipients")

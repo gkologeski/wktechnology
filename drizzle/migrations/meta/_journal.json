@@ -400,6 +400,20 @@
       "when": 1791166409649,
       "tag": "0056_inbox_first_unread_notification",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1791300055138,
+      "tag": "0057_sdr_prospecting_agent",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1791301017286,
+      "tag": "0058_sdr_claim_respects_delay",
+      "breakpoints": true
     }
   ]
 }

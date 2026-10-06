@@ -331,6 +331,7 @@ import { Route as ApiPublicHooksProspectingDialTickRouteImport } from './routes/
 import { Route as ApiPublicHooksRecurrencesTickRouteImport } from './routes/api/public/hooks/recurrences-tick'
 import { Route as ApiPublicHooksScheduledExportsTickRouteImport } from './routes/api/public/hooks/scheduled-exports-tick'
 import { Route as ApiPublicHooksScoringTickRouteImport } from './routes/api/public/hooks/scoring-tick'
+import { Route as ApiPublicHooksSdrTickRouteImport } from './routes/api/public/hooks/sdr-tick'
 import { Route as ApiPublicHooksSecurityScanTickRouteImport } from './routes/api/public/hooks/security-scan-tick'
 import { Route as ApiPublicHooksSegmentsTickRouteImport } from './routes/api/public/hooks/segments-tick'
 import { Route as ApiPublicHooksSentimentTickRouteImport } from './routes/api/public/hooks/sentiment-tick'
@@ -2240,6 +2241,11 @@ const ApiPublicHooksScoringTickRoute =
     path: '/api/public/hooks/scoring-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksSdrTickRoute = ApiPublicHooksSdrTickRouteImport.update({
+  id: '/api/public/hooks/sdr-tick',
+  path: '/api/public/hooks/sdr-tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksSecurityScanTickRoute =
   ApiPublicHooksSecurityScanTickRouteImport.update({
     id: '/api/public/hooks/security-scan-tick',
@@ -2904,6 +2910,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/recurrences-tick': typeof ApiPublicHooksRecurrencesTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
   '/api/public/hooks/scoring-tick': typeof ApiPublicHooksScoringTickRoute
+  '/api/public/hooks/sdr-tick': typeof ApiPublicHooksSdrTickRoute
   '/api/public/hooks/security-scan-tick': typeof ApiPublicHooksSecurityScanTickRoute
   '/api/public/hooks/segments-tick': typeof ApiPublicHooksSegmentsTickRoute
   '/api/public/hooks/sentiment-tick': typeof ApiPublicHooksSentimentTickRoute
@@ -3283,6 +3290,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/recurrences-tick': typeof ApiPublicHooksRecurrencesTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
   '/api/public/hooks/scoring-tick': typeof ApiPublicHooksScoringTickRoute
+  '/api/public/hooks/sdr-tick': typeof ApiPublicHooksSdrTickRoute
   '/api/public/hooks/security-scan-tick': typeof ApiPublicHooksSecurityScanTickRoute
   '/api/public/hooks/segments-tick': typeof ApiPublicHooksSegmentsTickRoute
   '/api/public/hooks/sentiment-tick': typeof ApiPublicHooksSentimentTickRoute
@@ -3670,6 +3678,7 @@ export interface FileRoutesById {
   '/api/public/hooks/recurrences-tick': typeof ApiPublicHooksRecurrencesTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
   '/api/public/hooks/scoring-tick': typeof ApiPublicHooksScoringTickRoute
+  '/api/public/hooks/sdr-tick': typeof ApiPublicHooksSdrTickRoute
   '/api/public/hooks/security-scan-tick': typeof ApiPublicHooksSecurityScanTickRoute
   '/api/public/hooks/segments-tick': typeof ApiPublicHooksSegmentsTickRoute
   '/api/public/hooks/sentiment-tick': typeof ApiPublicHooksSentimentTickRoute
@@ -4057,6 +4066,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/recurrences-tick'
     | '/api/public/hooks/scheduled-exports-tick'
     | '/api/public/hooks/scoring-tick'
+    | '/api/public/hooks/sdr-tick'
     | '/api/public/hooks/security-scan-tick'
     | '/api/public/hooks/segments-tick'
     | '/api/public/hooks/sentiment-tick'
@@ -4436,6 +4446,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/recurrences-tick'
     | '/api/public/hooks/scheduled-exports-tick'
     | '/api/public/hooks/scoring-tick'
+    | '/api/public/hooks/sdr-tick'
     | '/api/public/hooks/security-scan-tick'
     | '/api/public/hooks/segments-tick'
     | '/api/public/hooks/sentiment-tick'
@@ -4822,6 +4833,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/recurrences-tick'
     | '/api/public/hooks/scheduled-exports-tick'
     | '/api/public/hooks/scoring-tick'
+    | '/api/public/hooks/sdr-tick'
     | '/api/public/hooks/security-scan-tick'
     | '/api/public/hooks/segments-tick'
     | '/api/public/hooks/sentiment-tick'
@@ -4965,6 +4977,7 @@ export interface RootRouteChildren {
   ApiPublicHooksRecurrencesTickRoute: typeof ApiPublicHooksRecurrencesTickRoute
   ApiPublicHooksScheduledExportsTickRoute: typeof ApiPublicHooksScheduledExportsTickRoute
   ApiPublicHooksScoringTickRoute: typeof ApiPublicHooksScoringTickRoute
+  ApiPublicHooksSdrTickRoute: typeof ApiPublicHooksSdrTickRoute
   ApiPublicHooksSecurityScanTickRoute: typeof ApiPublicHooksSecurityScanTickRoute
   ApiPublicHooksSegmentsTickRoute: typeof ApiPublicHooksSegmentsTickRoute
   ApiPublicHooksSentimentTickRoute: typeof ApiPublicHooksSentimentTickRoute
@@ -7275,6 +7288,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksScoringTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/sdr-tick': {
+      id: '/api/public/hooks/sdr-tick'
+      path: '/api/public/hooks/sdr-tick'
+      fullPath: '/api/public/hooks/sdr-tick'
+      preLoaderRoute: typeof ApiPublicHooksSdrTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/security-scan-tick': {
       id: '/api/public/hooks/security-scan-tick'
       path: '/api/public/hooks/security-scan-tick'
@@ -8628,6 +8648,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksScheduledExportsTickRoute:
     ApiPublicHooksScheduledExportsTickRoute,
   ApiPublicHooksScoringTickRoute: ApiPublicHooksScoringTickRoute,
+  ApiPublicHooksSdrTickRoute: ApiPublicHooksSdrTickRoute,
   ApiPublicHooksSecurityScanTickRoute: ApiPublicHooksSecurityScanTickRoute,
   ApiPublicHooksSegmentsTickRoute: ApiPublicHooksSegmentsTickRoute,
   ApiPublicHooksSentimentTickRoute: ApiPublicHooksSentimentTickRoute,

@@ -211,6 +211,22 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
       sent_at: nowIso,
       raw,
     });
+    // Mensagem manual em conversa do SDR: humano assume e trabalhos da IA ficam obsoletos.
+    {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: sdrConv } = await supabaseAdmin
+        .from("whatsapp_conversations")
+        .select("ai_owner, workspace_id")
+        .eq("id", conv.id)
+        .maybeSingle();
+      if (sdrConv?.ai_owner === "ai" && sdrConv.workspace_id === workspaceId) {
+        const { error: oErr } = await supabaseAdmin.rpc("sdr_set_conversation_owner", {
+          p_conversation: conv.id,
+          p_owner: "human",
+        });
+        if (oErr) console.error("[sdr] takeover falhou", oErr.code);
+      }
+    }
     if (mErr)
       throw new Error(
         "Mensagem enviada ao WhatsApp, mas não foi possível registrá-la no histórico.",

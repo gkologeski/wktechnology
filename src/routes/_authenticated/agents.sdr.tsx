@@ -18,6 +18,7 @@ import {
   deletePlaybook,
   listEnrollments,
 } from "@/lib/sdr-agent.functions";
+import { SdrConsoleTabs } from "@/components/prospecting/sdr-console";
 
 export const Route = createFileRoute("/_authenticated/agents/sdr")({
   component: SdrAgentPage,
@@ -114,11 +115,16 @@ function SdrAgentPage() {
         </Button>
       </div>
 
-      <Tabs defaultValue="playbook">
-        <TabsList>
+      <Tabs defaultValue="sdr-supervision">
+        <TabsList className="flex-wrap">
+          <TabsTrigger value="sdr-supervision">Supervisão</TabsTrigger>
+          <TabsTrigger value="sdr-results">Resultados</TabsTrigger>
+          <TabsTrigger value="sdr-catalog">Portfólio e materiais</TabsTrigger>
+          <TabsTrigger value="sdr-settings">Configuração</TabsTrigger>
           <TabsTrigger value="playbook">Playbook</TabsTrigger>
           <TabsTrigger value="enrollments">Em atendimento</TabsTrigger>
         </TabsList>
+        <SdrConsoleTabs />
 
         <TabsContent value="playbook" className="space-y-4">
           <div className="grid md:grid-cols-[260px_1fr] gap-4">

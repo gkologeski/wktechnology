@@ -24,6 +24,7 @@ export const AI_FEATURES = {
   propriedades: "Propriedades personalizadas",
   reunioes: "Reuniões",
   teste_conexao: "Teste de conexão",
+  sdr_agente: "Agente SDR (Prospecção)",
   outros: "Outros",
 } as const;
 
