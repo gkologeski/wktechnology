@@ -383,7 +383,9 @@ export async function reconcileMeetings(
 ): Promise<number> {
   const { data: rows } = await admin
     .from("sdr_enrollments")
-    .select("id, workspace_id, contact_id, lead_id, booking_id, meeting_status, last_action_at")
+    .select(
+      "id, workspace_id, contact_id, lead_id, booking_id, meeting_status, last_action_at, playbook:sdr_playbooks(booking_page_id)",
+    )
     .in("meeting_status", ["link_sent", "pending_sync", "sync_failed"])
     .in("workspace_id", workspaceIds ?? [])
     .limit(limit);
@@ -396,11 +398,13 @@ export async function reconcileMeetings(
         .select("id, status, gcal_event_id, calendar_sync_error")
         .eq("id", e.booking_id)
         .maybeSingle());
-    } else if (e.contact_id || e.lead_id) {
+    } else if ((e.contact_id || e.lead_id) && (e as any).playbook?.booking_page_id) {
+      // Só reservas da página de agenda do playbook contam como reunião do SDR.
       const q = admin
         .from("bookings")
         .select("id, status, gcal_event_id, calendar_sync_error")
         .eq("workspace_id", e.workspace_id)
+        .eq("page_id", (e as any).playbook.booking_page_id)
         .gte("created_at", e.last_action_at ?? new Date(0).toISOString())
         .order("created_at", { ascending: false })
         .limit(1);
