@@ -10,7 +10,9 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Link } from "@tanstack/react-router";
+import { leadScoreBandLabel, LEAD_SCORE_MAX } from "@/lib/prospecting/lead-score";
 import { EmptyState, MetricCard, SectionHeader } from "@/components/techhire/ui";
 import {
   approveSdrDraft,
@@ -43,6 +45,39 @@ const MEETING: Record<string, string> = {
 };
 
 type Overview = Awaited<ReturnType<typeof getSdrOverview>>;
+
+const DECISION: Record<string, string> = {
+  pending: "Pendente",
+  qualified: "Qualificado",
+  disqualified: "Desqualificado",
+  nurture: "Nutrição",
+  scheduled: "Agendado",
+};
+
+/** Agente SDR dentro da Prospecção (mesmo conteúdo de /agents/sdr). */
+export function SdrAgentPanel() {
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm text-muted-foreground">
+          Supervisione o SDR do WhatsApp. Playbooks e atendimentos ficam na página completa.
+        </p>
+        <Button asChild variant="outline" size="sm">
+          <Link to="/agents/sdr">Abrir página completa</Link>
+        </Button>
+      </div>
+      <Tabs defaultValue="sdr-supervision">
+        <TabsList className="flex-wrap">
+          <TabsTrigger value="sdr-supervision">Supervisão</TabsTrigger>
+          <TabsTrigger value="sdr-results">Resultados</TabsTrigger>
+          <TabsTrigger value="sdr-catalog">Portfólio e materiais</TabsTrigger>
+          <TabsTrigger value="sdr-settings">Configuração</TabsTrigger>
+        </TabsList>
+        <SdrConsoleTabs />
+      </Tabs>
+    </div>
+  );
+}
 
 /** Abas extras do Agente SDR. Renderizar dentro do <Tabs> da página. */
 export function SdrConsoleTabs() {
@@ -235,6 +270,12 @@ function CatalogPanel({ d }: { d: Overview }) {
     ),
     onError: (e: Error) => toast.error(e.message),
   });
+  const approveMat = useMutation({
+    mutationFn: (m: { id: string; title: string; url: string; offerIds: string[] }) =>
+      saveMat({ data: { workspaceId: d.workspaceId, ...m, approved: true, active: true } }),
+    onSuccess: () => (toast.success("Material aprovado"), refresh()),
+    onError: (e: Error) => toast.error(e.message),
+  });
   const linksBy = (mid: string) =>
     d.links.filter((l) => l.material_id === mid).map((l) => l.offer_id);
   const name = (id: string) => d.offers.find((o) => o.id === id)?.name ?? "?";
@@ -289,8 +330,21 @@ function CatalogPanel({ d }: { d: Overview }) {
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{m.title}</span>
                   <Badge variant={m.approved && m.active ? "secondary" : "outline"}>
-                    {m.approved && m.active ? "Aprovado" : "Inativo"}
+                    {!m.active ? "Inativo" : m.approved ? "Aprovado" : "Aguardando aprovação"}
                   </Badge>
+                  {d.canManage && m.active && !m.approved && m.url && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="ml-auto"
+                      disabled={approveMat.isPending}
+                      onClick={() =>
+                        approveMat.mutate({ id: m.id, title: m.title, url: m.url as string, offerIds: linksBy(m.id) })
+                      }
+                    >
+                      Aprovar para envio
+                    </Button>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {linksBy(m.id).map(name).join(", ") || "Sem serviço vinculado"}
@@ -499,7 +553,7 @@ function ResultsPanel({ d }: { d: Overview }) {
               <tr>
                 <th className="p-2">Telefone</th>
                 <th className="p-2">Etapa</th>
-                <th className="p-2">Score</th>
+                <th className="p-2">Qualificação</th>
                 <th className="p-2">Reunião</th>
                 <th className="p-2" />
               </tr>
@@ -509,7 +563,18 @@ function ResultsPanel({ d }: { d: Overview }) {
                 <tr key={e.id}>
                   <td className="p-2">{e.contact_phone}</td>
                   <td className="p-2">{STAGE[e.commercial_stage ?? ""] ?? e.commercial_stage}</td>
-                  <td className="p-2">{e.qualification_score ?? "—"}</td>
+                  <td className="p-2">
+                    {(() => {
+                      const q = e.qualification_id ? d.qualifications[e.qualification_id] : null;
+                      if (!q) return "—";
+                      return (
+                        <span title={q.questionnaire ?? undefined}>
+                          {q.total}/{LEAD_SCORE_MAX} · {leadScoreBandLabel(q.total)} ·{" "}
+                          {DECISION[q.decision] ?? q.decision}
+                        </span>
+                      );
+                    })()}
+                  </td>
                   <td className="p-2">{MEETING[e.meeting_status ?? "none"] ?? e.meeting_status}</td>
                   <td className="p-2 text-right">
                     {e.meeting_status === "sync_failed" && (

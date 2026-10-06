@@ -7,7 +7,6 @@ import {
   selectableMaterials,
   selectableOffers,
   sendGuard,
-  shouldCreateOpportunity,
   turnIdemKey,
   validateAgentOutput,
 } from "./policy";
@@ -95,15 +94,6 @@ describe("opt-out", () => {
   it("recusa encerra e não cria oportunidade nem follow-up", () => {
     expect(nextStage("discovery", "opt_out", true)).toBe("opted_out");
     expect(
-      shouldCreateOpportunity({
-        score: 99,
-        minScore: 60,
-        offerKeys: ["x"],
-        evidenceCount: 3,
-        intent: "opt_out",
-      }),
-    ).toBe(false);
-    expect(
       nextFollowUpAt({ now: new Date(), hours: 24, count: 0, max: 2, stage: "opted_out" }),
     ).toBeNull();
   });
@@ -113,26 +103,15 @@ describe("saída da IA", () => {
   const ctx = {
     offers: [{ offer_key: "outsourcing", name: "Outsourcing" }],
     materials: [{ id: "m1" }],
-    inbound: [
-      {
-        id: "msg1",
-        direction: "inbound" as const,
-        body: "Precisamos de 3 devs Java até março",
-        created_at: "",
-      },
-    ],
   };
-  it("descarta ofertas/materiais não autorizados e evidência inventada", () => {
+  it("descarta ofertas/materiais não autorizados e ignora score autodeclarado", () => {
     const r = validateAgentOutput(
       {
         reply: "Entendi!",
         intent: "continue",
         offer_keys: ["outsourcing", "inventada"],
         material_ids: ["m1", "mX"],
-        qualification: [
-          { field: "necessidade", value: "3 devs", message_id: "msg1", excerpt: "3 devs Java" },
-          { field: "orcamento", value: "alto", message_id: "msg1", excerpt: "orçamento aprovado" },
-        ],
+        answers: [{ question_id: "q1", value: "Sim", message_id: "m", excerpt: "x" }],
         score: 150,
         handoff_reason: "",
       },
@@ -141,8 +120,8 @@ describe("saída da IA", () => {
     if ("error" in r) throw new Error(r.error);
     expect(r.offer_keys).toEqual(["outsourcing"]);
     expect(r.material_ids).toEqual(["m1"]);
-    expect(r.qualification).toHaveLength(1);
-    expect(r.score).toBe(100);
+    expect(r).not.toHaveProperty("score");
+    expect(r.answers).toHaveLength(1);
   });
   it("bloqueia oferta inexistente e sinaliza preço", () => {
     expect(
@@ -150,26 +129,6 @@ describe("saída da IA", () => {
     ).toHaveProperty("error");
     const r = validateAgentOutput({ reply: "Custa R$ 5.000", intent: "continue" }, ctx);
     expect("warnings" in r && r.warnings.length).toBeTruthy();
-  });
-  it("oportunidade só com critério", () => {
-    expect(
-      shouldCreateOpportunity({
-        score: 70,
-        minScore: 60,
-        offerKeys: ["x"],
-        evidenceCount: 0,
-        intent: "continue",
-      }),
-    ).toBe(false);
-    expect(
-      shouldCreateOpportunity({
-        score: 70,
-        minScore: 60,
-        offerKeys: ["x"],
-        evidenceCount: 1,
-        intent: "continue",
-      }),
-    ).toBe(true);
   });
 });
 

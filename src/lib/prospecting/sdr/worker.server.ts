@@ -21,13 +21,20 @@ import {
   selectableMaterials,
   selectableOffers,
   sendGuard,
-  shouldCreateOpportunity,
   validateAgentOutput,
   type CommercialStage,
   type ConversationMessage,
   type SdrMaterial,
   type SdrOffer,
 } from "./policy";
+import {
+  acceptAnswers,
+  mergeAnswers,
+  qualifiesForOpportunity,
+  scoreCanonical,
+  type CanonicalQuestion,
+  type CanonicalScore,
+} from "./qualification";
 
 const LEASE_SECONDS = 120;
 
@@ -66,6 +73,7 @@ async function finish(
     .from("sdr_turn_jobs")
     .update({ ...patch, lease_token: null, updated_at: new Date().toISOString() })
     .eq("id", jobId)
+    .eq("status", "running")
     .eq("lease_token", leaseToken);
 }
 
@@ -80,7 +88,94 @@ type Job = {
   status: string;
 };
 
-export async function processJob(admin: Admin, job: Job): Promise<string> {
+export type WorkerDeps = {
+  callAgent: typeof callSdrAgent;
+  ensureOpportunity: typeof ensureOpportunity;
+  handoffToHuman: typeof handoffToHuman;
+  sendMessage: typeof sendSdrMessage;
+};
+
+const defaultDeps: WorkerDeps = {
+  callAgent: callSdrAgent,
+  ensureOpportunity,
+  handoffToHuman,
+  sendMessage: sendSdrMessage,
+};
+
+async function guard(admin: Admin, job: Job): Promise<string> {
+  const { data, error } = await admin.rpc("sdr_guard", { p_job: job.id, p_lease: job.lease_token });
+  if (error) throw new Error(error.message);
+  if (data !== "ok")
+    await finish(admin, job.id, job.lease_token, { status: "discarded", error: String(data) });
+  return String(data);
+}
+
+async function loadQuestions(
+  admin: Admin,
+  workspaceId: string,
+  questionnaireId: string | null,
+): Promise<CanonicalQuestion[]> {
+  if (!questionnaireId) return [];
+  const { data, error } = await admin
+    .from("prospecting_questions")
+    .select("id, label, type, options, weight, required, text_points, text_min_chars, position")
+    .eq("questionnaire_id", questionnaireId)
+    .eq("workspace_id", workspaceId)
+    .order("position");
+  if (error) throw new Error(error.message);
+  return (data ?? []) as CanonicalQuestion[];
+}
+
+async function loadQualification(
+  admin: Admin,
+  workspaceId: string,
+  questionnaireId: string,
+  target: { entity: "lead" | "contact"; id: string },
+): Promise<{ id: string; answers: unknown; updated_at: string } | null> {
+  const { data, error } = await admin
+    .from("prospecting_qualifications")
+    .select("id, answers, updated_at")
+    .eq("workspace_id", workspaceId)
+    .eq("questionnaire_id", questionnaireId)
+    .eq("entity", target.entity)
+    .eq("entity_id", target.id)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ?? null;
+}
+
+/** ICP do lead com critérios do próprio workspace (o cliente admin não aplica RLS). */
+async function scopedIcpFit(admin: Admin, workspaceId: string, leadId: string) {
+  const { computeIcpFit } = await import("@/lib/scoring/icp.server");
+  const [{ data: criteria }, { data: lead }] = await Promise.all([
+    admin
+      .from("icp_criteria")
+      .select("id, name, entity, field, op, value, points, enabled")
+      .eq("workspace_id", workspaceId)
+      .eq("enabled", true),
+    admin.from("leads").select("*").eq("id", leadId).eq("workspace_id", workspaceId).maybeSingle(),
+  ]);
+  if (!lead) return null;
+  let company = null;
+  if (lead.company_id) {
+    ({ data: company } = await admin
+      .from("companies")
+      .select("*")
+      .eq("id", lead.company_id)
+      .eq("workspace_id", workspaceId)
+      .maybeSingle());
+  }
+  const fit = computeIcpFit(criteria ?? [], lead, company ?? null);
+  return { points: fit.points, max: fit.max };
+}
+
+export async function processJob(
+  admin: Admin,
+  job: Job,
+  deps: WorkerDeps = defaultDeps,
+): Promise<string> {
   const [{ data: conv }, { data: enr }, { data: settings }] = await Promise.all([
     admin
       .from("whatsapp_conversations")
@@ -145,26 +240,11 @@ export async function processJob(admin: Admin, job: Job): Promise<string> {
     });
     return "skipped";
   }
-  const { data: questions } = playbook.questionnaire_id
-    ? await admin
-        .from("prospecting_questions")
-        .select("label")
-        .eq("questionnaire_id", playbook.questionnaire_id)
-        .order("position")
-    : { data: [] };
-  const qualificationFields = [
-    "necessidade",
-    "empresa",
-    "cargo",
-    "prazo",
-    "orcamento_existe",
-    "decisor",
-    ...((questions ?? []) as { label: string }[]).map((q) => q.label),
-  ];
+  const questions = await loadQuestions(admin, job.workspace_id, playbook.questionnaire_id);
   const system = buildSystemPrompt({
     offers,
     materials,
-    qualificationFields,
+    questions,
     bookingAvailable: !!playbook.booking_page_id,
     extraInstructions:
       [
@@ -177,7 +257,7 @@ export async function processJob(admin: Admin, job: Job): Promise<string> {
         .join("\n") || null,
   });
 
-  const ai = await callSdrAgent({ workspaceId: job.workspace_id, system, history });
+  const ai = await deps.callAgent({ workspaceId: job.workspace_id, system, history });
   if (!ai.ok) {
     if (ai.retryable) {
       await finish(admin, job.id, job.lease_token, {
@@ -198,52 +278,109 @@ export async function processJob(admin: Admin, job: Job): Promise<string> {
     });
     return "failed";
   }
-  const out = validateAgentOutput(ai.output, {
-    offers,
-    materials,
-    inbound: history.filter((m) => m.direction === "inbound"),
-  });
+  const out = validateAgentOutput(ai.output, { offers, materials });
   if ("error" in out) {
     await finish(admin, job.id, job.lease_token, { status: "failed", error: out.error });
     return "failed";
   }
 
-  // Evidências e estado comercial (separado do dono da conversa).
-  if (out.qualification.length) {
-    await admin.from("sdr_qualification_evidence").upsert(
-      out.qualification.map((q) => ({
-        workspace_id: job.workspace_id,
-        enrollment_id: enr.id,
-        field: q.field,
-        value: q.value,
-        source_message_id: q.message_id,
-        excerpt: q.excerpt,
-      })),
-      { onConflict: "enrollment_id,field,source_message_id", ignoreDuplicates: true },
+  // Qualificação canônica: mesmo questionário, cálculo e linha da Prospecção.
+  const inbound = history.filter((m) => m.direction === "inbound");
+  const target = enr.lead_id
+    ? { entity: "lead" as const, id: enr.lead_id as string }
+    : enr.contact_id
+      ? { entity: "contact" as const, id: enr.contact_id as string }
+      : null;
+  let canonical: CanonicalScore | null = null;
+  let qualificationPayload: Record<string, unknown> | null = null;
+  let evidence: Record<string, unknown>[] = [];
+  if (playbook.questionnaire_id && target && questions.length) {
+    const existing = await loadQualification(
+      admin,
+      job.workspace_id,
+      playbook.questionnaire_id,
+      target,
     );
+    const { accepted, rejected } = acceptAnswers(questions, out.answers, inbound);
+    out.warnings.push(...rejected.slice(0, 5));
+    const merged = mergeAnswers(existing?.answers as Record<string, unknown> | null, accepted);
+    const icp =
+      target.entity === "lead" ? await scopedIcpFit(admin, job.workspace_id, target.id) : null;
+    canonical = scoreCanonical(questions, merged.answers, icp);
+    if (merged.added.length) {
+      qualificationPayload = {
+        id: existing?.id ?? null,
+        expected_updated_at: existing?.updated_at ?? null,
+        expected_answers: existing?.answers ?? {},
+        questionnaire_id: playbook.questionnaire_id,
+        entity: target.entity,
+        entity_id: target.id,
+        answers: merged.answers,
+        score: canonical.score,
+        questionnaire_points: canonical.unified.questionnairePoints,
+        icp_points: canonical.unified.icpPoints,
+        total_score: canonical.unified.total,
+      };
+      evidence = merged.added.map((a) => ({
+        field: a.label.slice(0, 80),
+        question_id: a.question_id,
+        value: Array.isArray(a.value) ? a.value.join(" | ") : String(a.value),
+        message_id: a.message_id,
+        excerpt: a.excerpt,
+      }));
+    }
   }
-  const { count: evidenceCount } = await admin
-    .from("sdr_qualification_evidence")
-    .select("id", { count: "exact", head: true })
-    .eq("enrollment_id", enr.id);
   const offerNames = offers.filter((o) => out.offer_keys.includes(o.offer_key)).map((o) => o.name);
-  const qualified = shouldCreateOpportunity({
-    score: out.score,
-    minScore: playbook.opportunity_min_score ?? 60,
+  const qualified = qualifiesForOpportunity({
+    canonical,
+    minTotal: playbook.opportunity_min_score ?? 60,
     offerKeys: out.offer_keys,
-    evidenceCount: evidenceCount ?? 0,
     intent: out.intent,
   });
-  await admin
-    .from("sdr_enrollments")
-    .update({
-      qualification_score: out.score,
-      offers: offerNames.length ? out.offer_keys : enr.offers,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", enr.id);
+  const optOut = out.intent === "opt_out";
+  const enrollmentPatch: Record<string, unknown> = {
+    ...(out.offer_keys.length ? { offers: out.offer_keys } : {}),
+    ...(optOut
+      ? {
+          status: "opted_out",
+          commercial_stage: "opted_out",
+          opted_out_at: new Date().toISOString(),
+          cancel_reason: "opt_out",
+          follow_up_at: null,
+        }
+      : {}),
+  };
+
+  // Compare-and-set: nada é gravado se lease, dono, versão ou workspace mudaram durante a IA.
+  const { data: commit, error: cErr } = await admin.rpc("sdr_commit_turn", {
+    p_job: job.id,
+    p_lease: job.lease_token,
+    p_evidence: evidence,
+    p_qualification: qualificationPayload,
+    p_enrollment: Object.keys(enrollmentPatch).length ? enrollmentPatch : null,
+    p_job_patch: optOut ? { status: "skipped", error: "opt_out" } : null,
+  });
+  if (cErr) throw new Error(cErr.message);
+  if (commit !== "ok") {
+    await finish(admin, job.id, job.lease_token, { status: "discarded", error: String(commit) });
+    return "discarded";
+  }
+
+  if (optOut) {
+    await admin.rpc("sdr_set_conversation_owner", { p_conversation: conv.id, p_owner: "paused" });
+    await recordSdrAction(admin, {
+      workspace_id: job.workspace_id,
+      enrollment_id: enr.id,
+      job_id: job.id,
+      kind: "opt_out",
+      status: "success",
+    });
+    return "opt_out";
+  }
+
   if (qualified) {
-    await ensureOpportunity(admin, {
+    if ((await guard(admin, job)) !== "ok") return "discarded";
+    await deps.ensureOpportunity(admin, {
       workspaceId: job.workspace_id,
       enrollment: enr,
       title: `SDR · ${offerNames.join(" + ")}`,
@@ -251,28 +388,14 @@ export async function processJob(admin: Admin, job: Job): Promise<string> {
     });
   }
 
-  if (out.intent === "opt_out") {
-    await admin
-      .from("sdr_enrollments")
-      .update({
-        status: "opted_out",
-        commercial_stage: "opted_out",
-        opted_out_at: new Date().toISOString(),
-        cancel_reason: "opt_out",
-        follow_up_at: null,
-      })
-      .eq("id", enr.id);
-    await admin.rpc("sdr_set_conversation_owner", { p_conversation: conv.id, p_owner: "paused" });
-    await finish(admin, job.id, job.lease_token, { status: "skipped", error: "opt_out" });
-    return "opt_out";
-  }
   if (out.intent === "handoff") {
+    if ((await guard(admin, job)) !== "ok") return "discarded";
     await finish(admin, job.id, job.lease_token, {
       status: "skipped",
       error: "handoff",
       draft_text: out.reply || null,
     });
-    await handoffToHuman(admin, {
+    await deps.handoffToHuman(admin, {
       workspaceId: job.workspace_id,
       enrollmentId: enr.id,
       conversationId: conv.id,
@@ -317,6 +440,7 @@ export async function processJob(admin: Admin, job: Job): Promise<string> {
       updated_at: new Date().toISOString(),
     })
     .eq("id", job.id)
+    .eq("status", "running")
     .eq("lease_token", job.lease_token)
     .select("id");
   if (!saved?.length) return "lease_lost";
@@ -324,7 +448,7 @@ export async function processJob(admin: Admin, job: Job): Promise<string> {
     await admin.from("sdr_turn_jobs").update({ lease_token: null }).eq("id", job.id);
     return "drafted";
   }
-  const sent = await sendSdrMessage(admin, {
+  const sent = await deps.sendMessage(admin, {
     jobId: job.id,
     expectedStatus: "running",
     leaseToken: job.lease_token,
@@ -350,12 +474,17 @@ export async function processJob(admin: Admin, job: Job): Promise<string> {
 }
 
 /** Agenda follow-ups vencidos como trabalhos (só dentro da janela de 24 h). */
-async function scheduleFollowUps(admin: Admin, limit: number): Promise<number> {
+async function scheduleFollowUps(
+  admin: Admin,
+  limit: number,
+  workspaceIds: string[],
+): Promise<number> {
   const { isWithinServiceWindow } = await import("@/lib/whatsapp/meta-channel.server");
   const { data: due } = await admin
     .from("sdr_enrollments")
     .select("id, workspace_id, conversation_id, follow_up_count, commercial_stage")
     .eq("status", "active")
+    .in("workspace_id", workspaceIds)
     .lte("follow_up_at", new Date().toISOString())
     .limit(limit);
   let n = 0;
@@ -404,9 +533,17 @@ async function scheduleFollowUps(admin: Admin, limit: number): Promise<number> {
   return n;
 }
 
-export async function tickSdr(admin: Admin, limit = 10) {
-  const meetings = await reconcileMeetings(admin);
-  const followUps = await scheduleFollowUps(admin, 50);
+export async function tickSdr(admin: Admin, limit = 10, deps: WorkerDeps = defaultDeps) {
+  // No-op quando nenhum workspace ligou o SDR: não lê fila, não chama IA, não envia.
+  const { data: enabledRows, error: sErr } = await admin
+    .from("sdr_workspace_settings")
+    .select("workspace_id")
+    .eq("enabled", true);
+  if (sErr) throw new Error(sErr.message);
+  const enabled = ((enabledRows ?? []) as { workspace_id: string }[]).map((r) => r.workspace_id);
+  if (!enabled.length) return { disabled: true, claimed: 0 };
+  const meetings = await reconcileMeetings(admin, 50, enabled);
+  const followUps = await scheduleFollowUps(admin, 50, enabled);
   const { data: jobs, error } = await admin.rpc("sdr_claim_jobs", {
     p_limit: limit,
     p_lease_seconds: LEASE_SECONDS,
@@ -416,7 +553,7 @@ export async function tickSdr(admin: Admin, limit = 10) {
   for (const job of (jobs ?? []) as Job[]) {
     let r: string;
     try {
-      r = await processJob(admin, job);
+      r = await processJob(admin, job, deps);
     } catch (e) {
       r = "error";
       await finish(admin, job.id, job.lease_token, {

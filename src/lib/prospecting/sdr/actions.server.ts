@@ -376,11 +376,16 @@ export async function ensureOpportunity(
  * Concilia reservas feitas pelo link do SDR. Reunião só fica "confirmada"
  * quando o Google devolveu o evento; falha fica visível e pode ser reenviada.
  */
-export async function reconcileMeetings(admin: Admin, limit = 50): Promise<number> {
+export async function reconcileMeetings(
+  admin: Admin,
+  limit = 50,
+  workspaceIds?: string[],
+): Promise<number> {
   const { data: rows } = await admin
     .from("sdr_enrollments")
     .select("id, workspace_id, contact_id, lead_id, booking_id, meeting_status, last_action_at")
     .in("meeting_status", ["link_sent", "pending_sync", "sync_failed"])
+    .in("workspace_id", workspaceIds ?? [])
     .limit(limit);
   let changed = 0;
   for (const e of rows ?? []) {

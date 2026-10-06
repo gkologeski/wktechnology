@@ -16422,6 +16422,7 @@ export type Database = {
           opted_out_at: string | null
           owner_id: string
           playbook_id: string
+          qualification_id: string | null
           qualification_score: number | null
           status: string
           updated_at: string
@@ -16453,6 +16454,7 @@ export type Database = {
           opted_out_at?: string | null
           owner_id: string
           playbook_id: string
+          qualification_id?: string | null
           qualification_score?: number | null
           status?: string
           updated_at?: string
@@ -16484,6 +16486,7 @@ export type Database = {
           opted_out_at?: string | null
           owner_id?: string
           playbook_id?: string
+          qualification_id?: string | null
           qualification_score?: number | null
           status?: string
           updated_at?: string
@@ -16530,6 +16533,13 @@ export type Database = {
             columns: ["playbook_id"]
             isOneToOne: false
             referencedRelation: "sdr_playbooks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sdr_enrollments_qualification_id_fkey"
+            columns: ["qualification_id"]
+            isOneToOne: false
+            referencedRelation: "prospecting_qualifications"
             referencedColumns: ["id"]
           },
           {
@@ -16829,6 +16839,7 @@ export type Database = {
           excerpt: string
           field: string
           id: string
+          question_id: string | null
           source_message_id: string
           value: string
           workspace_id: string
@@ -16839,6 +16850,7 @@ export type Database = {
           excerpt: string
           field: string
           id?: string
+          question_id?: string | null
           source_message_id: string
           value: string
           workspace_id: string
@@ -16849,6 +16861,7 @@ export type Database = {
           excerpt?: string
           field?: string
           id?: string
+          question_id?: string | null
           source_message_id?: string
           value?: string
           workspace_id?: string
@@ -16859,6 +16872,13 @@ export type Database = {
             columns: ["enrollment_id"]
             isOneToOne: false
             referencedRelation: "sdr_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sdr_qualification_evidence_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "prospecting_questions"
             referencedColumns: ["id"]
           },
           {
@@ -21433,6 +21453,18 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      sdr_commit_turn: {
+        Args: {
+          p_enrollment: Json
+          p_evidence: Json
+          p_job: string
+          p_job_patch: Json
+          p_lease: string
+          p_qualification: Json
+        }
+        Returns: string
+      }
+      sdr_guard: { Args: { p_job: string; p_lease: string }; Returns: string }
       sdr_set_conversation_owner: {
         Args: { p_conversation: string; p_owner: string }
         Returns: number
