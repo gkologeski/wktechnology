@@ -173,10 +173,20 @@ async function handleMessages(admin: Admin, value: any): Promise<string | null> 
 
 /** SDR: fila idempotente; falha vira nova tentativa do webhook (chave impede duplicar). */
 async function sdrIngest(admin: Admin, p: Parameters<typeof ingestInboundForSdr>[1]) {
+  let r: Awaited<ReturnType<typeof ingestInboundForSdr>>;
   try {
-    await ingestInboundForSdr(admin, p);
+    r = await ingestInboundForSdr(admin, p);
   } catch (e) {
     throw new Retry(`SDR: ${(e as Error).message}`);
+  }
+  // Acorda o processamento ao enfileirar (sem polling). Falha fica na fila com lease.
+  if (r === "queued") {
+    try {
+      const { tickSdr } = await import("@/lib/prospecting/sdr/worker.server");
+      await tickSdr(admin, 3);
+    } catch (e) {
+      console.error("[sdr] processamento adiado", (e as Error).message);
+    }
   }
 }
 
