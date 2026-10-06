@@ -8,6 +8,13 @@ import {
   resolveWaNumber,
   type WaNumber,
 } from "@/lib/whatsapp/meta-channel.server";
+import {
+  pacingEnabled,
+  PACING_RUN_BUDGET_MS,
+  randomIntervalSeconds,
+  resolveInterval,
+  type PacingInterval,
+} from "@/lib/whatsapp/campaign-pacing";
 
 function applyTemplate(body: string, vars: Record<string, string>): string {
   return body.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? "");
@@ -26,6 +33,10 @@ type Campaign = {
   total: number;
   sent: number;
   failed: number;
+  workspace_id: string;
+  send_interval_min_s: number | null;
+  send_interval_max_s: number | null;
+  next_send_at: string | null;
 };
 
 /** Variáveis posicionais do template, renderizadas com os dados do destinatário. */
@@ -38,7 +49,7 @@ function templateVariables(camp: Campaign, vars: Record<string, string>): string
   return indexes.map((i) => applyTemplate(map[String(i)] ?? "", vars));
 }
 
-async function processCampaign(camp: Campaign) {
+async function processCampaign(camp: Campaign, batchOverride?: number) {
   const since = new Date(Date.now() - 60_000).toISOString();
   const { count: recentCount } = await supabaseAdmin
     .from("whatsapp_campaign_recipients")
@@ -48,7 +59,7 @@ async function processCampaign(camp: Campaign) {
   const allowed = Math.max(0, camp.rate_per_minute - (recentCount ?? 0));
   if (allowed === 0) return { processed: 0 };
 
-  const batch = Math.min(allowed, 20);
+  const batch = Math.min(allowed, batchOverride ?? 20);
   const { data: recips } = await supabaseAdmin
     .from("whatsapp_campaign_recipients")
     .select("id, phone, variables, contact_id")
@@ -223,6 +234,49 @@ async function processCampaign(camp: Campaign) {
   return { processed: recips.length, sent: sentInc, failed: failedInc };
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Disparo espaçado: um destinatário por vez, com intervalo sorteado entre X e Y.
+ * `next_send_at` persiste o espaçamento entre execuções; o lease impede duas
+ * execuções simultâneas na mesma campanha.
+ */
+async function processPaced(camp: Campaign, interval: PacingInterval, startedAt: number) {
+  const { data: claimed } = await supabaseAdmin.rpc("wa_campaign_claim_dispatch", {
+    p_campaign: camp.id,
+    p_seconds: Math.ceil(PACING_RUN_BUDGET_MS / 1000) + 30,
+  });
+  if (!claimed) return { processed: 0, skipped: "locked" };
+  let processed = 0;
+  let nextAt = camp.next_send_at ? new Date(camp.next_send_at).getTime() : 0;
+  try {
+    while (Date.now() - startedAt < PACING_RUN_BUDGET_MS) {
+      const wait = nextAt - Date.now();
+      if (wait > 0) {
+        if (Date.now() + wait - startedAt > PACING_RUN_BUDGET_MS) break;
+        await sleep(wait);
+      }
+      const res = await processCampaign(camp, 1);
+      if (!res.processed) break; // sem pendentes, limite por minuto ou número indisponível
+      processed += res.processed;
+      camp.sent += res.sent ?? 0;
+      camp.failed += res.failed ?? 0;
+      // Envio ou falha contam como tentativa: o próximo respeita o intervalo.
+      nextAt = Date.now() + randomIntervalSeconds(interval.min, interval.max) * 1000;
+      await supabaseAdmin
+        .from("whatsapp_campaigns")
+        .update({ next_send_at: new Date(nextAt).toISOString() })
+        .eq("id", camp.id);
+    }
+  } finally {
+    await supabaseAdmin
+      .from("whatsapp_campaigns")
+      .update({ dispatch_lease_until: null })
+      .eq("id", camp.id);
+  }
+  return { processed };
+}
+
 export const Route = createFileRoute("/api/public/hooks/whatsapp-campaign-tick")({
   server: {
     handlers: {
@@ -234,17 +288,40 @@ export const Route = createFileRoute("/api/public/hooks/whatsapp-campaign-tick")
           const { data: camps, error } = await supabaseAdmin
             .from("whatsapp_campaigns")
             .select(
-              "id, owner_id, body_template, template_name, template_language, content_variables_template, media_url, media_content_type, rate_per_minute, total, sent, failed, scheduled_at",
+              "id, owner_id, body_template, template_name, template_language, content_variables_template, media_url, media_content_type, rate_per_minute, total, sent, failed, scheduled_at, workspace_id, send_interval_min_s, send_interval_max_s, next_send_at",
             )
             .eq("status", "running")
             .or(`scheduled_at.is.null,scheduled_at.lte.${nowIso}`)
             .limit(50);
           if (error) throw new Error(error.message);
           const results: Array<{ id: string; processed: number }> = [];
+          const startedAt = Date.now();
+          const wsIds = Array.from(new Set((camps ?? []).map((c) => c.workspace_id)));
+          const { data: wsSettings } = wsIds.length
+            ? await supabaseAdmin
+                .from("sdr_workspace_settings")
+                .select("workspace_id, template_interval_min_s, template_interval_max_s")
+                .in("workspace_id", wsIds)
+            : { data: [] };
+          const byWs = new Map((wsSettings ?? []).map((w) => [w.workspace_id, w]));
+          const paced: Array<{ camp: Campaign; interval: PacingInterval }> = [];
           for (const c of camps ?? []) {
-            const res = await processCampaign(c as unknown as Campaign);
+            const camp = c as unknown as Campaign;
+            const interval = resolveInterval(camp, byWs.get(camp.workspace_id) ?? null);
+            if (pacingEnabled(interval)) {
+              paced.push({ camp, interval });
+              continue;
+            }
+            const res = await processCampaign(camp);
             results.push({ id: c.id, processed: res.processed });
           }
+          // Campanhas espaçadas rodam em paralelo, cada uma no seu próprio ritmo.
+          const pacedRes = await Promise.all(
+            paced.map(({ camp, interval }) => processPaced(camp, interval, startedAt)),
+          );
+          paced.forEach(({ camp }, i) =>
+            results.push({ id: camp.id, processed: pacedRes[i].processed }),
+          );
           return { campaigns: results.length, results };
         });
         return Response.json(run);

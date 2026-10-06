@@ -449,6 +449,20 @@
       "when": 1791315235446,
       "tag": "0063_sdr_cron_health_and_reschedule",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1791329210721,
+      "tag": "0064_wa_campaign_random_pacing",
+      "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1791329606719,
+      "tag": "0065_cron_http_timeout_60s",
+      "breakpoints": true
     }
   ]
 }
