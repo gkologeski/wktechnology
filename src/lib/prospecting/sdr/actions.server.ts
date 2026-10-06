@@ -349,7 +349,7 @@ export async function ensureOpportunity(
         workspace_id: p.workspaceId,
         name: p.title.slice(0, 200),
         lead_id: p.enrollment.lead_id,
-        description: `Oportunidade identificada pelo SDR: ${p.offerNames.join(", ")}`,
+        description: `Oportunidade identificada pelo SDR: ${p.offerNames.join(", ")}. Valor: sob proposta (a definir pelo especialista).`,
         external_ids: { sdr_enrollment_id: p.enrollment.id },
       })
       .select("id")
