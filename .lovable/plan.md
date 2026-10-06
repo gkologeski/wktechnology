@@ -1,62 +1,60 @@
-# Intervalo aleatório entre envios do SDR
+# Intervalo aleatório entre disparos do template (campanhas do SDR)
 
 ## O que muda para o usuário
-Em Agente SDR › Configuração, dois campos novos: "Intervalo mínimo (s)" e "Intervalo máximo (s)". A cada envio, o sistema sorteia um tempo entre X e Y. Dois envios do SDR nunca saem com intervalo menor que esse tempo, mesmo para clientes diferentes do workspace.
-- Vale para o envio automático e para rascunhos aprovados por humano. Aprovar coloca a mensagem na fila, e a supervisão mostra "Agendado para hh:mm:ss".
-- Enquanto está na fila, a mensagem pode ser cancelada ("Cancelar envio"). Se um humano assumir a conversa, ou o cliente recusar ou responder de novo, ela é descartada antes de sair.
-- Validação: 0 ≤ X ≤ Y ≤ 3600. Padrão sugerido: 20–90 s. Com X = Y = 0 o espaçamento fica desligado e o comportamento é o atual.
-- O intervalo sorteado é o **mínimo garantido**. Como a fila é processada em ciclos, o tempo real pode passar do sorteado em até cerca de 1 minuto. A tela informa isso.
+- Em Agente SDR › Configuração aparecem dois campos para o workspace: **"Intervalo entre disparos: de X a Y segundos"**.
+- Em cada campanha de WhatsApp, a cada destinatário o sistema sorteia um tempo entre X e Y. O próximo template só sai depois desse tempo. A cadência fica irregular, parecida com envio humano, e reduz o risco de bloqueio pela Meta.
+- Vale só para o **disparo inicial do template** das campanhas. As respostas do SDR dentro da conversa não mudam.
+- A campanha pode usar o padrão do workspace ou valores próprios, no formulário da campanha.
+- Validação: 0 ≤ X ≤ Y ≤ 3600 segundos. Padrão sugerido: 30–120 s. Com X = Y = 0 nada muda: vale só o "envios por minuto" atual.
+- O limite "envios por minuto" continua valendo junto. Prevalece o que for mais lento.
+- Na lista de campanhas: "Próximo disparo em ~N s" e a previsão de término, calculada com a média entre X e Y.
+- O sorteio é o **intervalo mínimo garantido**. Como a fila roda em ciclos, um disparo pode atrasar além do sorteado (até cerca de 1 minuto quando Y é curto). A tela avisa isso.
 
 ## Como funciona
 
 ```text
-aprovar / envio automático
-   -> reserva atômica do próximo horário do workspace
-      (último horário reservado + sorteio entre X e Y)
-   -> trabalho fica "agendado" com send_after
-despachante (acordado ao agendar, desligado quando a fila esvazia)
-   -> pega envios vencidos, um por vez por workspace
-   -> rechecagem: dono da conversa, versão, recusa, janela de 24h, limite diário
-   -> envia; só marca "enviado" após confirmação da Meta
+rotina de campanhas (já existente)
+  -> trava a campanha (evita duas execuções simultâneas)
+  -> se agora < próximo_disparo: não envia nada
+  -> envia 1 destinatário (template aprovado, vínculo SDR como hoje)
+  -> sorteia intervalo entre X e Y e grava próximo_disparo
+  -> se o próximo vence dentro da janela desta execução: espera e repete
+  -> senão encerra; a próxima execução continua de onde parou
 ```
 
 ## Etapas
 1. **Banco (aditivo):**
-   - `sdr_workspace_settings` ganha `send_interval_min_s` e `send_interval_max_s` (padrão 0, com checagem min ≤ max ≤ 3600) e `next_send_slot_at`.
-   - `sdr_turn_jobs` ganha `send_after` e `scheduled_text`, e passa a aceitar o status `scheduled`.
-   - Nova função `sdr_reserve_send_slot(workspace)`: trava a linha do workspace, sorteia no servidor e devolve o horário reservado.
-2. **Servidor:**
-   - `approveSdrDraft` e o envio automático do worker passam a agendar em vez de enviar na hora quando o intervalo está ligado.
-   - Novo despachante `dispatchScheduledSends` reaproveita `sendSdrMessage` com todas as rechecagens atuais (o rascunho aprovado fica congelado em `scheduled_text`).
-   - `cancelScheduledSend` exige permissão de supervisão.
-   - Takeover, recusa e nova mensagem do cliente descartam os envios agendados daquela conversa.
-3. **Despacho:**
-   - Rota `/api/public/hooks/sdr-send-tick`, protegida pelo mesmo segredo do cron.
-   - Ela processa os envios vencidos e espera dentro da própria execução os que vencem nos próximos ~20 s.
-   - Agendar um envio liga uma rotina por minuto; ela se desliga sozinha quando não há mais nada na fila. Sem envios agendados, nada roda e não há custo.
-   - Enquanto houver fila, a rotina roda no máximo 1.440 vezes por dia.
-   - Até a publicação, essa rotina fica no mesmo estado suspenso do `sdr-tick`.
-4. **Tela:**
-   - Campos X/Y com validação e explicação na Configuração.
-   - Na Supervisão: estado "Agendado para…", contagem regressiva e botão "Cancelar envio" com confirmação.
-   - Nos Resultados: métrica "Envios agendados".
-5. **Testes:**
-   - O sorteio respeita os limites.
-   - Duas reservas simultâneas não ficam a menos de X uma da outra.
-   - Aprovar agenda e não chama a Meta.
-   - O despachante envia só o que venceu.
-   - Takeover, recusa ou nova mensagem durante a espera descartam sem enviar.
-   - Falha da Meta no despacho não confirma o envio.
-   - X = Y = 0 mantém o envio imediato.
-   - Também: typecheck, lint, build e conferência no navegador.
+   - `sdr_workspace_settings`: `template_interval_min_s`, `template_interval_max_s` (padrão 0, checagem min ≤ max ≤ 3600).
+   - `whatsapp_campaigns`: `send_interval_min_s` e `send_interval_max_s` (nulos = usar o padrão do workspace), `next_send_at` e `dispatch_lease_until`.
+   - Função `wa_campaign_claim_dispatch(campanha)`: trava a campanha com lease curto, para duas rotinas nunca dispararem a mesma campanha ao mesmo tempo.
+2. **Rotina de campanhas:**
+   - Quando há intervalo configurado, envia um destinatário por vez, espera o tempo sorteado e repete enquanto couber num orçamento de ~45 s por execução.
+   - Grava `next_send_at` depois de cada envio, para o espaçamento valer também entre execuções.
+   - Sem intervalo, o comportamento atual em lotes fica intacto.
+   - O sorteio é feito no servidor; uma falha da Meta conta como tentativa e também respeita o intervalo.
+3. **Telas:**
+   - Configuração do SDR: campos X/Y com validação e explicação.
+   - Formulário da campanha: "Usar padrão do workspace" ou X/Y próprios.
+   - Lista de campanhas: próximo disparo e previsão de término.
+   - Todas as alterações exigem as permissões atuais de campanha ou do SDR no servidor.
+4. **Testes:**
+   - O sorteio fica sempre entre X e Y.
+   - Nenhum envio antes de `next_send_at`.
+   - Duas execuções simultâneas da mesma campanha não geram envio em dobro nem quebram o intervalo.
+   - X = Y = 0 mantém os lotes atuais.
+   - "Envios por minuto" continua respeitado.
+   - Falha da Meta não interrompe o espaçamento.
+   - O padrão do workspace é aplicado quando a campanha não define valores.
+   - Também: typecheck, lint, build e conferência das telas no navegador.
 
 ## Fora do escopo
-- Não liga o SDR nem campanhas.
+- Não envia mensagens reais nem ativa campanhas ou o SDR.
 - Não publica.
-- Não altera intervalos de campanhas de template já existentes.
+- Não muda a frequência da rotina de campanhas, que continua a cada 2 minutos.
 
 ## Detalhes técnicos
-- O sorteio usa `random()` no Postgres dentro de `sdr_reserve_send_slot`, com `SELECT ... FOR UPDATE` na linha de configurações. O slot é `greatest(now(), next_send_slot_at) + interval sorteado`, e isso garante o espaçamento entre workers concorrentes.
-- O despachante usa lease em `sdr_turn_jobs` (`status='scheduled'` → `running`) e chama `sdr_guard` antes de enviar, para que um trabalho obsoleto nunca envie.
-- A rotina de acordar é criada por `pg_net`/`pg_cron` no agendamento e removida quando a fila fica vazia (sem varredura permanente). Ela entra no `reschedule_lovable_cron`, que preserva o estado ativo/suspenso.
-- A regra nova vai para `AGENTS.md`: todo envio do SDR passa pela reserva de horário do workspace.
+- Arquivos: `src/routes/api/public/hooks/whatsapp-campaign-tick.ts` (laço com espera dentro do orçamento), `src/lib/whatsapp-campaigns.functions.ts` (validação zod e permissão), `src/lib/prospecting/sdr.functions.ts` (padrão do workspace), `sdr-console.tsx` e o formulário/lista de campanhas.
+- O sorteio é uma função pura `randomIntervalSeconds(min, max, rng)` em `src/lib/whatsapp/campaign-pacing.ts`, testável e usada só no servidor.
+- O lease da campanha usa `UPDATE ... WHERE dispatch_lease_until < now() RETURNING`. O `next_send_at` é gravado na mesma atualização que marca o destinatário como enviado.
+- A espera dentro da execução usa `setTimeout` com teto de ~45 s, e a chamada agendada dessa rotina recebe um tempo limite compatível. Se a execução for interrompida, o `next_send_at` já gravado mantém o espaçamento.
+- A regra nova vai para `AGENTS.md`: o ritmo de disparo das campanhas é controlado por `next_send_at`, sob lease por campanha.
