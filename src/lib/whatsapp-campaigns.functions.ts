@@ -23,11 +23,19 @@ const CreateInput = z.object({
 });
 
 /** Playbook do SDR precisa existir e ser visível ao usuário (RLS). Exige template oficial. */
-async function sdrColumns(supabase: any, playbookId: string | null | undefined, templateName: string | null | undefined) {
+async function sdrColumns(
+  supabase: any,
+  playbookId: string | null | undefined,
+  templateName: string | null | undefined,
+) {
   if (playbookId === undefined) return {};
   if (!playbookId) return { sdr_enabled: false, sdr_playbook_id: null };
   if (!templateName) throw new Error("O SDR só pode ser ligado a campanhas com template aprovado.");
-  const { data, error } = await supabase.from("sdr_playbooks").select("id").eq("id", playbookId).maybeSingle();
+  const { data, error } = await supabase
+    .from("sdr_playbooks")
+    .select("id")
+    .eq("id", playbookId)
+    .maybeSingle();
   if (error || !data) throw new Error("Playbook do SDR não encontrado.");
   return { sdr_enabled: true, sdr_playbook_id: playbookId };
 }

@@ -82,7 +82,10 @@ function CampaignsPage() {
   const [mediaUrl, setMediaUrl] = useState("");
   const [sdrPlaybook, setSdrPlaybook] = useState<string>("__none__");
   const playbooksFn = useServerFn(listPlaybooks);
-  const { data: playbooksData } = useQuery({ queryKey: ["sdr-playbooks"], queryFn: () => playbooksFn() });
+  const { data: playbooksData } = useQuery({
+    queryKey: ["sdr-playbooks"],
+    queryFn: () => playbooksFn(),
+  });
   const playbooks = (playbooksData?.items ?? []) as { id: string; name: string }[];
 
   const selectedTpl = templates.find((t) => t.name === templateName);
@@ -266,11 +269,15 @@ function CampaignsPage() {
                     Agente SDR após resposta (opcional)
                   </label>
                   <Select value={sdrPlaybook} onValueChange={setSdrPlaybook}>
-                    <SelectTrigger id="camp-sdr"><SelectValue /></SelectTrigger>
+                    <SelectTrigger id="camp-sdr">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="__none__">Desligado</SelectItem>
                       {playbooks.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

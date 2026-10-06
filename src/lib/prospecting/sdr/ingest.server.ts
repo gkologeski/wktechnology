@@ -59,7 +59,12 @@ export async function linkCampaignSend(
   p: {
     workspaceId: string;
     ownerId: string;
-    campaign: { id: string; sdr_enabled: boolean; sdr_playbook_id: string | null; template_name: string | null };
+    campaign: {
+      id: string;
+      sdr_enabled: boolean;
+      sdr_playbook_id: string | null;
+      template_name: string | null;
+    };
     conversationId: string;
     phone: string;
     wamid: string | null;
@@ -175,12 +180,15 @@ export async function ingestInboundForSdr(
 
   const { data: enr, error: eErr } = await admin
     .from("sdr_enrollments")
-    .select("id, workspace_id, status, conversation_id, playbook_id, lead_id, contact_id, follow_up_at")
+    .select(
+      "id, workspace_id, status, conversation_id, playbook_id, lead_id, contact_id, follow_up_at",
+    )
     .eq("id", conv.sdr_enrollment_id)
     .maybeSingle();
   if (eErr) throw new Error(eErr.message);
   // Conservador: vínculo inconsistente não aciona o agente.
-  if (!enr || enr.workspace_id !== p.workspaceId || enr.conversation_id !== conv.id) return "not_sdr";
+  if (!enr || enr.workspace_id !== p.workspaceId || enr.conversation_id !== conv.id)
+    return "not_sdr";
   if (enr.status !== "active") return "inactive";
 
   const { data: settings } = await admin

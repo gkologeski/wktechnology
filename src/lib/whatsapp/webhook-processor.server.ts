@@ -143,21 +143,25 @@ async function handleMessages(admin: Admin, value: any): Promise<string | null> 
     const media = ["image", "audio", "video", "document", "sticker"].includes(m.type)
       ? m[m.type]
       : null;
-    const { data: inserted, error: mErr } = await admin.from("whatsapp_messages").insert({
-      conversation_id: conv.id,
-      owner_id: ws.workspace_id,
-      workspace_id: ws.workspace_id,
-      direction: "inbound",
-      body,
-      from_number: from,
-      to_number: ourPhone,
-      provider: "meta",
-      wa_message_id: m.id,
-      context_message_id: m.context?.id ?? null,
-      media_content_type: media?.mime_type ?? null,
-      status: "received",
-      raw: m,
-    }).select("id").single();
+    const { data: inserted, error: mErr } = await admin
+      .from("whatsapp_messages")
+      .insert({
+        conversation_id: conv.id,
+        owner_id: ws.workspace_id,
+        workspace_id: ws.workspace_id,
+        direction: "inbound",
+        body,
+        from_number: from,
+        to_number: ourPhone,
+        provider: "meta",
+        wa_message_id: m.id,
+        context_message_id: m.context?.id ?? null,
+        media_content_type: media?.mime_type ?? null,
+        status: "received",
+        raw: m,
+      })
+      .select("id")
+      .single();
     if (mErr) throw new Retry(mErr.message);
     await sdrIngest(admin, {
       workspaceId: ws.workspace_id,
@@ -189,7 +193,6 @@ async function sdrIngest(admin: Admin, p: Parameters<typeof ingestInboundForSdr>
     }
   }
 }
-
 
 async function handleStatuses(admin: Admin, value: any): Promise<string | null> {
   let workspaceId: string | null = null;

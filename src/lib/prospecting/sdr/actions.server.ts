@@ -19,8 +19,18 @@ export type DraftPayload = {
 /** Mensagem final: texto do agente + link de agenda + links de materiais aprovados. */
 export async function composeOutgoing(
   admin: Admin,
-  p: { workspaceId: string; reply: string; intent: SdrIntent; materialIds: string[]; bookingPageId: string | null },
-): Promise<{ text: string; bookingUrl: string | null; materials: { id: string; title: string; url: string }[] }> {
+  p: {
+    workspaceId: string;
+    reply: string;
+    intent: SdrIntent;
+    materialIds: string[];
+    bookingPageId: string | null;
+  },
+): Promise<{
+  text: string;
+  bookingUrl: string | null;
+  materials: { id: string; title: string; url: string }[];
+}> {
   let bookingUrl: string | null = null;
   if (p.intent === "schedule_meeting" && p.bookingPageId) {
     const { data: page } = await admin
@@ -39,8 +49,15 @@ export async function composeOutgoing(
       .in("id", p.materialIds)
       .eq("workspace_id", p.workspaceId);
     materials = (data ?? [])
-      .filter((m: { approved: boolean; active: boolean; url: string | null }) => m.approved && m.active && m.url)
-      .map((m: { id: string; title: string; url: string }) => ({ id: m.id, title: m.title, url: m.url }));
+      .filter(
+        (m: { approved: boolean; active: boolean; url: string | null }) =>
+          m.approved && m.active && m.url,
+      )
+      .map((m: { id: string; title: string; url: string }) => ({
+        id: m.id,
+        title: m.title,
+        url: m.url,
+      }));
   }
   const parts = [p.reply.trim()];
   if (bookingUrl) parts.push(`Agende um horário: ${bookingUrl}`);
@@ -48,9 +65,7 @@ export async function composeOutgoing(
   return { text: parts.filter(Boolean).join("\n\n"), bookingUrl, materials };
 }
 
-export type SendOutcome =
-  | { ok: true; wamid: string }
-  | { ok: false; reason: string };
+export type SendOutcome = { ok: true; wamid: string } | { ok: false; reason: string };
 
 /**
  * Envia a mensagem do SDR. Rechecagem imediatamente antes do envio:
@@ -69,7 +84,9 @@ export async function sendSdrMessage(
 ): Promise<SendOutcome> {
   const { data: job } = await admin
     .from("sdr_turn_jobs")
-    .select("id, workspace_id, enrollment_id, conversation_id, status, lease_token, conversation_version, draft_payload")
+    .select(
+      "id, workspace_id, enrollment_id, conversation_id, status, lease_token, conversation_version, draft_payload",
+    )
     .eq("id", p.jobId)
     .maybeSingle();
   if (!job || job.status !== p.expectedStatus) return { ok: false, reason: "job_state_changed" };
@@ -82,17 +99,25 @@ export async function sendSdrMessage(
       .select("id, workspace_id, ai_owner, ai_version, contact_phone, last_inbound_at, contact_id")
       .eq("id", job.conversation_id)
       .maybeSingle(),
-    admin.from("sdr_enrollments").select("id, status, owner_id, playbook_id, follow_up_count").eq("id", job.enrollment_id).maybeSingle(),
-    admin.from("sdr_workspace_settings").select("daily_send_limit").eq("workspace_id", job.workspace_id).maybeSingle(),
+    admin
+      .from("sdr_enrollments")
+      .select("id, status, owner_id, playbook_id, follow_up_count")
+      .eq("id", job.enrollment_id)
+      .maybeSingle(),
+    admin
+      .from("sdr_workspace_settings")
+      .select("daily_send_limit")
+      .eq("workspace_id", job.workspace_id)
+      .maybeSingle(),
   ]);
-  if (!conv || conv.workspace_id !== job.workspace_id) return { ok: false, reason: "conversation_missing" };
+  if (!conv || conv.workspace_id !== job.workspace_id)
+    return { ok: false, reason: "conversation_missing" };
   if (conv.ai_owner !== "ai") return { ok: false, reason: "owner_not_ai" };
   if (conv.ai_version !== job.conversation_version) return { ok: false, reason: "stale_version" };
   if (!enr || enr.status !== "active") return { ok: false, reason: "enrollment_inactive" };
 
-  const { isWithinServiceWindow, resolveWaNumber, metaSend } = await import(
-    "@/lib/whatsapp/meta-channel.server"
-  );
+  const { isWithinServiceWindow, resolveWaNumber, metaSend } =
+    await import("@/lib/whatsapp/meta-channel.server");
   if (!isWithinServiceWindow(conv.last_inbound_at)) return { ok: false, reason: "window_closed" };
 
   const since = new Date(Date.now() - 86400_000).toISOString();
@@ -102,7 +127,8 @@ export async function sendSdrMessage(
     .eq("workspace_id", job.workspace_id)
     .eq("kind", "message_sent")
     .gte("created_at", since);
-  if ((count ?? 0) >= (settings?.daily_send_limit ?? 50)) return { ok: false, reason: "daily_limit" };
+  if ((count ?? 0) >= (settings?.daily_send_limit ?? 50))
+    return { ok: false, reason: "daily_limit" };
 
   // Trava o trabalho antes da chamada externa (evita envio duplo em paralelo).
   const { data: claimed } = await admin
@@ -138,7 +164,10 @@ export async function sendSdrMessage(
     });
     await admin
       .from("whatsapp_conversations")
-      .update({ last_message_at: new Date().toISOString(), last_message_preview: p.text.slice(0, 120) })
+      .update({
+        last_message_at: new Date().toISOString(),
+        last_message_preview: p.text.slice(0, 120),
+      })
       .eq("id", conv.id);
   } catch (e) {
     const msg = (e as Error).message.slice(0, 300);
@@ -195,7 +224,12 @@ export async function sendSdrMessage(
   });
   await admin
     .from("sdr_turn_jobs")
-    .update({ draft_text: p.text, decided_by: p.actorUserId, decided_at: new Date().toISOString(), error: null })
+    .update({
+      draft_text: p.text,
+      decided_by: p.actorUserId,
+      decided_at: new Date().toISOString(),
+      error: null,
+    })
     .eq("id", job.id);
   await admin
     .from("sdr_enrollments")
@@ -212,9 +246,18 @@ export async function sendSdrMessage(
 /** Handoff: humano assume, IA trava, follow-ups cancelados, tarefa para o responsável. */
 export async function handoffToHuman(
   admin: Admin,
-  p: { workspaceId: string; enrollmentId: string; conversationId: string; reason: string; actorUserId: string | null },
+  p: {
+    workspaceId: string;
+    enrollmentId: string;
+    conversationId: string;
+    reason: string;
+    actorUserId: string | null;
+  },
 ): Promise<void> {
-  await admin.rpc("sdr_set_conversation_owner", { p_conversation: p.conversationId, p_owner: "human" });
+  await admin.rpc("sdr_set_conversation_owner", {
+    p_conversation: p.conversationId,
+    p_owner: "human",
+  });
   const { data: enr } = await admin
     .from("sdr_enrollments")
     .update({
@@ -265,7 +308,13 @@ export async function ensureOpportunity(
   admin: Admin,
   p: {
     workspaceId: string;
-    enrollment: { id: string; owner_id: string; deal_id: string | null; contact_id: string | null; lead_id: string | null };
+    enrollment: {
+      id: string;
+      owner_id: string;
+      deal_id: string | null;
+      contact_id: string | null;
+      lead_id: string | null;
+    };
     title: string;
     offerNames: string[];
   },
@@ -308,7 +357,9 @@ export async function ensureOpportunity(
     if (error) throw new Error(`Falha ao criar negócio: ${error.message}`);
     dealId = created.id as string;
     if (p.enrollment.contact_id)
-      await admin.from("deal_contacts").insert({ deal_id: dealId, contact_id: p.enrollment.contact_id });
+      await admin
+        .from("deal_contacts")
+        .insert({ deal_id: dealId, contact_id: p.enrollment.contact_id });
   }
   await admin.from("sdr_enrollments").update({ deal_id: dealId }).eq("id", p.enrollment.id);
   await recordSdrAction(admin, {
@@ -348,7 +399,9 @@ export async function reconcileMeetings(admin: Admin, limit = 50): Promise<numbe
         .gte("created_at", e.last_action_at ?? new Date(0).toISOString())
         .order("created_at", { ascending: false })
         .limit(1);
-      ({ data: booking } = await (e.contact_id ? q.eq("contact_id", e.contact_id) : q.eq("lead_id", e.lead_id)).maybeSingle());
+      ({ data: booking } = await (
+        e.contact_id ? q.eq("contact_id", e.contact_id) : q.eq("lead_id", e.lead_id)
+      ).maybeSingle());
     }
     if (!booking) continue;
     const st = meetingStatus(booking as never);
@@ -381,12 +434,18 @@ export async function reconcileMeetings(admin: Admin, limit = 50): Promise<numbe
 export async function retryBookingSync(admin: Admin, workspaceId: string, bookingId: string) {
   const { data: b } = await admin
     .from("bookings")
-    .select("id, page_id, workspace_id, start_at, end_at, invitee_name, invitee_email, notes, gcal_event_id")
+    .select(
+      "id, page_id, workspace_id, start_at, end_at, invitee_name, invitee_email, notes, gcal_event_id",
+    )
     .eq("id", bookingId)
     .maybeSingle();
   if (!b || b.workspace_id !== workspaceId) throw new Error("Reserva não encontrada");
   if (b.gcal_event_id) return { status: "confirmed" as const, eventId: b.gcal_event_id as string };
-  const { data: page } = await admin.from("booking_pages").select("*").eq("id", b.page_id).maybeSingle();
+  const { data: page } = await admin
+    .from("booking_pages")
+    .select("*")
+    .eq("id", b.page_id)
+    .maybeSingle();
   if (!page) throw new Error("Página de agendamento não encontrada");
   const { pushBookingToGoogle } = await import("@/lib/booking/engine.server");
   const r = await pushBookingToGoogle(page, b);

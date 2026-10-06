@@ -13,32 +13,48 @@ export const getSdrOverview = createServerFn({ method: "POST" })
     if (!wsRaw) throw new Error("Workspace não identificado.");
     const wsId: string = wsRaw;
     const since = new Date(Date.now() - 30 * 86400_000).toISOString();
-    const [settings, offers, materials, links, jobs, enrollments, actions, isAdmin] = await Promise.all([
-      supabase.from("sdr_workspace_settings").select("*").eq("workspace_id", wsId).maybeSingle(),
-      supabase.from("sdr_offers").select("*").eq("workspace_id", wsId).order("position"),
-      supabase.from("sdr_materials").select("*").eq("workspace_id", wsId).order("title"),
-      supabase.from("sdr_material_offers").select("material_id, offer_id").eq("workspace_id", wsId),
-      supabase
-        .from("sdr_turn_jobs")
-        .select("id, status, kind, draft_text, draft_payload, error, created_at, enrollment_id, conversation_id")
-        .eq("workspace_id", wsId)
-        .in("status", ["drafted", "failed", "queued", "running"])
-        .order("created_at", { ascending: false })
-        .limit(100),
-      supabase
-        .from("sdr_enrollments")
-        .select("id, status, commercial_stage, meeting_status, qualification_score, contact_phone, offers, deal_id, booking_id, conversation_id, created_at")
-        .eq("workspace_id", wsId)
-        .gte("created_at", since)
-        .order("created_at", { ascending: false })
-        .limit(500),
-      supabase.from("sdr_actions").select("kind, status").eq("workspace_id", wsId).gte("created_at", since).limit(5000),
-      supabase.rpc("is_workspace_admin", { _workspace: wsId, _user: userId }),
-    ]);
-    const err = [settings, offers, materials, links, jobs, enrollments, actions].find((r) => r.error)?.error;
+    const [settings, offers, materials, links, jobs, enrollments, actions, isAdmin] =
+      await Promise.all([
+        supabase.from("sdr_workspace_settings").select("*").eq("workspace_id", wsId).maybeSingle(),
+        supabase.from("sdr_offers").select("*").eq("workspace_id", wsId).order("position"),
+        supabase.from("sdr_materials").select("*").eq("workspace_id", wsId).order("title"),
+        supabase
+          .from("sdr_material_offers")
+          .select("material_id, offer_id")
+          .eq("workspace_id", wsId),
+        supabase
+          .from("sdr_turn_jobs")
+          .select(
+            "id, status, kind, draft_text, draft_payload, error, created_at, enrollment_id, conversation_id",
+          )
+          .eq("workspace_id", wsId)
+          .in("status", ["drafted", "failed", "queued", "running"])
+          .order("created_at", { ascending: false })
+          .limit(100),
+        supabase
+          .from("sdr_enrollments")
+          .select(
+            "id, status, commercial_stage, meeting_status, qualification_score, contact_phone, offers, deal_id, booking_id, conversation_id, created_at",
+          )
+          .eq("workspace_id", wsId)
+          .gte("created_at", since)
+          .order("created_at", { ascending: false })
+          .limit(500),
+        supabase
+          .from("sdr_actions")
+          .select("kind, status")
+          .eq("workspace_id", wsId)
+          .gte("created_at", since)
+          .limit(5000),
+        supabase.rpc("is_workspace_admin", { _workspace: wsId, _user: userId }),
+      ]);
+    const err = [settings, offers, materials, links, jobs, enrollments, actions].find(
+      (r) => r.error,
+    )?.error;
     if (err) throw new Error(err.message);
     const metrics: Record<string, number> = {};
-    for (const a of actions.data ?? []) metrics[`${a.kind}:${a.status}`] = (metrics[`${a.kind}:${a.status}`] ?? 0) + 1;
+    for (const a of actions.data ?? [])
+      metrics[`${a.kind}:${a.status}`] = (metrics[`${a.kind}:${a.status}`] ?? 0) + 1;
     return {
       workspaceId: wsId as string,
       canManage: !!isAdmin.data,
@@ -53,7 +69,10 @@ export const getSdrOverview = createServerFn({ method: "POST" })
   });
 
 async function assertAdmin(supabase: any, userId: string, workspaceId: string) {
-  const { data } = await supabase.rpc("is_workspace_admin", { _workspace: workspaceId, _user: userId });
+  const { data } = await supabase.rpc("is_workspace_admin", {
+    _workspace: workspaceId,
+    _user: userId,
+  });
   if (!data) throw new Error("Somente administradores do workspace podem alterar o SDR.");
 }
 
@@ -74,16 +93,23 @@ export const saveSdrSettings = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId, data.workspaceId);
     const { workspaceId, ...rest } = data;
-    const { error } = await context.supabase
-      .from("sdr_workspace_settings")
-      .upsert({ workspace_id: workspaceId, ...rest, updated_by: context.userId, updated_at: new Date().toISOString() });
+    const { error } = await context.supabase.from("sdr_workspace_settings").upsert({
+      workspace_id: workspaceId,
+      ...rest,
+      updated_by: context.userId,
+      updated_at: new Date().toISOString(),
+    });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 export const setSdrOfferActive = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({ workspaceId: z.string().uuid(), id: z.string().uuid(), active: z.boolean() }).parse(i))
+  .inputValidator((i) =>
+    z
+      .object({ workspaceId: z.string().uuid(), id: z.string().uuid(), active: z.boolean() })
+      .parse(i),
+  )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId, data.workspaceId);
     const { error } = await context.supabase
@@ -103,7 +129,10 @@ export const saveSdrMaterial = createServerFn({ method: "POST" })
         workspaceId: z.string().uuid(),
         id: z.string().uuid().optional(),
         title: z.string().trim().min(1).max(200),
-        url: z.string().url().refine((u) => u.startsWith("https://"), "Use um link https"),
+        url: z
+          .string()
+          .url()
+          .refine((u) => u.startsWith("https://"), "Use um link https"),
         approved: z.boolean(),
         active: z.boolean(),
         offerIds: z.array(z.string().uuid()).max(50),
@@ -121,13 +150,24 @@ export const saveSdrMaterial = createServerFn({ method: "POST" })
       approved: data.approved,
       active: data.active,
     };
-    const { data: saved, error } = await supabase.from("sdr_materials").upsert(row).select("id").single();
+    const { data: saved, error } = await supabase
+      .from("sdr_materials")
+      .upsert(row)
+      .select("id")
+      .single();
     if (error) throw new Error(error.message);
-    const { error: dErr } = await supabase.from("sdr_material_offers").delete().eq("material_id", saved.id);
+    const { error: dErr } = await supabase
+      .from("sdr_material_offers")
+      .delete()
+      .eq("material_id", saved.id);
     if (dErr) throw new Error(dErr.message);
     if (data.offerIds.length) {
       const { error: lErr } = await supabase.from("sdr_material_offers").insert(
-        data.offerIds.map((offer_id) => ({ workspace_id: data.workspaceId, material_id: saved.id, offer_id })),
+        data.offerIds.map((offer_id) => ({
+          workspace_id: data.workspaceId,
+          material_id: saved.id,
+          offer_id,
+        })),
       );
       if (lErr) throw new Error(lErr.message);
     }
@@ -145,7 +185,13 @@ async function loadJobScoped(supabase: any, jobId: string) {
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Rascunho não encontrado.");
-  return data as { id: string; workspace_id: string; enrollment_id: string; conversation_id: string; status: string };
+  return data as {
+    id: string;
+    workspace_id: string;
+    enrollment_id: string;
+    conversation_id: string;
+    status: string;
+  };
 }
 
 export const approveSdrDraft = createServerFn({ method: "POST" })
@@ -185,7 +231,11 @@ export const discardSdrDraft = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin
       .from("sdr_turn_jobs")
-      .update({ status: "discarded", decided_by: context.userId, decided_at: new Date().toISOString() })
+      .update({
+        status: "discarded",
+        decided_by: context.userId,
+        decided_at: new Date().toISOString(),
+      })
       .eq("id", job.id)
       .in("status", ["drafted", "failed", "queued"]);
     return { ok: true };
@@ -193,7 +243,9 @@ export const discardSdrDraft = createServerFn({ method: "POST" })
 
 export const takeoverSdrConversation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => JobInput.extend({ reason: z.string().max(300).default("Assumido manualmente") }).parse(i))
+  .inputValidator((i) =>
+    JobInput.extend({ reason: z.string().max(300).default("Assumido manualmente") }).parse(i),
+  )
   .handler(async ({ data, context }) => {
     const job = await loadJobScoped(context.supabase, data.jobId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -223,6 +275,9 @@ export const retrySdrMeetingSync = createServerFn({ method: "POST" })
     const { retryBookingSync } = await import("./sdr/actions.server");
     if (!enr.workspace_id) throw new Error("Workspace não identificado.");
     const r = await retryBookingSync(supabaseAdmin, enr.workspace_id, enr.booking_id);
-    await supabaseAdmin.from("sdr_enrollments").update({ meeting_status: r.status }).eq("id", enr.id);
+    await supabaseAdmin
+      .from("sdr_enrollments")
+      .update({ meeting_status: r.status })
+      .eq("id", enr.id);
     return r;
   });

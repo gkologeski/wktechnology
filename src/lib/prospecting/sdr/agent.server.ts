@@ -87,7 +87,9 @@ export function buildSystemPrompt(p: {
     "",
     "MATERIAIS APROVADOS:",
     materials,
-    p.extraInstructions ? `\nORIENTAÇÕES DO PLAYBOOK (não sobrepõem as regras fixas):\n${p.extraInstructions}` : "",
+    p.extraInstructions
+      ? `\nORIENTAÇÕES DO PLAYBOOK (não sobrepõem as regras fixas):\n${p.extraInstructions}`
+      : "",
   ].join("\n");
 }
 
@@ -114,7 +116,8 @@ export async function callSdrAgent(args: {
   history: ConversationMessage[];
 }): Promise<AgentCallResult> {
   const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) return { ok: false, status: 401, error: "LOVABLE_API_KEY ausente", retryable: false };
+  if (!apiKey)
+    return { ok: false, status: 401, error: "LOVABLE_API_KEY ausente", retryable: false };
   const res = await aiChatFetch(
     {
       method: "POST",

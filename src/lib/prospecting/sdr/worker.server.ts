@@ -34,19 +34,34 @@ const LEASE_SECONDS = 120;
 async function loadKnowledge(admin: Admin, workspaceId: string) {
   const [{ data: offers }, { data: materials }, { data: links }] = await Promise.all([
     admin.from("sdr_offers").select("*").eq("workspace_id", workspaceId).order("position"),
-    admin.from("sdr_materials").select("id, title, approved, active, url").eq("workspace_id", workspaceId),
-    admin.from("sdr_material_offers").select("material_id, offer_id").eq("workspace_id", workspaceId),
+    admin
+      .from("sdr_materials")
+      .select("id, title, approved, active, url")
+      .eq("workspace_id", workspaceId),
+    admin
+      .from("sdr_material_offers")
+      .select("material_id, offer_id")
+      .eq("workspace_id", workspaceId),
   ]);
   const byMat = new Map<string, string[]>();
-  for (const l of links ?? []) byMat.set(l.material_id, [...(byMat.get(l.material_id) ?? []), l.offer_id]);
-  const mats: SdrMaterial[] = (materials ?? []).map((m: SdrMaterial) => ({ ...m, offer_ids: byMat.get(m.id) ?? [] }));
+  for (const l of links ?? [])
+    byMat.set(l.material_id, [...(byMat.get(l.material_id) ?? []), l.offer_id]);
+  const mats: SdrMaterial[] = (materials ?? []).map((m: SdrMaterial) => ({
+    ...m,
+    offer_ids: byMat.get(m.id) ?? [],
+  }));
   return {
     offers: selectableOffers((offers ?? []) as SdrOffer[]),
     materials: selectableMaterials(mats),
   };
 }
 
-async function finish(admin: Admin, jobId: string, leaseToken: string, patch: Record<string, unknown>) {
+async function finish(
+  admin: Admin,
+  jobId: string,
+  leaseToken: string,
+  patch: Record<string, unknown>,
+) {
   await admin
     .from("sdr_turn_jobs")
     .update({ ...patch, lease_token: null, updated_at: new Date().toISOString() })
@@ -73,10 +88,22 @@ export async function processJob(admin: Admin, job: Job): Promise<string> {
       .eq("id", job.conversation_id)
       .maybeSingle(),
     admin.from("sdr_enrollments").select("*").eq("id", job.enrollment_id).maybeSingle(),
-    admin.from("sdr_workspace_settings").select("*").eq("workspace_id", job.workspace_id).maybeSingle(),
+    admin
+      .from("sdr_workspace_settings")
+      .select("*")
+      .eq("workspace_id", job.workspace_id)
+      .maybeSingle(),
   ]);
-  if (!conv || !enr || conv.workspace_id !== job.workspace_id || enr.workspace_id !== job.workspace_id) {
-    await finish(admin, job.id, job.lease_token, { status: "discarded", error: "context_mismatch" });
+  if (
+    !conv ||
+    !enr ||
+    conv.workspace_id !== job.workspace_id ||
+    enr.workspace_id !== job.workspace_id
+  ) {
+    await finish(admin, job.id, job.lease_token, {
+      status: "discarded",
+      error: "context_mismatch",
+    });
     return "discarded";
   }
   const pre = sendGuard({ job, leaseToken: job.lease_token, conversation: conv, enrollment: enr });
@@ -85,10 +112,17 @@ export async function processJob(admin: Admin, job: Job): Promise<string> {
     return "discarded";
   }
   if (!settings?.enabled) {
-    await finish(admin, job.id, job.lease_token, { status: "skipped", error: "workspace_disabled" });
+    await finish(admin, job.id, job.lease_token, {
+      status: "skipped",
+      error: "workspace_disabled",
+    });
     return "skipped";
   }
-  const { data: playbook } = await admin.from("sdr_playbooks").select("*").eq("id", enr.playbook_id).maybeSingle();
+  const { data: playbook } = await admin
+    .from("sdr_playbooks")
+    .select("*")
+    .eq("id", enr.playbook_id)
+    .maybeSingle();
   if (!playbook?.enabled) {
     await finish(admin, job.id, job.lease_token, { status: "skipped", error: "playbook_disabled" });
     return "skipped";
@@ -105,11 +139,18 @@ export async function processJob(admin: Admin, job: Job): Promise<string> {
     .reverse();
   const { offers, materials } = await loadKnowledge(admin, job.workspace_id);
   if (!offers.length) {
-    await finish(admin, job.id, job.lease_token, { status: "skipped", error: "no_approved_offers" });
+    await finish(admin, job.id, job.lease_token, {
+      status: "skipped",
+      error: "no_approved_offers",
+    });
     return "skipped";
   }
   const { data: questions } = playbook.questionnaire_id
-    ? await admin.from("prospecting_questions").select("label").eq("questionnaire_id", playbook.questionnaire_id).order("position")
+    ? await admin
+        .from("prospecting_questions")
+        .select("label")
+        .eq("questionnaire_id", playbook.questionnaire_id)
+        .order("position")
     : { data: [] };
   const qualificationFields = [
     "necessidade",
@@ -126,7 +167,12 @@ export async function processJob(admin: Admin, job: Job): Promise<string> {
     qualificationFields,
     bookingAvailable: !!playbook.booking_page_id,
     extraInstructions:
-      [playbook.qualification_prompt, job.kind === "follow_up" ? "Este é um follow-up: retome a conversa com gentileza, sem pressão." : null]
+      [
+        playbook.qualification_prompt,
+        job.kind === "follow_up"
+          ? "Este é um follow-up: retome a conversa com gentileza, sem pressão."
+          : null,
+      ]
         .filter(Boolean)
         .join("\n") || null,
   });
@@ -208,7 +254,13 @@ export async function processJob(admin: Admin, job: Job): Promise<string> {
   if (out.intent === "opt_out") {
     await admin
       .from("sdr_enrollments")
-      .update({ status: "opted_out", commercial_stage: "opted_out", opted_out_at: new Date().toISOString(), cancel_reason: "opt_out", follow_up_at: null })
+      .update({
+        status: "opted_out",
+        commercial_stage: "opted_out",
+        opted_out_at: new Date().toISOString(),
+        cancel_reason: "opt_out",
+        follow_up_at: null,
+      })
       .eq("id", enr.id);
     await admin.rpc("sdr_set_conversation_owner", { p_conversation: conv.id, p_owner: "paused" });
     await finish(admin, job.id, job.lease_token, { status: "skipped", error: "opt_out" });
@@ -249,7 +301,12 @@ export async function processJob(admin: Admin, job: Job): Promise<string> {
     settings.auto_send_enabled &&
     playbook.mode === "auto" &&
     out.warnings.length === 0 &&
-    !isQuietHours(new Date(), settings.timezone, settings.quiet_hours_start, settings.quiet_hours_end);
+    !isQuietHours(
+      new Date(),
+      settings.timezone,
+      settings.quiet_hours_start,
+      settings.quiet_hours_end,
+    );
 
   const { data: saved } = await admin
     .from("sdr_turn_jobs")
@@ -276,7 +333,12 @@ export async function processJob(admin: Admin, job: Job): Promise<string> {
   });
   if (!sent.ok) {
     // Descarta trabalho obsoleto; demais falhas viram rascunho para revisão humana.
-    const obsolete = ["owner_not_ai", "stale_version", "enrollment_inactive", "lease_lost"].includes(sent.reason);
+    const obsolete = [
+      "owner_not_ai",
+      "stale_version",
+      "enrollment_inactive",
+      "lease_lost",
+    ].includes(sent.reason);
     await admin
       .from("sdr_turn_jobs")
       .update({ status: obsolete ? "discarded" : "drafted", error: sent.reason, lease_token: null })
@@ -333,7 +395,10 @@ async function scheduleFollowUps(admin: Admin, limit: number): Promise<number> {
       },
       { onConflict: "workspace_id,idem_key", ignoreDuplicates: true },
     );
-    await admin.from("sdr_enrollments").update({ ...clear, follow_up_count: count }).eq("id", e.id);
+    await admin
+      .from("sdr_enrollments")
+      .update({ ...clear, follow_up_count: count })
+      .eq("id", e.id);
     n++;
   }
   return n;

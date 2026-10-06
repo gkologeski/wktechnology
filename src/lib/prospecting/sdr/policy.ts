@@ -98,9 +98,7 @@ export function selectableOffers<T extends Pick<SdrOffer, "status" | "approved_a
 ): T[] {
   return offers.filter(
     (o) =>
-      o.status === "active" &&
-      !!o.approved_at &&
-      !FORBIDDEN_OFFER_NAMES.includes(norm(o.name)),
+      o.status === "active" && !!o.approved_at && !FORBIDDEN_OFFER_NAMES.includes(norm(o.name)),
   );
 }
 
@@ -262,7 +260,11 @@ export function shouldCreateOpportunity(o: {
 }
 
 /** Estado comercial após a decisão do agente (independe do dono da conversa). */
-export function nextStage(current: CommercialStage, intent: SdrIntent, qualified: boolean): CommercialStage {
+export function nextStage(
+  current: CommercialStage,
+  intent: SdrIntent,
+  qualified: boolean,
+): CommercialStage {
   if (intent === "opt_out") return "opted_out";
   if (intent === "handoff") return "handoff";
   if (intent === "schedule_meeting") return "meeting_link_sent";
@@ -272,7 +274,13 @@ export function nextStage(current: CommercialStage, intent: SdrIntent, qualified
 }
 
 /** Motivos que encerram follow-ups pendentes. */
-export const FOLLOW_UP_CANCEL_REASONS = ["replied", "opt_out", "meeting", "handoff", "human"] as const;
+export const FOLLOW_UP_CANCEL_REASONS = [
+  "replied",
+  "opt_out",
+  "meeting",
+  "handoff",
+  "human",
+] as const;
 
 /** Próximo follow-up: só quando aguardando resposta e dentro do limite. */
 export function nextFollowUpAt(o: {
@@ -288,11 +296,13 @@ export function nextFollowUpAt(o: {
 }
 
 /** Status da reunião a partir da reserva e do retorno do Google. */
-export function meetingStatus(b: {
-  status: string | null;
-  gcal_event_id: string | null;
-  calendar_sync_error: string | null;
-} | null): "none" | "confirmed" | "sync_failed" | "pending_sync" | "canceled" {
+export function meetingStatus(
+  b: {
+    status: string | null;
+    gcal_event_id: string | null;
+    calendar_sync_error: string | null;
+  } | null,
+): "none" | "confirmed" | "sync_failed" | "pending_sync" | "canceled" {
   if (!b) return "none";
   if (b.status === "canceled") return "canceled";
   if (b.gcal_event_id) return "confirmed";
