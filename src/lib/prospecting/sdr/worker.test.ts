@@ -495,7 +495,7 @@ describe("homologação sintética ponta a ponta (provedores simulados)", () => 
     expect(db.t("prospecting_qualifications")[0].total_score).toBe(50);
     expect(d.ensureOpportunity).toHaveBeenCalledTimes(1);
     // 3) humano aprova; envio só conta como feito após sucesso da Meta simulada
-    metaSend.mockResolvedValue({ messages: [{ id: "wamid.out" }] });
+    metaSend.mockResolvedValue({ wamid: "wamid.out", raw: {} });
     const sent = await sendSdrMessage(db, {
       jobId: j.id,
       expectedStatus: "drafted",
