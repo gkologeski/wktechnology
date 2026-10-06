@@ -228,7 +228,10 @@ function PilotReadiness({ d }: { d: Overview }) {
           booking_page_id: pageId || null,
         },
       }),
-    onSuccess: () => (toast.success("Playbook do piloto atualizado (continua desativado)"), refresh()),
+    onSuccess: () => (
+      toast.success("Playbook do piloto atualizado (continua desativado)"),
+      refresh()
+    ),
     onError: (e: Error) => toast.error(e.message),
   });
   if (!pilot)

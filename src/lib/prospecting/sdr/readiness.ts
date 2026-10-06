@@ -1,7 +1,11 @@
 // Checagens puras de prontidão do SDR (sem banco): viabilidade do limiar de
 // qualificação, rótulo de preço e saúde da página de agenda.
 import { computeQualificationMaxScore, type ScoreQuestion } from "@/lib/prospecting/score";
-import { ICP_MAX_POINTS, LEAD_SCORE_MAX, QUESTIONNAIRE_MAX_POINTS } from "@/lib/prospecting/lead-score";
+import {
+  ICP_MAX_POINTS,
+  LEAD_SCORE_MAX,
+  QUESTIONNAIRE_MAX_POINTS,
+} from "@/lib/prospecting/lead-score";
 
 export type QualificationFeasibility = {
   scaleMax: number;
@@ -98,10 +102,24 @@ export function bookingReadiness(p: {
   const c = p.calendar;
   const checks = [
     { key: "page", label: "Página ativa", ok: !!pg?.active },
-    { key: "workspace", label: "Página no mesmo workspace", ok: !!pg && pg.workspace_id === p.workspaceId },
+    {
+      key: "workspace",
+      label: "Página no mesmo workspace",
+      ok: !!pg && pg.workspace_id === p.workspaceId,
+    },
     { key: "host", label: "Anfitrião ativo no workspace", ok: p.hostActive },
-    { key: "availability", label: "Disponibilidade semanal definida", ok: slots > 0, detail: `${slots} faixa(s)` },
-    { key: "timezone", label: "Fuso horário definido", ok: !!pg?.timezone, detail: pg?.timezone ?? undefined },
+    {
+      key: "availability",
+      label: "Disponibilidade semanal definida",
+      ok: slots > 0,
+      detail: `${slots} faixa(s)`,
+    },
+    {
+      key: "timezone",
+      label: "Fuso horário definido",
+      ok: !!pg?.timezone,
+      detail: pg?.timezone ?? undefined,
+    },
     { key: "calendar", label: "Agenda Google vinculada", ok: !!c && c.provider === "google" },
     {
       key: "calendar_owner",

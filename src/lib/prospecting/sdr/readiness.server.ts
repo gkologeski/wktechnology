@@ -15,10 +15,16 @@ export async function loadSdrReadiness(supabase: SupabaseClient, workspaceId: st
       .select("id, name, enabled, mode, questionnaire_id, booking_page_id, opportunity_min_score")
       .eq("workspace_id", workspaceId)
       .order("created_at"),
-    supabase.from("icp_criteria").select("points").eq("workspace_id", workspaceId).eq("enabled", true),
+    supabase
+      .from("icp_criteria")
+      .select("points")
+      .eq("workspace_id", workspaceId)
+      .eq("enabled", true),
     supabase
       .from("booking_pages")
-      .select("id, slug, title, active, workspace_id, owner_id, timezone, availability, calendar_account_id, duration_minutes")
+      .select(
+        "id, slug, title, active, workspace_id, owner_id, timezone, availability, calendar_account_id, duration_minutes",
+      )
       .eq("workspace_id", workspaceId),
     supabase
       .from("sdr_offers")
@@ -42,7 +48,9 @@ export async function loadSdrReadiness(supabase: SupabaseClient, workspaceId: st
   const playbooks = (pbs.data ?? []).map((p) => ({
     ...p,
     feasibility: qualificationFeasibility({
-      questions: ((questions ?? []) as any[]).filter((q) => q.questionnaire_id === p.questionnaire_id),
+      questions: ((questions ?? []) as any[]).filter(
+        (q) => q.questionnaire_id === p.questionnaire_id,
+      ),
       icpEnabledCriteria: (icp.data ?? []) as { points: number | null }[],
       threshold: Number(p.opportunity_min_score ?? 60),
     }),
@@ -67,7 +75,9 @@ export async function loadSdrReadiness(supabase: SupabaseClient, workspaceId: st
       pg.calendar_account_id
         ? supabaseAdmin
             .from("calendar_accounts")
-            .select("provider, owner_id, workspace_id, sync_enabled, last_status, refresh_token, scopes")
+            .select(
+              "provider, owner_id, workspace_id, sync_enabled, last_status, refresh_token, scopes",
+            )
             .eq("id", pg.calendar_account_id)
             .maybeSingle()
         : Promise.resolve({ data: null }),

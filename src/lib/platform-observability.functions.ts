@@ -69,9 +69,13 @@ export const getPlatformStatus = createServerFn({ method: "GET" })
     // (sem credencial) para jobs sem execução registrada pela aplicação.
     const jobsRes = await supabaseAdmin.rpc("platform_cron_jobs" as never);
     const jobMeta = new Map(
-      ((jobsRes.data ?? []) as Array<{ jobname: string; active: boolean; target_url: string | null }>).map(
-        (j) => [j.jobname, j],
-      ),
+      (
+        (jobsRes.data ?? []) as Array<{
+          jobname: string;
+          active: boolean;
+          target_url: string | null;
+        }>
+      ).map((j) => [j.jobname, j]),
     );
     const probe = new Map<string, number | null>();
     await Promise.all(
@@ -109,8 +113,10 @@ export const getPlatformStatus = createServerFn({ method: "GET" })
             ? (probe.get(c.jobname) ?? 0) > 0 && probe.get(c.jobname) !== 404
             : null,
         endpoint_unhealthy: Boolean(
-          (probe.has(c.jobname) && (probe.get(c.jobname) === 404 || probe.get(c.jobname) == null)) ||
-          (schedulerRecent && app && !appRecent) || (app && app.status === "error" && appRecent),
+          (probe.has(c.jobname) &&
+            (probe.get(c.jobname) === 404 || probe.get(c.jobname) == null)) ||
+          (schedulerRecent && app && !appRecent) ||
+          (app && app.status === "error" && appRecent),
         ),
       };
     });

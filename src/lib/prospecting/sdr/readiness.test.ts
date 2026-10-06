@@ -15,17 +15,30 @@ describe("viabilidade da qualificação", () => {
       icpEnabledCriteria: [{ points: 10 }],
       threshold: 60,
     });
-    expect(f).toMatchObject({ leadMax: 85, contactMax: 50, feasibleForLead: true, feasibleForContact: false });
+    expect(f).toMatchObject({
+      leadMax: 85,
+      contactMax: 50,
+      feasibleForLead: true,
+      feasibleForContact: false,
+    });
     expect(f.issues.join(" ")).toMatch(/Contato/);
   });
   it("sem ICP: limiar 60 é impossível e é sinalizado", () => {
-    const f = qualificationFeasibility({ questions: [q([25])], icpEnabledCriteria: [], threshold: 60 });
+    const f = qualificationFeasibility({
+      questions: [q([25])],
+      icpEnabledCriteria: [],
+      threshold: 60,
+    });
     expect(f.leadMax).toBe(50);
     expect(f.feasibleForLead).toBe(false);
     expect(f.issues.some((i) => i.includes("nunca será atingido"))).toBe(true);
   });
   it("sem questionário: nota sempre 0", () => {
-    const f = qualificationFeasibility({ questions: [], icpEnabledCriteria: [{ points: 5 }], threshold: 30 });
+    const f = qualificationFeasibility({
+      questions: [],
+      icpEnabledCriteria: [{ points: 5 }],
+      threshold: 30,
+    });
     expect(f.questionnairePossible).toBe(0);
     expect(f.leadMax).toBe(35);
   });
@@ -58,7 +71,9 @@ describe("agenda", () => {
     can_write_events: true,
   };
   it("configuração completa passa", () => {
-    expect(bookingReadiness({ page, workspaceId: "w1", hostActive: true, calendar: cal }).ok).toBe(true);
+    expect(bookingReadiness({ page, workspaceId: "w1", hostActive: true, calendar: cal }).ok).toBe(
+      true,
+    );
   });
   it("agenda de outro workspace ou sem escrita falha", () => {
     const r = bookingReadiness({
@@ -68,14 +83,20 @@ describe("agenda", () => {
       calendar: { ...cal, workspace_id: "w2", can_write_events: false },
     });
     expect(r.ok).toBe(false);
-    expect(r.checks.filter((c) => !c.ok).map((c) => c.key)).toEqual(["calendar_owner", "calendar_auth"]);
+    expect(r.checks.filter((c) => !c.ok).map((c) => c.key)).toEqual([
+      "calendar_owner",
+      "calendar_auth",
+    ]);
   });
 });
 
 vi.mock("@/lib/access-control/enforce.server", () => ({
   assertAnyPermission: vi.fn(async (sb: any, _u: string, ws: string, keys: string[]) => {
     for (const k of keys) {
-      const { data } = await sb.rpc("user_has_permission", { _permission_key: k, _workspace_id: ws });
+      const { data } = await sb.rpc("user_has_permission", {
+        _permission_key: k,
+        _workspace_id: ws,
+      });
       if (data) return;
     }
     throw Object.assign(new Error("forbidden"), { status: 403 });
