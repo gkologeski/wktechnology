@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   estimateRemainingMs,
   pacingEnabled,
@@ -57,5 +57,78 @@ describe("validação e previsão", () => {
   it("prevalece o mais lento entre intervalo e envios por minuto", () => {
     expect(estimateRemainingMs(10, { min: 30, max: 90 }, 60)).toBe(10 * 60_000);
     expect(estimateRemainingMs(10, { min: 0, max: 0 }, 10)).toBe(10 * 6_000);
+  });
+});
+
+import { runPacedLoop } from "./campaign-pacing";
+
+function clock(start = 0) {
+  let t = start;
+  return {
+    now: () => t,
+    sleep: async (ms: number) => void (t += ms),
+    advance: (ms: number) => (t += ms),
+  };
+}
+
+describe("laço do disparo espaçado", () => {
+  it("nenhum envio antes de next_send_at e intervalo entre X e Y entre envios", async () => {
+    const c = clock(1_000);
+    const sendTimes: number[] = [];
+    let pending = 5;
+    const r = await runPacedLoop({
+      interval: { min: 10, max: 20 },
+      nextAt: 6_000, // ainda faltam 5 s
+      startedAt: 1_000,
+      budgetMs: 45_000,
+      now: c.now,
+      sleep: c.sleep,
+      rng: () => 0.5,
+      sendOne: async () => {
+        if (!pending) return { processed: 0 };
+        pending--;
+        sendTimes.push(c.now());
+        return { processed: 1 };
+      },
+      persistNextAt: async () => {},
+    });
+    expect(sendTimes[0]).toBeGreaterThanOrEqual(6_000);
+    for (let i = 1; i < sendTimes.length; i++) {
+      const gap = sendTimes[i] - sendTimes[i - 1];
+      expect(gap).toBeGreaterThanOrEqual(10_000);
+      expect(gap).toBeLessThanOrEqual(20_000);
+    }
+    // 6s, +15s, +15s = 36s; o próximo (51s) passa do orçamento de 45s
+    expect(r.processed).toBe(3);
+  });
+  it("próximo disparo além do orçamento: não espera nem envia", async () => {
+    const c = clock(0);
+    const sendOne = vi.fn(async () => ({ processed: 1 }));
+    const r = await runPacedLoop({
+      interval: { min: 30, max: 30 },
+      nextAt: 120_000,
+      startedAt: 0,
+      now: c.now,
+      sleep: c.sleep,
+      sendOne,
+      persistNextAt: async () => {},
+    });
+    expect(sendOne).not.toHaveBeenCalled();
+    expect(r.nextAt).toBe(120_000);
+  });
+  it("falha conta como tentativa e o próximo também respeita o intervalo", async () => {
+    const c = clock(0);
+    const persisted: number[] = [];
+    let n = 0;
+    await runPacedLoop({
+      interval: { min: 40, max: 40 },
+      nextAt: 0,
+      startedAt: 0,
+      now: c.now,
+      sleep: c.sleep,
+      sendOne: async () => (n++ < 2 ? { processed: 1 } : { processed: 0 }),
+      persistNextAt: async (ms) => void persisted.push(ms),
+    });
+    expect(persisted[0]).toBe(40_000);
   });
 });

@@ -11,8 +11,8 @@ import {
 import {
   pacingEnabled,
   PACING_RUN_BUDGET_MS,
-  randomIntervalSeconds,
   resolveInterval,
+  runPacedLoop,
   type PacingInterval,
 } from "@/lib/whatsapp/campaign-pacing";
 
@@ -248,26 +248,26 @@ async function processPaced(camp: Campaign, interval: PacingInterval, startedAt:
   });
   if (!claimed) return { processed: 0, skipped: "locked" };
   let processed = 0;
-  let nextAt = camp.next_send_at ? new Date(camp.next_send_at).getTime() : 0;
   try {
-    while (Date.now() - startedAt < PACING_RUN_BUDGET_MS) {
-      const wait = nextAt - Date.now();
-      if (wait > 0) {
-        if (Date.now() + wait - startedAt > PACING_RUN_BUDGET_MS) break;
-        await sleep(wait);
-      }
-      const res = await processCampaign(camp, 1);
-      if (!res.processed) break; // sem pendentes, limite por minuto ou número indisponível
-      processed += res.processed;
-      camp.sent += res.sent ?? 0;
-      camp.failed += res.failed ?? 0;
-      // Envio ou falha contam como tentativa: o próximo respeita o intervalo.
-      nextAt = Date.now() + randomIntervalSeconds(interval.min, interval.max) * 1000;
-      await supabaseAdmin
-        .from("whatsapp_campaigns")
-        .update({ next_send_at: new Date(nextAt).toISOString() })
-        .eq("id", camp.id);
-    }
+    const r = await runPacedLoop({
+      interval,
+      startedAt,
+      nextAt: camp.next_send_at ? new Date(camp.next_send_at).getTime() : 0,
+      sleep,
+      sendOne: async () => {
+        const res = await processCampaign(camp, 1);
+        camp.sent += res.sent ?? 0;
+        camp.failed += res.failed ?? 0;
+        return res;
+      },
+      persistNextAt: async (ms) => {
+        await supabaseAdmin
+          .from("whatsapp_campaigns")
+          .update({ next_send_at: new Date(ms).toISOString() })
+          .eq("id", camp.id);
+      },
+    });
+    processed = r.processed;
   } finally {
     await supabaseAdmin
       .from("whatsapp_campaigns")

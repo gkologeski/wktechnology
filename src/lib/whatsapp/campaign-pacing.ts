@@ -66,3 +66,37 @@ export function campaignIntervalColumns(
   if (err) throw new Error(err);
   return { send_interval_min_s: min, send_interval_max_s: max };
 }
+
+/**
+ * Laço do disparo espaçado, sem banco: só envia quando `nextAt` venceu, sorteia
+ * o próximo intervalo após cada tentativa (envio ou falha) e para no orçamento.
+ */
+export async function runPacedLoop(p: {
+  interval: PacingInterval;
+  nextAt: number;
+  startedAt: number;
+  budgetMs?: number;
+  now?: () => number;
+  sleep: (ms: number) => Promise<void>;
+  sendOne: () => Promise<{ processed: number }>;
+  persistNextAt: (ms: number) => Promise<void>;
+  rng?: () => number;
+}): Promise<{ processed: number; nextAt: number }> {
+  const now = p.now ?? Date.now;
+  const budget = p.budgetMs ?? PACING_RUN_BUDGET_MS;
+  let nextAt = p.nextAt;
+  let processed = 0;
+  while (now() - p.startedAt < budget) {
+    const wait = nextAt - now();
+    if (wait > 0) {
+      if (now() + wait - p.startedAt > budget) break;
+      await p.sleep(wait);
+    }
+    const res = await p.sendOne();
+    if (!res.processed) break;
+    processed += res.processed;
+    nextAt = now() + randomIntervalSeconds(p.interval.min, p.interval.max, p.rng) * 1000;
+    await p.persistNextAt(nextAt);
+  }
+  return { processed, nextAt };
+}
