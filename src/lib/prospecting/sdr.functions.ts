@@ -2,6 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertAnyPermission } from "@/lib/access-control/enforce.server";
+import { assertSdr } from "@/lib/prospecting/sdr/access.server";
+import { loadSdrReadiness } from "@/lib/prospecting/sdr/readiness.server";
+import { qualificationFeasibility } from "@/lib/prospecting/sdr/readiness";
 
 // Leituras passam pelo cliente do usuário (RLS por workspace). Ações que
 // tocam provedores leem o registro primeiro com RLS e só então usam o admin.
@@ -82,6 +85,7 @@ export const getSdrOverview = createServerFn({ method: "POST" })
         },
       ]),
     );
+    const readiness = await loadSdrReadiness(supabase, wsId);
     const metrics: Record<string, number> = {};
     for (const a of actions.data ?? [])
       metrics[`${a.kind}:${a.status}`] = (metrics[`${a.kind}:${a.status}`] ?? 0) + 1;
@@ -95,6 +99,7 @@ export const getSdrOverview = createServerFn({ method: "POST" })
       jobs: jobs.data ?? [],
       enrollments: enrollments.data ?? [],
       qualifications,
+      readiness,
       metrics,
     };
   });
@@ -232,6 +237,7 @@ export const approveSdrDraft = createServerFn({ method: "POST" })
   .inputValidator((i) => JobInput.extend({ text: z.string().trim().min(1).max(4000) }).parse(i))
   .handler(async ({ data, context }) => {
     const job = await loadJobScoped(context.supabase, context.userId, data.jobId);
+    await assertSdr(context.supabase, context.userId, job.workspace_id, "supervise");
     if (job.status !== "drafted") throw new Error("Este rascunho não está mais pendente.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendSdrMessage } = await import("./sdr/actions.server");
@@ -261,6 +267,7 @@ export const discardSdrDraft = createServerFn({ method: "POST" })
   .inputValidator((i) => JobInput.parse(i))
   .handler(async ({ data, context }) => {
     const job = await loadJobScoped(context.supabase, context.userId, data.jobId);
+    await assertSdr(context.supabase, context.userId, job.workspace_id, "supervise");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin
       .from("sdr_turn_jobs")
@@ -281,6 +288,7 @@ export const takeoverSdrConversation = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const job = await loadJobScoped(context.supabase, context.userId, data.jobId);
+    await assertSdr(context.supabase, context.userId, job.workspace_id, "supervise");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { handoffToHuman } = await import("./sdr/actions.server");
     await handoffToHuman(supabaseAdmin, {
@@ -317,4 +325,74 @@ export const retrySdrMeetingSync = createServerFn({ method: "POST" })
       .update({ meeting_status: r.status })
       .eq("id", enr.id);
     return r;
+  });
+
+/**
+ * Prepara o playbook do piloto (limiar e página de agenda) sem ativá-lo.
+ * Bloqueia limiar impossível com os critérios atuais e agenda de outro workspace.
+ */
+export const saveSdrPilotPlaybook = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        workspaceId: z.string().uuid(),
+        playbookId: z.string().uuid(),
+        opportunity_min_score: z.number().int().min(1).max(85),
+        booking_page_id: z.string().uuid().nullable(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId, data.workspaceId);
+    const { data: pb, error } = await supabase
+      .from("sdr_playbooks")
+      .select("id, questionnaire_id")
+      .eq("id", data.playbookId)
+      .eq("workspace_id", data.workspaceId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!pb) throw new Error("Playbook não encontrado neste workspace.");
+    if (data.booking_page_id) {
+      const { data: page } = await supabase
+        .from("booking_pages")
+        .select("id")
+        .eq("id", data.booking_page_id)
+        .eq("workspace_id", data.workspaceId)
+        .maybeSingle();
+      if (!page) throw new Error("Página de agenda não pertence a este workspace.");
+    }
+    const [{ data: questions }, { data: icp }] = await Promise.all([
+      pb.questionnaire_id
+        ? supabase
+            .from("prospecting_questions")
+            .select("id, type, weight, options, text_points, text_min_chars")
+            .eq("questionnaire_id", pb.questionnaire_id)
+            .eq("workspace_id", data.workspaceId)
+        : Promise.resolve({ data: [] }),
+      supabase
+        .from("icp_criteria")
+        .select("points")
+        .eq("workspace_id", data.workspaceId)
+        .eq("enabled", true),
+    ]);
+    const f = qualificationFeasibility({
+      questions: (questions ?? []) as never,
+      icpEnabledCriteria: (icp ?? []) as never,
+      threshold: data.opportunity_min_score,
+    });
+    if (!f.feasibleForLead)
+      throw new Error(f.issues[0] ?? "Limiar inalcançável com os critérios atuais.");
+    const { error: uErr } = await supabase
+      .from("sdr_playbooks")
+      .update({
+        opportunity_min_score: data.opportunity_min_score,
+        booking_page_id: data.booking_page_id,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", pb.id)
+      .eq("workspace_id", data.workspaceId);
+    if (uErr) throw new Error(uErr.message);
+    return { ok: true, feasibility: f };
   });

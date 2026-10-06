@@ -461,3 +461,75 @@ describe("recusa, falhas e desligado", () => {
     expect(db.t("sdr_turn_jobs")[0].status).toBe("queued");
   });
 });
+
+describe("homologação sintética ponta a ponta (provedores simulados)", () => {
+  it("inbound → turno → qualificação canônica → oportunidade → envio aprovado → recusa encerra", async () => {
+    // 1) resposta ao template entra uma vez na fila
+    expect(
+      await ingestInboundForSdr(db, {
+        workspaceId: W1,
+        conversationId: "c1",
+        messageId: "m1",
+        waMessageId: "wamid.e2e",
+        providerPhoneId: "pn1",
+        body: "Temos orçamento sim, aprovado.",
+      }),
+    ).toBe("queued");
+    // O banco real aplica os defaults da fila; o fake recebe-os aqui.
+    Object.assign(db.t("sdr_turn_jobs")[0], {
+      status: db.t("sdr_turn_jobs")[0].status ?? "queued",
+      attempts: 0,
+      created_at: new Date().toISOString(),
+    });
+    // 2) turno supervisionado: rascunho + qualificação do servidor + oportunidade
+    const j = await claimOne(db);
+    const d = deps({
+      reply: "Que bom! Posso te enviar nosso material?",
+      intent: "continue",
+      offer_keys: ["outsourcing"],
+      material_ids: [],
+      answers: goodAnswers,
+      handoff_reason: "",
+    });
+    expect(await processJob(db, j, d)).toBe("drafted");
+    expect(db.t("prospecting_qualifications")[0].total_score).toBe(50);
+    expect(d.ensureOpportunity).toHaveBeenCalledTimes(1);
+    // 3) humano aprova; envio só conta como feito após sucesso da Meta simulada
+    metaSend.mockResolvedValue({ wamid: "wamid.out", raw: {} });
+    const sent = await sendSdrMessage(db, {
+      jobId: j.id,
+      expectedStatus: "drafted",
+      text: "Que bom! Posso te enviar nosso material?",
+      actorUserId: "u1",
+    });
+    expect(sent).toMatchObject({ ok: true, wamid: "wamid.out" });
+    expect(metaSend).toHaveBeenCalledTimes(1);
+    // 4) cliente recusa: encerra sem novo envio
+    db.t("whatsapp_messages").push({
+      id: "m2",
+      conversation_id: "c1",
+      workspace_id: W1,
+      direction: "inbound",
+      body: "Não tenho interesse, pare de mandar.",
+      created_at: "2026-10-06T11:00:00Z",
+    });
+    const j2 = job(db);
+    const c2 = await claimOne(db);
+    expect(c2.id).toBe(j2.id);
+    const d2 = deps({
+      reply: "Entendido, obrigado.",
+      intent: "opt_out",
+      offer_keys: [],
+      material_ids: [],
+      answers: [],
+      handoff_reason: "",
+    });
+    expect(await processJob(db, c2, d2)).toBe("opt_out");
+    expect(db.find("sdr_enrollments", "e1")).toMatchObject({
+      status: "opted_out",
+      follow_up_at: null,
+    });
+    expect(d2.handoffToHuman).not.toHaveBeenCalled();
+    expect(metaSend).toHaveBeenCalledTimes(1);
+  });
+});

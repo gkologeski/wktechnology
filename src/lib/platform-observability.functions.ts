@@ -65,6 +65,32 @@ export const getPlatformStatus = createServerFn({ method: "GET" })
       if (!appByJob.has(key)) appByJob.set(key, r);
     }
 
+    // Distingue "cron cadastrado" de "endpoint implantado": sonda o GET da rota
+    // (sem credencial) para jobs sem execução registrada pela aplicação.
+    const jobsRes = await supabaseAdmin.rpc("platform_cron_jobs" as never);
+    const jobMeta = new Map(
+      (
+        (jobsRes.data ?? []) as Array<{
+          jobname: string;
+          active: boolean;
+          target_url: string | null;
+        }>
+      ).map((j) => [j.jobname, j]),
+    );
+    const probe = new Map<string, number | null>();
+    await Promise.all(
+      crons.map(async (c) => {
+        const url = jobMeta.get(c.jobname)?.target_url;
+        if (!url || appByJob.has(norm(c.jobname))) return;
+        try {
+          const r = await fetch(url, { method: "GET", signal: AbortSignal.timeout(4000) });
+          probe.set(c.jobname, r.status);
+        } catch {
+          probe.set(c.jobname, null);
+        }
+      }),
+    );
+
     const cronJobs = crons.map((c) => {
       const lastStartMs = c.last_start ? new Date(c.last_start).getTime() : 0;
       const lateMin = lastStartMs ? Math.round((now - lastStartMs) / 60000) : null;
@@ -79,8 +105,18 @@ export const getPlatformStatus = createServerFn({ method: "GET" })
         app_last_run: app?.started_at ?? null,
         app_last_status: app?.status ?? null,
         app_last_error: app?.error ?? null,
+        active: jobMeta.get(c.jobname)?.active ?? true,
+        endpoint_probe_status: probe.get(c.jobname) ?? null,
+        endpoint_deployed: app
+          ? true
+          : probe.has(c.jobname)
+            ? (probe.get(c.jobname) ?? 0) > 0 && probe.get(c.jobname) !== 404
+            : null,
         endpoint_unhealthy: Boolean(
-          (schedulerRecent && app && !appRecent) || (app && app.status === "error" && appRecent),
+          (probe.has(c.jobname) &&
+            (probe.get(c.jobname) === 404 || probe.get(c.jobname) == null)) ||
+          (schedulerRecent && app && !appRecent) ||
+          (app && app.status === "error" && appRecent),
         ),
       };
     });

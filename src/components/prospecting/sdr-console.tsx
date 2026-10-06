@@ -20,6 +20,7 @@ import {
   getSdrOverview,
   retrySdrMeetingSync,
   saveSdrMaterial,
+  saveSdrPilotPlaybook,
   saveSdrSettings,
   setSdrOfferActive,
   takeoverSdrConversation,
@@ -205,7 +206,105 @@ function SettingsPanel({ d }: { d: Overview }) {
       <p className="text-xs text-muted-foreground">
         Para ativar numa campanha, ligue “SDR” e escolha o playbook na campanha de WhatsApp.
       </p>
+      <PilotReadiness d={d} />
     </div>
+  );
+}
+
+function PilotReadiness({ d }: { d: Overview }) {
+  const save = useServerFn(saveSdrPilotPlaybook);
+  const refresh = useRefresh();
+  const pilot =
+    d.readiness.playbooks.find((p) => p.questionnaire_id) ?? d.readiness.playbooks[0] ?? null;
+  const [threshold, setThreshold] = useState(pilot?.opportunity_min_score ?? 60);
+  const [pageId, setPageId] = useState<string>(pilot?.booking_page_id ?? "");
+  const m = useMutation({
+    mutationFn: () =>
+      save({
+        data: {
+          workspaceId: d.workspaceId,
+          playbookId: pilot!.id,
+          opportunity_min_score: threshold,
+          booking_page_id: pageId || null,
+        },
+      }),
+    onSuccess: () => (
+      toast.success("Playbook do piloto atualizado (continua desativado)"),
+      refresh()
+    ),
+    onError: (e: Error) => toast.error(e.message),
+  });
+  if (!pilot)
+    return <EmptyState title="Sem playbook" description="Crie o playbook do piloto primeiro." />;
+  const f = pilot.feasibility;
+  const page = d.readiness.bookingPages.find((p) => p.id === pageId);
+  return (
+    <section className="space-y-3" aria-labelledby="sdr-pilot-title">
+      <SectionHeader
+        title="Prontidão do piloto"
+        description={`${pilot.name} · ${pilot.enabled ? "ativo" : "desativado"} · modo ${pilot.mode === "auto" ? "automático" : "supervisionado"}`}
+      />
+      <div className="space-y-4 rounded-lg border bg-card p-4 text-sm">
+        <div>
+          <p className="font-medium">Qualificação (escala 0–{f.scaleMax})</p>
+          <p className="text-muted-foreground">
+            Questionário até {f.questionnairePossible} pts · ICP até {f.icpPossible} pts (
+            {f.icpCriteria} critério(s) ativo(s)). Máximo hoje: Lead {f.leadMax} · Contato{" "}
+            {f.contactMax}. Limiar atual: {f.threshold}.
+          </p>
+          {f.issues.length > 0 && (
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-warning" role="status">
+              {f.issues.map((i) => (
+                <li key={i}>{i}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <NumField
+            id="sdr-threshold"
+            label="Nota mínima para criar oportunidade"
+            value={threshold}
+            disabled={!d.canManage || m.isPending}
+            onChange={setThreshold}
+          />
+          <div className="space-y-1">
+            <Label htmlFor="sdr-page">Página de agenda</Label>
+            <select
+              id="sdr-page"
+              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+              value={pageId}
+              disabled={!d.canManage || m.isPending}
+              onChange={(e) => setPageId(e.target.value)}
+            >
+              <option value="">Sem agenda (encaminha para humano)</option>
+              {d.readiness.bookingPages.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.title} ({p.slug})
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        {page && (
+          <ul className="space-y-1" aria-label="Checagens da agenda">
+            {page.readiness.checks.map((c) => (
+              <li key={c.key} className={c.ok ? "text-muted-foreground" : "text-destructive"}>
+                {c.ok ? "✓" : "✗"} {c.label}
+                {c.detail ? ` — ${c.detail}` : ""}
+              </li>
+            ))}
+            <li className="text-xs text-muted-foreground">
+              Checagem de configuração apenas. A reunião só é dada como confirmada quando o Google
+              devolve o evento.
+            </li>
+          </ul>
+        )}
+        <Button onClick={() => m.mutate()} disabled={!d.canManage || m.isPending}>
+          {m.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar preparação
+        </Button>
+      </div>
+    </section>
   );
 }
 
@@ -298,6 +397,10 @@ function CatalogPanel({ d }: { d: Overview }) {
                 <div className="min-w-0">
                   <p className="text-sm font-medium">{o.name}</p>
                   <p className="line-clamp-2 text-xs text-muted-foreground">{o.summary}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Preço: {d.readiness.priceLabels[o.id] ?? "Sob proposta"} — nunca informado ao
+                    cliente pelo SDR
+                  </p>
                   {o.source_url && (
                     <p className="truncate text-xs text-muted-foreground">Fonte: {o.source_url}</p>
                   )}

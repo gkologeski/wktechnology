@@ -21363,6 +21363,14 @@ export type Database = {
         Args: { _expires: string }
         Returns: Database["public"]["Enums"]["people_doc_status"]
       }
+      platform_cron_jobs: {
+        Args: never
+        Returns: {
+          active: boolean
+          jobname: string
+          target_url: string
+        }[]
+      }
       platform_cron_status: {
         Args: never
         Returns: {
