@@ -502,7 +502,7 @@ describe("homologação sintética ponta a ponta (provedores simulados)", () => 
       text: "Que bom! Posso te enviar nosso material?",
       actorUserId: "u1",
     });
-    expect(sent.ok).toBe(true);
+    expect(sent).toEqual({ ok: true });
     expect(metaSend).toHaveBeenCalledTimes(1);
     // 4) cliente recusa: encerra sem novo envio
     db.t("whatsapp_messages").push({
