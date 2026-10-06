@@ -475,6 +475,12 @@ describe("homologação sintética ponta a ponta (provedores simulados)", () => 
         body: "Temos orçamento sim, aprovado.",
       }),
     ).toBe("queued");
+    // O banco real aplica os defaults da fila; o fake recebe-os aqui.
+    Object.assign(db.t("sdr_turn_jobs")[0], {
+      status: db.t("sdr_turn_jobs")[0].status ?? "queued",
+      attempts: 0,
+      created_at: new Date().toISOString(),
+    });
     // 2) turno supervisionado: rascunho + qualificação do servidor + oportunidade
     const j = await claimOne(db);
     const d = deps({
