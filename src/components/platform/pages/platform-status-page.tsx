@@ -170,7 +170,16 @@ export function AdminStatusPage() {
                         <Badge className={badgeClass}>{c.status ?? "—"}</Badge>
                       </TableCell>
                       <TableCell>
-                        {c.app_last_status == null ? (
+                        {c.active === false ? (
+                          <Badge variant="outline">suspenso</Badge>
+                        ) : c.endpoint_deployed === false ? (
+                          <Badge
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive"
+                            title={`Rota não implantada (HTTP ${c.endpoint_probe_status ?? "sem resposta"}). Publique a aplicação.`}
+                          >
+                            endpoint não implantado
+                          </Badge>
+                        ) : c.app_last_status == null ? (
                           <span className="text-xs text-muted-foreground">sem registro</span>
                         ) : unhealthy ? (
                           <Badge
