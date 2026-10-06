@@ -179,6 +179,8 @@ export const saveSdrMaterial = createServerFn({ method: "POST" })
       title: data.title,
       url: data.url,
       approved: data.approved,
+      approved_by: data.approved ? userId : null,
+      approved_at: data.approved ? new Date().toISOString() : null,
       active: data.active,
     };
     const { data: saved, error } = await supabase

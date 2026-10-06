@@ -339,7 +339,12 @@ function CatalogPanel({ d }: { d: Overview }) {
                       className="ml-auto"
                       disabled={approveMat.isPending}
                       onClick={() =>
-                        approveMat.mutate({ id: m.id, title: m.title, url: m.url as string, offerIds: linksBy(m.id) })
+                        approveMat.mutate({
+                          id: m.id,
+                          title: m.title,
+                          url: m.url as string,
+                          offerIds: linksBy(m.id),
+                        })
                       }
                     >
                       Aprovar para envio
