@@ -177,7 +177,7 @@ export function FlowCanvas({ layout = "studio" }: { layout?: "studio" | "tray" |
           target.closest(".ap-node, button, .ap-minimap, .ap-flow-tools, input, textarea")
         )
           return;
-        const start = { x: e.clientX, y: e.clientY, ...pan };
+        const start = { ...pan };
         const el = e.currentTarget;
         el.setPointerCapture(e.pointerId);
         const move = (ev: PointerEvent) =>
