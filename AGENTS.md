@@ -25,8 +25,8 @@
 - Mensagens inbound notificam somente o responsável ativo e apenas quando a conversa não possui aviso não lido; por quê: agrupar sequências e evitar ruído e duplicidade entre provedores.
 - WhatsApp livre exige mensagem inbound nas últimas 24 horas; fora da janela, somente template `APPROVED` validado no servidor; por quê: cumprir a política da Meta em todos os pontos de envio.
 - Fichas comerciais usam `RecordLayout` opt-in com timeline central como mestre da rolagem proporcional lateral; por quê: painéis de alturas diferentes terminam juntos sem afetar telas ATS.
-- SDR da Prospecção (`src/lib/prospecting/sdr/`): fila `sdr_turn_jobs` com lease e trava por conversa; após a IA, toda escrita passa por `sdr_commit_turn` (compare-and-set de lease, dono, versão e workspace) e a qualificação usa a linha canônica de `prospecting_qualifications` com nota calculada no servidor; por quê: trabalho obsoleto nunca altera CRM e a nota é a mesma da Prospecção.
 
-- Autorização do Agente SDR (telas novas e legadas `/agents/sdr`) passa por `requireSdr`/`assertSdr` em `src/lib/prospecting/sdr/access.server.ts`, com filtro explícito por workspace; por quê: uma única matriz de permissões no servidor, sem depender só da RLS ou da UI.
+- Agente SDR (regras de fila/envio em `src/lib/prospecting/sdr/AGENTS.md`): autorização (telas novas e legadas `/agents/sdr`) passa por `requireSdr`/`assertSdr` em `src/lib/prospecting/sdr/access.server.ts`, com filtro explícito por workspace; por quê: uma única matriz de permissões no servidor, sem depender só da RLS ou da UI.
 
 - Ritmo do disparo de template das campanhas WhatsApp é controlado por `whatsapp_campaigns.next_send_at` sob lease `wa_campaign_claim_dispatch`, com sorteio em `src/lib/whatsapp/campaign-pacing.ts`; por quê: o espaçamento vale entre execuções e nunca há disparo duplo.
+

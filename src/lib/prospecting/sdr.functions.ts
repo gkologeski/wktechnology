@@ -35,7 +35,7 @@ export const getSdrOverview = createServerFn({ method: "POST" })
         supabase
           .from("sdr_turn_jobs")
           .select(
-            "id, status, kind, draft_text, draft_payload, error, attempts, created_at, updated_at, enrollment_id, conversation_id",
+            "id, status, kind, draft_text, draft_payload, error, block_category, attempts, created_at, updated_at, ai_started_at, ai_finished_at, send_started_at, sent_at, enrollment_id, conversation_id",
           )
           .eq("workspace_id", wsId)
           .in("status", ["drafted", "failed", "queued", "running"])
@@ -85,28 +85,49 @@ export const getSdrOverview = createServerFn({ method: "POST" })
         },
       ]),
     );
-    // Cota de respostas: envios confirmados (wamid único) na janela móvel de 24 h.
+    // Contadores separados (janela móvel de 24 h), só envios comprovados.
     const since24 = new Date(Date.now() - 86400_000).toISOString();
     const { data: sent24 } = await supabase
-      .from("sdr_actions")
-      .select("provider_ref, created_at")
+      .from("sdr_turn_jobs")
+      .select("kind, provider_message_id, sent_at")
       .eq("workspace_id", wsId)
-      .eq("kind", "message_sent")
-      .eq("status", "success")
-      .not("provider_ref", "is", null)
-      .gte("created_at", since24)
-      .order("created_at", { ascending: true })
+      .eq("status", "sent")
+      .gte("sent_at", since24)
+      .order("sent_at", { ascending: true })
       .limit(5000);
-    const usedRefs = new Set((sent24 ?? []).map((r) => r.provider_ref));
-    const quotaLimit = Number(settings.data?.daily_send_limit ?? 50);
-    const quota = {
-      limit: quotaLimit,
-      used: usedRefs.size,
-      remaining: Math.max(0, quotaLimit - usedRefs.size),
-      // Quando a resposta mais antiga sai da janela, uma vaga é liberada.
-      nextFreeAt: sent24?.[0]
-        ? new Date(new Date(sent24[0].created_at).getTime() + 86400_000).toISOString()
-        : null,
+    const fuSent = (sent24 ?? []).filter((r) => r.kind === "follow_up");
+    const fuLimit = Number(settings.data?.followup_daily_limit ?? 50);
+    const { count: tplSent } = await supabase
+      .from("whatsapp_campaign_recipients")
+      .select("id, whatsapp_campaigns!inner(workspace_id)", { count: "exact", head: true })
+      .eq("whatsapp_campaigns.workspace_id", wsId)
+      .eq("status", "sent")
+      .not("wa_message_id", "is", null)
+      .gte("sent_at", since24);
+    const { count: alerts24 } = await supabase
+      .from("sdr_actions")
+      .select("id", { count: "exact", head: true })
+      .eq("workspace_id", wsId)
+      .in("kind", ["technical_alert", "circuit_opened"])
+      .gte("created_at", since24);
+    const counters = {
+      followUps: {
+        limit: fuLimit,
+        used: new Set(fuSent.map((r) => r.provider_message_id)).size,
+        nextFreeAt: fuSent[0]?.sent_at
+          ? new Date(new Date(fuSent[0].sent_at).getTime() + 86400_000).toISOString()
+          : null,
+      },
+      templates: {
+        limit: (settings.data?.template_daily_limit as number | null) ?? null,
+        used: tplSent ?? 0,
+      },
+      replies24h: (sent24 ?? []).filter((r) => r.kind === "reply").length,
+      technical: {
+        breakerOpenAt: (settings.data?.tech_breaker_open_at as string | null) ?? null,
+        breakerReason: (settings.data?.tech_breaker_reason as string | null) ?? null,
+        alerts24h: alerts24 ?? 0,
+      },
     };
     const readiness = await loadSdrReadiness(supabase, wsId);
     const metrics: Record<string, number> = {};
@@ -124,7 +145,7 @@ export const getSdrOverview = createServerFn({ method: "POST" })
       qualifications,
       readiness,
       metrics,
-      quota,
+      counters,
     };
   });
 
@@ -144,7 +165,11 @@ export const saveSdrSettings = createServerFn({ method: "POST" })
         workspaceId: z.string().uuid(),
         enabled: z.boolean(),
         auto_send_enabled: z.boolean(),
-        daily_send_limit: z.number().int().min(1).max(1000),
+        followup_daily_limit: z.number().int().min(0).max(1000),
+        template_daily_limit: z.number().int().min(0).max(100000).nullable(),
+        template_respect_hours: z.boolean(),
+        tech_conv_turns_per_hour: z.number().int().min(5).max(500),
+        tech_failure_threshold: z.number().int().min(2).max(100),
         quiet_hours_start: z.number().int().min(0).max(23),
         quiet_hours_end: z.number().int().min(0).max(23),
         template_interval_min_s: z.number().int().min(0).max(3600).default(0),
@@ -308,12 +333,118 @@ export const approveSdrDraft = createServerFn({ method: "POST" })
         stale_version: "A conversa mudou desde o rascunho. Gere um novo.",
         enrollment_inactive: "A prospecção foi encerrada.",
         window_closed: "A janela de 24 horas fechou; use um template aprovado.",
-        daily_limit: "Limite diário de envios do SDR atingido.",
+        followup_quota: "Cota de retomadas (follow-ups) das últimas 24 h atingida.",
+        followup_hours: "Fora do horário de prospecção para retomadas.",
+        followup_max_reached: "Número máximo de retomadas deste contato atingido.",
+        invalid_origin: "Origem do trabalho inválida: respostas só valem para mensagens recebidas.",
+        not_allowlisted: "Número fora da lista do piloto.",
+        uncertain_after_send: "Envio anterior incerto: reconcilie antes de reenviar.",
         provider_failed: "O WhatsApp recusou o envio. Nada foi confirmado.",
         job_state_changed: "Este rascunho já foi tratado.",
       };
       throw new Error(msg[r.reason] ?? "Envio não realizado.");
     }
+    return { ok: true };
+  });
+
+/**
+ * Retomada controlada pelo operador:
+ *  - reconcile: falha incerta após chamar a Meta. Se a mensagem aparece no
+ *    histórico, fecha como enviada; senão vira rascunho para aprovação humana.
+ *  - requeue: falha técnica (disjuntor, tentativas, IA) do turno mais recente
+ *    volta à fila com tentativas zeradas e gera resposta para a versão atual.
+ */
+export const resumeSdrJob = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => JobInput.extend({ mode: z.enum(["reconcile", "requeue"]) }).parse(i))
+  .handler(async ({ data, context }) => {
+    const job = await loadJobScoped(context.supabase, context.userId, data.jobId);
+    await assertSdr(context.supabase, context.userId, job.workspace_id, "supervise");
+    if (job.status !== "failed") throw new Error("Só trabalhos com falha podem ser retomados.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: full } = await supabaseAdmin
+      .from("sdr_turn_jobs")
+      .select("id, error, block_category, provider_message_id, conversation_id, created_at")
+      .eq("id", job.id)
+      .eq("workspace_id", job.workspace_id)
+      .maybeSingle();
+    if (!full) throw new Error("Trabalho não encontrado.");
+    const now = new Date().toISOString();
+    if (data.mode === "reconcile") {
+      if (full.block_category !== "reconcile")
+        throw new Error("Este trabalho não precisa de reconciliação.");
+      const { data: msg } = await supabaseAdmin
+        .from("whatsapp_messages")
+        .select("wa_message_id")
+        .eq("conversation_id", full.conversation_id)
+        .eq("direction", "outbound")
+        .contains("raw", { job_id: full.id })
+        .limit(1)
+        .maybeSingle();
+      const proof = msg?.wa_message_id ?? full.provider_message_id;
+      await supabaseAdmin
+        .from("sdr_turn_jobs")
+        .update(
+          proof
+            ? { status: "sent", provider_message_id: proof, block_category: null, updated_at: now }
+            : {
+                status: "drafted",
+                send_started_at: null,
+                block_category: null,
+                error: "reconciled_not_sent",
+                decided_by: context.userId,
+                updated_at: now,
+              },
+        )
+        .eq("id", full.id)
+        .eq("status", "failed");
+      return { ok: true, result: proof ? "already_sent" : "back_to_draft" };
+    }
+    if (full.block_category === "reconcile")
+      throw new Error("Envio incerto: use a reconciliação, nunca a repetição automática.");
+    const { data: newer } = await supabaseAdmin
+      .from("sdr_turn_jobs")
+      .select("id")
+      .eq("conversation_id", full.conversation_id)
+      .neq("id", full.id)
+      .gte("created_at", full.created_at)
+      .limit(1)
+      .maybeSingle();
+    if (newer) throw new Error("Há um turno mais recente nesta conversa; este ficou obsoleto.");
+    await supabaseAdmin
+      .from("sdr_turn_jobs")
+      .update({
+        status: "queued",
+        attempts: 0,
+        lease_until: null,
+        lease_token: null,
+        error: null,
+        block_category: null,
+        updated_at: now,
+      })
+      .eq("id", full.id)
+      .eq("status", "failed");
+    return { ok: true, result: "requeued" };
+  });
+
+/** Fecha o disjuntor técnico do workspace (somente administradores). */
+export const resetSdrBreaker = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ workspaceId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId, data.workspaceId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin
+      .from("sdr_workspace_settings")
+      .update({ tech_breaker_open_at: null, tech_breaker_reason: null })
+      .eq("workspace_id", data.workspaceId);
+    await supabaseAdmin.from("sdr_actions").insert({
+      workspace_id: data.workspaceId,
+      kind: "circuit_closed",
+      status: "success",
+      created_by: context.userId,
+      payload: {},
+    });
     return { ok: true };
   });
 

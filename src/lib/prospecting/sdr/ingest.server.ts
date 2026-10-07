@@ -215,6 +215,13 @@ export async function ingestInboundForSdr(
       updated_at: new Date().toISOString(),
     })
     .eq("id", enr.id);
+  // Retomadas pendentes ficam obsoletas quando o cliente responde.
+  await admin
+    .from("sdr_turn_jobs")
+    .update({ status: "discarded", error: "superseded_by_inbound", lease_token: null })
+    .eq("enrollment_id", enr.id)
+    .eq("kind", "follow_up")
+    .in("status", ["queued", "drafted"]);
   const cancelled = await cancelProspectingCadences(
     admin,
     p.workspaceId,

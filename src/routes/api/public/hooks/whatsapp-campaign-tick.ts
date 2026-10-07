@@ -97,7 +97,37 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
   let sentInc = 0;
   let failedInc = 0;
 
+  // Política de prospecção: cota de templates (opcional) e horário de campanha.
+  const { data: pol } = await supabaseAdmin
+    .from("sdr_workspace_settings")
+    .select(
+      "template_daily_limit, template_respect_hours, timezone, quiet_hours_start, quiet_hours_end",
+    )
+    .eq("workspace_id", camp.workspace_id)
+    .maybeSingle();
+  if (pol?.template_respect_hours) {
+    const { isQuietHours } = await import("@/lib/prospecting/sdr/policy");
+    if (
+      isQuietHours(
+        new Date(),
+        pol.timezone ?? "America/Sao_Paulo",
+        pol.quiet_hours_start ?? 0,
+        pol.quiet_hours_end ?? 0,
+      )
+    )
+      return { processed: 0, skipped: "campaign_hours" };
+  }
+
   for (const r of recips) {
+    if (pol?.template_daily_limit != null) {
+      const { data: q } = await supabaseAdmin.rpc("wa_reserve_template_quota", {
+        p_recipient: r.id,
+        p_limit: pol.template_daily_limit,
+      });
+      const res = (q as { result?: string } | null)?.result;
+      if (res === "template_quota") break; // fica pendente para a próxima janela
+      if (res !== "ok") continue;
+    }
     const toBare = normalizePhone(r.phone);
     const vars = (r.variables ?? {}) as Record<string, string>;
     const body = applyTemplate(camp.body_template ?? "", vars);
@@ -166,6 +196,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
           status: "sent",
           wa_message_id: wamid,
           sent_at: new Date().toISOString(),
+          quota_reserved_until: null,
         })
         .eq("id", r.id);
       sentInc += 1;
@@ -204,6 +235,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
         .update({
           status: "failed",
           error: e instanceof Error ? e.message : "Erro desconhecido",
+          quota_reserved_until: null,
         })
         .eq("id", r.id);
       failedInc += 1;

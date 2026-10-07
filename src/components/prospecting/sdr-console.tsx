@@ -25,6 +25,8 @@ import {
   saveSdrSettings,
   setSdrOfferActive,
   takeoverSdrConversation,
+  resumeSdrJob,
+  resetSdrBreaker,
 } from "@/lib/prospecting/sdr.functions";
 
 const STAGE: Record<string, string> = {
@@ -142,7 +144,11 @@ function SettingsPanel({ d }: { d: Overview }) {
   const [form, setForm] = useState({
     enabled: s?.enabled ?? false,
     auto_send_enabled: s?.auto_send_enabled ?? false,
-    daily_send_limit: s?.daily_send_limit ?? 50,
+    followup_daily_limit: s?.followup_daily_limit ?? s?.daily_send_limit ?? 50,
+    template_daily_limit: (s?.template_daily_limit ?? null) as number | null,
+    template_respect_hours: s?.template_respect_hours ?? false,
+    tech_conv_turns_per_hour: s?.tech_conv_turns_per_hour ?? 40,
+    tech_failure_threshold: s?.tech_failure_threshold ?? 5,
     quiet_hours_start: s?.quiet_hours_start ?? 20,
     quiet_hours_end: s?.quiet_hours_end ?? 8,
     template_interval_min_s: s?.template_interval_min_s ?? 0,
@@ -185,29 +191,70 @@ function SettingsPanel({ d }: { d: Overview }) {
           disabled={dis}
           onChange={(v) => setForm({ ...form, auto_send_enabled: v })}
         />
-        <div className="grid gap-4 sm:grid-cols-3">
+      </div>
+
+      <section aria-labelledby="sdr-pol-prosp" className="space-y-4 rounded-lg border bg-card p-4">
+        <div>
+          <h3 id="sdr-pol-prosp" className="text-sm font-semibold">
+            1. Prospecção ativa e follow-ups
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            Cotas comerciais em janela móvel de 24 h. Contam só envios confirmados pelo WhatsApp;
+            falhas e repetições não consomem.
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
           <NumField
-            id="sdr-limit"
-            label="Limite diário de envios"
-            value={form.daily_send_limit}
+            id="sdr-fu-limit"
+            label="Retomadas (follow-ups) por 24 h"
+            value={form.followup_daily_limit}
             disabled={dis}
-            onChange={(v) => setForm({ ...form, daily_send_limit: v })}
+            onChange={(v) => setForm({ ...form, followup_daily_limit: v })}
           />
+          <div className="space-y-1">
+            <Label htmlFor="sdr-tpl-limit">Templates de início de contato por 24 h</Label>
+            <Input
+              id="sdr-tpl-limit"
+              type="number"
+              min={0}
+              placeholder="Sem cota (só o ritmo da campanha)"
+              value={form.template_daily_limit ?? ""}
+              disabled={dis}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  template_daily_limit: e.target.value === "" ? null : Number(e.target.value),
+                })
+              }
+            />
+          </div>
           <NumField
             id="sdr-qs"
-            label="Silêncio a partir de (h)"
+            label="Prospecção pausada a partir de (h)"
             value={form.quiet_hours_start}
             disabled={dis}
             onChange={(v) => setForm({ ...form, quiet_hours_start: v })}
           />
           <NumField
             id="sdr-qe"
-            label="Silêncio até (h)"
+            label="Prospecção pausada até (h)"
             value={form.quiet_hours_end}
             disabled={dis}
             onChange={(v) => setForm({ ...form, quiet_hours_end: v })}
           />
         </div>
+        <ToggleRow
+          id="sdr-tpl-hours"
+          label="Aplicar o horário também aos templates das campanhas"
+          hint="O horário sempre vale para retomadas. Iguais (ex.: 0 e 0) desligam a pausa."
+          checked={form.template_respect_hours}
+          disabled={dis}
+          onChange={(v) => setForm({ ...form, template_respect_hours: v })}
+        />
+        <p className="text-xs text-muted-foreground">
+          Máximo de retomadas por contato e intervalo entre elas ficam no playbook. Resposta do
+          cliente, recusa, transferência para humano ou reunião cancelam retomadas pendentes.
+        </p>
         <div className="space-y-2">
           <p className="text-sm font-medium">Intervalo entre disparos do template</p>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -234,6 +281,55 @@ function SettingsPanel({ d }: { d: Overview }) {
               "Padrão das campanhas de WhatsApp: entre um destinatário e o próximo, espera um tempo sorteado nesse intervalo (0 a 0 desliga). Sugestão: 30 a 120 s. O tempo real pode passar do sorteado em até ~1 min."}
           </p>
         </div>
+      </section>
+
+      <section aria-labelledby="sdr-pol-conv" className="space-y-2 rounded-lg border bg-card p-4">
+        <h3 id="sdr-pol-conv" className="text-sm font-semibold">
+          2. Atendimento em conversa (sem cota comercial)
+        </h3>
+        <p className="text-xs text-muted-foreground">
+          Toda mensagem recebida do cliente gera um turno de resposta, sem cota diária, sem horário
+          de prospecção e sem o intervalo dos templates. Continua respeitando: agente ligado, dono
+          da conversa (humano assume e a IA para), recusa, lista do piloto e janela oficial de 24 h
+          do WhatsApp.
+        </p>
+      </section>
+
+      <section aria-labelledby="sdr-pol-tech" className="space-y-4 rounded-lg border bg-card p-4">
+        <div>
+          <h3 id="sdr-pol-tech" className="text-sm font-semibold">
+            3. Proteção técnica
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            Controles contra loop, repetição, rajada e falhas — não são cota de vendas. Quando algo
+            trava, o motivo aparece na Supervisão para retomada controlada.
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <NumField
+            id="sdr-tech-rate"
+            label="Respostas por conversa por hora (anomalia)"
+            value={form.tech_conv_turns_per_hour}
+            disabled={dis}
+            onChange={(v) => setForm({ ...form, tech_conv_turns_per_hour: v })}
+          />
+          <NumField
+            id="sdr-tech-fail"
+            label="Falhas em 15 min que abrem o disjuntor"
+            value={form.tech_failure_threshold}
+            disabled={dis}
+            onChange={(v) => setForm({ ...form, tech_failure_threshold: v })}
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Fixos: no máximo 3 tentativas por turno com espera crescente (30 s, 1 min, 2 min…); uma
+          resposta por mensagem recebida; mensagens em rajada são agrupadas na mais recente; texto
+          idêntico à última resposta é retido; envio incerto exige reconciliação, nunca reenvio
+          automático.
+        </p>
+      </section>
+
+      <div>
         <Button onClick={() => m.mutate()} disabled={dis || !!ivError}>
           {m.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar
         </Button>
@@ -591,6 +687,7 @@ function CatalogPanel({ d }: { d: Overview }) {
 
 function SupervisionPanel({ d }: { d: Overview }) {
   const drafts = d.jobs.filter((j) => j.status === "drafted" || j.status === "failed");
+
   const pending = d.jobs.length - drafts.length;
   return (
     <div className="space-y-4">
@@ -598,7 +695,7 @@ function SupervisionPanel({ d }: { d: Overview }) {
         title="Supervisão"
         description={`Rascunhos aguardando aprovação. ${pending} em processamento.`}
       />
-      <QuotaSummary quota={d.quota} />
+      <PolicyCounters d={d} />
       {drafts.length === 0 ? (
         <EmptyState
           title="Nada para revisar"
@@ -616,7 +713,22 @@ function DraftCard({ job }: { job: Overview["jobs"][number] }) {
   const approve = useServerFn(approveSdrDraft);
   const discard = useServerFn(discardSdrDraft);
   const takeover = useServerFn(takeoverSdrConversation);
+  const resumeFn = useServerFn(resumeSdrJob);
   const refresh = useRefresh();
+  const resume = useMutation({
+    mutationFn: (mode: "reconcile" | "requeue") => resumeFn({ data: { jobId: job.id, mode } }),
+    onSuccess: (r) => (
+      toast.success(
+        r.result === "already_sent"
+          ? "Já havia sido enviada: confirmado"
+          : r.result === "back_to_draft"
+            ? "Não enviada: voltou para aprovação"
+            : "Retomado na fila",
+      ),
+      refresh()
+    ),
+    onError: (e: Error) => (toast.error(e.message), refresh()),
+  });
   const run = useMutation({
     mutationFn: (k: "send" | "discard" | "human") =>
       k === "send"
@@ -653,10 +765,16 @@ function DraftCard({ job }: { job: Overview["jobs"][number] }) {
         {job.status === "drafted" && job.error && (
           <Badge variant="outline">{sdrReasonLabel(job.error)}</Badge>
         )}
+        {job.block_category && (
+          <Badge variant="secondary">
+            {CATEGORY_LABELS[job.block_category] ?? job.block_category}
+          </Badge>
+        )}
       </div>
       <p className="text-xs text-muted-foreground">
-        Recebida para processamento {fmtTime(job.created_at)} · última etapa{" "}
-        {fmtTime(job.updated_at)} · tentativas {job.attempts ?? 0}
+        Na fila {fmtTime(job.created_at)} · espera {secs(job.created_at, job.ai_started_at)} · IA{" "}
+        {secs(job.ai_started_at, job.ai_finished_at)} · envio{" "}
+        {secs(job.send_started_at, job.sent_at)} · tentativas {job.attempts ?? 0}
       </p>
       {(p.warnings ?? []).length > 0 && (
         <p className="text-xs text-destructive">Atenção: {(p.warnings ?? []).join("; ")}</p>
@@ -671,6 +789,18 @@ function DraftCard({ job }: { job: Overview["jobs"][number] }) {
         onChange={(e) => setText(e.target.value)}
       />
       <div className="flex flex-wrap gap-2">
+        {job.status === "failed" && (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={resume.isPending}
+            onClick={() =>
+              resume.mutate(job.block_category === "reconcile" ? "reconcile" : "requeue")
+            }
+          >
+            {job.block_category === "reconcile" ? "Reconciliar" : "Retomar"}
+          </Button>
+        )}
         <Button
           size="sm"
           disabled={run.isPending || job.status !== "drafted" || !text.trim()}
@@ -792,19 +922,38 @@ function ResultsPanel({ d }: { d: Overview }) {
 }
 
 const SDR_REASON_LABELS: Record<string, string> = {
-  daily_limit: "Limite de respostas atingido (janela móvel de 24 h)",
-  quota_check_failed: "Não foi possível verificar a cota de respostas",
+  followup_quota: "Cota de retomadas atingida (janela móvel de 24 h)",
+  followup_hours: "Fora do horário de prospecção (retomada)",
+  followup_max_reached: "Máximo de retomadas do contato atingido",
+  daily_limit: "Bloqueio da cota antiga (descontinuada para respostas)",
+  quota_check_failed: "Não foi possível verificar a cota de retomadas",
   window_closed: "Janela de 24 h do WhatsApp fechada",
   not_allowlisted: "Número fora da lista do piloto",
   owner_not_ai: "Conversa assumida por humano",
   stale_version: "Há mensagem mais recente do cliente",
+  coalesced: "Agrupada na mensagem mais recente",
+  invalid_origin: "Origem inválida (resposta sem mensagem recebida)",
+  circuit_open: "Disjuntor técnico aberto",
+  repetition_detected: "Texto idêntico à última resposta",
+  conversation_rate_anomaly: "Ritmo anormal de respostas na conversa",
+  max_attempts: "Tentativas esgotadas",
   provider_failed: "WhatsApp recusou o envio",
+  uncertain_after_send: "Envio incerto — reconciliar antes de reenviar",
+  reconciled_not_sent: "Reconciliado: não enviado, aguardando aprovação",
   lease_lost: "Processamento substituído por outro",
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  prospecting: "Prospecção",
+  conversation: "Conversa",
+  technical: "Proteção técnica",
+  reconcile: "Reconciliação",
 };
 
 function sdrReasonLabel(code: string | null | undefined): string {
   if (!code) return "";
-  return SDR_REASON_LABELS[code] ?? code;
+  const key = code.startsWith("uncertain_after_send") ? "uncertain_after_send" : code;
+  return SDR_REASON_LABELS[key] ?? code;
 }
 
 function fmtTime(iso: string | null | undefined): string {
@@ -818,22 +967,62 @@ function fmtTime(iso: string | null | undefined): string {
   });
 }
 
-function QuotaSummary({ quota }: { quota: Overview["quota"] }) {
-  const exhausted = quota.remaining <= 0;
+function secs(a: string | null | undefined, b: string | null | undefined): string {
+  if (!a || !b) return "—";
+  return `${Math.max(0, (new Date(b).getTime() - new Date(a).getTime()) / 1000).toFixed(1)} s`;
+}
+
+function PolicyCounters({ d }: { d: Overview }) {
+  const c = d.counters;
+  const fuLeft = Math.max(0, c.followUps.limit - c.followUps.used);
+  const reset = useServerFn(resetSdrBreaker);
+  const refresh = useRefresh();
+  const m = useMutation({
+    mutationFn: () => reset({ data: { workspaceId: d.workspaceId } }),
+    onSuccess: () => (toast.success("Disjuntor fechado"), refresh()),
+    onError: (e: Error) => toast.error(e.message),
+  });
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      className={`rounded-lg border p-3 text-sm ${exhausted ? "border-destructive/50 bg-destructive/5" : "bg-card"}`}
-    >
-      <p className="font-medium">
-        {exhausted ? "Limite de respostas atingido" : "Cota de respostas"}:{" "}
-        {quota.used} de {quota.limit} usadas · {quota.remaining} restantes
-      </p>
-      <p className="text-xs text-muted-foreground">
-        Janela móvel de 24 h; contam só envios confirmados pelo WhatsApp. Falhas não consomem.
-        {quota.nextFreeAt && ` Próxima vaga libera em ${fmtTime(quota.nextFreeAt)}.`}
-      </p>
+    <div className="grid gap-3 sm:grid-cols-3" role="status" aria-live="polite">
+      <div className="rounded-lg border bg-card p-3 text-sm">
+        <p className="font-medium">Prospecção e follow-ups</p>
+        <p className="text-xs text-muted-foreground">
+          Retomadas: {c.followUps.used} de {c.followUps.limit} · {fuLeft} restantes
+          {c.followUps.nextFreeAt && ` · libera ${fmtTime(c.followUps.nextFreeAt)}`}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Templates: {c.templates.used}
+          {c.templates.limit != null ? ` de ${c.templates.limit}` : " (sem cota diária)"}
+        </p>
+      </div>
+      <div className="rounded-lg border bg-card p-3 text-sm">
+        <p className="font-medium">Atendimento em conversa</p>
+        <p className="text-xs text-muted-foreground">
+          {c.replies24h} respostas em 24 h · sem cota comercial
+        </p>
+      </div>
+      <div
+        className={`rounded-lg border p-3 text-sm ${c.technical.breakerOpenAt ? "border-destructive/50 bg-destructive/5" : "bg-card"}`}
+      >
+        <p className="font-medium">Proteção técnica</p>
+        <p className="text-xs text-muted-foreground">
+          {c.technical.breakerOpenAt
+            ? `Disjuntor aberto desde ${fmtTime(c.technical.breakerOpenAt)}: ${c.technical.breakerReason ?? ""}`
+            : "Disjuntor fechado"}{" "}
+          · {c.technical.alerts24h} alertas em 24 h
+        </p>
+        {c.technical.breakerOpenAt && d.canManage && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="mt-2"
+            disabled={m.isPending}
+            onClick={() => m.mutate()}
+          >
+            Fechar disjuntor
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
