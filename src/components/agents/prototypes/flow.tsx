@@ -67,6 +67,27 @@ export function FlowCanvas({ layout = "studio" }: { layout?: "studio" | "tray" |
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      if (e.ctrlKey || e.metaKey) {
+        const rect = element.getBoundingClientRect();
+        const px = e.clientX - rect.left;
+        const py = e.clientY - rect.top;
+        setZoom((z) => {
+          const next = Math.min(1.5, Math.max(0.2, z * Math.exp(-e.deltaY * 0.01)));
+          setPan((p) => ({ x: px - ((px - p.x) * next) / z, y: py - ((py - p.y) * next) / z }));
+          return next;
+        });
+        return;
+      }
+      setPan((p) => ({ x: p.x - e.deltaX, y: p.y - e.deltaY }));
+    };
+    element.addEventListener("wheel", onWheel, { passive: false });
+    return () => element.removeEventListener("wheel", onWheel);
+  }, []);
   const fit = () => {
     const width = ref.current?.clientWidth ?? 600;
     const height = ref.current?.clientHeight ?? 500;
@@ -131,21 +152,34 @@ export function FlowCanvas({ layout = "studio" }: { layout?: "studio" | "tray" |
   const canvas = (
     <div
       ref={ref}
-      className="ap-canvas"
-      aria-label="Canvas de fluxo"
-      onPointerDown={(e) => {
+      className="ap-canvas cursor-grab touch-none active:cursor-grabbing focus-visible:outline-2 focus-visible:outline-ring"
+      aria-label="Canvas de fluxo. Arraste o fundo ou use as setas para mover a visualização"
+      tabIndex={0}
+      onKeyDown={(e) => {
         if (e.target !== e.currentTarget) return;
+        const step = 40;
+        const d = { ArrowLeft: [step, 0], ArrowRight: [-step, 0], ArrowUp: [0, step], ArrowDown: [0, -step] }[e.key];
+        if (!d) return;
+        e.preventDefault();
+        setPan((p) => ({ x: p.x + d[0], y: p.y + d[1] }));
+      }}
+      onPointerDown={(e) => {
+        const target = e.target as HTMLElement;
+        if (e.button !== 0 || target.closest(".ap-node, button, .ap-minimap, .ap-flow-tools, input, textarea")) return;
         const start = { x: e.clientX, y: e.clientY, ...pan };
         const el = e.currentTarget;
         el.setPointerCapture(e.pointerId);
         const move = (ev: PointerEvent) =>
           setPan({ x: start.x + ev.clientX - e.clientX, y: start.y + ev.clientY - e.clientY });
         const end = () => {
+          if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
           el.removeEventListener("pointermove", move);
           el.removeEventListener("pointerup", end);
+          el.removeEventListener("pointercancel", end);
         };
         el.addEventListener("pointermove", move);
         el.addEventListener("pointerup", end);
+        el.addEventListener("pointercancel", end);
       }}
     >
       <div className="absolute left-4 top-4 z-10 flex gap-2 text-[10px] text-muted-foreground">
