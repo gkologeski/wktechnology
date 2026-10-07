@@ -533,3 +533,85 @@ describe("homologação sintética ponta a ponta (provedores simulados)", () => 
     expect(metaSend).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("cota de respostas (janela móvel 24 h)", () => {
+  const send = (id: string) =>
+    sendSdrMessage(db, { jobId: id, expectedStatus: "drafted", text: "Oi", actorUserId: "u1" });
+  const setLimit = (n: number) => {
+    db.t("sdr_workspace_settings")[0].daily_send_limit = n;
+  };
+
+  it("tentativas com falha não consomem cota", async () => {
+    setLimit(1);
+    const a = job(db, { status: "drafted", draft_payload: {} });
+    metaSend.mockRejectedValueOnce(new Error("Meta 500"));
+    expect(await send(a.id)).toEqual({ ok: false, reason: "provider_failed" });
+    const b = job(db, { status: "drafted", draft_payload: {} });
+    metaSend.mockResolvedValueOnce({ wamid: "wamid.ok", raw: {} });
+    expect(await send(b.id)).toEqual({ ok: true, wamid: "wamid.ok" });
+  });
+
+  it("limite atingido bloqueia com daily_limit sem chamar a Meta", async () => {
+    setLimit(1);
+    db.t("sdr_actions").push({
+      id: "x", workspace_id: W1, kind: "message_sent", status: "success",
+      provider_ref: "wamid.prev", created_at: new Date().toISOString(),
+    });
+    const a = job(db, { status: "drafted", draft_payload: {} });
+    expect(await send(a.id)).toEqual({ ok: false, reason: "daily_limit" });
+    expect(metaSend).not.toHaveBeenCalled();
+    expect(db.find("sdr_turn_jobs", a.id)?.status).toBe("drafted");
+  });
+
+  it("mesmo wamid registrado duas vezes conta uma única vez", async () => {
+    setLimit(2);
+    for (const id of ["x1", "x2"])
+      db.t("sdr_actions").push({
+        id, workspace_id: W1, kind: "message_sent", status: "success",
+        provider_ref: "wamid.dup", created_at: new Date().toISOString(),
+      });
+    const a = job(db, { status: "drafted", draft_payload: {} });
+    metaSend.mockResolvedValueOnce({ wamid: "wamid.new", raw: {} });
+    expect((await send(a.id)).ok).toBe(true);
+  });
+
+  it("replay de envio confirmado não reenvia nem consome de novo, mesmo com limite cheio", async () => {
+    setLimit(1);
+    const a = job(db, { status: "drafted", draft_payload: {} });
+    metaSend.mockResolvedValueOnce({ wamid: "wamid.once", raw: {} });
+    expect((await send(a.id)).ok).toBe(true);
+    db.find("sdr_turn_jobs", a.id)!.status = "drafted"; // simula retomada após queda
+    expect(await send(a.id)).toEqual({ ok: true, wamid: "wamid.once" });
+    expect(metaSend).toHaveBeenCalledTimes(1);
+    expect(
+      db.t("sdr_actions").filter((x) => x.kind === "message_sent" && x.status === "success"),
+    ).toHaveLength(1);
+  });
+
+  it("concorrência: reserva em andamento de outro trabalho ocupa a cota", async () => {
+    setLimit(1);
+    job(db, {
+      status: "running", lease_token: "L", conversation_id: "c1",
+      send_reserved_until: new Date(Date.now() + 60_000).toISOString(),
+    });
+    const b = job(db, { status: "drafted", draft_payload: {} });
+    expect(await send(b.id)).toEqual({ ok: false, reason: "daily_limit" });
+    expect(metaSend).not.toHaveBeenCalled();
+  });
+
+  it("versão obsoleta (mensagem mais nova) é recusada antes da cota", async () => {
+    const a = job(db, { status: "drafted", draft_payload: {}, conversation_version: 0 });
+    expect(await send(a.id)).toEqual({ ok: false, reason: "stale_version" });
+    expect(metaSend).not.toHaveBeenCalled();
+  });
+
+  it("fora da allowlist e após handoff não envia", async () => {
+    db.t("sdr_workspace_settings")[0].pilot_allowlist = ["+5511999999999"];
+    const a = job(db, { status: "drafted", draft_payload: {} });
+    expect(await send(a.id)).toEqual({ ok: false, reason: "not_allowlisted" });
+    db.t("sdr_workspace_settings")[0].pilot_allowlist = null;
+    db.find("whatsapp_conversations", "c1")!.ai_owner = "human";
+    expect(await send(a.id)).toEqual({ ok: false, reason: "owner_not_ai" });
+    expect(metaSend).not.toHaveBeenCalled();
+  });
+});
