@@ -133,13 +133,41 @@ export async function sendSdrMessage(
   if ((count ?? 0) >= (settings?.daily_send_limit ?? 50))
     return { ok: false, reason: "daily_limit" };
 
-  // Trava o trabalho antes da chamada externa (evita envio duplo em paralelo).
-  const { data: claimed } = await admin
+  // Idempotência: se uma tentativa anterior já gravou a mensagem deste trabalho,
+  // só finaliza como enviado — nunca reenvia.
+  const { data: already } = await admin
+    .from("whatsapp_messages")
+    .select("wa_message_id")
+    .eq("conversation_id", conv.id)
+    .eq("direction", "outbound")
+    .contains("raw", { job_id: job.id })
+    .not("wa_message_id", "is", null)
+    .limit(1)
+    .maybeSingle();
+  if (already?.wa_message_id) {
+    await admin
+      .from("sdr_turn_jobs")
+      .update({ status: "sent", lease_token: null, updated_at: new Date().toISOString() })
+      .eq("id", job.id);
+    return { ok: true, wamid: already.wa_message_id };
+  }
+
+  // Trava de envio: mantém "running" com lease próprio até a Meta confirmar.
+  // Se o processo cair durante o envio, o lease expira e a rotina de reserva
+  // retoma o trabalho (máx. 3 tentativas). Só vira "sent" após wamid gravado.
+  const sendLease = crypto.randomUUID();
+  let lockQuery = admin
     .from("sdr_turn_jobs")
-    .update({ status: "sent", updated_at: new Date().toISOString() })
+    .update({
+      status: "running",
+      lease_token: sendLease,
+      lease_until: new Date(Date.now() + 90_000).toISOString(),
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", job.id)
-    .eq("status", p.expectedStatus)
-    .select("id");
+    .eq("status", p.expectedStatus);
+  if (p.expectedStatus === "running") lockQuery = lockQuery.eq("lease_token", p.leaseToken ?? "");
+  const { data: claimed } = await lockQuery.select("id");
   if (!claimed?.length) return { ok: false, reason: "job_state_changed" };
 
   let wamid: string | null = null;
@@ -150,7 +178,7 @@ export async function sendSdrMessage(
     wamid = res.wamid;
     raw = res.raw;
     if (!wamid) throw new Error("A Meta não devolveu o id da mensagem");
-    await admin.from("whatsapp_messages").insert({
+    const { error: insErr } = await admin.from("whatsapp_messages").insert({
       conversation_id: conv.id,
       owner_id: enr.owner_id,
       workspace_id: job.workspace_id,
@@ -165,6 +193,7 @@ export async function sendSdrMessage(
       sent_at: new Date().toISOString(),
       raw: { sdr: true, job_id: job.id, response: raw },
     });
+    if (insErr) console.error("[sdr] falha ao gravar mensagem enviada", insErr.message);
     await admin
       .from("whatsapp_conversations")
       .update({
@@ -172,12 +201,24 @@ export async function sendSdrMessage(
         last_message_preview: p.text.slice(0, 120),
       })
       .eq("id", conv.id);
+    // Confirmação: só agora o trabalho é marcado como enviado.
+    await admin
+      .from("sdr_turn_jobs")
+      .update({ status: "sent", lease_token: null, updated_at: new Date().toISOString() })
+      .eq("id", job.id)
+      .eq("lease_token", sendLease);
   } catch (e) {
     const msg = (e as Error).message.slice(0, 300);
     await admin
       .from("sdr_turn_jobs")
-      .update({ status: "failed", error: msg, updated_at: new Date().toISOString() })
-      .eq("id", job.id);
+      .update({
+        status: "failed",
+        error: msg,
+        lease_token: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", job.id)
+      .eq("lease_token", sendLease);
     await recordSdrAction(admin, {
       workspace_id: job.workspace_id,
       enrollment_id: enr.id,
