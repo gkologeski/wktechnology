@@ -243,6 +243,45 @@ export class FakeDb {
       if (again !== "ok") return { data: again, error: null };
       return { data: this.commit(a), error: null };
     }
+    if (fn === "sdr_reserve_followup_quota") {
+      // Espelha 0070: só retomadas confirmadas (wamid único) + reservas de retomadas.
+      const j = this.find("sdr_turn_jobs", a.p_job);
+      if (!j || j.status !== "running" || j.lease_token !== a.p_lease)
+        return { data: { result: "lease_lost" }, error: null };
+      if (j.kind !== "follow_up") return { data: { result: "not_follow_up" }, error: null };
+      const since = new Date(Date.now() - 86400_000).toISOString();
+      const kindOf = (id: string) => this.find("sdr_turn_jobs", id)?.kind;
+      const used = new Set(
+        this.t("sdr_actions")
+          .filter(
+            (x) =>
+              x.workspace_id === j.workspace_id &&
+              x.kind === "message_sent" &&
+              x.status === "success" &&
+              x.provider_ref &&
+              kindOf(x.job_id) === "follow_up" &&
+              (x.created_at ?? now) >= since,
+          )
+          .map((x) => x.provider_ref),
+      ).size;
+      const reserved = this.t("sdr_turn_jobs").filter(
+        (t) =>
+          t.workspace_id === j.workspace_id &&
+          t.id !== j.id &&
+          t.kind === "follow_up" &&
+          ["running", "sent"].includes(t.status) &&
+          t.send_reserved_until > now &&
+          !this.t("sdr_actions").some(
+            (x) => x.job_id === t.id && x.kind === "message_sent" && x.status === "success",
+          ),
+      ).length;
+      if (j.send_reserved_until > now)
+        return { data: { result: "already_reserved", used, reserved }, error: null };
+      if (used + reserved >= a.p_limit)
+        return { data: { result: "followup_quota", used, reserved, limit: a.p_limit }, error: null };
+      j.send_reserved_until = new Date(Date.now() + 90_000).toISOString();
+      return { data: { result: "ok", used, reserved: reserved + 1 }, error: null };
+    }
     if (fn === "sdr_reserve_send_quota") {
       // Espelha 0069: conta wamids únicos de sucesso em 24 h + reservas ativas alheias.
       const j = this.find("sdr_turn_jobs", a.p_job);

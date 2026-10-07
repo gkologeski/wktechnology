@@ -4,7 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const metaSend = vi.fn();
 vi.mock("@/lib/whatsapp/meta-channel.server", () => ({
-  isWithinServiceWindow: () => true,
+  isWithinServiceWindow: (t: string | null) =>
+    !!t && Date.now() - new Date(t).getTime() < 86400_000,
   resolveWaNumber: async () => ({ displayPhoneNumber: "5511900000000", phoneNumberId: "pn1" }),
   metaSend: (...a: unknown[]) => metaSend(...a),
 }));
@@ -120,6 +121,7 @@ function seed(db: FakeDb) {
     conversation_id: "c1",
     workspace_id: W1,
     direction: "inbound",
+    wa_message_id: "wamid.in1",
     body: "Temos orçamento sim, aprovado. Alta demanda de desenvolvimento aqui.",
     created_at: "2026-10-06T10:00:00Z",
   });
@@ -132,6 +134,7 @@ function job(db: FakeDb, extra: Record<string, unknown> = {}) {
     enrollment_id: "e1",
     conversation_id: "c1",
     kind: "reply",
+    inbound_message_id: "m1",
     status: "queued",
     attempts: 0,
     conversation_version: 1,
@@ -424,14 +427,14 @@ describe("recusa, falhas e desligado", () => {
 
   it("falha do WhatsApp na aprovação não confirma envio", async () => {
     job(db, { status: "drafted", draft_payload: {} });
-    metaSend.mockRejectedValue(new Error("Meta 500"));
+    metaSend.mockRejectedValue(Object.assign(new Error("Meta 400"), { status: 400 }));
     const r = await sendSdrMessage(db, {
       jobId: "j1",
       expectedStatus: "drafted",
       text: "Oi",
       actorUserId: "u1",
     });
-    expect(r).toEqual({ ok: false, reason: "provider_failed" });
+    expect(r).toMatchObject({ ok: false, reason: "provider_failed" });
     expect(db.find("sdr_turn_jobs", "j1")?.status).toBe("failed");
     expect(
       db.t("sdr_actions").filter((a) => a.kind === "message_sent" && a.status === "success"),
@@ -448,7 +451,7 @@ describe("recusa, falhas e desligado", () => {
       text: "Oi",
       actorUserId: "u1",
     });
-    expect(r).toEqual({ ok: false, reason: "owner_not_ai" });
+    expect(r).toMatchObject({ ok: false, reason: "owner_not_ai" });
     expect(metaSend).not.toHaveBeenCalled();
   });
 
@@ -534,88 +537,6 @@ describe("homologação sintética ponta a ponta (provedores simulados)", () => 
   });
 });
 
-describe("cota de respostas (janela móvel 24 h)", () => {
-  const send = (id: string) =>
-    sendSdrMessage(db, { jobId: id, expectedStatus: "drafted", text: "Oi", actorUserId: "u1" });
-  const setLimit = (n: number) => {
-    db.t("sdr_workspace_settings")[0].daily_send_limit = n;
-  };
-
-  it("tentativas com falha não consomem cota", async () => {
-    setLimit(1);
-    const a = job(db, { status: "drafted", draft_payload: {} });
-    metaSend.mockRejectedValueOnce(new Error("Meta 500"));
-    expect(await send(a.id)).toEqual({ ok: false, reason: "provider_failed" });
-    const b = job(db, { status: "drafted", draft_payload: {} });
-    metaSend.mockResolvedValueOnce({ wamid: "wamid.ok", raw: {} });
-    expect(await send(b.id)).toEqual({ ok: true, wamid: "wamid.ok" });
-  });
-
-  it("limite atingido bloqueia com daily_limit sem chamar a Meta", async () => {
-    setLimit(1);
-    db.t("sdr_actions").push({
-      id: "x", workspace_id: W1, kind: "message_sent", status: "success",
-      provider_ref: "wamid.prev", created_at: new Date().toISOString(),
-    });
-    const a = job(db, { status: "drafted", draft_payload: {} });
-    expect(await send(a.id)).toEqual({ ok: false, reason: "daily_limit" });
-    expect(metaSend).not.toHaveBeenCalled();
-    expect(db.find("sdr_turn_jobs", a.id)?.status).toBe("drafted");
-  });
-
-  it("mesmo wamid registrado duas vezes conta uma única vez", async () => {
-    setLimit(2);
-    for (const id of ["x1", "x2"])
-      db.t("sdr_actions").push({
-        id, workspace_id: W1, kind: "message_sent", status: "success",
-        provider_ref: "wamid.dup", created_at: new Date().toISOString(),
-      });
-    const a = job(db, { status: "drafted", draft_payload: {} });
-    metaSend.mockResolvedValueOnce({ wamid: "wamid.new", raw: {} });
-    expect((await send(a.id)).ok).toBe(true);
-  });
-
-  it("replay de envio confirmado não reenvia nem consome de novo, mesmo com limite cheio", async () => {
-    setLimit(1);
-    const a = job(db, { status: "drafted", draft_payload: {} });
-    metaSend.mockResolvedValueOnce({ wamid: "wamid.once", raw: {} });
-    expect((await send(a.id)).ok).toBe(true);
-    db.find("sdr_turn_jobs", a.id)!.status = "drafted"; // simula retomada após queda
-    expect(await send(a.id)).toEqual({ ok: true, wamid: "wamid.once" });
-    expect(metaSend).toHaveBeenCalledTimes(1);
-    expect(
-      db.t("sdr_actions").filter((x) => x.kind === "message_sent" && x.status === "success"),
-    ).toHaveLength(1);
-  });
-
-  it("concorrência: reserva em andamento de outro trabalho ocupa a cota", async () => {
-    setLimit(1);
-    job(db, {
-      status: "running", lease_token: "L", conversation_id: "c1",
-      send_reserved_until: new Date(Date.now() + 60_000).toISOString(),
-    });
-    const b = job(db, { status: "drafted", draft_payload: {} });
-    expect(await send(b.id)).toEqual({ ok: false, reason: "daily_limit" });
-    expect(metaSend).not.toHaveBeenCalled();
-  });
-
-  it("versão obsoleta (mensagem mais nova) é recusada antes da cota", async () => {
-    const a = job(db, { status: "drafted", draft_payload: {}, conversation_version: 0 });
-    expect(await send(a.id)).toEqual({ ok: false, reason: "stale_version" });
-    expect(metaSend).not.toHaveBeenCalled();
-  });
-
-  it("fora da allowlist e após handoff não envia", async () => {
-    db.t("sdr_workspace_settings")[0].pilot_allowlist = ["+5511999999999"];
-    const a = job(db, { status: "drafted", draft_payload: {} });
-    expect(await send(a.id)).toEqual({ ok: false, reason: "not_allowlisted" });
-    db.t("sdr_workspace_settings")[0].pilot_allowlist = null;
-    db.find("whatsapp_conversations", "c1")!.ai_owner = "human";
-    expect(await send(a.id)).toEqual({ ok: false, reason: "owner_not_ai" });
-    expect(metaSend).not.toHaveBeenCalled();
-  });
-});
-
 describe("rascunho superado", () => {
   it("rascunho anterior a uma resposta já enviada não é enviado", async () => {
     const a = job(db, { status: "drafted", draft_payload: {}, created_at: "2026-01-01T10:00:00Z" });
@@ -624,7 +545,258 @@ describe("rascunho superado", () => {
       created_at: "2026-01-01T10:05:00Z", wa_message_id: "wamid.later", raw: {},
     });
     const r = await sendSdrMessage(db, { jobId: a.id, expectedStatus: "drafted", text: "Oi", actorUserId: "u1" });
-    expect(r).toEqual({ ok: false, reason: "stale_version" });
+    expect(r).toMatchObject({ ok: false, reason: "stale_version" });
     expect(metaSend).not.toHaveBeenCalled();
+  });
+});
+
+
+describe("três políticas de envio", () => {
+  const settings = () => db.t("sdr_workspace_settings")[0];
+  let seq = 0;
+  const base = Date.now();
+  /** Nova mensagem recebida real + turno de resposta derivado dela. */
+  function inboundTurn(i: number, extra: Record<string, unknown> = {}) {
+    const mid = `in${++seq}`;
+    db.t("whatsapp_messages").push({
+      id: mid,
+      conversation_id: "c1",
+      workspace_id: W1,
+      direction: "inbound",
+      wa_message_id: `wamid.${mid}`,
+      body: `mensagem ${i}`,
+      created_at: new Date(base + 10_000 + i * 1000).toISOString(),
+    });
+    return job(db, {
+      status: "running",
+      lease_token: `L${mid}`,
+      inbound_message_id: mid,
+      created_at: new Date(base + 10_000 + i * 1000 + 1).toISOString(),
+      ...extra,
+    });
+  }
+  const sendAuto = (j: { id: string; lease_token?: unknown }, text: string) =>
+    sendSdrMessage(db, {
+      jobId: j.id,
+      expectedStatus: "running",
+      leaseToken: j.lease_token as string,
+      text,
+      actorUserId: null,
+    });
+  function followUp(extra: Record<string, unknown> = {}) {
+    return job(db, {
+      kind: "follow_up",
+      inbound_message_id: null,
+      status: "running",
+      lease_token: `F${++seq}`,
+      created_at: new Date(base + 500_000 + seq).toISOString(),
+      ...extra,
+    });
+  }
+  function confirmedFollowUp(wamid: string) {
+    const j = job(db, {
+      kind: "follow_up",
+      inbound_message_id: null,
+      status: "sent",
+      created_at: new Date(base - 3600_000).toISOString(),
+    });
+    db.t("sdr_actions").push({
+      id: `a-${wamid}`,
+      workspace_id: W1,
+      job_id: j.id,
+      kind: "message_sent",
+      status: "success",
+      provider_ref: wamid,
+      created_at: new Date().toISOString(),
+    });
+  }
+  beforeEach(() => {
+    db.find("sdr_playbooks", "pb1")!.max_follow_ups = 5;
+    settings().followup_daily_limit = 1;
+    settings().daily_send_limit = 1;
+    metaSend.mockImplementation(async () => ({ wamid: `wamid.out.${Math.random()}`, raw: {} }));
+  });
+
+  it("cota comercial esgotada: 35 turnos de conversa seguem e a retomada fica bloqueada", async () => {
+    confirmedFollowUp("wamid.fu.prev");
+    for (let i = 0; i < 35; i++) {
+      const j = inboundTurn(i);
+      const r = await sendAuto(j, `resposta ${i}`);
+      expect(r.ok).toBe(true);
+    }
+    expect(metaSend).toHaveBeenCalledTimes(35);
+    const fu = followUp();
+    // Retomada não pode ser mais nova que a última resposta (senão fica obsoleta).
+    db.t("whatsapp_messages").forEach((m) => {
+      if (m.direction === "outbound") m.created_at = new Date(base).toISOString();
+    });
+    expect(await sendAuto(fu, "retomando")).toMatchObject({
+      ok: false,
+      reason: "followup_quota",
+      category: "prospecting",
+    });
+    expect(metaSend).toHaveBeenCalledTimes(35);
+  });
+
+  it("trabalho forjado ou reclassificado é negado", async () => {
+    db.t("whatsapp_messages").push({
+      id: "out1",
+      conversation_id: "c1",
+      workspace_id: W1,
+      direction: "outbound",
+      wa_message_id: "wamid.o",
+      body: "x",
+      created_at: new Date(base - 999_999).toISOString(),
+    });
+    const fakeReply = job(db, { status: "running", lease_token: "X1", inbound_message_id: "out1" });
+    expect(await sendAuto(fakeReply, "a")).toMatchObject({ reason: "invalid_origin" });
+    const noInbound = job(db, { status: "running", lease_token: "X2", inbound_message_id: null });
+    expect(await sendAuto(noInbound, "b")).toMatchObject({ reason: "invalid_origin" });
+    const fuWithInbound = job(db, {
+      kind: "follow_up",
+      status: "running",
+      lease_token: "X3",
+      inbound_message_id: "m1",
+    });
+    expect(await sendAuto(fuWithInbound, "c")).toMatchObject({ reason: "invalid_origin" });
+    expect(metaSend).not.toHaveBeenCalled();
+  });
+
+  it("retomada: falha definitiva não consome cota; replay não reenvia nem conta 2x", async () => {
+    const a = followUp();
+    metaSend.mockRejectedValueOnce(Object.assign(new Error("Meta 400"), { status: 400 }));
+    expect(await sendAuto(a, "oi")).toMatchObject({ reason: "provider_failed" });
+    db.t("sdr_turn_jobs").forEach((j) => {
+      if (j.id === a.id) j.created_at = new Date(base - 10).toISOString();
+    });
+    const b = followUp();
+    metaSend.mockResolvedValueOnce({ wamid: "wamid.fu.ok", raw: {} });
+    expect(await sendAuto(b, "olá")).toEqual({ ok: true, wamid: "wamid.fu.ok" });
+    const bj = db.find("sdr_turn_jobs", b.id)!;
+    Object.assign(bj, { status: "running", lease_token: "R" });
+    expect(await sendAuto({ id: b.id, lease_token: "R" }, "olá")).toEqual({
+      ok: true,
+      wamid: "wamid.fu.ok",
+    });
+    expect(metaSend).toHaveBeenCalledTimes(2);
+    expect(
+      db.t("sdr_actions").filter((x) => x.job_id === b.id && x.status === "success"),
+    ).toHaveLength(1);
+  });
+
+  it("corrida: reserva ativa de outra retomada ocupa a cota", async () => {
+    followUp({
+      status: "running",
+      lease_token: "OTHER",
+      send_reserved_until: new Date(Date.now() + 60_000).toISOString(),
+      created_at: new Date(base - 50).toISOString(),
+    });
+    const b = followUp();
+    // A outra é mais antiga; esta é a mais nova e passa na checagem de versão.
+    expect(await sendAuto(b, "x")).toMatchObject({ reason: "followup_quota" });
+    expect(metaSend).not.toHaveBeenCalled();
+  });
+
+  it("resposta não usa a cota de retomadas mesmo com cota zerada", async () => {
+    settings().followup_daily_limit = 0;
+    expect((await sendAuto(inboundTurn(1), "oi")).ok).toBe(true);
+  });
+
+  it("duas mensagens rápidas: o turno antigo é coalescido sem chamar a IA", async () => {
+    const old = inboundTurn(1);
+    inboundTurn(2, { status: "queued", lease_token: null });
+    const d = deps({});
+    expect(await processJob(db, { ...old, status: "running" } as never, d)).toBe("discarded");
+    expect(db.find("sdr_turn_jobs", old.id)?.error).toBe("coalesced");
+    expect(d.callAgent).not.toHaveBeenCalled();
+  });
+
+  it("resposta para mensagem que não é a mais recente fica obsoleta", async () => {
+    const old = inboundTurn(1);
+    db.t("whatsapp_messages").push({
+      id: "newest",
+      conversation_id: "c1",
+      workspace_id: W1,
+      direction: "inbound",
+      wa_message_id: "wamid.newest",
+      body: "nova",
+      created_at: new Date(base + 900_000).toISOString(),
+    });
+    expect(await sendAuto(old, "x")).toMatchObject({ reason: "stale_version" });
+  });
+
+  it("disjuntor aberto bloqueia envio automático; aprovação humana é a retomada controlada", async () => {
+    settings().tech_breaker_open_at = new Date().toISOString();
+    const j = inboundTurn(1);
+    expect(await sendAuto(j, "x")).toMatchObject({ reason: "circuit_open", category: "technical" });
+    Object.assign(db.find("sdr_turn_jobs", j.id)!, { status: "drafted", lease_token: null });
+    const r = await sendSdrMessage(db, {
+      jobId: j.id,
+      expectedStatus: "drafted",
+      text: "x",
+      actorUserId: "u1",
+    });
+    expect(r.ok).toBe(true);
+  });
+
+  it("repetição e ritmo anormal são limites técnicos específicos", async () => {
+    expect((await sendAuto(inboundTurn(1), "mesma frase")).ok).toBe(true);
+    expect(await sendAuto(inboundTurn(2), "Mesma   frase")).toMatchObject({
+      reason: "repetition_detected",
+    });
+    settings().tech_conv_turns_per_hour = 1;
+    expect(await sendAuto(inboundTurn(3), "outra")).toMatchObject({
+      reason: "conversation_rate_anomaly",
+    });
+  });
+
+  it("falha incerta após chamar a Meta exige reconciliação e nunca reenvia", async () => {
+    const j = inboundTurn(1);
+    metaSend.mockRejectedValueOnce(new Error("network timeout"));
+    expect(await sendAuto(j, "x")).toMatchObject({
+      reason: "uncertain_after_send",
+      category: "reconcile",
+    });
+    expect(db.find("sdr_turn_jobs", j.id)?.status).toBe("failed");
+    Object.assign(db.find("sdr_turn_jobs", j.id)!, { status: "running", lease_token: "again" });
+    expect(await sendAuto({ id: j.id, lease_token: "again" }, "x")).toMatchObject({
+      reason: "uncertain_after_send",
+    });
+    expect(metaSend).toHaveBeenCalledTimes(1);
+  });
+
+  it("prova do provedor guardada no trabalho basta para não reenviar", async () => {
+    const j = inboundTurn(1, { provider_message_id: "wamid.saved", send_started_at: "x" });
+    expect(await sendAuto(j, "x")).toEqual({ ok: true, wamid: "wamid.saved" });
+    expect(metaSend).not.toHaveBeenCalled();
+  });
+
+  it("isolamento: trabalho de outro workspace não envia", async () => {
+    const j = inboundTurn(1, { workspace_id: W2 });
+    expect(await sendAuto(j, "x")).toMatchObject({ reason: "conversation_missing" });
+  });
+
+  it("janela de 24 h e allowlist do piloto continuam valendo para respostas", async () => {
+    db.find("whatsapp_conversations", "c1")!.last_inbound_at = new Date(
+      Date.now() - 2 * 86400_000,
+    ).toISOString();
+    expect(await sendAuto(inboundTurn(1), "x")).toMatchObject({ reason: "window_closed" });
+    db.find("whatsapp_conversations", "c1")!.last_inbound_at = new Date().toISOString();
+    settings().pilot_allowlist = ["+5511999999999"];
+    expect(await sendAuto(inboundTurn(2), "y")).toMatchObject({ reason: "not_allowlisted" });
+    expect(metaSend).not.toHaveBeenCalled();
+  });
+
+  it("resposta do cliente descarta retomadas pendentes", async () => {
+    const fu = followUp({ status: "queued", lease_token: null });
+    await ingestInboundForSdr(db, {
+      workspaceId: W1,
+      conversationId: "c1",
+      messageId: "m1",
+      waMessageId: "wamid.in1",
+      providerPhoneId: "pn1",
+      body: "voltei",
+    });
+    expect(db.find("sdr_turn_jobs", fu.id)?.status).toBe("discarded");
   });
 });

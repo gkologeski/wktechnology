@@ -11,6 +11,7 @@ import {
   handoffToHuman,
   reconcileMeetings,
   sendSdrMessage,
+  tripBreakerIfNeeded,
   type DraftPayload,
 } from "./actions.server";
 import { recordSdrAction } from "./ingest.server";
@@ -79,6 +80,8 @@ async function finish(
 
 type Job = {
   id: string;
+  attempts?: number;
+  created_at?: string;
   workspace_id: string;
   enrollment_id: string;
   conversation_id: string;
@@ -171,6 +174,11 @@ async function scopedIcpFit(admin: Admin, workspaceId: string, leadId: string) {
   return { points: fit.points, max: fit.max };
 }
 
+/** Backoff exponencial para falhas transitórias: 30 s, 60 s, 120 s… até 10 min. */
+export function retryDelayMs(attempt: number): number {
+  return Math.min(600_000, 30_000 * 2 ** Math.max(0, attempt - 1));
+}
+
 export async function processJob(
   admin: Admin,
   job: Job,
@@ -212,6 +220,31 @@ export async function processJob(
       error: "workspace_disabled",
     });
     return "skipped";
+  }
+  // Disjuntor técnico aberto: não chama IA; operador retoma de forma controlada.
+  if (settings.tech_breaker_open_at) {
+    await finish(admin, job.id, job.lease_token, {
+      status: "failed",
+      error: "circuit_open",
+      block_category: "technical",
+    });
+    return "failed";
+  }
+  // Coalescência de rajada: se já existe turno mais novo nesta conversa, ele
+  // responde com o histórico completo; este é descartado sem chamar a IA.
+  const { data: newer } = await admin
+    .from("sdr_turn_jobs")
+    .select("id")
+    .eq("conversation_id", job.conversation_id)
+    .eq("kind", "reply")
+    .neq("id", job.id)
+    .in("status", ["queued", "running"])
+    .gte("created_at", job.created_at ?? new Date(0).toISOString())
+    .limit(1)
+    .maybeSingle();
+  if (newer) {
+    await finish(admin, job.id, job.lease_token, { status: "discarded", error: "coalesced" });
+    return "discarded";
   }
   const { data: playbook } = await admin
     .from("sdr_playbooks")
@@ -257,17 +290,31 @@ export async function processJob(
         .join("\n") || null,
   });
 
+  await admin
+    .from("sdr_turn_jobs")
+    .update({ ai_started_at: new Date().toISOString() })
+    .eq("id", job.id)
+    .eq("lease_token", job.lease_token);
   const ai = await deps.callAgent({ workspaceId: job.workspace_id, system, history });
+  await admin
+    .from("sdr_turn_jobs")
+    .update({ ai_finished_at: new Date().toISOString() })
+    .eq("id", job.id)
+    .eq("lease_token", job.lease_token);
   if (!ai.ok) {
     if (ai.retryable) {
       await finish(admin, job.id, job.lease_token, {
         status: "queued",
-        lease_until: new Date(Date.now() + 120_000).toISOString(),
+        lease_until: new Date(Date.now() + retryDelayMs(job.attempts ?? 1)).toISOString(),
         error: ai.error,
       });
       return "retry";
     }
-    await finish(admin, job.id, job.lease_token, { status: "failed", error: ai.error });
+    await finish(admin, job.id, job.lease_token, {
+      status: "failed",
+      error: ai.error,
+      block_category: "technical",
+    });
     await recordSdrAction(admin, {
       workspace_id: job.workspace_id,
       enrollment_id: enr.id,
@@ -276,6 +323,7 @@ export async function processJob(
       status: "failed",
       error: ai.error,
     });
+    await tripBreakerIfNeeded(admin, job.workspace_id);
     return "failed";
   }
   const out = validateAgentOutput(ai.output, { offers, materials });
@@ -424,12 +472,13 @@ export async function processJob(
     settings.auto_send_enabled &&
     playbook.mode === "auto" &&
     out.warnings.length === 0 &&
-    !isQuietHours(
+    // Horário de prospecção vale só para retomadas; respostas seguem a qualquer hora.
+    !(job.kind === "follow_up" && isQuietHours(
       new Date(),
       settings.timezone,
       settings.quiet_hours_start,
       settings.quiet_hours_end,
-    );
+    ));
 
   const { data: saved } = await admin
     .from("sdr_turn_jobs")
@@ -465,7 +514,12 @@ export async function processJob(
     ].includes(sent.reason);
     await admin
       .from("sdr_turn_jobs")
-      .update({ status: obsolete ? "discarded" : "drafted", error: sent.reason, lease_token: null })
+      .update({
+        status: obsolete ? "discarded" : "drafted",
+        error: sent.reason,
+        block_category: sent.category ?? null,
+        lease_token: null,
+      })
       .eq("id", job.id)
       .in("status", ["running"]);
     return obsolete ? "discarded" : "drafted";
@@ -542,6 +596,7 @@ export async function tickSdr(admin: Admin, limit = 10, deps: WorkerDeps = defau
   if (sErr) throw new Error(sErr.message);
   const enabled = ((enabledRows ?? []) as { workspace_id: string }[]).map((r) => r.workspace_id);
   if (!enabled.length) return { disabled: true, claimed: 0 };
+  const stranded = await sweepExhaustedJobs(admin, enabled);
   const meetings = await reconcileMeetings(admin, 50, enabled);
   const followUps = await scheduleFollowUps(admin, 50, enabled);
   const { data: jobs, error } = await admin.rpc("sdr_claim_jobs", {
@@ -558,11 +613,53 @@ export async function tickSdr(admin: Admin, limit = 10, deps: WorkerDeps = defau
       r = "error";
       await finish(admin, job.id, job.lease_token, {
         status: "queued",
-        lease_until: new Date(Date.now() + 120_000).toISOString(),
+        lease_until: new Date(Date.now() + retryDelayMs(job.attempts ?? 1)).toISOString(),
         error: (e as Error).message.slice(0, 300),
       });
     }
     results[r] = (results[r] ?? 0) + 1;
   }
-  return { meetings, followUps, claimed: jobs?.length ?? 0, ...results };
+  return { meetings, followUps, stranded, claimed: jobs?.length ?? 0, ...results };
+}
+
+/**
+ * Trabalhos que esgotaram as tentativas não ficam presos em silêncio: viram
+ * falha técnica com alerta para o operador retomar de forma controlada.
+ */
+async function sweepExhaustedJobs(admin: Admin, workspaceIds: string[]): Promise<number> {
+  const now = new Date().toISOString();
+  const { data: rows } = await admin
+    .from("sdr_turn_jobs")
+    .select("id, workspace_id, enrollment_id, status, attempts, lease_until")
+    .in("workspace_id", workspaceIds)
+    .in("status", ["queued", "running"])
+    .gte("attempts", 3)
+    .lte("lease_until", now)
+    .limit(50);
+  let n = 0;
+  for (const j of rows ?? []) {
+    const { data: upd } = await admin
+      .from("sdr_turn_jobs")
+      .update({
+        status: "failed",
+        error: "max_attempts",
+        block_category: "technical",
+        lease_token: null,
+        updated_at: now,
+      })
+      .eq("id", j.id)
+      .eq("status", j.status)
+      .select("id");
+    if (!upd?.length) continue;
+    n++;
+    await recordSdrAction(admin, {
+      workspace_id: j.workspace_id,
+      enrollment_id: j.enrollment_id,
+      job_id: j.id,
+      kind: "technical_alert",
+      status: "failed",
+      error: "max_attempts",
+    });
+  }
+  return n;
 }

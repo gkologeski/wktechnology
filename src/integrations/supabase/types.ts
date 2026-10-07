@@ -16899,7 +16899,10 @@ export type Database = {
       }
       sdr_turn_jobs: {
         Row: {
+          ai_finished_at: string | null
+          ai_started_at: string | null
           attempts: number
+          block_category: string | null
           conversation_id: string
           conversation_version: number | null
           created_at: string
@@ -16915,13 +16918,19 @@ export type Database = {
           kind: string
           lease_token: string | null
           lease_until: string | null
+          provider_message_id: string | null
           send_reserved_until: string | null
+          send_started_at: string | null
+          sent_at: string | null
           status: string
           updated_at: string
           workspace_id: string
         }
         Insert: {
+          ai_finished_at?: string | null
+          ai_started_at?: string | null
           attempts?: number
+          block_category?: string | null
           conversation_id: string
           conversation_version?: number | null
           created_at?: string
@@ -16937,13 +16946,19 @@ export type Database = {
           kind?: string
           lease_token?: string | null
           lease_until?: string | null
+          provider_message_id?: string | null
           send_reserved_until?: string | null
+          send_started_at?: string | null
+          sent_at?: string | null
           status?: string
           updated_at?: string
           workspace_id: string
         }
         Update: {
+          ai_finished_at?: string | null
+          ai_started_at?: string | null
           attempts?: number
+          block_category?: string | null
           conversation_id?: string
           conversation_version?: number | null
           created_at?: string
@@ -16959,7 +16974,10 @@ export type Database = {
           kind?: string
           lease_token?: string | null
           lease_until?: string | null
+          provider_message_id?: string | null
           send_reserved_until?: string | null
+          send_started_at?: string | null
+          sent_at?: string | null
           status?: string
           updated_at?: string
           workspace_id?: string
@@ -17001,11 +17019,18 @@ export type Database = {
           daily_send_limit: number
           default_playbook_id: string | null
           enabled: boolean
+          followup_daily_limit: number | null
           pilot_allowlist: string[]
           quiet_hours_end: number
           quiet_hours_start: number
+          tech_breaker_open_at: string | null
+          tech_breaker_reason: string | null
+          tech_conv_turns_per_hour: number
+          tech_failure_threshold: number
+          template_daily_limit: number | null
           template_interval_max_s: number
           template_interval_min_s: number
+          template_respect_hours: boolean
           timezone: string
           updated_at: string
           updated_by: string | null
@@ -17016,11 +17041,18 @@ export type Database = {
           daily_send_limit?: number
           default_playbook_id?: string | null
           enabled?: boolean
+          followup_daily_limit?: number | null
           pilot_allowlist?: string[]
           quiet_hours_end?: number
           quiet_hours_start?: number
+          tech_breaker_open_at?: string | null
+          tech_breaker_reason?: string | null
+          tech_conv_turns_per_hour?: number
+          tech_failure_threshold?: number
+          template_daily_limit?: number | null
           template_interval_max_s?: number
           template_interval_min_s?: number
+          template_respect_hours?: boolean
           timezone?: string
           updated_at?: string
           updated_by?: string | null
@@ -17031,11 +17063,18 @@ export type Database = {
           daily_send_limit?: number
           default_playbook_id?: string | null
           enabled?: boolean
+          followup_daily_limit?: number | null
           pilot_allowlist?: string[]
           quiet_hours_end?: number
           quiet_hours_start?: number
+          tech_breaker_open_at?: string | null
+          tech_breaker_reason?: string | null
+          tech_conv_turns_per_hour?: number
+          tech_failure_threshold?: number
+          template_daily_limit?: number | null
           template_interval_max_s?: number
           template_interval_min_s?: number
+          template_respect_hours?: boolean
           timezone?: string
           updated_at?: string
           updated_by?: string | null
@@ -19741,6 +19780,7 @@ export type Database = {
           id: string
           owner_id: string
           phone: string
+          quota_reserved_until: string | null
           sent_at: string | null
           status: string
           twilio_sid: string | null
@@ -19756,6 +19796,7 @@ export type Database = {
           id?: string
           owner_id: string
           phone: string
+          quota_reserved_until?: string | null
           sent_at?: string | null
           status?: string
           twilio_sid?: string | null
@@ -19771,6 +19812,7 @@ export type Database = {
           id?: string
           owner_id?: string
           phone?: string
+          quota_reserved_until?: string | null
           sent_at?: string | null
           status?: string
           twilio_sid?: string | null
@@ -21458,7 +21500,10 @@ export type Database = {
       sdr_claim_jobs: {
         Args: { p_lease_seconds: number; p_limit: number }
         Returns: {
+          ai_finished_at: string | null
+          ai_started_at: string | null
           attempts: number
+          block_category: string | null
           conversation_id: string
           conversation_version: number | null
           created_at: string
@@ -21474,7 +21519,10 @@ export type Database = {
           kind: string
           lease_token: string | null
           lease_until: string | null
+          provider_message_id: string | null
           send_reserved_until: string | null
+          send_started_at: string | null
+          sent_at: string | null
           status: string
           updated_at: string
           workspace_id: string
@@ -21498,6 +21546,10 @@ export type Database = {
         Returns: string
       }
       sdr_guard: { Args: { p_job: string; p_lease: string }; Returns: string }
+      sdr_reserve_followup_quota: {
+        Args: { p_job: string; p_lease: string; p_limit: number }
+        Returns: Json
+      }
       sdr_reserve_send_quota: {
         Args: { p_job: string; p_lease: string; p_limit: number }
         Returns: Json
@@ -21595,6 +21647,10 @@ export type Database = {
       wa_campaign_claim_dispatch: {
         Args: { p_campaign: string; p_seconds: number }
         Returns: boolean
+      }
+      wa_reserve_template_quota: {
+        Args: { p_limit: number; p_recipient: string }
+        Returns: Json
       }
       workspace_for_user: { Args: { _user: string }; Returns: string }
       workspace_member_by_email: {
