@@ -1,5 +1,3 @@
--- Representante restrito: a releitura após INSERT não enxerga a linha nova
--- dentro das funções rep_visible_*_ids(); conferir dono/responsável direto na linha.
 DROP POLICY IF EXISTS rep_scope_select_companies ON public.companies;
 CREATE POLICY rep_scope_select_companies ON public.companies
   AS RESTRICTIVE FOR SELECT TO authenticated

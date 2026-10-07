@@ -505,6 +505,13 @@
       "when": 1791375246821,
       "tag": "0071_sdr_agent_versions",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1791378510367,
+      "tag": "0072_rep_scope_select_own_rows",
+      "breakpoints": true
     }
   ]
 }
