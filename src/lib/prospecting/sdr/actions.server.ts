@@ -119,28 +119,6 @@ export async function sendSdrMessage(
   if (!isPhoneAllowlisted(conv.contact_phone ?? "", settings?.pilot_allowlist))
     return { ok: false, reason: "not_allowlisted" };
 
-  // Versão mais recente: se o cliente escreveu depois que este rascunho foi gerado
-  // e a IA já respondeu (ou há outro turno), o rascunho é obsoleto.
-  if (job.created_at) {
-    const { data: newerOut } = await admin
-      .from("whatsapp_messages")
-      .select("id")
-      .eq("conversation_id", job.conversation_id)
-      .eq("direction", "outbound")
-      .gte("created_at", job.created_at)
-      .limit(1)
-      .maybeSingle();
-    const { data: newerJob } = await admin
-      .from("sdr_turn_jobs")
-      .select("id")
-      .eq("conversation_id", job.conversation_id)
-      .neq("id", job.id)
-      .gte("created_at", job.created_at)
-      .limit(1)
-      .maybeSingle();
-    if (newerOut || newerJob) return { ok: false, reason: "stale_version" };
-  }
-
   const { isWithinServiceWindow, resolveWaNumber, metaSend } =
     await import("@/lib/whatsapp/meta-channel.server");
   if (!isWithinServiceWindow(conv.last_inbound_at)) return { ok: false, reason: "window_closed" };
@@ -187,6 +165,28 @@ export async function sendSdrMessage(
         created_by: p.actorUserId,
       });
     return { ok: true, wamid: already.wa_message_id };
+  }
+
+  // Versão mais recente: se o cliente escreveu depois que este rascunho foi gerado
+  // e a IA já respondeu (ou há outro turno), o rascunho é obsoleto.
+  if (job.created_at) {
+    const { data: newerOut } = await admin
+      .from("whatsapp_messages")
+      .select("id")
+      .eq("conversation_id", job.conversation_id)
+      .eq("direction", "outbound")
+      .gte("created_at", job.created_at)
+      .limit(1)
+      .maybeSingle();
+    const { data: newerJob } = await admin
+      .from("sdr_turn_jobs")
+      .select("id")
+      .eq("conversation_id", job.conversation_id)
+      .neq("id", job.id)
+      .gte("created_at", job.created_at)
+      .limit(1)
+      .maybeSingle();
+    if (newerOut || newerJob) return { ok: false, reason: "stale_version" };
   }
 
   // Trava de envio: mantém "running" com lease próprio até a Meta confirmar.
