@@ -183,15 +183,9 @@ async function sdrIngest(admin: Admin, p: Parameters<typeof ingestInboundForSdr>
   } catch (e) {
     throw new Retry(`SDR: ${(e as Error).message}`);
   }
-  // Acorda o processamento ao enfileirar (sem polling). Falha fica na fila com lease.
-  if (r === "queued") {
-    try {
-      const { tickSdr } = await import("@/lib/prospecting/sdr/worker.server");
-      await tickSdr(admin, 3);
-    } catch (e) {
-      console.error("[sdr] processamento adiado", (e as Error).message);
-    }
-  }
+  // O processamento é acordado pelo banco ao enfileirar (gatilho → rotina do SDR),
+  // para o webhook responder em menos de 5 s sem esperar a IA.
+  void r;
 }
 
 async function handleStatuses(admin: Admin, value: any): Promise<string | null> {
