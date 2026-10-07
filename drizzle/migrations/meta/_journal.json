@@ -470,6 +470,13 @@
       "when": 1791331407588,
       "tag": "0066_sdr_pilot_allowlist",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1791346519716,
+      "tag": "0067_sdr_wake_on_enqueue",
+      "breakpoints": true
     }
   ]
 }
