@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CrudSettings, type CrudField } from "@/components/crud-settings";
 import { Button } from "@/components/ui/button";
-import { ListChecks } from "lucide-react";
+import { ListChecks, PencilRuler } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { SurveyQuestionsDialog } from "@/components/surveys/survey-questions-dialog";
 
 export type SurveyTemplateKind = "csat" | "nps" | "form";
@@ -115,14 +116,21 @@ export function SurveyTemplatesTab({ kind = "csat" }: { kind?: SurveyTemplateKin
         }}
         fields={fields}
         rowActions={(row) => (
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 gap-1.5 text-xs"
-            onClick={() => setQuestionsFor({ id: row.id, name: row.name })}
-          >
-            <ListChecks className="h-3.5 w-3.5" aria-hidden /> Perguntas
-          </Button>
+          <>
+            <Button asChild variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
+              <Link to="/survey-builder/$id" params={{ id: row.id }}>
+                <PencilRuler className="h-3.5 w-3.5" aria-hidden /> Construtor
+              </Link>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5 text-xs"
+              onClick={() => setQuestionsFor({ id: row.id, name: row.name })}
+            >
+              <ListChecks className="h-3.5 w-3.5" aria-hidden /> Perguntas
+            </Button>
+          </>
         )}
         columns={
           isForm

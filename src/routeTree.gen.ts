@@ -253,6 +253,7 @@ import { Route as AuthenticatedSettingsWorkflowSubscriptionsRouteImport } from '
 import { Route as AuthenticatedSettingsWorkflowsRouteImport } from './routes/_authenticated/settings.workflows'
 import { Route as AuthenticatedSettingsWorkspaceTeamRouteImport } from './routes/_authenticated/settings.workspace-team'
 import { Route as AuthenticatedSettingsZapierRouteImport } from './routes/_authenticated/settings.zapier'
+import { Route as AuthenticatedSurveyBuilderIdRouteImport } from './routes/_authenticated/survey-builder.$id'
 import { Route as AuthenticatedTasksIdRouteImport } from './routes/_authenticated/tasks.$id'
 import { Route as AuthenticatedTasksQueuesRouteImport } from './routes/_authenticated/tasks.queues'
 import { Route as AuthenticatedTicketsIdRouteImport } from './routes/_authenticated/tickets.$id'
@@ -260,6 +261,7 @@ import { Route as AuthenticatedWorkspaceIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedWorkspaceModulesRouteImport } from './routes/_authenticated/workspace.modules'
 import { Route as ApiAgentChatRouteImport } from './routes/api/agent/chat'
 import { Route as ApiContractsTemplateImportRouteImport } from './routes/api/contracts.template-import'
+import { Route as ApiSurveysImportRouteImport } from './routes/api/surveys.import'
 import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
 import { Route as AuthenticatedatsCandidatesIndexRouteImport } from './routes/_authenticated/(ats)/candidates.index'
 import { Route as AuthenticatedatsCandidatesIdRouteImport } from './routes/_authenticated/(ats)/candidates.$id'
@@ -1788,6 +1790,12 @@ const AuthenticatedSettingsZapierRoute =
     path: '/zapier',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSurveyBuilderIdRoute =
+  AuthenticatedSurveyBuilderIdRouteImport.update({
+    id: '/survey-builder/$id',
+    path: '/survey-builder/$id',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedTasksIdRoute = AuthenticatedTasksIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -1827,6 +1835,11 @@ const ApiContractsTemplateImportRoute =
     path: '/api/contracts/template-import',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiSurveysImportRoute = ApiSurveysImportRouteImport.update({
+  id: '/api/surveys/import',
+  path: '/api/surveys/import',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableEmailEventsRoute = LovableEmailEventsRouteImport.update({
   id: '/lovable/email/events',
   path: '/lovable/email/events',
@@ -2861,12 +2874,14 @@ export interface FileRoutesByFullPath {
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/settings/workspace-team': typeof AuthenticatedSettingsWorkspaceTeamRoute
   '/settings/zapier': typeof AuthenticatedSettingsZapierRoute
+  '/survey-builder/$id': typeof AuthenticatedSurveyBuilderIdRoute
   '/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/tickets/$id': typeof AuthenticatedTicketsIdRoute
   '/workspace/modules': typeof AuthenticatedWorkspaceModulesRoute
   '/api/agent/chat': typeof ApiAgentChatRoute
   '/api/contracts/template-import': typeof ApiContractsTemplateImportRoute
+  '/api/surveys/import': typeof ApiSurveysImportRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/ats/': typeof AuthenticatedAtsIndexRoute
   '/contracts/': typeof AuthenticatedContractsIndexRoute
@@ -3245,12 +3260,14 @@ export interface FileRoutesByTo {
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/settings/workspace-team': typeof AuthenticatedSettingsWorkspaceTeamRoute
   '/settings/zapier': typeof AuthenticatedSettingsZapierRoute
+  '/survey-builder/$id': typeof AuthenticatedSurveyBuilderIdRoute
   '/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/tickets/$id': typeof AuthenticatedTicketsIdRoute
   '/workspace/modules': typeof AuthenticatedWorkspaceModulesRoute
   '/api/agent/chat': typeof ApiAgentChatRoute
   '/api/contracts/template-import': typeof ApiContractsTemplateImportRoute
+  '/api/surveys/import': typeof ApiSurveysImportRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/ats': typeof AuthenticatedAtsIndexRoute
   '/contracts': typeof AuthenticatedContractsIndexRoute
@@ -3638,12 +3655,14 @@ export interface FileRoutesById {
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/_authenticated/settings/workspace-team': typeof AuthenticatedSettingsWorkspaceTeamRoute
   '/_authenticated/settings/zapier': typeof AuthenticatedSettingsZapierRoute
+  '/_authenticated/survey-builder/$id': typeof AuthenticatedSurveyBuilderIdRoute
   '/_authenticated/tasks/$id': typeof AuthenticatedTasksIdRoute
   '/_authenticated/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/_authenticated/tickets/$id': typeof AuthenticatedTicketsIdRoute
   '/_authenticated/workspace/modules': typeof AuthenticatedWorkspaceModulesRoute
   '/api/agent/chat': typeof ApiAgentChatRoute
   '/api/contracts/template-import': typeof ApiContractsTemplateImportRoute
+  '/api/surveys/import': typeof ApiSurveysImportRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/_authenticated/ats/': typeof AuthenticatedAtsIndexRoute
   '/_authenticated/contracts/': typeof AuthenticatedContractsIndexRoute
@@ -4031,12 +4050,14 @@ export interface FileRouteTypes {
     | '/settings/workflows'
     | '/settings/workspace-team'
     | '/settings/zapier'
+    | '/survey-builder/$id'
     | '/tasks/$id'
     | '/tasks/queues'
     | '/tickets/$id'
     | '/workspace/modules'
     | '/api/agent/chat'
     | '/api/contracts/template-import'
+    | '/api/surveys/import'
     | '/lovable/email/events'
     | '/ats/'
     | '/contracts/'
@@ -4415,12 +4436,14 @@ export interface FileRouteTypes {
     | '/settings/workflows'
     | '/settings/workspace-team'
     | '/settings/zapier'
+    | '/survey-builder/$id'
     | '/tasks/$id'
     | '/tasks/queues'
     | '/tickets/$id'
     | '/workspace/modules'
     | '/api/agent/chat'
     | '/api/contracts/template-import'
+    | '/api/surveys/import'
     | '/lovable/email/events'
     | '/ats'
     | '/contracts'
@@ -4807,12 +4830,14 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/workflows'
     | '/_authenticated/settings/workspace-team'
     | '/_authenticated/settings/zapier'
+    | '/_authenticated/survey-builder/$id'
     | '/_authenticated/tasks/$id'
     | '/_authenticated/tasks/queues'
     | '/_authenticated/tickets/$id'
     | '/_authenticated/workspace/modules'
     | '/api/agent/chat'
     | '/api/contracts/template-import'
+    | '/api/surveys/import'
     | '/lovable/email/events'
     | '/_authenticated/ats/'
     | '/_authenticated/contracts/'
@@ -5012,6 +5037,7 @@ export interface RootRouteChildren {
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiAgentChatRoute: typeof ApiAgentChatRoute
   ApiContractsTemplateImportRoute: typeof ApiContractsTemplateImportRoute
+  ApiSurveysImportRoute: typeof ApiSurveysImportRoute
   LovableEmailEventsRoute: typeof LovableEmailEventsRoute
   ApiPublicBankingInterWebhookRoute: typeof ApiPublicBankingInterWebhookRoute
   ApiPublicBookingSlugRoute: typeof ApiPublicBookingSlugRouteWithChildren
@@ -6805,6 +6831,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsZapierRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/survey-builder/$id': {
+      id: '/_authenticated/survey-builder/$id'
+      path: '/survey-builder/$id'
+      fullPath: '/survey-builder/$id'
+      preLoaderRoute: typeof AuthenticatedSurveyBuilderIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/tasks/$id': {
       id: '/_authenticated/tasks/$id'
       path: '/$id'
@@ -6852,6 +6885,13 @@ declare module '@tanstack/react-router' {
       path: '/api/contracts/template-import'
       fullPath: '/api/contracts/template-import'
       preLoaderRoute: typeof ApiContractsTemplateImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/surveys/import': {
+      id: '/api/surveys/import'
+      path: '/api/surveys/import'
+      fullPath: '/api/surveys/import'
+      preLoaderRoute: typeof ApiSurveysImportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lovable/email/events': {
@@ -8422,6 +8462,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedProjectsTimesheetRoute: typeof AuthenticatedProjectsTimesheetRoute
   AuthenticatedQaTestCasesRoute: typeof AuthenticatedQaTestCasesRoute
   AuthenticatedServicesIdRoute: typeof AuthenticatedServicesIdRoute
+  AuthenticatedSurveyBuilderIdRoute: typeof AuthenticatedSurveyBuilderIdRoute
   AuthenticatedWorkspaceModulesRoute: typeof AuthenticatedWorkspaceModulesRoute
   AuthenticatedAtsIndexRoute: typeof AuthenticatedAtsIndexRoute
   AuthenticatedContractsIndexRoute: typeof AuthenticatedContractsIndexRoute
@@ -8571,6 +8612,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedProjectsTimesheetRoute: AuthenticatedProjectsTimesheetRoute,
   AuthenticatedQaTestCasesRoute: AuthenticatedQaTestCasesRoute,
   AuthenticatedServicesIdRoute: AuthenticatedServicesIdRoute,
+  AuthenticatedSurveyBuilderIdRoute: AuthenticatedSurveyBuilderIdRoute,
   AuthenticatedWorkspaceModulesRoute: AuthenticatedWorkspaceModulesRoute,
   AuthenticatedAtsIndexRoute: AuthenticatedAtsIndexRoute,
   AuthenticatedContractsIndexRoute: AuthenticatedContractsIndexRoute,
@@ -8736,6 +8778,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiAgentChatRoute: ApiAgentChatRoute,
   ApiContractsTemplateImportRoute: ApiContractsTemplateImportRoute,
+  ApiSurveysImportRoute: ApiSurveysImportRoute,
   LovableEmailEventsRoute: LovableEmailEventsRoute,
   ApiPublicBankingInterWebhookRoute: ApiPublicBankingInterWebhookRoute,
   ApiPublicBookingSlugRoute: ApiPublicBookingSlugRouteWithChildren,

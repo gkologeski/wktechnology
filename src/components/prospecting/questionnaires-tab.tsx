@@ -37,6 +37,8 @@ import {
   upsertQuestionnaire,
   deleteQuestionnaire,
   upsertQuestion,
+  setQuestionnaireScoring,
+  setQuestionScored,
   deleteQuestion,
   duplicateQuestionnaire,
   reorderQuestions,
@@ -450,6 +452,16 @@ function QuestionnaireEditorSheet({
     onError: (e) => toast.error((e as Error).message),
   });
 
+  const scoringFn = useServerFn(setQuestionnaireScoring);
+  const toggleScoring = useMutation({
+    mutationFn: (scoring_enabled: boolean) => scoringFn({ data: { id, scoring_enabled } }),
+    onSuccess: () => {
+      toast.success("Pontuação atualizada.");
+      invalidate();
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
   const toggleEnabled = useMutation({
     mutationFn: (enabled: boolean) =>
       upsertMeta({
@@ -505,6 +517,26 @@ function QuestionnaireEditorSheet({
                 <Switch
                   checked={data.questionnaire.enabled}
                   onCheckedChange={(v) => toggleEnabled.mutate(v)}
+                />
+              </div>
+            )}
+
+            {readOnly ? null : (
+              <div className="flex items-center justify-between rounded-md border p-3 bg-muted/30">
+                <div>
+                  <Label htmlFor="q-scoring" className="text-sm font-medium">
+                    Questionário com pontuação
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Desligado: as respostas ficam registradas sem nota e a decisão é manual.
+                  </p>
+                </div>
+                <Switch
+                  id="q-scoring"
+                  checked={
+                    (data.questionnaire as { scoring_enabled?: boolean }).scoring_enabled !== false
+                  }
+                  onCheckedChange={(v) => toggleScoring.mutate(v)}
                 />
               </div>
             )}
@@ -704,6 +736,8 @@ function QuestionRow({
   const [label, setLabel] = useState(question.label);
   const [weight, setWeight] = useState(question.weight);
   const [required, setRequired] = useState(question.required);
+  const scoredFn = useServerFn(setQuestionScored);
+  const [scored, setScored] = useState((question as { scored?: boolean }).scored !== false);
   const [textPoints, setTextPoints] = useState(Number(question.text_points ?? 0));
   const [textMinChars, setTextMinChars] = useState(Number(question.text_min_chars ?? 10));
   const [options, setOptions] = useState<{ label: string; points: number }[]>(
@@ -732,7 +766,9 @@ function QuestionRow({
           text_min_chars: textMinChars,
         },
       }),
-    onSuccess: () => {
+    onSuccess: async () => {
+      if (scored !== ((question as { scored?: boolean }).scored !== false))
+        await scoredFn({ data: { id: question.id, scored } });
       toast.success("Pergunta salva.");
       setExpanded(false);
       onSaved();
@@ -765,7 +801,11 @@ function QuestionRow({
               </Badge>
             ) : null}
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">Peso: {question.weight}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {(question as { scored?: boolean }).scored === false
+              ? "Sem pontuação"
+              : `Peso: ${question.weight}`}
+          </p>
         </div>
         {readOnly ? null : (
           <div className="flex items-center gap-1 shrink-0">
@@ -812,6 +852,12 @@ function QuestionRow({
               <Label className="text-xs">Obrigatória</Label>
               <Switch checked={required} onCheckedChange={setRequired} />
             </div>
+          </div>
+          <div className="flex items-center justify-between rounded-md border px-3 py-2">
+            <Label htmlFor={`sc-${question.id}`} className="text-xs">
+              Pontuar esta pergunta
+            </Label>
+            <Switch id={`sc-${question.id}`} checked={scored} onCheckedChange={setScored} />
           </div>
 
           {supportsTextPoints ? (

@@ -26,6 +26,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SurveyField } from "@/components/surveys/survey-form-fields";
+import { FormRenderer } from "@/components/surveys/form/form-renderer";
+import { validateAnswers, type FormSchema } from "@/lib/surveys/form-schema";
 import { isAnswered, type SurveyQuestion } from "@/lib/surveys/survey-fields";
 import {
   getSurveyForm,
@@ -171,9 +173,17 @@ export function SurveyActivityDialog({
     [form.data],
   );
 
+  const formSchema = (form.data?.form_schema ?? null) as unknown as FormSchema | null;
+  const idemRef = useRef<string>("");
+  useEffect(() => {
+    idemRef.current = crypto.randomUUID();
+  }, [open, selection?.id]);
   const missing = useMemo(
-    () => questions.filter((q) => q.required && !isAnswered(answers[q.id])).map((q) => q.id),
-    [questions, answers],
+    () =>
+      formSchema
+        ? Object.keys(validateAnswers(formSchema, answers))
+        : questions.filter((q) => q.required && !isAnswered(answers[q.id])).map((q) => q.id),
+    [questions, answers, formSchema],
   );
 
   // Pesquisas de vendas usam o renderizador e o score da qualificação.
@@ -217,6 +227,8 @@ export function SurveyActivityDialog({
           related_id: relatedId,
           answers,
           notes: notes.trim() || null,
+          template_version: formSchema ? (form.data?.published_version ?? null) : null,
+          idempotency_key: idemRef.current || null,
         },
       });
     },
@@ -477,32 +489,42 @@ export function SurveyActivityDialog({
                         autofilled={entityFields.autofilled}
                       />
                     )}
-                    {questions.map((q) =>
-                      isSalesForm ? (
-                        <QualificationQuestionInput
-                          key={q.id}
-                          question={{
-                            id: q.id,
-                            label: q.label,
-                            type: q.type,
-                            options: q.options,
-                            required: q.required,
-                            help_text: q.help_text,
-                          }}
-                          value={answers[q.id]}
-                          invalid={showErrors && missing.includes(q.id)}
-                          onChange={(v) => setAnswers((prev) => ({ ...prev, [q.id]: v }))}
-                        />
-                      ) : (
-                        <SurveyField
-                          key={q.id}
-                          question={q}
-                          value={answers[q.id]}
-                          invalid={showErrors && missing.includes(q.id)}
-                          onChange={(v) => setAnswers((prev) => ({ ...prev, [q.id]: v }))}
-                        />
-                      ),
-                    )}
+                    {formSchema ? (
+                      <FormRenderer
+                        schema={formSchema}
+                        answers={answers}
+                        onChange={setAnswers}
+                        showErrors={showErrors}
+                        paginate={false}
+                      />
+                    ) : null}
+                    {!formSchema &&
+                      questions.map((q) =>
+                        isSalesForm ? (
+                          <QualificationQuestionInput
+                            key={q.id}
+                            question={{
+                              id: q.id,
+                              label: q.label,
+                              type: q.type,
+                              options: q.options,
+                              required: q.required,
+                              help_text: q.help_text,
+                            }}
+                            value={answers[q.id]}
+                            invalid={showErrors && missing.includes(q.id)}
+                            onChange={(v) => setAnswers((prev) => ({ ...prev, [q.id]: v }))}
+                          />
+                        ) : (
+                          <SurveyField
+                            key={q.id}
+                            question={q}
+                            value={answers[q.id]}
+                            invalid={showErrors && missing.includes(q.id)}
+                            onChange={(v) => setAnswers((prev) => ({ ...prev, [q.id]: v }))}
+                          />
+                        ),
+                      )}
                     {isSalesLead && blocksAfter.length > 0 && (
                       <QualificationEntityBlocks
                         blocks={blocksAfter}
