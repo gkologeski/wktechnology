@@ -123,15 +123,6 @@ export async function sendSdrMessage(
     await import("@/lib/whatsapp/meta-channel.server");
   if (!isWithinServiceWindow(conv.last_inbound_at)) return { ok: false, reason: "window_closed" };
 
-  const since = new Date(Date.now() - 86400_000).toISOString();
-  const { count } = await admin
-    .from("sdr_actions")
-    .select("id", { count: "exact", head: true })
-    .eq("workspace_id", job.workspace_id)
-    .eq("kind", "message_sent")
-    .gte("created_at", since);
-  if ((count ?? 0) >= (settings?.daily_send_limit ?? 50))
-    return { ok: false, reason: "daily_limit" };
 
   // Idempotência: se uma tentativa anterior já gravou a mensagem deste trabalho,
   // só finaliza como enviado — nunca reenvia.
