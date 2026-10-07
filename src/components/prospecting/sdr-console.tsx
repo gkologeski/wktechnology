@@ -598,6 +598,7 @@ function SupervisionPanel({ d }: { d: Overview }) {
         title="Supervisão"
         description={`Rascunhos aguardando aprovação. ${pending} em processamento.`}
       />
+      <QuotaSummary quota={d.quota} />
       {drafts.length === 0 ? (
         <EmptyState
           title="Nada para revisar"
@@ -646,8 +647,17 @@ function DraftCard({ job }: { job: Overview["jobs"][number] }) {
             {k}
           </Badge>
         ))}
-        {job.status === "failed" && <Badge variant="destructive">Falhou: {job.error}</Badge>}
+        {job.status === "failed" && (
+          <Badge variant="destructive">Falhou: {sdrReasonLabel(job.error)}</Badge>
+        )}
+        {job.status === "drafted" && job.error && (
+          <Badge variant="outline">{sdrReasonLabel(job.error)}</Badge>
+        )}
       </div>
+      <p className="text-xs text-muted-foreground">
+        Recebida para processamento {fmtTime(job.created_at)} · última etapa{" "}
+        {fmtTime(job.updated_at)} · tentativas {job.attempts ?? 0}
+      </p>
       {(p.warnings ?? []).length > 0 && (
         <p className="text-xs text-destructive">Atenção: {(p.warnings ?? []).join("; ")}</p>
       )}
@@ -777,6 +787,53 @@ function ResultsPanel({ d }: { d: Overview }) {
           </table>
         </div>
       )}
+    </div>
+  );
+}
+
+const SDR_REASON_LABELS: Record<string, string> = {
+  daily_limit: "Limite de respostas atingido (janela móvel de 24 h)",
+  quota_check_failed: "Não foi possível verificar a cota de respostas",
+  window_closed: "Janela de 24 h do WhatsApp fechada",
+  not_allowlisted: "Número fora da lista do piloto",
+  owner_not_ai: "Conversa assumida por humano",
+  stale_version: "Há mensagem mais recente do cliente",
+  provider_failed: "WhatsApp recusou o envio",
+  lease_lost: "Processamento substituído por outro",
+};
+
+function sdrReasonLabel(code: string | null | undefined): string {
+  if (!code) return "";
+  return SDR_REASON_LABELS[code] ?? code;
+}
+
+function fmtTime(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
+function QuotaSummary({ quota }: { quota: Overview["quota"] }) {
+  const exhausted = quota.remaining <= 0;
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className={`rounded-lg border p-3 text-sm ${exhausted ? "border-destructive/50 bg-destructive/5" : "bg-card"}`}
+    >
+      <p className="font-medium">
+        {exhausted ? "Limite de respostas atingido" : "Cota de respostas"}:{" "}
+        {quota.used} de {quota.limit} usadas · {quota.remaining} restantes
+      </p>
+      <p className="text-xs text-muted-foreground">
+        Janela móvel de 24 h; contam só envios confirmados pelo WhatsApp. Falhas não consomem.
+        {quota.nextFreeAt && ` Próxima vaga libera em ${fmtTime(quota.nextFreeAt)}.`}
+      </p>
     </div>
   );
 }
