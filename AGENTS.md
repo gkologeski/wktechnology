@@ -30,3 +30,5 @@
 - Autorização do Agente SDR (telas novas e legadas `/agents/sdr`) passa por `requireSdr`/`assertSdr` em `src/lib/prospecting/sdr/access.server.ts`, com filtro explícito por workspace; por quê: uma única matriz de permissões no servidor, sem depender só da RLS ou da UI.
 
 - Ritmo do disparo de template das campanhas WhatsApp é controlado por `whatsapp_campaigns.next_send_at` sob lease `wa_campaign_claim_dispatch`, com sorteio em `src/lib/whatsapp/campaign-pacing.ts`; por quê: o espaçamento vale entre execuções e nunca há disparo duplo.
+
+- Envios do SDR seguem três políticas no servidor (`sendSdrMessage`): resposta (`kind=reply`, só de inbound real validado por gatilho) sem cota comercial; retomada (`follow_up`) com cota atômica `sdr_reserve_followup_quota` e horário de prospecção; proteção técnica (disjuntor, repetição, ritmo, coalescência, reconciliação de envio incerto); por quê: cota de vendas nunca silencia conversa legítima e loops/rajadas param com motivo explícito.
