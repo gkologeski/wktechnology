@@ -279,6 +279,10 @@ import { Route as AuthenticatedatsSourcingPoolsRouteImport } from './routes/_aut
 import { Route as AuthenticatedatsSourcingReferralsRouteImport } from './routes/_authenticated/(ats)/sourcing/referrals'
 import { Route as AuthenticatedatsSourcingSequencesRouteImport } from './routes/_authenticated/(ats)/sourcing/sequences'
 import { Route as AuthenticatedAdminWorkspacesIdRouteImport } from './routes/_authenticated/admin.workspaces.$id'
+import { Route as AuthenticatedAgentsPrototypeIndexRouteImport } from './routes/_authenticated/agents.prototype.index'
+import { Route as AuthenticatedAgentsPrototype1RouteImport } from './routes/_authenticated/agents.prototype.1'
+import { Route as AuthenticatedAgentsPrototype2RouteImport } from './routes/_authenticated/agents.prototype.2'
+import { Route as AuthenticatedAgentsPrototype3RouteImport } from './routes/_authenticated/agents.prototype.3'
 import { Route as AuthenticatedAtsJobsIdRouteImport } from './routes/_authenticated/ats.jobs.$id'
 import { Route as AuthenticatedContractsIdFlowRouteImport } from './routes/_authenticated/contracts.$id_.flow'
 import { Route as AuthenticatedContractsTemplatesIndexRouteImport } from './routes/_authenticated/contracts.templates.index'
@@ -1935,6 +1939,30 @@ const AuthenticatedAdminWorkspacesIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedAdminWorkspacesRoute,
   } as any)
+const AuthenticatedAgentsPrototypeIndexRoute =
+  AuthenticatedAgentsPrototypeIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAgentsPrototypeRoute,
+  } as any)
+const AuthenticatedAgentsPrototype1Route =
+  AuthenticatedAgentsPrototype1RouteImport.update({
+    id: '/1',
+    path: '/1',
+    getParentRoute: () => AuthenticatedAgentsPrototypeRoute,
+  } as any)
+const AuthenticatedAgentsPrototype2Route =
+  AuthenticatedAgentsPrototype2RouteImport.update({
+    id: '/2',
+    path: '/2',
+    getParentRoute: () => AuthenticatedAgentsPrototypeRoute,
+  } as any)
+const AuthenticatedAgentsPrototype3Route =
+  AuthenticatedAgentsPrototype3RouteImport.update({
+    id: '/3',
+    path: '/3',
+    getParentRoute: () => AuthenticatedAgentsPrototypeRoute,
+  } as any)
 const AuthenticatedAtsJobsIdRoute = AuthenticatedAtsJobsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -2688,7 +2716,7 @@ export interface FileRoutesByFullPath {
   '/admin/security-scans': typeof AuthenticatedAdminSecurityScansRoute
   '/admin/status': typeof AuthenticatedAdminStatusRoute
   '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
-  '/agents/prototype': typeof AuthenticatedAgentsPrototypeRoute
+  '/agents/prototype': typeof AuthenticatedAgentsPrototypeRouteWithChildren
   '/agents/sdr': typeof AuthenticatedAgentsSdrRoute
   '/ats/candidates': typeof AuthenticatedAtsCandidatesRoute
   '/ats/jobs': typeof AuthenticatedAtsJobsRouteWithChildren
@@ -2870,6 +2898,9 @@ export interface FileRoutesByFullPath {
   '/sourcing/referrals': typeof AuthenticatedatsSourcingReferralsRoute
   '/sourcing/sequences': typeof AuthenticatedatsSourcingSequencesRoute
   '/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
+  '/agents/prototype/1': typeof AuthenticatedAgentsPrototype1Route
+  '/agents/prototype/2': typeof AuthenticatedAgentsPrototype2Route
+  '/agents/prototype/3': typeof AuthenticatedAgentsPrototype3Route
   '/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
   '/contracts/$id/flow': typeof AuthenticatedContractsIdFlowRoute
   '/contracts/templates/$id': typeof AuthenticatedContractsTemplatesIdRoute
@@ -2963,6 +2994,7 @@ export interface FileRoutesByFullPath {
   '/hunting/': typeof AuthenticatedatsHuntingIndexRoute
   '/jobs/': typeof AuthenticatedatsJobsIndexRoute
   '/sourcing/': typeof AuthenticatedatsSourcingIndexRoute
+  '/agents/prototype/': typeof AuthenticatedAgentsPrototypeIndexRoute
   '/contracts/templates/': typeof AuthenticatedContractsTemplatesIndexRoute
   '/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/settings/integrations/': typeof AuthenticatedSettingsIntegrationsIndexRoute
@@ -3070,7 +3102,6 @@ export interface FileRoutesByTo {
   '/admin/security-scans': typeof AuthenticatedAdminSecurityScansRoute
   '/admin/status': typeof AuthenticatedAdminStatusRoute
   '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
-  '/agents/prototype': typeof AuthenticatedAgentsPrototypeRoute
   '/agents/sdr': typeof AuthenticatedAgentsSdrRoute
   '/ats/candidates': typeof AuthenticatedAtsCandidatesRoute
   '/ats/jobs': typeof AuthenticatedAtsJobsRouteWithChildren
@@ -3251,6 +3282,9 @@ export interface FileRoutesByTo {
   '/sourcing/referrals': typeof AuthenticatedatsSourcingReferralsRoute
   '/sourcing/sequences': typeof AuthenticatedatsSourcingSequencesRoute
   '/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
+  '/agents/prototype/1': typeof AuthenticatedAgentsPrototype1Route
+  '/agents/prototype/2': typeof AuthenticatedAgentsPrototype2Route
+  '/agents/prototype/3': typeof AuthenticatedAgentsPrototype3Route
   '/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
   '/contracts/$id/flow': typeof AuthenticatedContractsIdFlowRoute
   '/contracts/templates/$id': typeof AuthenticatedContractsTemplatesIdRoute
@@ -3344,6 +3378,7 @@ export interface FileRoutesByTo {
   '/hunting': typeof AuthenticatedatsHuntingIndexRoute
   '/jobs': typeof AuthenticatedatsJobsIndexRoute
   '/sourcing': typeof AuthenticatedatsSourcingIndexRoute
+  '/agents/prototype': typeof AuthenticatedAgentsPrototypeIndexRoute
   '/contracts/templates': typeof AuthenticatedContractsTemplatesIndexRoute
   '/prospecting/campaigns': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/settings/integrations': typeof AuthenticatedSettingsIntegrationsIndexRoute
@@ -3458,7 +3493,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/security-scans': typeof AuthenticatedAdminSecurityScansRoute
   '/_authenticated/admin/status': typeof AuthenticatedAdminStatusRoute
   '/_authenticated/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
-  '/_authenticated/agents/prototype': typeof AuthenticatedAgentsPrototypeRoute
+  '/_authenticated/agents/prototype': typeof AuthenticatedAgentsPrototypeRouteWithChildren
   '/_authenticated/agents/sdr': typeof AuthenticatedAgentsSdrRoute
   '/_authenticated/ats/candidates': typeof AuthenticatedAtsCandidatesRoute
   '/_authenticated/ats/jobs': typeof AuthenticatedAtsJobsRouteWithChildren
@@ -3640,6 +3675,9 @@ export interface FileRoutesById {
   '/_authenticated/(ats)/sourcing/referrals': typeof AuthenticatedatsSourcingReferralsRoute
   '/_authenticated/(ats)/sourcing/sequences': typeof AuthenticatedatsSourcingSequencesRoute
   '/_authenticated/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
+  '/_authenticated/agents/prototype/1': typeof AuthenticatedAgentsPrototype1Route
+  '/_authenticated/agents/prototype/2': typeof AuthenticatedAgentsPrototype2Route
+  '/_authenticated/agents/prototype/3': typeof AuthenticatedAgentsPrototype3Route
   '/_authenticated/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
   '/_authenticated/contracts/$id_/flow': typeof AuthenticatedContractsIdFlowRoute
   '/_authenticated/contracts/templates/$id': typeof AuthenticatedContractsTemplatesIdRoute
@@ -3733,6 +3771,7 @@ export interface FileRoutesById {
   '/_authenticated/(ats)/hunting/': typeof AuthenticatedatsHuntingIndexRoute
   '/_authenticated/(ats)/jobs/': typeof AuthenticatedatsJobsIndexRoute
   '/_authenticated/(ats)/sourcing/': typeof AuthenticatedatsSourcingIndexRoute
+  '/_authenticated/agents/prototype/': typeof AuthenticatedAgentsPrototypeIndexRoute
   '/_authenticated/contracts/templates/': typeof AuthenticatedContractsTemplatesIndexRoute
   '/_authenticated/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/_authenticated/settings/integrations/': typeof AuthenticatedSettingsIntegrationsIndexRoute
@@ -4029,6 +4068,9 @@ export interface FileRouteTypes {
     | '/sourcing/referrals'
     | '/sourcing/sequences'
     | '/admin/workspaces/$id'
+    | '/agents/prototype/1'
+    | '/agents/prototype/2'
+    | '/agents/prototype/3'
     | '/ats/jobs/$id'
     | '/contracts/$id/flow'
     | '/contracts/templates/$id'
@@ -4122,6 +4164,7 @@ export interface FileRouteTypes {
     | '/hunting/'
     | '/jobs/'
     | '/sourcing/'
+    | '/agents/prototype/'
     | '/contracts/templates/'
     | '/prospecting/campaigns/'
     | '/settings/integrations/'
@@ -4229,7 +4272,6 @@ export interface FileRouteTypes {
     | '/admin/security-scans'
     | '/admin/status'
     | '/admin/workspaces'
-    | '/agents/prototype'
     | '/agents/sdr'
     | '/ats/candidates'
     | '/ats/jobs'
@@ -4410,6 +4452,9 @@ export interface FileRouteTypes {
     | '/sourcing/referrals'
     | '/sourcing/sequences'
     | '/admin/workspaces/$id'
+    | '/agents/prototype/1'
+    | '/agents/prototype/2'
+    | '/agents/prototype/3'
     | '/ats/jobs/$id'
     | '/contracts/$id/flow'
     | '/contracts/templates/$id'
@@ -4503,6 +4548,7 @@ export interface FileRouteTypes {
     | '/hunting'
     | '/jobs'
     | '/sourcing'
+    | '/agents/prototype'
     | '/contracts/templates'
     | '/prospecting/campaigns'
     | '/settings/integrations'
@@ -4798,6 +4844,9 @@ export interface FileRouteTypes {
     | '/_authenticated/(ats)/sourcing/referrals'
     | '/_authenticated/(ats)/sourcing/sequences'
     | '/_authenticated/admin/workspaces/$id'
+    | '/_authenticated/agents/prototype/1'
+    | '/_authenticated/agents/prototype/2'
+    | '/_authenticated/agents/prototype/3'
     | '/_authenticated/ats/jobs/$id'
     | '/_authenticated/contracts/$id_/flow'
     | '/_authenticated/contracts/templates/$id'
@@ -4891,6 +4940,7 @@ export interface FileRouteTypes {
     | '/_authenticated/(ats)/hunting/'
     | '/_authenticated/(ats)/jobs/'
     | '/_authenticated/(ats)/sourcing/'
+    | '/_authenticated/agents/prototype/'
     | '/_authenticated/contracts/templates/'
     | '/_authenticated/prospecting/campaigns/'
     | '/_authenticated/settings/integrations/'
@@ -6937,6 +6987,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminWorkspacesIdRouteImport
       parentRoute: typeof AuthenticatedAdminWorkspacesRoute
     }
+    '/_authenticated/agents/prototype/': {
+      id: '/_authenticated/agents/prototype/'
+      path: '/'
+      fullPath: '/agents/prototype/'
+      preLoaderRoute: typeof AuthenticatedAgentsPrototypeIndexRouteImport
+      parentRoute: typeof AuthenticatedAgentsPrototypeRoute
+    }
+    '/_authenticated/agents/prototype/1': {
+      id: '/_authenticated/agents/prototype/1'
+      path: '/1'
+      fullPath: '/agents/prototype/1'
+      preLoaderRoute: typeof AuthenticatedAgentsPrototype1RouteImport
+      parentRoute: typeof AuthenticatedAgentsPrototypeRoute
+    }
+    '/_authenticated/agents/prototype/2': {
+      id: '/_authenticated/agents/prototype/2'
+      path: '/2'
+      fullPath: '/agents/prototype/2'
+      preLoaderRoute: typeof AuthenticatedAgentsPrototype2RouteImport
+      parentRoute: typeof AuthenticatedAgentsPrototypeRoute
+    }
+    '/_authenticated/agents/prototype/3': {
+      id: '/_authenticated/agents/prototype/3'
+      path: '/3'
+      fullPath: '/agents/prototype/3'
+      preLoaderRoute: typeof AuthenticatedAgentsPrototype3RouteImport
+      parentRoute: typeof AuthenticatedAgentsPrototypeRoute
+    }
     '/_authenticated/ats/jobs/$id': {
       id: '/_authenticated/ats/jobs/$id'
       path: '/$id'
@@ -8194,6 +8272,27 @@ const AuthenticatedAdminWorkspacesRouteWithChildren =
     AuthenticatedAdminWorkspacesRouteChildren,
   )
 
+interface AuthenticatedAgentsPrototypeRouteChildren {
+  AuthenticatedAgentsPrototype1Route: typeof AuthenticatedAgentsPrototype1Route
+  AuthenticatedAgentsPrototype2Route: typeof AuthenticatedAgentsPrototype2Route
+  AuthenticatedAgentsPrototype3Route: typeof AuthenticatedAgentsPrototype3Route
+  AuthenticatedAgentsPrototypeIndexRoute: typeof AuthenticatedAgentsPrototypeIndexRoute
+}
+
+const AuthenticatedAgentsPrototypeRouteChildren: AuthenticatedAgentsPrototypeRouteChildren =
+  {
+    AuthenticatedAgentsPrototype1Route: AuthenticatedAgentsPrototype1Route,
+    AuthenticatedAgentsPrototype2Route: AuthenticatedAgentsPrototype2Route,
+    AuthenticatedAgentsPrototype3Route: AuthenticatedAgentsPrototype3Route,
+    AuthenticatedAgentsPrototypeIndexRoute:
+      AuthenticatedAgentsPrototypeIndexRoute,
+  }
+
+const AuthenticatedAgentsPrototypeRouteWithChildren =
+  AuthenticatedAgentsPrototypeRoute._addFileChildren(
+    AuthenticatedAgentsPrototypeRouteChildren,
+  )
+
 interface AuthenticatedAtsJobsRouteChildren {
   AuthenticatedAtsJobsIdRoute: typeof AuthenticatedAtsJobsIdRoute
 }
@@ -8266,7 +8365,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminSecurityScansRoute: typeof AuthenticatedAdminSecurityScansRoute
   AuthenticatedAdminStatusRoute: typeof AuthenticatedAdminStatusRoute
   AuthenticatedAdminWorkspacesRoute: typeof AuthenticatedAdminWorkspacesRouteWithChildren
-  AuthenticatedAgentsPrototypeRoute: typeof AuthenticatedAgentsPrototypeRoute
+  AuthenticatedAgentsPrototypeRoute: typeof AuthenticatedAgentsPrototypeRouteWithChildren
   AuthenticatedAgentsSdrRoute: typeof AuthenticatedAgentsSdrRoute
   AuthenticatedAtsCandidatesRoute: typeof AuthenticatedAtsCandidatesRoute
   AuthenticatedAtsJobsRoute: typeof AuthenticatedAtsJobsRouteWithChildren
@@ -8408,7 +8507,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminStatusRoute: AuthenticatedAdminStatusRoute,
   AuthenticatedAdminWorkspacesRoute:
     AuthenticatedAdminWorkspacesRouteWithChildren,
-  AuthenticatedAgentsPrototypeRoute: AuthenticatedAgentsPrototypeRoute,
+  AuthenticatedAgentsPrototypeRoute:
+    AuthenticatedAgentsPrototypeRouteWithChildren,
   AuthenticatedAgentsSdrRoute: AuthenticatedAgentsSdrRoute,
   AuthenticatedAtsCandidatesRoute: AuthenticatedAtsCandidatesRoute,
   AuthenticatedAtsJobsRoute: AuthenticatedAtsJobsRouteWithChildren,

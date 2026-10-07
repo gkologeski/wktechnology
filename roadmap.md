@@ -1,5 +1,13 @@
 # Roadmap — Ciclo de contratação/desligamento via Workflows
 
+# Roadmap — Três propostas de Agentes de IA
+
+- [ ] Estúdio em /agents/prototype/1
+- [ ] Assistente de criação em /agents/prototype/2
+- [ ] Central de operação em /agents/prototype/3
+- [ ] Navegação, wizard, canvas e cliente com estados locais
+- [ ] Inspeção autenticada, temas, arquétipos e validações direcionadas
+
 - [x] Fase 1 — ações de contratação no motor (validada com candidata de teste)
 - [x] Fase 2 — diálogo de desfecho de contratação no TechHire (interna/outsourcing/hunting)
 - [x] Fase 3 — modelos nativos (Vendedor PJ, Freelancer, Outsourcing, Hunting, Desligamento)

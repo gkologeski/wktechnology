@@ -1,0 +1,413 @@
+.agent-prototype {
+  min-width: 0;
+  padding-bottom: 84px;
+  color: var(--foreground);
+  background: var(--product-panel);
+  font-family: var(--font-body, inherit);
+}
+.agent-prototype h1,
+.agent-prototype h2,
+.agent-prototype h3 {
+  font-family: var(--font-heading, inherit);
+  letter-spacing: 0;
+}
+.agent-prototype button[data-variant="ghost"],
+.agent-prototype button[data-variant="outline"],
+.agent-prototype input,
+.agent-prototype textarea,
+.agent-prototype [role="combobox"] {
+  color: var(--foreground);
+}
+.agent-prototype button.text-primary {
+  color: var(--primary);
+}
+.agent-prototype button.text-muted-foreground {
+  color: var(--muted-foreground);
+}
+.ap-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--product-header);
+}
+.ap-caption {
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+.ap-workspace {
+  height: clamp(460px, calc(100dvh - 310px), 700px);
+  min-height: 460px;
+  overflow: hidden;
+}
+.ap-flow {
+  display: grid;
+  grid-template-columns: 148px minmax(0, 1fr) 218px;
+  height: 100%;
+  min-width: 0;
+}
+.ap-palette {
+  padding: 16px 10px;
+  overflow: auto;
+  background: var(--product-toolbar);
+  border-right: 1px solid var(--border-subtle);
+}
+.ap-inspector {
+  padding: 20px 16px;
+  overflow: auto;
+  background: var(--product-panel);
+  border-left: 1px solid var(--border-subtle);
+}
+.ap-canvas {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  touch-action: none;
+  background-color: var(--product-canvas);
+  background-image: radial-gradient(var(--product-divider) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+.ap-canvas-world {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  width: 1200px;
+  height: 650px;
+}
+.ap-node {
+  position: absolute;
+  width: 218px;
+  min-height: 106px;
+  user-select: none;
+  cursor: grab;
+  background: var(--product-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+}
+.ap-node[data-selected="true"] {
+  border-color: var(--primary);
+  box-shadow:
+    0 0 0 2px color-mix(in oklab, var(--primary) 25%, transparent),
+    var(--shadow-sm);
+}
+.ap-node:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+.ap-port {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--product-panel);
+  border: 2px solid var(--primary);
+  top: 48px;
+}
+.ap-flow-tools {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--product-panel);
+  padding: 4px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+.ap-minimap {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  width: 132px;
+  height: 78px;
+  background: var(--product-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+}
+.ap-flow-tray {
+  display: flex;
+  gap: 6px;
+  overflow: auto;
+  padding: 12px;
+  background: var(--product-toolbar);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.ap-flow-focus {
+  display: flex;
+  flex-direction: column;
+  height: clamp(460px, calc(100dvh - 310px), 700px);
+}
+.ap-flow-focus .ap-canvas {
+  flex: 1;
+  min-height: 340px;
+}
+.ap-flow-bottom {
+  display: grid;
+  grid-template-columns: 170px 1fr 1fr;
+  gap: 16px;
+  background: var(--product-panel);
+  padding: 14px 24px;
+  border-top: 1px solid var(--border-subtle);
+}
+.ap-wizard {
+  display: grid;
+  grid-template-columns: 215px minmax(0, 1fr) 280px;
+  min-height: 580px;
+}
+.ap-steprail {
+  padding: 24px 14px;
+  background: var(--product-toolbar);
+}
+.ap-form {
+  padding: 38px 40px;
+  min-width: 0;
+}
+.ap-preview {
+  padding: 30px 22px;
+  background: var(--product-panel-muted);
+  border-left: 1px solid var(--border-subtle);
+}
+.ap-wizard-footer {
+  position: sticky;
+  bottom: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 16px 24px;
+  background: var(--product-panel);
+  border-top: 1px solid var(--border-subtle);
+  z-index: 5;
+}
+.ap-editorial {
+  padding: 38px 40px;
+}
+.ap-operation {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) 280px;
+  min-height: 620px;
+}
+.ap-master {
+  background: var(--product-toolbar);
+  padding: 20px 12px;
+  border-right: 1px solid var(--border-subtle);
+}
+.ap-overview {
+  min-width: 0;
+  padding: 28px;
+}
+.ap-activity {
+  background: var(--product-panel-muted);
+  padding: 24px 20px;
+  border-left: 1px solid var(--border-subtle);
+}
+.ap-uppersteps {
+  display: flex;
+  gap: 4px;
+  overflow: auto;
+  padding: 16px 24px;
+  background: var(--product-toolbar);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.ap-wizard-horizontal {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  max-width: 1100px;
+  margin: auto;
+}
+.ap-metric-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  padding: 24px 0;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.ap-record {
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr) 250px;
+  min-height: 550px;
+}
+.ap-timeline {
+  padding: 30px;
+  min-width: 0;
+}
+.ap-timeline-item {
+  position: relative;
+  padding: 0 0 26px 28px;
+  border-left: 1px solid var(--product-divider);
+}
+.ap-timeline-item::before {
+  content: "";
+  position: absolute;
+  left: -5px;
+  top: 4px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid var(--product-panel);
+}
+.ap-tabs {
+  display: flex;
+  gap: 12px;
+  overflow: auto;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--product-header);
+}
+.ap-chat {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 360px;
+}
+.ap-chat-log {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+  max-height: 400px;
+  overflow: auto;
+}
+.ap-source-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+@media (min-width: 1500px) {
+  .ap-workspace,
+  .ap-flow-focus {
+    height: 690px;
+  }
+  .ap-form {
+    padding: 48px 56px;
+  }
+}
+@media (max-width: 1199px) {
+  .ap-flow {
+    grid-template-columns: 150px minmax(0, 1fr);
+  }
+  .ap-flow > .ap-inspector {
+    display: none;
+  }
+  .ap-wizard {
+    grid-template-columns: 180px minmax(0, 1fr);
+  }
+  .ap-preview {
+    grid-column: 2;
+    border-left: 0;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .ap-operation {
+    grid-template-columns: 180px minmax(0, 1fr);
+  }
+  .ap-activity {
+    grid-column: 2;
+    border-left: 0;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .ap-record {
+    grid-template-columns: 190px minmax(0, 1fr);
+  }
+  .ap-record > .ap-activity {
+    grid-column: 2;
+  }
+  .ap-form {
+    padding: 30px;
+  }
+}
+@media (max-width: 767px) {
+  .ap-top {
+    padding: 14px 16px;
+  }
+  .ap-flow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ap-palette {
+    display: none;
+  }
+  .ap-workspace,
+  .ap-flow-focus {
+    height: 470px;
+  }
+  .ap-wizard,
+  .ap-operation,
+  .ap-wizard-horizontal,
+  .ap-record {
+    display: block;
+  }
+  .ap-steprail {
+    padding: 12px;
+  }
+  .ap-steprail ol {
+    display: flex;
+    overflow: auto;
+    gap: 4px;
+  }
+  .ap-steprail ol li {
+    flex-shrink: 0;
+  }
+  .ap-steprail .ap-step-subtitle {
+    display: none;
+  }
+  .ap-form,
+  .ap-editorial,
+  .ap-overview,
+  .ap-timeline {
+    padding: 24px 18px;
+  }
+  .ap-preview {
+    padding: 24px 18px;
+  }
+  .ap-master {
+    border-right: 0;
+  }
+  .ap-agent-buttons {
+    display: flex;
+    gap: 6px;
+    overflow: auto;
+  }
+  .ap-agent-buttons > div {
+    min-width: 165px;
+  }
+  .ap-activity {
+    border-left: 0;
+  }
+  .ap-flow-bottom {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 16px;
+  }
+  .ap-minimap {
+    display: none;
+  }
+  .ap-tabs {
+    padding: 0 16px;
+    gap: 4px;
+  }
+  .ap-metric-row {
+    gap: 12px;
+  }
+  .ap-wizard-footer {
+    padding: 12px 16px;
+  }
+  .ap-caption {
+    font-size: 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .agent-prototype * {
+    transition: none !important;
+  }
+}
