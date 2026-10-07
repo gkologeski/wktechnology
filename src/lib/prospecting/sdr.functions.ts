@@ -35,7 +35,7 @@ export const getSdrOverview = createServerFn({ method: "POST" })
         supabase
           .from("sdr_turn_jobs")
           .select(
-            "id, status, kind, draft_text, draft_payload, error, created_at, enrollment_id, conversation_id",
+            "id, status, kind, draft_text, draft_payload, error, attempts, created_at, updated_at, enrollment_id, conversation_id",
           )
           .eq("workspace_id", wsId)
           .in("status", ["drafted", "failed", "queued", "running"])
@@ -85,6 +85,29 @@ export const getSdrOverview = createServerFn({ method: "POST" })
         },
       ]),
     );
+    // Cota de respostas: envios confirmados (wamid único) na janela móvel de 24 h.
+    const since24 = new Date(Date.now() - 86400_000).toISOString();
+    const { data: sent24 } = await supabase
+      .from("sdr_actions")
+      .select("provider_ref, created_at")
+      .eq("workspace_id", wsId)
+      .eq("kind", "message_sent")
+      .eq("status", "success")
+      .not("provider_ref", "is", null)
+      .gte("created_at", since24)
+      .order("created_at", { ascending: true })
+      .limit(5000);
+    const usedRefs = new Set((sent24 ?? []).map((r) => r.provider_ref));
+    const quotaLimit = Number(settings.data?.daily_send_limit ?? 50);
+    const quota = {
+      limit: quotaLimit,
+      used: usedRefs.size,
+      remaining: Math.max(0, quotaLimit - usedRefs.size),
+      // Quando a resposta mais antiga sai da janela, uma vaga é liberada.
+      nextFreeAt: sent24?.[0]
+        ? new Date(new Date(sent24[0].created_at).getTime() + 86400_000).toISOString()
+        : null,
+    };
     const readiness = await loadSdrReadiness(supabase, wsId);
     const metrics: Record<string, number> = {};
     for (const a of actions.data ?? [])
@@ -101,6 +124,7 @@ export const getSdrOverview = createServerFn({ method: "POST" })
       qualifications,
       readiness,
       metrics,
+      quota,
     };
   });
 
