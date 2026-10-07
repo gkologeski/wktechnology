@@ -1,5 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { AgentsPrototype } from "@/components/agents/agents-prototype";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/agents/prototype")({
   head: () => ({
@@ -13,5 +12,5 @@ export const Route = createFileRoute("/_authenticated/agents/prototype")({
       { property: "og:description", content: "Esboço navegável da central de agentes de IA." },
     ],
   }),
-  component: AgentsPrototype,
+  component: Outlet,
 });
