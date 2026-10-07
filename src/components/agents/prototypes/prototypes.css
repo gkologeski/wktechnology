@@ -172,7 +172,16 @@
 }
 .ap-wizard:has(.ap-flow-focus) .ap-flow-focus,
 .ap-wizard-horizontal:has(.ap-flow-focus) .ap-flow-focus {
-  height: clamp(340px, calc(100dvh - 455px), 560px);
+  height: clamp(300px, calc(100dvh - 505px), 560px);
+}
+.ap-wizard:has(.ap-flow-focus) .ap-canvas,
+.ap-wizard-horizontal:has(.ap-flow-focus) .ap-canvas {
+  min-height: 0;
+}
+.ap-wizard:has(.ap-flow-focus) + .ap-wizard-footer,
+.ap-wizard-horizontal:has(.ap-flow-focus) + .ap-wizard-footer {
+  position: relative;
+  bottom: auto;
 }
 .ap-steprail {
   padding: 24px 14px;
