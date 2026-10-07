@@ -206,8 +206,8 @@ function FlowCanvas() {
           </div>
         ))}
       </aside>
-      <div className="relative h-[460px] rounded-lg border bg-muted/30 overflow-hidden">
-        <svg className="absolute inset-0 h-full w-full" aria-hidden>
+      <div className="relative h-[460px] rounded-lg border bg-muted/30 overflow-auto">
+        <svg className="absolute left-0 top-0 h-full w-[760px]" aria-hidden>
           {EDGES.map(([a, b, l]) => {
             const s = pos[a];
             const t = pos[b];
