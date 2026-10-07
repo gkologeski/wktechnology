@@ -50,6 +50,8 @@ export function FlowCanvas({ layout = "studio" }: { layout?: "studio" | "tray" |
   const [pan, setPan] = useState({ x: 18, y: 65 });
   const [inspector, setInspector] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   useEffect(() => {
     const element = ref.current;
@@ -76,11 +78,11 @@ export function FlowCanvas({ layout = "studio" }: { layout?: "studio" | "tray" |
         const rect = element.getBoundingClientRect();
         const px = e.clientX - rect.left;
         const py = e.clientY - rect.top;
-        setZoom((z) => {
-          const next = Math.min(1.5, Math.max(0.2, z * Math.exp(-e.deltaY * 0.01)));
-          setPan((p) => ({ x: px - ((px - p.x) * next) / z, y: py - ((py - p.y) * next) / z }));
-          return next;
-        });
+        const z = zoomRef.current;
+        const next = Math.min(1.5, Math.max(0.2, z * Math.exp(-e.deltaY * 0.01)));
+        zoomRef.current = next;
+        setZoom(next);
+        setPan((p) => ({ x: px - ((px - p.x) * next) / z, y: py - ((py - p.y) * next) / z }));
         return;
       }
       setPan((p) => ({ x: p.x - e.deltaX, y: p.y - e.deltaY }));
@@ -158,14 +160,23 @@ export function FlowCanvas({ layout = "studio" }: { layout?: "studio" | "tray" |
       onKeyDown={(e) => {
         if (e.target !== e.currentTarget) return;
         const step = 40;
-        const d = { ArrowLeft: [step, 0], ArrowRight: [-step, 0], ArrowUp: [0, step], ArrowDown: [0, -step] }[e.key];
+        const d = {
+          ArrowLeft: [step, 0],
+          ArrowRight: [-step, 0],
+          ArrowUp: [0, step],
+          ArrowDown: [0, -step],
+        }[e.key];
         if (!d) return;
         e.preventDefault();
         setPan((p) => ({ x: p.x + d[0], y: p.y + d[1] }));
       }}
       onPointerDown={(e) => {
         const target = e.target as HTMLElement;
-        if (e.button !== 0 || target.closest(".ap-node, button, .ap-minimap, .ap-flow-tools, input, textarea")) return;
+        if (
+          e.button !== 0 ||
+          target.closest(".ap-node, button, .ap-minimap, .ap-flow-tools, input, textarea")
+        )
+          return;
         const start = { x: e.clientX, y: e.clientY, ...pan };
         const el = e.currentTarget;
         el.setPointerCapture(e.pointerId);
