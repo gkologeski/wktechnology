@@ -35,7 +35,7 @@ export function DemoProvider({
   const [area, setArea] = useState("Fluxo");
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(`agents-prototype-${number}`);
+      const raw = localStorage.getItem(`agents-prototype-v2-${number}`);
       if (!raw) return;
       const saved = JSON.parse(raw) as Agent[];
       if (
@@ -46,6 +46,8 @@ export function DemoProvider({
             typeof a.id === "string" &&
             typeof a.name === "string" &&
             Array.isArray(a.nodes) &&
+            Array.isArray(a.edges) &&
+            a.nodes.every((n) => typeof n.type === "string" && typeof n.config === "object") &&
             Array.isArray(a.sources),
         )
       )
@@ -60,7 +62,7 @@ export function DemoProvider({
     setAgents((all) => all.map((a) => (a.id === selected ? { ...a, ...change } : a)));
   const save = () => {
     try {
-      localStorage.setItem(`agents-prototype-${number}`, JSON.stringify(agents));
+      localStorage.setItem(`agents-prototype-v2-${number}`, JSON.stringify(agents));
       toast.success("Salvo neste protótipo");
     } catch {
       toast.error("Não foi possível salvar neste navegador.");

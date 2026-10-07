@@ -1,71 +1,81 @@
-import { useState, useRef, useEffect, type CSSProperties } from "react";
-import { DndContext, useDraggable, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { useState, useRef, useEffect } from "react";
+import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { toast } from "sonner";
 import {
-  Bot,
-  ShieldCheck,
-  UserRound,
-  CircleStop,
-  Zap,
   Plus,
   Minus,
   Maximize,
   Settings2,
-  X,
-  Database,
-  Calendar,
+  Undo2,
+  Redo2,
+  Lock,
+  LockOpen,
+  Download,
+  Upload,
+  AlertTriangle,
   GitBranch,
-  FileText,
-  Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { CATEGORIES, NODE_TYPES, defaultConfig, getNodeType } from "@/lib/agents/flow/catalog";
 import { useDemo } from "./state";
-import { EDGES, type FlowNode } from "./model";
-const icons: Record<string, typeof Bot> = {
-  entrada: Zap,
-  proteção: ShieldCheck,
-  agente: Bot,
-  humano: UserRound,
-  saída: CircleStop,
-};
-const groups = [
-  {
-    name: "Construir",
-    items: ["Agente", "Classificar", "Proteções", "Condição", "Enviar resposta", "Fim"],
-  },
-  { name: "Conhecimento", items: ["Buscar KB", "Consultar catálogo", "Buscar cliente"] },
-  {
-    name: "Ferramentas",
-    items: ["Agendar reunião", "Escalar pra humano", "Prospecção", "Nota interna"],
-  },
-];
-import { DraggableNode, Inspector } from "./flow-nodes";
+import { flowIssues, type Agent, type FlowNode } from "./model";
+import { DraggableNode, Inspector, ICONS } from "./flow-nodes";
+import { FlowEdges, WORLD_W, WORLD_H } from "./flow-edges";
+
+type Snapshot = Pick<Agent, "nodes" | "edges">;
+
 export function FlowCanvas({ layout = "studio" }: { layout?: "studio" | "tray" | "bottom" }) {
-  const { agent, patch } = useDemo();
+  const { agent, patch: rawPatch } = useDemo();
   const [selected, setSelected] = useState("agent");
-  const [zoom, setZoom] = useState(0.65);
+  const [zoom, setZoom] = useState(0.5);
   const [pan, setPan] = useState({ x: 18, y: 65 });
   const [inspector, setInspector] = useState(false);
+  const [locked, setLocked] = useState(false);
+  const [query, setQuery] = useState("");
+  const [connecting, setConnecting] = useState<{ from: string; port: string } | null>(null);
+  const past = useRef<Snapshot[]>([]);
+  const future = useRef<Snapshot[]>([]);
   const ref = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const issues = flowIssues(agent);
+  const errors = issues.filter((i) => i.level === "erro");
+
+  const patch = (change: Partial<Snapshot>) => {
+    past.current = [...past.current.slice(-49), { nodes: agent.nodes, edges: agent.edges }];
+    future.current = [];
+    rawPatch(change);
+  };
+  const undo = () => {
+    const prev = past.current.pop();
+    if (!prev) return;
+    future.current.push({ nodes: agent.nodes, edges: agent.edges });
+    rawPatch(prev);
+  };
+  const redo = () => {
+    const next = future.current.pop();
+    if (!next) return;
+    past.current.push({ nodes: agent.nodes, edges: agent.edges });
+    rawPatch(next);
+  };
+
+  const fitTo = (element: HTMLElement) => {
+    const z = Math.max(
+      0.2,
+      Math.min((element.clientWidth - 60) / WORLD_W, (element.clientHeight - 90) / WORLD_H, 1),
+    );
+    setZoom(z);
+    setPan({ x: 24, y: Math.max(40, (element.clientHeight - WORLD_H * z) / 2) });
+  };
   useEffect(() => {
     const element = ref.current;
     if (!element) return;
-    const resize = () => {
-      const z = Math.max(
-        0.23,
-        Math.min((element.clientWidth - 60) / 1160, (element.clientHeight - 100) / 530, 1),
-      );
-      setZoom(z);
-      setPan({ x: 24, y: (element.clientHeight - 530 * z) / 2 });
-    };
-    resize();
-    const observer = new ResizeObserver(resize);
+    fitTo(element);
+    const observer = new ResizeObserver(() => fitTo(element));
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
@@ -90,67 +100,148 @@ export function FlowCanvas({ layout = "studio" }: { layout?: "studio" | "tray" |
     element.addEventListener("wheel", onWheel, { passive: false });
     return () => element.removeEventListener("wheel", onWheel);
   }, []);
-  const fit = () => {
-    const width = ref.current?.clientWidth ?? 600;
-    const height = ref.current?.clientHeight ?? 500;
-    const z = Math.min((width - 60) / 1160, (height - 100) / 530, 1);
-    setZoom(Math.max(0.23, z));
-    setPan({ x: 24, y: (height - 530 * z) / 2 });
-  };
-  const add = (title: string) => {
-    const node = {
+
+  const add = (type: string) => {
+    const def = getNodeType(type);
+    if (!def) return;
+    if (def.unique && agent.nodes.some((n) => n.type === type)) {
+      toast.error(`O fluxo já tem um bloco ${def.label}.`);
+      return;
+    }
+    const from = agent.nodes.find((n) => n.id === selected);
+    const fromDef = from && getNodeType(from.type);
+    const freePort =
+      fromDef && !fromDef.visual
+        ? fromDef
+            .outputs(from.config)
+            .find((p) => !agent.edges.some((e) => e.from === from.id && e.port === p))
+        : undefined;
+    const node: FlowNode = {
       id: crypto.randomUUID(),
-      title,
-      kind: "agente",
-      summary: "Configurar instrução deste bloco",
-      x: 450,
-      y: 450,
-      from: selected,
+      type,
+      title: def.label,
+      config: defaultConfig(type),
+      x: (from?.x ?? 300) + (freePort ? 285 : 40),
+      y: (from?.y ?? 300) + (freePort ? 0 : 160),
     };
-    patch({ nodes: [...agent.nodes, node] });
+    patch({
+      nodes: [...agent.nodes, node],
+      edges:
+        freePort && !def.visual && type !== "start"
+          ? [
+              ...agent.edges,
+              { id: crypto.randomUUID(), from: from!.id, to: node.id, port: freePort },
+            ]
+          : agent.edges,
+    });
     setSelected(node.id);
   };
+  const remove = (id: string) => {
+    patch({
+      nodes: agent.nodes.filter((n) => n.id !== id),
+      edges: agent.edges.filter((e) => e.from !== id && e.to !== id),
+    });
+    setSelected("start");
+    setInspector(false);
+  };
+  const duplicate = (id: string) => {
+    const src = agent.nodes.find((n) => n.id === id);
+    if (!src) return;
+    const copy = {
+      ...structuredClone(src),
+      id: crypto.randomUUID(),
+      title: `${src.title} (cópia)`,
+      x: src.x + 30,
+      y: src.y + 140,
+    };
+    patch({ nodes: [...agent.nodes, copy] });
+    setSelected(copy.id);
+  };
+  const exportJson = () => {
+    const blob = new Blob(
+      [JSON.stringify({ version: 1, nodes: agent.nodes, edges: agent.edges }, null, 2)],
+      { type: "application/json" },
+    );
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `fluxo-${agent.name.toLowerCase().replace(/\W+/g, "-")}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+  const importJson = async (file: File) => {
+    try {
+      const data = JSON.parse(await file.text()) as Snapshot;
+      if (
+        !Array.isArray(data.nodes) ||
+        !Array.isArray(data.edges) ||
+        data.nodes.some((n) => !getNodeType(n.type))
+      )
+        throw new Error("formato");
+      patch({ nodes: data.nodes, edges: data.edges });
+      toast.success("Fluxo importado no rascunho local");
+    } catch {
+      toast.error("Arquivo de fluxo inválido.");
+    }
+  };
+  const onPort = (from: string, port: string) => {
+    if (locked) return;
+    setConnecting({ from, port });
+    toast.message(`Clique no bloco de destino da saída “${port}”`);
+  };
+  const onNode = (id: string) => {
+    if (connecting) {
+      const to = agent.nodes.find((n) => n.id === id);
+      if (to && id !== connecting.from && to.type !== "start" && !getNodeType(to.type)?.visual)
+        patch({
+          edges: [
+            ...agent.edges.filter(
+              (e) => !(e.from === connecting.from && e.port === connecting.port),
+            ),
+            { id: crypto.randomUUID(), from: connecting.from, to: id, port: connecting.port },
+          ],
+        });
+      else toast.error("Destino inválido para esta conexão.");
+      setConnecting(null);
+      return;
+    }
+    setSelected(id);
+    if (layout === "tray" || (ref.current?.clientWidth ?? 900) < 500) setInspector(true);
+  };
+
   const Palette = ({ tray = false }: { tray?: boolean }) => (
     <div className={tray ? "ap-flow-tray" : "ap-palette"}>
-      {groups.map((group) => (
-        <div key={group.name} className={tray ? "flex items-center gap-1" : "mb-5"}>
+      {CATEGORIES.map((cat) => (
+        <div key={cat} className={tray ? "flex items-center gap-1" : "mb-4"}>
           {!tray && (
-            <h3 className="mb-2 px-2 text-[10px] font-semibold uppercase text-muted-foreground">
-              {group.name}
+            <h3 className="mb-1.5 px-2 text-[10px] font-semibold uppercase text-muted-foreground">
+              {cat}
             </h3>
           )}
-          {group.items.map((title, i) => (
-            <Button
-              key={title}
-              size="sm"
-              variant="ghost"
-              className={tray ? "shrink-0" : "mb-1 w-full justify-start font-normal"}
-              onClick={() => add(title)}
-              title={`Adicionar ${title}`}
-            >
-              <span className="text-muted-foreground">
-                {i % 3 === 0 ? <Bot /> : i % 3 === 1 ? <GitBranch /> : <Plus />}
-              </span>
-              {title}
-            </Button>
-          ))}
+          {NODE_TYPES.filter((d) => d.category === cat && d.type !== "start").map((d) => {
+            const Icon = ICONS[d.icon] ?? GitBranch;
+            return (
+              <Button
+                key={d.type}
+                size="sm"
+                variant="ghost"
+                disabled={locked}
+                className={tray ? "shrink-0" : "mb-0.5 h-7 w-full justify-start font-normal"}
+                onClick={() => add(d.type)}
+                title={d.description}
+              >
+                <Icon className="text-muted-foreground" />
+                {d.label}
+              </Button>
+            );
+          })}
         </div>
       ))}
-      {!tray && (
-        <div className="border-t border-border-subtle pt-3">
-          <Button
-            disabled
-            variant="ghost"
-            size="sm"
-            title="Integração HTTP não disponível no protótipo"
-          >
-            HTTP Request
-          </Button>
-          <p className="px-2 text-[10px] text-muted-foreground">Não conectado</p>
-        </div>
-      )}
     </div>
   );
+  const issueCount = (id: string) =>
+    issues.filter((i) => i.nodeId === id && i.level === "erro").length;
+  const q = query.trim().toLowerCase();
+
   const canvas = (
     <div
       ref={ref}
@@ -158,23 +249,31 @@ export function FlowCanvas({ layout = "studio" }: { layout?: "studio" | "tray" |
       aria-label="Canvas de fluxo. Arraste o fundo ou use as setas para mover a visualização"
       tabIndex={0}
       onKeyDown={(e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {
+          e.preventDefault();
+          if (e.shiftKey) redo();
+          else undo();
+          return;
+        }
+        if (e.key === "Escape") setConnecting(null);
         if (e.target !== e.currentTarget) return;
-        const step = 40;
         const d = {
-          ArrowLeft: [step, 0],
-          ArrowRight: [-step, 0],
-          ArrowUp: [0, step],
-          ArrowDown: [0, -step],
+          ArrowLeft: [40, 0],
+          ArrowRight: [-40, 0],
+          ArrowUp: [0, 40],
+          ArrowDown: [0, -40],
         }[e.key];
         if (!d) return;
         e.preventDefault();
-        setPan((p) => ({ x: p.x + d[0], y: p.y + d[1] }));
+        setPan((p) => ({ x: p.x + d[0]!, y: p.y + d[1]! }));
       }}
       onPointerDown={(e) => {
         const target = e.target as HTMLElement;
         if (
           e.button !== 0 ||
-          target.closest(".ap-node, button, .ap-minimap, .ap-flow-tools, input, textarea")
+          target.closest(
+            ".ap-node, button, .ap-minimap, .ap-flow-tools, .ap-flow-top, input, textarea",
+          )
         )
           return;
         const start = { ...pan };
@@ -193,15 +292,96 @@ export function FlowCanvas({ layout = "studio" }: { layout?: "studio" | "tray" |
         el.addEventListener("pointercancel", end);
       }}
     >
-      <div className="absolute left-4 top-4 z-10 flex gap-2 text-[10px] text-muted-foreground">
+      <div className="ap-flow-top absolute left-3 right-3 top-3 z-10 flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
         <span className="rounded-md bg-product-panel px-2 py-1">
-          Rascunho · {agent.nodes.length} blocos
+          Rascunho · {agent.nodes.length} blocos · {agent.edges.length} conexões
         </span>
-        <span className="rounded-md bg-product-panel px-2 py-1">Alterações locais</span>
+        <span
+          className={`flex items-center gap-1 rounded-md bg-product-panel px-2 py-1 ${errors.length ? "text-destructive" : "text-success"}`}
+          title={errors.map((i) => i.message).join("\n")}
+        >
+          {errors.length > 0 && <AlertTriangle size={12} />}
+          {errors.length ? `${errors.length} pendências` : "Fluxo válido"}
+        </span>
+        {connecting && (
+          <span className="rounded-md bg-accent px-2 py-1 text-accent-foreground">
+            Conectando “{connecting.port}” · Esc cancela
+          </span>
+        )}
+        <Input
+          aria-label="Buscar bloco"
+          placeholder="Buscar bloco"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="ml-auto h-7 w-36 text-xs"
+        />
+        <Button
+          size="icon"
+          variant="ghost"
+          className="size-7"
+          aria-label="Desfazer"
+          title="Desfazer (Ctrl+Z)"
+          onClick={undo}
+        >
+          <Undo2 />
+        </Button>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="size-7"
+          aria-label="Refazer"
+          title="Refazer (Ctrl+Shift+Z)"
+          onClick={redo}
+        >
+          <Redo2 />
+        </Button>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="size-7"
+          aria-label={locked ? "Desbloquear interação" : "Bloquear interação"}
+          aria-pressed={locked}
+          onClick={() => setLocked((l) => !l)}
+        >
+          {locked ? <Lock /> : <LockOpen />}
+        </Button>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="size-7"
+          aria-label="Exportar JSON"
+          title="Exportar JSON"
+          onClick={exportJson}
+        >
+          <Download />
+        </Button>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="size-7"
+          aria-label="Importar JSON"
+          title="Importar JSON"
+          onClick={() => fileRef.current?.click()}
+        >
+          <Upload />
+        </Button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/json"
+          className="hidden"
+          aria-hidden="true"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void importJson(f);
+            e.target.value = "";
+          }}
+        />
       </div>
       <DndContext
         sensors={sensors}
         onDragEnd={(e) => {
+          if (locked) return;
           patch({
             nodes: agent.nodes.map((n) =>
               n.id === e.active.id
@@ -217,82 +397,26 @@ export function FlowCanvas({ layout = "studio" }: { layout?: "studio" | "tray" |
       >
         <div
           className="ap-canvas-world"
-          style={{ transform: `translate(${pan.x}px,${pan.y}px) scale(${zoom})` }}
+          style={{
+            width: WORLD_W,
+            height: WORLD_H,
+            transform: `translate(${pan.x}px,${pan.y}px) scale(${zoom})`,
+          }}
         >
-          <svg
-            width="1200"
-            height="650"
-            className="pointer-events-none absolute inset-0 overflow-visible"
-            aria-hidden="true"
-          >
-            <defs>
-              <marker
-                id={`arrow-${layout}`}
-                markerWidth="7"
-                markerHeight="7"
-                refX="6"
-                refY="3.5"
-                orient="auto"
-              >
-                <path d="M0 0L7 3.5L0 7" className="fill-primary" />
-              </marker>
-            </defs>
-            {[
-              ...EDGES,
-              ...agent.nodes.filter((n) => n.from).map((n) => [n.from!, n.id, "Próximo"]),
-            ].map(([a, b, label]) => {
-              const from = agent.nodes.find((n) => n.id === a),
-                to = agent.nodes.find((n) => n.id === b);
-              if (!from || !to) return null;
-              const x1 = from.x + 222,
-                y1 = from.y + 52,
-                x2 = to.x - 8,
-                y2 = to.y + 52,
-                m = (x1 + x2) / 2;
-              return (
-                <g key={a + b}>
-                  <path
-                    d={`M${x1} ${y1} C${m} ${y1},${m} ${y2},${x2} ${y2}`}
-                    fill="none"
-                    className={label === "Bloqueou" ? "stroke-warning" : "stroke-primary"}
-                    strokeWidth="1.8"
-                    markerEnd={`url(#arrow-${layout})`}
-                  />
-                  {label && (
-                    <g>
-                      <rect
-                        x={m - 30}
-                        y={(y1 + y2) / 2 - 21}
-                        width="68"
-                        height="20"
-                        rx="4"
-                        className="fill-product-canvas"
-                      />
-                      <text
-                        x={m + 4}
-                        y={(y1 + y2) / 2 - 7}
-                        textAnchor="middle"
-                        className="fill-muted-foreground text-[11px]"
-                      >
-                        {label}
-                      </text>
-                    </g>
-                  )}
-                </g>
-              );
-            })}
-          </svg>
+          <FlowEdges nodes={agent.nodes} edges={agent.edges} layout={layout} />
           {agent.nodes.map((node) => (
             <DraggableNode
               key={node.id}
               node={node}
               zoom={zoom}
               selected={selected === node.id}
-              onSelect={() => {
-                setSelected(node.id);
-                if (layout === "tray" || (ref.current?.clientWidth ?? 900) < 500)
-                  setInspector(true);
-              }}
+              dimmed={
+                !!q && !`${node.title} ${getNodeType(node.type)?.label}`.toLowerCase().includes(q)
+              }
+              issues={issueCount(node.id)}
+              connecting={!!connecting}
+              onSelect={() => onNode(node.id)}
+              onPort={(p) => onPort(node.id, p)}
             />
           ))}
         </div>
@@ -322,7 +446,7 @@ export function FlowCanvas({ layout = "studio" }: { layout?: "studio" | "tray" |
           size="icon"
           aria-label="Ajustar fluxo à tela"
           title="Ajustar à tela"
-          onClick={fit}
+          onClick={() => ref.current && fitTo(ref.current)}
         >
           <Maximize />
         </Button>
@@ -335,30 +459,21 @@ export function FlowCanvas({ layout = "studio" }: { layout?: "studio" | "tray" |
         >
           <Settings2 />
         </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Adicionar bloco"
-          title="Adicionar agente"
-          onClick={() => add("Agente")}
-        >
-          <Bot />
-        </Button>
       </div>
       <svg
         className="ap-minimap"
-        viewBox="0 0 1200 650"
+        viewBox={`0 0 ${WORLD_W} ${WORLD_H}`}
         role="img"
         aria-label="Minimapa do fluxo"
-        onClick={fit}
+        onClick={() => ref.current && fitTo(ref.current)}
       >
         {agent.nodes.map((n) => (
           <rect
             key={n.id}
             x={n.x}
             y={n.y}
-            width="218"
-            height="106"
+            width="230"
+            height="150"
             rx="12"
             className={selected === n.id ? "fill-primary" : "fill-product-panel-strong"}
           />
@@ -370,11 +485,12 @@ export function FlowCanvas({ layout = "studio" }: { layout?: "studio" | "tray" |
           height={(ref.current?.clientHeight ?? 500) / zoom}
           fill="none"
           className="stroke-primary"
-          strokeWidth="6"
+          strokeWidth="8"
         />
       </svg>
     </div>
   );
+  const inspectorEl = <Inspector selected={selected} onDelete={remove} onDuplicate={duplicate} />;
   return (
     <>
       <div className={layout === "studio" ? "ap-flow" : "ap-flow-focus"}>
@@ -382,9 +498,7 @@ export function FlowCanvas({ layout = "studio" }: { layout?: "studio" | "tray" |
           <>
             <Palette />
             {canvas}
-            <aside className="ap-inspector">
-              <Inspector selected={selected} />
-            </aside>
+            <aside className="ap-inspector">{inspectorEl}</aside>
           </>
         ) : (
           <>
@@ -394,19 +508,13 @@ export function FlowCanvas({ layout = "studio" }: { layout?: "studio" | "tray" |
               <div className="ap-flow-bottom">
                 <div className="flex items-center gap-2 text-sm font-semibold">
                   <Settings2 size={16} />
-                  Bloco selecionado
+                  {agent.nodes.find((n) => n.id === selected)?.title ?? "Bloco selecionado"}
                 </div>
-                <Input
-                  aria-label="Título do bloco selecionado"
-                  value={agent.nodes.find((n) => n.id === selected)?.title ?? ""}
-                  onChange={(e) =>
-                    patch({
-                      nodes: agent.nodes.map((n) =>
-                        n.id === selected ? { ...n, title: e.target.value } : n,
-                      ),
-                    })
-                  }
-                />
+                <span className="text-xs text-muted-foreground">
+                  {getNodeType(agent.nodes.find((n) => n.id === selected)?.type ?? "")?.summary(
+                    agent.nodes.find((n) => n.id === selected)?.config ?? {},
+                  )}
+                </span>
                 <Button variant="outline" onClick={() => setInspector(true)}>
                   Configurar parâmetros
                 </Button>
@@ -416,10 +524,10 @@ export function FlowCanvas({ layout = "studio" }: { layout?: "studio" | "tray" |
         )}
       </div>
       <Dialog open={inspector} onOpenChange={setInspector}>
-        <DialogContent>
+        <DialogContent className="max-h-[85dvh] overflow-y-auto">
           <DialogTitle>Editar bloco</DialogTitle>
-          <DialogDescription>Configuração local do fluxo demonstrativo.</DialogDescription>
-          <Inspector selected={selected} />
+          <DialogDescription>Configuração do rascunho local deste protótipo.</DialogDescription>
+          {inspectorEl}
         </DialogContent>
       </Dialog>
     </>

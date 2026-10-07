@@ -1,7 +1,8 @@
 import { Bot, Calendar, FileText } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useDemo } from "./state";
-import { STEPS } from "./model";
+import { STEPS, buildPrompt } from "./model";
 import { FlowCanvas } from "./flow";
 import { Field } from "./wizard-navigation";
 import { Choice } from "./wizard-navigation";
@@ -134,6 +135,24 @@ export function WizardContent() {
               onChange={(instructions) => patch({ instructions })}
               multiline
             />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const prompt = buildPrompt(agent);
+                patch({
+                  instructions: prompt,
+                  nodes: agent.nodes.map((n) =>
+                    n.type === "agent"
+                      ? { ...n, config: { ...n.config, tone: agent.tone, prompt } }
+                      : n,
+                  ),
+                });
+                toast.success("Prompt gerado a partir dos campos");
+              }}
+            >
+              Gerar prompt
+            </Button>
           </>
         )}
         {step === 2 && <Knowledge />}

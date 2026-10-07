@@ -64,3 +64,15 @@
 - [x] Avisar somente na primeira mensagem não lida e fora da Inbox
 - [x] Corrigir cortes com três painéis fluidos em desktop e mobile
 - [ ] Validar código, testes e fluxo visual
+
+# Roadmap — Agentes de IA: paridade ChatSuite (docs/agents/chatsuite-parity.md)
+
+- [x] Catálogo único de blocos com editores próprios, saídas, validação e resumo
+- [x] Executor de fluxo com trace, validação de grafo e ferramentas simuladas (testado)
+- [x] Três protótipos usando o mesmo contrato; chat de teste roda o executor
+- [ ] Persistência multiagente com rascunho/publicado e rollback (migração aditiva)
+- [ ] Seletores reais do workspace (agendas, equipes, funis, fontes, conexões)
+- [ ] Executor ligado ao inbound de produção, métricas por agente/versão/origem
+- [ ] Ingestão de conhecimento (upload, trechos, validade) e perguntas sem resposta
+- [ ] HTTP no servidor com cofre; integrações externas (dependem de credenciais)
+- [ ] Modelos de fluxo, regras de ativação, supervisor/treinador/regressão
