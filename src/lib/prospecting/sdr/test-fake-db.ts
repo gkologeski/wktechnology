@@ -51,9 +51,20 @@ class Query {
     this.filters.push((r) => r[c] != null && r[c] >= v);
     return this;
   }
-  not(c: string, _op: string, v: string) {
-    const list = v.replace(/[()]/g, "").split(",");
+  not(c: string, op: string, v: string | null) {
+    if (op === "is") {
+      this.filters.push((r) => (r[c] ?? null) !== v);
+      return this;
+    }
+    const list = String(v).replace(/[()]/g, "").split(",");
     this.filters.push((r) => !list.includes(String(r[c])));
+    return this;
+  }
+  contains(c: string, sub: Record<string, unknown>) {
+    this.filters.push((r) => {
+      const o = (r[c] ?? {}) as Record<string, unknown>;
+      return Object.entries(sub).every(([k, val]) => o[k] === val);
+    });
     return this;
   }
   order(col: string, o?: { ascending?: boolean }) {
