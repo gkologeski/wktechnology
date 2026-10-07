@@ -16,6 +16,7 @@ import { leadScoreBandLabel, LEAD_SCORE_MAX } from "@/lib/prospecting/lead-score
 import { EmptyState, MetricCard, SectionHeader } from "@/components/techhire/ui";
 import {
   approveSdrDraft,
+  setSdrOfferApproval,
   discardSdrDraft,
   getSdrOverview,
   retrySdrMeetingSync,
@@ -385,7 +386,20 @@ function NumField(p: {
 function CatalogPanel({ d }: { d: Overview }) {
   const setActive = useServerFn(setSdrOfferActive);
   const saveMat = useServerFn(saveSdrMaterial);
+  const setApproval = useServerFn(setSdrOfferApproval);
   const refresh = useRefresh();
+  const approve = useMutation({
+    mutationFn: (v: { ids: string[]; approved: boolean }) =>
+      setApproval({ data: { workspaceId: d.workspaceId, ...v } }),
+    onSuccess: (_r, v) => (
+      toast.success(v.approved ? "Oferta aprovada para o SDR" : "Aprovação removida"),
+      refresh()
+    ),
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const pendingIds = d.offers
+    .filter((o) => o.status === "active" && !o.approved_at)
+    .map((o) => o.id);
   const [mat, setMat] = useState({ title: "", url: "", offerIds: [] as string[] });
   const toggle = useMutation({
     mutationFn: (v: { id: string; active: boolean }) =>
@@ -418,6 +432,17 @@ function CatalogPanel({ d }: { d: Overview }) {
         <SectionHeader
           title="Portfólio que o SDR conhece"
           description="Só ofertas ativas e aprovadas entram no agente. Preços nunca são informados."
+          action={
+            d.canManage && pendingIds.length > 0 ? (
+              <Button
+                size="sm"
+                disabled={approve.isPending}
+                onClick={() => approve.mutate({ ids: pendingIds, approved: true })}
+              >
+                Aprovar {pendingIds.length} pendentes
+              </Button>
+            ) : undefined
+          }
         />
         {d.offers.length === 0 ? (
           <EmptyState
@@ -439,12 +464,27 @@ function CatalogPanel({ d }: { d: Overview }) {
                     <p className="truncate text-xs text-muted-foreground">Fonte: {o.source_url}</p>
                   )}
                 </div>
-                <Switch
-                  aria-label={`Ativar ${o.name}`}
-                  checked={o.status === "active"}
-                  disabled={!d.canManage || toggle.isPending}
-                  onCheckedChange={(v) => toggle.mutate({ id: o.id, active: v })}
-                />
+                <div className="flex shrink-0 items-center gap-3">
+                  <Badge variant={o.approved_at ? "secondary" : "outline"}>
+                    {o.approved_at ? "Aprovada" : "Aguardando aprovação"}
+                  </Badge>
+                  {d.canManage && o.status === "active" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={approve.isPending}
+                      onClick={() => approve.mutate({ ids: [o.id], approved: !o.approved_at })}
+                    >
+                      {o.approved_at ? "Revogar" : "Aprovar"}
+                    </Button>
+                  )}
+                  <Switch
+                    aria-label={`Ativar ${o.name}`}
+                    checked={o.status === "active"}
+                    disabled={!d.canManage || toggle.isPending}
+                    onCheckedChange={(v) => toggle.mutate({ id: o.id, active: v })}
+                  />
+                </div>
               </li>
             ))}
           </ul>

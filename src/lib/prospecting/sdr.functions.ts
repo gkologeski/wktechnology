@@ -162,6 +162,32 @@ export const setSdrOfferActive = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const setSdrOfferApproval = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        workspaceId: z.string().uuid(),
+        ids: z.array(z.string().uuid()).min(1).max(100),
+        approved: z.boolean(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId, data.workspaceId);
+    const { error } = await context.supabase
+      .from("sdr_offers")
+      .update(
+        data.approved
+          ? { approved_at: new Date().toISOString(), approved_by: context.userId }
+          : { approved_at: null, approved_by: null },
+      )
+      .in("id", data.ids)
+      .eq("workspace_id", data.workspaceId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const saveSdrMaterial = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
