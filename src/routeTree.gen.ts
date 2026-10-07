@@ -93,6 +93,7 @@ import { Route as AuthenticatedAdminSandboxRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminSecurityScansRouteImport } from './routes/_authenticated/admin.security-scans'
 import { Route as AuthenticatedAdminStatusRouteImport } from './routes/_authenticated/admin.status'
 import { Route as AuthenticatedAdminWorkspacesRouteImport } from './routes/_authenticated/admin.workspaces'
+import { Route as AuthenticatedAgentsPrototypeRouteImport } from './routes/_authenticated/agents.prototype'
 import { Route as AuthenticatedAgentsSdrRouteImport } from './routes/_authenticated/agents.sdr'
 import { Route as AuthenticatedAtsIndexRouteImport } from './routes/_authenticated/ats.index'
 import { Route as AuthenticatedAtsCandidatesRouteImport } from './routes/_authenticated/ats.candidates'
@@ -838,6 +839,12 @@ const AuthenticatedAdminWorkspacesRoute =
   AuthenticatedAdminWorkspacesRouteImport.update({
     id: '/admin/workspaces',
     path: '/admin/workspaces',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAgentsPrototypeRoute =
+  AuthenticatedAgentsPrototypeRouteImport.update({
+    id: '/agents/prototype',
+    path: '/agents/prototype',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedAgentsSdrRoute = AuthenticatedAgentsSdrRouteImport.update({
@@ -2681,6 +2688,7 @@ export interface FileRoutesByFullPath {
   '/admin/security-scans': typeof AuthenticatedAdminSecurityScansRoute
   '/admin/status': typeof AuthenticatedAdminStatusRoute
   '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
+  '/agents/prototype': typeof AuthenticatedAgentsPrototypeRoute
   '/agents/sdr': typeof AuthenticatedAgentsSdrRoute
   '/ats/candidates': typeof AuthenticatedAtsCandidatesRoute
   '/ats/jobs': typeof AuthenticatedAtsJobsRouteWithChildren
@@ -3062,6 +3070,7 @@ export interface FileRoutesByTo {
   '/admin/security-scans': typeof AuthenticatedAdminSecurityScansRoute
   '/admin/status': typeof AuthenticatedAdminStatusRoute
   '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
+  '/agents/prototype': typeof AuthenticatedAgentsPrototypeRoute
   '/agents/sdr': typeof AuthenticatedAgentsSdrRoute
   '/ats/candidates': typeof AuthenticatedAtsCandidatesRoute
   '/ats/jobs': typeof AuthenticatedAtsJobsRouteWithChildren
@@ -3449,6 +3458,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/security-scans': typeof AuthenticatedAdminSecurityScansRoute
   '/_authenticated/admin/status': typeof AuthenticatedAdminStatusRoute
   '/_authenticated/admin/workspaces': typeof AuthenticatedAdminWorkspacesRouteWithChildren
+  '/_authenticated/agents/prototype': typeof AuthenticatedAgentsPrototypeRoute
   '/_authenticated/agents/sdr': typeof AuthenticatedAgentsSdrRoute
   '/_authenticated/ats/candidates': typeof AuthenticatedAtsCandidatesRoute
   '/_authenticated/ats/jobs': typeof AuthenticatedAtsJobsRouteWithChildren
@@ -3837,6 +3847,7 @@ export interface FileRouteTypes {
     | '/admin/security-scans'
     | '/admin/status'
     | '/admin/workspaces'
+    | '/agents/prototype'
     | '/agents/sdr'
     | '/ats/candidates'
     | '/ats/jobs'
@@ -4218,6 +4229,7 @@ export interface FileRouteTypes {
     | '/admin/security-scans'
     | '/admin/status'
     | '/admin/workspaces'
+    | '/agents/prototype'
     | '/agents/sdr'
     | '/ats/candidates'
     | '/ats/jobs'
@@ -4604,6 +4616,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/security-scans'
     | '/_authenticated/admin/status'
     | '/_authenticated/admin/workspaces'
+    | '/_authenticated/agents/prototype'
     | '/_authenticated/agents/sdr'
     | '/_authenticated/ats/candidates'
     | '/_authenticated/ats/jobs'
@@ -5620,6 +5633,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/workspaces'
       fullPath: '/admin/workspaces'
       preLoaderRoute: typeof AuthenticatedAdminWorkspacesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/agents/prototype': {
+      id: '/_authenticated/agents/prototype'
+      path: '/agents/prototype'
+      fullPath: '/agents/prototype'
+      preLoaderRoute: typeof AuthenticatedAgentsPrototypeRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/agents/sdr': {
@@ -8246,6 +8266,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminSecurityScansRoute: typeof AuthenticatedAdminSecurityScansRoute
   AuthenticatedAdminStatusRoute: typeof AuthenticatedAdminStatusRoute
   AuthenticatedAdminWorkspacesRoute: typeof AuthenticatedAdminWorkspacesRouteWithChildren
+  AuthenticatedAgentsPrototypeRoute: typeof AuthenticatedAgentsPrototypeRoute
   AuthenticatedAgentsSdrRoute: typeof AuthenticatedAgentsSdrRoute
   AuthenticatedAtsCandidatesRoute: typeof AuthenticatedAtsCandidatesRoute
   AuthenticatedAtsJobsRoute: typeof AuthenticatedAtsJobsRouteWithChildren
@@ -8387,6 +8408,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminStatusRoute: AuthenticatedAdminStatusRoute,
   AuthenticatedAdminWorkspacesRoute:
     AuthenticatedAdminWorkspacesRouteWithChildren,
+  AuthenticatedAgentsPrototypeRoute: AuthenticatedAgentsPrototypeRoute,
   AuthenticatedAgentsSdrRoute: AuthenticatedAgentsSdrRoute,
   AuthenticatedAtsCandidatesRoute: AuthenticatedAtsCandidatesRoute,
   AuthenticatedAtsJobsRoute: AuthenticatedAtsJobsRouteWithChildren,
