@@ -85,7 +85,7 @@ export async function sendSdrMessage(
   const { data: job } = await admin
     .from("sdr_turn_jobs")
     .select(
-      "id, workspace_id, enrollment_id, conversation_id, status, lease_token, conversation_version, draft_payload",
+      "id, workspace_id, enrollment_id, conversation_id, status, lease_token, conversation_version, draft_payload, created_at",
     )
     .eq("id", p.jobId)
     .maybeSingle();
@@ -118,6 +118,28 @@ export async function sendSdrMessage(
   const { isPhoneAllowlisted } = await import("./allowlist");
   if (!isPhoneAllowlisted(conv.contact_phone ?? "", settings?.pilot_allowlist))
     return { ok: false, reason: "not_allowlisted" };
+
+  // Versão mais recente: se o cliente escreveu depois que este rascunho foi gerado
+  // e a IA já respondeu (ou há outro turno), o rascunho é obsoleto.
+  if (job.created_at) {
+    const { data: newerOut } = await admin
+      .from("whatsapp_messages")
+      .select("id")
+      .eq("conversation_id", job.conversation_id)
+      .eq("direction", "outbound")
+      .gte("created_at", job.created_at)
+      .limit(1)
+      .maybeSingle();
+    const { data: newerJob } = await admin
+      .from("sdr_turn_jobs")
+      .select("id")
+      .eq("conversation_id", job.conversation_id)
+      .neq("id", job.id)
+      .gte("created_at", job.created_at)
+      .limit(1)
+      .maybeSingle();
+    if (newerOut || newerJob) return { ok: false, reason: "stale_version" };
+  }
 
   const { isWithinServiceWindow, resolveWaNumber, metaSend } =
     await import("@/lib/whatsapp/meta-channel.server");
