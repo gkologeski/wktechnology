@@ -242,10 +242,10 @@ export async function sendSdrMessage(
       kind: "message_sent",
       status: "failed",
       error: msg,
-    created_by: p.actorUserId,
-  });
-  // Envio confirmado já conta na cota: libera a reserva temporária.
-  await admin.from("sdr_turn_jobs").update({ send_reserved_until: null }).eq("id", job.id);
+      created_by: p.actorUserId,
+    });
+    // Falha do provedor não consome cota: libera a reserva.
+    await admin.from("sdr_turn_jobs").update({ send_reserved_until: null }).eq("id", job.id);
     return { ok: false, reason: "provider_failed" };
   }
 
