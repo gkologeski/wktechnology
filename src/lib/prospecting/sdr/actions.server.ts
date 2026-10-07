@@ -161,6 +161,31 @@ export async function sendSdrMessage(
   const { data: claimed } = await lockQuery.select("id");
   if (!claimed?.length) return { ok: false, reason: "job_state_changed" };
 
+  // Cota de respostas (janela móvel de 24 h): reserva atômica no banco. Conta só
+  // envios confirmados com wamid único + reservas em andamento; falhas não consomem.
+  const { data: quota, error: quotaErr } = await admin.rpc("sdr_reserve_send_quota", {
+    p_job: job.id,
+    p_lease: sendLease,
+    p_limit: settings?.daily_send_limit ?? 50,
+  });
+  const quotaResult = (quota as { result?: string } | null)?.result ?? "error";
+  if (quotaErr || (quotaResult !== "ok" && quotaResult !== "already_reserved")) {
+    const reason = quotaResult === "daily_limit" ? "daily_limit" : "quota_check_failed";
+    await admin
+      .from("sdr_turn_jobs")
+      .update({
+        status: "drafted",
+        error: reason,
+        lease_token: null,
+        send_reserved_until: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", job.id)
+      .eq("lease_token", sendLease);
+    console.warn("[sdr] envio bloqueado pela cota", { job: job.id, reason, quota });
+    return { ok: false, reason };
+  }
+
   let wamid: string | null = null;
   let raw: unknown = null;
   try {
