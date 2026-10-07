@@ -432,7 +432,7 @@ function CatalogPanel({ d }: { d: Overview }) {
         <SectionHeader
           title="Portfólio que o SDR conhece"
           description="Só ofertas ativas e aprovadas entram no agente. Preços nunca são informados."
-          actions={
+          action={
             d.canManage && pendingIds.length > 0 ? (
               <Button
                 size="sm"
