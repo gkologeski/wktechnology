@@ -21,7 +21,7 @@ import { computeUnifiedLeadScore } from "@/lib/prospecting/lead-score";
 const EntityEnum = z.enum(["lead", "contact"]);
 const DecisionEnum = z.enum(["pending", "qualified", "disqualified", "nurture", "scheduled"]);
 
-const QUESTION_COLUMNS = "id, type, weight, options, text_points, text_min_chars";
+const QUESTION_COLUMNS = "id, type, weight, options, text_points, text_min_chars, scored";
 
 const computeScore = computeQualificationScore;
 
