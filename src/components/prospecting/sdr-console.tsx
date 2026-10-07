@@ -478,12 +478,12 @@ function CatalogPanel({ d }: { d: Overview }) {
                       {o.approved_at ? "Revogar" : "Aprovar"}
                     </Button>
                   )}
-                <Switch
-                  aria-label={`Ativar ${o.name}`}
-                  checked={o.status === "active"}
-                  disabled={!d.canManage || toggle.isPending}
-                  onCheckedChange={(v) => toggle.mutate({ id: o.id, active: v })}
-                />
+                  <Switch
+                    aria-label={`Ativar ${o.name}`}
+                    checked={o.status === "active"}
+                    disabled={!d.canManage || toggle.isPending}
+                    onCheckedChange={(v) => toggle.mutate({ id: o.id, active: v })}
+                  />
                 </div>
               </li>
             ))}
