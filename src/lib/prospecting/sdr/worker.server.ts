@@ -4,6 +4,7 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Admin = any;
 
+import { parsePersona, stripStockOpener } from "./persona";
 import { buildSystemPrompt, callSdrAgent } from "./agent.server";
 import {
   composeOutgoing,
@@ -39,7 +40,7 @@ import {
 
 const LEASE_SECONDS = 120;
 
-async function loadKnowledge(admin: Admin, workspaceId: string) {
+export async function loadKnowledge(admin: Admin, workspaceId: string) {
   const [{ data: offers }, { data: materials }, { data: links }] = await Promise.all([
     admin.from("sdr_offers").select("*").eq("workspace_id", workspaceId).order("position"),
     admin
@@ -113,7 +114,7 @@ async function guard(admin: Admin, job: Job): Promise<string> {
   return String(data);
 }
 
-async function loadQuestions(
+export async function loadQuestions(
   admin: Admin,
   workspaceId: string,
   questionnaireId: string | null,
@@ -274,7 +275,17 @@ export async function processJob(
     return "skipped";
   }
   const questions = await loadQuestions(admin, job.workspace_id, playbook.questionnaire_id);
+  // Persona da versão PUBLICADA (rascunho nunca afeta produção).
+  const { data: agentVersion } = await admin
+    .from("sdr_agent_versions")
+    .select("id, persona")
+    .eq("playbook_id", playbook.id)
+    .eq("status", "published")
+    .maybeSingle();
+  const persona = parsePersona(agentVersion?.persona);
   const system = buildSystemPrompt({
+    persona,
+    origin: enr.campaign_id ? "prospecting" : "inbound",
     offers,
     materials,
     questions,
@@ -292,7 +303,7 @@ export async function processJob(
 
   await admin
     .from("sdr_turn_jobs")
-    .update({ ai_started_at: new Date().toISOString() })
+    .update({ ai_started_at: new Date().toISOString(), agent_version_id: agentVersion?.id ?? null })
     .eq("id", job.id)
     .eq("lease_token", job.lease_token);
   const ai = await deps.callAgent({ workspaceId: job.workspace_id, system, history });
@@ -331,6 +342,8 @@ export async function processJob(
     await finish(admin, job.id, job.lease_token, { status: "failed", error: out.error });
     return "failed";
   }
+  // Abertura burocrática ("Entendi que...") é removida quando sobra mensagem completa.
+  out.reply = stripStockOpener(out.reply);
 
   // Qualificação canônica: mesmo questionário, cálculo e linha da Prospecção.
   const inbound = history.filter((m) => m.direction === "inbound");

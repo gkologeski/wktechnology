@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { SdrAgentStudio } from "./sdr-agent-studio";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "@tanstack/react-router";
 import { leadScoreBandLabel, LEAD_SCORE_MAX } from "@/lib/prospecting/lead-score";
@@ -76,6 +77,7 @@ export function SdrAgentPanel() {
           <TabsTrigger value="sdr-results">Resultados</TabsTrigger>
           <TabsTrigger value="sdr-catalog">Portfólio e materiais</TabsTrigger>
           <TabsTrigger value="sdr-settings">Configuração</TabsTrigger>
+          <TabsTrigger value="sdr-agent">Persona e teste</TabsTrigger>
         </TabsList>
         <SdrConsoleTabs />
       </Tabs>
@@ -121,6 +123,17 @@ export function SdrConsoleTabs() {
       <TabsContent value="sdr-supervision" className="mt-4">
         {body((d) => (
           <SupervisionPanel d={d} />
+        ))}
+      </TabsContent>
+      <TabsContent value="sdr-agent" className="mt-4">
+        {body((d) => (
+          <SdrAgentStudio
+            workspaceId={d.workspaceId}
+            playbookId={
+              (d.readiness.playbooks.find((p) => p.questionnaire_id) ?? d.readiness.playbooks[0])
+                ?.id ?? null
+            }
+          />
         ))}
       </TabsContent>
       <TabsContent value="sdr-results" className="mt-4">

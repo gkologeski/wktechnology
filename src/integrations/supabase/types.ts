@@ -16395,6 +16395,69 @@ export type Database = {
           },
         ]
       }
+      sdr_agent_versions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          flow: Json
+          id: string
+          notes: string | null
+          persona: Json
+          playbook_id: string
+          published_at: string | null
+          published_by: string | null
+          status: string
+          updated_at: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          flow?: Json
+          id?: string
+          notes?: string | null
+          persona?: Json
+          playbook_id: string
+          published_at?: string | null
+          published_by?: string | null
+          status?: string
+          updated_at?: string
+          version: number
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          flow?: Json
+          id?: string
+          notes?: string | null
+          persona?: Json
+          playbook_id?: string
+          published_at?: string | null
+          published_by?: string | null
+          status?: string
+          updated_at?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sdr_agent_versions_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "sdr_playbooks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sdr_agent_versions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sdr_enrollments: {
         Row: {
           booking_id: string | null
@@ -16899,6 +16962,7 @@ export type Database = {
       }
       sdr_turn_jobs: {
         Row: {
+          agent_version_id: string | null
           ai_finished_at: string | null
           ai_started_at: string | null
           attempts: number
@@ -16927,6 +16991,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          agent_version_id?: string | null
           ai_finished_at?: string | null
           ai_started_at?: string | null
           attempts?: number
@@ -16955,6 +17020,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          agent_version_id?: string | null
           ai_finished_at?: string | null
           ai_started_at?: string | null
           attempts?: number
@@ -16983,6 +17049,13 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "sdr_turn_jobs_agent_version_id_fkey"
+            columns: ["agent_version_id"]
+            isOneToOne: false
+            referencedRelation: "sdr_agent_versions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "sdr_turn_jobs_conversation_id_fkey"
             columns: ["conversation_id"]
@@ -21500,6 +21573,7 @@ export type Database = {
       sdr_claim_jobs: {
         Args: { p_lease_seconds: number; p_limit: number }
         Returns: {
+          agent_version_id: string | null
           ai_finished_at: string | null
           ai_started_at: string | null
           attempts: number
@@ -21546,6 +21620,10 @@ export type Database = {
         Returns: string
       }
       sdr_guard: { Args: { p_job: string; p_lease: string }; Returns: string }
+      sdr_publish_agent_version: {
+        Args: { p_user: string; p_version: string }
+        Returns: string
+      }
       sdr_reserve_followup_quota: {
         Args: { p_job: string; p_lease: string; p_limit: number }
         Returns: Json
