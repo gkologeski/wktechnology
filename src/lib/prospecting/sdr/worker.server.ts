@@ -473,12 +473,15 @@ export async function processJob(
     playbook.mode === "auto" &&
     out.warnings.length === 0 &&
     // Horário de prospecção vale só para retomadas; respostas seguem a qualquer hora.
-    !(job.kind === "follow_up" && isQuietHours(
-      new Date(),
-      settings.timezone,
-      settings.quiet_hours_start,
-      settings.quiet_hours_end,
-    ));
+    !(
+      job.kind === "follow_up" &&
+      isQuietHours(
+        new Date(),
+        settings.timezone,
+        settings.quiet_hours_start,
+        settings.quiet_hours_end,
+      )
+    );
 
   const { data: saved } = await admin
     .from("sdr_turn_jobs")

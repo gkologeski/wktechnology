@@ -100,7 +100,9 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
   // Política de prospecção: cota de templates (opcional) e horário de campanha.
   const { data: pol } = await supabaseAdmin
     .from("sdr_workspace_settings")
-    .select("template_daily_limit, template_respect_hours, timezone, quiet_hours_start, quiet_hours_end")
+    .select(
+      "template_daily_limit, template_respect_hours, timezone, quiet_hours_start, quiet_hours_end",
+    )
     .eq("workspace_id", camp.workspace_id)
     .maybeSingle();
   if (pol?.template_respect_hours) {

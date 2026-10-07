@@ -541,15 +541,23 @@ describe("rascunho superado", () => {
   it("rascunho anterior a uma resposta já enviada não é enviado", async () => {
     const a = job(db, { status: "drafted", draft_payload: {}, created_at: "2026-01-01T10:00:00Z" });
     db.t("whatsapp_messages").push({
-      id: "o1", conversation_id: "c1", direction: "outbound",
-      created_at: "2026-01-01T10:05:00Z", wa_message_id: "wamid.later", raw: {},
+      id: "o1",
+      conversation_id: "c1",
+      direction: "outbound",
+      created_at: "2026-01-01T10:05:00Z",
+      wa_message_id: "wamid.later",
+      raw: {},
     });
-    const r = await sendSdrMessage(db, { jobId: a.id, expectedStatus: "drafted", text: "Oi", actorUserId: "u1" });
+    const r = await sendSdrMessage(db, {
+      jobId: a.id,
+      expectedStatus: "drafted",
+      text: "Oi",
+      actorUserId: "u1",
+    });
     expect(r).toMatchObject({ ok: false, reason: "stale_version" });
     expect(metaSend).not.toHaveBeenCalled();
   });
 });
-
 
 describe("três políticas de envio", () => {
   const settings = () => db.t("sdr_workspace_settings")[0];

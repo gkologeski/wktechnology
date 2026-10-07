@@ -278,7 +278,10 @@ export class FakeDb {
       if (j.send_reserved_until > now)
         return { data: { result: "already_reserved", used, reserved }, error: null };
       if (used + reserved >= a.p_limit)
-        return { data: { result: "followup_quota", used, reserved, limit: a.p_limit }, error: null };
+        return {
+          data: { result: "followup_quota", used, reserved, limit: a.p_limit },
+          error: null,
+        };
       j.send_reserved_until = new Date(Date.now() + 90_000).toISOString();
       return { data: { result: "ok", used, reserved: reserved + 1 }, error: null };
     }

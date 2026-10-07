@@ -716,8 +716,7 @@ function DraftCard({ job }: { job: Overview["jobs"][number] }) {
   const resumeFn = useServerFn(resumeSdrJob);
   const refresh = useRefresh();
   const resume = useMutation({
-    mutationFn: (mode: "reconcile" | "requeue") =>
-      resumeFn({ data: { jobId: job.id, mode } }),
+    mutationFn: (mode: "reconcile" | "requeue") => resumeFn({ data: { jobId: job.id, mode } }),
     onSuccess: (r) => (
       toast.success(
         r.result === "already_sent"
@@ -767,7 +766,9 @@ function DraftCard({ job }: { job: Overview["jobs"][number] }) {
           <Badge variant="outline">{sdrReasonLabel(job.error)}</Badge>
         )}
         {job.block_category && (
-          <Badge variant="secondary">{CATEGORY_LABELS[job.block_category] ?? job.block_category}</Badge>
+          <Badge variant="secondary">
+            {CATEGORY_LABELS[job.block_category] ?? job.block_category}
+          </Badge>
         )}
       </div>
       <p className="text-xs text-muted-foreground">
@@ -1011,7 +1012,13 @@ function PolicyCounters({ d }: { d: Overview }) {
           · {c.technical.alerts24h} alertas em 24 h
         </p>
         {c.technical.breakerOpenAt && d.canManage && (
-          <Button size="sm" variant="outline" className="mt-2" disabled={m.isPending} onClick={() => m.mutate()}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="mt-2"
+            disabled={m.isPending}
+            onClick={() => m.mutate()}
+          >
             Fechar disjuntor
           </Button>
         )}

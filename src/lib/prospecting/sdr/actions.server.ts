@@ -377,7 +377,8 @@ export async function sendSdrMessage(
     const res = await metaSend(num, { to: conv.contact_phone, body: p.text });
     wamid = res.wamid;
     raw = res.raw;
-    if (!wamid) throw Object.assign(new Error("A Meta não devolveu o id da mensagem"), { uncertain: true });
+    if (!wamid)
+      throw Object.assign(new Error("A Meta não devolveu o id da mensagem"), { uncertain: true });
     // Prova do provedor guardada antes de qualquer outra escrita.
     await admin.from("sdr_turn_jobs").update({ provider_message_id: wamid }).eq("id", job.id);
     const { error: insErr } = await admin.from("whatsapp_messages").insert({
