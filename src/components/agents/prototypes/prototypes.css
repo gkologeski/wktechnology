@@ -437,3 +437,30 @@
     transition: none !important;
   }
 }
+.ap-port-out {
+  cursor: crosshair;
+  padding: 0;
+}
+.ap-port-out:hover,
+.ap-port-out:focus-visible {
+  background: var(--primary);
+  outline: none;
+}
+.ap-node[data-visual="true"] {
+  background: color-mix(in oklab, var(--warning) 12%, var(--product-panel));
+  border-style: dashed;
+}
+.ap-node[data-type="end"] {
+  border-color: var(--border-strong);
+  background: var(--product-panel-muted);
+}
+.ap-node[data-connecting] {
+  cursor: copy;
+}
+.ap-inspector {
+  overflow-x: hidden;
+}
+[data-node-form] [role="combobox"],
+[data-node-form] input {
+  min-width: 0;
+}

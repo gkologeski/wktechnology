@@ -24,7 +24,14 @@ export function Agenda() {
         label="Anfitrião da agenda"
         value={agent.host}
         options={HOSTS}
-        onChange={(host) => patch({ host })}
+        onChange={(host) =>
+          patch({
+            host,
+            nodes: agent.nodes.map((n) =>
+              n.type === "schedule" ? { ...n, config: { ...n.config, host } } : n,
+            ),
+          })
+        }
       />
       <div className="rounded-md bg-product-panel-muted p-5">
         <div className="flex gap-3">

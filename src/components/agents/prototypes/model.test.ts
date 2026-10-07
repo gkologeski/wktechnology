@@ -5,11 +5,13 @@ describe("protótipos multiagente locais", () => {
   it("mantém persona, fontes, fluxo e anfitrião independentes", () => {
     const [sales, technical] = makeAgents();
     sales!.nodes[0]!.title = "Entrada comercial";
+    sales!.nodes.find((n) => n.type === "schedule")!.config.host = "Outro";
     sales!.sources[0]!.text = "Novo conteúdo local";
     sales!.persona = "Outra persona";
     expect(technical!.nodes[0]!.title).toBe("Início");
     expect(technical!.persona).toBe("Alex");
     expect(technical!.host).not.toBe(sales!.host);
+    expect(technical!.nodes.find((n) => n.type === "schedule")!.config.host).toBe(technical!.host);
     expect(makeAgents()[0]!.sources[0]!.text).not.toBe("Novo conteúdo local");
   });
   it("valida identidade, persona, conhecimento, agenda e canal", () => {

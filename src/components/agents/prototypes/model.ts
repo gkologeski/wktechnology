@@ -1,3 +1,5 @@
+import { defaultConfig, type Config, type Dependency } from "@/lib/agents/flow/catalog";
+import { validateGraph, type GraphEdge, type GraphNode } from "@/lib/agents/flow/runtime";
 export type Agent = {
   id: string;
   name: string;
@@ -10,6 +12,7 @@ export type Agent = {
   archived: boolean;
   sources: Source[];
   nodes: FlowNode[];
+  edges: GraphEdge[];
 };
 export type Source = {
   id: string;
@@ -19,15 +22,7 @@ export type Source = {
   text: string;
   ready: boolean;
 };
-export type FlowNode = {
-  id: string;
-  title: string;
-  kind: string;
-  summary: string;
-  x: number;
-  y: number;
-  from?: string;
-};
+export type FlowNode = GraphNode & { title: string };
 export const STEPS = [
   "Identidade",
   "Persona",
@@ -40,41 +35,69 @@ export const STEPS = [
 ];
 export const AREAS = ["Fluxo", "Testar", "Métricas", "Conhecimento", "Lançamento"];
 export const HOSTS = ["Closer · Equipe Comercial", "P.O. · Equipe de Projetos"];
-export const makeNodes = (): FlowNode[] => [
-  { id: "start", title: "Início", kind: "entrada", summary: "Mensagem recebida", x: 50, y: 205 },
-  {
-    id: "guard",
-    title: "Proteções",
-    kind: "proteção",
-    summary: "Janela, permissão e dono humano",
-    x: 310,
-    y: 205,
-  },
-  {
-    id: "agent",
-    title: "Agente",
-    kind: "agente",
-    summary: "Conhecimento + persona consultiva",
-    x: 595,
-    y: 95,
-  },
-  {
-    id: "human",
-    title: "Transferir para pessoa",
-    kind: "humano",
-    summary: "Encaminhar com contexto completo",
-    x: 595,
-    y: 325,
-  },
-  { id: "end", title: "Fim", kind: "saída", summary: "Concluir este turno", x: 890, y: 205 },
+const node = (
+  id: string,
+  type: string,
+  title: string,
+  x: number,
+  y: number,
+  config: Config = {},
+): FlowNode => ({
+  id,
+  type,
+  title,
+  x,
+  y,
+  config: { ...defaultConfig(type), ...config },
+});
+export const makeNodes = (host: string = HOSTS[0]!, sources: string[] = []): FlowNode[] => [
+  node("start", "start", "Início", 50, 205),
+  node("guard", "guardrails", "Proteções", 310, 205),
+  node("classify", "classify", "Classificar intenção", 595, 95),
+  node("kb", "kb_search", "Buscar KB", 880, 30, { sources, minScore: 30 }),
+  node("agent", "agent", "Agente", 1165, 30, {
+    objective: "Entender a necessidade e avançar com uma pergunta por vez.",
+  }),
+  node("schedule", "schedule", "Agendar reunião", 1165, 250, { host }),
+  node("human", "handoff", "Transferir para pessoa", 595, 365, { team: DEMO_OPTIONS.teams[0] }),
+  node("end", "end", "Fim", 1450, 140),
 ];
-export const EDGES = [
-  ["start", "guard", ""],
-  ["guard", "agent", "Passou"],
-  ["guard", "human", "Bloqueou"],
-  ["agent", "end", "Resposta"],
-  ["human", "end", "Transferido"],
+export const makeEdges = (): GraphEdge[] =>
+  [
+    ["start", "guard", "próximo"],
+    ["guard", "classify", "ok"],
+    ["guard", "human", "blocked"],
+    ["classify", "kb", "Comercial"],
+    ["classify", "human", "Suporte"],
+    ["classify", "schedule", "Outros"],
+    ["kb", "agent", "encontrado"],
+    ["kb", "human", "sem resposta"],
+    ["agent", "end", "próximo"],
+    ["schedule", "end", "agendado"],
+    ["schedule", "human", "sem horário"],
+  ].map(([from, to, port]) => ({ id: `${from}-${to}-${port}`, from: from!, to: to!, port: port! }));
+/** Dados demonstrativos isolados e rotulados; não são registros reais do workspace. */
+export const DEMO_OPTIONS = {
+  hosts: HOSTS,
+  teams: ["Equipe Comercial", "Equipe de Projetos", "Atendimento"],
+  people: ["Closer (demo)", "P.O. (demo)", "Analista de atendimento (demo)"],
+  pipelines: ["Funil de Vendas (demo)"],
+  stages: ["Lead", "Qualificação", "Proposta", "Negociação"],
+  tags: ["icp", "respondeu", "suporte"],
+  media: ["Apresentação institucional.pdf (demo)", "Case IA Governança.pdf (demo)"],
+  connections: ["Nenhuma conexão configurada"],
+  fields: ["Segmento", "Cargo"],
+};
+export const DEMO_AVAILABLE: Dependency[] = ["kb", "catalog", "crm", "calendar", "inbox"];
+export const DEMO_CATALOG = [
+  { name: "IA Governança", active: true, category: "IA" },
+  { name: "Alocação de profissionais", active: true, category: "Serviços" },
+  { name: "BPO Administrativo/Financeiro", active: false, category: "Serviços" },
 ];
+export const DEMO_SLOTS: Record<string, string[]> = {
+  [HOSTS[0]!]: ["ter 10h", "qua 15h"],
+  [HOSTS[1]!]: ["qui 9h"],
+};
 export const makeAgents = (): Agent[] => [
   {
     id: "sales",
@@ -105,7 +128,8 @@ export const makeAgents = (): Agent[] => [
         ready: true,
       },
     ],
-    nodes: makeNodes(),
+    nodes: makeNodes(HOSTS[0]!, ["Catálogo de serviços", "Playbook de descoberta"]),
+    edges: makeEdges(),
   },
   {
     id: "technical",
@@ -128,7 +152,8 @@ export const makeAgents = (): Agent[] => [
         ready: true,
       },
     ],
-    nodes: makeNodes(),
+    nodes: makeNodes(HOSTS[1]!, ["Guia do Projeto Aurora"]),
+    edges: makeEdges(),
   },
   {
     id: "inbound",
@@ -151,7 +176,8 @@ export const makeAgents = (): Agent[] => [
         ready: true,
       },
     ],
-    nodes: makeNodes(),
+    nodes: makeNodes(HOSTS[0]!, ["Perguntas frequentes"]),
+    edges: makeEdges(),
   },
 ];
 export function validateStep(agent: Agent, step: number): string | null {
@@ -162,7 +188,11 @@ export function validateStep(agent: Agent, step: number): string | null {
   if (step === 2 && !agent.sources.some((s) => s.ready))
     return "Adicione pelo menos uma fonte processada.";
   if (step === 4 && !agent.host) return "Escolha o anfitrião da agenda.";
-  if (step === 3 && !agent.nodes.length) return "Adicione um bloco ao fluxo.";
+  if (step === 3) {
+    if (!agent.nodes.length) return "Adicione um bloco ao fluxo.";
+    const err = flowIssues(agent).find((i) => i.level === "erro");
+    if (err) return err.message;
+  }
   if (step === 5 && (!agent.channel || agent.channel === "Nenhum canal"))
     return "Escolha um canal demonstrativo.";
   return null;
@@ -179,4 +209,28 @@ export function demoReply(agent: Agent, message: string) {
   return agent.tone === "Objetivo"
     ? "Qual detalhe do projeto você precisa esclarecer?"
     : `Olá! Sou ${agent.persona}. O que você gostaria de resolver hoje?`;
+}
+
+export const flowIssues = (agent: Agent) =>
+  validateGraph(
+    { nodes: agent.nodes, edges: agent.edges },
+    { available: DEMO_AVAILABLE, httpAllowlist: [] },
+  );
+
+/** Monta o prompt principal a partir dos campos estruturados (sem IA; determinístico). */
+export function buildPrompt(agent: Agent) {
+  const node = agent.nodes.find((n) => n.type === "agent")?.config ?? {};
+  const line = (label: string, v: unknown) =>
+    typeof v === "string" && v.trim() ? `${label}: ${v.trim()}` : "";
+  return [
+    `Você é ${agent.persona}, assistente de ${agent.name}. Finalidade: ${agent.purpose}.`,
+    `Tom ${agent.tone.toLowerCase()}, em PT-BR natural. Não abra mensagens com "Entendi" nem repita o que o cliente disse.`,
+    line("Objetivo", node.objective),
+    line("Informações a coletar (uma pergunta por vez)", node.collect),
+    line("Política de preço", node.pricePolicy),
+    line("Quando envolver uma pessoa", node.whenHuman),
+    "Use apenas fatos das fontes consultadas; sem evidência, diga que vai confirmar com a equipe.",
+  ]
+    .filter(Boolean)
+    .join("\n");
 }

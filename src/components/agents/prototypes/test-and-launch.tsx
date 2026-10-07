@@ -6,7 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useDemo } from "./state";
-import { demoReply } from "./model";
+import { runFlow, type TraceEntry } from "@/lib/agents/flow/runtime";
+import { sandboxTools } from "@/lib/agents/flow/sandbox-tools";
+import { DEMO_CATALOG, DEMO_SLOTS, flowIssues, validateStep, STEPS } from "./model";
 import { Agenda } from "./agent-configuration";
 
 export function TestChat({ compact = false }: { compact?: boolean }) {
@@ -15,14 +17,36 @@ export function TestChat({ compact = false }: { compact?: boolean }) {
     [messages, setMessages] = useState([
       { role: "agent", text: `Olá! Sou ${agent.persona}. Como posso ajudar?` },
     ]);
-  const send = () => {
-    if (!message.trim()) return;
+  const [trace, setTrace] = useState<TraceEntry[]>([]);
+  const [origin, setOrigin] = useState<"Receptivo" | "Prospecção">("Receptivo");
+  const send = async () => {
+    const text = message.trim();
+    if (!text) return;
+    setMessage("");
+    setMessages((all) => [...all, { role: "user", text }]);
+    const result = await runFlow(
+      { nodes: structuredClone(agent.nodes), edges: agent.edges },
+      {
+        message: text,
+        contact: { nome: "Cliente demo", empresa: "Empresa demo" },
+        origin,
+        vars: {},
+      },
+      sandboxTools({
+        persona: agent.persona,
+        sources: agent.sources,
+        catalog: DEMO_CATALOG,
+        slotsByHost: DEMO_SLOTS,
+        contact: { nome: "Cliente demo" },
+      }),
+    );
+    setTrace(result.trace);
     setMessages((all) => [
       ...all,
-      { role: "user", text: message },
-      { role: "agent", text: demoReply(agent, message) },
+      ...(result.replies.length ? result.replies : [`(sem resposta · ${result.status})`]).map(
+        (r) => ({ role: "agent", text: r }),
+      ),
     ]);
-    setMessage("");
   };
   return (
     <div className="ap-chat">
@@ -30,7 +54,18 @@ export function TestChat({ compact = false }: { compact?: boolean }) {
         <span className="text-xs font-medium">
           {agent.persona} · {agent.tone}
         </span>
-        <span className="ap-caption">Simulação local</span>
+        <span className="flex items-center gap-2">
+          <select
+            aria-label="Origem simulada"
+            className="rounded-md border border-input bg-background px-1 py-0.5 text-[10px]"
+            value={origin}
+            onChange={(e) => setOrigin(e.target.value as "Receptivo" | "Prospecção")}
+          >
+            <option>Receptivo</option>
+            <option>Prospecção</option>
+          </select>
+          <span className="ap-caption">Sandbox · mesmo executor</span>
+        </span>
       </div>
       <div className="ap-chat-log" aria-live="polite">
         {messages.map((m, i) => (
@@ -57,7 +92,7 @@ export function TestChat({ compact = false }: { compact?: boolean }) {
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
-              send();
+              void send();
             }
           }}
         />
@@ -65,14 +100,32 @@ export function TestChat({ compact = false }: { compact?: boolean }) {
           size="icon"
           aria-label="Enviar teste local"
           disabled={!message.trim()}
-          onClick={send}
+          onClick={() => void send()}
         >
           <Send />
         </Button>
       </div>
       <p className="px-4 pb-3 text-[10px] text-muted-foreground">
-        Texto apenas · anexos indisponíveis · sem envio real
+        Texto apenas · anexos indisponíveis · ferramentas simuladas, nada enviado ou gravado
       </p>
+      {trace.length > 0 && (
+        <details className="border-t border-border-subtle px-4 py-2 text-[11px]" open>
+          <summary className="cursor-pointer font-medium">
+            Trace da execução ({trace.length} blocos)
+          </summary>
+          <ol className="mt-2 space-y-1">
+            {trace.map((s, i) => (
+              <li key={i} className="flex gap-2">
+                <span className="w-24 shrink-0 truncate text-muted-foreground">
+                  {agent.nodes.find((n) => n.id === s.nodeId)?.title ?? s.type}
+                </span>
+                <span className="text-primary">{s.port ?? "—"}</span>
+                <span className="min-w-0 truncate text-muted-foreground">{s.detail}</span>
+              </li>
+            ))}
+          </ol>
+        </details>
+      )}
     </div>
   );
 }
@@ -87,17 +140,31 @@ export function Launch() {
         <h3 className="text-xl font-semibold">Conferência de lançamento</h3>
         <p className="mt-2 text-sm text-muted-foreground">{agent.name} · rascunho v4</p>
       </div>
-      {[
-        "Identidade e persona definidas",
-        "Fontes de conhecimento disponíveis",
-        "Agenda e equipe selecionadas",
-        "Teste local disponível",
-      ].map((s) => (
-        <div key={s} className="flex items-center gap-3 border-b border-border-subtle pb-3 text-sm">
-          <Check size={16} className="text-success" />
-          {s}
-        </div>
-      ))}
+      {STEPS.slice(0, 6).map((name, i) => {
+        const problem = validateStep(agent, i);
+        return (
+          <div
+            key={name}
+            className="flex items-start gap-3 border-b border-border-subtle pb-3 text-sm"
+          >
+            {problem ? (
+              <span className="mt-0.5 size-4 shrink-0 rounded-full border-2 border-destructive" />
+            ) : (
+              <Check size={16} className="mt-0.5 shrink-0 text-success" />
+            )}
+            <span>
+              {name}
+              {problem && <span className="block text-xs text-destructive">{problem}</span>}
+            </span>
+          </div>
+        );
+      })}
+      {flowIssues(agent).filter((i) => i.level === "aviso").length > 0 && (
+        <p className="text-xs text-muted-foreground">
+          {flowIssues(agent).filter((i) => i.level === "aviso").length} avisos no fluxo (saídas sem
+          conexão ou blocos inalcançáveis).
+        </p>
+      )}
       <div className="flex items-center justify-between">
         <Label htmlFor="demo-active">Agente ativo</Label>
         <Switch id="demo-active" disabled />

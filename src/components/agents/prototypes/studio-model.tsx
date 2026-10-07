@@ -56,7 +56,7 @@ function StudioLayout() {
             <span className="text-muted-foreground">v4 · Rascunho independente</span>
             <span className="flex items-center gap-1.5 text-success">
               <span className="size-1.5 rounded-full bg-current" />
-              {5 + agent.nodes.filter((n) => n.from).length} conexões · configuração local
+              {agent.edges.length} conexões · configuração local
             </span>
           </div>
           <StudioTabs />
