@@ -123,6 +123,11 @@ export const saveSdrSettings = createServerFn({ method: "POST" })
         daily_send_limit: z.number().int().min(1).max(1000),
         quiet_hours_start: z.number().int().min(0).max(23),
         quiet_hours_end: z.number().int().min(0).max(23),
+        template_interval_min_s: z.number().int().min(0).max(3600).default(0),
+        template_interval_max_s: z.number().int().min(0).max(3600).default(0),
+      })
+      .refine((v) => v.template_interval_min_s <= v.template_interval_max_s, {
+        message: "O intervalo mínimo não pode ser maior que o máximo.",
       })
       .parse(i),
   )

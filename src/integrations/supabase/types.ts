@@ -17000,6 +17000,8 @@ export type Database = {
           enabled: boolean
           quiet_hours_end: number
           quiet_hours_start: number
+          template_interval_max_s: number
+          template_interval_min_s: number
           timezone: string
           updated_at: string
           updated_by: string | null
@@ -17012,6 +17014,8 @@ export type Database = {
           enabled?: boolean
           quiet_hours_end?: number
           quiet_hours_start?: number
+          template_interval_max_s?: number
+          template_interval_min_s?: number
           timezone?: string
           updated_at?: string
           updated_by?: string | null
@@ -17024,6 +17028,8 @@ export type Database = {
           enabled?: boolean
           quiet_hours_end?: number
           quiet_hours_start?: number
+          template_interval_max_s?: number
+          template_interval_min_s?: number
           timezone?: string
           updated_at?: string
           updated_by?: string | null
@@ -19789,6 +19795,7 @@ export type Database = {
           content_sid: string | null
           content_variables_template: Json
           created_at: string
+          dispatch_lease_until: string | null
           failed: number
           finished_at: string | null
           id: string
@@ -19796,11 +19803,14 @@ export type Database = {
           media_content_type: string | null
           media_url: string | null
           name: string
+          next_send_at: string | null
           owner_id: string
           rate_per_minute: number
           scheduled_at: string | null
           sdr_enabled: boolean
           sdr_playbook_id: string | null
+          send_interval_max_s: number | null
+          send_interval_min_s: number | null
           sent: number
           started_at: string | null
           status: string
@@ -19815,6 +19825,7 @@ export type Database = {
           content_sid?: string | null
           content_variables_template?: Json
           created_at?: string
+          dispatch_lease_until?: string | null
           failed?: number
           finished_at?: string | null
           id?: string
@@ -19822,11 +19833,14 @@ export type Database = {
           media_content_type?: string | null
           media_url?: string | null
           name: string
+          next_send_at?: string | null
           owner_id: string
           rate_per_minute?: number
           scheduled_at?: string | null
           sdr_enabled?: boolean
           sdr_playbook_id?: string | null
+          send_interval_max_s?: number | null
+          send_interval_min_s?: number | null
           sent?: number
           started_at?: string | null
           status?: string
@@ -19841,6 +19855,7 @@ export type Database = {
           content_sid?: string | null
           content_variables_template?: Json
           created_at?: string
+          dispatch_lease_until?: string | null
           failed?: number
           finished_at?: string | null
           id?: string
@@ -19848,11 +19863,14 @@ export type Database = {
           media_content_type?: string | null
           media_url?: string | null
           name?: string
+          next_send_at?: string | null
           owner_id?: string
           rate_per_minute?: number
           scheduled_at?: string | null
           sdr_enabled?: boolean
           sdr_playbook_id?: string | null
+          send_interval_max_s?: number | null
+          send_interval_min_s?: number | null
           sent?: number
           started_at?: string | null
           status?: string
@@ -21562,6 +21580,10 @@ export type Database = {
           display_phone_number: string
           prefill_message: string
         }[]
+      }
+      wa_campaign_claim_dispatch: {
+        Args: { p_campaign: string; p_seconds: number }
+        Returns: boolean
       }
       workspace_for_user: { Args: { _user: string }; Returns: string }
       workspace_member_by_email: {

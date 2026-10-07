@@ -144,7 +144,15 @@ function SettingsPanel({ d }: { d: Overview }) {
     daily_send_limit: s?.daily_send_limit ?? 50,
     quiet_hours_start: s?.quiet_hours_start ?? 20,
     quiet_hours_end: s?.quiet_hours_end ?? 8,
+    template_interval_min_s: s?.template_interval_min_s ?? 0,
+    template_interval_max_s: s?.template_interval_max_s ?? 0,
   });
+  const ivError =
+    form.template_interval_min_s > form.template_interval_max_s
+      ? "O mínimo não pode ser maior que o máximo."
+      : form.template_interval_max_s > 3600
+        ? "O máximo é 3600 segundos."
+        : null;
   const m = useMutation({
     mutationFn: () => save({ data: { workspaceId: d.workspaceId, ...form } }),
     onSuccess: () => (toast.success("Configuração salva"), refresh()),
@@ -199,7 +207,33 @@ function SettingsPanel({ d }: { d: Overview }) {
             onChange={(v) => setForm({ ...form, quiet_hours_end: v })}
           />
         </div>
-        <Button onClick={() => m.mutate()} disabled={dis}>
+        <div className="space-y-2">
+          <p className="text-sm font-medium">Intervalo entre disparos do template</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <NumField
+              id="sdr-iv-min"
+              label="De (segundos)"
+              value={form.template_interval_min_s}
+              disabled={dis}
+              onChange={(v) => setForm({ ...form, template_interval_min_s: v })}
+            />
+            <NumField
+              id="sdr-iv-max"
+              label="Até (segundos)"
+              value={form.template_interval_max_s}
+              disabled={dis}
+              onChange={(v) => setForm({ ...form, template_interval_max_s: v })}
+            />
+          </div>
+          <p
+            className={`text-xs ${ivError ? "text-destructive" : "text-muted-foreground"}`}
+            role={ivError ? "alert" : undefined}
+          >
+            {ivError ??
+              "Padrão das campanhas de WhatsApp: entre um destinatário e o próximo, espera um tempo sorteado nesse intervalo (0 a 0 desliga). Sugestão: 30 a 120 s. O tempo real pode passar do sorteado em até ~1 min."}
+          </p>
+        </div>
+        <Button onClick={() => m.mutate()} disabled={dis || !!ivError}>
           {m.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar
         </Button>
       </div>

@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { formatDateTime } from "@/lib/crm";
+import { estimateRemainingMs, validateInterval } from "@/lib/whatsapp/campaign-pacing";
 
 export const Route = createFileRoute("/_authenticated/campaigns/whatsapp")({
   component: CampaignsPage,
@@ -81,6 +82,14 @@ function CampaignsPage() {
   const [recipientsRaw, setRecipientsRaw] = useState("");
   const [mediaUrl, setMediaUrl] = useState("");
   const [sdrPlaybook, setSdrPlaybook] = useState<string>("__none__");
+  // Intervalo aleatório entre disparos: "" = usar o padrão do workspace.
+  const [ivMin, setIvMin] = useState<string>("");
+  const [ivMax, setIvMax] = useState<string>("");
+  const ownInterval = ivMin !== "" || ivMax !== "";
+  const ivError = ownInterval ? validateInterval(Number(ivMin || 0), Number(ivMax || 0)) : null;
+  const intervalPayload = ownInterval
+    ? { send_interval_min_s: Number(ivMin || 0), send_interval_max_s: Number(ivMax || 0) }
+    : { send_interval_min_s: null, send_interval_max_s: null };
   const playbooksFn = useServerFn(listPlaybooks);
   const { data: playbooksData } = useQuery({
     queryKey: ["sdr-playbooks"],
@@ -101,6 +110,8 @@ function CampaignsPage() {
     setRecipientsRaw("");
     setMediaUrl("");
     setSdrPlaybook("__none__");
+    setIvMin("");
+    setIvMax("");
   }
 
   function openEdit(c: (typeof items)[number]) {
@@ -111,6 +122,8 @@ function CampaignsPage() {
     setEditingId(c.id);
     setName(c.name);
     setRate(c.rate_per_minute);
+    setIvMin(c.interval_source === "campaign" ? String(c.interval_min_s) : "");
+    setIvMax(c.interval_source === "campaign" ? String(c.interval_max_s) : "");
     setBody("");
     setTemplateName("__none__");
     setMediaUrl("");
@@ -120,6 +133,7 @@ function CampaignsPage() {
 
   const create = useMutation({
     mutationFn: async () => {
+      if (ivError) throw new Error(ivError);
       if (isEditing && editingId) {
         // Para HSM monta content_variables_template a partir de {{1}}..{{N}}
         let content_variables_template: Record<string, string> | undefined;
@@ -140,6 +154,7 @@ function CampaignsPage() {
             media_url: mediaUrl || null,
             rate_per_minute: rate,
             sdr_playbook_id: sdrPlaybook !== "__none__" ? sdrPlaybook : null,
+            ...intervalPayload,
           },
         });
       }
@@ -166,6 +181,7 @@ function CampaignsPage() {
           rate_per_minute: rate,
           recipients,
           sdr_playbook_id: sdrPlaybook !== "__none__" ? sdrPlaybook : null,
+          ...intervalPayload,
         },
       });
     },
@@ -249,6 +265,36 @@ function CampaignsPage() {
                   />
                 </div>
               </div>
+              <fieldset className="space-y-1">
+                <legend className="text-xs text-muted-foreground">
+                  Intervalo aleatório entre disparos (segundos)
+                </legend>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={0}
+                    max={3600}
+                    aria-label="Intervalo mínimo em segundos"
+                    placeholder="padrão"
+                    value={ivMin}
+                    onChange={(e) => setIvMin(e.target.value)}
+                  />
+                  <span className="text-xs text-muted-foreground">a</span>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={3600}
+                    aria-label="Intervalo máximo em segundos"
+                    placeholder="padrão"
+                    value={ivMax}
+                    onChange={(e) => setIvMax(e.target.value)}
+                  />
+                </div>
+                <p className={`text-xs ${ivError ? "text-destructive" : "text-muted-foreground"}`}>
+                  {ivError ??
+                    "Em branco usa o padrão do workspace (Agente SDR › Configuração). Cada disparo espera um tempo sorteado nesse intervalo; pode atrasar até ~1 min além do sorteado."}
+                </p>
+              </fieldset>
               {!isHsm && (
                 <div>
                   <label className="text-xs text-muted-foreground">
@@ -344,10 +390,17 @@ function CampaignsPage() {
                 </Link>
                 <Badge variant={c.status === "running" ? "default" : "secondary"}>{c.status}</Badge>
                 <Badge variant="outline">{c.rate_per_minute}/min</Badge>
+                {c.interval_max_s > 0 && (
+                  <Badge variant="outline">
+                    {c.interval_min_s}–{c.interval_max_s}s
+                    {c.interval_source === "workspace" ? " (padrão)" : ""}
+                  </Badge>
+                )}
               </div>
               <div className="text-xs text-muted-foreground mt-1">
                 {c.sent}/{c.total} enviadas · {c.failed} falhas
                 {c.started_at ? ` · iniciou ${formatDateTime(c.started_at)}` : ""}
+                {c.status === "running" && <PacingInfo c={c} />}
               </div>
             </div>
             <div className="flex items-center gap-1">
@@ -388,5 +441,35 @@ function CampaignsPage() {
         ))}
       </Card>
     </div>
+  );
+}
+
+function PacingInfo({
+  c,
+}: {
+  c: {
+    total: number;
+    sent: number;
+    failed: number;
+    rate_per_minute: number;
+    interval_min_s: number;
+    interval_max_s: number;
+    next_send_at: string | null;
+  };
+}) {
+  const pending = Math.max(0, c.total - c.sent - c.failed);
+  const remaining = estimateRemainingMs(
+    pending,
+    { min: c.interval_min_s, max: c.interval_max_s },
+    c.rate_per_minute,
+  );
+  const nextIn = c.next_send_at
+    ? Math.max(0, Math.round((new Date(c.next_send_at).getTime() - Date.now()) / 1000))
+    : null;
+  return (
+    <>
+      {c.interval_max_s > 0 && nextIn != null && pending > 0 && ` · próximo disparo em ~${nextIn}s`}
+      {pending > 0 && ` · término previsto em ~${Math.max(1, Math.round(remaining / 60000))} min`}
+    </>
   );
 }
