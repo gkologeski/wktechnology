@@ -138,8 +138,32 @@ export async function sendSdrMessage(
   if (already?.wa_message_id) {
     await admin
       .from("sdr_turn_jobs")
-      .update({ status: "sent", lease_token: null, updated_at: new Date().toISOString() })
+      .update({
+        status: "sent",
+        lease_token: null,
+        send_reserved_until: null,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", job.id);
+    // Replay: registra a prova do envio só se ainda não existir (não consome 2x).
+    const { data: act } = await admin
+      .from("sdr_actions")
+      .select("id")
+      .eq("job_id", job.id)
+      .eq("kind", "message_sent")
+      .eq("status", "success")
+      .limit(1)
+      .maybeSingle();
+    if (!act)
+      await recordSdrAction(admin, {
+        workspace_id: job.workspace_id,
+        enrollment_id: enr.id,
+        job_id: job.id,
+        kind: "message_sent",
+        status: "success",
+        provider_ref: already.wa_message_id,
+        created_by: p.actorUserId,
+      });
     return { ok: true, wamid: already.wa_message_id };
   }
 
@@ -259,6 +283,8 @@ export async function sendSdrMessage(
     provider_ref: wamid,
     created_by: p.actorUserId,
   });
+  // Envio confirmado já conta na cota: libera a reserva temporária.
+  await admin.from("sdr_turn_jobs").update({ send_reserved_until: null }).eq("id", job.id);
   for (const id of payload.material_ids ?? []) {
     await recordSdrAction(admin, {
       workspace_id: job.workspace_id,
