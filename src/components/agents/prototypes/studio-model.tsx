@@ -55,7 +55,8 @@ function StudioLayout() {
           <div className="flex items-center justify-between bg-product-toolbar px-6 py-2 text-[10px]">
             <span className="text-muted-foreground">v4 · Rascunho independente</span>
             <span className="flex items-center gap-1.5 text-success">
-              <span className="size-1.5 rounded-full bg-current" />{5 + agent.nodes.filter(n => n.from).length} conexões · configuração local
+              <span className="size-1.5 rounded-full bg-current" />
+              {5 + agent.nodes.filter((n) => n.from).length} conexões · configuração local
             </span>
           </div>
           <StudioTabs />
