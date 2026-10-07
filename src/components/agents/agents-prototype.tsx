@@ -136,7 +136,7 @@ function AgentList({ go }: { go: (v: View) => void }) {
         eyebrow="Agentes de IA"
         title="Seus agentes"
         description="Cada agente tem persona, conhecimento, fluxo, agenda e canais próprios."
-        actions={
+        primaryAction={
           <Button onClick={() => go("wizard")}>
             <Plus className="mr-2 h-4 w-4" /> Novo agente
           </Button>
