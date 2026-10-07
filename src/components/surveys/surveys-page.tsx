@@ -8,7 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Copy, Pencil, Plus } from "lucide-react";
+import { Copy, Pencil, Plus, Sparkles } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { ImportSurveyDialog } from "@/components/surveys/form/import-survey-dialog";
+import { createFormTemplate } from "@/lib/surveys/form-builder.functions";
+import { emptySchema } from "@/lib/surveys/form-schema";
 import { toast } from "sonner";
 import {
   Table,
@@ -45,6 +50,21 @@ export function SurveysPage() {
   const [editing, setEditing] = useState<Survey | null>(null);
 
   const qc = useQueryClient();
+  const navigate = useNavigate();
+  const createFn = useServerFn(createFormTemplate);
+  const [importOpen, setImportOpen] = useState(false);
+  const [creatingForm, setCreatingForm] = useState(false);
+  const newForm = async () => {
+    setCreatingForm(true);
+    try {
+      const { id } = await createFn({ data: { schema: emptySchema() } });
+      void navigate({ to: "/survey-builder/$id", params: { id } });
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setCreatingForm(false);
+    }
+  };
 
   const { data: surveys = [], isLoading } = useQuery({
     queryKey: ["surveys"],
@@ -99,19 +119,26 @@ export function SurveysPage() {
   const filtered = useMemo(() => surveys.filter((s) => s.kind === tab), [surveys, tab]);
 
   const stats = useMemo(() => {
-    const answered = filtered.filter((s) => s.score !== null);
+    // Respondida = tem data de resposta; a nota é opcional e só entra nas médias quando existe.
+    const responded = filtered.filter((s) => s.responded_at !== null);
+    const answered = responded.filter((s) => s.score !== null);
     if (tab === "nps") {
       const promoters = answered.filter((s) => (s.score ?? 0) >= 9).length;
       const detractors = answered.filter((s) => (s.score ?? 0) <= 6).length;
       const nps = answered.length
         ? Math.round(((promoters - detractors) / answered.length) * 100)
         : null;
-      return { total: filtered.length, answered: answered.length, nps, avg: null as number | null };
+      return {
+        total: filtered.length,
+        answered: responded.length,
+        nps,
+        avg: null as number | null,
+      };
     }
     const avg = answered.length
       ? answered.reduce((a, s) => a + (s.score ?? 0), 0) / answered.length
       : null;
-    return { total: filtered.length, answered: answered.length, nps: null, avg };
+    return { total: filtered.length, answered: responded.length, nps: null, avg };
   }, [filtered, tab]);
 
   const perAgent = useMemo(() => {
@@ -159,9 +186,22 @@ export function SurveysPage() {
               formulários livres. Todas podem ser respondidas na timeline das entidades.
             </p>
           </div>
-          <Button size="sm" onClick={() => setTypePickerOpen(true)}>
-            <Plus className="h-4 w-4 mr-1" /> Nova pesquisa
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}>
+              <Sparkles className="h-4 w-4 mr-1" /> Importar pesquisa com IA
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={creatingForm}
+              onClick={() => void newForm()}
+            >
+              <Plus className="h-4 w-4 mr-1" /> Nova no construtor
+            </Button>
+            <Button size="sm" onClick={() => setTypePickerOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" /> Nova pesquisa
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <Tabs value={tab} onValueChange={(v) => setTab(v as SurveyKindTab)}>
@@ -328,6 +368,7 @@ export function SurveysPage() {
         </Card>
       )}
 
+      <ImportSurveyDialog open={importOpen} onOpenChange={setImportOpen} />
       <SurveyTypePickerDialog
         open={typePickerOpen}
         onOpenChange={setTypePickerOpen}

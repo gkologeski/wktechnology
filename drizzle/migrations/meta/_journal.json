@@ -512,6 +512,20 @@
       "when": 1791378510367,
       "tag": "0072_rep_scope_select_own_rows",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1791402191616,
+      "tag": "0073_survey_builder_optional_scoring",
+      "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1791407485255,
+      "tag": "0074_qualification_score_nullable",
+      "breakpoints": true
     }
   ]
 }

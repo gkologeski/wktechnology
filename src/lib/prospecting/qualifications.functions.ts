@@ -21,7 +21,7 @@ import { computeUnifiedLeadScore } from "@/lib/prospecting/lead-score";
 const EntityEnum = z.enum(["lead", "contact"]);
 const DecisionEnum = z.enum(["pending", "qualified", "disqualified", "nurture", "scheduled"]);
 
-const QUESTION_COLUMNS = "id, type, weight, options, text_points, text_min_chars";
+const QUESTION_COLUMNS = "id, type, weight, options, text_points, text_min_chars, scored";
 
 const computeScore = computeQualificationScore;
 
@@ -128,11 +128,22 @@ export const saveQualification = createServerFn({ method: "POST" })
       .select(QUESTION_COLUMNS)
       .eq("questionnaire_id", data.questionnaire_id);
     if (qsErr) throw new Error(qsErr.message);
-    const score = computeScore((qs ?? []) as Question[], data.answers);
+    const { data: qMeta } = await context.supabase
+      .from("prospecting_questionnaires")
+      .select("scoring_enabled")
+      .eq("id", data.questionnaire_id)
+      .maybeSingle();
+    // Sem pontuação: score nulo e sem contribuição automática (decisão segue manual).
+    const scoringOn = qMeta?.scoring_enabled !== false;
+    const scoredQs = ((qs ?? []) as (Question & { scored?: boolean })[]).filter(
+      (q) => scoringOn && q.scored !== false,
+    ) as Question[];
+    const rawScore = scoredQs.length ? computeScore(scoredQs, data.answers) : null;
+    const score = rawScore ?? 0;
     const unified = await buildUnifiedScore(context.supabase, {
       entity: data.entity,
       entityId: data.entity_id,
-      questions: (qs ?? []) as Question[],
+      questions: scoredQs,
       score,
     });
 
@@ -142,7 +153,7 @@ export const saveQualification = createServerFn({ method: "POST" })
       entity: data.entity,
       entity_id: data.entity_id,
       answers: data.answers,
-      score,
+      score: rawScore,
       questionnaire_points: unified.questionnairePoints,
       icp_points: unified.icpPoints,
       total_score: unified.total,

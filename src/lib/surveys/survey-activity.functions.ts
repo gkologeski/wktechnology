@@ -10,6 +10,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Json } from "@/integrations/supabase/types";
 import { getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
+import { scoreAnswers, validateAnswers, type FormSchema } from "@/lib/surveys/form-schema";
 import {
   computeQualificationMaxScore,
   computeQualificationScore,
@@ -90,7 +91,7 @@ export const getSurveyForm = createServerFn({ method: "POST" })
       const [{ data: tpl }, { data: rows, error }] = await Promise.all([
         context.supabase
           .from("survey_templates")
-          .select("id, name, description, kind")
+          .select("id, name, description, kind, published_version")
           .eq("id", data.source_id)
           .maybeSingle(),
         context.supabase
@@ -101,7 +102,19 @@ export const getSurveyForm = createServerFn({ method: "POST" })
       ]);
       if (error) throw new Error(error.message);
       if (!tpl) throw new Error("Modelo de pesquisa não encontrado.");
+      let formSchema: Json = null;
+      if (tpl.published_version) {
+        const { data: v } = await context.supabase
+          .from("survey_template_versions")
+          .select("schema")
+          .eq("template_id", tpl.id)
+          .eq("version", tpl.published_version)
+          .maybeSingle();
+        formSchema = (v?.schema ?? null) as Json;
+      }
       return {
+        form_schema: formSchema,
+        published_version: (tpl.published_version ?? null) as number | null,
         source: data.source,
         kind: (tpl.kind ?? "form") as string,
         id: tpl.id,
@@ -153,6 +166,8 @@ export const getSurveyForm = createServerFn({ method: "POST" })
       boolean: "boolean",
     };
     return {
+      form_schema: null as Json,
+      published_version: null as number | null,
       source: data.source,
       kind: "sales",
       id: q.id,
@@ -196,6 +211,10 @@ const SaveSchema = z.object({
   related_id: z.string().uuid(),
   answers: z.record(z.string(), z.unknown()),
   notes: z.string().max(4000).optional().nullable(),
+  /** Versão publicada respondida; o servidor usa o snapshot dessa versão. */
+  template_version: z.number().int().positive().optional().nullable(),
+  /** Evita duplicar a atividade em reenvio/duplo clique. */
+  idempotency_key: z.string().min(8).max(80).optional().nullable(),
 });
 
 /** Cria (ou atualiza) a atividade de pesquisa com as respostas. */
@@ -211,6 +230,22 @@ export const saveSurveyActivity = createServerFn({ method: "POST" })
     let score: number | null = null;
     let maxScore: number | null = null;
 
+    let snapshot: FormSchema | null = null;
+    if (data.idempotency_key) {
+      const { data: dup } = await supabase
+        .from("activity_survey_responses")
+        .select("activity_id, score, max_score")
+        .eq("workspace_id", ws)
+        .eq("idempotency_key", data.idempotency_key)
+        .maybeSingle();
+      if (dup)
+        return {
+          activity_id: dup.activity_id as string,
+          score: dup.score,
+          max_score: dup.max_score,
+        };
+    }
+
     if (data.source === "survey_template") {
       const { data: tpl } = await supabase
         .from("survey_templates")
@@ -218,23 +253,43 @@ export const saveSurveyActivity = createServerFn({ method: "POST" })
         .eq("id", data.source_id)
         .maybeSingle();
       sourceName = tpl?.name ?? sourceName;
+      if (data.template_version) {
+        const { data: v } = await supabase
+          .from("survey_template_versions")
+          .select("schema")
+          .eq("template_id", data.source_id)
+          .eq("version", data.template_version)
+          .maybeSingle();
+        if (!v) throw new Error("Versão da pesquisa não encontrada.");
+        snapshot = v.schema as unknown as FormSchema;
+        const errors = validateAnswers(snapshot, data.answers);
+        if (Object.keys(errors).length) throw new Error("Há respostas obrigatórias ou inválidas.");
+        const r = scoreAnswers(snapshot, data.answers);
+        score = r.score === null ? null : Math.round(r.score);
+        maxScore = r.max === null ? null : Math.round(r.max);
+      }
     } else {
       const [{ data: q }, { data: questions }] = await Promise.all([
         supabase
           .from("prospecting_questionnaires")
-          .select("name")
+          .select("name, scoring_enabled")
           .eq("id", data.source_id)
           .maybeSingle(),
         supabase
           .from("prospecting_questions")
-          .select("id, type, weight, options, text_points, text_min_chars")
+          .select("id, type, weight, options, text_points, text_min_chars, scored")
           .eq("questionnaire_id", data.source_id),
       ]);
       sourceName = q?.name ?? sourceName;
-      const list = (questions ?? []) as unknown as ScoreQuestion[];
-      score = computeQualificationScore(list, data.answers);
-      const { max } = computeQualificationMaxScore(list);
-      maxScore = max > 0 ? max : null;
+      // Questionário sem pontuação: score nulo, nunca 0 nem aprovação automática.
+      const list = (
+        (questions ?? []) as unknown as (ScoreQuestion & { scored?: boolean })[]
+      ).filter((x) => x.scored !== false);
+      if (q?.scoring_enabled !== false && list.length) {
+        score = computeQualificationScore(list, data.answers);
+        const { max } = computeQualificationMaxScore(list);
+        maxScore = max > 0 ? max : null;
+      }
     }
 
     const subject = `Pesquisa — ${sourceName}`;
@@ -276,6 +331,9 @@ export const saveSurveyActivity = createServerFn({ method: "POST" })
       max_score: maxScore,
       responded_by: userId,
       responded_at: new Date().toISOString(),
+      template_version: data.template_version ?? null,
+      schema_snapshot: (snapshot ?? null) as unknown as Json,
+      idempotency_key: data.idempotency_key ?? null,
     };
     const { error: upErr } = await supabase
       .from("activity_survey_responses")
@@ -296,7 +354,7 @@ export const getActivitySurveyResponses = createServerFn({ method: "POST" })
     const { data: rows, error } = await context.supabase
       .from("activity_survey_responses")
       .select(
-        "id, activity_id, source, source_id, source_name, answers, score, max_score, responded_by, responded_at",
+        "id, activity_id, source, source_id, source_name, answers, score, max_score, responded_by, responded_at, schema_snapshot",
       )
       .in("activity_id", data.activity_ids);
     if (error) throw new Error(error.message);
@@ -369,7 +427,24 @@ export const getActivitySurveyResponses = createServerFn({ method: "POST" })
 
     return responses.map((r) => ({
       ...r,
-      questions: bySource.get(r.source_id) ?? [],
+      // Snapshot da versão respondida tem precedência: editar a pesquisa não reinterpreta o histórico.
+      questions: r.schema_snapshot
+        ? ((r.schema_snapshot as unknown as FormSchema).fields ?? [])
+            .filter((f) => !["heading", "paragraph", "page_break"].includes(f.type))
+            .map(
+              (f, position) =>
+                ({
+                  id: f.id,
+                  label: f.label,
+                  help_text: f.description ?? null,
+                  type: f.type,
+                  options: (f.options ?? null) as unknown as Json,
+                  settings: { min: f.min, max: f.max, stars: f.stars } as unknown as Json,
+                  required: !!f.required,
+                  position,
+                }) satisfies SurveyFormQuestion,
+            )
+        : (bySource.get(r.source_id) ?? []),
     }));
   });
 

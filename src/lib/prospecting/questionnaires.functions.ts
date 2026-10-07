@@ -541,3 +541,35 @@ const FRAMEWORK_TEMPLATES: Record<z.infer<typeof FRAMEWORK>, Template> = {
 };
 
 export const FRAMEWORKS = Object.keys(FRAMEWORK_TEMPLATES) as z.infer<typeof FRAMEWORK>[];
+
+/** Liga/desliga a pontuação do questionário (sem pontuação: score nulo, sem aprovação automática). */
+export const setQuestionnaireScoring = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({ id: z.string().uuid(), scoring_enabled: z.boolean() }).parse(i),
+  )
+  .handler(async ({ context, data }) => {
+    const ws = await getActiveWorkspaceId(context.supabase, context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, asKeys(QUESTIONNAIRES_UPDATE));
+    const { error } = await context.supabase
+      .from("prospecting_questionnaires")
+      .update({ scoring_enabled: data.scoring_enabled } as never)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Marca se a pergunta entra na soma (independente de ser obrigatória). */
+export const setQuestionScored = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ id: z.string().uuid(), scored: z.boolean() }).parse(i))
+  .handler(async ({ context, data }) => {
+    const ws = await getActiveWorkspaceId(context.supabase, context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, asKeys(QUESTIONNAIRES_UPDATE));
+    const { error } = await context.supabase
+      .from("prospecting_questions")
+      .update({ scored: data.scored } as never)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

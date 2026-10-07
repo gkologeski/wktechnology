@@ -21,6 +21,7 @@ export const AI_FEATURES = {
   enriquecimento_hunting: "Enriquecimento de hunting",
   importacao_contrato: "Importação de contrato",
   importacao_modelo: "Importação de modelo de contrato",
+  importacao_pesquisa: "Importação de pesquisa",
   propriedades: "Propriedades personalizadas",
   reunioes: "Reuniões",
   teste_conexao: "Teste de conexão",

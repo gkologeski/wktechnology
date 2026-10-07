@@ -534,14 +534,17 @@ export type Database = {
           answers: Json
           created_at: string
           id: string
+          idempotency_key: string | null
           max_score: number | null
           owner_id: string
           responded_at: string
           responded_by: string | null
+          schema_snapshot: Json | null
           score: number | null
           source: string
           source_id: string
           source_name: string | null
+          template_version: number | null
           updated_at: string
           workspace_id: string | null
         }
@@ -550,14 +553,17 @@ export type Database = {
           answers?: Json
           created_at?: string
           id?: string
+          idempotency_key?: string | null
           max_score?: number | null
           owner_id: string
           responded_at?: string
           responded_by?: string | null
+          schema_snapshot?: Json | null
           score?: number | null
           source: string
           source_id: string
           source_name?: string | null
+          template_version?: number | null
           updated_at?: string
           workspace_id?: string | null
         }
@@ -566,14 +572,17 @@ export type Database = {
           answers?: Json
           created_at?: string
           id?: string
+          idempotency_key?: string | null
           max_score?: number | null
           owner_id?: string
           responded_at?: string
           responded_by?: string | null
+          schema_snapshot?: Json | null
           score?: number | null
           source?: string
           source_id?: string
           source_name?: string | null
+          template_version?: number | null
           updated_at?: string
           workspace_id?: string | null
         }
@@ -14939,7 +14948,7 @@ export type Database = {
           qualified_by: string | null
           questionnaire_id: string
           questionnaire_points: number | null
-          score: number
+          score: number | null
           total_score: number | null
           updated_at: string
           workspace_id: string | null
@@ -14958,7 +14967,7 @@ export type Database = {
           qualified_by?: string | null
           questionnaire_id: string
           questionnaire_points?: number | null
-          score?: number
+          score?: number | null
           total_score?: number | null
           updated_at?: string
           workspace_id?: string | null
@@ -14977,7 +14986,7 @@ export type Database = {
           qualified_by?: string | null
           questionnaire_id?: string
           questionnaire_points?: number | null
-          score?: number
+          score?: number | null
           total_score?: number | null
           updated_at?: string
           workspace_id?: string | null
@@ -15013,6 +15022,7 @@ export type Database = {
           owner_id: string
           pass_threshold: number
           pipeline_id: string | null
+          scoring_enabled: boolean
           updated_at: string
           workspace_id: string | null
         }
@@ -15029,6 +15039,7 @@ export type Database = {
           owner_id: string
           pass_threshold?: number
           pipeline_id?: string | null
+          scoring_enabled?: boolean
           updated_at?: string
           workspace_id?: string | null
         }
@@ -15045,6 +15056,7 @@ export type Database = {
           owner_id?: string
           pass_threshold?: number
           pipeline_id?: string | null
+          scoring_enabled?: boolean
           updated_at?: string
           workspace_id?: string | null
         }
@@ -15069,6 +15081,7 @@ export type Database = {
           position: number
           questionnaire_id: string
           required: boolean
+          scored: boolean
           text_min_chars: number
           text_points: number
           type: string
@@ -15086,6 +15099,7 @@ export type Database = {
           position?: number
           questionnaire_id: string
           required?: boolean
+          scored?: boolean
           text_min_chars?: number
           text_points?: number
           type: string
@@ -15103,6 +15117,7 @@ export type Database = {
           position?: number
           questionnaire_id?: string
           required?: boolean
+          scored?: boolean
           text_min_chars?: number
           text_points?: number
           type?: string
@@ -18166,6 +18181,48 @@ export type Database = {
         }
         Relationships: []
       }
+      survey_imports: {
+        Row: {
+          content_hash: string
+          created_at: string
+          created_by: string
+          error: string | null
+          id: string
+          result: Json | null
+          source_kind: string
+          source_name: string
+          status: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          content_hash: string
+          created_at?: string
+          created_by: string
+          error?: string | null
+          id?: string
+          result?: Json | null
+          source_kind: string
+          source_name: string
+          status?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          content_hash?: string
+          created_at?: string
+          created_by?: string
+          error?: string | null
+          id?: string
+          result?: Json | null
+          source_kind?: string
+          source_name?: string
+          status?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       survey_responses: {
         Row: {
           assigned_to: string | null
@@ -18224,48 +18281,63 @@ export type Database = {
       }
       survey_template_questions: {
         Row: {
+          conditions: Json | null
           created_at: string
+          field_key: string | null
           help_text: string | null
           id: string
           label: string
           options: Json
           owner_id: string
+          page: number
           position: number
           required: boolean
+          scored: boolean
           settings: Json
           survey_template_id: string
           type: string
           updated_at: string
+          weight: number
           workspace_id: string | null
         }
         Insert: {
+          conditions?: Json | null
           created_at?: string
+          field_key?: string | null
           help_text?: string | null
           id?: string
           label: string
           options?: Json
           owner_id: string
+          page?: number
           position?: number
           required?: boolean
+          scored?: boolean
           settings?: Json
           survey_template_id: string
           type?: string
           updated_at?: string
+          weight?: number
           workspace_id?: string | null
         }
         Update: {
+          conditions?: Json | null
           created_at?: string
+          field_key?: string | null
           help_text?: string | null
           id?: string
           label?: string
           options?: Json
           owner_id?: string
+          page?: number
           position?: number
           required?: boolean
+          scored?: boolean
           settings?: Json
           survey_template_id?: string
           type?: string
           updated_at?: string
+          weight?: number
           workspace_id?: string | null
         }
         Relationships: [
@@ -18278,12 +18350,52 @@ export type Database = {
           },
         ]
       }
+      survey_template_versions: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          schema: Json
+          template_id: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          schema: Json
+          template_id: string
+          version: number
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          schema?: Json
+          template_id?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_template_versions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "survey_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       survey_templates: {
         Row: {
           channel: string
           created_at: string
           delay_minutes: number
           description: string | null
+          draft_revision: number
+          draft_schema: Json | null
           id: string
           invite_body: string | null
           invite_subject: string | null
@@ -18292,8 +18404,10 @@ export type Database = {
           kind: string
           name: string
           owner_id: string
+          published_version: number | null
           question: string | null
           scope: string
+          scoring_enabled: boolean
           trigger_event: string
           updated_at: string
           workspace_id: string
@@ -18303,6 +18417,8 @@ export type Database = {
           created_at?: string
           delay_minutes?: number
           description?: string | null
+          draft_revision?: number
+          draft_schema?: Json | null
           id?: string
           invite_body?: string | null
           invite_subject?: string | null
@@ -18311,8 +18427,10 @@ export type Database = {
           kind?: string
           name: string
           owner_id: string
+          published_version?: number | null
           question?: string | null
           scope?: string
+          scoring_enabled?: boolean
           trigger_event?: string
           updated_at?: string
           workspace_id: string
@@ -18322,6 +18440,8 @@ export type Database = {
           created_at?: string
           delay_minutes?: number
           description?: string | null
+          draft_revision?: number
+          draft_schema?: Json | null
           id?: string
           invite_body?: string | null
           invite_subject?: string | null
@@ -18330,8 +18450,10 @@ export type Database = {
           kind?: string
           name?: string
           owner_id?: string
+          published_version?: number | null
           question?: string | null
           scope?: string
+          scoring_enabled?: boolean
           trigger_event?: string
           updated_at?: string
           workspace_id?: string

@@ -168,17 +168,20 @@ export function QualificationPanel({
     staleTime: 60_000,
   });
 
-  const score = useMemo(
-    () => (qData ? computeQualificationScore(qData.questions as ScoreQuestion[], answers) : 0),
-    [answers, qData],
-  );
-  const maxInfo = useMemo(
+  // Questionário sem pontuação: sem nota e sem aprovação automática (decisão manual).
+  const scoringOff =
+    (qData?.questionnaire as { scoring_enabled?: boolean } | undefined)?.scoring_enabled === false;
+  const scoreQs = useMemo(
     () =>
-      qData
-        ? computeQualificationMaxScore(qData.questions as ScoreQuestion[])
-        : { max: 0, hasOpenEnded: false },
-    [qData],
+      scoringOff || !qData
+        ? []
+        : ((qData.questions as (ScoreQuestion & { scored?: boolean })[]).filter(
+            (q) => q.scored !== false,
+          ) as ScoreQuestion[]),
+    [qData, scoringOff],
   );
+  const score = useMemo(() => computeQualificationScore(scoreQs, answers), [answers, scoreQs]);
+  const maxInfo = useMemo(() => computeQualificationMaxScore(scoreQs), [scoreQs]);
   const percent = scorePercent(score, maxInfo.max);
 
   // Nota unificada do lead (0–85): questionário (até 50) + ICP (até 35).
@@ -194,7 +197,7 @@ export function QualificationPanel({
   );
 
   const threshold = qData?.questionnaire.pass_threshold ?? 0;
-  const passesAuto = score >= threshold;
+  const passesAuto = !scoringOff && score >= threshold;
 
   const missingRequired = useMemo(() => {
     if (!qData) return [] as string[];
@@ -866,8 +869,8 @@ export function QualificationPanel({
                     passesAuto ? "text-emerald-600" : "text-foreground"
                   }`}
                 >
-                  {score}
-                  {maxInfo.max > 0 ? (
+                  {scoringOff ? "Sem pontuação" : score}
+                  {!scoringOff && maxInfo.max > 0 ? (
                     <span className="text-xs text-muted-foreground ml-1">
                       de {maxInfo.max}
                       {percent != null ? ` (${percent}%)` : ""}
@@ -875,8 +878,8 @@ export function QualificationPanel({
                   ) : null}
                 </p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                  Corte {threshold}
-                  {maxInfo.hasOpenEnded ? " · há perguntas sem teto" : ""}
+                  {scoringOff ? "Decisão manual" : `Corte ${threshold}`}
+                  {!scoringOff && maxInfo.hasOpenEnded ? " · há perguntas sem teto" : ""}
                 </p>
               </div>
               {icpFit.data && icpFit.data.criteriaCount > 0 ? (

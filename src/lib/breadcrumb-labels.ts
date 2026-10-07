@@ -95,6 +95,7 @@ export const SEGMENT_LABELS: Record<string, string> = {
   sso: "SSO",
   subscriptions: "Assinaturas",
   surveys: "Pesquisas",
+  "survey-builder": "Construtor de pesquisa",
   teams: "Membros",
   "user-groups": "Times",
   video: "Vídeo",
