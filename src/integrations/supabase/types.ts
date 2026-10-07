@@ -16998,6 +16998,7 @@ export type Database = {
           daily_send_limit: number
           default_playbook_id: string | null
           enabled: boolean
+          pilot_allowlist: string[]
           quiet_hours_end: number
           quiet_hours_start: number
           template_interval_max_s: number
@@ -17012,6 +17013,7 @@ export type Database = {
           daily_send_limit?: number
           default_playbook_id?: string | null
           enabled?: boolean
+          pilot_allowlist?: string[]
           quiet_hours_end?: number
           quiet_hours_start?: number
           template_interval_max_s?: number
@@ -17026,6 +17028,7 @@ export type Database = {
           daily_send_limit?: number
           default_playbook_id?: string | null
           enabled?: boolean
+          pilot_allowlist?: string[]
           quiet_hours_end?: number
           quiet_hours_start?: number
           template_interval_max_s?: number
