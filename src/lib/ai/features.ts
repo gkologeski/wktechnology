@@ -25,6 +25,7 @@ export const AI_FEATURES = {
   reunioes: "Reuniões",
   teste_conexao: "Teste de conexão",
   sdr_agente: "Agente SDR (Prospecção)",
+  sdr_agente_teste: "Agente SDR (teste em sandbox)",
   outros: "Outros",
 } as const;
 

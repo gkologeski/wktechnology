@@ -121,6 +121,7 @@ function SdrAgentPage() {
           <TabsTrigger value="sdr-results">Resultados</TabsTrigger>
           <TabsTrigger value="sdr-catalog">Portfólio e materiais</TabsTrigger>
           <TabsTrigger value="sdr-settings">Configuração</TabsTrigger>
+          <TabsTrigger value="sdr-agent">Persona e teste</TabsTrigger>
           <TabsTrigger value="playbook">Playbook</TabsTrigger>
           <TabsTrigger value="enrollments">Em atendimento</TabsTrigger>
         </TabsList>
