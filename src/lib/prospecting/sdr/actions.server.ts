@@ -85,7 +85,7 @@ export async function sendSdrMessage(
   const { data: job } = await admin
     .from("sdr_turn_jobs")
     .select(
-      "id, workspace_id, enrollment_id, conversation_id, status, lease_token, conversation_version, draft_payload",
+      "id, workspace_id, enrollment_id, conversation_id, status, lease_token, conversation_version, draft_payload, created_at",
     )
     .eq("id", p.jobId)
     .maybeSingle();
@@ -123,15 +123,6 @@ export async function sendSdrMessage(
     await import("@/lib/whatsapp/meta-channel.server");
   if (!isWithinServiceWindow(conv.last_inbound_at)) return { ok: false, reason: "window_closed" };
 
-  const since = new Date(Date.now() - 86400_000).toISOString();
-  const { count } = await admin
-    .from("sdr_actions")
-    .select("id", { count: "exact", head: true })
-    .eq("workspace_id", job.workspace_id)
-    .eq("kind", "message_sent")
-    .gte("created_at", since);
-  if ((count ?? 0) >= (settings?.daily_send_limit ?? 50))
-    return { ok: false, reason: "daily_limit" };
 
   // Idempotência: se uma tentativa anterior já gravou a mensagem deste trabalho,
   // só finaliza como enviado — nunca reenvia.
@@ -147,9 +138,55 @@ export async function sendSdrMessage(
   if (already?.wa_message_id) {
     await admin
       .from("sdr_turn_jobs")
-      .update({ status: "sent", lease_token: null, updated_at: new Date().toISOString() })
+      .update({
+        status: "sent",
+        lease_token: null,
+        send_reserved_until: null,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", job.id);
+    // Replay: registra a prova do envio só se ainda não existir (não consome 2x).
+    const { data: act } = await admin
+      .from("sdr_actions")
+      .select("id")
+      .eq("job_id", job.id)
+      .eq("kind", "message_sent")
+      .eq("status", "success")
+      .limit(1)
+      .maybeSingle();
+    if (!act)
+      await recordSdrAction(admin, {
+        workspace_id: job.workspace_id,
+        enrollment_id: enr.id,
+        job_id: job.id,
+        kind: "message_sent",
+        status: "success",
+        provider_ref: already.wa_message_id,
+        created_by: p.actorUserId,
+      });
     return { ok: true, wamid: already.wa_message_id };
+  }
+
+  // Versão mais recente: se o cliente escreveu depois que este rascunho foi gerado
+  // e a IA já respondeu (ou há outro turno), o rascunho é obsoleto.
+  if (job.created_at) {
+    const { data: newerOut } = await admin
+      .from("whatsapp_messages")
+      .select("id")
+      .eq("conversation_id", job.conversation_id)
+      .eq("direction", "outbound")
+      .gte("created_at", job.created_at)
+      .limit(1)
+      .maybeSingle();
+    const { data: newerJob } = await admin
+      .from("sdr_turn_jobs")
+      .select("id")
+      .eq("conversation_id", job.conversation_id)
+      .neq("id", job.id)
+      .gte("created_at", job.created_at)
+      .limit(1)
+      .maybeSingle();
+    if (newerOut || newerJob) return { ok: false, reason: "stale_version" };
   }
 
   // Trava de envio: mantém "running" com lease próprio até a Meta confirmar.
@@ -169,6 +206,31 @@ export async function sendSdrMessage(
   if (p.expectedStatus === "running") lockQuery = lockQuery.eq("lease_token", p.leaseToken ?? "");
   const { data: claimed } = await lockQuery.select("id");
   if (!claimed?.length) return { ok: false, reason: "job_state_changed" };
+
+  // Cota de respostas (janela móvel de 24 h): reserva atômica no banco. Conta só
+  // envios confirmados com wamid único + reservas em andamento; falhas não consomem.
+  const { data: quota, error: quotaErr } = await admin.rpc("sdr_reserve_send_quota", {
+    p_job: job.id,
+    p_lease: sendLease,
+    p_limit: settings?.daily_send_limit ?? 50,
+  });
+  const quotaResult = (quota as { result?: string } | null)?.result ?? "error";
+  if (quotaErr || (quotaResult !== "ok" && quotaResult !== "already_reserved")) {
+    const reason = quotaResult === "daily_limit" ? "daily_limit" : "quota_check_failed";
+    await admin
+      .from("sdr_turn_jobs")
+      .update({
+        status: "drafted",
+        error: reason,
+        lease_token: null,
+        send_reserved_until: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", job.id)
+      .eq("lease_token", sendLease);
+    console.warn("[sdr] envio bloqueado pela cota", { job: job.id, reason, quota });
+    return { ok: false, reason };
+  }
 
   let wamid: string | null = null;
   let raw: unknown = null;
@@ -228,6 +290,8 @@ export async function sendSdrMessage(
       error: msg,
       created_by: p.actorUserId,
     });
+    // Falha do provedor não consome cota: libera a reserva.
+    await admin.from("sdr_turn_jobs").update({ send_reserved_until: null }).eq("id", job.id);
     return { ok: false, reason: "provider_failed" };
   }
 
@@ -241,6 +305,8 @@ export async function sendSdrMessage(
     provider_ref: wamid,
     created_by: p.actorUserId,
   });
+  // Envio confirmado já conta na cota: libera a reserva temporária.
+  await admin.from("sdr_turn_jobs").update({ send_reserved_until: null }).eq("id", job.id);
   for (const id of payload.material_ids ?? []) {
     await recordSdrAction(admin, {
       workspace_id: job.workspace_id,

@@ -477,6 +477,20 @@
       "when": 1791346519716,
       "tag": "0067_sdr_wake_on_enqueue",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1791369497587,
+      "tag": "0068_sdr_send_quota_reservation",
+      "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1791370065791,
+      "tag": "0069_sdr_send_quota_reservation_gap",
+      "breakpoints": true
     }
   ]
 }

@@ -16915,6 +16915,7 @@ export type Database = {
           kind: string
           lease_token: string | null
           lease_until: string | null
+          send_reserved_until: string | null
           status: string
           updated_at: string
           workspace_id: string
@@ -16936,6 +16937,7 @@ export type Database = {
           kind?: string
           lease_token?: string | null
           lease_until?: string | null
+          send_reserved_until?: string | null
           status?: string
           updated_at?: string
           workspace_id: string
@@ -16957,6 +16959,7 @@ export type Database = {
           kind?: string
           lease_token?: string | null
           lease_until?: string | null
+          send_reserved_until?: string | null
           status?: string
           updated_at?: string
           workspace_id?: string
@@ -21471,6 +21474,7 @@ export type Database = {
           kind: string
           lease_token: string | null
           lease_until: string | null
+          send_reserved_until: string | null
           status: string
           updated_at: string
           workspace_id: string
@@ -21494,6 +21498,10 @@ export type Database = {
         Returns: string
       }
       sdr_guard: { Args: { p_job: string; p_lease: string }; Returns: string }
+      sdr_reserve_send_quota: {
+        Args: { p_job: string; p_lease: string; p_limit: number }
+        Returns: Json
+      }
       sdr_set_conversation_owner: {
         Args: { p_conversation: string; p_owner: string }
         Returns: number
