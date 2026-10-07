@@ -195,7 +195,9 @@ function FlowCanvas() {
               <div
                 key={i.label}
                 className={`rounded px-2 py-1 ${i.available ? "hover:bg-muted cursor-grab" : "opacity-50"}`}
-                title={i.available ? "Arraste para o canvas" : "Indisponível: integração não conectada"}
+                title={
+                  i.available ? "Arraste para o canvas" : "Indisponível: integração não conectada"
+                }
               >
                 {i.label}
                 {!i.available && <span className="ml-1 text-xs">(indisponível)</span>}
@@ -243,7 +245,10 @@ function FlowCanvas() {
             {n.label}
           </button>
         ))}
-        <div className="absolute bottom-2 right-2 h-16 w-24 rounded border bg-card/90 p-1" aria-label="Minimapa">
+        <div
+          className="absolute bottom-2 right-2 h-16 w-24 rounded border bg-card/90 p-1"
+          aria-label="Minimapa"
+        >
           {NODES.map((n) => (
             <div
               key={n.id}
@@ -253,8 +258,12 @@ function FlowCanvas() {
           ))}
         </div>
         <div className="absolute bottom-2 left-2 flex gap-1">
-          <Button size="sm" variant="outline" aria-label="Aproximar">+</Button>
-          <Button size="sm" variant="outline" aria-label="Afastar">−</Button>
+          <Button size="sm" variant="outline" aria-label="Aproximar">
+            +
+          </Button>
+          <Button size="sm" variant="outline" aria-label="Afastar">
+            −
+          </Button>
         </div>
       </div>
       <aside className="rounded-lg border bg-card p-3 space-y-3 text-sm">
@@ -296,7 +305,10 @@ function TestChat() {
           para começar?
         </div>
         <div className="flex gap-2 pt-4">
-          <Textarea aria-label="Mensagem de teste" placeholder="Enter envia, Shift+Enter quebra linha" />
+          <Textarea
+            aria-label="Mensagem de teste"
+            placeholder="Enter envia, Shift+Enter quebra linha"
+          />
           <Button aria-label="Enviar teste">
             <Send className="h-4 w-4" />
           </Button>
@@ -328,7 +340,11 @@ function Wizard({ go }: { go: (v: View) => void }) {
           Etapa {step + 1} de {STEPS.length}
         </p>
         <h2 className="text-xl font-semibold">{STEPS[step]}</h2>
-        <Progress value={((step + 1) / STEPS.length) * 100} className="mt-2" aria-label="Progresso" />
+        <Progress
+          value={((step + 1) / STEPS.length) * 100}
+          className="mt-2"
+          aria-label="Progresso"
+        />
       </div>
       <ol className="flex flex-wrap gap-1 text-xs">
         {STEPS.map((s, i) => (
@@ -355,13 +371,16 @@ function Wizard({ go }: { go: (v: View) => void }) {
         {step === 1 && (
           <>
             <Label htmlFor="w-persona">Instruções</Label>
-            <Textarea id="w-persona" defaultValue="Tom consultivo, direto, sem jargão. Uma pergunta por vez." />
+            <Textarea
+              id="w-persona"
+              defaultValue="Tom consultivo, direto, sem jargão. Uma pergunta por vez."
+            />
           </>
         )}
         {step === 2 && (
           <p className="text-sm">
-            Escopo: <strong>Só este agente</strong> · Projeto: <em>Projeto X (exemplo)</em>. Documentos
-            de outros projetos ficam inacessíveis.
+            Escopo: <strong>Só este agente</strong> · Projeto: <em>Projeto X (exemplo)</em>.
+            Documentos de outros projetos ficam inacessíveis.
           </p>
         )}
         {step === 3 && <FlowCanvas />}
@@ -376,18 +395,28 @@ function Wizard({ go }: { go: (v: View) => void }) {
         )}
         {step === 5 && (
           <p className="text-sm">
-            Regra de roteamento: inbound do contato vinculado ao Projeto X → este agente. Conflito com
-            outro agente → triagem humana.
+            Regra de roteamento: inbound do contato vinculado ao Projeto X → este agente. Conflito
+            com outro agente → triagem humana.
           </p>
         )}
         {step === 6 && <TestChat />}
         {step === 7 && (
           <ul className="text-sm space-y-1">
-            <li><CheckCircle2 className="inline h-4 w-4 text-success mr-1" />Função definida</li>
-            <li><CheckCircle2 className="inline h-4 w-4 text-success mr-1" />Fontes de conhecimento</li>
-            <li><AlertTriangle className="inline h-4 w-4 text-warning mr-1" />Nenhum canal conectado</li>
+            <li>
+              <CheckCircle2 className="inline h-4 w-4 text-success mr-1" />
+              Função definida
+            </li>
+            <li>
+              <CheckCircle2 className="inline h-4 w-4 text-success mr-1" />
+              Fontes de conhecimento
+            </li>
+            <li>
+              <AlertTriangle className="inline h-4 w-4 text-warning mr-1" />
+              Nenhum canal conectado
+            </li>
             <li className="flex items-center gap-2 pt-2">
-              <Switch id="w-active" disabled /> <Label htmlFor="w-active">Agente ativo (desligado)</Label>
+              <Switch id="w-active" disabled />{" "}
+              <Label htmlFor="w-active">Agente ativo (desligado)</Label>
             </li>
           </ul>
         )}
@@ -424,8 +453,12 @@ function Studio({ go }: { go: (v: View) => void }) {
           <TabsTrigger value="kb">Conhecimento</TabsTrigger>
           <TabsTrigger value="launch">Lançamento</TabsTrigger>
         </TabsList>
-        <TabsContent value="flow" className="mt-4"><FlowCanvas /></TabsContent>
-        <TabsContent value="test" className="mt-4"><TestChat /></TabsContent>
+        <TabsContent value="flow" className="mt-4">
+          <FlowCanvas />
+        </TabsContent>
+        <TabsContent value="test" className="mt-4">
+          <TestChat />
+        </TabsContent>
         <TabsContent value="metrics" className="mt-4">
           <EmptyState
             title="Sem dados de produção para este agente"
@@ -434,7 +467,9 @@ function Studio({ go }: { go: (v: View) => void }) {
         </TabsContent>
         <TabsContent value="kb" className="mt-4">
           <div className="rounded-lg border bg-card p-4 text-sm space-y-2">
-            <p className="font-medium">Catálogo de serviços WK (exemplo) · Texto · Processado · 12 trechos</p>
+            <p className="font-medium">
+              Catálogo de serviços WK (exemplo) · Texto · Processado · 12 trechos
+            </p>
             <p className="text-muted-foreground">Escopo: Todos os agentes</p>
             <p className="font-medium pt-2">Perguntas sem resposta</p>
             <p className="text-muted-foreground">“Vocês atendem fora do Brasil?” (exemplo)</p>
@@ -444,7 +479,9 @@ function Studio({ go }: { go: (v: View) => void }) {
           <div className="rounded-lg border bg-card p-4 text-sm space-y-2">
             <p>Modo homologação: somente números autorizados</p>
             <p className="text-muted-foreground">Canais: WhatsApp piloto (exemplo)</p>
-            <Button variant="outline" size="sm">Conferir novamente</Button>
+            <Button variant="outline" size="sm">
+              Conferir novamente
+            </Button>
           </div>
         </TabsContent>
       </Tabs>
@@ -454,12 +491,30 @@ function Studio({ go }: { go: (v: View) => void }) {
 
 function RecordConversations() {
   const rows = [
-    { ch: "WhatsApp", agent: "Agente Vendas v3", owner: "Ana Souza", when: "07/10 10:12", status: "Aberta", ctx: "Negócio: Squad Delphi" },
-    { ch: "WhatsApp", agent: "Agente Técnico v1 → humano", owner: "Bruno Lima", when: "06/10 15:40", status: "Com humano", ctx: "Projeto X" },
+    {
+      ch: "WhatsApp",
+      agent: "Agente Vendas v3",
+      owner: "Ana Souza",
+      when: "07/10 10:12",
+      status: "Aberta",
+      ctx: "Negócio: Squad Delphi",
+    },
+    {
+      ch: "WhatsApp",
+      agent: "Agente Técnico v1 → humano",
+      owner: "Bruno Lima",
+      when: "06/10 15:40",
+      status: "Com humano",
+      ctx: "Projeto X",
+    },
   ];
   return (
     <div className="space-y-4">
-      <PageHeader eyebrow="Contato (exemplo)" title="Maria Exemplo" description="Empresa Exemplo Ltda" />
+      <PageHeader
+        eyebrow="Contato (exemplo)"
+        title="Maria Exemplo"
+        description="Empresa Exemplo Ltda"
+      />
       <section className="rounded-lg border bg-card">
         <div className="flex items-center gap-2 border-b px-4 py-2">
           <MessageSquare className="h-4 w-4" aria-hidden />
@@ -468,22 +523,38 @@ function RecordConversations() {
         <table className="w-full text-sm">
           <thead className="text-left text-muted-foreground">
             <tr>
-              <th className="px-4 py-2">Canal</th><th>Agente/autor</th><th>Responsável</th>
-              <th>Último</th><th>Status</th><th>Contexto</th><th />
+              <th className="px-4 py-2">Canal</th>
+              <th>Agente/autor</th>
+              <th>Responsável</th>
+              <th>Último</th>
+              <th>Status</th>
+              <th>Contexto</th>
+              <th />
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.when} className="border-t">
-                <td className="px-4 py-2">{r.ch}</td><td>{r.agent}</td><td>{r.owner}</td>
-                <td>{r.when}</td><td><Badge variant="outline">{r.status}</Badge></td><td>{r.ctx}</td>
-                <td><Button size="sm" variant="link">Abrir conversa</Button></td>
+                <td className="px-4 py-2">{r.ch}</td>
+                <td>{r.agent}</td>
+                <td>{r.owner}</td>
+                <td>{r.when}</td>
+                <td>
+                  <Badge variant="outline">{r.status}</Badge>
+                </td>
+                <td>{r.ctx}</td>
+                <td>
+                  <Button size="sm" variant="link">
+                    Abrir conversa
+                  </Button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
         <p className="px-4 py-2 text-xs text-muted-foreground border-t">
-          Conversa sem contexto definido fica em triagem — não é anexada a todos os negócios/projetos.
+          Conversa sem contexto definido fica em triagem — não é anexada a todos os
+          negócios/projetos.
         </p>
       </section>
     </div>
@@ -504,7 +575,12 @@ export function AgentsPrototype() {
             ["record", "Ficha com conversas"],
           ] as [View, string][]
         ).map(([v, l]) => (
-          <Button key={v} size="sm" variant={view === v ? "default" : "outline"} onClick={() => setView(v)}>
+          <Button
+            key={v}
+            size="sm"
+            variant={view === v ? "default" : "outline"}
+            onClick={() => setView(v)}
+          >
             {l}
           </Button>
         ))}
