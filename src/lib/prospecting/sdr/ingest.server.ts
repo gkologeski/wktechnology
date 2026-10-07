@@ -72,6 +72,13 @@ export async function linkCampaignSend(
   },
 ): Promise<string | null> {
   if (!p.campaign.sdr_enabled || !p.campaign.sdr_playbook_id) return null;
+  const { data: wsCfg } = await admin
+    .from("sdr_workspace_settings")
+    .select("pilot_allowlist")
+    .eq("workspace_id", p.workspaceId)
+    .maybeSingle();
+  const { isPhoneAllowlisted } = await import("./allowlist");
+  if (!isPhoneAllowlisted(p.phone, wsCfg?.pilot_allowlist)) return null;
   const { data: playbook } = await admin
     .from("sdr_playbooks")
     .select("id, follow_up_hours, max_follow_ups, workspace_id")

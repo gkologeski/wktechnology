@@ -1,0 +1,2 @@
+ALTER TABLE public.sdr_workspace_settings ADD COLUMN IF NOT EXISTS pilot_allowlist text[] NOT NULL DEFAULT '{}';
+COMMENT ON COLUMN public.sdr_workspace_settings.pilot_allowlist IS 'Quando não vazio, o SDR só entra/envia para estes telefones (E.164).';

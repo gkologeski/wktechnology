@@ -106,7 +106,7 @@ export async function sendSdrMessage(
       .maybeSingle(),
     admin
       .from("sdr_workspace_settings")
-      .select("daily_send_limit")
+      .select("daily_send_limit, pilot_allowlist")
       .eq("workspace_id", job.workspace_id)
       .maybeSingle(),
   ]);
@@ -115,6 +115,9 @@ export async function sendSdrMessage(
   if (conv.ai_owner !== "ai") return { ok: false, reason: "owner_not_ai" };
   if (conv.ai_version !== job.conversation_version) return { ok: false, reason: "stale_version" };
   if (!enr || enr.status !== "active") return { ok: false, reason: "enrollment_inactive" };
+  const { isPhoneAllowlisted } = await import("./allowlist");
+  if (!isPhoneAllowlisted(conv.contact_phone ?? "", settings?.pilot_allowlist))
+    return { ok: false, reason: "not_allowlisted" };
 
   const { isWithinServiceWindow, resolveWaNumber, metaSend } =
     await import("@/lib/whatsapp/meta-channel.server");

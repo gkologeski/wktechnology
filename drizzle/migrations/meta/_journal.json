@@ -463,6 +463,13 @@
       "when": 1791329606719,
       "tag": "0065_cron_http_timeout_60s",
       "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1791331407588,
+      "tag": "0066_sdr_pilot_allowlist",
+      "breakpoints": true
     }
   ]
 }
