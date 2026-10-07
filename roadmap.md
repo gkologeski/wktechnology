@@ -2,11 +2,12 @@
 
 # Roadmap — Três propostas de Agentes de IA
 
-- [ ] Estúdio em /agents/prototype/1
-- [ ] Assistente de criação em /agents/prototype/2
-- [ ] Central de operação em /agents/prototype/3
-- [ ] Navegação, wizard, canvas e cliente com estados locais
-- [ ] Inspeção autenticada, temas, arquétipos e validações direcionadas
+- [x] Estúdio em /agents/prototype/1
+- [x] Assistente de criação em /agents/prototype/2
+- [x] Central de operação em /agents/prototype/3
+- [x] Navegação, wizard, canvas e cliente com estados locais
+- [x] Inspeção autenticada, temas, arquétipos e validações direcionadas
+- [ ] Escolha/aprovação visual do usuário (sem ativação real)
 
 - [x] Fase 1 — ações de contratação no motor (validada com candidata de teste)
 - [x] Fase 2 — diálogo de desfecho de contratação no TechHire (interna/outsourcing/hunting)

@@ -27,7 +27,7 @@ Playwright: `/tmp/browser/agents-options/verify.py`; log: `browser.log`. Captura
 
 Percursos autenticados passam: hard refresh, edição/retorno wizard, drag, edição e adição de bloco, cinco áreas, chat local, salvar/reabrir, claro/escuro e Quiet Premium/Enterprise Classic. Medidos 1440×900, 1280×800, tablet 768 e mobile 390; sem overflow horizontal global. Screenshots são inspecionadas após ajustes.
 
-`bunx vitest run src/components/agents/prototypes/model.test.ts`: três testes passam (isolamento, validações, respostas locais usando agenda/fontes corretas). Lint direcionado: zero erros, dois avisos (tamanho de flow.tsx e export de hook no contexto). O typecheck automático global repetidamente atingiu o limite sem diagnóstico de arquivo; a validação global atual de types/build permanece inconclusiva. Não foi executado build/typecheck manual.
+`bunx vitest run src/components/agents/prototypes/model.test.ts`: três testes passam (isolamento, validações, respostas locais usando agenda/fontes corretas). Lint direcionado: zero erros, dois avisos (tamanho de flow.tsx e export de hook no contexto). Houve timeouts anteriores do typecheck automático sem diagnóstico de arquivo; as verificações automáticas mais recentes registraram `build OK` em 07/10/2026 às 15:38:24Z e 15:39:55Z. Não foi executado build/typecheck manual. Playwright também confirmou duplicar/arquivar, validação de identidade e troca local de anfitrião nas três propostas, sem page errors.
 
 ## Limites conhecidos
 
