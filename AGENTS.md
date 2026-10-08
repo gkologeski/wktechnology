@@ -31,3 +31,6 @@
 
 - Ritmo do disparo de template das campanhas WhatsApp é controlado por `whatsapp_campaigns.next_send_at` sob lease `wa_campaign_claim_dispatch`, com sorteio em `src/lib/whatsapp/campaign-pacing.ts`; por quê: o espaçamento vale entre execuções e nunca há disparo duplo.
 
+
+- Perfis de vaga do negócio (`src/lib/role-profiles/`): aprovar/encaminhar/sincronizar só por RPCs `role_profile_*` (versão imutável, 1 requisição TechHire por perfil, trigger barra atalhos); comercial interno em tabela própria e cliente/TechHire só por allowlist (`toClientView`/`toAtsJob`); por quê: sem duplicar vagas nem vazar custo/margem.
+- Leitura de documentos para importações com IA vive em `src/lib/import/` (SSRF, assinatura MIME, DOCX/PDF/imagem); por quê: um só caminho seguro reaproveitado por pesquisas e perfis.
