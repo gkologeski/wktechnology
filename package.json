@@ -8,7 +8,7 @@
     "build": "NODE_OPTIONS=--max-old-space-size=8192 vite build",
     "build:dev": "NODE_OPTIONS=--max-old-space-size=8192 vite build --mode development",
     "preview": "vite preview",
-    "lint": "eslint .",
+    "lint": "eslint . --cache --cache-location .eslintcache --cache-strategy content",
     "lint:fix": "eslint . --fix",
     "lint:types": "eslint --config eslint.typed.config.mjs .",
     "typecheck": "tsgo --noEmit",
@@ -22,7 +22,8 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:install": "playwright install --with-deps chromium",
     "audit:access": "bun scripts/audit-access-rules.ts",
-    "audit:design-system": "bun scripts/audit-design-system.ts"
+    "audit:design-system": "bun scripts/audit-design-system.ts",
+    "lint:nocache": "eslint ."
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^3.0.11",

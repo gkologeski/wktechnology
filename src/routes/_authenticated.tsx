@@ -102,7 +102,7 @@ function AuthenticatedLayout() {
   const { isLicensed } = useModuleLicenses();
   const { canAccessModule, soleModule, loading: accessLoading } = useModuleAccess();
 
-  useIdleListPreload(!loading && !!user);
+  useIdleListPreload(!loading && !!user, user?.id ?? null);
 
   useEffect(() => {
     if (!loading && !user) router.navigate({ to: "/login" });

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { useQuery } from "@tanstack/react-query";
@@ -12,16 +12,39 @@ import {
   type ActivityWindowRequest,
 } from "./activity-window-context";
 import { ActivityWindowFrame } from "./activity-window-frame";
-import { ActivityLogWindow } from "./activity-log-window";
-import { TimelineActionDialogs } from "./timeline-action-dialogs";
-import { QuickCreateTaskDialog } from "@/components/record/quick-create-dialogs";
-import { SendEmailDialog } from "@/components/email/send-email-dialog";
-import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
-import { BulkCreateActivityDialog } from "@/components/bulk-create-activity-dialog";
 import { useQueryClient } from "@tanstack/react-query";
-import { ActivityEditWindow } from "./activity-edit-window";
 import { useChannelAvailability } from "@/hooks/use-channel-availability";
 import { isChannelBlocked, isSendChannel } from "@/lib/channel-availability";
+
+// Janelas/diálogos só são baixados quando o usuário abre uma janela; o
+// provedor (contexto, rascunhos e lista de janelas) segue carregado no layout.
+const ActivityLogWindow = lazy(() =>
+  import("./activity-log-window").then((m) => ({ default: m.ActivityLogWindow })),
+);
+const TimelineActionDialogs = lazy(() =>
+  import("./timeline-action-dialogs").then((m) => ({ default: m.TimelineActionDialogs })),
+);
+const QuickCreateTaskDialog = lazy(() =>
+  import("@/components/record/quick-create-dialogs").then((m) => ({
+    default: m.QuickCreateTaskDialog,
+  })),
+);
+const SendEmailDialog = lazy(() =>
+  import("@/components/email/send-email-dialog").then((m) => ({ default: m.SendEmailDialog })),
+);
+const SendWhatsAppDialog = lazy(() =>
+  import("@/components/whatsapp/send-whatsapp-dialog").then((m) => ({
+    default: m.SendWhatsAppDialog,
+  })),
+);
+const BulkCreateActivityDialog = lazy(() =>
+  import("@/components/bulk-create-activity-dialog").then((m) => ({
+    default: m.BulkCreateActivityDialog,
+  })),
+);
+const ActivityEditWindow = lazy(() =>
+  import("./activity-edit-window").then((m) => ({ default: m.ActivityEditWindow })),
+);
 
 interface WindowEntry {
   id: string;
@@ -136,72 +159,74 @@ export function ActivityWindows({ children }: { children: React.ReactNode }) {
           return (
             <WindowChromeContext.Provider key={w.id} value={chrome}>
               <div className={w.minimized || chrome.position > 1 ? "hidden" : "contents"}>
-                {w.request.editingActivity ? (
-                  <ActivityWindowFrame>
-                    <ActivityEditWindow
-                      activity={w.request.editingActivity}
-                      onSaved={() => close(w.id)}
-                      onCancel={chrome.onClose}
+                <Suspense fallback={null}>
+                  {w.request.editingActivity ? (
+                    <ActivityWindowFrame>
+                      <ActivityEditWindow
+                        activity={w.request.editingActivity}
+                        onSaved={() => close(w.id)}
+                        onCancel={chrome.onClose}
+                      />
+                    </ActivityWindowFrame>
+                  ) : w.request.bulk ? (
+                    <BulkCreateActivityDialog
+                      open
+                      setOpen={(value) => {
+                        if (!value) close(w.id);
+                      }}
+                      ids={w.request.bulk.ids}
+                      entity={w.request.bulk.entity}
+                      onDone={w.request.bulk.onDone}
                     />
-                  </ActivityWindowFrame>
-                ) : w.request.bulk ? (
-                  <BulkCreateActivityDialog
-                    open
-                    setOpen={(value) => {
-                      if (!value) close(w.id);
-                    }}
-                    ids={w.request.bulk.ids}
-                    entity={w.request.bulk.entity}
-                    onDone={w.request.bulk.onDone}
-                  />
-                ) : !w.request.relatedKey &&
-                  w.request.action.kind === "create" &&
-                  w.request.action.value === "whatsapp" ? (
-                  <SendWhatsAppDialog
-                    open
-                    onOpenChange={(value) => {
-                      if (!value) close(w.id);
-                    }}
-                    defaultTo={w.request.to}
-                    contactId={w.request.contactId}
-                    contactName={w.request.contactName}
-                  />
-                ) : !w.request.relatedKey &&
-                  w.request.action.kind === "log" &&
-                  w.request.action.value === "task" ? (
-                  <QuickCreateTaskDialog
-                    open
-                    onOpenChange={(value) => {
-                      if (!value) close(w.id);
-                    }}
-                    onCreated={() => void queryClient.invalidateQueries({ queryKey: ["tasks"] })}
-                  />
-                ) : !w.request.relatedKey &&
-                  w.request.action.kind === "create" &&
-                  w.request.action.value === "email" ? (
-                  <SendEmailDialog
-                    open
-                    onOpenChange={(value) => {
-                      if (!value) close(w.id);
-                    }}
-                    defaultTo={w.request.to}
-                    defaultSubject={w.request.subject}
-                    defaultBody={w.request.body}
-                    threadId={w.request.threadId}
-                    contactId={w.request.contactId}
-                    leadId={w.request.leadId}
-                    dealId={w.request.dealId}
-                    companyId={w.request.companyId}
-                    contactName={w.request.contactName}
-                    onSent={w.request.onSent}
-                  />
-                ) : w.request.relatedKey && w.request.action.kind === "log" ? (
-                  <ActivityWindowFrame>
-                    <ActivityLogWindow request={w.request} onSaved={() => close(w.id)} />
-                  </ActivityWindowFrame>
-                ) : w.request.relatedKey ? (
-                  <ActivityActionWindow request={w.request} onClose={() => close(w.id)} />
-                ) : null}
+                  ) : !w.request.relatedKey &&
+                    w.request.action.kind === "create" &&
+                    w.request.action.value === "whatsapp" ? (
+                    <SendWhatsAppDialog
+                      open
+                      onOpenChange={(value) => {
+                        if (!value) close(w.id);
+                      }}
+                      defaultTo={w.request.to}
+                      contactId={w.request.contactId}
+                      contactName={w.request.contactName}
+                    />
+                  ) : !w.request.relatedKey &&
+                    w.request.action.kind === "log" &&
+                    w.request.action.value === "task" ? (
+                    <QuickCreateTaskDialog
+                      open
+                      onOpenChange={(value) => {
+                        if (!value) close(w.id);
+                      }}
+                      onCreated={() => void queryClient.invalidateQueries({ queryKey: ["tasks"] })}
+                    />
+                  ) : !w.request.relatedKey &&
+                    w.request.action.kind === "create" &&
+                    w.request.action.value === "email" ? (
+                    <SendEmailDialog
+                      open
+                      onOpenChange={(value) => {
+                        if (!value) close(w.id);
+                      }}
+                      defaultTo={w.request.to}
+                      defaultSubject={w.request.subject}
+                      defaultBody={w.request.body}
+                      threadId={w.request.threadId}
+                      contactId={w.request.contactId}
+                      leadId={w.request.leadId}
+                      dealId={w.request.dealId}
+                      companyId={w.request.companyId}
+                      contactName={w.request.contactName}
+                      onSent={w.request.onSent}
+                    />
+                  ) : w.request.relatedKey && w.request.action.kind === "log" ? (
+                    <ActivityWindowFrame>
+                      <ActivityLogWindow request={w.request} onSaved={() => close(w.id)} />
+                    </ActivityWindowFrame>
+                  ) : w.request.relatedKey ? (
+                    <ActivityActionWindow request={w.request} onClose={() => close(w.id)} />
+                  ) : null}
+                </Suspense>
               </div>
             </WindowChromeContext.Provider>
           );

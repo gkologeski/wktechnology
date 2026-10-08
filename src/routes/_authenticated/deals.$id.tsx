@@ -104,9 +104,17 @@ function DealDetail() {
   const load = () => qc.invalidateQueries({ queryKey: qk.deal(id) });
 
   useRealtimeInvalidate([
-    { table: "deals", queryKeys: [qk.deal(id)] },
-    { table: "deal_line_items", queryKeys: [qk.deal(id), qk.dealLineItems(id)] },
-    { table: "activities", queryKeys: [qk.activities("related_deal_id", id)] },
+    { table: "deals", filter: `id=eq.${id}`, queryKeys: [qk.deal(id)] },
+    {
+      table: "deal_line_items",
+      filter: `deal_id=eq.${id}`,
+      queryKeys: [qk.deal(id), qk.dealLineItems(id)],
+    },
+    {
+      table: "activities",
+      filter: `related_deal_id=eq.${id}`,
+      queryKeys: [qk.activities("related_deal_id", id)],
+    },
   ]);
 
   useEffect(() => {

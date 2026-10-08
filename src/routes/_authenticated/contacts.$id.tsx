@@ -60,8 +60,12 @@ function ContactDetail() {
   const load = () => qc.invalidateQueries({ queryKey: qk.contact(id) });
 
   useRealtimeInvalidate([
-    { table: "contacts", queryKeys: [qk.contact(id)] },
-    { table: "activities", queryKeys: [qk.activities("related_contact_id", id)] },
+    { table: "contacts", filter: `id=eq.${id}`, queryKeys: [qk.contact(id)] },
+    {
+      table: "activities",
+      filter: `related_contact_id=eq.${id}`,
+      queryKeys: [qk.activities("related_contact_id", id)],
+    },
   ]);
 
   const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techsales.contacts");

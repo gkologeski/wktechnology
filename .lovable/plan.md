@@ -22,14 +22,14 @@ Maiores arquivos escritos à mão (Fato): `extra-fields-editor.tsx` 1.692, `bank
 ## 2. Verificação automática: o que se sabe
 
 - **Fato**: os scripts locais (`typecheck`=tsgo, `typecheck:inc`, `verify` em paralelo) já existem. O tempo limite de 240s acontece na verificação da própria plataforma, cujo comando exato **não está visível** no sandbox. O log `/tmp/observability` não existe neste turno.
-- **Medido**: tsgo frio leva 54s, bem abaixo de 240s. Então o tempo limite **não** vem de tsgo.
+- **Medido**: tsgo frio leva 37–54s. Isso **não prova** que o tempo limite não venha de tipos: o comando real da plataforma é desconhecido. O build sozinho mede 212–256s.
 - **Hipótese principal**: a plataforma roda `tsc` sem cache (medido antes em 2m25s, quando `types.ts` era 11% menor) e/ou o build de produção. Somados, passam de 240s.
 - **Falta medir**: o comando real da plataforma, CPU e RAM durante esse passo, e as fases do `vite build` (cliente, servidor e worker separados).
 
 ## 3. Principais gargalos (por ordem de impacto)
 
 **Para o usuário (telas lentas)**
-1. **Consultas largas**: 260 `select("*")` e 95 contagens exatas. Contagem exata com RLS percorre a tabela inteira a cada abertura de lista. (Fato + Hipótese de impacto)
+1. **Consultas largas**: 260 `select("*")` e 95 contagens exatas. Contagem exata não percorre necessariamente a tabela inteira, e onde a exatidão comercial importa ela deve ser mantida. (Hipótese de impacto; medir antes)
 2. **Realtime + intervalos sobrepostos**: negócios, leads, tarefas e Inbox assinam mudanças e também têm `refetchInterval`. Em workspaces movimentados isso gera tempestades de recarga. (Fato; impacto é Hipótese)
 3. **Provedores globais em `__root.tsx`** (Auth, I18n, Branding com Realtime, AgentTrigger, NewVersionWatcher): tudo carrega em toda tela, inclusive nas públicas. (Fato)
 4. **Detalhe do negócio e timeline**: vários painéis buscam dados em paralelo, cada um com sua própria verificação de RLS; políticas restritivas de visibilidade por cargo (`rep_scope_*`) somam custo a cada linha. (Fato; custo é Hipótese)
@@ -62,12 +62,12 @@ Conclusão: dividir em serviços **não** resolve a lentidão das telas, que vem
 
 **Sprint 1 — Consultas (esforço M, risco baixo, rollback revertendo o commit)**
 - Trocar `select("*")` por colunas projetadas nas 6 áreas prioritárias.
-- Trocar `count: "exact"` por `estimated` ou paginação por cursor nas listas.
-- Criar índices cobrindo `workspace_id + assigned_to + updated_at`, guiados pelas consultas lentas.
+- Revisar `count: "exact"` só onde a medição apontar custo e a exatidão não for comercialmente exigida.
+- Índices apenas a partir de EXPLAIN de consultas interativas reais; nada de índices genéricos.
 - Aceite: p95 das consultas das listas abaixo de 300 ms; nenhuma regra de RLS alterada.
 
 **Sprint 2 — Recargas e cache (M, risco médio)**
-- Uma única fonte de atualização por tela: Realtime **ou** intervalo, nunca os dois.
+- Realtime e reconciliação periódica podem coexistir de forma controlada, com filtro por registro e agrupamento.
 - Agrupar invalidações (debounce) e restringir as assinaturas a `workspace_id`.
 - Chaves de cache sempre com `workspaceId`, e cache limpo ao trocar de workspace ou no "Ver como" (isolamento entre clientes).
 - Aceite: no máximo 1 recarga por evento; trocar de workspace não mostra dado anterior.
@@ -82,7 +82,7 @@ Conclusão: dividir em serviços **não** resolve a lentidão das telas, que vem
 - Aceite: um workspace grande não atrasa os outros; nada é processado duas vezes.
 
 **Sprint 5 — Build e verificação (M, risco baixo)**
-- Quebrar os 10 maiores arquivos (sem mudar comportamento).
+- Dividir arquivos apenas onde a medição mostrar ganho; nada de fragmentação cega.
 - Fronteiras de módulo por regra de lint.
 - Só depois disso, testar project references num ramo separado.
 - Aceite: verificação da plataforma abaixo de 180s, sem desligar tipos, lint ou testes.

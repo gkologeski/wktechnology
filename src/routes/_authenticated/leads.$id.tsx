@@ -187,8 +187,12 @@ function LeadDetail() {
   };
 
   useRealtimeInvalidate([
-    { table: "leads", queryKeys: [qk.lead(id)] },
-    { table: "activities", queryKeys: [qk.activities("related_lead_id", id)] },
+    { table: "leads", filter: `id=eq.${id}`, queryKeys: [qk.lead(id)] },
+    {
+      table: "activities",
+      filter: `related_lead_id=eq.${id}`,
+      queryKeys: [qk.activities("related_lead_id", id)],
+    },
   ]);
 
   const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techsales.leads");

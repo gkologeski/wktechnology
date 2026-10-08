@@ -16,3 +16,4 @@ eslint-rules/
 
 # Relatório gerado por scripts/audit-access-rules.ts
 docs/qa/access-rule-audit.md
+.eslintcache
