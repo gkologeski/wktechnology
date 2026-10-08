@@ -6811,6 +6811,649 @@ export type Database = {
         }
         Relationships: []
       }
+      deal_role_profile_attachments: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          filename: string
+          id: string
+          mime: string
+          profile_id: string
+          size_bytes: number
+          storage_path: string
+          uploaded_by: string | null
+          uploaded_by_kind: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          filename: string
+          id?: string
+          mime: string
+          profile_id: string
+          size_bytes: number
+          storage_path: string
+          uploaded_by?: string | null
+          uploaded_by_kind?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          filename?: string
+          id?: string
+          mime?: string
+          profile_id?: string
+          size_bytes?: number
+          storage_path?: string
+          uploaded_by?: string | null
+          uploaded_by_kind?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_role_profile_attachments_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "deal_role_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_role_profile_attachments_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_role_profile_client_proposals: {
+        Row: {
+          base_revision: number
+          confirmed: boolean
+          created_at: string
+          id: string
+          link_id: string
+          payload: Json
+          profile_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          base_revision: number
+          confirmed?: boolean
+          created_at?: string
+          id?: string
+          link_id: string
+          payload: Json
+          profile_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          workspace_id: string
+        }
+        Update: {
+          base_revision?: number
+          confirmed?: boolean
+          created_at?: string
+          id?: string
+          link_id?: string
+          payload?: Json
+          profile_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_role_profile_client_proposals_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "deal_role_profile_share_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_role_profile_client_proposals_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "deal_role_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_role_profile_client_proposals_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_role_profile_commercial: {
+        Row: {
+          data: Json
+          profile_id: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        Insert: {
+          data?: Json
+          profile_id: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id: string
+        }
+        Update: {
+          data?: Json
+          profile_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_role_profile_commercial_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "deal_role_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_role_profile_commercial_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_role_profile_events: {
+        Row: {
+          actor_id: string | null
+          actor_kind: string
+          created_at: string
+          details: Json
+          from_status: string | null
+          id: string
+          kind: string
+          profile_id: string
+          reason: string | null
+          to_status: string | null
+          version: number | null
+          workspace_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_kind?: string
+          created_at?: string
+          details?: Json
+          from_status?: string | null
+          id?: string
+          kind: string
+          profile_id: string
+          reason?: string | null
+          to_status?: string | null
+          version?: number | null
+          workspace_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          actor_kind?: string
+          created_at?: string
+          details?: Json
+          from_status?: string | null
+          id?: string
+          kind?: string
+          profile_id?: string
+          reason?: string | null
+          to_status?: string | null
+          version?: number | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_role_profile_events_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "deal_role_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_role_profile_events_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_role_profile_handoffs: {
+        Row: {
+          ats_job_id: string | null
+          authorized_by: string | null
+          created_at: string
+          created_by: string
+          early: boolean
+          early_reason: string | null
+          id: string
+          last_synced_at: string
+          last_synced_version: number
+          profile_id: string
+          version_id: string
+          workspace_id: string
+        }
+        Insert: {
+          ats_job_id?: string | null
+          authorized_by?: string | null
+          created_at?: string
+          created_by: string
+          early?: boolean
+          early_reason?: string | null
+          id?: string
+          last_synced_at?: string
+          last_synced_version: number
+          profile_id: string
+          version_id: string
+          workspace_id: string
+        }
+        Update: {
+          ats_job_id?: string | null
+          authorized_by?: string | null
+          created_at?: string
+          created_by?: string
+          early?: boolean
+          early_reason?: string | null
+          id?: string
+          last_synced_at?: string
+          last_synced_version?: number
+          profile_id?: string
+          version_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_role_profile_handoffs_ats_job_id_fkey"
+            columns: ["ats_job_id"]
+            isOneToOne: false
+            referencedRelation: "ats_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_role_profile_handoffs_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "deal_role_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_role_profile_handoffs_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "deal_role_profile_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_role_profile_handoffs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_role_profile_imports: {
+        Row: {
+          content_hash: string
+          created_at: string
+          created_by: string
+          deal_id: string
+          error: string | null
+          id: string
+          profile_id: string | null
+          result: Json | null
+          source_kind: string
+          source_name: string | null
+          status: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          content_hash: string
+          created_at?: string
+          created_by: string
+          deal_id: string
+          error?: string | null
+          id?: string
+          profile_id?: string | null
+          result?: Json | null
+          source_kind: string
+          source_name?: string | null
+          status?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          content_hash?: string
+          created_at?: string
+          created_by?: string
+          deal_id?: string
+          error?: string | null
+          id?: string
+          profile_id?: string | null
+          result?: Json | null
+          source_kind?: string
+          source_name?: string | null
+          status?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_role_profile_imports_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_role_profile_imports_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "deal_role_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_role_profile_imports_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_role_profile_share_links: {
+        Row: {
+          allowed_fields: string[]
+          base_revision: number
+          created_at: string
+          created_by: string
+          expires_at: string
+          id: string
+          last_access_at: string | null
+          max_reads: number
+          max_writes: number
+          profile_id: string
+          read_count: number
+          revoked_at: string | null
+          token_hash: string
+          workspace_id: string
+          write_count: number
+        }
+        Insert: {
+          allowed_fields?: string[]
+          base_revision: number
+          created_at?: string
+          created_by: string
+          expires_at: string
+          id?: string
+          last_access_at?: string | null
+          max_reads?: number
+          max_writes?: number
+          profile_id: string
+          read_count?: number
+          revoked_at?: string | null
+          token_hash: string
+          workspace_id: string
+          write_count?: number
+        }
+        Update: {
+          allowed_fields?: string[]
+          base_revision?: number
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          id?: string
+          last_access_at?: string | null
+          max_reads?: number
+          max_writes?: number
+          profile_id?: string
+          read_count?: number
+          revoked_at?: string | null
+          token_hash?: string
+          workspace_id?: string
+          write_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_role_profile_share_links_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "deal_role_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_role_profile_share_links_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_role_profile_templates: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          created_by: string
+          id: string
+          modality: string
+          name: string
+          payload: Json
+          seniority: string | null
+          workspace_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          modality: string
+          name: string
+          payload: Json
+          seniority?: string | null
+          workspace_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          modality?: string
+          name?: string
+          payload?: Json
+          seniority?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_role_profile_templates_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_role_profile_versions: {
+        Row: {
+          approved_at: string
+          approved_by: string
+          commercial_snapshot: Json | null
+          id: string
+          profile_id: string
+          snapshot: Json
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          approved_at?: string
+          approved_by: string
+          commercial_snapshot?: Json | null
+          id?: string
+          profile_id: string
+          snapshot: Json
+          version: number
+          workspace_id: string
+        }
+        Update: {
+          approved_at?: string
+          approved_by?: string
+          commercial_snapshot?: Json | null
+          id?: string
+          profile_id?: string
+          snapshot?: Json
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_role_profile_versions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "deal_role_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_role_profile_versions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_role_profiles: {
+        Row: {
+          approved_version_id: string | null
+          archived_at: string | null
+          assigned_to: string | null
+          ats_job_id: string | null
+          ats_synced_version: number | null
+          company_id: string | null
+          contact_id: string | null
+          created_at: string
+          created_by: string
+          data: Json
+          deal_id: string
+          id: string
+          last_version: number
+          modality: string
+          priority: string
+          quantity: number
+          revision: number
+          seniority: string | null
+          status: string
+          title: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          approved_version_id?: string | null
+          archived_at?: string | null
+          assigned_to?: string | null
+          ats_job_id?: string | null
+          ats_synced_version?: number | null
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          created_by: string
+          data?: Json
+          deal_id: string
+          id?: string
+          last_version?: number
+          modality?: string
+          priority?: string
+          quantity?: number
+          revision?: number
+          seniority?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          approved_version_id?: string | null
+          archived_at?: string | null
+          assigned_to?: string | null
+          ats_job_id?: string | null
+          ats_synced_version?: number | null
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string
+          data?: Json
+          deal_id?: string
+          id?: string
+          last_version?: number
+          modality?: string
+          priority?: string
+          quantity?: number
+          revision?: number
+          seniority?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_role_profiles_approved_version_fk"
+            columns: ["approved_version_id"]
+            isOneToOne: false
+            referencedRelation: "deal_role_profile_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_role_profiles_ats_job_id_fkey"
+            columns: ["ats_job_id"]
+            isOneToOne: false
+            referencedRelation: "ats_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_role_profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_role_profiles_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_role_profiles_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_role_profiles_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deals: {
         Row: {
           assigned_to: string | null
@@ -21690,6 +22333,48 @@ export type Database = {
       restore_workspace: {
         Args: { _actor: string; _workspace: string }
         Returns: undefined
+      }
+      role_profile_approve: {
+        Args: {
+          _commercial: Json
+          _expected_revision: number
+          _profile: string
+          _snapshot: Json
+        }
+        Returns: Json
+      }
+      role_profile_can: {
+        Args: { _key: string; _workspace: string }
+        Returns: boolean
+      }
+      role_profile_forward: {
+        Args: {
+          _early: boolean
+          _early_reason: string
+          _job: Json
+          _profile: string
+        }
+        Returns: Json
+      }
+      role_profile_link_consume: {
+        Args: { _hash: string; _write: boolean }
+        Returns: {
+          allowed_fields: string[]
+          base_revision: number
+          expires_at: string
+          link_id: string
+          profile_id: string
+          reason: string
+          workspace_id: string
+        }[]
+      }
+      role_profile_sync_ats: {
+        Args: { _job: Json; _profile: string }
+        Returns: Json
+      }
+      role_profile_version_commercial: {
+        Args: { _version: string }
+        Returns: Json
       }
       schedule_platform_alerts_cron: { Args: never; Returns: Json }
       sdr_claim_jobs: {

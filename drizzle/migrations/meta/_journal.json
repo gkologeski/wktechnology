@@ -526,6 +526,34 @@
       "when": 1791407485255,
       "tag": "0074_qualification_score_nullable",
       "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1791423335876,
+      "tag": "0075_deal_role_profiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1791425206352,
+      "tag": "0076_role_profile_link_consume",
+      "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1791426915528,
+      "tag": "0077_role_profiles_tighten_grants",
+      "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1791426943105,
+      "tag": "0078_role_profiles_protect_columns",
+      "breakpoints": true
     }
   ]
 }

@@ -67,6 +67,7 @@ import { Route as PortalTokenRouteImport } from './routes/portal.$token'
 import { Route as ProposalTokenRouteImport } from './routes/proposal.$token'
 import { Route as QuoteTokenRouteImport } from './routes/quote.$token'
 import { Route as ReferSlugRouteImport } from './routes/refer.$slug'
+import { Route as RoleProfileTokenRouteImport } from './routes/role-profile.$token'
 import { Route as ScheduleTokenRouteImport } from './routes/schedule.$token'
 import { Route as SignTokenRouteImport } from './routes/sign.$token'
 import { Route as SurveyTokenRouteImport } from './routes/survey.$token'
@@ -261,6 +262,7 @@ import { Route as AuthenticatedWorkspaceIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedWorkspaceModulesRouteImport } from './routes/_authenticated/workspace.modules'
 import { Route as ApiAgentChatRouteImport } from './routes/api/agent/chat'
 import { Route as ApiContractsTemplateImportRouteImport } from './routes/api/contracts.template-import'
+import { Route as ApiRoleProfilesImportRouteImport } from './routes/api/role-profiles.import'
 import { Route as ApiSurveysImportRouteImport } from './routes/api/surveys.import'
 import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
 import { Route as AuthenticatedatsCandidatesIndexRouteImport } from './routes/_authenticated/(ats)/candidates.index'
@@ -363,6 +365,7 @@ import { Route as ApiPublicOauthContaazulCallbackRouteImport } from './routes/ap
 import { Route as ApiPublicOauthGoogleCallbackRouteImport } from './routes/api/public/oauth/google-callback'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicReferSlugRouteImport } from './routes/api/public/refer/$slug'
+import { Route as ApiPublicRoleProfileTokenRouteImport } from './routes/api/public/role-profile/$token'
 import { Route as ApiPublicTwilioRecordingStatusRouteImport } from './routes/api/public/twilio/recording-status'
 import { Route as ApiPublicTwilioVoiceRouteImport } from './routes/api/public/twilio/voice'
 import { Route as ApiPublicUnipileWebhookRouteImport } from './routes/api/public/unipile/webhook'
@@ -698,6 +701,11 @@ const QuoteTokenRoute = QuoteTokenRouteImport.update({
 const ReferSlugRoute = ReferSlugRouteImport.update({
   id: '/refer/$slug',
   path: '/refer/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RoleProfileTokenRoute = RoleProfileTokenRouteImport.update({
+  id: '/role-profile/$token',
+  path: '/role-profile/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ScheduleTokenRoute = ScheduleTokenRouteImport.update({
@@ -1835,6 +1843,11 @@ const ApiContractsTemplateImportRoute =
     path: '/api/contracts/template-import',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiRoleProfilesImportRoute = ApiRoleProfilesImportRouteImport.update({
+  id: '/api/role-profiles/import',
+  path: '/api/role-profiles/import',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSurveysImportRoute = ApiSurveysImportRouteImport.update({
   id: '/api/surveys/import',
   path: '/api/surveys/import',
@@ -2433,6 +2446,12 @@ const ApiPublicReferSlugRoute = ApiPublicReferSlugRouteImport.update({
   path: '/api/public/refer/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicRoleProfileTokenRoute =
+  ApiPublicRoleProfileTokenRouteImport.update({
+    id: '/api/public/role-profile/$token',
+    path: '/api/public/role-profile/$token',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicTwilioRecordingStatusRoute =
   ApiPublicTwilioRecordingStatusRouteImport.update({
     id: '/api/public/twilio/recording-status',
@@ -2700,6 +2719,7 @@ export interface FileRoutesByFullPath {
   '/proposal/$token': typeof ProposalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
   '/refer/$slug': typeof ReferSlugRoute
+  '/role-profile/$token': typeof RoleProfileTokenRoute
   '/schedule/$token': typeof ScheduleTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
@@ -2881,6 +2901,7 @@ export interface FileRoutesByFullPath {
   '/workspace/modules': typeof AuthenticatedWorkspaceModulesRoute
   '/api/agent/chat': typeof ApiAgentChatRoute
   '/api/contracts/template-import': typeof ApiContractsTemplateImportRoute
+  '/api/role-profiles/import': typeof ApiRoleProfilesImportRoute
   '/api/surveys/import': typeof ApiSurveysImportRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/ats/': typeof AuthenticatedAtsIndexRoute
@@ -2989,6 +3010,7 @@ export interface FileRoutesByFullPath {
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/refer/$slug': typeof ApiPublicReferSlugRouteWithChildren
+  '/api/public/role-profile/$token': typeof ApiPublicRoleProfileTokenRoute
   '/api/public/twilio/recording-status': typeof ApiPublicTwilioRecordingStatusRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
   '/api/public/unipile/webhook': typeof ApiPublicUnipileWebhookRoute
@@ -3088,6 +3110,7 @@ export interface FileRoutesByTo {
   '/proposal/$token': typeof ProposalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
   '/refer/$slug': typeof ReferSlugRoute
+  '/role-profile/$token': typeof RoleProfileTokenRoute
   '/schedule/$token': typeof ScheduleTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
@@ -3267,6 +3290,7 @@ export interface FileRoutesByTo {
   '/workspace/modules': typeof AuthenticatedWorkspaceModulesRoute
   '/api/agent/chat': typeof ApiAgentChatRoute
   '/api/contracts/template-import': typeof ApiContractsTemplateImportRoute
+  '/api/role-profiles/import': typeof ApiRoleProfilesImportRoute
   '/api/surveys/import': typeof ApiSurveysImportRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/ats': typeof AuthenticatedAtsIndexRoute
@@ -3375,6 +3399,7 @@ export interface FileRoutesByTo {
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/refer/$slug': typeof ApiPublicReferSlugRouteWithChildren
+  '/api/public/role-profile/$token': typeof ApiPublicRoleProfileTokenRoute
   '/api/public/twilio/recording-status': typeof ApiPublicTwilioRecordingStatusRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
   '/api/public/unipile/webhook': typeof ApiPublicUnipileWebhookRoute
@@ -3481,6 +3506,7 @@ export interface FileRoutesById {
   '/proposal/$token': typeof ProposalTokenRoute
   '/quote/$token': typeof QuoteTokenRoute
   '/refer/$slug': typeof ReferSlugRoute
+  '/role-profile/$token': typeof RoleProfileTokenRoute
   '/schedule/$token': typeof ScheduleTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/survey/$token': typeof SurveyTokenRoute
@@ -3662,6 +3688,7 @@ export interface FileRoutesById {
   '/_authenticated/workspace/modules': typeof AuthenticatedWorkspaceModulesRoute
   '/api/agent/chat': typeof ApiAgentChatRoute
   '/api/contracts/template-import': typeof ApiContractsTemplateImportRoute
+  '/api/role-profiles/import': typeof ApiRoleProfilesImportRoute
   '/api/surveys/import': typeof ApiSurveysImportRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/_authenticated/ats/': typeof AuthenticatedAtsIndexRoute
@@ -3770,6 +3797,7 @@ export interface FileRoutesById {
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/refer/$slug': typeof ApiPublicReferSlugRouteWithChildren
+  '/api/public/role-profile/$token': typeof ApiPublicRoleProfileTokenRoute
   '/api/public/twilio/recording-status': typeof ApiPublicTwilioRecordingStatusRoute
   '/api/public/twilio/voice': typeof ApiPublicTwilioVoiceRoute
   '/api/public/unipile/webhook': typeof ApiPublicUnipileWebhookRoute
@@ -3876,6 +3904,7 @@ export interface FileRouteTypes {
     | '/proposal/$token'
     | '/quote/$token'
     | '/refer/$slug'
+    | '/role-profile/$token'
     | '/schedule/$token'
     | '/sign/$token'
     | '/survey/$token'
@@ -4057,6 +4086,7 @@ export interface FileRouteTypes {
     | '/workspace/modules'
     | '/api/agent/chat'
     | '/api/contracts/template-import'
+    | '/api/role-profiles/import'
     | '/api/surveys/import'
     | '/lovable/email/events'
     | '/ats/'
@@ -4165,6 +4195,7 @@ export interface FileRouteTypes {
     | '/api/public/oauth/google-callback'
     | '/api/public/payments/webhook'
     | '/api/public/refer/$slug'
+    | '/api/public/role-profile/$token'
     | '/api/public/twilio/recording-status'
     | '/api/public/twilio/voice'
     | '/api/public/unipile/webhook'
@@ -4264,6 +4295,7 @@ export interface FileRouteTypes {
     | '/proposal/$token'
     | '/quote/$token'
     | '/refer/$slug'
+    | '/role-profile/$token'
     | '/schedule/$token'
     | '/sign/$token'
     | '/survey/$token'
@@ -4443,6 +4475,7 @@ export interface FileRouteTypes {
     | '/workspace/modules'
     | '/api/agent/chat'
     | '/api/contracts/template-import'
+    | '/api/role-profiles/import'
     | '/api/surveys/import'
     | '/lovable/email/events'
     | '/ats'
@@ -4551,6 +4584,7 @@ export interface FileRouteTypes {
     | '/api/public/oauth/google-callback'
     | '/api/public/payments/webhook'
     | '/api/public/refer/$slug'
+    | '/api/public/role-profile/$token'
     | '/api/public/twilio/recording-status'
     | '/api/public/twilio/voice'
     | '/api/public/unipile/webhook'
@@ -4656,6 +4690,7 @@ export interface FileRouteTypes {
     | '/proposal/$token'
     | '/quote/$token'
     | '/refer/$slug'
+    | '/role-profile/$token'
     | '/schedule/$token'
     | '/sign/$token'
     | '/survey/$token'
@@ -4837,6 +4872,7 @@ export interface FileRouteTypes {
     | '/_authenticated/workspace/modules'
     | '/api/agent/chat'
     | '/api/contracts/template-import'
+    | '/api/role-profiles/import'
     | '/api/surveys/import'
     | '/lovable/email/events'
     | '/_authenticated/ats/'
@@ -4945,6 +4981,7 @@ export interface FileRouteTypes {
     | '/api/public/oauth/google-callback'
     | '/api/public/payments/webhook'
     | '/api/public/refer/$slug'
+    | '/api/public/role-profile/$token'
     | '/api/public/twilio/recording-status'
     | '/api/public/twilio/voice'
     | '/api/public/unipile/webhook'
@@ -5024,6 +5061,7 @@ export interface RootRouteChildren {
   ProposalTokenRoute: typeof ProposalTokenRoute
   QuoteTokenRoute: typeof QuoteTokenRoute
   ReferSlugRoute: typeof ReferSlugRoute
+  RoleProfileTokenRoute: typeof RoleProfileTokenRoute
   ScheduleTokenRoute: typeof ScheduleTokenRoute
   SignTokenRoute: typeof SignTokenRoute
   SurveyTokenRoute: typeof SurveyTokenRoute
@@ -5037,6 +5075,7 @@ export interface RootRouteChildren {
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiAgentChatRoute: typeof ApiAgentChatRoute
   ApiContractsTemplateImportRoute: typeof ApiContractsTemplateImportRoute
+  ApiRoleProfilesImportRoute: typeof ApiRoleProfilesImportRoute
   ApiSurveysImportRoute: typeof ApiSurveysImportRoute
   LovableEmailEventsRoute: typeof LovableEmailEventsRoute
   ApiPublicBankingInterWebhookRoute: typeof ApiPublicBankingInterWebhookRoute
@@ -5091,6 +5130,7 @@ export interface RootRouteChildren {
   ApiPublicOauthGoogleCallbackRoute: typeof ApiPublicOauthGoogleCallbackRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicReferSlugRoute: typeof ApiPublicReferSlugRouteWithChildren
+  ApiPublicRoleProfileTokenRoute: typeof ApiPublicRoleProfileTokenRoute
   ApiPublicTwilioRecordingStatusRoute: typeof ApiPublicTwilioRecordingStatusRoute
   ApiPublicTwilioVoiceRoute: typeof ApiPublicTwilioVoiceRoute
   ApiPublicUnipileWebhookRoute: typeof ApiPublicUnipileWebhookRoute
@@ -5527,6 +5567,13 @@ declare module '@tanstack/react-router' {
       path: '/refer/$slug'
       fullPath: '/refer/$slug'
       preLoaderRoute: typeof ReferSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/role-profile/$token': {
+      id: '/role-profile/$token'
+      path: '/role-profile/$token'
+      fullPath: '/role-profile/$token'
+      preLoaderRoute: typeof RoleProfileTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/schedule/$token': {
@@ -6887,6 +6934,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiContractsTemplateImportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/role-profiles/import': {
+      id: '/api/role-profiles/import'
+      path: '/api/role-profiles/import'
+      fullPath: '/api/role-profiles/import'
+      preLoaderRoute: typeof ApiRoleProfilesImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/surveys/import': {
       id: '/api/surveys/import'
       path: '/api/surveys/import'
@@ -7599,6 +7653,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/refer/$slug'
       fullPath: '/api/public/refer/$slug'
       preLoaderRoute: typeof ApiPublicReferSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/role-profile/$token': {
+      id: '/api/public/role-profile/$token'
+      path: '/api/public/role-profile/$token'
+      fullPath: '/api/public/role-profile/$token'
+      preLoaderRoute: typeof ApiPublicRoleProfileTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/twilio/recording-status': {
@@ -8765,6 +8826,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProposalTokenRoute: ProposalTokenRoute,
   QuoteTokenRoute: QuoteTokenRoute,
   ReferSlugRoute: ReferSlugRoute,
+  RoleProfileTokenRoute: RoleProfileTokenRoute,
   ScheduleTokenRoute: ScheduleTokenRoute,
   SignTokenRoute: SignTokenRoute,
   SurveyTokenRoute: SurveyTokenRoute,
@@ -8778,6 +8840,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiAgentChatRoute: ApiAgentChatRoute,
   ApiContractsTemplateImportRoute: ApiContractsTemplateImportRoute,
+  ApiRoleProfilesImportRoute: ApiRoleProfilesImportRoute,
   ApiSurveysImportRoute: ApiSurveysImportRoute,
   LovableEmailEventsRoute: LovableEmailEventsRoute,
   ApiPublicBankingInterWebhookRoute: ApiPublicBankingInterWebhookRoute,
@@ -8842,6 +8905,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicOauthGoogleCallbackRoute: ApiPublicOauthGoogleCallbackRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicReferSlugRoute: ApiPublicReferSlugRouteWithChildren,
+  ApiPublicRoleProfileTokenRoute: ApiPublicRoleProfileTokenRoute,
   ApiPublicTwilioRecordingStatusRoute: ApiPublicTwilioRecordingStatusRoute,
   ApiPublicTwilioVoiceRoute: ApiPublicTwilioVoiceRoute,
   ApiPublicUnipileWebhookRoute: ApiPublicUnipileWebhookRoute,

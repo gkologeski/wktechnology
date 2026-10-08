@@ -76,3 +76,14 @@
 - [ ] Ingestão de conhecimento (upload, trechos, validade) e perguntas sem resposta
 - [ ] HTTP no servidor com cofre; integrações externas (dependem de credenciais)
 - [ ] Modelos de fluxo, regras de ativação, supervisor/treinador/regressão
+
+# Roadmap — Perfis de vaga no negócio (TechSales → TechHire)
+
+- [x] Banco: perfis, comercial restrito, versões imutáveis, eventos, anexos privados, links do cliente, propostas, encaminhamentos, modelos, importações
+- [x] Aba "Vagas e perfis" com assistente em 6 etapas, ficha, histórico, diff, modelos, duplicar
+- [x] Aprovação com mínimos, encaminhamento idempotente com autorização antecipada, sincronização explícita
+- [x] Link seguro do cliente (somente campos liberados, revisão interna)
+- [x] Importação com IA (texto, URL, DOCX, PDF, imagem, conversas do negócio)
+- [x] Testes: unitários, banco com rollback, navegador ponta a ponta
+- [ ] Liberar as novas permissões para cargos não administradores (decisão do usuário)
+- [ ] Apagar 3 arquivos fictícios de teste no armazenamento privado (exige ação de armazenamento)
