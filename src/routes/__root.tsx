@@ -20,6 +20,7 @@ import { BrandingProvider } from "@/lib/branding";
 import { NewVersionWatcher } from "@/components/new-version-watcher";
 import { installChunkReloadGuard } from "@/lib/chunk-reload";
 import { AgentTrigger } from "@/components/ai-agent/agent-trigger";
+import { cacheActionForAuthEvent } from "@/lib/session-cache";
 
 if (typeof window !== "undefined") {
   installChunkReloadGuard();
@@ -160,12 +161,20 @@ function AuthInvalidator() {
   const router = useRouter();
   const qc = useQueryClient();
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      // Só invalida quando o usuário troca; ignora INITIAL_SESSION e TOKEN_REFRESHED
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
-        router.invalidate();
-        qc.invalidateQueries();
-      }
+    let lastUserId: string | null = null;
+    void supabase.auth.getSession().then(({ data }) => {
+      lastUserId = data.session?.user.id ?? null;
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      const nextUserId = session?.user.id ?? null;
+      const action = cacheActionForAuthEvent(event, lastUserId, nextUserId);
+      if (event === "INITIAL_SESSION") lastUserId = nextUserId;
+      if (action === "none") return;
+      lastUserId = nextUserId;
+      void router.invalidate();
+      if (action === "clear") qc.clear();
+      else if (action === "reset") void qc.resetQueries();
+      else void qc.invalidateQueries();
     });
     return () => sub.subscription.unsubscribe();
   }, [router, qc]);

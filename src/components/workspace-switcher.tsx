@@ -41,7 +41,9 @@ export function WorkspaceSwitcher() {
     mutationFn: (workspace_id: string) => setFn({ data: { workspace_id } }),
     onSuccess: () => {
       toast.success("Workspace alterado");
-      qc.invalidateQueries();
+      // reset (e não só invalidate): descarta os dados do workspace anterior
+      // para que nenhuma tela os exiba enquanto recarrega.
+      void qc.resetQueries();
     },
     onError: (e: Error) => toast.error(e.message),
   });

@@ -3,70 +3,104 @@
 // feitas por outros usuários (ou por webhooks/automações) apareçam na tela
 // sem precisar dar refresh.
 //
-// Padrão baseado em src/hooks/use-chat-realtime.ts.
+// - `filter` restringe o canal ao registro (ex.: `id=eq.<uuid>`); eventos de
+//   outros registros não recarregam a tela. A RLS continua sendo a fronteira de
+//   segurança — o filtro só reduz recargas.
+// - Eventos são agrupados (250 ms de silêncio, no máximo 1 s de espera).
+// - Ao (re)conectar depois de uma queda ou de a aba voltar a ficar visível,
+//   todas as chaves são recarregadas uma vez para não perder mudanças.
 import { useEffect, useRef } from "react";
 import { useQueryClient, type QueryKey } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  buildChannelName,
+  createInvalidationBatcher,
+  payloadMatchesFilter,
+  type RealtimeEvent,
+} from "@/lib/realtime/invalidation-batcher";
 
 export type RealtimeSubscription = {
   /** Nome da tabela em public.* */
   table: string;
   /** Evento a escutar. Default: '*' (INSERT|UPDATE|DELETE). */
-  event?: "INSERT" | "UPDATE" | "DELETE" | "*";
+  event?: RealtimeEvent;
+  /** Filtro Postgres Changes (`coluna=eq.valor` ou `coluna=in.(a,b)`). */
+  filter?: string;
   /** Query keys a invalidar no react-query quando o evento chegar. */
   queryKeys?: QueryKey[];
   /** Callback opcional executado quando o evento chegar (para páginas sem react-query). */
   onChange?: () => void;
 };
 
-/**
- * Assina realtime para uma lista de tabelas e invalida queries automaticamente.
- * Todas as inscrições passadas no mesmo array compartilham UM canal para
- * economizar conexões WebSocket. O canal é fechado quando a aba fica oculta
- * (visibilitychange) e no unmount.
- */
 export function useRealtimeInvalidate(
   subs: RealtimeSubscription[],
-  opts?: { channelName?: string },
+  opts?: { channelName?: string; scope?: string | null },
 ) {
   const qc = useQueryClient();
-  // Guardamos a versão mais recente em ref pra não recriar o canal a cada render.
   const subsRef = useRef(subs);
   subsRef.current = subs;
 
-  // Chave estável baseada nas tabelas — evita reassinar quando só as queryKeys mudam.
-  const tablesKey = subs.map((s) => `${s.table}:${s.event ?? "*"}`).join("|");
-  const channelName = opts?.channelName ?? `rt:${tablesKey}`;
+  const channelName = opts?.channelName ?? buildChannelName(subs, opts?.scope);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     let channel: ReturnType<typeof supabase.channel> | null = null;
+    let everSubscribed = false;
+    let disposed = false;
+
+    const batcher = createInvalidationBatcher((keys, callbacks) => {
+      if (disposed) return;
+      for (const key of keys) void qc.invalidateQueries({ queryKey: key });
+      for (const cb of callbacks) cb();
+    });
+
+    const reconcileAll = () => {
+      const all = subsRef.current;
+      batcher.push(
+        all.flatMap((s) => s.queryKeys ?? []),
+        all.flatMap((s) => (s.onChange ? [s.onChange] : [])),
+      );
+    };
 
     const subscribe = () => {
-      if (channel) return;
+      if (channel || disposed) return;
       let c = supabase.channel(channelName);
-      for (const sub of subsRef.current) {
+      subsRef.current.forEach((sub, index) => {
+        const params: Record<string, string> = {
+          event: sub.event ?? "*",
+          schema: "public",
+          table: sub.table,
+        };
+        if (sub.filter) params.filter = sub.filter;
         c = c.on(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           "postgres_changes" as any,
-          { event: sub.event ?? "*", schema: "public", table: sub.table },
-          () => {
-            const current = subsRef.current.find((s) => s.table === sub.table);
-            if (!current) return;
-            for (const key of current.queryKeys ?? []) {
-              qc.invalidateQueries({ queryKey: key });
-            }
-            current.onChange?.();
+          params,
+          (payload: {
+            eventType?: string;
+            new?: Record<string, unknown>;
+            old?: Record<string, unknown>;
+          }) => {
+            const current = subsRef.current[index];
+            if (!current || current.table !== sub.table) return;
+            if (!payloadMatchesFilter(current.filter, payload)) return;
+            batcher.push(current.queryKeys ?? [], current.onChange ? [current.onChange] : []);
           },
         );
-      }
-      channel = c.subscribe();
+      });
+      channel = c.subscribe((status) => {
+        if (status !== "SUBSCRIBED") return;
+        // Reconexão (queda de rede ou aba que voltou): eventos no intervalo
+        // não chegam pelo canal, então recarrega uma vez.
+        if (everSubscribed) reconcileAll();
+        everSubscribed = true;
+      });
     };
 
     const unsubscribe = () => {
       if (channel) {
-        supabase.removeChannel(channel);
+        void supabase.removeChannel(channel);
         channel = null;
       }
     };
@@ -76,13 +110,15 @@ export function useRealtimeInvalidate(
       else subscribe();
     };
 
-    if (typeof document === "undefined" || !document.hidden) subscribe();
+    if (!document.hidden) subscribe();
     document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
+      disposed = true;
       document.removeEventListener("visibilitychange", onVisibility);
+      batcher.cancel();
       unsubscribe();
     };
-    // channelName encapsula tablesKey; qc é estável.
+    // channelName encapsula escopo/tabelas/eventos/filtros; qc é estável.
   }, [channelName, qc]);
 }

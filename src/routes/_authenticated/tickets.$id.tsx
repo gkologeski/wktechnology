@@ -55,8 +55,12 @@ function TicketDetail() {
   const load = () => qc.invalidateQueries({ queryKey: qk.ticket(id) });
 
   useRealtimeInvalidate([
-    { table: "tickets", queryKeys: [qk.ticket(id)] },
-    { table: "activities", queryKeys: [qk.activities("related_ticket_id", id)] },
+    { table: "tickets", filter: `id=eq.${id}`, queryKeys: [qk.ticket(id)] },
+    {
+      table: "activities",
+      filter: `related_ticket_id=eq.${id}`,
+      queryKeys: [qk.activities("related_ticket_id", id)],
+    },
   ]);
 
   const pipeline = useMemo(

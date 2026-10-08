@@ -1,45 +1,88 @@
-// Pré-carrega, com o navegador ocioso, o código das listagens mais pesadas e
-// as preferências de grade (colunas/ordenação) e o catálogo de campos delas.
-// Assim, ao abrir Contatos, Empresas etc., a tela monta na hora e a lista não
-// precisa esperar essas duas consultas em sequência.
+// Pré-carrega, com o navegador ocioso, o código e as preferências de grade das
+// listagens pesadas — apenas as do módulo ativo e com permissão de leitura.
+// Roda uma de cada vez, depois da primeira tela, nunca durante uma navegação,
+// respeita economia de dados e é cancelado ao trocar usuário/workspace/módulo.
+// O pré-carregamento por intenção (passar o mouse no link) continua no roteador.
 import { useEffect } from "react";
-import { useRouter } from "@tanstack/react-router";
+import { useRouter, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { getGridPreference } from "@/lib/grid-preferences.functions";
 import { getEntityFieldCatalog } from "@/lib/entity-fields.functions";
-import type { CatalogEntity } from "@/hooks/use-auto-grid-columns";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { useModuleAccess } from "@/hooks/use-module-access";
+import { useActiveModule } from "@/lib/modules/active-module";
+import { planIdlePreload, type ConnectionHint } from "@/lib/preload/idle-list-plan";
 
-const HEAVY_LISTS: { to: string; gridKey: string; entity: CatalogEntity }[] = [
-  { to: "/contacts", gridKey: "contacts", entity: "contacts" },
-  { to: "/companies", gridKey: "companies", entity: "companies" },
-  { to: "/deals", gridKey: "deals", entity: "deals" },
-  { to: "/tasks", gridKey: "tasks", entity: "activities" },
-];
+const START_DELAY_MS = 4000;
 
-export function useIdleListPreload(enabled: boolean) {
+export function useIdleListPreload(enabled: boolean, identity: string | null) {
   const router = useRouter();
   const qc = useQueryClient();
+  const activeModule = useActiveModule();
+  const { canAny, isLoading: permLoading, workspaceId } = usePermissions();
+  const { canAccessModule, loading: accessLoading } = useModuleAccess();
+  const path = useRouterState({ select: (s) => s.location.pathname });
+  const permissionsReady = !permLoading && !accessLoading && !!workspaceId;
 
   useEffect(() => {
-    if (!enabled || typeof window === "undefined") return;
+    if (!enabled || !identity || !permissionsReady || typeof window === "undefined") return;
+    const connection = (navigator as Navigator & { connection?: ConnectionHint }).connection;
+    const plan = planIdlePreload({
+      activeModule,
+      canAccessModule,
+      canAny,
+      permissionsReady,
+      currentPath: path,
+      connection,
+    });
+    if (!plan.length) return;
+
+    let cancelled = false;
     const idle =
-      window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 1500) as number);
-    const cancel = window.cancelIdleCallback ?? window.clearTimeout;
-    const handle = idle(() => {
-      for (const l of HEAVY_LISTS) {
-        void router.preloadRoute({ to: l.to }).catch(() => undefined);
-        void qc.prefetchQuery({
+      window.requestIdleCallback ??
+      ((cb: () => void) => window.setTimeout(cb, 200) as unknown as number);
+    const cancelIdle = window.cancelIdleCallback ?? window.clearTimeout;
+    let idleHandle: number | null = null;
+
+    const runNext = async (index: number) => {
+      if (cancelled || index >= plan.length) return;
+      // Não compete com uma navegação em andamento.
+      if (router.state.status === "pending") {
+        idleHandle = idle(() => void runNext(index));
+        return;
+      }
+      const l = plan[index];
+      try {
+        await router.preloadRoute({ to: l.to });
+        if (cancelled) return;
+        await qc.prefetchQuery({
           queryKey: ["grid-pref", l.gridKey],
           queryFn: () => getGridPreference({ data: { gridKey: l.gridKey } }),
           staleTime: 60_000,
         });
-        void qc.prefetchQuery({
+        if (cancelled) return;
+        await qc.prefetchQuery({
           queryKey: ["entity-field-catalog", l.entity],
           queryFn: () => getEntityFieldCatalog({ data: { entity: l.entity } }),
           staleTime: 5 * 60_000,
         });
+      } catch {
+        // Pré-carregamento é oportunista; falha não afeta a tela.
       }
-    });
-    return () => cancel(handle);
-  }, [enabled, router, qc]);
+      if (!cancelled) idleHandle = idle(() => void runNext(index + 1));
+    };
+
+    const start = window.setTimeout(() => {
+      idleHandle = idle(() => void runNext(0));
+    }, START_DELAY_MS);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(start);
+      if (idleHandle !== null) cancelIdle(idleHandle);
+    };
+    // `path` fica fora: trocar de tela não reinicia o ciclo; a tela atual
+    // é só excluída do plano inicial.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, identity, permissionsReady, activeModule, workspaceId, router, qc]);
 }

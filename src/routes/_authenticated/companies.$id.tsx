@@ -53,8 +53,12 @@ function CompanyDetail() {
   const load = () => qc.invalidateQueries({ queryKey: qk.company(id) });
 
   useRealtimeInvalidate([
-    { table: "companies", queryKeys: [qk.company(id)] },
-    { table: "activities", queryKeys: [qk.activities("related_company_id", id)] },
+    { table: "companies", filter: `id=eq.${id}`, queryKeys: [qk.company(id)] },
+    {
+      table: "activities",
+      filter: `related_company_id=eq.${id}`,
+      queryKeys: [qk.activities("related_company_id", id)],
+    },
   ]);
   const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techsales.companies");
   const canDelete = !deletePermLoading && canDeleteRecord(company);
