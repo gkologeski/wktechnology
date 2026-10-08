@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
 import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { collectSseText, extractJsonObject } from "@/lib/contracts/template-import.server";
+import { isBlockedStatus, isLoginRedirect, siteBlockedError } from "./site-block";
 import {
   IMPORT_LIMITS,
   IMPORT_SYSTEM_PROMPT,
@@ -47,11 +48,12 @@ async function safeFetch(
     if (res.status >= 300 && res.status < 400) {
       const loc = res.headers.get("location");
       if (!loc) throw new Error("Redirecionamento inválido.");
+      if (isLoginRedirect(loc)) throw siteBlockedError();
       current = new URL(loc, check.url).toString();
       continue;
     }
-    if (res.status === 401 || res.status === 403)
-      throw new Error("A página exige login ou bloqueia acesso; não é possível importar.");
+    // Sem novas tentativas: recusa do site externo vira orientação ao usuário.
+    if (isBlockedStatus(res.status)) throw siteBlockedError();
     if (!res.ok) throw new Error(`A página respondeu com erro ${res.status}.`);
     const ct = res.headers.get("content-type") ?? "";
     if (!/text\/html|application\/xhtml/.test(ct))

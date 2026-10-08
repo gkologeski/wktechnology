@@ -1,4 +1,9 @@
 // Preparação de fontes (URL/arquivo/texto) e chamada da IA para importações.
+import {
+  isBlockedStatus,
+  isLoginRedirect,
+  siteBlockedError,
+} from "@/lib/surveys/import/site-block";
 // Server-only. Documento processado em memória; o conteúdo é DADO, nunca instrução.
 import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import type { AiFeature } from "@/lib/ai/features";
@@ -47,11 +52,12 @@ export async function safeFetchHtml(
     if (res.status >= 300 && res.status < 400) {
       const loc = res.headers.get("location");
       if (!loc) throw new Error("Redirecionamento inválido.");
+      if (isLoginRedirect(loc)) throw siteBlockedError();
       current = new URL(loc, check.url).toString();
       continue;
     }
-    if (res.status === 401 || res.status === 403)
-      throw new Error("A página exige login ou bloqueia acesso; não é possível importar.");
+    // Sem novas tentativas: recusa do site externo vira orientação ao usuário.
+    if (isBlockedStatus(res.status)) throw siteBlockedError();
     if (!res.ok) throw new Error(`A página respondeu com erro ${res.status}.`);
     const ct = res.headers.get("content-type") ?? "";
     if (!/text\/html|application\/xhtml|text\/plain/.test(ct))
