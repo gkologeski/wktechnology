@@ -252,7 +252,15 @@ export function RoleProfilesEditor({
     setRows(list);
     const failed = list.filter((r) => keys.has(r.key) && r.error);
     if (failed.length) {
-      toast.error(`${failed.length} perfil(is) não foram salvos. Os demais foram salvos.`);
+      const savedCount = keys.size - failed.length;
+      toast.error(
+        failed.length === 1
+          ? `Perfil "${failed[0].header.title || "sem título"}" não foi salvo.`
+          : `${failed.length} perfis não foram salvos.`,
+        {
+          description: `${failed[0].error ?? ""}${savedCount > 0 ? ` Os outros ${savedCount} foram salvos.` : ""}`,
+        },
+      );
       setExpanded((s) => new Set([...s, ...failed.map((f) => f.key)]));
     } else toast.success("Rascunhos salvos. Nada foi enviado para aprovação.");
     onSaved();
