@@ -73,6 +73,25 @@ DO $$ BEGIN
   END;
 END $$;
 
+-- 3c) Bypass direto barrado: status aprovado e colunas protegidas
+DO $$ BEGIN
+  BEGIN
+    UPDATE public.deal_role_profiles SET status = 'approved', revision = revision + 1 WHERE id = pg_temp.fx('p2');
+    RAISE EXCEPTION 'deveria falhar';
+  EXCEPTION WHEN insufficient_privilege THEN RAISE NOTICE 'OK 3c: status aprovado só pela ação';
+  END;
+  BEGIN
+    UPDATE public.deal_role_profiles SET ats_job_id = NULL WHERE id = pg_temp.fx('p2');
+    RAISE EXCEPTION 'deveria falhar';
+  EXCEPTION WHEN insufficient_privilege THEN RAISE NOTICE 'OK 3d: colunas de vínculo protegidas';
+  END;
+  BEGIN
+    UPDATE public.deal_role_profiles SET title = 'x', revision = revision + 5 WHERE id = pg_temp.fx('p2');
+    RAISE EXCEPTION 'deveria falhar';
+  EXCEPTION WHEN serialization_failure THEN RAISE NOTICE 'OK 3e: revisão só avança de 1 em 1';
+  END;
+END $$;
+
 -- 4) Encaminhar sem autorização antecipada em negócio não ganho -> bloqueado
 DO $$ BEGIN
   BEGIN
