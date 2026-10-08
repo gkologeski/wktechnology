@@ -21,6 +21,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { listRoleProfileConversations } from "@/lib/role-profiles/role-profiles.functions";
 import type { ImportedProfile } from "@/lib/role-profiles/import";
+import { isKnownBlockingUrl, parseSiteBlocked } from "@/lib/surveys/import/site-block";
 
 export type ImportResult = ImportedProfile & {
   importId: string;
@@ -102,6 +103,7 @@ export function RoleProfileImportDialog({
   const [tab, setTab] = useState("text");
   const [text, setText] = useState("");
   const [url, setUrl] = useState("");
+  const [blocked, setBlocked] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [stage, setStage] = useState<string | null>(null);
@@ -134,7 +136,11 @@ export function RoleProfileImportDialog({
     try {
       setResult(await runImport(dealId, body, setStage, ac.signal));
     } catch (e) {
-      if (!ac.signal.aborted) toast.error((e as Error).message);
+      if (!ac.signal.aborted) {
+        const p = parseSiteBlocked((e as Error).message);
+        if (p.blocked) setBlocked(p.text);
+        toast.error(p.text);
+      }
     } finally {
       setStage(null);
     }
@@ -205,12 +211,39 @@ export function RoleProfileImportDialog({
                 id="rpi-url"
                 type="url"
                 value={url}
-                onChange={(e) => setUrl(e.target.value)}
+                onChange={(e) => {
+                  setUrl(e.target.value);
+                  setBlocked(null);
+                }}
                 placeholder="https://…"
               />
               <p className="text-[11px] text-text-tertiary">
                 Somente páginas públicas http/https; endereços internos são bloqueados.
               </p>
+              {(blocked || isKnownBlockingUrl(url)) && (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="mt-2 space-y-2 rounded-md border border-border bg-muted p-2 text-xs text-foreground"
+                >
+                  <p>
+                    {blocked ??
+                      "Este site costuma bloquear leitura automática. Prefira colar o texto da vaga ou enviar um PDF ou print."}
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setText((t) => (t.trim() ? t : `Fonte: ${url}\n\n`));
+                      setBlocked(null);
+                      setTab("text");
+                    }}
+                  >
+                    Colar texto em vez disso
+                  </Button>
+                </div>
+              )}
             </TabsContent>
             <TabsContent value="file" className="mt-3 space-y-1">
               <Label htmlFor="rpi-file">PDF, DOCX, PNG, JPG ou WebP (até 10 MB)</Label>

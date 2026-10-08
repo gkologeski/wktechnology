@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { parseSiteBlocked } from "@/lib/surveys/import/site-block";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -147,7 +148,9 @@ export function ImportSurveyDialog({
       setStage("Iniciando");
       setResult(await runImport(body, ac.signal, setStage));
     } catch (e) {
-      setError(ac.signal.aborted ? "Importação cancelada." : (e as Error).message);
+      setError(
+        ac.signal.aborted ? "Importação cancelada." : parseSiteBlocked((e as Error).message).text,
+      );
     } finally {
       setStage(null);
     }
