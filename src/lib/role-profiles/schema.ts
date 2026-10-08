@@ -316,7 +316,7 @@ export const SECTION_LABEL: Record<SectionKey, string> = {
   role: "Atuação",
   requirements: "Requisitos",
   conditions: "Condições",
-  commercial: "Comercial",
+  commercial: "Contratação",
   selection: "Seleção e aprovação",
 };
 
@@ -338,7 +338,6 @@ export function completeness(p: ProfileLike): {
     commercial.push(
       !!d.hunting.hiring_regime,
       d.hunting.salary_min != null || d.hunting.salary_max != null,
-      !!d.hunting.fee_type,
     );
   const sections: Record<SectionKey, number> = {
     need: ratio([has(p.title), p.quantity >= 1, has(d.need.reason)]),
@@ -590,7 +589,6 @@ const DIFF_FIELDS: { path: string; label: string; important?: boolean }[] = [
   { path: "data.hunting.salary_min", label: "Salário mínimo", important: true },
   { path: "data.hunting.salary_max", label: "Salário máximo", important: true },
   { path: "data.hunting.hiring_regime", label: "Regime" },
-  { path: "data.hunting.fee_value", label: "Honorários", important: true },
   { path: "data.selection.stages", label: "Etapas de seleção" },
 ];
 

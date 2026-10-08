@@ -69,7 +69,7 @@ import {
   type ProfileStatus,
 } from "@/lib/role-profiles/schema";
 import { RoleProfileStatusBadge } from "./role-profile-status-badge";
-import type { WizardInitial } from "./role-profile-wizard";
+import type { WizardInitial } from "./profile-fields";
 
 const EVENT_LABEL: Record<string, string> = {
   created: "Perfil criado",
@@ -361,19 +361,24 @@ export function RoleProfileDetail({
                 <Button
                   size="sm"
                   variant="outline"
-                  disabled={!!busy}
                   onClick={() =>
-                    run(
-                      "val",
-                      () =>
-                        fns.status({
-                          data: { id: p.id, to: "in_validation", expectedRevision: p.revision },
-                        }),
-                      "Enviado para validação",
-                    )
+                    onEdit({
+                      id: p.id,
+                      revision: p.revision,
+                      header: {
+                        title: p.title,
+                        quantity: p.quantity,
+                        modality: p.modality,
+                        priority: p.priority,
+                        seniority: (p.seniority as never) ?? null,
+                        contact_id: p.contact_id,
+                        assigned_to: p.assigned_to,
+                      },
+                      data: p.data,
+                    })
                   }
                 >
-                  Enviar para validação
+                  Solicitar validação ao líder
                 </Button>
               ) : null}
               {d.perms.update && (p.status === "draft" || p.status === "in_validation") ? (

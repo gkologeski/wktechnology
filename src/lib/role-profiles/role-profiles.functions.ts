@@ -4,6 +4,9 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const id = z.string().uuid();
+const TitleLinksZ = z
+  .object({ jobProfileId: id.nullable().optional(), presetId: id.nullable().optional() })
+  .strict();
 
 async function ctxOf(context: { supabase: unknown; userId: string }) {
   const { getActiveWorkspaceId } = await import("@/lib/access-control/enforce.server");
@@ -42,6 +45,14 @@ export const createRoleProfile = createServerFn({ method: "POST" })
         templateId: id.optional(),
         duplicateOf: id.optional(),
         importId: id.optional(),
+        links: z
+          .object({
+            sourceLineItemId: id.optional(),
+            jobProfileId: id.optional(),
+            presetId: id.optional(),
+          })
+          .strict()
+          .optional(),
       })
       .strict()
       .parse(d),
@@ -61,6 +72,7 @@ export const saveRoleProfile = createServerFn({ method: "POST" })
         header: z.unknown(),
         data: z.unknown(),
         commercial: z.unknown().optional(),
+        links: TitleLinksZ.optional(),
       })
       .strict()
       .parse(d),
@@ -212,4 +224,110 @@ export const listRoleProfileConversations = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const s = await import("./service.server");
     return s.listDealConversations(await ctxOf(context), data.dealId);
+  });
+
+export const listRoleProfileTitleOptions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const s = await import("./service.server");
+    return s.listTitleOptions(await ctxOf(context));
+  });
+
+export const createRoleProfilesFromLines = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ dealId: id, lineItemIds: z.array(id).min(1).max(50) }).strict().parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const s = await import("./service.server");
+    return s.createFromLines(await ctxOf(context), data);
+  });
+
+export const saveRoleProfilesBatch = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        items: z
+          .array(
+            z
+              .object({
+                id,
+                expectedRevision: z.number().int(),
+                header: z.unknown(),
+                data: z.unknown(),
+                links: TitleLinksZ.optional(),
+              })
+              .strict(),
+          )
+          .min(1)
+          .max(50),
+      })
+      .strict()
+      .parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const s = await import("./service.server");
+    return s.saveMany(
+      await ctxOf(context),
+      data.items.map((i) => ({ ...i, header: i.header, data: i.data })),
+    );
+  });
+
+export const resolveRoleProfileApprover = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ dealId: id }).parse(d))
+  .handler(async ({ context, data }) => {
+    const a = await import("./approval.server");
+    return a.resolveApprover(await ctxOf(context), data.dealId);
+  });
+
+export const requestRoleProfileValidation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        dealId: id,
+        expected: z.record(id, z.number().int()),
+        key: z.string().min(8).max(120),
+      })
+      .strict()
+      .parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const a = await import("./approval.server");
+    return a.requestValidation(await ctxOf(context), data);
+  });
+
+export const retryRoleProfileApprovalDelivery = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ requestId: id }).parse(d))
+  .handler(async ({ context, data }) => {
+    const a = await import("./approval.server");
+    return a.dispatchRequest(await ctxOf(context), data.requestId);
+  });
+
+export const decideRoleProfileApproval = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        itemId: id,
+        decision: z.enum(["approve", "request_changes"]),
+        comment: z.string().max(1000).optional(),
+      })
+      .strict()
+      .parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const a = await import("./approval.server");
+    return a.decide(await ctxOf(context), data);
+  });
+
+export const listRoleProfileApprovals = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ dealId: id }).parse(d))
+  .handler(async ({ context, data }) => {
+    const a = await import("./approval.server");
+    return a.listApprovals(await ctxOf(context), data.dealId);
   });
