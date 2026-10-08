@@ -1,6 +1,7 @@
 // Perfis de vaga do negócio — regras de servidor. Usa o cliente do usuário (RLS)
 // para dados de negócio; o admin só entra em storage privado, link público
 // (após validar token) e avisos internos.
+import { parseFriendly } from "./validation-message";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
 import { assertPermission, hasPermission } from "@/lib/access-control/enforce.server";
@@ -417,8 +418,8 @@ export async function createProfile(
     throw new Error(
       "Associe um serviço de Outsourcing ou Hunting ao negócio (itens de linha) antes de criar perfis.",
     );
-  let header = ProfileHeaderZ.parse(input.header);
-  let data = ProfileDataZ.parse(input.data ?? {});
+  let header = parseFriendly(ProfileHeaderZ, input.header);
+  let data = parseFriendly(ProfileDataZ, input.data ?? {});
   if (input.templateId) {
     const { data: t } = await ctx.supabase
       .from("deal_role_profile_templates")
@@ -428,17 +429,17 @@ export async function createProfile(
       .maybeSingle();
     if (!t) throw new Error("Modelo não encontrado.");
     const payload = t.payload as unknown as { header: unknown; data: unknown };
-    header = ProfileHeaderZ.parse({
+    header = parseFriendly(ProfileHeaderZ, {
       ...(payload.header as object),
       contact_id: header.contact_id ?? null,
       assigned_to: header.assigned_to ?? null,
     });
-    data = ProfileDataZ.parse(payload.data);
+    data = parseFriendly(ProfileDataZ, payload.data);
   }
   if (input.duplicateOf) {
     const src = await loadProfile(ctx, input.duplicateOf);
     const t = toTemplatePayload(rowToLike(src));
-    header = ProfileHeaderZ.parse({
+    header = parseFriendly(ProfileHeaderZ, {
       ...t.header,
       title: `${t.header.title} (cópia)`,
       contact_id: src.contact_id,
@@ -593,8 +594,8 @@ export async function saveProfile(
   if (input.commercial !== undefined)
     throw new Error("Dados comerciais internos não são mais editados no perfil de vaga.");
   const titleLinks = input.links ? await setProfileTitleLink(ctx, cur.id, input.links) : null;
-  const header = ProfileHeaderZ.parse(input.header);
-  const data = ProfileDataZ.parse(input.data);
+  const header = parseFriendly(ProfileHeaderZ, input.header);
+  const data = parseFriendly(ProfileDataZ, input.data);
   if (cur.revision !== input.expectedRevision)
     throw new Error("Outra pessoa alterou este perfil. Recarregue para ver a versão mais recente.");
   const before = rowToLike(cur);
