@@ -501,21 +501,22 @@ export function RoleProfileDetail({
                   onClick={async () => {
                     if (
                       await confirmDialog({
-                        title: "Arquivar perfil?",
-                        description: "O histórico é preservado.",
-                        confirmLabel: "Arquivar",
+                        title: "Excluir perfil?",
+                        description:
+                          "O perfil sai do negócio. Histórico e versões aprovadas ficam guardados.",
+                        confirmLabel: "Excluir",
                         variant: "destructive",
                       })
                     )
                       await run(
                         "arch",
                         () => fns.archive({ data: { id: p.id } }).then(onClose),
-                        "Perfil arquivado",
+                        "Perfil excluído",
                       );
                   }}
                 >
                   <Trash2 className="mr-1 h-3.5 w-3.5" aria-hidden />
-                  Arquivar
+                  Excluir
                 </Button>
               ) : null}
             </div>

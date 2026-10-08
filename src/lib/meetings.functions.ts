@@ -59,6 +59,8 @@ export const createMeeting = createServerFn({ method: "POST" })
     const insert: Record<string, unknown> = {
       owner_id: workspaceId,
       host_user_id: userId,
+      // owner_id guarda o workspace; o responsável é sempre quem marcou.
+      assigned_to: userId,
       title: data.title,
       room_name: room,
       public_token: token,
@@ -76,7 +78,10 @@ export const createMeeting = createServerFn({ method: "POST" })
       .insert(insert)
       .select("*")
       .single();
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("createMeeting failed", error.code);
+      throw new Error("Não foi possível criar a sala da reunião. Tente novamente.");
+    }
 
     // Log activity timeline entry (skip when the caller will record its own)
     if (!data.skip_activity) {
@@ -392,39 +397,42 @@ Gere:
 - sentiment: positive | neutral | negative
 Responda APENAS com JSON válido.`;
 
-      const res = await aiChatFetch({
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          response_format: { type: "json_object" },
-          messages: [
-            { role: "system", content: systemPrompt },
-            {
-              role: "user",
-              content: [
-                { type: "text", text: "Processe esta gravação de reunião." },
-                {
-                  type: "input_audio",
-                  input_audio: {
-                    data: b64,
-                    format: mime.includes("mp4")
-                      ? "mp4"
-                      : mime.includes("wav")
-                        ? "wav"
-                        : mime.includes("webm")
-                          ? "webm"
-                          : "mp3",
+      const res = await aiChatFetch(
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            response_format: { type: "json_object" },
+            messages: [
+              { role: "system", content: systemPrompt },
+              {
+                role: "user",
+                content: [
+                  { type: "text", text: "Processe esta gravação de reunião." },
+                  {
+                    type: "input_audio",
+                    input_audio: {
+                      data: b64,
+                      format: mime.includes("mp4")
+                        ? "mp4"
+                        : mime.includes("wav")
+                          ? "wav"
+                          : mime.includes("webm")
+                            ? "webm"
+                            : "mp3",
+                    },
                   },
-                },
-              ],
-            },
-          ],
-        }),
-      }, { feature: "reunioes" });
+                ],
+              },
+            ],
+          }),
+        },
+        { feature: "reunioes" },
+      );
 
       if (!res.ok) {
         const txt = await res.text();
@@ -659,18 +667,21 @@ Responda APENAS com JSON válido.`;
         ];
       }
 
-      const aiRes = await aiChatFetch({
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          response_format: { type: "json_object" },
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userContent },
-          ],
-        }),
-      }, { feature: "reunioes" });
+      const aiRes = await aiChatFetch(
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            response_format: { type: "json_object" },
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userContent },
+            ],
+          }),
+        },
+        { feature: "reunioes" },
+      );
       if (!aiRes.ok) {
         const txt = await aiRes.text();
         throw new Error(`AI gateway ${aiRes.status}: ${txt.slice(0, 400)}`);

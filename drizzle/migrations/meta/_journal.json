@@ -561,6 +561,20 @@
       "when": 1791465509709,
       "tag": "0079_role_profiles_leader_approval",
       "breakpoints": true
+    },
+    {
+      "idx": 80,
+      "version": "7",
+      "when": 1791472126102,
+      "tag": "0080_meetings_default_assigned_to_host",
+      "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1791472718380,
+      "tag": "0081_role_profile_supersede_on_archive",
+      "breakpoints": true
     }
   ]
 }
