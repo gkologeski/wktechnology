@@ -454,6 +454,12 @@ export function toAtsJob(p: ProfileLike) {
 // ---------------------------------------------------------------------------
 // Diff entre versões. Campos "importantes" ganham destaque na UI.
 // ---------------------------------------------------------------------------
+const stable = (v: unknown): string =>
+  JSON.stringify(v, (_k, val: unknown) =>
+    val && typeof val === "object" && !Array.isArray(val)
+      ? Object.fromEntries(Object.entries(val as Record<string, unknown>).filter(([, x]) => x !== undefined).sort(([a], [b]) => a.localeCompare(b)))
+      : val,
+  );
 export type DiffItem = { path: string; label: string; before: unknown; after: unknown; important: boolean };
 const DIFF_FIELDS: { path: string; label: string; important?: boolean }[] = [
   { path: "title", label: "Título", important: true },
@@ -485,7 +491,7 @@ export function diffProfiles(a: ProfileLike, b: ProfileLike): DiffItem[] {
   for (const f of DIFF_FIELDS) {
     const x = getPath(A, f.path) ?? null;
     const y = getPath(B, f.path) ?? null;
-    if (JSON.stringify(x) !== JSON.stringify(y))
+    if (stable(x) !== stable(y))
       out.push({ path: f.path, label: f.label, before: x, after: y, important: !!f.important });
   }
   return out;

@@ -231,7 +231,8 @@ export async function getDetail(ctx: Ctx, id: string) {
   const like = rowToLike(p);
   const approved = (versions.data ?? []).find((v) => v.id === p.approved_version_id) ?? (versions.data ?? [])[0];
   const pending = (versions.data ?? [])[0];
-  const diff = pending ? diffProfiles(pending.snapshot as unknown as ProfileLike, like) : [];
+  const snap = pending ? (pending.snapshot as unknown as ProfileLike) : null;
+  const diff = snap ? diffProfiles({ ...snap, data: parseData(snap.data) }, like) : [];
   return {
     profile: { ...p, data: like.data },
     commercial: commercial.data ? CommercialDataZ.safeParse(commercial.data.data).data ?? null : null,

@@ -145,3 +145,12 @@ describe("importação — normalização da proposta da IA", () => {
     expect(r.data.requirements.skills).toEqual([]);
   });
 });
+
+describe("diff estável", () => {
+  it("ordem de chaves diferente não gera alteração falsa", () => {
+    const a = full();
+    const b = full();
+    b.data.requirements.skills = b.data.requirements.skills.map((s) => ({ kind: s.kind, years: s.years, name: s.name }));
+    expect(diffProfiles(a, b)).toEqual([]);
+  });
+});
