@@ -397,39 +397,42 @@ Gere:
 - sentiment: positive | neutral | negative
 Responda APENAS com JSON válido.`;
 
-      const res = await aiChatFetch({
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          response_format: { type: "json_object" },
-          messages: [
-            { role: "system", content: systemPrompt },
-            {
-              role: "user",
-              content: [
-                { type: "text", text: "Processe esta gravação de reunião." },
-                {
-                  type: "input_audio",
-                  input_audio: {
-                    data: b64,
-                    format: mime.includes("mp4")
-                      ? "mp4"
-                      : mime.includes("wav")
-                        ? "wav"
-                        : mime.includes("webm")
-                          ? "webm"
-                          : "mp3",
+      const res = await aiChatFetch(
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            response_format: { type: "json_object" },
+            messages: [
+              { role: "system", content: systemPrompt },
+              {
+                role: "user",
+                content: [
+                  { type: "text", text: "Processe esta gravação de reunião." },
+                  {
+                    type: "input_audio",
+                    input_audio: {
+                      data: b64,
+                      format: mime.includes("mp4")
+                        ? "mp4"
+                        : mime.includes("wav")
+                          ? "wav"
+                          : mime.includes("webm")
+                            ? "webm"
+                            : "mp3",
+                    },
                   },
-                },
-              ],
-            },
-          ],
-        }),
-      }, { feature: "reunioes" });
+                ],
+              },
+            ],
+          }),
+        },
+        { feature: "reunioes" },
+      );
 
       if (!res.ok) {
         const txt = await res.text();
@@ -664,18 +667,21 @@ Responda APENAS com JSON válido.`;
         ];
       }
 
-      const aiRes = await aiChatFetch({
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          response_format: { type: "json_object" },
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userContent },
-          ],
-        }),
-      }, { feature: "reunioes" });
+      const aiRes = await aiChatFetch(
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            response_format: { type: "json_object" },
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userContent },
+            ],
+          }),
+        },
+        { feature: "reunioes" },
+      );
       if (!aiRes.ok) {
         const txt = await aiRes.text();
         throw new Error(`AI gateway ${aiRes.status}: ${txt.slice(0, 400)}`);

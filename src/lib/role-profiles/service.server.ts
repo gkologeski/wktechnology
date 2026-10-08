@@ -758,8 +758,7 @@ export async function saveTemplate(ctx: Ctx, input: { profileId: string; name: s
 export async function archive(ctx: Ctx, id: string) {
   await assertPermission(ctx.supabase, ctx.userId, ctx.workspaceId, PERM.update);
   const p = await loadProfile(ctx, id);
-  if (p.ats_job_id)
-    throw new Error("Perfil já encaminhado ao recrutamento não pode ser excluído.");
+  if (p.ats_job_id) throw new Error("Perfil já encaminhado ao recrutamento não pode ser excluído.");
   const { data: done, error } = await ctx.supabase
     .from("deal_role_profiles")
     .update({ archived_at: new Date().toISOString(), revision: p.revision + 1 })
