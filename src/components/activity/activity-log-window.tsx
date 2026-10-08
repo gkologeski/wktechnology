@@ -20,6 +20,7 @@ import { TimelineComposer } from "./timeline-composer";
 import { LOG_LABEL, type Attachment, type LogKind, type TeamMember } from "./timeline-shared";
 import type { ActivityWindowRequest } from "./activity-window-context";
 import { activityDraftKey, useActivityDraft } from "@/hooks/use-activity-draft";
+import { supabase } from "@/integrations/supabase/client";
 import { DraftBar } from "./activity-draft-bar";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
