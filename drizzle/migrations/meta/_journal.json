@@ -547,6 +547,13 @@
       "when": 1791426915528,
       "tag": "0077_role_profiles_tighten_grants",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1791426943105,
+      "tag": "0078_role_profiles_protect_columns",
+      "breakpoints": true
     }
   ]
 }
