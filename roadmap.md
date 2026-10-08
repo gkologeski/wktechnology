@@ -87,3 +87,15 @@
 - [x] Testes: unitários, banco com rollback, navegador ponta a ponta
 - [ ] Liberar as novas permissões para cargos não administradores (decisão do usuário)
 - [ ] Apagar 3 arquivos fictícios de teste no armazenamento privado (exige ação de armazenamento)
+
+# Roadmap — Performance ciclo 1
+
+- [x] Sprint 0 — baseline (docs/architecture/performance-baseline.md)
+- [x] Tempo real filtrado por registro, agrupado e reconciliado ao reconectar
+- [x] Pré-carregamento seletivo (módulo, permissão, rede, sem competir com navegação)
+- [x] Cache zerado na troca de workspace/usuário/Ver como/saída
+- [x] Janelas de atividade sob demanda
+- [x] Cache do lint (medido 55 s → 3 s)
+- [ ] Medir telas restantes (dashboard, Inbox, Projetos, Prospecção, TechHire)
+- [ ] Comando real da verificação automática (inacessível no sandbox)
+- [ ] Backlog do próximo ciclo (docs/architecture/performance-backlog.md)
