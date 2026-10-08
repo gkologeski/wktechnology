@@ -7,14 +7,20 @@ const Body = z
   .object({
     changes: z.record(z.string().max(80), z.unknown()).default({}),
     confirm: z.boolean().default(false),
-    attachment: z.object({ filename: z.string().min(1).max(255), base64: z.string().min(8).max(14_500_000) }).optional(),
+    attachment: z
+      .object({ filename: z.string().min(1).max(255), base64: z.string().min(8).max(14_500_000) })
+      .optional(),
   })
   .strict();
 
 const json = (o: unknown, status = 200) =>
   new Response(JSON.stringify(o), {
     status,
-    headers: { "Content-Type": "application/json", "Cache-Control": "no-store", "X-Robots-Tag": "noindex" },
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+      "X-Robots-Tag": "noindex",
+    },
   });
 
 export const Route = createFileRoute("/api/public/role-profile/$token")({

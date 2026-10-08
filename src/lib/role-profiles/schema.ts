@@ -8,7 +8,13 @@ import { z } from "zod";
 
 export const MODALITIES = ["outsourcing", "hunting", "both"] as const;
 export const PRIORITIES = ["low", "medium", "high", "urgent"] as const;
-export const STATUSES = ["draft", "awaiting_info", "in_validation", "approved", "forwarded"] as const;
+export const STATUSES = [
+  "draft",
+  "awaiting_info",
+  "in_validation",
+  "approved",
+  "forwarded",
+] as const;
 export const SENIORITIES = ["junior", "pleno", "senior", "especialista", "lideranca"] as const;
 export type Modality = (typeof MODALITIES)[number];
 export type ProfileStatus = (typeof STATUSES)[number];
@@ -54,7 +60,10 @@ const Req = z.enum(["required", "desired"]);
 
 export const ProfileDataZ = z
   .object({
-    need: z.object({ reason: txt(2000) }).strict().default({}),
+    need: z
+      .object({ reason: txt(2000) })
+      .strict()
+      .default({}),
     role: z
       .object({
         project_context: txt(),
@@ -106,7 +115,10 @@ export const ProfileDataZ = z
         schedule: txt(200),
         timezone: txt(60),
         travel: txt(300),
-        start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        start_date: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .optional(),
       })
       .strict()
       .default({}),
@@ -240,7 +252,13 @@ export function approvalMissing(p: ProfileLike): string[] {
   return out;
 }
 
-export type SectionKey = "need" | "role" | "requirements" | "conditions" | "commercial" | "selection";
+export type SectionKey =
+  | "need"
+  | "role"
+  | "requirements"
+  | "conditions"
+  | "commercial"
+  | "selection";
 export const SECTION_LABEL: Record<SectionKey, string> = {
   need: "Necessidade",
   role: "Atuação",
@@ -325,7 +343,10 @@ export const CLIENT_FIELD_KEYS = Object.keys(CLIENT_FIELDS) as ClientField[];
 function getPath(obj: Record<string, unknown>, path: string): unknown {
   return path
     .split(".")
-    .reduce<unknown>((o, k) => (o && typeof o === "object" ? (o as Record<string, unknown>)[k] : undefined), obj);
+    .reduce<unknown>(
+      (o, k) => (o && typeof o === "object" ? (o as Record<string, unknown>)[k] : undefined),
+      obj,
+    );
 }
 function setPath(obj: Record<string, unknown>, path: string, value: unknown) {
   const ks = path.split(".");
@@ -339,7 +360,11 @@ function setPath(obj: Record<string, unknown>, path: string, value: unknown) {
 
 export function sanitizeAllowedFields(fields: unknown): ClientField[] {
   if (!Array.isArray(fields)) return [];
-  return [...new Set(fields.filter((f): f is ClientField => CLIENT_FIELD_KEYS.includes(f as ClientField)))];
+  return [
+    ...new Set(
+      fields.filter((f): f is ClientField => CLIENT_FIELD_KEYS.includes(f as ClientField)),
+    ),
+  ];
 }
 
 /** Serialização para o cliente: cabeçalho público + somente campos liberados. */
@@ -442,7 +467,12 @@ export function toAtsJob(p: ProfileLike) {
     description: description || null,
     requirements: requirements || null,
     seniority: p.seniority ?? null,
-    employment_type: hunting && d.hunting.hiring_regime ? REGIME_LABEL[d.hunting.hiring_regime] : usesOutsourcing(p.modality) ? "Outsourcing" : null,
+    employment_type:
+      hunting && d.hunting.hiring_regime
+        ? REGIME_LABEL[d.hunting.hiring_regime]
+        : usesOutsourcing(p.modality)
+          ? "Outsourcing"
+          : null,
     location: d.conditions.location ?? null,
     remote_mode: d.conditions.work_mode ? WORK_MODE_LABEL[d.conditions.work_mode] : null,
     salary_min: hunting ? (d.hunting.salary_min ?? null) : null,
@@ -457,10 +487,20 @@ export function toAtsJob(p: ProfileLike) {
 const stable = (v: unknown): string =>
   JSON.stringify(v, (_k, val: unknown) =>
     val && typeof val === "object" && !Array.isArray(val)
-      ? Object.fromEntries(Object.entries(val as Record<string, unknown>).filter(([, x]) => x !== undefined).sort(([a], [b]) => a.localeCompare(b)))
+      ? Object.fromEntries(
+          Object.entries(val as Record<string, unknown>)
+            .filter(([, x]) => x !== undefined)
+            .sort(([a], [b]) => a.localeCompare(b)),
+        )
       : val,
   );
-export type DiffItem = { path: string; label: string; before: unknown; after: unknown; important: boolean };
+export type DiffItem = {
+  path: string;
+  label: string;
+  before: unknown;
+  after: unknown;
+  important: boolean;
+};
 const DIFF_FIELDS: { path: string; label: string; important?: boolean }[] = [
   { path: "title", label: "Título", important: true },
   { path: "quantity", label: "Quantidade", important: true },
@@ -522,11 +562,20 @@ export function marginPct(c: CommercialData | null | undefined): number | null {
  * Modelo reutilizável / duplicação: copia só conteúdo técnico e condições.
  * Nunca leva comercial interno, evidências, aprovação, ATS, links ou responsáveis.
  */
-export function toTemplatePayload(p: ProfileLike): { header: Omit<ProfileHeader, "contact_id" | "assigned_to">; data: ProfileData } {
+export function toTemplatePayload(p: ProfileLike): {
+  header: Omit<ProfileHeader, "contact_id" | "assigned_to">;
+  data: ProfileData;
+} {
   const data = structuredClone(p.data);
   delete data.evidence;
   return {
-    header: { title: p.title, quantity: p.quantity, modality: p.modality, priority: p.priority, seniority: p.seniority ?? null },
+    header: {
+      title: p.title,
+      quantity: p.quantity,
+      modality: p.modality,
+      priority: p.priority,
+      seniority: p.seniority ?? null,
+    },
     data,
   };
 }

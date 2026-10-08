@@ -18,20 +18,60 @@ import { normalizeImportedProfile } from "./import";
 function full(over: Partial<ProfileLike> = {}): ProfileLike {
   const data = ProfileDataZ.parse({
     role: { responsibilities: "Manter ERP em Delphi", project_context: "Migração" },
-    requirements: { skills: [{ name: "Delphi", kind: "required", years: 5 }, { name: "Firebird", kind: "desired" }], languages: [], certifications: [] },
+    requirements: {
+      skills: [
+        { name: "Delphi", kind: "required", years: 5 },
+        { name: "Firebird", kind: "desired" },
+      ],
+      languages: [],
+      certifications: [],
+    },
     conditions: { work_mode: "remote", schedule: "40h" },
     outsourcing: { allocation_months: 12, dedication: "full" },
-    hunting: { hiring_regime: "clt", salary_min: 9000, salary_max: 12000, salary_currency: "BRL", fee_type: "percent", fee_value: 20, fee_terms: "SEGREDO-HONORARIO" },
+    hunting: {
+      hiring_regime: "clt",
+      salary_min: 9000,
+      salary_max: 12000,
+      salary_currency: "BRL",
+      fee_type: "percent",
+      fee_value: 20,
+      fee_terms: "SEGREDO-HONORARIO",
+    },
     selection: { stages: ["Técnica"], criteria: "ok" },
   });
-  return { title: "Delphi Sênior", quantity: 2, modality: "both", priority: "high", seniority: "senior", contact_id: null, data, ...over };
+  return {
+    title: "Delphi Sênior",
+    quantity: 2,
+    modality: "both",
+    priority: "high",
+    seniority: "senior",
+    contact_id: null,
+    data,
+    ...over,
+  };
 }
 
 describe("perfil de vaga — mínimos e completude (sem pontuação)", () => {
   it("rascunho parcial é válido mas bloqueia aprovação com lista do que falta", () => {
-    const p: ProfileLike = { title: "Delphi Pleno", quantity: 3, modality: "outsourcing", priority: "medium", seniority: null, data: emptyData() };
+    const p: ProfileLike = {
+      title: "Delphi Pleno",
+      quantity: 3,
+      modality: "outsourcing",
+      priority: "medium",
+      seniority: null,
+      data: emptyData(),
+    };
     const miss = approvalMissing(p);
-    expect(miss).toEqual(expect.arrayContaining(["Senioridade", "Responsabilidades", "Ao menos uma tecnologia obrigatória", "Modelo de trabalho", "Duração da alocação", "Dedicação"]));
+    expect(miss).toEqual(
+      expect.arrayContaining([
+        "Senioridade",
+        "Responsabilidades",
+        "Ao menos uma tecnologia obrigatória",
+        "Modelo de trabalho",
+        "Duração da alocação",
+        "Dedicação",
+      ]),
+    );
     expect(miss).not.toContain("Regime de contratação");
     const c = completeness(p);
     expect(c.total).toBeGreaterThan(0);
@@ -47,7 +87,9 @@ describe("perfil de vaga — mínimos e completude (sem pontuação)", () => {
     const p = full();
     p.data.conditions.work_mode = "onsite";
     p.data.hunting.salary_min = 20000;
-    expect(approvalMissing(p)).toEqual(expect.arrayContaining(["Localidade", "Faixa salarial coerente (mínimo ≤ máximo)"]));
+    expect(approvalMissing(p)).toEqual(
+      expect.arrayContaining(["Localidade", "Faixa salarial coerente (mínimo ≤ máximo)"]),
+    );
   });
   it("quantidade não positiva é rejeitada pelo schema do cabeçalho via mínimos", () => {
     expect(approvalMissing(full({ quantity: 0 }))).toContain("Quantidade");
@@ -56,7 +98,11 @@ describe("perfil de vaga — mínimos e completude (sem pontuação)", () => {
 
 describe("vazamento zero — cliente e TechHire", () => {
   it("visão do cliente só serializa campos liberados", () => {
-    const v = toClientView(full(), ["role.responsibilities", "hunting.fee_value" as never, "x.y" as never]);
+    const v = toClientView(full(), [
+      "role.responsibilities",
+      "hunting.fee_value" as never,
+      "x.y" as never,
+    ]);
     const json = JSON.stringify(v);
     expect(v.fields.map((f) => f.key)).toEqual(["role.responsibilities"]);
     expect(json).not.toContain("SEGREDO-HONORARIO");
@@ -64,7 +110,9 @@ describe("vazamento zero — cliente e TechHire", () => {
     expect(json).not.toContain("9000");
   });
   it("allowlist descarta campos inexistentes/internos", () => {
-    expect(sanitizeAllowedFields(["hunting.fee_value", "evidence", "role.team", "role.team"])).toEqual(["role.team"]);
+    expect(
+      sanitizeAllowedFields(["hunting.fee_value", "evidence", "role.team", "role.team"]),
+    ).toEqual(["role.team"]);
   });
   it("proposta do cliente com campo não liberado é recusada (mass assignment)", () => {
     const r = applyClientProposal(full().data, { "hunting.fee_value": 1 }, ["role.team"]);
@@ -73,7 +121,10 @@ describe("vazamento zero — cliente e TechHire", () => {
     expect(ok.ok && ok.data.role.team).toBe("8 pessoas");
   });
   it("proposta com valor de formato inválido é recusada", () => {
-    expect(applyClientProposal(full().data, { "conditions.work_mode": "lua" }, ["conditions.work_mode"]).ok).toBe(false);
+    expect(
+      applyClientProposal(full().data, { "conditions.work_mode": "lua" }, ["conditions.work_mode"])
+        .ok,
+    ).toBe(false);
   });
   it("payload do TechHire não contém honorários nem comercial", () => {
     const job = toAtsJob(full());
@@ -98,7 +149,9 @@ describe("versões, modelos e margem", () => {
     b.data = structuredClone(b.data);
     b.data.hunting.salary_max = 15000;
     const d = diffProfiles(a, b);
-    expect(d.filter((x) => x.important).map((x) => x.label)).toEqual(expect.arrayContaining(["Quantidade", "Senioridade", "Salário máximo"]));
+    expect(d.filter((x) => x.important).map((x) => x.label)).toEqual(
+      expect.arrayContaining(["Quantidade", "Senioridade", "Salário máximo"]),
+    );
   });
   it("modelo/duplicação não leva evidências", () => {
     const p = full();
@@ -108,8 +161,16 @@ describe("versões, modelos e margem", () => {
     expect(JSON.stringify(t)).not.toMatch(/approved|ats_job|token|assigned_to|contact_id/);
   });
   it("margem só com períodos iguais", () => {
-    expect(marginPct({ outsourcing: { sale_price: 100, cost: 60, sale_period: "hour", cost_period: "hour" } })).toBeCloseTo(40);
-    expect(marginPct({ outsourcing: { sale_price: 100, cost: 60, sale_period: "hour", cost_period: "month" } })).toBeNull();
+    expect(
+      marginPct({
+        outsourcing: { sale_price: 100, cost: 60, sale_period: "hour", cost_period: "hour" },
+      }),
+    ).toBeCloseTo(40);
+    expect(
+      marginPct({
+        outsourcing: { sale_price: 100, cost: 60, sale_period: "hour", cost_period: "month" },
+      }),
+    ).toBeNull();
   });
 });
 
@@ -121,7 +182,12 @@ describe("importação — normalização da proposta da IA", () => {
         quantity: { value: 2, status: "found" },
         modality: { value: "hunting", status: "doubtful" },
         fields: {
-          "requirements.skills": { value: [{ name: "Delphi", kind: "required" }], status: "found", excerpt: "Delphi", page: 2 },
+          "requirements.skills": {
+            value: [{ name: "Delphi", kind: "required" }],
+            status: "found",
+            excerpt: "Delphi",
+            page: 2,
+          },
           "hunting.salary_min": { value: 9000, status: "found" },
           "conditions.work_mode": { value: "marte", status: "found", excerpt: "?" },
           "role.team": { value: null, status: "missing" },
@@ -150,7 +216,11 @@ describe("diff estável", () => {
   it("ordem de chaves diferente não gera alteração falsa", () => {
     const a = full();
     const b = full();
-    b.data.requirements.skills = b.data.requirements.skills.map((s) => ({ kind: s.kind, years: s.years, name: s.name }));
+    b.data.requirements.skills = b.data.requirements.skills.map((s) => ({
+      kind: s.kind,
+      years: s.years,
+      name: s.name,
+    }));
     expect(diffProfiles(a, b)).toEqual([]);
   });
 });

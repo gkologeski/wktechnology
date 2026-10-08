@@ -8,7 +8,11 @@ const id = z.string().uuid();
 async function ctxOf(context: { supabase: unknown; userId: string }) {
   const { getActiveWorkspaceId } = await import("@/lib/access-control/enforce.server");
   const supabase = context.supabase as import("./service.server").Ctx["supabase"];
-  return { supabase, userId: context.userId, workspaceId: await getActiveWorkspaceId(supabase, context.userId) };
+  return {
+    supabase,
+    userId: context.userId,
+    workspaceId: await getActiveWorkspaceId(supabase, context.userId),
+  };
 }
 
 export const listDealRoleProfiles = createServerFn({ method: "POST" })
@@ -51,7 +55,13 @@ export const saveRoleProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z
-      .object({ id, expectedRevision: z.number().int(), header: z.unknown(), data: z.unknown(), commercial: z.unknown().optional() })
+      .object({
+        id,
+        expectedRevision: z.number().int(),
+        header: z.unknown(),
+        data: z.unknown(),
+        commercial: z.unknown().optional(),
+      })
       .strict()
       .parse(d),
   )
@@ -87,7 +97,9 @@ export const approveRoleProfile = createServerFn({ method: "POST" })
 
 export const forwardRoleProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id, early: z.boolean(), reason: z.string().max(1000).optional() }).parse(d))
+  .inputValidator((d: unknown) =>
+    z.object({ id, early: z.boolean(), reason: z.string().max(1000).optional() }).parse(d),
+  )
   .handler(async ({ context, data }) => {
     const s = await import("./service.server");
     return s.forward(await ctxOf(context), data);
@@ -103,7 +115,9 @@ export const syncRoleProfileAts = createServerFn({ method: "POST" })
 
 export const saveRoleProfileTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ profileId: id, name: z.string().trim().min(1).max(120) }).parse(d))
+  .inputValidator((d: unknown) =>
+    z.object({ profileId: id, name: z.string().trim().min(1).max(120) }).parse(d),
+  )
   .handler(async ({ context, data }) => {
     const s = await import("./service.server");
     return s.saveTemplate(await ctxOf(context), data);
@@ -121,7 +135,12 @@ export const createRoleProfileShareLink = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z
-      .object({ id, allowedFields: z.array(z.string().max(80)).max(40), days: z.number().int().min(1).max(30), maxWrites: z.number().int().min(1).max(20) })
+      .object({
+        id,
+        allowedFields: z.array(z.string().max(80)).max(40),
+        days: z.number().int().min(1).max(30),
+        maxWrites: z.number().int().min(1).max(20),
+      })
       .parse(d),
   )
   .handler(async ({ context, data }) => {
@@ -140,7 +159,13 @@ export const revokeRoleProfileShareLink = createServerFn({ method: "POST" })
 export const reviewRoleProfileProposal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ proposalId: id, action: z.enum(["apply", "reject"]), expectedRevision: z.number().int() }).parse(d),
+    z
+      .object({
+        proposalId: id,
+        action: z.enum(["apply", "reject"]),
+        expectedRevision: z.number().int(),
+      })
+      .parse(d),
   )
   .handler(async ({ context, data }) => {
     const s = await import("./service.server");
@@ -150,7 +175,13 @@ export const reviewRoleProfileProposal = createServerFn({ method: "POST" })
 export const uploadRoleProfileAttachment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ id, filename: z.string().min(1).max(255), base64: z.string().min(8).max(14_500_000) }).parse(d),
+    z
+      .object({
+        id,
+        filename: z.string().min(1).max(255),
+        base64: z.string().min(8).max(14_500_000),
+      })
+      .parse(d),
   )
   .handler(async ({ context, data }) => {
     const s = await import("./service.server");

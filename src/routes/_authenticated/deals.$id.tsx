@@ -50,7 +50,9 @@ import { confirmDialog } from "@/components/ui/confirm-dialog";
 export const Route = createFileRoute("/_authenticated/deals/$id")({
   validateSearch: (s: Record<string, unknown>): { tab?: "perfis"; profile?: string } => ({
     ...(s["tab"] === "perfis" ? { tab: "perfis" as const } : {}),
-    ...(typeof s["profile"] === "string" && /^[0-9a-f-]{36}$/i.test(s["profile"]) ? { profile: s["profile"] } : {}),
+    ...(typeof s["profile"] === "string" && /^[0-9a-f-]{36}$/i.test(s["profile"])
+      ? { profile: s["profile"] }
+      : {}),
   }),
   component: DealDetail,
   head: () => ({

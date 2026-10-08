@@ -83,7 +83,11 @@ export const IMPORTABLE_PATHS = [
 ] as const;
 
 /** Valores numéricos sensíveis só entram com trecho literal de evidência. */
-const NEEDS_EXCERPT = new Set(["hunting.salary_min", "hunting.salary_max", "outsourcing.allocation_months"]);
+const NEEDS_EXCERPT = new Set([
+  "hunting.salary_min",
+  "hunting.salary_max",
+  "outsourcing.allocation_months",
+]);
 
 type Cell = { value?: unknown; status?: unknown; excerpt?: unknown; page?: unknown };
 export type ImportedProfile = {
@@ -114,11 +118,16 @@ function setPath(obj: Record<string, unknown>, path: string, value: unknown) {
 export function normalizeImportedProfile(raw: unknown, sourceName: string): ImportedProfile {
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
   const warnings: string[] = Array.isArray(r.warnings)
-    ? r.warnings.filter((w): w is string => typeof w === "string").slice(0, 20).map((w) => w.slice(0, 300))
+    ? r.warnings
+        .filter((w): w is string => typeof w === "string")
+        .slice(0, 20)
+        .map((w) => w.slice(0, 300))
     : [];
   const fieldStatus: ImportedProfile["fieldStatus"] = {};
   const pick = <T extends readonly string[]>(c: Cell, list: T): T[number] | null =>
-    typeof c.value === "string" && (list as readonly string[]).includes(c.value) ? (c.value as T[number]) : null;
+    typeof c.value === "string" && (list as readonly string[]).includes(c.value)
+      ? (c.value as T[number])
+      : null;
 
   const titleC = asCell(r.title);
   const qtyC = asCell(r.quantity);
@@ -126,9 +135,17 @@ export function normalizeImportedProfile(raw: unknown, sourceName: string): Impo
   const senC = asCell(r.seniority);
   const priC = asCell(r.priority);
   const title =
-    typeof titleC.value === "string" && titleC.value.trim() ? titleC.value.trim().slice(0, 200) : "Perfil importado";
+    typeof titleC.value === "string" && titleC.value.trim()
+      ? titleC.value.trim().slice(0, 200)
+      : "Perfil importado";
   fieldStatus.title = statusOf(titleC);
-  const qty = typeof qtyC.value === "number" && Number.isInteger(qtyC.value) && qtyC.value > 0 && qtyC.value < 1000 ? qtyC.value : 1;
+  const qty =
+    typeof qtyC.value === "number" &&
+    Number.isInteger(qtyC.value) &&
+    qtyC.value > 0 &&
+    qtyC.value < 1000
+      ? qtyC.value
+      : 1;
   fieldStatus.quantity = typeof qtyC.value === "number" ? statusOf(qtyC) : "missing";
   const modality = pick(modC, MODALITIES) ?? "outsourcing";
   fieldStatus.modality = pick(modC, MODALITIES) ? statusOf(modC) : "missing";
@@ -136,7 +153,10 @@ export function normalizeImportedProfile(raw: unknown, sourceName: string): Impo
   fieldStatus.seniority = seniority ? statusOf(senC) : "missing";
   const priority = pick(priC, PRIORITIES) ?? "medium";
 
-  const fields = (r.fields && typeof r.fields === "object" ? r.fields : {}) as Record<string, unknown>;
+  const fields = (r.fields && typeof r.fields === "object" ? r.fields : {}) as Record<
+    string,
+    unknown
+  >;
   const base = emptyData() as unknown as Record<string, unknown>;
   const evidence: NonNullable<ProfileData["evidence"]> = {};
   for (const path of IMPORTABLE_PATHS) {
@@ -173,9 +193,20 @@ export function normalizeImportedProfile(raw: unknown, sourceName: string): Impo
   const parsed = ProfileDataZ.safeParse({ ...base, evidence });
   const data = parsed.success ? parsed.data : emptyData();
   const otherProfiles = Array.isArray(r.other_profiles)
-    ? r.other_profiles.filter((x): x is string => typeof x === "string").slice(0, 10).map((x) => x.slice(0, 200))
+    ? r.other_profiles
+        .filter((x): x is string => typeof x === "string")
+        .slice(0, 10)
+        .map((x) => x.slice(0, 200))
     : [];
   if (otherProfiles.length)
-    warnings.push(`O conteúdo cita outros perfis (${otherProfiles.join(", ")}); importe-os separadamente.`);
-  return { header: { title, quantity: qty, modality, priority, seniority }, data, fieldStatus, otherProfiles, warnings };
+    warnings.push(
+      `O conteúdo cita outros perfis (${otherProfiles.join(", ")}); importe-os separadamente.`,
+    );
+  return {
+    header: { title, quantity: qty, modality, priority, seniority },
+    data,
+    fieldStatus,
+    otherProfiles,
+    warnings,
+  };
 }

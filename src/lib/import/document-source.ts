@@ -174,4 +174,3 @@ export async function sha256(input: Uint8Array | string): Promise<string> {
   const d = await crypto.subtle.digest("SHA-256", data as BufferSource);
   return Array.from(new Uint8Array(d), (b) => b.toString(16).padStart(2, "0")).join("");
 }
-

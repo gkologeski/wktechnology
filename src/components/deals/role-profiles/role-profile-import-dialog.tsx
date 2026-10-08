@@ -10,12 +10,24 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { listRoleProfileConversations } from "@/lib/role-profiles/role-profiles.functions";
 import type { ImportedProfile } from "@/lib/role-profiles/import";
 
-export type ImportResult = ImportedProfile & { importId: string; sourceName: string; sourceKind: string; reused?: boolean };
+export type ImportResult = ImportedProfile & {
+  importId: string;
+  sourceName: string;
+  sourceKind: string;
+  reused?: boolean;
+};
 
 type Body =
   | { kind: "text"; text: string }
@@ -23,7 +35,12 @@ type Body =
   | { kind: "file"; filename: string; base64: string }
   | { kind: "conversation"; activityIds: string[] };
 
-async function runImport(dealId: string, body: Body, onStage: (s: string) => void, signal: AbortSignal): Promise<ImportResult> {
+async function runImport(
+  dealId: string,
+  body: Body,
+  onStage: (s: string) => void,
+  signal: AbortSignal,
+): Promise<ImportResult> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   if (!token) throw new Error("Sessão expirada. Entre novamente.");
@@ -33,7 +50,8 @@ async function runImport(dealId: string, body: Body, onStage: (s: string) => voi
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({ dealId, ...body }),
   });
-  if (!res.ok || !res.body) throw new Error(res.status === 400 ? "Conteúdo inválido." : `Falha (${res.status}).`);
+  if (!res.ok || !res.body)
+    throw new Error(res.status === 400 ? "Conteúdo inválido." : `Falha (${res.status}).`);
   const reader = res.body.getReader();
   const dec = new TextDecoder();
   let buf = "";
@@ -45,7 +63,12 @@ async function runImport(dealId: string, body: Body, onStage: (s: string) => voi
     buf = lines.pop() ?? "";
     for (const l of lines) {
       if (!l.trim()) continue;
-      const m = JSON.parse(l) as { type: string; stage?: string; message?: string; result?: ImportResult };
+      const m = JSON.parse(l) as {
+        type: string;
+        stage?: string;
+        message?: string;
+        result?: ImportResult;
+      };
       if (m.type === "progress" && m.stage) onStage(m.stage);
       if (m.type === "error") throw new Error(m.message);
       if (m.type === "result" && m.result) return m.result;
@@ -65,7 +88,17 @@ function toBase64(file: File): Promise<string> {
 
 const STATUS_LABEL = { found: "Encontrado", doubtful: "Duvidoso", missing: "Ausente" } as const;
 
-export function RoleProfileImportDialog({ open, onOpenChange, dealId, onReview }: { open: boolean; onOpenChange: (o: boolean) => void; dealId: string; onReview: (r: ImportResult) => void }) {
+export function RoleProfileImportDialog({
+  open,
+  onOpenChange,
+  dealId,
+  onReview,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  dealId: string;
+  onReview: (r: ImportResult) => void;
+}) {
   const [tab, setTab] = useState("text");
   const [text, setText] = useState("");
   const [url, setUrl] = useState("");
@@ -75,7 +108,11 @@ export function RoleProfileImportDialog({ open, onOpenChange, dealId, onReview }
   const [result, setResult] = useState<ImportResult | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const listConv = useServerFn(listRoleProfileConversations);
-  const conv = useQuery({ queryKey: ["role-profile-conversations", dealId], queryFn: () => listConv({ data: { dealId } }), enabled: open && tab === "conversation" });
+  const conv = useQuery({
+    queryKey: ["role-profile-conversations", dealId],
+    queryFn: () => listConv({ data: { dealId } }),
+    enabled: open && tab === "conversation",
+  });
 
   async function start() {
     let body: Body;
@@ -104,57 +141,135 @@ export function RoleProfileImportDialog({ open, onOpenChange, dealId, onReview }
   }
 
   const close = (o: boolean) => {
-    if (!o) { abortRef.current?.abort(); setResult(null); }
+    if (!o) {
+      abortRef.current?.abort();
+      setResult(null);
+    }
     onOpenChange(o);
   };
 
-  const counts = result ? Object.values(result.fieldStatus).reduce((a, s) => ({ ...a, [s]: (a[s] ?? 0) + 1 }), {} as Record<string, number>) : {};
+  const counts = result
+    ? Object.values(result.fieldStatus).reduce(
+        (a, s) => ({ ...a, [s]: (a[s] ?? 0) + 1 }),
+        {} as Record<string, number>,
+      )
+    : {};
 
   return (
     <Dialog open={open} onOpenChange={close}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" aria-hidden /> Importar perfil com IA</DialogTitle>
-          <DialogDescription>A IA propõe; você revisa no formulário antes de salvar. Nada é publicado nem enviado. Valores não escritos na fonte ficam em branco.</DialogDescription>
+          <DialogTitle className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" aria-hidden /> Importar perfil com IA
+          </DialogTitle>
+          <DialogDescription>
+            A IA propõe; você revisa no formulário antes de salvar. Nada é publicado nem enviado.
+            Valores não escritos na fonte ficam em branco.
+          </DialogDescription>
         </DialogHeader>
         {!result ? (
           <Tabs value={tab} onValueChange={setTab}>
             <TabsList className="flex-wrap">
-              <TabsTrigger value="text"><Type className="mr-1 h-3.5 w-3.5" aria-hidden />Texto</TabsTrigger>
-              <TabsTrigger value="url"><Link2 className="mr-1 h-3.5 w-3.5" aria-hidden />URL</TabsTrigger>
-              <TabsTrigger value="file"><FileUp className="mr-1 h-3.5 w-3.5" aria-hidden />Arquivo</TabsTrigger>
-              <TabsTrigger value="conversation"><MessageSquare className="mr-1 h-3.5 w-3.5" aria-hidden />Conversas</TabsTrigger>
+              <TabsTrigger value="text">
+                <Type className="mr-1 h-3.5 w-3.5" aria-hidden />
+                Texto
+              </TabsTrigger>
+              <TabsTrigger value="url">
+                <Link2 className="mr-1 h-3.5 w-3.5" aria-hidden />
+                URL
+              </TabsTrigger>
+              <TabsTrigger value="file">
+                <FileUp className="mr-1 h-3.5 w-3.5" aria-hidden />
+                Arquivo
+              </TabsTrigger>
+              <TabsTrigger value="conversation">
+                <MessageSquare className="mr-1 h-3.5 w-3.5" aria-hidden />
+                Conversas
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="text" className="mt-3">
-              <Label htmlFor="rpi-text" className="sr-only">Descrição da vaga</Label>
-              <Textarea id="rpi-text" rows={8} value={text} onChange={(e) => setText(e.target.value)} placeholder="Cole aqui a descrição da vaga ou o e-mail do cliente…" />
+              <Label htmlFor="rpi-text" className="sr-only">
+                Descrição da vaga
+              </Label>
+              <Textarea
+                id="rpi-text"
+                rows={8}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Cole aqui a descrição da vaga ou o e-mail do cliente…"
+              />
             </TabsContent>
             <TabsContent value="url" className="mt-3 space-y-1">
               <Label htmlFor="rpi-url">Endereço público da página</Label>
-              <Input id="rpi-url" type="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" />
-              <p className="text-[11px] text-text-tertiary">Somente páginas públicas http/https; endereços internos são bloqueados.</p>
+              <Input
+                id="rpi-url"
+                type="url"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://…"
+              />
+              <p className="text-[11px] text-text-tertiary">
+                Somente páginas públicas http/https; endereços internos são bloqueados.
+              </p>
             </TabsContent>
             <TabsContent value="file" className="mt-3 space-y-1">
               <Label htmlFor="rpi-file">PDF, DOCX, PNG, JPG ou WebP (até 10 MB)</Label>
-              <Input id="rpi-file" type="file" accept=".pdf,.docx,.png,.jpg,.jpeg,.webp" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-              <p className="text-[11px] text-text-tertiary">O arquivo fica guardado em área privada para auditoria.</p>
+              <Input
+                id="rpi-file"
+                type="file"
+                accept=".pdf,.docx,.png,.jpg,.jpeg,.webp"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              />
+              <p className="text-[11px] text-text-tertiary">
+                O arquivo fica guardado em área privada para auditoria.
+              </p>
             </TabsContent>
             <TabsContent value="conversation" className="mt-3">
-              <p className="mb-2 text-xs text-text-secondary">Somente conversas deste negócio. Marque as que devem ser lidas.</p>
+              <p className="mb-2 text-xs text-text-secondary">
+                Somente conversas deste negócio. Marque as que devem ser lidas.
+              </p>
               {conv.isLoading ? (
-                <p className="py-4 text-xs text-text-tertiary"><Loader2 className="mr-1 inline h-3 w-3 animate-spin" aria-hidden />Carregando…</p>
+                <p className="py-4 text-xs text-text-tertiary">
+                  <Loader2 className="mr-1 inline h-3 w-3 animate-spin" aria-hidden />
+                  Carregando…
+                </p>
               ) : conv.isError ? (
-                <div className="py-3 text-xs text-destructive">Erro ao carregar. <Button variant="link" size="sm" onClick={() => conv.refetch()}>Tentar de novo</Button></div>
+                <div className="py-3 text-xs text-destructive">
+                  Erro ao carregar.{" "}
+                  <Button variant="link" size="sm" onClick={() => conv.refetch()}>
+                    Tentar de novo
+                  </Button>
+                </div>
               ) : (conv.data ?? []).length === 0 ? (
-                <p className="py-4 text-xs text-text-tertiary">Este negócio não tem conversas registradas.</p>
+                <p className="py-4 text-xs text-text-tertiary">
+                  Este negócio não tem conversas registradas.
+                </p>
               ) : (
                 <ul className="max-h-60 space-y-1 overflow-y-auto">
                   {(conv.data ?? []).map((a) => (
-                    <li key={a.id} className="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-muted">
-                      <Checkbox id={`rpi-${a.id}`} checked={selected.includes(a.id)} onCheckedChange={(v) => setSelected((s) => (v ? [...s, a.id] : s.filter((x) => x !== a.id)))} />
-                      <Label htmlFor={`rpi-${a.id}`} className="flex-1 truncate text-sm font-normal">{a.subject || "(sem assunto)"}</Label>
-                      <Badge variant="outline" className="text-[10px]">{a.type}</Badge>
-                      <span className="text-[11px] tabular-nums text-text-tertiary">{a.created_at.slice(0, 10)}</span>
+                    <li
+                      key={a.id}
+                      className="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-muted"
+                    >
+                      <Checkbox
+                        id={`rpi-${a.id}`}
+                        checked={selected.includes(a.id)}
+                        onCheckedChange={(v) =>
+                          setSelected((s) => (v ? [...s, a.id] : s.filter((x) => x !== a.id)))
+                        }
+                      />
+                      <Label
+                        htmlFor={`rpi-${a.id}`}
+                        className="flex-1 truncate text-sm font-normal"
+                      >
+                        {a.subject || "(sem assunto)"}
+                      </Label>
+                      <Badge variant="outline" className="text-[10px]">
+                        {a.type}
+                      </Badge>
+                      <span className="text-[11px] tabular-nums text-text-tertiary">
+                        {a.created_at.slice(0, 10)}
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -165,32 +280,68 @@ export function RoleProfileImportDialog({ open, onOpenChange, dealId, onReview }
           <div className="space-y-3" aria-live="polite">
             <div className="rounded-lg border border-border-subtle p-3">
               <p className="text-sm font-semibold text-text-primary">{result.header.title}</p>
-              <p className="text-xs text-text-secondary">Fonte: {result.sourceName}{result.reused ? " · leitura reaproveitada" : ""}</p>
+              <p className="text-xs text-text-secondary">
+                Fonte: {result.sourceName}
+                {result.reused ? " · leitura reaproveitada" : ""}
+              </p>
               <div className="mt-2 flex flex-wrap gap-2 text-xs">
                 {(["found", "doubtful", "missing"] as const).map((s) => (
-                  <Badge key={s} variant="outline">{STATUS_LABEL[s]}: {counts[s] ?? 0}</Badge>
+                  <Badge key={s} variant="outline">
+                    {STATUS_LABEL[s]}: {counts[s] ?? 0}
+                  </Badge>
                 ))}
               </div>
             </div>
             {result.warnings.length ? (
-              <ul className="list-disc space-y-1 pl-5 text-xs text-text-secondary">{result.warnings.map((w) => <li key={w}>{w}</li>)}</ul>
+              <ul className="list-disc space-y-1 pl-5 text-xs text-text-secondary">
+                {result.warnings.map((w) => (
+                  <li key={w}>{w}</li>
+                ))}
+              </ul>
             ) : null}
-            <p className="text-xs text-text-tertiary">Ao continuar, o formulário abre preenchido. O rascunho só é criado quando você salvar.</p>
+            <p className="text-xs text-text-tertiary">
+              Ao continuar, o formulário abre preenchido. O rascunho só é criado quando você salvar.
+            </p>
           </div>
         )}
         <DialogFooter>
           {stage ? (
-            <span role="status" className="mr-auto inline-flex items-center gap-2 text-xs text-text-secondary"><Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />{stage}…</span>
+            <span
+              role="status"
+              className="mr-auto inline-flex items-center gap-2 text-xs text-text-secondary"
+            >
+              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+              {stage}…
+            </span>
           ) : null}
           {stage ? (
-            <Button variant="ghost" onClick={() => abortRef.current?.abort()}>Cancelar</Button>
+            <Button variant="ghost" onClick={() => abortRef.current?.abort()}>
+              Cancelar
+            </Button>
           ) : result ? (
             <>
-              <Button variant="ghost" onClick={() => setResult(null)}>Ler outra fonte</Button>
-              <Button onClick={() => { onReview(result); close(false); }}>Revisar no formulário</Button>
+              <Button variant="ghost" onClick={() => setResult(null)}>
+                Ler outra fonte
+              </Button>
+              <Button
+                onClick={() => {
+                  onReview(result);
+                  close(false);
+                }}
+              >
+                Revisar no formulário
+              </Button>
             </>
           ) : (
-            <Button onClick={start} disabled={(tab === "text" && text.trim().length < 20) || (tab === "url" && url.length < 8) || (tab === "file" && !file) || (tab === "conversation" && !selected.length)}>
+            <Button
+              onClick={start}
+              disabled={
+                (tab === "text" && text.trim().length < 20) ||
+                (tab === "url" && url.length < 8) ||
+                (tab === "file" && !file) ||
+                (tab === "conversation" && !selected.length)
+              }
+            >
               Ler com IA
             </Button>
           )}

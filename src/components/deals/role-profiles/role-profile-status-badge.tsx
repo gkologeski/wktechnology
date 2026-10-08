@@ -10,7 +10,13 @@ const TONE: Record<ProfileStatus, string> = {
   forwarded: "border-success/40 bg-success/10 text-success",
 };
 
-export function RoleProfileStatusBadge({ status, className }: { status: ProfileStatus; className?: string }) {
+export function RoleProfileStatusBadge({
+  status,
+  className,
+}: {
+  status: ProfileStatus;
+  className?: string;
+}) {
   return (
     <Badge variant="outline" className={cn("font-medium", TONE[status], className)}>
       {STATUS_LABEL[status]}

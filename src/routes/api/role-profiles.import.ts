@@ -8,8 +8,21 @@ const dealId = z.string().uuid();
 const BodySchema = z.union([
   z.object({ dealId, kind: z.literal("url"), url: z.string().min(8).max(2000) }).strict(),
   z.object({ dealId, kind: z.literal("text"), text: z.string().min(20).max(120_000) }).strict(),
-  z.object({ dealId, kind: z.literal("conversation"), activityIds: z.array(z.string().uuid()).min(1).max(20) }).strict(),
-  z.object({ dealId, kind: z.literal("file"), filename: z.string().min(1).max(255), base64: z.string().min(20).max(14_500_000) }).strict(),
+  z
+    .object({
+      dealId,
+      kind: z.literal("conversation"),
+      activityIds: z.array(z.string().uuid()).min(1).max(20),
+    })
+    .strict(),
+  z
+    .object({
+      dealId,
+      kind: z.literal("file"),
+      filename: z.string().min(1).max(255),
+      base64: z.string().min(20).max(14_500_000),
+    })
+    .strict(),
 ]);
 
 export const Route = createFileRoute("/api/role-profiles/import")({
@@ -53,10 +66,20 @@ export const Route = createFileRoute("/api/role-profiles/import")({
             };
             const ping = setInterval(() => send({ type: "ping" }), 8000);
             try {
-              const result = await runRoleProfileImport({ supabase, userId, workspaceId }, parsed.data, send, abort.signal);
+              const result = await runRoleProfileImport(
+                { supabase, userId, workspaceId },
+                parsed.data,
+                send,
+                abort.signal,
+              );
               send({ type: "result", result });
             } catch (e) {
-              send({ type: "error", message: abort.signal.aborted ? "Importação cancelada." : (e as Error).message || "Falha na importação" });
+              send({
+                type: "error",
+                message: abort.signal.aborted
+                  ? "Importação cancelada."
+                  : (e as Error).message || "Falha na importação",
+              });
             } finally {
               clearInterval(ping);
               try {
@@ -71,7 +94,10 @@ export const Route = createFileRoute("/api/role-profiles/import")({
           },
         });
         return new Response(stream, {
-          headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-cache, no-transform" },
+          headers: {
+            "Content-Type": "application/x-ndjson; charset=utf-8",
+            "Cache-Control": "no-cache, no-transform",
+          },
         });
       },
     },
