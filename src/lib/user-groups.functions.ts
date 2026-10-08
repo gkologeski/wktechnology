@@ -63,7 +63,7 @@ export const listUserGroups = createServerFn({ method: "GET" })
     if (ids.length) {
       const { data: mem, error: mErr } = await supabase
         .from("user_group_members")
-        .select("group_id, user_id")
+        .select("group_id, user_id, is_leader")
         .in("group_id", ids);
       if (mErr) throw new Error(mErr.message);
       membersByGroup = (mem ?? []).reduce<Record<string, string[]>>((acc, r) => {
@@ -72,7 +72,23 @@ export const listUserGroups = createServerFn({ method: "GET" })
         return acc;
       }, {});
     }
-    return { groups: list.map((g) => ({ ...g, member_ids: membersByGroup[g.id] ?? [] })) };
+    const leadersByGroup: Record<string, string[]> = {};
+    if (ids.length) {
+      const { data: lead } = await supabase
+        .from("user_group_members")
+        .select("group_id, user_id")
+        .in("group_id", ids)
+        .eq("is_leader", true);
+      for (const r of (lead ?? []) as Array<{ group_id: string; user_id: string }>)
+        (leadersByGroup[r.group_id] ??= []).push(r.user_id);
+    }
+    return {
+      groups: list.map((g) => ({
+        ...g,
+        member_ids: membersByGroup[g.id] ?? [],
+        leader_ids: leadersByGroup[g.id] ?? [],
+      })),
+    };
   });
 
 export const createUserGroup = createServerFn({ method: "POST" })
@@ -144,6 +160,7 @@ export const setGroupMembers = createServerFn({ method: "POST" })
       .object({
         group_id: z.string().uuid(),
         user_ids: z.array(z.string().uuid()).max(500),
+        leader_ids: z.array(z.string().uuid()).max(500).optional(),
       })
       .parse(i),
   )
@@ -154,7 +171,12 @@ export const setGroupMembers = createServerFn({ method: "POST" })
       .eq("group_id", data.group_id);
     if (dErr) throw new Error(dErr.message);
     if (data.user_ids.length) {
-      const rows = data.user_ids.map((uid) => ({ group_id: data.group_id, user_id: uid }));
+      const leaders = new Set(data.leader_ids ?? []);
+      const rows = data.user_ids.map((uid) => ({
+        group_id: data.group_id,
+        user_id: uid,
+        is_leader: leaders.has(uid),
+      }));
       const { error: iErr } = await context.supabase
         .from("user_group_members")
         .insert(rows as never);

@@ -53,6 +53,7 @@ type Group = {
   color: string | null;
   description: string | null;
   member_ids: string[];
+  leader_ids?: string[];
 };
 
 function UserGroupsPage() {
@@ -78,16 +79,19 @@ function UserGroupsPage() {
     description: "",
   });
   const [memberDraft, setMemberDraft] = useState<string[]>([]);
+  const [leaderDraft, setLeaderDraft] = useState<string[]>([]);
 
   const openCreate = () => {
     setDraft({ name: "", color: COLORS[0], description: "" });
     setMemberDraft([]);
+    setLeaderDraft([]);
     setCreating(true);
   };
   const openEdit = (g: Group) => {
     setEditing(g);
     setDraft({ name: g.name, color: g.color ?? COLORS[0], description: g.description ?? "" });
     setMemberDraft(g.member_ids);
+    setLeaderDraft(g.leader_ids ?? []);
   };
 
   const saveMutation = useMutation({
@@ -101,7 +105,7 @@ function UserGroupsPage() {
             description: htmlToPlain(draft.description).trim() ? draft.description : null,
           },
         });
-        await membersFn({ data: { group_id: editing.id, user_ids: memberDraft } });
+        await membersFn({ data: { group_id: editing.id, user_ids: memberDraft, leader_ids: leaderDraft.filter((x) => memberDraft.includes(x)) } });
       } else {
         const res = await createFn({
           data: {
@@ -111,7 +115,7 @@ function UserGroupsPage() {
           },
         });
         if (memberDraft.length)
-          await membersFn({ data: { group_id: res.id, user_ids: memberDraft } });
+          await membersFn({ data: { group_id: res.id, user_ids: memberDraft, leader_ids: leaderDraft.filter((x) => memberDraft.includes(x)) } });
       }
     },
     onSuccess: () => {
@@ -290,6 +294,25 @@ function UserGroupsPage() {
                       <div className="text-sm truncate">{m.full_name || "(sem nome)"}</div>
                       <div className="text-xs text-muted-foreground truncate">{m.email}</div>
                     </div>
+                    {memberDraft.includes(m.user_id) ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={leaderDraft.includes(m.user_id) ? "default" : "outline"}
+                        className="h-6 px-2 text-xs"
+                        aria-pressed={leaderDraft.includes(m.user_id)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setLeaderDraft((cur) =>
+                            cur.includes(m.user_id)
+                              ? cur.filter((x) => x !== m.user_id)
+                              : [...cur, m.user_id],
+                          );
+                        }}
+                      >
+                        {leaderDraft.includes(m.user_id) ? "Líder" : "Tornar líder"}
+                      </Button>
+                    ) : null}
                     <Badge variant="outline" className="text-xs">
                       {m.role}
                     </Badge>
