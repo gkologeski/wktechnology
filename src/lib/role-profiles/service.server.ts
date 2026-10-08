@@ -17,10 +17,15 @@ import {
   snapshotOf,
   toAtsJob,
   toTemplatePayload,
-  type CommercialData,
   type ProfileLike,
   type ProfileStatus,
 } from "./schema";
+import {
+  computeEligibility,
+  divergenceFrom,
+  suggestionFromLine,
+  type PrefillLine,
+} from "./eligibility";
 
 type Sb = SupabaseClient<Database>;
 export type Ctx = { supabase: Sb; userId: string; workspaceId: string };
@@ -108,20 +113,64 @@ export function rowToLike(
   };
 }
 
-/** Serviços elegíveis (Outsourcing/Hunting/Alocação) associados ao negócio. */
-export const STAFFING_RE = /outsourc|hunting|aloca[cç][aã]o|squad|headhunt/i;
-async function dealEligibility(ctx: Ctx, dealId: string) {
-  const { data } = await ctx.supabase
+/** Itens de linha do negócio com catálogo, preset e cargo (IDs reais). */
+export async function loadDealLines(ctx: Ctx, dealId: string): Promise<PrefillLine[]> {
+  const { data, error } = await ctx.supabase
     .from("deal_line_items")
-    .select("id, name, service_catalog_id, service_catalog:service_catalog_id(name, active)")
-    .eq("deal_id", dealId);
-  const services = (data ?? [])
-    .map((li) => {
-      const sc = li.service_catalog as unknown as { name?: string } | null;
-      return sc?.name ?? li.name;
-    })
-    .filter((n): n is string => !!n && STAFFING_RE.test(n));
-  return { eligible: services.length > 0, services: [...new Set(services)] };
+    .select(
+      "id, name, quantity, seniority, service_catalog_id, contracting_preset_id, job_profile_id, service_catalog:service_catalog_id(name), preset:contracting_preset_id(name, seniority, job_profile_id), job_profile:job_profile_id(name, seniority)",
+    )
+    .eq("deal_id", dealId)
+    .eq("workspace_id", ctx.workspaceId)
+    .order("position", { ascending: true });
+  if (error) throw friendly(error);
+  const rows = (data ?? []) as unknown as Array<{
+    id: string;
+    name: string | null;
+    quantity: number | null;
+    seniority: string | null;
+    service_catalog_id: string | null;
+    contracting_preset_id: string | null;
+    job_profile_id: string | null;
+    service_catalog: { name: string } | null;
+    preset: { name: string; seniority: string | null; job_profile_id: string | null } | null;
+    job_profile: { name: string; seniority: string | null } | null;
+  }>;
+  // Cargo herdado do preset quando o item não tem cargo próprio.
+  const missingJp = [
+    ...new Set(
+      rows
+        .filter((r) => !r.job_profile_id && r.preset?.job_profile_id)
+        .map((r) => r.preset!.job_profile_id!),
+    ),
+  ];
+  const { data: jps } = missingJp.length
+    ? await ctx.supabase
+        .from("job_profiles")
+        .select("id, name, seniority")
+        .in("id", missingJp)
+        .eq("workspace_id", ctx.workspaceId)
+    : { data: [] as { id: string; name: string; seniority: string | null }[] };
+  const jpMap = new Map((jps ?? []).map((j) => [j.id, j]));
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    quantity: r.quantity,
+    seniority: r.seniority,
+    service_catalog_id: r.service_catalog_id,
+    catalogName: r.service_catalog?.name ?? null,
+    contracting_preset_id: r.contracting_preset_id,
+    job_profile_id: r.job_profile_id,
+    preset: r.preset,
+    jobProfile:
+      r.job_profile ??
+      (r.preset?.job_profile_id ? (jpMap.get(r.preset.job_profile_id) ?? null) : null),
+  }));
+}
+
+/** Elegível só com serviço de catálogo cujo nome contém Hunting ou Outsourcing. */
+export async function dealEligibility(ctx: Ctx, dealId: string) {
+  return computeEligibility(await loadDealLines(ctx, dealId));
 }
 
 async function notifyAssignee(
@@ -141,7 +190,7 @@ async function notifyAssignee(
       type: "role_profile",
       title,
       body,
-      link: `/deals/${p.deal_id}?tab=perfis&profile=${p.id}`,
+      link: `/deals/${p.deal_id}?profile=${p.id}`,
       entity: "deal",
       entity_id: p.deal_id,
       dedupe_key: `role_profile:${p.id}:${title}:${Date.now()}`,
@@ -178,17 +227,17 @@ async function logEvent(
 export async function listForDeal(ctx: Ctx, dealId: string) {
   await assertPermission(ctx.supabase, ctx.userId, ctx.workspaceId, PERM.view);
   const deal = await loadDeal(ctx, dealId);
-  const [{ data: rows, error }, eligibility, perms, { data: templates }] = await Promise.all([
+  const [{ data: rows, error }, lines, perms, { data: templates }] = await Promise.all([
     ctx.supabase
       .from("deal_role_profiles")
       .select(
-        "id, title, quantity, modality, priority, seniority, status, revision, last_version, ats_job_id, ats_synced_version, assigned_to, updated_at, data, contact_id",
+        "id, title, quantity, modality, priority, seniority, status, revision, last_version, ats_job_id, ats_synced_version, assigned_to, updated_at, data, contact_id, source_line_item_id, job_profile_id, contracting_preset_id",
       )
       .eq("deal_id", dealId)
       .eq("workspace_id", ctx.workspaceId)
       .is("archived_at", null)
       .order("created_at", { ascending: true }),
-    dealEligibility(ctx, dealId),
+    loadDealLines(ctx, dealId),
     permFlags(ctx),
     ctx.supabase
       .from("deal_role_profile_templates")
@@ -198,6 +247,12 @@ export async function listForDeal(ctx: Ctx, dealId: string) {
       .order("name"),
   ]);
   if (error) throw friendly(error);
+  const eligibility = computeEligibility(lines);
+  const suggestionsAll = lines
+    .map(suggestionFromLine)
+    .filter((x): x is NonNullable<typeof x> => !!x);
+  const byLine = new Map(suggestionsAll.map((x) => [x.lineItemId, x]));
+  const linked = new Set((rows ?? []).map((r) => r.source_line_item_id).filter(Boolean));
   const assignees = [
     ...new Set((rows ?? []).map((r) => r.assigned_to).filter(Boolean)),
   ] as string[];
@@ -225,6 +280,16 @@ export async function listForDeal(ctx: Ctx, dealId: string) {
       updatedAt: r.updated_at,
       missing: approvalMissing(like),
       workMode: like.data.conditions.work_mode ?? null,
+      sourceLineItemId: r.source_line_item_id,
+      jobProfileId: r.job_profile_id,
+      presetId: r.contracting_preset_id,
+      contactId: r.contact_id,
+      data: like.data,
+      divergence:
+        r.source_line_item_id && byLine.get(r.source_line_item_id)
+          ? divergenceFrom(r, byLine.get(r.source_line_item_id)!)
+          : [],
+      sourceMissing: !!r.source_line_item_id && !byLine.has(r.source_line_item_id),
     };
   });
   return {
@@ -237,6 +302,7 @@ export async function listForDeal(ctx: Ctx, dealId: string) {
     eligibility,
     perms,
     profiles,
+    suggestions: suggestionsAll.filter((x) => !linked.has(x.lineItemId)),
     totals: { profiles: profiles.length, positions: profiles.reduce((a, p) => a + p.quantity, 0) },
     templates: templates ?? [],
   };
@@ -340,9 +406,11 @@ export async function createProfile(
     templateId?: string;
     duplicateOf?: string;
     importId?: string;
+    links?: { sourceLineItemId?: string; jobProfileId?: string; presetId?: string };
   },
 ) {
   await assertPermission(ctx.supabase, ctx.userId, ctx.workspaceId, PERM.create);
+  const links = await validateLinks(ctx, input.dealId, input.links);
   const deal = await loadDeal(ctx, input.dealId);
   const elig = await dealEligibility(ctx, input.dealId);
   if (!elig.eligible)
@@ -403,9 +471,23 @@ export async function createProfile(
       assigned_to: header.assigned_to ?? deal.assigned_to ?? ctx.userId,
       data: data as unknown as Json,
       created_by: ctx.userId,
+      source_line_item_id: links.sourceLineItemId,
+      job_profile_id: links.jobProfileId,
+      contracting_preset_id: links.presetId,
     })
     .select("id")
     .single();
+  if (error?.code === "23505" && links.sourceLineItemId) {
+    // Já existe perfil para este item de linha: idempotente, não duplica.
+    const { data: ex } = await ctx.supabase
+      .from("deal_role_profiles")
+      .select("id")
+      .eq("deal_id", deal.id)
+      .eq("source_line_item_id", links.sourceLineItemId)
+      .is("archived_at", null)
+      .maybeSingle();
+    if (ex) return { id: ex.id, already: true };
+  }
   if (error) throw friendly(error);
   await logEvent(
     ctx,
@@ -436,6 +518,65 @@ export async function createProfile(
   return { id: row.id };
 }
 
+async function validateLinks(
+  ctx: Ctx,
+  dealId: string,
+  links: { sourceLineItemId?: string; jobProfileId?: string; presetId?: string } | undefined,
+) {
+  const out: {
+    sourceLineItemId: string | null;
+    jobProfileId: string | null;
+    presetId: string | null;
+  } = { sourceLineItemId: null, jobProfileId: null, presetId: null };
+  if (!links) return out;
+  if (links.sourceLineItemId) {
+    const { data } = await ctx.supabase
+      .from("deal_line_items")
+      .select("id")
+      .eq("id", links.sourceLineItemId)
+      .eq("deal_id", dealId)
+      .eq("workspace_id", ctx.workspaceId)
+      .maybeSingle();
+    if (!data) throw new Error("Item de linha não pertence a este negócio.");
+    out.sourceLineItemId = data.id;
+  }
+  if (links.jobProfileId) {
+    const { data } = await ctx.supabase
+      .from("job_profiles")
+      .select("id")
+      .eq("id", links.jobProfileId)
+      .eq("workspace_id", ctx.workspaceId)
+      .maybeSingle();
+    if (!data) throw new Error("Cargo não encontrado neste workspace.");
+    out.jobProfileId = data.id;
+  }
+  if (links.presetId) {
+    const { data } = await ctx.supabase
+      .from("contracting_presets")
+      .select("id")
+      .eq("id", links.presetId)
+      .eq("workspace_id", ctx.workspaceId)
+      .maybeSingle();
+    if (!data) throw new Error("Preset não encontrado neste workspace.");
+    out.presetId = data.id;
+  }
+  return out;
+}
+
+/** Atualiza só o vínculo de título (cargo/preset) de um perfil existente. */
+export async function setProfileTitleLink(
+  ctx: Ctx,
+  profileId: string,
+  links: { jobProfileId?: string | null; presetId?: string | null },
+) {
+  const p = await loadProfile(ctx, profileId);
+  const v = await validateLinks(ctx, p.deal_id, {
+    jobProfileId: links.jobProfileId ?? undefined,
+    presetId: links.presetId ?? undefined,
+  });
+  return v;
+}
+
 export async function saveProfile(
   ctx: Ctx,
   input: {
@@ -444,10 +585,14 @@ export async function saveProfile(
     header: unknown;
     data: unknown;
     commercial?: unknown;
+    links?: { jobProfileId?: string | null; presetId?: string | null };
   },
 ) {
   await assertPermission(ctx.supabase, ctx.userId, ctx.workspaceId, PERM.update);
   const cur = await loadProfile(ctx, input.id);
+  if (input.commercial !== undefined)
+    throw new Error("Dados comerciais internos não são mais editados no perfil de vaga.");
+  const titleLinks = input.links ? await setProfileTitleLink(ctx, cur.id, input.links) : null;
   const header = ProfileHeaderZ.parse(input.header);
   const data = ProfileDataZ.parse(input.data);
   if (cur.revision !== input.expectedRevision)
@@ -470,6 +615,9 @@ export async function saveProfile(
       data: data as unknown as Json,
       status: nextStatus,
       revision: cur.revision + 1,
+      ...(titleLinks
+        ? { job_profile_id: titleLinks.jobProfileId, contracting_preset_id: titleLinks.presetId }
+        : {}),
       updated_at: new Date().toISOString(),
     })
     .eq("id", cur.id)
@@ -480,19 +628,6 @@ export async function saveProfile(
   if (!upd)
     throw new Error("Outra pessoa alterou este perfil. Recarregue para ver a versão mais recente.");
 
-  if (input.commercial !== undefined) {
-    if (!(await hasPermission(ctx.supabase, ctx.userId, ctx.workspaceId, PERM.commercial)))
-      throw new Error("Você não tem permissão para editar dados comerciais internos.");
-    const c = CommercialDataZ.parse(input.commercial);
-    const { error: cErr } = await ctx.supabase.from("deal_role_profile_commercial").upsert({
-      profile_id: cur.id,
-      workspace_id: ctx.workspaceId,
-      data: c as unknown as Json,
-      updated_by: ctx.userId,
-      updated_at: new Date().toISOString(),
-    });
-    if (cErr) throw friendly(cErr);
-  }
   if (changes.length) {
     await logEvent(ctx, cur.id, wasApproved ? "edited_after_approval" : "edited", {
       from_status: cur.status,
@@ -521,6 +656,8 @@ export async function setStatus(
   const from = cur.status as ProfileStatus;
   if (!MANUAL_TRANSITIONS[from].includes(input.to))
     throw new Error("Transição de status não permitida.");
+  if (input.to === "in_validation" && from !== "approved")
+    throw new Error('Use "Solicitar validação" para enviar ao líder da equipe.');
   if (input.to === "in_validation" && from === "approved" && cur.ats_job_id)
     throw new Error("Perfil já encaminhado.");
   const { data: upd, error } = await ctx.supabase
@@ -547,20 +684,11 @@ export async function approve(ctx: Ctx, input: { id: string; expectedRevision: n
   const like = rowToLike(cur);
   const missing = approvalMissing(like);
   if (missing.length) throw new Error(`Complete antes de aprovar: ${missing.join(", ")}.`);
-  let commercial: CommercialData | null = null;
-  if (await hasPermission(ctx.supabase, ctx.userId, ctx.workspaceId, PERM.commercial)) {
-    const { data } = await ctx.supabase
-      .from("deal_role_profile_commercial")
-      .select("data")
-      .eq("profile_id", cur.id)
-      .maybeSingle();
-    commercial = data ? (CommercialDataZ.safeParse(data.data).data ?? null) : null;
-  }
   const { data, error } = await ctx.supabase.rpc("role_profile_approve", {
     _profile: cur.id,
     _expected_revision: input.expectedRevision,
     _snapshot: snapshotOf(like) as unknown as Json,
-    _commercial: (commercial ?? null) as unknown as Json,
+    _commercial: null as unknown as Json,
   });
   if (error) throw friendly(error);
   return data as { version_id: string; version: number };
@@ -861,4 +989,95 @@ export async function listDealConversations(ctx: Ctx, dealId: string) {
     .order("created_at", { ascending: false })
     .limit(50);
   return data ?? [];
+}
+
+// ---------------------------------------------------------------------------
+// Edição em lote e pré-preenchimento pelos itens de linha.
+
+export async function listTitleOptions(ctx: Ctx) {
+  await assertPermission(ctx.supabase, ctx.userId, ctx.workspaceId, PERM.view);
+  const [{ data: jps }, { data: presets }] = await Promise.all([
+    ctx.supabase
+      .from("job_profiles")
+      .select("id, name, seniority")
+      .eq("workspace_id", ctx.workspaceId)
+      .eq("active", true)
+      .order("name")
+      .limit(1000),
+    ctx.supabase
+      .from("contracting_presets")
+      .select("id, name, seniority, job_profile_id")
+      .eq("workspace_id", ctx.workspaceId)
+      .eq("active", true)
+      .order("name")
+      .limit(1000),
+  ]);
+  return {
+    jobProfiles: jps ?? [],
+    presets: presets ?? [],
+  };
+}
+
+export async function createFromLines(ctx: Ctx, input: { dealId: string; lineItemIds: string[] }) {
+  await assertPermission(ctx.supabase, ctx.userId, ctx.workspaceId, PERM.create);
+  const lines = await loadDealLines(ctx, input.dealId);
+  const wanted = new Set(input.lineItemIds);
+  const results: { lineItemId: string; id?: string; already?: boolean; error?: string }[] = [];
+  for (const l of lines.filter((x) => wanted.has(x.id))) {
+    const sug = suggestionFromLine(l);
+    if (!sug) {
+      results.push({ lineItemId: l.id, error: "Item sem serviço elegível ou sem cargo/preset." });
+      continue;
+    }
+    try {
+      const r = await createProfile(ctx, {
+        dealId: input.dealId,
+        header: {
+          title: sug.title || "Perfil",
+          quantity: sug.quantity,
+          modality: sug.modality,
+          priority: "medium",
+          seniority: sug.seniority,
+          contact_id: null,
+          assigned_to: null,
+        },
+        links: {
+          sourceLineItemId: l.id,
+          jobProfileId: sug.jobProfileId ?? undefined,
+          presetId: sug.presetId ?? undefined,
+        },
+      });
+      results.push({ lineItemId: l.id, id: r.id, already: "already" in r ? !!r.already : false });
+    } catch (e) {
+      results.push({ lineItemId: l.id, error: (e as Error).message });
+    }
+  }
+  return results;
+}
+
+/** Salva vários perfis; erro de um não impede os outros. */
+export async function saveMany(
+  ctx: Ctx,
+  items: {
+    id: string;
+    expectedRevision: number;
+    header: unknown;
+    data: unknown;
+    links?: { jobProfileId?: string | null; presetId?: string | null };
+  }[],
+) {
+  const out: { id: string; revision?: number; status?: string; error?: string }[] = [];
+  for (const it of items) {
+    try {
+      const r = await saveProfile(ctx, it);
+      out.push({ id: it.id, revision: r.revision, status: r.status });
+    } catch (e) {
+      const err = e as Error & { issues?: { path: (string | number)[]; message: string }[] };
+      const msg = err.issues?.length
+        ? err.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")
+        : err.message;
+      out.push({ id: it.id, error: msg });
+    }
+  }
+  return out;
 }

@@ -7345,17 +7345,20 @@ export type Database = {
           ats_synced_version: number | null
           company_id: string | null
           contact_id: string | null
+          contracting_preset_id: string | null
           created_at: string
           created_by: string
           data: Json
           deal_id: string
           id: string
+          job_profile_id: string | null
           last_version: number
           modality: string
           priority: string
           quantity: number
           revision: number
           seniority: string | null
+          source_line_item_id: string | null
           status: string
           title: string
           updated_at: string
@@ -7369,17 +7372,20 @@ export type Database = {
           ats_synced_version?: number | null
           company_id?: string | null
           contact_id?: string | null
+          contracting_preset_id?: string | null
           created_at?: string
           created_by: string
           data?: Json
           deal_id: string
           id?: string
+          job_profile_id?: string | null
           last_version?: number
           modality?: string
           priority?: string
           quantity?: number
           revision?: number
           seniority?: string | null
+          source_line_item_id?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -7393,17 +7399,20 @@ export type Database = {
           ats_synced_version?: number | null
           company_id?: string | null
           contact_id?: string | null
+          contracting_preset_id?: string | null
           created_at?: string
           created_by?: string
           data?: Json
           deal_id?: string
           id?: string
+          job_profile_id?: string | null
           last_version?: number
           modality?: string
           priority?: string
           quantity?: number
           revision?: number
           seniority?: string | null
+          source_line_item_id?: string | null
           status?: string
           title?: string
           updated_at?: string
@@ -16649,6 +16658,155 @@ export type Database = {
           },
         ]
       }
+      role_profile_approval_deliveries: {
+        Row: {
+          attempts: number
+          channel: string
+          created_at: string
+          id: string
+          last_error: string | null
+          next_attempt_at: string
+          recipient_id: string
+          request_id: string
+          sent_at: string | null
+          status: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          attempts?: number
+          channel: string
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          next_attempt_at?: string
+          recipient_id: string
+          request_id: string
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          attempts?: number
+          channel?: string
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          next_attempt_at?: string
+          recipient_id?: string
+          request_id?: string
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_profile_approval_deliveries_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "role_profile_approval_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_profile_approval_items: {
+        Row: {
+          comment: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          profile_id: string
+          profile_revision: number
+          request_id: string
+          status: string
+          version: number | null
+          workspace_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          profile_id: string
+          profile_revision: number
+          request_id: string
+          status?: string
+          version?: number | null
+          workspace_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          profile_id?: string
+          profile_revision?: number
+          request_id?: string
+          status?: string
+          version?: number | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_profile_approval_items_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "deal_role_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "role_profile_approval_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "role_profile_approval_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_profile_approval_requests: {
+        Row: {
+          approver_id: string
+          created_at: string
+          deal_id: string
+          decided_at: string | null
+          id: string
+          idempotency_key: string
+          requested_by: string
+          status: string
+          team_ids: string[]
+          workspace_id: string
+        }
+        Insert: {
+          approver_id: string
+          created_at?: string
+          deal_id: string
+          decided_at?: string | null
+          id?: string
+          idempotency_key: string
+          requested_by: string
+          status?: string
+          team_ids?: string[]
+          workspace_id: string
+        }
+        Update: {
+          approver_id?: string
+          created_at?: string
+          deal_id?: string
+          decided_at?: string | null
+          id?: string
+          idempotency_key?: string
+          requested_by?: string
+          status?: string
+          team_ids?: string[]
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       rotation_rules: {
         Row: {
           assignees: Json
@@ -19800,16 +19958,19 @@ export type Database = {
         Row: {
           created_at: string
           group_id: string
+          is_leader: boolean
           user_id: string
         }
         Insert: {
           created_at?: string
           group_id: string
+          is_leader?: boolean
           user_id: string
         }
         Update: {
           created_at?: string
           group_id?: string
+          is_leader?: boolean
           user_id?: string
         }
         Relationships: [
@@ -22356,6 +22517,10 @@ export type Database = {
         }
         Returns: Json
       }
+      role_profile_leader_decide: {
+        Args: { _comment: string; _decision: string; _item: string }
+        Returns: Json
+      }
       role_profile_link_consume: {
         Args: { _hash: string; _write: boolean }
         Returns: {
@@ -22368,6 +22533,11 @@ export type Database = {
           workspace_id: string
         }[]
       }
+      role_profile_request_validation: {
+        Args: { _deal: string; _expected: Json; _key: string }
+        Returns: Json
+      }
+      role_profile_resolve_leader: { Args: { _deal: string }; Returns: Json }
       role_profile_sync_ats: {
         Args: { _job: Json; _profile: string }
         Returns: Json

@@ -143,7 +143,7 @@ export async function publicSubmit(
         ? "Cliente validou o perfil de vaga"
         : "Cliente sugeriu alterações no perfil de vaga",
       body: `${p.title}: revise a proposta antes de aplicar.`,
-      link: `/deals/${p.deal_id}?tab=perfis&profile=${p.id}`,
+      link: `/deals/${p.deal_id}?profile=${p.id}`,
       entity: "deal",
       entity_id: p.deal_id,
     } as never);
