@@ -52,7 +52,8 @@ export function normalizeSeniority(raw: string | null | undefined): ProfileHeade
   if (n.startsWith("ple") || n === "pl") return "pleno";
   if (n.startsWith("sen") || n === "sr") return "senior";
   if (n.startsWith("espec")) return "especialista";
-  if (n.startsWith("lider") || n.startsWith("lead") || n.startsWith("tech lead")) return "lideranca";
+  if (n.startsWith("lider") || n.startsWith("lead") || n.startsWith("tech lead"))
+    return "lideranca";
   return (SENIORITIES as readonly string[]).includes(n) ? (n as ProfileHeader["seniority"]) : null;
 }
 

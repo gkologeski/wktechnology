@@ -16,9 +16,17 @@ const filled = (v: unknown): boolean =>
   v !== null &&
   !(typeof v === "string" && v.trim() === "") &&
   !(Array.isArray(v) && v.length === 0) &&
-  !(typeof v === "object" && !Array.isArray(v) && Object.values(v as object).every((x) => !filled(x)));
+  !(
+    typeof v === "object" &&
+    !Array.isArray(v) &&
+    Object.values(v as object).every((x) => !filled(x))
+  );
 
-type Pick = { label: string; get: (d: ProfileData) => unknown; set: (d: ProfileData, v: unknown) => ProfileData };
+type Pick = {
+  label: string;
+  get: (d: ProfileData) => unknown;
+  set: (d: ProfileData, v: unknown) => ProfileData;
+};
 
 const FIELDS: Record<CommonGroup, Pick[]> = {
   conditions: [
@@ -32,17 +40,26 @@ const FIELDS: Record<CommonGroup, Pick[]> = {
     {
       label: "Escolaridade",
       get: (d) => d.requirements.education,
-      set: (d, v) => ({ ...d, requirements: { ...d.requirements, education: structuredClone(v) as never } }),
+      set: (d, v) => ({
+        ...d,
+        requirements: { ...d.requirements, education: structuredClone(v) as never },
+      }),
     },
     {
       label: "Idiomas",
       get: (d) => d.requirements.languages,
-      set: (d, v) => ({ ...d, requirements: { ...d.requirements, languages: structuredClone(v) as never } }),
+      set: (d, v) => ({
+        ...d,
+        requirements: { ...d.requirements, languages: structuredClone(v) as never },
+      }),
     },
     {
       label: "Competências comportamentais",
       get: (d) => d.requirements.soft_skills,
-      set: (d, v) => ({ ...d, requirements: { ...d.requirements, soft_skills: structuredClone(v) as never } }),
+      set: (d, v) => ({
+        ...d,
+        requirements: { ...d.requirements, soft_skills: structuredClone(v) as never },
+      }),
     },
   ],
   methodologies: [
@@ -67,7 +84,13 @@ const FIELDS: Record<CommonGroup, Pick[]> = {
       label: "Hunting",
       // Honorários antigos (fee_*) nunca são copiados.
       get: (d) => {
-        const { fee_type: _a, fee_value: _b, fee_terms: _c, guarantee_days: _g, ...rest } = d.hunting;
+        const {
+          fee_type: _a,
+          fee_value: _b,
+          fee_terms: _c,
+          guarantee_days: _g,
+          ...rest
+        } = d.hunting;
         return rest;
       },
       set: (d, v) => ({ ...d, hunting: { ...d.hunting, ...(structuredClone(v) as object) } }),
@@ -82,14 +105,22 @@ const FIELDS: Record<CommonGroup, Pick[]> = {
   ],
 };
 
-export function applyCommon(src: ProfileData, target: ProfileData, groups: CommonGroup[]): ProfileData {
+export function applyCommon(
+  src: ProfileData,
+  target: ProfileData,
+  groups: CommonGroup[],
+): ProfileData {
   let out = target;
   for (const g of groups) for (const f of FIELDS[g]) out = f.set(out, f.get(src));
   return out;
 }
 
 /** Rótulos dos campos do alvo que já têm valor diferente e seriam sobrescritos. */
-export function overwrittenBy(src: ProfileData, target: ProfileData, groups: CommonGroup[]): string[] {
+export function overwrittenBy(
+  src: ProfileData,
+  target: ProfileData,
+  groups: CommonGroup[],
+): string[] {
   const out: string[] = [];
   for (const g of groups)
     for (const f of FIELDS[g]) {

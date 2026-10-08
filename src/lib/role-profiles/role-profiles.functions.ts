@@ -236,7 +236,10 @@ export const listRoleProfileTitleOptions = createServerFn({ method: "POST" })
 export const createRoleProfilesFromLines = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ dealId: id, lineItemIds: z.array(id).min(1).max(50) }).strict().parse(d),
+    z
+      .object({ dealId: id, lineItemIds: z.array(id).min(1).max(50) })
+      .strict()
+      .parse(d),
   )
   .handler(async ({ context, data }) => {
     const s = await import("./service.server");

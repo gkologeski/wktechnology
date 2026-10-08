@@ -145,7 +145,9 @@ export function RoleProfileTitlePicker({
           ) : (
             <OptionList
               options={q.data ?? []}
-              isSelected={(o) => (o.kind === "preset" ? o.id === presetId : !presetId && o.id === jobProfileId)}
+              isSelected={(o) =>
+                o.kind === "preset" ? o.id === presetId : !presetId && o.id === jobProfileId
+              }
               onPick={(o) => {
                 onPick(o);
                 setOpen(false);

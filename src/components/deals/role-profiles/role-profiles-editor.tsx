@@ -3,16 +3,7 @@
 // duplicar, aplicar campos comuns, salvar em lote e solicitar validação.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import {
-  AlertTriangle,
-  ChevronDown,
-  Copy,
-  Loader2,
-  Save,
-  Send,
-  Trash2,
-  Users,
-} from "lucide-react";
+import { AlertTriangle, ChevronDown, Copy, Loader2, Save, Send, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -55,10 +46,21 @@ import {
 import { normalizeSeniority } from "@/lib/role-profiles/eligibility";
 import { ProfileSection, defaultHeader, type FieldStatus } from "./profile-fields";
 import { RoleProfileStatusBadge } from "./role-profile-status-badge";
-import { AddTitlesPicker, RoleProfileTitlePicker, type TitleOption } from "./role-profile-title-picker";
+import {
+  AddTitlesPicker,
+  RoleProfileTitlePicker,
+  type TitleOption,
+} from "./role-profile-title-picker";
 import { COMMON_GROUPS, applyCommon, overwrittenBy, type CommonGroup } from "./apply-common";
 
-const SECTIONS: SectionKey[] = ["need", "role", "requirements", "conditions", "commercial", "selection"];
+const SECTIONS: SectionKey[] = [
+  "need",
+  "role",
+  "requirements",
+  "conditions",
+  "commercial",
+  "selection",
+];
 const EDITABLE = new Set(["draft", "awaiting_info", "in_validation", "approved", "forwarded"]);
 
 export type EditorRow = {
@@ -131,11 +133,14 @@ export function RoleProfilesEditor({
   const [validateOpen, setValidateOpen] = useState(false);
 
   useEffect(() => {
-    if (focusKey) document.getElementById(`rp-card-${focusKey}`)?.scrollIntoView({ block: "start" });
+    if (focusKey)
+      document.getElementById(`rp-card-${focusKey}`)?.scrollIntoView({ block: "start" });
   }, [focusKey]);
 
   const update = (key: string, fn: (r: EditorRow) => EditorRow) =>
-    setRows((xs) => xs.map((r) => (r.key === key ? { ...fn(r), dirty: true, error: undefined } : r)));
+    setRows((xs) =>
+      xs.map((r) => (r.key === key ? { ...fn(r), dirty: true, error: undefined } : r)),
+    );
   const toggleSel = (key: string) =>
     setSelected((s) => {
       const n = new Set(s);
@@ -152,7 +157,10 @@ export function RoleProfilesEditor({
     });
 
   const totals = useMemo(
-    () => ({ profiles: rows.length, positions: rows.reduce((a, r) => a + (r.header.quantity || 0), 0) }),
+    () => ({
+      profiles: rows.length,
+      positions: rows.reduce((a, r) => a + (r.header.quantity || 0), 0),
+    }),
     [rows],
   );
   const dirtyCount = rows.filter((r) => r.dirty).length;
@@ -193,7 +201,14 @@ export function RoleProfilesEditor({
               },
             },
           });
-          next.set(r.key, { ...r, id: res.id, revision: 1, dirty: false, error: undefined, importId: undefined });
+          next.set(r.key, {
+            ...r,
+            id: res.id,
+            revision: 1,
+            dirty: false,
+            error: undefined,
+            importId: undefined,
+          });
         } catch (e) {
           next.set(r.key, { ...r, error: (e as Error).message });
         }
@@ -217,7 +232,13 @@ export function RoleProfilesEditor({
             r.key,
             out.error
               ? { ...r, error: out.error }
-              : { ...r, revision: out.revision!, status: out.status ?? r.status, dirty: false, error: undefined },
+              : {
+                  ...r,
+                  revision: out.revision!,
+                  status: out.status ?? r.status,
+                  dirty: false,
+                  error: undefined,
+                },
           );
         }
       }
@@ -249,7 +270,9 @@ export function RoleProfilesEditor({
               <Checkbox
                 id="rp-sel-all"
                 checked={rows.length > 0 && selected.size === rows.length}
-                onCheckedChange={(v) => setSelected(v ? new Set(rows.map((r) => r.key)) : new Set())}
+                onCheckedChange={(v) =>
+                  setSelected(v ? new Set(rows.map((r) => r.key)) : new Set())
+                }
               />
               <Label htmlFor="rp-sel-all" className="text-xs text-text-secondary">
                 Todos
@@ -376,7 +399,10 @@ export function RoleProfilesEditor({
                     </Button>
                   ) : null}
                   <ChevronDown
-                    className={cn("mt-1 h-4 w-4 text-text-tertiary transition-transform", isOpen && "rotate-180")}
+                    className={cn(
+                      "mt-1 h-4 w-4 text-text-tertiary transition-transform",
+                      isOpen && "rotate-180",
+                    )}
                     aria-hidden
                   />
                 </div>
@@ -484,7 +510,9 @@ export function RoleProfilesEditor({
             onDone={(ids) => {
               setRows((xs) =>
                 xs.map((r) =>
-                  r.id && ids.includes(r.id) ? { ...r, status: "in_validation", revision: r.revision + 1 } : r,
+                  r.id && ids.includes(r.id)
+                    ? { ...r, status: "in_validation", revision: r.revision + 1 }
+                    : r,
                 ),
               );
               setSelected(new Set());
@@ -565,7 +593,10 @@ function ApplyCommonDialog({
             ))}
           </div>
           {affected.length ? (
-            <div role="alert" className="rounded-md border border-warning/30 bg-warning/5 p-3 text-xs">
+            <div
+              role="alert"
+              className="rounded-md border border-warning/30 bg-warning/5 p-3 text-xs"
+            >
               <p className="flex items-center gap-1 font-medium text-text-primary">
                 <AlertTriangle className="h-3.5 w-3.5 text-warning" aria-hidden /> Vai sobrescrever
                 valores já preenchidos:
@@ -609,7 +640,11 @@ function ValidateDialog({
   send: (
     expected: Record<string, number>,
     key: string,
-  ) => Promise<{ requestId: string; already: boolean; deliveries: { status: string; error?: string }[] }>;
+  ) => Promise<{
+    requestId: string;
+    already: boolean;
+    deliveries: { status: string; error?: string }[];
+  }>;
   onClose: () => void;
   onDone: (ids: string[]) => void;
 }) {
@@ -620,7 +655,9 @@ function ValidateDialog({
   useEffect(() => {
     resolve(dealId).then(setInfo, (e: Error) => setErr(e.message));
   }, [dealId, resolve]);
-  const blocked = rows.filter((r) => !["draft", "awaiting_info", "in_validation"].includes(r.status));
+  const blocked = rows.filter(
+    (r) => !["draft", "awaiting_info", "in_validation"].includes(r.status),
+  );
   const ok = info?.status === "ok" && !blocked.length && rows.length > 0;
   return (
     <Dialog open onOpenChange={(o) => !o && !busy && onClose()}>
@@ -628,8 +665,8 @@ function ValidateDialog({
         <DialogHeader>
           <DialogTitle>Solicitar validação</DialogTitle>
           <DialogDescription>
-            Uma única solicitação agrupada é enviada ao líder da equipe do responsável pelo
-            negócio, com decisão por perfil.
+            Uma única solicitação agrupada é enviada ao líder da equipe do responsável pelo negócio,
+            com decisão por perfil.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 text-sm">

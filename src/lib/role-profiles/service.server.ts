@@ -20,7 +20,12 @@ import {
   type ProfileLike,
   type ProfileStatus,
 } from "./schema";
-import { computeEligibility, divergenceFrom, suggestionFromLine, type PrefillLine } from "./eligibility";
+import {
+  computeEligibility,
+  divergenceFrom,
+  suggestionFromLine,
+  type PrefillLine,
+} from "./eligibility";
 
 type Sb = SupabaseClient<Database>;
 export type Ctx = { supabase: Sb; userId: string; workspaceId: string };
@@ -518,8 +523,11 @@ async function validateLinks(
   dealId: string,
   links: { sourceLineItemId?: string; jobProfileId?: string; presetId?: string } | undefined,
 ) {
-  const out: { sourceLineItemId: string | null; jobProfileId: string | null; presetId: string | null } =
-    { sourceLineItemId: null, jobProfileId: null, presetId: null };
+  const out: {
+    sourceLineItemId: string | null;
+    jobProfileId: string | null;
+    presetId: string | null;
+  } = { sourceLineItemId: null, jobProfileId: null, presetId: null };
   if (!links) return out;
   if (links.sourceLineItemId) {
     const { data } = await ctx.supabase
@@ -649,7 +657,7 @@ export async function setStatus(
   if (!MANUAL_TRANSITIONS[from].includes(input.to))
     throw new Error("Transição de status não permitida.");
   if (input.to === "in_validation" && from !== "approved")
-    throw new Error("Use \"Solicitar validação\" para enviar ao líder da equipe.");
+    throw new Error('Use "Solicitar validação" para enviar ao líder da equipe.');
   if (input.to === "in_validation" && from === "approved" && cur.ats_job_id)
     throw new Error("Perfil já encaminhado.");
   const { data: upd, error } = await ctx.supabase

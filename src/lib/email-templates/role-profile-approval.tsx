@@ -66,8 +66,8 @@ const RoleProfileApprovalEmail = ({
         <Container style={container}>
           <Heading style={heading}>Perfis de vaga aguardando sua aprovação</Heading>
           <Text style={text}>
-            {approverName ? `Olá, ${approverName}.` : "Olá."}{" "}
-            {requesterName ?? "Um colega"} pediu sua validação como líder da equipe
+            {approverName ? `Olá, ${approverName}.` : "Olá."} {requesterName ?? "Um colega"} pediu
+            sua validação como líder da equipe
             {dealName ? ` no negócio ${dealName}` : ""}.
           </Text>
           <Section style={box}>

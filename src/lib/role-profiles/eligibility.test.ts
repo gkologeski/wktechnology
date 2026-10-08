@@ -32,8 +32,12 @@ describe("elegibilidade", () => {
     expect(staffingKindOf("Consultoria")).toBeNull();
   });
   it("usa só associação ao catálogo, não texto do item", () => {
-    expect(computeEligibility([{ service_catalog_id: null, catalogName: "Hunting" }]).eligible).toBe(false);
-    expect(computeEligibility([{ service_catalog_id: "x", catalogName: "Hunting" }]).eligible).toBe(true);
+    expect(
+      computeEligibility([{ service_catalog_id: null, catalogName: "Hunting" }]).eligible,
+    ).toBe(false);
+    expect(computeEligibility([{ service_catalog_id: "x", catalogName: "Hunting" }]).eligible).toBe(
+      true,
+    );
   });
   it("modalidade padrão conforme serviços", () => {
     expect(modalityFor(["hunting", "outsourcing"])).toBe("both");
@@ -45,26 +49,37 @@ describe("pré-preenchimento pelos itens de linha", () => {
   it("2 Delphi Sênior + 3 React Pleno = 2 perfis e 5 posições", () => {
     const s = [
       line(),
-      line({ id: "l2", quantity: 3, jobProfile: { name: "Desenvolvedor React", seniority: "Pleno" } }),
+      line({
+        id: "l2",
+        quantity: 3,
+        jobProfile: { name: "Desenvolvedor React", seniority: "Pleno" },
+      }),
     ].map(suggestionFromLine);
     expect(s).toHaveLength(2);
     expect(s.reduce((a, x) => a + x!.quantity, 0)).toBe(5);
   });
   it("valor explícito do item vence o padrão do preset/cargo", () => {
     const s = suggestionFromLine(
-      line({ seniority: "Pleno", preset: { name: "P", seniority: "Sênior", job_profile_id: "jp1" } }),
+      line({
+        seniority: "Pleno",
+        preset: { name: "P", seniority: "Sênior", job_profile_id: "jp1" },
+      }),
     )!;
     expect(s.seniority).toBe("pleno");
     expect(s.origin.seniority).toBe("Item de linha");
   });
   it("aponta lacunas e ignora itens sem cargo/preset ou fora de Hunting/Outsourcing", () => {
-    expect(suggestionFromLine(line({ jobProfile: { name: "X", seniority: null } }))!.gaps).toContain("Senioridade");
+    expect(
+      suggestionFromLine(line({ jobProfile: { name: "X", seniority: null } }))!.gaps,
+    ).toContain("Senioridade");
     expect(suggestionFromLine(line({ job_profile_id: null, jobProfile: null }))).toBeNull();
     expect(suggestionFromLine(line({ catalogName: "Licença" }))).toBeNull();
   });
   it("divergência é só informada", () => {
     const s = suggestionFromLine(line())!;
-    expect(divergenceFrom({ title: "Outro", quantity: 2, seniority: "senior" }, s)).toEqual(["Título"]);
+    expect(divergenceFrom({ title: "Outro", quantity: 2, seniority: "senior" }, s)).toEqual([
+      "Título",
+    ]);
   });
 });
 
@@ -93,7 +108,10 @@ describe("despacho de avisos", () => {
   });
   it("não reenvia o que já foi enviado", async () => {
     const d = deps();
-    await dispatchDeliveries([base({ status: "sent" }), base({ id: "n", channel: "notification", status: "sent" })], d);
+    await dispatchDeliveries(
+      [base({ status: "sent" }), base({ id: "n", channel: "notification", status: "sent" })],
+      d,
+    );
     expect(d.sendEmail).not.toHaveBeenCalled();
     expect(d.sendNotification).not.toHaveBeenCalled();
   });
@@ -102,7 +120,10 @@ describe("despacho de avisos", () => {
     d.sendEmail.mockRejectedValueOnce(new Error("provedor fora"));
     const r = await dispatchDeliveries([base({})], d);
     expect(r[0]).toMatchObject({ status: "failed", error: "provedor fora" });
-    expect(d.finish).toHaveBeenCalledWith(expect.anything(), { status: "failed", error: "provedor fora" });
+    expect(d.finish).toHaveBeenCalledWith(expect.anything(), {
+      status: "failed",
+      error: "provedor fora",
+    });
     const r2 = await dispatchDeliveries([base({ status: "failed", attempts: 1 })], d);
     expect(r2[0]!.status).toBe("sent");
   });

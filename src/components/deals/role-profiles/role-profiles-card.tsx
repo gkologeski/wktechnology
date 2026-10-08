@@ -100,7 +100,10 @@ export function RoleProfilesCard({
   const decide = useServerFn(decideRoleProfileApproval);
   const retry = useServerFn(retryRoleProfileApprovalDelivery);
 
-  const q = useQuery({ queryKey: roleProfilesKey(dealId), queryFn: () => list({ data: { dealId } }) });
+  const q = useQuery({
+    queryKey: roleProfilesKey(dealId),
+    queryFn: () => list({ data: { dealId } }),
+  });
   const appr = useQuery({
     queryKey: approvalsKey(dealId),
     queryFn: () => listAppr({ data: { dealId } }),
@@ -137,10 +140,14 @@ export function RoleProfilesCard({
 
   const data = q.data;
   const suggestions = data?.suggestions ?? [];
-  useEffect(() => setPickedLines(new Set(suggestions.map((s) => s.lineItemId))), [suggestions.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(
+    () => setPickedLines(new Set(suggestions.map((s) => s.lineItemId))),
+    [suggestions.length],
+  ); // eslint-disable-line react-hooks/exhaustive-deps
 
   const pendingForMe = useMemo(
-    () => (appr.data ?? []).filter((r) => r.isApprover && r.items.some((i) => i.status === "pending")),
+    () =>
+      (appr.data ?? []).filter((r) => r.isApprover && r.items.some((i) => i.status === "pending")),
     [appr.data],
   );
 
@@ -191,7 +198,8 @@ export function RoleProfilesCard({
         <CardTitle className="text-base">
           Vagas e perfis{" "}
           <span className="text-sm font-normal text-text-secondary">
-            ({totals.profiles} · {totals.positions} {totals.positions === 1 ? "posição" : "posições"})
+            ({totals.profiles} · {totals.positions}{" "}
+            {totals.positions === 1 ? "posição" : "posições"})
           </span>
         </CardTitle>
         {perms.create || perms.update ? (
@@ -214,13 +222,17 @@ export function RoleProfilesCard({
               ) : null}
               {canCreate && templates.length ? (
                 <>
-                  <DropdownMenuLabel className="text-xs text-text-tertiary">Modelos</DropdownMenuLabel>
+                  <DropdownMenuLabel className="text-xs text-text-tertiary">
+                    Modelos
+                  </DropdownMenuLabel>
                   {templates.map((t) => (
                     <DropdownMenuItem
                       key={t.id}
                       onSelect={async () => {
                         try {
-                          await create({ data: { dealId, header: defaultHeader(), templateId: t.id } });
+                          await create({
+                            data: { dealId, header: defaultHeader(), templateId: t.id },
+                          });
                           toast.success("Rascunho criado a partir do modelo");
                           reload();
                         } catch (e) {
@@ -240,7 +252,10 @@ export function RoleProfilesCard({
       </CardHeader>
       <CardContent className="space-y-4">
         {!eligibility.eligible ? (
-          <p role="status" className="rounded-md border border-warning/30 bg-warning/5 p-2 text-xs text-text-secondary">
+          <p
+            role="status"
+            className="rounded-md border border-warning/30 bg-warning/5 p-2 text-xs text-text-secondary"
+          >
             Nenhum serviço de Hunting ou Outsourcing está associado agora. Perfis existentes ficam
             disponíveis para consulta; novas criações e validações estão bloqueadas.
           </p>
@@ -262,7 +277,10 @@ export function RoleProfilesCard({
                   .map((i) => {
                     const p = profiles.find((x) => x.id === i.profile_id);
                     return (
-                      <div key={i.id} className="space-y-1.5 rounded border border-border-subtle p-2">
+                      <div
+                        key={i.id}
+                        className="space-y-1.5 rounded border border-border-subtle p-2"
+                      >
                         <button
                           type="button"
                           className="text-left text-sm font-medium text-primary hover:underline"
@@ -284,7 +302,13 @@ export function RoleProfilesCard({
                             onClick={async () => {
                               setBusy(i.id);
                               try {
-                                await decide({ data: { itemId: i.id, decision: "approve", comment: comments[i.id] } });
+                                await decide({
+                                  data: {
+                                    itemId: i.id,
+                                    decision: "approve",
+                                    comment: comments[i.id],
+                                  },
+                                });
                                 toast.success("Perfil aprovado");
                                 reload();
                               } catch (e) {
@@ -310,7 +334,11 @@ export function RoleProfilesCard({
                               setBusy(i.id);
                               try {
                                 await decide({
-                                  data: { itemId: i.id, decision: "request_changes", comment: comments[i.id] },
+                                  data: {
+                                    itemId: i.id,
+                                    decision: "request_changes",
+                                    comment: comments[i.id],
+                                  },
                                 });
                                 toast.success("Ajustes solicitados");
                                 reload();
@@ -358,7 +386,9 @@ export function RoleProfilesCard({
                     <span className="tabular-nums text-text-secondary">· {s.quantity}</span>
                     <span className="block text-[11px] text-text-tertiary">
                       Título: {s.origin.title} · Qtd.: {s.origin.quantity} · Senioridade:{" "}
-                      {s.seniority ? `${SENIORITY_LABEL[s.seniority]} (${s.origin.seniority})` : "falta"}
+                      {s.seniority
+                        ? `${SENIORITY_LABEL[s.seniority]} (${s.origin.seniority})`
+                        : "falta"}
                       {s.gaps.length ? ` · lacunas: ${s.gaps.join(", ")}` : ""}
                     </span>
                   </label>
@@ -406,7 +436,9 @@ export function RoleProfilesCard({
                   className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="min-w-0 truncate text-sm font-medium text-text-primary">{p.title}</span>
+                    <span className="min-w-0 truncate text-sm font-medium text-text-primary">
+                      {p.title}
+                    </span>
                     <Badge variant="outline" className="h-5 tabular-nums">
                       <Users className="mr-1 h-3 w-3" aria-hidden />
                       {p.quantity}
@@ -415,18 +447,24 @@ export function RoleProfilesCard({
                   </div>
                   <p className="mt-0.5 text-[11px] text-text-tertiary">
                     {p.seniority
-                      ? (SENIORITY_LABEL[p.seniority as keyof typeof SENIORITY_LABEL] ?? p.seniority)
+                      ? (SENIORITY_LABEL[p.seniority as keyof typeof SENIORITY_LABEL] ??
+                        p.seniority)
                       : "Senioridade não informada"}
                     {p.lastVersion ? ` · v${p.lastVersion}` : ""}
-                    {p.missing.length && p.status !== "forwarded" ? ` · faltam ${p.missing.length} campo(s)` : ""}
+                    {p.missing.length && p.status !== "forwarded"
+                      ? ` · faltam ${p.missing.length} campo(s)`
+                      : ""}
                   </p>
                   {p.divergence.length ? (
                     <p className="mt-0.5 text-[11px] text-warning">
-                      Difere do item de linha: {p.divergence.join(", ")} (não alterado automaticamente)
+                      Difere do item de linha: {p.divergence.join(", ")} (não alterado
+                      automaticamente)
                     </p>
                   ) : null}
                   {p.sourceMissing ? (
-                    <p className="mt-0.5 text-[11px] text-text-tertiary">Item de linha de origem removido</p>
+                    <p className="mt-0.5 text-[11px] text-text-tertiary">
+                      Item de linha de origem removido
+                    </p>
                   ) : null}
                 </button>
                 {p.atsJobId ? (
@@ -445,16 +483,26 @@ export function RoleProfilesCard({
         )}
 
         {(appr.data ?? []).slice(0, 3).map((r) => {
-          const failed = r.deliveries.filter((d) => d.status === "failed" || d.status === "pending");
+          const failed = r.deliveries.filter(
+            (d) => d.status === "failed" || d.status === "pending",
+          );
           return (
-            <div key={r.id} className="rounded-md border border-border-subtle p-2 text-[11px] text-text-secondary">
+            <div
+              key={r.id}
+              className="rounded-md border border-border-subtle p-2 text-[11px] text-text-secondary"
+            >
               <p>
-                Validação para <span className="font-medium text-text-primary">{r.approverName}</span> ·{" "}
-                {r.items.filter((i) => i.status === "pending").length} pendente(s) de {r.items.length}
+                Validação para{" "}
+                <span className="font-medium text-text-primary">{r.approverName}</span> ·{" "}
+                {r.items.filter((i) => i.status === "pending").length} pendente(s) de{" "}
+                {r.items.length}
               </p>
               <p>
                 {r.deliveries
-                  .map((d) => `${d.channel === "email" ? "E-mail" : "Notificação"}: ${DELIVERY_LABEL[d.status] ?? d.status}`)
+                  .map(
+                    (d) =>
+                      `${d.channel === "email" ? "E-mail" : "Notificação"}: ${DELIVERY_LABEL[d.status] ?? d.status}`,
+                  )
                   .join(" · ")}
               </p>
               {r.deliveries
@@ -500,7 +548,8 @@ export function RoleProfilesCard({
         ) : null}
         {appr.isError ? (
           <p className="flex items-center gap-1 text-[11px] text-destructive">
-            <AlertTriangle className="h-3 w-3" aria-hidden /> Não foi possível carregar as aprovações.
+            <AlertTriangle className="h-3 w-3" aria-hidden /> Não foi possível carregar as
+            aprovações.
           </p>
         ) : null}
       </CardContent>

@@ -105,7 +105,13 @@ function UserGroupsPage() {
             description: htmlToPlain(draft.description).trim() ? draft.description : null,
           },
         });
-        await membersFn({ data: { group_id: editing.id, user_ids: memberDraft, leader_ids: leaderDraft.filter((x) => memberDraft.includes(x)) } });
+        await membersFn({
+          data: {
+            group_id: editing.id,
+            user_ids: memberDraft,
+            leader_ids: leaderDraft.filter((x) => memberDraft.includes(x)),
+          },
+        });
       } else {
         const res = await createFn({
           data: {
@@ -115,7 +121,13 @@ function UserGroupsPage() {
           },
         });
         if (memberDraft.length)
-          await membersFn({ data: { group_id: res.id, user_ids: memberDraft, leader_ids: leaderDraft.filter((x) => memberDraft.includes(x)) } });
+          await membersFn({
+            data: {
+              group_id: res.id,
+              user_ids: memberDraft,
+              leader_ids: leaderDraft.filter((x) => memberDraft.includes(x)),
+            },
+          });
       }
     },
     onSuccess: () => {
