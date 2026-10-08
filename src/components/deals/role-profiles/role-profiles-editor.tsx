@@ -27,7 +27,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
+  archiveRoleProfile,
   createRoleProfile,
   requestRoleProfileValidation,
   resolveRoleProfileApprover,
@@ -122,6 +124,7 @@ export function RoleProfilesEditor({
   const saveBatch = useServerFn(saveRoleProfilesBatch);
   const resolve = useServerFn(resolveRoleProfileApprover);
   const request = useServerFn(requestRoleProfileValidation);
+  const archive = useServerFn(archiveRoleProfile);
 
   const [rows, setRows] = useState<EditorRow[]>(initialRows);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -387,17 +390,37 @@ export function RoleProfilesEditor({
                       ) : null}
                     </button>
                   </CollapsibleTrigger>
-                  {!r.id ? (
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      aria-label="Remover perfil não salvo"
-                      onClick={() => setRows((xs) => xs.filter((x) => x.key !== r.key))}
-                    >
-                      <Trash2 className="h-4 w-4" aria-hidden />
-                    </Button>
-                  ) : null}
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    aria-label={r.id ? "Excluir perfil" : "Remover perfil não salvo"}
+                    title={r.id ? "Excluir perfil" : "Remover perfil não salvo"}
+                    onClick={async () => {
+                      if (!r.id) {
+                        setRows((xs) => xs.filter((x) => x.key !== r.key));
+                        return;
+                      }
+                      const ok = await confirmDialog({
+                        title: "Excluir perfil?",
+                        description:
+                          "O perfil sai do negócio. Histórico e versões aprovadas ficam guardados.",
+                        confirmLabel: "Excluir",
+                        variant: "destructive",
+                      });
+                      if (!ok) return;
+                      try {
+                        await archive({ data: { id: r.id } });
+                        setRows((xs) => xs.filter((x) => x.key !== r.key));
+                        toast.success("Perfil excluído");
+                        onSaved();
+                      } catch (e) {
+                        toast.error(e instanceof Error ? e.message : "Falha ao excluir");
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden />
+                  </Button>
                   <ChevronDown
                     className={cn(
                       "mt-1 h-4 w-4 text-text-tertiary transition-transform",
