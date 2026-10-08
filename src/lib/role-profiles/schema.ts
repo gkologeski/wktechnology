@@ -54,6 +54,44 @@ export const MANUAL_TRANSITIONS: Record<ProfileStatus, ProfileStatus[]> = {
   forwarded: [],
 };
 
+export const EDUCATION_LEVELS = [
+  "ensino_medio",
+  "tecnico",
+  "superior_andamento",
+  "superior_completo",
+  "pos_mba",
+  "mestrado",
+  "doutorado",
+] as const;
+export const EDUCATION_LABEL: Record<(typeof EDUCATION_LEVELS)[number], string> = {
+  ensino_medio: "Ensino médio",
+  tecnico: "Técnico",
+  superior_andamento: "Superior em andamento",
+  superior_completo: "Superior completo",
+  pos_mba: "Pós-graduação/MBA",
+  mestrado: "Mestrado",
+  doutorado: "Doutorado",
+};
+export const SOFT_SKILL_PRESETS = [
+  "Comunicação",
+  "Liderança",
+  "Trabalho sob pressão",
+  "Proatividade",
+  "Trabalho em equipe",
+  "Resolução de problemas",
+];
+export const METHODOLOGY_PRESETS = ["Scrum", "Kanban", "Squads", "SAFe", "Cascata", "DevOps"];
+export const BENEFIT_PRESETS = [
+  "Plano de saúde",
+  "Plano odontológico",
+  "VR/VA",
+  "Ajuda de custo home office",
+  "Gympass/Wellhub",
+  "Seguro de vida",
+  "PLR",
+  "Auxílio educação",
+];
+
 const txt = (max = 4000) => z.string().trim().max(max).optional();
 const money = z.number().nonnegative().max(1e9).optional();
 const Req = z.enum(["required", "desired"]);
@@ -71,6 +109,7 @@ export const ProfileDataZ = z
         deliverables: txt(),
         team: txt(1000),
         technical_manager: txt(200),
+        methodologies: z.array(z.string().trim().min(1).max(60)).max(20).optional(),
       })
       .strict()
       .default({}),
@@ -105,6 +144,18 @@ export const ProfileDataZ = z
           .max(20)
           .default([]),
         experience_notes: txt(),
+        education: z
+          .object({
+            level: z.enum(EDUCATION_LEVELS).optional(),
+            kind: Req.optional(),
+            field: txt(200),
+          })
+          .strict()
+          .optional(),
+        soft_skills: z
+          .array(z.object({ name: z.string().trim().min(1).max(80), kind: Req }).strict())
+          .max(30)
+          .optional(),
       })
       .strict()
       .default({ skills: [], languages: [], certifications: [] }),
@@ -141,6 +192,7 @@ export const ProfileDataZ = z
         salary_currency: z.enum(["BRL", "USD", "EUR"]).optional(),
         salary_period: z.enum(["month", "year"]).optional(),
         benefits: txt(1000),
+        benefit_options: z.array(z.string().trim().min(1).max(80)).max(30).optional(),
         fee_type: z.enum(["percent", "fixed"]).optional(),
         fee_value: money,
         fee_terms: txt(1000),
@@ -318,6 +370,10 @@ export const CLIENT_FIELDS = {
   "requirements.languages": "Idiomas",
   "requirements.certifications": "Certificações",
   "requirements.experience_notes": "Observações de experiência",
+  "requirements.education.level": "Nível de escolaridade",
+  "requirements.education.field": "Área de formação",
+  "requirements.soft_skills": "Competências comportamentais",
+  "role.methodologies": "Metodologias de trabalho",
   "conditions.work_mode": "Modelo de trabalho",
   "conditions.location": "Localidade",
   "conditions.schedule": "Jornada",
@@ -428,6 +484,10 @@ export function toAtsJob(p: ProfileLike) {
     section("Responsabilidades", d.role.responsibilities),
     section("Entregas", d.role.deliverables),
     section("Equipe", d.role.team),
+    d.role.methodologies?.length ? `Metodologias: ${d.role.methodologies.join(", ")}` : "",
+    usesHunting(p.modality) && d.hunting.benefit_options?.length
+      ? `Benefícios: ${d.hunting.benefit_options.join(", ")}`
+      : "",
     d.conditions.schedule ? `Jornada: ${d.conditions.schedule}` : "",
     d.conditions.timezone ? `Fuso: ${d.conditions.timezone}` : "",
     d.conditions.travel ? `Viagens: ${d.conditions.travel}` : "",
@@ -456,6 +516,12 @@ export function toAtsJob(p: ProfileLike) {
       : "",
     req.certifications.length
       ? `Certificações:\n${req.certifications.map((c) => `- ${c.name}${c.kind === "desired" ? " — desejável" : ""}`).join("\n")}`
+      : "",
+    req.education?.level
+      ? `Escolaridade: ${EDUCATION_LABEL[req.education.level]}${req.education.field ? ` — ${req.education.field}` : ""}${req.education.kind === "desired" ? " (desejável)" : ""}`
+      : "",
+    req.soft_skills?.length
+      ? `Competências comportamentais:\n${req.soft_skills.map((c) => `- ${c.name}${c.kind === "desired" ? " — desejável" : ""}`).join("\n")}`
       : "",
     req.experience_notes ?? "",
   ]
@@ -510,6 +576,10 @@ const DIFF_FIELDS: { path: string; label: string; important?: boolean }[] = [
   { path: "data.requirements.skills", label: "Tecnologias", important: true },
   { path: "data.requirements.languages", label: "Idiomas" },
   { path: "data.requirements.certifications", label: "Certificações" },
+  { path: "data.requirements.education", label: "Escolaridade", important: true },
+  { path: "data.requirements.soft_skills", label: "Competências comportamentais" },
+  { path: "data.role.methodologies", label: "Metodologias" },
+  { path: "data.hunting.benefit_options", label: "Benefícios (seleção)" },
   { path: "data.role.responsibilities", label: "Responsabilidades" },
   { path: "data.role.project_context", label: "Contexto" },
   { path: "data.conditions.work_mode", label: "Modelo de trabalho", important: true },

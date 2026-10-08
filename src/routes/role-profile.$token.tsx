@@ -7,7 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { MODALITY_LABEL, SENIORITY_LABEL, type ClientField } from "@/lib/role-profiles/schema";
+import {
+  EDUCATION_LABEL,
+  MODALITY_LABEL,
+  SENIORITY_LABEL,
+  type ClientField,
+} from "@/lib/role-profiles/schema";
 
 export const Route = createFileRoute("/role-profile/$token")({
   head: () => ({
@@ -47,6 +52,8 @@ const LIST_FIELDS = new Set([
   "requirements.languages",
   "requirements.certifications",
   "selection.stages",
+  "requirements.soft_skills",
+  "role.methodologies",
 ]);
 const NUM_FIELDS = new Set([
   "hunting.salary_min",
@@ -59,6 +66,7 @@ const ENUMS: Partial<Record<ClientField, Record<string, string>>> = {
   "hunting.hiring_regime": { clt: "CLT", pj: "PJ", cooperado: "Cooperado", outro: "Outro" },
   "hunting.salary_currency": { BRL: "BRL", USD: "USD", EUR: "EUR" },
   "hunting.salary_period": { month: "Mensal", year: "Anual" },
+  "requirements.education.level": EDUCATION_LABEL,
 };
 
 const toText = (key: string, v: unknown): string => {
@@ -79,7 +87,7 @@ const fromText = (key: string, t: string): unknown => {
       .split("\n")
       .map((l) => l.trim())
       .filter(Boolean);
-    if (key === "selection.stages") return lines;
+    if (key === "selection.stages" || key === "role.methodologies") return lines;
     return lines.map((l) => ({
       name: l.replace(/\s*\(desejável\)$/i, ""),
       kind: /\(desejável\)$/i.test(l) ? "desired" : "required",
