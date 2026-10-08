@@ -1,0 +1,1 @@
+GRANT INSERT (source_line_item_id, job_profile_id, contracting_preset_id), UPDATE (job_profile_id, contracting_preset_id) ON public.deal_role_profiles TO authenticated;
