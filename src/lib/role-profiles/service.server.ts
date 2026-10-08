@@ -759,12 +759,15 @@ export async function archive(ctx: Ctx, id: string) {
   await assertPermission(ctx.supabase, ctx.userId, ctx.workspaceId, PERM.update);
   const p = await loadProfile(ctx, id);
   if (p.ats_job_id)
-    throw new Error("Perfil já encaminhado ao recrutamento não pode ser arquivado aqui.");
-  const { error } = await ctx.supabase
+    throw new Error("Perfil já encaminhado ao recrutamento não pode ser excluído.");
+  const { data: done, error } = await ctx.supabase
     .from("deal_role_profiles")
     .update({ archived_at: new Date().toISOString(), revision: p.revision + 1 })
-    .eq("id", id);
+    .eq("id", id)
+    .is("archived_at", null)
+    .select("id");
   if (error) throw friendly(error);
+  if (!done?.length) throw new Error("Você não tem permissão para excluir este perfil.");
   await logEvent(ctx, id, "archived");
   return { ok: true };
 }
