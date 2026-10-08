@@ -59,6 +59,8 @@ export const createMeeting = createServerFn({ method: "POST" })
     const insert: Record<string, unknown> = {
       owner_id: workspaceId,
       host_user_id: userId,
+      // owner_id guarda o workspace; o responsável é sempre quem marcou.
+      assigned_to: userId,
       title: data.title,
       room_name: room,
       public_token: token,
@@ -76,7 +78,10 @@ export const createMeeting = createServerFn({ method: "POST" })
       .insert(insert)
       .select("*")
       .single();
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("createMeeting failed", error.code);
+      throw new Error("Não foi possível criar a sala da reunião. Tente novamente.");
+    }
 
     // Log activity timeline entry (skip when the caller will record its own)
     if (!data.skip_activity) {
