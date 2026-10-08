@@ -30,6 +30,8 @@ import { DealQuotes } from "@/components/deals/deal-quotes";
 import { DealProposals } from "@/components/deals/deal-proposals";
 import { DealContracts } from "@/components/contracts/deal-contracts";
 import { DealDeliveryPanel } from "@/components/deals/deal-delivery-panel";
+import { RoleProfilesTab } from "@/components/deals/role-profiles/role-profiles-tab";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DEAL_STAGES, formatCurrency, formatDateTime } from "@/lib/crm";
 import { usePipelines } from "@/lib/pipelines";
@@ -46,6 +48,10 @@ import { toast } from "sonner";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/deals/$id")({
+  validateSearch: (s: Record<string, unknown>): { tab?: "perfis"; profile?: string } => ({
+    ...(s["tab"] === "perfis" ? { tab: "perfis" as const } : {}),
+    ...(typeof s["profile"] === "string" && /^[0-9a-f-]{36}$/i.test(s["profile"]) ? { profile: s["profile"] } : {}),
+  }),
   component: DealDetail,
   head: () => ({
     meta: [
@@ -67,6 +73,7 @@ export const Route = createFileRoute("/_authenticated/deals/$id")({
 
 function DealDetail() {
   const { id } = Route.useParams();
+  const search = Route.useSearch();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { pipelines } = usePipelines("deal");
@@ -384,7 +391,39 @@ function DealDetail() {
           <>
             <AiSummaryPanel entity="deal" entityId={deal.id} />
             <DealDeliveryPanel dealId={deal.id} />
-            <ActivityTimeline relatedKey="related_deal_id" relatedId={deal.id} />
+            <Tabs
+              value={search.tab === "perfis" ? "perfis" : "atividades"}
+              onValueChange={(v) =>
+                void navigate({
+                  to: "/deals/$id",
+                  params: { id },
+                  search: v === "perfis" ? { tab: "perfis" } : {},
+                  replace: true,
+                })
+              }
+            >
+              <TabsList>
+                <TabsTrigger value="atividades">Atividades</TabsTrigger>
+                <TabsTrigger value="perfis">Vagas e perfis</TabsTrigger>
+              </TabsList>
+              <TabsContent value="atividades" className="mt-4">
+                <ActivityTimeline relatedKey="related_deal_id" relatedId={deal.id} />
+              </TabsContent>
+              <TabsContent value="perfis" className="mt-4">
+                <RoleProfilesTab
+                  dealId={deal.id}
+                  openProfileId={search.profile}
+                  onOpenProfile={(pid) =>
+                    void navigate({
+                      to: "/deals/$id",
+                      params: { id },
+                      search: pid ? { tab: "perfis", profile: pid } : { tab: "perfis" },
+                      replace: true,
+                    })
+                  }
+                />
+              </TabsContent>
+            </Tabs>
           </>
         }
         right={

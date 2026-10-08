@@ -22,6 +22,7 @@ export const AI_FEATURES = {
   importacao_contrato: "Importação de contrato",
   importacao_modelo: "Importação de modelo de contrato",
   importacao_pesquisa: "Importação de pesquisa",
+  importacao_perfil_vaga: "Importação de perfil de vaga",
   propriedades: "Propriedades personalizadas",
   reunioes: "Reuniões",
   teste_conexao: "Teste de conexão",
