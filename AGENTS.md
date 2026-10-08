@@ -30,4 +30,3 @@
 - Agente SDR (regras de fila/envio em `src/lib/prospecting/sdr/AGENTS.md`): autorização (telas novas e legadas `/agents/sdr`) passa por `requireSdr`/`assertSdr` em `src/lib/prospecting/sdr/access.server.ts`, com filtro explícito por workspace; por quê: uma única matriz de permissões no servidor, sem depender só da RLS ou da UI.
 
 - Ritmo do disparo de template das campanhas WhatsApp é controlado por `whatsapp_campaigns.next_send_at` sob lease `wa_campaign_claim_dispatch`, com sorteio em `src/lib/whatsapp/campaign-pacing.ts`; por quê: o espaçamento vale entre execuções e nunca há disparo duplo.
-- Tempo real de fichas usa `useRealtimeInvalidate` com `filter` por registro e agrupamento em `src/lib/realtime/invalidation-batcher.ts`; troca de identidade zera o cache via `src/lib/session-cache.ts`; por quê: evitar recargas por eventos alheios e dados do contexto anterior.
