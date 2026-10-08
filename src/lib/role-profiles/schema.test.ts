@@ -224,3 +224,33 @@ describe("diff estável", () => {
     expect(diffProfiles(a, b)).toEqual([]);
   });
 });
+
+describe("perfil de vaga — escolaridade, competências, metodologias e benefícios", () => {
+  it("perfis antigos sem os novos campos continuam válidos", () => {
+    expect(ProfileDataZ.safeParse(emptyData()).success).toBe(true);
+  });
+  it("diff destaca mudança de escolaridade", () => {
+    const a = full();
+    const b = full();
+    b.data.requirements.education = { level: "superior_completo", kind: "required" };
+    const d = diffProfiles(a, b).find((x) => x.path === "data.requirements.education");
+    expect(d?.important).toBe(true);
+  });
+  it("benefícios selecionados nunca vão para o cliente", () => {
+    const p = full();
+    p.data.hunting.benefit_options = ["PLR"];
+    expect(sanitizeAllowedFields(["hunting.benefit_options"])).toEqual([]);
+    expect(JSON.stringify(toClientView(p, ["requirements.skills"]))).not.toContain("PLR");
+  });
+  it("benefícios entram na vaga só em Hunting; escolaridade e metodologias sempre", () => {
+    const p = full({ modality: "hunting" });
+    p.data.hunting.benefit_options = ["PLR"];
+    p.data.role.methodologies = ["Scrum"];
+    p.data.requirements.education = { level: "mestrado" };
+    const j = toAtsJob(p);
+    expect(j.description).toContain("Benefícios: PLR");
+    expect(j.description).toContain("Metodologias: Scrum");
+    expect(j.requirements).toContain("Escolaridade: Mestrado");
+    expect(toAtsJob({ ...p, modality: "outsourcing" }).description).not.toContain("PLR");
+  });
+});

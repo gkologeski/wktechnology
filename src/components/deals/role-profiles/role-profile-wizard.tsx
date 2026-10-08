@@ -33,6 +33,10 @@ import {
   PRIORITY_LABEL,
   SECTION_LABEL,
   SENIORITY_LABEL,
+  BENEFIT_PRESETS,
+  EDUCATION_LABEL,
+  METHODOLOGY_PRESETS,
+  SOFT_SKILL_PRESETS,
   completeness,
   emptyData,
   marginPct,
@@ -147,6 +151,111 @@ function OptSelect<T extends string>({
 const numOrU = (v: string) => (v === "" ? undefined : Math.max(0, Math.floor(Number(v))));
 
 /** Chips com alternância obrigatório/desejável. */
+function PresetToggles({
+  label,
+  presets,
+  selected,
+  onToggle,
+}: {
+  label: string;
+  presets: string[];
+  selected: string[];
+  onToggle: (name: string) => void;
+}) {
+  return (
+    <div role="group" aria-label={`Atalhos: ${label}`} className="flex flex-wrap gap-1.5">
+      {presets.map((p) => {
+        const on = selected.some((x) => x.toLowerCase() === p.toLowerCase());
+        return (
+          <button
+            key={p}
+            type="button"
+            aria-pressed={on}
+            onClick={() => onToggle(p)}
+            className={cn(
+              "rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              on
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border-subtle bg-background text-text-secondary hover:bg-muted",
+            )}
+          >
+            {on ? <Check className="mr-1 inline h-3 w-3" aria-hidden /> : null}
+            {p}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function PresetStringChips({
+  label,
+  presets,
+  items,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  presets: string[];
+  items: string[];
+  onChange: (xs: string[]) => void;
+  placeholder: string;
+}) {
+  const [draft, setDraft] = useState("");
+  const has = (n: string) => items.some((x) => x.toLowerCase() === n.toLowerCase());
+  const toggle = (n: string) =>
+    onChange(has(n) ? items.filter((x) => x.toLowerCase() !== n.toLowerCase()) : [...items, n]);
+  const add = () => {
+    const n = draft.trim();
+    if (n && !has(n)) onChange([...items, n]);
+    setDraft("");
+  };
+  const custom = items.filter((x) => !presets.some((p) => p.toLowerCase() === x.toLowerCase()));
+  return (
+    <div className="space-y-2">
+      <PresetToggles label={label} presets={presets} selected={items} onToggle={toggle} />
+      <div className="flex gap-2">
+        <Input
+          aria-label={`Outro: ${label}`}
+          value={draft}
+          placeholder={placeholder}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              add();
+            }
+          }}
+          className="h-9"
+        />
+        <Button type="button" variant="outline" size="sm" onClick={add} className="h-9">
+          <Plus className="mr-1 h-3.5 w-3.5" aria-hidden /> Adicionar
+        </Button>
+      </div>
+      {custom.length ? (
+        <ul className="flex flex-wrap gap-2">
+          {custom.map((c) => (
+            <li
+              key={c}
+              className="inline-flex items-center gap-1 rounded-full border border-border-subtle bg-muted py-0.5 pl-2.5 pr-1 text-xs"
+            >
+              <span className="font-medium text-text-primary">{c}</span>
+              <button
+                type="button"
+                onClick={() => toggle(c)}
+                aria-label={`Remover ${c}`}
+                className="rounded-full p-0.5 text-text-secondary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <X className="h-3 w-3" aria-hidden />
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
 function RequirementChips({
   label,
   items,
@@ -624,6 +733,15 @@ export function RoleProfileWizard({
                     />
                   </Field>
                 </div>
+                <Field label="Metodologias de trabalho" status={fs["role.methodologies"]}>
+                  <PresetStringChips
+                    label="Metodologias"
+                    presets={METHODOLOGY_PRESETS}
+                    items={d.role.methodologies ?? []}
+                    onChange={(methodologies) => patch("role", { methodologies })}
+                    placeholder="Outra metodologia"
+                  />
+                </Field>
               </div>
             </FormSection>
           )}
@@ -677,6 +795,76 @@ export function RoleProfileWizard({
                     }
                     placeholder="Ex.: AWS Solutions Architect"
                   />
+                </Field>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <Field
+                    label="Nível de escolaridade"
+                    htmlFor="rp-edu"
+                    status={fs["requirements.education"]}
+                  >
+                    <OptSelect
+                      id="rp-edu"
+                      value={d.requirements.education?.level}
+                      onChange={(level) =>
+                        patch("requirements", {
+                          education: { ...d.requirements.education, level },
+                        })
+                      }
+                      options={EDUCATION_LABEL}
+                    />
+                  </Field>
+                  <Field label="Exigência" htmlFor="rp-edu-kind">
+                    <OptSelect
+                      id="rp-edu-kind"
+                      value={d.requirements.education?.kind}
+                      onChange={(kind) =>
+                        patch("requirements", {
+                          education: { ...d.requirements.education, kind },
+                        })
+                      }
+                      options={{ required: "Obrigatório", desired: "Desejável" }}
+                    />
+                  </Field>
+                  <Field label="Área de formação" htmlFor="rp-edu-field">
+                    <Input
+                      id="rp-edu-field"
+                      value={d.requirements.education?.field ?? ""}
+                      placeholder="Ex.: Ciência da Computação"
+                      onChange={(e) =>
+                        patch("requirements", {
+                          education: { ...d.requirements.education, field: e.target.value },
+                        })
+                      }
+                    />
+                  </Field>
+                </div>
+                <Field label="Competências comportamentais" status={fs["requirements.soft_skills"]}>
+                  <div className="space-y-2">
+                    <PresetToggles
+                      label="Competências comportamentais"
+                      presets={SOFT_SKILL_PRESETS}
+                      selected={(d.requirements.soft_skills ?? []).map((x) => x.name)}
+                      onToggle={(n) => {
+                        const cur = d.requirements.soft_skills ?? [];
+                        const on = cur.some((x) => x.name.toLowerCase() === n.toLowerCase());
+                        patch("requirements", {
+                          soft_skills: on
+                            ? cur.filter((x) => x.name.toLowerCase() !== n.toLowerCase())
+                            : [...cur, { name: n, kind: "required" }],
+                        });
+                      }}
+                    />
+                    <RequirementChips
+                      label="Competências comportamentais"
+                      items={d.requirements.soft_skills ?? []}
+                      onChange={(xs) =>
+                        patch("requirements", {
+                          soft_skills: xs.map(({ name, kind }) => ({ name, kind })),
+                        })
+                      }
+                      placeholder="Outra competência"
+                    />
+                  </div>
                 </Field>
                 <Field label="Observações de experiência" htmlFor="rp-exp">
                   <Textarea
@@ -978,7 +1166,17 @@ export function RoleProfileWizard({
                     </Field>
                     <div className="sm:col-span-2">
                       <Field label="Benefícios" htmlFor="rp-ben">
+                        <div className="mb-2">
+                          <PresetStringChips
+                            label="Benefícios"
+                            presets={BENEFIT_PRESETS}
+                            items={d.hunting.benefit_options ?? []}
+                            onChange={(benefit_options) => patch("hunting", { benefit_options })}
+                            placeholder="Outro benefício"
+                          />
+                        </div>
                         <Textarea
+                          placeholder="Detalhes (valores, regras)"
                           id="rp-ben"
                           rows={2}
                           value={d.hunting.benefits ?? ""}
