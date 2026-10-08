@@ -59,6 +59,7 @@ export function ActivityLogWindow({
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [identity, setIdentity] = useState<WhatsAppIdentity>({});
   const [contactId, setContactId] = useState<string | undefined>();
+  const [targetName, setTargetName] = useState<string | undefined>();
   const [saving, setSaving] = useState(false);
   const notify = useServerFn(notifyActivityEvent);
   const draft = useActivityDraft({
@@ -108,8 +109,27 @@ export function ActivityLogWindow({
       if (active) setAutoLinkCount(Object.values(links ?? {}).filter(Boolean).length || 1);
     });
     void fetchTimelineTarget(relatedKey, relatedId).then((target) => {
-      if (active) setContactId(target?.contactId);
+      if (active) {
+        setContactId(target?.contactId);
+        if (relatedKey === "related_lead_id" || relatedKey === "related_contact_id")
+          setTargetName(target?.name);
+      }
     });
+    // A janela continua aberta ao navegar; o nome deixa claro onde a atividade será salva.
+    const named: Partial<Record<string, { table: "deals" | "companies"; label: string }>> = {
+      related_deal_id: { table: "deals", label: "Negócio" },
+      related_company_id: { table: "companies", label: "Empresa" },
+    };
+    const n = named[relatedKey];
+    if (n)
+      void supabase
+        .from(n.table)
+        .select("name")
+        .eq("id", relatedId)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (active && data?.name) setTargetName(`${n.label}: ${data.name}`);
+        });
     return () => {
       active = false;
     };
@@ -208,6 +228,11 @@ export function ActivityLogWindow({
         setPendingFiles((p) => [...p, ...Array.from(e.dataTransfer.files)]);
       }}
     >
+      {targetName ? (
+        <p className="truncate border-b border-border-subtle px-3 py-1.5 text-xs text-text-secondary">
+          Será salva em <span className="font-medium text-text-primary">{targetName}</span>
+        </p>
+      ) : null}
       <DraftBar savedAt={draft.savedAt} onDiscard={discard} />
       <TimelineComposer
         type={type}
