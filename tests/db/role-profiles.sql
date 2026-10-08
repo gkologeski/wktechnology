@@ -169,7 +169,7 @@ END $$;
 
 -- 9) Outro workspace (tenant) não enxerga nada
 RESET role;
-INSERT INTO public.workspaces(id, name, created_by) VALUES (pg_temp.fx('ws2'), '[TESTE-ROLLBACK] WS2', pg_temp.fx('user2'));
+INSERT INTO public.workspaces(id, name, slug, created_by) VALUES (pg_temp.fx('ws2'), '[TESTE-ROLLBACK] WS2', 'teste-rollback-' || substr(md5(random()::text),1,8), pg_temp.fx('user2'));
 SELECT pg_temp.as_user(pg_temp.fx('user2'));
 DO $$ BEGIN
   ASSERT (SELECT count(*) FROM public.deal_role_profiles) = 0;
