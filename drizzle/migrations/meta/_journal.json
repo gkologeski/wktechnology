@@ -575,6 +575,13 @@
       "when": 1791472718380,
       "tag": "0081_role_profile_supersede_on_archive",
       "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1791484458154,
+      "tag": "0082_grant_role_profile_link_columns",
+      "breakpoints": true
     }
   ]
 }
