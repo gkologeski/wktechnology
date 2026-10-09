@@ -114,8 +114,13 @@ Não feita: o achado do item 2 já era a extração de fronteira útil; mover ar
 
 ## Pendências
 
-- Timeout automático de 240 s da plataforma: **comando e logs não acessíveis**; nada aqui prova causa ou
-  correção. Diagnóstico disponível: fases e tempos acima + scripts de grafo/fechamento.
+- Timeout automático de 240 s: o log da plataforma (`/tmp/observability/build-errors.log`) agora mostra que
+  é a etapa **"typecheck"** que é encerrada (226–240 s, 12 vezes entre 20:32 e 21:38 UTC). Esse intervalo
+  coincide com os 6 builds de produção deste ciclo (8 núcleos, ~7,3 GB cada); as 3 verificações depois que
+  os builds pararam (21:38, 21:40, 21:47) deram "build OK". Indício forte de **disputa de CPU/memória**, não
+  prova: o comando exato do typecheck da plataforma segue desconhecido (localmente `tsgo` completo leva
+  17–19 s frio; `tsc` sem cache ~2m25s, ciclos anteriores). Não alterado nem contornado. Consequência
+  prática: evitar builds pesados simultâneos às verificações automáticas.
 - Fase nitro (46–71 s) retransforma ~5.700 módulos — maior custo isolado, configurada pelo preset; não
   alterada.
 - `settings.tsx` exporta `getSettingsForScope` (≈23 KB na entrada) e `dashboard.tsx` é a 1ª rota a puxar
