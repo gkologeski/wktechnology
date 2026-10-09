@@ -65,13 +65,19 @@ export function MessageHistoryViewport({
     };
     const vTop = el.getBoundingClientRect().top;
     anchor.current = null;
+    // Primeiro item que começa dentro da área visível: se um item parcialmente visível
+    // acima crescer (corpo/mídia), o que está sendo lido continua no lugar.
+    let partial: { el: Element; top: number } | null = null;
     for (const child of Array.from(contentRef.current?.children ?? [])) {
       const r = child.getBoundingClientRect();
-      if (r.bottom > vTop && r.height > 0) {
+      if (r.height <= 0 || r.bottom <= vTop) continue;
+      if (r.top >= vTop - 1) {
         anchor.current = { el: child, top: r.top - vTop };
         break;
       }
+      partial ??= { el: child, top: r.top - vTop };
     }
+    if (!anchor.current) anchor.current = partial;
   };
   /** Devolve o item âncora à mesma distância do topo. */
   const restoreAnchor = () => {
