@@ -108,7 +108,15 @@ function WhatsAppInbox() {
   const [templateVars, setTemplateVars] = useState<string[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const conversationsQ = useQuery({ queryKey: ["wa", "conversations"], queryFn: () => listFn() });
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
+  const {
+    rows: conversations,
+    counts,
+    total,
+    query: conversationsQ,
+  } = useInboxChannelPage<WaConversationRow>("whatsapp", filter, debouncedSearch);
+  const [selectedSnapshot, setSelectedSnapshot] = useState<WaConversationRow | null>(null);
   const messagesQ = useQuery({
     queryKey: ["wa", "messages", selected],
     queryFn: () => msgsFn({ data: { conversationId: selected! } }),
@@ -132,13 +140,13 @@ function WhatsAppInbox() {
       .channel("wa-inbox")
       .on("postgres_changes", { event: "*", schema: "public", table: "whatsapp_messages" }, () => {
         qc.invalidateQueries({ queryKey: ["wa", "messages"] });
-        qc.invalidateQueries({ queryKey: ["wa", "conversations"] });
+        qc.invalidateQueries({ queryKey: ["inbox-channel", "whatsapp"] });
       })
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "whatsapp_conversations" },
         () => {
-          qc.invalidateQueries({ queryKey: ["wa", "conversations"] });
+          qc.invalidateQueries({ queryKey: ["inbox-channel", "whatsapp"] });
         },
       )
       .subscribe();
@@ -151,7 +159,7 @@ function WhatsAppInbox() {
   useEffect(() => {
     if (selected) {
       markFn({ data: { conversationId: selected } }).then(() => {
-        qc.invalidateQueries({ queryKey: ["wa", "conversations"] });
+        qc.invalidateQueries({ queryKey: ["inbox-channel", "whatsapp"] });
       });
     }
   }, [selected, markFn, qc]);
@@ -233,7 +241,7 @@ function WhatsAppInbox() {
   const assignMut = useMutation({
     mutationFn: (vars: { conversationId: string; assignedTo: string | null }) =>
       assignFn({ data: vars }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["wa", "conversations"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["inbox-channel", "whatsapp"] }),
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -242,23 +250,17 @@ function WhatsAppInbox() {
       statusFn({ data: vars }),
     onSuccess: () => {
       toast.success("Status atualizado");
-      qc.invalidateQueries({ queryKey: ["wa", "conversations"] });
+      qc.invalidateQueries({ queryKey: ["inbox-channel", "whatsapp"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const allConversations = conversationsQ.data ?? [];
-  const conversations = useMemo(() => {
-    if (filter === "mine") return allConversations.filter((c) => c.assigned_to === user?.id);
-    if (filter === "unassigned") return allConversations.filter((c) => !c.assigned_to);
-    return allConversations;
-  }, [allConversations, filter, user?.id]);
   const messages = messagesQ.data ?? [];
   const current = useMemo(
     () =>
       conversations.find((c) => c.id === selected) ??
-      allConversations.find((c) => c.id === selected),
-    [conversations, allConversations, selected],
+      (selectedSnapshot?.id === selected ? selectedSnapshot : undefined),
+    [conversations, selectedSnapshot, selected],
   );
 
   // Rascunho automático da mensagem em digitação por conversa.
@@ -296,20 +298,22 @@ function WhatsAppInbox() {
           <InboxListHeader>
             <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="mine">Minhas</TabsTrigger>
-                <TabsTrigger value="unassigned">Sem dono</TabsTrigger>
-                <TabsTrigger value="all">Todas</TabsTrigger>
+                <TabsTrigger value="mine">Minhas{counts ? ` (${counts.mine})` : ""}</TabsTrigger>
+                <TabsTrigger value="unassigned">
+                  Sem dono{counts ? ` (${counts.unassigned})` : ""}
+                </TabsTrigger>
+                <TabsTrigger value="all">Todas{counts ? ` (${counts.all})` : ""}</TabsTrigger>
               </TabsList>
             </Tabs>
-            <div className="mt-2 px-1 text-xs text-muted-foreground">
-              {conversations.length} conversa(s)
-            </div>
+            <InboxListSearch value={search} onChange={setSearch} placeholder="Buscar telefone, mensagem ou contato…" />
           </InboxListHeader>
           <InboxConversationList>
-            {conversationsQ.isError ? (
+            {conversationsQ.isError && conversations.length === 0 ? (
               <InboxError onRetry={() => conversationsQ.refetch()} />
-            ) : conversationsQ.isLoading ? (
+            ) : conversationsQ.isPending ? (
               <InboxLoading />
+            ) : conversations.length === 0 && debouncedSearch.trim() ? (
+              <InboxEmpty>Nenhuma conversa encontrada.</InboxEmpty>
             ) : conversations.length === 0 ? (
               <InboxEmpty>Nenhuma conversa ainda. Envie uma mensagem para começar.</InboxEmpty>
             ) : null}
@@ -322,7 +326,10 @@ function WhatsAppInbox() {
                   when={c.last_message_at}
                   whenTitle={c.last_message_at ? formatDateTime(c.last_message_at) : undefined}
                   selected={selected === c.id}
-                  onClick={() => setSelected(c.id)}
+                  onClick={() => {
+                    setSelected(c.id);
+                    setSelectedSnapshot(c);
+                  }}
                   unread={c.unread_count}
                   badge={
                     c.status === "closed" ? (
@@ -645,7 +652,7 @@ function WhatsAppInbox() {
                 contactId={current.contact_id}
                 leadId={current.lead_id}
                 status={current.identity_status}
-                onLinked={() => qc.invalidateQueries({ queryKey: ["wa", "conversations"] })}
+                onLinked={() => qc.invalidateQueries({ queryKey: ["inbox-channel", "whatsapp"] })}
               />
             </div>
           </InboxContext>
