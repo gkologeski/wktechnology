@@ -22361,6 +22361,25 @@ export type Database = {
         }[]
       }
       get_my_phone: { Args: never; Returns: string }
+      get_sales_dashboard_deal_aggregates: {
+        Args: {
+          p_lost_stage_ids: string[]
+          p_month_end: string
+          p_month_start: string
+          p_open_stage_ids: string[]
+          p_owner_id: string
+          p_owner_mode: string
+          p_period_end: string
+          p_period_start: string
+          p_pipeline_id: string
+          p_prev_end: string
+          p_prev_start: string
+          p_stage_probabilities: Json
+          p_won_stage_ids: string[]
+          p_workspace_id: string
+        }
+        Returns: Json
+      }
       get_timeline_activity_page: {
         Args: {
           p_assignees?: string[]
