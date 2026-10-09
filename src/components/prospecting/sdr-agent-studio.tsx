@@ -116,7 +116,9 @@ function Studio({ workspaceId, playbookId }: { workspaceId: string; playbookId: 
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-base font-semibold text-text-primary">Persona e teste</h2>
                 <Badge variant="outline">Rascunho</Badge>
-                {published ? <Badge variant="secondary">Produção v{published.version}</Badge> : null}
+                {published ? (
+                  <Badge variant="secondary">Produção v{published.version}</Badge>
+                ) : null}
               </div>
               <p className="mt-1 text-sm text-text-secondary">
                 Ajuste a voz do agente e valide a conversa em ambiente seguro antes de publicar.
@@ -202,7 +204,10 @@ function Studio({ workspaceId, playbookId }: { workspaceId: string; playbookId: 
                 {(Object.keys(TRAIT_LABELS) as Array<keyof typeof TRAIT_LABELS>).map((key) => {
                   const trait = TRAIT_LABELS[key];
                   return (
-                    <div key={key} className="grid gap-3 rounded-md border border-border-subtle bg-surface-sunken p-3 sm:col-span-2">
+                    <div
+                      key={key}
+                      className="grid gap-3 rounded-md border border-border-subtle bg-surface-sunken p-3 sm:col-span-2"
+                    >
                       <div className="flex items-center justify-between gap-3">
                         <Label htmlFor={`pa-${key}`}>{trait.label}</Label>
                         <span className="min-w-6 rounded-md bg-product-panel px-1.5 py-0.5 text-center text-xs font-semibold tabular-nums text-text-primary">
@@ -286,7 +291,9 @@ function Studio({ workspaceId, playbookId }: { workspaceId: string; playbookId: 
                       )
                     }
                   />
-                  <p className="text-xs text-text-tertiary">Um exemplo por linha, até 10 exemplos.</p>
+                  <p className="text-xs text-text-tertiary">
+                    Um exemplo por linha, até 10 exemplos.
+                  </p>
                 </div>
                 <div className="grid gap-1.5">
                   <Label htmlFor="pa-avoid">Expressões a evitar</Label>
@@ -322,7 +329,10 @@ function Studio({ workspaceId, playbookId }: { workspaceId: string; playbookId: 
             </div>
             <div className="px-4 py-2 md:px-5">
               {q.isLoading ? (
-                <div className="flex items-center gap-2 py-6 text-sm text-text-secondary" role="status">
+                <div
+                  className="flex items-center gap-2 py-6 text-sm text-text-secondary"
+                  role="status"
+                >
                   <Loader2 className="size-4 animate-spin" /> Carregando versões…
                 </div>
               ) : q.error ? (
@@ -339,9 +349,14 @@ function Studio({ workspaceId, playbookId }: { workspaceId: string; playbookId: 
               ) : (
                 <ul className="divide-y divide-product-divider">
                   {q.data.map((version) => (
-                    <li key={version.id} className="flex min-h-12 items-center justify-between gap-3 py-2">
+                    <li
+                      key={version.id}
+                      className="flex min-h-12 items-center justify-between gap-3 py-2"
+                    >
                       <div className="flex min-w-0 items-center gap-2 text-sm">
-                        <span className="font-medium tabular-nums text-text-primary">v{version.version}</span>
+                        <span className="font-medium tabular-nums text-text-primary">
+                          v{version.version}
+                        </span>
                         <Badge variant={version.status === "published" ? "default" : "outline"}>
                           {STATUS[version.status]}
                         </Badge>
@@ -428,7 +443,9 @@ function TestChat({
             </div>
             <div>
               <h3 className="text-sm font-semibold text-text-primary">Conversa de teste</h3>
-              <p className="mt-0.5 text-xs text-text-secondary">Usa o rascunho aberto nesta tela.</p>
+              <p className="mt-0.5 text-xs text-text-secondary">
+                Usa o rascunho aberto nesta tela.
+              </p>
             </div>
           </div>
           <Button
@@ -468,7 +485,8 @@ function TestChat({
             </div>
             <p className="mt-3 text-sm font-medium text-text-primary">Comece uma conversa</p>
             <p className="mt-1 max-w-xs text-xs text-text-secondary">
-              Escreva como se fosse o cliente. Nenhuma mensagem ou ação será enviada para fora deste teste.
+              Escreva como se fosse o cliente. Nenhuma mensagem ou ação será enviada para fora deste
+              teste.
             </p>
           </div>
         )}
