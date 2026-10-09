@@ -222,7 +222,7 @@ export async function loadSalesDashboard(
             : "one",
       p_owner_id:
         effectiveAssignee === "__all__" || effectiveAssignee === "__none__"
-          ? undefined
+          ? userId
           : effectiveAssignee,
       p_open_stage_ids: stageParameters.open,
       p_won_stage_ids: stageParameters.won,
