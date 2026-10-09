@@ -6,18 +6,16 @@ import type { Database } from "@/integrations/supabase/types";
 import type { Deal } from "@/lib/db-types";
 import type { Pipeline, PipelineStage } from "@/lib/pipelines";
 import { computeHotScore } from "@/lib/deals/hot-score";
-import { activityEffectiveDate } from "@/lib/deals/activity-effective-date";
 import {
   dashboardStageParameters,
   parseDealDashboardAggregates,
 } from "@/lib/deals/sales-dashboard-aggregates";
 import {
-  LEAD_CHANNEL_LABELS,
-  LEAD_CHANNELS,
-  normalizeLeadChannel,
-  resolveJourneyStage,
-  type LeadJourneyRow,
-} from "@/lib/deals/lead-journey";
+  advancedStageIds,
+  parseDashboardSecondary,
+  summarizeLeadJourney,
+  type SecondaryDealRow,
+} from "@/lib/deals/sales-dashboard-secondary";
 import type {
   ContactsByDay,
   DealListItem,
@@ -71,22 +69,6 @@ function startOfDay(d: Date): Date {
 function stageOf(deal: DealRow, stages: PipelineStage[]): PipelineStage | null {
   const key = deal.stage_id || deal.stage;
   return stages.find((s) => s.value === key) ?? stages.find((s) => s.value === deal.stage) ?? null;
-}
-
-function isClosed(deal: DealRow, stages: PipelineStage[]): boolean {
-  const st = stageOf(deal, stages);
-  if (st) return st.type === "won" || st.type === "lost";
-  return deal.stage === "won" || deal.stage === "lost";
-}
-
-function isWon(deal: DealRow, stages: PipelineStage[]): boolean {
-  const st = stageOf(deal, stages);
-  if (st) return st.type === "won";
-  return deal.stage === "won";
-}
-
-function probabilityOf(deal: DealRow, stages: PipelineStage[]): number {
-  return stageOf(deal, stages)?.probability ?? 0;
 }
 
 export async function loadSalesDashboard(
@@ -165,19 +147,6 @@ export async function loadSalesDashboard(
         ? q.is("owner_id", null)
         : q.eq("owner_id", effectiveAssignee);
 
-  // 2) Negócios do pipeline selecionado
-  let dealsQ = supabase
-    .from("deals")
-    .select(
-      "id, name, value, stage, stage_id, pipeline_id, owner_id, assigned_to, company_id, expected_close_date, closed_at, updated_at",
-    )
-    .eq("workspace_id", workspaceId)
-    .is("deleted_at", null)
-    .order("updated_at", { ascending: false })
-    .limit(3000);
-  if (selected) dealsQ = dealsQ.eq("pipeline_id", selected.id);
-  dealsQ = mine(dealsQ);
-
   // Consultas secundárias não podem derrubar o painel inteiro: em caso de
   // falha, o bloco correspondente fica vazio.
   const safe = <T>(p: PromiseLike<{ data: T | null; error?: unknown }>) =>
@@ -186,40 +155,37 @@ export async function loadSalesDashboard(
       () => ({ data: null }) as { data: T | null; error?: unknown },
     );
 
-  // 3) Demais consultas em paralelo
-  let journeyLeadsQ = supabase
-    .from("leads")
-    .select("id, source, status, stage_id, converted_at, converted_deal_id")
-    .eq("workspace_id", workspaceId)
-    .is("deleted_at", null)
-    .gte("created_at", periodStart.toISOString())
-    .lte("created_at", periodEnd.toISOString())
-    .limit(10000);
-  if (selectedLeadPipeline)
-    journeyLeadsQ = journeyLeadsQ.eq("pipeline_id", selectedLeadPipeline.id);
-  journeyLeadsQ = mine(journeyLeadsQ);
+  const ownerMode =
+    effectiveAssignee === "__all__" ? "all" : effectiveAssignee === "__none__" ? "none" : "one";
+  const ownerParam =
+    effectiveAssignee === "__all__" || effectiveAssignee === "__none__" ? userId : effectiveAssignee;
+
+  // Leads a trabalhar: contagem exata + amostra (sem baixar a lista inteira).
+  const leadsToWorkBase = () =>
+    mine(
+      supabase
+        .from("leads")
+        .select("id, first_name, last_name, company_name, status, updated_at", {
+          count: "exact",
+        })
+        .eq("workspace_id", workspaceId)
+        .in("status", ["new", "contacted", "nurturing"]),
+    );
 
   const [
     aggregatesRes,
-    dealsRes,
-    acts14Res,
-    acts30Res,
+    secondaryRes,
     meetingsRes,
     bookingsRes,
     tasksRes,
     goalsRes,
     leadsRes,
-    journeyLeadsRes,
   ] = await Promise.all([
     supabase.rpc("get_sales_dashboard_deal_aggregates", {
       p_workspace_id: workspaceId,
       p_pipeline_id: selected?.id,
-      p_owner_mode:
-        effectiveAssignee === "__all__" ? "all" : effectiveAssignee === "__none__" ? "none" : "one",
-      p_owner_id:
-        effectiveAssignee === "__all__" || effectiveAssignee === "__none__"
-          ? userId
-          : effectiveAssignee,
+      p_owner_mode: ownerMode,
+      p_owner_id: ownerParam,
       p_open_stage_ids: stageParameters.open,
       p_won_stage_ids: stageParameters.won,
       p_lost_stage_ids: stageParameters.lost,
@@ -231,30 +197,21 @@ export async function loadSalesDashboard(
       p_month_start: monthStart.toISOString(),
       p_month_end: monthEnd.toISOString(),
     }),
-    dealsQ,
-    safe(
-      mine(
-        supabase
-          .from("activities")
-          .select("id, type, created_at")
-          .eq("workspace_id", workspaceId)
-          .gte("created_at", d14.toISOString())
-          .limit(5000),
-      ),
-    ),
-    safe(
-      mine(
-        supabase
-          .from("activities")
-          .select("id, related_deal_id, type, due_date, activity_date, created_at")
-          .eq("workspace_id", workspaceId)
-          .not("related_deal_id", "is", null)
-          .or(
-            `created_at.gte.${d30.toISOString()},activity_date.gte.${d30.toISOString()},and(type.eq.task,due_date.gte.${d30.toISOString()})`,
-          )
-          .limit(10000),
-      ),
-    ),
+    supabase.rpc("get_sales_dashboard_secondary", {
+      p_workspace_id: workspaceId,
+      p_pipeline_id: selected?.id,
+      p_lead_pipeline_id: selectedLeadPipeline?.id,
+      p_owner_mode: ownerMode,
+      p_owner_id: ownerParam,
+      p_open_stage_ids: stageParameters.open,
+      p_advanced_stage_ids: advancedStageIds(stages),
+      p_now: now.toISOString(),
+      p_today: today.toISOString(),
+      p_contacts_since: d14.toISOString(),
+      p_utc_offset_minutes: Math.round(BR_OFFSET_MS / 60000),
+      p_period_start: periodStart.toISOString(),
+      p_period_end: periodEnd.toISOString(),
+    }),
     safe(
       mine(
         supabase
@@ -303,28 +260,22 @@ export async function loadSalesDashboard(
           .gte("period_end", isoDay(monthStart)),
       ),
     ),
-    safe(
-      mine(
-        supabase
-          .from("leads")
-          .select("id, first_name, last_name, company_name, status, updated_at")
-          .eq("workspace_id", workspaceId)
-          .in("status", ["new", "contacted", "nurturing"])
-          .order("updated_at", { ascending: true })
-          .limit(500),
-      ),
-    ),
-    safe(journeyLeadsQ),
+    safe(leadsToWorkBase().order("updated_at", { ascending: true }).limit(5)),
   ]);
 
-  if (dealsRes.error) throw new Error(dealsRes.error.message);
   if (aggregatesRes.error) throw new Error(aggregatesRes.error.message);
+  if (secondaryRes.error) throw new Error(secondaryRes.error.message);
   const dealAggregates = parseDealDashboardAggregates(aggregatesRes.data);
   if (!dealAggregates) throw new Error("Agregação comercial indisponível.");
+  const secondary = parseDashboardSecondary(secondaryRes.data);
+  if (!secondary) throw new Error("Listas do painel indisponíveis.");
 
-  const deals = (dealsRes.data ?? []) as unknown as DealRow[];
-  const openDeals = deals.filter((d) => !isClosed(d, stages));
-  const sum = (rows: DealRow[]) => rows.reduce((acc, d) => acc + (d.value ?? 0), 0);
+  // Negócios carregados apenas para as listas (os totais vêm do agregado SQL).
+  const deals: SecondaryDealRow[] = [
+    ...secondary.advanced,
+    ...secondary.overdue,
+    ...secondary.stale,
+  ];
 
   const goals = (
     (goalsRes.data ?? []) as Array<{
@@ -361,35 +312,16 @@ export async function loadSalesDashboard(
     ]),
   );
 
-  // Última atividade por negócio (janela de 30 dias pela data efetiva).
-  // Tarefas usam o vencimento; demais interações usam a data em que ocorreram.
-  const lastActivityByDeal = new Map<string, number>();
-  for (const a of (acts30Res.data ?? []) as Array<{
-    related_deal_id: string | null;
-    type: string;
-    due_date: string | null;
-    activity_date: string | null;
-    created_at: string | null;
-  }>) {
-    if (!a.related_deal_id) continue;
-    const effectiveDate = activityEffectiveDate(a);
-    if (!effectiveDate) continue;
-    const t = new Date(effectiveDate).getTime();
-    if (!Number.isFinite(t) || t < d30.getTime()) continue;
-    const prev = lastActivityByDeal.get(a.related_deal_id) ?? 0;
-    if (t > prev) lastActivityByDeal.set(a.related_deal_id, t);
-  }
-
-  const riskOf = (d: DealRow): DealListItem["risk"] => {
+  // Atividade recente (data efetiva nos últimos 7 dias) já vem calculada no servidor.
+  const riskOf = (d: SecondaryDealRow): DealListItem["risk"] => {
     if (d.expected_close_date && new Date(d.expected_close_date).getTime() < today.getTime()) {
       return "overdue_close";
     }
-    const last = lastActivityByDeal.get(d.id);
-    if (!last || now.getTime() - last > 7 * DAY_MS) return "no_recent_activity";
+    if (!d.has_recent_activity) return "no_recent_activity";
     return null;
   };
 
-  const toItem = (d: DealRow): DealListItem => {
+  const toItem = (d: SecondaryDealRow): DealListItem => {
     const st = stageOf(d, stages);
     const pipe: Pipeline = selected
       ? selected
@@ -411,15 +343,15 @@ export async function loadSalesDashboard(
   };
 
   // Negócios em fase avançada (probabilidade >= 60%), ordenados por hot score
-  const advancedDeals = openDeals
-    .filter((d) => probabilityOf(d, stages) >= 60)
+  const advancedDeals = secondary.advanced
     .map(toItem)
     .sort((a, b) => b.hotScore - a.hotScore)
     .slice(0, 8);
   const advancedIds = new Set(advancedDeals.map((d) => d.id));
 
-  // Negócios que precisam de atenção
-  const attentionDeals = openDeals
+  // Negócios que precisam de atenção: o servidor devolve os 16 maiores de cada risco,
+  // o suficiente para completar 8 mesmo após remover os 8 já listados como avançados.
+  const attentionDeals = [...secondary.overdue, ...secondary.stale]
     .filter((d) => !advancedIds.has(d.id))
     .map(toItem)
     .filter((d) => d.risk !== null)
@@ -507,27 +439,21 @@ export async function loadSalesDashboard(
     contactsByDay.push(row);
     byDay.set(day, row);
   }
-  for (const a of (acts14Res.data ?? []) as Array<{
-    type: string;
-    created_at: string | null;
-  }>) {
-    if (!a.created_at) continue;
-    const row = byDay.get(brDayKey(new Date(a.created_at)));
+  for (const g of secondary.contacts) {
+    const row = byDay.get(g.day);
     if (!row) continue;
-
-    const key =
-      a.type === "call"
+    const key: (typeof bucketKeys)[number] =
+      g.type === "call"
         ? "calls"
-        : a.type === "email"
+        : g.type === "email"
           ? "emails"
-          : a.type === "whatsapp"
+          : g.type === "whatsapp"
             ? "whatsapp"
-            : a.type === "meeting"
+            : g.type === "meeting"
               ? "meetings"
               : "other";
-    row[key] += 1;
-    row.total += 1;
-    void bucketKeys;
+    row[key] += g.n;
+    row.total += g.n;
   }
 
   // Funil do pipeline selecionado (apenas etapas abertas)
@@ -545,7 +471,7 @@ export async function loadSalesDashboard(
       };
     });
 
-  // Leads a trabalhar
+  // Leads a trabalhar (amostra + contagem exata)
   const leadsRows = (leadsRes.data ?? []) as Array<{
     id: string;
     first_name: string | null;
@@ -553,80 +479,12 @@ export async function loadSalesDashboard(
     company_name: string | null;
     status: string;
   }>;
+  const leadsToWorkCount =
+    typeof (leadsRes as { count?: number | null }).count === "number"
+      ? ((leadsRes as { count?: number | null }).count as number)
+      : leadsRows.length;
 
-  const allJourneyLeads = (journeyLeadsRes.data ?? []) as LeadJourneyRow[];
-  const journeyLeads = input.channel
-    ? allJourneyLeads.filter((lead) => normalizeLeadChannel(lead.source) === input.channel)
-    : allJourneyLeads;
-  // Reutiliza os negócios já carregados para evitar uma consulta sequencial extra.
-  // `deals` já respeita workspace, permissão, pipeline e exclusão lógica.
-  const linkedDealById = new Map(deals.map((deal) => [deal.id, deal]));
-  const journeyQualified = journeyLeads.filter((lead) => {
-    const stage = resolveJourneyStage(lead, leadStages);
-    return lead.converted_at !== null || stage?.type === "won" || lead.status === "qualified";
-  });
-  const journeyOpportunities = journeyLeads.filter(
-    (lead) => lead.converted_deal_id !== null && linkedDealById.has(lead.converted_deal_id),
-  );
-  const journeySales = journeyOpportunities.filter((lead) => {
-    const deal = lead.converted_deal_id ? linkedDealById.get(lead.converted_deal_id) : undefined;
-    return deal ? isWon(deal as DealRow, stages) : false;
-  });
-  const convertedJourneyLeads = journeyLeads.filter(
-    (lead) => lead.converted_at !== null || lead.converted_deal_id !== null,
-  );
-  const journeyRevenue = journeySales.reduce((total, lead) => {
-    const deal = lead.converted_deal_id ? linkedDealById.get(lead.converted_deal_id) : undefined;
-    return total + (deal?.value ?? 0);
-  }, 0);
-  const rate = (part: number, total: number) => (total > 0 ? (part / total) * 100 : 0);
-  const channelRows = LEAD_CHANNELS.map((key) => {
-    // O ranking permanece comparativo mesmo quando um canal filtra os demais painéis.
-    const rows = allJourneyLeads.filter((lead) => normalizeLeadChannel(lead.source) === key);
-    const convertedRows = rows.filter(
-      (lead) => lead.converted_at !== null || lead.status === "qualified",
-    );
-    const opportunityRows = rows.filter(
-      (lead) => lead.converted_deal_id !== null && linkedDealById.has(lead.converted_deal_id),
-    );
-    const salesRows = opportunityRows.filter((lead) => {
-      const deal = lead.converted_deal_id ? linkedDealById.get(lead.converted_deal_id) : undefined;
-      return deal ? isWon(deal as DealRow, stages) : false;
-    });
-    return {
-      key,
-      label: LEAD_CHANNEL_LABELS[key],
-      leads: rows.length,
-      share: rate(rows.length, allJourneyLeads.length),
-      qualified: convertedRows.length,
-      opportunities: opportunityRows.length,
-      sales: salesRows.length,
-      revenue: salesRows.reduce((total, lead) => {
-        const deal = lead.converted_deal_id
-          ? linkedDealById.get(lead.converted_deal_id)
-          : undefined;
-        return total + (deal?.value ?? 0);
-      }, 0),
-      sources: Array.from(
-        new Set(rows.map((lead) => lead.source).filter(Boolean) as string[]),
-      ).sort(),
-    };
-  })
-    .filter((row) => row.leads > 0)
-    .sort((a, b) => b.leads - a.leads);
-  const leadStageRows = leadStages.map((stage) => {
-    const count = journeyLeads.filter(
-      (lead) => resolveJourneyStage(lead, leadStages)?.value === stage.value,
-    ).length;
-    return {
-      value: stage.value,
-      label: stage.label,
-      color: stage.color ?? null,
-      type: stage.type ?? "open",
-      count,
-      share: rate(count, journeyLeads.length),
-    };
-  });
+  const journey = summarizeLeadJourney(secondary.journey, leadStages, stages, input.channel);
 
   return {
     pipelines: pipelines.map((p) => ({ id: p.id, name: p.name, isDefault: p.is_default })),
@@ -670,20 +528,9 @@ export async function loadSalesDashboard(
           : null,
     },
     leadJourney: {
-      totalLeads: journeyLeads.length,
-      qualified: journeyQualified.length,
-      opportunities: journeyOpportunities.length,
-      sales: journeySales.length,
-      revenue: journeyRevenue,
-      leadToQualifiedRate: rate(journeyQualified.length, journeyLeads.length),
-      qualifiedToOpportunityRate: rate(journeyOpportunities.length, journeyQualified.length),
-      opportunityToSaleRate: rate(journeySales.length, journeyOpportunities.length),
-      attributionCoverage: rate(journeyOpportunities.length, convertedJourneyLeads.length),
-      linkedOpportunities: journeyOpportunities.length,
+      ...journey,
       selectedChannel: input.channel,
       leadPipelineName: selectedLeadPipeline?.name ?? null,
-      channels: channelRows,
-      stages: leadStageRows,
     },
     advancedDeals,
     attentionDeals,
@@ -692,7 +539,7 @@ export async function loadSalesDashboard(
     contactsByDay,
     funnel,
     leadsToWork: {
-      count: leadsRows.length,
+      count: leadsToWorkCount,
       sample: leadsRows.slice(0, 5).map((l) => ({
         id: l.id,
         name:

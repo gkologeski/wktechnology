@@ -22380,6 +22380,24 @@ export type Database = {
         }
         Returns: Json
       }
+      get_sales_dashboard_secondary: {
+        Args: {
+          p_advanced_stage_ids: string[]
+          p_contacts_since: string
+          p_lead_pipeline_id: string
+          p_now: string
+          p_open_stage_ids: string[]
+          p_owner_id: string
+          p_owner_mode: string
+          p_period_end: string
+          p_period_start: string
+          p_pipeline_id: string
+          p_today: string
+          p_utc_offset_minutes: number
+          p_workspace_id: string
+        }
+        Returns: Json
+      }
       get_timeline_activity_page: {
         Args: {
           p_assignees?: string[]
