@@ -24,3 +24,7 @@ pode cortar histórico nem contagens.
 - Ciclo 5: telas Email/WhatsApp/Chat paginadas (0097) e tempo real de e-mail filtrado por caixa — ver
   performance-cycle-5-channels.md. Pendente: RLS não-admin no banco real (requisito de publicação),
   paginação do histórico de mensagens dentro da conversa e entrega real do evento de e-mail.
+- Ciclo 6: histórico de mensagens paginado (Email/WhatsApp/Chat), corpo de e-mail sob demanda, âncora de rolagem,
+  tempo real por conversa e detecção de recusa silenciosa — ver performance-cycle-6-message-history.md.
+  Pendente: RLS não-admin real, evento ponta a ponta do tempo real, abertura de conversa WhatsApp no navegador
+  (marca como lida na Meta), assinatura `branding` recusada pelo servidor (fora do escopo, ver ciclo 6).
