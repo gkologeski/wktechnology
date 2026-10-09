@@ -33,7 +33,13 @@ export function RecordLayout({
   return (
     <div className="-m-4 min-h-full bg-product-canvas md:-m-6">
       {header}
-      <div className="grid grid-cols-1 border-t border-product-divider xl:grid-cols-[260px_minmax(0,1fr)_300px] 2xl:grid-cols-[280px_minmax(0,1fr)_320px]">
+      <div
+        className={`grid grid-cols-1 border-t border-product-divider ${
+          synchronizedTimeline
+            ? "xl:grid-cols-[300px_minmax(0,1fr)_340px] 2xl:grid-cols-[320px_minmax(0,1fr)_360px]"
+            : "xl:grid-cols-[260px_minmax(0,1fr)_300px] 2xl:grid-cols-[280px_minmax(0,1fr)_320px]"
+        }`}
+      >
         <aside
           ref={leftRef}
           className={`min-w-0 space-y-4 border-b border-product-divider bg-product-panel-muted p-4 xl:border-b-0 xl:border-r ${synchronizedTimeline ? "xl:max-h-[calc(100dvh-8rem)] xl:overflow-y-auto" : ""}`}
