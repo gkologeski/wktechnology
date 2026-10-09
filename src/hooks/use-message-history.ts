@@ -45,7 +45,10 @@ export function useMessageHistory<Row extends HistoryRow>(opts: {
 }) {
   const { contextKey, realtime } = opts;
   const [state, dispatch] = useReducer(
-    historyReducer as (s: HistoryState<Row>, a: Parameters<typeof historyReducer<Row>>[1]) => HistoryState<Row>,
+    historyReducer as (
+      s: HistoryState<Row>,
+      a: Parameters<typeof historyReducer<Row>>[1],
+    ) => HistoryState<Row>,
     contextKey,
     (k) => emptyHistory<Row>(k),
   );
@@ -68,11 +71,11 @@ export function useMessageHistory<Row extends HistoryRow>(opts: {
     fetchRef
       .current({ signal: ac.signal })
       .then((p) => {
-        if (!ac.signal.aborted) dispatch({ type: "initialOk", key: contextKey, items: p.items, hasMore: p.hasMore });
+        if (!ac.signal.aborted)
+          dispatch({ type: "initialOk", key: contextKey, items: p.items, hasMore: p.hasMore });
       })
       .catch((e: unknown) => {
-        if (!ac.signal.aborted)
-          dispatch({ type: "initialErr", key: contextKey, error: errMsg(e) });
+        if (!ac.signal.aborted) dispatch({ type: "initialErr", key: contextKey, error: errMsg(e) });
       });
     return () => ac.abort();
   }, [contextKey]);
@@ -83,8 +86,15 @@ export function useMessageHistory<Row extends HistoryRow>(opts: {
     if (!key || !ac) return;
     fetchRef
       .current({ signal: ac.signal })
-      .then((p) => !ac.signal.aborted && dispatch({ type: "initialOk", key, items: p.items, hasMore: p.hasMore }))
-      .catch((e: unknown) => !ac.signal.aborted && dispatch({ type: "initialErr", key, error: errMsg(e) }));
+      .then(
+        (p) =>
+          !ac.signal.aborted &&
+          dispatch({ type: "initialOk", key, items: p.items, hasMore: p.hasMore }),
+      )
+      .catch(
+        (e: unknown) =>
+          !ac.signal.aborted && dispatch({ type: "initialErr", key, error: errMsg(e) }),
+      );
   }, []);
 
   const loadOlder = useCallback(async () => {
@@ -95,7 +105,8 @@ export function useMessageHistory<Row extends HistoryRow>(opts: {
     dispatch({ type: "olderStart", key });
     try {
       const p = await fetchRef.current({ before: cursorOf(s.items[0]), signal: ac.signal });
-      if (!ac.signal.aborted) dispatch({ type: "olderOk", key, items: p.items, hasMore: p.hasMore });
+      if (!ac.signal.aborted)
+        dispatch({ type: "olderOk", key, items: p.items, hasMore: p.hasMore });
     } catch (e) {
       if (!ac.signal.aborted) dispatch({ type: "olderErr", key, error: errMsg(e) });
     }
@@ -123,7 +134,11 @@ export function useMessageHistory<Row extends HistoryRow>(opts: {
             : await fetchRef.current({ signal: ac.signal });
           if (ac.signal.aborted) return;
           dispatch({ type: "upsert", key, items: p.items });
-          stateRef.current = historyReducer(stateRef.current, { type: "upsert", key, items: p.items });
+          stateRef.current = historyReducer(stateRef.current, {
+            type: "upsert",
+            key,
+            items: p.items,
+          });
           if (!last || !p.hasMore) break;
         }
       } while (syncing.current.again && !ac.signal.aborted);
@@ -199,7 +214,11 @@ export function useMessageHistory<Row extends HistoryRow>(opts: {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           "postgres_changes" as any,
           { event: "*", schema: "public", table: rtTable, filter: rtFilter },
-          (payload: { eventType?: string; new?: Record<string, unknown>; old?: Record<string, unknown> }) => {
+          (payload: {
+            eventType?: string;
+            new?: Record<string, unknown>;
+            old?: Record<string, unknown>;
+          }) => {
             if (rtKind === "parent") return bumpNewer();
             const ev = payload.eventType;
             const nid = typeof payload.new?.id === "string" ? payload.new.id : null;
@@ -210,7 +229,12 @@ export function useMessageHistory<Row extends HistoryRow>(opts: {
               return;
             }
             if (ev === "UPDATE" && nid && stateRef.current.items.some((r) => r.id === nid)) {
-              dispatch({ type: "patch", key, id: nid, fields: pickFields<Row>(payload.new, patchKeysRef.current) });
+              dispatch({
+                type: "patch",
+                key,
+                id: nid,
+                fields: pickFields<Row>(payload.new, patchKeysRef.current),
+              });
               return;
             }
             bumpNewer();
@@ -228,7 +252,8 @@ export function useMessageHistory<Row extends HistoryRow>(opts: {
           }
           if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
             setHealth("degraded");
-            if (!degradedTimer) degradedTimer = setInterval(() => void reconcile(), DEGRADED_RECONCILE_MS);
+            if (!degradedTimer)
+              degradedTimer = setInterval(() => void reconcile(), DEGRADED_RECONCILE_MS);
             if (channel) void supabase.removeChannel(channel);
             channel = null;
             const wait = Math.min(60_000, 5_000 * 2 ** attempt++);

@@ -121,7 +121,9 @@ function EmailInbox() {
         data: { channel: "email", conversation_id: selected!, ...cur },
         signal,
       }) as Promise<HistoryPage<EmailMessageRow>>,
-    realtime: selected ? { table: "email_threads", filter: `id=eq.${selected}`, kind: "parent" } : null,
+    realtime: selected
+      ? { table: "email_threads", filter: `id=eq.${selected}`, kind: "parent" }
+      : null,
   });
   const membersQ = useQuery({ queryKey: ["inbox", "members"], queryFn: () => membersFn() });
   const assign = useMutation({
@@ -183,7 +185,11 @@ function EmailInbox() {
                     </span>
                   ) : null}
                 </TabsTrigger>
-                <TabsTrigger className="flex-col gap-0 px-1" value="unassigned" title="Sem responsável">
+                <TabsTrigger
+                  className="flex-col gap-0 px-1"
+                  value="unassigned"
+                  title="Sem responsável"
+                >
                   Sem dono
                   {counts ? (
                     <span className="block text-[10px] font-normal text-muted-foreground">
@@ -340,7 +346,9 @@ function EmailInbox() {
                   onRetrySync={() => void history.reconcile()}
                   className="bg-product-panel-muted px-5 py-6"
                 >
-                  {history.initial === "loading" && !current.messages.length ? <InboxLoading /> : null}
+                  {history.initial === "loading" && !current.messages.length ? (
+                    <InboxLoading />
+                  ) : null}
                   {current.messages.map((m) => (
                     <MessageCard key={m.id} message={m} />
                   ))}
@@ -364,7 +372,9 @@ function EmailInbox() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Mensagens</p>
-                <p className="mt-1 font-medium">{current.thread.message_count ?? current.messages.length}</p>
+                <p className="mt-1 font-medium">
+                  {current.thread.message_count ?? current.messages.length}
+                </p>
               </div>
               <InboxIdentityLinker
                 channel="email"
@@ -412,9 +422,12 @@ function useEmailBody(id: string) {
   useEffect(() => {
     if (visible || !ref.current) return;
     if (typeof IntersectionObserver === "undefined") return setVisible(true);
-    const io = new IntersectionObserver((e) => e.some((x) => x.isIntersecting) && setVisible(true), {
-      rootMargin: "600px 0px",
-    });
+    const io = new IntersectionObserver(
+      (e) => e.some((x) => x.isIntersecting) && setVisible(true),
+      {
+        rootMargin: "600px 0px",
+      },
+    );
     io.observe(ref.current);
     return () => io.disconnect();
   }, [visible]);

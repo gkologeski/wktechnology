@@ -153,7 +153,6 @@ function WhatsAppInbox() {
     return map;
   }, [membersQ.data]);
 
-
   // Marca como lido ao selecionar
   useEffect(() => {
     if (selected) {
@@ -275,7 +274,6 @@ function WhatsAppInbox() {
     value: { body_text: draft },
     onRestore: (d) => setDraft(d.body_text),
   });
-
 
   return (
     <InboxWorkspace
@@ -466,24 +464,21 @@ function WhatsAppInbox() {
                 className="bg-product-panel-muted px-5 py-6"
               >
                 {history.initial === "loading" && !messages.length ? <InboxLoading /> : null}
-                  {messages.map((m) => (
-                    <InboxMessageBubble
-                      key={m.id}
-                      outbound={m.direction === "outbound"}
-                      when={m.created_at}
-                      status={m.direction === "outbound" ? m.status : null}
-                    >
-                      {m.media_url && (
-                        <div className="mb-1">
-                          <WhatsAppMediaBubble
-                            url={m.media_url}
-                            contentType={m.media_content_type}
-                          />
-                        </div>
-                      )}
-                      {m.body && <div className="whitespace-pre-wrap">{m.body}</div>}
-                    </InboxMessageBubble>
-                  ))}
+                {messages.map((m) => (
+                  <InboxMessageBubble
+                    key={m.id}
+                    outbound={m.direction === "outbound"}
+                    when={m.created_at}
+                    status={m.direction === "outbound" ? m.status : null}
+                  >
+                    {m.media_url && (
+                      <div className="mb-1">
+                        <WhatsAppMediaBubble url={m.media_url} contentType={m.media_content_type} />
+                      </div>
+                    )}
+                    {m.body && <div className="whitespace-pre-wrap">{m.body}</div>}
+                  </InboxMessageBubble>
+                ))}
               </MessageHistoryViewport>
               <div className="bg-product-panel p-4 pt-3">
                 {templateRequired && (

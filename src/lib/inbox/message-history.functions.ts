@@ -57,7 +57,10 @@ export const listConversationMessages = createServerFn({ method: "POST" })
     const spec = SPEC[data.channel];
     const limit = data.limit ?? spec.limit;
     const from = context.supabase.from as unknown as (t: string) => { select(s: string): Q };
-    let q = from.call(context.supabase, spec.table).select(spec.select).eq(spec.fk, data.conversation_id);
+    let q = from
+      .call(context.supabase, spec.table)
+      .select(spec.select)
+      .eq(spec.fk, data.conversation_id);
     if (data.channel === "chat") {
       const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
       q = q.eq("owner_id", await resolveActiveWorkspace(context.userId));

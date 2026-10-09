@@ -38,7 +38,12 @@ export function MessageHistoryViewport({
   const ref = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const snap = useRef({ scrollHeight: 0, scrollTop: 0, clientHeight: 0, nearBottom: true });
-  const prev = useRef<{ key: string | null; first: string | null; last: string | null; count: number }>({
+  const prev = useRef<{
+    key: string | null;
+    first: string | null;
+    last: string | null;
+    count: number;
+  }>({
     key: null,
     first: null,
     last: null,
@@ -78,7 +83,12 @@ export function MessageHistoryViewport({
       if (!p.last || snap.current.nearBottom) toBottom();
       else setUnseen((n) => n + Math.max(1, count - p.count));
     }
-    prev.current = { key: lastId ? resetKey : p.key === resetKey ? p.key : null, first: firstId, last: lastId, count };
+    prev.current = {
+      key: lastId ? resetKey : p.key === resetKey ? p.key : null,
+      first: firstId,
+      last: lastId,
+      count,
+    };
     record();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resetKey, firstId, lastId, count]);
@@ -121,7 +131,9 @@ export function MessageHistoryViewport({
                 </div>
               ) : (
                 <Button size="sm" variant="ghost" onClick={onLoadOlder} disabled={olderLoading}>
-                  {olderLoading && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" aria-hidden />}
+                  {olderLoading && (
+                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" aria-hidden />
+                  )}
                   Carregar anteriores
                 </Button>
               )}
@@ -131,7 +143,10 @@ export function MessageHistoryViewport({
         </div>
       </div>
       {(syncError || degraded) && (
-        <div className="flex items-center justify-between gap-2 border-t border-border bg-product-panel px-4 py-1.5 text-xs text-muted-foreground" role="status">
+        <div
+          className="flex items-center justify-between gap-2 border-t border-border bg-product-panel px-4 py-1.5 text-xs text-muted-foreground"
+          role="status"
+        >
           <span>
             {syncError
               ? "Não foi possível atualizar as novas mensagens."

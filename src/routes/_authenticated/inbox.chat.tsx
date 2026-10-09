@@ -98,11 +98,15 @@ function LiveChatInbox() {
         signal,
       }) as Promise<HistoryPage<ChatMessageRow>>,
     realtime: selected
-      ? { table: "live_chat_messages", filter: `session_id=eq.${selected}`, kind: "rows", patchKeys: ["body"] }
+      ? {
+          table: "live_chat_messages",
+          filter: `session_id=eq.${selected}`,
+          kind: "rows",
+          patchKeys: ["body"],
+        }
       : null,
   });
   const membersQ = useQuery({ queryKey: ["inbox", "members"], queryFn: () => membersFn() });
-
 
   const send = useMutation({
     mutationFn: () => sendFn({ data: { session_id: selected!, body: draft.trim() } }),
@@ -161,7 +165,11 @@ function LiveChatInbox() {
                     </span>
                   ) : null}
                 </TabsTrigger>
-                <TabsTrigger className="flex-col gap-0 px-1" value="unassigned" title="Sem responsável">
+                <TabsTrigger
+                  className="flex-col gap-0 px-1"
+                  value="unassigned"
+                  title="Sem responsável"
+                >
                   Sem dono
                   {counts ? (
                     <span className="block text-[10px] font-normal text-muted-foreground">
@@ -310,16 +318,16 @@ function LiveChatInbox() {
                 className="bg-product-panel-muted px-5 py-6"
               >
                 {history.initial === "loading" && !messages.length ? <InboxLoading /> : null}
-                  {messages.map((m) => (
-                    <InboxMessageBubble
-                      key={m.id}
-                      outbound={m.direction !== "inbound"}
-                      when={m.created_at}
-                      status={m.direction !== "inbound" ? "sent" : null}
-                    >
-                      <div className="whitespace-pre-wrap">{m.body}</div>
-                    </InboxMessageBubble>
-                  ))}
+                {messages.map((m) => (
+                  <InboxMessageBubble
+                    key={m.id}
+                    outbound={m.direction !== "inbound"}
+                    when={m.created_at}
+                    status={m.direction !== "inbound" ? "sent" : null}
+                  >
+                    <div className="whitespace-pre-wrap">{m.body}</div>
+                  </InboxMessageBubble>
+                ))}
               </MessageHistoryViewport>
               {current.status !== "closed" && (
                 <div className="flex items-end gap-2 bg-product-panel p-4">

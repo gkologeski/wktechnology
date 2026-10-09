@@ -25,7 +25,8 @@ export function tsKey(s: string): number {
   const m = TS_RE.exec(s);
   if (!m) return Number.NaN;
   let off = m[4] ?? "Z";
-  if (off !== "Z") off = off.length === 3 ? `${off}:00` : off.replace(/^([+-]\d{2})(\d{2})$/, "$1:$2");
+  if (off !== "Z")
+    off = off.length === 3 ? `${off}:00` : off.replace(/^([+-]\d{2})(\d{2})$/, "$1:$2");
   const ms = Date.parse(`${m[1]}T${m[2]}${off}`);
   const frac = (m[3] ?? "").padEnd(6, "0");
   return ms * 1000 + Number(frac);
@@ -108,7 +109,12 @@ export function historyReducer<Row extends HistoryRow>(
     case "olderStart":
       return { ...s, olderLoading: true, olderError: null };
     case "olderOk":
-      return { ...s, items: mergeHistory(s.items, a.items), hasOlder: a.hasMore, olderLoading: false };
+      return {
+        ...s,
+        items: mergeHistory(s.items, a.items),
+        hasOlder: a.hasMore,
+        olderLoading: false,
+      };
     case "olderErr":
       return { ...s, olderLoading: false, olderError: a.error };
     case "upsert":
@@ -136,7 +142,10 @@ export function historyReducer<Row extends HistoryRow>(
 }
 
 /** Campos do payload do tempo real que podem atualizar um item já carregado. */
-export function pickFields<Row>(payload: Record<string, unknown> | undefined, keys: readonly string[]) {
+export function pickFields<Row>(
+  payload: Record<string, unknown> | undefined,
+  keys: readonly string[],
+) {
   const out: Record<string, unknown> = {};
   if (!payload) return out as Partial<Row>;
   for (const k of keys) if (k in payload && k !== "created_at" && k !== "id") out[k] = payload[k];
@@ -151,6 +160,9 @@ export function isNearBottom(
 }
 
 /** Nova posição para manter o conteúdo visível no lugar após inserir itens acima. */
-export function anchoredScrollTop(prev: { scrollHeight: number; scrollTop: number }, nextHeight: number) {
+export function anchoredScrollTop(
+  prev: { scrollHeight: number; scrollTop: number },
+  nextHeight: number,
+) {
   return prev.scrollTop + (nextHeight - prev.scrollHeight);
 }
