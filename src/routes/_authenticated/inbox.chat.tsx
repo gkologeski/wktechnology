@@ -156,15 +156,30 @@ function LiveChatInbox() {
         <>
           <InboxListHeader>
             <Tabs value={filter} onValueChange={(value) => setFilter(value as typeof filter)}>
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid h-auto w-full grid-cols-3">
                 <TabsTrigger value="mine">
-                  Minhas{counts ? ` (${compactCount(counts.mine)})` : ""}
+                  Minhas
+                  {counts ? (
+                    <span className="block text-[10px] font-normal text-muted-foreground">
+                      {compactCount(counts.mine)}
+                    </span>
+                  ) : null}
                 </TabsTrigger>
                 <TabsTrigger value="unassigned" title="Sem responsável">
-                  Sem dono{counts ? ` (${compactCount(counts.unassigned)})` : ""}
+                  Sem dono
+                  {counts ? (
+                    <span className="block text-[10px] font-normal text-muted-foreground">
+                      {compactCount(counts.unassigned)}
+                    </span>
+                  ) : null}
                 </TabsTrigger>
                 <TabsTrigger value="all">
-                  Todas{counts ? ` (${compactCount(counts.all)})` : ""}
+                  Todas
+                  {counts ? (
+                    <span className="block text-[10px] font-normal text-muted-foreground">
+                      {compactCount(counts.all)}
+                    </span>
+                  ) : null}
                 </TabsTrigger>
               </TabsList>
             </Tabs>
