@@ -22398,6 +22398,26 @@ export type Database = {
         }
         Returns: Json
       }
+      get_sales_dashboard_secondary_v2: {
+        Args: {
+          p_advanced_limit?: number
+          p_advanced_stage_ids: string[]
+          p_contacts_since: string
+          p_lead_pipeline_id: string
+          p_now: string
+          p_open_stage_ids: string[]
+          p_owner_id: string
+          p_owner_mode: string
+          p_period_end: string
+          p_period_start: string
+          p_pipeline_id: string
+          p_stage_probabilities: Json
+          p_today: string
+          p_utc_offset_minutes: number
+          p_workspace_id: string
+        }
+        Returns: Json
+      }
       get_timeline_activity_page: {
         Args: {
           p_assignees?: string[]
@@ -22627,6 +22647,16 @@ export type Database = {
       role_profile_version_commercial: {
         Args: { _version: string }
         Returns: Json
+      }
+      sales_dashboard_hot_score: {
+        Args: {
+          p_created_at: string
+          p_expected_close_date: string
+          p_now: string
+          p_probability: number
+          p_updated_at: string
+        }
+        Returns: number
       }
       schedule_platform_alerts_cron: { Args: never; Returns: Json }
       sdr_claim_jobs: {
