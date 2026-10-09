@@ -1,4 +1,4 @@
-// Persona, teste em sandbox e versões (rascunho × publicado) do agente.
+// Persona, teste isolado e versões (rascunho × publicado) do agente.
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
