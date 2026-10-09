@@ -60,7 +60,10 @@ export function useMessageHistory<Row extends HistoryRow>(opts: {
   stateRef.current = state;
   const abortRef = useRef<AbortController | null>(null);
   const syncing = useRef<{ running: boolean; again: boolean }>({ running: false, again: false });
-  const reconciling = useRef<{ running: boolean; again: boolean }>({ running: false, again: false });
+  const reconciling = useRef<{ running: boolean; again: boolean }>({
+    running: false,
+    again: false,
+  });
 
   // Troca de contexto: cancela tudo e recomeça.
   useEffect(() => {

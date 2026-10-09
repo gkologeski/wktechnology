@@ -335,7 +335,10 @@ describe("reconcileRange (ciclo 7)", () => {
     const at = "2026-01-01T00:00:00+00:00";
     const rows: Row[] = [uuid(3), uuid(1), uuid(2)].map((id) => ({ id, created_at: at }));
     const box = loaded([...rows].sort(compareHistory));
-    await run(box, rows.filter((r) => r.id !== uuid(2)));
+    await run(
+      box,
+      rows.filter((r) => r.id !== uuid(2)),
+    );
     expect(box.s.items.map((r) => r.id)).toEqual([uuid(1), uuid(3)]);
   });
 });

@@ -41,7 +41,10 @@ const FULL_PATTERNS: RegExp[] = [
 const MODULES: [string, RegExp][] = [
   ["TechHire", /\/(ats|\(ats\)|techhire)\//],
   ["Agents", /\/(agents?|ai-agent|prospecting\/sdr)\b/],
-  ["TechSales", /\/(crm|deals|leads|contacts|companies|prospecting|inbox|whatsapp|email|quotes|proposals)\b/],
+  [
+    "TechSales",
+    /\/(crm|deals|leads|contacts|companies|prospecting|inbox|whatsapp|email|quotes|proposals)\b/,
+  ],
   ["TechProjects", /\/projects?\b/],
   ["TechPeople", /\/people\b/],
   ["TechContracts", /\/(contracts|services)\b/],
@@ -50,19 +53,22 @@ const MODULES: [string, RegExp][] = [
 ];
 
 const CODE = /\.(ts|tsx|js|jsx|mjs|cjs)$/;
-const IGNORABLE = /^(docs\/|\.lovable\/|roadmap\.md$|AGENTS\.md$|.*\/AGENTS\.md$|README|public\/|tests\/e2e\/)/;
+const IGNORABLE =
+  /^(docs\/|\.lovable\/|roadmap\.md$|AGENTS\.md$|.*\/AGENTS\.md$|README|public\/|tests\/e2e\/)/;
 
 export function classifyChanges(
   changed: string[] | null,
   exists: (f: string) => boolean,
 ): VerifyPlan {
   const empty = { modules: [], lintFiles: [], testTargets: [] };
-  if (changed === null) return { mode: "full", reason: "não foi possível listar alterações", ...empty };
+  if (changed === null)
+    return { mode: "full", reason: "não foi possível listar alterações", ...empty };
   if (!changed.length) return { mode: "none", reason: "nenhuma alteração", ...empty };
   const hit = changed.find((f) => FULL_PATTERNS.some((p) => p.test(f)));
   if (hit) return { mode: "full", reason: `arquivo compartilhado/config: ${hit}`, ...empty };
   const unknown = changed.find(
-    (f) => !IGNORABLE.test(f) && !(CODE.test(f) && (f.startsWith("src/") || f.startsWith("scripts/"))),
+    (f) =>
+      !IGNORABLE.test(f) && !(CODE.test(f) && (f.startsWith("src/") || f.startsWith("scripts/"))),
   );
   if (unknown) return { mode: "full", reason: `fora do mapa: ${unknown}`, ...empty };
 
@@ -71,7 +77,12 @@ export function classifyChanges(
   // Arquivo de código removido: quem o importava pode quebrar sem aparecer no grafo.
   if (present.length !== code.length)
     return { mode: "full", reason: "arquivo de código removido/renomeado", ...empty };
-  const modules = [...new Set(present.flatMap((f) => MODULES.filter(([, re]) => re.test(`/${f}`)).map(([m]) => m)))];
-  if (!present.length) return { mode: "none", reason: "só documentação", modules, lintFiles: [], testTargets: [] };
+  const modules = [
+    ...new Set(
+      present.flatMap((f) => MODULES.filter(([, re]) => re.test(`/${f}`)).map(([m]) => m)),
+    ),
+  ];
+  if (!present.length)
+    return { mode: "none", reason: "só documentação", modules, lintFiles: [], testTargets: [] };
   return { mode: "incremental", modules, lintFiles: present, testTargets: present };
 }
