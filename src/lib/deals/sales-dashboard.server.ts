@@ -8,6 +8,10 @@ import type { Pipeline, PipelineStage } from "@/lib/pipelines";
 import { computeHotScore } from "@/lib/deals/hot-score";
 import { activityEffectiveDate } from "@/lib/deals/activity-effective-date";
 import {
+  dashboardStageParameters,
+  parseDealDashboardAggregates,
+} from "@/lib/deals/sales-dashboard-aggregates";
+import {
   LEAD_CHANNEL_LABELS,
   LEAD_CHANNELS,
   normalizeLeadChannel,
@@ -133,6 +137,7 @@ export async function loadSalesDashboard(
     pipelines[0] ??
     null;
   const stages: PipelineStage[] = selected?.stages ?? [];
+  const stageParameters = dashboardStageParameters(stages);
 
   const leadPipesRes = await supabase
     .from("pipelines")
@@ -195,6 +200,7 @@ export async function loadSalesDashboard(
   journeyLeadsQ = mine(journeyLeadsQ);
 
   const [
+    aggregatesRes,
     dealsRes,
     acts14Res,
     acts30Res,
@@ -205,6 +211,30 @@ export async function loadSalesDashboard(
     leadsRes,
     journeyLeadsRes,
   ] = await Promise.all([
+    supabase.rpc("get_sales_dashboard_deal_aggregates", {
+      p_workspace_id: workspaceId,
+      p_pipeline_id: selected?.id,
+      p_owner_mode:
+        effectiveAssignee === "__all__"
+          ? "all"
+          : effectiveAssignee === "__none__"
+            ? "none"
+            : "one",
+      p_owner_id:
+        effectiveAssignee === "__all__" || effectiveAssignee === "__none__"
+          ? undefined
+          : effectiveAssignee,
+      p_open_stage_ids: stageParameters.open,
+      p_won_stage_ids: stageParameters.won,
+      p_lost_stage_ids: stageParameters.lost,
+      p_stage_probabilities: stageParameters.probabilities,
+      p_period_start: periodStart.toISOString(),
+      p_period_end: periodEnd.toISOString(),
+      p_prev_start: prevPeriodStart.toISOString(),
+      p_prev_end: prevPeriodEnd.toISOString(),
+      p_month_start: monthStart.toISOString(),
+      p_month_end: monthEnd.toISOString(),
+    }),
     dealsQ,
     safe(
       mine(
@@ -292,6 +322,9 @@ export async function loadSalesDashboard(
   ]);
 
   if (dealsRes.error) throw new Error(dealsRes.error.message);
+  if (aggregatesRes.error) throw new Error(aggregatesRes.error.message);
+  const dealAggregates = parseDealDashboardAggregates(aggregatesRes.data);
+  if (!dealAggregates) throw new Error("Agregação comercial indisponível.");
 
   const deals = (dealsRes.data ?? []) as unknown as DealRow[];
   const openDeals = deals.filter((d) => !isClosed(d, stages));
@@ -539,16 +572,14 @@ export async function loadSalesDashboard(
   const funnel: FunnelStageRow[] = stages
     .filter((s) => s.type === "open")
     .map((s) => {
-      const rows = openDeals.filter(
-        (d) => (d.stage_id || d.stage) === s.value || d.stage === s.value,
-      );
+      const aggregate = dealAggregates.stages[s.value] ?? { count: 0, value: 0 };
       return {
         value: s.value,
         label: s.label,
         color: s.color ?? null,
         probability: s.probability ?? 0,
-        count: rows.length,
-        valueSum: sum(rows),
+        count: aggregate.count,
+        valueSum: aggregate.value,
       };
     });
 
@@ -643,20 +674,38 @@ export async function loadSalesDashboard(
     canViewTeam,
     effectiveAssignee: effectiveAssignee === userId ? "__me__" : effectiveAssignee,
     kpis: {
-      pipelineValue: sum(openDeals),
-      openDeals: openDeals.length,
-      forecastValue,
-      forecastDeals: forecastDeals.length,
-      wonValue: sum(wonMonth),
-      wonCount: wonMonth.length,
+      pipelineValue: dealAggregates.pipeline_value,
+      openDeals: dealAggregates.open_count,
+      forecastValue: dealAggregates.forecast_value,
+      forecastDeals: dealAggregates.forecast_count,
+      wonValue: dealAggregates.won_month_value,
+      wonCount: dealAggregates.won_month_count,
       goalValue,
-      conversionRate: conv(wonPeriod, lostPeriod),
+      conversionRate:
+        dealAggregates.won_period_count + dealAggregates.lost_period_count > 0
+          ? (dealAggregates.won_period_count /
+              (dealAggregates.won_period_count + dealAggregates.lost_period_count)) *
+            100
+          : 0,
       conversionDelta:
-        wonPrev.length + lostPrev.length > 0
-          ? conv(wonPeriod, lostPeriod) - conv(wonPrev, lostPrev)
+        dealAggregates.won_prev_count + dealAggregates.lost_prev_count > 0
+          ? (dealAggregates.won_period_count /
+                Math.max(1, dealAggregates.won_period_count + dealAggregates.lost_period_count)) *
+              100 -
+            (dealAggregates.won_prev_count /
+              (dealAggregates.won_prev_count + dealAggregates.lost_prev_count)) *
+              100
           : null,
-      wonDeltaPct: sum(wonPrev) > 0 ? ((sum(wonPeriod) - sum(wonPrev)) / sum(wonPrev)) * 100 : null,
-      avgTicket: wonPeriod.length > 0 ? sum(wonPeriod) / wonPeriod.length : null,
+      wonDeltaPct:
+        dealAggregates.won_prev_value > 0
+          ? ((dealAggregates.won_period_value - dealAggregates.won_prev_value) /
+              dealAggregates.won_prev_value) *
+            100
+          : null,
+      avgTicket:
+        dealAggregates.won_period_count > 0
+          ? dealAggregates.won_period_value / dealAggregates.won_period_count
+          : null,
     },
     leadJourney: {
       totalLeads: journeyLeads.length,
