@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { dashboardStageParameters, parseDealDashboardAggregates } from "./sales-dashboard-aggregates";
+import {
+  dashboardStageParameters,
+  parseDealDashboardAggregates,
+} from "./sales-dashboard-aggregates";
 
 describe("dashboard aggregate contract", () => {
   it("preserves exact integer counts and decimal values returned by Postgres", () => {

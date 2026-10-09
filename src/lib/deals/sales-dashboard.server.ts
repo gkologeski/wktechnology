@@ -215,11 +215,7 @@ export async function loadSalesDashboard(
       p_workspace_id: workspaceId,
       p_pipeline_id: selected?.id,
       p_owner_mode:
-        effectiveAssignee === "__all__"
-          ? "all"
-          : effectiveAssignee === "__none__"
-            ? "none"
-            : "one",
+        effectiveAssignee === "__all__" ? "all" : effectiveAssignee === "__none__" ? "none" : "one",
       p_owner_id:
         effectiveAssignee === "__all__" || effectiveAssignee === "__none__"
           ? userId
@@ -656,7 +652,7 @@ export async function loadSalesDashboard(
       conversionDelta:
         dealAggregates.won_prev_count + dealAggregates.lost_prev_count > 0
           ? (dealAggregates.won_period_count /
-                Math.max(1, dealAggregates.won_period_count + dealAggregates.lost_period_count)) *
+              Math.max(1, dealAggregates.won_period_count + dealAggregates.lost_period_count)) *
               100 -
             (dealAggregates.won_prev_count /
               (dealAggregates.won_prev_count + dealAggregates.lost_prev_count)) *
