@@ -10,9 +10,9 @@ pode cortar histórico nem contagens.
    RLS, mantendo as contagens exatas onde a exatidão comercial importa.
 4. [Feito nos ciclos 4 e 5] Inbox unificada (0095/0096) e telas por canal (0097) paginadas no servidor;
    último remetente por `LIMIT 1` só nas linhas da página.
-5. A fase nitro do build repete a transformação de cerca de 5.700 módulos. Investigar a
-   configuração do plugin Cloudflare/nitro antes de mexer, com medição.
-6. Mais de 500 erros de prettier preexistentes (pendente). `hardcode-guard` corrigido no ciclo 3.
+5. A fase nitro do build repete a transformação de cerca de 5.700 módulos (46–71 s, maior fase no
+   ciclo 7). Investigar a configuração do plugin Cloudflare/nitro antes de mexer, com medição.
+6. 503 erros de prettier em 43 arquivos (ciclo 7: todos `prettier/prettier`, nenhum outro); `bun run verify` para no lint por isso. `hardcode-guard` corrigido no ciclo 3.
 7. Assinaturas de `deal_line_items` e `meetings` estão fora da publicação de tempo real. Decidir
    entre incluí-las na publicação (exige migração) ou remover a assinatura.
 8. Índices: criar só a partir de um EXPLAIN de consultas interativas reais. Nada de índices
@@ -28,3 +28,8 @@ pode cortar histórico nem contagens.
   tempo real por conversa e detecção de recusa silenciosa — ver performance-cycle-6-message-history.md.
   Pendente: RLS não-admin real, evento ponta a ponta do tempo real, abertura de conversa WhatsApp no navegador
   (marca como lida na Meta), assinatura `branding` recusada pelo servidor (fora do escopo, ver ciclo 6).
+- Ciclo 7: histórico sem teto que perca novas/apague itens fora da amostra; entrada do cliente −40 KB gzip
+  (export que bloqueava o code-splitting da Prospecção); `bun run verify:changed` como feedback (gate segue
+  `verify` + `build`) — ver performance-cycle-7-build-verification.md. Pendente: timeout 240 s sem comando
+  acessível, fase nitro, `settings.tsx`/`getSettingsForScope` na entrada, assinatura `branding` recusada
+  (prioridade), RLS não-admin real, evento realtime ponta a ponta.

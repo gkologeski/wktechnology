@@ -14,6 +14,7 @@
     "typecheck": "tsgo --noEmit",
     "typecheck:inc": "tsc --noEmit --incremental",
     "typecheck:tsc": "tsc --noEmit",
+    "verify:changed": "bun scripts/verify-changed.ts",
     "verify": "bun run typecheck & p1=$!; bun run lint & p2=$!; wait $p1 && wait $p2 && bun run test",
     "format": "prettier --write .",
     "test": "vitest run",

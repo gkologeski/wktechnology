@@ -87,6 +87,15 @@ export type HistoryAction<Row> =
   | { type: "patch"; key: string; id: string; fields: Partial<Row> }
   | { type: "remove"; key: string; id: string }
   | { type: "replaceWindow"; key: string; items: Row[] }
+  | {
+      type: "replaceRange";
+      key: string;
+      after: HistoryCursor;
+      until: HistoryCursor | null;
+      items: Row[];
+      /** Com `until` null (fim do servidor): só estes ids, já presentes antes da busca, podem sair. */
+      priorIds?: ReadonlySet<string>;
+    }
   | { type: "syncErr"; key: string; error: string | null };
 
 export function historyReducer<Row extends HistoryRow>(
@@ -135,10 +144,111 @@ export function historyReducer<Row extends HistoryRow>(
       const keep = start ? s.items.filter((r) => compareHistory(r, start) < 0) : [];
       return { ...s, items: mergeHistory(keep, a.items), syncError: null };
     }
+    case "replaceRange": {
+      // Só o intervalo (after, until] coberto pela página do servidor é autoritativo:
+      // ausente ali = excluído; fora dele nada é apagado (incompleto ≠ excluído).
+      const lo = { id: a.after.id, created_at: a.after.at };
+      const hi = a.until ? { id: a.until.id, created_at: a.until.at } : null;
+      const got = new Set(a.items.map((r) => r.id));
+      const kept = s.items.filter(
+        (r) =>
+          got.has(r.id) ||
+          compareHistory(r, lo) <= 0 ||
+          (hi ? compareHistory(r, hi) > 0 : !a.priorIds?.has(r.id)),
+      );
+      return { ...s, items: mergeHistory(kept, a.items) };
+    }
     case "syncErr":
       return { ...s, syncError: a.error };
   }
   return s;
+}
+
+type LoopFetch<Row> = (args: {
+  after: HistoryCursor;
+  limit: number;
+  signal: AbortSignal;
+}) => Promise<HistoryPage<Row>>;
+
+const yieldToUi = () => new Promise<void>((r) => setTimeout(r, 0));
+
+/**
+ * Busca tudo que chegou depois de `last` até esgotar. Cada rodada tem no máximo
+ * `pagesPerRound` páginas (sequenciais) e cede a vez à interface entre rodadas;
+ * para quando o servidor diz que acabou, o cursor não avança ou o sinal é abortado.
+ */
+export async function drainNewer<Row extends HistoryRow>(o: {
+  fetch: LoopFetch<Row>;
+  getLast: () => Row | undefined;
+  apply: (items: Row[]) => void;
+  signal: AbortSignal;
+  pageSize?: number;
+  pagesPerRound?: number;
+}): Promise<{ pages: number; complete: boolean }> {
+  const limit = o.pageSize ?? 100;
+  const per = o.pagesPerRound ?? 5;
+  let pages = 0;
+  for (;;) {
+    for (let i = 0; i < per; i++) {
+      const last = o.getLast();
+      if (!last) return { pages, complete: true };
+      const p = await o.fetch({ after: cursorOf(last), limit, signal: o.signal });
+      if (o.signal.aborted) return { pages, complete: false };
+      pages++;
+      o.apply(p.items);
+      if (!p.hasMore) return { pages, complete: true };
+      const nl = o.getLast();
+      if (!nl || nl.id === last.id) return { pages, complete: false }; // sem progresso
+    }
+    await yieldToUi();
+    if (o.signal.aborted) return { pages, complete: false };
+  }
+}
+
+/**
+ * Revalida a janela carregada a partir da mais antiga, página a página, aplicando
+ * cada página como intervalo autoritativo (`replaceRange`). Sem teto que interrompa:
+ * cede a vez a cada `pagesPerRound` e termina ao esgotar o servidor.
+ */
+export async function reconcileRange<Row extends HistoryRow>(o: {
+  oldest: Row;
+  fetch: LoopFetch<Row>;
+  applyRange: (
+    after: HistoryCursor,
+    until: HistoryCursor | null,
+    items: Row[],
+    priorIds?: ReadonlySet<string>,
+  ) => void;
+  /** Ids carregados agora (lidos antes de cada busca). */
+  currentIds: () => ReadonlySet<string>;
+  signal: AbortSignal;
+  pageSize?: number;
+  pagesPerRound?: number;
+}): Promise<{ pages: number; complete: boolean }> {
+  const limit = o.pageSize ?? 100;
+  const per = o.pagesPerRound ?? 20;
+  let cursor = windowStartCursor(o.oldest);
+  let pages = 0;
+  for (;;) {
+    for (let i = 0; i < per; i++) {
+      const prior = o.currentIds();
+      const p = await o.fetch({ after: cursor, limit, signal: o.signal });
+      if (o.signal.aborted) return { pages, complete: false };
+      pages++;
+      const lastItem = p.items[p.items.length - 1];
+      if (!p.hasMore) {
+        // Fim do servidor: some o que já estava aqui antes da busca e não veio;
+        // o que chegou durante a busca (fora de `prior`) é mantido.
+        o.applyRange(cursor, null, p.items, prior);
+        return { pages, complete: true };
+      }
+      if (!lastItem) return { pages, complete: false }; // resposta incoerente: não apaga nada
+      o.applyRange(cursor, cursorOf(lastItem), p.items);
+      cursor = cursorOf(lastItem);
+    }
+    await yieldToUi();
+    if (o.signal.aborted) return { pages, complete: false };
+  }
 }
 
 /** Campos do payload do tempo real que podem atualizar um item já carregado. */
