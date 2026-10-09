@@ -28,7 +28,13 @@ export function InboxListFooter({
           </Button>
         </div>
       ) : hasMore ? (
-        <Button size="sm" variant="outline" className="w-full" disabled={loadingMore} onClick={onLoadMore}>
+        <Button
+          size="sm"
+          variant="outline"
+          className="w-full"
+          disabled={loadingMore}
+          onClick={onLoadMore}
+        >
           {loadingMore ? "Carregando…" : `Carregar mais (${loaded} de ${total ?? loaded})`}
         </Button>
       ) : total != null && total > 0 ? (

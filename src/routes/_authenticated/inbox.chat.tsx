@@ -98,11 +98,8 @@ function LiveChatInbox() {
     const ch = supabase
       .channel("live-chat-inbox")
       .on("postgres_changes", { event: "*", schema: "public", table: "live_chat_messages" }, () => {
+        // A lista é reconciliada pelo hook (live_chat_sessions, agrupado).
         qc.invalidateQueries({ queryKey: ["chat-messages"] });
-        qc.invalidateQueries({ queryKey: ["inbox-channel", "chat"] });
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "live_chat_sessions" }, () => {
-        qc.invalidateQueries({ queryKey: ["inbox-channel", "chat"] });
       })
       .subscribe();
     return () => {
@@ -166,7 +163,11 @@ function LiveChatInbox() {
                 <TabsTrigger value="all">Todas{counts ? ` (${counts.all})` : ""}</TabsTrigger>
               </TabsList>
             </Tabs>
-            <InboxListSearch value={search} onChange={setSearch} placeholder="Buscar visitante ou contato…" />
+            <InboxListSearch
+              value={search}
+              onChange={setSearch}
+              placeholder="Buscar visitante ou contato…"
+            />
           </InboxListHeader>
           <InboxConversationList>
             {sessionsQ.isError && sessions.length === 0 ? (

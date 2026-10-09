@@ -44,7 +44,10 @@ export function useInboxUnifiedPage(channel: InboxChannelFilter, search: string)
 
   // Realtime filtrado e coalescido (e-mail só das caixas do próprio usuário); reconexão e
   // volta da aba recarregam as páginas abertas, sem voltar ao topo.
-  useInboxListRealtime(["email", "whatsapp", "chat"], [["inbox-unified", "page", user?.id ?? "anon"]]);
+  useInboxListRealtime(
+    ["email", "whatsapp", "chat"],
+    [["inbox-unified", "page", user?.id ?? "anon"]],
+  );
 
   const rows = useMemo(() => mergeInboxPages(q.data?.pages ?? []), [q.data]);
   const first = q.data?.pages[0];

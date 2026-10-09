@@ -47,7 +47,8 @@ export function useInboxListRealtime(
   const keys = queryKeys.map((k) => [...k]);
   if (channels.includes("email") && emailFilter)
     subs.push({ table: "email_threads", filter: emailFilter, queryKeys: keys });
-  if (channels.includes("whatsapp")) subs.push({ table: "whatsapp_conversations", queryKeys: keys });
+  if (channels.includes("whatsapp"))
+    subs.push({ table: "whatsapp_conversations", queryKeys: keys });
   if (channels.includes("chat")) subs.push({ table: "live_chat_sessions", queryKeys: keys });
   useRealtimeInvalidate(user?.id ? subs : [], { scope: `inbox:${user?.id ?? "anon"}` });
 }

@@ -161,7 +161,11 @@ function EmailInbox() {
                 <TabsTrigger value="all">Todas{counts ? ` (${counts.all})` : ""}</TabsTrigger>
               </TabsList>
             </Tabs>
-            <InboxListSearch value={search} onChange={setSearch} placeholder="Buscar assunto, trecho ou contato…" />
+            <InboxListSearch
+              value={search}
+              onChange={setSearch}
+              placeholder="Buscar assunto, trecho ou contato…"
+            />
           </InboxListHeader>
           <InboxConversationList>
             {threadsQ.isError && threads.length === 0 ? (

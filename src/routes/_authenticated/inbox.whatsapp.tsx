@@ -144,16 +144,9 @@ function WhatsAppInbox() {
     const channel = supabase
       .channel("wa-inbox")
       .on("postgres_changes", { event: "*", schema: "public", table: "whatsapp_messages" }, () => {
+        // A lista é reconciliada pelo hook (whatsapp_conversations, agrupado).
         qc.invalidateQueries({ queryKey: ["wa", "messages"] });
-        qc.invalidateQueries({ queryKey: ["inbox-channel", "whatsapp"] });
       })
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "whatsapp_conversations" },
-        () => {
-          qc.invalidateQueries({ queryKey: ["inbox-channel", "whatsapp"] });
-        },
-      )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
@@ -310,7 +303,11 @@ function WhatsAppInbox() {
                 <TabsTrigger value="all">Todas{counts ? ` (${counts.all})` : ""}</TabsTrigger>
               </TabsList>
             </Tabs>
-            <InboxListSearch value={search} onChange={setSearch} placeholder="Buscar telefone, mensagem ou contato…" />
+            <InboxListSearch
+              value={search}
+              onChange={setSearch}
+              placeholder="Buscar telefone, mensagem ou contato…"
+            />
           </InboxListHeader>
           <InboxConversationList>
             {conversationsQ.isError && conversations.length === 0 ? (

@@ -20,7 +20,8 @@ export function parseChannelPage<Row extends { id: string }>(raw: unknown): Chan
   const r = (raw ?? {}) as Record<string, unknown>;
   const items = (Array.isArray(r.items) ? r.items : []).filter(
     (it): it is Row =>
-      !!it && typeof (it as { id?: unknown }).id === "string" &&
+      !!it &&
+      typeof (it as { id?: unknown }).id === "string" &&
       typeof (it as { sort_at?: unknown }).sort_at === "string",
   );
   const c = (r.counts ?? {}) as Record<string, unknown>;
@@ -29,7 +30,11 @@ export function parseChannelPage<Row extends { id: string }>(raw: unknown): Chan
     nc && typeof nc.at === "string" && typeof nc.id === "string" ? { at: nc.at, id: nc.id } : null;
   return {
     items,
-    counts: { all: Number(c.all) || 0, mine: Number(c.mine) || 0, unassigned: Number(c.unassigned) || 0 },
+    counts: {
+      all: Number(c.all) || 0,
+      mine: Number(c.mine) || 0,
+      unassigned: Number(c.unassigned) || 0,
+    },
     total: Number(r.total) || 0,
     hasMore: r.has_more === true && nextCursor !== null,
     nextCursor,
