@@ -2,6 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Json } from "@/integrations/supabase/types";
 import { isHistoryTimestamp } from "@/lib/inbox/message-history";
 
 const cursorSchema = z.object({
@@ -73,7 +74,7 @@ export const listConversationMessages = createServerFn({ method: "POST" })
       .limit(limit + 1);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    const list = (rows ?? []) as Array<Record<string, unknown> & { id: string; created_at: string }>;
+    const list = (rows ?? []) as Array<{ [k: string]: Json } & { id: string; created_at: string }>;
     const hasMore = list.length > limit;
     const page = list.slice(0, limit);
     if (!asc) page.reverse();
