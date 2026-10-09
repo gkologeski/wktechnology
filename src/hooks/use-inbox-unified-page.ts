@@ -9,6 +9,7 @@ import {
   parseInboxPage,
   type InboxChannelFilter,
   type InboxCursor,
+  type InboxPage,
 } from "@/lib/inbox/unified-page";
 
 const PAGE_SIZE = 50;
@@ -24,7 +25,7 @@ export function useInboxUnifiedPage(channel: InboxChannelFilter, search: string)
     initialPageParam: null as InboxCursor | null,
     // Mantém a lista anterior visível enquanto a nova busca/filtro carrega.
     placeholderData: (prev) => prev,
-    queryFn: async ({ pageParam, signal }) => {
+    queryFn: async ({ pageParam, signal }): Promise<InboxPage> => {
       const { data, error } = await supabase
         .rpc("get_inbox_unified_page", {
           p_channel: channel,
@@ -38,7 +39,7 @@ export function useInboxUnifiedPage(channel: InboxChannelFilter, search: string)
       if (error) throw error;
       return parseInboxPage(data);
     },
-    getNextPageParam: (last) => (last.hasMore ? last.nextCursor : undefined),
+    getNextPageParam: (last: InboxPage) => (last.hasMore ? last.nextCursor : undefined),
   });
 
   // Realtime: WhatsApp e chat estão na publicação; e-mail não (reconcilia ao focar a aba).
