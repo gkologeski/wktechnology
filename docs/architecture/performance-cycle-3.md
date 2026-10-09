@@ -1,4 +1,4 @@
-# Performance — ciclo 3 (09/10/2026) — A e B implementadas; validação de papéis não-admin e C (Inbox) pendentes
+# Performance — ciclo 3 (09/10/2026) — A e B implementadas; RLS não-admin pendente; Inbox em performance-cycle-4-inbox.md
 
 Base: commit do ciclo 2 `5c573cea5`. Sem publicação, envios ou alteração de dados reais.
 
@@ -45,25 +45,24 @@ Base: commit do ciclo 2 `5c573cea5`. Sem publicação, envios ou alteração de 
   não representa produção. A primeira página foi pedida duas vezes (filtros salvos reidratados), comportamento anterior.
 - tsgo e ESLint dos arquivos alterados sem erros (avisos de tamanho preexistentes).
 
-## Parte A — limites conhecidos
-- Busca no histórico usa nome da propriedade e valores brutos; nomes resolvidos (ex.: nome da etapa quando o
-  valor é id) não são encontrados pela busca do servidor — divergência documentada.
-- Período de calendário agora usa `< fim` (antes `<=`), igual às atividades.
-- Antes, o dedup de calendário só considerava atividades da página carregada; agora considera todas do registro.
-- Realtime ainda escuta só `activities` (e respostas de pesquisa); alterações de histórico/calendário aparecem
-  ao focar a aba ou reabrir, como antes.
-- Teste com sessão de usuário de outro workspace/escopo próprio ainda não executado.
-- Sem medição comparável antes/depois além da amostra dev acima; suíte completa e build não rodados neste turno.
+## Parte A — limites conhecidos (estado atual; substitui as notas antigas)
+- Busca do histórico: casa nome da propriedade, valores brutos **e** rótulos resolvidos (0094).
+- Período de calendário usa `< fim`, igual às atividades; dedup considera todas as atividades do registro.
+- Realtime: `activities`, `property_history` (filtrado pela ficha) e `calendar_events` filtrado por
+  `related_contact_id` só em contatos. Leads/empresas/negócios não têm coluna de associação filtrável
+  direta em `calendar_events` — fallback: reconciliação ao focar/voltar à aba (sem assinatura ampla).
+- E-mail detalhado carrega por proximidade na viewport.
+- Pins e selos de e-mail: conferidos por teste de componente com fixtures
+  (`timeline-card-badges.test.ts`, 3 testes); não há registro fixado nos dados reais para ver no navegador.
 
 ## Pendente (atualizado)
-- A/B: validar RLS com perfis não-admin (próprio/equipe) e outro tenant com dados.
-- A: conferir visualmente pins e selos de e-mail; agenda em tempo real fora de contatos.
-- C: Inbox — não iniciada (depende da validação acima).
+- A/B: RLS com perfis não-admin e outro tenant no banco real (ver "Permissões").
 - Medições comparáveis antes/depois e em produção.
 
-## Rollback
-- Parte A: restaurar `activity-fetch.ts`/`use-timeline-feed.ts` anteriores; as RPCs 0087/0088 permanecem sem efeito.
-Reaplicar a definição de 0086 via nova migração `CREATE OR REPLACE` (sem perda de dados).
+## Rollback (parte A)
+- Restaurar `activity-fetch.ts`/`use-timeline-feed.ts` anteriores; as RPCs permanecem sem efeito.
+- **Não** reaplicar a definição de 0086: ela omitia gravação, duração, pins, status de tarefa/e-mail e
+  criador (regressão corrigida por 0089). Qualquer rollback de RPC parte de 0089.
 
 ## Parte B — Dashboard sem tetos (implementado)
 
@@ -105,18 +104,20 @@ Reaplicar a definição de 0086 via nova migração `CREATE OR REPLACE` (sem per
 - Observação: com as colunas laterais alargadas, a coluna central fica estreita em 1280 px.
 
 ## Permissões — cobertura real
-- Validado com sessão authenticated real: conta admin (escopo workspace), filtro por
-  responsável, workspace alheio e entidade inexistente (timeline 0).
-- **Não validado**: perfis com escopo próprio/equipe sem admin e outro tenant com dados (existe
-  um único workspace com negócios). `SET ROLE authenticated` é negado à ferramenta de leitura;
-  emitir sessão de outro usuário exige aprovação do usuário. Até lá, Inbox (parte C) não começa.
+- Sessão authenticated real (banco compartilhado): só a conta admin do solicitante — escopo workspace,
+  filtro por responsável, workspace alheio e entidade inexistente.
+- **Não validado no banco real**: perfis não-admin (próprio/equipe) e outro tenant com dados para
+  timeline e dashboard. Não foi emitida sessão de terceiros; `SET ROLE` segue negado à ferramenta.
+- Inbox: validada em banco **isolado local** com réplica das políticas (performance-cycle-4-inbox.md);
+  timeline/dashboard não foram replicados ali (dependem de dezenas de tabelas e helpers).
+- Consequência: não está pronto para publicação até essa cobertura existir.
 
 ## Gates desta entrega (commit base 2df94a8)
 | Verificação | Resultado |
 | --- | --- |
 | `tsgo --noEmit` | exit 0 |
 | ESLint nos arquivos alterados | exit 0, 0 erros, 5 avisos (tamanho de arquivo, diretivas) |
-| Suíte completa | exit 1 antes: 670/671, falha preexistente `hardcode-guard` (domínio fixo em `role-profile-approval.tsx`); corrigida — teste isolado 7/7 |
+| Suíte completa | exit 1 antes: 670/671 (`hardcode-guard`, domínio fixo no modelo de aprovação); corrigida usando `CANONICAL_APP_ORIGIN` (teste não suprimido). Reexecução 09/10: exit 0, 100 arquivos / 678 testes |
 | Build | exit 0, 259 s (cliente 93 s, SSR 69 s, Nitro 89 s); entrada 1.046,97 KB / 310.103 B gzip (inalterada) |
 | Verificação automática da plataforma | segue em timeout de 240 s; `tsgo` local termina em segundos. Comando real inacessível — hipótese (não comprovada): roda `tsc` sem cache incremental. |
 
