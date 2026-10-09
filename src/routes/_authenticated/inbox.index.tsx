@@ -84,210 +84,60 @@ function UnifiedInboxPage() {
   const sendChat = useServerFn(sendChatMessage);
   const compose = useServerFn(smartCompose);
 
-  const emailQ = useQuery({
-    queryKey: ["inbox-unified", "email"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("email_threads")
-        .select("id, subject, snippet, last_message_at, contact_id, lead_id")
-        .order("last_message_at", { ascending: false, nullsFirst: false })
-        .limit(150);
-      return data ?? [];
-    },
-  });
-  const waQ = useQuery({
-    queryKey: ["inbox-unified", "whatsapp"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("whatsapp_conversations")
-        .select(
-          "id, contact_phone, last_message_preview, last_message_at, contact_id, lead_id, status",
-        )
-        .order("last_message_at", { ascending: false, nullsFirst: false })
-        .limit(150);
-      return data ?? [];
-    },
-  });
-  const chatQ = useQuery({
-    queryKey: ["inbox-unified", "chat"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("live_chat_sessions")
-        .select("id, visitor_name, visitor_email, last_message_at, contact_id, lead_id, status")
-        .order("last_message_at", { ascending: false, nullsFirst: false })
-        .limit(150);
-      return data ?? [];
-    },
-  });
+  const debouncedSearch = useDebounced(search, 300);
+  const { rows, counts, total, query: pageQ } = useInboxUnifiedPage(channel, debouncedSearch);
 
-  // For email: load last inbound email per thread to know from_email
-  const emailThreadIds = (emailQ.data ?? []).map((t) => t.id);
-  const lastEmailQ = useQuery({
-    queryKey: ["inbox-unified", "email-last", emailThreadIds.join(",")],
-    enabled: emailThreadIds.length > 0,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("email_messages")
-        .select("thread_id, from_email, subject, direction")
-        .in("thread_id", emailThreadIds)
-        .order("created_at", { ascending: false });
-      const map = new Map<string, { from_email: string | null; subject: string | null }>();
-      for (const m of data ?? []) {
-        if (!m.thread_id) continue;
-        if (!map.has(m.thread_id) && m.direction === "inbound") {
-          map.set(m.thread_id, { from_email: m.from_email ?? null, subject: m.subject ?? null });
-        }
-      }
-      return map;
-    },
-  });
-
-  const contactIds = useMemo(() => {
-    const s = new Set<string>();
-    (emailQ.data ?? []).forEach((t) => t.contact_id && s.add(t.contact_id));
-    (waQ.data ?? []).forEach((t) => t.contact_id && s.add(t.contact_id));
-    (chatQ.data ?? []).forEach((t) => t.contact_id && s.add(t.contact_id));
-    return Array.from(s);
-  }, [emailQ.data, waQ.data, chatQ.data]);
-
-  const leadIds = useMemo(() => {
-    const ids = new Set<string>();
-    (emailQ.data ?? []).forEach((t) => t.lead_id && ids.add(t.lead_id));
-    (waQ.data ?? []).forEach((t) => t.lead_id && ids.add(t.lead_id));
-    (chatQ.data ?? []).forEach((t) => t.lead_id && ids.add(t.lead_id));
-    return Array.from(ids);
-  }, [emailQ.data, waQ.data, chatQ.data]);
-
-  const contactsQ = useQuery({
-    queryKey: ["inbox-unified", "contacts", contactIds.sort().join(",")],
-    enabled: contactIds.length > 0,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("contacts")
-        .select("id, first_name, last_name, email")
-        .in("id", contactIds);
-      const m = new Map<string, string>();
-      (data ?? []).forEach((c) =>
-        m.set(
-          c.id,
-          [c.first_name, c.last_name].filter(Boolean).join(" ").trim() ||
-            c.email ||
-            c.id.slice(0, 8),
-        ),
-      );
-      return m;
-    },
-  });
-  const leadsQ = useQuery({
-    queryKey: ["inbox-unified", "leads", leadIds.sort().join(",")],
-    enabled: leadIds.length > 0,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("leads")
-        .select("id, first_name, last_name, email")
-        .in("id", leadIds);
-      const map = new Map<string, string>();
-      (data ?? []).forEach((lead) =>
-        map.set(
-          lead.id,
-          [lead.first_name, lead.last_name].filter(Boolean).join(" ").trim() ||
-            lead.email ||
-            lead.id.slice(0, 8),
-        ),
-      );
-      return map;
-    },
-  });
-
-  const items: Item[] = useMemo(() => {
-    const m = contactsQ.data ?? new Map<string, string>();
-    const leads = leadsQ.data ?? new Map<string, string>();
-    const lastMap = lastEmailQ.data ?? new Map();
-    const a: Item[] = (emailQ.data ?? []).map((t) => {
-      const last = lastMap.get(t.id);
-      return {
-        id: `email:${t.id}`,
-        conversationId: t.id,
-        channel: "email" as const,
-        title: t.subject || "(sem assunto)",
-        snippet: t.snippet ?? "",
-        contactLabel:
-          (t.contact_id ? m.get(t.contact_id) : undefined) ??
-          (t.lead_id ? leads.get(t.lead_id) : undefined) ??
-          last?.from_email ??
-          "Remetente desconhecido",
-        lastAt: t.last_message_at,
-        href: `/inbox/email`,
-        replyTo: last?.from_email ?? null,
-        contactId: t.contact_id ?? null,
-        leadId: t.lead_id ?? null,
-        subject: t.subject ?? "",
-      };
-    });
-    const b: Item[] = (waQ.data ?? []).map((c) => ({
-      id: `wa:${c.id}`,
-      conversationId: c.id,
-      channel: "whatsapp" as const,
-      title: c.contact_id
-        ? (m.get(c.contact_id) ?? c.contact_phone)
-        : c.lead_id
-          ? (leads.get(c.lead_id) ?? c.contact_phone)
-          : c.contact_phone,
-      snippet: c.last_message_preview ?? "",
-      contactLabel: c.contact_id
-        ? (m.get(c.contact_id) ?? c.contact_phone)
-        : c.lead_id
-          ? (leads.get(c.lead_id) ?? c.contact_phone)
-          : c.contact_phone,
-      lastAt: c.last_message_at,
-      href: `/inbox/whatsapp`,
-      replyTo: c.contact_phone,
-      contactId: c.contact_id ?? null,
-      leadId: c.lead_id ?? null,
-      subject: "",
-    }));
-    const c: Item[] = (chatQ.data ?? []).map((session) => ({
-      id: `chat:${session.id}`,
-      conversationId: session.id,
-      channel: "chat" as const,
-      title: session.visitor_name || session.visitor_email || "Visitante anônimo",
-      snippet: session.visitor_email || "Chat ao vivo",
-      contactLabel:
-        (session.contact_id ? m.get(session.contact_id) : undefined) ??
-        (session.lead_id ? leads.get(session.lead_id) : undefined) ??
-        session.visitor_name ??
-        session.visitor_email ??
-        "Visitante anônimo",
-      lastAt: session.last_message_at,
-      href: "/inbox/chat",
-      replyTo: session.visitor_email,
-      contactId: session.contact_id ?? null,
-      leadId: session.lead_id ?? null,
-      subject: "Chat ao vivo",
-    }));
-    let merged = [...a, ...b, ...c];
-    if (channel !== "all") merged = merged.filter((i) => i.channel === channel);
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      merged = merged.filter(
-        (i) =>
-          i.title.toLowerCase().includes(q) ||
-          i.snippet.toLowerCase().includes(q) ||
-          i.contactLabel.toLowerCase().includes(q),
-      );
-    }
-    merged.sort((x, y) => new Date(y.lastAt ?? 0).getTime() - new Date(x.lastAt ?? 0).getTime());
-    return merged;
-  }, [
-    emailQ.data,
-    waQ.data,
-    chatQ.data,
-    contactsQ.data,
-    leadsQ.data,
-    lastEmailQ.data,
-    channel,
-    search,
-  ]);
+  const items: Item[] = useMemo(
+    () =>
+      rows.map((r) => {
+        const person = r.contact_name ?? r.lead_name ?? null;
+        if (r.channel === "email")
+          return {
+            id: `email:${r.id}`,
+            conversationId: r.id,
+            channel: "email" as const,
+            title: r.title || "(sem assunto)",
+            snippet: r.snippet ?? "",
+            contactLabel: person ?? r.last_inbound_from ?? "Remetente desconhecido",
+            lastAt: r.last_message_at,
+            href: "/inbox/email",
+            replyTo: r.last_inbound_from,
+            contactId: r.contact_id,
+            leadId: r.lead_id,
+            subject: r.title ?? "",
+          };
+        if (r.channel === "whatsapp")
+          return {
+            id: `wa:${r.id}`,
+            conversationId: r.id,
+            channel: "whatsapp" as const,
+            title: person ?? r.phone ?? "",
+            snippet: r.snippet ?? "",
+            contactLabel: person ?? r.phone ?? "",
+            lastAt: r.last_message_at,
+            href: "/inbox/whatsapp",
+            replyTo: r.phone,
+            contactId: r.contact_id,
+            leadId: r.lead_id,
+            subject: "",
+          };
+        return {
+          id: `chat:${r.id}`,
+          conversationId: r.id,
+          channel: "chat" as const,
+          title: r.title || "Visitante anônimo",
+          snippet: r.visitor_email || "Chat ao vivo",
+          contactLabel: person ?? r.title ?? "Visitante anônimo",
+          lastAt: r.last_message_at,
+          href: "/inbox/chat",
+          replyTo: r.visitor_email,
+          contactId: r.contact_id,
+          leadId: r.lead_id,
+          subject: "Chat ao vivo",
+        };
+      }),
+    [rows],
+  );
 
   const current = items.find((i) => i.id === selected) ?? null;
 
