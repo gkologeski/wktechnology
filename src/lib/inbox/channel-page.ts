@@ -65,8 +65,16 @@ export function channelPageKey(
 
 /** Filtro realtime das caixas de e-mail do próprio usuário (null = não assinar). */
 export function emailAccountsFilter(accountIds: string[]): string | null {
+  return emailAccountsFilters(accountIds)[0] ?? null;
+}
+
+/** O Realtime aceita no máximo 100 valores em `in`; divide em blocos (validado no preview). */
+export function emailAccountsFilters(accountIds: string[], chunk = 100): string[] {
   const ids = [...new Set(accountIds.filter((id) => /^[0-9a-f-]{36}$/i.test(id)))].sort();
-  return ids.length ? `account_id=in.(${ids.join(",")})` : null;
+  const out: string[] = [];
+  for (let i = 0; i < ids.length; i += chunk)
+    out.push(`account_id=in.(${ids.slice(i, i + chunk).join(",")})`);
+  return out;
 }
 
 /** Contagem curta para abas estreitas (o total exato fica no rodapé e no título). */

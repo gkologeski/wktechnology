@@ -48,6 +48,11 @@ export function useRealtimeInvalidate(
     let channel: ReturnType<typeof supabase.channel> | null = null;
     let everSubscribed = false;
     let disposed = false;
+    // Falha da assinatura (filtro recusado, rede): nova tentativa com espera crescente e
+    // reconciliação limitada (60 s) enquanto não volta — nunca consulta agressiva silenciosa.
+    let attempt = 0;
+    let retry: ReturnType<typeof setTimeout> | null = null;
+    let degraded: ReturnType<typeof setInterval> | null = null;
 
     const batcher = createInvalidationBatcher((keys, callbacks) => {
       if (disposed) return;
@@ -90,7 +95,20 @@ export function useRealtimeInvalidate(
         );
       });
       channel = c.subscribe((status) => {
+        if (disposed) return;
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          if (!degraded) degraded = setInterval(reconcileAll, 60_000);
+          if (channel) void supabase.removeChannel(channel);
+          channel = null;
+          everSubscribed = true; // ao voltar, reconcilia uma vez
+          if (retry) clearTimeout(retry);
+          retry = setTimeout(subscribe, Math.min(60_000, 5_000 * 2 ** attempt++));
+          return;
+        }
         if (status !== "SUBSCRIBED") return;
+        attempt = 0;
+        if (degraded) clearInterval(degraded);
+        degraded = null;
         // Reconexão (queda de rede ou aba que voltou): eventos no intervalo
         // não chegam pelo canal, então recarrega uma vez.
         if (everSubscribed) reconcileAll();
@@ -115,6 +133,8 @@ export function useRealtimeInvalidate(
 
     return () => {
       disposed = true;
+      if (retry) clearTimeout(retry);
+      if (degraded) clearInterval(degraded);
       document.removeEventListener("visibilitychange", onVisibility);
       batcher.cancel();
       unsubscribe();

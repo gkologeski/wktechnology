@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { listInboxChannelPage } from "@/lib/inbox/channel-page.functions";
 import {
   channelPageKey,
-  emailAccountsFilter,
+  emailAccountsFilters,
   mergeChannelPages,
   parseChannelPage,
   type AssigneeFilter,
@@ -42,11 +42,12 @@ export function useInboxListRealtime(
 ) {
   const { user } = useAuth();
   const accounts = useMyEmailAccountIds();
-  const emailFilter = emailAccountsFilter(accounts.data ?? []);
+  const emailFilters = emailAccountsFilters(accounts.data ?? []);
   const subs: RealtimeSubscription[] = [];
   const keys = queryKeys.map((k) => [...k]);
-  if (channels.includes("email") && emailFilter)
-    subs.push({ table: "email_threads", filter: emailFilter, queryKeys: keys });
+  if (channels.includes("email"))
+    for (const filter of emailFilters)
+      subs.push({ table: "email_threads", filter, queryKeys: keys });
   if (channels.includes("whatsapp"))
     subs.push({ table: "whatsapp_conversations", queryKeys: keys });
   if (channels.includes("chat")) subs.push({ table: "live_chat_sessions", queryKeys: keys });
