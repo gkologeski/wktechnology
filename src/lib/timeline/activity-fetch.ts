@@ -459,25 +459,26 @@ export type EmailDetail = Pick<
 
 /** Corpo, anexos e último rastreamento de um e-mail (sob demanda, sob RLS). */
 export async function fetchEmailDetail(messageId: string): Promise<EmailDetail> {
-  const [{ data: m, error }, { data: events }] = await Promise.all([
+  const lastEvent = (type: "open" | "click") =>
+    supabase
+      .from("email_tracking_events")
+      .select("url, occurred_at")
+      .eq("message_id", messageId)
+      .eq("event_type", type)
+      .order("occurred_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+  const [{ data: m, error }, { data: open }, { data: click }] = await Promise.all([
     supabase
       .from("email_messages")
       .select("body_html, body_text, attachments")
       .eq("id", messageId)
       .maybeSingle(),
-    supabase
-      .from("email_tracking_events")
-      .select("event_type, url, occurred_at")
-      .eq("message_id", messageId)
-      .in("event_type", ["open", "click"])
-      .order("occurred_at", { ascending: false })
-      .limit(20),
+    lastEvent("open"),
+    lastEvent("click"),
   ]);
   if (error) throw new Error(error.message);
   if (!m) throw new Error("E-mail indisponível ou sem permissão de acesso.");
-  const evs = (events ?? []) as Array<{ event_type: string; url: string | null; occurred_at: string }>;
-  const open = evs.find((e) => e.event_type === "open");
-  const click = evs.find((e) => e.event_type === "click");
   const raw = Array.isArray(m.attachments) ? (m.attachments as Array<Record<string, unknown>>) : [];
   return {
     body_html: m.body_html,
