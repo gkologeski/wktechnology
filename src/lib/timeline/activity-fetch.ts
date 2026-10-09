@@ -312,21 +312,36 @@ export async function fetchTimelineData({
       category,
     ),
   );
+  const activityCategorySet = new Set([
+    "call",
+    "email",
+    "whatsapp",
+    "message",
+    "note",
+    "task",
+    "meeting",
+    "survey",
+  ]);
+  const activityFilterExcludesAll = !selectedCategories.some((category) =>
+    activityCategorySet.has(category),
+  );
   const assigneeIds = filters.assignees.filter((id) => id !== UNASSIGNED);
-  const { data, error } = await supabase.rpc("get_timeline_activity_page", {
-    p_entity_kind: ENTITY_KIND[relatedKey],
-    p_entity_id: relatedId,
-    p_since: range.start?.toISOString(),
-    p_until: range.end?.toISOString(),
-    p_categories:
-      activityCategories.length === ALL_CATEGORIES.length ? undefined : activityCategories,
-    p_assignees: assigneeIds.length ? assigneeIds : undefined,
-    p_include_unassigned: filters.assignees.includes(UNASSIGNED),
-    p_search: filters.search.trim() || undefined,
-    p_cursor_at: cursor?.at,
-    p_cursor_id: cursor?.id,
-    p_page_size: 40,
-  });
+  const { data, error } = activityFilterExcludesAll
+    ? { data: null, error: null }
+    : await supabase.rpc("get_timeline_activity_page", {
+        p_entity_kind: ENTITY_KIND[relatedKey],
+        p_entity_id: relatedId,
+        p_since: range.start?.toISOString(),
+        p_until: range.end?.toISOString(),
+        p_categories:
+          activityCategories.length === ALL_CATEGORIES.length ? undefined : activityCategories,
+        p_assignees: assigneeIds.length ? assigneeIds : undefined,
+        p_include_unassigned: filters.assignees.includes(UNASSIGNED),
+        p_search: filters.search.trim() || undefined,
+        p_cursor_at: cursor?.at,
+        p_cursor_id: cursor?.id,
+        p_page_size: 40,
+      });
   const payload = (data ?? {}) as unknown as {
     items?: Activity[];
     total?: number;
@@ -336,10 +351,15 @@ export async function fetchTimelineData({
     next_id?: string | null;
   };
   const { rows: baseRows, emailMeta } = await enrichEmails((payload.items ?? []).slice());
+  const showUnfilteredCalendar =
+    !cursor &&
+    !filters.search.trim() &&
+    filters.assignees.length === 0 &&
+    selectedCategories.includes("meeting");
   const [calendarVirtuals, historyRows] = cursor
     ? [[], []]
     : await Promise.all([
-        loadCalendarVirtuals(baseRows, relatedKey, relatedId, range),
+        showUnfilteredCalendar ? loadCalendarVirtuals(baseRows, relatedKey, relatedId, range) : [],
         loadHistory(relatedKey, relatedId, range),
       ]);
   const items = [...baseRows, ...calendarVirtuals].sort((a, b) => {

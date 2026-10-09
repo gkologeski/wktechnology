@@ -158,7 +158,14 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
   }, [items, historyGroups]);
 
   const loadedCounts = useMemo(() => countByCategory(allEntries), [allEntries]);
-  const counts = serverCounts.size ? serverCounts : loadedCounts;
+  const counts = useMemo(() => {
+    if (!serverCounts.size) return loadedCounts;
+    const merged = new Map(serverCounts);
+    // Reuniões virtuais do calendário não pertencem à tabela de atividades.
+    const virtualMeetings = items.filter((item) => item.id.startsWith("cal_")).length;
+    if (virtualMeetings) merged.set("meeting", (merged.get("meeting") ?? 0) + virtualMeetings);
+    return merged;
+  }, [serverCounts, loadedCounts, items]);
 
   const timelineEntries = useMemo(
     () =>
@@ -300,7 +307,7 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
     filters,
     setFilters,
     counts,
-    totalCount,
+    totalCount: totalCount + items.filter((item) => item.id.startsWith("cal_")).length,
     hasMore,
     loadingMore,
     loadMore,
