@@ -10,7 +10,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import {
   listChatSessions,
-  listChatMessages,
   sendChatMessage,
   closeChatSession,
   convertChatSessionToTicket,
@@ -19,7 +18,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { SnippetTextarea } from "@/components/snippets/snippet-textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { listConversationMessages } from "@/lib/inbox/message-history.functions";
+import { useMessageHistory } from "@/hooks/use-message-history";
+import { MessageHistoryViewport } from "@/components/inbox/message-history-viewport";
+import type { HistoryPage } from "@/lib/inbox/message-history";
 import { Badge } from "@/components/ui/badge";
 import { Send, X, Ticket as TicketIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -68,7 +70,7 @@ function LiveChatInbox() {
   const qc = useQueryClient();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const msgsFn = useServerFn(listChatMessages);
+  const msgsFn = useServerFn(listConversationMessages);
   const sendFn = useServerFn(sendChatMessage);
   const closeFn = useServerFn(closeChatSession);
   const convertFn = useServerFn(convertChatSessionToTicket);
@@ -87,32 +89,26 @@ function LiveChatInbox() {
     query: sessionsQ,
   } = useInboxChannelPage<ChatSessionRow>("chat", filter, debouncedSearch);
   const [selectedSnapshot, setSelectedSnapshot] = useState<ChatSessionRow | null>(null);
-  const messagesQ = useQuery({
-    queryKey: ["chat-messages", selected],
-    queryFn: () => msgsFn({ data: { session_id: selected! } }),
-    enabled: !!selected,
-    refetchInterval: 3000,
+  // Antes: consulta a cada 3 s. Agora: tempo real da sessão + reconciliação limitada.
+  const history = useMessageHistory<ChatMessageRow>({
+    contextKey: selected && user?.id ? `${user.id}:chat:${selected}` : null,
+    fetchPage: ({ signal, ...cur }) =>
+      msgsFn({
+        data: { channel: "chat", conversation_id: selected!, ...cur },
+        signal,
+      }) as Promise<HistoryPage<ChatMessageRow>>,
+    realtime: selected
+      ? { table: "live_chat_messages", filter: `session_id=eq.${selected}`, kind: "rows", patchKeys: ["body"] }
+      : null,
   });
   const membersQ = useQuery({ queryKey: ["inbox", "members"], queryFn: () => membersFn() });
 
-  useEffect(() => {
-    const ch = supabase
-      .channel("live-chat-inbox")
-      .on("postgres_changes", { event: "*", schema: "public", table: "live_chat_messages" }, () => {
-        // A lista é reconciliada pelo hook (live_chat_sessions, agrupado).
-        qc.invalidateQueries({ queryKey: ["chat-messages"] });
-      })
-      .subscribe();
-    return () => {
-      supabase.removeChannel(ch);
-    };
-  }, [qc]);
 
   const send = useMutation({
     mutationFn: () => sendFn({ data: { session_id: selected!, body: draft.trim() } }),
     onSuccess: () => {
       setDraft("");
-      qc.invalidateQueries({ queryKey: ["chat-messages", selected] });
+      void history.syncNewer();
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -140,7 +136,7 @@ function LiveChatInbox() {
     onError: (error: Error) => toast.error(error.message),
   });
 
-  const messages = messagesQ.data ?? [];
+  const messages = history.items;
   const current =
     sessions.find((s) => s.id === selected) ??
     (selectedSnapshot?.id === selected ? selectedSnapshot : undefined);
@@ -241,8 +237,8 @@ function LiveChatInbox() {
         <>
           {!current ? (
             <InboxEmpty>Selecione uma sessão para iniciar o atendimento.</InboxEmpty>
-          ) : messagesQ.isError ? (
-            <InboxError onRetry={() => messagesQ.refetch()}>
+          ) : history.initial === "error" ? (
+            <InboxError onRetry={history.retryInitial}>
               Não foi possível carregar esta conversa.
             </InboxError>
           ) : (
@@ -299,8 +295,21 @@ function LiveChatInbox() {
                   </>
                 }
               />
-              <ScrollArea className="flex-1 bg-product-panel-muted px-5 py-6" aria-live="polite">
-                <div className="space-y-5">
+              <MessageHistoryViewport
+                resetKey={selected}
+                count={messages.length}
+                firstId={messages[0]?.id ?? null}
+                lastId={messages[messages.length - 1]?.id ?? null}
+                hasOlder={history.hasOlder}
+                olderLoading={history.olderLoading}
+                olderError={history.olderError}
+                syncError={history.syncError}
+                degraded={history.health === "degraded"}
+                onLoadOlder={() => void history.loadOlder()}
+                onRetrySync={() => void history.reconcile()}
+                className="bg-product-panel-muted px-5 py-6"
+              >
+                {history.initial === "loading" && !messages.length ? <InboxLoading /> : null}
                   {messages.map((m) => (
                     <InboxMessageBubble
                       key={m.id}
@@ -311,8 +320,7 @@ function LiveChatInbox() {
                       <div className="whitespace-pre-wrap">{m.body}</div>
                     </InboxMessageBubble>
                   ))}
-                </div>
-              </ScrollArea>
+              </MessageHistoryViewport>
               {current.status !== "closed" && (
                 <div className="flex items-end gap-2 bg-product-panel p-4">
                   <div className="flex flex-1 items-end gap-2 rounded-[calc(var(--radius)+1rem)] bg-product-panel-muted p-2 ring-1 ring-border-subtle focus-within:ring-2 focus-within:ring-ring">
@@ -384,3 +392,11 @@ function LiveChatInbox() {
 function sessionAssignee(assigneeId: string | null, memberNames: Map<string, string>) {
   return assigneeId ? (memberNames.get(assigneeId) ?? "atribuída") : "sem responsável";
 }
+
+type ChatMessageRow = {
+  id: string;
+  created_at: string;
+  direction: string;
+  author_user_id: string | null;
+  body: string;
+};

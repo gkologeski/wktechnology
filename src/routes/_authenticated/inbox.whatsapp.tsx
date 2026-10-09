@@ -25,7 +25,6 @@ import { useMessageDraft } from "@/hooks/use-message-draft";
 import { MessageDraftStatus } from "@/components/message-draft-status";
 import {
   listWhatsAppConversations,
-  listWhatsAppMessages,
   sendWhatsAppMessage,
   markWhatsAppRead,
   listAssignableMembers,
@@ -38,7 +37,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { listConversationMessages } from "@/lib/inbox/message-history.functions";
+import { useMessageHistory } from "@/hooks/use-message-history";
+import { MessageHistoryViewport } from "@/components/inbox/message-history-viewport";
+import type { HistoryPage } from "@/lib/inbox/message-history";
 import {
   Select,
   SelectContent,
@@ -92,7 +94,7 @@ function WhatsAppInbox() {
   const openActivity = useActivityWindows();
   const qc = useQueryClient();
   const { user } = useAuth();
-  const msgsFn = useServerFn(listWhatsAppMessages);
+  const msgsFn = useServerFn(listConversationMessages);
   const sendFn = useServerFn(sendWhatsAppMessage);
   const markFn = useServerFn(markWhatsAppRead);
   const membersFn = useServerFn(listAssignableMembers);
@@ -123,10 +125,21 @@ function WhatsAppInbox() {
     query: conversationsQ,
   } = useInboxChannelPage<WaConversationRow>("whatsapp", filter, debouncedSearch);
   const [selectedSnapshot, setSelectedSnapshot] = useState<WaConversationRow | null>(null);
-  const messagesQ = useQuery({
-    queryKey: ["wa", "messages", selected],
-    queryFn: () => msgsFn({ data: { conversationId: selected! } }),
-    enabled: !!selected,
+  const history = useMessageHistory<WaMessageRow>({
+    contextKey: selected && user?.id ? `${user.id}:whatsapp:${selected}` : null,
+    fetchPage: ({ signal, ...cur }) =>
+      msgsFn({
+        data: { channel: "whatsapp", conversation_id: selected!, ...cur },
+        signal,
+      }) as Promise<HistoryPage<WaMessageRow>>,
+    realtime: selected
+      ? {
+          table: "whatsapp_messages",
+          filter: `conversation_id=eq.${selected}`,
+          kind: "rows",
+          patchKeys: WA_PATCH_KEYS,
+        }
+      : null,
   });
   const membersQ = useQuery({ queryKey: ["wa", "members"], queryFn: () => membersFn() });
   const templatesQ = useQuery({
@@ -140,19 +153,6 @@ function WhatsAppInbox() {
     return map;
   }, [membersQ.data]);
 
-  // Realtime: nova mensagem entra -> refetch
-  useEffect(() => {
-    const channel = supabase
-      .channel("wa-inbox")
-      .on("postgres_changes", { event: "*", schema: "public", table: "whatsapp_messages" }, () => {
-        // A lista é reconciliada pelo hook (whatsapp_conversations, agrupado).
-        qc.invalidateQueries({ queryKey: ["wa", "messages"] });
-      })
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [qc]);
 
   // Marca como lido ao selecionar
   useEffect(() => {
@@ -189,7 +189,8 @@ function WhatsAppInbox() {
       setTemplateName("");
       setTemplateVars([]);
       setSelected(res.conversationId);
-      qc.invalidateQueries({ queryKey: ["wa"] });
+      qc.invalidateQueries({ queryKey: ["inbox-channel", "whatsapp"] });
+      void history.syncNewer();
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -254,7 +255,7 @@ function WhatsAppInbox() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const messages = messagesQ.data ?? [];
+  const messages = history.items;
   const current = useMemo(
     () =>
       conversations.find((c) => c.id === selected) ??
@@ -275,10 +276,6 @@ function WhatsAppInbox() {
     onRestore: (d) => setDraft(d.body_text),
   });
 
-  const bottomRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length]);
 
   return (
     <InboxWorkspace
@@ -391,8 +388,8 @@ function WhatsAppInbox() {
         <>
           {!current ? (
             <InboxEmpty>Selecione uma conversa para visualizar o histórico.</InboxEmpty>
-          ) : messagesQ.isError ? (
-            <InboxError onRetry={() => messagesQ.refetch()}>
+          ) : history.initial === "error" ? (
+            <InboxError onRetry={history.retryInitial}>
               Não foi possível carregar esta conversa.
             </InboxError>
           ) : (
@@ -454,8 +451,21 @@ function WhatsAppInbox() {
                   </>
                 }
               />
-              <ScrollArea className="flex-1 bg-product-panel-muted px-5 py-6" aria-live="polite">
-                <div className="space-y-5">
+              <MessageHistoryViewport
+                resetKey={selected}
+                count={messages.length}
+                firstId={messages[0]?.id ?? null}
+                lastId={messages[messages.length - 1]?.id ?? null}
+                hasOlder={history.hasOlder}
+                olderLoading={history.olderLoading}
+                olderError={history.olderError}
+                syncError={history.syncError}
+                degraded={history.health === "degraded"}
+                onLoadOlder={() => void history.loadOlder()}
+                onRetrySync={() => void history.reconcile()}
+                className="bg-product-panel-muted px-5 py-6"
+              >
+                {history.initial === "loading" && !messages.length ? <InboxLoading /> : null}
                   {messages.map((m) => (
                     <InboxMessageBubble
                       key={m.id}
@@ -474,9 +484,7 @@ function WhatsAppInbox() {
                       {m.body && <div className="whitespace-pre-wrap">{m.body}</div>}
                     </InboxMessageBubble>
                   ))}
-                  <div ref={bottomRef} />
-                </div>
-              </ScrollArea>
+              </MessageHistoryViewport>
               <div className="bg-product-panel p-4 pt-3">
                 {templateRequired && (
                   <div className="mb-3 space-y-3 rounded-md border border-border bg-product-panel-muted p-3">
@@ -704,3 +712,29 @@ function WhatsAppSettingsButton() {
     </Button>
   );
 }
+
+type WaMessageRow = {
+  id: string;
+  created_at: string;
+  direction: string;
+  body: string | null;
+  media_url: string | null;
+  media_content_type: string | null;
+  status: string | null;
+  sent_at: string | null;
+  delivered_at: string | null;
+  read_at: string | null;
+  wa_message_id: string | null;
+  template_name: string | null;
+  is_template: boolean | null;
+};
+const WA_PATCH_KEYS = [
+  "status",
+  "sent_at",
+  "delivered_at",
+  "read_at",
+  "wa_message_id",
+  "body",
+  "media_url",
+  "media_content_type",
+] as const;
