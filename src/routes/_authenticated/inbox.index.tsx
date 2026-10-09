@@ -248,7 +248,7 @@ function UnifiedInboxPage() {
                 className="pl-8"
               />
             </div>
-            <div className="flex gap-1">
+            <div className="flex flex-wrap gap-1">
               <Button
                 size="sm"
                 variant={channel === "all" ? "default" : "outline"}
