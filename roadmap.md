@@ -99,3 +99,11 @@
 - [ ] Medir telas restantes (dashboard, Inbox, Projetos, Prospecção, TechHire)
 - [ ] Comando real da verificação automática (inacessível no sandbox)
 - [ ] Backlog do próximo ciclo (docs/architecture/performance-backlog.md)
+
+# Roadmap — Persona e teste do Agente SDR
+
+- [x] Auditar a tela existente e os padrões atuais do TechERP
+- [x] Redesenhar identidade, voz, atendimento, ações e versões sem alterar comportamento
+- [x] Redesenhar a conversa de teste segura para desktop e mobile
+- [ ] Validar visualmente em claro/escuro e desktop/mobile
+- [ ] Executar tipos, lint direcionado e conferir build automático

@@ -22,6 +22,22 @@ import { SdrConsoleTabs } from "@/components/prospecting/sdr-console";
 
 export const Route = createFileRoute("/_authenticated/agents/sdr")({
   component: SdrAgentPage,
+  head: () => ({
+    meta: [
+      { title: "Agente SDR | TechERP" },
+      {
+        name: "description",
+        content: "Configure, acompanhe e teste o agente SDR do TechSales.",
+      },
+      { property: "og:title", content: "Agente SDR | TechERP" },
+      {
+        property: "og:description",
+        content: "Configure, acompanhe e teste o agente SDR do TechSales.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
 });
 
 type Step = { delay_hours: number; template: string };
