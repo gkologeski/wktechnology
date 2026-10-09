@@ -22360,6 +22360,18 @@ export type Database = {
           type: string
         }[]
       }
+      get_inbox_channel_page: {
+        Args: {
+          p_assignee?: string
+          p_channel: string
+          p_cursor_at?: string
+          p_cursor_id?: string
+          p_page_size?: number
+          p_search?: string
+          p_workspace_id?: string
+        }
+        Returns: Json
+      }
       get_inbox_unified_page: {
         Args: {
           p_channel?: string
