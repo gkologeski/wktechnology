@@ -30,4 +30,4 @@
 - Agente SDR (regras de fila/envio em `src/lib/prospecting/sdr/AGENTS.md`): autorização (telas novas e legadas `/agents/sdr`) passa por `requireSdr`/`assertSdr` em `src/lib/prospecting/sdr/access.server.ts`, com filtro explícito por workspace; por quê: uma única matriz de permissões no servidor, sem depender só da RLS ou da UI.
 
 - Ritmo do disparo de template das campanhas WhatsApp é controlado por `whatsapp_campaigns.next_send_at` sob lease `wa_campaign_claim_dispatch`, com sorteio em `src/lib/whatsapp/campaign-pacing.ts`; por quê: o espaçamento vale entre execuções e nunca há disparo duplo.
-- Arquivos de rota só exportam `Route`; qualquer outro export impede o code-splitting de tirar o componente da entrada (medir com `PERF_GRAPH=1` + `scripts/perf/chunk-closure.py`). `verify:changed` é só feedback; o gate é `verify` + `build`.
+- Rotas só exportam `Route` (outro export anula o code-splitting); gate = `verify`+`build`, `verify:changed` é só feedback.
