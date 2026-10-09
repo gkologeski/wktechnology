@@ -15,7 +15,7 @@ o cliente antigo compatível.
   `COALESCE(hs_createdate, created_at), id`, além do histórico por entidade/data/id.
 - `0084_performance_cycle2_timeline_page.sql` e correção aditiva `0086`: RPC `SECURITY INVOKER`
   com RLS, filtros de período/tipo/responsável/busca antes da paginação, cursor estável, página de
-  40, contagens exatas das atividades filtradas, projeção reduzida e exclusão lógica.
+  40, contagens por categoria; **o total estava errado (contava categorias, não atividades) — corrigido no ciclo 3 pela 0087**, projeção reduzida e exclusão lógica.
 - `activity-fetch.ts`, `use-timeline-feed.ts`, `timeline-page.ts`: consumo paginado, descarte de
   respostas de contexto antigo, merge sem duplicação, busca de e-mail no servidor e botão
   “Carregar mais”. E-mails são enriquecidos apenas para os IDs da página.
@@ -48,8 +48,8 @@ para duas linhas. São amostras pontuais, não p50/p95.
 
 O build medido ficou abaixo da faixa anterior de 212–256 s e o Worker abaixo de 86–94 s, mas uma
 execução não prova ganho causal ou estabilidade. Nenhuma configuração Nitro foi alterada: a fase
-ainda retransforma 5.757 módulos. A entrada cresceu de aproximadamente 303 KB para 310 KB gzip;
-não houve ganho de bundle. O comando real da verificação automática da plataforma continua
+ainda retransforma 5.757 módulos. A entrada cresceu de aproximadamente 303 KB para 310 KB gzip (piora, não estabilidade);
+não houve ganho de bundle. O build de 149,3 s é amostra única sem mudança Nitro; não é ganho causal. O comando real da verificação automática da plataforma continua
 inacessível.
 
 ## Parcial e limitações honestas
