@@ -1,5 +1,6 @@
 - Painel de vendas usa a origem principal do Lead e explicita a cobertura; nunca presume vínculos ambíguos.
 - Ações manuais da timeline usam o gerenciador global autenticado para preservar janelas e rascunhos.
+- Timeline pagina cada origem no servidor (RPCs `get_timeline_*_page`, invoker/RLS) e intercala no cliente por `src/lib/timeline/feed-merge.ts`; corpo de e-mail vem sob demanda; por quê: histórico completo sem limites fixos nem grupos partidos.
 - Datas/horários de atividades usam seletores compartilhados, adaptadores local/ISO e passos de 15 min.
 - Regras de Workflows ficam em src/lib/workflows/AGENTS.md.
 - Arquétipos White Label são catálogos do workspace; trocam estilo, preservam identidade/assets e usam o `theme`.
