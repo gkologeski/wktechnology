@@ -14,6 +14,7 @@ CREATE OR REPLACE FUNCTION pg_temp.walk(p_size int) RETURNS TABLE(n int, distinc
 LANGUAGE plpgsql AS $$
 DECLARE c_at timestamptz; c_id uuid; got uuid[] := '{}'; pg int := 0; r record; cnt int;
 BEGIN
+  DELETE FROM m WHERE created_at > '2026-06-01'; -- limpa a "nova" da execução anterior
   LOOP
     cnt := 0;
     FOR r IN SELECT id, created_at FROM m
@@ -27,14 +28,14 @@ BEGIN
     END LOOP;
     pg := pg + 1;
     -- nova mensagem chega durante a ida (mais nova que tudo): não pode aparecer nas anteriores
-    IF pg = 3 THEN INSERT INTO m VALUES (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', now() + interval '1 day'); END IF;
+    IF pg = 3 THEN INSERT INTO m VALUES (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', timestamptz '2026-12-01'); END IF;
     EXIT WHEN cnt <= p_size OR pg > 500;
   END LOOP;
   RETURN QUERY SELECT cardinality(got), (SELECT count(DISTINCT x)::int FROM unnest(got) x), pg,
     (SELECT bool_and(o.rn = s.rn) FROM
       (SELECT x, row_number() OVER () rn FROM unnest(got) x) o
       JOIN (SELECT id, row_number() OVER (ORDER BY created_at DESC, id DESC) rn FROM m
-            WHERE created_at < now()) s ON s.id = o.x);
+            WHERE created_at < '2026-06-01') s ON s.id = o.x);
 END $$;
 
 SELECT 'páginas de 50' caso, * FROM pg_temp.walk(50);
