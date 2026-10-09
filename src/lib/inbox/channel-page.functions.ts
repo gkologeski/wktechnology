@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Json } from "@/integrations/supabase/types";
 
 // Lista paginada de um canal da Inbox (RPC sob a RLS do usuário). O chat continua
 // restrito ao workspace ativo, como em listChatSessions.
@@ -34,5 +35,5 @@ export const listInboxChannelPage = createServerFn({ method: "POST" })
       p_page_size: data.pageSize ?? 50,
     });
     if (error) throw new Error(error.message);
-    return page as unknown;
+    return (page ?? null) as Json;
   });
