@@ -22396,6 +22396,35 @@ export type Database = {
         }
         Returns: Json
       }
+      get_timeline_calendar_page: {
+        Args: {
+          p_cursor_at?: string
+          p_cursor_id?: string
+          p_entity_id: string
+          p_entity_kind: string
+          p_page_size?: number
+          p_search?: string
+          p_since?: string
+          p_until?: string
+        }
+        Returns: Json
+      }
+      get_timeline_history_page: {
+        Args: {
+          p_actors?: string[]
+          p_categories?: string[]
+          p_cursor_at?: string
+          p_cursor_id?: string
+          p_entity: string
+          p_entity_id: string
+          p_include_unassigned?: boolean
+          p_page_size?: number
+          p_search?: string
+          p_since?: string
+          p_until?: string
+        }
+        Returns: Json
+      }
       get_workspace_plan: { Args: { _workspace: string }; Returns: string }
       has_entitlement: {
         Args: { _key: string; _workspace: string }
