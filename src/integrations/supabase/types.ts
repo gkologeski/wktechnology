@@ -22361,6 +22361,22 @@ export type Database = {
         }[]
       }
       get_my_phone: { Args: never; Returns: string }
+      get_timeline_activity_page: {
+        Args: {
+          p_assignees?: string[]
+          p_categories?: string[]
+          p_cursor_at?: string
+          p_cursor_id?: string
+          p_entity_id: string
+          p_entity_kind: string
+          p_include_unassigned?: boolean
+          p_page_size?: number
+          p_search?: string
+          p_since?: string
+          p_until?: string
+        }
+        Returns: Json
+      }
       get_workspace_plan: { Args: { _workspace: string }; Returns: string }
       has_entitlement: {
         Args: { _key: string; _workspace: string }
