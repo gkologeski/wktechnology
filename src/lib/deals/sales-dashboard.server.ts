@@ -328,41 +328,7 @@ export async function loadSalesDashboard(
 
   const deals = (dealsRes.data ?? []) as unknown as DealRow[];
   const openDeals = deals.filter((d) => !isClosed(d, stages));
-  const closed = deals.filter((d) => isClosed(d, stages) && d.closed_at);
-
-  const inRange = (iso: string | null, a: Date, b: Date) => {
-    if (!iso) return false;
-    const t = new Date(iso).getTime();
-    return t >= a.getTime() && t <= b.getTime();
-  };
-
-  const wonPeriod = closed.filter(
-    (d) => isWon(d, stages) && inRange(d.closed_at, periodStart, periodEnd),
-  );
-  const lostPeriod = closed.filter(
-    (d) => !isWon(d, stages) && inRange(d.closed_at, periodStart, periodEnd),
-  );
-  const wonPrev = closed.filter(
-    (d) => isWon(d, stages) && inRange(d.closed_at, prevPeriodStart, prevPeriodEnd),
-  );
-  const lostPrev = closed.filter(
-    (d) => !isWon(d, stages) && inRange(d.closed_at, prevPeriodStart, prevPeriodEnd),
-  );
-  const wonMonth = closed.filter(
-    (d) => isWon(d, stages) && inRange(d.closed_at, monthStart, monthEnd),
-  );
-
   const sum = (rows: DealRow[]) => rows.reduce((acc, d) => acc + (d.value ?? 0), 0);
-  const conv = (w: DealRow[], l: DealRow[]) =>
-    w.length + l.length > 0 ? (w.length / (w.length + l.length)) * 100 : 0;
-
-  const forecastDeals = openDeals.filter(
-    (d) => d.expected_close_date && inRange(d.expected_close_date, monthStart, monthEnd),
-  );
-  const forecastValue = forecastDeals.reduce(
-    (acc, d) => acc + (d.value ?? 0) * (probabilityOf(d, stages) / 100),
-    0,
-  );
 
   const goals = (
     (goalsRes.data ?? []) as Array<{
