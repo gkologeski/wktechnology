@@ -1,3 +1,7 @@
+import { useInboxChannelPage } from "@/hooks/use-inbox-channel-page";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { InboxListFooter } from "@/components/inbox/inbox-list-footer";
+import { InboxListSearch } from "@/components/inbox/inbox-list-search";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -61,6 +65,8 @@ import {
   InboxWorkspace,
 } from "@/components/inbox/inbox-workspace";
 
+type WaConversationRow = Awaited<ReturnType<typeof listWhatsAppConversations>>[number];
+
 export const Route = createFileRoute("/_authenticated/inbox/whatsapp")({
   head: () => ({
     meta: [
@@ -85,7 +91,6 @@ function WhatsAppInbox() {
   const openActivity = useActivityWindows();
   const qc = useQueryClient();
   const { user } = useAuth();
-  const listFn = useServerFn(listWhatsAppConversations);
   const msgsFn = useServerFn(listWhatsAppMessages);
   const sendFn = useServerFn(sendWhatsAppMessage);
   const markFn = useServerFn(markWhatsAppRead);
@@ -350,6 +355,17 @@ function WhatsAppInbox() {
                   }
                 />
               ))}
+              {conversations.length > 0 ? (
+                <InboxListFooter
+                  loaded={conversations.length}
+                  total={total}
+                  hasMore={!!conversationsQ.hasNextPage}
+                  loadingMore={conversationsQ.isFetchingNextPage}
+                  error={conversationsQ.isError}
+                  onLoadMore={() => void conversationsQ.fetchNextPage()}
+                  onRetry={() => void conversationsQ.refetch()}
+                />
+              ) : null}
             </div>
           </InboxConversationList>
         </>
