@@ -137,8 +137,6 @@ const TABS: readonly TabDef[] = [
   },
 ];
 
-export const PROSPECTING_TAB_PERMISSIONS = TABS.map((t) => t.permission);
-
 export const Route = createFileRoute("/_authenticated/prospecting/")({
   validateSearch: (s) => searchSchema.parse(s),
   head: () => ({

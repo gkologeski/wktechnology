@@ -192,3 +192,150 @@ describe("histórico de mensagens paginado", () => {
     expect(isNearBottom({ scrollHeight: 2000, scrollTop: 900, clientHeight: 450 })).toBe(false);
   });
 });
+
+// ---- Ciclo 7: continuação sem teto e reconciliação por intervalo ----
+import { drainNewer, reconcileRange } from "./message-history";
+
+function asyncServer(rows: Row[], onCall?: (n: number) => void) {
+  const srv = fakeServer(rows);
+  let n = 0;
+  return async (a: { after: HistoryCursor; limit: number; signal: AbortSignal }) => {
+    onCall?.(++n);
+    await Promise.resolve();
+    return srv(a);
+  };
+}
+
+function loaded(rows: Row[]): { s: HistoryState<Row> } {
+  const box = { s: emptyHistory<Row>("k") };
+  box.s = historyReducer(box.s, { type: "initialOk", key: "k", items: rows, hasMore: false });
+  return box;
+}
+
+describe("drainNewer (ciclo 7)", () => {
+  it("traz >600 novas após reconectar sem parar no teto de 5×100 por rodada", async () => {
+    const all = fixture(3200);
+    const sorted = [...all].sort(compareHistory);
+    const box = loaded(sorted.slice(0, 2600)); // >2500 carregadas
+    const r = await drainNewer<Row>({
+      fetch: asyncServer(all),
+      getLast: () => box.s.items[box.s.items.length - 1],
+      apply: (items) => (box.s = historyReducer(box.s, { type: "upsert", key: "k", items })),
+      signal: new AbortController().signal,
+    });
+    expect(r.complete).toBe(true);
+    expect(r.pages).toBe(6); // 600 novas = 6 páginas (a 6ª já sem continuação)
+    expect(box.s.items.length).toBe(3200);
+    expect(new Set(box.s.items.map((x) => x.id)).size).toBe(3200);
+  });
+
+  it("aborta ao trocar de contexto sem aplicar respostas posteriores", async () => {
+    const all = fixture(1500);
+    const sorted = [...all].sort(compareHistory);
+    const box = loaded(sorted.slice(0, 100));
+    const ac = new AbortController();
+    const r = await drainNewer<Row>({
+      fetch: asyncServer(all, (n) => n === 3 && ac.abort()),
+      getLast: () => box.s.items[box.s.items.length - 1],
+      apply: (items) => (box.s = historyReducer(box.s, { type: "upsert", key: "k", items })),
+      signal: ac.signal,
+    });
+    expect(r.complete).toBe(false);
+    expect(box.s.items.length).toBe(300); // 100 + 2 páginas antes do abort
+  });
+
+  it("para sem laço infinito se o cursor não avança", async () => {
+    const box = loaded(fixture(10).sort(compareHistory));
+    let calls = 0;
+    const r = await drainNewer<Row>({
+      fetch: async () => (calls++, { items: [], hasMore: true }),
+      getLast: () => box.s.items[box.s.items.length - 1],
+      apply: () => {},
+      signal: new AbortController().signal,
+    });
+    expect(r.complete).toBe(false);
+    expect(calls).toBe(1);
+  });
+});
+
+describe("reconcileRange (ciclo 7)", () => {
+  function run(box: { s: HistoryState<Row> }, server: Row[], extra?: () => void) {
+    return reconcileRange<Row>({
+      oldest: box.s.items[0],
+      fetch: asyncServer(server, extra ? () => extra() : undefined),
+      currentIds: () => new Set(box.s.items.map((r) => r.id)),
+      applyRange: (after, until, items, priorIds) =>
+        (box.s = historyReducer(box.s, {
+          type: "replaceRange",
+          key: "k",
+          after,
+          until,
+          items,
+          priorIds,
+        })),
+      signal: new AbortController().signal,
+    });
+  }
+
+  it("janela >2000 (2600): percorre tudo, remove só excluídos e mantém o resto", async () => {
+    const all = fixture(2600).sort(compareHistory);
+    const box = loaded(all);
+    const deleted = new Set([all[5].id, all[1500].id, all[2599].id]);
+    const server = all
+      .filter((r) => !deleted.has(r.id))
+      .map((r, i) => (i === 2100 ? { ...r, status: "read" } : r));
+    const res = await run(box, server);
+    expect(res.complete).toBe(true);
+    expect(res.pages).toBe(26);
+    expect(box.s.items.length).toBe(2597);
+    expect(box.s.items.some((r) => deleted.has(r.id))).toBe(false);
+    expect(box.s.items.find((r) => r.id === server[2100].id)?.status).toBe("read");
+  });
+
+  it("interrompido no meio não apaga itens fora do intervalo já coberto", async () => {
+    const all = fixture(2600).sort(compareHistory);
+    const box = loaded(all);
+    const ac = new AbortController();
+    let n = 0;
+    await reconcileRange<Row>({
+      oldest: box.s.items[0],
+      fetch: async (a) => {
+        if (++n === 4) ac.abort();
+        return fakeServer(all.filter((_, i) => i < 1000 || i > 1100))(a); // 101 excluídos adiante
+      },
+      currentIds: () => new Set(box.s.items.map((r) => r.id)),
+      applyRange: (after, until, items, priorIds) =>
+        (box.s = historyReducer(box.s, {
+          type: "replaceRange",
+          key: "k",
+          after,
+          until,
+          items,
+          priorIds,
+        })),
+      signal: ac.signal,
+    });
+    // Só 300 itens foram cobertos antes do abort; os excluídos adiante continuam (não verificados).
+    expect(box.s.items.length).toBe(2600);
+  });
+
+  it("mensagem nova que chega durante a revalidação não é apagada", async () => {
+    const all = fixture(400).sort(compareHistory);
+    const box = loaded(all.slice(0, 399));
+    let calls = 0;
+    await run(box, all.slice(0, 399), () => {
+      if (++calls !== 4) return; // chega durante a busca da última página
+      box.s = historyReducer(box.s, { type: "upsert", key: "k", items: [all[399]] });
+    });
+    expect(box.s.items.map((r) => r.id)).toContain(all[399].id);
+    expect(box.s.items.length).toBe(400);
+  });
+
+  it("empates no mesmo instante: exclusão de um não remove o vizinho", async () => {
+    const at = "2026-01-01T00:00:00+00:00";
+    const rows: Row[] = [uuid(3), uuid(1), uuid(2)].map((id) => ({ id, created_at: at }));
+    const box = loaded([...rows].sort(compareHistory));
+    await run(box, rows.filter((r) => r.id !== uuid(2)));
+    expect(box.s.items.map((r) => r.id)).toEqual([uuid(1), uuid(3)]);
+  });
+});

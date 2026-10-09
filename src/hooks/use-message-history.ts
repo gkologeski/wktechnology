@@ -1,14 +1,15 @@
 // Histórico de uma conversa: primeira página recente, "carregar anteriores",
 // novas mensagens por cursor "after", tempo real filtrado pela conversa e
-// reconciliação limitada ao reconectar/focar ou quando o tempo real falha.
+// reconciliação por intervalos (sem teto que perca itens) ao reconectar/focar ou quando o tempo real falha.
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   cursorOf,
   emptyHistory,
   historyReducer,
+  drainNewer,
   pickFields,
-  windowStartCursor,
+  reconcileRange,
   type HistoryCursor,
   type HistoryPage,
   type HistoryRow,
@@ -33,8 +34,8 @@ export type HistoryRealtime = {
 
 export type RealtimeHealth = "off" | "connecting" | "live" | "degraded";
 
-const MAX_SYNC_PAGES = 5;
-const MAX_WINDOW_PAGES = 20;
+const SYNC_PAGES_PER_ROUND = 5;
+const WINDOW_PAGES_PER_ROUND = 20;
 const DEGRADED_RECONCILE_MS = 30_000;
 
 export function useMessageHistory<Row extends HistoryRow>(opts: {
@@ -59,6 +60,7 @@ export function useMessageHistory<Row extends HistoryRow>(opts: {
   stateRef.current = state;
   const abortRef = useRef<AbortController | null>(null);
   const syncing = useRef<{ running: boolean; again: boolean }>({ running: false, again: false });
+  const reconciling = useRef<{ running: boolean; again: boolean }>({ running: false, again: false });
 
   // Troca de contexto: cancela tudo e recomeça.
   useEffect(() => {
@@ -66,6 +68,7 @@ export function useMessageHistory<Row extends HistoryRow>(opts: {
     const ac = new AbortController();
     abortRef.current = ac;
     syncing.current = { running: false, again: false };
+    reconciling.current = { running: false, again: false };
     dispatch({ type: "reset", key: contextKey });
     if (!contextKey) return;
     fetchRef
@@ -112,7 +115,7 @@ export function useMessageHistory<Row extends HistoryRow>(opts: {
     }
   }, []);
 
-  /** Busca o que chegou depois da mais nova carregada; chamadas concorrentes se juntam. */
+  /** Busca o que chegou depois da mais nova carregada até esgotar; chamadas concorrentes se juntam. */
   const syncNewer = useCallback(async () => {
     const s0 = stateRef.current;
     const ac = abortRef.current;
@@ -121,59 +124,77 @@ export function useMessageHistory<Row extends HistoryRow>(opts: {
       syncing.current.again = true;
       return;
     }
-    syncing.current.running = true;
+    const flag = syncing.current; // objeto do contexto atual (troca de contexto cria outro)
+    flag.running = true;
     const key = s0.key;
     try {
       do {
-        syncing.current.again = false;
-        for (let i = 0; i < MAX_SYNC_PAGES; i++) {
-          const items = stateRef.current.items;
-          const last = items[items.length - 1];
-          const p = last
-            ? await fetchRef.current({ after: cursorOf(last), limit: 100, signal: ac.signal })
-            : await fetchRef.current({ signal: ac.signal });
+        flag.again = false;
+        if (!stateRef.current.items.length) {
+          const p = await fetchRef.current({ signal: ac.signal });
           if (ac.signal.aborted) return;
-          dispatch({ type: "upsert", key, items: p.items });
-          stateRef.current = historyReducer(stateRef.current, {
-            type: "upsert",
-            key,
-            items: p.items,
-          });
-          if (!last || !p.hasMore) break;
+          applyUpsert(key, p.items);
+          continue;
         }
-      } while (syncing.current.again && !ac.signal.aborted);
+        await drainNewer<Row>({
+          fetch: (a) => fetchRef.current(a),
+          getLast: () => stateRef.current.items[stateRef.current.items.length - 1],
+          apply: (items) => applyUpsert(key, items),
+          signal: ac.signal,
+          pagesPerRound: SYNC_PAGES_PER_ROUND,
+        });
+      } while (flag.again && !ac.signal.aborted);
     } catch (e) {
       if (!ac.signal.aborted) dispatch({ type: "syncErr", key, error: errMsg(e) });
     } finally {
-      syncing.current.running = false;
+      flag.running = false;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /** Recarrega a janela já carregada (status, edições, exclusões perdidas). */
+  /** Revalida a janela já carregada (status, edições, exclusões perdidas), intervalo a intervalo. */
   const reconcile = useCallback(async () => {
     const s = stateRef.current;
     const ac = abortRef.current;
     if (!s.key || !ac || s.initial !== "ready") return;
     if (!s.items.length) return void syncNewer();
+    if (reconciling.current.running) {
+      reconciling.current.again = true;
+      return;
+    }
+    const rflag = reconciling.current;
+    rflag.running = true;
     const key = s.key;
     try {
-      let cursor = windowStartCursor(s.items[0]);
-      const all: Row[] = [];
-      for (let i = 0; i < MAX_WINDOW_PAGES; i++) {
-        const p = await fetchRef.current({ after: cursor, limit: 100, signal: ac.signal });
-        if (ac.signal.aborted) return;
-        all.push(...p.items);
-        if (!p.hasMore || !p.items.length) {
-          dispatch({ type: "replaceWindow", key, items: all });
-          return;
-        }
-        cursor = cursorOf(p.items[p.items.length - 1]);
-      }
-      dispatch({ type: "upsert", key, items: all }); // janela grande demais: só une
+      do {
+        rflag.again = false;
+        const oldest = stateRef.current.items[0];
+        if (!oldest) break;
+        await reconcileRange<Row>({
+          oldest,
+          fetch: (a) => fetchRef.current(a),
+          currentIds: () => new Set(stateRef.current.items.map((r) => r.id)),
+          applyRange: (after, until, items, priorIds) => {
+            const act = { type: "replaceRange" as const, key, after, until, items, priorIds };
+            dispatch(act);
+            stateRef.current = historyReducer(stateRef.current, act);
+          },
+          signal: ac.signal,
+          pagesPerRound: WINDOW_PAGES_PER_ROUND,
+        });
+      } while (rflag.again && !ac.signal.aborted);
+      if (!ac.signal.aborted) dispatch({ type: "syncErr", key, error: null });
     } catch (e) {
       if (!ac.signal.aborted) dispatch({ type: "syncErr", key, error: errMsg(e) });
+    } finally {
+      rflag.running = false;
     }
   }, [syncNewer]);
+
+  function applyUpsert(key: string, items: Row[]) {
+    dispatch({ type: "upsert", key, items });
+    stateRef.current = historyReducer(stateRef.current, { type: "upsert", key, items });
+  }
 
   // Tempo real filtrado pela conversa + saúde da assinatura.
   const rtTable = realtime?.table;

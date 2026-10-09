@@ -7,6 +7,7 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { createRequire } from "node:module";
 import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/tanstack/vite";
+import { perfGraphPlugin } from "./scripts/perf/graph-plugin";
 
 const require = createRequire(import.meta.url);
 const eventsPolyfillPath = require.resolve("events/events.js");
@@ -33,6 +34,9 @@ export default defineConfig({
     plugins: [
       // Servidor MCP (integrações de agentes) gerado a partir de src/lib/mcp.
       mcpPlugin(),
+      // Diagnóstico opcional (PERF_GRAPH=1): grava em /tmp a cadeia de imports que
+      // traz cada módulo do chunk de entrada do cliente. Não altera o bundle.
+      ...(process.env.PERF_GRAPH === "1" ? [perfGraphPlugin()] : []),
       {
         // @twilio/voice-sdk imports `node:events` / `events`. Vite's default
         // browser externalization replaces these with a stub that has no
@@ -58,7 +62,7 @@ export default defineConfig({
       target: "esnext",
       // Sourcemaps de produção custam tempo e memória em um grafo de ~5.3k
       // módulos e não são consumidos por nada no runtime publicado.
-      sourcemap: false,
+      sourcemap: process.env.PERF_SOURCEMAP === "1",
       // Sem polyfill de modulepreload: os navegadores-alvo suportam nativo.
       modulePreload: { polyfill: false },
       rollupOptions: {
