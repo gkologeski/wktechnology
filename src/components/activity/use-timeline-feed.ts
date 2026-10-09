@@ -86,24 +86,31 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
     async (opts?: { silent?: boolean }) => {
       const version = ++requestVersion.current;
       if (opts?.silent) setRefreshing(true);
-      const data = await fetchTimelineData({
-        relatedKey,
-        relatedId,
-        datePreset,
-        dateCustom,
-        filters,
-      });
-      if (version !== requestVersion.current) return;
-      if (data.error) toast.error(data.error);
-      setEmailMeta(data.emailMeta);
-      setItems(data.items);
-      setHistoryRows(data.historyRows);
-      setHasMore(data.hasMore);
-      setNextCursor(data.nextCursor);
-      setTotalCount(data.totalCount);
-      setServerCounts(data.categoryCounts);
-      setLoading(false);
-      setRefreshing(false);
+      try {
+        const data = await fetchTimelineData({
+          relatedKey,
+          relatedId,
+          datePreset,
+          dateCustom,
+          filters,
+        });
+        if (version !== requestVersion.current) return;
+        if (data.error) toast.error(data.error);
+        setEmailMeta(data.emailMeta);
+        setItems(data.items);
+        setHistoryRows(data.historyRows);
+        setHasMore(data.hasMore);
+        setNextCursor(data.nextCursor);
+        setTotalCount(data.totalCount);
+        setServerCounts(data.categoryCounts);
+      } catch (error) {
+        if (version === requestVersion.current) toast.error((error as Error).message);
+      } finally {
+        if (version === requestVersion.current) {
+          setLoading(false);
+          setRefreshing(false);
+        }
+      }
     },
     [relatedKey, relatedId, datePreset, dateCustom, filters],
   );
@@ -112,25 +119,33 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
     if (!nextCursor || loadingMore) return;
     const version = requestVersion.current;
     setLoadingMore(true);
-    const data = await fetchTimelineData({
-      relatedKey,
-      relatedId,
-      datePreset,
-      dateCustom,
-      filters,
-      cursor: nextCursor,
-    });
-    if (version !== requestVersion.current) return setLoadingMore(false);
-    if (data.error) toast.error(data.error);
-    setItems((current) => mergeTimelinePage(current, data.items));
-    setEmailMeta((current) => new Map([...current, ...data.emailMeta]));
-    setHasMore(data.hasMore);
-    setNextCursor(data.nextCursor);
-    setLoadingMore(false);
+    try {
+      const data = await fetchTimelineData({
+        relatedKey,
+        relatedId,
+        datePreset,
+        dateCustom,
+        filters,
+        cursor: nextCursor,
+      });
+      if (version !== requestVersion.current) return;
+      if (data.error) toast.error(data.error);
+      setItems((current) => mergeTimelinePage(current, data.items));
+      setEmailMeta((current) => new Map([...current, ...data.emailMeta]));
+      setHasMore(data.hasMore);
+      setNextCursor(data.nextCursor);
+    } catch (error) {
+      if (version === requestVersion.current) toast.error((error as Error).message);
+    } finally {
+      if (version === requestVersion.current) setLoadingMore(false);
+    }
   }, [nextCursor, loadingMore, relatedKey, relatedId, datePreset, dateCustom, filters]);
 
   useEffect(() => {
     void load(); /* eslint-disable-next-line */
+    return () => {
+      requestVersion.current += 1;
+    };
   }, [load]);
 
   // Histórico agrupado + resolução de IDs para nomes.

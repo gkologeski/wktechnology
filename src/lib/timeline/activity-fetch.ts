@@ -49,6 +49,17 @@ const HISTORY_ENTITY: Record<RelatedKey, string | null> = {
   related_ticket_id: null,
 };
 
+const ACTIVITY_CATEGORIES: TimelineCategory[] = [
+  "call",
+  "email",
+  "whatsapp",
+  "message",
+  "note",
+  "task",
+  "meeting",
+  "survey",
+];
+
 const externalIds = (row: unknown) =>
   ((row as { external_ids?: Record<string, unknown> } | null)?.external_ids ?? {}) as Record<
     string,
@@ -308,23 +319,9 @@ export async function fetchTimelineData({
         ? [filters.tab]
         : [];
   const activityCategories = selectedCategories.filter((category) =>
-    ["call", "email", "whatsapp", "message", "note", "task", "meeting", "survey"].includes(
-      category,
-    ),
+    ACTIVITY_CATEGORIES.includes(category),
   );
-  const activityCategorySet = new Set([
-    "call",
-    "email",
-    "whatsapp",
-    "message",
-    "note",
-    "task",
-    "meeting",
-    "survey",
-  ]);
-  const activityFilterExcludesAll = !selectedCategories.some((category) =>
-    activityCategorySet.has(category),
-  );
+  const activityFilterExcludesAll = activityCategories.length === 0;
   const assigneeIds = filters.assignees.filter((id) => id !== UNASSIGNED);
   const { data, error } = activityFilterExcludesAll
     ? { data: null, error: null }
@@ -334,7 +331,7 @@ export async function fetchTimelineData({
         p_since: range.start?.toISOString(),
         p_until: range.end?.toISOString(),
         p_categories:
-          activityCategories.length === ALL_CATEGORIES.length ? undefined : activityCategories,
+          activityCategories.length === ACTIVITY_CATEGORIES.length ? undefined : activityCategories,
         p_assignees: assigneeIds.length ? assigneeIds : undefined,
         p_include_unassigned: filters.assignees.includes(UNASSIGNED),
         p_search: filters.search.trim() || undefined,
