@@ -7,7 +7,11 @@ import { Mail, RefreshCw, Reply, Eye, MousePointerClick, Paperclip, UserCheck } 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { listEmailThreads, getEmailThread } from "@/lib/email-inbox.functions";
+import { getEmailThread } from "@/lib/email-inbox.functions";
+import { useInboxChannelPage } from "@/hooks/use-inbox-channel-page";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { InboxListFooter } from "@/components/inbox/inbox-list-footer";
+import { InboxListSearch } from "@/components/inbox/inbox-list-search";
 import { syncMyEmailAccounts } from "@/lib/gmail-sync.functions";
 import { useActivityWindows } from "@/components/activity/activity-window-context";
 import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
@@ -58,6 +62,19 @@ export const Route = createFileRoute("/_authenticated/inbox/email")({
   component: EmailInbox,
 });
 
+type EmailThreadRow = {
+  id: string;
+  subject: string | null;
+  snippet: string | null;
+  last_message_at: string | null;
+  message_count: number;
+  contact_id: string | null;
+  lead_id: string | null;
+  identity_status: string | null;
+  account_id: string | null;
+  assigned_to: string | null;
+};
+
 function EmailInbox() {
   const openActivityWindow = useActivityWindows();
   const openEmail = (to?: string, threadId?: string) => {
@@ -66,7 +83,6 @@ function EmailInbox() {
   };
   const qc = useQueryClient();
   const { user } = useAuth();
-  const listFn = useServerFn(listEmailThreads);
   const getFn = useServerFn(getEmailThread);
   const syncFn = useServerFn(syncMyEmailAccounts);
   const membersFn = useServerFn(listWorkspaceMembers);
@@ -75,10 +91,14 @@ function EmailInbox() {
   const [selected, setSelected] = useState<string | null>(null);
   const [filter, setFilter] = useState<"mine" | "unassigned" | "all">("all");
 
-  const threadsQ = useQuery({
-    queryKey: ["email_threads"],
-    queryFn: () => listFn(),
-  });
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
+  const {
+    rows: threads,
+    counts,
+    total,
+    query: threadsQ,
+  } = useInboxChannelPage<EmailThreadRow>("email", filter, debouncedSearch);
   const threadQ = useQuery({
     queryKey: ["email_thread", selected],
     queryFn: () => getFn({ data: { thread_id: selected! } }),
@@ -89,20 +109,12 @@ function EmailInbox() {
     mutationFn: (assignedTo: string | null) =>
       assignFn({ data: { conversationId: selected ?? "", assignedTo } }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["email_threads"] });
+      qc.invalidateQueries({ queryKey: ["inbox-channel", "email"] });
       qc.invalidateQueries({ queryKey: ["email_thread", selected] });
     },
     onError: (error: Error) => toast.error(error.message),
   });
 
-  const allThreads = threadsQ.data?.items ?? [];
-  const threads = allThreads.filter((thread) =>
-    filter === "mine"
-      ? thread.assigned_to === user?.id
-      : filter === "unassigned"
-        ? !thread.assigned_to
-        : true,
-  );
   const current = threadQ.data;
   const memberNames = new Map(
     (membersQ.data ?? []).map((member) => [member.user_id, member.full_name]),
@@ -111,7 +123,7 @@ function EmailInbox() {
   async function handleSync() {
     try {
       await syncFn({ data: {} });
-      qc.invalidateQueries({ queryKey: ["email_threads"] });
+      qc.invalidateQueries({ queryKey: ["inbox-channel", "email"] });
       if (selected) qc.invalidateQueries({ queryKey: ["email_thread", selected] });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro");
@@ -142,20 +154,22 @@ function EmailInbox() {
           <InboxListHeader>
             <Tabs value={filter} onValueChange={(value) => setFilter(value as typeof filter)}>
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="mine">Minhas</TabsTrigger>
+                <TabsTrigger value="mine">Minhas{counts ? ` (${counts.mine})` : ""}</TabsTrigger>
                 <TabsTrigger value="unassigned" title="Sem responsável">
-                  Sem dono
+                  Sem dono{counts ? ` (${counts.unassigned})` : ""}
                 </TabsTrigger>
-                <TabsTrigger value="all">Todas</TabsTrigger>
+                <TabsTrigger value="all">Todas{counts ? ` (${counts.all})` : ""}</TabsTrigger>
               </TabsList>
             </Tabs>
-            <p className="text-xs text-muted-foreground">{threads.length} conversa(s)</p>
+            <InboxListSearch value={search} onChange={setSearch} placeholder="Buscar assunto, trecho ou contato…" />
           </InboxListHeader>
           <InboxConversationList>
-            {threadsQ.isError ? (
+            {threadsQ.isError && threads.length === 0 ? (
               <InboxError onRetry={() => threadsQ.refetch()} />
-            ) : threadsQ.isLoading ? (
+            ) : threadsQ.isPending ? (
               <InboxLoading />
+            ) : threads.length === 0 && debouncedSearch.trim() ? (
+              <InboxEmpty>Nenhuma conversa encontrada.</InboxEmpty>
             ) : threads.length === 0 ? (
               <InboxEmpty>
                 <div className="space-y-2">
@@ -196,6 +210,17 @@ function EmailInbox() {
                   }
                 />
               ))}
+              {threads.length > 0 ? (
+                <InboxListFooter
+                  loaded={threads.length}
+                  total={total}
+                  hasMore={!!threadsQ.hasNextPage}
+                  loadingMore={threadsQ.isFetchingNextPage}
+                  error={threadsQ.isError}
+                  onLoadMore={() => void threadsQ.fetchNextPage()}
+                  onRetry={() => void threadsQ.refetch()}
+                />
+              ) : null}
             </div>
           </InboxConversationList>
         </>
@@ -286,7 +311,7 @@ function EmailInbox() {
                 leadId={current.thread.lead_id}
                 status={current.thread.identity_status}
                 onLinked={() => {
-                  qc.invalidateQueries({ queryKey: ["email_threads"] });
+                  qc.invalidateQueries({ queryKey: ["inbox-channel", "email"] });
                   qc.invalidateQueries({ queryKey: ["email_thread", current.thread.id] });
                 }}
               />
