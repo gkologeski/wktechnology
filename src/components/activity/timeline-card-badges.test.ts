@@ -13,14 +13,18 @@ const act = (extra: Record<string, unknown>) => ({ ...base, ...extra }) as A;
 describe("selos da timeline", () => {
   it("mostra direção e status do e-mail", () => {
     const html = renderToStaticMarkup(
-      h(EmailStatusBadges, { activity: act({ email_direction: "inbound", email_status: "opened" }) }),
+      h(EmailStatusBadges, {
+        activity: act({ email_direction: "inbound", email_status: "opened" }),
+      }),
     );
     expect(html).toContain("recebido");
     expect(html).toContain("opened");
   });
   it("enviado para outbound; nada quando faltam campos", () => {
     expect(
-      renderToStaticMarkup(h(EmailStatusBadges, { activity: act({ email_direction: "outbound" }) })),
+      renderToStaticMarkup(
+        h(EmailStatusBadges, { activity: act({ email_direction: "outbound" }) }),
+      ),
     ).toContain("enviado");
     expect(renderToStaticMarkup(h(EmailStatusBadges, { activity: base }))).toBe("");
   });
