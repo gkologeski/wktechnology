@@ -41,7 +41,15 @@ describe("dashboard secundário", () => {
     const r = summarizeLeadJourney(
       [
         g({ n: 12000 }),
-        g({ n: 300, stage_id: "q", converted: true, has_deal_ref: true, linked: true, deal_stage_id: "w", deal_value: 9000 }),
+        g({
+          n: 300,
+          stage_id: "q",
+          converted: true,
+          has_deal_ref: true,
+          linked: true,
+          deal_stage_id: "w",
+          deal_value: 9000,
+        }),
         g({ n: 50, converted: true, has_deal_ref: true, linked: false }),
       ],
       leadStages,

@@ -49,7 +49,9 @@ export type DashboardSecondary = {
 };
 
 const arr = (v: unknown): Record<string, unknown>[] =>
-  Array.isArray(v) ? (v.filter((x) => x && typeof x === "object") as Record<string, unknown>[]) : [];
+  Array.isArray(v)
+    ? (v.filter((x) => x && typeof x === "object") as Record<string, unknown>[])
+    : [];
 const str = (v: unknown): string | null => (typeof v === "string" ? v : null);
 const num = (v: unknown): number => {
   const n = Number(v);
@@ -103,9 +105,7 @@ export function parseDashboardSecondary(value: unknown): DashboardSecondary | nu
 
 /** Etapas abertas com probabilidade >= 60% (critério de "fase avançada"). */
 export function advancedStageIds(stages: PipelineStage[]): string[] {
-  return stages
-    .filter((s) => s.type === "open" && (s.probability ?? 0) >= 60)
-    .map((s) => s.value);
+  return stages.filter((s) => s.type === "open" && (s.probability ?? 0) >= 60).map((s) => s.value);
 }
 
 function dealStageOf(

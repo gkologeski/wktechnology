@@ -157,7 +157,9 @@ export async function loadSalesDashboard(
   const ownerMode =
     effectiveAssignee === "__all__" ? "all" : effectiveAssignee === "__none__" ? "none" : "one";
   const ownerParam =
-    effectiveAssignee === "__all__" || effectiveAssignee === "__none__" ? userId : effectiveAssignee;
+    effectiveAssignee === "__all__" || effectiveAssignee === "__none__"
+      ? userId
+      : effectiveAssignee;
 
   // Leads a trabalhar: contagem exata + amostra (sem baixar a lista inteira).
   const leadsToWorkBase = () =>
@@ -171,96 +173,91 @@ export async function loadSalesDashboard(
         .in("status", ["new", "contacted", "nurturing"]),
     );
 
-  const [
-    aggregatesRes,
-    secondaryRes,
-    meetingsRes,
-    bookingsRes,
-    tasksRes,
-    goalsRes,
-    leadsRes,
-  ] = await Promise.all([
-    supabase.rpc("get_sales_dashboard_deal_aggregates", {
-      p_workspace_id: workspaceId,
-      p_pipeline_id: selected?.id,
-      p_owner_mode: ownerMode,
-      p_owner_id: ownerParam,
-      p_open_stage_ids: stageParameters.open,
-      p_won_stage_ids: stageParameters.won,
-      p_lost_stage_ids: stageParameters.lost,
-      p_stage_probabilities: stageParameters.probabilities,
-      p_period_start: periodStart.toISOString(),
-      p_period_end: periodEnd.toISOString(),
-      p_prev_start: prevPeriodStart.toISOString(),
-      p_prev_end: prevPeriodEnd.toISOString(),
-      p_month_start: monthStart.toISOString(),
-      p_month_end: monthEnd.toISOString(),
-    }),
-    supabase.rpc("get_sales_dashboard_secondary", {
-      p_workspace_id: workspaceId,
-      p_pipeline_id: selected?.id,
-      p_lead_pipeline_id: selectedLeadPipeline?.id,
-      p_owner_mode: ownerMode,
-      p_owner_id: ownerParam,
-      p_open_stage_ids: stageParameters.open,
-      p_advanced_stage_ids: advancedStageIds(stages),
-      p_now: now.toISOString(),
-      p_today: today.toISOString(),
-      p_contacts_since: d14.toISOString(),
-      p_utc_offset_minutes: Math.round(BR_OFFSET_MS / 60000),
-      p_period_start: periodStart.toISOString(),
-      p_period_end: periodEnd.toISOString(),
-    }),
-    safe(
-      mine(
-        supabase
-          .from("meetings")
-          .select("id, title, scheduled_at, status, public_token, related_deal_id")
-          .eq("workspace_id", workspaceId)
-          .gte("scheduled_at", now.toISOString())
-          .lte("scheduled_at", in7.toISOString())
-          .not("status", "in", '("cancelled","canceled")')
-          .order("scheduled_at", { ascending: true })
-          .limit(10),
+  const [aggregatesRes, secondaryRes, meetingsRes, bookingsRes, tasksRes, goalsRes, leadsRes] =
+    await Promise.all([
+      supabase.rpc("get_sales_dashboard_deal_aggregates", {
+        p_workspace_id: workspaceId,
+        p_pipeline_id: selected?.id,
+        p_owner_mode: ownerMode,
+        p_owner_id: ownerParam,
+        p_open_stage_ids: stageParameters.open,
+        p_won_stage_ids: stageParameters.won,
+        p_lost_stage_ids: stageParameters.lost,
+        p_stage_probabilities: stageParameters.probabilities,
+        p_period_start: periodStart.toISOString(),
+        p_period_end: periodEnd.toISOString(),
+        p_prev_start: prevPeriodStart.toISOString(),
+        p_prev_end: prevPeriodEnd.toISOString(),
+        p_month_start: monthStart.toISOString(),
+        p_month_end: monthEnd.toISOString(),
+      }),
+      supabase.rpc("get_sales_dashboard_secondary", {
+        p_workspace_id: workspaceId,
+        p_pipeline_id: selected?.id,
+        p_lead_pipeline_id: selectedLeadPipeline?.id,
+        p_owner_mode: ownerMode,
+        p_owner_id: ownerParam,
+        p_open_stage_ids: stageParameters.open,
+        p_advanced_stage_ids: advancedStageIds(stages),
+        p_now: now.toISOString(),
+        p_today: today.toISOString(),
+        p_contacts_since: d14.toISOString(),
+        p_utc_offset_minutes: Math.round(BR_OFFSET_MS / 60000),
+        p_period_start: periodStart.toISOString(),
+        p_period_end: periodEnd.toISOString(),
+      }),
+      safe(
+        mine(
+          supabase
+            .from("meetings")
+            .select("id, title, scheduled_at, status, public_token, related_deal_id")
+            .eq("workspace_id", workspaceId)
+            .gte("scheduled_at", now.toISOString())
+            .lte("scheduled_at", in7.toISOString())
+            .not("status", "in", '("cancelled","canceled")')
+            .order("scheduled_at", { ascending: true })
+            .limit(10),
+        ),
       ),
-    ),
-    safe(
-      mine(
-        supabase
-          .from("bookings")
-          .select("id, invitee_name, invitee_email, start_at, meet_link, status")
-          .eq("workspace_id", workspaceId)
-          .eq("status", "confirmed")
-          .gte("start_at", now.toISOString())
-          .lte("start_at", in7.toISOString())
-          .order("start_at", { ascending: true })
-          .limit(10),
+      safe(
+        mine(
+          supabase
+            .from("bookings")
+            .select("id, invitee_name, invitee_email, start_at, meet_link, status")
+            .eq("workspace_id", workspaceId)
+            .eq("status", "confirmed")
+            .gte("start_at", now.toISOString())
+            .lte("start_at", in7.toISOString())
+            .order("start_at", { ascending: true })
+            .limit(10),
+        ),
       ),
-    ),
-    safe(
-      supabase
-        .from("activities")
-        .select("id, subject, due_date, type, completed")
-        .eq("workspace_id", workspaceId)
-        .eq("owner_id", userId)
-        .eq("completed", false)
-        .not("due_date", "is", null)
-        .order("due_date", { ascending: true })
-        .limit(12),
-    ),
-    safe(
-      mine(
+      safe(
         supabase
-          .from("goals")
-          .select("id, metric, target_value, period_start, period_end, pipeline_id, target_user_id")
+          .from("activities")
+          .select("id, subject, due_date, type, completed")
           .eq("workspace_id", workspaceId)
-          .eq("metric", "deals_won_value")
-          .lte("period_start", isoDay(monthEnd))
-          .gte("period_end", isoDay(monthStart)),
+          .eq("owner_id", userId)
+          .eq("completed", false)
+          .not("due_date", "is", null)
+          .order("due_date", { ascending: true })
+          .limit(12),
       ),
-    ),
-    safe(leadsToWorkBase().order("updated_at", { ascending: true }).limit(5)),
-  ]);
+      safe(
+        mine(
+          supabase
+            .from("goals")
+            .select(
+              "id, metric, target_value, period_start, period_end, pipeline_id, target_user_id",
+            )
+            .eq("workspace_id", workspaceId)
+            .eq("metric", "deals_won_value")
+            .lte("period_start", isoDay(monthEnd))
+            .gte("period_end", isoDay(monthStart)),
+        ),
+      ),
+      safe(leadsToWorkBase().order("updated_at", { ascending: true }).limit(5)),
+    ]);
 
   if (aggregatesRes.error) throw new Error(aggregatesRes.error.message);
   if (secondaryRes.error) throw new Error(secondaryRes.error.message);
