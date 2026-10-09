@@ -1,13 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import DOMPurify from "dompurify";
 import { Mail, RefreshCw, Reply, Eye, MousePointerClick, Paperclip, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { getEmailThread } from "@/lib/email-inbox.functions";
+import {
+  getEmailMessageBody,
+  getEmailThreadMeta,
+  listConversationMessages,
+} from "@/lib/inbox/message-history.functions";
+import { useMessageHistory } from "@/hooks/use-message-history";
+import { MessageHistoryViewport } from "@/components/inbox/message-history-viewport";
+import type { HistoryPage } from "@/lib/inbox/message-history";
 import { compactCount } from "@/lib/inbox/channel-page";
 import { useInboxChannelPage } from "@/hooks/use-inbox-channel-page";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -84,7 +90,8 @@ function EmailInbox() {
   };
   const qc = useQueryClient();
   const { user } = useAuth();
-  const getFn = useServerFn(getEmailThread);
+  const getFn = useServerFn(getEmailThreadMeta);
+  const msgsFn = useServerFn(listConversationMessages);
   const syncFn = useServerFn(syncMyEmailAccounts);
   const membersFn = useServerFn(listWorkspaceMembers);
   const assignFn = useServerFn(assignEmailThread);
@@ -105,6 +112,19 @@ function EmailInbox() {
     queryFn: () => getFn({ data: { thread_id: selected! } }),
     enabled: !!selected,
   });
+  // Mensagens por página, sem corpo/anexos (carregados por cartão ao aparecer).
+  // email_messages não está na publicação: a thread (email_threads) sinaliza novidades.
+  const history = useMessageHistory<EmailMessageRow>({
+    contextKey: selected && user?.id ? `${user.id}:email:${selected}` : null,
+    fetchPage: ({ signal, ...cur }) =>
+      msgsFn({
+        data: { channel: "email", conversation_id: selected!, ...cur },
+        signal,
+      }) as Promise<HistoryPage<EmailMessageRow>>,
+    realtime: selected
+      ? { table: "email_threads", filter: `id=eq.${selected}`, kind: "parent" }
+      : null,
+  });
   const membersQ = useQuery({ queryKey: ["inbox", "members"], queryFn: () => membersFn() });
   const assign = useMutation({
     mutationFn: (assignedTo: string | null) =>
@@ -116,7 +136,8 @@ function EmailInbox() {
     onError: (error: Error) => toast.error(error.message),
   });
 
-  const current = threadQ.data;
+  const thread = threadQ.data;
+  const current = thread ? { thread, messages: history.items } : undefined;
   const memberNames = new Map(
     (membersQ.data ?? []).map((member) => [member.user_id, member.full_name]),
   );
@@ -126,6 +147,7 @@ function EmailInbox() {
       await syncFn({ data: {} });
       qc.invalidateQueries({ queryKey: ["inbox-channel", "email"] });
       if (selected) qc.invalidateQueries({ queryKey: ["email_thread", selected] });
+      void history.syncNewer();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro");
     }
@@ -163,7 +185,11 @@ function EmailInbox() {
                     </span>
                   ) : null}
                 </TabsTrigger>
-                <TabsTrigger className="flex-col gap-0 px-1" value="unassigned" title="Sem responsável">
+                <TabsTrigger
+                  className="flex-col gap-0 px-1"
+                  value="unassigned"
+                  title="Sem responsável"
+                >
                   Sem dono
                   {counts ? (
                     <span className="block text-[10px] font-normal text-muted-foreground">
@@ -266,7 +292,7 @@ function EmailInbox() {
                   current.thread.subject ||
                   "Contato por email"
                 }
-                subtitle={`Email · ${current.thread.subject || "(sem assunto)"} · ${current.messages.length} mensagem(ns)`}
+                subtitle={`Email · ${current.thread.subject || "(sem assunto)"} · ${current.thread.message_count ?? current.messages.length} mensagem(ns)`}
                 actions={
                   <>
                     <Select
@@ -301,13 +327,33 @@ function EmailInbox() {
                   </>
                 }
               />
-              <ScrollArea className="flex-1 bg-product-panel-muted px-5 py-6" aria-live="polite">
-                <div className="space-y-5">
+              {history.initial === "error" ? (
+                <InboxError onRetry={history.retryInitial}>
+                  Não foi possível carregar as mensagens.
+                </InboxError>
+              ) : (
+                <MessageHistoryViewport
+                  resetKey={selected}
+                  count={current.messages.length}
+                  firstId={current.messages[0]?.id ?? null}
+                  lastId={current.messages[current.messages.length - 1]?.id ?? null}
+                  hasOlder={history.hasOlder}
+                  olderLoading={history.olderLoading}
+                  olderError={history.olderError}
+                  syncError={history.syncError}
+                  degraded={history.health === "degraded"}
+                  onLoadOlder={() => void history.loadOlder()}
+                  onRetrySync={() => void history.reconcile()}
+                  className="bg-product-panel-muted px-5 py-6"
+                >
+                  {history.initial === "loading" && !current.messages.length ? (
+                    <InboxLoading />
+                  ) : null}
                   {current.messages.map((m) => (
                     <MessageCard key={m.id} message={m} />
                   ))}
-                </div>
-              </ScrollArea>
+                </MessageHistoryViewport>
+              )}
             </>
           )}
         </>
@@ -326,7 +372,9 @@ function EmailInbox() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Mensagens</p>
-                <p className="mt-1 font-medium">{current.messages.length}</p>
+                <p className="mt-1 font-medium">
+                  {current.thread.message_count ?? current.messages.length}
+                </p>
               </div>
               <InboxIdentityLinker
                 channel="email"
@@ -347,16 +395,62 @@ function EmailInbox() {
   );
 }
 
-type Msg = NonNullable<
-  ReturnType<typeof getEmailThread> extends Promise<infer T> ? T : never
->["messages"][number];
+type EmailMessageRow = {
+  id: string;
+  created_at: string;
+  direction: string | null;
+  from_email: string | null;
+  from_name: string | null;
+  to_emails: string[] | null;
+  cc_emails: string[] | null;
+  subject: string | null;
+  snippet: string | null;
+  sent_at: string | null;
+  received_at: string | null;
+  open_count: number | null;
+  click_count: number | null;
+  first_opened_at: string | null;
+  has_attachments: boolean | null;
+};
+type Msg = EmailMessageRow;
+
+/** Corpo do e-mail só quando o cartão chega perto da tela. */
+function useEmailBody(id: string) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [visible, setVisible] = useState(false);
+  const bodyFn = useServerFn(getEmailMessageBody);
+  useEffect(() => {
+    if (visible || !ref.current) return;
+    if (typeof IntersectionObserver === "undefined") return setVisible(true);
+    const io = new IntersectionObserver(
+      (e) => e.some((x) => x.isIntersecting) && setVisible(true),
+      {
+        rootMargin: "600px 0px",
+      },
+    );
+    io.observe(ref.current);
+    return () => io.disconnect();
+  }, [visible]);
+  const q = useQuery({
+    queryKey: ["email_body", id],
+    queryFn: () => bodyFn({ data: { message_id: id } }),
+    enabled: visible,
+    staleTime: Infinity,
+  });
+  return { ref, q };
+}
 
 function MessageCard({ message: m }: { message: Msg }) {
   const isOut = m.direction === "outbound";
-  const html =
-    m.body_html && typeof window !== "undefined"
-      ? DOMPurify.sanitize(m.body_html, { USE_PROFILES: { html: true } })
-      : null;
+  const { ref, q: bodyQ } = useEmailBody(m.id);
+  const body = bodyQ.data;
+  const html = useMemo(
+    () =>
+      body?.body_html && typeof window !== "undefined"
+        ? DOMPurify.sanitize(body.body_html, { USE_PROFILES: { html: true } })
+        : null,
+    [body?.body_html],
+  );
   return (
     <InboxMessageBubble
       outbound={isOut}
@@ -387,16 +481,27 @@ function MessageCard({ message: m }: { message: Msg }) {
         </>
       }
     >
-      {html ? (
-        <div
-          className="prose prose-sm max-w-none dark:prose-invert"
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
-      ) : (
-        <pre className="whitespace-pre-wrap font-sans text-sm">
-          {m.body_text || m.snippet || ""}
-        </pre>
-      )}
+      <div ref={ref}>
+        {html ? (
+          <div
+            className="prose prose-sm max-w-none dark:prose-invert"
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        ) : (
+          <pre className="whitespace-pre-wrap font-sans text-sm">
+            {body?.body_text || m.snippet || ""}
+          </pre>
+        )}
+        {bodyQ.isError && (
+          <button
+            type="button"
+            className="mt-1 text-xs text-destructive underline"
+            onClick={() => void bodyQ.refetch()}
+          >
+            Não foi possível carregar o conteúdo completo. Tentar novamente
+          </button>
+        )}
+      </div>
     </InboxMessageBubble>
   );
 }

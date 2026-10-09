@@ -90,3 +90,17 @@ describe("compactCount", () => {
     expect(compactCount(12345)).toBe("12 mil");
   });
 });
+
+describe("filtro de caixas do tempo real", () => {
+  it("divide em blocos de 100 valores (limite do filtro in)", async () => {
+    const { emailAccountsFilters } = await import("./channel-page");
+    const ids = Array.from(
+      { length: 205 },
+      (_, i) => `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`,
+    );
+    const f = emailAccountsFilters(ids);
+    expect(f).toHaveLength(3);
+    expect(f.map((x) => x.split(",").length)).toEqual([100, 100, 5]);
+    expect(emailAccountsFilters(["nao-uuid"])).toEqual([]);
+  });
+});
