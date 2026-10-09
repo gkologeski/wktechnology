@@ -22,7 +22,7 @@ import {
   openEmailAttachment,
   type TeamMember,
 } from "@/components/activity/timeline-shared";
-import { EmailTimelineItem } from "@/components/activity/email-timeline-item";
+import { LazyEmailTimelineItem } from "@/components/activity/lazy-email-timeline-item";
 import { MeetingMetaCard } from "@/components/activity/meeting-meta-card";
 import {
   CallDurationBadges,
@@ -194,7 +194,7 @@ export function ActivityTimelineItem({
         {isEditing ? (
           editForm
         ) : a.type === "email" && emailMeta ? (
-          <EmailTimelineItem
+          <LazyEmailTimelineItem
             meta={emailMeta}
             createdAt={a.created_at ?? null}
             onOpenAttachment={openEmailAttachment}
