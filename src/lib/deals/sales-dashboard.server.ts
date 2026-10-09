@@ -191,7 +191,7 @@ export async function loadSalesDashboard(
         p_month_start: monthStart.toISOString(),
         p_month_end: monthEnd.toISOString(),
       }),
-      supabase.rpc("get_sales_dashboard_secondary", {
+      supabase.rpc("get_sales_dashboard_secondary_v2", {
         p_workspace_id: workspaceId,
         p_pipeline_id: selected?.id,
         p_lead_pipeline_id: selectedLeadPipeline?.id,
@@ -199,6 +199,8 @@ export async function loadSalesDashboard(
         p_owner_id: ownerParam,
         p_open_stage_ids: stageParameters.open,
         p_advanced_stage_ids: advancedStageIds(stages),
+        p_stage_probabilities: stageParameters.probabilities,
+        p_advanced_limit: 8,
         p_now: now.toISOString(),
         p_today: today.toISOString(),
         p_contacts_since: d14.toISOString(),
@@ -322,7 +324,9 @@ export async function loadSalesDashboard(
     const pipe: Pipeline = selected
       ? selected
       : ({ id: "", name: "", stages } as unknown as Pipeline);
-    const hot = computeHotScore({ deal: d as unknown as Deal, pipeline: pipe });
+    const hot =
+      d.hot_score ??
+      computeHotScore({ deal: d as unknown as Deal, pipeline: pipe, now: now.getTime() });
     return {
       id: d.id,
       name: d.name,
@@ -339,10 +343,8 @@ export async function loadSalesDashboard(
   };
 
   // Negócios em fase avançada (probabilidade >= 60%), ordenados por hot score
-  const advancedDeals = secondary.advanced
-    .map(toItem)
-    .sort((a, b) => b.hotScore - a.hotScore)
-    .slice(0, 8);
+  // O banco já devolve o top 8 ordenado (score desc, valor desc, id) sobre TODOS os candidatos.
+  const advancedDeals = secondary.advanced.map(toItem).slice(0, 8);
   const advancedIds = new Set(advancedDeals.map((d) => d.id));
 
   // Negócios que precisam de atenção: o servidor devolve os 16 maiores de cada risco,

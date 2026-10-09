@@ -55,6 +55,9 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
   // Filtros no padrão HubSpot, salvos por tipo de ficha neste navegador.
   const storageKey = `timeline-filters:${relatedKey}`;
   const [filters, setFiltersState] = useState<TimelineFilters>(DEFAULT_TIMELINE_FILTERS);
+  // Só carrega depois de reidratar os filtros salvos desta ficha: evita uma primeira
+  // consulta com filtros padrão seguida de outra com os filtros salvos.
+  const [hydratedKey, setHydratedKey] = useState<string | null>(null);
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(storageKey);
@@ -68,8 +71,11 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
       });
     } catch {
       /* preferências inválidas são ignoradas */
+    } finally {
+      setHydratedKey(storageKey);
     }
   }, [storageKey]);
+  const filtersReady = hydratedKey === storageKey;
   const setFilters = (f: TimelineFilters) => {
     setFiltersState(f);
     try {
@@ -168,12 +174,13 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
   }, [loadingMore, hasMore]);
 
   useEffect(() => {
+    if (!filtersReady) return;
     loadedCountRef.current = 0;
     void load();
     return () => {
       requestVersion.current += 1;
     };
-  }, [load]);
+  }, [load, filtersReady]);
 
   const historyRows = useMemo(() => historyGroups.flatMap((g) => g.changes), [historyGroups]);
   const { resolveValue: resolveHistoryValue, resolveActor: resolveHistoryActor } =
@@ -275,6 +282,33 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
           },
           () => schedule(() => void loadRef.current({ silent: true })),
         )
+        // Histórico de propriedades e agenda: filtros limitados a esta ficha e coalescidos
+        // no mesmo recarregamento silencioso (preserva páginas abertas e rascunhos).
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "property_history",
+            filter: `entity_id=eq.${relatedId}`,
+          },
+          () => schedule(() => void loadRef.current({ silent: true })),
+        );
+      if (relatedKey === "related_contact_id") {
+        // calendar_events só tem vínculo direto com contato; demais fichas reconciliam
+        // ao focar a janela / voltar à aba.
+        channel = channel.on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "calendar_events",
+            filter: `related_contact_id=eq.${relatedId}`,
+          },
+          () => schedule(() => void loadRef.current({ silent: true })),
+        );
+      }
+      channel = channel
         .on(
           "postgres_changes",
           { event: "*", schema: "public", table: "activity_survey_responses" },

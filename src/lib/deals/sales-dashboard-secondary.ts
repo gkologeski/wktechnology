@@ -23,6 +23,8 @@ export type SecondaryDealRow = {
   closed_at: string | null;
   updated_at: string | null;
   has_recent_activity: boolean;
+  /** Score calculado no banco (mesma fórmula de computeHotScore); null em respostas antigas. */
+  hot_score: number | null;
 };
 
 export type ContactGroup = { day: string; type: string; n: number };
@@ -42,6 +44,8 @@ export type JourneyGroup = {
 
 export type DashboardSecondary = {
   advanced: SecondaryDealRow[];
+  /** Total exato de negócios em fase avançada (independente do top-N). */
+  advancedTotal: number;
   overdue: SecondaryDealRow[];
   stale: SecondaryDealRow[];
   contacts: ContactGroup[];
@@ -73,6 +77,7 @@ function deal(r: Record<string, unknown>): SecondaryDealRow {
     closed_at: str(r.closed_at),
     updated_at: str(r.updated_at),
     has_recent_activity: r.has_recent_activity === true,
+    hot_score: r.hot_score == null ? null : num(r.hot_score),
   };
 }
 
@@ -81,6 +86,7 @@ export function parseDashboardSecondary(value: unknown): DashboardSecondary | nu
   const raw = value as Record<string, unknown>;
   return {
     advanced: arr(raw.advanced).map(deal),
+    advancedTotal: raw.advanced_total == null ? arr(raw.advanced).length : num(raw.advanced_total),
     overdue: arr(raw.overdue).map(deal),
     stale: arr(raw.stale).map(deal),
     contacts: arr(raw.contacts).map((c) => ({

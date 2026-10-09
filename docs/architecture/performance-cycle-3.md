@@ -1,4 +1,4 @@
-# Performance — ciclo 3 (09/10/2026) — A implementada; B e C pendentes
+# Performance — ciclo 3 (09/10/2026) — A e B implementadas; validação de papéis não-admin e C (Inbox) pendentes
 
 Base: commit do ciclo 2 `5c573cea5`. Sem publicação, envios ou alteração de dados reais.
 
@@ -55,33 +55,73 @@ Base: commit do ciclo 2 `5c573cea5`. Sem publicação, envios ou alteração de 
 - Teste com sessão de usuário de outro workspace/escopo próprio ainda não executado.
 - Sem medição comparável antes/depois além da amostra dev acima; suíte completa e build não rodados neste turno.
 
-## Pendente
-- A: teste RLS com sessão real (escopo próprio e outro workspace); realtime de histórico/calendário.
-- B: jornada de leads, atividades 14/30 dias e listas secundárias ainda com 3.000/5.000/10.000.
-- C: Inbox — não iniciado (depende de A/B).
-- Medições antes/depois autenticadas, suíte completa e build deste ciclo não executadas além da migração.
+## Pendente (atualizado)
+- A/B: validar RLS com perfis não-admin (próprio/equipe) e outro tenant com dados.
+- A: conferir visualmente pins e selos de e-mail; agenda em tempo real fora de contatos.
+- C: Inbox — não iniciada (depende da validação acima).
+- Medições comparáveis antes/depois e em produção.
 
 ## Rollback
 - Parte A: restaurar `activity-fetch.ts`/`use-timeline-feed.ts` anteriores; as RPCs 0087/0088 permanecem sem efeito.
 Reaplicar a definição de 0086 via nova migração `CREATE OR REPLACE` (sem perda de dados).
 
-## Parte B — Dashboard sem tetos (iniciada)
+## Parte B — Dashboard sem tetos (implementado)
 
-- `0090_performance_cycle3_dashboard_secondary.sql`: RPC `get_sales_dashboard_secondary`
-  (`SECURITY INVOKER`, RLS do usuário) que substitui os limites de 3.000 negócios, 5.000/10.000
-  atividades, 10.000 leads da jornada e 500 leads a trabalhar.
-  - Negócios avançados: todas as abertas com probabilidade >= 60%; hot score continua em JS.
-  - Atenção: 16 maiores por risco (prazo vencido / sem atividade em 7 dias), calculado no banco.
-  - Contatos por dia: contagens agrupadas por dia local e tipo.
-  - Jornada de leads: grupos agregados (origem, status, etapa, conversão, negócio vinculado);
-    o vínculo agora considera todos os negócios do escopo, não só os 3.000 mais recentes.
-  - Leads a trabalhar: contagem exata (`count: exact`) + amostra de 5.
-- Testes: `sales-dashboard-secondary.test.ts` (4), incluindo 12.350 leads acima do teto antigo.
-- Conferência read-only (papel privilegiado, não prova RLS): workspace principal devolveu
-  128 contatos em 14 dias e 1.103 leads em 365 dias, idênticos às contagens diretas.
-- Diferença conhecida: negócios com etapa fora do pipeline deixam de ser tratados como abertos
-  nas listas (agora coerente com os KPIs da 0085).
-- Pendente: teste com sessão real de usuário (own/team), fixture acima de 10 mil negócios,
-  medição antes/depois e lista "avançados" ainda é baixada inteira (sem teto, mas sem top-N SQL).
+- `0090`: `get_sales_dashboard_secondary` (invoker) — atenção, contatos/dia, jornada agrupada; sem
+  os tetos 3.000/5.000/10.000/500. **DEPRECATED** pela v2, mantida para clientes antigos.
+- `0091` + `0092`: `sales_dashboard_hot_score` (mesma fórmula de `computeHotScore`, termo de
+  engajamento = 0 como no painel; 0092 corrigiu paridade de ponto flutuante — `extract(epoch)`
+  devolve numeric) e `get_sales_dashboard_secondary_v2`: ranking dos avançados **no banco** sobre
+  todos os candidatos, ordem `score desc, valor desc, id`, devolve só o top 8 + `advanced_total`
+  exato. Atenção (8 por risco) já exclui o top 8 avançado no banco.
+- Leads a trabalhar: `count: exact` + amostra de 5.
+- Mudança de semântica: negócio com etapa inexistente no pipeline não entra nas listas (igual aos
+  KPIs de 0085). Score agora vem do banco; JS só recalcula se a resposta não trouxer o campo.
 
-Rollback: reverter `sales-dashboard.server.ts`; a função 0090 é aditiva e pode permanecer.
+### Parte B — validado
+- Referência independente: fixture de 12.000 candidatos gerada por `generate_series` (nenhuma
+  gravação em tabela, nenhum gatilho): soma dos scores, soma ponderada por índice e top 8 com
+  empates idênticos entre banco e `computeHotScore` (`sales-dashboard-secondary.test.ts`). A
+  primeira versão divergiu em 1 ponto e foi corrigida pela 0092 — o teste pegou.
+- Sessão real authenticated (conta admin do solicitante, via PostgREST): jornada 5.913 leads e
+  contatos 129 = contagens diretas; modo "um responsável" (membro) 4 leads = direto; workspace
+  sem vínculo devolve tudo zerado/vazio.
+- Navegador (dev): painel mostra "Fase avançada" com scores do banco; 7,2 s / 7,0 s até o bloco
+  visível em duas cargas. **Sem baseline anterior comparável**; não é medida de produção.
+
+## Parte A — complementos desta entrega
+- Dupla carga inicial: o feed só consulta depois de reidratar os filtros salvos (1 chamada de
+  `get_timeline_activity_page` na abertura, antes 2).
+- Realtime: `0093` adiciona só `property_history` à publicação; a ficha assina
+  `entity_id=eq.<ficha>`; `calendar_events` filtrado por `related_contact_id` apenas em
+  contatos (demais fichas reconciliam ao focar/voltar à aba). Coalescido em 250 ms, recarga
+  silenciosa preserva páginas e rascunhos.
+- `0094`: busca do histórico também casa rótulos resolvidos (etapa por ID → label do pipeline,
+  funil → nome, responsável → nome), sob a RLS de quem consulta. Ex.: "Perdido" 0 → 1 grupo.
+- Cartões após a regressão da projeção (navegador, dev): 7 players de gravação, duração
+  ("0m 9s"), "Abrir gravação", criador e status/prioridade de tarefa visíveis. **Não conferidos
+  visualmente**: pins (nenhum registro fixado nos dados) e selos de direção/status de e-mail.
+- E-mail detalhado continua carregando **por proximidade na viewport**, não só ao clicar.
+- Observação: com as colunas laterais alargadas, a coluna central fica estreita em 1280 px.
+
+## Permissões — cobertura real
+- Validado com sessão authenticated real: conta admin (escopo workspace), filtro por
+  responsável, workspace alheio e entidade inexistente (timeline 0).
+- **Não validado**: perfis com escopo próprio/equipe sem admin e outro tenant com dados (existe
+  um único workspace com negócios). `SET ROLE authenticated` é negado à ferramenta de leitura;
+  emitir sessão de outro usuário exige aprovação do usuário. Até lá, Inbox (parte C) não começa.
+
+## Gates desta entrega (commit base 2df94a8)
+| Verificação | Resultado |
+| --- | --- |
+| `tsgo --noEmit` | exit 0 |
+| ESLint nos arquivos alterados | exit 0, 0 erros, 5 avisos (tamanho de arquivo, diretivas) |
+| Suíte completa | exit 1 antes: 670/671, falha preexistente `hardcode-guard` (domínio fixo em `role-profile-approval.tsx`); corrigida — teste isolado 7/7 |
+| Build | exit 0, 259 s (cliente 93 s, SSR 69 s, Nitro 89 s); entrada 1.046,97 KB / 310.103 B gzip (inalterada) |
+| Verificação automática da plataforma | segue em timeout de 240 s; `tsgo` local termina em segundos. Comando real inacessível — hipótese (não comprovada): roda `tsc` sem cache incremental. |
+
+## Rollback
+- App: reverter `sales-dashboard.server.ts` para `get_sales_dashboard_secondary` (0090) — não
+  voltar às consultas com `.limit(3000/10000)`, que truncavam. 0091–0094 são aditivas.
+- Realtime: `ALTER PUBLICATION supabase_realtime DROP TABLE public.property_history` em janela
+  administrativa, se houver custo; a timeline continua reconciliando ao focar.
