@@ -21,4 +21,4 @@ pode cortar histórico nem contagens.
 
 ## Ciclo 3
 - Ciclo 3 A: feed paginado em 3 origens (0088), e-mail sob demanda, recarga silenciosa sem reset — ver performance-cycle-3.md.
-- Ciclo 3 B: dashboard sem tetos (0090–0092), top 8 avançados ranqueado no banco. Pendente: validar papéis não-admin; Inbox (C) — ver performance-cycle-3.md.
+- Ciclo 3 B: dashboard sem tetos (0090–0092). Ciclo 4 C: Inbox unificada paginada (0095/0096), validada em banco isolado; pendente RLS não-admin no banco real e telas por canal — ver performance-cycle-4-inbox.md.
