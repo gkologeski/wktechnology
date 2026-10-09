@@ -130,7 +130,13 @@ export function TimelineEntriesList({
       })}
       {hasMore && (
         <li className="flex justify-center pt-2">
-          <Button type="button" variant="outline" size="sm" onClick={onLoadMore} disabled={loadingMore}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onLoadMore}
+            disabled={loadingMore}
+          >
             {loadingMore && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
             Carregar mais
           </Button>

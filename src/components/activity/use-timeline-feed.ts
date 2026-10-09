@@ -81,28 +81,31 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
   const [datePreset, setDatePreset] = useState<DatePreset>("any");
   const [dateCustom, setDateCustom] = useState<CustomRange>({});
 
-  const load = useCallback(async (opts?: { silent?: boolean }) => {
-    const version = ++requestVersion.current;
-    if (opts?.silent) setRefreshing(true);
-    const data = await fetchTimelineData({
-      relatedKey,
-      relatedId,
-      datePreset,
-      dateCustom,
-      filters,
-    });
-    if (version !== requestVersion.current) return;
-    if (data.error) toast.error(data.error);
-    setEmailMeta(data.emailMeta);
-    setItems(data.items);
-    setHistoryRows(data.historyRows);
-    setHasMore(data.hasMore);
-    setNextCursor(data.nextCursor);
-    setTotalCount(data.totalCount);
-    setServerCounts(data.categoryCounts);
-    setLoading(false);
-    setRefreshing(false);
-  }, [relatedKey, relatedId, datePreset, dateCustom, filters]);
+  const load = useCallback(
+    async (opts?: { silent?: boolean }) => {
+      const version = ++requestVersion.current;
+      if (opts?.silent) setRefreshing(true);
+      const data = await fetchTimelineData({
+        relatedKey,
+        relatedId,
+        datePreset,
+        dateCustom,
+        filters,
+      });
+      if (version !== requestVersion.current) return;
+      if (data.error) toast.error(data.error);
+      setEmailMeta(data.emailMeta);
+      setItems(data.items);
+      setHistoryRows(data.historyRows);
+      setHasMore(data.hasMore);
+      setNextCursor(data.nextCursor);
+      setTotalCount(data.totalCount);
+      setServerCounts(data.categoryCounts);
+      setLoading(false);
+      setRefreshing(false);
+    },
+    [relatedKey, relatedId, datePreset, dateCustom, filters],
+  );
 
   const loadMore = useCallback(async () => {
     if (!nextCursor || loadingMore) return;
