@@ -64,3 +64,24 @@ Base: commit do ciclo 2 `5c573cea5`. Sem publicação, envios ou alteração de 
 ## Rollback
 - Parte A: restaurar `activity-fetch.ts`/`use-timeline-feed.ts` anteriores; as RPCs 0087/0088 permanecem sem efeito.
 Reaplicar a definição de 0086 via nova migração `CREATE OR REPLACE` (sem perda de dados).
+
+## Parte B — Dashboard sem tetos (iniciada)
+
+- `0090_performance_cycle3_dashboard_secondary.sql`: RPC `get_sales_dashboard_secondary`
+  (`SECURITY INVOKER`, RLS do usuário) que substitui os limites de 3.000 negócios, 5.000/10.000
+  atividades, 10.000 leads da jornada e 500 leads a trabalhar.
+  - Negócios avançados: todas as abertas com probabilidade >= 60%; hot score continua em JS.
+  - Atenção: 16 maiores por risco (prazo vencido / sem atividade em 7 dias), calculado no banco.
+  - Contatos por dia: contagens agrupadas por dia local e tipo.
+  - Jornada de leads: grupos agregados (origem, status, etapa, conversão, negócio vinculado);
+    o vínculo agora considera todos os negócios do escopo, não só os 3.000 mais recentes.
+  - Leads a trabalhar: contagem exata (`count: exact`) + amostra de 5.
+- Testes: `sales-dashboard-secondary.test.ts` (4), incluindo 12.350 leads acima do teto antigo.
+- Conferência read-only (papel privilegiado, não prova RLS): workspace principal devolveu
+  128 contatos em 14 dias e 1.103 leads em 365 dias, idênticos às contagens diretas.
+- Diferença conhecida: negócios com etapa fora do pipeline deixam de ser tratados como abertos
+  nas listas (agora coerente com os KPIs da 0085).
+- Pendente: teste com sessão real de usuário (own/team), fixture acima de 10 mil negócios,
+  medição antes/depois e lista "avançados" ainda é baixada inteira (sem teto, mas sem top-N SQL).
+
+Rollback: reverter `sales-dashboard.server.ts`; a função 0090 é aditiva e pode permanecer.
