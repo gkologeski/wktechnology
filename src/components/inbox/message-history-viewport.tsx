@@ -50,6 +50,9 @@ export function MessageHistoryViewport({
     count: 0,
   });
   const [unseen, setUnseen] = useState(0);
+  // Âncora manual: primeiro item visível e sua distância ao topo. A âncora nativa do
+  // navegador não compensou corpos de e-mail carregados depois (medido no preview).
+  const anchor = useRef<{ el: Element; top: number } | null>(null);
 
   const record = () => {
     const el = ref.current;
@@ -60,6 +63,24 @@ export function MessageHistoryViewport({
       clientHeight: el.clientHeight,
       nearBottom: isNearBottom(el),
     };
+    const vTop = el.getBoundingClientRect().top;
+    anchor.current = null;
+    for (const child of Array.from(contentRef.current?.children ?? [])) {
+      const r = child.getBoundingClientRect();
+      if (r.bottom > vTop && r.height > 0) {
+        anchor.current = { el: child, top: r.top - vTop };
+        break;
+      }
+    }
+  };
+  /** Devolve o item âncora à mesma distância do topo. */
+  const restoreAnchor = () => {
+    const el = ref.current;
+    const a = anchor.current;
+    if (!el || !a || !a.el.isConnected) return false;
+    const delta = a.el.getBoundingClientRect().top - el.getBoundingClientRect().top - a.top;
+    if (delta) el.scrollTop += delta;
+    return true;
   };
   const toBottom = () => {
     const el = ref.current;
@@ -78,7 +99,7 @@ export function MessageHistoryViewport({
       if (lastId) toBottom();
     } else if (p.first && firstId && p.first !== firstId && p.last === lastId) {
       // Itens antigos entraram acima: mantém o que o usuário estava lendo.
-      el.scrollTop = anchoredScrollTop(snap.current, el.scrollHeight);
+      if (!restoreAnchor()) el.scrollTop = anchoredScrollTop(snap.current, el.scrollHeight);
     } else if (lastId && p.last !== lastId) {
       if (!p.last || snap.current.nearBottom) toBottom();
       else setUnseen((n) => n + Math.max(1, count - p.count));
@@ -99,7 +120,10 @@ export function MessageHistoryViewport({
     if (!c || typeof ResizeObserver === "undefined") return;
     const ro = new ResizeObserver(() => {
       if (snap.current.nearBottom) toBottom();
-      else record();
+      else {
+        restoreAnchor();
+        record();
+      }
     });
     ro.observe(c);
     return () => ro.disconnect();
@@ -113,9 +137,17 @@ export function MessageHistoryViewport({
           record();
           if (snap.current.nearBottom && unseen) setUnseen(0);
           const el = ref.current;
-          if (el && el.scrollTop < 40 && hasOlder && !olderLoading && !olderError) onLoadOlder();
+          if (
+            el &&
+            el.scrollTop < 40 &&
+            el.scrollHeight > el.clientHeight &&
+            hasOlder &&
+            !olderLoading &&
+            !olderError
+          )
+            onLoadOlder();
         }}
-        className={cn("min-h-0 flex-1 overflow-y-auto [overflow-anchor:auto]", className)}
+        className={cn("min-h-0 flex-1 overflow-y-auto [overflow-anchor:none]", className)}
         aria-live="polite"
         data-testid="message-history"
       >
