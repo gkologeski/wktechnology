@@ -19,3 +19,6 @@ pode cortar histórico nem contagens.
    entre incluí-las na publicação (exige migração) ou remover a assinatura.
 8. Índices: criar só a partir de um EXPLAIN de consultas interativas reais. Nada de índices
    genéricos.
+
+## Ciclo 3
+- Feito: 0087 (total, sem responsável, UUID). Pendente: feed unificado, dashboard caps, Inbox — ver performance-cycle-3.md.
