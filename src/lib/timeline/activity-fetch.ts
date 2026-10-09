@@ -13,11 +13,23 @@ import {
   type EmailMeta,
   type RelatedKey,
 } from "@/components/activity/timeline-shared";
+import {
+  ALL_CATEGORIES,
+  UNASSIGNED,
+  type TimelineCategory,
+  type TimelineFilters,
+} from "@/lib/timeline/timeline-filters";
+
+export type TimelineCursor = { at: string; id: string };
 
 export type TimelineData = {
   items: Activity[];
   emailMeta: Map<string, EmailMeta>;
   historyRows: PropertyChangeRow[];
+  totalCount: number;
+  categoryCounts: Map<TimelineCategory, number>;
+  hasMore: boolean;
+  nextCursor: TimelineCursor | null;
   error?: string;
 };
 
@@ -278,36 +290,77 @@ export async function fetchTimelineData({
   relatedId,
   datePreset,
   dateCustom,
+  filters,
+  cursor = null,
 }: {
   relatedKey: RelatedKey;
   relatedId: string;
   datePreset: DatePreset;
   dateCustom: CustomRange;
+  filters: TimelineFilters;
+  cursor?: TimelineCursor | null;
 }): Promise<TimelineData> {
-  const { data, error } = await supabase.from("activities").select("*").eq(relatedKey, relatedId);
-
-  const { rows: baseRows, emailMeta } = await enrichEmails(((data as Activity[]) ?? []).slice());
   const range = getDateRange(datePreset, new Date(), dateCustom);
-  const calendarVirtuals = await loadCalendarVirtuals(baseRows, relatedKey, relatedId, range);
-
-  const inRange = (iso: string | null | undefined) => {
-    if (!iso) return !range.start && !range.end;
-    const t = new Date(iso).getTime();
-    if (range.start && t < range.start.getTime()) return false;
-    if (range.end && t >= range.end.getTime()) return false;
-    return true;
+  const selectedCategories =
+    filters.tab === "all"
+      ? filters.categories
+      : filters.categories.includes(filters.tab)
+        ? [filters.tab]
+        : [];
+  const activityCategories = selectedCategories.filter((category) =>
+    ["call", "email", "whatsapp", "message", "note", "task", "meeting", "survey"].includes(
+      category,
+    ),
+  );
+  const assigneeIds = filters.assignees.filter((id) => id !== UNASSIGNED);
+  const { data, error } = await supabase.rpc("get_timeline_activity_page", {
+    p_entity_kind: ENTITY_KIND[relatedKey],
+    p_entity_id: relatedId,
+    p_since: range.start?.toISOString(),
+    p_until: range.end?.toISOString(),
+    p_categories:
+      activityCategories.length === ALL_CATEGORIES.length ? undefined : activityCategories,
+    p_assignees: assigneeIds.length ? assigneeIds : undefined,
+    p_include_unassigned: filters.assignees.includes(UNASSIGNED),
+    p_search: filters.search.trim() || undefined,
+    p_cursor_at: cursor?.at,
+    p_cursor_id: cursor?.id,
+    p_page_size: 40,
+  });
+  const payload = (data ?? {}) as unknown as {
+    items?: Activity[];
+    total?: number;
+    counts?: Record<string, number>;
+    has_more?: boolean;
+    next_at?: string | null;
+    next_id?: string | null;
   };
-  const filteredBase =
-    datePreset === "any"
-      ? baseRows
-      : baseRows.filter((row) => inRange(row.hs_createdate ?? row.created_at));
-
-  const items = [...filteredBase, ...calendarVirtuals].sort((a, b) => {
+  const { rows: baseRows, emailMeta } = await enrichEmails((payload.items ?? []).slice());
+  const [calendarVirtuals, historyRows] = cursor
+    ? [[], []]
+    : await Promise.all([
+        loadCalendarVirtuals(baseRows, relatedKey, relatedId, range),
+        loadHistory(relatedKey, relatedId, range),
+      ]);
+  const items = [...baseRows, ...calendarVirtuals].sort((a, b) => {
     const ta = new Date(a.hs_createdate ?? a.created_at ?? 0).getTime();
     const tb = new Date(b.hs_createdate ?? b.created_at ?? 0).getTime();
-    return tb - ta;
+    return tb - ta || b.id.localeCompare(a.id);
   });
-
-  const historyRows = await loadHistory(relatedKey, relatedId, range);
-  return { items, emailMeta, historyRows, error: error?.message };
+  return {
+    items,
+    emailMeta,
+    historyRows,
+    totalCount: Number(payload.total ?? items.length),
+    categoryCounts: new Map(
+      Object.entries(payload.counts ?? {}).map(([key, value]) => [
+        key as TimelineCategory,
+        Number(value),
+      ]),
+    ),
+    hasMore: Boolean(payload.has_more),
+    nextCursor:
+      payload.next_at && payload.next_id ? { at: payload.next_at, id: payload.next_id } : null,
+    error: error?.message,
+  };
 }
