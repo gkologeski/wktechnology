@@ -8,6 +8,8 @@ import type { TimelineEntry } from "@/components/activity/use-timeline-feed";
 import { ActivityTimelineItem } from "@/components/activity/activity-timeline-item";
 import { ActivityEditForm } from "@/components/activity/activity-edit-form";
 import { HistoryTimelineItem } from "@/components/activity/history-timeline-item";
+import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export type TimelineEditingState = {
   id: string | null;
@@ -43,6 +45,9 @@ export function TimelineEntriesList({
   editing,
   onPatch,
   onFollowUp,
+  hasMore,
+  loadingMore,
+  onLoadMore,
 }: {
   loading: boolean;
   entries: TimelineEntry[];
@@ -60,6 +65,9 @@ export function TimelineEntriesList({
   editing: TimelineEditingState;
   onPatch: (a: Activity, patch: Record<string, unknown>) => void;
   onFollowUp: (a: Activity) => void;
+  hasMore: boolean;
+  loadingMore: boolean;
+  onLoadMore: () => void;
 }) {
   if (loading) return <div className="text-sm text-muted-foreground">Carregando...</div>;
   if (entries.length === 0) {
@@ -120,6 +128,20 @@ export function TimelineEntriesList({
           />
         );
       })}
+      {hasMore && (
+        <li className="flex justify-center pt-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onLoadMore}
+            disabled={loadingMore}
+          >
+            {loadingMore && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
+            Carregar mais
+          </Button>
+        </li>
+      )}
     </ol>
   );
 }

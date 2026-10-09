@@ -8,6 +8,7 @@ import { BarChart3, Briefcase, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OnboardingChecklist } from "@/components/onboarding-checklist";
 import { useCurrentUserId } from "@/hooks/use-current-user-id";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { EmptyState, PageHeader, Skeletons } from "@/components/techhire/ui";
 import { getSalesDashboard } from "@/lib/deals/sales-dashboard.functions";
 import { resolveAssignee, resolveDashboardRange, toIsoDay } from "@/lib/deals/dashboard-period";
@@ -93,9 +94,20 @@ function DashboardPage() {
   const assignee = resolveAssignee(search.assignee, search.scope);
 
   const userId = useCurrentUserId();
+  const { workspaceId } = usePermissions();
   const fetchDashboard = useServerFn(getSalesDashboard);
   const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
-    queryKey: ["sales-dashboard", fromIso, toIso, pipelineId, leadPipelineId, channel, assignee],
+    queryKey: [
+      "sales-dashboard",
+      workspaceId,
+      userId,
+      fromIso,
+      toIso,
+      pipelineId,
+      leadPipelineId,
+      channel,
+      assignee,
+    ],
     queryFn: async () => {
       const result = await fetchDashboard({
         data: { from: fromIso, to: toIso, pipelineId, leadPipelineId, channel, assignee },
@@ -107,7 +119,7 @@ function DashboardPage() {
       }
       return result;
     },
-    enabled: !!userId,
+    enabled: !!userId && !!workspaceId,
     retry: 2,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
     staleTime: 60_000,

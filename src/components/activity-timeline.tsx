@@ -49,6 +49,9 @@ export function ActivityTimeline({
     setFilters,
     counts,
     totalCount,
+    hasMore,
+    loadingMore,
+    loadMore,
     datePreset,
     setDatePreset,
     dateCustom,
@@ -205,6 +208,9 @@ export function ActivityTimeline({
                   subject: `Acompanhar: ${a.subject || "atividade"}`,
                 });
             }}
+            hasMore={hasMore}
+            loadingMore={loadingMore}
+            onLoadMore={() => void loadMore()}
             loading={loading}
             entries={timelineEntries}
             emailMeta={emailMeta}

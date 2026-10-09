@@ -1,13 +1,13 @@
 // Camada de dados da timeline: carregamento, filtro de período, histórico,
 // respostas de pesquisa e assinatura de realtime.
 // Extraído de `activity-timeline.tsx` sem mudança de comportamento.
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useRefreshCallback } from "@/hooks/use-refresh-callback";
 import type { Activity } from "@/lib/db-types";
 import type { CustomRange, DatePreset } from "@/lib/date-presets";
-import { fetchTimelineData } from "@/lib/timeline/activity-fetch";
+import { fetchTimelineData, type TimelineCursor } from "@/lib/timeline/activity-fetch";
 import {
   groupPropertyChanges,
   type HistoryGroup,
@@ -16,6 +16,7 @@ import {
 import { getActivitySurveyResponses } from "@/lib/surveys/survey-activity.functions";
 import type { SurveyResponseSummary } from "@/components/surveys/survey-timeline-card";
 import type { EmailMeta, RelatedKey } from "@/components/activity/timeline-shared";
+import { mergeTimelinePage } from "@/lib/timeline/timeline-page";
 import { useHistoryLabels } from "@/components/activity/use-history-labels";
 import { labelProperty, labelValue } from "@/lib/timeline/property-labels";
 import {
@@ -24,6 +25,7 @@ import {
   applyTimelineFilters,
   countByCategory,
   type TimelineFilters,
+  type TimelineCategory,
 } from "@/lib/timeline/timeline-filters";
 
 export type TimelineEntry = { t: number; activity?: Activity; history?: HistoryGroup };
@@ -39,6 +41,12 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
   const [surveyTick, setSurveyTick] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<TimelineCursor | null>(null);
+  const [totalCount, setTotalCount] = useState(0);
+  const [serverCounts, setServerCounts] = useState<Map<TimelineCategory, number>>(new Map());
+  const requestVersion = useRef(0);
 
   // Histórico de alterações/movimentações (property_history) exibido na timeline.
   const [historyRows, setHistoryRows] = useState<PropertyChangeRow[]>([]);
@@ -74,20 +82,71 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
   const [datePreset, setDatePreset] = useState<DatePreset>("any");
   const [dateCustom, setDateCustom] = useState<CustomRange>({});
 
-  const load = async (opts?: { silent?: boolean }) => {
-    if (opts?.silent) setRefreshing(true);
-    const data = await fetchTimelineData({ relatedKey, relatedId, datePreset, dateCustom });
-    if (data.error) toast.error(data.error);
-    setEmailMeta(data.emailMeta);
-    setItems(data.items);
-    setHistoryRows(data.historyRows);
-    setLoading(false);
-    setRefreshing(false);
-  };
+  const load = useCallback(
+    async (opts?: { silent?: boolean }) => {
+      const version = ++requestVersion.current;
+      if (opts?.silent) setRefreshing(true);
+      try {
+        const data = await fetchTimelineData({
+          relatedKey,
+          relatedId,
+          datePreset,
+          dateCustom,
+          filters,
+        });
+        if (version !== requestVersion.current) return;
+        if (data.error) toast.error(data.error);
+        setEmailMeta(data.emailMeta);
+        setItems(data.items);
+        setHistoryRows(data.historyRows);
+        setHasMore(data.hasMore);
+        setNextCursor(data.nextCursor);
+        setTotalCount(data.totalCount);
+        setServerCounts(data.categoryCounts);
+      } catch (error) {
+        if (version === requestVersion.current) toast.error((error as Error).message);
+      } finally {
+        if (version === requestVersion.current) {
+          setLoading(false);
+          setRefreshing(false);
+        }
+      }
+    },
+    [relatedKey, relatedId, datePreset, dateCustom, filters],
+  );
+
+  const loadMore = useCallback(async () => {
+    if (!nextCursor || loadingMore) return;
+    const version = requestVersion.current;
+    setLoadingMore(true);
+    try {
+      const data = await fetchTimelineData({
+        relatedKey,
+        relatedId,
+        datePreset,
+        dateCustom,
+        filters,
+        cursor: nextCursor,
+      });
+      if (version !== requestVersion.current) return;
+      if (data.error) toast.error(data.error);
+      setItems((current) => mergeTimelinePage(current, data.items));
+      setEmailMeta((current) => new Map([...current, ...data.emailMeta]));
+      setHasMore(data.hasMore);
+      setNextCursor(data.nextCursor);
+    } catch (error) {
+      if (version === requestVersion.current) toast.error((error as Error).message);
+    } finally {
+      if (version === requestVersion.current) setLoadingMore(false);
+    }
+  }, [nextCursor, loadingMore, relatedKey, relatedId, datePreset, dateCustom, filters]);
 
   useEffect(() => {
     void load(); /* eslint-disable-next-line */
-  }, [relatedId, datePreset, dateCustom.start, dateCustom.end]);
+    return () => {
+      requestVersion.current += 1;
+    };
+  }, [load]);
 
   // Histórico agrupado + resolução de IDs para nomes.
   const historyGroups = useMemo(() => groupPropertyChanges(historyRows), [historyRows]);
@@ -106,7 +165,15 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
     return entries.sort((a, b) => b.t - a.t);
   }, [items, historyGroups]);
 
-  const counts = useMemo(() => countByCategory(allEntries), [allEntries]);
+  const loadedCounts = useMemo(() => countByCategory(allEntries), [allEntries]);
+  const counts = useMemo(() => {
+    if (!serverCounts.size) return loadedCounts;
+    const merged = new Map(serverCounts);
+    // Reuniões virtuais do calendário não pertencem à tabela de atividades.
+    const virtualMeetings = items.filter((item) => item.id.startsWith("cal_")).length;
+    if (virtualMeetings) merged.set("meeting", (merged.get("meeting") ?? 0) + virtualMeetings);
+    return merged;
+  }, [serverCounts, loadedCounts, items]);
 
   const timelineEntries = useMemo(
     () =>
@@ -248,7 +315,10 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
     filters,
     setFilters,
     counts,
-    totalCount: items.length,
+    totalCount: totalCount + items.filter((item) => item.id.startsWith("cal_")).length,
+    hasMore,
+    loadingMore,
+    loadMore,
     datePreset,
     setDatePreset,
     dateCustom,
