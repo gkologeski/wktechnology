@@ -297,7 +297,7 @@ function WhatsAppInbox() {
           <InboxListHeader>
             <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
               <TabsList className="grid h-auto w-full grid-cols-3">
-                <TabsTrigger value="mine">
+                <TabsTrigger className="flex-col gap-0 px-1" value="mine">
                   Minhas
                   {counts ? (
                     <span className="block text-[10px] font-normal text-muted-foreground">
@@ -305,7 +305,7 @@ function WhatsAppInbox() {
                     </span>
                   ) : null}
                 </TabsTrigger>
-                <TabsTrigger value="unassigned">
+                <TabsTrigger className="flex-col gap-0 px-1" value="unassigned">
                   Sem dono
                   {counts ? (
                     <span className="block text-[10px] font-normal text-muted-foreground">
@@ -313,7 +313,7 @@ function WhatsAppInbox() {
                     </span>
                   ) : null}
                 </TabsTrigger>
-                <TabsTrigger value="all">
+                <TabsTrigger className="flex-col gap-0 px-1" value="all">
                   Todas
                   {counts ? (
                     <span className="block text-[10px] font-normal text-muted-foreground">
