@@ -105,5 +105,5 @@
 - [x] Auditar a tela existente e os padrões atuais do TechERP
 - [x] Redesenhar identidade, voz, atendimento, ações e versões sem alterar comportamento
 - [x] Redesenhar a conversa de teste segura para desktop e mobile
-- [ ] Validar visualmente em claro/escuro e desktop/mobile
-- [ ] Executar tipos, lint direcionado e conferir build automático
+- [x] Validar visualmente em claro/escuro e desktop/mobile
+- [x] Executar tipos, lint direcionado e conferir build automático

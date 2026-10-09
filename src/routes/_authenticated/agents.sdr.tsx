@@ -132,14 +132,28 @@ function SdrAgentPage() {
       </div>
 
       <Tabs defaultValue="sdr-supervision">
-        <TabsList className="flex-wrap">
-          <TabsTrigger value="sdr-supervision">Supervisão</TabsTrigger>
-          <TabsTrigger value="sdr-results">Resultados</TabsTrigger>
-          <TabsTrigger value="sdr-catalog">Portfólio e materiais</TabsTrigger>
-          <TabsTrigger value="sdr-settings">Configuração</TabsTrigger>
-          <TabsTrigger value="sdr-agent">Persona e teste</TabsTrigger>
-          <TabsTrigger value="playbook">Playbook</TabsTrigger>
-          <TabsTrigger value="enrollments">Em atendimento</TabsTrigger>
+        <TabsList className="h-auto w-full justify-start overflow-x-auto">
+          <TabsTrigger className="shrink-0" value="sdr-supervision">
+            Supervisão
+          </TabsTrigger>
+          <TabsTrigger className="shrink-0" value="sdr-results">
+            Resultados
+          </TabsTrigger>
+          <TabsTrigger className="shrink-0" value="sdr-catalog">
+            Portfólio e materiais
+          </TabsTrigger>
+          <TabsTrigger className="shrink-0" value="sdr-settings">
+            Configuração
+          </TabsTrigger>
+          <TabsTrigger className="shrink-0" value="sdr-agent">
+            Persona e teste
+          </TabsTrigger>
+          <TabsTrigger className="shrink-0" value="playbook">
+            Playbook
+          </TabsTrigger>
+          <TabsTrigger className="shrink-0" value="enrollments">
+            Em atendimento
+          </TabsTrigger>
         </TabsList>
         <SdrConsoleTabs />
 
