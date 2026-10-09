@@ -205,6 +205,18 @@ export function useMessageHistory<Row extends HistoryRow>(opts: {
       if (degradedTimer) clearInterval(degradedTimer);
       degradedTimer = null;
     };
+    const fail = () => {
+      if (disposed) return;
+      setHealth("degraded");
+      if (!degradedTimer)
+        degradedTimer = setInterval(() => void reconcile(), DEGRADED_RECONCILE_MS);
+      if (channel) void supabase.removeChannel(channel);
+      channel = null;
+      ever = true;
+      const wait = Math.min(60_000, 5_000 * 2 ** attempt++);
+      if (retry) clearTimeout(retry);
+      retry = setTimeout(subscribe, wait);
+    };
     const subscribe = () => {
       if (disposed || channel) return;
       setHealth("connecting");
@@ -240,6 +252,11 @@ export function useMessageHistory<Row extends HistoryRow>(opts: {
             bumpNewer();
           },
         )
+        // O SDK responde SUBSCRIBED mesmo com postgres_changes recusado; a recusa vem em "system".
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .on("system" as any, {}, (p: { status?: string; extension?: string }) => {
+          if (p?.status === "error" && p.extension === "postgres_changes") fail();
+        })
         .subscribe((status) => {
           if (disposed) return;
           if (status === "SUBSCRIBED") {
@@ -250,16 +267,7 @@ export function useMessageHistory<Row extends HistoryRow>(opts: {
             ever = true;
             return;
           }
-          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-            setHealth("degraded");
-            if (!degradedTimer)
-              degradedTimer = setInterval(() => void reconcile(), DEGRADED_RECONCILE_MS);
-            if (channel) void supabase.removeChannel(channel);
-            channel = null;
-            const wait = Math.min(60_000, 5_000 * 2 ** attempt++);
-            if (retry) clearTimeout(retry);
-            retry = setTimeout(subscribe, wait);
-          }
+          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") fail();
         });
     };
     const unsubscribe = () => {
