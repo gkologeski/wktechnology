@@ -55,11 +55,11 @@ Base: commit do ciclo 2 `5c573cea5`. Sem publicação, envios ou alteração de 
 - Teste com sessão de usuário de outro workspace/escopo próprio ainda não executado.
 - Sem medição comparável antes/depois além da amostra dev acima; suíte completa e build não rodados neste turno.
 
-## Pendente
-- A: teste RLS com sessão real (escopo próprio e outro workspace); realtime de histórico/calendário.
-- B: jornada de leads, atividades 14/30 dias e listas secundárias ainda com 3.000/5.000/10.000.
-- C: Inbox — não iniciado (depende de A/B).
-- Medições antes/depois autenticadas, suíte completa e build deste ciclo não executadas além da migração.
+## Pendente (atualizado)
+- A/B: validar RLS com perfis não-admin (próprio/equipe) e outro tenant com dados.
+- A: conferir visualmente pins e selos de e-mail; agenda em tempo real fora de contatos.
+- C: Inbox — não iniciada (depende da validação acima).
+- Medições comparáveis antes/depois e em produção.
 
 ## Rollback
 - Parte A: restaurar `activity-fetch.ts`/`use-timeline-feed.ts` anteriores; as RPCs 0087/0088 permanecem sem efeito.
