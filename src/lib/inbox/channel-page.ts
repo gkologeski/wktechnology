@@ -68,3 +68,9 @@ export function emailAccountsFilter(accountIds: string[]): string | null {
   const ids = [...new Set(accountIds.filter((id) => /^[0-9a-f-]{36}$/i.test(id)))].sort();
   return ids.length ? `account_id=in.(${ids.join(",")})` : null;
 }
+
+/** Contagem curta para abas estreitas (o total exato fica no rodapé e no título). */
+export function compactCount(n: number): string {
+  if (n < 1000) return String(n);
+  return `${(n / 1000).toLocaleString("pt-BR", { maximumFractionDigits: n < 10000 ? 1 : 0 })} mil`;
+}

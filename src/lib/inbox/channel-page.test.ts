@@ -81,3 +81,12 @@ describe("realtime de e-mail (fixture de eventos, sem banco)", () => {
     vi.useRealTimers();
   });
 });
+
+import { compactCount } from "./channel-page";
+describe("compactCount", () => {
+  it("abrevia milhares em pt-BR", () => {
+    expect(compactCount(999)).toBe("999");
+    expect(compactCount(7489)).toBe("7,5 mil");
+    expect(compactCount(12345)).toBe("12 mil");
+  });
+});

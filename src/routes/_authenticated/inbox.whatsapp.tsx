@@ -1,3 +1,4 @@
+import { compactCount } from "@/lib/inbox/channel-page";
 import { useInboxChannelPage } from "@/hooks/use-inbox-channel-page";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { InboxListFooter } from "@/components/inbox/inbox-list-footer";
@@ -296,11 +297,15 @@ function WhatsAppInbox() {
           <InboxListHeader>
             <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="mine">Minhas{counts ? ` (${counts.mine})` : ""}</TabsTrigger>
-                <TabsTrigger value="unassigned">
-                  Sem dono{counts ? ` (${counts.unassigned})` : ""}
+                <TabsTrigger value="mine">
+                  Minhas{counts ? ` (${compactCount(counts.mine)})` : ""}
                 </TabsTrigger>
-                <TabsTrigger value="all">Todas{counts ? ` (${counts.all})` : ""}</TabsTrigger>
+                <TabsTrigger value="unassigned">
+                  Sem dono{counts ? ` (${compactCount(counts.unassigned)})` : ""}
+                </TabsTrigger>
+                <TabsTrigger value="all">
+                  Todas{counts ? ` (${compactCount(counts.all)})` : ""}
+                </TabsTrigger>
               </TabsList>
             </Tabs>
             <InboxListSearch
