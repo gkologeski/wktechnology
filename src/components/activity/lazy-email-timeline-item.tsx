@@ -6,7 +6,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmailTimelineItem } from "@/components/activity/email-timeline-item";
 import type { EmailMeta } from "@/components/activity/timeline-shared";
-import { fetchEmailDetail, type EmailDetail } from "@/lib/timeline/activity-fetch";
+import { fetchEmailDetail, type EmailDetail } from "@/lib/timeline/email-fetch";
 
 export function LazyEmailTimelineItem({
   meta,
@@ -75,7 +75,12 @@ export function LazyEmailTimelineItem({
       {error ? (
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="text-destructive">Não foi possível carregar o e-mail: {error}</span>
-          <Button type="button" size="sm" variant="outline" onClick={() => setAttempt((n) => n + 1)}>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => setAttempt((n) => n + 1)}
+          >
             Tentar novamente
           </Button>
         </div>
