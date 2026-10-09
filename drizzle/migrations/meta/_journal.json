@@ -624,6 +624,13 @@
       "when": 1791540948600,
       "tag": "0088_performance_cycle3_timeline_history_calendar_pages",
       "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "7",
+      "when": 1791542975449,
+      "tag": "0089_timeline_activity_page_full_card_fields",
+      "breakpoints": true
     }
   ]
 }
