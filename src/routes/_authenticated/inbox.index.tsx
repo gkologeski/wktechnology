@@ -1,9 +1,9 @@
 import { formatDateTime } from "@/lib/crm";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { supabase } from "@/integrations/supabase/client";
+import { useInboxUnifiedPage } from "@/hooks/use-inbox-unified-page";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -139,7 +139,11 @@ function UnifiedInboxPage() {
     [rows],
   );
 
-  const current = items.find((i) => i.id === selected) ?? null;
+  const [selectedSnapshot, setSelectedSnapshot] = useState<Item | null>(null);
+  // Se a conversa aberta sair das páginas carregadas após uma recarga, ela continua aberta.
+  const current =
+    items.find((i) => i.id === selected) ??
+    (selectedSnapshot?.id === selected ? selectedSnapshot : null);
 
   // Rascunho automático da resposta inline, por conversa selecionada.
   const messageDraft = useMessageDraft({
@@ -250,48 +254,35 @@ function UnifiedInboxPage() {
                 variant={channel === "all" ? "default" : "outline"}
                 onClick={() => setChannel("all")}
               >
-                Todos
+                Todos{counts ? ` (${counts.email + counts.whatsapp + counts.chat})` : ""}
               </Button>
               <Button
                 size="sm"
                 variant={channel === "email" ? "default" : "outline"}
                 onClick={() => setChannel("email")}
               >
-                <Mail className="h-4 w-4 mr-1" /> E-mail
+                <Mail className="h-4 w-4 mr-1" /> E-mail{counts ? ` (${counts.email})` : ""}
               </Button>
               <Button
                 size="sm"
                 variant={channel === "whatsapp" ? "default" : "outline"}
                 onClick={() => setChannel("whatsapp")}
               >
-                <MessageCircle className="h-4 w-4 mr-1" /> WhatsApp
+                <MessageCircle className="h-4 w-4 mr-1" /> WhatsApp{counts ? ` (${counts.whatsapp})` : ""}
               </Button>
               <Button
                 size="sm"
                 variant={channel === "chat" ? "default" : "outline"}
                 onClick={() => setChannel("chat")}
               >
-                <MessagesSquare className="mr-1 h-4 w-4" /> Chat
+                <MessagesSquare className="mr-1 h-4 w-4" /> Chat{counts ? ` (${counts.chat})` : ""}
               </Button>
             </div>
           </InboxListHeader>
           <InboxConversationList>
-            {emailQ.isError ||
-            waQ.isError ||
-            chatQ.isError ||
-            lastEmailQ.isError ||
-            contactsQ.isError ||
-            leadsQ.isError ? (
-              <InboxError
-                onRetry={() => {
-                  emailQ.refetch();
-                  waQ.refetch();
-                  chatQ.refetch();
-                  lastEmailQ.refetch();
-                  contactsQ.refetch();
-                }}
-              />
-            ) : emailQ.isLoading || waQ.isLoading || chatQ.isLoading ? (
+            {pageQ.isError && items.length === 0 ? (
+              <InboxError onRetry={() => void pageQ.refetch()} />
+            ) : pageQ.isPending ? (
               <InboxLoading />
             ) : items.length === 0 ? (
               <InboxEmpty>Nenhuma conversa encontrada.</InboxEmpty>
@@ -308,6 +299,7 @@ function UnifiedInboxPage() {
                       selected={selected === it.id}
                       onClick={() => {
                         setSelected(it.id);
+                        setSelectedSnapshot(it);
                         setDraft("");
                       }}
                       channelIcon={
@@ -322,6 +314,32 @@ function UnifiedInboxPage() {
                     />
                   </li>
                 ))}
+                <li className="px-1 pt-2" aria-live="polite">
+                  {pageQ.isError ? (
+                    <div className="flex items-center justify-between gap-2 rounded-md border border-destructive/40 px-3 py-2 text-xs text-destructive">
+                      <span>Não foi possível atualizar todas as conversas.</span>
+                      <Button size="sm" variant="outline" onClick={() => void pageQ.refetch()}>
+                        Tentar de novo
+                      </Button>
+                    </div>
+                  ) : pageQ.hasNextPage ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full"
+                      disabled={pageQ.isFetchingNextPage}
+                      onClick={() => void pageQ.fetchNextPage()}
+                    >
+                      {pageQ.isFetchingNextPage
+                        ? "Carregando…"
+                        : `Carregar mais (${items.length} de ${total ?? items.length})`}
+                    </Button>
+                  ) : total != null ? (
+                    <p className="text-center text-xs text-muted-foreground">
+                      {total} conversa{total === 1 ? "" : "s"}
+                    </p>
+                  ) : null}
+                </li>
               </ul>
             )}
           </InboxConversationList>
@@ -454,4 +472,13 @@ function UnifiedInboxPage() {
       }
     />
   );
+}
+
+function useDebounced<T>(value: T, ms: number): T {
+  const [v, setV] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setV(value), ms);
+    return () => clearTimeout(t);
+  }, [value, ms]);
+  return v;
 }
