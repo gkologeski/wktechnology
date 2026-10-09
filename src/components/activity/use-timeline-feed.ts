@@ -16,6 +16,7 @@ import {
 import { getActivitySurveyResponses } from "@/lib/surveys/survey-activity.functions";
 import type { SurveyResponseSummary } from "@/components/surveys/survey-timeline-card";
 import type { EmailMeta, RelatedKey } from "@/components/activity/timeline-shared";
+import { mergeTimelinePage } from "@/lib/timeline/timeline-page";
 import { useHistoryLabels } from "@/components/activity/use-history-labels";
 import { labelProperty, labelValue } from "@/lib/timeline/property-labels";
 import {
@@ -121,15 +122,7 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
     });
     if (version !== requestVersion.current) return setLoadingMore(false);
     if (data.error) toast.error(data.error);
-    setItems((current) => {
-      const byId = new Map(current.map((item) => [item.id, item]));
-      for (const item of data.items) byId.set(item.id, item);
-      return [...byId.values()].sort((a, b) => {
-        const ta = new Date(a.hs_createdate ?? a.created_at ?? 0).getTime();
-        const tb = new Date(b.hs_createdate ?? b.created_at ?? 0).getTime();
-        return tb - ta || b.id.localeCompare(a.id);
-      });
-    });
+    setItems((current) => mergeTimelinePage(current, data.items));
     setEmailMeta((current) => new Map([...current, ...data.emailMeta]));
     setHasMore(data.hasMore);
     setNextCursor(data.nextCursor);
