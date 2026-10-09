@@ -1,3 +1,4 @@
+import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 import {
   Body,
   Button,
@@ -112,6 +113,6 @@ export const template = {
       { title: "Desenvolvedor Delphi", quantity: 2, seniority: "Sênior" },
       { title: "Desenvolvedor React", quantity: 3, seniority: "Pleno" },
     ],
-    link: "https://app.wktechnology.com.br/deals/exemplo",
+    link: `${CANONICAL_APP_ORIGIN}/deals/exemplo`,
   },
 } satisfies TemplateEntry;
