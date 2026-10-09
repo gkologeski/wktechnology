@@ -22,3 +22,4 @@ pode cortar histórico nem contagens.
 
 ## Ciclo 3
 - Feito: 0087 (total, sem responsável, UUID). Pendente: feed unificado, dashboard caps, Inbox — ver performance-cycle-3.md.
+- Ciclo 3 A: feed paginado em 3 origens (0088), e-mail sob demanda, recarga silenciosa sem reset — ver performance-cycle-3.md.

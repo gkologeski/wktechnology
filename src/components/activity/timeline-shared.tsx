@@ -23,6 +23,10 @@ import {
 import { WhatsAppIcon } from "@/components/whatsapp/whatsapp-icon";
 
 export type EmailMeta = {
+  /** Id em email_messages; usado para carregar corpo/anexos sob demanda. */
+  message_id?: string;
+  /** false enquanto corpo, anexos e rastreamento ainda não foram buscados. */
+  detail_loaded?: boolean;
   direction: "inbound" | "outbound" | null;
   from_email: string | null;
   from_name: string | null;

@@ -63,6 +63,31 @@ export function groupPropertyChanges(rows: PropertyChangeRow[]): HistoryGroup[] 
   return groups;
 }
 
+/**
+ * Monta um grupo já agrupado no servidor (`get_timeline_history_page`) com as
+ * mesmas regras de exibição de `groupPropertyChanges`.
+ */
+export function finalizeHistoryGroup(input: {
+  id: string;
+  changed_at: string;
+  changed_by: string | null;
+  changes: PropertyChangeRow[];
+}): HistoryGroup {
+  const changes = dedupeStageChanges(input.changes);
+  changes.sort((a, b) => {
+    const am = MOVEMENT_PROPERTIES.has(a.property) ? 0 : 1;
+    const bm = MOVEMENT_PROPERTIES.has(b.property) ? 0 : 1;
+    return am - bm;
+  });
+  return {
+    id: `hist_${input.id}`,
+    changed_at: input.changed_at,
+    changed_by: input.changed_by ?? null,
+    changes,
+    hasMovement: input.changes.some((c) => MOVEMENT_PROPERTIES.has(c.property)),
+  };
+}
+
 const STAGE_PROPS = ["stage_id", "stage"] as const;
 
 /**

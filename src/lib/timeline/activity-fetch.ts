@@ -1,37 +1,36 @@
-// Carregamento de dados da linha do tempo de atividades.
+// Carregamento paginado da linha do tempo.
 //
-// Extraído de `src/components/activity-timeline.tsx` sem mudança de
-// comportamento: busca as atividades do registro, enriquece e-mails com os
-// metadados de rastreamento, espelha eventos do Google Calendar via RPC,
-// aplica o filtro de período e carrega o histórico de alterações.
+// Três origens paginadas no servidor, todas sob RLS do usuário (RPCs
+// SECURITY INVOKER) e com filtros aplicados antes da paginação:
+//   - atividades            → get_timeline_activity_page
+//   - reuniões do calendário → get_timeline_calendar_page (dedup com atividades antes de paginar)
+//   - grupos de histórico   → get_timeline_history_page (grupos indivisíveis)
+// A intercalação k-way em `feed-merge.ts` produz páginas de 40 itens em ordem
+// global (data efetiva DESC, origem, id DESC) sem cortes fixos.
+//
+// E-mails: a página traz apenas o resumo (remetente, destinatários, datas,
+// contadores). Corpo, anexos e rastreamento são buscados por
+// `fetchEmailDetail` quando o item fica visível.
 import { supabase } from "@/integrations/supabase/client";
 import type { Activity } from "@/lib/db-types";
 import { getDateRange, type CustomRange, type DatePreset } from "@/lib/date-presets";
-import type { PropertyChangeRow } from "@/lib/timeline/history-groups";
 import {
-  calendarAttendees,
-  type EmailMeta,
-  type RelatedKey,
-} from "@/components/activity/timeline-shared";
+  finalizeHistoryGroup,
+  type HistoryGroup,
+  type PropertyChangeRow,
+} from "@/lib/timeline/history-groups";
+import { calendarAttendees, type RelatedKey } from "@/components/activity/timeline-shared";
 import {
-  ALL_CATEGORIES,
   UNASSIGNED,
   type TimelineCategory,
   type TimelineFilters,
 } from "@/lib/timeline/timeline-filters";
+import { loadEmailSummaries } from "@/lib/timeline/email-fetch";
+import { takeMerged, feedHasMore, type FeedSourceState } from "@/lib/timeline/feed-merge";
 
 export type TimelineCursor = { at: string; id: string };
 
-export type TimelineData = {
-  items: Activity[];
-  emailMeta: Map<string, EmailMeta>;
-  historyRows: PropertyChangeRow[];
-  totalCount: number;
-  categoryCounts: Map<TimelineCategory, number>;
-  hasMore: boolean;
-  nextCursor: TimelineCursor | null;
-  error?: string;
-};
+export const TIMELINE_PAGE_SIZE = 40;
 
 const ENTITY_KIND: Record<RelatedKey, string> = {
   related_lead_id: "lead",
@@ -59,6 +58,9 @@ const ACTIVITY_CATEGORIES: TimelineCategory[] = [
   "meeting",
   "survey",
 ];
+const HISTORY_CATEGORIES: TimelineCategory[] = ["stage", "substatus", "owner", "fields"];
+
+const RANK = { activity: 0, calendar: 1, history: 2 } as const;
 
 const externalIds = (row: unknown) =>
   ((row as { external_ids?: Record<string, unknown> } | null)?.external_ids ?? {}) as Record<
@@ -69,315 +71,328 @@ const externalIds = (row: unknown) =>
 const strField = (obj: Record<string, unknown>, key: string) =>
   typeof obj[key] === "string" ? (obj[key] as string) : null;
 
-type MsgRow = {
-  id: string;
-  direction: string | null;
-  from_email: string | null;
-  from_name: string | null;
-  to_emails: string[] | null;
-  cc_emails: string[] | null;
-  body_html: string | null;
-  body_text: string | null;
-  sent_at: string | null;
-  received_at: string | null;
-  open_count: number | null;
-  click_count: number | null;
-  first_opened_at: string | null;
-  has_attachments: boolean | null;
-  attachments: unknown;
+type PagePayload<T> = {
+  items?: T[];
+  total?: number;
+  counts?: Record<string, number>;
+  has_more?: boolean;
+  next_at?: string | null;
+  next_id?: string | null;
 };
 
-type EvRow = { message_id: string; event_type: string; url: string | null; occurred_at: string };
+export type FeedItem = {
+  at: number;
+  rank: number;
+  id: string;
+  activity?: Activity;
+  history?: HistoryGroup;
+};
 
-/** Enriquece atividades de e-mail com corpo, anexos, aberturas e cliques. */
-async function enrichEmails(baseRows: Activity[]) {
-  const emailMeta = new Map<string, EmailMeta>();
-  const messageIds = [
-    ...new Set(
-      baseRows
-        .map((row) => strField(externalIds(row), "email_message_id"))
-        .filter(Boolean) as string[],
-    ),
-  ];
-  if (messageIds.length === 0) return { rows: baseRows, emailMeta };
+export type TimelineFeedSession = {
+  sources: FeedSourceState<FeedItem>[];
+  totals: { activity: number; calendar: number; history: number };
+  counts: Map<TimelineCategory, number>;
+};
 
-  const [{ data: messages }, { data: events }] = await Promise.all([
-    supabase
-      .from("email_messages")
-      .select(
-        "id, direction, from_email, from_name, to_emails, cc_emails, body_html, body_text, sent_at, received_at, open_count, click_count, first_opened_at, has_attachments, attachments",
-      )
-      .in("id", messageIds),
-    supabase
-      .from("email_tracking_events")
-      .select("message_id, event_type, url, occurred_at")
-      .in("message_id", messageIds)
-      .order("occurred_at", { ascending: false }),
-  ]);
+import type { EmailMeta } from "@/components/activity/timeline-shared";
 
-  const messageById = new Map(((messages ?? []) as MsgRow[]).map((m) => [m.id, m]));
-  const lastOpen = new Map<string, string>();
-  const lastClick = new Map<string, { at: string; url: string | null }>();
-  for (const e of (events ?? []) as EvRow[]) {
-    if (e.event_type === "open" && !lastOpen.has(e.message_id)) {
-      lastOpen.set(e.message_id, e.occurred_at);
-    } else if (e.event_type === "click" && !lastClick.has(e.message_id)) {
-      lastClick.set(e.message_id, { at: e.occurred_at, url: e.url });
-    }
-  }
+export type TimelinePage = {
+  activities: Activity[];
+  historyGroups: HistoryGroup[];
+  emailMeta: Map<string, EmailMeta>;
+  hasMore: boolean;
+  totalCount: number;
+  categoryCounts: Map<TimelineCategory, number>;
+};
 
-  const rows = baseRows.map((row) => {
-    if (row.type !== "email") return row;
-    const messageId = strField(externalIds(row), "email_message_id");
-    const message = messageId ? messageById.get(messageId) : null;
-    if (!message) return row;
-    const attachmentsRaw = Array.isArray(message.attachments)
-      ? (message.attachments as Array<Record<string, unknown>>)
-      : [];
-    const attachments = attachmentsRaw.map((a) => ({
-      path: typeof a.path === "string" ? a.path : undefined,
-      filename: typeof a.filename === "string" ? a.filename : "arquivo",
-      content_type: typeof a.content_type === "string" ? a.content_type : undefined,
-      size: typeof a.size === "number" ? a.size : undefined,
-    }));
-    const click = lastClick.get(message.id);
-    const dir =
-      message.direction === "inbound" || message.direction === "outbound"
-        ? message.direction
-        : null;
-    emailMeta.set(row.id, {
-      direction: dir,
-      from_email: message.from_email,
-      from_name: message.from_name,
-      to_emails: message.to_emails ?? [],
-      cc_emails: message.cc_emails ?? [],
-      body_html: message.body_html,
-      body_text: message.body_text,
-      sent_at: message.sent_at,
-      received_at: message.received_at,
-      open_count: Number(message.open_count ?? 0),
-      click_count: Number(message.click_count ?? 0),
-      first_opened_at: message.first_opened_at,
-      last_opened_at: lastOpen.get(message.id) ?? null,
-      last_clicked_at: click?.at ?? null,
-      last_clicked_url: click?.url ?? null,
-      has_attachments: Boolean(message.has_attachments),
-      attachments,
-    });
-    const html = message.body_html?.trim() ? message.body_html : message.body_text;
-    return html ? ({ ...row, body: html } as Activity) : row;
-  });
-
-  return { rows, emailMeta };
-}
-
-/**
- * Espelha eventos do Google Calendar pela RPC `get_entity_timeline` e completa
- * atividades reais com a gravação encontrada depois da criação.
- *
- * Muta `baseRows` no mesmo ponto em que o componente original mutava.
- */
-async function loadCalendarVirtuals(
-  baseRows: Activity[],
-  relatedKey: RelatedKey,
-  relatedId: string,
-  range: { start?: Date; end?: Date },
-): Promise<Activity[]> {
-  try {
-    const { data: tl, error: tlErr } = await supabase.rpc("get_entity_timeline", {
-      p_entity_kind: ENTITY_KIND[relatedKey],
-      p_entity_id: relatedId,
-      p_since: range.start ? range.start.toISOString() : undefined,
-      p_until: range.end ? range.end.toISOString() : undefined,
-      p_limit: 300,
-    });
-    if (tlErr) throw tlErr;
-    const calIdsFromRpc = ((tl ?? []) as Array<{ id: string; source: string }>)
-      .filter((r) => r.source === "calendar_event")
-      .map((r) => r.id.replace(/^cal_/, ""))
-      .filter(Boolean);
-    const existingCalIds = new Set(
-      baseRows
-        .map((row) => strField(externalIds(row), "calendar_event_id"))
-        .filter(Boolean) as string[],
-    );
-    const calIds = Array.from(new Set([...calIdsFromRpc, ...existingCalIds]));
-    if (calIds.length === 0) return [];
-
-    const { data: events } = await supabase
-      .from("calendar_events")
-      .select(
-        "id, title, description, start_at, end_at, location, html_link, hangout_link, attendees, recording_url, related_contact_id, created_at",
-      )
-      .in("id", calIds);
-    const eventsById = new Map<string, Record<string, unknown>>();
-    for (const e of (events ?? []) as Array<Record<string, unknown>>) {
-      eventsById.set(e.id as string, e);
-    }
-
-    // Fallback de gravação para atividades reais já existentes.
-    for (const row of baseRows) {
-      const cid = strField(externalIds(row), "calendar_event_id");
-      if (!cid) continue;
-      const ev = eventsById.get(cid);
-      const evRec = ev ? ((ev.recording_url as string | null) ?? null) : null;
-      if (!evRec) continue;
-      const r = row as unknown as {
-        recording_url?: string | null;
-        attachments?: Record<string, unknown> | null;
-        external_ids?: Record<string, unknown> | null;
+/** Cria um fetcher paginado com cursor próprio. */
+function pagedSource<T>(
+  call: (cursor: TimelineCursor | null) => Promise<PagePayload<T>>,
+  toItem: (row: T) => FeedItem,
+  onFirst: (payload: PagePayload<T>) => void,
+): FeedSourceState<FeedItem> {
+  let cursor: TimelineCursor | null = null;
+  let first = true;
+  return {
+    buffer: [],
+    hasMore: true,
+    fetchNext: async () => {
+      const payload = await call(cursor);
+      if (first) {
+        onFirst(payload);
+        first = false;
+      }
+      cursor =
+        payload.next_at && payload.next_id ? { at: payload.next_at, id: payload.next_id } : null;
+      return {
+        items: (payload.items ?? []).map(toItem),
+        hasMore: Boolean(payload.has_more) && cursor !== null,
       };
-      const atts = { ...((r.attachments ?? {}) as Record<string, unknown>) };
-      const ex = { ...((r.external_ids ?? {}) as Record<string, unknown>) };
-      if (!atts.recording_url) atts.recording_url = evRec;
-      if (!ex.recording_url) ex.recording_url = evRec;
-      r.attachments = atts;
-      r.external_ids = ex;
-      if (!r.recording_url) r.recording_url = evRec;
-    }
-
-    return Array.from(eventsById.values())
-      .filter((e) => !existingCalIds.has(e.id as string))
-      .map((e) => {
-        const atts = calendarAttendees(e.attendees);
-        return {
-          id: `cal_${e.id as string}`,
-          type: "meeting",
-          subject: (e.title as string) ?? "Reunião (Google Calendar)",
-          body: (e.description as string) ?? "",
-          due_date: (e.start_at as string) ?? null,
-          created_at: (e.start_at as string) ?? (e.created_at as string),
-          hs_createdate: (e.start_at as string) ?? (e.created_at as string),
-          meeting_location: (e.location as string) ?? (e.hangout_link as string) ?? null,
-          external_ids: {
-            source: "google_calendar",
-            calendar_event_id: e.id,
-            gcal_html_link: e.html_link ?? null,
-            recording_url: e.recording_url ?? null,
-          },
-          attachments: {
-            end_at: e.end_at ?? null,
-            meet_link: e.hangout_link ?? null,
-            calendar_html_link: e.html_link ?? null,
-            recording_url: e.recording_url ?? null,
-            attendees: atts
-              .filter((a) => a.email)
-              .map((a) => ({ email: a.email, name: a.displayName })),
-          },
-          completed: false,
-          owner_id: null,
-          [relatedKey]: relatedId,
-        } as unknown as Activity;
-      });
-  } catch (e) {
-    console.error("[timeline] mirrored events load", e);
-    return [];
-  }
+    },
+  };
 }
 
-async function loadHistory(
-  relatedKey: RelatedKey,
-  relatedId: string,
-  range: { start?: Date; end?: Date },
-): Promise<PropertyChangeRow[]> {
-  const entityName = HISTORY_ENTITY[relatedKey];
-  if (!entityName) return [];
-  let hq = supabase
-    .from("property_history")
-    .select("id, entity, entity_id, property, old_value, new_value, changed_at, changed_by")
-    .eq("entity", entityName)
-    .eq("entity_id", relatedId)
-    .order("changed_at", { ascending: false })
-    .limit(300);
-  if (range.start) hq = hq.gte("changed_at", range.start.toISOString());
-  if (range.end) hq = hq.lt("changed_at", range.end.toISOString());
-  const { data, error } = await hq;
-  if (error) console.error("[timeline] history load", error);
-  return (data ?? []) as PropertyChangeRow[];
+async function rpcPage<T>(name: string, args: Record<string, unknown>): Promise<PagePayload<T>> {
+  // Nomes de RPC tipados no cliente gerado; o payload jsonb é validado abaixo.
+  const { data, error } = await supabase.rpc(name as "get_timeline_activity_page", args as never);
+  if (error) throw new Error(error.message);
+  return (data ?? {}) as unknown as PagePayload<T>;
 }
 
-export async function fetchTimelineData({
+type CalRow = {
+  id: string;
+  title: string | null;
+  description: string | null;
+  start_at: string | null;
+  end_at: string | null;
+  location: string | null;
+  html_link: string | null;
+  hangout_link: string | null;
+  attendees: unknown;
+  recording_url: string | null;
+  created_at: string;
+};
+
+function calendarToActivity(e: CalRow, relatedKey: RelatedKey, relatedId: string): Activity {
+  const atts = calendarAttendees(e.attendees);
+  return {
+    id: `cal_${e.id}`,
+    type: "meeting",
+    subject: e.title ?? "Reunião (Google Calendar)",
+    body: e.description ?? "",
+    due_date: e.start_at ?? null,
+    created_at: e.start_at ?? e.created_at,
+    hs_createdate: e.start_at ?? e.created_at,
+    meeting_location: e.location ?? e.hangout_link ?? null,
+    external_ids: {
+      source: "google_calendar",
+      calendar_event_id: e.id,
+      gcal_html_link: e.html_link ?? null,
+      recording_url: e.recording_url ?? null,
+    },
+    attachments: {
+      end_at: e.end_at ?? null,
+      meet_link: e.hangout_link ?? null,
+      calendar_html_link: e.html_link ?? null,
+      recording_url: e.recording_url ?? null,
+      attendees: atts.filter((a) => a.email).map((a) => ({ email: a.email, name: a.displayName })),
+    },
+    completed: false,
+    owner_id: null,
+    [relatedKey]: relatedId,
+  } as unknown as Activity;
+}
+
+const timeOf = (iso: string | null | undefined) => new Date(iso ?? 0).getTime();
+
+export function createTimelineFeed({
   relatedKey,
   relatedId,
   datePreset,
   dateCustom,
   filters,
-  cursor = null,
 }: {
   relatedKey: RelatedKey;
   relatedId: string;
   datePreset: DatePreset;
   dateCustom: CustomRange;
   filters: TimelineFilters;
-  cursor?: TimelineCursor | null;
-}): Promise<TimelineData> {
+}): TimelineFeedSession {
   const range = getDateRange(datePreset, new Date(), dateCustom);
-  const selectedCategories =
+  const since = range.start?.toISOString();
+  const until = range.end?.toISOString();
+  const search = filters.search.trim() || undefined;
+  const selected =
     filters.tab === "all"
       ? filters.categories
       : filters.categories.includes(filters.tab)
         ? [filters.tab]
         : [];
-  const activityCategories = selectedCategories.filter((category) =>
-    ACTIVITY_CATEGORIES.includes(category),
-  );
-  const activityFilterExcludesAll = activityCategories.length === 0;
+  const activityCats = selected.filter((c) => ACTIVITY_CATEGORIES.includes(c));
+  const historyCats = selected.filter((c) => HISTORY_CATEGORIES.includes(c));
   const assigneeIds = filters.assignees.filter((id) => id !== UNASSIGNED);
-  const { data, error } = activityFilterExcludesAll
-    ? { data: null, error: null }
-    : await supabase.rpc("get_timeline_activity_page", {
-        p_entity_kind: ENTITY_KIND[relatedKey],
-        p_entity_id: relatedId,
-        p_since: range.start?.toISOString(),
-        p_until: range.end?.toISOString(),
-        p_categories:
-          activityCategories.length === ACTIVITY_CATEGORIES.length ? undefined : activityCategories,
-        p_assignees: assigneeIds.length ? assigneeIds : undefined,
-        p_include_unassigned: filters.assignees.includes(UNASSIGNED),
-        p_search: filters.search.trim() || undefined,
-        p_cursor_at: cursor?.at,
-        p_cursor_id: cursor?.id,
-        p_page_size: 40,
-      });
-  const payload = (data ?? {}) as unknown as {
-    items?: Activity[];
-    total?: number;
-    counts?: Record<string, number>;
-    has_more?: boolean;
-    next_at?: string | null;
-    next_id?: string | null;
+  const includeUnassigned = filters.assignees.includes(UNASSIGNED);
+  const kind = ENTITY_KIND[relatedKey];
+  const historyEntity = HISTORY_ENTITY[relatedKey];
+
+  const session: TimelineFeedSession = {
+    sources: [],
+    totals: { activity: 0, calendar: 0, history: 0 },
+    counts: new Map(),
   };
-  const { rows: baseRows, emailMeta } = await enrichEmails((payload.items ?? []).slice());
-  const showUnfilteredCalendar =
-    !cursor &&
-    !filters.search.trim() &&
-    filters.assignees.length === 0 &&
-    selectedCategories.includes("meeting");
-  const [calendarVirtuals, historyRows] = cursor
-    ? [[], []]
-    : await Promise.all([
-        showUnfilteredCalendar ? loadCalendarVirtuals(baseRows, relatedKey, relatedId, range) : [],
-        loadHistory(relatedKey, relatedId, range),
-      ]);
-  const items = [...baseRows, ...calendarVirtuals].sort((a, b) => {
-    const ta = new Date(a.hs_createdate ?? a.created_at ?? 0).getTime();
-    const tb = new Date(b.hs_createdate ?? b.created_at ?? 0).getTime();
-    return tb - ta || b.id.localeCompare(a.id);
-  });
-  return {
-    items,
-    emailMeta,
-    historyRows,
-    totalCount: Number(payload.total ?? items.length),
-    categoryCounts: new Map(
-      Object.entries(payload.counts ?? {}).map(([key, value]) => [
-        key as TimelineCategory,
-        Number(value),
-      ]),
+  const addCounts = (counts: Record<string, number> | undefined) => {
+    for (const [k, v] of Object.entries(counts ?? {})) {
+      const key = k as TimelineCategory;
+      session.counts.set(key, (session.counts.get(key) ?? 0) + Number(v));
+    }
+  };
+
+  if (activityCats.length) {
+    session.sources.push(
+      pagedSource<Activity>(
+        (cursor) =>
+          rpcPage("get_timeline_activity_page", {
+            p_entity_kind: kind,
+            p_entity_id: relatedId,
+            p_since: since,
+            p_until: until,
+            p_categories:
+              activityCats.length === ACTIVITY_CATEGORIES.length ? undefined : activityCats,
+            p_assignees: assigneeIds.length ? assigneeIds : undefined,
+            p_include_unassigned: includeUnassigned,
+            p_search: search,
+            p_cursor_at: cursor?.at,
+            p_cursor_id: cursor?.id,
+            p_page_size: TIMELINE_PAGE_SIZE,
+          }),
+        (a) => ({
+          at: timeOf(a.hs_createdate ?? a.created_at),
+          rank: RANK.activity,
+          id: a.id,
+          activity: a,
+        }),
+        (p) => {
+          session.totals.activity = Number(p.total ?? 0);
+          addCounts(p.counts);
+        },
+      ),
+    );
+  }
+
+  // Reuniões do calendário não têm responsável na timeline; como antes, só
+  // aparecem quando não há filtro de responsável.
+  if (selected.includes("meeting") && filters.assignees.length === 0) {
+    session.sources.push(
+      pagedSource<CalRow>(
+        (cursor) =>
+          rpcPage("get_timeline_calendar_page", {
+            p_entity_kind: kind,
+            p_entity_id: relatedId,
+            p_since: since,
+            p_until: until,
+            p_search: search,
+            p_cursor_at: cursor?.at,
+            p_cursor_id: cursor?.id,
+            p_page_size: TIMELINE_PAGE_SIZE,
+          }),
+        (e) => {
+          const activity = calendarToActivity(e, relatedKey, relatedId);
+          return {
+            at: timeOf(e.start_at ?? e.created_at),
+            rank: RANK.calendar,
+            id: e.id,
+            activity,
+          };
+        },
+        (p) => {
+          const total = Number(p.total ?? 0);
+          session.totals.calendar = total;
+          if (total) session.counts.set("meeting", (session.counts.get("meeting") ?? 0) + total);
+        },
+      ),
+    );
+  }
+
+  if (historyEntity && historyCats.length) {
+    type HistRow = {
+      id: string;
+      changed_at: string;
+      changed_by: string | null;
+      changes: PropertyChangeRow[];
+    };
+    session.sources.push(
+      pagedSource<HistRow>(
+        (cursor) =>
+          rpcPage("get_timeline_history_page", {
+            p_entity: historyEntity,
+            p_entity_id: relatedId,
+            p_since: since,
+            p_until: until,
+            p_categories:
+              historyCats.length === HISTORY_CATEGORIES.length ? undefined : historyCats,
+            p_actors: assigneeIds.length ? assigneeIds : undefined,
+            p_include_unassigned: includeUnassigned,
+            p_search: search,
+            p_cursor_at: cursor?.at,
+            p_cursor_id: cursor?.id,
+            p_page_size: TIMELINE_PAGE_SIZE,
+          }),
+        (g) => ({
+          at: timeOf(g.changed_at),
+          rank: RANK.history,
+          id: g.id,
+          history: finalizeHistoryGroup(g),
+        }),
+        (p) => {
+          session.totals.history = Number(p.total ?? 0);
+          addCounts(p.counts);
+        },
+      ),
+    );
+  }
+
+  return session;
+}
+
+/** Completa atividades reais com a gravação do evento de calendário vinculado. */
+async function applyCalendarRecordings(rows: Activity[]): Promise<void> {
+  const ids = [
+    ...new Set(
+      rows
+        .filter((r) => !r.id.startsWith("cal_"))
+        .map((r) => strField(externalIds(r), "calendar_event_id"))
+        .filter(Boolean) as string[],
     ),
-    hasMore: Boolean(payload.has_more),
-    nextCursor:
-      payload.next_at && payload.next_id ? { at: payload.next_at, id: payload.next_id } : null,
-    error: error?.message,
+  ];
+  if (!ids.length) return;
+  const { data } = await supabase
+    .from("calendar_events")
+    .select("id, recording_url")
+    .in("id", ids)
+    .not("recording_url", "is", null);
+  const rec = new Map(
+    ((data ?? []) as Array<{ id: string; recording_url: string | null }>).map((e) => [
+      e.id,
+      e.recording_url,
+    ]),
+  );
+  for (const row of rows) {
+    const cid = strField(externalIds(row), "calendar_event_id");
+    const url = cid ? rec.get(cid) : null;
+    if (!url) continue;
+    const r = row as unknown as {
+      recording_url?: string | null;
+      attachments?: Record<string, unknown> | null;
+      external_ids?: Record<string, unknown> | null;
+    };
+    const atts = { ...(r.attachments ?? {}) };
+    const ex = { ...(r.external_ids ?? {}) };
+    if (!atts.recording_url) atts.recording_url = url;
+    if (!ex.recording_url) ex.recording_url = url;
+    r.attachments = atts;
+    r.external_ids = ex;
+    if (!r.recording_url) r.recording_url = url;
+  }
+}
+
+/** Próxima página global de 40 itens a partir de uma sessão de feed. */
+export async function nextTimelinePage(
+  session: TimelineFeedSession,
+  size = TIMELINE_PAGE_SIZE,
+): Promise<TimelinePage> {
+  const items = await takeMerged(session.sources, size, (i) => i);
+  const activities = items.flatMap((i) => (i.activity ? [i.activity] : []));
+  const historyGroups = items.flatMap((i) => (i.history ? [i.history] : []));
+  const [emailMeta] = await Promise.all([
+    loadEmailSummaries(activities),
+    applyCalendarRecordings(activities),
+  ]);
+  return {
+    activities,
+    historyGroups,
+    emailMeta,
+    hasMore: feedHasMore(session.sources),
+    totalCount: session.totals.activity + session.totals.calendar + session.totals.history,
+    categoryCounts: new Map(session.counts),
   };
 }
