@@ -1,6 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
-import { channelPageKey, emailAccountsFilter, mergeChannelPages, parseChannelPage } from "./channel-page";
-import { createInvalidationBatcher, payloadMatchesFilter } from "@/lib/realtime/invalidation-batcher";
+import {
+  channelPageKey,
+  emailAccountsFilter,
+  mergeChannelPages,
+  parseChannelPage,
+} from "./channel-page";
+import {
+  createInvalidationBatcher,
+  payloadMatchesFilter,
+} from "@/lib/realtime/invalidation-batcher";
 
 const row = (id: string) => ({ id, sort_at: "2026-10-01T00:00:00Z" });
 
@@ -52,8 +60,12 @@ describe("realtime de e-mail (fixture de eventos, sem banco)", () => {
     expect(emailAccountsFilter([])).toBeNull();
   });
   it("evento de outra caixa não recarrega; da própria caixa recarrega", () => {
-    expect(payloadMatchesFilter(filter, { eventType: "UPDATE", new: { account_id: OTHER } })).toBe(false);
-    expect(payloadMatchesFilter(filter, { eventType: "INSERT", new: { account_id: A } })).toBe(true);
+    expect(payloadMatchesFilter(filter, { eventType: "UPDATE", new: { account_id: OTHER } })).toBe(
+      false,
+    );
+    expect(payloadMatchesFilter(filter, { eventType: "INSERT", new: { account_id: A } })).toBe(
+      true,
+    );
   });
   it("DELETE com payload incompleto (só id) recarrega por segurança", () => {
     expect(payloadMatchesFilter(filter, { eventType: "DELETE", old: { id: "x" } })).toBe(true);
