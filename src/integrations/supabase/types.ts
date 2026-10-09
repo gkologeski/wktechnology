@@ -22360,6 +22360,17 @@ export type Database = {
           type: string
         }[]
       }
+      get_inbox_unified_page: {
+        Args: {
+          p_channel?: string
+          p_cursor_at?: string
+          p_cursor_id?: string
+          p_cursor_src?: number
+          p_page_size?: number
+          p_search?: string
+        }
+        Returns: Json
+      }
       get_my_phone: { Args: never; Returns: string }
       get_sales_dashboard_deal_aggregates: {
         Args: {

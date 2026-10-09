@@ -666,6 +666,20 @@
       "when": 1791549114308,
       "tag": "0094_timeline_history_search_resolved_labels",
       "breakpoints": true
+    },
+    {
+      "idx": 95,
+      "version": "7",
+      "when": 1791551200738,
+      "tag": "0095_inbox_unified_page",
+      "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "7",
+      "when": 1791551395194,
+      "tag": "0096_inbox_unified_page_counts",
+      "breakpoints": true
     }
   ]
 }
