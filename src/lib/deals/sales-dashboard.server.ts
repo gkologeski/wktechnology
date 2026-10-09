@@ -81,7 +81,6 @@ export async function loadSalesDashboard(
   const today = startOfDay(now);
   const in7 = new Date(today.getTime() + 7 * DAY_MS);
   const d14 = new Date(brDayStart(brDayKey(now)).getTime() - 13 * DAY_MS);
-  const d30 = new Date(today.getTime() - 30 * DAY_MS);
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
   const periodStart = new Date(input.from);

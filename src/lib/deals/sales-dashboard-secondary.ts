@@ -1,5 +1,6 @@
 // Parser puro da RPC `get_sales_dashboard_secondary` (listas, contatos e jornada sem tetos).
 import type { PipelineStage } from "@/lib/pipelines";
+import type { LeadStageRow } from "@/lib/deals/sales-dashboard.types";
 import {
   LEAD_CHANNEL_LABELS,
   LEAD_CHANNELS,
@@ -145,14 +146,7 @@ export type LeadJourneySummary = {
     revenue: number;
     sources: string[];
   }>;
-  stages: Array<{
-    value: string;
-    label: string;
-    color: string | null;
-    type: string;
-    count: number;
-    share: number;
-  }>;
+  stages: LeadStageRow[];
 };
 
 /**
@@ -214,7 +208,7 @@ export function summarizeLeadJourney(
       value: stage.value,
       label: stage.label,
       color: stage.color ?? null,
-      type: stage.type ?? "open",
+      type: (stage.type ?? "open") as LeadStageRow["type"],
       count,
       share: rate(count, total),
     };
