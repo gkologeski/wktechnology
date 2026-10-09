@@ -68,19 +68,26 @@ function walkToStart(rows: Row[], pageSize: number) {
 describe("histórico de mensagens paginado", () => {
   it("timestamps do PostgREST e do tempo real têm a mesma chave com microssegundos", () => {
     expect(tsKey("2026-10-09T19:27:00.123456+00:00")).toBe(tsKey("2026-10-09 19:27:00.123456+00"));
-    expect(tsKey("2026-10-09T19:27:00.123457+00:00")).toBeGreaterThan(tsKey("2026-10-09T19:27:00.123456Z"));
-    expect(tsKey("2026-10-09T19:27:00+00:00")).toBeLessThan(tsKey("2026-10-09T19:27:00.000001+00:00"));
+    expect(tsKey("2026-10-09T19:27:00.123457+00:00")).toBeGreaterThan(
+      tsKey("2026-10-09T19:27:00.123456Z"),
+    );
+    expect(tsKey("2026-10-09T19:27:00+00:00")).toBeLessThan(
+      tsKey("2026-10-09T19:27:00.000001+00:00"),
+    );
     expect(isHistoryTimestamp('2026-10-09T19:27:00Z",id.gt.x')).toBe(false);
   });
 
-  it.each([501, 1203])("percorre %i mensagens com empates até o início sem perder nem repetir", (n) => {
-    const rows = fixture(n);
-    const { s } = walkToStart(rows, 50);
-    expect(s.items).toHaveLength(n);
-    expect(new Set(s.items.map((r) => r.id)).size).toBe(n);
-    expect(s.items).toEqual([...rows].sort(compareHistory));
-    expect(s.hasOlder).toBe(false);
-  });
+  it.each([501, 1203])(
+    "percorre %i mensagens com empates até o início sem perder nem repetir",
+    (n) => {
+      const rows = fixture(n);
+      const { s } = walkToStart(rows, 50);
+      expect(s.items).toHaveLength(n);
+      expect(new Set(s.items.map((r) => r.id)).size).toBe(n);
+      expect(s.items).toEqual([...rows].sort(compareHistory));
+      expect(s.hasOlder).toBe(false);
+    },
+  );
 
   it("primeira página traz as mais recentes (WhatsApp não esconde as novas >500)", () => {
     const rows = fixture(700);
@@ -103,7 +110,12 @@ describe("histórico de mensagens paginado", () => {
     s = historyReducer(s, { type: "upsert", key: "k", items: newer.items });
     s = historyReducer(s, { type: "upsert", key: "k", items: newer.items }); // evento duplicado
     const older = server({ before: cursorOf(s.items[0]), limit: 50 });
-    s = historyReducer(s, { type: "olderOk", key: "k", items: older.items, hasMore: older.hasMore });
+    s = historyReducer(s, {
+      type: "olderOk",
+      key: "k",
+      items: older.items,
+      hasMore: older.hasMore,
+    });
     expect(s.items.filter((r) => r.id === fresh.id)).toHaveLength(1);
     expect(s.items[s.items.length - 1].id).toBe(fresh.id);
     expect(s.items).toHaveLength(101);
