@@ -7,18 +7,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useRefreshCallback } from "@/hooks/use-refresh-callback";
 import type { Activity } from "@/lib/db-types";
 import type { CustomRange, DatePreset } from "@/lib/date-presets";
-import { fetchTimelineData, type TimelineCursor } from "@/lib/timeline/activity-fetch";
 import {
-  groupPropertyChanges,
-  type HistoryGroup,
-  type PropertyChangeRow,
-} from "@/lib/timeline/history-groups";
+  createTimelineFeed,
+  nextTimelinePage,
+  TIMELINE_PAGE_SIZE,
+  type TimelineFeedSession,
+} from "@/lib/timeline/activity-fetch";
+import type { HistoryGroup } from "@/lib/timeline/history-groups";
 import { getActivitySurveyResponses } from "@/lib/surveys/survey-activity.functions";
 import type { SurveyResponseSummary } from "@/components/surveys/survey-timeline-card";
 import type { EmailMeta, RelatedKey } from "@/components/activity/timeline-shared";
 import { mergeTimelinePage } from "@/lib/timeline/timeline-page";
 import { useHistoryLabels } from "@/components/activity/use-history-labels";
-import { labelProperty, labelValue } from "@/lib/timeline/property-labels";
 import {
   ALL_CATEGORIES,
   DEFAULT_TIMELINE_FILTERS,
@@ -32,8 +32,7 @@ export type TimelineEntry = { t: number; activity?: Activity; history?: HistoryG
 
 export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
   const [items, setItems] = useState<Activity[]>([]);
-  // Metadados enriquecidos de e-mails (corpo, anexos, aberturas, cliques),
-  // indexados pelo id da atividade correspondente.
+  // Resumo de e-mails da página (corpo/anexos/rastreamento vêm sob demanda).
   const [emailMeta, setEmailMeta] = useState<Map<string, EmailMeta>>(new Map());
   // Respostas de pesquisas, indexadas pelo id da atividade do tipo "survey".
   const [surveyMeta, setSurveyMeta] = useState<Map<string, SurveyResponseSummary>>(new Map());
@@ -43,13 +42,16 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
-  const [nextCursor, setNextCursor] = useState<TimelineCursor | null>(null);
   const [totalCount, setTotalCount] = useState(0);
   const [serverCounts, setServerCounts] = useState<Map<TimelineCategory, number>>(new Map());
+  // Grupos de histórico já agrupados no servidor (indivisíveis entre páginas).
+  const [historyGroups, setHistoryGroups] = useState<HistoryGroup[]>([]);
+  // Versão da requisição: respostas de contexto anterior (registro, filtros,
+  // identidade) são descartadas.
   const requestVersion = useRef(0);
+  const sessionRef = useRef<TimelineFeedSession | null>(null);
+  const loadedCountRef = useRef(0);
 
-  // Histórico de alterações/movimentações (property_history) exibido na timeline.
-  const [historyRows, setHistoryRows] = useState<PropertyChangeRow[]>([]);
   // Filtros no padrão HubSpot, salvos por tipo de ficha neste navegador.
   const storageKey = `timeline-filters:${relatedKey}`;
   const [filters, setFiltersState] = useState<TimelineFilters>(DEFAULT_TIMELINE_FILTERS);
@@ -82,28 +84,52 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
   const [datePreset, setDatePreset] = useState<DatePreset>("any");
   const [dateCustom, setDateCustom] = useState<CustomRange>({});
 
+  // Busca com debounce: o servidor filtra antes de paginar.
+  const [debouncedSearch, setDebouncedSearch] = useState(filters.search);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(filters.search), 300);
+    return () => clearTimeout(t);
+  }, [filters.search]);
+  const serverFilters = useMemo(
+    () => ({ ...filters, search: debouncedSearch }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [filters.tab, filters.categories, filters.assignees, debouncedSearch],
+  );
+
+  /**
+   * Carrega a primeira página. Em modo silencioso (realtime, foco, modal
+   * fechado) recarrega a mesma quantidade já exibida e troca tudo de uma vez:
+   * não volta para a primeira página nem mostra estado de carregamento, então
+   * scroll e rascunhos (que vivem fora da lista) são preservados.
+   */
   const load = useCallback(
     async (opts?: { silent?: boolean }) => {
       const version = ++requestVersion.current;
+      const target = opts?.silent
+        ? Math.max(TIMELINE_PAGE_SIZE, loadedCountRef.current)
+        : TIMELINE_PAGE_SIZE;
       if (opts?.silent) setRefreshing(true);
+      else setLoading(true);
       try {
-        const data = await fetchTimelineData({
+        const session = createTimelineFeed({
           relatedKey,
           relatedId,
           datePreset,
           dateCustom,
-          filters,
+          filters: serverFilters,
         });
+        const page = await nextTimelinePage(session, target);
         if (version !== requestVersion.current) return;
-        if (data.error) toast.error(data.error);
-        setEmailMeta(data.emailMeta);
-        setItems(data.items);
-        setHistoryRows(data.historyRows);
-        setHasMore(data.hasMore);
-        setNextCursor(data.nextCursor);
-        setTotalCount(data.totalCount);
-        setServerCounts(data.categoryCounts);
+        sessionRef.current = session;
+        loadedCountRef.current = page.activities.length + page.historyGroups.length;
+        setItems(page.activities);
+        setHistoryGroups(page.historyGroups);
+        setEmailMeta(page.emailMeta);
+        setHasMore(page.hasMore);
+        setTotalCount(page.totalCount);
+        setServerCounts(page.categoryCounts);
       } catch (error) {
+        // Falha não vira lista vazia: mantém o que já estava na tela.
         if (version === requestVersion.current) toast.error((error as Error).message);
       } finally {
         if (version === requestVersion.current) {
@@ -112,44 +138,44 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
         }
       }
     },
-    [relatedKey, relatedId, datePreset, dateCustom, filters],
+    [relatedKey, relatedId, datePreset, dateCustom, serverFilters],
   );
+  const loadRef = useRef(load);
+  loadRef.current = load;
 
   const loadMore = useCallback(async () => {
-    if (!nextCursor || loadingMore) return;
+    const session = sessionRef.current;
+    if (!session || loadingMore || !hasMore) return;
     const version = requestVersion.current;
     setLoadingMore(true);
     try {
-      const data = await fetchTimelineData({
-        relatedKey,
-        relatedId,
-        datePreset,
-        dateCustom,
-        filters,
-        cursor: nextCursor,
-      });
+      const page = await nextTimelinePage(session);
       if (version !== requestVersion.current) return;
-      if (data.error) toast.error(data.error);
-      setItems((current) => mergeTimelinePage(current, data.items));
-      setEmailMeta((current) => new Map([...current, ...data.emailMeta]));
-      setHasMore(data.hasMore);
-      setNextCursor(data.nextCursor);
+      loadedCountRef.current += page.activities.length + page.historyGroups.length;
+      setItems((current) => mergeTimelinePage(current, page.activities));
+      setHistoryGroups((current) => {
+        const seen = new Set(current.map((g) => g.id));
+        return [...current, ...page.historyGroups.filter((g) => !seen.has(g.id))];
+      });
+      setEmailMeta((current) => new Map([...current, ...page.emailMeta]));
+      setHasMore(page.hasMore);
     } catch (error) {
       if (version === requestVersion.current) toast.error((error as Error).message);
     } finally {
-      if (version === requestVersion.current) setLoadingMore(false);
+      // Sempre libera o botão, mesmo se o contexto mudou no meio.
+      setLoadingMore(false);
     }
-  }, [nextCursor, loadingMore, relatedKey, relatedId, datePreset, dateCustom, filters]);
+  }, [loadingMore, hasMore]);
 
   useEffect(() => {
-    void load(); /* eslint-disable-next-line */
+    loadedCountRef.current = 0;
+    void load();
     return () => {
       requestVersion.current += 1;
     };
   }, [load]);
 
-  // Histórico agrupado + resolução de IDs para nomes.
-  const historyGroups = useMemo(() => groupPropertyChanges(historyRows), [historyRows]);
+  const historyRows = useMemo(() => historyGroups.flatMap((g) => g.changes), [historyGroups]);
   const { resolveValue: resolveHistoryValue, resolveActor: resolveHistoryActor } =
     useHistoryLabels(historyRows);
 
@@ -166,33 +192,14 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
   }, [items, historyGroups]);
 
   const loadedCounts = useMemo(() => countByCategory(allEntries), [allEntries]);
-  const counts = useMemo(() => {
-    if (!serverCounts.size) return loadedCounts;
-    const merged = new Map(serverCounts);
-    // Reuniões virtuais do calendário não pertencem à tabela de atividades.
-    const virtualMeetings = items.filter((item) => item.id.startsWith("cal_")).length;
-    if (virtualMeetings) merged.set("meeting", (merged.get("meeting") ?? 0) + virtualMeetings);
-    return merged;
-  }, [serverCounts, loadedCounts, items]);
+  const counts = serverCounts.size ? serverCounts : loadedCounts;
 
+  // O servidor já aplicou período, tipos, responsável e busca antes de paginar.
+  // No cliente só se reaplicam tipos/responsável (sem busca) para refletir de
+  // imediato uma mudança de filtro enquanto a nova página chega.
   const timelineEntries = useMemo(
-    () =>
-      applyTimelineFilters(allEntries, filters, {
-        extraText: (a) => {
-          const m = a.id ? emailMeta.get(a.id) : undefined;
-          return m
-            ? `${m.from_name ?? ""} ${m.from_email ?? ""} ${m.body_text ?? (m.body_html ?? "").replace(/<[^>]*>/g, " ")}`
-            : "";
-        },
-        historyText: (g) =>
-          g.changes
-            .map(
-              (c) =>
-                `${labelProperty(c.property)} ${resolveHistoryValue(c.property, c.old_value) ?? labelValue(c.old_value)} ${resolveHistoryValue(c.property, c.new_value) ?? labelValue(c.new_value)}`,
-            )
-            .join(" "),
-      }) as TimelineEntry[],
-    [allEntries, filters, emailMeta, resolveHistoryValue],
+    () => applyTimelineFilters(allEntries, { ...filters, search: "" }) as TimelineEntry[],
+    [allEntries, filters],
   );
 
   // Carrega as respostas das atividades do tipo "pesquisa" exibidas na timeline.
@@ -218,7 +225,7 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
 
   // Re-sincroniza silenciosamente quando a janela volta a focar ou um modal fecha
   useRefreshCallback(() => {
-    void load({ silent: true });
+    void loadRef.current({ silent: true });
   });
 
   // Recarrega quando uma associação é criada/removida em outro componente
@@ -227,7 +234,7 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
     const handler = () => {
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => {
-        void load({ silent: true });
+        void loadRef.current({ silent: true });
       }, 150);
     };
     window.addEventListener("timeline:refresh", handler);
@@ -266,7 +273,7 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
             table: "activities",
             filter: `${relatedKey}=eq.${relatedId}`,
           },
-          () => schedule(() => void load({ silent: true })),
+          () => schedule(() => void loadRef.current({ silent: true })),
         )
         .on(
           "postgres_changes",
@@ -291,7 +298,7 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
       if (document.hidden) unsubscribe();
       else {
         subscribe();
-        void load({ silent: true });
+        void loadRef.current({ silent: true });
       }
     };
 
@@ -315,7 +322,7 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
     filters,
     setFilters,
     counts,
-    totalCount: totalCount + items.filter((item) => item.id.startsWith("cal_")).length,
+    totalCount,
     hasMore,
     loadingMore,
     loadMore,
