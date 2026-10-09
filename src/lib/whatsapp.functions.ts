@@ -278,10 +278,11 @@ export const listWhatsAppMessages = createServerFn({ method: "POST" })
         "id, direction, body, media_url, media_content_type, status, created_at, sent_at, delivered_at, read_at, wa_message_id, template_name, is_template",
       )
       .eq("conversation_id", data.conversationId)
-      .order("created_at", { ascending: true })
+      // As 500 mais recentes (antes: as 500 mais antigas, escondendo as novas em conversas longas).
+      .order("created_at", { ascending: false })
       .limit(500);
     if (error) throw error;
-    return rows ?? [];
+    return (rows ?? []).reverse();
   });
 
 // ---------- mark conversation read ----------

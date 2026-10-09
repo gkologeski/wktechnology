@@ -1,4 +1,9 @@
 import { formatDateTime } from "@/lib/crm";
+import { compactCount } from "@/lib/inbox/channel-page";
+import { useInboxChannelPage } from "@/hooks/use-inbox-channel-page";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { InboxListFooter } from "@/components/inbox/inbox-list-footer";
+import { InboxListSearch } from "@/components/inbox/inbox-list-search";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -43,6 +48,8 @@ import {
   InboxWorkspace,
 } from "@/components/inbox/inbox-workspace";
 
+type ChatSessionRow = Awaited<ReturnType<typeof listChatSessions>>[number];
+
 export const Route = createFileRoute("/_authenticated/inbox/chat")({
   head: () => ({
     meta: [
@@ -61,7 +68,6 @@ function LiveChatInbox() {
   const qc = useQueryClient();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const listFn = useServerFn(listChatSessions);
   const msgsFn = useServerFn(listChatMessages);
   const sendFn = useServerFn(sendChatMessage);
   const closeFn = useServerFn(closeChatSession);
@@ -72,11 +78,15 @@ function LiveChatInbox() {
   const [draft, setDraft] = useState("");
   const [filter, setFilter] = useState<"mine" | "unassigned" | "all">("all");
 
-  const sessionsQ = useQuery({
-    queryKey: ["chat-sessions"],
-    queryFn: () => listFn(),
-    refetchInterval: 10000,
-  });
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
+  const {
+    rows: sessions,
+    counts,
+    total,
+    query: sessionsQ,
+  } = useInboxChannelPage<ChatSessionRow>("chat", filter, debouncedSearch);
+  const [selectedSnapshot, setSelectedSnapshot] = useState<ChatSessionRow | null>(null);
   const messagesQ = useQuery({
     queryKey: ["chat-messages", selected],
     queryFn: () => msgsFn({ data: { session_id: selected! } }),
@@ -89,11 +99,8 @@ function LiveChatInbox() {
     const ch = supabase
       .channel("live-chat-inbox")
       .on("postgres_changes", { event: "*", schema: "public", table: "live_chat_messages" }, () => {
+        // A lista é reconciliada pelo hook (live_chat_sessions, agrupado).
         qc.invalidateQueries({ queryKey: ["chat-messages"] });
-        qc.invalidateQueries({ queryKey: ["chat-sessions"] });
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "live_chat_sessions" }, () => {
-        qc.invalidateQueries({ queryKey: ["chat-sessions"] });
       })
       .subscribe();
     return () => {
@@ -112,7 +119,7 @@ function LiveChatInbox() {
   const close = useMutation({
     mutationFn: (id: string) => closeFn({ data: { session_id: id } }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["chat-sessions"] });
+      qc.invalidateQueries({ queryKey: ["inbox-channel", "chat"] });
       toast.success("Encerrada.");
     },
   });
@@ -120,7 +127,7 @@ function LiveChatInbox() {
     mutationFn: (id: string) =>
       convertFn({ data: { session_id: id } }) as Promise<{ ticket_id: string }>,
     onSuccess: (res) => {
-      qc.invalidateQueries({ queryKey: ["chat-sessions"] });
+      qc.invalidateQueries({ queryKey: ["inbox-channel", "chat"] });
       toast.success("Ticket criado");
       navigate({ to: "/tickets/$id", params: { id: res.ticket_id } });
     },
@@ -129,20 +136,14 @@ function LiveChatInbox() {
   const assign = useMutation({
     mutationFn: (assignedTo: string | null) =>
       assignFn({ data: { conversationId: selected ?? "", assignedTo } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["chat-sessions"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["inbox-channel", "chat"] }),
     onError: (error: Error) => toast.error(error.message),
   });
 
-  const allSessions = sessionsQ.data ?? [];
-  const sessions = allSessions.filter((session) =>
-    filter === "mine"
-      ? session.assignee_id === user?.id
-      : filter === "unassigned"
-        ? !session.assignee_id
-        : true,
-  );
   const messages = messagesQ.data ?? [];
-  const current = allSessions.find((s) => s.id === selected);
+  const current =
+    sessions.find((s) => s.id === selected) ??
+    (selectedSnapshot?.id === selected ? selectedSnapshot : undefined);
   const memberNames = new Map(
     (membersQ.data ?? []).map((member) => [member.user_id, member.full_name]),
   );
@@ -155,21 +156,46 @@ function LiveChatInbox() {
         <>
           <InboxListHeader>
             <Tabs value={filter} onValueChange={(value) => setFilter(value as typeof filter)}>
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="mine">Minhas</TabsTrigger>
-                <TabsTrigger value="unassigned" title="Sem responsável">
-                  Sem dono
+              <TabsList className="grid h-auto w-full grid-cols-3">
+                <TabsTrigger className="flex-col gap-0 px-1" value="mine">
+                  Minhas
+                  {counts ? (
+                    <span className="block text-[10px] font-normal text-muted-foreground">
+                      {compactCount(counts.mine)}
+                    </span>
+                  ) : null}
                 </TabsTrigger>
-                <TabsTrigger value="all">Todas</TabsTrigger>
+                <TabsTrigger className="flex-col gap-0 px-1" value="unassigned" title="Sem responsável">
+                  Sem dono
+                  {counts ? (
+                    <span className="block text-[10px] font-normal text-muted-foreground">
+                      {compactCount(counts.unassigned)}
+                    </span>
+                  ) : null}
+                </TabsTrigger>
+                <TabsTrigger className="flex-col gap-0 px-1" value="all">
+                  Todas
+                  {counts ? (
+                    <span className="block text-[10px] font-normal text-muted-foreground">
+                      {compactCount(counts.all)}
+                    </span>
+                  ) : null}
+                </TabsTrigger>
               </TabsList>
             </Tabs>
-            <p className="text-xs text-muted-foreground">{sessions.length} sessão(ões)</p>
+            <InboxListSearch
+              value={search}
+              onChange={setSearch}
+              placeholder="Buscar visitante ou contato…"
+            />
           </InboxListHeader>
           <InboxConversationList>
-            {sessionsQ.isError ? (
+            {sessionsQ.isError && sessions.length === 0 ? (
               <InboxError onRetry={() => sessionsQ.refetch()} />
-            ) : sessionsQ.isLoading ? (
+            ) : sessionsQ.isPending ? (
               <InboxLoading />
+            ) : sessions.length === 0 && debouncedSearch.trim() ? (
+              <InboxEmpty>Nenhuma sessão encontrada.</InboxEmpty>
             ) : sessions.length === 0 ? (
               <InboxEmpty>Nenhuma sessão ainda.</InboxEmpty>
             ) : null}
@@ -182,7 +208,10 @@ function LiveChatInbox() {
                   when={s.last_message_at}
                   whenTitle={s.last_message_at ? formatDateTime(s.last_message_at) : undefined}
                   selected={selected === s.id}
-                  onClick={() => setSelected(s.id)}
+                  onClick={() => {
+                    setSelected(s.id);
+                    setSelectedSnapshot(s);
+                  }}
                   badge={
                     s.status === "closed" ? (
                       <Badge variant="outline" className="text-[10px]">
@@ -193,6 +222,17 @@ function LiveChatInbox() {
                   meta={sessionAssignee(s.assignee_id, memberNames)}
                 />
               ))}
+              {sessions.length > 0 ? (
+                <InboxListFooter
+                  loaded={sessions.length}
+                  total={total}
+                  hasMore={!!sessionsQ.hasNextPage}
+                  loadingMore={sessionsQ.isFetchingNextPage}
+                  error={sessionsQ.isError}
+                  onLoadMore={() => void sessionsQ.fetchNextPage()}
+                  onRetry={() => void sessionsQ.refetch()}
+                />
+              ) : null}
             </div>
           </InboxConversationList>
         </>
@@ -331,7 +371,7 @@ function LiveChatInbox() {
                 contactId={current.contact_id}
                 leadId={current.lead_id}
                 status={current.identity_status}
-                onLinked={() => qc.invalidateQueries({ queryKey: ["chat-sessions"] })}
+                onLinked={() => qc.invalidateQueries({ queryKey: ["inbox-channel", "chat"] })}
               />
             </div>
           </InboxContext>

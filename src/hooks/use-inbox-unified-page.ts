@@ -1,6 +1,7 @@
-// Lista paginada da Inbox unificada (RPC sob RLS) + reconciliação em tempo real.
-import { useEffect, useMemo } from "react";
-import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+// Lista paginada da Inbox unificada (RPC sob RLS) + tempo real filtrado.
+import { useMemo } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInboxListRealtime } from "@/hooks/use-inbox-channel-page";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import {
@@ -16,7 +17,6 @@ const PAGE_SIZE = 50;
 
 export function useInboxUnifiedPage(channel: InboxChannelFilter, search: string) {
   const { user } = useAuth();
-  const qc = useQueryClient();
   const key = inboxPageKey(user?.id, channel, search);
 
   const q = useInfiniteQuery({
@@ -42,32 +42,12 @@ export function useInboxUnifiedPage(channel: InboxChannelFilter, search: string)
     getNextPageParam: (last: InboxPage) => (last.hasMore ? last.nextCursor : undefined),
   });
 
-  // Realtime: WhatsApp e chat estão na publicação; e-mail não (reconcilia ao focar a aba).
-  // Eventos são agrupados em 400 ms e recarregam as páginas já abertas, sem voltar ao topo.
-  useEffect(() => {
-    if (!user?.id) return;
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    const bump = () => {
-      if (timer) return;
-      timer = setTimeout(() => {
-        timer = null;
-        void qc.invalidateQueries({ queryKey: ["inbox-unified", "page", user.id] });
-      }, 400);
-    };
-    const ch = supabase
-      .channel(`inbox-unified-${user.id}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "whatsapp_conversations" },
-        bump,
-      )
-      .on("postgres_changes", { event: "*", schema: "public", table: "live_chat_sessions" }, bump)
-      .subscribe();
-    return () => {
-      if (timer) clearTimeout(timer);
-      void supabase.removeChannel(ch);
-    };
-  }, [qc, user?.id]);
+  // Realtime filtrado e coalescido (e-mail só das caixas do próprio usuário); reconexão e
+  // volta da aba recarregam as páginas abertas, sem voltar ao topo.
+  useInboxListRealtime(
+    ["email", "whatsapp", "chat"],
+    [["inbox-unified", "page", user?.id ?? "anon"]],
+  );
 
   const rows = useMemo(() => mergeInboxPages(q.data?.pages ?? []), [q.data]);
   const first = q.data?.pages[0];

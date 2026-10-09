@@ -680,6 +680,13 @@
       "when": 1791551395194,
       "tag": "0096_inbox_unified_page_counts",
       "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "7",
+      "when": 1791568348538,
+      "tag": "0097_inbox_channel_page_email_realtime",
+      "breakpoints": true
     }
   ]
 }
