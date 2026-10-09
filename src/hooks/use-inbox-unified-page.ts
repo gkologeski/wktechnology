@@ -56,7 +56,11 @@ export function useInboxUnifiedPage(channel: InboxChannelFilter, search: string)
     };
     const ch = supabase
       .channel(`inbox-unified-${user.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "whatsapp_conversations" }, bump)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "whatsapp_conversations" },
+        bump,
+      )
       .on("postgres_changes", { event: "*", schema: "public", table: "live_chat_sessions" }, bump)
       .subscribe();
     return () => {

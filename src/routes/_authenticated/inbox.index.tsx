@@ -268,7 +268,8 @@ function UnifiedInboxPage() {
                 variant={channel === "whatsapp" ? "default" : "outline"}
                 onClick={() => setChannel("whatsapp")}
               >
-                <MessageCircle className="h-4 w-4 mr-1" /> WhatsApp{counts ? ` (${counts.whatsapp})` : ""}
+                <MessageCircle className="h-4 w-4 mr-1" /> WhatsApp
+                {counts ? ` (${counts.whatsapp})` : ""}
               </Button>
               <Button
                 size="sm"
