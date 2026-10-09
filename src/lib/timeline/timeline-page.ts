@@ -16,9 +16,7 @@ export function isTimelineCursor(value: unknown): value is TimelineCursor {
   const cursor = value as Partial<TimelineCursor>;
   return (
     typeof cursor.id === "string" &&
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-      cursor.id,
-    ) &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(cursor.id) &&
     typeof cursor.at === "string" &&
     Number.isFinite(Date.parse(cursor.at))
   );
