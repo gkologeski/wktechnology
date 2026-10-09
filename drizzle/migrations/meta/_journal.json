@@ -603,6 +603,13 @@
       "when": 1791514470308,
       "tag": "0085_performance_cycle2_dashboard_aggregates",
       "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "7",
+      "when": 1791515612247,
+      "tag": "0086_performance_cycle2_timeline_projection_fix",
+      "breakpoints": true
     }
   ]
 }
