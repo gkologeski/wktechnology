@@ -31,3 +31,4 @@
 
 - Ritmo do disparo de template das campanhas WhatsApp é controlado por `whatsapp_campaigns.next_send_at` sob lease `wa_campaign_claim_dispatch`, com sorteio em `src/lib/whatsapp/campaign-pacing.ts`; por quê: o espaçamento vale entre execuções e nunca há disparo duplo.
 - Rotas só exportam `Route` (outro export anula o code-splitting); gate = `verify`+`build`, `verify:changed` é só feedback.
+- Validação isolada usa `scripts/isolated-db/` (estrutura extraída do catálogo real, nunca reaplicando o histórico de migrations, que não é reproduzível); `run.sh` sai 3 quando algo não foi executado e isso nunca conta como verde; por quê: provar RLS com as políticas reais sem tocar o banco compartilhado.
