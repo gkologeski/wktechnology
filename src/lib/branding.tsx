@@ -1,6 +1,11 @@
 // White-label / branding por workspace ativo (+ sobrescritas por módulo).
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  brandingRealtimeFilters,
+  onWorkspaceChanged,
+  realtimeRetryDelay,
+} from "@/lib/workspace-events";
 import { useAuth } from "@/lib/auth";
 import { useActiveModule } from "@/lib/modules/active-module";
 import type { ModuleId } from "@/lib/modules/registry";
@@ -233,7 +238,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
     // Ao voltar à aba: reconcilia (pode ter perdido eventos) e reabre a assinatura.
     const onVis = () => {
       if (document.hidden) unsubscribe();
-      else void load().then(() => loadedWorkspace && !channel && subscribe(loadedWorkspace));
+      else void load();
     };
     document.addEventListener("visibilitychange", onVis);
 
