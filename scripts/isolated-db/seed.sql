@@ -7,8 +7,12 @@ DO $$ BEGIN
   END IF;
 END $$;
 
-\copy public.permissions (key,module,resource,action,scope,label_pt,description,is_system) from '/tmp/techerp-isolated/ref-permissions.csv' with csv
-\copy public.modules (id,name,host_suffix,default_color,default_product_name,icon,sort_order) from '/tmp/techerp-isolated/ref-modules.csv' with csv
+CREATE TEMP TABLE _perm (LIKE public.permissions INCLUDING DEFAULTS);
+\copy _perm (key,module,resource,action,scope,label_pt,description,is_system) from '/tmp/techerp-isolated/ref-permissions.csv' with csv
+INSERT INTO public.permissions SELECT * FROM _perm ON CONFLICT DO NOTHING;
+CREATE TEMP TABLE _mod (LIKE public.modules INCLUDING DEFAULTS);
+\copy _mod (id,name,host_suffix,default_color,default_product_name,icon,sort_order) from '/tmp/techerp-isolated/ref-modules.csv' with csv
+INSERT INTO public.modules SELECT * FROM _mod ON CONFLICT DO NOTHING;
 
 -- Usuários: 1 admin A | 2 próprio A | 3 equipe A | 4 workspace A | 5 removido A | 6 admin B | 7 par A
 INSERT INTO auth.users (id, email, aud, role, email_confirmed_at, raw_user_meta_data) VALUES
