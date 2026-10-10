@@ -76,7 +76,14 @@ for (const [name, sql] of Object.entries(CHECKS)) {
   const different = [...a.keys()].filter((k) => b.has(k) && a.get(k) !== b.get(k));
   manifest[name] = {
     count: a.size,
-    sha256: createHash("sha256").update([...a.entries()].map(([k, v]) => `${k}\t${v}`).sort().join("\n")).digest("hex"),
+    sha256: createHash("sha256")
+      .update(
+        [...a.entries()]
+          .map(([k, v]) => `${k}\t${v}`)
+          .sort()
+          .join("\n"),
+      )
+      .digest("hex"),
   };
   diverged += onlyProject.length + onlyIsolated.length + different.length;
   report[name] = { project: a.size, isolated: b.size, onlyProject, onlyIsolated, different };
@@ -94,8 +101,15 @@ const MANIFEST = "scripts/isolated-db/catalog-manifest.json";
 if (existsSync(MANIFEST)) {
   const prev = JSON.parse(readFileSync(MANIFEST, "utf8")).categories ?? {};
   const drift = Object.keys(manifest).filter((k) => prev[k]?.sha256 !== manifest[k].sha256);
-  console.log(drift.length ? `drift desde o manifesto: ${drift.join(", ")}` : "catálogo idêntico ao manifesto versionado");
+  console.log(
+    drift.length
+      ? `drift desde o manifesto: ${drift.join(", ")}`
+      : "catálogo idêntico ao manifesto versionado",
+  );
 }
 if (process.env.ISO_WRITE_MANIFEST === "1")
-  writeFileSync(MANIFEST, JSON.stringify({ generatedAt: new Date().toISOString(), categories: manifest }, null, 2) + "\n");
+  writeFileSync(
+    MANIFEST,
+    JSON.stringify({ generatedAt: new Date().toISOString(), categories: manifest }, null, 2) + "\n",
+  );
 process.exit(diverged ? 1 : 0);

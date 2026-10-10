@@ -12,7 +12,16 @@ const root = process.env.ISO_ROOT ?? "/tmp/techerp-isolated";
 const env: Record<string, string | undefined> = { ...process.env };
 for (const k of ["PGHOST", "PGPORT", "PGUSER", "PGPASSWORD", "PGDATABASE", "DATABASE_URL"])
   delete env[k];
-const CONN = ["-h", `${root}/sock`, "-p", process.env.ISO_PORT ?? "54329", "-U", "postgres", "-d", "postgres"];
+const CONN = [
+  "-h",
+  `${root}/sock`,
+  "-p",
+  process.env.ISO_PORT ?? "54329",
+  "-U",
+  "postgres",
+  "-d",
+  "postgres",
+];
 
 const WA = "aaaaaaaa-0000-4000-8000-00000000000a";
 const WB = "aaaaaaaa-0000-4000-8000-00000000000b";
@@ -20,8 +29,14 @@ const WB = "aaaaaaaa-0000-4000-8000-00000000000b";
 // sintético vazio, para o FK aceitar e o vazamento silencioso ficar observável.
 const WORIG = "184b9435-0a9b-4334-9e89-8854dc883f5d";
 const U = (n: number) => `10000000-0000-4000-8000-00000000000${n}`;
-const ADMIN_A = U(1), OWN_A = U(2), TEAM_A = U(3), WS_A = U(4), REMOVED_A = U(5), ADMIN_B = U(6);
-const CT_A = "70000000-0000-4000-8000-0000000000a1", CT_B = "70000000-0000-4000-8000-0000000000b1";
+const ADMIN_A = U(1),
+  OWN_A = U(2),
+  TEAM_A = U(3),
+  WS_A = U(4),
+  REMOVED_A = U(5),
+  ADMIN_B = U(6);
+const CT_A = "70000000-0000-4000-8000-0000000000a1",
+  CT_B = "70000000-0000-4000-8000-0000000000b1";
 const TK_B = "71000000-0000-4000-8000-0000000000b1";
 const SUB_B = "72000000-0000-4000-8000-0000000000b1";
 const TH_A = "73000000-0000-4000-8000-0000000000a1";
@@ -66,84 +81,284 @@ const seeThread = `select count(*) from public.email_threads where id = '${TH_A}
 
 const CASES: Case[] = [
   // ---- pesquisa de chamado (create_ticket_survey) ----
-  { id: "survey-user-b", area: "survey", uid: ADMIN_B, setup: ticketB,
+  {
+    id: "survey-user-b",
+    area: "survey",
+    uid: ADMIN_B,
+    setup: ticketB,
     sql: `update public.tickets set status = 'resolved' where id = '${TK_B}'; ${surveyWs}`,
-    expect: WB, why: "admin de B resolve chamado de B: pesquisa nasce em B" },
-  { id: "survey-job-b", area: "survey", uid: null, role: "service_role", setup: ticketB,
+    expect: WB,
+    why: "admin de B resolve chamado de B: pesquisa nasce em B",
+  },
+  {
+    id: "survey-job-b",
+    area: "survey",
+    uid: null,
+    role: "service_role",
+    setup: ticketB,
     sql: `update public.tickets set status = 'closed' where id = '${TK_B}'; ${surveyWs}`,
-    expect: WB, why: "job sem sessão: tenant vem do chamado, nunca do tenant original" },
-  { id: "survey-idempotent", area: "survey", uid: ADMIN_B, setup: ticketB,
+    expect: WB,
+    why: "job sem sessão: tenant vem do chamado, nunca do tenant original",
+  },
+  {
+    id: "survey-idempotent",
+    area: "survey",
+    uid: ADMIN_B,
+    setup: ticketB,
     sql: `update public.tickets set status = 'resolved' where id = '${TK_B}'; update public.tickets set status = 'open' where id = '${TK_B}';
           update public.tickets set status = 'closed' where id = '${TK_B}'; select count(*) from public.survey_responses where ticket_id = '${TK_B}'`,
-    expect: "1", why: "reabrir e fechar não duplica a pesquisa" },
+    expect: "1",
+    why: "reabrir e fechar não duplica a pesquisa",
+  },
   // ---- assinatura → fatura (subscription_after_insert / subscription_invoice_after_paid) ----
-  { id: "sub-insert-user-b", area: "billing", uid: ADMIN_B, setup: contacts,
-    sql: `${subIns(WB)}; ${invWs}`, expect: `${WB}|1`, why: "1ª fatura no tenant da assinatura" },
-  { id: "sub-insert-job-b", area: "billing", uid: null, role: "service_role", setup: contacts,
-    sql: `${subIns(WB)}; ${invWs}`, expect: `${WB}|1`, why: "job com tenant explícito: fatura em B" },
-  { id: "sub-paid-next-b", area: "billing", uid: null, role: "service_role", setup: `${contacts} ${subIns(WB)};`,
-    sql: `${payFirst}; ${invWs}`, expect: `${WB},${WB}|2`, why: "pagamento gera a próxima fatura no mesmo tenant" },
-  { id: "sub-paid-twice", area: "billing", uid: null, role: "service_role", setup: `${contacts} ${subIns(WB)};`,
+  {
+    id: "sub-insert-user-b",
+    area: "billing",
+    uid: ADMIN_B,
+    setup: contacts,
+    sql: `${subIns(WB)}; ${invWs}`,
+    expect: `${WB}|1`,
+    why: "1ª fatura no tenant da assinatura",
+  },
+  {
+    id: "sub-insert-job-b",
+    area: "billing",
+    uid: null,
+    role: "service_role",
+    setup: contacts,
+    sql: `${subIns(WB)}; ${invWs}`,
+    expect: `${WB}|1`,
+    why: "job com tenant explícito: fatura em B",
+  },
+  {
+    id: "sub-paid-next-b",
+    area: "billing",
+    uid: null,
+    role: "service_role",
+    setup: `${contacts} ${subIns(WB)};`,
+    sql: `${payFirst}; ${invWs}`,
+    expect: `${WB},${WB}|2`,
+    why: "pagamento gera a próxima fatura no mesmo tenant",
+  },
+  {
+    id: "sub-paid-twice",
+    area: "billing",
+    uid: null,
+    role: "service_role",
+    setup: `${contacts} ${subIns(WB)};`,
     sql: `${payFirst}; ${payFirst}; update public.subscription_invoices set status = 'paid' where subscription_id = '${SUB_B}' and status = 'paid'; ${invWs}`,
-    expect: `${WB},${WB}|2`, why: "repetir 'pago' não gera fatura duplicada" },
-  { id: "sub-adulterated-ws", area: "billing", uid: OWN_A, setup: contacts,
-    sql: `${subIns(WB, CT_A, OWN_A)}; select 1`, expect: /42501|not a member/, why: "membro de A não grava em B" },
-  { id: "sub-removed-member", area: "billing", uid: REMOVED_A, setup: contacts,
-    sql: `${subIns(WA, CT_A, REMOVED_A)}; select 1`, expect: /42501|not a member|row-level/, why: "membro desativado não grava" },
-  { id: "sub-cross-tenant-parent", area: "billing", uid: ADMIN_B, setup: contacts,
-    sql: `${subIns(WB, CT_A)}; select 'aceito'`, expect: /workspace_mismatch/, gap: "aceito",
-    why: "assinatura de B apontando para contato de A deveria ser recusada" },
-  { id: "sub-missing-ws-job", area: "defaults", uid: null, role: "service_role", setup: contacts,
+    expect: `${WB},${WB}|2`,
+    why: "repetir 'pago' não gera fatura duplicada",
+  },
+  {
+    id: "sub-adulterated-ws",
+    area: "billing",
+    uid: OWN_A,
+    setup: contacts,
+    sql: `${subIns(WB, CT_A, OWN_A)}; select 1`,
+    expect: /42501|not a member/,
+    why: "membro de A não grava em B",
+  },
+  {
+    id: "sub-removed-member",
+    area: "billing",
+    uid: REMOVED_A,
+    setup: contacts,
+    sql: `${subIns(WA, CT_A, REMOVED_A)}; select 1`,
+    expect: /42501|not a member|row-level/,
+    why: "membro desativado não grava",
+  },
+  {
+    id: "sub-cross-tenant-parent",
+    area: "billing",
+    uid: ADMIN_B,
+    setup: contacts,
+    sql: `${subIns(WB, CT_A)}; select 'aceito'`,
+    expect: /workspace_mismatch/,
+    gap: "aceito",
+    why: "assinatura de B apontando para contato de A deveria ser recusada",
+  },
+  {
+    id: "sub-missing-ws-job",
+    area: "defaults",
+    uid: null,
+    role: "service_role",
+    setup: contacts,
     sql: `${subIns(null)}; select workspace_id from public.subscriptions where id = '${SUB_B}'`,
-    expect: /null value|not-null|23502|workspace/i, gap: WORIG,
-    why: "job sem tenant explícito deveria falhar; hoje o DEFAULT fixo grava no tenant original" },
-  { id: "lead-missing-ws-user-b", area: "defaults", uid: ADMIN_B,
+    expect: /null value|not-null|23502|workspace/i,
+    gap: WORIG,
+    why: "job sem tenant explícito deveria falhar; hoje o DEFAULT fixo grava no tenant original",
+  },
+  {
+    id: "lead-missing-ws-user-b",
+    area: "defaults",
+    uid: ADMIN_B,
     sql: `insert into public.leads (owner_id, first_name) values ('${ADMIN_B}', '[ISO] lead sem ws') returning workspace_id`,
-    expect: WB, gap: /42501|not a member/,
-    why: "usuário de B sem workspace_id explícito: DEFAULT fixo vence o gatilho e a gravação é recusada" },
-  { id: "ticket-pipeline-cross-tenant", area: "survey", uid: ADMIN_B, setup: `${contacts} ${pipeA}`,
+    expect: WB,
+    gap: /42501|not a member/,
+    why: "usuário de B sem workspace_id explícito: DEFAULT fixo vence o gatilho e a gravação é recusada",
+  },
+  {
+    id: "ticket-pipeline-cross-tenant",
+    area: "survey",
+    uid: ADMIN_B,
+    setup: `${contacts} ${pipeA}`,
     sql: `insert into public.tickets (workspace_id, owner_id, subject) values ('${WB}','${ADMIN_B}','[ISO] sem funil') returning pipeline_id`,
-    expect: /pipeline_id/, why: "sem funil de chamados em B, nunca herda o funil de A (recusa clara)" },
+    expect: /pipeline_id/,
+    why: "sem funil de chamados em B, nunca herda o funil de A (recusa clara)",
+  },
   // ---- histórico/etapas (regressão de 0099) ----
-  { id: "lead-history-b", area: "history", uid: ADMIN_B,
+  {
+    id: "lead-history-b",
+    area: "history",
+    uid: ADMIN_B,
     sql: `with l as (insert into public.leads (workspace_id, owner_id, first_name) values ('${WB}', '${ADMIN_B}', '[ISO] lead B') returning id)
           select coalesce((select string_agg(distinct workspace_id::text, ',') from public.stage_entries where entity_id in (select id from l)), 'none')`,
-    expect: /^(aaaaaaaa-0000-4000-8000-00000000000b|none)$/, why: "etapas do lead de B ficam em B" },
-  { id: "deal-history-b", area: "history", uid: ADMIN_B,
+    expect: /^(aaaaaaaa-0000-4000-8000-00000000000b|none)$/,
+    why: "etapas do lead de B ficam em B",
+  },
+  {
+    id: "deal-history-b",
+    area: "history",
+    uid: ADMIN_B,
     sql: `insert into public.deals (id, workspace_id, owner_id, name, value, stage) values ('74000000-0000-4000-8000-0000000000b1','${WB}','${ADMIN_B}','[ISO] deal B',1,'new');
           update public.deals set stage = 'qualified' where id = '74000000-0000-4000-8000-0000000000b1';
           select coalesce((select string_agg(distinct workspace_id::text, ',') from public.stage_entries where entity_id = '74000000-0000-4000-8000-0000000000b1'), 'none')
            || '|' || coalesce((select string_agg(distinct workspace_id::text, ',') from public.property_history where entity_id = '74000000-0000-4000-8000-0000000000b1'), 'none')`,
-    expect: /^(aaaaaaaa-0000-4000-8000-00000000000b|none)\|(aaaaaaaa-0000-4000-8000-00000000000b|none)$/,
-    why: "etapas e histórico do negócio de B nunca vão para outro tenant" },
+    expect:
+      /^(aaaaaaaa-0000-4000-8000-00000000000b|none)\|(aaaaaaaa-0000-4000-8000-00000000000b|none)$/,
+    why: "etapas e histórico do negócio de B nunca vão para outro tenant",
+  },
   // ---- ranking do painel (get_sales_dashboard_secondary_v2) ----
-  { id: "rank-workspace", area: "dashboard", uid: WS_A, sql: rank(WA),
-    expect: "[ISO] Negócio A2,[ISO] Negócio A7", why: "sem cargo restrito o ranking cobre o workspace" },
-  { id: "rank-own-restricted", area: "dashboard", uid: OWN_A, setup: restrict, sql: rank(WA),
-    expect: "[ISO] Negócio A2", why: "cargo restrito: só os próprios" },
-  { id: "rank-team-restricted", area: "dashboard", uid: TEAM_A, setup: restrict, sql: rank(WA),
-    expect: "", why: "contrato real: restrição por cargo vale só próprio/atribuído, inclusive para líder" },
-  { id: "rank-other-tenant", area: "dashboard", uid: ADMIN_B, sql: rank(WA), expect: "", why: "workspace adulterado: nada de A" },
-  { id: "rank-b-own", area: "dashboard", uid: ADMIN_B, sql: rank(WB), expect: "[ISO] Negócio SegredoB", why: "positivo em B" },
+  {
+    id: "rank-workspace",
+    area: "dashboard",
+    uid: WS_A,
+    sql: rank(WA),
+    expect: "[ISO] Negócio A2,[ISO] Negócio A7",
+    why: "sem cargo restrito o ranking cobre o workspace",
+  },
+  {
+    id: "rank-own-restricted",
+    area: "dashboard",
+    uid: OWN_A,
+    setup: restrict,
+    sql: rank(WA),
+    expect: "[ISO] Negócio A2",
+    why: "cargo restrito: só os próprios",
+  },
+  {
+    id: "rank-team-restricted",
+    area: "dashboard",
+    uid: TEAM_A,
+    setup: restrict,
+    sql: rank(WA),
+    expect: "",
+    why: "contrato real: restrição por cargo vale só próprio/atribuído, inclusive para líder",
+  },
+  {
+    id: "rank-other-tenant",
+    area: "dashboard",
+    uid: ADMIN_B,
+    sql: rank(WA),
+    expect: "",
+    why: "workspace adulterado: nada de A",
+  },
+  {
+    id: "rank-b-own",
+    area: "dashboard",
+    uid: ADMIN_B,
+    sql: rank(WB),
+    expect: "[ISO] Negócio SegredoB",
+    why: "positivo em B",
+  },
   // ---- negócios por equipe ----
-  { id: "deals-team-unrestricted", area: "deals", uid: TEAM_A, sql: dealNames,
-    expect: "[ISO] Negócio A2,[ISO] Negócio A7", why: "contrato: negócios visíveis no workspace sem cargo restrito" },
-  { id: "deals-team-restricted", area: "deals", uid: TEAM_A, setup: restrict, sql: dealNames, expect: "", why: "cargo restrito: só próprio/atribuído" },
-  { id: "deals-own-restricted", area: "deals", uid: OWN_A, setup: restrict, sql: dealNames, expect: "[ISO] Negócio A2", why: "próprio" },
+  {
+    id: "deals-team-unrestricted",
+    area: "deals",
+    uid: TEAM_A,
+    sql: dealNames,
+    expect: "[ISO] Negócio A2,[ISO] Negócio A7",
+    why: "contrato: negócios visíveis no workspace sem cargo restrito",
+  },
+  {
+    id: "deals-team-restricted",
+    area: "deals",
+    uid: TEAM_A,
+    setup: restrict,
+    sql: dealNames,
+    expect: "",
+    why: "cargo restrito: só próprio/atribuído",
+  },
+  {
+    id: "deals-own-restricted",
+    area: "deals",
+    uid: OWN_A,
+    setup: restrict,
+    sql: dealNames,
+    expect: "[ISO] Negócio A2",
+    why: "próprio",
+  },
   // ---- Inbox por equipe ----
-  { id: "inbox-team-no-contact", area: "inbox", uid: TEAM_A, setup: threadA(false), sql: seeThread, expect: "0",
-    why: "e-mail sem contato é privado da caixa, mesmo para líder" },
-  { id: "inbox-owner-no-contact", area: "inbox", uid: OWN_A, setup: threadA(false), sql: seeThread, expect: "1", why: "dono da caixa vê" },
-  { id: "inbox-team-with-contact", area: "inbox", uid: TEAM_A, setup: threadA(true), sql: seeThread, expect: "1",
-    why: "e-mail vinculado a contato é do workspace" },
-  { id: "inbox-b-with-contact", area: "inbox", uid: ADMIN_B, setup: threadA(true), sql: seeThread, expect: "0", why: "outro tenant não vê" },
-  { id: "view-as-user-mode", area: "view-as", uid: ADMIN_A, sql: "select 1", expect: "1",
+  {
+    id: "inbox-team-no-contact",
+    area: "inbox",
+    uid: TEAM_A,
+    setup: threadA(false),
+    sql: seeThread,
+    expect: "0",
+    why: "e-mail sem contato é privado da caixa, mesmo para líder",
+  },
+  {
+    id: "inbox-owner-no-contact",
+    area: "inbox",
+    uid: OWN_A,
+    setup: threadA(false),
+    sql: seeThread,
+    expect: "1",
+    why: "dono da caixa vê",
+  },
+  {
+    id: "inbox-team-with-contact",
+    area: "inbox",
+    uid: TEAM_A,
+    setup: threadA(true),
+    sql: seeThread,
+    expect: "1",
+    why: "e-mail vinculado a contato é do workspace",
+  },
+  {
+    id: "inbox-b-with-contact",
+    area: "inbox",
+    uid: ADMIN_B,
+    setup: threadA(true),
+    sql: seeThread,
+    expect: "0",
+    why: "outro tenant não vê",
+  },
+  {
+    id: "view-as-user-mode",
+    area: "view-as",
+    uid: ADMIN_A,
+    sql: "select 1",
+    expect: "1",
     why: "modo usuário do Ver como emite sessão real do alvo",
-    notExecuted: "exige GoTrue (emissão de sessão); indisponível no isolado e proibido emitir sessão de terceiro" },
+    notExecuted:
+      "exige GoTrue (emissão de sessão); indisponível no isolado e proibido emitir sessão de terceiro",
+  },
 ];
 
 function runCase(c: Case) {
-  if (c.notExecuted) return { id: c.id, area: c.area, why: c.why, status: "not_executed", expected: "", actual: c.notExecuted, ms: 0 };
+  if (c.notExecuted)
+    return {
+      id: c.id,
+      area: c.area,
+      why: c.why,
+      status: "not_executed",
+      expected: "",
+      actual: c.notExecuted,
+      ms: 0,
+    };
   const role: Role = c.role ?? (c.uid ? "authenticated" : "anon");
   const claims = JSON.stringify(c.uid ? { sub: c.uid, role } : { role });
   const script = [
@@ -157,15 +372,37 @@ function runCase(c: Case) {
     "ROLLBACK;",
   ].join("\n");
   const t0 = Date.now();
-  const r = spawnSync("psql", ["-X", "-q", "-tA", ...CONN, "-f", "-"], { input: script, encoding: "utf8", env: env as NodeJS.ProcessEnv, timeout: 20_000 });
+  const r = spawnSync("psql", ["-X", "-q", "-tA", ...CONN, "-f", "-"], {
+    input: script,
+    encoding: "utf8",
+    env: env as NodeJS.ProcessEnv,
+    timeout: 20_000,
+  });
   const out = (r.stdout ?? "").trim().split("\n").filter(Boolean).pop() ?? "";
   const actual = r.status === 0 ? out : (r.stderr ?? "").trim();
-  const match = (e: string | RegExp) => (e instanceof RegExp ? e.test(actual) : r.status === 0 && actual === e);
-  const status = match(c.expect) ? "passed" : c.gap !== undefined && match(c.gap) ? "known_gap" : "failed";
-  return { id: c.id, area: c.area, why: c.why, status, expected: String(c.expect), actual: actual.slice(0, 300), ms: Date.now() - t0 };
+  const match = (e: string | RegExp) =>
+    e instanceof RegExp ? e.test(actual) : r.status === 0 && actual === e;
+  const status = match(c.expect)
+    ? "passed"
+    : c.gap !== undefined && match(c.gap)
+      ? "known_gap"
+      : "failed";
+  return {
+    id: c.id,
+    area: c.area,
+    why: c.why,
+    status,
+    expected: String(c.expect),
+    actual: actual.slice(0, 300),
+    ms: Date.now() - t0,
+  };
 }
 
-const ping = spawnSync("psql", ["-X", "-tA", ...CONN, "-c", "select label from public.__isolated_marker where id=1"], { encoding: "utf8", env: env as NodeJS.ProcessEnv });
+const ping = spawnSync(
+  "psql",
+  ["-X", "-tA", ...CONN, "-c", "select label from public.__isolated_marker where id=1"],
+  { encoding: "utf8", env: env as NodeJS.ProcessEnv },
+);
 mkdirSync(`${root}/artifacts`, { recursive: true });
 if (ping.stdout?.trim() !== "techerp-isolated-harness") {
   console.error("BLOQUEADO: banco isolado não está rodando (scripts/isolated-db/start.sh)");
@@ -173,17 +410,38 @@ if (ping.stdout?.trim() !== "techerp-isolated-harness") {
 }
 const results = CASES.map(runCase);
 const n = (s: string) => results.filter((r) => r.status === s).length;
-const summary = { passed: n("passed"), failed: n("failed"), known_gap: n("known_gap"), not_executed: n("not_executed") };
-writeFileSync(`${root}/artifacts/workspace-integrity.json`, JSON.stringify({ ...summary, results }, null, 2));
-const esc = (s: string) => s.replace(/[<&"]/g, (m) => ({ "<": "&lt;", "&": "&amp;", '"': "&quot;" })[m]!);
+const summary = {
+  passed: n("passed"),
+  failed: n("failed"),
+  known_gap: n("known_gap"),
+  not_executed: n("not_executed"),
+};
+writeFileSync(
+  `${root}/artifacts/workspace-integrity.json`,
+  JSON.stringify({ ...summary, results }, null, 2),
+);
+const esc = (s: string) =>
+  s.replace(/[<&"]/g, (m) => ({ "<": "&lt;", "&": "&amp;", '"': "&quot;" })[m]!);
 writeFileSync(
   `${root}/artifacts/workspace-integrity.xml`,
   `<?xml version="1.0"?>\n<testsuite name="isolated-workspace-integrity" tests="${results.length}" failures="${summary.failed}" skipped="${summary.known_gap + summary.not_executed}">\n` +
-    results.map((r) => `  <testcase classname="${r.area}" name="${esc(r.id)}" time="${r.ms / 1000}">${
-      r.status === "failed" ? `<failure message="${esc(`esperado ${r.expected}; obtido ${r.actual}`)}"/>`
-      : r.status === "passed" ? "" : `<skipped message="${esc(`${r.status}: ${r.actual}`)}"/>`}</testcase>`).join("\n") + "\n</testsuite>\n",
+    results
+      .map(
+        (r) =>
+          `  <testcase classname="${r.area}" name="${esc(r.id)}" time="${r.ms / 1000}">${
+            r.status === "failed"
+              ? `<failure message="${esc(`esperado ${r.expected}; obtido ${r.actual}`)}"/>`
+              : r.status === "passed"
+                ? ""
+                : `<skipped message="${esc(`${r.status}: ${r.actual}`)}"/>`
+          }</testcase>`,
+      )
+      .join("\n") +
+    "\n</testsuite>\n",
 );
 for (const r of results)
-  console.log(`${r.status.toUpperCase()} ${r.area}/${r.id}${r.status !== "passed" ? `  esperado=${r.expected} obtido=${r.actual}` : ""}`);
+  console.log(
+    `${r.status.toUpperCase()} ${r.area}/${r.id}${r.status !== "passed" ? `  esperado=${r.expected} obtido=${r.actual}` : ""}`,
+  );
 console.log(`\n${JSON.stringify(summary)}`);
 process.exit(summary.failed ? 1 : summary.known_gap || summary.not_executed ? 3 : 0);
