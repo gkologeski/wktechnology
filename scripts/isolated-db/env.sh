@@ -5,7 +5,7 @@ export ISO_DATA="$ISO_ROOT/data"
 export ISO_SOCK="$ISO_ROOT/sock"
 export ISO_PORT="${ISO_PORT:-54329}"
 export ISO_LOG="$ISO_ROOT/postgres.log"
-export ISO_OS_USER="${ISO_OS_USER:-techerp_iso}"
+export ISO_OS_USER="${ISO_OS_USER:-nobody}"
 export ISO_PROJECT_REF="czrmhtzaeonzjmbgbabz"
 
 iso_psql() { psql -X -q -v ON_ERROR_STOP=1 -h "$ISO_SOCK" -p "$ISO_PORT" -U postgres -d postgres "$@"; }

@@ -4,7 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 . scripts/isolated-db/env.sh
 command -v initdb >/dev/null || { echo "PRECONDIÇÃO: initdb/postgres ausente" >&2; exit 3; }
-id "$ISO_OS_USER" >/dev/null 2>&1 || useradd -M -r -s /usr/sbin/nologin "$ISO_OS_USER"
+id "$ISO_OS_USER" >/dev/null || { echo "PRECONDIÇÃO: usuário $ISO_OS_USER ausente" >&2; exit 3; }
 mkdir -p "$ISO_ROOT" "$ISO_SOCK"; chown -R "$ISO_OS_USER" "$ISO_ROOT"
 if [ ! -f "$ISO_DATA/PG_VERSION" ]; then
   runuser -u "$ISO_OS_USER" -- initdb -D "$ISO_DATA" -U postgres -A trust --no-sync >/dev/null
