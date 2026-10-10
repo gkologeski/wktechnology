@@ -45,7 +45,7 @@ pode cortar histórico nem contagens.
   0099 (etapa/histórico gravando o tenant fixo — criar lead fora do tenant original falhava) e 0100 (admin
   desativado seguia admin) — ver performance-cycle-9-isolated-validation.md.
 
-## Matriz do plano de 16 frentes (estado após o ciclo 10)
+## Matriz do plano de 16 frentes (estado após o fechamento — ver executed-tasks-closure.md)
 
 | #   | Frente                                                                                            | Estado                                                                                                               | Falta                                                         |
 | --- | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
@@ -66,5 +66,5 @@ pode cortar histórico nem contagens.
 | 15  | Budgets de performance e regressão                                                                | Não iniciado                                                                                                         | —                                                             |
 | 16  | Validação de artefato SSR Cloudflare/verify/rollback/publicação                                   | Não iniciado                                                                                                         | Só com autorização futura de publicação                       |
 
-Riscos abertos: 76 DEFAULTs fixos de `workspace_id` (inventário em
+Riscos abertos: 49 DEFAULTs fixos de `workspace_id` (inventário em
 `performance-cycle-10-workspace-integrity.md`); DELETE com filtro por workspace não chega pelo tempo real.
