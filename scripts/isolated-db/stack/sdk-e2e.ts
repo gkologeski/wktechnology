@@ -65,7 +65,7 @@ const LEAD_A = "50000000-0000-4000-8000-0000000000a1";
 // Setup (superusuário só no banco descartável): senha efêmera desta execução.
 const PW = randomBytes(18).toString("base64url");
 psql(`update auth.users set encrypted_password = extensions.crypt('${PW}', extensions.gen_salt('bf')),
-  instance_id = '00000000-0000-0000-0000-000000000000',
+  instance_id = '00000000-0000-0000-0000-000000000000', created_at = coalesce(created_at, now()), updated_at = coalesce(updated_at, now()),
   confirmation_token = coalesce(confirmation_token,''), recovery_token = coalesce(recovery_token,''),
   email_change_token_new = coalesce(email_change_token_new,''), email_change = coalesce(email_change,''),
   email_change_token_current = coalesce(email_change_token_current,''), phone_change = coalesce(phone_change,''),
