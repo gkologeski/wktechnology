@@ -6,5 +6,5 @@ cd "$(dirname "$0")/../.."
 if [ -f "$ISO_DATA/PG_VERSION" ]; then
   runuser -u "$ISO_OS_USER" -- env PATH="$PATH" pg_ctl -D "$ISO_DATA" -m fast stop >/dev/null 2>&1 || true
 fi
-case "$ISO_ROOT" in /tmp/techerp-isolated*) rm -rf "$ISO_ROOT";; *) echo "recusado: $ISO_ROOT" >&2; exit 1;; esac
+case "$ISO_ROOT" in /tmp/techerp-isolated*) rm -rf "$ISO_DATA" "$ISO_SOCK" "$ISO_LOG" "$ISO_ROOT"/*.log;; *) echo "recusado: $ISO_ROOT" >&2; exit 1;; esac
 echo "isolated db removido"
