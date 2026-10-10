@@ -43,8 +43,28 @@ const URL_ = `http://127.0.0.1:${proxy.port}`;
 
 function psql(sql: string) {
   const env: Record<string, string | undefined> = { ...process.env };
-  for (const k of ["PGHOST", "PGPORT", "PGUSER", "PGPASSWORD", "PGDATABASE", "DATABASE_URL"]) delete env[k];
-  const r = spawnSync("psql", ["-X", "-qtA", "-v", "ON_ERROR_STOP=1", "-h", `${root}/sock`, "-p", port, "-U", "postgres", "-d", "postgres", "-c", sql], { env, encoding: "utf8" });
+  for (const k of ["PGHOST", "PGPORT", "PGUSER", "PGPASSWORD", "PGDATABASE", "DATABASE_URL"])
+    delete env[k];
+  const r = spawnSync(
+    "psql",
+    [
+      "-X",
+      "-qtA",
+      "-v",
+      "ON_ERROR_STOP=1",
+      "-h",
+      `${root}/sock`,
+      "-p",
+      port,
+      "-U",
+      "postgres",
+      "-d",
+      "postgres",
+      "-c",
+      sql,
+    ],
+    { env, encoding: "utf8" },
+  );
   if (r.status !== 0) throw new Error(r.stderr);
   return r.stdout.trim();
 }
@@ -55,11 +75,16 @@ if (psql("select label from public.__isolated_marker where id=1") !== "techerp-i
 
 const U = (n: number) => `10000000-0000-4000-8000-00000000000${n}`;
 const EMAIL: Record<number, string> = {
-  1: "admin-a@techerp-test.invalid", 2: "own-a@techerp-test.invalid", 3: "team-a@techerp-test.invalid",
-  4: "ws-a@techerp-test.invalid", 5: "removed-a@techerp-test.invalid", 6: "admin-b@techerp-test.invalid",
+  1: "admin-a@techerp-test.invalid",
+  2: "own-a@techerp-test.invalid",
+  3: "team-a@techerp-test.invalid",
+  4: "ws-a@techerp-test.invalid",
+  5: "removed-a@techerp-test.invalid",
+  6: "admin-b@techerp-test.invalid",
   7: "peer-a@techerp-test.invalid",
 };
-const WA = "aaaaaaaa-0000-4000-8000-00000000000a", WB = "aaaaaaaa-0000-4000-8000-00000000000b";
+const WA = "aaaaaaaa-0000-4000-8000-00000000000a",
+  WB = "aaaaaaaa-0000-4000-8000-00000000000b";
 const LEAD_A = "50000000-0000-4000-8000-0000000000a1";
 
 // Setup (superusuário só no banco descartável): senha efêmera desta execução.
@@ -72,7 +97,8 @@ psql(`update auth.users set encrypted_password = extensions.crypt('${PW}', exten
   phone_change_token = coalesce(phone_change_token,''), reauthentication_token = coalesce(reauthentication_token,'')
   where email like '%@techerp-test.invalid'`);
 
-const mk = () => createClient(URL_, anonKey, { auth: { persistSession: false, autoRefreshToken: false } });
+const mk = () =>
+  createClient(URL_, anonKey, { auth: { persistSession: false, autoRefreshToken: false } });
 async function signIn(n: number): Promise<SupabaseClient> {
   const c = mk();
   const { error } = await c.auth.signInWithPassword({ email: EMAIL[n], password: PW });
@@ -80,16 +106,42 @@ async function signIn(n: number): Promise<SupabaseClient> {
   return c;
 }
 
-type R = { id: string; area: string; status: "pass" | "fail" | "not_executed"; detail: string; why: string };
+type R = {
+  id: string;
+  area: string;
+  status: "pass" | "fail" | "not_executed";
+  detail: string;
+  why: string;
+};
 const results: R[] = [];
-async function check(id: string, area: string, why: string, fn: () => Promise<string>, expect: string | RegExp) {
+async function check(
+  id: string,
+  area: string,
+  why: string,
+  fn: () => Promise<string>,
+  expect: string | RegExp,
+) {
   let got: string;
-  try { got = await fn(); } catch (e) { got = `ERR ${(e as Error).message}`; }
+  try {
+    got = await fn();
+  } catch (e) {
+    got = `ERR ${(e as Error).message}`;
+  }
   const ok = typeof expect === "string" ? got === expect : expect.test(got);
-  results.push({ id, area, status: ok ? "pass" : "fail", detail: `got=${got} expect=${expect}`, why });
+  results.push({
+    id,
+    area,
+    status: ok ? "pass" : "fail",
+    detail: `got=${got} expect=${expect}`,
+    why,
+  });
 }
 const subjects = async (c: SupabaseClient) => {
-  const { data, error } = await c.from("activities").select("subject").eq("related_lead_id", LEAD_A).order("subject");
+  const { data, error } = await c
+    .from("activities")
+    .select("subject")
+    .eq("related_lead_id", LEAD_A)
+    .order("subject");
   if (error) return `ERR ${error.message}`;
   return (data ?? []).map((r) => r.subject).join(",");
 };
@@ -104,14 +156,26 @@ const s: Record<number, SupabaseClient> = {};
 for (const n of [1, 2, 3, 4, 6, 7]) s[n] = await signIn(n);
 
 // Identidade: o JWT do GoTrue carrega o sub real e o papel authenticated.
-await check("jwt-identity", "auth", "token real do GoTrue", async () => {
-  const { data } = await s[2].auth.getUser();
-  return `${data.user?.id}|${data.user?.role}`;
-}, `${U(2)}|authenticated`);
-await check("login-wrong-password", "auth", "senha errada recusada pelo GoTrue", async () => {
-  const { error } = await mk().auth.signInWithPassword({ email: EMAIL[2], password: "x" + PW });
-  return error ? "refused" : "accepted";
-}, "refused");
+await check(
+  "jwt-identity",
+  "auth",
+  "token real do GoTrue",
+  async () => {
+    const { data } = await s[2].auth.getUser();
+    return `${data.user?.id}|${data.user?.role}`;
+  },
+  `${U(2)}|authenticated`,
+);
+await check(
+  "login-wrong-password",
+  "auth",
+  "senha errada recusada pelo GoTrue",
+  async () => {
+    const { error } = await mk().auth.signInWithPassword({ email: EMAIL[2], password: "x" + PW });
+    return error ? "refused" : "accepted";
+  },
+  "refused",
+);
 
 const ALL = "[ISO] nota admin,[ISO] nota par,[ISO] nota propria";
 await check("act-admin", "timeline", "admin vê o workspace", () => subjects(s[1]), ALL);
@@ -120,58 +184,173 @@ await check("act-team", "timeline", "escopo equipe", () => subjects(s[3]), "[ISO
 await check("act-ws", "timeline", "escopo workspace", () => subjects(s[4]), ALL);
 await check("act-other-tenant", "timeline", "admin de B não vê A", () => subjects(s[6]), "");
 await check("act-anon", "timeline", "anônimo", () => subjects(mk()), /^$|ERR .*permission denied/);
-await check("tl-rpc-own", "timeline", "RPC paginada própria", async () => {
-  const { data, error } = await s[2].rpc("get_timeline_activity_page", { p_entity_kind: "lead", p_entity_id: LEAD_A });
-  return error ? `ERR ${error.message}` : String((data as { total?: number })?.total);
-}, "1");
-await check("deal-b-from-a", "deals", "negócio de B invisível para A", () => count(s[1], "deals", ["workspace_id", WB]), "0");
-await check("deal-own", "deals", "dono vê o seu", () => count(s[2], "deals", ["id", "51000000-0000-4000-8000-0000000000a1"]), "1");
-await check("inbox-own", "inbox", "dono vê conversas", async () => {
-  const { data, error } = await s[2].rpc("get_inbox_unified_page", { p_channel: "all", p_search: null });
-  return error ? `ERR ${error.message}` : String(((data as { items?: unknown[] })?.items ?? []).length > 0);
-}, "true");
-await check("inbox-search-leak", "inbox", "busca não vaza B", async () => {
-  const { data, error } = await s[2].rpc("get_inbox_unified_page", { p_channel: "all", p_search: "SegredoB" });
-  return error ? `ERR ${error.message}` : String(((data as { items?: unknown[] })?.items ?? []).length);
-}, "0");
-await check("wa-other", "whatsapp", "mensagem WA de B", () => count(s[2], "whatsapp_messages", ["id", "58000000-0000-4000-8000-0000000000b6"]), "0");
-await check("email-other", "email", "e-mail de B", () => count(s[1], "email_messages", ["workspace_id", WB]), "0");
+await check(
+  "tl-rpc-own",
+  "timeline",
+  "RPC paginada própria",
+  async () => {
+    const { data, error } = await s[2].rpc("get_timeline_activity_page", {
+      p_entity_kind: "lead",
+      p_entity_id: LEAD_A,
+    });
+    return error ? `ERR ${error.message}` : String((data as { total?: number })?.total);
+  },
+  "1",
+);
+await check(
+  "deal-b-from-a",
+  "deals",
+  "negócio de B invisível para A",
+  () => count(s[1], "deals", ["workspace_id", WB]),
+  "0",
+);
+await check(
+  "deal-own",
+  "deals",
+  "dono vê o seu",
+  () => count(s[2], "deals", ["id", "51000000-0000-4000-8000-0000000000a1"]),
+  "1",
+);
+await check(
+  "inbox-own",
+  "inbox",
+  "dono vê conversas",
+  async () => {
+    const { data, error } = await s[2].rpc("get_inbox_unified_page", {
+      p_channel: "all",
+      p_search: null,
+    });
+    return error
+      ? `ERR ${error.message}`
+      : String(((data as { items?: unknown[] })?.items ?? []).length > 0);
+  },
+  "true",
+);
+await check(
+  "inbox-search-leak",
+  "inbox",
+  "busca não vaza B",
+  async () => {
+    const { data, error } = await s[2].rpc("get_inbox_unified_page", {
+      p_channel: "all",
+      p_search: "SegredoB",
+    });
+    return error
+      ? `ERR ${error.message}`
+      : String(((data as { items?: unknown[] })?.items ?? []).length);
+  },
+  "0",
+);
+await check(
+  "wa-other",
+  "whatsapp",
+  "mensagem WA de B",
+  () => count(s[2], "whatsapp_messages", ["id", "58000000-0000-4000-8000-0000000000b6"]),
+  "0",
+);
+await check(
+  "email-other",
+  "email",
+  "e-mail de B",
+  () => count(s[1], "email_messages", ["workspace_id", WB]),
+  "0",
+);
 await check("chat-member", "chat", "membro do chat", () => count(s[7], "chat_messages"), "1");
 await check("chat-non-member", "chat", "não membro", () => count(s[4], "chat_messages"), "0");
-await check("brand-member", "branding", "lê só o seu", () => count(s[2], "workspace_branding"), "1");
-await check("brand-other", "branding", "outro tenant", () => count(s[6], "workspace_branding", ["workspace_id", WA]), "0");
-await check("brand-member-write", "branding", "membro comum não altera", async () => {
-  const { data, error } = await s[2].from("workspace_branding").update({ primary_color: "#000000" }).eq("workspace_id", WA).select("workspace_id");
-  return error ? `ERR ${error.message}` : String(data?.length ?? 0);
-}, /^0$|ERR/);
-await check("insert-other-ws", "write", "inserir em B recusado", async () => {
-  const { error } = await s[2].from("activities").insert({ workspace_id: WB, owner_id: U(2), type: "note", subject: "x" });
-  return error ? `ERR ${error.message}` : "inserted";
-}, /ERR .*(row-level security|denied)/);
-await check("insert-lead-own-ws", "write", "lead no próprio tenant", async () => {
-  const { error } = await s[1].from("leads").insert({ workspace_id: WA, owner_id: U(1), first_name: "[ISO] E2E" });
-  return error ? `ERR ${error.message}` : "ok";
-}, "ok");
+await check(
+  "brand-member",
+  "branding",
+  "lê só o seu",
+  () => count(s[2], "workspace_branding"),
+  "1",
+);
+await check(
+  "brand-other",
+  "branding",
+  "outro tenant",
+  () => count(s[6], "workspace_branding", ["workspace_id", WA]),
+  "0",
+);
+await check(
+  "brand-member-write",
+  "branding",
+  "membro comum não altera",
+  async () => {
+    const { data, error } = await s[2]
+      .from("workspace_branding")
+      .update({ primary_color: "#000000" })
+      .eq("workspace_id", WA)
+      .select("workspace_id");
+    return error ? `ERR ${error.message}` : String(data?.length ?? 0);
+  },
+  /^0$|ERR/,
+);
+await check(
+  "insert-other-ws",
+  "write",
+  "inserir em B recusado",
+  async () => {
+    const { error } = await s[2]
+      .from("activities")
+      .insert({ workspace_id: WB, owner_id: U(2), type: "note", subject: "x" });
+    return error ? `ERR ${error.message}` : "inserted";
+  },
+  /ERR .*(row-level security|denied)/,
+);
+await check(
+  "insert-lead-own-ws",
+  "write",
+  "lead no próprio tenant",
+  async () => {
+    const { error } = await s[1]
+      .from("leads")
+      .insert({ workspace_id: WA, owner_id: U(1), first_name: "[ISO] E2E" });
+    return error ? `ERR ${error.message}` : "ok";
+  },
+  "ok",
+);
 
 // Removido: login funciona até ser banido; sem dados quando inativo; banido não entra.
 const s5 = await signIn(5);
 await check("removed-inactive", "revoke", "inativo sem dados", () => subjects(s5), "");
 psql(`update auth.users set banned_until = now() + interval '1 day' where id = '${U(5)}'`);
-await check("removed-banned-login", "revoke", "banido recusado pelo GoTrue", async () => {
-  const { error } = await mk().auth.signInWithPassword({ email: EMAIL[5], password: PW });
-  return error ? "refused" : "accepted";
-}, "refused");
+await check(
+  "removed-banned-login",
+  "revoke",
+  "banido recusado pelo GoTrue",
+  async () => {
+    const { error } = await mk().auth.signInWithPassword({ email: EMAIL[5], password: PW });
+    return error ? "refused" : "accepted";
+  },
+  "refused",
+);
 // Revogação no meio da sessão: inativar 4 e reconsultar com o MESMO token.
-psql(`update public.workspace_members set status='inactive' where user_id='${U(4)}' and workspace_id='${WA}'`);
-await check("revoke-midstream", "revoke", "mesmo token perde acesso na próxima consulta", () => subjects(s[4]), "");
-psql(`update public.workspace_members set status='active' where user_id='${U(4)}' and workspace_id='${WA}'`);
+psql(
+  `update public.workspace_members set status='inactive' where user_id='${U(4)}' and workspace_id='${WA}'`,
+);
+await check(
+  "revoke-midstream",
+  "revoke",
+  "mesmo token perde acesso na próxima consulta",
+  () => subjects(s[4]),
+  "",
+);
+psql(
+  `update public.workspace_members set status='active' where user_id='${U(4)}' and workspace_id='${WA}'`,
+);
 psql(`update auth.users set banned_until = null where id = '${U(5)}'`);
-await check("signout", "auth", "logout encerra sessão no GoTrue", async () => {
-  const c = await signIn(7);
-  await c.auth.signOut();
-  const { data } = await c.auth.getSession();
-  return data.session ? "still" : "none";
-}, "none");
+await check(
+  "signout",
+  "auth",
+  "logout encerra sessão no GoTrue",
+  async () => {
+    const c = await signIn(7);
+    await c.auth.signOut();
+    const { data } = await c.auth.getSession();
+    return data.session ? "still" : "none";
+  },
+  "none",
+);
 
 for (const [id, why] of [
   ["rt-subscribe-own", "Realtime ausente na stack (não empacotado no nixpkgs)"],
@@ -179,7 +358,10 @@ for (const [id, why] of [
   ["rt-reconnect", "Realtime ausente"],
   ["rt-delete-event", "Realtime ausente"],
   ["ui-event-to-screen", "depende de Realtime + app apontado para a stack"],
-  ["view-as-gotrue-session", "fluxo Ver como usa servidor do app com chave administrativa; não ligado à stack"],
+  [
+    "view-as-gotrue-session",
+    "fluxo Ver como usa servidor do app com chave administrativa; não ligado à stack",
+  ],
 ] as const)
   results.push({ id, area: "realtime/ui", status: "not_executed", detail: why, why });
 
@@ -188,11 +370,22 @@ const pass = results.filter((r) => r.status === "pass").length;
 const fail = results.filter((r) => r.status === "fail").length;
 const ne = results.filter((r) => r.status === "not_executed").length;
 mkdirSync(`${root}/artifacts`, { recursive: true });
-writeFileSync(`${root}/artifacts/sdk-e2e.json`, JSON.stringify({ pass, fail, not_executed: ne, results }, null, 2));
-const esc = (x: string) => x.replace(/[<&"]/g, (c) => ({ "<": "&lt;", "&": "&amp;", '"': "&quot;" })[c]!);
-writeFileSync(`${root}/artifacts/sdk-e2e.xml`, `<?xml version="1.0"?>\n<testsuite name="sdk-e2e" tests="${results.length}" failures="${fail}" skipped="${ne}">\n${results
-  .map((r) => `  <testcase classname="${r.area}" name="${esc(r.id)}">${r.status === "fail" ? `<failure message="${esc(r.detail)}"/>` : r.status === "not_executed" ? `<skipped message="${esc(r.detail)}"/>` : ""}</testcase>`)
-  .join("\n")}\n</testsuite>\n`);
-for (const r of results) if (r.status !== "pass") console.log(`${r.status.toUpperCase()} ${r.id}: ${r.detail}`);
+writeFileSync(
+  `${root}/artifacts/sdk-e2e.json`,
+  JSON.stringify({ pass, fail, not_executed: ne, results }, null, 2),
+);
+const esc = (x: string) =>
+  x.replace(/[<&"]/g, (c) => ({ "<": "&lt;", "&": "&amp;", '"': "&quot;" })[c]!);
+writeFileSync(
+  `${root}/artifacts/sdk-e2e.xml`,
+  `<?xml version="1.0"?>\n<testsuite name="sdk-e2e" tests="${results.length}" failures="${fail}" skipped="${ne}">\n${results
+    .map(
+      (r) =>
+        `  <testcase classname="${r.area}" name="${esc(r.id)}">${r.status === "fail" ? `<failure message="${esc(r.detail)}"/>` : r.status === "not_executed" ? `<skipped message="${esc(r.detail)}"/>` : ""}</testcase>`,
+    )
+    .join("\n")}\n</testsuite>\n`,
+);
+for (const r of results)
+  if (r.status !== "pass") console.log(`${r.status.toUpperCase()} ${r.id}: ${r.detail}`);
 console.log(`sdk-e2e: ${pass} passaram, ${fail} falharam, ${ne} não executados`);
 process.exit(fail ? 1 : ne ? 3 : 0);
