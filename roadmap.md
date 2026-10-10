@@ -107,3 +107,6 @@
 - [x] Redesenhar a conversa de teste segura para desktop e mobile
 - [x] Validar visualmente em claro/escuro e desktop/mobile
 - [x] Executar tipos, lint direcionado e conferir build automático
+
+- [ ] ID 1: criar conta QA "[TESTE] Validação TechSales" (techerp-permissions-qa@techerp-test.invalid) e validar permissões reais com sessão própria; relatório docs/architecture/task-1-real-user-validation.md
+- [ ] Otimização do banco: aguardando decisão do usuário sobre retenção de logs e frequência das tarefas agendadas
