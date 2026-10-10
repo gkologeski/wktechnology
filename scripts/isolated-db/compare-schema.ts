@@ -36,7 +36,7 @@ const CHECKS: Record<string, string> = {
 };
 
 function run(local: boolean, sql: string): Map<string, string> {
-  const r = spawnSync("psql", ["-X", "-tA", "-F", "\t", ...(local ? LOCAL : []), "-c", sql],
+  const r = spawnSync("psql", ["-X", "-tA", "-F", "\t", ...(local ? LOCAL : []), "-c", "SET search_path = public", "-c", sql],
     { encoding: "utf8", env: (local ? localEnv : process.env) as NodeJS.ProcessEnv, maxBuffer: 1 << 27 });
   if (r.status !== 0) throw new Error(r.stderr);
   return new Map(r.stdout.trim().split("\n").filter(Boolean).map((l) => l.split("\t") as [string, string]));

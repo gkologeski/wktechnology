@@ -36,7 +36,8 @@ for (const e of q<{ name: string; labels: string[] }>(`
 sec("sequências");
 for (const s of q<{ name: string }>(`select c.relname as name from pg_class c join pg_namespace n on n.oid = c.relnamespace
   where ${NS} and c.relkind = 'S' and ${notExt("pg_class", "c.oid")} order by 1`))
-  out.push(`CREATE SEQUENCE IF NOT EXISTS public.${JSON.stringify(s.name)};`);
+  out.push(`CREATE SEQUENCE IF NOT EXISTS public.${JSON.stringify(s.name)};`,
+    `REVOKE ALL ON SEQUENCE public.${JSON.stringify(s.name)} FROM anon, authenticated, service_role, PUBLIC;`);
 
 type Col = { tbl: string; col: string; typ: string; notnull: boolean; def: string | null; gen: string; ident: string; num: number };
 const cols = q<Col>(`
@@ -74,7 +75,7 @@ const cons = q<Con>(`select c.relname as tbl, k.conname as name, pg_get_constrai
 sec("restrições");
 for (const k of cons) {
   // FKs para auth.users e demais schemas gerenciados são mantidas: o bootstrap cria auth.users.
-  out.push(`ALTER TABLE public.${id(k.tbl)} ADD CONSTRAINT ${id(k.name)} ${k.def}${k.type === "f" ? " NOT VALID" : ""};`);
+  out.push(`ALTER TABLE public.${id(k.tbl)} ADD CONSTRAINT ${id(k.name)} ${k.def};`);
 }
 
 sec("índices");
@@ -113,8 +114,8 @@ for (const t of tables.concat(q<{ name: string }>(`select c.relname as name from
 for (const g of q<{ tbl: string; priv: string; grantee: string }>(`
   select c.relname as tbl, a.privilege_type as priv, coalesce(r.rolname, 'PUBLIC') as grantee
   from pg_class c join pg_namespace n on n.oid = c.relnamespace, aclexplode(c.relacl) a
-  left join pg_roles r on r.oid = a.grantee where ${NS} and c.relkind in ('r','p','v','m') and coalesce(r.rolname,'PUBLIC') in ${ROLES}`))
-  out.push(`GRANT ${g.priv} ON public.${id(g.tbl)} TO ${g.grantee === "PUBLIC" ? "PUBLIC" : id(g.grantee)};`);
+  left join pg_roles r on r.oid = a.grantee where ${NS} and c.relkind in ('r','p','v','m','S') and coalesce(r.rolname,'PUBLIC') in ${ROLES}`))
+  out.push(`GRANT ${g.priv} ON TABLE public.${id(g.tbl)} TO ${g.grantee === "PUBLIC" ? "PUBLIC" : id(g.grantee)};`);
 for (const g of q<{ tbl: string; col: string; priv: string; grantee: string }>(`
   select c.relname as tbl, a.attname as col, x.privilege_type as priv, coalesce(r.rolname, 'PUBLIC') as grantee
   from pg_attribute a join pg_class c on c.oid = a.attrelid join pg_namespace n on n.oid = c.relnamespace, aclexplode(a.attacl) x
