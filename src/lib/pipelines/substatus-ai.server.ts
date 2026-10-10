@@ -127,30 +127,33 @@ export async function requestSubstatusSuggestions(
   const key = process.env["LOVABLE_API_KEY"];
   if (!key) throw new Error("A IA não está configurada neste ambiente (LOVABLE_API_KEY ausente).");
 
-  const res = await aiChatFetch({
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Lovable-API-Key": key,
-      "X-Lovable-AIG-SDK": "fetch",
-    },
-    body: JSON.stringify({
-      model: "openai/gpt-5.6-sol",
-      instructions: SYSTEM_PROMPT,
-      input: buildPrompt(ctx),
-      stream: true,
-      store: false,
-      reasoning: { effort: "low", summary: "auto" },
-      text: {
-        format: {
-          type: "json_schema",
-          name: "substatus_suggestions",
-          strict: true,
-          schema: JSON_SCHEMA,
-        },
+  const res = await aiChatFetch(
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Lovable-API-Key": key,
+        "X-Lovable-AIG-SDK": "fetch",
       },
-    }),
-  }, { feature: "subetapa_pipeline" });
+      body: JSON.stringify({
+        model: "openai/gpt-5.6-sol",
+        instructions: SYSTEM_PROMPT,
+        input: buildPrompt(ctx),
+        stream: true,
+        store: false,
+        reasoning: { effort: "low", summary: "auto" },
+        text: {
+          format: {
+            type: "json_schema",
+            name: "substatus_suggestions",
+            strict: true,
+            schema: JSON_SCHEMA,
+          },
+        },
+      }),
+    },
+    { feature: "subetapa_pipeline" },
+  );
 
   if (!res.ok) {
     const body = await res.text();

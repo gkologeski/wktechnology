@@ -12,7 +12,7 @@ pode cortar histórico nem contagens.
    último remetente por `LIMIT 1` só nas linhas da página.
 5. A fase nitro do build repete a transformação de cerca de 5.700 módulos (46–71 s, maior fase no
    ciclo 7). Investigar a configuração do plugin Cloudflare/nitro antes de mexer, com medição.
-6. 503 erros de prettier em 43 arquivos (ciclo 7: todos `prettier/prettier`, nenhum outro); `bun run verify` para no lint por isso. `hardcode-guard` corrigido no ciclo 3.
+6. [Feito no ciclo 8] Dívida de prettier (503 erros/43 arquivos) corrigida só por formatação.
 7. Assinaturas de `deal_line_items` e `meetings` estão fora da publicação de tempo real. Decidir
    entre incluí-las na publicação (exige migração) ou remover a assinatura.
 8. Índices: criar só a partir de um EXPLAIN de consultas interativas reais. Nada de índices
@@ -33,3 +33,8 @@ pode cortar histórico nem contagens.
   `verify` + `build`) — ver performance-cycle-7-build-verification.md. Pendente: timeout 240 s sem comando
   acessível, fase nitro, `settings.tsx`/`getSettingsForScope` na entrada, assinatura `branding` recusada
   (prioridade), RLS não-admin real, evento realtime ponta a ponta.
+- Ciclo 8: gate `bun run verify` verde (503 erros de prettier corrigidos só por formatação); dois experimentos
+  de carga inicial medidos e revertidos (sem ganho real); tempo real do White Label em `workspace_branding`/
+  `module_branding` (0098), assinatura aceita, evento ponta a ponta não comprovado — ver
+  performance-cycle-8-entry-quality-branding.md. Próximo ciclo: observabilidade de build, ambiente isolado
+  com tempo real, contratos por módulo (zod em `validateSearch`), RLS não-admin real.

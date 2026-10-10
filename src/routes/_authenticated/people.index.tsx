@@ -326,157 +326,162 @@ function PeoplePage() {
       ) : (
         <div className="rounded-md border bg-card">
           <GridListShell filters={gridFilters}>
-          <GridListToolbar
-            filters={gridFilters}
-            sort={sort}
-            setSort={setGridSort}
-            grid={sortGrid}
-            filename="pessoas"
-            labels={{
-              name: "Pessoa",
-              role: "Cargo",
-              type: "Vínculo",
-              status: "Status",
-              hire: "Contratação",
-            }}
-            search={false}
-          />
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10">
-                  <Checkbox
-                    aria-label="Selecionar todas as pessoas exibidas"
-                    checked={
-                      selection.allOnPageSelected
-                        ? true
-                        : selection.someOnPageSelected
-                          ? "indeterminate"
-                          : false
-                    }
-                    onCheckedChange={selection.toggleAllOnPage}
+            <GridListToolbar
+              filters={gridFilters}
+              sort={sort}
+              setSort={setGridSort}
+              grid={sortGrid}
+              filename="pessoas"
+              labels={{
+                name: "Pessoa",
+                role: "Cargo",
+                type: "Vínculo",
+                status: "Status",
+                hire: "Contratação",
+              }}
+              search={false}
+            />
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      aria-label="Selecionar todas as pessoas exibidas"
+                      checked={
+                        selection.allOnPageSelected
+                          ? true
+                          : selection.someOnPageSelected
+                            ? "indeterminate"
+                            : false
+                      }
+                      onCheckedChange={selection.toggleAllOnPage}
+                    />
+                  </TableHead>
+                  <SortableTableHead
+                    label="Pessoa"
+                    active={sort?.key === "name"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("name")}
                   />
-                </TableHead>
-                <SortableTableHead
-                  label="Pessoa"
-                  active={sort?.key === "name"}
-                  dir={sort?.dir}
-                  onSort={() => toggle("name")}
-                />
-                <SortableTableHead
-                  label="Cargo"
-                  active={sort?.key === "role"}
-                  dir={sort?.dir}
-                  onSort={() => toggle("role")}
-                />
-                <SortableTableHead
-                  label="Vínculo"
-                  active={sort?.key === "type"}
-                  dir={sort?.dir}
-                  onSort={() => toggle("type")}
-                />
-                <SortableTableHead
-                  label="Status"
-                  active={sort?.key === "status"}
-                  dir={sort?.dir}
-                  onSort={() => toggle("status")}
-                />
-                <SortableTableHead
-                  label="Contratação"
-                  active={sort?.key === "hire"}
-                  dir={sort?.dir}
-                  onSort={() => toggle("hire")}
-                />
-                <TableHead>Responsável</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">
-                    Carregando…
-                  </TableCell>
+                  <SortableTableHead
+                    label="Cargo"
+                    active={sort?.key === "role"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("role")}
+                  />
+                  <SortableTableHead
+                    label="Vínculo"
+                    active={sort?.key === "type"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("type")}
+                  />
+                  <SortableTableHead
+                    label="Status"
+                    active={sort?.key === "status"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("status")}
+                  />
+                  <SortableTableHead
+                    label="Contratação"
+                    active={sort?.key === "hire"}
+                    dir={sort?.dir}
+                    onSort={() => toggle("hire")}
+                  />
+                  <TableHead>Responsável</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
-              ) : rows.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-12">
-                    <div className="flex flex-col items-center gap-3">
-                      <UserCog className="h-8 w-8 text-muted-foreground" />
-                      <div>
-                        <div className="text-sm font-medium">Nenhuma pessoa cadastrada</div>
-                        <div className="text-xs text-muted-foreground">
-                          Cadastre um prestador ou promova um candidato contratado.
-                        </div>
-                      </div>
-                      <Button size="sm" onClick={() => setOpenNew(true)}>
-                        <Plus className="h-4 w-4 mr-2" /> Nova pessoa
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                rows.map((p) => (
-                  <TableRow key={p.id} className="hover:bg-muted/40">
-                    <TableCell>
-                      <Checkbox
-                        aria-label={`Selecionar ${p.full_name}`}
-                        checked={selection.selectedIds.has(p.id)}
-                        onCheckedChange={() => selection.toggleOne(p.id)}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Link
-                        to="/people/$id"
-                        params={{ id: p.id }}
-                        className="flex items-center gap-3 hover:underline"
-                      >
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={p.photo_url ?? undefined} alt={p.full_name} />
-                          <AvatarFallback className="text-xs">
-                            {initials(p.full_name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{p.full_name}</span>
-                          {p.email ? (
-                            <span className="text-xs text-muted-foreground">{p.email}</span>
-                          ) : null}
-                        </div>
-                      </Link>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">{p.role_title ?? "—"}</div>
-                      {p.seniority ? (
-                        <div className="text-xs text-muted-foreground">{p.seniority}</div>
-                      ) : null}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{PEOPLE_EMPLOYMENT_LABELS[p.employment_type]}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={STATUS_TONE[p.status]} variant="secondary">
-                        {PEOPLE_STATUS_LABELS[p.status]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {p.hire_date ?? "—"}
-                    </TableCell>
-                    <TableCell>
-                      <AssigneeCell assignedTo={p.assigned_to} />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button asChild variant="ghost" size="sm">
-                        <Link to="/people/$id" params={{ id: p.id }}>
-                          Abrir
-                        </Link>
-                      </Button>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={8}
+                      className="text-center text-sm text-muted-foreground py-8"
+                    >
+                      Carregando…
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : rows.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-12">
+                      <div className="flex flex-col items-center gap-3">
+                        <UserCog className="h-8 w-8 text-muted-foreground" />
+                        <div>
+                          <div className="text-sm font-medium">Nenhuma pessoa cadastrada</div>
+                          <div className="text-xs text-muted-foreground">
+                            Cadastre um prestador ou promova um candidato contratado.
+                          </div>
+                        </div>
+                        <Button size="sm" onClick={() => setOpenNew(true)}>
+                          <Plus className="h-4 w-4 mr-2" /> Nova pessoa
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  rows.map((p) => (
+                    <TableRow key={p.id} className="hover:bg-muted/40">
+                      <TableCell>
+                        <Checkbox
+                          aria-label={`Selecionar ${p.full_name}`}
+                          checked={selection.selectedIds.has(p.id)}
+                          onCheckedChange={() => selection.toggleOne(p.id)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Link
+                          to="/people/$id"
+                          params={{ id: p.id }}
+                          className="flex items-center gap-3 hover:underline"
+                        >
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={p.photo_url ?? undefined} alt={p.full_name} />
+                            <AvatarFallback className="text-xs">
+                              {initials(p.full_name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{p.full_name}</span>
+                            {p.email ? (
+                              <span className="text-xs text-muted-foreground">{p.email}</span>
+                            ) : null}
+                          </div>
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">{p.role_title ?? "—"}</div>
+                        {p.seniority ? (
+                          <div className="text-xs text-muted-foreground">{p.seniority}</div>
+                        ) : null}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {PEOPLE_EMPLOYMENT_LABELS[p.employment_type]}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={STATUS_TONE[p.status]} variant="secondary">
+                          {PEOPLE_STATUS_LABELS[p.status]}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {p.hire_date ?? "—"}
+                      </TableCell>
+                      <TableCell>
+                        <AssigneeCell assignedTo={p.assigned_to} />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button asChild variant="ghost" size="sm">
+                          <Link to="/people/$id" params={{ id: p.id }}>
+                            Abrir
+                          </Link>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </GridListShell>
         </div>
       )}

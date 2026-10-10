@@ -65,7 +65,8 @@ export function ViewAsSwitcher() {
         <div className="border-b border-border px-3 py-2">
           <p className="text-sm font-medium">Ver como</p>
           <p className="text-xs text-muted-foreground">
-            Usuário: ações reais com as permissões da pessoa. Papel: teste isolado, apagado em até 1h.
+            Usuário: ações reais com as permissões da pessoa. Papel: teste isolado, apagado em até
+            1h.
           </p>
         </div>
         <Command>

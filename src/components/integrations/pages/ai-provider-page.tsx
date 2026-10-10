@@ -29,7 +29,10 @@ import { AI_PROVIDERS, type AiProviderDef, type AiProviderId } from "@/lib/ai/pr
 
 type Settings = Awaited<ReturnType<typeof getAiSettings>>;
 
-const STATUS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+const STATUS: Record<
+  string,
+  { label: string; variant: "default" | "secondary" | "destructive" | "outline" }
+> = {
   not_configured: { label: "Não configurado", variant: "outline" },
   configured: { label: "Configurado", variant: "secondary" },
   connected: { label: "Conectado", variant: "default" },
@@ -192,9 +195,7 @@ function ProviderRow({
               <CheckCircle2 className="h-3.5 w-3.5" aria-hidden /> Em uso
             </Badge>
           )}
-          <Badge variant={st.variant}>
-            {testMut.isPending ? "Testando…" : st.label}
-          </Badge>
+          <Badge variant={st.variant}>{testMut.isPending ? "Testando…" : st.label}</Badge>
           {def.id === "lovable" && (
             <Badge variant="outline" className="gap-1">
               <Sparkles className="h-3.5 w-3.5" aria-hidden /> Padrão

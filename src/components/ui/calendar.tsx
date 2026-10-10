@@ -120,9 +120,11 @@ function Calendar({
 
 type CalendarComponents = NonNullable<React.ComponentProps<typeof DayPicker>["components"]>;
 
-const CalendarRoot: NonNullable<CalendarComponents["Root"]> = ({ className, rootRef, ...props }) => (
-  <div data-slot="calendar" ref={rootRef} className={cn(className)} {...props} />
-);
+const CalendarRoot: NonNullable<CalendarComponents["Root"]> = ({
+  className,
+  rootRef,
+  ...props
+}) => <div data-slot="calendar" ref={rootRef} className={cn(className)} {...props} />;
 
 const CalendarChevron: NonNullable<CalendarComponents["Chevron"]> = ({
   className,

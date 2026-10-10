@@ -35,14 +35,15 @@ export const Route = createFileRoute("/api/contracts/template-import")({
         const parsed = BodySchema.safeParse(await request.json().catch(() => null));
         if (!parsed.success) return new Response("Requisição inválida", { status: 400 });
         const data = parsed.data;
-        if (data.kind === "pdf" && !data.base64) return new Response("Arquivo ausente", { status: 400 });
-        if (data.kind === "html" && !data.html) return new Response("Conteúdo ausente", { status: 400 });
+        if (data.kind === "pdf" && !data.base64)
+          return new Response("Arquivo ausente", { status: 400 });
+        if (data.kind === "html" && !data.html)
+          return new Response("Conteúdo ausente", { status: 400 });
 
         const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
         const { assertAnyPermission } = await import("@/lib/access-control/enforce.server");
-        const { convertTemplateWithAi, TEMPLATE_IMPORT_PERMISSIONS } = await import(
-          "@/lib/contracts/template-import.server"
-        );
+        const { convertTemplateWithAi, TEMPLATE_IMPORT_PERMISSIONS } =
+          await import("@/lib/contracts/template-import.server");
         let workspaceId: string;
         try {
           workspaceId = await resolveActiveWorkspace(userId);
@@ -54,11 +55,23 @@ export const Route = createFileRoute("/api/contracts/template-import")({
         const content =
           data.kind === "pdf"
             ? [
-                { type: "text", text: `Converta o contrato "${data.filename}" em um modelo reutilizável conforme as regras.` },
-                { type: "file", file: { filename: data.filename, file_data: `data:application/pdf;base64,${data.base64}` } },
+                {
+                  type: "text",
+                  text: `Converta o contrato "${data.filename}" em um modelo reutilizável conforme as regras.`,
+                },
+                {
+                  type: "file",
+                  file: {
+                    filename: data.filename,
+                    file_data: `data:application/pdf;base64,${data.base64}`,
+                  },
+                },
               ]
             : [
-                { type: "text", text: `Converta o contrato "${data.filename}" em um modelo reutilizável conforme as regras. Conteúdo em HTML:\n\n${data.html}` },
+                {
+                  type: "text",
+                  text: `Converta o contrato "${data.filename}" em um modelo reutilizável conforme as regras. Conteúdo em HTML:\n\n${data.html}`,
+                },
               ];
 
         const enc = new TextEncoder();

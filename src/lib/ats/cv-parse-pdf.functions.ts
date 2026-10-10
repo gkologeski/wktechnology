@@ -68,33 +68,36 @@ Retorne JSON estrito no formato:
 }
 Nunca invente dados. Se um campo não estiver no PDF, use null ou [].`;
 
-    const aiRes = await aiChatFetch({
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          { role: "system", content: sys },
-          {
-            role: "user",
-            content: [
-              { type: "text", text: "Extraia os dados deste currículo." },
-              {
-                type: "file",
-                file: {
-                  filename: data.filename,
-                  file_data: `data:${mime};base64,${b64}`,
+    const aiRes = await aiChatFetch(
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          messages: [
+            { role: "system", content: sys },
+            {
+              role: "user",
+              content: [
+                { type: "text", text: "Extraia os dados deste currículo." },
+                {
+                  type: "file",
+                  file: {
+                    filename: data.filename,
+                    file_data: `data:${mime};base64,${b64}`,
+                  },
                 },
-              },
-            ],
-          },
-        ],
-        response_format: { type: "json_object" },
-      }),
-    }, { feature: "leitura_curriculo" });
+              ],
+            },
+          ],
+          response_format: { type: "json_object" },
+        }),
+      },
+      { feature: "leitura_curriculo" },
+    );
     if (!aiRes.ok) {
       const txt = await aiRes.text();
       if (aiRes.status === 402)

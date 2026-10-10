@@ -24,15 +24,18 @@ type StageMetric = {
 async function callAi(messages: Array<{ role: string; content: string }>) {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY ausente");
-  const r = await aiChatFetch({
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
-    body: JSON.stringify({
-      model: MODEL,
-      messages,
-      response_format: { type: "json_object" },
-    }),
-  }, { feature: "insights_pipeline" });
+  const r = await aiChatFetch(
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
+      body: JSON.stringify({
+        model: MODEL,
+        messages,
+        response_format: { type: "json_object" },
+      }),
+    },
+    { feature: "insights_pipeline" },
+  );
   if (r.status === 429)
     throw new Error("Limite de uso da IA atingido. Tente novamente em alguns instantes.");
   if (r.status === 402)

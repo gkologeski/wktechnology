@@ -223,24 +223,27 @@ export const computeAiProperty = createServerFn({ method: "POST" })
               : prop.type === "date"
                 ? "Retorne APENAS uma data no formato YYYY-MM-DD."
                 : "Retorne APENAS o texto final, sem aspas nem explicação.";
-    const res = await aiChatFetch({
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          {
-            role: "system",
-            content: `Você calcula o valor da propriedade "${prop.label}" (${prop.type}). ${typeHint}`,
-          },
-          {
-            role: "user",
-            content: `Prompt: ${prop.ai_prompt}\n\nDados do registro (JSON):\n${ctxJson}`,
-          },
-        ],
-        temperature: 0.2,
-      }),
-    }, { feature: "propriedades" });
+    const res = await aiChatFetch(
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            {
+              role: "system",
+              content: `Você calcula o valor da propriedade "${prop.label}" (${prop.type}). ${typeHint}`,
+            },
+            {
+              role: "user",
+              content: `Prompt: ${prop.ai_prompt}\n\nDados do registro (JSON):\n${ctxJson}`,
+            },
+          ],
+          temperature: 0.2,
+        }),
+      },
+      { feature: "propriedades" },
+    );
     if (!res.ok) throw new Error(`AI Gateway ${res.status}: ${(await res.text()).slice(0, 200)}`);
     const j = (await res.json()) as { choices?: { message?: { content?: string } }[] };
     const raw = (j.choices?.[0]?.message?.content ?? "").trim();

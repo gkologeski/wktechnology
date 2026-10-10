@@ -11,7 +11,10 @@ type Opts = {
   resolveSender?: (userId: string) => string;
 };
 
-export function useChatRealtime({ activeConversationId: _activeConversationId, resolveSender: _resolveSender }: Opts) {
+export function useChatRealtime({
+  activeConversationId: _activeConversationId,
+  resolveSender: _resolveSender,
+}: Opts) {
   const qc = useQueryClient();
   const { user } = useAuth();
 

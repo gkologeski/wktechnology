@@ -7,18 +7,21 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 async function callAi(systemPrompt: string, userPrompt: string) {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY ausente");
-  const r = await aiChatFetch({
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      response_format: { type: "json_object" },
-    }),
-  }, { feature: "match_vaga" });
+  const r = await aiChatFetch(
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        response_format: { type: "json_object" },
+      }),
+    },
+    { feature: "match_vaga" },
+  );
   if (!r.ok) throw new Error(`AI Gateway ${r.status}: ${await r.text().catch(() => "")}`);
   const j = await r.json();
   const txt = j.choices?.[0]?.message?.content ?? "{}";

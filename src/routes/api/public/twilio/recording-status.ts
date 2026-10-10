@@ -109,31 +109,38 @@ export const Route = createFileRoute("/api/public/twilio/recording-status")({
           const b64 = btoa(bin);
 
           const model = "google/gemini-2.5-flash";
-          const aiRes = await aiChatFetch({
-            method: "POST",
-            headers: { Authorization: `Bearer ${aiKey}`, "Content-Type": "application/json" },
-            body: JSON.stringify({
-              model,
-              messages: [
-                {
-                  role: "system",
-                  content:
-                    "Você transcreve gravações de ligação em português do Brasil. Retorne APENAS a transcrição com indicação dos falantes (Agente/Cliente quando possível), sem comentários adicionais.",
-                },
-                {
-                  role: "user",
-                  content: [
-                    { type: "text", text: "Transcreva a ligação abaixo." },
-                    {
-                      type: "input_audio",
-                      input_audio: { data: b64, format: "mp3" },
-                    },
-                  ],
-                },
-              ],
-              temperature: 0.1,
-            }),
-          }, { workspaceId: await workspaceForRecord(null, activity?.owner_id), feature: "transcricao_ligacao", triggerSource: "automatic" });
+          const aiRes = await aiChatFetch(
+            {
+              method: "POST",
+              headers: { Authorization: `Bearer ${aiKey}`, "Content-Type": "application/json" },
+              body: JSON.stringify({
+                model,
+                messages: [
+                  {
+                    role: "system",
+                    content:
+                      "Você transcreve gravações de ligação em português do Brasil. Retorne APENAS a transcrição com indicação dos falantes (Agente/Cliente quando possível), sem comentários adicionais.",
+                  },
+                  {
+                    role: "user",
+                    content: [
+                      { type: "text", text: "Transcreva a ligação abaixo." },
+                      {
+                        type: "input_audio",
+                        input_audio: { data: b64, format: "mp3" },
+                      },
+                    ],
+                  },
+                ],
+                temperature: 0.1,
+              }),
+            },
+            {
+              workspaceId: await workspaceForRecord(null, activity?.owner_id),
+              feature: "transcricao_ligacao",
+              triggerSource: "automatic",
+            },
+          );
           if (!aiRes.ok) {
             const t = await aiRes.text();
             throw new Error(`AI Gateway ${aiRes.status}: ${t.slice(0, 200)}`);

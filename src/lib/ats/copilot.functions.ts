@@ -11,15 +11,18 @@ const MODEL = "google/gemini-2.5-flash";
 async function callAi(messages: Array<{ role: string; content: string }>, json = false) {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY ausente");
-  const r = await aiChatFetch({
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
-    body: JSON.stringify({
-      model: MODEL,
-      messages,
-      ...(json ? { response_format: { type: "json_object" } } : {}),
-    }),
-  }, { feature: "copiloto_ats" });
+  const r = await aiChatFetch(
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
+      body: JSON.stringify({
+        model: MODEL,
+        messages,
+        ...(json ? { response_format: { type: "json_object" } } : {}),
+      }),
+    },
+    { feature: "copiloto_ats" },
+  );
   if (!r.ok) throw new Error(`AI Gateway ${r.status}: ${await r.text().catch(() => "")}`);
   const j = await r.json();
   return j.choices?.[0]?.message?.content ?? "";

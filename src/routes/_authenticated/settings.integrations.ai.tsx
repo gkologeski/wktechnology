@@ -7,7 +7,8 @@ export const Route = createFileRoute("/_authenticated/settings/integrations/ai")
       { title: "Inteligência Artificial — Integrações" },
       {
         name: "description",
-        content: "Escolha o provedor de IA do workspace: Lovable AI, OpenAI, Anthropic, Google, xAI, DeepSeek ou OpenRouter.",
+        content:
+          "Escolha o provedor de IA do workspace: Lovable AI, OpenAI, Anthropic, Google, xAI, DeepSeek ou OpenRouter.",
       },
       { property: "og:title", content: "Inteligência Artificial — Integrações" },
       { property: "og:description", content: "Configure qual IA atende os recursos do workspace." },

@@ -119,7 +119,8 @@ async function ensureTestUser(workspaceId: string, roleId: string, roleName: str
     password: randomBytes(24).toString("base64url"),
     user_metadata: { full_name: fullName, is_test_user: true },
   });
-  if (created.error || !created.data.user) throw new Error("Não foi possível criar o usuário de teste.");
+  if (created.error || !created.data.user)
+    throw new Error("Não foi possível criar o usuário de teste.");
   const uid = created.data.user.id;
   await admin
     .from("profiles")
@@ -156,29 +157,51 @@ const TEST_RECORD_DELETE_ORDER = ["activities", "deals", "contacts", "leads", "c
  * `view_as_test_records` (nunca por nome/data) e só então apaga a conta.
  * Em falha, mantém a conta desativada para nova tentativa no próximo tick.
  */
-async function cleanupTestUser(uid: string, workspaceId: string, now: string): Promise<"removed" | "blocked" | "skip"> {
-  const { data: member } = await admin.from("workspace_members")
+async function cleanupTestUser(
+  uid: string,
+  workspaceId: string,
+  now: string,
+): Promise<"removed" | "blocked" | "skip"> {
+  const { data: member } = await admin
+    .from("workspace_members")
     .select("user_id, is_test_user")
-    .eq("workspace_id", workspaceId).eq("user_id", uid).maybeSingle();
+    .eq("workspace_id", workspaceId)
+    .eq("user_id", uid)
+    .maybeSingle();
   if (!member?.is_test_user) return "skip";
-  const { data: active } = await admin.from("view_as_sessions").select("id")
-    .eq("target_user_id", uid).eq("mode", "role")
-    .gt("expires_at", now).is("ended_at", null).limit(1);
+  const { data: active } = await admin
+    .from("view_as_sessions")
+    .select("id")
+    .eq("target_user_id", uid)
+    .eq("mode", "role")
+    .gt("expires_at", now)
+    .is("ended_at", null)
+    .limit(1);
   if (active?.length) return "skip";
-  const { error: disableError } = await admin.from("workspace_members")
-    .update({ status: "inactive" }).eq("workspace_id", workspaceId)
-    .eq("user_id", uid).eq("is_test_user", true);
+  const { error: disableError } = await admin
+    .from("workspace_members")
+    .update({ status: "inactive" })
+    .eq("workspace_id", workspaceId)
+    .eq("user_id", uid)
+    .eq("is_test_user", true);
   if (disableError) return "blocked";
 
-  const { data: sessions } = await admin.from("view_as_sessions").select("id")
-    .eq("target_user_id", uid).eq("mode", "role");
+  const { data: sessions } = await admin
+    .from("view_as_sessions")
+    .select("id")
+    .eq("target_user_id", uid)
+    .eq("mode", "role");
   const sessionIds = (sessions ?? []).map((s: { id: string }) => s.id as string);
   if (sessionIds.length) {
-    const { data: records, error: recErr } = await admin.from("view_as_test_records")
-      .select("table_name, record_id").in("session_id", sessionIds);
+    const { data: records, error: recErr } = await admin
+      .from("view_as_test_records")
+      .select("table_name, record_id")
+      .in("session_id", sessionIds);
     if (recErr) return "blocked";
     for (const table of TEST_RECORD_DELETE_ORDER) {
-      const ids = (records ?? []).filter((r: { table_name: string }) => r.table_name === table).map((r: { record_id: string }) => r.record_id as string);
+      const ids = (records ?? [])
+        .filter((r: { table_name: string }) => r.table_name === table)
+        .map((r: { record_id: string }) => r.record_id as string);
       if (!ids.length) continue;
       const { error: delErr } = await admin.from(table).delete().in("id", ids);
       if (delErr) {
@@ -189,16 +212,27 @@ async function cleanupTestUser(uid: string, workspaceId: string, now: string): P
     await admin.from("view_as_test_records").delete().in("session_id", sessionIds);
   }
 
-  const { error: roleError } = await admin.from("user_job_roles").delete()
-    .eq("workspace_id", workspaceId).eq("user_id", uid);
+  const { error: roleError } = await admin
+    .from("user_job_roles")
+    .delete()
+    .eq("workspace_id", workspaceId)
+    .eq("user_id", uid);
   if (roleError) return "blocked";
-  const { error: memberError } = await admin.from("workspace_members").delete()
-    .eq("workspace_id", workspaceId).eq("user_id", uid).eq("is_test_user", true);
+  const { error: memberError } = await admin
+    .from("workspace_members")
+    .delete()
+    .eq("workspace_id", workspaceId)
+    .eq("user_id", uid)
+    .eq("is_test_user", true);
   if (memberError) return "blocked";
   const { error: deleteError } = await admin.auth.admin.deleteUser(uid);
   if (deleteError) return "blocked";
-  await admin.from("view_as_sessions").update({ ended_at: now })
-    .eq("target_user_id", uid).eq("mode", "role").is("ended_at", null);
+  await admin
+    .from("view_as_sessions")
+    .update({ ended_at: now })
+    .eq("target_user_id", uid)
+    .eq("mode", "role")
+    .is("ended_at", null);
   return "removed";
 }
 

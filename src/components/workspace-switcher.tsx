@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Check, ChevronsUpDown, Building2 } from "lucide-react";
 import { listMyWorkspaces, setActiveWorkspace } from "@/lib/workspaces.functions";
+import { notifyWorkspaceChanged } from "@/lib/workspace-events";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,6 +45,7 @@ export function WorkspaceSwitcher() {
       // reset (e não só invalidate): descarta os dados do workspace anterior
       // para que nenhuma tela os exiba enquanto recarrega.
       void qc.resetQueries();
+      notifyWorkspaceChanged(); // White Label recarrega o branding do novo workspace
     },
     onError: (e: Error) => toast.error(e.message),
   });

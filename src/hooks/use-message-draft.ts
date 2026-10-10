@@ -59,11 +59,14 @@ export function useMessageDraft(options: {
   valueRef.current = value;
 
   // Flush the latest debounced edit when a composer is closed before the timer fires.
-  useEffect(() => () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    if (pendingRef.current) void save(pendingRef.current).catch(() => {});
-    pendingRef.current = null;
-  }, [save, channel, scopeKey]);
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      if (pendingRef.current) void save(pendingRef.current).catch(() => {});
+      pendingRef.current = null;
+    },
+    [save, channel, scopeKey],
+  );
 
   // Carrega o rascunho ao abrir/trocar de composição.
   useEffect(() => {

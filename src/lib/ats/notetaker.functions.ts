@@ -39,18 +39,21 @@ function buildPrompt(transcript: string, kit: unknown, jobTitle: string | null):
 async function callAi(prompt: string, model: string): Promise<AiNotes> {
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
-  const res = await aiChatFetch({
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: "system", content: "Responda apenas com JSON válido, sem markdown." },
-        { role: "user", content: prompt },
-      ],
-      temperature: 0.2,
-    }),
-  }, { feature: "anotacoes_entrevista" });
+  const res = await aiChatFetch(
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: "system", content: "Responda apenas com JSON válido, sem markdown." },
+          { role: "user", content: prompt },
+        ],
+        temperature: 0.2,
+      }),
+    },
+    { feature: "anotacoes_entrevista" },
+  );
   if (res.status === 429)
     throw new Error("Limite de uso da IA atingido. Tente novamente em alguns minutos.");
   if (res.status === 402)

@@ -260,7 +260,9 @@ export function HiringActionForm({
               select="id, name"
               searchColumns={["name"]}
               labelFrom={(r) => String((r as { name?: string }).name ?? "Projeto")}
-              value={action.project_id && !action.project_id.includes("{{") ? action.project_id : null}
+              value={
+                action.project_id && !action.project_id.includes("{{") ? action.project_id : null
+              }
               onChange={(id) => set({ project_id: id ?? undefined })}
               placeholder="Sem projeto"
               emptyLabel="Nenhum projeto"

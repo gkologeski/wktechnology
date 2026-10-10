@@ -22,7 +22,10 @@ export function OnboardingChecklist() {
         supabase.from("contacts").select("id", { head: true, count: "exact" }),
         supabase.from("deals").select("id", { head: true, count: "exact" }),
         supabase.from("pipelines").select("id", { head: true, count: "exact" }),
-        supabase.from("workspace_members").select("id", { head: true, count: "exact" }).eq("is_test_user", false),
+        supabase
+          .from("workspace_members")
+          .select("id", { head: true, count: "exact" })
+          .eq("is_test_user", false),
         supabase.from("workspace_invites").select("id", { head: true, count: "exact" }),
         supabase.from("integrations").select("id", { head: true, count: "exact" }),
       ]);
