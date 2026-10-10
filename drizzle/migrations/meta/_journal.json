@@ -687,6 +687,13 @@
       "when": 1791568348538,
       "tag": "0097_inbox_channel_page_email_realtime",
       "breakpoints": true
+    },
+    {
+      "idx": 98,
+      "version": "7",
+      "when": 1791593509628,
+      "tag": "0098_branding_realtime_publication",
+      "breakpoints": true
     }
   ]
 }
