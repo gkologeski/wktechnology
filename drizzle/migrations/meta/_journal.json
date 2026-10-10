@@ -708,6 +708,13 @@
       "when": 1791636527987,
       "tag": "0100_admin_of_requires_active_member",
       "breakpoints": true
+    },
+    {
+      "idx": 101,
+      "version": "7",
+      "when": 1791637866989,
+      "tag": "0101_workspace_from_source_entity",
+      "breakpoints": true
     }
   ]
 }
