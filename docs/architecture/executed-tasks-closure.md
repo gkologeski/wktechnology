@@ -161,6 +161,48 @@ Build único sequencial: client 36,1 s, ssr 41,1 s, nitro 53,3 s; total 2:13,5; 
 por rota na tabela de aceite. Nenhuma mudança: não houve experimento medido com ganho neste ciclo;
 ficam pendentes com estas medidas como linha de base.
 
+## Diagnóstico 10/10 — IDs 7 e 8 (somente leitura, cópia local)
+
+Cópia em `/tmp/diag-copy` (rsync sem node_modules/dist/caches, `bun install --frozen-lockfile`
+com o `bun.lock` original). Sandbox com 8 CPUs e 31 GB; o ciclo anterior tinha 16 CPUs, então os
+tempos não são comparáveis um a um. Cada comando rodou sozinho, com `timeout 240`.
+
+| Comando | Saída | Tempo | Pico RAM | Tipo |
+|---|---|---|---|---|
+| `npx tsc --noEmit --incremental false` (heap padrão) | 134 (abort, OOM) | 2:10 | 3,35 GB | medido |
+| idem com `NODE_OPTIONS=--max-old-space-size=8192` | 0 | 2:16 | 5,20 GB | medido |
+| `npx tsgo --noEmit --incremental false` | 0 | 0:47 | 5,71 GB | medido |
+| `vite build` (8 GB, `--cpu-prof`) | 0 | 2:42 (client 48,0 · ssr 46,7 · nitro 56,6) | 8,09 GB | medido (o perfil acrescenta custo) |
+
+Registros: `/tmp/observability/build-errors.log` agora só tem "build OK" (20:55 e 20:58 UTC). A
+entrada original "typecheck encerrado após 240 s" (13:47 UTC) **não existe mais**, e nenhum
+arquivo em `/tmp/exec-logs` ou `/tmp/dev-server-logs` contém o comando da plataforma.
+
+ID 7 — conclusão:
+- **Medido:** nenhum dos quatro comandos passou de 240 s nesta máquina. O `tsc` com memória
+  padrão falha por falta de memória antes do limite.
+- **Hipótese (não provada):** o limite é da etapa de verificação de tipos da plataforma, e não do
+  build. É compatível com o nome do registro ("typecheck") e com o fato de o `tsc` ficar a 24 s do
+  limite (2:16). Numa máquina mais lenta ou mais carregada, ele passaria de 240 s; com pouca
+  memória, travaria em coleta de lixo até ser encerrado.
+- **Não provado:** qual comando e quanta memória a plataforma usa. Isso só é visível na própria
+  plataforma.
+
+ID 8 — onde a fase nitro gasta o tempo (perfil de CPU da linha principal nos últimos 56,6 s;
+o Vite rotula essa fase como "nitro environment" e ela transforma 5.794 módulos):
+- Rollup: 28,6 s (50,6 %), dividido em tree-shaking (`include` 4,1 s, `includePath` 1,8 s,
+  rastreadores de caminho 2,9 s, `includeCallArguments` 1,0 s), parse (`parseAst` 2,0 s,
+  `decode` 3,1 s) e `render` 0,6 s.
+- Coleta de lixo: 21,3 s (37,6 %). O pico de memória do build (8,09 GB) bate no teto de 8 GB do
+  script `build`.
+- Plugin nitro 1,9 s, Vite 1,2 s, plugins TanStack menos de 0,3 s. Código de `src` não aparece:
+  transformar não é o custo, o custo é tree-shaking e memória.
+- **Hipótese não testada:** mais memória ou menos módulos no grafo do worker reduziriam a coleta
+  de lixo. Nenhuma alteração foi feita, conforme o pedido.
+
+Arquivos da medição (temporários): `/tmp/diag-*.time`, `/tmp/diag-build.out`,
+`/tmp/diag-copy/prof/*.cpuprofile`, `/tmp/diag-prof.py`.
+
 ## Stack isolada com serviços autênticos (atualização)
 
 Mecanismo suportado encontrado: `nixpkgs#gotrue-supabase` (2.180.0) e `nixpkgs#postgrest` (14.1),
