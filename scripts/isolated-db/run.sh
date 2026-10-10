@@ -18,9 +18,11 @@ iso_guard || exit 2
 iso_psql -f scripts/isolated-db/seed.sql >/dev/null || { echo "seed falhou"; exit 1; }
 bun scripts/isolated-db/permission-matrix.ts || rc=1
 bun scripts/isolated-db/realtime-wal.ts || rc=1
+bun scripts/isolated-db/workspace-integrity.ts; wi=$?; [ $wi -eq 1 ] || [ $wi -eq 2 ] && rc=1
 ne=$(python3 -c "import json;print(json.load(open('$ISO_ROOT/artifacts/realtime.json'))['not_executed'])")
 [ "$KEEP" = "1" ] || bash scripts/isolated-db/stop.sh >/dev/null
 echo "artefatos: $ISO_ROOT/artifacts (JUnit + JSON) e $ISO_ROOT/fidelity.json"
 [ $rc -ne 0 ] && exit 1
 [ "$ne" != "0" ] && { echo "INCOMPLETO: $ne asserção(ões) de tempo real não executadas"; exit 3; }
+[ "$wi" = "3" ] && { echo "INCOMPLETO: lacunas conhecidas/não executadas na integridade multiworkspace"; exit 3; }
 exit 0
