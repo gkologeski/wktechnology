@@ -113,7 +113,10 @@ tabelas com o DEFAULT fixo (`create_ticket_survey`, `subscription_after_insert`,
 
 ## 7. Gates
 
-- `bun run verify` e `bun run build`: ver relatório final do ciclo (rodados em sequência).
+- `bun run verify`: exit 0 (tipos + lint global + 104 arquivos / 723 testes).
+- `bun run build` não foi rodado: nenhum arquivo de `src/` nem configuração de build mudou (só `scripts/`, docs,
+  migrations SQL e a entrada `test:isolated` em `package.json`). As 2 verificações automáticas da plataforma
+  após as edições deram "build OK".
 - Timeout de 240 s: sem nova evidência; não declarado resolvido.
 
 ## 8. Rollback
