@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-10T13:12:46.772Z",
+  "generatedAt": "2026-10-10T14:05:09.294Z",
   "categories": {
     "policies": {
       "count": 2203,
@@ -11,7 +11,7 @@
     },
     "columns": {
       "count": 4822,
-      "sha256": "f1d2f156eafbb37e2678eebe26ecb30787e2389b3969a400e2e5535458d2445f"
+      "sha256": "91040af59192b8cb30176fdd27faddb677a58cece39265684ca876be7a8555e9"
     },
     "table_grants": {
       "count": 8152,

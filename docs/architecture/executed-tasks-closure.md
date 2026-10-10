@@ -17,8 +17,8 @@ diagnóstico com evidência, sem alegar correção · **Bloqueado** = depende de
 | 7   | Causa do encerramento por 240 s diagnosticada com evidência                                                          | `tsc --noEmit --extendedDiagnostics` com heap padrão e com 8 GB; `/tmp/observability/build-errors.log`                                                                   | Heap padrão (3,2 GB): **OOM** após 2:14; com 8 GB: 1:55, 5,1 GB usados, 13,5 mi instanciações, check 105,7 s. A plataforma registrou novo encerramento às 13:47:12 UTC | **Investigação encerrada**, não corrigido                                  |
 | 8   | Fase Nitro medida; otimização só se compatível e medida                                                              | `rm -rf dist; /usr/bin/time -v bun run build`                                                                                                                            | client 36,1 s · ssr 41,1 s · nitro (cloudflare-module) 53,3 s · total 2:13,5 · pico 7,3 GB                                                                             | **Pendente** (medido; nenhum experimento seguro executado)                 |
 | 9   | Peso por rota (não só entrada) medido; mudança só com ganho                                                          | `python3 scripts/perf/chunk-closure.py dist/client/assets index- <rota>-`                                                                                                | entrada 933.315 B (270.519 gz); +dashboard 1.153.184 (348.665 gz); +prospecção 1.387.877 (434.474 gz); +inbox 1.042.928 (315.178 gz)                                   | **Pendente** (medido; zod em `validateSearch` sem experimento neste ciclo) |
-| 2   | Ambiente isolado fiel e reproduzível                                                                                 | `bun run test:isolated`; `catalog-manifest.json`                                                                                                                         | 0 divergências em 11 categorias; manifesto idêntico                                                                                                                    | **Concluído** para PostgreSQL; Auth/PostgREST/Realtime **Bloqueado**       |
-| 1   | Matriz own/team/workspace/tenant/removido/anon + "Ver como"                                                          | `permission-matrix.ts` 43/43; `workspace-integrity.ts` 29 passaram, 3 lacunas, 1 não executado                                                                           | Isolado fiel verde; **não-admin no banco real não executado**                                                                                                          | **Bloqueado** (sessão autorizada não-admin)                                |
+| 2   | Ambiente isolado fiel e reproduzível                                                                                 | `bun run test:isolated`; `catalog-manifest.json`                                                                                                                         | 0 divergências em 11 categorias; manifesto idêntico                                                                                                                    | **Concluído** para PostgreSQL + GoTrue + PostgREST (stack `scripts/isolated-db/stack/`, 0 divergências); Realtime **Bloqueado** |
+| 1   | Matriz own/team/workspace/tenant/removido/anon + "Ver como"                                                          | `permission-matrix.ts` 43/43; `workspace-integrity.ts` 29 passaram, 3 lacunas, 1 não executado                                                                           | Isolado fiel verde; **SDK + GoTrue real: 26 passaram, 0 falharam** (`stack/run-e2e.sh`); **não-admin no banco real não executado**                                                                                                          | **Bloqueado** (sessão autorizada não-admin)                                |
 | 3   | 14 E2E SDK→evento→UI                                                                                                 | `realtime-wal.ts`: WAL 4/4; 14 `not_executed`                                                                                                                            | Sem serviço Realtime                                                                                                                                                   | **Bloqueado** (infraestrutura)                                             |
 | 5   | UX de conversas (reconexão, rolagem, rascunho)                                                                       | Testes de fixture dos ciclos 6/7 (vitest) verdes; asserções com Realtime real em `realtime-wal.ts`                                                                       | Dependem do 3                                                                                                                                                          | **Bloqueado** (infraestrutura)                                             |
 
@@ -161,17 +161,42 @@ Build único sequencial: client 36,1 s, ssr 41,1 s, nitro 53,3 s; total 2:13,5; 
 por rota na tabela de aceite. Nenhuma mudança: não houve experimento medido com ganho neste ciclo;
 ficam pendentes com estas medidas como linha de base.
 
-## Bloqueios externos (IDs 1, 2, 3, 5)
+## Stack isolada com serviços autênticos (atualização)
 
-- Sem Docker, podman, Supabase CLI, GoTrue nem PostgREST no ambiente; o serviço Realtime não existe
-  no nixpkgs. Não há serviço autorizado (homologação) informado.
-- Validação não-admin no banco real: precisa de uma conta não-admin autorizada e de sessão emitida
-  pelo próprio usuário. Não foram usadas identidades de terceiros nem pedidas senhas no chat.
-- Pronto para quando houver stack: `scripts/isolated-db/realtime-wal.ts` lista as 14 asserções
-  SDK/UI como `not_executed` com o motivo; `run.sh` nunca transforma 3 em 0.
+Mecanismo suportado encontrado: `nixpkgs#gotrue-supabase` (2.180.0) e `nixpkgs#postgrest` (14.1),
+sem Docker e sem serviço pago. `scripts/isolated-db/stack/start.sh` sobe um PostgreSQL descartável
+próprio (porta 54330, socket em /tmp), cria o schema `auth` com as **migrations oficiais do GoTrue**
+(não o stub), aplica o restante do bootstrap e a estrutura real extraída, e serve GoTrue e PostgREST
+em 127.0.0.1. Segredo JWT efêmero por execução; e-mail com autoconfirmação só nesta stack e SMTP
+apontado para domínio `.invalid` (nenhum envio).
+
+- Fidelidade da stack: `ISO_ROOT=/tmp/techerp-stack ISO_PORT=54330 bun scripts/isolated-db/compare-schema.ts`
+  → 0 divergências nas 11 categorias. Manifesto atualizado (drift de colunas era a 0102 já aprovada).
+- `bash scripts/isolated-db/stack/run-e2e.sh` (`bun run test:isolated:stack`): login por senha no
+  GoTrue → JWT real → consultas pelo `@supabase/supabase-js` via PostgREST, sem SET ROLE manual e sem
+  service_role. **26 passaram, 0 falharam, 6 não executados; exit 3.** Cobre identidade do token,
+  senha errada, timeline own/team/workspace/admin/outro tenant/anônimo, RPC paginada, negócios,
+  Inbox (incluindo busca que não vaza B), WhatsApp, e-mail, chat membro/não membro, White Label
+  leitura/escrita, inserção cross-tenant recusada, inativo sem dados, banido recusado no login,
+  revogação com o mesmo token e logout. Artefatos: `/tmp/techerp-stack/artifacts/sdk-e2e.{json,xml}`.
+
+## Bloqueios externos restantes (IDs 1, 3, 5 e Realtime do 2)
+
+- **Realtime:** não empacotado no nixpkgs. Tentativa de compilar o oficial (v2.143.3, Elixir 1.19.5/
+  OTP 28 do nixpkgs): `mix deps.get` exige `git checkout` de dependência git (fork do Phoenix), e a
+  ferramenta do ambiente bloqueia `git checkout` — não foi contornado. Sem Realtime, as asserções
+  SDK→evento→UI (ID 3) e reconexão/rolagem/rascunho com eventos reais (ID 5) seguem `not_executed`.
+- **"Ver como" via GoTrue:** depende do servidor do app com chave administrativa ligado à stack; não
+  executado.
+- **ID 1:** a stack prova as políticas reais com login real, mas em banco descartável. A validação
+  não-admin **no banco real** continua sem conta autorizada (não existe projeto de homologação
+  identificado; não usamos identidade de terceiro nem pedimos senha). Continua bloqueando publicação.
 
 ## Gates
 
 - `bun run verify`: exit 0 — 0 erros de lint (1.274 avisos), 105 arquivos / 725 testes.
 - `bun run build`: exit 0 (único, sequencial, `dist/` apagado antes).
 - `bun run test:isolated`: exit 3 (incompleto).
+- Atualização: `bun run test:isolated:stack` exit 3 (26 passaram, 0 falharam, 6 não executados);
+  `bun run verify` exit 0 (0 erros de lint, 1.274 avisos; 105 arquivos / 725 testes). Sem mudança em
+  `src/` ou configuração de build nesta atualização: build não repetido.
