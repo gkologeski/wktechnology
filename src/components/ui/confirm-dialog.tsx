@@ -1,5 +1,17 @@
 import * as React from "react";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
+
 export type ConfirmOptions = {
   /** Título curto do diálogo. */
   title?: string;
@@ -58,22 +70,8 @@ export function confirmDialog(input: string | ConfirmOptions): Promise<boolean> 
   });
 }
 
-// A interface do diálogo (Radix AlertDialog + bloqueio de rolagem, ~90 KB) é carregada
-// sob demanda: pré-carregada no ocioso após montar e, no pior caso, no primeiro pedido.
-// Assim ela não entra no arquivo inicial de todas as páginas.
-type ViewModule = typeof import("./confirm-dialog-view");
-let viewPromise: Promise<ViewModule> | null = null;
-function loadView() {
-  viewPromise ??= import("./confirm-dialog-view").catch((err) => {
-    viewPromise = null; // permite nova tentativa no próximo pedido
-    throw err;
-  });
-  return viewPromise;
-}
-
 export function ConfirmDialogHost() {
   const [pending, setPending] = React.useState<Pending | null>(current);
-  const [View, setView] = React.useState<ViewModule["ConfirmDialogView"] | null>(null);
 
   React.useEffect(() => {
     listeners.add(setPending);
@@ -95,33 +93,41 @@ export function ConfirmDialogHost() {
     [pending],
   );
 
-  // Pré-carrega no ocioso.
-  React.useEffect(() => {
-    const w = window as Window & { requestIdleCallback?: (cb: () => void) => number };
-    const run = () =>
-      void loadView()
-        .then((m) => setView(() => m.ConfirmDialogView))
-        .catch(() => {});
-    const id = w.requestIdleCallback ? w.requestIdleCallback(run) : window.setTimeout(run, 2000);
-    return () => {
-      if (!w.requestIdleCallback) window.clearTimeout(id);
-    };
-  }, []);
+  const options = pending?.options;
+  const destructive = options?.variant === "destructive";
 
-  // Pedido antes do pré-carregamento: carrega agora; se falhar, cancela (nunca confirma sozinho).
-  React.useEffect(() => {
-    if (!pending || View) return;
-    let alive = true;
-    loadView()
-      .then((m) => alive && setView(() => m.ConfirmDialogView))
-      .catch(() => alive && settle(false));
-    return () => {
-      alive = false;
-    };
-  }, [pending, View, settle]);
-
-  if (!View) return null;
-  return <View options={pending?.options ?? null} open={!!pending} onSettle={settle} />;
+  return (
+    <AlertDialog
+      open={!!pending}
+      onOpenChange={(open) => {
+        if (!open) settle(false);
+      }}
+    >
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{options?.title ?? "Confirmar ação"}</AlertDialogTitle>
+          {options?.description ? (
+            <AlertDialogDescription className="whitespace-pre-line">
+              {options.description}
+            </AlertDialogDescription>
+          ) : null}
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => settle(false)}>
+            {options?.cancelLabel ?? "Cancelar"}
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => settle(true)}
+            className={cn(
+              destructive && "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+            )}
+          >
+            {options?.confirmLabel ?? "Confirmar"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 }
 
 /** Hook opcional, para quem preferir a API de hook. */
