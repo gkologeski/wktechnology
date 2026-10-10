@@ -94,7 +94,7 @@ const subjects = async (c: SupabaseClient) => {
   return (data ?? []).map((r) => r.subject).join(",");
 };
 const count = async (c: SupabaseClient, t: string, f?: [string, string]) => {
-  let q = c.from(t).select("id", { count: "exact", head: true });
+  let q = c.from(t).select("*", { count: "exact", head: true });
   if (f) q = q.eq(f[0], f[1]);
   const { count: n, error } = await q;
   return error ? `ERR ${error.message}` : String(n);
