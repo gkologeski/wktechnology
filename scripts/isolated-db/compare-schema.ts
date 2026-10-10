@@ -6,7 +6,16 @@ import { spawnSync } from "node:child_process";
 const root = process.env.ISO_ROOT ?? "/tmp/techerp-isolated";
 const localEnv: Record<string, string | undefined> = { ...process.env };
 for (const k of ["PGHOST", "PGPORT", "PGUSER", "PGPASSWORD", "PGDATABASE"]) delete localEnv[k];
-const LOCAL = ["-h", `${root}/sock`, "-p", process.env.ISO_PORT ?? "54329", "-U", "postgres", "-d", "postgres"];
+const LOCAL = [
+  "-h",
+  `${root}/sock`,
+  "-p",
+  process.env.ISO_PORT ?? "54329",
+  "-U",
+  "postgres",
+  "-d",
+  "postgres",
+];
 
 const CHECKS: Record<string, string> = {
   policies: `select tablename||'.'||policyname k, md5(permissive||cmd||roles::text||coalesce(qual,'')||coalesce(with_check,'')) v
@@ -36,22 +45,41 @@ const CHECKS: Record<string, string> = {
 };
 
 function run(local: boolean, sql: string): Map<string, string> {
-  const r = spawnSync("psql", ["-X", "-tA", "-F", "\t", ...(local ? LOCAL : []), "-c", "SET search_path = public", "-c", sql],
-    { encoding: "utf8", env: (local ? localEnv : process.env) as NodeJS.ProcessEnv, maxBuffer: 1 << 27 });
+  const r = spawnSync(
+    "psql",
+    ["-X", "-tA", "-F", "\t", ...(local ? LOCAL : []), "-c", "SET search_path = public", "-c", sql],
+    {
+      encoding: "utf8",
+      env: (local ? localEnv : process.env) as NodeJS.ProcessEnv,
+      maxBuffer: 1 << 27,
+    },
+  );
   if (r.status !== 0) throw new Error(r.stderr);
-  return new Map(r.stdout.trim().split("\n").filter(Boolean).map((l) => l.split("\t") as [string, string]));
+  return new Map(
+    r.stdout
+      .trim()
+      .split("\n")
+      .filter(Boolean)
+      .map((l) => l.split("\t") as [string, string]),
+  );
 }
 
 const report: Record<string, unknown> = {};
 let diverged = 0;
 for (const [name, sql] of Object.entries(CHECKS)) {
-  const a = run(false, sql), b = run(true, sql);
+  const a = run(false, sql),
+    b = run(true, sql);
   const onlyProject = [...a.keys()].filter((k) => !b.has(k));
   const onlyIsolated = [...b.keys()].filter((k) => !a.has(k));
   const different = [...a.keys()].filter((k) => b.has(k) && a.get(k) !== b.get(k));
   diverged += onlyProject.length + onlyIsolated.length + different.length;
   report[name] = { project: a.size, isolated: b.size, onlyProject, onlyIsolated, different };
-  console.log(`${name.padEnd(16)} projeto=${a.size} isolado=${b.size} faltando=${onlyProject.length} extra=${onlyIsolated.length} diferente=${different.length}`);
+  console.log(
+    `${name.padEnd(16)} projeto=${a.size} isolado=${b.size} faltando=${onlyProject.length} extra=${onlyIsolated.length} diferente=${different.length}`,
+  );
 }
-writeFileSync(`${root}/fidelity.json`, JSON.stringify({ generatedAt: new Date().toISOString(), diverged, report }, null, 2));
+writeFileSync(
+  `${root}/fidelity.json`,
+  JSON.stringify({ generatedAt: new Date().toISOString(), diverged, report }, null, 2),
+);
 process.exit(diverged ? 1 : 0);

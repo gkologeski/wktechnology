@@ -5,32 +5,32 @@ Foco: frentes 2 (ambiente isolado), 1 (permissões) e 3 (tempo real ponta a pont
 
 ## 1. Precheck do ambiente
 
-| Recurso | Situação |
-| --- | --- |
-| Docker / podman / Supabase CLI | **ausentes** |
-| PostgreSQL 17.9 (nix store) | disponível (o `/usr/bin/initdb` direto falha por `$libdir`; o harness usa o caminho do nix) |
-| Extensões locais | pgcrypto, uuid-ossp, pg_trgm, test_decoding; **sem** pg_cron, pg_net, supabase_vault, pgmq |
-| PostgREST | existe no nixpkgs (14.1), não usado: as asserções rodam no mesmo mecanismo do PostgREST (`SET LOCAL ROLE` + `request.jwt.claims`) |
-| Supabase Realtime | **indisponível** (sem contêiner; não existe no nixpkgs) |
-| GoTrue (Auth) | indisponível; `auth.uid()/role()/jwt()` reproduzidos com a mesma definição da plataforma |
-| Usuário do SO | `useradd` bloqueado (`/etc/passwd` travado); o banco roda como `nobody` |
+| Recurso                        | Situação                                                                                                                          |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| Docker / podman / Supabase CLI | **ausentes**                                                                                                                      |
+| PostgreSQL 17.9 (nix store)    | disponível (o `/usr/bin/initdb` direto falha por `$libdir`; o harness usa o caminho do nix)                                       |
+| Extensões locais               | pgcrypto, uuid-ossp, pg_trgm, test_decoding; **sem** pg_cron, pg_net, supabase_vault, pgmq                                        |
+| PostgREST                      | existe no nixpkgs (14.1), não usado: as asserções rodam no mesmo mecanismo do PostgREST (`SET LOCAL ROLE` + `request.jwt.claims`) |
+| Supabase Realtime              | **indisponível** (sem contêiner; não existe no nixpkgs)                                                                           |
+| GoTrue (Auth)                  | indisponível; `auth.uid()/role()/jwt()` reproduzidos com a mesma definição da plataforma                                          |
+| Usuário do SO                  | `useradd` bloqueado (`/etc/passwd` travado); o banco roda como `nobody`                                                           |
 
 Nenhum serviço pago/externo ou projeto novo foi criado.
 
 ## 2. Harness (`scripts/isolated-db/`)
 
-| Arquivo | Papel |
-| --- | --- |
-| `env.sh` | limpa `PG*`, fixa socket em `/tmp/techerp-isolated/sock` (sem TCP), `iso_guard` recusa alvo que não seja o socket local com o marcador `__isolated_marker`, ou que contenha o ref do projeto/`supabase.co`/`pooler` |
-| `bootstrap.sql` | papéis (`anon`, `authenticated`, `service_role`…), schema `auth` (funções iguais às da plataforma), `storage`, `realtime.messages/topic()`, e **stubs inertes** de `cron`, `net` (grava em `net.blocked_requests`, nunca chama rede) e `vault`; publicação `supabase_realtime` |
-| `extract-schema.ts` | lê **só o catálogo** do projeto (acesso de leitura) e gera `schema.sql`: enums, sequências, tabelas, funções (`pg_get_functiondef`), defaults, restrições, índices, views, triggers (inclui `auth.users`), RLS/políticas, GRANTs de tabela/coluna/função/sequência e a publicação. Exporta também os catálogos globais `permissions` e `modules` (sem workspace, sem dado pessoal). Nenhuma tabela de tenant é lida |
-| `start.sh` / `stop.sh` | sobe/derruba o PostgreSQL descartável; `stop` só apaga dentro de `/tmp/techerp-isolated` |
-| `seed.sql` | fixtures sintéticas idempotentes (ids fixos, `[ISO]`, e-mails `@techerp-test.invalid`, telefones `+5500000000xxx`); recusa rodar sem o marcador |
-| `compare-schema.ts` | compara projeto × isolado em 11 categorias; gera `fidelity.json`; exit 1 se houver divergência |
-| `permission-matrix.ts` | 43 casos; cada um numa transação com `ROLLBACK`, como `authenticated`/`anon` com claims sintéticos; gera JSON + JUnit |
-| `realtime-wal.ts` | camada WAL do tempo real (slot lógico `test_decoding`) + registro explícito do que **não** foi executado |
-| `run.sh` | ciclo completo; exit 0 = tudo passou e nada pendente, 1 = falha, 2 = bloqueado, **3 = incompleto** |
-| `apply-migrations.ts` | diagnóstico: reexecuta o histórico de migrations (ver §3) |
+| Arquivo                | Papel                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `env.sh`               | limpa `PG*`, fixa socket em `/tmp/techerp-isolated/sock` (sem TCP), `iso_guard` recusa alvo que não seja o socket local com o marcador `__isolated_marker`, ou que contenha o ref do projeto/`supabase.co`/`pooler`                                                                                                                                                                                                 |
+| `bootstrap.sql`        | papéis (`anon`, `authenticated`, `service_role`…), schema `auth` (funções iguais às da plataforma), `storage`, `realtime.messages/topic()`, e **stubs inertes** de `cron`, `net` (grava em `net.blocked_requests`, nunca chama rede) e `vault`; publicação `supabase_realtime`                                                                                                                                      |
+| `extract-schema.ts`    | lê **só o catálogo** do projeto (acesso de leitura) e gera `schema.sql`: enums, sequências, tabelas, funções (`pg_get_functiondef`), defaults, restrições, índices, views, triggers (inclui `auth.users`), RLS/políticas, GRANTs de tabela/coluna/função/sequência e a publicação. Exporta também os catálogos globais `permissions` e `modules` (sem workspace, sem dado pessoal). Nenhuma tabela de tenant é lida |
+| `start.sh` / `stop.sh` | sobe/derruba o PostgreSQL descartável; `stop` só apaga dentro de `/tmp/techerp-isolated`                                                                                                                                                                                                                                                                                                                            |
+| `seed.sql`             | fixtures sintéticas idempotentes (ids fixos, `[ISO]`, e-mails `@techerp-test.invalid`, telefones `+5500000000xxx`); recusa rodar sem o marcador                                                                                                                                                                                                                                                                     |
+| `compare-schema.ts`    | compara projeto × isolado em 11 categorias; gera `fidelity.json`; exit 1 se houver divergência                                                                                                                                                                                                                                                                                                                      |
+| `permission-matrix.ts` | 43 casos; cada um numa transação com `ROLLBACK`, como `authenticated`/`anon` com claims sintéticos; gera JSON + JUnit                                                                                                                                                                                                                                                                                               |
+| `realtime-wal.ts`      | camada WAL do tempo real (slot lógico `test_decoding`) + registro explícito do que **não** foi executado                                                                                                                                                                                                                                                                                                            |
+| `run.sh`               | ciclo completo; exit 0 = tudo passou e nada pendente, 1 = falha, 2 = bloqueado, **3 = incompleto**                                                                                                                                                                                                                                                                                                                  |
+| `apply-migrations.ts`  | diagnóstico: reexecuta o histórico de migrations (ver §3)                                                                                                                                                                                                                                                                                                                                                           |
 
 Comando: `bun run test:isolated` (equivale a `bash scripts/isolated-db/run.sh`). `ISO_KEEP=1` mantém o banco.
 Recursos: ~200 MB em `/tmp/techerp-isolated`, socket Unix porta 54329, sem TCP. Artefatos em
@@ -47,19 +47,19 @@ por isso não foi ligado em `.github/workflows/ci.yml`. O código 3 (incompleto)
   repositório). Por isso o harness carrega a estrutura **atual** do catálogo.
 - Resultado da comparação (após 0099/0100), divergência **zero** em todas as categorias:
 
-| Categoria | Projeto | Isolado |
-| --- | ---: | ---: |
-| Políticas | 2.203 | 2.203 |
-| Funções (`public`, sem extensões) | 205 | 205 |
-| Colunas (tipo, nulo, default, gerada) | 4.822 | 4.822 |
-| GRANTs de tabela/sequência | 8.152 | 8.152 |
-| GRANTs de função | 646 | 646 |
-| RLS ligada/forçada | 348 | 348 |
-| Triggers | 526 | 526 |
-| Restrições | 1.425 | 1.425 |
-| Índices | 1.354 | 1.354 |
-| Views | 5 | 5 |
-| Publicação realtime | 27 | 27 |
+| Categoria                             | Projeto | Isolado |
+| ------------------------------------- | ------: | ------: |
+| Políticas                             |   2.203 |   2.203 |
+| Funções (`public`, sem extensões)     |     205 |     205 |
+| Colunas (tipo, nulo, default, gerada) |   4.822 |   4.822 |
+| GRANTs de tabela/sequência            |   8.152 |   8.152 |
+| GRANTs de função                      |     646 |     646 |
+| RLS ligada/forçada                    |     348 |     348 |
+| Triggers                              |     526 |     526 |
+| Restrições                            |   1.425 |   1.425 |
+| Índices                               |   1.354 |   1.354 |
+| Views                                 |       5 |       5 |
+| Publicação realtime                   |      27 |      27 |
 
 Diferenças conhecidas, fora de `public` (não comparadas): `auth` mínimo (sem GoTrue), políticas de
 `storage.objects` e `realtime.messages` não copiadas, `cron`/`net`/`vault` como stubs inertes, sem `pgmq`.
@@ -70,14 +70,14 @@ Identidades: 1 admin A, 2 escopo próprio A, 3 escopo equipe A (time com 7), 4 e
 5 removido (inativo) A, 6 admin B (outro tenant com dados), 7 par A, anônimo. Cargos com chaves reais do
 catálogo (`techsales.activities.view.{own,team,workspace}` etc.).
 
-| Área | Casos | O que cobre |
-| --- | ---: | --- |
-| Timeline | 20 | atividades por escopo (tabela e `get_timeline_activity_page`), histórico, agenda, corpo de e-mail, id direto de outro tenant, busca por texto de B, removido, anônimo, admin desativado |
-| Dashboard | 3 | `get_sales_dashboard_deal_aggregates` com workspace adulterado; positivo de B; `dashboard_metrics` anônimo |
-| Inbox | 8 | unificada (positivo, busca de B, removido), canal com workspace adulterado, mensagem WA de B, chat privado membro/não membro |
-| Branding | 6 | leitura por tenant, removido, escrita de membro comum, módulo de outro tenant, anônimo |
-| Escrita/identidade | 4 | inserir em B, criar lead fora do tenant original, revogação, troca de identidade na mesma conexão |
-| "Ver como" | 2 | sessão de papel não altera registro real; sem permissão de update fora do modo |
+| Área               | Casos | O que cobre                                                                                                                                                                             |
+| ------------------ | ----: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Timeline           |    20 | atividades por escopo (tabela e `get_timeline_activity_page`), histórico, agenda, corpo de e-mail, id direto de outro tenant, busca por texto de B, removido, anônimo, admin desativado |
+| Dashboard          |     3 | `get_sales_dashboard_deal_aggregates` com workspace adulterado; positivo de B; `dashboard_metrics` anônimo                                                                              |
+| Inbox              |     8 | unificada (positivo, busca de B, removido), canal com workspace adulterado, mensagem WA de B, chat privado membro/não membro                                                            |
+| Branding           |     6 | leitura por tenant, removido, escrita de membro comum, módulo de outro tenant, anônimo                                                                                                  |
+| Escrita/identidade |     4 | inserir em B, criar lead fora do tenant original, revogação, troca de identidade na mesma conexão                                                                                       |
+| "Ver como"         |     2 | sessão de papel não altera registro real; sem permissão de update fora do modo                                                                                                          |
 
 Não coberto nesta matriz: ranking do dashboard (`get_sales_dashboard_secondary_v2`), escopo de equipe em
 Inbox/negócios, contrato completo do "Ver como" modo usuário (exige magic link/GoTrue).
