@@ -27,13 +27,13 @@ INSERT INTO public.workspaces (id, name, slug, created_by) VALUES
 ON CONFLICT DO NOTHING;
 
 INSERT INTO public.workspace_members (workspace_id, user_id, role, status) VALUES
- ('aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000001','owner','active'),
+ ('aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000001','admin','active'),
  ('aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000002','member','active'),
  ('aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000003','member','active'),
  ('aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000004','member','active'),
  ('aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000005','member','active'),
  ('aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000007','member','active'),
- ('aaaaaaaa-0000-4000-8000-00000000000b','10000000-0000-4000-8000-000000000006','owner','active')
+ ('aaaaaaaa-0000-4000-8000-00000000000b','10000000-0000-4000-8000-000000000006','admin','active')
 ON CONFLICT DO NOTHING;
 -- "Removido": desativado depois de entrar (mesmo caminho do produto).
 UPDATE public.workspace_members SET status = 'inactive'
