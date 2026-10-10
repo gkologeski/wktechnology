@@ -1,6 +1,7 @@
 // Compara (somente leitura, só catálogo) a estrutura do projeto com a do banco isolado.
 // Gera $ISO_ROOT/fidelity.json com contagens e divergências por categoria. Exit 1 se houver divergência.
-import { writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 
 const root = process.env.ISO_ROOT ?? "/tmp/techerp-isolated";
@@ -65,6 +66,7 @@ function run(local: boolean, sql: string): Map<string, string> {
 }
 
 const report: Record<string, unknown> = {};
+const manifest: Record<string, { count: number; sha256: string }> = {};
 let diverged = 0;
 for (const [name, sql] of Object.entries(CHECKS)) {
   const a = run(false, sql),
@@ -72,6 +74,10 @@ for (const [name, sql] of Object.entries(CHECKS)) {
   const onlyProject = [...a.keys()].filter((k) => !b.has(k));
   const onlyIsolated = [...b.keys()].filter((k) => !a.has(k));
   const different = [...a.keys()].filter((k) => b.has(k) && a.get(k) !== b.get(k));
+  manifest[name] = {
+    count: a.size,
+    sha256: createHash("sha256").update([...a.entries()].map(([k, v]) => `${k}\t${v}`).sort().join("\n")).digest("hex"),
+  };
   diverged += onlyProject.length + onlyIsolated.length + different.length;
   report[name] = { project: a.size, isolated: b.size, onlyProject, onlyIsolated, different };
   console.log(
@@ -82,4 +88,14 @@ writeFileSync(
   `${root}/fidelity.json`,
   JSON.stringify({ generatedAt: new Date().toISOString(), diverged, report }, null, 2),
 );
+// Manifesto versionado (só contagens + hashes do catálogo; sem dados nem corpos de função).
+// Mostra drift do projeto desde o último snapshot registrado; atualizar com ISO_WRITE_MANIFEST=1.
+const MANIFEST = "scripts/isolated-db/catalog-manifest.json";
+if (existsSync(MANIFEST)) {
+  const prev = JSON.parse(readFileSync(MANIFEST, "utf8")).categories ?? {};
+  const drift = Object.keys(manifest).filter((k) => prev[k]?.sha256 !== manifest[k].sha256);
+  console.log(drift.length ? `drift desde o manifesto: ${drift.join(", ")}` : "catálogo idêntico ao manifesto versionado");
+}
+if (process.env.ISO_WRITE_MANIFEST === "1")
+  writeFileSync(MANIFEST, JSON.stringify({ generatedAt: new Date().toISOString(), categories: manifest }, null, 2) + "\n");
 process.exit(diverged ? 1 : 0);
