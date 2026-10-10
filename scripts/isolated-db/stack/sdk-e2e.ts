@@ -121,17 +121,17 @@ await check("act-ws", "timeline", "escopo workspace", () => subjects(s[4]), ALL)
 await check("act-other-tenant", "timeline", "admin de B não vê A", () => subjects(s[6]), "");
 await check("act-anon", "timeline", "anônimo", () => subjects(mk()), /^$|ERR .*permission denied/);
 await check("tl-rpc-own", "timeline", "RPC paginada própria", async () => {
-  const { data, error } = await s[2].rpc("get_timeline_activity_page", { p_entity: "lead", p_entity_id: LEAD_A });
+  const { data, error } = await s[2].rpc("get_timeline_activity_page", { p_entity_kind: "lead", p_entity_id: LEAD_A });
   return error ? `ERR ${error.message}` : String((data as { total?: number })?.total);
 }, "1");
 await check("deal-b-from-a", "deals", "negócio de B invisível para A", () => count(s[1], "deals", ["workspace_id", WB]), "0");
 await check("deal-own", "deals", "dono vê o seu", () => count(s[2], "deals", ["id", "51000000-0000-4000-8000-0000000000a1"]), "1");
 await check("inbox-own", "inbox", "dono vê conversas", async () => {
-  const { data, error } = await s[2].rpc("get_inbox_unified_page", { p_filter: "all", p_search: null });
+  const { data, error } = await s[2].rpc("get_inbox_unified_page", { p_channel: "all", p_search: null });
   return error ? `ERR ${error.message}` : String(((data as { items?: unknown[] })?.items ?? []).length > 0);
 }, "true");
 await check("inbox-search-leak", "inbox", "busca não vaza B", async () => {
-  const { data, error } = await s[2].rpc("get_inbox_unified_page", { p_filter: "all", p_search: "SegredoB" });
+  const { data, error } = await s[2].rpc("get_inbox_unified_page", { p_channel: "all", p_search: "SegredoB" });
   return error ? `ERR ${error.message}` : String(((data as { items?: unknown[] })?.items ?? []).length);
 }, "0");
 await check("wa-other", "whatsapp", "mensagem WA de B", () => count(s[2], "whatsapp_messages", ["id", "58000000-0000-4000-8000-0000000000b6"]), "0");
