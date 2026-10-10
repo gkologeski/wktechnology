@@ -197,3 +197,6 @@ apontado para domínio `.invalid` (nenhum envio).
 - `bun run verify`: exit 0 — 0 erros de lint (1.274 avisos), 105 arquivos / 725 testes.
 - `bun run build`: exit 0 (único, sequencial, `dist/` apagado antes).
 - `bun run test:isolated`: exit 3 (incompleto).
+- Atualização: `bun run test:isolated:stack` exit 3 (26 passaram, 0 falharam, 6 não executados);
+  `bun run verify` exit 0 (0 erros de lint, 1.274 avisos; 105 arquivos / 725 testes). Sem mudança em
+  `src/` ou configuração de build nesta atualização: build não repetido.
