@@ -44,7 +44,9 @@ type Case = {
 
 const contacts = `insert into public.contacts (id, workspace_id, owner_id, first_name) values
  ('${CT_A}','${WA}','${OWN_A}','[ISO] Contato A'), ('${CT_B}','${WB}','${ADMIN_B}','[ISO] Contato B') on conflict do nothing;`;
-const ticketB = `${contacts} insert into public.tickets (id, workspace_id, owner_id, subject, contact_id, status)
+const pipeB = `insert into public.pipelines (id, workspace_id, owner_id, entity, name) values ('75000000-0000-4000-8000-0000000000b1','${WB}','${ADMIN_B}','ticket','[ISO] funil B') on conflict do nothing;`;
+const pipeA = `insert into public.pipelines (id, workspace_id, owner_id, entity, name) values ('75000000-0000-4000-8000-0000000000a1','${WA}','${ADMIN_A}','ticket','[ISO] funil A') on conflict do nothing;`;
+const ticketB = `${contacts} ${pipeB} insert into public.tickets (id, workspace_id, owner_id, subject, contact_id, status)
  values ('${TK_B}','${WB}','${ADMIN_B}','[ISO] chamado B','${CT_B}','open');`;
 const surveyWs = `select coalesce(string_agg(workspace_id::text, ','), 'none') from public.survey_responses where ticket_id = '${TK_B}'`;
 const subIns = (ws: string | null, contact = CT_B, owner = ADMIN_B) =>
@@ -89,7 +91,7 @@ const CASES: Case[] = [
   { id: "sub-removed-member", area: "billing", uid: REMOVED_A, setup: contacts,
     sql: `${subIns(WA, CT_A, REMOVED_A)}; select 1`, expect: /42501|not a member|row-level/, why: "membro desativado não grava" },
   { id: "sub-cross-tenant-parent", area: "billing", uid: ADMIN_B, setup: contacts,
-    sql: `${subIns(WB, CT_A)}; select 'aceito'`, expect: /contato|contact|42501|workspace/i, gap: "aceito",
+    sql: `${subIns(WB, CT_A)}; select 'aceito'`, expect: /workspace_mismatch/, gap: "aceito",
     why: "assinatura de B apontando para contato de A deveria ser recusada" },
   { id: "sub-missing-ws-job", area: "defaults", uid: null, role: "service_role", setup: contacts,
     sql: `${subIns(null)}; select workspace_id from public.subscriptions where id = '${SUB_B}'`,
@@ -99,6 +101,9 @@ const CASES: Case[] = [
     sql: `insert into public.leads (owner_id, first_name) values ('${ADMIN_B}', '[ISO] lead sem ws') returning workspace_id`,
     expect: WB, gap: /42501|not a member/,
     why: "usuário de B sem workspace_id explícito: DEFAULT fixo vence o gatilho e a gravação é recusada" },
+  { id: "ticket-pipeline-cross-tenant", area: "survey", uid: ADMIN_B, setup: `${contacts} ${pipeA}`,
+    sql: `insert into public.tickets (workspace_id, owner_id, subject) values ('${WB}','${ADMIN_B}','[ISO] sem funil') returning pipeline_id`,
+    expect: /pipeline_id/, why: "sem funil de chamados em B, nunca herda o funil de A (recusa clara)" },
   // ---- histórico/etapas (regressão de 0099) ----
   { id: "lead-history-b", area: "history", uid: ADMIN_B,
     sql: `with l as (insert into public.leads (workspace_id, owner_id, first_name) values ('${WB}', '${ADMIN_B}', '[ISO] lead B') returning id)
