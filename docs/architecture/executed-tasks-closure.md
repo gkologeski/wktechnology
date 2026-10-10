@@ -14,8 +14,8 @@ diagnóstico com evidência, sem alegar correção · **Bloqueado** = depende de
 | --- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
 | 13  | Nenhum caminho cai em silêncio no tenant original; gatilhos derivam o tenant da origem; contratos de módulo testados | `drizzle/migrations/0101_*.sql`, `0102_workspace_default_from_session.sql`; `bun scripts/isolated-db/workspace-integrity.ts`; `src/lib/modules/module-contracts.test.ts` | 4 funções corrigidas; 32 de 81 DEFAULTs trocados; 49 continuam com DEFAULT fixo (lista abaixo); 2 imports de servidor no topo de rotas corrigidos; contratos verdes    | **Parcial**                                                                |
 | 12  | Planos medidos das consultas interativas já alteradas; índice só com evidência                                       | `EXPLAIN ANALYZE` (só leitura) no banco do projeto, abaixo                                                                                                               | Todos ≤ 52 ms; histórico e timeline usam índice; listas com seq scan em ≤ 8,8 mil linhas (≤ 25 ms)                                                                     | **Concluído** (nenhum índice novo justificado)                             |
-| 7   | Causa do encerramento por 240 s diagnosticada com evidência                                                          | `tsc --noEmit --extendedDiagnostics` com heap padrão e com 8 GB; `/tmp/observability/build-errors.log`                                                                   | Heap padrão (3,2 GB): **OOM** após 2:14; com 8 GB: 1:55, 5,1 GB usados, 13,5 mi instanciações, check 105,7 s. A plataforma registrou novo encerramento às 13:47:12 UTC | **Investigação encerrada**, não corrigido                                  |
-| 8   | Fase Nitro medida; otimização só se compatível e medida                                                              | `rm -rf dist; /usr/bin/time -v bun run build`                                                                                                                            | client 36,1 s · ssr 41,1 s · nitro (cloudflare-module) 53,3 s · total 2:13,5 · pico 7,3 GB                                                                             | **Pendente** (medido; nenhum experimento seguro executado)                 |
+| 7   | Causa do encerramento por 240 s diagnosticada com evidência                                                          | `timeout 240` + `/usr/bin/time -v` em cópia `/tmp/diag-copy` (10/10, 8 CPUs) — ver "Diagnóstico 10/10"                                                                  | `tsc` heap padrão: exit 134 (OOM) em 2:10, 3,35 GB; `tsc` 8 GB: 2:16, 5,2 GB; `tsgo` sem cache: 0:47; build: 2:42 — nenhum passou de 240 s. Registro original da plataforma perdido | **Investigação encerrada**, não corrigido; comando da plataforma não comprovado |
+| 8   | Fase Nitro medida; otimização só se compatível e medida                                                              | `vite build` com `--cpu-prof` na cópia; `/tmp/diag-prof.py`                                                                                                              | nitro 56,6 s: Rollup 50,6 % (tree-shake `include` + parse), coleta de lixo 37,6 %, plugin nitro 3,3 %; pico 8,09 GB (no teto de 8 GB)                                 | **Pendente** (onde o tempo vai: medido; nenhuma otimização experimentada) |
 | 9   | Peso por rota (não só entrada) medido; mudança só com ganho                                                          | `python3 scripts/perf/chunk-closure.py dist/client/assets index- <rota>-`                                                                                                | entrada 933.315 B (270.519 gz); +dashboard 1.153.184 (348.665 gz); +prospecção 1.387.877 (434.474 gz); +inbox 1.042.928 (315.178 gz)                                   | **Pendente** (medido; zod em `validateSearch` sem experimento neste ciclo) |
 | 2   | Ambiente isolado fiel e reproduzível                                                                                 | `bun run test:isolated`; `catalog-manifest.json`                                                                                                                         | 0 divergências em 11 categorias; manifesto idêntico                                                                                                                    | **Concluído** para PostgreSQL + GoTrue + PostgREST (stack `scripts/isolated-db/stack/`, 0 divergências); Realtime **Bloqueado** |
 | 1   | Matriz own/team/workspace/tenant/removido/anon + "Ver como"                                                          | `permission-matrix.ts` 43/43; `workspace-integrity.ts` 29 passaram, 3 lacunas, 1 não executado                                                                           | Isolado fiel verde; **SDK + GoTrue real: 26 passaram, 0 falharam** (`stack/run-e2e.sh`); **não-admin no banco real não executado**                                                                                                          | **Parcial** (banco real com conta QA: 29/9; lacuna de Inbox/e-mail/WhatsApp/agenda/histórico em cargo restrito — `task-1-real-user-validation.md`) |
@@ -160,6 +160,48 @@ não é visível. Fatos medidos agora:
 Build único sequencial: client 36,1 s, ssr 41,1 s, nitro 53,3 s; total 2:13,5; pico 7,3 GB. Pesos
 por rota na tabela de aceite. Nenhuma mudança: não houve experimento medido com ganho neste ciclo;
 ficam pendentes com estas medidas como linha de base.
+
+## Diagnóstico 10/10 — IDs 7 e 8 (somente leitura, cópia local)
+
+Cópia em `/tmp/diag-copy` (rsync sem node_modules/dist/caches, `bun install --frozen-lockfile`
+com o `bun.lock` original). Sandbox com 8 CPUs e 31 GB; o ciclo anterior tinha 16 CPUs, então os
+tempos não são comparáveis um a um. Cada comando rodou sozinho, com `timeout 240`.
+
+| Comando | Saída | Tempo | Pico RAM | Tipo |
+|---|---|---|---|---|
+| `npx tsc --noEmit --incremental false` (heap padrão) | 134 (abort, OOM) | 2:10 | 3,35 GB | medido |
+| idem com `NODE_OPTIONS=--max-old-space-size=8192` | 0 | 2:16 | 5,20 GB | medido |
+| `npx tsgo --noEmit --incremental false` | 0 | 0:47 | 5,71 GB | medido |
+| `vite build` (8 GB, `--cpu-prof`) | 0 | 2:42 (client 48,0 · ssr 46,7 · nitro 56,6) | 8,09 GB | medido (o perfil acrescenta custo) |
+
+Registros: `/tmp/observability/build-errors.log` agora só tem "build OK" (20:55 e 20:58 UTC). A
+entrada original "typecheck encerrado após 240 s" (13:47 UTC) **não existe mais**, e nenhum
+arquivo em `/tmp/exec-logs` ou `/tmp/dev-server-logs` contém o comando da plataforma.
+
+ID 7 — conclusão:
+- **Medido:** nenhum dos quatro comandos passou de 240 s nesta máquina. O `tsc` com memória
+  padrão falha por falta de memória antes do limite.
+- **Hipótese (não provada):** o limite é da etapa de verificação de tipos da plataforma, e não do
+  build. É compatível com o nome do registro ("typecheck") e com o fato de o `tsc` ficar a 24 s do
+  limite (2:16). Numa máquina mais lenta ou mais carregada, ele passaria de 240 s; com pouca
+  memória, travaria em coleta de lixo até ser encerrado.
+- **Não provado:** qual comando e quanta memória a plataforma usa. Isso só é visível na própria
+  plataforma.
+
+ID 8 — onde a fase nitro gasta o tempo (perfil de CPU da linha principal nos últimos 56,6 s;
+o Vite rotula essa fase como "nitro environment" e ela transforma 5.794 módulos):
+- Rollup: 28,6 s (50,6 %), dividido em tree-shaking (`include` 4,1 s, `includePath` 1,8 s,
+  rastreadores de caminho 2,9 s, `includeCallArguments` 1,0 s), parse (`parseAst` 2,0 s,
+  `decode` 3,1 s) e `render` 0,6 s.
+- Coleta de lixo: 21,3 s (37,6 %). O pico de memória do build (8,09 GB) bate no teto de 8 GB do
+  script `build`.
+- Plugin nitro 1,9 s, Vite 1,2 s, plugins TanStack menos de 0,3 s. Código de `src` não aparece:
+  transformar não é o custo, o custo é tree-shaking e memória.
+- **Hipótese não testada:** mais memória ou menos módulos no grafo do worker reduziriam a coleta
+  de lixo. Nenhuma alteração foi feita, conforme o pedido.
+
+Arquivos da medição (temporários): `/tmp/diag-*.time`, `/tmp/diag-build.out`,
+`/tmp/diag-copy/prof/*.cpuprofile`, `/tmp/diag-prof.py`.
 
 ## Stack isolada com serviços autênticos (atualização)
 
