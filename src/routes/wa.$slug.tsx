@@ -1,11 +1,11 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 const resolveSlug = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ slug: z.string().min(1).max(60) }).parse(i))
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .rpc("wa_ad_slug_increment", { p_slug: data.slug })
       .maybeSingle();
