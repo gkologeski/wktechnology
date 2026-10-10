@@ -137,3 +137,13 @@ for (const p of q<{ tbl: string }>(`select tablename as tbl from pg_publication_
 
 writeFileSync(`${root}/schema.sql`, out.join("\n") + "\n");
 console.log(`schema extraído: ${tables.length} tabelas, ${out.length} instruções → ${root}/schema.sql`);
+
+// Catálogos GLOBAIS do sistema (sem workspace, sem dados pessoais): chaves de permissão e módulos.
+// Necessários para user_effective_permissions/admin; nenhuma tabela de tenant é lida.
+for (const [tbl, cols] of [["permissions", "key,module,resource,action,scope,label_pt,description,is_system"],
+  ["modules", "id,name,host_suffix,default_color,default_product_name,icon,sort_order"]] as const) {
+  const r = spawnSync("psql", ["-X", "-v", "ON_ERROR_STOP=1", "-c",
+    `\\copy (select ${cols} from public.${tbl} order by 1) to '${root}/ref-${tbl}.csv' with csv`], { encoding: "utf8" });
+  if (r.status !== 0) throw new Error(`catálogo ${tbl}: ${r.stderr}`);
+}
+console.log("catálogos globais exportados: permissions, modules");
