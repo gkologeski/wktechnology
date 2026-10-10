@@ -109,8 +109,8 @@ INSERT INTO public.activities (id, workspace_id, owner_id, type, subject, relate
 ON CONFLICT DO NOTHING;
 
 INSERT INTO public.property_history (id, workspace_id, owner_id, entity, entity_id, property, old_value, new_value) VALUES
- ('53000000-0000-4000-8000-0000000000a1','aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000002','lead','50000000-0000-4000-8000-0000000000a1','status','"new"','"contacted"'),
- ('53000000-0000-4000-8000-0000000000b1','aaaaaaaa-0000-4000-8000-00000000000b','10000000-0000-4000-8000-000000000006','lead','50000000-0000-4000-8000-0000000000b1','status','"new"','"SegredoB"')
+ ('53000000-0000-4000-8000-0000000000a1','aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000002','leads','50000000-0000-4000-8000-0000000000a1','status','"new"','"contacted"'),
+ ('53000000-0000-4000-8000-0000000000b1','aaaaaaaa-0000-4000-8000-00000000000b','10000000-0000-4000-8000-000000000006','leads','50000000-0000-4000-8000-0000000000b1','status','"new"','"SegredoB"')
 ON CONFLICT DO NOTHING;
 
 -- E-mail: caixa do 2 (A) e do 6 (B).
