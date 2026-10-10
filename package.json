@@ -24,7 +24,8 @@
     "test:e2e:install": "playwright install --with-deps chromium",
     "audit:access": "bun scripts/audit-access-rules.ts",
     "audit:design-system": "bun scripts/audit-design-system.ts",
-    "lint:nocache": "eslint ."
+    "lint:nocache": "eslint .",
+    "test:isolated": "bash scripts/isolated-db/run.sh"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^3.0.11",
