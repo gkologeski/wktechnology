@@ -124,3 +124,16 @@ END $$;
 CREATE TABLE IF NOT EXISTS public.__isolated_marker (id int PRIMARY KEY, label text NOT NULL, created_at timestamptz DEFAULT now());
 INSERT INTO public.__isolated_marker VALUES (1, 'techerp-isolated-harness') ON CONFLICT DO NOTHING;
 REVOKE ALL ON public.__isolated_marker FROM anon, authenticated;
+
+-- ===== realtime (só a tabela/funcão que as policies versionadas referenciam; sem servidor) =====
+CREATE SCHEMA IF NOT EXISTS realtime;
+GRANT USAGE ON SCHEMA realtime TO anon, authenticated, service_role;
+CREATE TABLE IF NOT EXISTS realtime.messages (
+  id bigserial PRIMARY KEY, topic text NOT NULL, extension text NOT NULL DEFAULT 'broadcast',
+  payload jsonb, event text, private boolean DEFAULT true, inserted_at timestamptz DEFAULT now(), updated_at timestamptz DEFAULT now()
+);
+ALTER TABLE realtime.messages ENABLE ROW LEVEL SECURITY;
+GRANT SELECT, INSERT ON realtime.messages TO authenticated;
+CREATE OR REPLACE FUNCTION realtime.topic() RETURNS text LANGUAGE sql STABLE AS $$
+  SELECT nullif(current_setting('realtime.topic', true), '')::text $$;
+GRANT EXECUTE ON FUNCTION realtime.topic() TO anon, authenticated;

@@ -19,7 +19,11 @@ const dz = journal.entries.map((e) => `drizzle/migrations/${e.tag}.sql`);
 
 const results: { file: string; ok: boolean; error?: string }[] = [];
 for (const file of [...sb, ...dz]) {
-  const sql = readFileSync(file, "utf8").replaceAll("--> statement-breakpoint", "");
+  // Divergência declarada: pg_cron/pg_net não existem no PostgreSQL local; os schemas cron/net
+  // vêm do bootstrap como stubs inertes, então só o CREATE EXTENSION é neutralizado.
+  const sql = readFileSync(file, "utf8")
+    .replaceAll("--> statement-breakpoint", "")
+    .replace(/CREATE EXTENSION IF NOT EXISTS\s+"?(pg_cron|pg_net)"?[^;]*;/gi, "/* isolated: extensão $1 substituída por stub */");
   const r = spawnSync(
     "psql",
     ["-X", "-q", "-v", "ON_ERROR_STOP=1", "--single-transaction", "-h", sock, "-p", port, "-U", "postgres",
