@@ -32,5 +32,3 @@
 - Ritmo do disparo de template das campanhas WhatsApp é controlado por `whatsapp_campaigns.next_send_at` sob lease `wa_campaign_claim_dispatch`, com sorteio em `src/lib/whatsapp/campaign-pacing.ts`; por quê: o espaçamento vale entre execuções e nunca há disparo duplo.
 - Rotas só exportam `Route` (outro export anula o code-splitting); gate = `verify`+`build`, `verify:changed` é só feedback.
 
-- Contratos de módulo são testes estáticos em `src/lib/modules/module-contracts.test.ts` (domínios verticais sem imports cruzados; código do navegador sem `*.server` no topo); por quê: barrar regressão sem refatorar em massa.
-- DEFAULT de `workspace_id` só troca para `default_workspace_for_user(auth.uid())` depois que todo gravador fora do navegador da tabela envia o tenant da origem; por quê: job sem tenant deve falhar, nunca cair no tenant original.
