@@ -10,4 +10,4 @@ export POSTGREST_BIN="${POSTGREST_BIN:-/nix/store/grkpy61kplv8wrf9iiga06658av4mw
 export STACK_AUTH_PORT="${STACK_AUTH_PORT:-59999}"
 export STACK_REST_PORT="${STACK_REST_PORT:-59998}"
 # Segredo efêmero gerado por execução (só desta stack descartável).
-[ -f "$ISO_ROOT/jwt.secret" ] && export STACK_JWT_SECRET="$(cat "$ISO_ROOT/jwt.secret")"
+if [ -f "$ISO_ROOT/jwt.secret" ]; then export STACK_JWT_SECRET="$(cat "$ISO_ROOT/jwt.secret")"; fi
