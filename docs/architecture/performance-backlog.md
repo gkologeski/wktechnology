@@ -38,3 +38,19 @@ pode cortar histórico nem contagens.
   `module_branding` (0098), assinatura aceita, evento ponta a ponta não comprovado — ver
   performance-cycle-8-entry-quality-branding.md. Próximo ciclo: observabilidade de build, ambiente isolado
   com tempo real, contratos por módulo (zod em `validateSearch`), RLS não-admin real.
+- Ciclo 9: harness isolado reproduzível (`bun run test:isolated`, `scripts/isolated-db/`) com estrutura
+  extraída do catálogo real (divergência zero em 11 categorias), matriz de permissões 43/43, camada WAL do
+  tempo real 4/4 e 14 asserções SDK/UI **não executadas** (sem serviço Realtime local). Bugs corrigidos:
+  0099 (etapa/histórico gravando o tenant fixo — criar lead fora do tenant original falhava) e 0100 (admin
+  desativado seguia admin) — ver performance-cycle-9-isolated-validation.md.
+
+## Matriz das frentes (estado após o ciclo 9)
+O texto original das 16 frentes não está versionado no repositório; abaixo só as tratadas neste ciclo.
+| Frente | Estado | Falta |
+| --- | --- | --- |
+| 1. Permissões | Isolado fiel: 43/43; 2 bugs corrigidos | RLS não-admin no banco real (sessão autorizada); ranking do dashboard; "Ver como" modo usuário |
+| 2. Ambiente isolado | Implementado e executado (PostgreSQL local, sem Auth/PostgREST/Realtime de serviço) | Stack com Realtime (exige Docker ou serviço autorizado) |
+| 3. Tempo real ponta a ponta | Parcial: camada WAL validada | SDK → servidor → UI bloqueado por infraestrutura |
+| Próximas | Observabilidade de build, carga isolada, contratos por módulo | — |
+Riscos novos: DEFAULT fixo de `workspace_id` em 81 colunas; `create_ticket_survey`, `subscription_after_insert`,
+`subscription_invoice_after_paid` gravam sem `workspace_id`; DELETE com filtro por workspace não chega pelo tempo real.
