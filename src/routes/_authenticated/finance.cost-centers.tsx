@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { useMemo, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
@@ -30,6 +29,7 @@ const listCostCentersWithTotals = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
     const workspaceId = await resolveActiveWorkspace(userId);
     const legalEntityId = data?.legalEntityId;
     const legalEntityIds = data?.legalEntityIds;
