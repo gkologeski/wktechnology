@@ -1,0 +1,49 @@
+{
+  "generatedAt": "2026-10-10T13:12:46.772Z",
+  "categories": {
+    "policies": {
+      "count": 2203,
+      "sha256": "07b5066f601f6305c08c92514bcea42962fb28293da854a120003045b5ce2aac"
+    },
+    "functions": {
+      "count": 205,
+      "sha256": "392c31c4afa91a63f1000c4f232f81cb79ef316509d2f3afdd70d51e2f5270eb"
+    },
+    "columns": {
+      "count": 4822,
+      "sha256": "f1d2f156eafbb37e2678eebe26ecb30787e2389b3969a400e2e5535458d2445f"
+    },
+    "table_grants": {
+      "count": 8152,
+      "sha256": "a977e05e419738fe97e916552c51a1993ccf15b92873ecad49aab3b32bf49cec"
+    },
+    "function_grants": {
+      "count": 646,
+      "sha256": "ae67d4f09ee6ee92452776d34a3a29dee7c56b4240b457fa7f5f545d7dbb6119"
+    },
+    "rls": {
+      "count": 348,
+      "sha256": "aba9cd77daca0408d4a337481a5243cf3e5c1968ec62e1d847c8e91c0ec8fb45"
+    },
+    "triggers": {
+      "count": 526,
+      "sha256": "c7b4f890f6aab9e348e753d5d0ec7beea762c5d463e2c70b5e8810d5aa5bf5cf"
+    },
+    "constraints": {
+      "count": 1425,
+      "sha256": "e7ca7ba9f82b7af6260566ae271ae3387c9d0ea6669efbb15b41d3ea7257823c"
+    },
+    "indexes": {
+      "count": 1354,
+      "sha256": "56f0de798908193a072cf3d8436553773a6b1d77b849640cb15f2dbf11534909"
+    },
+    "views": {
+      "count": 5,
+      "sha256": "061cd4ae2c01d66c1271116ca4f551d786e6bc247aeba0dd5397157203cdfb1f"
+    },
+    "publication": {
+      "count": 27,
+      "sha256": "e7d8ce8d4ef176d8315e3be30b022e9597d453c03728b1c127ce2f3ef8b9f85b"
+    }
+  }
+}
