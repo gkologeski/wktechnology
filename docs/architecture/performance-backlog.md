@@ -44,13 +44,25 @@ pode cortar histórico nem contagens.
   0099 (etapa/histórico gravando o tenant fixo — criar lead fora do tenant original falhava) e 0100 (admin
   desativado seguia admin) — ver performance-cycle-9-isolated-validation.md.
 
-## Matriz das frentes (estado após o ciclo 9)
-O texto original das 16 frentes não está versionado no repositório; abaixo só as tratadas neste ciclo.
-| Frente | Estado | Falta |
-| --- | --- | --- |
-| 1. Permissões | Isolado fiel: 43/43; 2 bugs corrigidos | RLS não-admin no banco real (sessão autorizada); ranking do dashboard; "Ver como" modo usuário |
-| 2. Ambiente isolado | Implementado e executado (PostgreSQL local, sem Auth/PostgREST/Realtime de serviço) | Stack com Realtime (exige Docker ou serviço autorizado) |
-| 3. Tempo real ponta a ponta | Parcial: camada WAL validada | SDK → servidor → UI bloqueado por infraestrutura |
-| Próximas | Observabilidade de build, carga isolada, contratos por módulo | — |
-Riscos novos: DEFAULT fixo de `workspace_id` em 81 colunas; `create_ticket_survey`, `subscription_after_insert`,
-`subscription_invoice_after_paid` gravam sem `workspace_id`; DELETE com filtro por workspace não chega pelo tempo real.
+## Matriz do plano de 16 frentes (estado após o ciclo 10)
+| # | Frente | Estado | Falta |
+| --- | --- | --- | --- |
+| 1 | Permissões reais own/team/workspace/tenant/Ver como | Isolado fiel: 43/43 + 26 de integridade (ranking, negócios e Inbox por equipe); 3 bugs corrigidos (0099, 0100, 0101) | RLS não-admin no banco real; "Ver como" modo usuário (GoTrue) |
+| 2 | Ambiente isolado fiel | Implementado; manifesto versionado de catálogo; 0 divergências | Stack com Realtime/Auth de serviço |
+| 3 | Realtime ponta a ponta | Parcial: WAL 4/4 | 14 asserções SDK/UI bloqueadas por infraestrutura |
+| 4 | Realtime pendente (deal_line_items, meetings, calendário, troca de workspace por outros caminhos) | Não iniciado | Decidir publicação vs remover assinatura |
+| 5 | UX de conversas (reconexão, rolagem, rascunhos) em testes seguros | Parcial (ciclo 6/7 com fixtures) | Testes com tempo real real |
+| 6 | Observabilidade de build/telas/queries | Não iniciado | Próximo ciclo |
+| 7 | Diagnóstico do timeout 240 s | Indício de disputa de CPU (ciclo 7), sem prova | Medição com observabilidade |
+| 8 | Fase Nitro do build | Medida (~46 s), não otimizada | Investigação com medição |
+| 9 | Carga inicial (zod/rotas/componentes pesados) | Parcial: −11% entrada (ciclo 7); 2 experimentos revertidos | zod em validateSearch |
+| 10 | Virtualização só com benefício | Não iniciado | Medição primeiro |
+| 11 | Métricas TechProjects/TechHire/Prospecção/Agentes/detalhes | Não iniciado | — |
+| 12 | Query plans/índices por evidência | Parcial (índices de timeline) | EXPLAIN de consultas reais |
+| 13 | Contratos de módulos Platform/Sales/Projects/Hire/Agents | Pré-requisito em curso: tenant explícito por tabela (ciclo 10) | 76 DEFAULTs; contratos por módulo |
+| 14 | Carga isolada/concorrência/filas/retry/idempotência | Pré-requisito: idempotência de faturas (0101) | Carga no isolado |
+| 15 | Budgets de performance e regressão | Não iniciado | — |
+| 16 | Validação de artefato SSR Cloudflare/verify/rollback/publicação | Não iniciado | Só com autorização futura de publicação |
+
+Riscos abertos: 76 DEFAULTs fixos de `workspace_id` (inventário em
+`performance-cycle-10-workspace-integrity.md`); DELETE com filtro por workspace não chega pelo tempo real.
