@@ -11,7 +11,7 @@ const LOCAL = ["-h", `${root}/sock`, "-p", process.env.ISO_PORT ?? "54329", "-U"
 const CHECKS: Record<string, string> = {
   policies: `select tablename||'.'||policyname k, md5(permissive||cmd||roles::text||coalesce(qual,'')||coalesce(with_check,'')) v
              from pg_policies where schemaname='public'`,
-  functions: `select p.oid::regprocedure::text k, md5(p.prosrc||p.prosecdef::text||p.provolatile||coalesce(p.proconfig::text,'')||pg_get_function_result(p.oid)) v
+  functions: `select p.oid::regprocedure::text k, md5(p.prosrc||p.prosecdef::text||p.provolatile::text||coalesce(p.proconfig::text,'')||pg_get_function_result(p.oid)) v
               from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'
               and not exists (select 1 from pg_depend d where d.classid='pg_proc'::regclass and d.objid=p.oid and d.deptype='e')`,
   columns: `select table_name||'.'||column_name k, md5(data_type||is_nullable||coalesce(column_default,'')||coalesce(generation_expression,'')) v
