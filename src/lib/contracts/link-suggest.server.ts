@@ -64,18 +64,21 @@ export async function requestAiLinkSuggestions(prompt: string): Promise<AiSugges
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY ausente");
 
-  const resp = await aiChatFetch({
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: prompt },
-      ],
-      response_format: { type: "json_object" },
-    }),
-  }, { feature: "vinculo_contrato" });
+  const resp = await aiChatFetch(
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: prompt },
+        ],
+        response_format: { type: "json_object" },
+      }),
+    },
+    { feature: "vinculo_contrato" },
+  );
 
   if (!resp.ok) {
     const body = await resp.text();

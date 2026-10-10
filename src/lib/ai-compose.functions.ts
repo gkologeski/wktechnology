@@ -72,18 +72,21 @@ Retorne APENAS o texto final, sem aspas, sem prefixos do tipo "Aqui está".`;
     if (data.prompt) userParts.push(`Instrução do usuário: ${data.prompt}`);
     if (data.input_text) userParts.push(`Texto base:\n${data.input_text}`);
     if (!data.input_text && !data.prompt) userParts.push("Redija uma mensagem útil de follow-up.");
-    const res = await aiChatFetch({
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: DEFAULT_MODEL,
-        messages: [
-          { role: "system", content: sys },
-          { role: "user", content: userParts.join("\n\n") },
-        ],
-        temperature: 0.6,
-      }),
-    }, { feature: "redacao" });
+    const res = await aiChatFetch(
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: DEFAULT_MODEL,
+          messages: [
+            { role: "system", content: sys },
+            { role: "user", content: userParts.join("\n\n") },
+          ],
+          temperature: 0.6,
+        }),
+      },
+      { feature: "redacao" },
+    );
     if (!res.ok) {
       const t = await res.text();
       throw new Error(`AI Gateway ${res.status}: ${t.slice(0, 200)}`);

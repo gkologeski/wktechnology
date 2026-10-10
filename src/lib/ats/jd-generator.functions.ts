@@ -23,18 +23,21 @@ export const generateJobDescription = createServerFn({ method: "POST" })
     if (!key) throw new Error("LOVABLE_API_KEY ausente");
     const sys = `Você é um recrutador especialista. Gere uma descrição de vaga atraente, inclusiva e estruturada no idioma ${data.language}. Responda APENAS JSON: {"description":"markdown completo","requirements":["..."],"benefits":["..."],"tags":["..."]}`;
     const usr = `Cargo: ${data.title}\nSenioridade: ${data.seniority ?? "-"}\nLocal: ${data.location ?? "-"}\nModalidade: ${data.modality ?? "-"}\nContexto extra: ${data.notes ?? "-"}`;
-    const r = await aiChatFetch({
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: sys },
-          { role: "user", content: usr },
-        ],
-        response_format: { type: "json_object" },
-      }),
-    }, { feature: "descricao_vaga" });
+    const r = await aiChatFetch(
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: sys },
+            { role: "user", content: usr },
+          ],
+          response_format: { type: "json_object" },
+        }),
+      },
+      { feature: "descricao_vaga" },
+    );
     if (!r.ok) throw new Error(`AI Gateway ${r.status}`);
     const j = await r.json();
     try {

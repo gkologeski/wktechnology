@@ -175,7 +175,12 @@ export function LinkedContactSummary({
   const ownerName = useOwnerName(contact.company_id);
   const name = [contact.first_name, contact.last_name].filter(Boolean).join(" ") || "Sem nome";
   return (
-    <Shell backTo="/contacts" icon={<User className="h-6 w-6" />} title={name} subtitle={companyName}>
+    <Shell
+      backTo="/contacts"
+      icon={<User className="h-6 w-6" />}
+      title={name}
+      subtitle={companyName}
+    >
       <section className="rounded-2xl border border-border/60 bg-card p-6">
         <FieldList
           fields={[

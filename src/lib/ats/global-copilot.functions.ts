@@ -11,11 +11,14 @@ const MODEL = "google/gemini-2.5-flash";
 async function callAi(messages: Array<{ role: string; content: string }>) {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY ausente");
-  const r = await aiChatFetch({
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
-    body: JSON.stringify({ model: MODEL, messages }),
-  }, { feature: "copiloto_global" });
+  const r = await aiChatFetch(
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
+      body: JSON.stringify({ model: MODEL, messages }),
+    },
+    { feature: "copiloto_global" },
+  );
   if (r.status === 429)
     throw new Error("AI Gateway: limite de requisições. Tente novamente em instantes.");
   if (r.status === 402)

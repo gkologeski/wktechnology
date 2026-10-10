@@ -11,15 +11,18 @@ const MODEL = "google/gemini-2.5-flash";
 async function callAi(messages: Array<{ role: string; content: string }>, json = false) {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY ausente");
-  const r = await aiChatFetch({
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
-    body: JSON.stringify({
-      model: MODEL,
-      messages,
-      ...(json ? { response_format: { type: "json_object" } } : {}),
-    }),
-  }, { feature: "copiloto_vaga" });
+  const r = await aiChatFetch(
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
+      body: JSON.stringify({
+        model: MODEL,
+        messages,
+        ...(json ? { response_format: { type: "json_object" } } : {}),
+      }),
+    },
+    { feature: "copiloto_vaga" },
+  );
   if (r.status === 429)
     throw new Error("Limite de uso da IA atingido. Tente novamente em alguns instantes.");
   if (r.status === 402)

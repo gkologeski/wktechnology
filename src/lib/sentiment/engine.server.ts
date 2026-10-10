@@ -19,7 +19,10 @@ function clampScore(n: unknown): number {
   return Math.max(-1, Math.min(1, v));
 }
 
-async function classify(text: string, aiWs?: string | null): Promise<{
+async function classify(
+  text: string,
+  aiWs?: string | null,
+): Promise<{
   label: "positive" | "neutral" | "negative";
   score: number;
   emotion: string | null;
@@ -28,21 +31,28 @@ async function classify(text: string, aiWs?: string | null): Promise<{
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) return null;
   const trimmed = text.slice(0, 2000);
-  const res = await aiChatFetch({
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [
-        {
-          role: "system",
-          content: `Classifique o sentimento da mensagem. Retorne APENAS JSON: {"label":"positive|neutral|negative","score":-1..1,"emotion":"alegria|raiva|tristeza|medo|surpresa|gratidão|frustração|neutro","keywords":["..."]}`,
-        },
-        { role: "user", content: trimmed },
-      ],
-      temperature: 0.1,
-    }),
-  }, { workspaceId: aiWs, feature: "sentimento", triggerSource: aiWs === undefined ? undefined : "automatic" });
+  const res = await aiChatFetch(
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [
+          {
+            role: "system",
+            content: `Classifique o sentimento da mensagem. Retorne APENAS JSON: {"label":"positive|neutral|negative","score":-1..1,"emotion":"alegria|raiva|tristeza|medo|surpresa|gratidão|frustração|neutro","keywords":["..."]}`,
+          },
+          { role: "user", content: trimmed },
+        ],
+        temperature: 0.1,
+      }),
+    },
+    {
+      workspaceId: aiWs,
+      feature: "sentimento",
+      triggerSource: aiWs === undefined ? undefined : "automatic",
+    },
+  );
   if (!res.ok) return null;
   const j = (await res.json()) as { choices?: { message?: { content?: string } }[] };
   const raw = (j.choices?.[0]?.message?.content ?? "")

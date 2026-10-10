@@ -55,21 +55,24 @@ Retorne JSON estrito no formato:
 }
 Nunca invente dados. Se um campo não estiver no texto, use null ou [].`;
 
-    const res = await aiChatFetch({
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
+    const res = await aiChatFetch(
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          messages: [
+            { role: "system", content: sys },
+            { role: "user", content: data.cv_text },
+          ],
+          response_format: { type: "json_object" },
+        }),
       },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          { role: "system", content: sys },
-          { role: "user", content: data.cv_text },
-        ],
-        response_format: { type: "json_object" },
-      }),
-    }, { feature: "leitura_curriculo" });
+      { feature: "leitura_curriculo" },
+    );
     if (!res.ok) {
       const txt = await res.text();
       if (res.status === 402)

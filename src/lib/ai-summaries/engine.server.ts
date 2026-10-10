@@ -160,18 +160,21 @@ ${lines.join("\n")}`;
 async function callAi(prompt: string, aiWs?: string | null) {
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
-  const res = await aiChatFetch({
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [
-        { role: "system", content: "Responda apenas com JSON válido, sem markdown." },
-        { role: "user", content: prompt },
-      ],
-      temperature: 0.2,
-    }),
-  }, { workspaceId: aiWs ?? null, feature: "resumo_automatico", triggerSource: "automatic" });
+  const res = await aiChatFetch(
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [
+          { role: "system", content: "Responda apenas com JSON válido, sem markdown." },
+          { role: "user", content: prompt },
+        ],
+        temperature: 0.2,
+      }),
+    },
+    { workspaceId: aiWs ?? null, feature: "resumo_automatico", triggerSource: "automatic" },
+  );
   if (!res.ok) throw new Error(`AI Gateway ${res.status}`);
   const j = (await res.json()) as { choices?: { message?: { content?: string } }[] };
   const raw = j.choices?.[0]?.message?.content ?? "";

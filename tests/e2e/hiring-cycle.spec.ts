@@ -23,7 +23,9 @@ test("Workflows — modelos de contratação abrem como rascunho", async ({ auth
     "Sucesso de hunting",
     "Desligamento",
   ]) {
-    await expect(page.getByRole("menuitem", { name: new RegExp(name.replace(/[()]/g, "\\$&")) })).toBeVisible();
+    await expect(
+      page.getByRole("menuitem", { name: new RegExp(name.replace(/[()]/g, "\\$&")) }),
+    ).toBeVisible();
   }
   await page.getByRole("menuitem", { name: /Desligamento/ }).click();
   await expect(page.getByRole("dialog")).toBeVisible();

@@ -32,21 +32,24 @@ Devolva SOMENTE um JSON válido neste formato:
 - headline: 1 linha curta (até 120 chars), em português.`;
   const user = `Dados brutos do perfil:\n${JSON.stringify(payload, null, 2)}`;
 
-  const res = await aiChatFetch({
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
+  const res = await aiChatFetch(
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: sys },
+          { role: "user", content: user },
+        ],
+        response_format: { type: "json_object" },
+      }),
     },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        { role: "system", content: sys },
-        { role: "user", content: user },
-      ],
-      response_format: { type: "json_object" },
-    }),
-  }, { feature: "enriquecimento_hunting" });
+    { feature: "enriquecimento_hunting" },
+  );
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
     throw new Error(`Gateway ${res.status}: ${txt.slice(0, 200)}`);

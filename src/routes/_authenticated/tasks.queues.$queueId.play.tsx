@@ -120,7 +120,20 @@ function PlayQueue() {
 
             <div className="flex flex-wrap gap-2">
               {email && (
-                <Button variant="outline" size="sm" onClick={() => openActivity?.({ action: ACTIONS_BY_KEY["create:email"], to: email, contactId: current.contact_id ?? undefined, leadId: current.lead_id ?? undefined, dealId: current.deal_id ?? undefined, contactName: subject })}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    openActivity?.({
+                      action: ACTIONS_BY_KEY["create:email"],
+                      to: email,
+                      contactId: current.contact_id ?? undefined,
+                      leadId: current.lead_id ?? undefined,
+                      dealId: current.deal_id ?? undefined,
+                      contactName: subject,
+                    })
+                  }
+                >
                   <Mail className="mr-1 h-4 w-4" /> Email
                 </Button>
               )}

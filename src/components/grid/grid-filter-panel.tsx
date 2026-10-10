@@ -76,7 +76,11 @@ function SearchablePills({
         className="h-9"
       />
       {term && (
-        <ul role="listbox" aria-label={`Sugestões de ${label}`} className="rounded-md border bg-popover p-1">
+        <ul
+          role="listbox"
+          aria-label={`Sugestões de ${label}`}
+          className="rounded-md border bg-popover p-1"
+        >
           {matches.length === 0 ? (
             <li className="px-2 py-1.5 text-xs text-muted-foreground">Nenhum resultado.</li>
           ) : (
@@ -102,7 +106,6 @@ function SearchablePills({
     </div>
   );
 }
-
 
 export function FieldEditor<T>({
   ctl,

@@ -69,7 +69,9 @@ function CandidateError({ error, reset }: { error: unknown; reset: () => void })
         <h2 className="text-base font-semibold text-text-primary">
           Não foi possível abrir este candidato
         </h2>
-        <p className="mt-2 text-sm text-text-secondary">{error instanceof Error ? error.message : String(error)}</p>
+        <p className="mt-2 text-sm text-text-secondary">
+          {error instanceof Error ? error.message : String(error)}
+        </p>
         <div className="mt-4 flex items-center justify-center gap-2">
           <Button
             size="sm"

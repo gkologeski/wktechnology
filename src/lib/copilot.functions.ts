@@ -95,18 +95,21 @@ export const askCopilot = createServerFn({ method: "POST" })
 Quando citar dados, use marcações como [1], [2] que se referem às fontes. Se não houver dado, diga claramente "não encontrei nessa base".`;
     const user = `Pergunta: ${q}\n\nContexto:\n${ctx || "(sem resultados)"}`;
 
-    const res = await aiChatFetch({
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          { role: "system", content: sys },
-          { role: "user", content: user },
-        ],
-        temperature: 0.3,
-      }),
-    }, { feature: "copiloto" });
+    const res = await aiChatFetch(
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: MODEL,
+          messages: [
+            { role: "system", content: sys },
+            { role: "user", content: user },
+          ],
+          temperature: 0.3,
+        }),
+      },
+      { feature: "copiloto" },
+    );
     if (!res.ok) {
       const t = await res.text();
       throw new Error(`AI Gateway ${res.status}: ${t.slice(0, 200)}`);

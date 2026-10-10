@@ -158,10 +158,13 @@ export async function handleOffboardingAction(
       // Ficha sem usuário vinculado: procura o membro do workspace pelo e-mail
       // da pessoa e grava o vínculo para as próximas execuções.
       if (!userId && person.email) {
-        const { data: found } = await supabase.rpc("workspace_member_by_email" as never, {
-          _workspace_id: ctx.workspaceId,
-          _email: person.email,
-        } as never);
+        const { data: found } = await supabase.rpc(
+          "workspace_member_by_email" as never,
+          {
+            _workspace_id: ctx.workspaceId,
+            _email: person.email,
+          } as never,
+        );
         if (typeof found === "string") {
           userId = found;
           await supabase

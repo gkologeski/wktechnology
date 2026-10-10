@@ -51,7 +51,9 @@ export const Route = createFileRoute("/careers/$slug")({
   errorComponent: ({ error }) => (
     <div className="mx-auto max-w-3xl px-6 py-20 text-center">
       <h1 className="text-2xl font-semibold text-text-primary">Ops</h1>
-      <p className="mt-2 text-text-secondary">{error instanceof Error ? error.message : String(error)}</p>
+      <p className="mt-2 text-text-secondary">
+        {error instanceof Error ? error.message : String(error)}
+      </p>
     </div>
   ),
 });
