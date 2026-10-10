@@ -101,7 +101,7 @@ INSERT INTO public.deals (id, workspace_id, owner_id, name, value, stage) VALUES
 ON CONFLICT DO NOTHING;
 
 -- Atividades no lead A: uma de cada dono; uma no B.
-INSERT INTO public.activities (id, workspace_id, owner_id, type, title, related_lead_id, created_at) VALUES
+INSERT INTO public.activities (id, workspace_id, owner_id, type, subject, related_lead_id, created_at) VALUES
  ('52000000-0000-4000-8000-0000000000a1','aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000001','note','[ISO] nota admin','50000000-0000-4000-8000-0000000000a1', now() - interval '3 hour'),
  ('52000000-0000-4000-8000-0000000000a2','aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000002','note','[ISO] nota propria','50000000-0000-4000-8000-0000000000a1', now() - interval '2 hour'),
  ('52000000-0000-4000-8000-0000000000a7','aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000007','note','[ISO] nota par','50000000-0000-4000-8000-0000000000a1', now() - interval '1 hour'),
@@ -109,8 +109,8 @@ INSERT INTO public.activities (id, workspace_id, owner_id, type, title, related_
 ON CONFLICT DO NOTHING;
 
 INSERT INTO public.property_history (id, workspace_id, owner_id, entity, entity_id, property, old_value, new_value) VALUES
- ('53000000-0000-4000-8000-0000000000a1','aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000002','lead','50000000-0000-4000-8000-0000000000a1','status','new','contacted'),
- ('53000000-0000-4000-8000-0000000000b1','aaaaaaaa-0000-4000-8000-00000000000b','10000000-0000-4000-8000-000000000006','lead','50000000-0000-4000-8000-0000000000b1','status','new','SegredoB')
+ ('53000000-0000-4000-8000-0000000000a1','aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000002','lead','50000000-0000-4000-8000-0000000000a1','status','"new"','"contacted"'),
+ ('53000000-0000-4000-8000-0000000000b1','aaaaaaaa-0000-4000-8000-00000000000b','10000000-0000-4000-8000-000000000006','lead','50000000-0000-4000-8000-0000000000b1','status','"new"','"SegredoB"')
 ON CONFLICT DO NOTHING;
 
 -- E-mail: caixa do 2 (A) e do 6 (B).
@@ -128,7 +128,7 @@ INSERT INTO public.email_messages (id, workspace_id, owner_id, account_id, threa
 ON CONFLICT DO NOTHING;
 
 -- WhatsApp (sem envio: só linhas).
-INSERT INTO public.whatsapp_conversations (id, workspace_id, owner_id, contact_phone, twilio_number, contact_name, last_message_at) VALUES
+INSERT INTO public.whatsapp_conversations (id, workspace_id, owner_id, contact_phone, twilio_number, last_message_preview, last_message_at) VALUES
  ('57000000-0000-4000-8000-0000000000a2','aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000002','+5500000000001','+5500000000999','[ISO] Contato A', now()),
  ('57000000-0000-4000-8000-0000000000b6','aaaaaaaa-0000-4000-8000-00000000000b','10000000-0000-4000-8000-000000000006','+5500000000002','+5500000000998','[ISO] Contato SegredoB', now())
 ON CONFLICT DO NOTHING;
@@ -147,9 +147,9 @@ INSERT INTO public.chat_messages (id, conversation_id, workspace_owner_id, sende
  ('5a000000-0000-4000-8000-0000000000a1','59000000-0000-4000-8000-0000000000a1','aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000002','[ISO] chat privado') ON CONFLICT DO NOTHING;
 
 -- White Label por tenant.
-INSERT INTO public.workspace_branding (id, workspace_id, owner_id, primary_color) VALUES
- ('5b000000-0000-4000-8000-0000000000a1','aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000001','#111111'),
- ('5b000000-0000-4000-8000-0000000000b1','aaaaaaaa-0000-4000-8000-00000000000b','10000000-0000-4000-8000-000000000006','#222222')
+INSERT INTO public.workspace_branding (workspace_id, owner_id, primary_color) VALUES
+ ('aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000001','#111111'),
+ ('aaaaaaaa-0000-4000-8000-00000000000b','10000000-0000-4000-8000-000000000006','#222222')
 ON CONFLICT DO NOTHING;
 INSERT INTO public.module_branding (workspace_id, module_id) SELECT 'aaaaaaaa-0000-4000-8000-00000000000a', 'crm'
  WHERE NOT EXISTS (SELECT 1 FROM public.module_branding WHERE workspace_id = 'aaaaaaaa-0000-4000-8000-00000000000a' AND module_id = 'crm');
