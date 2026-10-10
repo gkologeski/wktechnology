@@ -122,8 +122,54 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user?.id) return;
     let cancelled = false;
+    let loadedWorkspace: string | null = null;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let retry: ReturnType<typeof setTimeout> | null = null;
+    let debounce: ReturnType<typeof setTimeout> | null = null;
+    let attempt = 0;
+    let seq = 0;
+
+    const unsubscribe = () => {
+      if (retry) clearTimeout(retry);
+      retry = null;
+      if (channel) void supabase.removeChannel(channel);
+      channel = null;
+    };
+
+    // Tempo real só das linhas de branding do workspace carregado (RLS de membro).
+    const subscribe = (workspaceId: string) => {
+      unsubscribe();
+      if (cancelled || document.hidden) return;
+      const fail = () => {
+        if (cancelled || loadedWorkspace !== workspaceId) return;
+        if (channel) void supabase.removeChannel(channel);
+        channel = null;
+        if (retry) clearTimeout(retry);
+        retry = setTimeout(() => subscribe(workspaceId), realtimeRetryDelay(attempt++));
+      };
+      let c = supabase.channel(`branding:${user.id}:${workspaceId}`);
+      for (const f of brandingRealtimeFilters(workspaceId)) {
+        c = c.on(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          "postgres_changes" as any,
+          { event: "*", schema: "public", table: f.table, filter: f.filter },
+          () => bump(),
+        );
+      }
+      channel = c
+        // O SDK responde SUBSCRIBED mesmo com postgres_changes recusado; a recusa vem em "system".
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .on("system" as any, {}, (p: { status?: string; extension?: string }) => {
+          if (p?.status === "error" && p.extension === "postgres_changes") fail();
+        })
+        .subscribe((status) => {
+          if (status === "SUBSCRIBED") attempt = 0;
+          else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") fail();
+        });
+    };
 
     const load = async () => {
+      const my = ++seq;
       const { data: profile } = await supabase
         .from("profiles")
         .select("active_workspace_id")
@@ -140,7 +186,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
           .maybeSingle();
         workspaceId = member?.workspace_id;
       }
-      if (!workspaceId || cancelled) return;
+      if (!workspaceId || cancelled || my !== seq) return;
 
       const [{ data }, { data: modules }] = await Promise.all([
         supabase
@@ -150,7 +196,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
           .maybeSingle(),
         supabase.from("module_branding").select("module_id, theme").eq("workspace_id", workspaceId),
       ]);
-      if (cancelled) return;
+      if (cancelled || my !== seq) return; // resposta de um contexto anterior: descarta
 
       const next = (data as Branding | null) ?? null;
       setBranding(next);
@@ -165,22 +211,38 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
       }
       setModuleThemes(map);
       writeJson(MODULE_CACHE_KEY, map);
+
+      if (loadedWorkspace !== workspaceId || !channel) {
+        loadedWorkspace = workspaceId;
+        attempt = 0;
+        subscribe(workspaceId);
+      }
     };
 
-    load();
+    // Rajadas (várias cores salvas de uma vez) viram uma recarga.
+    const bump = () => {
+      if (debounce) return;
+      debounce = setTimeout(() => {
+        debounce = null;
+        void load();
+      }, 300);
+    };
 
-    const channel = supabase
-      .channel(`branding:${user.id}`)
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${user.id}` },
-        () => load(),
-      )
-      .subscribe();
+    void load();
+    const offWorkspace = onWorkspaceChanged(() => void load());
+    // Ao voltar à aba: reconcilia (pode ter perdido eventos) e reabre a assinatura.
+    const onVis = () => {
+      if (document.hidden) unsubscribe();
+      else void load().then(() => loadedWorkspace && !channel && subscribe(loadedWorkspace));
+    };
+    document.addEventListener("visibilitychange", onVis);
 
     return () => {
       cancelled = true;
-      supabase.removeChannel(channel);
+      offWorkspace();
+      document.removeEventListener("visibilitychange", onVis);
+      if (debounce) clearTimeout(debounce);
+      unsubscribe();
     };
   }, [user?.id]);
 
