@@ -10,11 +10,12 @@ test -n "${PGHOST:-}" || { echo "BLOQUEADO: sem acesso de leitura ao catálogo d
 bun scripts/isolated-db/extract-schema.ts || exit 2
 bash scripts/isolated-db/stop.sh >/dev/null 2>&1 || true
 bash scripts/isolated-db/start.sh || exit 2
+rc=0
+# Comparação precisa do acesso de leitura do projeto: roda antes de env.sh limpar as PG*.
+bun scripts/isolated-db/compare-schema.ts || rc=1
 . scripts/isolated-db/env.sh
 iso_guard || exit 2
 iso_psql -f scripts/isolated-db/seed.sql >/dev/null || { echo "seed falhou"; exit 1; }
-rc=0
-bun scripts/isolated-db/compare-schema.ts || rc=1
 bun scripts/isolated-db/permission-matrix.ts || rc=1
 bun scripts/isolated-db/realtime-wal.ts || rc=1
 ne=$(python3 -c "import json;print(json.load(open('$ISO_ROOT/artifacts/realtime.json'))['not_executed'])")
