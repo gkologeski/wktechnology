@@ -50,3 +50,11 @@ Preview → Negócios → "Ver como" → "[TESTE] Validação TechSales": faixa 
 ## Status do ID 1
 
 **Parcial.** Próprio/workspace/revogação/ID direto/painel/White Label e "Ver como" validados no banco real. Pendente: (a) decisão sobre a lacuna de Inbox/e-mail/WhatsApp/agenda/histórico para cargos restritos; (b) visão de equipe com colegas, que exige um segundo usuário fictício; (c) outro tenant no banco real, que exige um workspace de teste. Nada foi publicado.
+
+## Aceite compartilhado pós-0103–0114 (11/10/2026 05:24 UTC) — NÃO EXECUTADO
+
+- Pré-condição informada pelo operador: versão com source_hash `1bae558d…0f08b` publicada; 0103–0114 aplicadas em uma transação.
+- Link de acesso pela API administrativa: recusado pela plataforma (exige consentimento de emissão de sessão).
+- Caminho oficial de sessão para a conta QA `9b75a10a-e5bf-4346-a16e-bab3cafb1d1e`: recusado, aprovação humana indisponível neste contexto.
+- Nenhuma sessão QA criada, nenhuma asserção executada, nada alterado. Resultado: 0 pass / 0 fail; as 9 lacunas seguem pendentes.
+- Desbloqueio: aprovar o acesso à conta QA no cartão de aprovação do Lovable, ou entrar com a conta QA no preview para a sessão ser injetada no próximo turno.
