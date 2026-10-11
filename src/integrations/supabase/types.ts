@@ -21975,6 +21975,35 @@ export type Database = {
           },
         ]
       }
+      workspace_realtime_signals: {
+        Row: {
+          nonce: string
+          table_name: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          nonce?: string
+          table_name: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          nonce?: string
+          table_name?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_realtime_signals_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workspace_subscriptions: {
         Row: {
           created_at: string
@@ -22610,6 +22639,10 @@ export type Database = {
       rep_my_contact_ids: { Args: never; Returns: string[] }
       rep_my_deal_ids: { Args: never; Returns: string[] }
       rep_my_lead_ids: { Args: never; Returns: string[] }
+      rep_owns_entity: {
+        Args: { p_entity: string; p_id: string }
+        Returns: boolean
+      }
       rep_restricted_workspaces: { Args: never; Returns: string[] }
       rep_visible_company_ids: { Args: never; Returns: string[] }
       rep_visible_contact_ids: { Args: never; Returns: string[] }
