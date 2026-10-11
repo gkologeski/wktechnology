@@ -115,3 +115,18 @@ Reaceite real com JWT da QA: **33 PASS / 2 FAIL**.
 - Agora PASS: chat ao vivo 0; Inbox unificada "all" com e sem busca 0 itens; histórico 0 em 375 ms.
 - Ainda FAIL: `activities` sem filtro de dono → 500 (statement timeout). Sem vazamento; causa no banco real não demonstrada (não reproduz no isolado). Tarefas 1 e 16 **não** aceitas.
 - Atenção: `stage_entries` respondeu 0 em 7,5 s, perto do limite de 8 s.
+
+## Diagnóstico activities — causa real e correção (11/10/2026, 0117/0118) — NÃO é aceite JWT real
+
+Estatísticas reais (somente leitura): n_live_tup 462.475, n_dead_tup 375, último autovacuum 26/09, autoanalyze 01/09 (868 mod. desde então — não justifica VACUUM/ANALYZE extra); heap 302.972 páginas (2.367 MB), relallvisible 302.512 (99,8%), TOAST 615 MB, índices 733 MB (maior: activities_hs_raw_gin 278 MB, 0 usos). Amostra TABLESAMPLE 0,3%: ~4,3 tuplas/página nas páginas ocupadas, sugerindo páginas vazias, mas pgstattuple não está instalado (não instalado) → bloat NÃO demonstrado; VACUUM FULL/pg_repack descartados.
+
+Planos (papel de leitura, sem RLS): `SELECT id ORDER BY created_at LIMIT 50` → Parallel Seq Scan, 286k páginas lidas do disco, 17,2 s; `count(*)` sem colunas → Index Only Scan 0,23 s; filtro owner/assigned → BitmapOr 6 ms.
+
+Causa 1 (medida no isolado, 300k linhas sintéticas): na policy restritiva, `related_*_id IN (lista)` com valor NULL dá NULL, e NULL AND … obriga avaliar por linha `current_role_test_session()` e 3× `user_has_permission`/`is_workspace_admin_of`. Contagem como restrito: >300 s (cancelada). Correção 0117 (mesma semântica): `IS NOT NULL AND … IN`, `(SELECT auth.uid())`/`(SELECT current_role_test_session())` como InitPlan, permissões calculadas sobre o conjunto de workspaces do usuário, colegas via `my_team_member_ids()` (SECURITY DEFINER, sem anon). Depois: restrito próprio 205 ms, equipe 1,8 s, workspace 169 ms, admin 179 ms, outro tenant 157 ms.
+- Equivalência: IDs visíveis idênticos para 9 usuários × (cargo restrito on/off) + anon. Matriz 43/43; integridade 32/0/1 não executado.
+
+Causa 2 (medida no real): mesmo sem custo por linha, leitura ampla sob RLS precisa das colunas da policy → lê o heap inteiro. 0118 cria `activities_rls_cover_idx` (workspace_id, owner_id, assigned_to) INCLUDE (related_*, id), 53 MB. Isolado: Index Only Scan, Heap Fetches 0. Real (sem RLS, filtro sobre as mesmas colunas): Index Only Scan 0,84 s vs seq scan 17,2 s. Criado sem CONCURRENTLY (bloqueou só gravações durante a construção).
+
+0116 (etapas/canais): 977,8 ms → 5,5 ms isolado, visibilidade idêntica (registrado acima).
+
+Pendente: medir com JWT real da QA (sessão oficial ainda indisponível); aceite 1/16 não concedido.
