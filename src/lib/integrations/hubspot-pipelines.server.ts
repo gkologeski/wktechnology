@@ -48,6 +48,7 @@ export async function syncHubspotDealPipelines(
   userId: string,
   workspaceId: string,
 ): Promise<PipelineSync> {
+  if (!workspaceId) throw new Error("Integração sem empresa de origem.");
   const r = (await hsFetch("/crm/v3/pipelines/deals")) as { results?: HsPipeline[] };
   const pipelines = r.results ?? [];
 
@@ -110,6 +111,7 @@ export async function syncHubspotDealPipelines(
         .from("pipelines")
         .insert({
           owner_id: userId,
+          workspace_id: workspaceId,
           entity: "deal",
           name: hp.label,
           is_default: !hasAnyDefault && Object.keys(pipelineMap).length === 0,
@@ -183,6 +185,7 @@ export async function syncHubspotTicketPipelines(
         .from("pipelines")
         .insert({
           owner_id: userId,
+          workspace_id: workspaceId,
           entity: "ticket",
           name: hp.label,
           is_default: false,

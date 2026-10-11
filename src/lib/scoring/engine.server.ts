@@ -91,17 +91,26 @@ export async function tickScoring(
   // Donos que têm pelo menos uma regra ativa.
   const { data: ownersRows, error: oErr } = await supabase
     .from("scoring_rules")
-    .select("owner_id")
+    .select("owner_id, workspace_id")
     .eq("enabled", true);
   if (oErr) throw new Error(oErr.message);
-  const owners = Array.from(new Set((ownersRows ?? []).map((r) => r.owner_id as string)));
-  result.owners = owners.length;
+  const scopes = Array.from(
+    new Map(
+      (ownersRows ?? []).map((r) => [
+        JSON.stringify([r.workspace_id, r.owner_id]),
+        { ownerId: r.owner_id as string, workspaceId: r.workspace_id as string },
+      ]),
+    ).values(),
+  );
+  result.owners = new Set(scopes.map((s) => s.ownerId)).size;
 
-  for (const ownerId of owners) {
+  for (const { ownerId, workspaceId } of scopes) {
+    if (!workspaceId) throw new Error("Regra de pontuação sem empresa de origem.");
     // cursor
     const { data: cur } = await supabase
       .from("scoring_cursors")
       .select("last_event_at")
+      .eq("workspace_id", workspaceId)
       .eq("owner_id", ownerId)
       .maybeSingle();
     const since = (cur?.last_event_at as string) ?? "1970-01-01T00:00:00Z";
@@ -109,6 +118,7 @@ export async function tickScoring(
     const { data: events, error: eErr } = await supabase
       .from("workflow_events")
       .select("id, entity, entity_id, event_type, before, after, created_at")
+      .eq("workspace_id", workspaceId)
       .eq("owner_id", ownerId)
       .gt("created_at", since)
       .in("entity", ["leads", "contacts", "companies"])
@@ -123,6 +133,7 @@ export async function tickScoring(
     const { data: rules, error: rErr } = await supabase
       .from("scoring_rules")
       .select("id, name, entity, condition, points, enabled")
+      .eq("workspace_id", workspaceId)
       .eq("owner_id", ownerId)
       .eq("enabled", true);
     if (rErr) {
@@ -148,9 +159,18 @@ export async function tickScoring(
         const points = Number(rule.points ?? 0);
         if (!points) continue;
 
+        const { data: row } = await supabase
+          .from(evEntity)
+          .select("score")
+          .eq("workspace_id", workspaceId)
+          .eq("id", ev.entity_id)
+          .maybeSingle();
+        if (!row) continue;
+
         const { error: insErr } = await supabase
           .from("score_events")
           .insert({
+            workspace_id: workspaceId,
             owner_id: ownerId,
             rule_id: rule.id,
             entity: evEntity,
@@ -169,25 +189,25 @@ export async function tickScoring(
         }
 
         // soma pontos no registro
-        const { data: row } = await supabase
-          .from(evEntity)
-          .select("score")
-          .eq("id", ev.entity_id)
-          .maybeSingle();
         const current = Number((row?.score as number | null) ?? 0);
         await supabase
           .from(evEntity)
           .update({ score: current + points })
+          .eq("workspace_id", workspaceId)
           .eq("id", ev.entity_id);
         result.applied += 1;
       }
     }
 
-    await supabase.from("scoring_cursors").upsert({
-      owner_id: ownerId,
-      last_event_at: maxAt,
-      updated_at: new Date().toISOString(),
-    });
+    await supabase.from("scoring_cursors").upsert(
+      {
+        workspace_id: workspaceId,
+        owner_id: ownerId,
+        last_event_at: maxAt,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "workspace_id,owner_id" },
+    );
   }
 
   return result;
@@ -220,13 +240,14 @@ export async function runScoringFullScan(
 
   const { data: rules, error: rErr } = await supabase
     .from("scoring_rules")
-    .select("id, owner_id, name, entity, condition, points, enabled")
+    .select("id, workspace_id, owner_id, name, entity, condition, points, enabled")
     .eq("enabled", true);
   if (rErr) throw new Error(rErr.message);
   if (!rules?.length) return result;
   result.rules = rules.length;
 
   for (const rule of rules) {
+    if (!rule.workspace_id) throw new Error("Regra de pontuação sem empresa de origem.");
     const ruleEntity = rule.entity as "lead" | "contact" | "company";
     const table = RULE_ENTITY_TO_TABLE[ruleEntity];
     if (!table) continue;
@@ -238,7 +259,12 @@ export async function runScoringFullScan(
     // paginação keyset por id
 
     while (true) {
-      let q = supabase.from(table).select("*").order("id", { ascending: true }).limit(pageSize);
+      let q = supabase
+        .from(table)
+        .select("*")
+        .eq("workspace_id", rule.workspace_id)
+        .order("id", { ascending: true })
+        .limit(pageSize);
       if (lastId) q = q.gt("id", lastId);
       const { data: rows, error: eErr } = await q;
       if (eErr) {
@@ -255,6 +281,7 @@ export async function runScoringFullScan(
         const { error: insErr } = await supabase
           .from("score_events")
           .insert({
+            workspace_id: rule.workspace_id,
             owner_id: rule.owner_id,
             rule_id: rule.id,
             entity: table,
@@ -277,6 +304,7 @@ export async function runScoringFullScan(
         await supabase
           .from(table)
           .update({ score: current + points })
+          .eq("workspace_id", rule.workspace_id)
           .eq("id", row.id as string);
         result.applied += 1;
       }

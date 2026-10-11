@@ -1,5 +1,5 @@
 // Engine de análise de sentimento de mensagens (WhatsApp/email/atividades).
-import { aiChatFetch, workspaceForRecord } from "@/lib/ai/provider-resolver.server";
+import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const MODEL = "google/gemini-2.5-flash-lite";
@@ -7,6 +7,7 @@ const MODEL = "google/gemini-2.5-flash-lite";
 type Pending = {
   source: "whatsapp" | "email" | "activity";
   source_id: string;
+  workspace_id: string;
   owner_id: string;
   text: string;
   contact_id: string | null;
@@ -86,7 +87,7 @@ async function pickPending(limit: number): Promise<Pending[]> {
   const { data: wa } = await supabaseAdmin
     .from("whatsapp_messages")
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .select("id, owner_id, body, direction, from_number, created_at" as any)
+    .select("id, workspace_id, owner_id, body, direction, from_number, created_at" as any)
     .eq("direction", "inbound")
     .not("body", "is", null)
     .gt("created_at", new Date(Date.now() - 30 * 86400_000).toISOString())
@@ -95,6 +96,7 @@ async function pickPending(limit: number): Promise<Pending[]> {
   const waRows = (wa ?? []) as unknown as Array<{
     id: string;
     owner_id: string;
+    workspace_id: string;
     body: string | null;
     from_number: string;
   }>;
@@ -110,20 +112,25 @@ async function pickPending(limit: number): Promise<Pending[]> {
     const { data: contacts } = await supabaseAdmin
 
       .from("contacts")
-      .select("id, owner_id, phone" as any)
+      .select("id, workspace_id, owner_id, phone" as any)
       .in("phone", phones);
     const phoneMap = new Map<string, string>();
-    for (const c of (contacts ?? []) as unknown as { id: string; phone: string | null }[]) {
-      if (c.phone) phoneMap.set(c.phone, c.id);
+    for (const c of (contacts ?? []) as unknown as {
+      id: string;
+      workspace_id: string;
+      phone: string | null;
+    }[]) {
+      if (c.phone) phoneMap.set(JSON.stringify([c.workspace_id, c.phone]), c.id);
     }
     for (const r of waRows) {
       if (doneSet.has(r.id) || !r.body) continue;
       out.push({
         source: "whatsapp",
         source_id: r.id,
+        workspace_id: r.workspace_id,
         owner_id: r.owner_id,
         text: r.body,
-        contact_id: phoneMap.get(r.from_number) ?? null,
+        contact_id: phoneMap.get(JSON.stringify([r.workspace_id, r.from_number])) ?? null,
         lead_id: null,
       });
     }
@@ -137,13 +144,15 @@ export async function tickSentiment(batch = 20): Promise<{ processed: number; er
     errors = 0;
   for (const p of pending) {
     try {
-      const cls = await classify(p.text, await workspaceForRecord(null, p.owner_id));
+      if (!p.workspace_id) throw new Error("Mensagem sem empresa de origem.");
+      const cls = await classify(p.text, p.workspace_id);
       if (!cls) {
         errors++;
         continue;
       }
       await supabaseAdmin.from("message_sentiments").upsert(
         {
+          workspace_id: p.workspace_id,
           owner_id: p.owner_id,
           source: p.source,
           source_id: p.source_id,

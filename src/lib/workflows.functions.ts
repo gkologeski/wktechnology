@@ -1,3 +1,4 @@
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { conditionsSummary, evaluateConditions } from "@/lib/workflows/conditions";
 import { isLineItemField, lineItemCaseMatches } from "@/lib/workflows/line-items";
 // Server functions para o builder de Workflows.
@@ -141,7 +142,10 @@ export const saveWorkflow = createServerFn({ method: "POST" })
     } as never;
     const { data: row, error } = await supabase
       .from("workflows")
-      .insert(insertPayload)
+      .insert({
+        ...(insertPayload as Record<string, unknown>),
+        workspace_id: await resolveActiveWorkspace(context.userId),
+      } as never)
       .select("id")
       .single();
     if (error) throw new Error(error.message);
@@ -386,7 +390,7 @@ export const bulkEnrollWorkflow = createServerFn({ method: "POST" })
 
     const { data: wf, error: wfErr } = await supabase
       .from("workflows")
-      .select("id, entity, trigger, status")
+      .select("id, workspace_id, entity, trigger, status")
       .eq("id", data.workflowId)
       .maybeSingle();
     if (wfErr) throw new Error(wfErr.message);
@@ -400,13 +404,17 @@ export const bulkEnrollWorkflow = createServerFn({ method: "POST" })
     const { data: records, error: recErr } = await supabase
       .from(wf.entity as never)
       .select("*")
+      .eq("workspace_id", wf.workspace_id)
       .limit(data.limit);
     if (recErr) throw new Error(recErr.message);
 
     let enqueued = 0;
     for (const rec of (records ?? []) as Record<string, unknown>[]) {
+      if (rec.workspace_id !== wf.workspace_id)
+        throw new Error("Workspace de origem incompatível.");
       if (!evaluateConditions(filters, (f) => passesFilter(rec, f))) continue;
       const { error: evErr } = await supabase.from("workflow_events").insert({
+        workspace_id: wf.workspace_id,
         owner_id: userId,
         entity: wf.entity,
         entity_id: rec.id as string,
@@ -462,12 +470,13 @@ export const decideApproval = createServerFn({ method: "POST" })
     const { data: appr, error: getErr } = await supabase
       .from("workflow_approvals")
       .select(
-        "id, owner_id, workflow_id, run_id, entity, entity_id, status, resume_cursor, event_snapshot",
+        "id, owner_id, workspace_id, workflow_id, run_id, entity, entity_id, status, resume_cursor, event_snapshot",
       )
       .eq("id", data.approvalId)
       .maybeSingle();
     if (getErr) throw new Error(getErr.message);
     if (!appr) throw new Error("Aprovação não encontrada");
+    if (!appr.workspace_id) throw new Error("Aprovação sem workspace de origem.");
     if (appr.status !== "pending") throw new Error("Aprovação já foi decidida");
 
     const { error: updErr } = await supabase
@@ -484,6 +493,7 @@ export const decideApproval = createServerFn({ method: "POST" })
     if (data.decision === "approved") {
       const snap = (appr.event_snapshot ?? {}) as { after?: unknown; before?: unknown };
       await supabase.from("workflow_events").insert({
+        workspace_id: appr.workspace_id,
         owner_id: appr.owner_id,
         entity: appr.entity,
         entity_id: appr.entity_id,

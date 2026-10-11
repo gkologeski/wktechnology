@@ -1,3 +1,5 @@
+import { workspaceOfSource } from "@/lib/workspace-source.server";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -45,7 +47,11 @@ export const upsertPlan = createServerFn({ method: "POST" })
     }
     const { data: row, error } = await supabase
       .from("recurring_plans")
-      .insert({ ...data, owner_id: userId })
+      .insert({
+        ...data,
+        owner_id: userId,
+        workspace_id: await resolveActiveWorkspace(context.userId),
+      })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
@@ -116,6 +122,14 @@ export const createSubscription = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await workspaceOfSource(supabase, "contacts", data.contact_id);
+    for (const [table, id] of [
+      ["deals", data.deal_id],
+      ["recurring_plans", data.plan_id],
+    ] as const) {
+      if (id && (await workspaceOfSource(supabase, table, id)) !== workspaceId)
+        throw new Error("Assinatura e registros relacionados pertencem a empresas diferentes.");
+    }
     const start = data.start_date ?? new Date().toISOString().slice(0, 10);
     const trialEnds =
       data.trial_days > 0
@@ -126,6 +140,7 @@ export const createSubscription = createServerFn({ method: "POST" })
     const { data: row, error } = await supabase
       .from("subscriptions")
       .insert({
+        workspace_id: workspaceId,
         owner_id: userId,
         contact_id: data.contact_id,
         deal_id: data.deal_id ?? null,

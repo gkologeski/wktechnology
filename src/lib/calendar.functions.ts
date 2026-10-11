@@ -203,6 +203,7 @@ export const startCalendarOAuth = createServerFn({ method: "POST" })
     const redirectUri = callbackRedirectUri(data.origin);
     const state = signState({
       user_id: context.userId,
+      workspace_id: await resolveActiveWorkspace(context.userId),
       return_to: data.return_to,
       return_origin: data.origin,
       mode: "calendar",

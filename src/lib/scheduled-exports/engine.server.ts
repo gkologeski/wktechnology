@@ -193,7 +193,9 @@ async function getGmailAccount(
 ): Promise<EmailAccountRow | null> {
   let q = supabaseAdmin
     .from("email_accounts")
-    .select("id, owner_id, email, access_token, refresh_token, expires_at, status, history_id")
+    .select(
+      "id, workspace_id, owner_id, email, access_token, refresh_token, expires_at, status, history_id",
+    )
     .eq("owner_id", ownerId)
     .eq("provider", "gmail")
     .eq("status", "connected");

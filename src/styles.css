@@ -863,3 +863,15 @@
     page-break-inside: avoid;
   }
 }
+
+/* Native offscreen rendering keeps React state and browser find/navigation intact.
+   Only large timelines opt in; editing disables the class at the list. */
+@supports (content-visibility: auto) {
+  .timeline-windowed > li {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 160px;
+  }
+  .timeline-windowed > li:focus-within {
+    content-visibility: visible;
+  }
+}

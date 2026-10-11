@@ -13,8 +13,8 @@
 
 import { useRouterState } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { MODULES, type ModuleId } from "./registry";
-import { ATS_ROUTE_PREFIXES } from "@/lib/menu-config-ats";
+import type { ModuleId } from "./registry";
+import { ATS_ROUTE_PREFIXES } from "./route-prefixes";
 
 const HOST_MATCHERS: Array<{ id: ModuleId; pattern: RegExp }> = [
   { id: "ats", pattern: /^ats\./i },
@@ -142,12 +142,4 @@ export function useActiveModule(): ModuleId {
 export function usePathModule(): ModuleId | null {
   const path = useRouterState({ select: (s) => s.location.pathname });
   return useMemo(() => detectModuleFromPath(path), [path]);
-}
-
-/**
- * Retorna a definição completa do módulo ativo (cor, nome, rota inicial, etc.).
- */
-export function useActiveModuleDefinition() {
-  const id = useActiveModule();
-  return MODULES[id];
 }

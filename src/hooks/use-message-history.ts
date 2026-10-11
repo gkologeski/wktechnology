@@ -43,7 +43,13 @@ export function useMessageHistory<Row extends HistoryRow>(opts: {
   contextKey: string | null;
   fetchPage: FetchHistoryPage<Row>;
   realtime?: HistoryRealtime | null;
-}) {
+}): HistoryState<Row> & {
+  health: RealtimeHealth;
+  loadOlder: () => Promise<void>;
+  syncNewer: () => Promise<void>;
+  reconcile: () => Promise<void>;
+  retryInitial: () => void;
+} {
   const { contextKey, realtime } = opts;
   const [state, dispatch] = useReducer(
     historyReducer as (
@@ -211,6 +217,7 @@ export function useMessageHistory<Row extends HistoryRow>(opts: {
       return;
     }
     let disposed = false;
+    let generation = 0;
     let channel: ReturnType<typeof supabase.channel> | null = null;
     let ever = false;
     let retry: ReturnType<typeof setTimeout> | null = null;
@@ -229,20 +236,23 @@ export function useMessageHistory<Row extends HistoryRow>(opts: {
       if (degradedTimer) clearInterval(degradedTimer);
       degradedTimer = null;
     };
-    const fail = () => {
-      if (disposed) return;
+    const fail = (current: number) => {
+      if (disposed || current !== generation) return;
+      generation++;
       setHealth("degraded");
       if (!degradedTimer)
         degradedTimer = setInterval(() => void reconcile(), DEGRADED_RECONCILE_MS);
-      if (channel) void supabase.removeChannel(channel);
+      const failedChannel = channel;
       channel = null;
+      if (failedChannel) void supabase.removeChannel(failedChannel);
       ever = true;
       const wait = Math.min(60_000, 5_000 * 2 ** attempt++);
       if (retry) clearTimeout(retry);
       retry = setTimeout(subscribe, wait);
     };
     const subscribe = () => {
-      if (disposed || channel) return;
+      if (disposed || channel || document.hidden) return;
+      const current = ++generation;
       setHealth("connecting");
       channel = supabase
         .channel(`history:${key}`)
@@ -255,6 +265,7 @@ export function useMessageHistory<Row extends HistoryRow>(opts: {
             new?: Record<string, unknown>;
             old?: Record<string, unknown>;
           }) => {
+            if (disposed || current !== generation) return;
             if (rtKind === "parent") return bumpNewer();
             const ev = payload.eventType;
             const nid = typeof payload.new?.id === "string" ? payload.new.id : null;
@@ -279,10 +290,12 @@ export function useMessageHistory<Row extends HistoryRow>(opts: {
         // O SDK responde SUBSCRIBED mesmo com postgres_changes recusado; a recusa vem em "system".
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .on("system" as any, {}, (p: { status?: string; extension?: string }) => {
-          if (p?.status === "error" && p.extension === "postgres_changes") fail();
+          if (disposed || current !== generation) return;
+          if (p?.status === "error" && p.extension === "postgres_changes") fail(current);
+          if (p?.status === "ok" && p.extension === "postgres_changes") void reconcile();
         })
         .subscribe((status) => {
-          if (disposed) return;
+          if (disposed || current !== generation) return;
           if (status === "SUBSCRIBED") {
             attempt = 0;
             clearDegraded();
@@ -291,12 +304,22 @@ export function useMessageHistory<Row extends HistoryRow>(opts: {
             ever = true;
             return;
           }
-          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") fail();
+          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED")
+            fail(current);
         });
     };
     const unsubscribe = () => {
-      if (channel) void supabase.removeChannel(channel);
+      generation++;
+      if (retry) clearTimeout(retry);
+      retry = null;
+      const oldChannel = channel;
       channel = null;
+      if (oldChannel) void supabase.removeChannel(oldChannel);
+    };
+    const onOnline = () => {
+      unsubscribe();
+      subscribe();
+      void reconcile();
     };
     const onVis = () => {
       if (document.hidden) unsubscribe();
@@ -307,9 +330,11 @@ export function useMessageHistory<Row extends HistoryRow>(opts: {
     };
     if (!document.hidden) subscribe();
     document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("online", onOnline);
     return () => {
       disposed = true;
       document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("online", onOnline);
       if (retry) clearTimeout(retry);
       if (debounce) clearTimeout(debounce);
       clearDegraded();
@@ -318,7 +343,14 @@ export function useMessageHistory<Row extends HistoryRow>(opts: {
     };
   }, [contextKey, rtTable, rtFilter, rtKind, syncNewer, reconcile]);
 
-  return { ...state, health, loadOlder, syncNewer, reconcile, retryInitial };
+  // Covers events committed between the first HTTP fetch and subscription readiness.
+  useEffect(() => {
+    if (state.initial === "ready" && health === "live") void reconcile();
+  }, [contextKey, state.initial, health, reconcile]);
+
+  // Do not render the previous conversation during the render before the reset effect.
+  const visibleState = state.key === contextKey ? state : emptyHistory<Row>(contextKey);
+  return { ...visibleState, health, loadOlder, syncNewer, reconcile, retryInitial };
 }
 
 function errMsg(e: unknown) {

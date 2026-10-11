@@ -1,3 +1,4 @@
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // Two-way HubSpot sync — server functions (push manual, conflitos, config).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -98,10 +99,12 @@ export const setHubspotAutoPush = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ enabled: z.boolean() }).parse(i))
   .handler(async ({ data, context }) => {
+    const workspaceId = await resolveActiveWorkspace(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: cur } = await supabaseAdmin
       .from("integrations")
       .select("id, config")
+      .eq("workspace_id", workspaceId)
       .eq("owner_id", context.userId)
       .eq("provider", "hubspot")
       .maybeSingle();
@@ -118,6 +121,7 @@ export const setHubspotAutoPush = createServerFn({ method: "POST" })
     } else {
       const { error } = await supabaseAdmin.from("integrations").insert({
         owner_id: context.userId,
+        workspace_id: workspaceId,
         provider: "hubspot",
         status: "connected",
         config: cfg,

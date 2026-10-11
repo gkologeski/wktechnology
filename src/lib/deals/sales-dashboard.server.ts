@@ -177,7 +177,7 @@ export async function loadSalesDashboard(
     await Promise.all([
       supabase.rpc("get_sales_dashboard_deal_aggregates", {
         p_workspace_id: workspaceId,
-        p_pipeline_id: selected?.id,
+        p_pipeline_id: selected?.id ?? null,
         p_owner_mode: ownerMode,
         p_owner_id: ownerParam,
         p_open_stage_ids: stageParameters.open,
@@ -193,8 +193,8 @@ export async function loadSalesDashboard(
       }),
       supabase.rpc("get_sales_dashboard_secondary_v2", {
         p_workspace_id: workspaceId,
-        p_pipeline_id: selected?.id,
-        p_lead_pipeline_id: selectedLeadPipeline?.id,
+        p_pipeline_id: selected?.id ?? null,
+        p_lead_pipeline_id: selectedLeadPipeline?.id ?? null,
         p_owner_mode: ownerMode,
         p_owner_id: ownerParam,
         p_open_stage_ids: stageParameters.open,

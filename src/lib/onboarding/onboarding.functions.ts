@@ -1,3 +1,4 @@
+import { workspaceOfSource } from "@/lib/workspace-source.server";
 // Onboarding guiado — server functions.
 // Templates reutilizáveis + execução (run) com autosave e materialização
 // de tarefas/workflow ao concluir.
@@ -274,6 +275,13 @@ export const completeOnbRun = createServerFn({ method: "POST" })
     if (rErr) throw new Error(rErr.message);
     if (!run) throw new Error("Onboarding run não encontrado.");
 
+    const sourceTable =
+      run.entity_type === "lead"
+        ? "leads"
+        : run.entity_type === "company"
+          ? "companies"
+          : "contacts";
+    const sourceWorkspace = await workspaceOfSource(supabase, sourceTable, data.entity_id);
     let tasksCreated = 0;
     let workflowEnqueued = false;
 
@@ -298,6 +306,7 @@ export const completeOnbRun = createServerFn({ method: "POST" })
           const due = new Date(now);
           due.setDate(due.getDate() + t.offset_days);
           return {
+            workspace_id: sourceWorkspace,
             owner_id: userId,
             created_by: userId,
             type: t.type,
@@ -321,6 +330,7 @@ export const completeOnbRun = createServerFn({ method: "POST" })
 
       if (tpl?.workflow_id) {
         const { error: evErr } = await supabase.from("workflow_events").insert({
+          workspace_id: sourceWorkspace,
           owner_id: userId,
           entity:
             run.entity_type === "lead"

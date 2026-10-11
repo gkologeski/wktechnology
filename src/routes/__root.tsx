@@ -1,3 +1,4 @@
+import { WorkspaceRealtimeSignals } from "@/components/workspace-realtime-signals";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import {
   Outlet,
@@ -20,6 +21,7 @@ import { BrandingProvider } from "@/lib/branding";
 import { NewVersionWatcher } from "@/components/new-version-watcher";
 import { installChunkReloadGuard } from "@/lib/chunk-reload";
 import { AgentTrigger } from "@/components/ai-agent/agent-trigger";
+import { onWorkspaceChanged } from "@/lib/workspace-events";
 import { cacheActionForAuthEvent } from "@/lib/session-cache";
 
 if (typeof window !== "undefined") {
@@ -176,7 +178,14 @@ function AuthInvalidator() {
       else if (action === "reset") void qc.resetQueries();
       else void qc.invalidateQueries();
     });
-    return () => sub.subscription.unsubscribe();
+    const offWorkspace = onWorkspaceChanged(() => {
+      void qc.resetQueries();
+      void router.invalidate();
+    });
+    return () => {
+      offWorkspace();
+      sub.subscription.unsubscribe();
+    };
   }, [router, qc]);
   return null;
 }
@@ -187,6 +196,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <AuthInvalidator />
+        <WorkspaceRealtimeSignals />
         <NewVersionWatcher />
         <I18nProvider>
           <BrandingProvider>

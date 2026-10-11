@@ -1,3 +1,4 @@
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // Server functions para Goals (metas por usuário/time/workspace).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -77,7 +78,10 @@ export const upsertGoal = createServerFn({ method: "POST" })
     }
     const { data: created, error } = await supabase
       .from("goals")
-      .insert(payload)
+      .insert({
+        ...(payload as Record<string, unknown>),
+        workspace_id: await resolveActiveWorkspace(context.userId),
+      } as never)
       .select("id")
       .single();
     if (error) throw new Error(error.message);

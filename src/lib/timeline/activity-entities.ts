@@ -94,6 +94,28 @@ export async function fetchTimelineTarget(
   return null;
 }
 
+/** O workspace vem da ficha autorizada por RLS, nunca de um default do banco. */
+export async function resolveTimelineWorkspace(
+  relatedKey: RelatedKey,
+  relatedId: string,
+): Promise<string> {
+  const tables = {
+    related_lead_id: "leads",
+    related_contact_id: "contacts",
+    related_company_id: "companies",
+    related_deal_id: "deals",
+    related_ticket_id: "tickets",
+  } as const;
+  const { data, error } = await supabase
+    .from(tables[relatedKey])
+    .select("workspace_id")
+    .eq("id", relatedId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data?.workspace_id) throw new Error("Registro associado indisponível ou sem workspace.");
+  return data.workspace_id;
+}
+
 /** Associações automáticas (empresa/contato) ao registrar uma atividade. */
 export async function resolveTimelineAutoLinks(
   relatedKey: RelatedKey,

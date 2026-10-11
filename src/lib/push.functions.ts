@@ -1,3 +1,4 @@
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // Push subscriptions (Web Push).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -31,6 +32,7 @@ export const registerPushSubscription = createServerFn({ method: "POST" })
         auth: data.auth,
         user_agent: data.user_agent ?? null,
         enabled: true,
+        workspace_id: await resolveActiveWorkspace(context.userId),
       },
       { onConflict: "endpoint" },
     );

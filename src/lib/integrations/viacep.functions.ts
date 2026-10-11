@@ -1,3 +1,4 @@
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // ViaCEP server-side bulk enrichment for companies
 // Endpoint: GET https://viacep.com.br/ws/{cep}/json/  (sem autenticação)
 import { createServerFn } from "@tanstack/react-start";
@@ -35,7 +36,11 @@ export const enrichCompaniesAddress = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    let q = supabase.from("companies").select("id, cep, address, city, state");
+    const workspaceId = await resolveActiveWorkspace(userId);
+    let q = supabase
+      .from("companies")
+      .select("id, cep, address, city, state")
+      .eq("workspace_id", workspaceId);
     if (data.ids && data.ids.length) q = q.in("id", data.ids);
     else if (data.all_missing) q = q.is("city", null);
     const { data: rows, error } = await q.limit(1000);
@@ -45,6 +50,7 @@ export const enrichCompaniesAddress = createServerFn({ method: "POST" })
       .from("enrichment_jobs")
       .insert({
         owner_id: userId,
+        workspace_id: workspaceId,
         provider: "viacep",
         kind: "enrich",
         entity: "company",

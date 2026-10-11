@@ -7,18 +7,23 @@ async function sign(secret: string, body: string) {
 }
 
 export async function enqueueWebhookEvent(
+  workspaceId: string,
   ownerId: string,
   eventType: string,
   payload: Record<string, unknown>,
 ) {
+  if (!workspaceId) throw new Error("Evento sem workspace de origem.");
   const { data: hooks } = await supabaseAdmin
     .from("outbound_webhooks")
-    .select("id")
+    .select("id, workspace_id")
+    .eq("workspace_id", workspaceId)
     .eq("owner_id", ownerId)
     .eq("active", true)
     .contains("events", [eventType]);
   if (!hooks || hooks.length === 0) return;
+  if (hooks.some((h) => !h.workspace_id)) throw new Error("Webhook sem workspace de origem.");
   const rows = hooks.map((h) => ({
+    workspace_id: workspaceId,
     owner_id: ownerId,
     webhook_id: h.id as string,
     event_type: eventType,
@@ -35,7 +40,7 @@ export async function runWebhookDispatch() {
   const now = new Date().toISOString();
   const { data: pending } = await supabaseAdmin
     .from("webhook_deliveries")
-    .select("id, webhook_id, event_type, payload, attempt")
+    .select("id, workspace_id, webhook_id, event_type, payload, attempt")
     .in("status", ["pending", "failed"])
     .lte("next_retry_at", now)
     .order("created_at", { ascending: true })
@@ -44,9 +49,11 @@ export async function runWebhookDispatch() {
 
   let processed = 0;
   for (const d of pending) {
+    if (!d.workspace_id) throw new Error("Entrega sem workspace de origem.");
     const { data: hook } = await supabaseAdmin
       .from("outbound_webhooks")
       .select("url, secret, active")
+      .eq("workspace_id", d.workspace_id)
       .eq("id", d.webhook_id as string)
       .maybeSingle();
     if (!hook || !hook.active) {

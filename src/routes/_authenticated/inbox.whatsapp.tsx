@@ -21,6 +21,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { uploadWhatsAppMedia } from "@/lib/whatsapp-media";
 import { WhatsAppMediaBubble } from "@/components/whatsapp/whatsapp-media-bubble";
+import { useScopedComposerValue } from "@/hooks/use-scoped-composer-value";
 import { useMessageDraft } from "@/hooks/use-message-draft";
 import { MessageDraftStatus } from "@/components/message-draft-status";
 import {
@@ -103,17 +104,18 @@ function WhatsAppInbox() {
   const templatesFn = useServerFn(listWhatsAppTemplates);
 
   const [selected, setSelected] = useState<string | null>(null);
-  const [draft, setDraft] = useState("");
+  const composerScope = `${user?.id ?? ""}:${selected ?? ""}`;
+  const [draft, setDraft] = useScopedComposerValue(composerScope, "");
   const [filter, setFilter] = useState<"mine" | "unassigned" | "all">("all");
-  const [pendingMedia, setPendingMedia] = useState<{
+  const [pendingMedia, setPendingMedia] = useScopedComposerValue<{
     url: string;
     contentType: string;
     name: string;
-  } | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [templateRequired, setTemplateRequired] = useState(false);
-  const [templateName, setTemplateName] = useState("");
-  const [templateVars, setTemplateVars] = useState<string[]>([]);
+  } | null>(composerScope, null);
+  const [uploading, setUploading] = useScopedComposerValue(composerScope, false);
+  const [templateRequired, setTemplateRequired] = useScopedComposerValue(composerScope, false);
+  const [templateName, setTemplateName] = useScopedComposerValue(composerScope, "");
+  const [templateVars, setTemplateVars] = useScopedComposerValue<string[]>(composerScope, []);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [search, setSearch] = useState("");

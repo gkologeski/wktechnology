@@ -241,7 +241,10 @@ export const reconcileHubspotActivities = createServerFn({ method: "POST" })
             properties: PROPS_BY_KIND[kind],
             inputs: chunk.map((id) => ({ id })),
           })) as { results?: HsRec[] };
-          const rows = (rd.results ?? []).map((rec) => buildPayload(kind, userId, rec));
+          const rows = (rd.results ?? []).map((rec) => ({
+            ...buildPayload(kind, userId, rec),
+            workspace_id: workspaceId,
+          }));
           if (rows.length) {
             const { error: insErr } = await supabase.from("activities").insert(rows as never);
             if (insErr) failed += rows.length;

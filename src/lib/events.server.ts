@@ -1,3 +1,4 @@
+import { workspaceOfSource } from "@/lib/workspace-source.server";
 // Event Bus v2 — emissão de eventos de domínio cross-módulo.
 // Use em qualquer ponto server-side para publicar acontecimentos relevantes
 // (ex.: `crm.deal.won`, `ats.candidate.hired`, `people.onboarding_started`).
@@ -57,6 +58,7 @@ async function executeSubscriptionAction(
   supabase: SupabaseClient,
   sub: SubscriptionRow,
   event: EmitEventInput,
+  workspaceId: string,
 ): Promise<void> {
   const action = sub.action ?? {};
   const type = String((action as { type?: string }).type ?? "");
@@ -82,6 +84,7 @@ async function executeSubscriptionAction(
       const { data: pipe } = await supabase
         .from("pipelines")
         .select("id")
+        .eq("workspace_id", workspaceId)
         .eq("owner_id", sub.owner_id)
         .eq("entity", "tickets")
         .order("is_default", { ascending: false })
@@ -90,7 +93,10 @@ async function executeSubscriptionAction(
         .maybeSingle();
       if (pipe) pipelineId = (pipe as { id: string }).id;
     }
+    if (pipelineId && (await workspaceOfSource(supabase, "pipelines", pipelineId)) !== workspaceId)
+      throw new Error("Funil fora da empresa do evento.");
     const row: Record<string, unknown> = {
+      workspace_id: workspaceId,
       owner_id: sub.owner_id,
       subject,
       description: description ? String(description) : null,
@@ -106,10 +112,15 @@ async function executeSubscriptionAction(
   // outros tipos podem ser adicionados no futuro
 }
 
-async function fanoutSubscriptions(supabase: SupabaseClient, event: EmitEventInput): Promise<void> {
+async function fanoutSubscriptions(
+  supabase: SupabaseClient,
+  event: EmitEventInput,
+  workspaceId: string,
+): Promise<void> {
   const { data, error } = await supabase
     .from("workflow_subscriptions")
     .select("id,owner_id,event_pattern,action,enabled")
+    .eq("workspace_id", workspaceId)
     .eq("owner_id", event.ownerId)
     .eq("enabled", true);
   if (error || !data) return;
@@ -120,7 +131,7 @@ async function fanoutSubscriptions(supabase: SupabaseClient, event: EmitEventInp
   });
   for (const sub of subs) {
     try {
-      await executeSubscriptionAction(supabase, sub, event);
+      await executeSubscriptionAction(supabase, sub, event, workspaceId);
     } catch (err) {
       console.error("[emitEvent] subscription action failed", {
         subscription_id: sub.id,
@@ -161,7 +172,8 @@ export async function emitEvent(
   }
 
   // Fan-out best-effort para workflow_subscriptions.
-  await fanoutSubscriptions(supabase, input).catch((err) => {
+  const workspaceId = await workspaceOfSource(supabase, "domain_events", data!.id as string);
+  await fanoutSubscriptions(supabase, input, workspaceId).catch((err) => {
     console.error("[emitEvent] fanout failed", {
       event: input.eventName,
       error: (err as Error).message,

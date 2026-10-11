@@ -1,4 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useAuth } from "@/lib/auth";
+import { listMyWorkspaces } from "@/lib/workspaces.functions";
 import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
@@ -281,11 +285,32 @@ function AtsJobsPage() {
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
 
   const navigate = useNavigate();
-  const [allRows, setRows] = useState<JobRow[]>([]);
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  const workspaceList = useServerFn(listMyWorkspaces);
+  const workspace = useQuery({
+    queryKey: ["my-workspaces", user?.id],
+    queryFn: () => workspaceList(),
+    enabled: !!user,
+    staleTime: 60_000,
+  });
+  const workspaceId = workspace.data?.active_workspace_id;
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string>("all");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const debouncedSearch = useDebouncedValue(search, 300);
+  const jobsKey = ["ats-jobs", user?.id, workspaceId, status, debouncedSearch];
+  const jobsQuery = useQuery({
+    queryKey: jobsKey,
+    queryFn: () => list({ data: { search: debouncedSearch, status } }),
+    enabled: !!workspaceId,
+  });
+  const allRows = (jobsQuery.data ?? []) as JobRow[];
+  const loading = jobsQuery.isPending;
+  const error = jobsQuery.error?.message ?? null;
+  const setRows = (update: JobRow[] | ((rows: JobRow[]) => JobRow[])) =>
+    qc.setQueryData<JobRow[]>(jobsKey, (old) =>
+      typeof update === "function" ? update(old ?? []) : update,
+    );
   const { assignee, setAssignee, filterRows } = useAssigneeFilter();
   // filtro de pipeline (persistido por usuário): "all" = todos os pipelines
   const [pipelineFilter, setPipelineFilter] = useState<string>(() =>
@@ -383,36 +408,13 @@ function AtsJobsPage() {
     if (typeof window !== "undefined") localStorage.setItem("jobs:pipeline", pipelineFilter);
   }, [pipelineFilter]);
 
-  const refresh = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const r = await list({ data: { search, status } });
-      setRows(r as JobRow[]);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "Falha ao listar vagas";
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status]);
-
-  useEffect(() => {
-    const t = setTimeout(() => {
-      refresh();
-    }, 300);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search]);
-
-  // Realtime: quando outro usuário/automação criar/editar vagas, recarrega a lista.
-  useRealtimeInvalidate([{ table: "ats_jobs", onChange: () => void refresh() }]);
+  const refresh = () => jobsQuery.refetch();
+  useRealtimeInvalidate(
+    workspaceId
+      ? [{ table: "ats_jobs", filter: `workspace_id=eq.${workspaceId}`, queryKeys: [["ats-jobs"]] }]
+      : [],
+    { scope: `${user?.id ?? ""}:${workspaceId ?? ""}` },
+  );
 
   const handleCreate = async () => {
     if (!form.title.trim()) {

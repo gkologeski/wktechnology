@@ -1,3 +1,4 @@
+import { workspaceOfSource } from "@/lib/workspace-source.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -231,6 +232,13 @@ export const getEsignSession = createServerFn({ method: "GET" })
       .eq("public_token", data.token)
       .maybeSingle();
     if (error || !signer) throw new Error("Link inválido ou expirado.");
+    const workspaceId = await workspaceOfSource(
+      supabaseAdmin,
+      "esign_documents",
+      signer.document_id,
+    );
+    if (signer.workspace_id !== workspaceId)
+      throw new Error("Signatário e documento pertencem a empresas diferentes.");
 
     const { data: doc, error: e2 } = await supabaseAdmin
       .from("esign_documents")
@@ -270,6 +278,7 @@ export const getEsignSession = createServerFn({ method: "GET" })
         document_id: doc.id,
         signer_id: signer.id,
         owner_id: signer.owner_id,
+        workspace_id: workspaceId,
         event: "viewed",
       });
     }
@@ -298,6 +307,13 @@ export const submitEsignSignature = createServerFn({ method: "POST" })
       .eq("public_token", data.token)
       .maybeSingle();
     if (error || !signer) throw new Error("Link inválido.");
+    const workspaceId = await workspaceOfSource(
+      supabaseAdmin,
+      "esign_documents",
+      signer.document_id,
+    );
+    if (signer.workspace_id !== workspaceId)
+      throw new Error("Signatário e documento pertencem a empresas diferentes.");
     if (signer.status === "signed") throw new Error("Você já assinou este documento.");
     if (signer.status === "declined") throw new Error("Assinatura recusada anteriormente.");
 
@@ -318,6 +334,7 @@ export const submitEsignSignature = createServerFn({ method: "POST" })
       document_id: signer.document_id,
       signer_id: signer.id,
       owner_id: signer.owner_id,
+      workspace_id: workspaceId,
       event: "signed",
       ip_address: ip,
       user_agent: ua,
@@ -374,6 +391,13 @@ export const declineEsign = createServerFn({ method: "POST" })
       .eq("public_token", data.token)
       .maybeSingle();
     if (error || !signer) throw new Error("Link inválido.");
+    const workspaceId = await workspaceOfSource(
+      supabaseAdmin,
+      "esign_documents",
+      signer.document_id,
+    );
+    if (signer.workspace_id !== workspaceId)
+      throw new Error("Signatário e documento pertencem a empresas diferentes.");
     const { error: e2 } = await supabaseAdmin
       .from("esign_signers")
       .update({
@@ -389,6 +413,7 @@ export const declineEsign = createServerFn({ method: "POST" })
       document_id: signer.document_id,
       signer_id: signer.id,
       owner_id: signer.owner_id,
+      workspace_id: workspaceId,
       event: "declined",
       ip_address: ip,
       user_agent: ua,

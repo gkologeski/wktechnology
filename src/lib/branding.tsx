@@ -45,6 +45,11 @@ function applyThemeCss(theme: BrandTheme | null) {
     document.head.appendChild(el);
   }
   if (el.textContent !== css) el.textContent = css;
+  // The theme stylesheet owns these tokens. Legacy inline values would outrank it.
+  for (const token of ["primary", "accent"]) {
+    if (theme?.light?.[token] || theme?.dark?.[token])
+      document.documentElement.style.removeProperty(`--${token}`);
+  }
 }
 
 function applyBranding(branding: Branding | null) {
@@ -152,6 +157,16 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
         if (retry) clearTimeout(retry);
         retry = setTimeout(() => subscribe(workspaceId), realtimeRetryDelay(attempt++));
       };
+      let joined = false;
+      let postgresReady = false;
+      let reconciled = false;
+      const ready = () => {
+        if (cancelled || loadedWorkspace !== workspaceId || !joined || !postgresReady || reconciled)
+          return;
+        reconciled = true;
+        attempt = 0;
+        bump();
+      };
       let c = supabase.channel(`branding:${user.id}:${workspaceId}`);
       for (const f of brandingRealtimeFilters(workspaceId)) {
         c = c.on(
@@ -165,11 +180,22 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
         // O SDK responde SUBSCRIBED mesmo com postgres_changes recusado; a recusa vem em "system".
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .on("system" as any, {}, (p: { status?: string; extension?: string }) => {
-          if (p?.status === "error" && p.extension === "postgres_changes") fail();
+          if (p.extension !== "postgres_changes") return;
+          if (p.status === "error") fail();
+          if (p.status === "ok") {
+            postgresReady = true;
+            ready();
+          }
         })
         .subscribe((status) => {
-          if (status === "SUBSCRIBED") attempt = 0;
-          else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") fail();
+          if (status === "SUBSCRIBED") {
+            joined = true;
+            ready();
+          } else if (status === "CLOSED") {
+            joined = false;
+            postgresReady = false;
+            reconciled = false;
+          } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") fail();
         });
     };
 
@@ -187,6 +213,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
           .from("workspace_members")
           .select("workspace_id")
           .eq("user_id", user.id)
+          .eq("status", "active")
           .limit(1)
           .maybeSingle();
         workspaceId = member?.workspace_id;
@@ -251,18 +278,30 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
     };
   }, [user?.id]);
 
-  const effectiveTheme = useMemo(
-    () => sanitizeTheme(mergeThemes(branding?.theme ?? null, moduleThemes[activeModule] ?? null)),
-    [branding?.theme, moduleThemes, activeModule],
-  );
+  const effectiveTheme = useMemo(() => {
+    const legacyColors = {
+      ...(branding?.primary_color ? { primary: branding.primary_color } : {}),
+      ...(branding?.accent_color ? { accent: branding.accent_color } : {}),
+    };
+    return sanitizeTheme(
+      mergeThemes(
+        { light: legacyColors, dark: legacyColors },
+        branding?.theme ?? null,
+        moduleThemes[activeModule] ?? null,
+      ),
+    );
+  }, [
+    branding?.primary_color,
+    branding?.accent_color,
+    branding?.theme,
+    moduleThemes,
+    activeModule,
+  ]);
 
   useEffect(() => {
     applyBranding(branding);
-  }, [branding]);
-
-  useEffect(() => {
     applyThemeCss(effectiveTheme);
-  }, [effectiveTheme]);
+  }, [branding, effectiveTheme]);
 
   return <BrandingContext.Provider value={branding}>{children}</BrandingContext.Provider>;
 }

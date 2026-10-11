@@ -8,7 +8,141 @@ Legenda: **Concluído** = critério cumprido com evidência executada · **Inves
 diagnóstico com evidência, sem alegar correção · **Bloqueado** = depende de algo externo ·
 **Parcial** = parte comprovada, resto listado.
 
-## Checklist de aceite
+## Ciclo 13 — permissões, realtime e verificação em 10/10/2026
+
+Este quadro substitui o status do ciclo 12 abaixo. Conclusão local não representa
+publicação em produção. A tarefa 7 foi aplicada e validada também no projeto Lovable.
+
+| # | Frente | Status | Evidência e limite |
+| --- | --- | --- | --- |
+| 1 | Permissões / Ver como | Concluído localmente | Autenticação GoTrue real: bloqueio de não administrador e outra empresa, nonce, vínculo único de sessão, leitura restrita e preservação da sessão normal após encerramento. |
+| 3 | Realtime | Concluído localmente | 71 verificações SDK aprovadas, zero falhas; 14 cenários conciliados com provas SDK e manuais separadas. Três placeholders visuais permanecem não executados no relatório automático. |
+| 7 | Verificação abaixo de 240 s | Concluído no Lovable | Commit 98cfeb86ce8bd18e04c58cbd44ca0c5527363445: verificação fria 86,2 s, final 48,3 s; 725 testes/105 arquivos; build Cloudflare completo 189,6 s. Interrupção testada: saída 130 e complete=false. Sem publicação. |
+| 8 | Otimização específica do Nitro | Executada, não concluída | Baseline 135,279 s nas três fases. Quatro alternativas completas: 152,394 s, 143,205 s, 143,591 s e 142,743 s. Sem ganho comprovado; configuração original preservada. |
+
+Correções: atualização só considera a assinatura pronta após confirmação do socket
+**e** do Postgres; reconcilia entrada/reconexão e cancela eventos do contexto anterior.
+Tema do módulo passa a prevalecer sobre cor legada inline. Detalhe de e-mail invalida
+seus metadados, corrigindo cabeçalho/contagem desatualizados com a conversa aberta.
+Cinco novos testes cobrem as condições de corrida, reconexão, recusa e limpeza.
+Verificação final local aprovada: **764 testes em 115 arquivos**, tipagem e lint
+sem erros, `complete=true`, 67,1 segundos. Ver como real: 1 teste adicional aprovado.
+Build final completo aprovado (saída 0), incluindo cliente, SSR e Nitro/Cloudflare;
+nenhuma configuração experimental foi mantida.
+
+Evidências locais em `.techerp-isolated.local/artifacts/`: `cycle13-view-as.json`,
+`cycle13-realtime-matrix.json`, `cycle13-build-comparison.json` e screenshots
+`cycle13-{branding,email,chat,property,context-b}-ui.png`. Arquivos privados não devem
+ser anexados. A comparação do build usa a soma das fases instrumentadas; não é
+comparável diretamente ao tempo total de parede medido no Lovable.
+
+## Ciclo 12 — integridade de workspace em 10/10/2026
+
+Resultado atual local: as migrações 0106–0111 completam a revisão dos 29 defaults
+restantes. Junto com 0104/0105, os **49 defaults fixos** do saldo anterior foram removidos.
+A consulta ao catálogo isolado confirmou zero defaults de workspace com UUID literal.
+Os gravadores auditados passam a empresa da origem; a migração 0112 também recusa
+seleção sem acesso e associação inativa no resolvedor do banco.
+
+Corrigidos caminhos de propostas, CRM, agendas/atividades, e-mail, WhatsApp,
+integrações, enriquecimento, workflows e sequências. A pontuação agora separa regras,
+eventos e cursores por workspace; o mesmo usuário pode ter cursores independentes em
+empresas diferentes. Testes novos cobrem pontuação entre empresas, contato por telefone
+repetido, ausência de origem e sequência de outra empresa.
+
+Validação integral: **759 testes em 114 arquivos**, tipagem e lint aprovados;
+verificador completo em aproximadamente 70 segundos. Supabase principal e reprodução
+nova em portas independentes: **62 aprovados, zero falhas** em cada um. Os três casos
+visuais continuam explicitamente não executados no relatório automático; suas evidências
+manuais anteriores permanecem separadas. Reprodução conferiu o checksum do snapshot.
+
+Build final aprovado (saída 0): cliente 33,52 s, SSR 49,05 s e Nitro concluído.
+**Tarefa 13 concluída localmente**, com contratos, revisão dos gravadores, migrações
+e reprodução limpa aprovados. Isso não representa implantação no ambiente compartilhado.
+Nenhuma alteração foi publicada, enviada ao GitHub ou aplicada à produção.
+
+| # | Frente | Status atual | O que falta |
+| --- | --- | --- | --- |
+| 1 | Permissões | Executada | Aceite compartilhado e conciliação final de Ver como. |
+| 2 | Ambiente isolado | Concluído | Reprodução nova aprovada com 62 verificações e zero falhas. |
+| 3 | Realtime | Executada | Conciliar e validar todos os 14 cenários visuais originais. |
+| 5 | Histórico e conversas | Concluído | Evidência local manual preservada no ciclo 11. |
+| 7 | Limite de 240 segundos | Executada | Validar o comando específico do Lovable; local completo aprovado. |
+| 8 | Nitro | Executada | Demonstrar ganho específico; build aprovado não comprova otimização. |
+| 9 | Entrada e rotas | Concluído | Redução medida no ciclo 11. |
+| 13 | Contratos e workspace | Concluído | Validação local completa; publicação não realizada. |
+
+As sete tarefas pendentes (4, 6, 10, 11, 14, 15 e 16) permanecem para depois.
+A tarefa 12 continua concluída. As seções abaixo são registros históricos, não o saldo atual.
+
+## Ciclo 11 — validação local em 10/10/2026
+
+Esta seção atualiza os resultados históricos abaixo. As alterações deste ciclo estão na cópia
+local; não foram enviadas ao GitHub, aplicadas ao banco de produção nem publicadas.
+
+| ID | Evidência nova | O que ainda impede o fechamento integral |
+| --- | --- | --- |
+| 1 | Migração `0103_restricted_channels_history.sql` aplicada no banco isolado. Matriz real GoTrue/PostgREST ampliada para e-mail, WhatsApp, agenda e histórico. Suite: 56 aprovados, zero falhas. | Validar a migração no ambiente de homologação do projeto antes de aplicação compartilhada; não confundir aprovação local com implantação. |
+| 2 | Segundo Supabase nativo criado do zero em portas independentes: checksum do snapshot verificado, esquema real sem registros de clientes, seed sintético, 56 testes aprovados e zero falhas. Versões do app preservadas por `bun.lock` e instalação congelada. | Reprodução local concluída. Três casos visuais não pertencem ao relatório automático e têm evidências separadas. |
+| 3 | INSERT/UPDATE/DELETE e reconexão automática do SDK aprovados. INSERT/UPDATE/DELETE de nota chegaram à timeline aberta sem recarregar. Corrigida espera pela prontidão `system/postgres_changes`, além de `SUBSCRIBED`. | A matriz visual completa dos 14 cenários originais ainda precisa ser conciliada caso a caso; não marcar casos manuais como aprovados pelo SDK. |
+| 5 | Recebimento de 200 mensagens; consulta inicial de 50; carregamento até 200 sem duplicação. Encontrado e corrigido rascunho que aparecia na conversa seguinte. Dois rascunhos independentes e restauração após recarregar verificados pela interface. | Âncora e reconexão manual aprovadas: mensagem 201 chegou uma vez mantendo scrollTop 2008,5 e âncora y 402,8515625; mensagem 202 recuperada uma vez após interrupção do realtime, sem recarregar. Evidência manual separada em cycle11-conversation-ui.json. |
+| 7 | Verificador completo sequencial com relatório por etapa. Primeira execução: 739 testes, tipagem e lint aprovados em aproximadamente 48 s. | Corrigido travamento da cache incremental do compilador: verificação padrão usa --incremental false. Última execução integral: 753 testes/112 arquivos, tipos 21,77 s, lint 3,87 s, testes 9,17 s (aproximadamente 35 s no total). O comando específico da plataforma que atinge 240 s continua desconhecido; registro original indisponível segundo consulta ao Lovable. |
+| 8 | Medições comparáveis com dependências congeladas: Nitro 25,67 s baseline / 24,94 s candidato. Experimento de `manualChunks` ficou em 24,92 s e foi descartado por não comprovar ganho. | Build final aprovado: cliente 44,90 s, SSR 51,56 s, Nitro aproximadamente 67 s. Não há otimização específica de Nitro comprovada; não comparar esse tempo com medições anteriores como se fosse ganho, pois houve variação de carga local. |
+| 9 | Separação dos prefixos ATS das definições completas de menus: entrada gzip 270.443 → 267.266 bytes; dashboard 348.668 → 346.838; prospecção 434.484 → 432.345; inbox 315.132 → 312.377. Builds comparáveis aprovados. | Conjunto final recompilado com sucesso após as correções de integrações e webhooks. Ganho anterior é modesto, sem promessa de aceleração perceptível. |
+| 13 | Resolver de workspace recusa associação inativa e acesso explícito inválido. Doze gravações de workflows passam workspace da origem e recusam substituição por campos extras; dois testes novos aprovados. | 0104 removeu 13 defaults fixos após auditoria dos gravadores. 0105 cobre sete tabelas de integrações após propagar origem e vincular OAuth ao workspace assinado, com revalidação de acesso antes da troca de token. Restam 29 defaults fixos a auditar confirmados após aplicar 0105 localmente. Não implantado no ambiente compartilhado. |
+
+Evidências locais (ignoradas pelo Git): `.techerp-isolated.local/artifacts/sdk-e2e.json`,
+`reproduction-ready.json`, `reproduction-latest.json`, `cycle11-conversation-ui.json`, `cycle11-default-audit.json`, `cycle11-ui-events.json`, `ui-delete-validated.png`,
+`build-pinned-baseline.json`, `build-pinned-candidate.json` e logs `cycle11-*`.
+Credenciais e arquivos `*.private.*` não devem ser anexados ou enviados.
+
+A primeira reprodução fria teve 48 aprovados / 2 falhas: o SDK anunciou inscrição antes da
+prontidão Postgres. Esse resultado foi preservado em `reproduction/`. Após corrigir a barreira
+de prontidão, **uma nova instância** (`reproduction-ready/`) teve 50 aprovados / zero falhas.
+Uma reprodução posterior em novo diretório datado, com 0104/0105, teve **56 aprovados / zero falhas**, registrada em `reproduction-latest.json`.
+Não foi apenas repetição da mesma instância até obter verde. O segundo stack foi desligado;
+o ambiente principal de desenvolvimento foi preservado.
+
+As tarefas 4, 6, 10, 11, 14, 15 e 16 continuam pendentes. O resultado anterior da tarefa 12
+permanece válido. Nenhuma das lacunas desta tabela deve ser omitida em resumos de status.
+
+### Estado das oito frentes após este avanço
+
+“Concluído” nesta tabela indica implementação e validação **local**. Não significa publicação.
+
+| # | Frente | Estado | Saldo para fechamento |
+| --- | --- | --- | --- |
+| 1 | Permissões | Executada | Aceite compartilhado da migração; conciliar evidência da sessão Ver como com a versão final. |
+| 2 | Ambiente isolado reproduzível | Concluído | Nova base vazia com 0103/0104/0105: 56 verificações aprovadas; zero falhas. |
+| 3 | Matriz realtime completa | Executada | Conciliar os 14 cenários; branding, canais adicionais, revogação e troca de contexto ainda não integralmente cobertos. |
+| 5 | Histórico, rascunho, rolagem e reconexão | Concluído | Validação local manual descrita acima; nenhuma mensagem externa enviada. |
+| 7 | Verificação em até 240 s | Executada | Verificação local corrigida e aprovada em aproximadamente 35 s; comando e validação específicos da plataforma ainda indisponíveis. |
+| 8 | Fase Nitro | Executada | Build aprovado; otimização específica ainda sem ganho comprovado. |
+| 9 | Entrada e rotas mais leves | Concluído | Redução medida com versões congeladas e build final aprovado. |
+| 13 | Contratos e integridade de workspace | Executada | 29 defaults fixos restantes; concluir revisão dos gravadores antes de alterar defaults. |
+
+### Auditoria de workspace: saldo atual local
+
+As migrações 0104 e 0105 removem **20 dos 49 defaults fixos originais**, após propagação
+explícita do workspace nos gravadores auditados. O teste real de criação de uma integração
+inerte pelo usuário da empresa B passou; nenhum Google foi conectado. OAuth preserva o
+workspace assinado e revalida associação ativa antes da troca de token. Estados antigos sem
+workspace pedem reconexão. A unicidade antiga por usuário/provedor/e-mail ainda pode impedir
+conectar a mesma conta Google em dois workspaces; não há transferência silenciosa da conta.
+
+Webhooks agora filtram destinos pelo workspace do evento persistido; entregas cujo destino
+não corresponde à empresa são encerradas sem envio. Três testes verificam esse isolamento
+com envio externo simulado e bloqueado.
+
+**29 defaults fixos ainda existentes:** activities, companies, contacts, credit_ledger,
+dashboard_widgets, deal_line_items, deals, email_broadcast_recipients, email_messages,
+email_threads, email_unsubscribes, enrichment_jobs, esign_audit, hubspot_sync_state,
+integrations, leads, message_sentiments, pipelines, quote_line_items, quotes, record_layouts,
+saved_views, score_events, scoring_cursors, sequence_enrollments, subscriptions, tickets,
+whatsapp_messages e workflow_events. Parte de seus gravadores já foi corrigida; a auditoria
+completa de todos os caminhos continua necessária antes de trocar seus defaults.
+
+## Checklist histórico de aceite (anterior ao ciclo 11)
 
 | ID  | Critério de aceite                                                                                                   | Evidência (arquivo / comando)                                                                                                                                            | Resultado                                                                                                                                                              | Estado                                                                     |
 | --- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |

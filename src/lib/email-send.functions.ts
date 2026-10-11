@@ -51,7 +51,9 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
     // Resolve account (use specified or first connected for this user)
     let q = supabaseAdmin
       .from("email_accounts")
-      .select("id, owner_id, email, access_token, refresh_token, expires_at, status, history_id")
+      .select(
+        "id, workspace_id, owner_id, email, access_token, refresh_token, expires_at, status, history_id",
+      )
       .eq("owner_id", context.userId)
       .eq("provider", "gmail");
     if (data.account_id) q = q.eq("id", data.account_id);
@@ -61,6 +63,7 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
     if (accErr) throw new Error(accErr.message);
     const account = rows?.[0] as EmailAccountRow | undefined;
     if (!account) throw new Error("Nenhuma conta Gmail conectada");
+    if (!account.workspace_id) throw new Error("Conta Gmail sem workspace de origem.");
 
     const accessToken = await ensureAccessToken(account);
 
@@ -144,6 +147,7 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
       const { data: ins, error: tErr } = await supabaseAdmin
         .from("email_threads")
         .insert({
+          workspace_id: account.workspace_id,
           owner_id: context.userId,
           account_id: account.id,
           provider_thread_id: sent.threadId,
@@ -163,6 +167,7 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
 
     const { error: mErr } = await supabaseAdmin.from("email_messages").insert({
       id: messageDbId,
+      workspace_id: account.workspace_id,
       owner_id: context.userId,
       account_id: account.id,
       thread_id: threadDbId,
@@ -202,6 +207,7 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
         data.body_text ?? (data.body_html ? data.body_html.replace(/<[^>]+>/g, " ") : "")
       ).slice(0, 4000);
       const { error: actErr } = await supabaseAdmin.from("activities").insert({
+        workspace_id: account.workspace_id,
         owner_id: context.userId,
         created_by: context.userId,
         type: "email",

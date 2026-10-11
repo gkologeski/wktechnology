@@ -1,3 +1,4 @@
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // Server fns para campanhas de email (broadcast).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -73,6 +74,7 @@ export const createEmailBroadcast = createServerFn({ method: "POST" })
         scheduled_at: data.scheduled_at ?? new Date().toISOString(),
         reply_to: data.reply_to ?? null,
         status: "draft",
+        workspace_id: await resolveActiveWorkspace(context.userId),
       })
       .select("id")
       .single();
@@ -170,7 +172,9 @@ export const sendTestEmailBroadcast = createServerFn({ method: "POST" })
     const admin = supabaseAdmin as any;
     let q = admin
       .from("email_accounts")
-      .select("id, owner_id, email, access_token, refresh_token, expires_at, status, history_id")
+      .select(
+        "id, workspace_id, owner_id, email, access_token, refresh_token, expires_at, status, history_id",
+      )
       .eq("provider", "gmail")
       .eq("status", "connected");
     if (data.email_account_id) q = q.eq("id", data.email_account_id);

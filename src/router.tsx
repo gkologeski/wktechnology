@@ -1,3 +1,5 @@
+import { observeQueries, measureNavigation } from "@/lib/performance/browser";
+import { routeFamily } from "@/lib/performance/metrics";
 import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
 import { createRouter, Link, useRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
@@ -77,6 +79,7 @@ export const getRouter = () => {
     },
   });
 
+  if (typeof window !== "undefined") observeQueries(queryClient);
   bindDialogRefreshClient(queryClient);
 
   const router = createRouter({
@@ -97,5 +100,14 @@ export const getRouter = () => {
     defaultNotFoundComponent: DefaultNotFoundComponent,
   });
 
+  if (typeof window !== "undefined") {
+    let navigationStart = performance.now();
+    router.subscribe("onBeforeNavigate", () => {
+      navigationStart = performance.now();
+    });
+    router.subscribe("onResolved", () => {
+      measureNavigation(routeFamily(router.state.location.pathname), navigationStart);
+    });
+  }
   return router;
 };

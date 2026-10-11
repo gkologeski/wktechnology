@@ -142,6 +142,7 @@ export const convertChatSessionToTicket = createServerFn({ method: "POST" })
     const { data: ticket, error: tErr } = await supabase
       .from("tickets")
       .insert({
+        workspace_id: ws,
         owner_id: ws,
         subject,
         description,

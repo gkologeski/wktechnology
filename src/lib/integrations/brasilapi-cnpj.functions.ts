@@ -1,3 +1,4 @@
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // BrasilAPI CNPJ enrichment for companies.
 // Endpoint: GET https://brasilapi.com.br/api/cnpj/v1/{cnpj}
 // Fallback: https://receitaws.com.br/v1/cnpj/{cnpj}
@@ -190,11 +191,13 @@ export const enrichCompaniesByCNPJ = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     let q = supabase
       .from("companies")
       .select(
         "id, cnpj, name, industry, size, phone, address, city, state, cep, cnpj_enriched_at, domain",
-      );
+      )
+      .eq("workspace_id", workspaceId);
     if (data.ids && data.ids.length) q = q.in("id", data.ids);
     else if (data.all_missing) q = q.not("cnpj", "is", null).is("cnpj_enriched_at", null);
     else q = q.in("id", []); // no-op guard
@@ -205,6 +208,7 @@ export const enrichCompaniesByCNPJ = createServerFn({ method: "POST" })
       .from("enrichment_jobs")
       .insert({
         owner_id: userId,
+        workspace_id: workspaceId,
         provider: "brasilapi",
         kind: "enrich",
         entity: "company",

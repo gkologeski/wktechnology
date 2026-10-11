@@ -1,3 +1,4 @@
+import { workspaceOfSource } from "@/lib/workspace-source.server";
 import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -137,11 +138,13 @@ export const createQuoteFromDeal = createServerFn({ method: "POST" })
       .eq("id", data.dealId)
       .maybeSingle();
     if (dErr || !deal) throw new Error("Negócio não encontrado");
+    const workspaceId = await workspaceOfSource(supabase, "deals", data.dealId);
 
     const { data: lines, error: lErr } = await supabase
       .from("deal_line_items")
       .select("*")
       .eq("deal_id", data.dealId)
+      .eq("workspace_id", workspaceId)
       .order("position");
     if (lErr) throw lErr;
     if (!lines || lines.length === 0) throw new Error("Adicione itens ao negócio primeiro.");
@@ -156,6 +159,7 @@ export const createQuoteFromDeal = createServerFn({ method: "POST" })
       const { data: def } = await supabase
         .from("quote_templates")
         .select("id")
+        .eq("workspace_id", workspaceId)
         .eq("is_default", true)
         .maybeSingle();
       templateId = (def as { id?: string } | null)?.id ?? null;
@@ -165,6 +169,7 @@ export const createQuoteFromDeal = createServerFn({ method: "POST" })
       .from("quotes")
       .insert({
         owner_id: userId,
+        workspace_id: workspaceId,
         deal_id: data.dealId,
         contact_id: deal.primary_contact_id,
         company_id: deal.company_id,
@@ -183,6 +188,7 @@ export const createQuoteFromDeal = createServerFn({ method: "POST" })
     if (qErr) throw qErr;
 
     const payload = lines.map((li, idx) => ({
+      workspace_id: workspaceId,
       owner_id: userId,
       quote_id: quote.id,
       name: li.name,
@@ -250,10 +256,15 @@ export const resyncQuoteLineItems = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .maybeSingle();
     if (qErr || !quote?.deal_id) throw new Error("Cotação não encontrada");
+    const workspaceId = await workspaceOfSource(supabase, "quotes", data.id);
+    const dealWorkspace = await workspaceOfSource(supabase, "deals", quote.deal_id);
+    if (workspaceId !== dealWorkspace)
+      throw new Error("Cotação e negócio pertencem a empresas diferentes.");
     const { data: lines, error: lErr } = await supabase
       .from("deal_line_items")
       .select("*")
       .eq("deal_id", quote.deal_id)
+      .eq("workspace_id", workspaceId)
       .order("position");
     if (lErr) throw lErr;
     const items = lines ?? [];
@@ -266,6 +277,7 @@ export const resyncQuoteLineItems = createServerFn({ method: "POST" })
     if (dErr) throw dErr;
     if (items.length) {
       const payload = items.map((li, idx) => ({
+        workspace_id: workspaceId,
         owner_id: userId,
         quote_id: data.id,
         name: li.name,

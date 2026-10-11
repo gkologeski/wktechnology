@@ -107,12 +107,14 @@ export async function recordTrackingEvent(opts: {
   // Look up message to get owner_id and ensure it exists.
   const { data: msg } = await supabaseAdmin
     .from("email_messages")
-    .select("id, owner_id, open_count, click_count, first_opened_at")
+    .select("id, workspace_id, owner_id, open_count, click_count, first_opened_at")
     .eq("id", opts.messageId)
     .maybeSingle();
   if (!msg) return;
+  if (!msg.workspace_id) throw new Error("Mensagem sem workspace de origem.");
 
   await supabaseAdmin.from("email_tracking_events").insert({
+    workspace_id: msg.workspace_id,
     owner_id: msg.owner_id,
     message_id: msg.id,
     event_type: opts.eventType,

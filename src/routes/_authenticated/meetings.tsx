@@ -15,6 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAuth } from "@/lib/auth";
+import { listMyWorkspaces } from "@/lib/workspaces.functions";
 import { listMeetings } from "@/lib/meetings.functions";
 import { MeetingDetailDrawer } from "@/components/meetings/meeting-detail-drawer";
 import { StartVideoButton } from "@/components/meetings/start-video-button";
@@ -27,12 +29,27 @@ export const Route = createFileRoute("/_authenticated/meetings")({
 
 function MeetingsLibrary() {
   const list = useServerFn(listMeetings);
+  const workspaceList = useServerFn(listMyWorkspaces);
+  const { user } = useAuth();
+  const { data: workspaceContext } = useQuery({
+    queryKey: ["my-workspaces", user?.id],
+    queryFn: () => workspaceList(),
+    enabled: !!user,
+    staleTime: 60_000,
+  });
+  const workspaceId = workspaceContext?.active_workspace_id;
+  const workspaceFilter = workspaceId ? `workspace_id=eq.${workspaceId}` : null;
   const qc = useQueryClient();
   const { assignee, setAssignee, filterRows } = useAssigneeFilter();
-  useRealtimeInvalidate([
-    { table: "calendar_events", queryKeys: [["meetings"]] },
-    { table: "meetings", queryKeys: [["meetings"]] },
-  ]);
+  useRealtimeInvalidate(
+    workspaceFilter
+      ? [
+          { table: "calendar_events", filter: workspaceFilter, queryKeys: [["meetings"]] },
+          { table: "meetings", filter: workspaceFilter, queryKeys: [["meetings"]] },
+        ]
+      : [],
+    { scope: `${user?.id ?? ""}:${workspaceId ?? ""}` },
+  );
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<"all" | "scheduled" | "live" | "ended" | "cancelled">("all");
   const [openId, setOpenId] = useState<string | null>(null);

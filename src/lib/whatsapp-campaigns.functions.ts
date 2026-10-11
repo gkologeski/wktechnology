@@ -1,3 +1,4 @@
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -65,6 +66,7 @@ export const createWhatsAppCampaign = createServerFn({ method: "POST" })
         total: data.recipients.length,
         ...(await sdrColumns(supabase, data.sdr_playbook_id, data.template_name)),
         ...campaignIntervalColumns(data.send_interval_min_s, data.send_interval_max_s),
+        workspace_id: await resolveActiveWorkspace(context.userId),
       })
       .select("id")
       .single();

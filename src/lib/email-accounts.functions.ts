@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildGmailAuthUrl, callbackRedirectUri, signState } from "@/lib/email-oauth.server";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { cleanEmailSignatureHtml } from "@/lib/email-signature-html";
 
 // Start Gmail OAuth — returns an authorize URL the client should redirect to.
@@ -14,6 +15,7 @@ export const startGmailOAuth = createServerFn({ method: "POST" })
     const redirectUri = callbackRedirectUri(data.origin);
     const state = signState({
       user_id: context.userId,
+      workspace_id: await resolveActiveWorkspace(context.userId),
       return_to: data.return_to,
       return_origin: data.origin,
     });

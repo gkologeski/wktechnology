@@ -177,6 +177,7 @@ export type SyncResult = {
 };
 
 export async function syncAccount(account: EmailAccountRow): Promise<SyncResult> {
+  if (!account.workspace_id) throw new Error("Conta Gmail sem workspace de origem.");
   const token = await ensureAccessToken(account);
 
   // Decide which IDs to pull this tick.
@@ -332,6 +333,7 @@ async function persistInboundMessage(
     const { data: ins, error: tErr } = await supabaseAdmin
       .from("email_threads")
       .insert({
+        workspace_id: account.workspace_id,
         owner_id: account.owner_id,
         account_id: account.id,
         provider_thread_id: msg.threadId,
@@ -358,6 +360,7 @@ async function persistInboundMessage(
   const messageDbId = crypto.randomUUID();
   const { error: mErr } = await supabaseAdmin.from("email_messages").insert({
     id: messageDbId,
+    workspace_id: account.workspace_id,
     owner_id: account.owner_id,
     account_id: account.id,
     thread_id: threadDbId,
@@ -403,6 +406,7 @@ async function persistInboundMessage(
   const contactId = existingThread?.contact_id ?? identity?.contact_id ?? null;
   if (!isOutbound && contactId) {
     await supabaseAdmin.from("activities").insert({
+      workspace_id: account.workspace_id,
       owner_id: account.owner_id,
       type: "email",
       subject,

@@ -105,9 +105,9 @@ function toHubspotProps(entity: SyncEntity, row: Record<string, unknown>): Recor
 }
 
 const SELECT_BY_ENTITY: Record<SyncEntity, string> = {
-  contact: "id, first_name, last_name, email, phone, company_name, updated_at",
-  company: "id, name, domain, website, industry, phone, city, state, updated_at",
-  deal: "id, name, value, close_date, updated_at",
+  contact: "id, workspace_id, first_name, last_name, email, phone, company_name, updated_at",
+  company: "id, workspace_id, name, domain, website, industry, phone, city, state, updated_at",
+  deal: "id, workspace_id, name, value, close_date, updated_at",
 };
 
 export type PushResult = {
@@ -155,7 +155,7 @@ export async function pushEntity(
   const localIds = (rows as unknown as Array<{ id: string }>).map((r) => r.id);
   const { data: stateRows } = await supabase
     .from("hubspot_sync_state")
-    .select("id, local_id, hubspot_id, local_updated_at, remote_updated_at")
+    .select("id, workspace_id, local_id, hubspot_id, local_updated_at, remote_updated_at")
     .eq("owner_id", ownerId)
     .eq("entity", entity)
     .in("local_id", localIds);
@@ -169,7 +169,7 @@ export async function pushEntity(
     }
   >();
   for (const s of stateRows ?? []) {
-    stateByLocal.set(s.local_id as string, {
+    stateByLocal.set(JSON.stringify([s.workspace_id, s.local_id]), {
       id: s.id as string,
       hubspot_id: s.hubspot_id as string,
       local_updated_at: s.local_updated_at as string | null,
@@ -180,8 +180,11 @@ export async function pushEntity(
   for (const r of rows as unknown as Array<Record<string, unknown>>) {
     const localId = r.id as string;
     const localUpdated = (r.updated_at as string) ?? new Date().toISOString();
-    const state = stateByLocal.get(localId);
+    const state = stateByLocal.get(JSON.stringify([r.workspace_id, localId]));
     try {
+      const workspaceId = r.workspace_id;
+      if (typeof workspaceId !== "string" || !workspaceId)
+        throw new Error("Registro sem empresa de origem.");
       const propsPayload = toHubspotProps(entity, r);
 
       // (a) sem mapping → cria no HubSpot
@@ -197,6 +200,7 @@ export async function pushEntity(
           (created as { updatedAt?: string }).updatedAt ??
           new Date().toISOString();
         await supabase.from("hubspot_sync_state").insert({
+          workspace_id: workspaceId,
           owner_id: ownerId,
           entity,
           local_id: localId,

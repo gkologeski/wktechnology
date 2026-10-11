@@ -1,3 +1,4 @@
+import { extractAssetFingerprint } from "@/lib/build-assets";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 
@@ -5,13 +6,6 @@ import { toast } from "sonner";
 // emitted by Vite. Each new deploy ships new hashed filenames, so a diff means
 // a new version of the app is live and the user should reload to use it.
 const POLL_INTERVAL_MS = 5 * 60_000;
-
-function extractAssetFingerprint(html: string): string {
-  // Captura todos os caminhos para assets versionados (com hash) gerados pelo
-  // build (Vite/TanStack). Concatena-os para servir como impressão digital.
-  const matches = html.match(/\/[A-Za-z0-9_\-./]+\.[a-z0-9]{6,}\.(?:js|css|mjs)/g) ?? [];
-  return Array.from(new Set(matches)).sort().join("|");
-}
 
 export function NewVersionWatcher() {
   const initialFingerprint = useRef<string | null>(null);

@@ -1,3 +1,4 @@
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // Apollo.io People Enrichment via direct API (POST /api/v1/people/match)
 // Docs: https://docs.apollo.io/reference/people-enrichment
 import { createServerFn } from "@tanstack/react-start";
@@ -58,6 +59,7 @@ export const enrichWithApollo = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => TargetSchema.parse(input))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const table = data.entity === "lead" ? "leads" : "contacts";
 
     const cols =
@@ -68,6 +70,7 @@ export const enrichWithApollo = createServerFn({ method: "POST" })
     const { data: rows, error } = await (supabase as any)
       .from(table)
       .select(cols)
+      .eq("workspace_id", workspaceId)
       .in("id", data.ids);
     if (error) throw new Error(error.message);
     const rowList = (rows ?? []) as Array<Record<string, unknown> & { id: string }>;
@@ -76,6 +79,7 @@ export const enrichWithApollo = createServerFn({ method: "POST" })
       .from("enrichment_jobs")
       .insert({
         owner_id: userId,
+        workspace_id: workspaceId,
         provider: "apollo",
         kind: "enrich",
         entity: data.entity,
@@ -156,6 +160,7 @@ export const enrichWithApollo = createServerFn({ method: "POST" })
     if (credits > 0) {
       await supabase.from("credit_ledger").insert({
         owner_id: userId,
+        workspace_id: workspaceId,
         provider: "apollo",
         job_id: job!.id,
         delta: credits,

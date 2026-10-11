@@ -1,3 +1,4 @@
+import { workspaceOfSource } from "@/lib/workspace-source.server";
 /**
  * Registro da qualificação na timeline do lead/contato.
  *
@@ -44,6 +45,13 @@ export async function logQualificationActivity(
   },
 ): Promise<{ created: boolean; skipped: boolean }> {
   try {
+    const sourceWorkspace = await workspaceOfSource(
+      supabase,
+      args.entity === "lead" ? "leads" : "contacts",
+      args.entityId,
+    );
+    if (args.workspaceId && args.workspaceId !== sourceWorkspace)
+      throw new Error("Qualificação fora da empresa de origem.");
     const relatedKey = args.entity === "lead" ? "related_lead_id" : "related_contact_id";
 
     const { data: q } = await supabase
@@ -121,7 +129,7 @@ export async function logQualificationActivity(
           body,
           completed: true,
           [relatedKey]: args.entityId,
-          ...(args.workspaceId ? { workspace_id: args.workspaceId } : {}),
+          workspace_id: sourceWorkspace,
           ...(args.occurredAt ? { created_at: args.occurredAt } : {}),
           ...(args.links?.contactId && args.entity !== "contact"
             ? { related_contact_id: args.links.contactId }
@@ -135,12 +143,11 @@ export async function logQualificationActivity(
       created = true;
     }
 
-    if (!args.workspaceId) return { created, skipped: false };
     await supabase.from("activity_survey_responses").upsert(
       {
         activity_id: activityId,
         owner_id: args.userId,
-        workspace_id: args.workspaceId,
+        workspace_id: sourceWorkspace,
         source: "prospecting_questionnaire",
         source_id: args.questionnaireId,
         source_name: name,

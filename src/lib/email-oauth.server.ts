@@ -57,6 +57,7 @@ export function signState(payload: Record<string, unknown>): string {
 
 export function verifyState(state: string): {
   user_id: string;
+  workspace_id?: string;
   return_to?: string;
   return_origin?: string;
   mode?: string;
@@ -70,6 +71,7 @@ export function verifyState(state: string): {
   if (a.length !== b.length || !timingSafeEqual(a, b)) throw new Error("State signature mismatch");
   const parsed = JSON.parse(b64urlDecode(body).toString("utf8")) as {
     user_id: string;
+    workspace_id?: string;
     return_to?: string;
     return_origin?: string;
     mode?: string;

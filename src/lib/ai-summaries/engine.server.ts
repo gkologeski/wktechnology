@@ -1,7 +1,8 @@
+import { workspaceOfSource } from "@/lib/workspace-source.server";
 // Engine que gera AI summaries automaticamente após nova atividade.
 // Roda via cron tick. Detecta entidades com atividades novas desde o último
 // summary e dispara geração com debounce.
-import { aiChatFetch, workspaceForRecord } from "@/lib/ai/provider-resolver.server";
+import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const MODEL = "google/gemini-2.5-flash";
@@ -266,8 +267,13 @@ async function summarizeOne(c: Candidate): Promise<"ok" | "skipped" | "error"> {
     const msgs = await collectMessages(c.entity, c.entity_id, "conversation", 60);
     if (msgs.length === 0) return "skipped";
     const prompt = buildPrompt(msgs, "conversation");
-    const ai = await callAi(prompt, await workspaceForRecord(null, c.owner_id));
+    const sourceTable = { lead: "leads", contact: "contacts", deal: "deals", ticket: "tickets" }[
+      c.entity
+    ];
+    const workspaceId = await workspaceOfSource(supabaseAdmin, sourceTable, c.entity_id);
+    const ai = await callAi(prompt, workspaceId);
     const { error } = await supabaseAdmin.from("ai_summaries").insert({
+      workspace_id: workspaceId,
       owner_id: c.owner_id,
       entity: c.entity,
       entity_id: c.entity_id,

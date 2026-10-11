@@ -10,6 +10,7 @@ import {
   fetchTimelineTarget,
   fetchTimelineTeam,
   resolveTimelineAutoLinks,
+  resolveTimelineWorkspace,
   uploadTimelineFiles,
 } from "@/lib/timeline/activity-entities";
 import { insertActivity } from "@/lib/timeline/activity-mutations";
@@ -156,6 +157,7 @@ export function ActivityLogWindow({
       return toast.error("Defina a data de vencimento para repetir a tarefa.");
     setSaving(true);
     try {
+      const workspaceId = await resolveTimelineWorkspace(relatedKey, relatedId);
       const attachments: Attachment[] = pendingFiles.length
         ? await uploadTimelineFiles(user.id, pendingFiles)
         : [];
@@ -164,6 +166,7 @@ export function ActivityLogWindow({
       const isTask = type === "task";
       const schedulable = isTask || type === "call" || type === "meeting";
       const res = await insertActivity({
+        workspace_id: workspaceId,
         owner_id: user.id,
         assigned_to: isTask && assigneeId ? assigneeId : user.id,
         created_by: user.id,
@@ -197,6 +200,7 @@ export function ActivityLogWindow({
       if (!isTask && extras.followUp.enabled) {
         const due = followUpDate(extras.followUp.preset, new Date(), extras.followUp.custom);
         const fu = await insertActivity({
+          workspace_id: workspaceId,
           owner_id: user.id,
           assigned_to: user.id,
           created_by: user.id,

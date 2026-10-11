@@ -1,3 +1,4 @@
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // Server functions para API keys públicas
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -48,6 +49,7 @@ export const createApiKey = createServerFn({ method: "POST" })
         key_hash,
         scopes: data.scopes,
         expires_at: data.expires_at ?? null,
+        workspace_id: await resolveActiveWorkspace(context.userId),
       })
       .select("id, name, prefix, scopes, expires_at, created_at")
       .single();

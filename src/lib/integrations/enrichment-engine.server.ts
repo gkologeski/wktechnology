@@ -178,6 +178,7 @@ export interface RunBatchOpts {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: SupabaseClient<any, any, any>;
   ownerId: string;
+  workspaceId: string;
   providers: EnrichProvider[]; // ordem do cascade
   entity: EnrichEntity;
   ids: string[];
@@ -202,7 +203,8 @@ export interface RunBatchResult {
 }
 
 export async function runEnrichmentBatch(opts: RunBatchOpts): Promise<RunBatchResult> {
-  const { supabase, ownerId, providers, entity, ids, mode, dryRun } = opts;
+  const { supabase, ownerId, workspaceId, providers, entity, ids, mode, dryRun } = opts;
+  if (!workspaceId) throw new Error("Enriquecimento sem empresa de origem.");
   const table = entity === "lead" ? "leads" : "contacts";
 
   const cols =
@@ -210,7 +212,11 @@ export async function runEnrichmentBatch(opts: RunBatchOpts): Promise<RunBatchRe
       ? "id, workspace_id, first_name, last_name, email, phone, company_name"
       : "id, workspace_id, first_name, last_name, email, phone, job_title, linkedin_url, company_name";
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: rows, error } = await (supabase as any).from(table).select(cols).in("id", ids);
+  const { data: rows, error } = await (supabase as any)
+    .from(table)
+    .select(cols)
+    .eq("workspace_id", workspaceId)
+    .in("id", ids);
   if (error) throw new Error(error.message);
   const rowList = (rows ?? []) as Array<Record<string, unknown> & { id: string }>;
 
@@ -223,6 +229,7 @@ export async function runEnrichmentBatch(opts: RunBatchOpts): Promise<RunBatchRe
         .from("enrichment_jobs")
         .insert({
           owner_id: ownerId,
+          workspace_id: workspaceId,
           provider: p,
           kind: "enrich",
           entity,
@@ -368,6 +375,7 @@ export async function runEnrichmentBatch(opts: RunBatchOpts): Promise<RunBatchRe
       if (c.cr > 0) {
         await supabase.from("credit_ledger").insert({
           owner_id: ownerId,
+          workspace_id: workspaceId,
           provider,
           job_id: jobId,
           delta: c.cr,

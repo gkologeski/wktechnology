@@ -5,7 +5,7 @@ import { Link } from "@tanstack/react-router";
 import { CheckCircle2, Circle, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useActiveModuleDefinition } from "@/lib/modules/active-module";
+import { useActiveModuleDefinition } from "@/lib/modules/active-module-definition";
 import { useAuth } from "@/lib/auth";
 
 type Step = { id: string; title: string; href: string; description: string };

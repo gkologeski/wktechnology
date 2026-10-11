@@ -15,6 +15,7 @@ export type ConvertResult = {
  * Throws on first error so the caller can surface it via toast.
  */
 export async function convertLead(lead: Lead, ownerId: string): Promise<ConvertResult> {
+  if (!lead.workspace_id) throw new Error("Lead sem empresa de origem.");
   let companyId: string | null = lead.company_id ?? null;
   let reusedCompany = !!lead.company_id;
 

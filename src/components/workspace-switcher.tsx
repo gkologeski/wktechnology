@@ -44,7 +44,6 @@ export function WorkspaceSwitcher() {
       toast.success("Workspace alterado");
       // reset (e não só invalidate): descarta os dados do workspace anterior
       // para que nenhuma tela os exiba enquanto recarrega.
-      void qc.resetQueries();
       notifyWorkspaceChanged(); // White Label recarrega o branding do novo workspace
     },
     onError: (e: Error) => toast.error(e.message),

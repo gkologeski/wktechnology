@@ -1,5 +1,5 @@
 import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
-import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { workspaceOfSource } from "@/lib/workspace-source.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -482,18 +482,17 @@ export const generateAiSummary = createServerFn({ method: "POST" })
       };
     }
     const prompt = buildPrompt(msgs, data.kind);
-    let workspaceId: string | null = null;
-    try {
-      workspaceId = await resolveActiveWorkspace(userId);
-    } catch {
-      workspaceId = null;
-    }
+    const sourceTable = { lead: "leads", contact: "contacts", deal: "deals", ticket: "tickets" }[
+      data.entity
+    ];
+    const workspaceId = await workspaceOfSource(supabase, sourceTable, data.entity_id);
     const ai = await callAi(prompt, DEFAULT_MODEL, { workspaceId, userId });
     const windowFrom = msgs[0].at;
     const windowTo = msgs[msgs.length - 1].at;
     const { data: row, error } = await supabase
       .from("ai_summaries")
       .insert({
+        workspace_id: workspaceId,
         owner_id: userId,
         entity: data.entity,
         entity_id: data.entity_id,

@@ -11,7 +11,7 @@ import { tickWorkflows } from "./engine-runtime.server";
 export async function tickTimeTriggers(supabase: SupabaseClient, limitPerWf = 100) {
   const { data: workflows, error } = await supabase
     .from("workflows")
-    .select("id, owner_id, entity, trigger")
+    .select("id, workspace_id, owner_id, entity, trigger")
     .eq("enabled", true)
     .eq("status", "published");
   if (error) throw new Error(error.message);
@@ -21,9 +21,11 @@ export async function tickTimeTriggers(supabase: SupabaseClient, limitPerWf = 10
   for (const wf of (workflows ?? []) as Array<{
     id: string;
     owner_id: string;
+    workspace_id: string;
     entity: WorkflowEntity;
     trigger: WorkflowTrigger | null;
   }>) {
+    if (!wf.workspace_id) throw new Error("Workflow sem workspace de origem.");
     const trig = wf.trigger ?? ({} as WorkflowTrigger);
     const tb = trig.time_based;
     if (!tb) continue;
@@ -43,6 +45,7 @@ export async function tickTimeTriggers(supabase: SupabaseClient, limitPerWf = 10
       .from(wf.entity as never)
       .select("*")
       .eq("owner_id", wf.owner_id)
+      .eq("workspace_id", wf.workspace_id)
       .lte(field, thresholdIso)
       .limit(limitPerWf);
     const { data: records, error: recErr } = await q;
@@ -75,6 +78,7 @@ export async function tickTimeTriggers(supabase: SupabaseClient, limitPerWf = 10
       }
 
       const { error: evErr } = await supabase.from("workflow_events").insert({
+        workspace_id: wf.workspace_id,
         owner_id: wf.owner_id,
         entity: wf.entity,
         entity_id: rec.id as string,

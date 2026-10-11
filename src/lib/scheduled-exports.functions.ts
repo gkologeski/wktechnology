@@ -1,3 +1,4 @@
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // Server functions para Agendamentos de Export por Email.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -72,7 +73,11 @@ export const upsertSchedule = createServerFn({ method: "POST" })
     }
     const { data: created, error } = await supabase
       .from("report_schedules")
-      .insert({ ...payload, owner_id: userId })
+      .insert({
+        ...payload,
+        owner_id: userId,
+        workspace_id: await resolveActiveWorkspace(context.userId),
+      })
       .select("id")
       .single();
     if (error) throw new Error(error.message);

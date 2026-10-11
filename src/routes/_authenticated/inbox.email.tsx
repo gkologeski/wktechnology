@@ -12,6 +12,7 @@ import {
   listConversationMessages,
 } from "@/lib/inbox/message-history.functions";
 import { useMessageHistory } from "@/hooks/use-message-history";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { MessageHistoryViewport } from "@/components/inbox/message-history-viewport";
 import type { HistoryPage } from "@/lib/inbox/message-history";
 import { compactCount } from "@/lib/inbox/channel-page";
@@ -112,6 +113,18 @@ function EmailInbox() {
     queryFn: () => getFn({ data: { thread_id: selected! } }),
     enabled: !!selected,
   });
+  useRealtimeInvalidate(
+    selected && user?.id
+      ? [
+          {
+            table: "email_threads",
+            filter: `id=eq.${selected}`,
+            queryKeys: [["email_thread", selected]],
+          },
+        ]
+      : [],
+    { scope: `email-meta:${user?.id ?? "anon"}:${selected ?? "none"}` },
+  );
   // Mensagens por página, sem corpo/anexos (carregados por cartão ao aparecer).
   // email_messages não está na publicação: a thread (email_threads) sinaliza novidades.
   const history = useMessageHistory<EmailMessageRow>({

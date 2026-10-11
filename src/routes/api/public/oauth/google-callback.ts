@@ -1,3 +1,4 @@
+import { requireSourceWorkspaceAccess } from "@/lib/workspace-source.server";
 import { createFileRoute } from "@tanstack/react-router";
 
 import {
@@ -83,7 +84,13 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
           return htmlResponse("Parâmetros faltando", `<h1>Requisição inválida</h1>`, 400);
         }
 
-        let parsed: { user_id: string; return_to?: string; return_origin?: string; mode?: string };
+        let parsed: {
+          workspace_id?: string;
+          user_id: string;
+          return_to?: string;
+          return_origin?: string;
+          mode?: string;
+        };
         try {
           parsed = verifyState(state);
         } catch (e) {
@@ -99,6 +106,11 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
 
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          const workspaceId = await requireSourceWorkspaceAccess(
+            supabaseAdmin,
+            parsed.user_id,
+            parsed.workspace_id,
+          );
           const tokens = await exchangeCodeForTokens({ code, redirectUri });
           const info = await fetchGoogleUserInfo(tokens.access_token);
           const scopes = tokens.scope ? tokens.scope.split(" ") : [];
@@ -109,12 +121,14 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
               .from("calendar_accounts")
               .select("id, refresh_token")
               .eq("owner_id", parsed.user_id)
+              .eq("workspace_id", workspaceId)
               .eq("provider", "google")
               .eq("email", info.email)
               .maybeSingle();
             const refreshToken = tokens.refresh_token ?? existing?.refresh_token ?? null;
             const payload = {
               owner_id: parsed.user_id,
+              workspace_id: workspaceId,
               provider: "google",
               email: info.email,
               access_token: tokens.access_token,
@@ -153,6 +167,7 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
             .from("email_accounts")
             .select("id, refresh_token")
             .eq("owner_id", parsed.user_id)
+            .eq("workspace_id", workspaceId)
             .eq("provider", "gmail")
             .eq("email", info.email)
             .maybeSingle();
@@ -161,6 +176,7 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
 
           const payload = {
             owner_id: parsed.user_id,
+            workspace_id: workspaceId,
             provider: "gmail",
             email: info.email,
             access_token: tokens.access_token,

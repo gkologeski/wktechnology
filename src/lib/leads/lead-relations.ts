@@ -88,10 +88,11 @@ export async function ensureLeadRelations(
   }
   if (!row) return result;
 
-  const workspaceId = row.workspace_id ?? null;
+  const workspaceId = row.workspace_id;
+  if (!workspaceId) throw new Error("Lead sem workspace de origem.");
   const base: Record<string, unknown> = {};
   if (row.owner_id) base["owner_id"] = row.owner_id;
-  if (workspaceId) base["workspace_id"] = workspaceId;
+  base["workspace_id"] = workspaceId;
   if (row.assigned_user_id) base["assigned_user_id"] = row.assigned_user_id;
 
   const patch: Record<string, unknown> = {};
