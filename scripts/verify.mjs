@@ -53,7 +53,10 @@ function run(step) {
         output,
       });
     };
-    child.on("error", (e) => done(127, null, (output += String(e))));
+    child.on("error", (e) => {
+      output += String(e);
+      done(127, null);
+    });
     child.on("close", done);
   });
 }
@@ -65,7 +68,9 @@ for (const step of STEPS) {
   console.log(`\n[verify] ▶ ${step.name}`);
   const r = await run(step);
   results.push(r);
-  console.log(`[verify] ${r.ok ? "OK" : "FALHOU"} ${step.name} em ${(r.duration_ms / 1000).toFixed(1)}s`);
+  console.log(
+    `[verify] ${r.ok ? "OK" : "FALHOU"} ${step.name} em ${(r.duration_ms / 1000).toFixed(1)}s`,
+  );
 }
 const finishedAt = new Date();
 const complete = !interrupted && results.length === STEPS.length && results.every((r) => r.ok);
@@ -85,6 +90,8 @@ writeFileSync(
     2,
   ),
 );
-console.log(`\n[verify] complete=${complete} total ${((finishedAt - startedAt) / 1000).toFixed(1)}s`);
+console.log(
+  `\n[verify] complete=${complete} total ${((finishedAt - startedAt) / 1000).toFixed(1)}s`,
+);
 const firstFail = results.find((r) => !r.ok);
-process.exit(complete ? 0 : interrupted ? 130 : (firstFail?.exit_code || 1));
+process.exit(complete ? 0 : interrupted ? 130 : firstFail?.exit_code || 1);
