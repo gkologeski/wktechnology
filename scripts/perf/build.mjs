@@ -10,15 +10,14 @@ writeFileSync(path, JSON.stringify({ complete: false, phases: {}, duration_ms: 0
 let interrupted = null;
 const child = spawn(
   process.execPath,
-  ["node_modules/vite/bin/vite.js", "build", ...process.argv.slice(2)],
+  // Heap como flag de linha de comando: vence qualquer NODE_OPTIONS do ambiente
+  // (medido: --max-old-space-size=3072 herdado → OOM/SIGABRT no SSR).
+  ["--max-old-space-size=8192", "node_modules/vite/bin/vite.js", "build", ...process.argv.slice(2)],
   {
     stdio: "inherit",
     env: {
       ...process.env,
       TECHERP_BUILD_SOURCE_HASH: sourceHash,
-      // O heap de 8 GB vai por último: o ambiente pode trazer um limite menor
-      // (medido: --max-old-space-size=3072 → SIGABRT no SSR), e o último valor vence.
-      NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --max-old-space-size=8192`.trim(),
     },
   },
 );
