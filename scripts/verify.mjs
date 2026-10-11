@@ -23,7 +23,14 @@ let interrupted = null;
 for (const sig of ["SIGINT", "SIGTERM"]) {
   process.on(sig, () => {
     interrupted = sig;
-    if (child && child.exitCode === null) child.kill(sig);
+    if (!child || child.exitCode !== null) return;
+    child.kill(sig);
+    // O tsgo ignora SIGTERM (medido: termina a checagem e sai 0). Após 3 s, força.
+    const c = child;
+    setTimeout(
+      () => c.exitCode === null && c.signalCode === null && c.kill("SIGKILL"),
+      3000,
+    ).unref();
   });
 }
 
@@ -51,7 +58,7 @@ function run(step) {
         duration_ms: finished - started,
         exit_code: code,
         signal: signal ?? null,
-        ok: code === 0,
+        ok: code === 0 && !interrupted,
         output,
       });
     };
