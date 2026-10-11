@@ -16,7 +16,9 @@ const child = spawn(
     env: {
       ...process.env,
       TECHERP_BUILD_SOURCE_HASH: sourceHash,
-      NODE_OPTIONS: process.env.NODE_OPTIONS || "--max-old-space-size=8192",
+      // O heap de 8 GB vai por último: o ambiente pode trazer um limite menor
+      // (medido: --max-old-space-size=3072 → SIGABRT no SSR), e o último valor vence.
+      NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --max-old-space-size=8192`.trim(),
     },
   },
 );
