@@ -232,8 +232,8 @@ await run("after", "A-perm-outro-ws", "admin B sem chave na A", async () => {
   return String(data);
 }, "false");
 // deny prevalece + soma de 2 cargos
-psql(`insert into public.job_role_permission_overrides(role_id, workspace_id, permission_key, effect)
- values ('30000000-0000-4000-8000-0000000000a4','${WA}','techsales.role_profiles.approve.workspace','deny') on conflict do nothing`);
+psql(`insert into public.job_role_permission_overrides(role_id, workspace_id, permission_key, effect, created_by)
+ values ('30000000-0000-4000-8000-0000000000a4','${WA}','techsales.role_profiles.approve.workspace','deny','${U(1)}') on conflict do nothing`);
 await run("after", "A-deny-prevalece", "deny em um cargo vence grant de outro", hasPerm(2, "techsales.role_profiles.approve.workspace"), "false");
 await run("after", "A-soma-cargos", "chave do outro cargo continua", hasPerm(2, "techsales.inbox.chat.view.own"), "true");
 psql(`delete from public.job_role_permission_overrides where role_id='30000000-0000-4000-8000-0000000000a4' and workspace_id='${WA}'`);
@@ -268,8 +268,8 @@ await run("after", "A-send-own-terceiro", "não envia em sessão de terceiro", s
 await run("after", "A-send-team-sem-chave", "visualizador de equipe sem criar não envia", send(3, S2), "ERR 42501");
 await run("after", "A-send-ws", "workspace envia na fila", send(4, S3), "ok");
 await run("after", "A-send-autor-falso", "não envia como outra pessoa", send(4, S3, U(2)), "ERR 42501");
-psql(`insert into public.job_role_permission_overrides(role_id, workspace_id, permission_key, effect)
- values ('${ROLE_OWN}','${WA}','techsales.inbox.chat.view.own','deny') on conflict do nothing`);
+psql(`insert into public.job_role_permission_overrides(role_id, workspace_id, permission_key, effect, created_by)
+ values ('${ROLE_OWN}','${WA}','techsales.inbox.chat.view.own','deny','${U(1)}') on conflict do nothing`);
 await run("after", "A-chat-deny", "deny remove visão própria", countSessions(2), "none");
 psql(`delete from public.job_role_permission_overrides where role_id='${ROLE_OWN}' and workspace_id='${WA}'`);
 
