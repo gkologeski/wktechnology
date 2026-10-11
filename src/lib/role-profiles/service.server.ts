@@ -63,6 +63,10 @@ function friendly(e: { message?: string } | null | undefined): Error {
     return new Error(
       "Outra pessoa alterou este perfil. Recarregue para ver a versão mais recente.",
     );
+  if (m.includes("LEADER_REQUIRED"))
+    return new Error(
+      'A aprovação é feita pelo líder da equipe do negócio. Use "Solicitar validação"; um administrador só pode aprovar por override com motivo registrado.',
+    );
   if (m.includes("PERMISSION_DENIED")) return new Error("Você não tem permissão para esta ação.");
   if (m.includes("EARLY_REQUIRED"))
     return new Error(
