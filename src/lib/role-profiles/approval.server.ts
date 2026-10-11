@@ -183,6 +183,17 @@ export async function decide(
   ctx: Ctx,
   input: { itemId: string; decision: "approve" | "request_changes"; comment?: string },
 ) {
+  // Visibilidade do negócio pelo próprio usuário (RLS) antes da decisão canônica.
+  const { data: item } = await ctx.supabase
+    .from("role_profile_approval_items")
+    .select("role_profile_approval_requests(deal_id)")
+    .eq("id", input.itemId)
+    .maybeSingle();
+  const dealId = (item as { role_profile_approval_requests?: { deal_id?: string } } | null)
+    ?.role_profile_approval_requests?.deal_id;
+  if (!dealId) throw new Error("Solicitação não encontrada.");
+  const { data: deal } = await ctx.supabase.from("deals").select("id").eq("id", dealId).maybeSingle();
+  if (!deal) throw new Error("Você não tem acesso a este negócio.");
   const { data, error } = await ctx.supabase.rpc("role_profile_leader_decide", {
     _item: input.itemId,
     _decision: input.decision,
