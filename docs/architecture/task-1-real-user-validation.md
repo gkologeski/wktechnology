@@ -130,3 +130,13 @@ Causa 2 (medida no real): mesmo sem custo por linha, leitura ampla sob RLS preci
 0116 (etapas/canais): 977,8 ms → 5,5 ms isolado, visibilidade idêntica (registrado acima).
 
 Pendente: medir com JWT real da QA (sessão oficial ainda indisponível); aceite 1/16 não concedido.
+
+## Aceite QA compartilhado — reteste final (11/10/2026 ~13:40 UTC) — APROVADO
+
+Método: sessão oficial `lovable auth-session --user 9b75a10a-…` aprovada pelo usuário; SDK com chave publicável + JWT real da QA (claims.sub = QA, role = authenticated). Somente contagens/IDs; nenhuma mensagem, marcação de lida, agendamento ou cron.
+
+1ª rodada: 34 PASS / 1 FAIL — 1ª página de `activities` ordenada por created_at expirou (57014, 8,2 s). Causa: índice 0118 não cobria created_at. Correção 0119 (testada no isolado: Index Only Scan, Heap Fetches 0, 127 ms): `activities_rls_cover2_idx` com created_at no INCLUDE, substituindo o da 0118.
+
+Reteste: **35 PASS / 0 FAIL**. Tempos: email_threads 0,5 s; stage_entries 0,3 s (antes 7,5 s); property_history 0,8 s; activities sem filtro 2,1 s (antes timeout) = 1 (nota própria); activities de terceiros 0; 1ª página 0,3 s = só a nota própria; 7 IDs diretos de terceiros invisíveis; Inbox unificada (all/email/whatsapp, com/sem busca) e por canal 0 itens; chat ao vivo 0; sinais: INSERT 42501, EXECUTE indisponível.
+
+Sessões da QA revogadas ao final (signOut global da própria QA; arquivo de sessão apagado). Conta, cargo (own, restricted_visibility) e senha não alterados.
