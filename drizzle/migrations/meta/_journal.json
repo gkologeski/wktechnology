@@ -806,6 +806,13 @@
       "when": 1791718800000,
       "tag": "0114_workspace_delete_signals",
       "breakpoints": true
+    },
+    {
+      "idx": 115,
+      "version": "7",
+      "when": 1791699162628,
+      "tag": "0115_rep_scope_live_chat_and_hashed_policies",
+      "breakpoints": true
     }
   ]
 }

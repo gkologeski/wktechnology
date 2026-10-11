@@ -22860,6 +22860,7 @@ export type Database = {
         }
         Returns: string
       }
+      view_as_test_record_ids: { Args: never; Returns: string[] }
       wa_ad_slug_increment: {
         Args: { p_slug: string }
         Returns: {
