@@ -259,9 +259,11 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
           }
         }
 
-        await supabaseAdmin.from("form_submissions").insert({
+        // Sem sessão: o tenant vem do formulário (o DEFAULT depende de auth.uid()).
+        const { error: subErr } = await supabaseAdmin.from("form_submissions").insert({
           form_id: form.id,
           owner_id: form.owner_id,
+          workspace_id: form.workspace_id,
           data: clean,
           lead_id: leadId,
           contact_id: contactId,
@@ -269,6 +271,7 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
           user_agent: ua,
           referer,
         });
+        if (subErr) console.error("[forms] falha ao gravar envio:", subErr.code, subErr.message);
 
         // Nota na timeline com os campos preenchidos, na ordem definida no
         // formulário. Falha aqui não invalida o envio: apenas registra log.
