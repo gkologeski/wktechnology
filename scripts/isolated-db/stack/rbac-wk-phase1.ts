@@ -3,7 +3,7 @@
 // Fixtures sintéticas só no banco descartável. Sem service_role nas asserções.
 // Exit 0 tudo passou | 1 falha | 2 bloqueado.
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { mkdirSync, writeFileSync, readFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 
@@ -46,7 +46,21 @@ function psqlArgs(extra: string[]) {
     delete env[k];
   return spawnSync(
     "psql",
-    ["-X", "-qtA", "-v", "ON_ERROR_STOP=1", "-h", `${root}/sock`, "-p", port, "-U", "postgres", "-d", "postgres", ...extra],
+    [
+      "-X",
+      "-qtA",
+      "-v",
+      "ON_ERROR_STOP=1",
+      "-h",
+      `${root}/sock`,
+      "-p",
+      port,
+      "-U",
+      "postgres",
+      "-d",
+      "postgres",
+      ...extra,
+    ],
     { env, encoding: "utf8" },
   );
 }
@@ -130,7 +144,8 @@ insert into public.role_profile_approval_items(id, request_id, workspace_id, pro
  ('${I3}','63000000-0000-4000-8000-0000000000a1','${WA}','${P3}',1) on conflict do nothing;
 `);
 
-const mk = () => createClient(URL_, anonKey!, { auth: { persistSession: false, autoRefreshToken: false } });
+const mk = () =>
+  createClient(URL_, anonKey!, { auth: { persistSession: false, autoRefreshToken: false } });
 const sessions: Record<number, SupabaseClient> = {};
 async function as(n: number) {
   if (sessions[n]) return sessions[n];
@@ -140,9 +155,21 @@ async function as(n: number) {
   return (sessions[n] = c);
 }
 
-type R = { id: string; phase: string; status: "pass" | "fail" | "observed"; detail: string; why: string };
+type R = {
+  id: string;
+  phase: string;
+  status: "pass" | "fail" | "observed";
+  detail: string;
+  why: string;
+};
 const results: R[] = [];
-async function run(phase: "before" | "after", id: string, why: string, fn: () => Promise<string>, expect?: string | RegExp) {
+async function run(
+  phase: "before" | "after",
+  id: string,
+  why: string,
+  fn: () => Promise<string>,
+  expect?: string | RegExp,
+) {
   let got: string;
   try {
     got = await fn();
@@ -154,37 +181,62 @@ async function run(phase: "before" | "after", id: string, why: string, fn: () =>
     return;
   }
   const ok = typeof expect === "string" ? got === expect : expect.test(got);
-  results.push({ id, phase, status: ok ? "pass" : "fail", detail: `got=${got} expect=${expect}`, why });
+  results.push({
+    id,
+    phase,
+    status: ok ? "pass" : "fail",
+    detail: `got=${got} expect=${expect}`,
+    why,
+  });
 }
 const hasPerm = (n: number, key: string) => async () => {
   const c = await as(n === 5 ? 5 : 1);
-  const { data, error } = await c.rpc("user_has_permission", { _user_id: U(n), _workspace_id: WA, _permission_key: key });
+  const { data, error } = await c.rpc("user_has_permission", {
+    _user_id: U(n),
+    _workspace_id: WA,
+    _permission_key: key,
+  });
   return error ? `ERR ${error.message}` : String(data);
 };
 const renameRole = (n: number, name: string) => async () => {
   const c = await as(n);
-  const { data, error } = await c.from("job_roles").update({ name }).eq("id", ROLE_OWN).select("id");
+  const { data, error } = await c
+    .from("job_roles")
+    .update({ name })
+    .eq("id", ROLE_OWN)
+    .select("id");
   if (error) return `ERR ${error.code}`;
   return `rows=${data?.length ?? 0}`;
 };
 const roleName = () => psql(`select name from public.job_roles where id='${ROLE_OWN}'`);
 const countSessions = (n: number) => async () => {
   const c = n === 0 ? mk() : await as(n);
-  const { data, error } = await c.from("live_chat_sessions").select("id").eq("workspace_id", WA).order("id");
+  const { data, error } = await c
+    .from("live_chat_sessions")
+    .select("id")
+    .eq("workspace_id", WA)
+    .order("id");
   if (error) return `ERR ${error.code}`;
   return (data ?? []).map((r) => r.id.slice(-2)).join(",") || "none";
 };
 const countMsgs = (n: number) => async () => {
   const c = n === 0 ? mk() : await as(n);
-  const { data, error } = await c.from("live_chat_messages").select("session_id").eq("workspace_id", WA);
+  const { data, error } = await c
+    .from("live_chat_messages")
+    .select("session_id")
+    .eq("workspace_id", WA);
   if (error) return `ERR ${error.code}`;
   return String(new Set((data ?? []).map((r) => r.session_id.slice(-2))).size);
 };
 const send = (n: number, session: string, author?: string) => async () => {
   const c = await as(n);
   const { error } = await c.from("live_chat_messages").insert({
-    session_id: session, owner_id: WA, workspace_id: WA, direction: "outbound",
-    author_user_id: author ?? U(n), body: "[ISO] resposta",
+    session_id: session,
+    owner_id: WA,
+    workspace_id: WA,
+    direction: "outbound",
+    author_user_id: author ?? U(n),
+    body: "[ISO] resposta",
   });
   return error ? `ERR ${error.code}` : "ok";
 };
@@ -196,11 +248,30 @@ const rpc = (n: number, fn: string, args: Record<string, unknown>) => async () =
 };
 
 // ===== ANTES =====
-await run("before", "B-perm-inativo", "membro inativo ainda tinha permissões efetivas", hasPerm(5, "techsales.deals.view.workspace"));
-await run("before", "B-cargo-membro", "membro comum renomeava cargo", renameRole(2, "[ISO] renomeado por membro"));
+await run(
+  "before",
+  "B-perm-inativo",
+  "membro inativo ainda tinha permissões efetivas",
+  hasPerm(5, "techsales.deals.view.workspace"),
+);
+await run(
+  "before",
+  "B-cargo-membro",
+  "membro comum renomeava cargo",
+  renameRole(2, "[ISO] renomeado por membro"),
+);
 await run("before", "B-chat-own", "dono de escopo próprio via todas as sessões", countSessions(2));
-await run("before", "B-legado-nao-lider", "não-líder com chave aprovava pelo legado",
-  rpc(2, "role_profile_approve", { _profile: P2, _expected_revision: 1, _snapshot: {}, _commercial: null }));
+await run(
+  "before",
+  "B-legado-nao-lider",
+  "não-líder com chave aprovava pelo legado",
+  rpc(2, "role_profile_approve", {
+    _profile: P2,
+    _expected_revision: 1,
+    _snapshot: {},
+    _commercial: null,
+  }),
+);
 // Desfaz efeitos do "antes" para o "depois" partir do mesmo estado.
 psql(`update public.job_roles set name='[ISO] Cargo próprio' where id='${ROLE_OWN}';
  delete from public.live_chat_messages where direction='outbound' and workspace_id='${WA}';
@@ -217,41 +288,121 @@ if (mig.status !== 0) {
   process.exit(1);
 }
 const mig2 = psqlArgs(["-f", MIGRATION]);
-results.push({ id: "M-idempotente", phase: "after", status: mig2.status === 0 ? "pass" : "fail", detail: mig2.stderr.slice(0, 200), why: "migration reaplicável" });
+results.push({
+  id: "M-idempotente",
+  phase: "after",
+  status: mig2.status === 0 ? "pass" : "fail",
+  detail: mig2.stderr.slice(0, 200),
+  why: "migration reaplicável",
+});
 psql("notify pgrst, 'reload schema'");
 await new Promise((r) => setTimeout(r, 1500));
 
 // ===== DEPOIS =====
 // 1.1 permissões efetivas
-await run("after", "A-perm-inativo", "inativo sem permissões", hasPerm(5, "techsales.deals.view.workspace"), "false");
-await run("after", "A-perm-ativo", "ativo mantém", hasPerm(4, "techsales.deals.view.workspace"), "true");
-await run("after", "A-perm-admin", "admin ativo mantém bypass", hasPerm(1, "techsales.inbox.chat.view.workspace"), "true");
-await run("after", "A-perm-outro-ws", "admin B sem chave na A", async () => {
-  const c = await as(6);
-  const { data } = await c.rpc("user_has_permission", { _user_id: U(6), _workspace_id: WA, _permission_key: "techsales.deals.view.own" });
-  return String(data);
-}, "false");
+await run(
+  "after",
+  "A-perm-inativo",
+  "inativo sem permissões",
+  hasPerm(5, "techsales.deals.view.workspace"),
+  "false",
+);
+await run(
+  "after",
+  "A-perm-ativo",
+  "ativo mantém",
+  hasPerm(4, "techsales.deals.view.workspace"),
+  "true",
+);
+await run(
+  "after",
+  "A-perm-admin",
+  "admin ativo mantém bypass",
+  hasPerm(1, "techsales.inbox.chat.view.workspace"),
+  "true",
+);
+await run(
+  "after",
+  "A-perm-outro-ws",
+  "admin B sem chave na A",
+  async () => {
+    const c = await as(6);
+    const { data } = await c.rpc("user_has_permission", {
+      _user_id: U(6),
+      _workspace_id: WA,
+      _permission_key: "techsales.deals.view.own",
+    });
+    return String(data);
+  },
+  "false",
+);
 // deny prevalece + soma de 2 cargos
 psql(`insert into public.job_role_permission_overrides(role_id, workspace_id, permission_key, effect, created_by)
  values ('30000000-0000-4000-8000-0000000000a4','${WA}','techsales.role_profiles.approve.workspace','deny','${U(1)}') on conflict do nothing`);
-await run("after", "A-deny-prevalece", "deny em um cargo vence grant de outro", hasPerm(2, "techsales.role_profiles.approve.workspace"), "false");
-await run("after", "A-soma-cargos", "chave do outro cargo continua", hasPerm(2, "techsales.inbox.chat.view.own"), "true");
-psql(`delete from public.job_role_permission_overrides where role_id='30000000-0000-4000-8000-0000000000a4' and workspace_id='${WA}'`);
+await run(
+  "after",
+  "A-deny-prevalece",
+  "deny em um cargo vence grant de outro",
+  hasPerm(2, "techsales.role_profiles.approve.workspace"),
+  "false",
+);
+await run(
+  "after",
+  "A-soma-cargos",
+  "chave do outro cargo continua",
+  hasPerm(2, "techsales.inbox.chat.view.own"),
+  "true",
+);
+psql(
+  `delete from public.job_role_permission_overrides where role_id='30000000-0000-4000-8000-0000000000a4' and workspace_id='${WA}'`,
+);
 
 // 1.2 cargos
-await run("after", "A-cargo-membro", "membro não renomeia cargo", async () => `${await renameRole(2, "[ISO] x")()} name=${roleName()}`, "rows=0 name=[ISO] Cargo próprio");
-await run("after", "A-cargo-outro-ws", "admin de outro workspace não altera", async () => `${await renameRole(6, "[ISO] y")()} name=${roleName()}`, "rows=0 name=[ISO] Cargo próprio");
-await run("after", "A-cargo-admin", "admin renomeia", async () => `${await renameRole(1, "[ISO] Cargo próprio")()}`, "rows=1");
-await run("after", "A-cargo-admin-sistema", "admin não vira cargo de sistema", async () => {
-  const c = await as(1);
-  const { error } = await c.from("job_roles").update({ is_system: true }).eq("id", ROLE_OWN);
-  return error ? `ERR ${error.code}` : "ok";
-}, "ERR 42501");
-await run("after", "A-cargo-membro-cria", "membro não cria cargo", async () => {
-  const c = await as(2);
-  const { error } = await c.from("job_roles").insert({ name: "[ISO] intruso", workspace_id: WA, owner_id: WA });
-  return error ? `ERR ${error.code}` : "ok";
-}, "ERR 42501");
+await run(
+  "after",
+  "A-cargo-membro",
+  "membro não renomeia cargo",
+  async () => `${await renameRole(2, "[ISO] x")()} name=${roleName()}`,
+  "rows=0 name=[ISO] Cargo próprio",
+);
+await run(
+  "after",
+  "A-cargo-outro-ws",
+  "admin de outro workspace não altera",
+  async () => `${await renameRole(6, "[ISO] y")()} name=${roleName()}`,
+  "rows=0 name=[ISO] Cargo próprio",
+);
+await run(
+  "after",
+  "A-cargo-admin",
+  "admin renomeia",
+  async () => `${await renameRole(1, "[ISO] Cargo próprio")()}`,
+  "rows=1",
+);
+await run(
+  "after",
+  "A-cargo-admin-sistema",
+  "admin não vira cargo de sistema",
+  async () => {
+    const c = await as(1);
+    const { error } = await c.from("job_roles").update({ is_system: true }).eq("id", ROLE_OWN);
+    return error ? `ERR ${error.code}` : "ok";
+  },
+  "ERR 42501",
+);
+await run(
+  "after",
+  "A-cargo-membro-cria",
+  "membro não cria cargo",
+  async () => {
+    const c = await as(2);
+    const { error } = await c
+      .from("job_roles")
+      .insert({ name: "[ISO] intruso", workspace_id: WA, owner_id: WA });
+    return error ? `ERR ${error.code}` : "ok";
+  },
+  "ERR 42501",
+);
 
 // 1.4 chat
 await run("after", "A-chat-own", "próprio vê só a sua", countSessions(2), "a1");
@@ -264,48 +415,164 @@ await run("after", "A-chat-anon", "anônimo nada", countSessions(0), /^(none|ERR
 await run("after", "A-msg-own", "mensagens só da sessão visível", countMsgs(2), "1");
 await run("after", "A-msg-team", "mensagens das sessões da equipe", countMsgs(3), "2");
 await run("after", "A-send-own-ok", "envia na própria", send(2, S1), "ok");
-await run("after", "A-send-own-terceiro", "não envia em sessão de terceiro", send(2, S2), "ERR 42501");
-await run("after", "A-send-team-sem-chave", "visualizador de equipe sem criar não envia", send(3, S2), "ERR 42501");
+await run(
+  "after",
+  "A-send-own-terceiro",
+  "não envia em sessão de terceiro",
+  send(2, S2),
+  "ERR 42501",
+);
+await run(
+  "after",
+  "A-send-team-sem-chave",
+  "visualizador de equipe sem criar não envia",
+  send(3, S2),
+  "ERR 42501",
+);
 await run("after", "A-send-ws", "workspace envia na fila", send(4, S3), "ok");
-await run("after", "A-send-autor-falso", "não envia como outra pessoa", send(4, S3, U(2)), "ERR 42501");
+await run(
+  "after",
+  "A-send-autor-falso",
+  "não envia como outra pessoa",
+  send(4, S3, U(2)),
+  "ERR 42501",
+);
 psql(`insert into public.job_role_permission_overrides(role_id, workspace_id, permission_key, effect, created_by)
  values ('${ROLE_OWN}','${WA}','techsales.inbox.chat.view.own','deny','${U(1)}') on conflict do nothing`);
 await run("after", "A-chat-deny", "deny remove visão própria", countSessions(2), "none");
-psql(`delete from public.job_role_permission_overrides where role_id='${ROLE_OWN}' and workspace_id='${WA}'`);
+psql(
+  `delete from public.job_role_permission_overrides where role_id='${ROLE_OWN}' and workspace_id='${WA}'`,
+);
 
 // 1.3 perfis de vaga
-await run("after", "A-legado-nao-lider", "não-líder com chave é barrado no legado",
-  rpc(2, "role_profile_approve", { _profile: P2, _expected_revision: 1, _snapshot: {}, _commercial: null }), "ERR LEADER_REQUIRED");
-await run("after", "A-legado-admin", "admin também precisa do líder ou override",
-  rpc(1, "role_profile_approve", { _profile: P2, _expected_revision: 1, _snapshot: {}, _commercial: null }), "ERR LEADER_REQUIRED");
-await run("after", "A-decide-nao-lider", "par não decide item do líder",
-  rpc(7, "role_profile_leader_decide", { _item: I1, _decision: "approve", _comment: "" }), "ERR PERMISSION_DENIED");
-await run("after", "A-decide-lider-sem-chave", "líder sem approve é barrado",
-  rpc(3, "role_profile_leader_decide", { _item: I1, _decision: "approve", _comment: "" }), "ERR PERMISSION_DENIED");
-psql(`insert into public.permission_set_items(set_id, permission_key) values ('20000000-0000-4000-8000-0000000000a2','techsales.role_profiles.approve.workspace') on conflict do nothing`);
-await run("after", "A-decide-lider", "líder com chave aprova", rpc(3, "role_profile_leader_decide", { _item: I1, _decision: "approve", _comment: "" }), /^ok .*"approved"/);
-await run("after", "A-legado-lider", "legado delega ao fluxo do líder", rpc(3, "role_profile_approve", { _profile: P3, _expected_revision: 1, _snapshot: {}, _commercial: null }), /^ok .*"approved"/);
-psql(`update public.workspace_members set status='inactive' where workspace_id='${WA}' and user_id='${U(3)}'`);
+await run(
+  "after",
+  "A-legado-nao-lider",
+  "não-líder com chave é barrado no legado",
+  rpc(2, "role_profile_approve", {
+    _profile: P2,
+    _expected_revision: 1,
+    _snapshot: {},
+    _commercial: null,
+  }),
+  "ERR LEADER_REQUIRED",
+);
+await run(
+  "after",
+  "A-legado-admin",
+  "admin também precisa do líder ou override",
+  rpc(1, "role_profile_approve", {
+    _profile: P2,
+    _expected_revision: 1,
+    _snapshot: {},
+    _commercial: null,
+  }),
+  "ERR LEADER_REQUIRED",
+);
+await run(
+  "after",
+  "A-decide-nao-lider",
+  "par não decide item do líder",
+  rpc(7, "role_profile_leader_decide", { _item: I1, _decision: "approve", _comment: "" }),
+  "ERR PERMISSION_DENIED",
+);
+await run(
+  "after",
+  "A-decide-lider-sem-chave",
+  "líder sem approve é barrado",
+  rpc(3, "role_profile_leader_decide", { _item: I1, _decision: "approve", _comment: "" }),
+  "ERR PERMISSION_DENIED",
+);
+psql(
+  `insert into public.permission_set_items(set_id, permission_key) values ('20000000-0000-4000-8000-0000000000a2','techsales.role_profiles.approve.workspace') on conflict do nothing`,
+);
+await run(
+  "after",
+  "A-decide-lider",
+  "líder com chave aprova",
+  rpc(3, "role_profile_leader_decide", { _item: I1, _decision: "approve", _comment: "" }),
+  /^ok .*"approved"/,
+);
+await run(
+  "after",
+  "A-legado-lider",
+  "legado delega ao fluxo do líder",
+  rpc(3, "role_profile_approve", {
+    _profile: P3,
+    _expected_revision: 1,
+    _snapshot: {},
+    _commercial: null,
+  }),
+  /^ok .*"approved"/,
+);
+psql(
+  `update public.workspace_members set status='inactive' where workspace_id='${WA}' and user_id='${U(3)}'`,
+);
 psql(`insert into public.role_profile_approval_items(id, request_id, workspace_id, profile_id, profile_revision) values
  ('62000000-0000-4000-8000-0000000000a9','63000000-0000-4000-8000-0000000000a1','${WA}','${P2}',1) on conflict do nothing`);
-await run("after", "A-lider-inativo", "líder com membership inativa não decide",
-  rpc(3, "role_profile_leader_decide", { _item: "62000000-0000-4000-8000-0000000000a9", _decision: "request_changes", _comment: "x" }), /^ERR /);
-psql(`update public.workspace_members set status='active' where workspace_id='${WA}' and user_id='${U(3)}'`);
-await run("after", "A-override-sem-motivo", "override exige motivo",
-  rpc(1, "role_profile_admin_override_approve", { _profile: P2, _expected_revision: 1, _reason: "curto" }), /^ERR Informe o motivo/);
-await run("after", "A-override-nao-admin", "não-admin não usa override",
-  rpc(2, "role_profile_admin_override_approve", { _profile: P2, _expected_revision: 1, _reason: "motivo suficientemente longo" }), "ERR PERMISSION_DENIED");
-await run("after", "A-override-admin", "admin com motivo aprova e audita", async () => {
-  const r = await rpc(1, "role_profile_admin_override_approve", { _profile: P2, _expected_revision: 1, _reason: "teste isolado de override auditado" })();
-  const a = psql(`select count(*) from public.access_audit_log where action='role_profile_admin_override' and entity_id='${P2}'`);
-  return `${r.startsWith("ok") ? "ok" : r} audit=${a}`;
-}, "ok audit=1");
+await run(
+  "after",
+  "A-lider-inativo",
+  "líder com membership inativa não decide",
+  rpc(3, "role_profile_leader_decide", {
+    _item: "62000000-0000-4000-8000-0000000000a9",
+    _decision: "request_changes",
+    _comment: "x",
+  }),
+  /^ERR /,
+);
+psql(
+  `update public.workspace_members set status='active' where workspace_id='${WA}' and user_id='${U(3)}'`,
+);
+await run(
+  "after",
+  "A-override-sem-motivo",
+  "override exige motivo",
+  rpc(1, "role_profile_admin_override_approve", {
+    _profile: P2,
+    _expected_revision: 1,
+    _reason: "curto",
+  }),
+  /^ERR Informe o motivo/,
+);
+await run(
+  "after",
+  "A-override-nao-admin",
+  "não-admin não usa override",
+  rpc(2, "role_profile_admin_override_approve", {
+    _profile: P2,
+    _expected_revision: 1,
+    _reason: "motivo suficientemente longo",
+  }),
+  "ERR PERMISSION_DENIED",
+);
+await run(
+  "after",
+  "A-override-admin",
+  "admin com motivo aprova e audita",
+  async () => {
+    const r = await rpc(1, "role_profile_admin_override_approve", {
+      _profile: P2,
+      _expected_revision: 1,
+      _reason: "teste isolado de override auditado",
+    })();
+    const a = psql(
+      `select count(*) from public.access_audit_log where action='role_profile_admin_override' and entity_id='${P2}'`,
+    );
+    return `${r.startsWith("ok") ? "ok" : r} audit=${a}`;
+  },
+  "ok audit=1",
+);
 
 const fails = results.filter((r) => r.status === "fail");
 mkdirSync(`${root}/artifacts`, { recursive: true });
-writeFileSync(`${root}/artifacts/rbac-wk-phase1.json`, JSON.stringify({ at: new Date().toISOString(), results }, null, 2));
+writeFileSync(
+  `${root}/artifacts/rbac-wk-phase1.json`,
+  JSON.stringify({ at: new Date().toISOString(), results }, null, 2),
+);
 for (const r of results) console.log(`${r.status.padEnd(8)} ${r.id.padEnd(26)} ${r.detail}`);
-console.log(`\n${results.filter((r) => r.status === "pass").length} pass / ${fails.length} fail / ${results.filter((r) => r.status === "observed").length} observados antes`);
-void readFileSync;
+console.log(
+  `\n${results.filter((r) => r.status === "pass").length} pass / ${fails.length} fail / ${results.filter((r) => r.status === "observed").length} observados antes`,
+);
 proxy.stop();
 process.exit(fails.length ? 1 : 0);

@@ -11,7 +11,11 @@ export const listChatSessions = createServerFn({ method: "GET" })
     const { supabase } = context;
     const ws = await resolveActiveWorkspace(context.userId);
     // Chave por ação no servidor; a RLS restringe as sessões ao escopo (próprio/equipe/workspace).
-    await assertAnyPermission(context.supabase, context.userId, ws, ["techsales.inbox.chat.view.own", "techsales.inbox.chat.view.team", "techsales.inbox.chat.view.workspace"]);
+    await assertAnyPermission(context.supabase, context.userId, ws, [
+      "techsales.inbox.chat.view.own",
+      "techsales.inbox.chat.view.team",
+      "techsales.inbox.chat.view.workspace",
+    ]);
     const { data, error } = await supabase
       .from("live_chat_sessions")
       .select(
@@ -31,7 +35,11 @@ export const listChatMessages = createServerFn({ method: "POST" })
     const { supabase } = context;
     const ws = await resolveActiveWorkspace(context.userId);
     // Chave por ação no servidor; a RLS restringe as sessões ao escopo (próprio/equipe/workspace).
-    await assertAnyPermission(context.supabase, context.userId, ws, ["techsales.inbox.chat.view.own", "techsales.inbox.chat.view.team", "techsales.inbox.chat.view.workspace"]);
+    await assertAnyPermission(context.supabase, context.userId, ws, [
+      "techsales.inbox.chat.view.own",
+      "techsales.inbox.chat.view.team",
+      "techsales.inbox.chat.view.workspace",
+    ]);
     const { data: rows, error } = await supabase
       .from("live_chat_messages")
       .select("id, direction, author_user_id, body, created_at")
@@ -57,7 +65,10 @@ export const sendChatMessage = createServerFn({ method: "POST" })
     const { supabase } = context;
     const ws = await resolveActiveWorkspace(context.userId);
     // Chave por ação no servidor; a RLS restringe as sessões ao escopo (próprio/equipe/workspace).
-    await assertAnyPermission(context.supabase, context.userId, ws, ["techsales.inbox.chat.create.own", "techsales.inbox.chat.create.workspace"]);
+    await assertAnyPermission(context.supabase, context.userId, ws, [
+      "techsales.inbox.chat.create.own",
+      "techsales.inbox.chat.create.workspace",
+    ]);
     const { error } = await supabase.from("live_chat_messages").insert({
       session_id: data.session_id,
       owner_id: ws,
@@ -84,7 +95,11 @@ export const closeChatSession = createServerFn({ method: "POST" })
     const { supabase } = context;
     const ws = await resolveActiveWorkspace(context.userId);
     // Chave por ação no servidor; a RLS restringe as sessões ao escopo (próprio/equipe/workspace).
-    await assertAnyPermission(context.supabase, context.userId, ws, ["techsales.inbox.chat.update.own", "techsales.inbox.chat.update.team", "techsales.inbox.chat.update.workspace"]);
+    await assertAnyPermission(context.supabase, context.userId, ws, [
+      "techsales.inbox.chat.update.own",
+      "techsales.inbox.chat.update.team",
+      "techsales.inbox.chat.update.workspace",
+    ]);
     const { error } = await supabase
       .from("live_chat_sessions")
       .update({ status: "closed" })
@@ -110,7 +125,11 @@ export const convertChatSessionToTicket = createServerFn({ method: "POST" })
     const { supabase } = context;
     const ws = await resolveActiveWorkspace(context.userId);
     // Chave por ação no servidor; a RLS restringe as sessões ao escopo (próprio/equipe/workspace).
-    await assertAnyPermission(context.supabase, context.userId, ws, ["techsales.inbox.chat.update.own", "techsales.inbox.chat.update.team", "techsales.inbox.chat.update.workspace"]);
+    await assertAnyPermission(context.supabase, context.userId, ws, [
+      "techsales.inbox.chat.update.own",
+      "techsales.inbox.chat.update.team",
+      "techsales.inbox.chat.update.workspace",
+    ]);
     const { data: session, error: sErr } = await supabase
       .from("live_chat_sessions")
       .select("id, visitor_name, visitor_email, visitor_url, status")
