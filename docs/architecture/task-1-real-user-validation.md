@@ -70,3 +70,31 @@ Preview → Negócios → "Ver como" → "[TESTE] Validação TechSales": faixa 
 - Tarefa 16: **Executada, aguardando aceite QA**.
 - Tarefa 1: **concluída apenas no escopo local**; as 9 lacunas de leitura no banco compartilhado **ainda sem reteste**.
 - Aceite QA com a conta `9b75a10a-e5bf-4346-a16e-bab3cafb1d1e`: **não executado**. O mecanismo oficial de sessão respondeu que a aprovação humana está indisponível neste contexto (sem cartão, sem awaiting_input/tool_id). Nenhuma sessão criada, nenhuma senha alterada.
+
+
+## Aceite QA compartilhado — EXECUTADO (11/10/2026 05:44–05:48 UTC)
+
+Método: sessão oficial `lovable auth-session --user 9b75a10a-…` (aprovada pelo usuário); cliente SDK com chave publicável + JWT real da QA (claims.sub = QA, role = authenticated, conferidos sem imprimir token). Só contagens HEAD/exact e formato de resposta; nenhuma conversa aberta, nada marcado como lido, nada enviado. Sessões QA revogadas (signOut global da QA) ao fim de cada rodada; arquivo de sessão apagado. Totais de referência lidos com leitura administrativa só para provar que existem dados de terceiros.
+
+| Verificação | Total no banco | Visto pela QA | Resultado |
+|---|---|---|---|
+| email_threads / email_messages | 8.792 / 9.842 | 0 / 0 | PASS |
+| whatsapp_conversations / messages | 8 / 62 | 0 / 0 | PASS |
+| calendar_events | 6.811 | 0 | PASS |
+| stage_entries | 7.665 | 0 | PASS |
+| property_history | 92.460 | — | **FAIL: timeout (57014) após 8 s** |
+| deals/leads/contacts/companies de terceiros | 1.795/5.915/51.136/32.041 | 0 | PASS |
+| ID direto de terceiro (7 tabelas) | — | 0 | PASS |
+| Nota fictícia própria | 1 | 1 | PASS |
+| activities de terceiros / sem filtro | — | — | **FAIL: timeout (57014) após 8 s** |
+| Inbox canal (email/whatsapp, com e sem busca) | — | 0 itens | PASS |
+| Inbox unificada email/whatsapp | — | 0 itens | PASS |
+| Inbox unificada "all" (com e sem busca) | 2 chats ao vivo | **2 itens (chat)** | **FAIL: vazamento** |
+| Sinais: INSERT | — | recusado 42501 | PASS |
+| Sinais: EXECUTE signal_workspace_delete | — | sem privilégio (has_function_privilege=false) | PASS |
+
+Achados reais (não corrigidos; aguardam decisão):
+1. **live_chat_sessions** só tem política permissiva por workspace; cargo restrito vê os 2 chats ao vivo do workspace pela Inbox unificada. Falta restrição equivalente a rep_scope_*.
+2. **activities** e **property_history** sem filtro de dono estouram o statement_timeout para o cargo restrito (o filtro por dono responde em ~130 ms). Não há vazamento, mas a leitura ampla falha em vez de retornar vazio.
+
+Saldo: 24 PASS / 10 FAIL na 1ª rodada; após corrigir a leitura da resposta jsonb da Inbox (erro do teste): 3 falhas reais (chat ao vivo visível; 2 timeouts). Tarefas 1 e 16 **não** aceitas.
