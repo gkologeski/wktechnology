@@ -22578,6 +22578,7 @@ export type Database = {
         }
         Returns: number
       }
+      my_team_member_ids: { Args: never; Returns: string[] }
       people_document_derive_status: {
         Args: { _expires: string }
         Returns: Database["public"]["Enums"]["people_doc_status"]

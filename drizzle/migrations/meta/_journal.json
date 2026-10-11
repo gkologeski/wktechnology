@@ -820,6 +820,20 @@
       "when": 1791723927142,
       "tag": "0116_rep_scope_hashed_channels_stage",
       "breakpoints": true
+    },
+    {
+      "idx": 117,
+      "version": "7",
+      "when": 1791724639971,
+      "tag": "0117_activities_rls_no_per_row_eval",
+      "breakpoints": true
+    },
+    {
+      "idx": 118,
+      "version": "7",
+      "when": 1791724927650,
+      "tag": "0118_activities_rls_cover_idx",
+      "breakpoints": true
     }
   ]
 }
