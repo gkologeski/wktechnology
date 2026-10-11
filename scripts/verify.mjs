@@ -4,9 +4,11 @@
 // Grava .verification/verify.json; complete=true só se todas passarem.
 import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
+// O wrapper do tsgo usa execFileSync e não repassa sinais: chama o binário nativo.
+import getTsgoExe from "@typescript/native-preview/lib/getExePath.js";
 
 const STEPS = [
-  { name: "typecheck", cmd: "tsgo", args: ["--noEmit", "--incremental", "false"] },
+  { name: "typecheck", cmd: getTsgoExe(), args: ["--noEmit", "--incremental", "false"] },
   {
     name: "lint",
     cmd: "eslint",
