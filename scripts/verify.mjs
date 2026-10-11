@@ -5,7 +5,7 @@
 import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 // O wrapper do tsgo usa execFileSync e não repassa sinais: chama o binário nativo.
-import getTsgoExe from "@typescript/native-preview/lib/getExePath.js";
+import getTsgoExe from "../node_modules/@typescript/native-preview/lib/getExePath.js";
 
 const STEPS = [
   { name: "typecheck", cmd: getTsgoExe(), args: ["--noEmit", "--incremental", "false"] },
