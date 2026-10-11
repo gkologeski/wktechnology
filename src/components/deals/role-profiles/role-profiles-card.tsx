@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -81,7 +82,21 @@ const DELIVERY_LABEL: Record<string, string> = {
   suppressed: "bloqueado pelo destinatário",
 };
 
-export function RoleProfilesCard({
+type RoleProfilesCardProps = {
+  dealId: string;
+  openProfileId?: string;
+  approvalId?: string;
+  onOpenProfile: (id: string | undefined) => void;
+};
+
+/** Só monta o quadro (e só consulta o servidor) para quem pode ver perfis de vaga. */
+export function RoleProfilesCard(props: RoleProfilesCardProps) {
+  const { can, isLoading } = usePermissions();
+  if (isLoading || !can("techsales.role_profiles.view.workspace")) return null;
+  return <RoleProfilesCardInner {...props} />;
+}
+
+function RoleProfilesCardInner({
   dealId,
   openProfileId,
   approvalId,
