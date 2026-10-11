@@ -1,3 +1,5 @@
+> **Estado atual (11/10/2026 ~13:50 UTC):** versão pública ativa `cd22b29a7b665e29f30c266bc85c66e3fe802d94cbd1c6f9d8c4c082cbdb9990` (commit 458d4e1bc, informada pelo operador); `1bae558d…` é histórica. Banco: 0116–0120 aplicadas. Aceite QA 35/0 foi antes da 0120 (só reduz acesso); reteste QA pós-0120 pendente. Detalhes em task-1-real-user-validation.md.
+
 # Lançamento e recuperação — ciclo 14
 
 > **Estado atual (11/10/2026 05:35 UTC):** versão publicada em app.wktechnology.com.br — deployment `35e01a9f-dd3d-4fec-9a5c-914cd9a36263`, hash ativo `1bae558d954f8494f6b51aaa4fc467e0835f03040de51cfecd9f5b8100a0f08b`. Migrações 0103–0114 com COMMIT (defaults fixos 0, 7 policies restritivas, 3 tópicos). Saldo: 14 Concluídas, 2 Executadas (1 e 16 aguardam aceite QA, **não executado**; nenhuma sessão QA emitida), 0 Pendentes. A regeneração automática posterior de types.ts passou typecheck local (saída 0); não é novo artefato publicado nem aceite QA. Menções a "não publicado" abaixo são históricas.
