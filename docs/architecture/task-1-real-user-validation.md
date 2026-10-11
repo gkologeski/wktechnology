@@ -58,3 +58,12 @@ Preview → Negócios → "Ver como" → "[TESTE] Validação TechSales": faixa 
 - Caminho oficial de sessão para a conta QA `9b75a10a-e5bf-4346-a16e-bab3cafb1d1e`: recusado, aprovação humana indisponível neste contexto.
 - Nenhuma sessão QA criada, nenhuma asserção executada, nada alterado. Resultado: 0 pass / 0 fail; as 9 lacunas seguem pendentes.
 - Desbloqueio: aprovar o acesso à conta QA no cartão de aprovação do Lovable, ou entrar com a conta QA no preview para a sessão ser injetada no próximo turno.
+
+
+## Estado comprovado do lançamento (11/10/2026 05:33 UTC)
+
+- Versão publicada em `https://app.wktechnology.com.br`: `/build-info.json` responde 200 com source_hash `1bae558d954f8494f6b51aaa4fc467e0835f03040de51cfecd9f5b8100a0f08b` (built_at 2026-10-11T05:20:15.841Z), conferido pelo operador.
+- Migrações 0103–0114 aplicadas pelo operador em uma transação com COMMIT: zero defaults fixos de workspace; 7 policies SELECT restritivas; 3 tópicos publicados (meetings, deal_line_items, workspace_realtime_signals); authenticated sem INSERT em sinais e sem EXECUTE em signal_workspace_delete; nenhum registro comercial alterado.
+- Tarefa 16: **Executada, aguardando aceite QA**.
+- Tarefa 1: **concluída apenas no escopo local**; as 9 lacunas de leitura no banco compartilhado **ainda sem reteste**.
+- Aceite QA com a conta `9b75a10a-e5bf-4346-a16e-bab3cafb1d1e`: **não executado**. O mecanismo oficial de sessão respondeu que a aprovação humana está indisponível neste contexto (sem cartão, sem awaiting_input/tool_id). Nenhuma sessão criada, nenhuma senha alterada.
