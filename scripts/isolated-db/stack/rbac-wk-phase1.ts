@@ -260,7 +260,7 @@ await run("after", "A-chat-team", "equipe vê equipe + fila", countSessions(3), 
 await run("after", "A-chat-ws", "workspace vê todas", countSessions(4), "a0,a1,a7");
 await run("after", "A-chat-inativo", "inativo nada", countSessions(5), "none");
 await run("after", "A-chat-outro-ws", "outro tenant nada", countSessions(6), "none");
-await run("after", "A-chat-anon", "anônimo nada", countSessions(0), "none");
+await run("after", "A-chat-anon", "anônimo nada", countSessions(0), /^(none|ERR 42501)$/);
 await run("after", "A-msg-own", "mensagens só da sessão visível", countMsgs(2), "1");
 await run("after", "A-msg-team", "mensagens das sessões da equipe", countMsgs(3), "2");
 await run("after", "A-send-own-ok", "envia na própria", send(2, S1), "ok");
@@ -286,8 +286,10 @@ psql(`insert into public.permission_set_items(set_id, permission_key) values ('2
 await run("after", "A-decide-lider", "líder com chave aprova", rpc(3, "role_profile_leader_decide", { _item: I1, _decision: "approve", _comment: "" }), /^ok .*"approved"/);
 await run("after", "A-legado-lider", "legado delega ao fluxo do líder", rpc(3, "role_profile_approve", { _profile: P3, _expected_revision: 1, _snapshot: {}, _commercial: null }), /^ok .*"approved"/);
 psql(`update public.workspace_members set status='inactive' where workspace_id='${WA}' and user_id='${U(3)}'`);
-await run("after", "A-lider-inativo", "líder inativo não é resolvido", async () =>
-  psql(`select public.role_profile_resolve_leader('51000000-0000-4000-8000-0000000000a7')->>'status'`).length ? "skip" : "skip");
+psql(`insert into public.role_profile_approval_items(id, request_id, workspace_id, profile_id, profile_revision) values
+ ('62000000-0000-4000-8000-0000000000a9','63000000-0000-4000-8000-0000000000a1','${WA}','${P2}',1) on conflict do nothing`);
+await run("after", "A-lider-inativo", "líder com membership inativa não decide",
+  rpc(3, "role_profile_leader_decide", { _item: "62000000-0000-4000-8000-0000000000a9", _decision: "request_changes", _comment: "x" }), /^ERR /);
 psql(`update public.workspace_members set status='active' where workspace_id='${WA}' and user_id='${U(3)}'`);
 await run("after", "A-override-sem-motivo", "override exige motivo",
   rpc(1, "role_profile_admin_override_approve", { _profile: P2, _expected_revision: 1, _reason: "curto" }), /^ERR Informe o motivo/);
@@ -298,8 +300,6 @@ await run("after", "A-override-admin", "admin com motivo aprova e audita", async
   const a = psql(`select count(*) from public.access_audit_log where action='role_profile_admin_override' and entity_id='${P2}'`);
   return `${r.startsWith("ok") ? "ok" : r} audit=${a}`;
 }, "ok audit=1");
-// Remove o resultado placeholder do líder inativo (medido por SQL abaixo com contexto JWT real não aplicável).
-results.splice(results.findIndex((r) => r.id === "A-lider-inativo"), 1);
 
 const fails = results.filter((r) => r.status === "fail");
 mkdirSync(`${root}/artifacts`, { recursive: true });
