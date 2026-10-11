@@ -43,7 +43,25 @@ export const parseCvFromPdf = createServerFn({ method: "POST" })
     if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
 
     // 1) Baixa o PDF (URL assinada vinda do bucket ats-cvs ou qualquer URL pública)
-    const fileRes = await fetch(data.cv_url);
+    const target = new URL(data.cv_url);
+    const host = target.hostname.toLowerCase().replace(/^\[|\]$/g, "");
+    const privateHost =
+      host === "localhost" ||
+      host.endsWith(".localhost") ||
+      host.endsWith(".internal") ||
+      host.endsWith(".local") ||
+      /^(0|10|127)\./.test(host) ||
+      /^169\.254\./.test(host) ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
+      /^192\.168\./.test(host) ||
+      /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./.test(host) ||
+      host === "::1" ||
+      /^(fc|fd|fe80)/.test(host) ||
+      /^\d+$/.test(host);
+    if (target.protocol !== "https:" || privateHost || (target.port && target.port !== "443")) {
+      throw new Error("URL do currículo não permitida (use um link https público).");
+    }
+    const fileRes = await fetch(target.toString(), { redirect: "manual" });
     if (!fileRes.ok) throw new Error(`Falha ao baixar PDF (${fileRes.status})`);
     const mime = fileRes.headers.get("content-type") ?? "application/pdf";
     if (!mime.includes("pdf")) throw new Error(`Arquivo não é PDF (content-type=${mime})`);

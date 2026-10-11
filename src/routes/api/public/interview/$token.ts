@@ -117,11 +117,21 @@ export const Route = createFileRoute("/api/public/interview/$token")({
           if (!questions.find((q) => q.id === questionId))
             return Response.json({ ok: false, error: "invalid_question" }, { status: 400 });
 
-          const ext = (file.type.split("/")[1] || "webm").split(";")[0];
+          const baseType = (file.type || "video/webm").split(";")[0].trim().toLowerCase();
+          const VIDEO_EXT: Record<string, string> = {
+            "video/webm": "webm",
+            "video/mp4": "mp4",
+            "video/quicktime": "mov",
+            "video/ogg": "ogv",
+            "video/x-matroska": "mkv",
+          };
+          const ext = VIDEO_EXT[baseType];
+          if (!ext)
+            return Response.json({ ok: false, error: "invalid_file_type" }, { status: 415 });
           const path = `${row.owner_id}/${row.id}/${questionId}-${Date.now()}.${ext}`;
           const bytes = new Uint8Array(await file.arrayBuffer());
           const { error: upErr } = await admin.storage.from(BUCKET).upload(path, bytes, {
-            contentType: file.type || "video/webm",
+            contentType: baseType,
             upsert: false,
           });
           if (upErr) return Response.json({ ok: false, error: upErr.message }, { status: 500 });
@@ -132,7 +142,7 @@ export const Route = createFileRoute("/api/public/interview/$token")({
             question_id: questionId,
             storage_path: path,
             duration_sec: duration,
-            mime_type: file.type || "video/webm",
+            mime_type: baseType,
             size_bytes: file.size,
           });
           if (insErr) return Response.json({ ok: false, error: insErr.message }, { status: 500 });

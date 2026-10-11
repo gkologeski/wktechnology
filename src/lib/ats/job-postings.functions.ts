@@ -114,6 +114,18 @@ export const publishJobToProvider = createServerFn({ method: "POST" })
     z.object({ job_id: z.string().uuid(), provider: PROVIDER }).parse(input),
   )
   .handler(async ({ context, data }) => {
+    {
+      const [{ resolveActiveWorkspace }, { assertAnyPermission }] = await Promise.all([
+        import("@/lib/active-workspace.server"),
+        import("@/lib/access-control/enforce.server"),
+      ]);
+      const ws = await resolveActiveWorkspace(context.userId);
+      await assertAnyPermission(context.supabase, context.userId, ws, [
+        "techhire.jobs.publish.workspace",
+        "techhire.jobs.update.workspace",
+        "techhire.jobs.update.team",
+      ]);
+    }
     // 1. Carrega a vaga (RLS garante autorização)
     const { data: job, error: jobErr } = await context.supabase
       .from("ats_jobs")
@@ -291,6 +303,18 @@ export const syncPostingApplicantsNow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ posting_id: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
+    {
+      const [{ resolveActiveWorkspace }, { assertAnyPermission }] = await Promise.all([
+        import("@/lib/active-workspace.server"),
+        import("@/lib/access-control/enforce.server"),
+      ]);
+      const ws = await resolveActiveWorkspace(context.userId);
+      await assertAnyPermission(context.supabase, context.userId, ws, [
+        "techhire.jobs.publish.workspace",
+        "techhire.jobs.update.workspace",
+        "techhire.jobs.update.team",
+      ]);
+    }
     // Verifica se o posting pertence ao workspace do usuário (RLS aplica).
     const { data: posting, error } = await context.supabase
       .from("ats_job_postings")

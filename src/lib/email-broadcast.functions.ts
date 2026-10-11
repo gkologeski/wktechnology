@@ -165,7 +165,8 @@ export const sendTestEmailBroadcast = createServerFn({ method: "POST" })
       })
       .parse(i),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const workspaceId = await resolveActiveWorkspace(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const gmail = await import("@/lib/gmail.server");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -176,7 +177,8 @@ export const sendTestEmailBroadcast = createServerFn({ method: "POST" })
         "id, workspace_id, owner_id, email, access_token, refresh_token, expires_at, status, history_id",
       )
       .eq("provider", "gmail")
-      .eq("status", "connected");
+      .eq("status", "connected")
+      .eq("workspace_id", workspaceId);
     if (data.email_account_id) q = q.eq("id", data.email_account_id);
     const { data: rows } = await q.order("created_at", { ascending: false }).limit(1);
     const acc = rows?.[0] as Parameters<typeof gmail.ensureAccessToken>[0] | undefined;

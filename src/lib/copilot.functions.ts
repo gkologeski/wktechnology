@@ -1,4 +1,5 @@
 import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
+import { orSafeLike } from "@/lib/postgrest-search";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -22,7 +23,7 @@ export const askCopilot = createServerFn({ method: "POST" })
     if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
 
     const q = data.question;
-    const ilike = `%${q.slice(0, 60).replace(/[%_]/g, " ")}%`;
+    const ilike = orSafeLike(q, 60);
 
     // Buscas paralelas — RLS scopa por owner/workspace.
     const [contacts, deals, leads, activities] = await Promise.all([

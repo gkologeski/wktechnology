@@ -2,6 +2,7 @@
 // Fornece list/get/upsert/archive de `people`, com projeção de campos
 // sensíveis conforme o papel do usuário (admin, gestor, própria pessoa).
 import { createServerFn } from "@tanstack/react-start";
+import { orSafeTerm } from "@/lib/postgrest-search";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runAutoStart } from "@/lib/people/onboarding.functions";
@@ -159,7 +160,7 @@ export const listPeople = createServerFn({ method: "POST" })
     if (!data.include_archived) q = q.eq("archived", false);
     if (data.status) q = q.eq("status", data.status);
     if (data.search && data.search.trim().length >= 2) {
-      const s = data.search.trim();
+      const s = orSafeTerm(data.search);
       q = q.or(`full_name.ilike.%${s}%,email.ilike.%${s}%,role_title.ilike.%${s}%`);
     }
     const { data: rows, error } = await q;

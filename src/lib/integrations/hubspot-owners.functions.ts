@@ -112,6 +112,13 @@ export const setHubspotOwnerMapping = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { data: wsData } = await supabase.rpc("default_workspace_for_user", { _user: userId });
     const workspaceId = (wsData as string | null) ?? userId;
+    {
+      const [{ assertAnyPermission }, { INTEGRATIONS_MANAGE }] = await Promise.all([
+        import("@/lib/access-control/enforce.server"),
+        import("@/lib/access-control/admin-permission-keys"),
+      ]);
+      await assertAnyPermission(supabase, userId, workspaceId, INTEGRATIONS_MANAGE);
+    }
 
     const { error } = await supabase
       .from("hubspot_owners")
@@ -124,7 +131,11 @@ export const setHubspotOwnerMapping = createServerFn({ method: "POST" })
     if (data.mapped_user_id) {
       const upd = { assigned_user_id: data.mapped_user_id } as never;
       for (const t of ["leads", "contacts", "companies", "deals"] as const) {
-        await supabase.from(t).update(upd).eq("hubspot_owner_id", data.hubspot_owner_id);
+        await supabase
+          .from(t)
+          .update(upd)
+          .eq("hubspot_owner_id", data.hubspot_owner_id)
+          .eq("workspace_id", workspaceId);
       }
     }
     return { ok: true };

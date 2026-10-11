@@ -1,5 +1,6 @@
 // Gera um contrato a partir de um modelo (com variáveis já mescladas).
 // Usado no TechContracts e no TechSales (aba de contratos do negócio).
+import { sanitizeHtml } from "@/components/rich-html-editor";
 import { useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -229,8 +230,8 @@ export function ApplyContractTemplateDialog({
               <p className="text-xs font-medium">{preview.title}</p>
               <article
                 className="prose prose-sm max-h-72 max-w-none overflow-y-auto dark:prose-invert"
-                // Conteúdo do próprio workspace, gerado pelo editor do sistema.
-                dangerouslySetInnerHTML={{ __html: preview.body_html }}
+                // Sanitizado: o HTML do modelo é editável e não pode executar script.
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(preview.body_html ?? "") }}
               />
             </div>
           ) : null}

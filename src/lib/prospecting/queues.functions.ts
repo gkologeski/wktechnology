@@ -6,6 +6,7 @@
  * respeita a RLS já existente.
  */
 import { createServerFn } from "@tanstack/react-start";
+import { orSafeLike } from "@/lib/postgrest-search";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
@@ -269,7 +270,7 @@ export const countQueueItems = createServerFn({ method: "POST" })
       query = query.lte("score", filters.score_max);
     }
     if (typeof filters.search === "string" && filters.search.trim()) {
-      const s = `%${filters.search.trim()}%`;
+      const s = orSafeLike(filters.search);
       query =
         queue.entity === "lead"
           ? query.or(
@@ -355,7 +356,7 @@ export const listQueueItems = createServerFn({ method: "POST" })
         query = query.lte("score", filters.score_max);
       }
       if (typeof filters.search === "string" && filters.search.trim()) {
-        const s = `%${filters.search.trim()}%`;
+        const s = orSafeLike(filters.search);
         query =
           queue.entity === "lead"
             ? query.or(
@@ -367,7 +368,8 @@ export const listQueueItems = createServerFn({ method: "POST" })
         query = query.gte("updated_at", filters.updated_after);
       }
     }
-    const sortField = sort.field ?? "updated_at";
+    const SORTABLE = new Set(["updated_at", "created_at", "score", "first_name", "last_name", "email", "company_name"]);
+    const sortField = SORTABLE.has(String(sort.field ?? "")) ? String(sort.field) : "updated_at";
     const sortDir = sort.dir ?? "desc";
     query = query.order(sortField, { ascending: sortDir === "asc" });
     if (!manualIds) {

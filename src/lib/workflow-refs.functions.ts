@@ -190,7 +190,8 @@ export const searchUsers = createServerFn({ method: "POST" })
 
     // Precisamos de e-mail como fallback: busca em auth.users APENAS para
     // ids que faltam nome.
-    const missingName = idList.filter((id) => !nameById.get(id));
+    // E-mail de auth só para membros do workspace; ids externos nunca expõem e-mail.
+    const missingName = idList.filter((id) => !nameById.get(id) && memberIds.has(id));
     const emailById = new Map<string, string>();
     if (missingName.length > 0) {
       // getUserById um a um — a Admin API não suporta filtro por id-set.

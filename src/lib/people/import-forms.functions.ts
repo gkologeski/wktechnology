@@ -803,6 +803,7 @@ export const reimportBrokenAttachments = createServerFn({ method: "POST" })
     const { data: all, error } = await supabaseAdmin
       .from("people_documents")
       .select("id, owner_id, person_id, doc_type, file_url, file_name, notes")
+      .eq("workspace_id", workspaceId)
       .or("file_url.ilike.%.bin,file_name.ilike.%.bin")
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);

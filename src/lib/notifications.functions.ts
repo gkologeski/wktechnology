@@ -421,6 +421,22 @@ export const notifyActivityCommentEvent = createServerFn({ method: "POST" })
 
     if (targets.length === 0) return { ok: true, sent: 0 };
 
+    // Só notifica membros ativos do workspace da atividade.
+    {
+      const { supabaseAdmin: memAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: mem } = await memAdmin
+        .from("workspace_members")
+        .select("user_id")
+        .eq("workspace_id", a.workspace_id)
+        .eq("status", "active")
+        .in("user_id", Array.from(new Set(targets.map((t) => t.userId))));
+      const allowed = new Set((mem ?? []).map((m) => (m as { user_id: string }).user_id));
+      for (let i = targets.length - 1; i >= 0; i--) {
+        if (!allowed.has(targets[i].userId)) targets.splice(i, 1);
+      }
+    }
+    if (targets.length === 0) return { ok: true, sent: 0 };
+
     const uniqueIds = Array.from(new Set(targets.map((t) => t.userId)));
     const { supabaseAdmin: prefAdmin } = await import("@/integrations/supabase/client.server");
     const { data: prefRows } = await prefAdmin

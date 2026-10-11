@@ -1,3 +1,4 @@
+import { escapeHtml } from "@/lib/security/escape";
 import { EMAIL_SENDER_DOMAIN } from "@/lib/platform-domains";
 // Engine de lembretes de entrevista (D-1 e 1h antes).
 import { sendLovableEmail } from "@lovable.dev/email-js";
@@ -59,15 +60,15 @@ async function sendReminderEmail(args: {
     args.reminderType === "d1" ? "Sua entrevista é amanhã" : "Sua entrevista começa em 1 hora";
   const subject = `${label} — ${args.jobTitle}`;
   const linkLine = args.meetUrl
-    ? `<p>Link da reunião: <a href="${args.meetUrl}" style="color:${color}">${args.meetUrl}</a></p>`
+    ? `<p>Link da reunião: <a href="${escapeHtml(args.meetUrl)}" style="color:${color}">${escapeHtml(args.meetUrl)}</a></p>`
     : args.location
-      ? `<p>Local: <strong>${args.location}</strong></p>`
+      ? `<p>Local: <strong>${escapeHtml(args.location)}</strong></p>`
       : "";
   const html = `
 <div style="font-family:Inter,system-ui,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f172a">
   <h1 style="font-size:20px;margin:0 0 16px;color:${color}">${label}</h1>
-  <p>Olá <strong>${args.candidateName}</strong>,</p>
-  <p>Lembrando: você tem uma entrevista para a vaga <strong>${args.jobTitle}</strong> em <strong>${when}</strong>.</p>
+  <p>Olá <strong>${escapeHtml(args.candidateName)}</strong>,</p>
+  <p>Lembrando: você tem uma entrevista para a vaga <strong>${escapeHtml(args.jobTitle)}</strong> em <strong>${when}</strong>.</p>
   ${linkLine}
   <hr style="margin:24px 0;border:none;border-top:1px solid #e5e7eb"/>
   <p style="font-size:12px;color:#64748b">Enviado por ${branding.productName}.</p>

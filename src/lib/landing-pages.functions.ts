@@ -134,6 +134,7 @@ export const trackLpEvent = createServerFn({ method: "POST" })
     const { data: lp } = await (supabaseAdmin.from("landing_pages") as any)
       .select("owner_id")
       .eq("id", data.landing_page_id)
+      .eq("status", "published")
       .maybeSingle();
     if (!lp) return { ok: false };
     await (supabaseAdmin.from("landing_page_events") as any).insert({

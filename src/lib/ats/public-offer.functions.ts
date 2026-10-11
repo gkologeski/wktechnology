@@ -18,6 +18,8 @@ export const getOfferByToken = createServerFn({ method: "GET" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!row) throw new Error("Oferta não encontrada");
+    if (["canceled", "cancelled", "withdrawn", "revoked"].includes(String(row.status)))
+      throw new Error("Oferta não encontrada");
     if (!row.viewed_at) {
       await supabaseAdmin
         .from("ats_offers")
