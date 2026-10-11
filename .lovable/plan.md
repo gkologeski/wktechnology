@@ -10,7 +10,10 @@ Escopo exclusivo da WK. Nada é apagado, nenhum administrador é rebaixado e nen
 ## Fase 1 — Correções estruturais no banco (testadas antes no ambiente isolado)
 1. `user_effective_permissions`: exige membro ATIVO (inclusive para bypass de admin); denies sempre prevalecem; passa a considerar defaults do cargo.
 2. `job_roles_ws_update`: só owner/admin altera cargos; não-admin nunca muda `is_system`, dono ou workspace.
-3. `role_profile_approve`: usa `role_profile_resolve_leader` + aprovação pendente + visibilidade do negócio; não-líder negado; admin só como exceção explícita registrada em auditoria.
+3. Aprovação de perfis de vaga em um único fluxo: o canônico é `role_profile_leader_decide`, que passa a exigir também a chave approve e a visibilidade do negócio. O legado `role_profile_approve` é fechado: só aceita líder canônico com solicitação pendente, ou override de admin explícito com motivo obrigatório e auditoria. Quando a aprovação é negada, a tela explica o motivo e oferece "Pedir ao líder" ou o override, sempre com mensagem visível.
+   - `role_profile_resolve_leader` considera apenas membership `status = 'active'`.
+   - Líderes elegíveis (Gerente Comercial, Diretor, Gerente Técnico, Head RH) recebem approve; ainda assim só aprovam quando forem o líder resolvido. Recrutador, Financeiro e demais só por concessão específica auditada. Denies preservados.
+   - Durante a validação, nenhuma mensagem real é enviada (financeiro/prospecção/avisos ficam em modo simulado).
 4. Chat ao vivo: listar/enviar/encerrar com `assertPermission` no servidor; políticas de `live_chat_messages` vinculadas à visibilidade da sessão; Auditor/somente leitura sem envio; Rep/QA sem mensagens de terceiros. Fallback das chaves legadas de Inbox explícito e testado.
 
 ## Fase 2 — Matriz dos 16 cargos (migration idempotente)
