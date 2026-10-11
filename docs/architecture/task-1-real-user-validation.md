@@ -98,3 +98,20 @@ Achados reais (não corrigidos; aguardam decisão):
 2. **activities** e **property_history** sem filtro de dono estouram o statement_timeout para o cargo restrito (o filtro por dono responde em ~130 ms). Não há vazamento, mas a leitura ampla falha em vez de retornar vazio.
 
 Saldo: 24 PASS / 10 FAIL na 1ª rodada; após corrigir a leitura da resposta jsonb da Inbox (erro do teste): 3 falhas reais (chat ao vivo visível; 2 timeouts). Tarefas 1 e 16 **não** aceitas.
+
+
+## Correção 0115 e reaceite QA (11/10/2026 06:05–06:18 UTC)
+
+Autorização do usuário: "sim" para fechar o chat ao vivo a cargos restritos e acelerar as consultas amplas, testando antes no isolado.
+
+Migração `drizzle/migrations/0115_rep_scope_live_chat_and_hashed_policies.sql` (aplicada no banco compartilhado após A/B no isolado):
+- `live_chat_sessions`: novas políticas RESTRITIVAS SELECT/UPDATE `rep_scope_*` — cargo restrito só vê chat ligado a lead/contato próprio. Demais cargos inalterados.
+- `property_history`: `rep_scope_select_property_history` reescrita com a mesma regra de `rep_owns_entity`, em forma avaliada uma vez por consulta.
+- `activities`: `view_as_hide_test` passa a usar `view_as_test_record_ids()` (SECURITY DEFINER, sem acesso anon), mesma semântica.
+
+Isolado (volume fictício 120 mil atividades / 95 mil históricos, cargo restrito): histórico 10,1 s → 25,6 ms; chats de terceiros 3 → 0; positivos: chat/histórico do lead próprio visíveis, usuários sem restrição veem tudo, outro tenant 0, registro de teste segue oculto. Após recriar o isolado limpo + 0115: matriz 43/43, integridade 32 pass / 0 fail / 1 não executado (exit 3 por tempo real, nunca verde). Atividades no isolado: 107 ms antes e depois (o estouro não se reproduz lá).
+
+Reaceite real com JWT da QA: **33 PASS / 2 FAIL**.
+- Agora PASS: chat ao vivo 0; Inbox unificada "all" com e sem busca 0 itens; histórico 0 em 375 ms.
+- Ainda FAIL: `activities` sem filtro de dono → 500 (statement timeout). Sem vazamento; causa no banco real não demonstrada (não reproduz no isolado). Tarefas 1 e 16 **não** aceitas.
+- Atenção: `stage_entries` respondeu 0 em 7,5 s, perto do limite de 8 s.
