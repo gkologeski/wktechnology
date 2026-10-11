@@ -1,5 +1,8 @@
 # Backlog de performance — próximo ciclo
 
+> **Gate final pós-0120 (11/10/2026 14:03 UTC, informado pelo operador):** 0119 cover2 + 0120 canônica reconciliadas; 0119 de helper duplicada removida da branch local; diff zero entre raiz e main em src/scripts/drizzle. Source hash local `92e2e8752393da039690f4ab0db580be4180b77d820c031cad98a6b921d1c211`: verify 63,936 s (773 testes, 120 arquivos), build 110,460 s (exit 0); ambos complete=true, source_changed=false, mesmo hash; perf:check aprovado. Provas: `cycle14-post-0120-verify.json` / `cycle14-post-0120-build.json` (do operador, não presentes nesta cópia). Versão pública continua `cd22b29a7b665e29f30c266bc85c66e3fe802d94cbd1c6f9d8c4c082cbdb9990` (commit 458d4e1bc), validada à parte: verify 66,543 s, build 110,981 s, login HTTP 200, ATS 401. Saldo: **14 Concluídas, 2 Executadas (1 e 16)** — o aceite JWT 35/0 foi anterior à 0120; o reaceite oficial pós-0120 aguarda a solicitação interativa do usuário no editor ("Rodar o aceite QA após a migração 0120"). Nenhuma nova tentativa de emitir sessão foi feita.
+
+
 Cada item precisa de um endpoint com cursor e ordenação estável, além de testes próprios. Não
 pode cortar histórico nem contagens.
 
