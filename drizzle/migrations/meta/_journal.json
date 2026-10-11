@@ -848,6 +848,13 @@
       "when": 1791726502294,
       "tag": "0120_activities_team_scope_active_membership",
       "breakpoints": true
+    },
+    {
+      "idx": 121,
+      "version": "7",
+      "when": 1791728331005,
+      "tag": "0121_restrict_catalog_reads_to_members",
+      "breakpoints": true
     }
   ]
 }
