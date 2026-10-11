@@ -150,3 +150,18 @@ Reprodução isolada: usuário 3 (equipe, ativo em WA) + grupo residual em WB (s
 Correção 0120: `my_team_member_pairs()` (workspace_id, user_id) só de grupos em workspace com membership ativa do chamador (`is_workspace_member`), comparado ao workspace da própria atividade; avaliado uma vez por consulta; sem EXECUTE para anon. `my_team_member_ids()` endurecida da mesma forma.
 Regressão isolada: seed 9 usuários × cargo restrito on/off + anon idêntico à 0117; equipe positiva (3 vê colega 7) = 1; chamador inativo com grupo residual = 0 pares/0 atividades; matriz 43/43 (inclui Ver como positivo/negativo); integridade 32/0/1 não executado; equipe com 300k linhas 2,25 s.
 Aplicada no compartilhado: `drizzle/migrations/0120_activities_team_scope_active_membership.sql`. Só reduz acesso. O aceite 35/0 foi ANTES da 0120; reteste com JWT da QA pós-0120 não executado (exige nova sessão oficial aprovada).
+
+## Reconciliação com a correção do operador (11/10/2026 ~13:55 UTC)
+
+- Operador aplicou no compartilhado (TX COMMIT) a guarda `is_workspace_member(g.workspace_id, auth.uid())` em `my_team_member_ids`. Esta sandbox já tinha aplicado a mesma guarda pela `0120_activities_team_scope_active_membership.sql` (o nome 0119 já está ocupado aqui por `0119_activities_rls_cover_idx_created_at.sql`). Não foi criada migração duplicada; reconciliar na branch local (9fc445663) mapeando a 0119 do operador para a 0120 daqui.
+- Estado real conferido: my_team_member_ids e my_team_member_pairs SECURITY DEFINER com guarda, anon EXECUTE=false, authenticated=true; `ws_select_activities` usa `my_team_member_pairs`.
+- Regressão isolada (TX ROLLBACK), peer U6 dono de atividade em WA ligado a U3 só pelo grupo WB:
+
+| Membership de U3 em WB | helper ids contém U6 | atividade WA visível |
+|---|---|---|
+| ausente | 0 | 0 |
+| inativa | 0 | 0 |
+| ativa | 1 | **0** |
+
+- Diferença consciente vs RLS original: com membership ATIVA em WB, a original mostraria a atividade de WA (1); a 0120 compara o par (workspace do grupo, colega) com o workspace da atividade e mostra 0. É mais restritivo (nunca amplia). Se a regra de negócio for a original, basta trocar o par pela lista `my_team_member_ids()` na policy — decisão do responsável.
+- Não é aceite JWT real; reteste QA pós-0120 depende de nova sessão oficial. Tarefas 1/16 não reconfirmadas após 0120.
