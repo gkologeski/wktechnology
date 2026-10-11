@@ -1,5 +1,8 @@
 # Backlog de performance — próximo ciclo
 
+> **Reaceite oficial pós-0120 (11/10/2026 14:04 UTC): 35 PASS / 0 FAIL.** Sessão da conta QA emitida pelo mecanismo oficial (`lovable auth-session --user 9b75a10a-…`) após pedido interativo do usuário; asserções com SDK + JWT real da QA (role authenticated), só contagens/IDs, sem mensagens, marcação de lida, agendamentos ou crons. Tempos: email_threads 0,9 s; stage_entries 0,19 s; property_history 0,48 s; activities sem filtro 1,9 s = 1 nota própria; terceiros 0; 1ª página 0,3 s = só a própria; 7 IDs diretos de terceiros invisíveis; Inbox unificada/canal 0 itens; chat ao vivo 0; sinais INSERT 42501, EXECUTE indisponível. Sessões revogadas (signOut global; refresh recusado; arquivo apagado). Conta, cargo e senha não alterados. **Tarefas 1 e 16: Concluídas. Saldo: 16 Concluídas, 0 Executadas, 0 Pendentes.**
+
+
 > **Gate final pós-0120 (11/10/2026 14:03 UTC, informado pelo operador):** 0119 cover2 + 0120 canônica reconciliadas; 0119 de helper duplicada removida da branch local; diff zero entre raiz e main em src/scripts/drizzle. Source hash local `92e2e8752393da039690f4ab0db580be4180b77d820c031cad98a6b921d1c211`: verify 63,936 s (773 testes, 120 arquivos), build 110,460 s (exit 0); ambos complete=true, source_changed=false, mesmo hash; perf:check aprovado. Provas: `cycle14-post-0120-verify.json` / `cycle14-post-0120-build.json` (do operador, não presentes nesta cópia). Versão pública continua `cd22b29a7b665e29f30c266bc85c66e3fe802d94cbd1c6f9d8c4c082cbdb9990` (commit 458d4e1bc), validada à parte: verify 66,543 s, build 110,981 s, login HTTP 200, ATS 401. Saldo: **14 Concluídas, 2 Executadas (1 e 16)** — o aceite JWT 35/0 foi anterior à 0120; o reaceite oficial pós-0120 aguarda a solicitação interativa do usuário no editor ("Rodar o aceite QA após a migração 0120"). Nenhuma nova tentativa de emitir sessão foi feita.
 
 
@@ -56,7 +59,7 @@ critério de conclusão. Os registros dos ciclos anteriores acima são históric
 
 | # | Tarefa | Status | O que ainda falta / escopo da conclusão |
 | --- | --- | --- | --- |
-| 1 | Permissões own/team/workspace/tenant e Ver como | Executada (reteste QA pós-0120 pendente) | Aceite anterior à 0120 com JWT da conta QA em 11/10/2026: 35 PASS / 0 FAIL nas 9 lacunas de leitura, Inbox, IDs diretos de terceiros, nota própria e sinais (após 0116–0119). Ver task-1-real-user-validation.md. |
+| 1 | Permissões own/team/workspace/tenant e Ver como | Concluída | Reaceite pós-0120 35/0 em 11/10/2026 14:04 UTC; aceite anterior à 0120 com JWT da conta QA em 11/10/2026: 35 PASS / 0 FAIL nas 9 lacunas de leitura, Inbox, IDs diretos de terceiros, nota própria e sinais (após 0116–0119). Ver task-1-real-user-validation.md. |
 | 2 | Ambiente isolado fiel e reproduzível | Concluído | Stack local completa e reprodução limpa validadas. |
 | 3 | Realtime ponta a ponta | Concluído | 76 verificações SDK e 14 cenários conciliados com evidências automáticas e manuais locais. |
 | 4 | Realtime de itens, reuniões, calendário e demais trocas de workspace | Concluído | INSERT/UPDATE/DELETE, sinais opacos, isolamento e troca A/B validados localmente; migrações 0113/0114 já aplicadas no banco compartilhado. |
@@ -71,9 +74,9 @@ critério de conclusão. Os registros dos ciclos anteriores acima são históric
 | 13 | Contratos de módulos e integridade de workspace | Concluído | Gravadores revisados; no banco compartilhado: defaults fixos 49 → 0, 7 policies SELECT restritivas, 3 tópicos publicados. |
 | 14 | Carga, concorrência, filas, retry e idempotência | Concluído | Sete cenários sintéticos aprovados: lease, concorrência, quota, retry, idempotência e isolamento; p95 179,1 ms. Sem provedores externos. |
 | 15 | Limites de performance e prevenção de regressões | Concluído | Metas, avisos locais e gate de regressão no CI; relatório incompleto ou de fonte diferente falha. |
-| 16 | Aceite do artefato SSR/Cloudflare, rollback e publicação | Executada (reteste QA pós-0120 pendente) | Release e banco concluídos (deployment 35e01a9f-dd3d-4fec-9a5c-914cd9a36263, hash 1bae558d…0f08b, 0103–0114 COMMIT); aceite QA compartilhado 35/0 em 11/10/2026 (antes da 0120; reteste QA pós-0120 pendente). Versão pública atual cd22b29a7b665e29f30c266bc85c66e3fe802d94cbd1c6f9d8c4c082cbdb9990 (commit 458d4e1bc; informado pelo operador). Migrações 0116–0120 só de banco (regras/índices), sem novo artefato. |
+| 16 | Aceite do artefato SSR/Cloudflare, rollback e publicação | Concluída (reaceite QA pós-0120 35/0) | Release e banco concluídos (deployment 35e01a9f-dd3d-4fec-9a5c-914cd9a36263, hash 1bae558d…0f08b, 0103–0114 COMMIT); aceite QA compartilhado 35/0 em 11/10/2026 (antes da 0120; reteste QA pós-0120 pendente). Versão pública atual cd22b29a7b665e29f30c266bc85c66e3fe802d94cbd1c6f9d8c4c082cbdb9990 (commit 458d4e1bc; informado pelo operador). Migrações 0116–0120 só de banco (regras/índices), sem novo artefato. |
 
-Saldo desta revisão: **14 Concluídas, 2 Executadas (1 e 16), 0 Pendentes**. O aceite QA 35/0 foi anterior à 0120; o reteste oficial pós-0120 não foi executado (aprovação da sessão QA recusada em 11/10/2026 13:55 UTC: "requires user approval, which is unavailable in this context").
+Saldo desta revisão: **16 Concluídas, 0 Executadas, 0 Pendentes** (reaceite pós-0120 35/0). Histórico: 14 Concluídas, 2 Executadas. O aceite QA 35/0 foi anterior à 0120; o reteste oficial pós-0120 não foi executado (aprovação da sessão QA recusada em 11/10/2026 13:55 UTC: "requires user approval, which is unavailable in this context").
 Detalhes e provas: `executed-tasks-closure.md`, ciclo 13. Não permanecem defaults
 fixos de workspace no banco isolado validado; não extrapolar esse resultado para
 produção. O relatório SDK mantém três placeholders visuais não executados, com
