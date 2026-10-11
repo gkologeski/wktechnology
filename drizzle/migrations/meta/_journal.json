@@ -841,6 +841,13 @@
       "when": 1791725990975,
       "tag": "0119_activities_rls_cover_idx_created_at",
       "breakpoints": true
+    },
+    {
+      "idx": 120,
+      "version": "7",
+      "when": 1791726502294,
+      "tag": "0120_activities_team_scope_active_membership",
+      "breakpoints": true
     }
   ]
 }
