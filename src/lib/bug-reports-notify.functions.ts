@@ -25,6 +25,8 @@ export const notifyBugReportStatusChange = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
+    const { data: isAdmin } = await context.supabase.rpc("is_platform_admin", { _user: userId });
+    if (!isAdmin) throw new Error("Apenas administradores da plataforma podem notificar chamados.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // 1) Carrega chamado
