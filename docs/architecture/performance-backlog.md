@@ -68,7 +68,7 @@ critério de conclusão. Os registros dos ciclos anteriores acima são históric
 | 13 | Contratos de módulos e integridade de workspace | Concluído | Gravadores revisados; no banco compartilhado: defaults fixos 49 → 0, 7 policies SELECT restritivas, 3 tópicos publicados. |
 | 14 | Carga, concorrência, filas, retry e idempotência | Concluído | Sete cenários sintéticos aprovados: lease, concorrência, quota, retry, idempotência e isolamento; p95 179,1 ms. Sem provedores externos. |
 | 15 | Limites de performance e prevenção de regressões | Concluído | Metas, avisos locais e gate de regressão no CI; relatório incompleto ou de fonte diferente falha. |
-| 16 | Aceite do artefato SSR/Cloudflare, rollback e publicação | Concluída | Release e banco concluídos (deployment 35e01a9f-dd3d-4fec-9a5c-914cd9a36263, hash 1bae558d…0f08b, 0103–0114 COMMIT); aceite QA compartilhado 35/0 em 11/10/2026. Migrações 0116–0119 só de banco (regras/índices), sem novo artefato. |
+| 16 | Aceite do artefato SSR/Cloudflare, rollback e publicação | Concluída | Release e banco concluídos (deployment 35e01a9f-dd3d-4fec-9a5c-914cd9a36263, hash 1bae558d…0f08b, 0103–0114 COMMIT); aceite QA compartilhado 35/0 em 11/10/2026 (antes da 0120; reteste QA pós-0120 pendente). Versão pública atual cd22b29a7b665e29f30c266bc85c66e3fe802d94cbd1c6f9d8c4c082cbdb9990 (commit 458d4e1bc; informado pelo operador). Migrações 0116–0120 só de banco (regras/índices), sem novo artefato. |
 
 Saldo desta revisão: **16 Concluídas, 0 Executadas, 0 Pendentes**. Versão publicada; aceite QA compartilhado aprovado (35/0).
 Detalhes e provas: `executed-tasks-closure.md`, ciclo 13. Não permanecem defaults

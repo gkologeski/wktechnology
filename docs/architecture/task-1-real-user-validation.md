@@ -140,3 +140,13 @@ Método: sessão oficial `lovable auth-session --user 9b75a10a-…` aprovada pel
 Reteste: **35 PASS / 0 FAIL**. Tempos: email_threads 0,5 s; stage_entries 0,3 s (antes 7,5 s); property_history 0,8 s; activities sem filtro 2,1 s (antes timeout) = 1 (nota própria); activities de terceiros 0; 1ª página 0,3 s = só a nota própria; 7 IDs diretos de terceiros invisíveis; Inbox unificada (all/email/whatsapp, com/sem busca) e por canal 0 itens; chat ao vivo 0; sinais: INSERT 42501, EXECUTE indisponível.
 
 Sessões da QA revogadas ao final (signOut global da própria QA; arquivo de sessão apagado). Conta, cargo (own, restricted_visibility) e senha não alterados.
+
+## Revisão 0117 → correção 0120 (11/10/2026 ~13:50 UTC)
+
+Identidade publicada atual (informada pelo operador): source_hash `cd22b29a7b665e29f30c266bc85c66e3fe802d94cbd1c6f9d8c4c082cbdb9990`, commit `458d4e1bc` (substitui `1bae558d…` como versão ativa); gates locais do operador: verify 66,5 s/773 testes, build 111,0 s (Nitro 38,6 s), perf:check aprovado; HTTP login 200 / ATS 401. Índice 0118 conferido válido (55 MB) antes da troca pela 0119.
+
+Achado: `my_team_member_ids()` (0117) considerava qualquer grupo do chamador, sem exigir membership ativa nem mesmo workspace. A regra ANTIGA (`shares_team_with`, também SECURITY DEFINER) tinha a mesma lacuna — 0117 era equivalente à antiga, mas ambas permitiam o caso.
+Reprodução isolada: usuário 3 (equipe, ativo em WA) + grupo residual em WB (sem membership) com colega 4 dono de atividade em WA → antiga: visível; 0117: visível; corrigida: invisível.
+Correção 0120: `my_team_member_pairs()` (workspace_id, user_id) só de grupos em workspace com membership ativa do chamador (`is_workspace_member`), comparado ao workspace da própria atividade; avaliado uma vez por consulta; sem EXECUTE para anon. `my_team_member_ids()` endurecida da mesma forma.
+Regressão isolada: seed 9 usuários × cargo restrito on/off + anon idêntico à 0117; equipe positiva (3 vê colega 7) = 1; chamador inativo com grupo residual = 0 pares/0 atividades; matriz 43/43 (inclui Ver como positivo/negativo); integridade 32/0/1 não executado; equipe com 300k linhas 2,25 s.
+Aplicada no compartilhado: `drizzle/migrations/0120_activities_team_scope_active_membership.sql`. Só reduz acesso. O aceite 35/0 foi ANTES da 0120; reteste com JWT da QA pós-0120 não executado (exige nova sessão oficial aprovada).
