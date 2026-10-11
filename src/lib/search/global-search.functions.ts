@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { orSafeTerm } from "@/lib/postgrest-search";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
@@ -24,7 +25,7 @@ export const globalSearch = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     const limit = data.limit ?? 5;
-    const raw = data.q.replace(/[%_]/g, " ").trim();
+    const raw = orSafeTerm(data.q);
     const pattern = `%${raw}%`;
     const allow = (t: string) => !data.types || data.types.length === 0 || data.types.includes(t);
     const t0 = Date.now();

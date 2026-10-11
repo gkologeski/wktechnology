@@ -165,6 +165,17 @@ export const setGroupMembers = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: g } = await supabaseAdmin
+        .from("user_groups")
+        .select("workspace_id")
+        .eq("id", data.group_id)
+        .maybeSingle();
+      const groupWs = (g as { workspace_id: string } | null)?.workspace_id;
+      if (!groupWs) throw new Error("Equipe não encontrada.");
+      await assertAdmin(groupWs, context.userId);
+    }
     const { error: dErr } = await context.supabase
       .from("user_group_members")
       .delete()

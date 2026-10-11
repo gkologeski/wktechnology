@@ -3,6 +3,7 @@ import { EMAIL_SENDER_DOMAIN } from "@/lib/platform-domains";
 import * as React from "react";
 import { render as renderEmail } from "@react-email/render";
 import { sendLovableEmail } from "@lovable.dev/email-js";
+import { safeInviteOrigin } from "@/lib/invite-origin";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -353,7 +354,7 @@ export const createWorkspaceInvite = createServerFn({ method: "POST" })
       .single();
     if (error || !inserted) throw new Error(error?.message ?? "Falha ao criar convite.");
 
-    const url = `${data.redirect_origin.replace(/\/+$/, "")}/accept-invite/${token}`;
+    const url = `${safeInviteOrigin(data.redirect_origin)}/accept-invite/${token}`;
     const ctx = await loadInviteContext(workspaceId, userId);
     await sendWorkspaceInviteEmail({
       to: email,
@@ -411,7 +412,7 @@ export const resendWorkspaceInvite = createServerFn({ method: "POST" })
       );
     }
 
-    const url = `${data.redirect_origin.replace(/\/+$/, "")}/accept-invite/${inv.token as string}`;
+    const url = `${safeInviteOrigin(data.redirect_origin)}/accept-invite/${inv.token as string}`;
     const ctx = await loadInviteContext(workspaceId, userId);
     await sendWorkspaceInviteEmail({
       to: inv.email as string,

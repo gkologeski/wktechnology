@@ -1,6 +1,7 @@
 // Server functions for Contracts (Sprint 2 MVP).
 // CRUD, número gerado, criação a partir de deal, transições de status.
 import { createServerFn } from "@tanstack/react-start";
+import { orSafeLike } from "@/lib/postgrest-search";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
@@ -46,7 +47,7 @@ export const listContracts = createServerFn({ method: "POST" })
     if (data.companyId) q = q.eq("counterparty_company_id", data.companyId);
     if (data.dealId) q = q.eq("deal_id", data.dealId);
     if (data.search && data.search.trim()) {
-      const t = `%${data.search.trim()}%`;
+      const t = orSafeLike(data.search);
       q = q.or(`title.ilike.${t},number.ilike.${t}`);
     }
     const { data: rows, error } = await q;
@@ -259,7 +260,7 @@ export const listLinkableContracts = createServerFn({ method: "POST" })
       .limit(data.limit ?? 20);
     if (data.excludeId) query = query.neq("id", data.excludeId);
     if (data.q && data.q.trim()) {
-      const t = `%${data.q.trim()}%`;
+      const t = orSafeLike(data.q);
       query = query.or(`title.ilike.${t},number.ilike.${t}`);
     }
     const { data: rows, error } = await query;
@@ -306,7 +307,7 @@ export const listOwnContractingPurchaseContracts = createServerFn({ method: "POS
       .order("created_at", { ascending: false })
       .limit(data.limit ?? 100);
     if (data.q && data.q.trim()) {
-      const t = `%${data.q.trim()}%`;
+      const t = orSafeLike(data.q);
       query = query.or(`title.ilike.${t},number.ilike.${t}`);
     }
     const { data: rows, error } = await query;
@@ -583,7 +584,7 @@ export const searchMainContracts = createServerFn({ method: "POST" })
     if (data.role) query = query.eq("role", data.role);
     if (data.excludeId) query = query.neq("id", data.excludeId);
     if (data.q && data.q.trim()) {
-      const t = `%${data.q.trim()}%`;
+      const t = orSafeLike(data.q);
       query = query.or(`title.ilike.${t},number.ilike.${t}`);
     }
     const { data: rows, error } = await query;

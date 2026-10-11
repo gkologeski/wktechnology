@@ -294,6 +294,9 @@ export const attachRecording = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const supabaseAdmin = await getSupabaseAdmin();
     const workspaceId = await resolveActiveWorkspace(context.userId);
+    const expectedPrefix = `${workspaceId}/${data.meeting_id}/`;
+    if (!data.path.startsWith(expectedPrefix) || data.path.includes(".."))
+      throw new Error("Caminho de gravação inválido para esta reunião.");
     const { data: meeting, error } = await supabaseAdmin
       .from("meetings")
       .update({

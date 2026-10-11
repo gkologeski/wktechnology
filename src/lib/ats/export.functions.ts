@@ -3,10 +3,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { neutralizeCsvFormula } from "@/lib/security/escape";
 
 function csvEscape(v: unknown): string {
   if (v === null || v === undefined) return "";
-  const s = String(v);
+  const s = neutralizeCsvFormula(String(v));
   if (/[",\n;]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
   return s;
 }

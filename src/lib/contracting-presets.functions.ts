@@ -4,6 +4,7 @@
 // sugeridos. Serve para preencher rapidamente a associação de serviço no
 // contrato, sem travar nada: todos os campos continuam editáveis depois.
 import { createServerFn } from "@tanstack/react-start";
+import { orSafeLike } from "@/lib/postgrest-search";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
@@ -52,7 +53,7 @@ export const listContractingPresets = createServerFn({ method: "POST" })
     if (data.onlyActive) q = q.eq("active", true);
     if (data.serviceCatalogId) q = q.eq("service_catalog_id", data.serviceCatalogId);
     if (data.search && data.search.trim()) {
-      const t = `%${data.search.trim()}%`;
+      const t = orSafeLike(data.search);
       q = q.or(`name.ilike.${t},code.ilike.${t}`);
     }
     const { data: rows, error } = await q;
@@ -239,7 +240,7 @@ export const listContractingPresetOptions = createServerFn({ method: "POST" })
       .order("name")
       .limit(300);
     if (data.search && data.search.trim()) {
-      const t = `%${data.search.trim()}%`;
+      const t = orSafeLike(data.search);
       q = q.or(`name.ilike.${t},code.ilike.${t}`);
     }
     const { data: rows, error } = await q;
@@ -274,7 +275,7 @@ export const listPresetsForService = createServerFn({ method: "POST" })
       q = q.eq("active", true).eq("service_catalog_id", data.serviceCatalogId!);
       const term = data.search?.trim();
       if (term) {
-        const t = `%${term}%`;
+        const t = orSafeLike(term);
         q = q.or(`name.ilike.${t},code.ilike.${t}`);
       }
     }

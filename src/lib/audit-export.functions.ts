@@ -102,6 +102,14 @@ export const runAuditExportNow = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const ws = await activeWorkspace(supabase, userId);
+    const { data: owned, error: ownErr } = await supabase
+      .from("audit_exports")
+      .select("id")
+      .eq("id", data.id)
+      .eq("workspace_id", ws)
+      .maybeSingle();
+    if (ownErr) throw new Error(ownErr.message);
+    if (!owned) throw new Error("Exportação não encontrada neste workspace.");
     const { runAuditExport } = await import("./audit-export.server");
     const r = await runAuditExport(data.id, ws);
     return r;

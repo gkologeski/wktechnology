@@ -90,7 +90,19 @@ export const getIntegration = createServerFn({ method: "POST" })
       .eq("workspace_id", workspaceId)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return { integration: row };
+    if (!row) return { integration: null };
+    // Nunca devolve tokens nem referências de credenciais ao navegador.
+    const { oauth_tokens, credentials_secret_ref, ...safe } = row as typeof row & {
+      oauth_tokens: unknown;
+      credentials_secret_ref: unknown;
+    };
+    return {
+      integration: {
+        ...safe,
+        has_tokens: !!oauth_tokens,
+        has_credentials: !!credentials_secret_ref,
+      },
+    };
   });
 
 export const upsertIntegration = createServerFn({ method: "POST" })

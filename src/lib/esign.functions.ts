@@ -246,6 +246,7 @@ export const getEsignSession = createServerFn({ method: "GET" })
       .eq("id", signer.document_id)
       .single();
     if (e2 || !doc) throw new Error("Documento não encontrado.");
+    if (doc.status === "canceled") throw new Error("Link inválido ou expirado.");
 
     const { data: allSigners } = await supabaseAdmin
       .from("esign_signers")

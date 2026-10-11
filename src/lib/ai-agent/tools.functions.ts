@@ -1,4 +1,5 @@
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { orSafeLike } from "@/lib/postgrest-search";
 // Server functions expostas como tools do agente de IA.
 // Read-only executam automaticamente; mutadoras são chamadas pelo cliente APÓS
 // aprovação humana no card. Todas rodam via requireSupabaseAuth → RLS aplica
@@ -25,7 +26,7 @@ export const agentSearchEntity = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const like = `%${data.query.replace(/[%_]/g, " ")}%`;
+    const like = orSafeLike(data.query);
     const results: Array<{ id: string; label: string; extra?: string }> = [];
 
     if (data.kind === "contact") {
@@ -120,7 +121,7 @@ export const agentLookupUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ query: z.string().min(1).max(120) }).parse(d))
   .handler(async ({ data, context }) => {
-    const like = `%${data.query.replace(/[%_]/g, " ")}%`;
+    const like = orSafeLike(data.query);
     const { data: rows } = await context.supabase
       .from("profiles")
       .select("id, full_name")

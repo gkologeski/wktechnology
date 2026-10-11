@@ -79,6 +79,17 @@ export const approveTimeEntriesV2 = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({ ids }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const { data: targets, error: tErr } = await supabase
+      .from("project_time_entries")
+      .select("workspace_id, project_id")
+      .in("id", data.ids);
+    if (tErr) throw new Error(tErr.message);
+    const { assertProjectManagerFor } = await import("@/lib/projects/project-authz.server");
+    await assertProjectManagerFor(supabase, userId, targets ?? [], [
+      "techprojects.time_entries.approve.workspace",
+      "techprojects.timesheet.approve.workspace",
+      "techprojects.projects.manage.workspace",
+    ]);
     const now = new Date().toISOString();
     const { data: rows, error } = await supabase
       .from("project_time_entries")

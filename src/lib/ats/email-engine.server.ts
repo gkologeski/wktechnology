@@ -1,3 +1,4 @@
+import { escapeHtml } from "@/lib/security/escape";
 import { EMAIL_SENDER_DOMAIN } from "@/lib/platform-domains";
 import { renderTokens as renderTemplate } from "@/lib/message-tokens";
 // Engine de envio de e-mails do ATS (Fase 1).
@@ -290,7 +291,7 @@ export async function enqueueApplicationConfirmation(args: {
   const html = `
 <div style="font-family:Inter,system-ui,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f172a">
   <h1 style="font-size:20px;margin:0 0 16px;color:${color}">Candidatura recebida 🎉</h1>
-  <p>Olá <strong>${args.candidateName}</strong>,</p>
+  <p>Olá <strong>${escapeHtml(args.candidateName)}</strong>,</p>
   <p>Recebemos sua candidatura para a vaga <strong>${args.jobTitle}</strong>.
   Nosso time vai analisar seu perfil e te retorna em breve.</p>
   <p>Você pode acompanhar o status pelo e-mail deste contato.</p>

@@ -188,12 +188,22 @@ export const getDocumentDownloadUrl = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: doc, error } = await context.supabase
       .from("people_documents")
-      .select("file_url")
+      .select("file_url, owner_id, person_id")
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    const path = (doc as { file_url: string | null } | null)?.file_url;
-    if (!path) throw new Error("Documento sem arquivo");
+    const d = doc as { file_url: string | null; owner_id: string | null; person_id: string } | null;
+    const path = d?.file_url;
+    if (!d || !path) throw new Error("Documento sem arquivo");
+    const { data: person } = await context.supabase
+      .from("people")
+      .select("owner_id")
+      .eq("id", d.person_id)
+      .maybeSingle();
+    const owners = [d.owner_id, (person as { owner_id: string } | null)?.owner_id].filter(Boolean);
+    const [seg1, seg2] = path.split("/");
+    if (path.includes("..") || seg2 !== d.person_id || !owners.includes(seg1))
+      throw new Error("Arquivo do documento inválido.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: signed, error: sErr } = await supabaseAdmin.storage
       .from("people-documents")

@@ -26,7 +26,8 @@ export const notifyTicketStatusChange = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // 1) Carrega ticket
-    const { data: ticket } = await supabaseAdmin
+    // Leitura com o cliente do usuário (RLS): só tickets que ele pode ver.
+    const { data: ticket } = await context.supabase
       .from("tickets")
       .select("id, subject, workspace_id, assignee_id")
       .eq("id", data.ticket_id)

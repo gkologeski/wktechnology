@@ -4,6 +4,7 @@
 // (Outsourcing, Fábrica de Software, BPO…). Assim o catálogo continua enxuto e
 // a variação de cargo/senioridade/stack vive aqui e no serviço do contrato.
 import { createServerFn } from "@tanstack/react-start";
+import { orSafeLike } from "@/lib/postgrest-search";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
@@ -58,7 +59,7 @@ export const listJobProfiles = createServerFn({ method: "POST" })
     if (data.onlyActive) q = q.eq("active", true);
     if (data.serviceCatalogId) q = q.eq("service_catalog_id", data.serviceCatalogId);
     if (data.search && data.search.trim()) {
-      const t = `%${data.search.trim()}%`;
+      const t = orSafeLike(data.search);
       q = q.or(`name.ilike.${t},code.ilike.${t}`);
     }
     const { data: rows, error } = await q;
@@ -194,7 +195,7 @@ export const listJobProfileOptions = createServerFn({ method: "POST" })
       .order("name")
       .limit(300);
     if (data.search && data.search.trim()) {
-      const t = `%${data.search.trim()}%`;
+      const t = orSafeLike(data.search);
       q = q.or(`name.ilike.${t},code.ilike.${t}`);
     }
     const { data: rows, error } = await q;

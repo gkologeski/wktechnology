@@ -184,6 +184,7 @@ export const getWebhookSecret = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    await assertPermission(context.supabase, userId, workspaceId, WEBHOOK_MANAGE);
     // `secret` is owner-only via RLS; use admin client scoped to owner_id.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin

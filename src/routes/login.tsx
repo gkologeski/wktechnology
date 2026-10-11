@@ -11,7 +11,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 
 function safeNext(value: unknown): string {
-  return typeof value === "string" && value.startsWith("/") && !value.startsWith("//") ? value : "";
+  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) return "";
+  if (/[\\\s]/.test(value) || /[\u0000-\u001f]/.test(value)) return "";
+  return value;
 }
 
 export const Route = createFileRoute("/login")({

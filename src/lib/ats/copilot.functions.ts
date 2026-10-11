@@ -104,7 +104,10 @@ export const askCandidateCopilot = createServerFn({ method: "POST" })
     const messages: Array<{ role: string; content: string }> = [
       { role: "system", content: sys },
       { role: "user", content: `CONTEXTO DO CANDIDATO:\n${ctx}` },
-      ...(data.history ?? []).map((h) => ({ role: h.role, content: h.content })),
+      ...(data.history ?? []).map((h) => ({
+        role: h.role === "assistant" ? "assistant" : "user",
+        content: String(h.content ?? "").slice(0, 4000),
+      })),
       { role: "user", content: data.question },
     ];
     const answer = await callAi(messages);

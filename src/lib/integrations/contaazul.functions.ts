@@ -31,8 +31,6 @@ export const contaAzulStatus = createServerFn({ method: "GET" })
     const tokens = integration?.oauth_tokens ?? null;
 
     // Últimas execuções do agendador (job "contaazul-tick", a cada 6 horas).
-    // Preferimos as linhas do próprio workspace; se ainda não existirem
-    // (execuções antigas eram apenas globais), caímos para as globais.
     const runCols =
       "id, started_at, finished_at, duration_ms, status, metrics, error, workspace_id";
     const { data: wsRuns } = await supabaseAdmin
@@ -43,17 +41,8 @@ export const contaAzulStatus = createServerFn({ method: "GET" })
       .order("started_at", { ascending: false })
       .limit(5);
 
-    let runs = wsRuns ?? [];
-    if (runs.length === 0) {
-      const { data: globalRuns } = await supabaseAdmin
-        .from("cron_run_logs")
-        .select(runCols)
-        .eq("job_name", "contaazul-tick")
-        .is("workspace_id", null)
-        .order("started_at", { ascending: false })
-        .limit(5);
-      runs = globalRuns ?? [];
-    }
+    // Só execuções do próprio workspace (logs globais não são expostos).
+    const runs = wsRuns ?? [];
 
     return {
       configured: api.contaAzulConfigured(),
@@ -155,6 +144,13 @@ export const contaAzulDisconnect = createServerFn({ method: "POST" })
       import("@/integrations/supabase/client.server"),
     ]);
     const workspaceId = await resolveActiveWorkspace(context.userId);
+    {
+      const [{ assertAnyPermission }, { INTEGRATIONS_MANAGE }] = await Promise.all([
+        import("@/lib/access-control/enforce.server"),
+        import("@/lib/access-control/admin-permission-keys"),
+      ]);
+      await assertAnyPermission(context.supabase, context.userId, workspaceId, INTEGRATIONS_MANAGE);
+    }
     const { error } = await supabaseAdmin
       .from("integrations")
       .update({
@@ -186,6 +182,13 @@ export const contaAzulRunSync = createServerFn({ method: "POST" })
       import("./contaazul-steps.server"),
     ]);
     const workspaceId = await resolveActiveWorkspace(context.userId);
+    {
+      const [{ assertAnyPermission }, { INTEGRATIONS_MANAGE }] = await Promise.all([
+        import("@/lib/access-control/enforce.server"),
+        import("@/lib/access-control/admin-permission-keys"),
+      ]);
+      await assertAnyPermission(context.supabase, context.userId, workspaceId, INTEGRATIONS_MANAGE);
+    }
     const results = await steps.runContaAzulSteps(
       { supabase: supabaseAdmin, workspaceId, userId: context.userId, since: data.since ?? null },
       data.entities,
@@ -234,6 +237,13 @@ export const contaAzulImportFileEntries = createServerFn({ method: "POST" })
       import("./contaazul-steps.server"),
     ]);
     const workspaceId = await resolveActiveWorkspace(context.userId);
+    {
+      const [{ assertAnyPermission }, { INTEGRATIONS_MANAGE }] = await Promise.all([
+        import("@/lib/access-control/enforce.server"),
+        import("@/lib/access-control/admin-permission-keys"),
+      ]);
+      await assertAnyPermission(context.supabase, context.userId, workspaceId, INTEGRATIONS_MANAGE);
+    }
     const result = await steps.persistEntries(
       { supabase: supabaseAdmin, workspaceId, userId: context.userId },
       data.direction,

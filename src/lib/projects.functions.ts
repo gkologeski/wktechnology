@@ -667,7 +667,18 @@ export const updateMember = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    const { data: target } = await supabase
+      .from("project_members")
+      .select("workspace_id, project_id")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (!target) throw new Error("Membro não encontrado.");
+    const { assertProjectManagerFor } = await import("@/lib/projects/project-authz.server");
+    await assertProjectManagerFor(supabase, userId, [target], [
+      "techprojects.projects.manage.workspace",
+      "techprojects.projects.update.workspace",
+    ]);
     const { data: row, error } = await supabase
       .from("project_members")
       .update(data.patch)

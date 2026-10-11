@@ -97,7 +97,9 @@ function buildRecord(
   mapping: Record<string, string>,
 ) {
   const out: Record<string, unknown> = {};
+  const allowed = new Set(ENTITY_FIELDS[entity].map((f) => f.key));
   for (const [csvCol, fieldKey] of Object.entries(mapping)) {
+    if (!allowed.has(fieldKey)) continue;
     const raw = row[csvCol];
     if (raw === undefined || raw === null || raw === "") continue;
     const value = String(raw).trim();
@@ -191,6 +193,8 @@ export const executeCsvImport = createServerFn({ method: "POST" })
     await assertImportEntity(context.supabase, context.userId, data.entity);
     const workspaceId = await getActiveWorkspaceId(context.userId);
     const { entity, rows, mapping, dedupeKey, strategy } = data;
+    if (!ENTITY_FIELDS[entity].some((f) => f.key === dedupeKey))
+      throw new Error("Campo de deduplicação inválido para esta entidade.");
 
     const records = rows.map((r) => buildRecord(entity, r, mapping));
     const keyValues = Array.from(

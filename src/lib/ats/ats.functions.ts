@@ -1,5 +1,6 @@
 // Server functions do módulo ATS (Sprint A: CRUD + Kanban).
 import { createServerFn } from "@tanstack/react-start";
+import { orSafeLike } from "@/lib/postgrest-search";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { emitEvent } from "@/lib/events.server";
@@ -562,7 +563,7 @@ export const listAtsCandidates = createServerFn({ method: "POST" })
         nullsFirst: false,
       })
       .limit(300);
-    if (data.search) q = q.or(`full_name.ilike.%${data.search}%,email.ilike.%${data.search}%`);
+    if (data.search) q = q.or(`full_name.ilike.${orSafeLike(data.search)},email.ilike.${orSafeLike(data.search)}`);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     return (rows ?? []) as unknown as CandidateListRow[];

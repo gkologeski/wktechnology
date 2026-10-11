@@ -397,6 +397,7 @@ export const auditCampaignQueueability = createServerFn({ method: "POST" })
     const { data: leads } = await sb
       .from("leads")
       .select("id, first_name, last_name, company_name, phone")
+      .eq("workspace_id", ws)
       .in("id", leadIds);
     const leadMap = new Map<string, { name: string; phone: string | null }>();
     for (const l of (leads ?? []) as Array<{
