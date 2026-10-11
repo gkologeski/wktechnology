@@ -262,7 +262,7 @@ export const getEsignSession = createServerFn({ method: "GET" })
       );
       if (blockers.length > 0) canSign = false;
     }
-    if (doc.status === "canceled" || doc.status === "completed" || doc.status === "declined") {
+    if (doc.status === "completed" || doc.status === "declined") {
       canSign = false;
     }
 
