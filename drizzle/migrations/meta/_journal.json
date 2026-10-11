@@ -813,6 +813,13 @@
       "when": 1791699162628,
       "tag": "0115_rep_scope_live_chat_and_hashed_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 116,
+      "version": "7",
+      "when": 1791723927142,
+      "tag": "0116_rep_scope_hashed_channels_stage",
+      "breakpoints": true
     }
   ]
 }
