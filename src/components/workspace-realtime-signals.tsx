@@ -20,7 +20,7 @@ export function WorkspaceRealtimeSignals() {
           {
             table: "workspace_realtime_signals",
             filter: `workspace_id=eq.${workspaceId}`,
-            queryKeys: [["deals"], ["meetings"], ["calendar"], ["activities"]],
+            queryKeys: [["deals"], ["meetings"], ["calendar"], ["activities"], ["tasks"]],
             onChange: () => window.dispatchEvent(new Event("timeline:refresh")),
           },
         ]

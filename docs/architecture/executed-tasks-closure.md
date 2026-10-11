@@ -376,3 +376,36 @@ apontado para domínio `.invalid` (nenhum envio).
 - Atualização: `bun run test:isolated:stack` exit 3 (26 passaram, 0 falharam, 6 não executados);
   `bun run verify` exit 0 (0 erros de lint, 1.274 avisos; 105 arquivos / 725 testes). Sem mudança em
   `src/` ou configuração de build nesta atualização: build não repetido.
+
+## Fechamento do ciclo 14 (11/10/2026)
+
+**Status:** 15 tarefas concluídas **no escopo local**; a tarefa 16 está **em lançamento** (publicação e alinhamento do banco ainda não executados). Nada foi publicado e nenhuma migração foi aplicada de forma permanente ao banco compartilhado.
+
+### Ajuste final de código
+- `src/components/workspace-realtime-signals.tsx`: `queryKeys` passa a incluir `["tasks"]` (atividades são a tabela de Tarefas), para que a exclusão opaca também reconcilie a lista de Tarefas. Validado localmente pelo operador com conta restrita: tarefa sintética excluída direto no banco local sumiu sem recarregar (lista 1→0). Nenhuma outra função ou migração alterada.
+
+### Harness SDK × prova manual (distinção obrigatória)
+Os três cenários `rt-delete-event`, `ui-event-to-screen` e `view-as-gotrue-session` **não são executados pelo runner SDK** e continuam `not_executed` → exit 3 no harness. Não viram verde automático. A prova foi feita separadamente, manualmente, pelo operador no navegador conectado ao app local:
+- `rt-delete-event`: nota e tarefa excluídas fora da tela sumiram sem reload; fixtures removidas.
+- `ui-event-to-screen`: 14 cenários conciliados neste checklist; troca de workspace A→B→A verificada em duas abas.
+- `view-as-gotrue-session`: teste real do "Ver como" do ciclo 13 e teste específico próprio passaram.
+
+### Outras provas locais (operador)
+- Reprodução SDK isolada: 76 aprovações / 0 falhas. Carga sintética: 7/7.
+- Rollback local: artefato anterior serviu login 200 e dashboard autenticado; retorno ao final com outra identidade de assets, `build-info.json` 200 e fingerprint exato; zero erros no navegador; diagnóstico DEV ausente.
+- Formulário público sem sessão no worker local: lead, envio e nota gravados no workspace B correto; depois removidas apenas as fixtures.
+- Migrações 0103–0114 executadas em transação de compatibilidade com `ROLLBACK`, sem dados de clientes: dentro da transação, zero defaults fixos e publicação com 3 tópicos; após o rollback, 49 defaults fixos e tabela de sinais inexistente (estado preservado). Helpers de membership/admin exigem `status = active`. Snapshot de DDL compartilhado preservado.
+
+### Gates nesta sandbox (Lovable)
+| Execução | verify | build | client | ssr | nitro | entrada gzip | módulos Nitro |
+|---|---|---|---|---|---|---|---|
+| Integração do pacote (antes do ajuste) | 32,5 s | 158,0 s | 40,6 s | 48,1 s | 65,8 s | 251.085 B | 3.104 |
+| Após ajuste `["tasks"]` (final) | 29,4 s (tipos 21,9 · lint 1,3 · testes 6,2) | 130,2 s | 40,8 s | 38,3 s | 47,3 s | 251.106 B | 3.104 |
+
+- verify: `complete=true`, 773 testes / 120 arquivos, 0 erros de lint. build: `complete=true`, saída 0. `bun run perf:check`: aprovado.
+- Fingerprint (source_hash) final: `1bae558d954f8494f6b51aaa4fc467e0835f03040de51cfecd9f5b8100a0f08b` — idêntico em `.verification/verify.json`, `.verification/build.json` e `dist/client/build-info.json`.
+- Commit no início desta rodada: `9b570ff9eed6adb3a8d0088e611044aae81153be` (o ajuste entra no próximo registro automático da plataforma).
+- Tempos locais anteriores do operador (verify 26,2 s, build 100,3 s, Nitro 38,9 s) são de outra máquina e **não são SLA**.
+
+### Próximo passo (não executado)
+Publicar o código primeiro; só então aplicar defaults/policies 0103–0114 na transação validada, para não quebrar gravadores da versão pública anterior.
