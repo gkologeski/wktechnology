@@ -53,7 +53,7 @@ critério de conclusão. Os registros dos ciclos anteriores acima são históric
 
 | # | Tarefa | Status | O que ainda falta / escopo da conclusão |
 | --- | --- | --- | --- |
-| 1 | Permissões own/team/workspace/tenant e Ver como | Executada | Implementada, validada localmente e publicada; as 9 lacunas de leitura no banco compartilhado aguardam sessão QA aprovada pelo usuário (teste QA não executado). |
+| 1 | Permissões own/team/workspace/tenant e Ver como | Concluída | Aceite real com JWT da conta QA em 11/10/2026: 35 PASS / 0 FAIL nas 9 lacunas de leitura, Inbox, IDs diretos de terceiros, nota própria e sinais (após 0116–0119). Ver task-1-real-user-validation.md. |
 | 2 | Ambiente isolado fiel e reproduzível | Concluído | Stack local completa e reprodução limpa validadas. |
 | 3 | Realtime ponta a ponta | Concluído | 76 verificações SDK e 14 cenários conciliados com evidências automáticas e manuais locais. |
 | 4 | Realtime de itens, reuniões, calendário e demais trocas de workspace | Concluído | INSERT/UPDATE/DELETE, sinais opacos, isolamento e troca A/B validados localmente; migrações 0113/0114 já aplicadas no banco compartilhado. |
@@ -68,9 +68,9 @@ critério de conclusão. Os registros dos ciclos anteriores acima são históric
 | 13 | Contratos de módulos e integridade de workspace | Concluído | Gravadores revisados; no banco compartilhado: defaults fixos 49 → 0, 7 policies SELECT restritivas, 3 tópicos publicados. |
 | 14 | Carga, concorrência, filas, retry e idempotência | Concluído | Sete cenários sintéticos aprovados: lease, concorrência, quota, retry, idempotência e isolamento; p95 179,1 ms. Sem provedores externos. |
 | 15 | Limites de performance e prevenção de regressões | Concluído | Metas, avisos locais e gate de regressão no CI; relatório incompleto ou de fonte diferente falha. |
-| 16 | Aceite do artefato SSR/Cloudflare, rollback e publicação | Executada | Release e banco concluídos (deployment 35e01a9f-dd3d-4fec-9a5c-914cd9a36263, hash ativo 1bae558d…0f08b, 0103–0114 com COMMIT); falta o mesmo aceite QA da linha 1. |
+| 16 | Aceite do artefato SSR/Cloudflare, rollback e publicação | Concluída | Release e banco concluídos (deployment 35e01a9f-dd3d-4fec-9a5c-914cd9a36263, hash 1bae558d…0f08b, 0103–0114 COMMIT); aceite QA compartilhado 35/0 em 11/10/2026. Migrações 0116–0119 só de banco (regras/índices), sem novo artefato. |
 
-Saldo desta revisão: **14 Concluídas, 2 Executadas, 0 Pendentes**. Versão publicada; aceite QA compartilhado não executado.
+Saldo desta revisão: **16 Concluídas, 0 Executadas, 0 Pendentes**. Versão publicada; aceite QA compartilhado aprovado (35/0).
 Detalhes e provas: `executed-tasks-closure.md`, ciclo 13. Não permanecem defaults
 fixos de workspace no banco isolado validado; não extrapolar esse resultado para
 produção. O relatório SDK mantém três placeholders visuais não executados, com
