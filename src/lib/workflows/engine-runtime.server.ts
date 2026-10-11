@@ -74,6 +74,8 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
         .from("workflow_runs")
         .insert({
           owner_id: wfr.owner_id,
+          // Job sem sessão: o tenant vem do workflow (o DEFAULT depende de auth.uid()).
+          workspace_id: wfr.workspace_id,
           workflow_id: wfr.id,
           event_id: event.id,
           entity: event.entity,
@@ -169,6 +171,7 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
       .from("workflow_runs")
       .insert({
         owner_id: wf.owner_id,
+        workspace_id: wf.workspace_id,
         workflow_id: wf.id,
         event_id: event.id,
         entity: event.entity,
@@ -178,7 +181,12 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
       } as never)
       .select("id")
       .single();
-    if (insErr || !run) continue;
+    if (insErr || !run) {
+      // Dedupe (23505) é esperado; qualquer outro erro precisa aparecer.
+      if (insErr && insErr.code !== "23505")
+        console.error("[workflows] falha ao criar run:", insErr.code, insErr.message);
+      continue;
+    }
 
     const res = await runActions(supabase, wf.actions ?? [], {
       entity: event.entity,
