@@ -16483,6 +16483,30 @@ export type Database = {
           },
         ]
       }
+      rbac_wk_backup_2026_10: {
+        Row: {
+          id: number
+          row_data: Json
+          source: string
+          taken_at: string
+          workspace_id: string
+        }
+        Insert: {
+          id?: number
+          row_data: Json
+          source: string
+          taken_at?: string
+          workspace_id: string
+        }
+        Update: {
+          id?: number
+          row_data?: Json
+          source?: string
+          taken_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       record_layouts: {
         Row: {
           created_at: string
@@ -22578,6 +22602,7 @@ export type Database = {
         }
         Returns: number
       }
+      my_perm_workspaces: { Args: { _key: string }; Returns: string[] }
       my_team_member_ids: { Args: never; Returns: string[] }
       my_team_member_pairs: {
         Args: never
@@ -22624,6 +22649,7 @@ export type Database = {
         Args: { _actor: string; _confirm_name: string; _workspace: string }
         Returns: undefined
       }
+      rbac_wk_restore_overrides_2026_10: { Args: never; Returns: number }
       recalc_deal_value: { Args: { _deal_id: string }; Returns: undefined }
       recalc_financial_entry: {
         Args: { _entry_id: string }
@@ -22660,6 +22686,10 @@ export type Database = {
       restore_workspace: {
         Args: { _actor: string; _workspace: string }
         Returns: undefined
+      }
+      role_profile_admin_override_approve: {
+        Args: { _expected_revision: number; _profile: string; _reason: string }
+        Returns: Json
       }
       role_profile_approve: {
         Args: {

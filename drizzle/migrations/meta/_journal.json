@@ -855,6 +855,13 @@
       "when": 1791728331005,
       "tag": "0121_restrict_catalog_reads_to_members",
       "breakpoints": true
+    },
+    {
+      "idx": 122,
+      "version": "7",
+      "when": 1791761878365,
+      "tag": "0122_rbac_wk_phase1_structural",
+      "breakpoints": true
     }
   ]
 }
