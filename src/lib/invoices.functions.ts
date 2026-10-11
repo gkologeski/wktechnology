@@ -42,7 +42,9 @@ export const listInvoices = createServerFn({ method: "GET" })
     if (data.status !== "all") q = q.eq("status", data.status);
     if (data.gateway !== "all") q = q.eq("gateway", data.gateway);
     if (data.search)
-      q = q.or(`invoice_number.ilike.${orSafeLike(data.search)},description.ilike.${orSafeLike(data.search)}`);
+      q = q.or(
+        `invoice_number.ilike.${orSafeLike(data.search)},description.ilike.${orSafeLike(data.search)}`,
+      );
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     return { invoices: rows ?? [] };
