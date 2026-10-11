@@ -1,3 +1,4 @@
+import { workspaceOfSource } from "@/lib/workspace-source.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -135,6 +136,8 @@ export const upsertWidget = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    const dashboardWorkspace = await workspaceOfSource(supabase, "dashboards", data.dashboard_id);
+    if (dashboardWorkspace !== workspaceId) throw new Error("Painel fora da empresa ativa.");
     const payload = {
       dashboard_id: data.dashboard_id,
       title: data.title,
@@ -152,7 +155,7 @@ export const upsertWidget = createServerFn({ method: "POST" })
     }
     const { data: row, error } = await supabase
       .from("dashboard_widgets")
-      .insert({ ...payload, owner_id: userId })
+      .insert({ ...payload, owner_id: userId, workspace_id: dashboardWorkspace })
       .select("id")
       .single();
     if (error) throw new Error(error.message);

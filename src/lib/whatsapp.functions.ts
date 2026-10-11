@@ -234,6 +234,7 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
 
     if (contactId) {
       await supabase.from("activities").insert({
+        workspace_id: workspaceId,
         owner_id: workspaceId,
         type: "whatsapp",
         related_contact_id: contactId,

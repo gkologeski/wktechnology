@@ -1,3 +1,4 @@
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -157,6 +158,7 @@ export const logCallActivity = createServerFn({ method: "POST" })
     const { data: row, error } = await supabase
       .from("activities")
       .insert({
+        workspace_id: await resolveActiveWorkspace(userId),
         owner_id: userId,
         type: "call",
         subject,

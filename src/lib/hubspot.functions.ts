@@ -1,3 +1,4 @@
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -94,6 +95,7 @@ export const importHubspotLeads = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     let imported = 0;
     let skipped = 0;
     let after: string | undefined;
@@ -111,6 +113,7 @@ export const importHubspotLeads = createServerFn({ method: "POST" })
       if (rows.length > 0) {
         const insertRows = rows.map((r) => ({
           owner_id: userId,
+          workspace_id: workspaceId,
           first_name: r.first_name,
           last_name: r.last_name,
           email: r.email,

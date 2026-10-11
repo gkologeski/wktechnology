@@ -41,7 +41,8 @@ export const listMyWorkspaces = createServerFn({ method: "GET" })
         .select(
           "workspace_id, role, workspaces:workspace_id(id, name, slug, logo_url, primary_color, status)",
         )
-        .eq("user_id", context.userId);
+        .eq("user_id", context.userId)
+        .eq("status", "active");
       if (error) throw new Error(error.message);
       workspaces = (members ?? [])
         .map((m) => {
@@ -85,6 +86,7 @@ export const setActiveWorkspace = createServerFn({ method: "POST" })
         .select("workspace_id")
         .eq("user_id", context.userId)
         .eq("workspace_id", data.workspace_id)
+        .eq("status", "active")
         .maybeSingle();
       if (mErr) throw new Error(mErr.message);
       if (!m) throw new Error("Você não é membro desse workspace.");

@@ -50,6 +50,7 @@ function templateVariables(camp: Campaign, vars: Record<string, string>): string
 }
 
 async function processCampaign(camp: Campaign, batchOverride?: number) {
+  if (!camp.workspace_id) throw new Error("Campanha sem empresa de origem.");
   const since = new Date(Date.now() - 60_000).toISOString();
   const { count: recentCount } = await supabaseAdmin
     .from("whatsapp_campaign_recipients")
@@ -84,7 +85,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
   // Número oficial da Meta do workspace (obrigatório).
   let num: WaNumber;
   try {
-    num = await resolveWaNumber(camp.owner_id);
+    num = await resolveWaNumber(camp.workspace_id);
   } catch (e) {
     const message = e instanceof Error ? e.message : "Número da Meta indisponível";
     await supabaseAdmin
@@ -152,7 +153,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
         .upsert(
           {
             owner_id: camp.owner_id,
-            workspace_id: camp.owner_id,
+            workspace_id: camp.workspace_id,
             contact_id: r.contact_id,
             contact_phone: toBare,
             twilio_number: num.displayPhoneNumber,
@@ -172,7 +173,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
         await supabaseAdmin.from("whatsapp_messages").insert({
           conversation_id: conv.id,
           owner_id: camp.owner_id,
-          workspace_id: camp.owner_id,
+          workspace_id: camp.workspace_id,
           direction: "outbound",
           body,
           media_url: camp.template_name ? null : camp.media_url,

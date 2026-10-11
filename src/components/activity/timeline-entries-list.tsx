@@ -77,7 +77,7 @@ export function TimelineEntriesList({
   }
 
   return (
-    <ol className="space-y-5">
+    <ol className={`space-y-5${entries.length >= 200 && !editing.id ? " timeline-windowed" : ""}`}>
       {entries.map((entry) => {
         if (entry.history) {
           return (

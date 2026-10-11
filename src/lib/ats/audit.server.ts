@@ -9,6 +9,7 @@
  * Usar SEMPRE em server functions / server routes — nunca no cliente.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { workspaceOfSource } from "@/lib/workspace-source.server";
 import { emitEvent } from "@/lib/events.server";
 
 export type AtsEventName =
@@ -84,10 +85,11 @@ export async function recordAtsEvent(
     dedupeKey: args.dedupeKey,
   });
   // Fan-out para webhooks de saída (silencioso em falha para não bloquear o caller).
-  if (!result.deduped) {
+  if (!result.deduped && result.id) {
     try {
       const { enqueueWebhookEvent } = await import("@/lib/webhooks/dispatcher.server");
-      await enqueueWebhookEvent(args.ownerId, args.name, {
+      const workspaceId = await workspaceOfSource(supabase, "domain_events", result.id);
+      await enqueueWebhookEvent(workspaceId, args.ownerId, args.name, {
         entity_type: args.entityType,
         entity_id: args.entityId,
         ...(args.payload ?? {}),

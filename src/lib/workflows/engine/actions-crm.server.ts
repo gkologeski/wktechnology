@@ -1,3 +1,4 @@
+import { withWorkflowWorkspace } from "./workspace-payload";
 // Ações de criação de registros do CRM: lead, contato, empresa, negócio e chamado.
 // Extraído de engine-actions.server.ts sem mudança de comportamento.
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -54,7 +55,7 @@ export async function handleCrmAction(
       const row = mergeExtra(base, resolveExtraFields(action.extra_fields, ctx.after, ctx.vars));
       const { data, error } = await supabase
         .from("leads")
-        .insert(row as never)
+        .insert(withWorkflowWorkspace(ctx, row) as never)
         .select("id")
         .single();
       if (error) throw new Error(error.message);
@@ -88,7 +89,7 @@ export async function handleCrmAction(
       const row = mergeExtra(base, resolveExtraFields(action.extra_fields, ctx.after, ctx.vars));
       const { data, error } = await supabase
         .from("contacts")
-        .insert(row as never)
+        .insert(withWorkflowWorkspace(ctx, row) as never)
         .select("id")
         .single();
       if (error) throw new Error(error.message);
@@ -114,7 +115,7 @@ export async function handleCrmAction(
       const row = mergeExtra(base, resolveExtraFields(action.extra_fields, ctx.after, ctx.vars));
       const { data, error } = await supabase
         .from("companies")
-        .insert(row as never)
+        .insert(withWorkflowWorkspace(ctx, row) as never)
         .select("id")
         .single();
       if (error) throw new Error(error.message);
@@ -152,7 +153,7 @@ export async function handleCrmAction(
       const row = mergeExtra(base, resolveExtraFields(action.extra_fields, ctx.after, ctx.vars));
       const { data, error } = await supabase
         .from("deals")
-        .insert(row as never)
+        .insert(withWorkflowWorkspace(ctx, row) as never)
         .select("id")
         .single();
       if (error) throw new Error(error.message);
@@ -190,7 +191,7 @@ export async function handleCrmAction(
       const row = mergeExtra(base, resolveExtraFields(action.extra_fields, ctx.after, ctx.vars));
       const { data, error } = await supabase
         .from("tickets")
-        .insert(row as never)
+        .insert(withWorkflowWorkspace(ctx, row) as never)
         .select("id")
         .single();
       if (error) throw new Error(error.message);

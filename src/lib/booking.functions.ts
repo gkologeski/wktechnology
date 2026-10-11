@@ -1,3 +1,4 @@
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -63,7 +64,10 @@ export const upsertBookingPage = createServerFn({ method: "POST" })
     }
     const { data: row, error } = await supabase
       .from("booking_pages")
-      .insert(payload)
+      .insert({
+        ...(payload as Record<string, unknown>),
+        workspace_id: await resolveActiveWorkspace(context.userId),
+      } as never)
       .select("id")
       .single();
     if (error) throw new Error(error.message);

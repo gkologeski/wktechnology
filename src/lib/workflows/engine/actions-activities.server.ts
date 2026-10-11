@@ -1,3 +1,4 @@
+import { withWorkflowWorkspace } from "./workspace-payload";
 // Ações de atividades: criar atividade, pesquisa, tarefa e intenção de negócio.
 // Extraído de engine-actions.server.ts sem mudança de comportamento.
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -33,7 +34,9 @@ export async function handleActivityAction(
       else if (ctx.entity === "contacts") baseRow.related_contact_id = ctx.entityId;
       else if (ctx.entity === "companies") baseRow.related_company_id = ctx.entityId;
       else if (ctx.entity === "deals") baseRow.related_deal_id = ctx.entityId;
-      const { error } = await supabase.from("activities").insert(baseRow as never);
+      const { error } = await supabase
+        .from("activities")
+        .insert(withWorkflowWorkspace(ctx, baseRow) as never);
       if (error) throw new Error(error.message);
       return { at, ok: true, action: "create_activity", detail: { subject } };
     }
@@ -81,7 +84,7 @@ export async function handleActivityAction(
       else throw new Error("create_survey_activity não suporta esta entidade");
       const { data: created, error } = await supabase
         .from("activities")
-        .insert(row as never)
+        .insert(withWorkflowWorkspace(ctx, row) as never)
         .select("id")
         .single();
       if (error) throw new Error(error.message);
@@ -101,19 +104,21 @@ export async function handleActivityAction(
         : "Criar oportunidade";
       const { data: created, error } = await supabase
         .from("activities")
-        .insert({
-          owner_id: ctx.ownerId,
-          type: "task",
-          subject,
-          completed: false,
-          related_lead_id: ctx.entityId,
-          custom_fields: {
-            ui_action: "create_deal",
-            pipeline_id: action.pipeline_id ?? null,
-            stage_value: action.stage_value ?? null,
-            due_rule: action.due_rule ?? "last_business_day_of_month",
-          },
-        } as never)
+        .insert(
+          withWorkflowWorkspace(ctx, {
+            owner_id: ctx.ownerId,
+            type: "task",
+            subject,
+            completed: false,
+            related_lead_id: ctx.entityId,
+            custom_fields: {
+              ui_action: "create_deal",
+              pipeline_id: action.pipeline_id ?? null,
+              stage_value: action.stage_value ?? null,
+              due_rule: action.due_rule ?? "last_business_day_of_month",
+            },
+          }) as never,
+        )
         .select("id")
         .single();
       if (error) throw new Error(error.message);
@@ -146,7 +151,9 @@ export async function handleActivityAction(
       else if (ctx.entity === "companies") base.related_company_id = ctx.entityId;
       else if (ctx.entity === "deals") base.related_deal_id = ctx.entityId;
       const row = mergeExtra(base, resolveExtraFields(action.extra_fields, ctx.after, ctx.vars));
-      const { error } = await supabase.from("activities").insert(row as never);
+      const { error } = await supabase
+        .from("activities")
+        .insert(withWorkflowWorkspace(ctx, row) as never);
       if (error) throw new Error(error.message);
       return { at, ok: true, action: "create_task", detail: { subject } };
     }

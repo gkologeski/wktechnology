@@ -132,6 +132,7 @@ export const listAtsJobs = createServerFn({ method: "POST" })
     let q = supabase
       .from("ats_jobs")
       .select(buildGridSelect(BASE_JOB_KEYS, projection.extras))
+      .eq("workspace_id", workspaceId)
       // Sem filtro por owner_id: as políticas RLS já expõem vagas do próprio
       // usuário, das quais é hiring manager/recruiter, e as compartilhadas no
       // workspace para quem tem `techhire.jobs.view.workspace`

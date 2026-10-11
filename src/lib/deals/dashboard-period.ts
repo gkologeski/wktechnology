@@ -29,8 +29,12 @@ export function resolveDashboardRange(
 ): { range: DateRange; preset: PresetKey | "custom" } {
   // Links anteriores enviavam timestamps completos sem `preset`.
   if (s.from && s.to && (s.preset === "custom" || !s.preset)) {
-    const a = parseISO(s.from);
-    const b = parseISO(s.to);
+    // O filtro representa dias de calendário. Links legados serializavam esses
+    // dias como timestamps UTC; convertê-los ao fuso do navegador recua um dia.
+    const day = (value: string) =>
+      isValid(parseISO(value)) ? parseISO(value.slice(0, 10)) : new Date(NaN);
+    const a = day(s.from);
+    const b = day(s.to);
     if (isValid(a) && isValid(b)) {
       const [x, y] = a <= b ? [a, b] : [b, a];
       return { range: { from: startOfDay(x), to: endOfDay(y) }, preset: "custom" };

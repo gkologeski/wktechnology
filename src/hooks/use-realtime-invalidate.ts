@@ -11,6 +11,7 @@
 //   todas as chaves são recarregadas uma vez para não perder mudanças.
 import { useEffect, useRef } from "react";
 import { useQueryClient, type QueryKey } from "@tanstack/react-query";
+import { onWorkspaceChanged } from "@/lib/workspace-events";
 import { supabase } from "@/integrations/supabase/client";
 import {
   buildChannelName,
@@ -43,11 +44,11 @@ export function useRealtimeInvalidate(
   const channelName = opts?.channelName ?? buildChannelName(subs, opts?.scope);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || subsRef.current.length === 0) return;
 
     let channel: ReturnType<typeof supabase.channel> | null = null;
-    let everSubscribed = false;
     let disposed = false;
+    let generation = 0;
     // Falha da assinatura (filtro recusado, rede): nova tentativa com espera crescente e
     // reconciliação limitada (60 s) enquanto não volta — nunca consulta agressiva silenciosa.
     let attempt = 0;
@@ -70,6 +71,20 @@ export function useRealtimeInvalidate(
 
     const subscribe = () => {
       if (channel || disposed) return;
+      const currentGeneration = ++generation;
+      let joined = false;
+      let postgresReady = false;
+      let reconciled = false;
+      const ready = () => {
+        if (disposed || currentGeneration !== generation || !joined || !postgresReady || reconciled)
+          return;
+        reconciled = true;
+        attempt = 0;
+        if (degraded) clearInterval(degraded);
+        degraded = null;
+        // Also closes the gap between the initial read and the first authorized subscription.
+        reconcileAll();
+      };
       let c = supabase.channel(channelName);
       subsRef.current.forEach((sub, index) => {
         const params: Record<string, string> = {
@@ -87,6 +102,7 @@ export function useRealtimeInvalidate(
             new?: Record<string, unknown>;
             old?: Record<string, unknown>;
           }) => {
+            if (disposed || currentGeneration !== generation) return;
             const current = subsRef.current[index];
             if (!current || current.table !== sub.table) return;
             if (!payloadMatchesFilter(current.filter, payload)) return;
@@ -95,11 +111,10 @@ export function useRealtimeInvalidate(
         );
       });
       const fail = () => {
-        if (disposed) return;
+        if (disposed || currentGeneration !== generation) return;
         if (!degraded) degraded = setInterval(reconcileAll, 60_000);
         if (channel) void supabase.removeChannel(channel);
         channel = null;
-        everSubscribed = true; // ao voltar, reconcilia uma vez
         if (retry) clearTimeout(retry);
         retry = setTimeout(subscribe, Math.min(60_000, 5_000 * 2 ** attempt++));
       };
@@ -107,23 +122,30 @@ export function useRealtimeInvalidate(
       // (verificado no preview); a recusa só chega como mensagem "system" com erro.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       c = c.on("system" as any, {}, (p: { status?: string; extension?: string }) => {
-        if (p?.status === "error" && p.extension === "postgres_changes") fail();
+        if (p.extension !== "postgres_changes") return;
+        if (p.status === "error") fail();
+        if (p.status === "ok") {
+          postgresReady = true;
+          ready();
+        }
       });
       channel = c.subscribe((status) => {
-        if (disposed) return;
+        if (disposed || currentGeneration !== generation) return;
         if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") return fail();
+        if (status === "CLOSED") {
+          joined = false;
+          postgresReady = false;
+          reconciled = false;
+          return;
+        }
         if (status !== "SUBSCRIBED") return;
-        attempt = 0;
-        if (degraded) clearInterval(degraded);
-        degraded = null;
-        // Reconexão (queda de rede ou aba que voltou): eventos no intervalo
-        // não chegam pelo canal, então recarrega uma vez.
-        if (everSubscribed) reconcileAll();
-        everSubscribed = true;
+        joined = true;
+        ready();
       });
     };
 
     const unsubscribe = () => {
+      generation++;
       if (channel) {
         void supabase.removeChannel(channel);
         channel = null;
@@ -135,11 +157,21 @@ export function useRealtimeInvalidate(
       else subscribe();
     };
 
+    const offWorkspace = onWorkspaceChanged(() => {
+      batcher.cancel();
+      if (retry) clearTimeout(retry);
+      if (degraded) clearInterval(degraded);
+      retry = null;
+      degraded = null;
+      unsubscribe();
+      if (!document.hidden) subscribe();
+    });
     if (!document.hidden) subscribe();
     document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
       disposed = true;
+      offWorkspace();
       if (retry) clearTimeout(retry);
       if (degraded) clearInterval(degraded);
       document.removeEventListener("visibilitychange", onVisibility);

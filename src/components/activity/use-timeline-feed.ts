@@ -251,7 +251,6 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
       window.removeEventListener("timeline:refresh", handler);
       window.removeEventListener("activities:changed", handler);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [relatedId, datePreset, dateCustom.start, dateCustom.end]);
 
   // Realtime: atualiza a timeline assim que uma atividade (ou resposta de
@@ -282,6 +281,7 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
           },
           () => schedule(() => void loadRef.current({ silent: true })),
         )
+        // DELETE is reconciled by workspace-scoped opaque signals in the root.
         // Histórico de propriedades e agenda: filtros limitados a esta ficha e coalescidos
         // no mesmo recarregamento silencioso (preserva páginas abertas e rascunhos).
         .on(
@@ -309,12 +309,22 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
         );
       }
       channel = channel
+        // Supabase emits this event but does not include it in its typed overloads.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .on("system" as any, {}, (payload: { status?: string; extension?: string }) => {
+          if (payload.status === "ok" && payload.extension === "postgres_changes") {
+            schedule(() => void loadRef.current({ silent: true }));
+          }
+        })
         .on(
           "postgres_changes",
           { event: "*", schema: "public", table: "activity_survey_responses" },
           () => schedule(() => setSurveyTick((t) => t + 1)),
         )
-        .subscribe();
+        .subscribe((status) => {
+          // Reconcile missed events between initial fetch/subscription and after reconnect.
+          if (status === "SUBSCRIBED") schedule(() => void loadRef.current({ silent: true }));
+        });
     };
 
     const unsubscribe = () => {
@@ -336,14 +346,21 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
       }
     };
 
+    const onOnline = () => {
+      if (!document.hidden) {
+        subscribe();
+        void loadRef.current({ silent: true });
+      }
+    };
     if (!document.hidden) subscribe();
     document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("online", onOnline);
 
     return () => {
       document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("online", onOnline);
       unsubscribe();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [relatedKey, relatedId, datePreset, dateCustom.start, dateCustom.end]);
 
   return {

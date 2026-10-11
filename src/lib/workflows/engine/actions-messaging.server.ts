@@ -1,3 +1,5 @@
+import { workspaceOfSource } from "@/lib/workspace-source.server";
+import { withWorkflowWorkspace } from "./workspace-payload";
 // Ações de mensagem e integrações: notificação, e-mail, WhatsApp, Slack, Teams,
 // webhook e inclusão em cadência. Extraído sem mudança de comportamento.
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -13,13 +15,18 @@ export async function handleMessagingAction(
 ): Promise<LogStep | null> {
   switch (action.type) {
     case "add_to_sequence": {
-      const { error } = await supabase.from("sequence_enrollments").insert({
-        owner_id: ctx.ownerId,
-        sequence_id: action.sequence_id,
-        entity_id: ctx.entityId,
-        status: "active",
-        next_run_at: new Date().toISOString(),
-      });
+      const sequenceWorkspace = await workspaceOfSource(supabase, "sequences", action.sequence_id);
+      if (sequenceWorkspace !== ctx.workspaceId)
+        throw new Error("Sequência fora da empresa do fluxo.");
+      const { error } = await supabase.from("sequence_enrollments").insert(
+        withWorkflowWorkspace(ctx, {
+          owner_id: ctx.ownerId,
+          sequence_id: action.sequence_id,
+          entity_id: ctx.entityId,
+          status: "active",
+          next_run_at: new Date().toISOString(),
+        }) as never,
+      );
       if (error) throw new Error(error.message);
       return {
         at,
@@ -82,14 +89,16 @@ export async function handleMessagingAction(
       }
       subject = renderTokens(subject, ctx.after) as string;
       body = renderTokens(body, ctx.after) as string;
-      const { error } = await supabase.from("email_messages").insert({
-        owner_id: ctx.ownerId,
-        direction: "outbound",
-        to_emails: [to],
-        subject,
-        body_html: body,
-        body_text: body.replace(/<[^>]+>/g, ""),
-      } as never);
+      const { error } = await supabase.from("email_messages").insert(
+        withWorkflowWorkspace(ctx, {
+          owner_id: ctx.ownerId,
+          direction: "outbound",
+          to_emails: [to],
+          subject,
+          body_html: body,
+          body_text: body.replace(/<[^>]+>/g, ""),
+        }) as never,
+      );
       if (error) throw new Error(error.message);
       return { at, ok: true, action: "send_email", detail: { to, subject, queued: true } };
     }
@@ -98,15 +107,17 @@ export async function handleMessagingAction(
       const to = (ctx.after?.[toField] as string | null) ?? null;
       if (!to) throw new Error(`sem destinatário em ${toField}`);
       const body = action.body ? (renderTokens(action.body, ctx.after) as string) : null;
-      const { error } = await supabase.from("whatsapp_messages").insert({
-        owner_id: ctx.ownerId,
-        direction: "outbound",
-        to_number: to,
-        body,
-        template_name: action.template_name ?? null,
-        is_template: !!action.template_name,
-        status: "queued",
-      } as never);
+      const { error } = await supabase.from("whatsapp_messages").insert(
+        withWorkflowWorkspace(ctx, {
+          owner_id: ctx.ownerId,
+          direction: "outbound",
+          to_number: to,
+          body,
+          template_name: action.template_name ?? null,
+          is_template: !!action.template_name,
+          status: "queued",
+        }) as never,
+      );
       if (error) throw new Error(error.message);
       return {
         at,

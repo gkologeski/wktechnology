@@ -26,7 +26,7 @@ export async function processDueEnrollments(limit = 50): Promise<{
   const { data: due, error } = await supabaseAdmin
     .from("ats_sourcing_enrollments")
     .select(
-      "id, owner_id, sequence_id, candidate_id, current_step, status, waiting_since, candidate:ats_candidates(id, full_name, email, phone, linkedin_url, headline, current_company)",
+      "id, workspace_id, owner_id, sequence_id, candidate_id, current_step, status, waiting_since, candidate:ats_candidates(id, full_name, email, phone, linkedin_url, headline, current_company)",
     )
     .eq("status", "active")
     .lte("next_run_at", new Date().toISOString())
@@ -125,6 +125,10 @@ export async function processDueEnrollments(limit = 50): Promise<{
   }
 
   for (const e of due) {
+    if (!e.workspace_id) {
+      result.errors++;
+      continue;
+    }
     result.processed += 1;
     try {
       const meta = await getSeqMeta(e.sequence_id);
@@ -431,16 +435,22 @@ export async function processDueEnrollments(limit = 50): Promise<{
         result.tasks += 1;
         meta.sentToday += 1;
         try {
-          await supabaseAdmin.from("activities").insert({
-            user_id: e.owner_id,
+          const { error: taskError } = await supabaseAdmin.from("activities").insert({
+            workspace_id: e.workspace_id,
+            owner_id: e.owner_id,
             type: "task",
-            title: `Sourcing (${next.channel}) — ${candidate?.full_name ?? "candidato"}`,
-            description: next.task_instructions ?? next.body ?? "",
-            due_at: new Date().toISOString(),
-            status: "pending",
+            subject: `Sourcing (${next.channel}) — ${candidate?.full_name ?? "candidato"}`,
+            body: next.task_instructions ?? next.body ?? "",
+            due_date: new Date().toISOString(),
+            task_status: "NOT_STARTED",
           } as never);
-        } catch {
-          // silencioso
+          if (taskError) throw new Error(taskError.message);
+        } catch (error) {
+          logStatus = "failed";
+          logError = error instanceof Error ? error.message : String(error);
+          result.errors++;
+          result.tasks--;
+          meta.sentToday--;
         }
       }
 

@@ -5,16 +5,32 @@
 //     error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import type { NitroConfig } from "nitro/types";
 import { createRequire } from "node:module";
 import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/tanstack/vite";
+import { buildMetricsPlugin } from "./scripts/perf/build-plugin";
 import { perfGraphPlugin } from "./scripts/perf/graph-plugin";
 
 const require = createRequire(import.meta.url);
 const eventsPolyfillPath = require.resolve("events/events.js");
 
+const nitroConfig: NitroConfig = {
+  preset: "cloudflare-module",
+  hooks: {
+    // Nitro groups packages before tree shaking. Let Rollup split the actual
+    // dynamic graph: fewer retained modules and faster worker rendering.
+    "rollup:before": (_nitro, config) => {
+      const outputs = Array.isArray(config.output) ? config.output : [config.output];
+      for (const output of outputs)
+        if (output && "manualChunks" in output) delete output.manualChunks;
+    },
+  },
+};
+
 // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
 // @cloudflare/vite-plugin builds from this — wrangler.jsonc main alone is insufficient.
 export default defineConfig({
+  nitro: nitroConfig,
   tanstackStart: {
     server: { entry: "server" },
     router: {
@@ -34,6 +50,7 @@ export default defineConfig({
     plugins: [
       // Servidor MCP (integrações de agentes) gerado a partir de src/lib/mcp.
       mcpPlugin(),
+      buildMetricsPlugin(),
       // Diagnóstico opcional (PERF_GRAPH=1): grava em /tmp a cadeia de imports que
       // traz cada módulo do chunk de entrada do cliente. Não altera o bundle.
       ...(process.env.PERF_GRAPH === "1" ? [perfGraphPlugin()] : []),

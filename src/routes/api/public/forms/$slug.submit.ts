@@ -179,6 +179,7 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
             const { data: lead, error: lerr } = await supabaseAdmin
               .from("leads")
               .insert({
+                workspace_id: form.workspace_id,
                 owner_id: form.owner_id,
                 first_name: firstName,
                 last_name: lastName,
@@ -239,6 +240,7 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
             const { data: contact, error: cerr } = await supabaseAdmin
               .from("contacts")
               .insert({
+                workspace_id: form.workspace_id,
                 owner_id: form.owner_id,
                 first_name: firstName,
                 last_name: lastName,

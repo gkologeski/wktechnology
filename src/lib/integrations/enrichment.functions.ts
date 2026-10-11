@@ -1,3 +1,4 @@
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // Server functions de enriquecimento (refinado) — cascade multi-provider,
 // modo fill_empty/overwrite, dry-run e histórico de jobs.
 import { createServerFn } from "@tanstack/react-start";
@@ -27,6 +28,7 @@ export const enrichBatch = createServerFn({ method: "POST" })
     return await runEnrichmentBatch({
       supabase: context.supabase,
       ownerId: context.userId,
+      workspaceId: await resolveActiveWorkspace(context.userId),
       providers: data.providers,
       entity: data.entity,
       ids: data.ids,

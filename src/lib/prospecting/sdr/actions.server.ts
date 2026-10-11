@@ -545,10 +545,12 @@ export async function handoffToHuman(
     .from("whatsapp_conversations")
     .select("assigned_to, contact_phone")
     .eq("id", p.conversationId)
+    .eq("workspace_id", p.workspaceId)
     .maybeSingle();
   const assignee = conv?.assigned_to ?? enr?.owner_id ?? null;
   if (assignee) {
     await admin.from("activities").insert({
+      workspace_id: p.workspaceId,
       owner_id: assignee,
       assigned_to: assignee,
       type: "task",

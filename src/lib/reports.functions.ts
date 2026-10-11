@@ -1,3 +1,4 @@
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -111,7 +112,11 @@ export const saveReport = createServerFn({ method: "POST" })
     }
     const { data: row, error } = await supabase
       .from("custom_reports")
-      .insert({ ...payload, owner_id: userId })
+      .insert({
+        ...payload,
+        owner_id: userId,
+        workspace_id: await resolveActiveWorkspace(context.userId),
+      })
       .select("id")
       .single();
     if (error) throw new Error(error.message);

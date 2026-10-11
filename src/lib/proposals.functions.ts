@@ -1,3 +1,4 @@
+import { workspaceOfSource } from "@/lib/workspace-source.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -210,6 +211,12 @@ export const sendProposal = createServerFn({ method: "POST" })
         "Apenas propostas aprovadas (ou em rascunho sem fluxo de aprovação) podem ser enviadas.",
       );
     }
+    const workspaceId = await workspaceOfSource(supabase, "proposals", prop.id);
+    if (
+      prop.esign_document_id &&
+      (await workspaceOfSource(supabase, "esign_documents", prop.esign_document_id)) !== workspaceId
+    )
+      throw new Error("Proposta e documento pertencem a empresas diferentes.");
     const sentAt = new Date().toISOString();
     const hashInput = JSON.stringify({
       id: prop.id,
@@ -244,6 +251,7 @@ export const sendProposal = createServerFn({ method: "POST" })
       await supabase.from("esign_audit").insert({
         document_id: prop.esign_document_id,
         owner_id: prop.owner_id,
+        workspace_id: workspaceId,
         event: "sealed",
         metadata: { hash: contentHash, proposal_id: prop.id },
       });

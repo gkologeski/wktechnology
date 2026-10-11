@@ -19,12 +19,16 @@ type Json = Record<string, unknown>;
 const admin = supabaseAdmin as any;
 
 async function getGmailAccount(
+  workspaceId: string,
   ownerId: string,
   accountId: string | null,
 ): Promise<EmailAccountRow | null> {
   let q = admin
     .from("email_accounts")
-    .select("id, owner_id, email, access_token, refresh_token, expires_at, status, history_id")
+    .select(
+      "id, workspace_id, owner_id, email, access_token, refresh_token, expires_at, status, history_id",
+    )
+    .eq("workspace_id", workspaceId)
     .eq("owner_id", ownerId)
     .eq("provider", "gmail")
     .eq("status", "connected");
@@ -57,10 +61,11 @@ export async function resolveBroadcastRecipients(
 ): Promise<{ added: number; skipped: number }> {
   const { data: b, error: bErr } = await admin
     .from("email_broadcasts")
-    .select("id, owner_id, segment_id")
+    .select("id, workspace_id, owner_id, segment_id")
     .eq("id", broadcastId)
     .single();
   if (bErr || !b) throw new Error(bErr?.message ?? "Broadcast não encontrado");
+  if (!b.workspace_id) throw new Error("Campanha sem workspace de origem.");
 
   // limpar existentes pendentes
   await admin.from("email_broadcast_recipients").delete().eq("broadcast_id", broadcastId);
@@ -78,6 +83,7 @@ export async function resolveBroadcastRecipients(
       .from("segments")
       .select("id, entity")
       .eq("id", b.segment_id)
+      .eq("workspace_id", b.workspace_id)
       .single();
     if (!seg) throw new Error("Segmento não encontrado");
     if (
@@ -101,6 +107,7 @@ export async function resolveBroadcastRecipients(
         .from(table)
         .select("id, first_name, last_name, email, company_name")
         .in("id", ids)
+        .eq("workspace_id", b.workspace_id)
         .eq("owner_id", b.owner_id);
       for (const r of (rows ?? []) as Array<Record<string, unknown>>) {
         const email = (r.email as string | null) ?? null;
@@ -129,12 +136,14 @@ export async function resolveBroadcastRecipients(
   const { data: unsubs } = await admin
     .from("email_unsubscribes")
     .select("email")
+    .eq("workspace_id", b.workspace_id)
     .eq("owner_id", b.owner_id);
   const blocked = new Set((unsubs ?? []).map((u: { email: string }) => u.email.toLowerCase()));
 
   // dedupe por email
   const seen = new Set<string>();
   const rows = [] as Array<{
+    workspace_id: string;
     broadcast_id: string;
     owner_id: string;
     email: string;
@@ -152,6 +161,7 @@ export async function resolveBroadcastRecipients(
     const status: "pending" | "unsubscribed" = blocked.has(k) ? "unsubscribed" : "pending";
     if (status === "unsubscribed") skipped++;
     rows.push({
+      workspace_id: b.workspace_id,
       broadcast_id: broadcastId,
       owner_id: b.owner_id,
       email: r.email,
@@ -173,10 +183,15 @@ export async function resolveBroadcastRecipients(
   return { added: rows.filter((r) => r.status === "pending").length, skipped };
 }
 
-async function ensureUnsubToken(ownerId: string, email: string): Promise<string> {
+async function ensureUnsubToken(
+  workspaceId: string,
+  ownerId: string,
+  email: string,
+): Promise<string> {
   const { data: existing } = await admin
     .from("email_unsubscribes")
     .select("token")
+    .eq("workspace_id", workspaceId)
     .eq("owner_id", ownerId)
     .eq("email", email)
     .maybeSingle();
@@ -192,12 +207,13 @@ async function ensureUnsubToken(ownerId: string, email: string): Promise<string>
   const token = randomUUID().replace(/-/g, "");
   const { error } = await admin
     .from("email_unsubscribes")
-    .insert({ owner_id: ownerId, email, token, reason: "__token__" });
+    .insert({ workspace_id: workspaceId, owner_id: ownerId, email, token, reason: "__token__" });
   if (error) {
     // race: outra inserção criou — buscar de novo
     const { data: re } = await admin
       .from("email_unsubscribes")
       .select("token")
+      .eq("workspace_id", workspaceId)
       .eq("owner_id", ownerId)
       .eq("email", email)
       .maybeSingle();
@@ -242,6 +258,7 @@ async function processBroadcast(broadcastId: string): Promise<{ sent: number; fa
     .eq("id", broadcastId)
     .single();
   if (bErr || !b) throw new Error(bErr?.message ?? "broadcast não encontrado");
+  if (!b.workspace_id) throw new Error("Campanha sem workspace de origem.");
 
   if (b.status === "scheduled") {
     await admin
@@ -250,7 +267,7 @@ async function processBroadcast(broadcastId: string): Promise<{ sent: number; fa
       .eq("id", b.id);
   }
 
-  const account = await getGmailAccount(b.owner_id, b.email_account_id);
+  const account = await getGmailAccount(b.workspace_id, b.owner_id, b.email_account_id);
   if (!account) {
     await admin
       .from("email_broadcasts")
@@ -322,7 +339,7 @@ async function processBroadcast(broadcastId: string): Promise<{ sent: number; fa
       const subject = renderTemplate(b.subject ?? "", vars);
       const htmlRaw = renderTemplate(b.body_html ?? "", vars);
       const textRaw = renderTemplate(b.body_text ?? "", vars);
-      const token = await ensureUnsubToken(b.owner_id, r.email);
+      const token = await ensureUnsubToken(b.workspace_id, b.owner_id, r.email);
       const unsubUrl = buildUnsubscribeLink(token, baseUrl);
       const merged = appendUnsubFooter(htmlRaw, textRaw, unsubUrl);
       const raw = buildRawMime({

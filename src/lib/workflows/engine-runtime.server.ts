@@ -1,3 +1,4 @@
+import { workflowEventWorkspace } from "./engine/workspace-payload";
 // Ciclo de execução do motor: enfileiramento, runs, ticks de fila e de tempo.
 // Extraído de engine.server.ts sem mudança de comportamento.
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -53,12 +54,14 @@ async function alreadyEnrolled(
 }
 
 export async function processEvent(supabase: SupabaseClient, event: EventRow) {
+  const sourceWorkspace = workflowEventWorkspace(event);
   // Caso 1: retomada (delay) → executa apenas o workflow indicado a partir do cursor.
   if (event.resume_workflow_id && typeof event.resume_cursor === "number") {
     const { data: wf } = await supabase
       .from("workflows")
       .select("id, owner_id, workspace_id, entity, trigger, actions, goal_filters")
       .eq("id", event.resume_workflow_id)
+      .eq("workspace_id", sourceWorkspace)
       .maybeSingle();
     if (wf) {
       const wfr = wf as WorkflowRow;
@@ -73,9 +76,8 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
       const { data: run } = await supabase
         .from("workflow_runs")
         .insert({
+          workspace_id: sourceWorkspace,
           owner_id: wfr.owner_id,
-          // Job sem sessão: o tenant vem do workflow (o DEFAULT depende de auth.uid()).
-          workspace_id: wfr.workspace_id,
           workflow_id: wfr.id,
           event_id: event.id,
           entity: event.entity,
@@ -114,16 +116,15 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
   // Caso 2: evento normal (created/updated/stage_changed).
   // Contratação/desligamento valem para o workspace inteiro (qualquer recrutador
   // ou gestor dispara o fluxo do admin); demais entidades mantêm o escopo por dono.
-  const byWorkspace = WORKSPACE_SCOPED_ENTITIES.has(event.entity) && !!event.workspace_id;
+  const byWorkspace = WORKSPACE_SCOPED_ENTITIES.has(event.entity);
   let wfQuery = supabase
     .from("workflows")
     .select("id, owner_id, workspace_id, entity, trigger, actions, goal_filters")
     .eq("entity", event.entity)
+    .eq("workspace_id", sourceWorkspace)
     .eq("enabled", true)
     .eq("status", "published");
-  wfQuery = byWorkspace
-    ? wfQuery.eq("workspace_id", event.workspace_id as string)
-    : wfQuery.eq("owner_id", event.owner_id);
+  wfQuery = byWorkspace ? wfQuery : wfQuery.eq("owner_id", event.owner_id);
   const { data: workflows } = await wfQuery;
 
   for (const wf of (workflows ?? []) as WorkflowRow[]) {
@@ -170,8 +171,8 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
     const { data: run, error: insErr } = await supabase
       .from("workflow_runs")
       .insert({
+        workspace_id: sourceWorkspace,
         owner_id: wf.owner_id,
-        workspace_id: wf.workspace_id,
         workflow_id: wf.id,
         event_id: event.id,
         entity: event.entity,
@@ -230,6 +231,7 @@ async function finishRun(
   // Se suspenso por delay, agenda novo evento de retomada.
   if (res.suspendedAt && workflowId) {
     await supabase.from("workflow_events").insert({
+      workspace_id: workflowEventWorkspace(event),
       owner_id: event.owner_id,
       entity: event.entity,
       entity_id: event.entity_id,

@@ -45,26 +45,33 @@ pode cortar histórico nem contagens.
   0099 (etapa/histórico gravando o tenant fixo — criar lead fora do tenant original falhava) e 0100 (admin
   desativado seguia admin) — ver performance-cycle-9-isolated-validation.md.
 
-## Matriz do plano de 16 frentes (estado após o fechamento — ver executed-tasks-closure.md)
+## Matriz do plano de 16 tarefas — revisão do ciclo 14 (antes da publicação)
 
-| #   | Frente                                                                                            | Estado                                                                             | Falta                                                                       |
-| --- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| 1   | Permissões reais own/team/workspace/tenant/Ver como                                               | Parcial: banco real com conta QA 29/9 (lacuna Inbox/histórico em cargo restrito); isolado 43/43; SDK/GoTrue 26/0                              | Sessão não-admin autorizada no banco real; "Ver como" modo usuário (GoTrue) |
-| 2   | Ambiente isolado fiel                                                                             | Concluído (PostgreSQL + GoTrue + PostgREST, manifesto); Realtime bloqueado             | Stack de serviço autorizada                                                 |
-| 3   | Realtime ponta a ponta                                                                            | Bloqueado: WAL 4/4; 14 SDK/UI não executados                                       | Serviço Realtime                                                            |
-| 4   | Realtime pendente (deal_line_items, meetings, calendário, troca de workspace por outros caminhos) | Não iniciado                                                                       | Decidir publicação vs remover assinatura                                    |
-| 5   | UX de conversas (reconexão, rolagem, rascunhos) em testes seguros                                 | Bloqueado: fixtures verdes; real depende do 3                                      | Serviço Realtime                                                            |
-| 6   | Observabilidade de build/telas/queries                                                            | Não iniciado                                                                       | Próximo ciclo                                                               |
-| 7   | Diagnóstico do timeout 240 s                                                                      | Investigação encerrada: tsc precisa de 5,1 GB (OOM com heap padrão); não corrigido | Reduzir tipos/instanciações                                                 |
-| 8   | Fase Nitro do build                                                                               | Pendente: medido 53,3 s (total 2:13,5)                                             | Experimento medido compatível com cloudflare-module                         |
-| 9   | Carga inicial (zod/rotas/componentes pesados)                                                     | Pendente: medido por rota (entrada 270 KB gz)                                      | Experimento zod/validateSearch                                              |
-| 10  | Virtualização só com benefício                                                                    | Não iniciado                                                                       | Medição primeiro                                                            |
-| 11  | Métricas TechProjects/TechHire/Prospecção/Agentes/detalhes                                        | Não iniciado                                                                       | —                                                                           |
-| 12  | Query plans/índices por evidência                                                                 | Concluído: planos ≤ 52 ms; nenhum índice justificado                               | Repetir como não-admin real                                                 |
-| 13  | Contratos de módulos Platform/Sales/Projects/Hire/Agents                                          | Parcial: 0101/0102 (32 de 81 DEFAULTs), contratos estáticos                        | 49 DEFAULTs com chamadores a corrigir                                       |
-| 14  | Carga isolada/concorrência/filas/retry/idempotência                                               | Pré-requisito: idempotência de faturas (0101)                                      | Carga no isolado                                                            |
-| 15  | Budgets de performance e regressão                                                                | Não iniciado                                                                       | —                                                                           |
-| 16  | Validação de artefato SSR Cloudflare/verify/rollback/publicação                                   | Não iniciado                                                                       | Só com autorização futura de publicação                                     |
+Concluído significa implementado e validado no escopo indicado. Conclusão local não
+representa implantação no ambiente compartilhado. Executada ainda não cumpriu todo o
+critério de conclusão. Os registros dos ciclos anteriores acima são históricos.
 
-Riscos abertos: 49 DEFAULTs fixos de `workspace_id` (inventário em
-`performance-cycle-10-workspace-integrity.md`); DELETE com filtro por workspace não chega pelo tempo real.
+| # | Tarefa | Status | O que ainda falta / escopo da conclusão |
+| --- | --- | --- | --- |
+| 1 | Permissões own/team/workspace/tenant e Ver como | Concluído | Validação local com autenticação real; aplicação e aceite no ambiente compartilhado não realizados. |
+| 2 | Ambiente isolado fiel e reproduzível | Concluído | Stack local completa e reprodução limpa validadas. |
+| 3 | Realtime ponta a ponta | Concluído | 76 verificações SDK e 14 cenários conciliados com evidências automáticas e manuais locais. |
+| 4 | Realtime de itens, reuniões, calendário e demais trocas de workspace | Concluído | INSERT/UPDATE/DELETE, sinais opacos, isolamento e troca A/B validados localmente; migrações 0113/0114 prontas para publicação. |
+| 5 | Conversas: histórico, reconexão, rolagem e rascunhos | Concluído | Validação local de paginação, rascunhos independentes, âncora e recuperação após reconexão. |
+| 6 | Observabilidade de build, telas e consultas | Concluído | Fases de build, medidas por família de tela/consulta, diagnóstico sem dados comerciais e fingerprint implementados e testados. |
+| 7 | Verificação e build dentro de 240 segundos | Concluído | Aplicado no Lovable: verificação 48,3 s e build completo 189,6 s; sem publicação. |
+| 8 | Otimização da fase Nitro | Concluído | Hook efetivo reduziu módulos retidos de 5789 para cerca de 3107; ganho medido e artefato executado no workerd local. |
+| 9 | Redução da carga inicial e peso das rotas | Concluído | Redução medida e build validado localmente; ganho modesto. |
+| 10 | Virtualização de listas com benefício comprovado | Concluído | Otimização nativa de layout/pintura em timeline extensa; p95 34,5 → 2,5 ms. Não reduz montagem React ou memória. |
+| 11 | Métricas de TechProjects, TechHire, Prospecção, Agentes e detalhes | Concluído | Cinco famílias medidas; consultas duplicadas de Vagas corrigidas. Tetos legados de Projetos/Vagas documentados como evolução adicional. |
+| 12 | Planos de consulta e índices por evidência | Concluído | Planos avaliados; nenhum índice adicional justificado nas medições registradas. |
+| 13 | Contratos de módulos e integridade de workspace | Concluído | Gravadores revisados, defaults fixos removidos e reprodução limpa validada localmente; sem implantação compartilhada. |
+| 14 | Carga, concorrência, filas, retry e idempotência | Concluído | Sete cenários sintéticos aprovados: lease, concorrência, quota, retry, idempotência e isolamento; p95 179,1 ms. Sem provedores externos. |
+| 15 | Limites de performance e prevenção de regressões | Concluído | Metas, avisos locais e gate de regressão no CI; relatório incompleto ou de fonte diferente falha. |
+| 16 | Aceite do artefato SSR/Cloudflare, rollback e publicação | Executada | Artefato local funcional e plano de recuperação preparado. Integração via Lovable, alinhamento do banco, rollback e publicação ainda em validação. |
+
+Saldo desta revisão: **15 Concluídas no escopo registrado, 1 Executada em validação de lançamento**. As alterações desta rodada ainda não foram publicadas.
+Detalhes e provas: `executed-tasks-closure.md`, ciclo 13. Não permanecem defaults
+fixos de workspace no banco isolado validado; não extrapolar esse resultado para
+produção. O relatório SDK mantém três placeholders visuais não executados, com
+as provas manuais conciliadas separadamente, sem convertê-las em testes automáticos.

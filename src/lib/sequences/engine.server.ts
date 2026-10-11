@@ -1,3 +1,4 @@
+import { workspaceOfSource } from "@/lib/workspace-source.server";
 // Sequence executor: avança enrollments cujo next_run_at já passou.
 // Chamado pelo endpoint /api/public/hooks/sequences-tick a cada minuto.
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -6,6 +7,7 @@ import { renderTokens } from "@/lib/message-tokens";
 import { loadAgentContext } from "@/lib/message-tokens-agent.server";
 
 interface EnrollmentRow {
+  workspace_id: string;
   id: string;
   owner_id: string;
   sequence_id: string;
@@ -15,6 +17,7 @@ interface EnrollmentRow {
 }
 
 interface SequenceRow {
+  workspace_id: string;
   id: string;
   entity: SequenceEntity;
   enabled: boolean;
@@ -66,6 +69,13 @@ async function executeStep(
   seq: SequenceRow,
   step: SequenceStep,
 ) {
+  if (!enrollment.workspace_id || seq.workspace_id !== enrollment.workspace_id)
+    throw new Error("Cadência e inscrição fora da mesma empresa.");
+  if (
+    (await workspaceOfSource(supabase, seq.entity, enrollment.entity_id)) !==
+    enrollment.workspace_id
+  )
+    throw new Error("Registro fora da empresa da cadência.");
   if (step.type === "wait") return;
   const relCol = seq.entity === "leads" ? "related_lead_id" : "related_contact_id";
   const ctx = await loadSequenceTokenContext(
@@ -76,6 +86,7 @@ async function executeStep(
   );
   const rawBody = "body" in step ? (step.body ?? null) : null;
   const { error } = await supabase.from("activities").insert({
+    workspace_id: enrollment.workspace_id,
     owner_id: enrollment.owner_id,
     type: step.type === "email" ? "email" : "task",
     subject: step.subject ? renderTokens(step.subject, ctx) : step.subject,
@@ -90,7 +101,7 @@ export async function tickSequences(supabase: SupabaseClient, limit = 100) {
   const nowIso = new Date().toISOString();
   const { data: enrollments, error } = await supabase
     .from("sequence_enrollments")
-    .select("id, owner_id, sequence_id, entity_id, current_step, status")
+    .select("id, workspace_id, owner_id, sequence_id, entity_id, current_step, status")
     .eq("status", "active")
     .lte("next_run_at", nowIso)
     .order("next_run_at", { ascending: true })
@@ -106,7 +117,7 @@ export async function tickSequences(supabase: SupabaseClient, limit = 100) {
       if (seq === undefined) {
         const { data } = await supabase
           .from("sequences")
-          .select("id, entity, enabled, steps")
+          .select("id, workspace_id, entity, enabled, steps")
           .eq("id", enr.sequence_id)
           .maybeSingle();
         seq = (data as SequenceRow | null) ?? null;

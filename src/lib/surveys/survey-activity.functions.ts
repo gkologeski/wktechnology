@@ -305,6 +305,7 @@ export const saveSurveyActivity = createServerFn({ method: "POST" })
       const { data: inserted, error } = await supabase
         .from("activities")
         .insert({
+          workspace_id: ws,
           owner_id: userId,
           created_by: userId,
           type: "survey",

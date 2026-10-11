@@ -1,3 +1,4 @@
+import { workspaceOfSource } from "@/lib/workspace-source.server";
 // Server-only Google Calendar sync engine.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
@@ -861,6 +862,7 @@ async function gcalFetch(token: string, path: string, init?: RequestInit) {
 async function pullGoogleEvents(
   account: CalendarAccountRow,
 ): Promise<{ imported: number; deleted: number; partial: boolean }> {
+  const sourceWorkspace = await workspaceOfSource(supabaseAdmin, "calendar_accounts", account.id);
   const token = await ensureAccessToken(account);
   const calId = encodeURIComponent(account.primary_calendar_id || "primary");
   // Retoma do ponto onde parou na execução anterior, se houver.
@@ -928,6 +930,7 @@ async function pullGoogleEvents(
         account.email,
       );
       upsertRows.push({
+        workspace_id: sourceWorkspace,
         owner_id: account.owner_id,
         calendar_account_id: account.id,
         provider_event_id: ev.id,

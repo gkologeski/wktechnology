@@ -1,3 +1,4 @@
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // Server functions para gerenciamento de listas (segments).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -70,7 +71,14 @@ export const upsertSegment = createServerFn({ method: "POST" })
       if (error) throw error;
       return { segment: row };
     }
-    const { data: row, error } = await supabase.from("segments").insert(payload).select().single();
+    const { data: row, error } = await supabase
+      .from("segments")
+      .insert({
+        ...(payload as Record<string, unknown>),
+        workspace_id: await resolveActiveWorkspace(context.userId),
+      } as never)
+      .select()
+      .single();
     if (error) throw error;
     return { segment: row };
   });

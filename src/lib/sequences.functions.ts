@@ -81,7 +81,11 @@ export const saveSequence = createServerFn({ method: "POST" })
     }
     const { data: row, error } = await supabase
       .from("sequences")
-      .insert({ ...payload, owner_id: userId })
+      .insert({
+        ...payload,
+        owner_id: userId,
+        workspace_id: await resolveActiveWorkspace(context.userId),
+      })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
@@ -138,6 +142,7 @@ export const enrollInSequence = createServerFn({ method: "POST" })
       .from("sequences")
       .select("id, steps")
       .eq("id", data.sequenceId)
+      .eq("workspace_id", workspaceId)
       .maybeSingle();
     if (!seq) throw new Error("Sequência não encontrada");
     const steps = (seq.steps as SequenceStep[] | null) ?? [];

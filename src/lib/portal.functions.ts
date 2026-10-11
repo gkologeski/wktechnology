@@ -100,7 +100,7 @@ async function loadContactByToken(token: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("contacts")
-    .select("id, first_name, last_name, email, owner_id, portal_enabled")
+    .select("id, workspace_id, first_name, last_name, email, owner_id, portal_enabled")
     .eq("portal_token", token)
     .maybeSingle();
   if (error) throw error;
@@ -151,9 +151,11 @@ export const createPortalTicket = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const contact = await loadContactByToken(data.token);
+    if (!contact.workspace_id) throw new Error("Contato sem workspace de origem.");
     const { data: ticket, error } = await supabaseAdmin
       .from("tickets")
       .insert({
+        workspace_id: contact.workspace_id,
         owner_id: contact.owner_id,
         contact_id: contact.id,
         subject: data.subject,

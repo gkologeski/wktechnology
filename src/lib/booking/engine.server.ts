@@ -238,6 +238,7 @@ export async function pushBookingToGoogle(
     .from("calendar_accounts")
     .select("id, provider, primary_calendar_id, access_token, refresh_token, expires_at, owner_id")
     .eq("id", page.calendar_account_id)
+    .eq("workspace_id", page.workspace_id ?? "")
     .maybeSingle();
   if (!account) return fail("Conta de calendário não encontrada");
   if (account.provider !== "google") return fail("Conta de calendário não é Google");
@@ -333,6 +334,8 @@ export async function createPublicBooking(input: {
 }): Promise<{ id: string; meet_link: string | null }> {
   const page = await getBookingPageBySlug(input.slug);
   if (!page) throw new Error("Página de agendamento não encontrada");
+  if (!page.workspace_id) throw new Error("Página de agendamento sem workspace de origem.");
+  const workspaceId = page.workspace_id;
   const startMs = new Date(input.start).getTime();
   if (!Number.isFinite(startMs)) throw new Error("Horário inválido");
   const endMs = startMs + page.duration_minutes * 60_000;
@@ -354,6 +357,7 @@ export async function createPublicBooking(input: {
       .from("contacts")
       .select("id")
       .eq("owner_id", page.owner_id)
+      .eq("workspace_id", workspaceId)
       .eq("email", input.invitee_email)
       .maybeSingle();
     if (existing) contactId = existing.id;
@@ -363,7 +367,7 @@ export async function createPublicBooking(input: {
         .from("contacts")
         .insert({
           owner_id: page.owner_id,
-          workspace_id: page.workspace_id ?? undefined,
+          workspace_id: workspaceId,
           first_name: first || input.invitee_email,
           last_name: rest.join(" ") || null,
           email: input.invitee_email,
@@ -382,6 +386,7 @@ export async function createPublicBooking(input: {
       .from("leads")
       .select("id")
       .eq("owner_id", page.owner_id)
+      .eq("workspace_id", workspaceId)
       .eq("email", input.invitee_email)
       .maybeSingle();
     if (existing) leadId = existing.id;
@@ -391,7 +396,7 @@ export async function createPublicBooking(input: {
         .from("leads")
         .insert({
           owner_id: page.owner_id,
-          workspace_id: page.workspace_id ?? undefined,
+          workspace_id: workspaceId,
           first_name: first || input.invitee_email,
           last_name: rest.join(" ") || null,
           email: input.invitee_email,
@@ -425,6 +430,7 @@ export async function createPublicBooking(input: {
   const { data: activity, error: activityError } = await supabaseAdmin
     .from("activities")
     .insert({
+      workspace_id: workspaceId,
       owner_id: page.owner_id,
       type: "meeting",
       subject: `${page.title} — ${input.invitee_name}`,
@@ -449,6 +455,7 @@ export async function createPublicBooking(input: {
     .from("bookings")
     .insert({
       page_id: page.id,
+      workspace_id: workspaceId,
       owner_id: page.owner_id,
       start_at,
       end_at,

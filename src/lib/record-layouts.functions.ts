@@ -1,3 +1,4 @@
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // Server fns para layouts de registro (sidebar configurável) por entidade.
 // Estrutura: sections = [{ title, keys: string[] }] — keys referem-se às
 // chaves de propriedades padrão exibidas no PropertiesPanel.
@@ -8,32 +9,12 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export type LayoutSection = { title: string; keys: string[] };
 export type RecordEntity = "leads" | "contacts" | "companies" | "deals";
 
-async function getActiveWorkspaceId(userId: string): Promise<string> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: profile } = await supabaseAdmin
-    .from("profiles")
-    .select("active_workspace_id")
-    .eq("id", userId)
-    .maybeSingle();
-  const activeId =
-    (profile as { active_workspace_id?: string | null } | null)?.active_workspace_id ?? null;
-  if (activeId) return activeId;
-  const { data: m } = await supabaseAdmin
-    .from("workspace_members")
-    .select("workspace_id")
-    .eq("user_id", userId)
-    .limit(1)
-    .maybeSingle();
-  const id = (m as { workspace_id?: string } | null)?.workspace_id;
-  if (!id) throw new Error("Nenhum workspace ativo.");
-  return id;
-}
-
 async function assertAdmin(workspaceId: string, userId: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
     .from("workspace_members")
     .select("role")
+    .eq("status", "active")
     .eq("workspace_id", workspaceId)
     .eq("user_id", userId)
     .maybeSingle();
@@ -56,7 +37,7 @@ export const getRecordLayout = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ entity: entitySchema }).parse(i))
   .handler(async ({ data, context }) => {
-    const workspaceId = await getActiveWorkspaceId(context.userId);
+    const workspaceId = await resolveActiveWorkspace(context.userId);
     const { data: row, error } = await context.supabase
       .from("record_layouts")
       .select("id, sections, updated_at")
@@ -81,7 +62,7 @@ export const upsertRecordLayout = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    const workspaceId = await getActiveWorkspaceId(context.userId);
+    const workspaceId = await resolveActiveWorkspace(context.userId);
     await assertAdmin(workspaceId, context.userId);
 
     const { data: existing } = await context.supabase
@@ -100,9 +81,11 @@ export const upsertRecordLayout = createServerFn({ method: "POST" })
         .eq("id", (existing as { id: string }).id);
       if (error) throw new Error(error.message);
     } else {
-      const { error } = await context.supabase
-        .from("record_layouts")
-        .insert({ entity: data.entity, sections: data.sections as never } as never);
+      const { error } = await context.supabase.from("record_layouts").insert({
+        workspace_id: workspaceId,
+        entity: data.entity,
+        sections: data.sections as never,
+      } as never);
       if (error) throw new Error(error.message);
     }
     return { ok: true };

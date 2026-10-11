@@ -1,3 +1,4 @@
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // ClickUp — POST /api/v2/list/{list_id}/task
 // Personal token: header Authorization: pk_xxx (sem "Bearer")
 // Docs: https://developer.clickup.com/reference/createtask
@@ -57,9 +58,11 @@ export const createClickUpTasksForDeals = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data: integ } = await supabase
       .from("integrations")
       .select("config")
+      .eq("workspace_id", workspaceId)
       .eq("provider", "clickup")
       .maybeSingle();
     const listId = (integ?.config as { list_id?: string } | null)?.list_id;
@@ -68,6 +71,7 @@ export const createClickUpTasksForDeals = createServerFn({ method: "POST" })
     const { data: deals, error } = await supabase
       .from("deals")
       .select("id, name, value, currency, expected_close_date, notes")
+      .eq("workspace_id", workspaceId)
       .in("id", data.deal_ids);
     if (error) throw new Error(error.message);
 
@@ -75,6 +79,7 @@ export const createClickUpTasksForDeals = createServerFn({ method: "POST" })
       .from("enrichment_jobs")
       .insert({
         owner_id: userId,
+        workspace_id: workspaceId,
         provider: "clickup",
         kind: "sync",
         entity: "deal",

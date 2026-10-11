@@ -3,6 +3,7 @@
 // todas as etapas rodam e o código de saída é o da primeira que falhou.
 // Grava .verification/verify.json; complete=true só se todas passarem.
 import { spawn } from "node:child_process";
+import { sourceFingerprint } from "./perf/source-fingerprint.mjs";
 import { mkdirSync, writeFileSync } from "node:fs";
 // O wrapper do tsgo usa execFileSync e não repassa sinais: chama o binário nativo.
 import getTsgoExe from "../node_modules/@typescript/native-preview/lib/getExePath.js";
@@ -70,7 +71,18 @@ function run(step) {
   });
 }
 
+const sourceHash = sourceFingerprint();
 const startedAt = new Date();
+mkdirSync(".verification", { recursive: true });
+writeFileSync(
+  ".verification/verify.json",
+  JSON.stringify({
+    complete: false,
+    source_hash: sourceHash,
+    started_at: startedAt.toISOString(),
+    steps: [],
+  }),
+);
 const results = [];
 for (const step of STEPS) {
   if (interrupted) break;
@@ -82,7 +94,9 @@ for (const step of STEPS) {
   );
 }
 const finishedAt = new Date();
-const complete = !interrupted && results.length === STEPS.length && results.every((r) => r.ok);
+const sourceChanged = sourceHash !== sourceFingerprint();
+const complete =
+  !sourceChanged && !interrupted && results.length === STEPS.length && results.every((r) => r.ok);
 mkdirSync(".verification", { recursive: true });
 writeFileSync(
   ".verification/verify.json",
@@ -92,6 +106,8 @@ writeFileSync(
       finished_at: finishedAt.toISOString(),
       duration_ms: finishedAt - startedAt,
       interrupted,
+      source_hash: sourceHash,
+      source_changed: sourceChanged,
       complete,
       steps: results,
     },

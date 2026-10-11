@@ -1,3 +1,4 @@
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // Server functions do módulo de Lead Scoring.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -63,7 +64,10 @@ export const saveScoringRule = createServerFn({ method: "POST" })
     }
     const { data: row, error } = await supabase
       .from("scoring_rules")
-      .insert(payload)
+      .insert({
+        ...(payload as Record<string, unknown>),
+        workspace_id: await resolveActiveWorkspace(context.userId),
+      } as never)
       .select("id")
       .single();
     if (error) throw new Error(error.message);

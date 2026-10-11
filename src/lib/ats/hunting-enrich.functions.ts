@@ -1,3 +1,4 @@
+import { workspaceOfSource } from "@/lib/workspace-source.server";
 import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 /**
  * Hunter v0.4 — Slice 5.6.
@@ -21,7 +22,10 @@ type EnrichResult = {
   headline: string | null;
 };
 
-async function callGemini(payload: Record<string, unknown>): Promise<EnrichResult> {
+async function callGemini(
+  payload: Record<string, unknown>,
+  workspaceId: string,
+): Promise<EnrichResult> {
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("LOVABLE_API_KEY ausente");
   const sys = `Você é um extractor de dados de perfis profissionais.
@@ -48,7 +52,7 @@ Devolva SOMENTE um JSON válido neste formato:
         response_format: { type: "json_object" },
       }),
     },
-    { feature: "enriquecimento_hunting" },
+    { workspaceId, feature: "enriquecimento_hunting" },
   );
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
@@ -88,11 +92,17 @@ export const enrichCapture = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!cap) throw new Error("Capture não encontrado");
+    const workspaceId = await workspaceOfSource(supabase, "ats_hunting_captures", cap.id);
+    if ((await workspaceOfSource(supabase, "ats_candidates", cap.candidate_id)) !== workspaceId)
+      throw new Error("Captura e candidato pertencem a empresas diferentes.");
 
-    const enriched = await callGemini({
-      raw: cap.raw_payload,
-      url: cap.source_url,
-    });
+    const enriched = await callGemini(
+      {
+        raw: cap.raw_payload,
+        url: cap.source_url,
+      },
+      workspaceId,
+    );
 
     // patch candidate
     const patch: Record<string, unknown> = {
@@ -110,6 +120,7 @@ export const enrichCapture = createServerFn({ method: "POST" })
     try {
       await supabase.from("credit_ledger").insert({
         owner_id: userId,
+        workspace_id: workspaceId,
         kind: "ats.hunting.enrich",
         amount: -1,
         meta: { capture_id: cap.id, model: "google/gemini-2.5-flash" },

@@ -50,6 +50,7 @@ export const Route = createFileRoute("/api/public/hunting/log-outreach")({
         const { data: ins } = await supabaseAdmin
           .from("activities")
           .insert({
+            workspace_id: auth.workspaceId,
             owner_id: auth.ownerId,
             type: "outreach",
             subject: `Mensagem ${parsed.data.channel} enviada`,

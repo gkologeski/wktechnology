@@ -1,3 +1,4 @@
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // Server functions expostas como tools do agente de IA.
 // Read-only executam automaticamente; mutadoras são chamadas pelo cliente APÓS
 // aprovação humana no card. Todas rodam via requireSupabaseAuth → RLS aplica
@@ -238,7 +239,11 @@ export const agentCreateContact = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
       .from("contacts")
-      .insert({ owner_id: context.userId, ...data })
+      .insert({
+        owner_id: context.userId,
+        ...data,
+        workspace_id: await resolveActiveWorkspace(context.userId),
+      })
       .select("id, first_name, last_name, email")
       .single();
     if (error) throw new Error(error.message);
@@ -264,7 +269,11 @@ export const agentCreateCompany = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
       .from("companies")
-      .insert({ owner_id: context.userId, ...data })
+      .insert({
+        owner_id: context.userId,
+        ...data,
+        workspace_id: await resolveActiveWorkspace(context.userId),
+      })
       .select("id, name")
       .single();
     if (error) throw new Error(error.message);
@@ -299,7 +308,11 @@ export const agentCreateLead = createServerFn({ method: "POST" })
     }
     const { data: row, error } = await context.supabase
       .from("leads")
-      .insert({ owner_id: context.userId, ...data })
+      .insert({
+        owner_id: context.userId,
+        ...data,
+        workspace_id: await resolveActiveWorkspace(context.userId),
+      })
       .select("id, first_name, last_name")
       .single();
     if (error) throw new Error(error.message);
@@ -333,7 +346,12 @@ export const agentCreateDeal = createServerFn({ method: "POST" })
     const { contact_id, ...rest } = data;
     const { data: row, error } = await context.supabase
       .from("deals")
-      .insert({ owner_id: context.userId, value: 0, ...rest })
+      .insert({
+        owner_id: context.userId,
+        value: 0,
+        ...rest,
+        workspace_id: await resolveActiveWorkspace(context.userId),
+      })
       .select("id, name")
       .single();
     if (error) throw new Error(error.message);
@@ -369,7 +387,12 @@ export const agentCreateTicket = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
       .from("tickets")
-      .insert({ owner_id: context.userId, stage: data.stage ?? "new", ...data })
+      .insert({
+        owner_id: context.userId,
+        stage: data.stage ?? "new",
+        ...data,
+        workspace_id: await resolveActiveWorkspace(context.userId),
+      })
       .select("id, subject")
       .single();
     if (error) throw new Error(error.message);
@@ -396,7 +419,11 @@ export const agentCreateActivity = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
       .from("activities")
-      .insert({ owner_id: context.userId, ...data })
+      .insert({
+        owner_id: context.userId,
+        ...data,
+        workspace_id: await resolveActiveWorkspace(context.userId),
+      })
       .select("id, type, subject")
       .single();
     if (error) throw new Error(error.message);
@@ -425,7 +452,12 @@ export const agentCreateTask = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
       .from("activities")
-      .insert({ owner_id: context.userId, type: "task", ...data })
+      .insert({
+        owner_id: context.userId,
+        type: "task",
+        ...data,
+        workspace_id: await resolveActiveWorkspace(context.userId),
+      })
       .select("id, subject")
       .single();
     if (error) throw new Error(error.message);
@@ -453,6 +485,7 @@ export const agentCreateMeeting = createServerFn({ method: "POST" })
       .from("activities")
       .insert({
         owner_id: context.userId,
+        workspace_id: await resolveActiveWorkspace(context.userId),
         type: "meeting",
         subject: data.subject,
         body: data.body,
