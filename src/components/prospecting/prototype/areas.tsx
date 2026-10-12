@@ -67,7 +67,7 @@ export function Campaigns() {
           </table>
         </div>
       </Panel>
-      <Panel>
+      <Panel className="min-w-0">
         <SectionHeader
           title="Montar campanha"
           description={`Etapa ${step + 1} de ${DEMO_FLOW.length}`}
