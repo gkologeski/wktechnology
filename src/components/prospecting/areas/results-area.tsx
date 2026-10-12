@@ -72,7 +72,11 @@ export function ResultsArea() {
         const cols = s.rows[0] ? Object.keys(s.rows[0].values) : [];
         return (
           <section key={s.key} className="space-y-3">
-            <SectionHeader title={s.title} description={s.origin} action={<CoverageBadge coverage={s.coverage} />} />
+            <SectionHeader
+              title={s.title}
+              description={s.origin}
+              action={<CoverageBadge coverage={s.coverage} />}
+            />
             {s.coverage === "no_access" || s.coverage === "error" ? (
               <Unavailable coverage={s.coverage} />
             ) : s.rows.length === 0 ? (
@@ -81,7 +85,9 @@ export function ResultsArea() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{s.rows[0].dimension === "agente" ? "Agente" : "Campanha"}</TableHead>
+                    <TableHead>
+                      {s.rows[0].dimension === "agente" ? "Agente" : "Campanha"}
+                    </TableHead>
                     <TableHead>Canal</TableHead>
                     {cols.map((c) => (
                       <TableHead key={c} className="text-right">

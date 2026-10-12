@@ -3,7 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { AlertTriangle, CalendarCheck, Clock, MessageSquareReply, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { EmptyState, MetricCard, MetricsGridSkeleton, SectionHeader } from "@/components/techhire/ui";
+import {
+  EmptyState,
+  MetricCard,
+  MetricsGridSkeleton,
+  SectionHeader,
+} from "@/components/techhire/ui";
 import { getProspectingOverview } from "@/lib/prospecting/overview.functions";
 import { coverageHint, coverageValue } from "./coverage";
 

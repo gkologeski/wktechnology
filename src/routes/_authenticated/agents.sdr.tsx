@@ -135,8 +135,8 @@ function SdrAgentPage() {
         </Button>
       </div>
       <p className="max-w-3xl text-sm text-muted-foreground">
-        Cada agente tem uma <strong className="text-foreground">persona</strong> (identidade e
-        tom, versionada) e um <strong className="text-foreground">playbook</strong> (roteiro,
+        Cada agente tem uma <strong className="text-foreground">persona</strong> (identidade e tom,
+        versionada) e um <strong className="text-foreground">playbook</strong> (roteiro,
         qualificação, agenda e passagem para humano). Público, disparos, cadência e limites são da{" "}
         <strong className="text-foreground">campanha</strong>, que escolhe qual agente responde.
       </p>

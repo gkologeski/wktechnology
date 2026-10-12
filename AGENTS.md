@@ -31,3 +31,4 @@
 - Rotas só exportam `Route` (outro export anula o code-splitting); gate = `verify`+`build`, `verify:changed` é só feedback.
 - RBAC: permissões efetivas exigem membership `active` (inclusive bypass admin) e deny prevalece; cargos só escritos por owner/admin; ajustes por workspace só em overrides/pacotes locais com foto `rbac_wk_backup_2026_10`; por quê: inativo/comum não herda nem altera acesso e outros tenants não são afetados.
 - O protótipo da Prospecção (`/prospecting/prototype`) usa apenas dados demonstrativos de `src/components/prospecting/prototype/`, sem leitura/escrita real; por quê: aprovar o redesign antes de mexer na rota produtiva.
+- Prospecção (`/prospecting`) tem cinco áreas por `?area=`/`?section=` e converte `?tab=` antigo só por `src/lib/prospecting/areas.ts`; indicadores vêm de `overview.server.ts` com origem e cobertura (sem permissão/erro/limite nunca vira zero); por quê: links salvos continuam abrindo e nenhum número é inventado.

@@ -8,7 +8,7 @@ const KINDS = [
     icon: PhoneCall,
     title: "Ligações por voz",
     description:
-      "Campanhas de discagem com o agente de voz: público, janela, tentativas e responsável.",
+      "Campanhas de discagem com o agente de voz: público, janela, tentativas e responsável. A voz do agente é configurada em Configurações › Agente de voz.",
     to: "/prospecting/campaigns",
     cta: "Abrir campanhas de voz",
   },

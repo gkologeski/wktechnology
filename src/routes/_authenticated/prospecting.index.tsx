@@ -27,69 +27,80 @@ import {
 const L = <K extends string>(p: () => Promise<Record<K, ComponentType>>, k: K) =>
   lazy(() => p().then((m) => ({ default: m[k] })));
 
-const OverviewArea = L(() => import("@/components/prospecting/areas/overview-area"), "OverviewArea");
+const OverviewArea = L(
+  () => import("@/components/prospecting/areas/overview-area"),
+  "OverviewArea",
+);
 const ResultsArea = L(() => import("@/components/prospecting/areas/results-area"), "ResultsArea");
-const CampaignsHub = L(() => import("@/components/prospecting/areas/campaigns-hub"), "CampaignsHub");
+const CampaignsHub = L(
+  () => import("@/components/prospecting/areas/campaigns-hub"),
+  "CampaignsHub",
+);
 
-const SECTIONS: Record<Section, { label: string; permission: string; Component: ComponentType }> =
-  {
-    fila: {
-      label: "Filas",
-      permission: "techsales.prospecting.queue.view",
-      Component: L(() => import("@/components/prospecting/queue-tab"), "QueueTab"),
-    },
-    nutricao: {
-      label: "Nutrição",
-      permission: "techsales.prospecting.queue.view",
-      Component: L(() => import("@/components/prospecting/nurturing-tab"), "NurturingTab"),
-    },
-    qualificacao: {
-      label: "Qualificação e pontuação",
-      permission: "techsales.prospecting.scoring.view",
-      Component: L(() => import("@/components/prospecting/pages/scoring-page"), "ScoringPage"),
-    },
-    cadencias: {
-      label: "Cadências",
-      permission: "techsales.prospecting.cadences.view",
-      Component: L(() => import("@/components/prospecting/cadences-tab"), "CadencesTab"),
-    },
-    roteiros: {
-      label: "Roteiros de ligação",
-      permission: "techsales.prospecting.scripts.view",
-      Component: L(() => import("@/components/prospecting/pages/scripts-page"), "ScriptsPage"),
-    },
-    questionarios: {
-      label: "Questionários comerciais",
-      permission: "techsales.prospecting.questionnaires.view",
-      Component: L(() => import("@/components/prospecting/questionnaires-tab"), "QuestionnairesTab"),
-    },
-    playbooks: {
-      label: "Roteiros de descoberta",
-      permission: "techsales.prospecting.playbooks.view",
-      Component: L(() => import("@/components/prospecting/pages/playbooks-page"), "PlaybooksPage"),
-    },
-    base: {
-      label: "Base interna",
-      permission: "techsales.prospecting.search.view",
-      Component: L(() => import("@/components/prospecting/base-tab"), "BaseTab"),
-    },
-    apollo: {
-      label: "Busca de prospects (Apollo)",
-      permission: "techsales.prospecting.search.view",
-      Component: L(() => import("@/components/prospecting/pages/prospecting-page"), "ProspectingPage"),
-    },
-    enriquecimento: {
-      label: "Enriquecimento",
-      permission: "techsales.prospecting.enrichment.view",
-      Component: L(
-        () => import("@/components/prospecting/pages/enrichment-history-page"),
-        "EnrichmentHistoryPage",
-      ),
-    },
-  };
+const SECTIONS: Record<Section, { label: string; permission: string; Component: ComponentType }> = {
+  fila: {
+    label: "Filas",
+    permission: "techsales.prospecting.queue.view",
+    Component: L(() => import("@/components/prospecting/queue-tab"), "QueueTab"),
+  },
+  nutricao: {
+    label: "Nutrição",
+    permission: "techsales.prospecting.queue.view",
+    Component: L(() => import("@/components/prospecting/nurturing-tab"), "NurturingTab"),
+  },
+  qualificacao: {
+    label: "Qualificação e pontuação",
+    permission: "techsales.prospecting.scoring.view",
+    Component: L(() => import("@/components/prospecting/pages/scoring-page"), "ScoringPage"),
+  },
+  cadencias: {
+    label: "Cadências",
+    permission: "techsales.prospecting.cadences.view",
+    Component: L(() => import("@/components/prospecting/cadences-tab"), "CadencesTab"),
+  },
+  roteiros: {
+    label: "Roteiros de ligação",
+    permission: "techsales.prospecting.scripts.view",
+    Component: L(() => import("@/components/prospecting/pages/scripts-page"), "ScriptsPage"),
+  },
+  questionarios: {
+    label: "Questionários comerciais",
+    permission: "techsales.prospecting.questionnaires.view",
+    Component: L(() => import("@/components/prospecting/questionnaires-tab"), "QuestionnairesTab"),
+  },
+  playbooks: {
+    label: "Roteiros de descoberta",
+    permission: "techsales.prospecting.playbooks.view",
+    Component: L(() => import("@/components/prospecting/pages/playbooks-page"), "PlaybooksPage"),
+  },
+  base: {
+    label: "Base interna",
+    permission: "techsales.prospecting.search.view",
+    Component: L(() => import("@/components/prospecting/base-tab"), "BaseTab"),
+  },
+  apollo: {
+    label: "Busca de prospects (Apollo)",
+    permission: "techsales.prospecting.search.view",
+    Component: L(
+      () => import("@/components/prospecting/pages/prospecting-page"),
+      "ProspectingPage",
+    ),
+  },
+  enriquecimento: {
+    label: "Enriquecimento",
+    permission: "techsales.prospecting.enrichment.view",
+    Component: L(
+      () => import("@/components/prospecting/pages/enrichment-history-page"),
+      "EnrichmentHistoryPage",
+    ),
+  },
+};
 
 const AREAS: Record<Area, { label: string; description: string }> = {
-  visao: { label: "Visão geral", description: "Pendências, respostas, qualificados, reuniões e falhas." },
+  visao: {
+    label: "Visão geral",
+    description: "Pendências, respostas, qualificados, reuniões e falhas.",
+  },
   trabalho: { label: "Meu trabalho", description: "Filas, próxima ação, nutrição e qualificação." },
   campanhas: {
     label: "Campanhas",
@@ -216,7 +227,10 @@ function ProspectingSuite() {
               {area === "campanhas" && <CampaignsHub />}
               {AREA_SECTIONS[area].length > 0 && section && (
                 <Tabs value={section} onValueChange={(v) => go({ area, section: v as Section })}>
-                  <TabsList className="h-auto justify-start overflow-x-auto" aria-label={`Seções de ${AREAS[area].label}`}>
+                  <TabsList
+                    className="h-auto justify-start overflow-x-auto"
+                    aria-label={`Seções de ${AREAS[area].label}`}
+                  >
                     {AREA_SECTIONS[area].filter(allowedSection).map((s) => (
                       <TabsTrigger key={s} value={s} className="shrink-0">
                         {SECTIONS[s].label}

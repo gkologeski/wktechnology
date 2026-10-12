@@ -6,7 +6,10 @@ export const Route = createFileRoute("/_authenticated/settings/voice-agent")({
   head: () => ({
     meta: [
       { title: "Agente de voz — Configurações | TechERP" },
-      { name: "description", content: "Configuração do agente de voz usado nas campanhas de ligação." },
+      {
+        name: "description",
+        content: "Configuração do agente de voz usado nas campanhas de ligação.",
+      },
     ],
   }),
   component: VoiceAgentPage,

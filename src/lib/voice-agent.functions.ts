@@ -45,7 +45,12 @@ export const getVoiceAgentSettings = createServerFn({ method: "POST" })
   .handler(async ({ context }): Promise<VoiceAgentSettings> => {
     const ws = await resolveActiveWorkspace(context.userId);
     const { assertPermission } = await import("@/lib/access-control/enforce.server");
-    await assertPermission(context.supabase, context.userId, ws, "techsales.prospecting.voice.view");
+    await assertPermission(
+      context.supabase,
+      context.userId,
+      ws,
+      "techsales.prospecting.voice.view",
+    );
     const sb = await sbAdmin();
     const { data } = await sb
       .from("voice_agent_settings")

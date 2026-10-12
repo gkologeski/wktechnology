@@ -1,8 +1,13 @@
 # Reorganização da Prospecção (TechSales) — plano e mapa de reaproveitamento
 
-Status: **protótipo aguardando aprovação visual** em `/prospecting/prototype`.
-A rota produtiva `/prospecting` não foi alterada. Nenhuma tabela, política,
-permissão ou dado foi criado/alterado nesta fase.
+Status: **fase 1 implementada na rota produtiva** (aprovação do usuário em 2026-10-12).
+`/prospecting` usa `?area=` (visao, trabalho, campanhas, publicos, resultados) e
+`?section=`; `?tab=` antigo é convertido por `src/lib/prospecting/areas.ts`.
+Indicadores reais em `src/lib/prospecting/overview.server.ts` com cobertura
+explícita (sem permissão/erro nunca vira zero). Voz em `/settings/voice-agent`.
+Nutrição paginada no servidor (50/página). Sem tabelas novas.
+Pendente: paginação da Base (mantém aviso de 1.000), Apollo além da 1ª página,
+importação em lotes idempotente, serviço do catálogo na campanha, biblioteca única.
 
 ## 1. Áreas aprovadas
 

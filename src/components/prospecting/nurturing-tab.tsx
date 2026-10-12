@@ -138,10 +138,16 @@ export function NurturingTab() {
       {total > PAGE && (
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>
-            {page * PAGE + 1}–{Math.min(total, (page + 1) * PAGE)} de {total.toLocaleString("pt-BR")}
+            {page * PAGE + 1}–{Math.min(total, (page + 1) * PAGE)} de{" "}
+            {total.toLocaleString("pt-BR")}
           </span>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(page - 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === 0}
+              onClick={() => setPage(page - 1)}
+            >
               Anterior
             </Button>
             <Button
