@@ -379,7 +379,7 @@ const FIN = "techfinance.payments.delete.workspace";
 psql(`insert into public.workspaces(id, name, slug, created_by) values
  ('${WPRIV}','[ISO] Privado do vendedor','iso-privado-vendedor','${U(2)}') on conflict (id) do nothing;
  insert into public.workspace_members(workspace_id, user_id, role, status)
- values ('${WPRIV}','${U(2)}','owner','active') on conflict do nothing;
+ values ('${WPRIV}','${U(2)}','admin','active') on conflict do nothing;
  update public.profiles set active_workspace_id='${WA}' where id='${U(2)}';`);
 const hasPermLegacy = (n: number, key: string) => async () => {
   const c = await as(n);
