@@ -84,17 +84,13 @@ export async function loadEffectiveOrigins(
       .select("set_id, permission_sets(id, name)")
       .eq("user_id", targetUserId)
       .or(ownerFilter),
-    // A função devolve mais de 1.000 chaves para admins: lê em páginas ordenadas.
-    fetchAllPages<string>(
-      (from, to) =>
-        sb
-          .rpc("user_effective_permissions", { _user_id: targetUserId, _workspace_id: ws })
-          .order("user_effective_permissions" as never)
-          .range(from, to) as unknown as PromiseLike<{
-          data: string[] | null;
-          error: { message: string } | null;
-        }>,
-    ),
+    // Array único (sem o corte de 1.000 linhas da API); a função exige admin do workspace.
+    sb
+      .rpc("effective_permissions_array", { _user_id: targetUserId, _workspace_id: ws })
+      .then((r) => {
+        if (r.error) throw new Error(r.error.message);
+        return ((r.data ?? []) as unknown as string[]).map(String);
+      }),
   ]);
   const m = member.data as { role: string; status: string } | null;
   const isActive = m?.status === "active";
