@@ -620,7 +620,7 @@ await run(
   "ERR 42501",
 );
 // Negócio de outra carteira: líder tem a chave, mas não enxerga o negócio.
-psql(`insert into public.deals(id, owner_id, workspace_id, title, assigned_to) values
+psql(`insert into public.deals(id, owner_id, workspace_id, name, assigned_to) values
  ('51000000-0000-4000-8000-0000000000c3','${WA}','${WA}','[ISO] Negócio fora do escopo','${U(4)}') on conflict do nothing;
  insert into public.deal_role_profiles(id, workspace_id, deal_id, title, created_by, status, revision, last_version) values
  ('52000000-0000-4000-8000-0000000000c3','${WA}','51000000-0000-4000-8000-0000000000c3','[ISO] Perfil fora','${U(4)}','in_validation',1,0) on conflict do nothing;
