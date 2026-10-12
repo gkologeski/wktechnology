@@ -580,6 +580,66 @@ await run(
   "ok audit=1",
 );
 
+// ===== Fase 4: ACL de cargo pelo SDK e visibilidade do negócio na aprovação =====
+const insertRow = (n: number, table: string, row: Record<string, unknown>) => async () => {
+  const c = await as(n);
+  const { error } = await c.from(table).insert(row);
+  return error ? `ERR ${error.code}` : "ok";
+};
+await run(
+  "after",
+  "A-pset-nao-admin",
+  "membro comum não cria pacote de permissões",
+  insertRow(2, "permission_sets", {
+    id: "20000000-0000-4000-8000-0000000000c1",
+    module: "techsales",
+    name: "[ISO] pacote proibido",
+    workspace_id: WA,
+  }),
+  "ERR 42501",
+);
+await run(
+  "after",
+  "A-pset-global-admin",
+  "admin não cria pacote global (sem workspace)",
+  insertRow(1, "permission_sets", {
+    id: "20000000-0000-4000-8000-0000000000c2",
+    module: "techsales",
+    name: "[ISO] pacote global proibido",
+  }),
+  "ERR 42501",
+);
+await run(
+  "after",
+  "A-jrs-nao-admin",
+  "membro comum não vincula pacote a cargo",
+  insertRow(2, "job_role_sets", {
+    role_id: ROLE_OWN,
+    set_id: "20000000-0000-4000-8000-0000000000a4",
+  }),
+  "ERR 42501",
+);
+// Negócio de outra carteira: líder tem a chave, mas não enxerga o negócio.
+psql(`insert into public.deals(id, owner_id, workspace_id, title, assigned_to) values
+ ('51000000-0000-4000-8000-0000000000c3','${WA}','${WA}','[ISO] Negócio fora do escopo','${U(4)}') on conflict do nothing;
+ insert into public.deal_role_profiles(id, workspace_id, deal_id, title, created_by, status, revision, last_version) values
+ ('52000000-0000-4000-8000-0000000000c3','${WA}','51000000-0000-4000-8000-0000000000c3','[ISO] Perfil fora','${U(4)}','in_validation',1,0) on conflict do nothing;
+ insert into public.role_profile_approval_requests(id, workspace_id, deal_id, requested_by, approver_id, idempotency_key) values
+ ('63000000-0000-4000-8000-0000000000c3','${WA}','51000000-0000-4000-8000-0000000000c3','${U(4)}','${U(3)}','iso-r3') on conflict do nothing;
+ insert into public.role_profile_approval_items(id, request_id, workspace_id, profile_id, profile_revision) values
+ ('62000000-0000-4000-8000-0000000000c3','63000000-0000-4000-8000-0000000000c3','${WA}','52000000-0000-4000-8000-0000000000c3',1) on conflict do nothing;`);
+await run(
+  "after",
+  "A-decide-lider-deal-fora",
+  "líder com chave não decide negócio fora da sua visibilidade",
+  rpc(3, "role_profile_leader_decide", {
+    _item: "62000000-0000-4000-8000-0000000000c3",
+    _decision: "approve",
+    _comment: "",
+  }),
+  "ERR PERMISSION_DENIED",
+);
+
 const fails = results.filter((r) => r.status === "fail");
 mkdirSync(`${root}/artifacts`, { recursive: true });
 writeFileSync(
