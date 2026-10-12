@@ -82,13 +82,29 @@ export const deletePlaybook = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const ws = await requireSdr(supabase, userId, "delete");
-    // Playbook com histórico é desativado, não apagado.
-    const { count } = await supabase
-      .from("sdr_enrollments")
-      .select("id", { count: "exact", head: true })
-      .eq("playbook_id", data.id)
-      .eq("workspace_id", ws);
-    if ((count ?? 0) > 0) {
+    // Agente com histórico, versão publicada ou vínculo em campanha/configuração
+    // é desativado, não apagado (a exclusão apagaria versões e soltaria vínculos).
+    const head = { count: "exact" as const, head: true };
+    const [enr, pub, camp, cfg] = await Promise.all([
+      supabase
+        .from("sdr_enrollments")
+        .select("id", head)
+        .eq("playbook_id", data.id)
+        .eq("workspace_id", ws),
+      supabase
+        .from("sdr_agent_versions")
+        .select("id", head)
+        .eq("playbook_id", data.id)
+        .eq("workspace_id", ws)
+        .neq("status", "draft"),
+      supabase.from("whatsapp_campaigns").select("id", head).eq("sdr_playbook_id", data.id),
+      supabase
+        .from("sdr_workspace_settings")
+        .select("workspace_id", head)
+        .eq("default_playbook_id", data.id),
+    ]);
+    const linked = [enr, pub, camp, cfg].some((r) => r.error || (r.count ?? 0) > 0);
+    if (linked) {
       const { error } = await supabase
         .from("sdr_playbooks")
         .update({ enabled: false, updated_at: new Date().toISOString() })
@@ -106,6 +122,27 @@ export const deletePlaybook = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!gone?.length) throw new Error("Playbook não encontrado ou sem permissão para excluir.");
     return { ok: true, archived: false };
+  });
+
+/** Edição rápida do agente (nome) a partir de "Persona e teste". */
+export const renamePlaybook = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ id: z.string().uuid(), name: z.string().trim().min(1).max(120) }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const ws = await requireSdr(supabase, userId, "update");
+    const { data: out, error } = await supabase
+      .from("sdr_playbooks")
+      .update({ name: data.name, updated_at: new Date().toISOString() })
+      .eq("id", data.id)
+      .eq("workspace_id", ws)
+      .select("id")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!out) throw new Error("Agente não encontrado ou sem permissão para editar.");
+    return { ok: true };
   });
 
 export const listEnrollments = createServerFn({ method: "POST" })
