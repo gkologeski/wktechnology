@@ -10,22 +10,14 @@ export type FieldRulesMap = Record<string, Record<string, FieldMode>>;
 
 const PRIORITY: Record<FieldMode, number> = { readonly: 1, masked: 2, hidden: 3 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function resolveActiveWorkspace(supabase: any, userId: string): Promise<string | null> {
-  const m = await supabase
-    .from("workspace_members")
-    .select("workspace_id, role")
-    .eq("user_id", userId)
-    .limit(1)
-    .maybeSingle();
-  if (m.data?.workspace_id) return m.data.workspace_id as string;
-  const w = await supabase
-    .from("workspaces")
-    .select("id")
-    .eq("created_by", userId)
-    .limit(1)
-    .maybeSingle();
-  return (w.data?.id as string) ?? null;
+// Resolvedor canônico (perfil ativo + membership ativa); nunca a primeira membership.
+async function resolveActiveWorkspaceOrNull(userId: string): Promise<string | null> {
+  const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
+  try {
+    return await resolveActiveWorkspace(userId);
+  } catch {
+    return null;
+  }
 }
 
 export type MyFieldRulesResult = {
@@ -43,7 +35,7 @@ export const getMyFieldRules = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<MyFieldRulesResult> => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(supabase, userId);
+    const workspaceId = await resolveActiveWorkspaceOrNull(userId);
     if (!workspaceId) return { workspace_id: null, is_privileged: false, rules: {} };
 
     // Privilégio: owner do workspace ou member com role owner/admin.
@@ -69,21 +61,23 @@ export const getMyFieldRules = createServerFn({ method: "GET" })
       supabase
         .from("user_job_roles")
         .select("role_id")
-        .eq("owner_id", workspaceId)
-        .eq("user_id", userId),
+        .eq("user_id", userId)
+        .or(`workspace_id.eq.${workspaceId},owner_id.eq.${workspaceId}`),
       supabase
         .from("user_permission_sets")
         .select("set_id")
-        .eq("owner_id", workspaceId)
-        .eq("user_id", userId),
+        .eq("user_id", userId)
+        .or(`workspace_id.eq.${workspaceId},owner_id.eq.${workspaceId}`),
     ]);
     const roleIds = ((rolesRes.data ?? []) as Array<{ role_id: string }>).map((r) => r.role_id);
     let setIds = ((setsRes.data ?? []) as Array<{ set_id: string }>).map((s) => s.set_id);
 
     // Conjuntos herdados por cargos.
     if (roleIds.length) {
-      const jrs = await supabase.from("job_role_sets").select("set_id").in("role_id", roleIds);
-      const inherited = ((jrs.data ?? []) as Array<{ set_id: string }>).map((r) => r.set_id);
+      // Mesma regra do banco: substituição local do workspace + escopo do pacote.
+      const { loadResolvedRoleSets } = await import("./role-set-resolution.server");
+      const byRole = await loadResolvedRoleSets(supabase, workspaceId, roleIds);
+      const inherited = [...byRole.values()].flat();
       setIds = Array.from(new Set([...setIds, ...inherited]));
     }
 

@@ -199,9 +199,9 @@ async function effectiveRoleKeys(
   workspaceId: string,
   roleId: string,
 ): Promise<Set<string>> {
-  const links = await supabase.from("job_role_sets").select("set_id").eq("role_id", roleId);
-  if (links.error) throw new Error(links.error.message);
-  const setIds = ((links.data ?? []) as Array<{ set_id: string }>).map((r) => r.set_id);
+  // Mesma regra do banco: substituição local do workspace + escopo do pacote.
+  const { loadResolvedRoleSets } = await import("./role-set-resolution.server");
+  const setIds = (await loadResolvedRoleSets(supabase, workspaceId, [roleId])).get(roleId) ?? [];
   const keys = new Set<string>();
   if (setIds.length > 0) {
     const items = await fetchAllPages<{ permission_key: string }>((from, to) =>
@@ -575,10 +575,9 @@ export const getMatrixState = createServerFn({ method: "GET" })
     // Lido em lotes e cruzado no servidor: `permission_set_items` passa de
     // 8.000 linhas e embeds/consultas sem paginação eram truncados em 1.000,
     // deixando os toggles da matriz desmarcados.
-    const [links, items] = await Promise.all([
-      fetchAllPages<{ role_id: string; set_id: string }>((from, to) =>
-        supabase.from("job_role_sets").select("role_id, set_id").order("role_id").range(from, to),
-      ),
+    const { loadResolvedRoleSets } = await import("./role-set-resolution.server");
+    const [setsByRole, items] = await Promise.all([
+      loadResolvedRoleSets(supabase, workspaceId),
       fetchAllPages<{ set_id: string; permission_key: string }>((from, to) =>
         supabase
           .from("permission_set_items")
@@ -597,9 +596,8 @@ export const getMatrixState = createServerFn({ method: "GET" })
     }
 
     const map: Record<string, string[]> = {};
-    for (const row of links) {
-      if (!map[row.role_id]) map[row.role_id] = [];
-      map[row.role_id].push(...(keysBySet.get(row.set_id) ?? []));
+    for (const [roleId, setIds] of setsByRole) {
+      map[roleId] = setIds.flatMap((sid) => keysBySet.get(sid) ?? []);
     }
     // Deduplicate.
     const out: Record<string, string[]> = {};

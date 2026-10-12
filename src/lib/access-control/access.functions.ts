@@ -66,80 +66,63 @@ export type AccessBundle = {
   members: MemberAssignmentRow[];
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function resolveActiveWorkspace(supabase: any, userId: string): Promise<string | null> {
-  const m = await supabase
-    .from("workspace_members")
-    .select("workspace_id")
-    .eq("user_id", userId)
-    .limit(1)
-    .maybeSingle();
-  if (m.data?.workspace_id) return m.data.workspace_id as string;
-  const w = await supabase
-    .from("workspaces")
-    .select("id")
-    .eq("created_by", userId)
-    .limit(1)
-    .maybeSingle();
-  return (w.data?.id as string) ?? null;
+// Resolvedor canônico (perfil ativo + membership ativa); nunca a primeira membership.
+async function resolveActiveWorkspaceOrNull(userId: string): Promise<string | null> {
+  const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
+  try {
+    return await resolveActiveWorkspace(userId);
+  } catch {
+    return null;
+  }
 }
 
 export const getAccessBundle = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AccessBundle> => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(supabase, userId);
+    const workspaceId = await resolveActiveWorkspaceOrNull(userId);
 
     // Todas as leituras de catálogo são paginadas: `permissions` e
     // `permission_set_items` já passam de 1.000 linhas e eram truncadas pelo
     // Data API, fazendo módulos inteiros (TechSales, TechProjects, atendimento)
     // desaparecerem da matriz.
-    const [permRows, setRows, itemRows, roleRows, roleSetRows, ruleRows, memberRows] =
-      await Promise.all([
-        fetchAllPages<PermissionRow>((from, to) =>
-          supabase.from("permissions").select("*").order("module").order("key").range(from, to),
-        ),
-        fetchAllPages<Omit<PermissionSetRow, "permission_keys">>((from, to) =>
-          supabase
-            .from("permission_sets")
-            .select("*")
-            .order("module")
-            .order("name")
-            .range(from, to),
-        ),
-        fetchAllPages<{ set_id: string; permission_key: string }>((from, to) =>
-          supabase
-            .from("permission_set_items")
-            .select("set_id, permission_key")
-            .order("set_id")
-            .order("permission_key")
-            .range(from, to),
-        ),
-        fetchAllPages<Omit<JobRoleRow, "set_ids">>((from, to) =>
-          supabase
-            .from("job_roles")
-            .select("*")
-            .order("is_system", { ascending: false })
-            .order("name")
-            .range(from, to),
-        ),
-        fetchAllPages<{ role_id: string; set_id: string }>((from, to) =>
-          supabase.from("job_role_sets").select("role_id, set_id").order("role_id").range(from, to),
-        ),
-        fetchAllPages<FieldRuleRow>((from, to) =>
-          supabase.from("field_permission_rules").select("*").order("id").range(from, to),
-        ),
-        workspaceId
-          ? fetchAllPages<{ user_id: string; role: string }>((from, to) =>
-              supabase
-                .from("workspace_members")
-                .select("user_id, role")
-                .eq("workspace_id", workspaceId)
-                .order("user_id")
-                .range(from, to),
-            )
-          : Promise.resolve([] as Array<{ user_id: string; role: string }>),
-      ]);
+    const [permRows, setRows, itemRows, roleRows, ruleRows, memberRows] = await Promise.all([
+      fetchAllPages<PermissionRow>((from, to) =>
+        supabase.from("permissions").select("*").order("module").order("key").range(from, to),
+      ),
+      fetchAllPages<Omit<PermissionSetRow, "permission_keys">>((from, to) =>
+        supabase.from("permission_sets").select("*").order("module").order("name").range(from, to),
+      ),
+      fetchAllPages<{ set_id: string; permission_key: string }>((from, to) =>
+        supabase
+          .from("permission_set_items")
+          .select("set_id, permission_key")
+          .order("set_id")
+          .order("permission_key")
+          .range(from, to),
+      ),
+      fetchAllPages<Omit<JobRoleRow, "set_ids">>((from, to) =>
+        supabase
+          .from("job_roles")
+          .select("*")
+          .order("is_system", { ascending: false })
+          .order("name")
+          .range(from, to),
+      ),
+      fetchAllPages<FieldRuleRow>((from, to) =>
+        supabase.from("field_permission_rules").select("*").order("id").range(from, to),
+      ),
+      workspaceId
+        ? fetchAllPages<{ user_id: string; role: string }>((from, to) =>
+            supabase
+              .from("workspace_members")
+              .select("user_id, role")
+              .eq("workspace_id", workspaceId)
+              .order("user_id")
+              .range(from, to),
+          )
+        : Promise.resolve([] as Array<{ user_id: string; role: string }>),
+    ]);
 
     // Group items and role_sets
     const itemsBySet = new Map<string, string[]>();
@@ -149,29 +132,12 @@ export const getAccessBundle = createServerFn({ method: "GET" })
       itemsBySet.set(it.set_id, arr);
     }
 
-    // Neste workspace, o vínculo a um conjunto amplo pode ser lido como um pacote local
-    // recortado (job_role_set_replacements). Mesma regra do banco, para a tela não divergir.
-    const replacement = new Map<string, string>();
-    if (workspaceId) {
-      const reps = await supabase
-        .from("job_role_set_replacements")
-        .select("role_id, set_id, replacement_set_id")
-        .eq("workspace_id", workspaceId);
-      for (const r of (reps.data ?? []) as Array<{
-        role_id: string;
-        set_id: string;
-        replacement_set_id: string;
-      }>) {
-        replacement.set(`${r.role_id}:${r.set_id}`, r.replacement_set_id);
-      }
-    }
-
-    const setsByRole = new Map<string, string[]>();
-    for (const rs of roleSetRows) {
-      const arr = setsByRole.get(rs.role_id) ?? [];
-      arr.push(replacement.get(`${rs.role_id}:${rs.set_id}`) ?? rs.set_id);
-      setsByRole.set(rs.role_id, arr);
-    }
+    // Vínculos cargo→pacote com a mesma regra do banco: substituição local do
+    // workspace + escopo do pacote (local do WS ou global não-__bundle__).
+    const { loadResolvedRoleSets } = await import("./role-set-resolution.server");
+    const setsByRole = workspaceId
+      ? await loadResolvedRoleSets(supabase, workspaceId)
+      : new Map<string, string[]>();
 
     // Load member assignments (only for workspace users)
     const memberUserIds = memberRows.map((m) => m.user_id);
@@ -183,11 +149,17 @@ export const getAccessBundle = createServerFn({ method: "GET" })
 
     if (workspaceId && memberUserIds.length > 0) {
       const [ujrRes, upsRes, profRes] = await Promise.all([
+        // Atribuições do workspace ativo (mesmo filtro de user_effective_permissions).
         supabase
           .from("user_job_roles")
           .select("user_id, role_id, is_primary")
-          .eq("owner_id", userId),
-        supabase.from("user_permission_sets").select("user_id, set_id").eq("owner_id", userId),
+          .in("user_id", memberUserIds)
+          .or(`workspace_id.eq.${workspaceId},owner_id.eq.${workspaceId}`),
+        supabase
+          .from("user_permission_sets")
+          .select("user_id, set_id")
+          .in("user_id", memberUserIds)
+          .or(`workspace_id.eq.${workspaceId},owner_id.eq.${workspaceId}`),
         supabase.from("profiles").select("id, full_name").in("id", memberUserIds),
       ]);
 
