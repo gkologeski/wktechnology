@@ -16539,6 +16539,42 @@ export type Database = {
           },
         ]
       }
+      rbac_policy_backup_2026_10: {
+        Row: {
+          cmd: string | null
+          id: number
+          permissive: string | null
+          policy_name: string
+          qual: string | null
+          roles: string | null
+          table_name: string
+          taken_at: string
+          with_check: string | null
+        }
+        Insert: {
+          cmd?: string | null
+          id?: number
+          permissive?: string | null
+          policy_name: string
+          qual?: string | null
+          roles?: string | null
+          table_name: string
+          taken_at?: string
+          with_check?: string | null
+        }
+        Update: {
+          cmd?: string | null
+          id?: number
+          permissive?: string | null
+          policy_name?: string
+          qual?: string | null
+          roles?: string | null
+          table_name?: string
+          taken_at?: string
+          with_check?: string | null
+        }
+        Relationships: []
+      }
       rbac_wk_backup_2026_10: {
         Row: {
           id: number
@@ -22619,6 +22655,14 @@ export type Database = {
       inbox_phone_digits: { Args: { _value: string }; Returns: string }
       increment_snippet_usage: { Args: { _id: string }; Returns: undefined }
       increment_wat_usage: { Args: { _id: string }; Returns: undefined }
+      is_active_workspace_admin: {
+        Args: { _user: string; _workspace: string }
+        Returns: boolean
+      }
+      is_active_workspace_member_of: {
+        Args: { _user: string; _workspace: string }
+        Returns: boolean
+      }
       is_chat_member: {
         Args: { _conv: string; _user: string }
         Returns: boolean
@@ -22644,6 +22688,10 @@ export type Database = {
       }
       is_workspace_member: {
         Args: { _user: string; _workspace: string }
+        Returns: boolean
+      }
+      job_role_usable_in_workspace: {
+        Args: { _role: string; _workspace: string }
         Returns: boolean
       }
       leads_source_facets: {
@@ -22678,6 +22726,10 @@ export type Database = {
       people_document_derive_status: {
         Args: { _expires: string }
         Returns: Database["public"]["Enums"]["people_doc_status"]
+      }
+      permission_set_usable_in_workspace: {
+        Args: { _set: string; _workspace: string }
+        Returns: boolean
       }
       platform_cron_jobs: {
         Args: never
