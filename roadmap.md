@@ -1,3 +1,13 @@
+# Roadmap — Correção dos cargos da WK
+
+- [x] Fase 0 — foto do estado atual e reversão (0122)
+- [x] Fase 1 — permissões só para membro ativo; cargos só por admin; aprovação de perfis só pelo líder (legado fechado, override admin com motivo); chat ao vivo por permissão e visibilidade (0122 + servidor)
+- [ ] Fase 2 — matriz dos 16 cargos (Apontador, perfis de vaga, denies de Visibilidade total, Rep. Externa, Colaborador Externo, Auditor)
+- [ ] Fase 3 — tela /settings/permissions com permissão efetiva, origens, dependências e aviso de admin
+- [ ] Fase 3b — botão de override administrativo com motivo no quadro de perfis de vaga
+- [ ] Fase 4 — provas isoladas dos cargos, aplicação e leitura das permissões efetivas reais
+- [ ] Publicação coordenada (decisão humana)
+
 # Roadmap — Ciclo de contratação/desligamento via Workflows
 
 # Roadmap — Três propostas de Agentes de IA

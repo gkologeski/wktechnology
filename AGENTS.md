@@ -32,3 +32,8 @@
 - Ritmo do disparo de template das campanhas WhatsApp é controlado por `whatsapp_campaigns.next_send_at` sob lease `wa_campaign_claim_dispatch`, com sorteio em `src/lib/whatsapp/campaign-pacing.ts`; por quê: o espaçamento vale entre execuções e nunca há disparo duplo.
 - Rotas só exportam `Route` (outro export anula o code-splitting); gate = `verify`+`build`, `verify:changed` é só feedback.
 
+
+- Permissões efetivas exigem membership `active` (inclusive bypass admin/criador) e deny sempre prevalece; cargos só são escritos por owner/admin do workspace (políticas restritivas + gatilho de identidade); por quê: membro inativo ou comum não herda nem altera acesso.
+- Aprovação de perfil de vaga tem fluxo único: `role_profile_leader_decide` (líder resolvido com membership ativa + chave approve); `role_profile_approve` só delega a ele e o admin usa `role_profile_admin_override_approve` com motivo auditado; por quê: sem segunda aprovação concorrente nem atalho por chave.
+- Chat ao vivo: servidor exige chave `techsales.inbox.chat.<ação>` e a RLS restringe sessões/mensagens ao escopo (próprio=responsável, equipe=+fila/equipe, workspace) via `my_perm_workspaces`; por quê: sem leitura ou envio em conversas de terceiros.
+- Mudanças RBAC por workspace usam overrides/pacotes locais e foto `rbac_wk_backup_2026_10`; nunca alteram pacotes/cargos globais; por quê: não afetar outros tenants e permitir reversão.
