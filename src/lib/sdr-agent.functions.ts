@@ -98,7 +98,10 @@ export const deletePlaybook = createServerFn({ method: "POST" })
         .eq("workspace_id", ws)
         .neq("status", "draft"),
       supabase.from("whatsapp_campaigns").select("id", head).eq("sdr_playbook_id", data.id),
-      supabase.from("sdr_workspace_settings").select("workspace_id", head).eq("default_playbook_id", data.id),
+      supabase
+        .from("sdr_workspace_settings")
+        .select("workspace_id", head)
+        .eq("default_playbook_id", data.id),
     ]);
     const linked = [enr, pub, camp, cfg].some((r) => r.error || (r.count ?? 0) > 0);
     if (linked) {
