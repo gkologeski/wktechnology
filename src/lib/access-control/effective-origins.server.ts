@@ -59,7 +59,11 @@ export async function loadEffectiveOrigins(
   ws: string,
   targetUserId: string,
 ): Promise<EffectiveOriginsResult> {
-  const { data: wsData } = await sb.from("workspaces").select("created_by").eq("id", ws).maybeSingle();
+  const { data: wsData } = await sb
+    .from("workspaces")
+    .select("created_by")
+    .eq("id", ws)
+    .maybeSingle();
   const creator = (wsData as { created_by?: string } | null)?.created_by ?? null;
   const ownerFilter = creator ? `owner_id.eq.${ws},owner_id.eq.${creator}` : `owner_id.eq.${ws}`;
   const [member, wsRow, ujr, ups, dbKeys] = await Promise.all([
