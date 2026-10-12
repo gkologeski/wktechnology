@@ -46,7 +46,7 @@ export function EffectivePermissionsPanel() {
   }, [origins.data, search, filter]);
 
   return (
-    <section className="space-y-3 rounded-lg border border-border bg-surface p-4" aria-labelledby="eff-title">
+    <section className="space-y-3 rounded-lg border border-border bg-card p-4" aria-labelledby="eff-title">
       <SectionHeader
         title="Permissão efetiva por pessoa"
         description="O que a pessoa realmente pode fazer e de onde vem: cargos, conjuntos extras, concessões, proibições e acesso de administrador."
@@ -92,7 +92,7 @@ export function EffectivePermissionsPanel() {
       {!userId ? (
         <EmptyState title="Escolha uma pessoa" description="A lista mostra a permissão efetiva calculada pelo banco." />
       ) : origins.isLoading ? (
-        <Skeletons.Table rows={6} />
+        <Skeletons.Card lines={6} />
       ) : origins.isError ? (
         <div role="alert" className="flex items-center justify-between rounded-md border border-destructive/40 p-3 text-sm text-destructive">
           <span>{(origins.error as Error).message}</span>
@@ -132,7 +132,7 @@ export function EffectivePermissionsPanel() {
           ) : (
             <div className="max-h-[480px] overflow-auto rounded-md border border-border">
               <table className="w-full text-xs">
-                <thead className="sticky top-0 bg-surface-muted text-left text-text-secondary">
+                <thead className="sticky top-0 bg-surface-2 text-left text-text-secondary">
                   <tr>
                     <th className="p-2 font-medium">Chave</th>
                     <th className="p-2 font-medium">Efetiva</th>

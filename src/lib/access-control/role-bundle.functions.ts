@@ -9,6 +9,7 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchAllPages } from "./fetch-all";
 import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
+import { dependencyViolations } from "./permission-dependencies";
 
 const BUNDLE_MODULE = "__bundle__";
 
@@ -235,6 +236,25 @@ async function effectiveRoleKeys(
   return keys;
 }
 
+// Impede criar combinação inconsistente (ex.: aprovar perfis sem ver perfis).
+async function assertDependencies(
+  supabase: SupabaseClient,
+  workspaceId: string,
+  roleId: string,
+  keys: string[],
+  granted: boolean,
+): Promise<void> {
+  const current = await effectiveRoleKeys(supabase, workspaceId, roleId);
+  const v = dependencyViolations(current, keys, granted);
+  if (v.length) {
+    throw new Error(
+      granted
+        ? `Conceda antes a permissão-base: ${v.map((x) => `${x.key} exige ${x.requires}`).join("; ")}.`
+        : `Revogue antes as permissões que dependem desta: ${v.map((x) => x.key).join(", ")}.`,
+    );
+  }
+}
+
 const SetPermInput = z.object({
   role_id: z.string().uuid(),
   permission_key: z.string().min(1),
@@ -248,6 +268,7 @@ export const setRolePermission = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
     await assertWorkspaceAdmin(supabase, userId, workspaceId);
+    await assertDependencies(supabase, workspaceId, data.role_id, [data.permission_key], data.granted);
     let setId: string | null = null;
     if (data.granted) {
       setId = await ensureBundle(supabase, userId, data.role_id);
@@ -310,6 +331,7 @@ export const bulkSetRolePermissions = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
     await assertWorkspaceAdmin(supabase, userId, workspaceId);
+    await assertDependencies(supabase, workspaceId, data.role_id, data.keys, data.granted);
     let setId: string | null = null;
     if (data.granted) {
       const grantedSetId = await ensureBundle(supabase, userId, data.role_id);
@@ -446,9 +468,25 @@ export const restoreRoleDefaults = createServerFn({ method: "POST" })
       .select("permission_key")
       .eq("role_id", data.role_id);
     if (defaults.error) throw new Error(defaults.error.message);
-    const keys = ((defaults.data ?? []) as Array<{ permission_key: string }>).map(
-      (r) => r.permission_key,
+    // Baseline do workspace: chaves retiradas do pacote local na revisão não voltam.
+    const baseline = await supabase
+      .from("rbac_wk_backup_2026_10")
+      .select("source, row_data")
+      .eq("workspace_id", workspaceId)
+      .in("source", ["phase2_added", "phase2_removed_bundle_item", "phase2_reverted_multirole"]);
+    if (baseline.error) throw new Error(baseline.error.message);
+    const bRows = (baseline.data ?? []) as Array<{ source: string; row_data: Record<string, string> }>;
+    const removedKeys = new Set(
+      bRows.filter((b) => b.source === "phase2_removed_bundle_item").map((b) => b.row_data.key),
     );
+    const reverted = new Set(
+      bRows
+        .filter((b) => b.source === "phase2_reverted_multirole" && b.row_data.role_id === data.role_id)
+        .map((b) => b.row_data.key),
+    );
+    const keys = ((defaults.data ?? []) as Array<{ permission_key: string }>)
+      .map((r) => r.permission_key)
+      .filter((k) => !removedKeys.has(k));
     const setId = await ensureBundle(supabase, userId, data.role_id);
     const del = await supabase.from("permission_set_items").delete().eq("set_id", setId);
     if (del.error) throw new Error(del.error.message);
@@ -459,12 +497,30 @@ export const restoreRoleDefaults = createServerFn({ method: "POST" })
         .upsert(rows, { onConflict: "set_id,permission_key" });
       if (error) throw new Error(error.message);
     }
-    const overrides = await supabase
-      .from("job_role_permission_overrides")
-      .delete()
-      .eq("workspace_id", workspaceId)
-      .eq("role_id", data.role_id);
-    if (overrides.error) throw new Error(overrides.error.message);
+    // Não apaga overrides/denies existentes: só recoloca os da baseline que faltarem.
+    const baselineRows = bRows
+      .filter(
+        (b) =>
+          b.source === "phase2_added" &&
+          b.row_data.role_id === data.role_id &&
+          !reverted.has(b.row_data.key),
+      )
+      .map((b) => ({
+        workspace_id: workspaceId,
+        role_id: data.role_id,
+        permission_key: b.row_data.key,
+        effect: b.row_data.effect as "grant" | "deny",
+        created_by: userId,
+      }));
+    if (baselineRows.length > 0) {
+      const { error } = await supabase
+        .from("job_role_permission_overrides")
+        .upsert(baselineRows, {
+          onConflict: "workspace_id,role_id,permission_key",
+          ignoreDuplicates: true,
+        });
+      if (error) throw new Error(error.message);
+    }
     return { ok: true, count: keys.length };
   });
 
