@@ -3,7 +3,10 @@
  * acompanhar contatos que foram enviados para o funil de nutrição via
  * qualificação em /prospecting/queues/*.
  */
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { orSafeLike } from "@/lib/postgrest-search";
+import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,33 +31,35 @@ type NurturingLead = {
 export function NurturingTab() {
   const [q, setQ] = useState("");
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["prospecting", "nurturing-leads"],
+  const [page, setPage] = useState(0);
+  const term = useDebouncedValue(q.trim(), 300);
+  const PAGE = 50;
+
+  // Paginação e busca no servidor (antes: 200 linhas fixas filtradas no navegador).
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["prospecting", "nurturing-leads", term, page],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("leads")
-        .select("id, first_name, last_name, email, phone, score, nurture_started_at, updated_at")
-        .eq("status", "nurturing")
+        .select("id, first_name, last_name, email, phone, score, nurture_started_at, updated_at", {
+          count: "exact",
+        })
+        .eq("status", "nurturing");
+      if (term) {
+        const like = orSafeLike(term);
+        query = query.or(
+          `first_name.ilike.${like},last_name.ilike.${like},email.ilike.${like},phone.ilike.${like}`,
+        );
+      }
+      const { data, error, count } = await query
         .order("nurture_started_at", { ascending: false })
-        .limit(200);
+        .range(page * PAGE, page * PAGE + PAGE - 1);
       if (error) throw new Error(error.message);
-      return (data ?? []) as NurturingLead[];
+      return { rows: (data ?? []) as NurturingLead[], total: count ?? 0 };
     },
   });
-
-  const filtered = useMemo(() => {
-    const rows = data ?? [];
-    if (!q.trim()) return rows;
-    const needle = q.trim().toLowerCase();
-    return rows.filter((r) => {
-      const name = `${r.first_name ?? ""} ${r.last_name ?? ""}`.toLowerCase();
-      return (
-        name.includes(needle) ||
-        (r.email ?? "").toLowerCase().includes(needle) ||
-        (r.phone ?? "").toLowerCase().includes(needle)
-      );
-    });
-  }, [data, q]);
+  const filtered = data?.rows ?? [];
+  const total = data?.total ?? 0;
 
   return (
     <div className="space-y-4">
@@ -69,7 +74,11 @@ export function NurturingTab() {
           className="pl-8"
           placeholder="Buscar por nome, e-mail ou telefone…"
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={(e) => {
+            setQ(e.target.value);
+            setPage(0);
+          }}
+          aria-label="Buscar leads em nutrição"
         />
       </div>
 
@@ -79,6 +88,12 @@ export function NurturingTab() {
             <Skeleton key={i} className="h-14 w-full" />
           ))}
         </div>
+      ) : isError ? (
+        <EmptyState
+          icon={Sprout}
+          title="Não foi possível carregar a nutrição"
+          description={(error as Error).message}
+        />
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={Sprout}
@@ -119,6 +134,26 @@ export function NurturingTab() {
             </div>
           </CardContent>
         </Card>
+      )}
+      {total > PAGE && (
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>
+            {page * PAGE + 1}–{Math.min(total, (page + 1) * PAGE)} de {total.toLocaleString("pt-BR")}
+          </span>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(page - 1)}>
+              Anterior
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={(page + 1) * PAGE >= total}
+              onClick={() => setPage(page + 1)}
+            >
+              Próxima
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );
