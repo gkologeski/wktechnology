@@ -357,6 +357,20 @@ psql(
   `delete from public.job_role_permission_overrides where role_id='30000000-0000-4000-8000-0000000000a4' and workspace_id='${WA}'`,
 );
 
+// Pacote de OUTRO workspace ligado a um cargo não vale fora dele.
+psql(`insert into public.permission_sets(id, module, name, workspace_id) values
+ ('20000000-0000-4000-8000-0000000000b9','__bundle__','[ISO] pacote B','aaaaaaaa-0000-4000-8000-00000000000b') on conflict do nothing;
+ insert into public.permission_set_items(set_id, permission_key) values ('20000000-0000-4000-8000-0000000000b9','techsales.deals.view.workspace') on conflict do nothing;
+ insert into public.job_role_sets(role_id, set_id) values ('${ROLE_OWN}','20000000-0000-4000-8000-0000000000b9') on conflict do nothing;`);
+await run(
+  "after",
+  "A-pacote-outro-ws",
+  "pacote de outro workspace não concede chave",
+  hasPerm(2, "techsales.deals.view.workspace"),
+  "false",
+);
+psql(`delete from public.job_role_sets where set_id='20000000-0000-4000-8000-0000000000b9'`);
+
 // 1.2 cargos
 await run(
   "after",
