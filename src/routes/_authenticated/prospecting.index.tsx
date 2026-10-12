@@ -1,157 +1,137 @@
 /**
- * Suíte de Prospecção — shell com abas.
- *
- * Concentra Fila, Questionários, Cadências, Scoring, Playbooks, Enrichment,
- * Scripts e Voice Agent em uma única página. As abas são exibidas somente
- * para usuários com a permission_key correspondente. Owners/admins do
- * workspace recebem todas as chaves automaticamente via
- * `user_effective_permissions`; para os demais, o administrador libera em
- * Configurações → Controle de acesso → Permissões.
+ * Prospecção (TechSales) — cinco áreas: Visão geral, Meu trabalho, Campanhas,
+ * Públicos e Resultados. Cada área/seção é carregada sob demanda e exibida
+ * somente com a permission_key correspondente (o servidor revalida).
+ * Links antigos `?tab=` são convertidos por `LEGACY_TAB_MAP`.
  */
-import { useEffect, useMemo, type ComponentType } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useSearch } from "@tanstack/react-router";
+import { lazy, Suspense, useEffect, useMemo, type ComponentType } from "react";
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { z } from "zod";
-import { AtsPageHeader } from "@/components/ats/ui";
+import { ShieldOff } from "lucide-react";
+import { PageHeader, EmptyState, ListPageSkeleton } from "@/components/techhire/ui";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ShieldOff } from "lucide-react";
 import { usePermissions } from "@/lib/access-control/use-permissions";
-import { QueueTab } from "@/components/prospecting/queue-tab";
-import { BaseTab } from "@/components/prospecting/base-tab";
-import { NurturingTab } from "@/components/prospecting/nurturing-tab";
+import {
+  AREA_SECTIONS,
+  AREA_VALUES,
+  LEGACY_TAB_MAP,
+  LEGACY_TAB_VALUES,
+  SECTION_VALUES,
+  resolveSection,
+  type Area,
+  type Section,
+} from "@/lib/prospecting/areas";
 
-import { QuestionnairesTab } from "@/components/prospecting/questionnaires-tab";
-import { CadencesTab } from "@/components/prospecting/cadences-tab";
-import { ScoringPage } from "@/components/prospecting/pages/scoring-page";
-import { PlaybooksPage } from "@/components/prospecting/pages/playbooks-page";
-import { EnrichmentHistoryPage } from "@/components/prospecting/pages/enrichment-history-page";
-import { ProspectingPage } from "@/components/prospecting/pages/prospecting-page";
-import { ScriptsPage } from "@/components/prospecting/pages/scripts-page";
-import { VoiceAgentPage } from "@/components/prospecting/pages/voice-agent-page";
-import { SdrAgentPanel } from "@/components/prospecting/sdr-console";
+const L = <K extends string>(p: () => Promise<Record<K, ComponentType>>, k: K) =>
+  lazy(() => p().then((m) => ({ default: m[k] })));
 
-const TAB_VALUES = [
-  "fila",
-  "base",
-  "nutricao",
-  "questionarios",
-  "cadencias",
-  "scoring",
-  "playbooks",
-  "enrichment",
-  "prospecting",
-  "scripts",
-  "voice",
-  "sdr",
-] as const;
+const OverviewArea = L(() => import("@/components/prospecting/areas/overview-area"), "OverviewArea");
+const ResultsArea = L(() => import("@/components/prospecting/areas/results-area"), "ResultsArea");
+const CampaignsHub = L(() => import("@/components/prospecting/areas/campaigns-hub"), "CampaignsHub");
 
-type TabValue = (typeof TAB_VALUES)[number];
+const SECTIONS: Record<Section, { label: string; permission: string; Component: ComponentType }> =
+  {
+    fila: {
+      label: "Filas",
+      permission: "techsales.prospecting.queue.view",
+      Component: L(() => import("@/components/prospecting/queue-tab"), "QueueTab"),
+    },
+    nutricao: {
+      label: "Nutrição",
+      permission: "techsales.prospecting.queue.view",
+      Component: L(() => import("@/components/prospecting/nurturing-tab"), "NurturingTab"),
+    },
+    qualificacao: {
+      label: "Qualificação e pontuação",
+      permission: "techsales.prospecting.scoring.view",
+      Component: L(() => import("@/components/prospecting/pages/scoring-page"), "ScoringPage"),
+    },
+    cadencias: {
+      label: "Cadências",
+      permission: "techsales.prospecting.cadences.view",
+      Component: L(() => import("@/components/prospecting/cadences-tab"), "CadencesTab"),
+    },
+    roteiros: {
+      label: "Roteiros de ligação",
+      permission: "techsales.prospecting.scripts.view",
+      Component: L(() => import("@/components/prospecting/pages/scripts-page"), "ScriptsPage"),
+    },
+    questionarios: {
+      label: "Questionários comerciais",
+      permission: "techsales.prospecting.questionnaires.view",
+      Component: L(() => import("@/components/prospecting/questionnaires-tab"), "QuestionnairesTab"),
+    },
+    playbooks: {
+      label: "Roteiros de descoberta",
+      permission: "techsales.prospecting.playbooks.view",
+      Component: L(() => import("@/components/prospecting/pages/playbooks-page"), "PlaybooksPage"),
+    },
+    base: {
+      label: "Base interna",
+      permission: "techsales.prospecting.search.view",
+      Component: L(() => import("@/components/prospecting/base-tab"), "BaseTab"),
+    },
+    apollo: {
+      label: "Busca de prospects (Apollo)",
+      permission: "techsales.prospecting.search.view",
+      Component: L(() => import("@/components/prospecting/pages/prospecting-page"), "ProspectingPage"),
+    },
+    enriquecimento: {
+      label: "Enriquecimento",
+      permission: "techsales.prospecting.enrichment.view",
+      Component: L(
+        () => import("@/components/prospecting/pages/enrichment-history-page"),
+        "EnrichmentHistoryPage",
+      ),
+    },
+  };
 
-const searchSchema = z.object({
-  tab: z.enum(TAB_VALUES).optional(),
-});
-
-type TabDef = {
-  value: TabValue;
-  label: string;
-  permission: string;
-  Component: ComponentType;
+const AREAS: Record<Area, { label: string; description: string }> = {
+  visao: { label: "Visão geral", description: "Pendências, respostas, qualificados, reuniões e falhas." },
+  trabalho: { label: "Meu trabalho", description: "Filas, próxima ação, nutrição e qualificação." },
+  campanhas: {
+    label: "Campanhas",
+    description: "Voz, WhatsApp, cadências e roteiros usados na abordagem.",
+  },
+  publicos: { label: "Públicos", description: "Base interna, busca Apollo e enriquecimento." },
+  resultados: { label: "Resultados", description: "Por campanha, canal e agente, com origem." },
 };
 
-const TABS: readonly TabDef[] = [
-  {
-    value: "fila",
-    label: "Fila",
-    permission: "techsales.prospecting.queue.view",
-    Component: QueueTab,
-  },
-  {
-    value: "base",
-    label: "Base",
-    permission: "techsales.prospecting.search.view",
-    Component: BaseTab,
-  },
-  {
-    value: "nutricao",
-    label: "Nutrição",
-    permission: "techsales.prospecting.queue.view",
-    Component: NurturingTab,
-  },
-
-  {
-    value: "questionarios",
-    label: "Questionários",
-    permission: "techsales.prospecting.questionnaires.view",
-    Component: QuestionnairesTab,
-  },
-  {
-    value: "cadencias",
-    label: "Cadências",
-    permission: "techsales.prospecting.cadences.view",
-    Component: CadencesTab,
-  },
-  {
-    value: "scoring",
-    label: "Scoring",
-    permission: "techsales.prospecting.scoring.view",
-    Component: ScoringPage,
-  },
-  {
-    value: "playbooks",
-    label: "Playbooks",
-    permission: "techsales.prospecting.playbooks.view",
-    Component: PlaybooksPage,
-  },
-  {
-    value: "enrichment",
-    label: "Enrichment",
-    permission: "techsales.prospecting.enrichment.view",
-    Component: EnrichmentHistoryPage,
-  },
-  {
-    value: "prospecting",
-    label: "Busca de prospects",
-    permission: "techsales.prospecting.search.view",
-    Component: ProspectingPage,
-  },
-  {
-    value: "scripts",
-    label: "Scripts",
-    permission: "techsales.prospecting.scripts.view",
-    Component: ScriptsPage,
-  },
-  {
-    value: "voice",
-    label: "Voice Agent",
-    permission: "techsales.prospecting.voice.view",
-    Component: VoiceAgentPage,
-  },
-  {
-    value: "sdr",
-    label: "Agente SDR",
-    permission: "techsales.marketing.sdr_agent.view.workspace",
-    Component: SdrAgentPanel,
-  },
+/** Áreas sem seções exigem ao menos uma permissão de leitura da Prospecção. */
+const AREA_BASE_PERMS = [
+  "techsales.prospecting.queue.view",
+  "techsales.prospecting.cadences.view",
+  "techsales.prospecting.voice.view",
+  "techsales.marketing.sdr_agent.view.workspace",
+  "techsales.marketing.campaigns.view.workspace",
 ];
+
+const searchSchema = z.object({
+  area: z.enum(AREA_VALUES).optional().catch(undefined),
+  section: z.enum(SECTION_VALUES).optional().catch(undefined),
+  tab: z.enum(LEGACY_TAB_VALUES).optional().catch(undefined),
+});
+type Search = z.infer<typeof searchSchema>;
 
 export const Route = createFileRoute("/_authenticated/prospecting/")({
   validateSearch: (s) => searchSchema.parse(s),
   head: () => ({
     meta: [
-      { title: "Prospecção — TechSales" },
+      { title: "Prospecção — TechSales | TechERP" },
       {
         name: "description",
         content:
-          "Suíte de prospecção do TechSales: fila configurável, qualificação, cadências multi-canal, scoring e voice agent em um único lugar.",
+          "Central operacional de prospecção do TechSales: trabalho diário, campanhas, públicos e resultados com dados reais.",
       },
-      { property: "og:title", content: "Prospecção — TechSales" },
+      { property: "og:title", content: "Prospecção — TechSales | TechERP" },
       {
         property: "og:description",
-        content: "Fila, qualificação e cadências para SDR/BDR em um único lugar.",
+        content: "Trabalho diário, campanhas, públicos e resultados da prospecção.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: ProspectingSuite,
@@ -162,106 +142,105 @@ function ProspectingSuite() {
   const navigate = useNavigate({ from: "/prospecting" });
   const { can, isLoading, isError, error, refetch } = usePermissions();
 
-  const visibleTabs = useMemo(
-    () => (isLoading ? [] : TABS.filter((t) => can(t.permission))),
-    [can, isLoading],
-  );
-
-  const requested = search.tab;
-  const active: TabValue | undefined = useMemo(() => {
-    if (visibleTabs.length === 0) return undefined;
-    if (requested && visibleTabs.some((t) => t.value === requested)) return requested;
-    return visibleTabs[0].value;
-  }, [requested, visibleTabs]);
-
-  // Normaliza a aba ativa quando a atual não é permitida ao usuário.
+  // Compatibilidade com links antigos ?tab=
   useEffect(() => {
-    if (isLoading) return;
-    if (!active) return;
-    if (requested === active) return;
-    navigate({
-      search: (prev: z.infer<typeof searchSchema>) => ({ ...prev, tab: active }),
-      replace: true,
-    });
-  }, [active, requested, isLoading, navigate]);
+    if (!search.tab) return;
+    const t = LEGACY_TAB_MAP[search.tab];
+    if (t.kind === "route") navigate({ to: t.to, replace: true });
+    else navigate({ search: { area: t.area, section: t.section }, replace: true });
+  }, [search.tab, navigate]);
+
+  const allowedSection = (s: Section) => !isLoading && can(SECTIONS[s].permission);
+  const areaVisible = (a: Area) =>
+    AREA_SECTIONS[a].length
+      ? AREA_SECTIONS[a].some(allowedSection) || (a === "campanhas" && AREA_BASE_PERMS.some(can))
+      : AREA_BASE_PERMS.some(can);
+  const visibleAreas = useMemo(
+    () => (isLoading ? [] : AREA_VALUES.filter(areaVisible)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isLoading, can],
+  );
+  const area: Area | undefined =
+    search.area && visibleAreas.includes(search.area) ? search.area : visibleAreas[0];
+  const section = area ? resolveSection(area, search.section, allowedSection) : undefined;
+
+  const go = (next: Search) => navigate({ search: next, replace: true });
 
   return (
-    <div className="p-6 space-y-6">
-      <AtsPageHeader
+    <div className="space-y-6 p-6">
+      <PageHeader
         eyebrow="TechSales"
         title="Prospecção"
-        description="Fila configurável, qualificação, cadências e ferramentas de sales engagement em um único lugar."
+        description="Central operacional da prospecção: trabalho do dia, campanhas, públicos e resultados."
       />
-
-      {isLoading ? (
+      {isLoading || search.tab ? (
         <div className="space-y-4">
           <div className="flex gap-2">
             {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-9 w-24" />
+              <Skeleton key={i} className="h-9 w-28" />
             ))}
           </div>
           <Skeleton className="h-64 w-full" />
         </div>
       ) : isError ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-            <ShieldOff className="h-8 w-8 text-muted-foreground" />
-            <div className="space-y-1">
-              <p className="font-medium">Não foi possível carregar suas permissões</p>
-              <p className="text-sm text-muted-foreground max-w-md">
-                {error?.message ?? "Falha ao consultar o controle de acesso."} Isso não significa
-                que você perdeu acesso — tente novamente.
-              </p>
-            </div>
+        <EmptyState
+          icon={ShieldOff}
+          title="Não foi possível carregar suas permissões"
+          description={`${error?.message ?? "Falha ao consultar o controle de acesso."} Isso não significa que você perdeu acesso.`}
+          action={
             <Button variant="outline" size="sm" onClick={refetch}>
               Tentar novamente
             </Button>
-          </CardContent>
-        </Card>
-      ) : visibleTabs.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-            <ShieldOff className="h-8 w-8 text-muted-foreground" />
-            <div className="space-y-1">
-              <p className="font-medium">Sem acesso à Prospecção</p>
-              <p className="text-sm text-muted-foreground max-w-md">
-                Você não possui permissão para nenhuma aba desta área. Solicite ao administrador do
-                workspace para liberar em Configurações → Controle de acesso → Permissões.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Tabs
-          value={active}
-          onValueChange={(v) =>
-            navigate({
-              search: (prev: z.infer<typeof searchSchema>) => ({
-                ...prev,
-                tab: v as TabValue,
-              }),
-              replace: true,
-            })
           }
-        >
-          <TabsList className="flex flex-wrap gap-1 h-auto">
-            {visibleTabs.map((t) => (
-              <TabsTrigger key={t.value} value={t.value}>
-                {t.label}
+        />
+      ) : !area ? (
+        <EmptyState
+          icon={ShieldOff}
+          title="Sem acesso à Prospecção"
+          description="Solicite ao administrador do workspace em Configurações → Controle de acesso → Permissões."
+        />
+      ) : (
+        <Tabs value={area} onValueChange={(v) => go({ area: v as Area })}>
+          <TabsList className="h-auto w-full justify-start overflow-x-auto">
+            {visibleAreas.map((a) => (
+              <TabsTrigger key={a} value={a} className="shrink-0">
+                {AREAS[a].label}
               </TabsTrigger>
             ))}
           </TabsList>
-
-          {visibleTabs.map((t) => {
-            const C = t.Component;
-            return (
-              <TabsContent key={t.value} value={t.value} className="mt-6">
-                <C />
-              </TabsContent>
-            );
-          })}
+          <TabsContent value={area} className="mt-6 space-y-6">
+            <p className="text-sm text-muted-foreground">{AREAS[area].description}</p>
+            <Suspense fallback={<ListPageSkeleton />}>
+              {area === "visao" && <OverviewArea />}
+              {area === "resultados" && <ResultsArea />}
+              {area === "campanhas" && <CampaignsHub />}
+              {AREA_SECTIONS[area].length > 0 && section && (
+                <Tabs value={section} onValueChange={(v) => go({ area, section: v as Section })}>
+                  <TabsList className="h-auto justify-start overflow-x-auto" aria-label={`Seções de ${AREAS[area].label}`}>
+                    {AREA_SECTIONS[area].filter(allowedSection).map((s) => (
+                      <TabsTrigger key={s} value={s} className="shrink-0">
+                        {SECTIONS[s].label}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                  <TabsContent value={section} className="mt-4">
+                    <SectionBody section={section} />
+                  </TabsContent>
+                </Tabs>
+              )}
+            </Suspense>
+          </TabsContent>
         </Tabs>
       )}
     </div>
+  );
+}
+
+function SectionBody({ section }: { section: Section }) {
+  const C = SECTIONS[section].Component;
+  return (
+    <Suspense fallback={<ListPageSkeleton />}>
+      <C />
+    </Suspense>
   );
 }
