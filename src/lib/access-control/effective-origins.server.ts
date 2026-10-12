@@ -119,7 +119,23 @@ export async function loadEffectiveOrigins(
           .in("role_id", roleIds)
       : Promise.resolve({ data: [] }),
   ]);
-  const linkRows = (links.data ?? []) as { role_id: string; set_id: string }[];
+  // Mesma regra do banco: no workspace, o vínculo a um conjunto amplo pode valer como pacote local.
+  const reps = roleIds.length
+    ? await sb
+        .from("job_role_set_replacements")
+        .select("role_id, set_id, replacement_set_id")
+        .eq("workspace_id", ws)
+        .in("role_id", roleIds)
+    : { data: [] };
+  const repMap = new Map(
+    ((reps.data ?? []) as { role_id: string; set_id: string; replacement_set_id: string }[]).map(
+      (r) => [`${r.role_id}:${r.set_id}`, r.replacement_set_id],
+    ),
+  );
+  const linkRows = ((links.data ?? []) as { role_id: string; set_id: string }[]).map((l) => ({
+    role_id: l.role_id,
+    set_id: repMap.get(`${l.role_id}:${l.set_id}`) ?? l.set_id,
+  }));
   const extra = (
     (ups.data ?? []) as unknown as {
       set_id: string;

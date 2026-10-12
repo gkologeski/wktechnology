@@ -110,3 +110,28 @@ Validação executada:
 - Gates: `bun run verify` completo (779 testes) e `bun run build` completo.
 
 Compatibilidade de jobs (cron, HubSpot, workflows): nenhum caminho do aplicativo chama o overload de 2 argumentos (verificado por varredura no código e no catálogo do banco); esses jobs já passam o workspace explicitamente. Nada publicado.
+
+## Fase 5 — Visibilidade ampla por pacote local (migration 0127)
+
+Problema: um deny de cargo vale para a pessoa inteira; os denies de "Visibilidade total" da fase 2
+cortavam concessões legítimas de Financeiro/Diretor em pessoas multicargo, e retirar 126 deles
+deixava cargos operacionais isolados com leitura indevida.
+
+Correção: `job_role_set_replacements` faz, só na WK, o vínculo cargo → "Visibilidade total (padrão)"
+ser lido como um pacote local recortado (`__vis_local:<cargo>`). O conjunto global, os cargos
+globais e os outros workspaces não mudam. Os 895 denies de visibilidade criados pela fase 2 foram
+trocados por esses pacotes (registrados como `phase5_vis_deny_replaced`); os denies anteriores à
+revisão e os da Rep. Externa ficaram. Restam 47 denies na WK.
+
+Recortes por cargo: Vendedor e Vendedor Interno sem financeiro/pessoas/config de sistema;
+Gerente Comercial, Recrutador, Head de RH e Gerente Técnico sem financeiro/config de sistema;
+Financeiro e Head Financeiro sem config de sistema; External Collaborator também sem leituras
+de equipe/workspace. Diretor e Auditor mantêm o conjunto amplo, como no plano aprovado.
+
+Provas (stack isolada, JWT real, `scripts/isolated-db/stack/run-rbac-phase5.sh`): 20 pass / 0 fail.
+Cobre Gerente sozinho sem financeiro, Gerente+Financeiro+Diretor com financeiro, Head RH+Gerente
+sem financeiro, futuro ocupante de um cargo só, outro workspace intacto, reaplicação idempotente,
+restauração sem reabrir acesso, substituto de outro workspace falhando fechado.
+
+Banco compartilhado depois da aplicação: 13 membros ativos com as mesmas contagens efetivas,
+exceto Gerente Comercial+Head de RH (627 → 628).

@@ -10128,6 +10128,62 @@ export type Database = {
           },
         ]
       }
+      job_role_set_replacements: {
+        Row: {
+          created_at: string
+          reason: string
+          replacement_set_id: string
+          role_id: string
+          set_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          reason: string
+          replacement_set_id: string
+          role_id: string
+          set_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          reason?: string
+          replacement_set_id?: string
+          role_id?: string
+          set_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_role_set_replacements_replacement_set_id_fkey"
+            columns: ["replacement_set_id"]
+            isOneToOne: false
+            referencedRelation: "permission_sets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_role_set_replacements_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "job_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_role_set_replacements_set_id_fkey"
+            columns: ["set_id"]
+            isOneToOne: false
+            referencedRelation: "permission_sets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_role_set_replacements_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_role_sets: {
         Row: {
           created_at: string
@@ -22656,6 +22712,14 @@ export type Database = {
       purge_workspace: {
         Args: { _actor: string; _confirm_name: string; _workspace: string }
         Returns: undefined
+      }
+      rbac_apply_vis_replacement: {
+        Args: { _spec: Json; _vis: string; _ws: string }
+        Returns: Json
+      }
+      rbac_vis_key_excluded: {
+        Args: { _cats: string[]; _key: string }
+        Returns: boolean
       }
       rbac_wk_apply_baseline_2026_10: { Args: never; Returns: Json }
       rbac_wk_restore_overrides_2026_10: { Args: never; Returns: number }
