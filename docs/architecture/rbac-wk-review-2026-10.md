@@ -1,6 +1,6 @@
 # Revisão de cargos WK (workspace 184b9435…) — outubro/2026
 
-Estado atual: as **Fases 0 e 1 foram aplicadas no banco compartilhado** (migration `0122_rbac_wk_phase1_structural`) e no código do servidor. Elas não foram publicadas. As Fases 2, 3 e 4 continuam pendentes.
+Estado atual (12/10/2026): as **Fases 0, 1, 2, 3 e 4 foram aplicadas** no banco compartilhado (migrations `0122`, `0123`, `0124`, `0125`, `0126`) e no código do servidor e da interface. Nada foi publicado. Pendem apenas o reteste das asserções pelo usuário e a publicação coordenada.
 
 ## Fase 0 — foto e reversão
 - `rbac_wk_backup_2026_10` guarda 393 linhas: overrides, cargos locais, vínculos cargo↔pacote, cargos dos usuários, conjuntos extras e o código anterior das 4 funções alteradas.
