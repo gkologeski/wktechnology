@@ -149,10 +149,27 @@ export const getAccessBundle = createServerFn({ method: "GET" })
       itemsBySet.set(it.set_id, arr);
     }
 
+    // Neste workspace, o vínculo a um conjunto amplo pode ser lido como um pacote local
+    // recortado (job_role_set_replacements). Mesma regra do banco, para a tela não divergir.
+    const replacement = new Map<string, string>();
+    if (workspaceId) {
+      const reps = await supabase
+        .from("job_role_set_replacements")
+        .select("role_id, set_id, replacement_set_id")
+        .eq("workspace_id", workspaceId);
+      for (const r of (reps.data ?? []) as Array<{
+        role_id: string;
+        set_id: string;
+        replacement_set_id: string;
+      }>) {
+        replacement.set(`${r.role_id}:${r.set_id}`, r.replacement_set_id);
+      }
+    }
+
     const setsByRole = new Map<string, string[]>();
     for (const rs of roleSetRows) {
       const arr = setsByRole.get(rs.role_id) ?? [];
-      arr.push(rs.set_id);
+      arr.push(replacement.get(`${rs.role_id}:${rs.set_id}`) ?? rs.set_id);
       setsByRole.set(rs.role_id, arr);
     }
 

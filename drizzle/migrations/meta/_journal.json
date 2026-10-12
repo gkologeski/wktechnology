@@ -890,6 +890,13 @@
       "when": 1791767550512,
       "tag": "0126_rbac_close_legacy_permission_overload",
       "breakpoints": true
+    },
+    {
+      "idx": 127,
+      "version": "7",
+      "when": 1791801902942,
+      "tag": "0127_rbac_wk_vis_local_per_role",
+      "breakpoints": true
     }
   ]
 }
