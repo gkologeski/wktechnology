@@ -12,7 +12,7 @@ import { toast } from "sonner";
 
 function safeNext(value: unknown): string {
   if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) return "";
-  if (/[\\\s]/.test(value) || /[\u0000-\u001f]/.test(value)) return "";
+  if (/[\\\s]/.test(value) || [...value].some((ch) => ch.charCodeAt(0) < 0x20)) return "";
   return value;
 }
 

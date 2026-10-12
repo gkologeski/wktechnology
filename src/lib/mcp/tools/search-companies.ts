@@ -28,7 +28,9 @@ export default defineTool({
       .select("id,name,domain,cnpj,industry,city,state,phone,website,score,updated_at")
       .eq("workspace_id", workspaceId)
       .is("deleted_at", null)
-      .or(`name.ilike.${orSafeLike(query)},domain.ilike.${orSafeLike(query)},cnpj.ilike.${orSafeLike(query)}`)
+      .or(
+        `name.ilike.${orSafeLike(query)},domain.ilike.${orSafeLike(query)},cnpj.ilike.${orSafeLike(query)}`,
+      )
       .order("updated_at", { ascending: false })
       .limit(limit);
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };

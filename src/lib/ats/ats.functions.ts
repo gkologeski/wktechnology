@@ -563,7 +563,8 @@ export const listAtsCandidates = createServerFn({ method: "POST" })
         nullsFirst: false,
       })
       .limit(300);
-    if (data.search) q = q.or(`full_name.ilike.${orSafeLike(data.search)},email.ilike.${orSafeLike(data.search)}`);
+    if (data.search)
+      q = q.or(`full_name.ilike.${orSafeLike(data.search)},email.ilike.${orSafeLike(data.search)}`);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     return (rows ?? []) as unknown as CandidateListRow[];

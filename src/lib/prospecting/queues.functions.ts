@@ -368,7 +368,15 @@ export const listQueueItems = createServerFn({ method: "POST" })
         query = query.gte("updated_at", filters.updated_after);
       }
     }
-    const SORTABLE = new Set(["updated_at", "created_at", "score", "first_name", "last_name", "email", "company_name"]);
+    const SORTABLE = new Set([
+      "updated_at",
+      "created_at",
+      "score",
+      "first_name",
+      "last_name",
+      "email",
+      "company_name",
+    ]);
     const sortField = SORTABLE.has(String(sort.field ?? "")) ? String(sort.field) : "updated_at";
     const sortDir = sort.dir ?? "desc";
     query = query.order(sortField, { ascending: sortDir === "asc" });
