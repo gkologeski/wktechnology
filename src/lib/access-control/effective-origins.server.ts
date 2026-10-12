@@ -34,7 +34,9 @@ async function setKeys(
     .select("id, workspace_id, module")
     .in("id", setIds);
   // Mesma regra do banco: global só vale se não for __bundle__; local só do próprio workspace.
-  const valid = ((sets ?? []) as { id: string; workspace_id: string | null; module: string | null }[])
+  const valid = (
+    (sets ?? []) as { id: string; workspace_id: string | null; module: string | null }[]
+  )
     .filter((s) => (s.workspace_id === null ? s.module !== "__bundle__" : s.workspace_id === ws))
     .map((s) => s.id);
   if (!valid.length) return out;
@@ -135,7 +137,10 @@ export async function loadEffectiveOrigins(
   const repIds = [...new Set(repMap.values())];
   const repLocal = new Set<string>();
   if (repIds.length) {
-    const { data: rs } = await sb.from("permission_sets").select("id, workspace_id").in("id", repIds);
+    const { data: rs } = await sb
+      .from("permission_sets")
+      .select("id, workspace_id")
+      .in("id", repIds);
     for (const r of (rs ?? []) as { id: string; workspace_id: string | null }[])
       if (r.workspace_id === ws) repLocal.add(r.id);
   }
