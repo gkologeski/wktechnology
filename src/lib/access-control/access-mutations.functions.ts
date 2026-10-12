@@ -5,6 +5,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
+import { assertActiveWorkspaceAdmin } from "./access-admin-guard.server";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SB = any;
@@ -34,22 +35,6 @@ async function logAudit(
   } catch {
     /* audit failures never block the mutation */
   }
-}
-
-// Workspace ativo pelo resolvedor canônico (perfil + membership ativa) e o
-// chamador precisa ser owner/admin DESSE workspace. Nunca a primeira membership.
-async function assertActiveWorkspaceAdmin(supabase: SB, userId: string): Promise<string> {
-  const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
-  const workspaceId = await resolveActiveWorkspace(userId);
-  const { data, error } = await supabase.rpc("is_workspace_admin_v2", {
-    _workspace: workspaceId,
-    _user: userId,
-  });
-  if (error) throw new Error(`Falha ao verificar administrador do workspace: ${error.message}`);
-  if (!data) {
-    throw new Error("Apenas administradores do workspace ativo podem editar o controle de acesso.");
-  }
-  return workspaceId;
 }
 
 // Cargos atribuíveis: globais ou deste workspace (mesmo filtro de my_roles no banco).
