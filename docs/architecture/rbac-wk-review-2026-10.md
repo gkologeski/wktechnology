@@ -135,3 +135,22 @@ restauração sem reabrir acesso, substituto de outro workspace falhando fechado
 
 Banco compartilhado depois da aplicação: 13 membros ativos com as mesmas contagens efetivas,
 exceto Gerente Comercial+Head de RH (627 → 628).
+
+## Fase 5b — Restaurar padrões não recoloca chave retirada pelo pacote local
+
+Defeito corrigido: `restoreRoleDefaults` copiava `job_role_default_permissions`
+inteiro para o pacote `__bundle__` do cargo, devolvendo chaves (ex.
+`techfinance.bank_accounts.view.workspace` nos defaults de Gerente Comercial,
+Head RH, Vendedor e Colaborador Externo) que a substituição local 0127 havia
+retirado.
+
+Regra agora: as chaves excluídas são derivadas de `job_role_set_replacements`
+(itens do conjunto original MENOS itens do pacote local do workspace), nunca dos
+ocupantes atuais, e filtradas dos defaults na restauração. Overrides/denies
+explícitos e concessões vindas de outros pacotes do cargo permanecem intactos;
+a soma multicargo continua valendo (Gerente + Financeiro mantém a chave).
+
+Cálculo isolado em `src/lib/access-control/restore-default-keys.ts`, coberto por
+`restore-default-keys.test.ts`. Gates: `bun run verify` completo (783 testes,
+28,0 s) e `bun run build` completo. Sem publicação e sem escrita de defaults em
+usuários reais.
