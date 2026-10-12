@@ -149,17 +149,17 @@ export const getAccessBundle = createServerFn({ method: "GET" })
 
     if (workspaceId && memberUserIds.length > 0) {
       const [ujrRes, upsRes, profRes] = await Promise.all([
-        // Atribuições do workspace ativo (mesmo filtro de user_effective_permissions).
+        // Atribuições do workspace ativo pelo namespace canônico workspace_id (0128).
         supabase
           .from("user_job_roles")
           .select("user_id, role_id, is_primary")
           .in("user_id", memberUserIds)
-          .or(`workspace_id.eq.${workspaceId},owner_id.eq.${workspaceId}`),
+          .eq("workspace_id", workspaceId),
         supabase
           .from("user_permission_sets")
           .select("user_id, set_id")
           .in("user_id", memberUserIds)
-          .or(`workspace_id.eq.${workspaceId},owner_id.eq.${workspaceId}`),
+          .eq("workspace_id", workspaceId),
         supabase.from("profiles").select("id, full_name").in("id", memberUserIds),
       ]);
 

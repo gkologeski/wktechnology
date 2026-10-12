@@ -154,3 +154,35 @@ Cálculo isolado em `src/lib/access-control/restore-default-keys.ts`, coberto po
 `restore-default-keys.test.ts`. Gates: `bun run verify` completo (783 testes,
 28,0 s) e `bun run build` completo. Sem publicação e sem escrita de defaults em
 usuários reais.
+
+## Fase 6 — escrita de atribuições presa ao workspace da linha (0128)
+
+Vetores reproduzidos no isolado (GoTrue + PostgREST, JWT real) ANTES da migração:
+admin apenas do workspace B inseria `user_job_roles` e `user_permission_sets` na WK
+usando `owner_id = UID do ator` (`ok`), e o admin legítimo da WK gravando
+`owner_id = workspace_id` era negado (42501). Causa: `can_manage_access_scope(_owner)`
+só exige `_owner = auth.uid()`, e as policies `ujr_write`/`ups_write` liam apenas `owner_id`.
+
+Migração `0128_assignment_writes_bound_to_workspace.sql`:
+- backup textual das policies anteriores em `rbac_policy_backup_2026_10` (leitura só platform admin);
+- leitura por namespace do workspace: `user_id = auth.uid()` ou admin ATIVO de `workspace_id` (sem `created_by` de pessoa como fallback de atribuição);
+- escrita permissiva por `is_active_workspace_admin(workspace_id, auth.uid())`;
+- policies RESTRITIVAS de INSERT/UPDATE/DELETE exigindo `workspace_id` não nulo, `owner_id = workspace_id`,
+  admin ativo do workspace da linha, alvo membro ATIVO e cargo/pacote do próprio workspace ou do catálogo global de sistema;
+- `view_as_ro_*` (Ver como somente leitura) preservadas.
+
+Provas isoladas `scripts/isolated-db/stack/rbac-wk-phase6.ts` (`run-rbac-phase6.sh`), stack limpa:
+3 observações antes (as 3 falhas reproduzidas) e **17 pass / 0 fail** depois — estrangeiro negado
+em insert/leitura/delete/update, admin da WK concede, membro comum negado, owner inconsistente negado,
+cargo de outro workspace negado, alvo inativo negado, outro workspace isolado, anônimo negado.
+
+Código alinhado ao namespace do workspace: `access-mutations.functions.ts` grava com o cliente do
+próprio usuário (RLS é o gate), `access.functions.ts`, `field-rules.functions.ts`,
+`governance.functions.ts` e `teams.functions.ts` leem por `workspace_id`, e
+`workspace-invites.functions.ts` grava `owner_id = workspace_id`.
+
+Gates: `bun run verify` (788 testes) e `bun run build` passaram. Sem publicação.
+
+Observação de dados (somente leitura): 17 das 18 linhas de `user_job_roles` ainda têm
+`owner_id` = UID do criador (legado). Elas continuam válidas em leitura/exclusão (regra por
+`workspace_id`); a normalização de `owner_id` não foi feita por envolver atribuições de pessoas reais.

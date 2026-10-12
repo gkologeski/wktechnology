@@ -897,6 +897,13 @@
       "when": 1791801902942,
       "tag": "0127_rbac_wk_vis_local_per_role",
       "breakpoints": true
+    },
+    {
+      "idx": 128,
+      "version": "7",
+      "when": 1791805117895,
+      "tag": "0128_assignment_writes_bound_to_workspace",
+      "breakpoints": true
     }
   ]
 }
