@@ -111,7 +111,11 @@ export const adminOverrideApproveRoleProfile = createServerFn({ method: "POST" }
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z
-      .object({ id, expectedRevision: z.number().int(), reason: z.string().trim().min(10).max(500) })
+      .object({
+        id,
+        expectedRevision: z.number().int(),
+        reason: z.string().trim().min(10).max(500),
+      })
       .parse(d),
   )
   .handler(async ({ context, data }) => {

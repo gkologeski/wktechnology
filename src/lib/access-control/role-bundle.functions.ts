@@ -268,7 +268,13 @@ export const setRolePermission = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
     await assertWorkspaceAdmin(supabase, userId, workspaceId);
-    await assertDependencies(supabase, workspaceId, data.role_id, [data.permission_key], data.granted);
+    await assertDependencies(
+      supabase,
+      workspaceId,
+      data.role_id,
+      [data.permission_key],
+      data.granted,
+    );
     let setId: string | null = null;
     if (data.granted) {
       setId = await ensureBundle(supabase, userId, data.role_id);
@@ -475,18 +481,26 @@ export const restoreRoleDefaults = createServerFn({ method: "POST" })
       .eq("workspace_id", workspaceId)
       .in("source", ["phase2_added", "phase2_removed_bundle_item", "phase2_reverted_multirole"]);
     if (baseline.error) throw new Error(baseline.error.message);
-    const bRows = (baseline.data ?? []) as Array<{ source: string; row_data: Record<string, string> }>;
+    const bRows = (baseline.data ?? []) as Array<{
+      source: string;
+      row_data: Record<string, string>;
+    }>;
     const removedKeys = new Set(
       bRows.filter((b) => b.source === "phase2_removed_bundle_item").map((b) => b.row_data.key),
     );
     const reverted = new Set(
       bRows
-        .filter((b) => b.source === "phase2_reverted_multirole" && b.row_data.role_id === data.role_id)
+        .filter(
+          (b) => b.source === "phase2_reverted_multirole" && b.row_data.role_id === data.role_id,
+        )
         .map((b) => b.row_data.key),
     );
     const keys = ((defaults.data ?? []) as Array<{ permission_key: string }>)
       .map((r) => r.permission_key)
       .filter((k) => !removedKeys.has(k));
+    if (keys.length === 0) {
+      throw new Error("Padrões deste cargo indisponíveis; nada foi alterado.");
+    }
     const setId = await ensureBundle(supabase, userId, data.role_id);
     const del = await supabase.from("permission_set_items").delete().eq("set_id", setId);
     if (del.error) throw new Error(del.error.message);
@@ -513,12 +527,10 @@ export const restoreRoleDefaults = createServerFn({ method: "POST" })
         created_by: userId,
       }));
     if (baselineRows.length > 0) {
-      const { error } = await supabase
-        .from("job_role_permission_overrides")
-        .upsert(baselineRows, {
-          onConflict: "workspace_id,role_id,permission_key",
-          ignoreDuplicates: true,
-        });
+      const { error } = await supabase.from("job_role_permission_overrides").upsert(baselineRows, {
+        onConflict: "workspace_id,role_id,permission_key",
+        ignoreDuplicates: true,
+      });
       if (error) throw new Error(error.message);
     }
     return { ok: true, count: keys.length };

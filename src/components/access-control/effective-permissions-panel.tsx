@@ -41,12 +41,17 @@ export function EffectivePermissionsPanel() {
     return all.filter((o) => {
       if (filter === "effective" && !o.db_effective) return false;
       if (filter === "denied" && o.deniedBy.length === 0) return false;
-      return !q || o.key.toLowerCase().includes(q) || o.sources.some((s) => s.toLowerCase().includes(q));
+      return (
+        !q || o.key.toLowerCase().includes(q) || o.sources.some((s) => s.toLowerCase().includes(q))
+      );
     });
   }, [origins.data, search, filter]);
 
   return (
-    <section className="space-y-3 rounded-lg border border-border bg-card p-4" aria-labelledby="eff-title">
+    <section
+      className="space-y-3 rounded-lg border border-border bg-card p-4"
+      aria-labelledby="eff-title"
+    >
       <SectionHeader
         title="Permissão efetiva por pessoa"
         description="O que a pessoa realmente pode fazer e de onde vem: cargos, conjuntos extras, concessões, proibições e acesso de administrador."
@@ -70,8 +75,16 @@ export function EffectivePermissionsPanel() {
         <div className="space-y-1">
           <Label htmlFor="eff-search">Buscar chave ou origem</Label>
           <div className="relative">
-            <Search className="pointer-events-none absolute left-2 top-2.5 h-4 w-4 text-text-tertiary" aria-hidden />
-            <Input id="eff-search" className="pl-8" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Search
+              className="pointer-events-none absolute left-2 top-2.5 h-4 w-4 text-text-tertiary"
+              aria-hidden
+            />
+            <Input
+              id="eff-search"
+              className="pl-8"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
         </div>
         <div className="space-y-1">
@@ -90,11 +103,17 @@ export function EffectivePermissionsPanel() {
       </div>
 
       {!userId ? (
-        <EmptyState title="Escolha uma pessoa" description="A lista mostra a permissão efetiva calculada pelo banco." />
+        <EmptyState
+          title="Escolha uma pessoa"
+          description="A lista mostra a permissão efetiva calculada pelo banco."
+        />
       ) : origins.isLoading ? (
         <Skeletons.Card lines={6} />
       ) : origins.isError ? (
-        <div role="alert" className="flex items-center justify-between rounded-md border border-destructive/40 p-3 text-sm text-destructive">
+        <div
+          role="alert"
+          className="flex items-center justify-between rounded-md border border-destructive/40 p-3 text-sm text-destructive"
+        >
           <span>{(origins.error as Error).message}</span>
           <Button size="sm" variant="outline" onClick={() => origins.refetch()}>
             Tentar novamente
@@ -103,28 +122,46 @@ export function EffectivePermissionsPanel() {
       ) : origins.data ? (
         <div className="space-y-3">
           <div className="flex flex-wrap gap-2 text-xs">
-            <Badge variant="outline">{origins.data.is_active ? "Membro ativo" : "Membro inativo"}</Badge>
-            {origins.data.is_admin_bypass ? <Badge variant="outline">Acesso de administrador</Badge> : null}
+            <Badge variant="outline">
+              {origins.data.is_active ? "Membro ativo" : "Membro inativo"}
+            </Badge>
+            {origins.data.is_admin_bypass ? (
+              <Badge variant="outline">Acesso de administrador</Badge>
+            ) : null}
             {origins.data.roles.map((r) => (
-              <Badge key={r.id} variant="secondary">Cargo: {r.name}</Badge>
+              <Badge key={r.id} variant="secondary">
+                Cargo: {r.name}
+              </Badge>
             ))}
             {origins.data.extra_sets.map((s) => (
-              <Badge key={s.id} variant="secondary">Conjunto extra: {s.name}</Badge>
+              <Badge key={s.id} variant="secondary">
+                Conjunto extra: {s.name}
+              </Badge>
             ))}
-            <Badge variant="outline">{origins.data.origins.filter((o) => o.db_effective).length} efetivas</Badge>
+            <Badge variant="outline">
+              {origins.data.origins.filter((o) => o.db_effective).length} efetivas
+            </Badge>
           </div>
-          {[...origins.data.warnings, ...origins.data.dependency_gaps.map((g) => ({
-            kind: "dep",
-            message: `${g.key} depende de ${g.requires}, que não está efetiva.`,
-          }))].map((w, i) => (
-            <p key={i} role="status" className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/5 p-2 text-xs text-text-primary">
+          {[
+            ...origins.data.warnings,
+            ...origins.data.dependency_gaps.map((g) => ({
+              kind: "dep",
+              message: `${g.key} depende de ${g.requires}, que não está efetiva.`,
+            })),
+          ].map((w, i) => (
+            <p
+              key={i}
+              role="status"
+              className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/5 p-2 text-xs text-text-primary"
+            >
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" aria-hidden />
               {w.message}
             </p>
           ))}
           {origins.data.mismatches > 0 ? (
             <p role="status" className="text-xs text-warning">
-              {origins.data.mismatches} chave(s) com explicação diferente do banco; vale o que o banco calcula.
+              {origins.data.mismatches} chave(s) com explicação diferente do banco; vale o que o
+              banco calcula.
             </p>
           ) : null}
           {rows.length === 0 ? (
@@ -152,7 +189,9 @@ export function EffectivePermissionsPanel() {
                 </tbody>
               </table>
               {rows.length > 500 ? (
-                <p className="p-2 text-xs text-text-tertiary">Mostrando 500 de {rows.length}; refine a busca.</p>
+                <p className="p-2 text-xs text-text-tertiary">
+                  Mostrando 500 de {rows.length}; refine a busca.
+                </p>
               ) : null}
             </div>
           )}

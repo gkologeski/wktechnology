@@ -55,14 +55,24 @@ describe("dependências de perfis de vaga", () => {
 
   it("bloqueia conceder aprovar sem ver, mas não bloqueia inconsistência antiga", () => {
     const current = ["techsales.role_profiles_commercial.view.workspace"];
-    expect(dependencyViolations(current, ["techsales.role_profiles.approve.workspace"], true)).toHaveLength(1);
+    expect(
+      dependencyViolations(current, ["techsales.role_profiles.approve.workspace"], true),
+    ).toHaveLength(1);
     expect(dependencyViolations(current, ["techsales.leads.view.own"], true)).toHaveLength(0);
   });
 
   it("bloqueia revogar ver enquanto criar continua concedido", () => {
-    const current = ["techsales.role_profiles.view.workspace", "techsales.role_profiles.create.workspace"];
-    expect(dependencyViolations(current, ["techsales.role_profiles.view.workspace"], false)).toEqual([
-      { key: "techsales.role_profiles.create.workspace", requires: "techsales.role_profiles.view.workspace" },
+    const current = [
+      "techsales.role_profiles.view.workspace",
+      "techsales.role_profiles.create.workspace",
+    ];
+    expect(
+      dependencyViolations(current, ["techsales.role_profiles.view.workspace"], false),
+    ).toEqual([
+      {
+        key: "techsales.role_profiles.create.workspace",
+        requires: "techsales.role_profiles.view.workspace",
+      },
     ]);
   });
 });

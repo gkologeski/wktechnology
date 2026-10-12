@@ -13,7 +13,8 @@ export const getEffectivePermissionOrigins = createServerFn({ method: "POST" })
       _workspace: ws,
       _user: context.userId,
     });
-    if (!isAdmin) throw new Error("Apenas owner e administradores podem ver permissões de outras pessoas.");
+    if (!isAdmin)
+      throw new Error("Apenas owner e administradores podem ver permissões de outras pessoas.");
     const { loadEffectiveOrigins } = await import("./effective-origins.server");
     return loadEffectiveOrigins(context.supabase, ws, data.user_id);
   });

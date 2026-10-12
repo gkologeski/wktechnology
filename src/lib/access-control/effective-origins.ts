@@ -45,13 +45,12 @@ export function computeEffectiveOrigins(input: OriginInput): KeyOrigin[] {
     for (const k of r.grants) at(k).sources.push(`Concessão no cargo: ${r.name}`);
     for (const k of r.denies) at(k).deniedBy.push(r.name);
   }
-  for (const s of input.extraSets) for (const k of s.keys) at(k).sources.push(`Conjunto extra: ${s.name}`);
+  for (const s of input.extraSets)
+    for (const k of s.keys) at(k).sources.push(`Conjunto extra: ${s.name}`);
   for (const o of map.values()) {
     o.sources = Array.from(new Set(o.sources));
     o.effective =
-      input.isActive &&
-      o.deniedBy.length === 0 &&
-      (o.sources.length > 0 || input.isAdminBypass);
+      input.isActive && o.deniedBy.length === 0 && (o.sources.length > 0 || input.isAdminBypass);
   }
   return Array.from(map.values()).sort((a, b) => a.key.localeCompare(b.key));
 }
@@ -63,12 +62,18 @@ export function isReadOnlyRole(r: RoleOriginInput): boolean {
   return keys.length > 0 && keys.every((k) => !WRITE_ACTIONS.has(actionOf(k)));
 }
 
-export type GovernanceWarning = { kind: "admin_readonly_role" | "inactive" | "multi_role"; message: string };
+export type GovernanceWarning = {
+  kind: "admin_readonly_role" | "inactive" | "multi_role";
+  message: string;
+};
 
 export function governanceWarnings(input: OriginInput): GovernanceWarning[] {
   const out: GovernanceWarning[] = [];
   if (!input.isActive)
-    out.push({ kind: "inactive", message: "Membro inativo: nenhuma permissão vale enquanto estiver inativo." });
+    out.push({
+      kind: "inactive",
+      message: "Membro inativo: nenhuma permissão vale enquanto estiver inativo.",
+    });
   const ro = input.roles.filter(isReadOnlyRole);
   if (input.isAdminBypass && ro.length)
     out.push({
