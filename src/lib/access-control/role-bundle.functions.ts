@@ -101,7 +101,12 @@ async function ensureBundle(
   if (existing.error) throw new Error(existing.error.message);
   const rows = (existing.data ?? []) as unknown as Array<{
     set_id: string;
-    permission_sets: { id: string; module: string; owner_id: string | null; workspace_id: string | null };
+    permission_sets: {
+      id: string;
+      module: string;
+      owner_id: string | null;
+      workspace_id: string | null;
+    };
   }>;
   const found = rows.find(
     (r) =>
