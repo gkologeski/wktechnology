@@ -94,3 +94,21 @@ Validação executada (sem Docker, stack isolada com GoTrue + PostgREST reais e 
 - Conferência no banco após aplicar: 12 itens no pacote local do Apontador, 0 concessões temporárias, 0 pacotes globais de cargo.
 
 Pendente: reteste das 47 asserções pelo usuário e publicação coordenada (não publicado).
+
+## Migration 0126 — fechamento do overload legado `user_has_permission(_user, _perm)`
+
+Origem: apontamento do usuário (vendedor da WK que também é dono de outro workspace podia passar em políticas legadas com permissão que só tem no outro tenant) e prova isolada de vazamento de pacote local pelo mesmo cargo de sistema em outro workspace (48 asserções, 12 pass / 36 fail antes).
+
+O que a 0126 garante:
+
+- **Checagem legada de 2 argumentos não varre mais todos os workspaces.** Agora avalia apenas o workspace ativo canônico do perfil (`profiles.active_workspace_id`) com membership ativa, e falha fechado quando não há workspace ativo. Sem inferência de "primeiro workspace" e sem bypass por ser dono de outro workspace. A função fica marcada como depreciada, assim como `techhire_rbac_gate(_user, _perm)`.
+- **Políticas migradas para 3 argumentos**: `prospecting_questionnaires` (update, delete) e `prospecting_questions` (update, delete) passaram a usar o workspace da própria linha. Não restou nenhuma política ou função de negócio usando o overload de 2 argumentos (apenas o gate depreciado, que não é chamado por nenhuma política).
+- **Cargo e pacote presos ao workspace avaliado.** A resolução efetiva deixou de inferir workspace por "dono = criador do workspace", exige que o cargo atribuído seja do workspace ou de sistema, e rejeita pacote local (`__bundle__`) sem workspace. Defaults continuam fora da resolução, apenas como presets de restauração.
+
+Validação executada:
+
+- Isolado com GoTrue + PostgREST reais: **48 pass / 0 fail / 4 observações antes da migration**, incluindo os casos novos: 2 argumentos com workspace ativo WA → `false` para `techfinance.payments.delete.workspace`; 3 argumentos no workspace privado → `true`; 3 argumentos na WA → `false`; pacote da WA não vale em outro workspace pelo mesmo cargo de sistema (nos dois sentidos); pacote do próprio workspace continua concedendo.
+- Comparação antes/depois no banco compartilhado, por usuário ativo: **0 permissões perdidas e 0 ganhas** (13 usuários, 14.778 chaves efetivas no total).
+- Gates: `bun run verify` completo (779 testes) e `bun run build` completo.
+
+Compatibilidade de jobs (cron, HubSpot, workflows): nenhum caminho do aplicativo chama o overload de 2 argumentos (verificado por varredura no código e no catálogo do banco); esses jobs já passam o workspace explicitamente. Nada publicado.
