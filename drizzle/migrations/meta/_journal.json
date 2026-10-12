@@ -883,6 +883,13 @@
       "when": 1791766677047,
       "tag": "0125_rbac_wk_phase4_guards",
       "breakpoints": true
+    },
+    {
+      "idx": 126,
+      "version": "7",
+      "when": 1791767550512,
+      "tag": "0126_rbac_close_legacy_permission_overload",
+      "breakpoints": true
     }
   ]
 }
