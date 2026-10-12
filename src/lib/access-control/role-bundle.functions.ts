@@ -86,23 +86,27 @@ async function assertRoleEditable(supabase: SupabaseClient, roleId: string) {
   return data as { id: string; owner_id: string | null };
 }
 
+// Pacotes de cargo são SEMPRE locais: ficam presos ao workspace ativo, nunca globais,
+// para não vazarem permissões para outros tenants pelos cargos de sistema.
 async function ensureBundle(
   supabase: SupabaseClient,
   userId: string,
+  workspaceId: string,
   roleId: string,
 ): Promise<string> {
-  // Try to find an existing bundle linked to this role owned by the current user.
   const existing = await supabase
     .from("job_role_sets")
-    .select("set_id, permission_sets!inner(id, module, owner_id)")
+    .select("set_id, permission_sets!inner(id, module, owner_id, workspace_id)")
     .eq("role_id", roleId);
   if (existing.error) throw new Error(existing.error.message);
   const rows = (existing.data ?? []) as unknown as Array<{
     set_id: string;
-    permission_sets: { id: string; module: string; owner_id: string | null };
+    permission_sets: { id: string; module: string; owner_id: string | null; workspace_id: string | null };
   }>;
   const found = rows.find(
-    (r) => r.permission_sets?.module === BUNDLE_MODULE && r.permission_sets?.owner_id === userId,
+    (r) =>
+      r.permission_sets?.module === BUNDLE_MODULE &&
+      r.permission_sets?.workspace_id === workspaceId,
   );
   if (found) return found.set_id;
 
@@ -112,6 +116,7 @@ async function ensureBundle(
     .from("permission_sets")
     .insert({
       owner_id: userId,
+      workspace_id: workspaceId,
       module: BUNDLE_MODULE,
       name,
       description: "Bundle gerado automaticamente para o cargo.",
@@ -124,7 +129,7 @@ async function ensureBundle(
     const q = await supabase
       .from("permission_sets")
       .select("id")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .eq("module", BUNDLE_MODULE)
       .eq("name", name)
       .maybeSingle();
