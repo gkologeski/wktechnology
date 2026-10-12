@@ -403,21 +403,18 @@ export const setMemberAssignments = createServerFn({ method: "POST" })
     await assertRolesUsable(workspaceId, roleIds);
     await assertSetsUsable(workspaceId, setIds);
 
-    // Atribuições pertencem ao workspace (workspace_id/owner_id = UUID do WS), que é
-    // exatamente o que user_effective_permissions lê. A reconstrução usa o cliente
-    // privilegiado só depois de confirmar acima que o chamador é admin deste WS,
-    // para não deixar para trás linhas gravadas por outro admin (RLS por autor).
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const scope = `workspace_id.eq.${workspaceId},owner_id.eq.${workspaceId}`;
-
-    const { error: dr } = await supabaseAdmin
+    // Atribuições pertencem ao workspace (owner_id = workspace_id = UUID do WS), que é
+    // o que user_effective_permissions lê. Grava com o cliente do PRÓPRIO usuário: as
+    // políticas 0128 exigem admin ativo do workspace da linha, owner_id consistente,
+    // alvo membro ativo e cargo/pacote do workspace ou do catálogo global de sistema.
+    const { error: dr } = await supabase
       .from("user_job_roles")
       .delete()
       .eq("user_id", data.user_id)
-      .or(scope);
+      .eq("workspace_id", workspaceId);
     if (dr) throw new Error(dr.message);
     if (roleIds.length > 0) {
-      const { error } = await supabaseAdmin.from("user_job_roles").insert(
+      const { error } = await supabase.from("user_job_roles").insert(
         roleIds.map((rid) => ({
           user_id: data.user_id,
           owner_id: workspaceId,
@@ -429,14 +426,14 @@ export const setMemberAssignments = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
 
-    const { error: ds } = await supabaseAdmin
+    const { error: ds } = await supabase
       .from("user_permission_sets")
       .delete()
       .eq("user_id", data.user_id)
-      .or(scope);
+      .eq("workspace_id", workspaceId);
     if (ds) throw new Error(ds.message);
     if (setIds.length > 0) {
-      const { error } = await supabaseAdmin.from("user_permission_sets").insert(
+      const { error } = await supabase.from("user_permission_sets").insert(
         setIds.map((sid) => ({
           user_id: data.user_id,
           owner_id: workspaceId,
