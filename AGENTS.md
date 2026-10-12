@@ -27,8 +27,6 @@
 - WhatsApp livre exige mensagem inbound nas últimas 24 horas; fora da janela, somente template `APPROVED` validado no servidor; por quê: cumprir a política da Meta em todos os pontos de envio.
 - Fichas comerciais usam `RecordLayout` opt-in com timeline central como mestre da rolagem proporcional lateral; por quê: painéis de alturas diferentes terminam juntos sem afetar telas ATS.
 
-- Agente SDR (regras de fila/envio em `src/lib/prospecting/sdr/AGENTS.md`): autorização (telas novas e legadas `/agents/sdr`) passa por `requireSdr`/`assertSdr` em `src/lib/prospecting/sdr/access.server.ts`, com filtro explícito por workspace; por quê: uma única matriz de permissões no servidor, sem depender só da RLS ou da UI.
 
-- Ritmo do disparo de template das campanhas WhatsApp é controlado por `whatsapp_campaigns.next_send_at` sob lease `wa_campaign_claim_dispatch`, com sorteio em `src/lib/whatsapp/campaign-pacing.ts`; por quê: o espaçamento vale entre execuções e nunca há disparo duplo.
 - Rotas só exportam `Route` (outro export anula o code-splitting); gate = `verify`+`build`, `verify:changed` é só feedback.
 - RBAC: permissões efetivas exigem membership `active` (inclusive bypass admin) e deny prevalece; cargos só escritos por owner/admin; ajustes por workspace só em overrides/pacotes locais com foto `rbac_wk_backup_2026_10`; por quê: inativo/comum não herda nem altera acesso e outros tenants não são afetados.
