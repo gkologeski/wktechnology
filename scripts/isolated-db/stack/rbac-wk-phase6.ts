@@ -286,7 +286,9 @@ await run(
 cleanup();
 // Regressão 0129: criador (U1, created_by de WA) com participação inativa não administra.
 const setU1 = (status: string, role: string) =>
-  psql(`update public.workspace_members set status='${status}', role='${role}' where workspace_id='${WA}' and user_id='${U(1)}'`);
+  psql(
+    `update public.workspace_members set status='${status}', role='${role}' where workspace_id='${WA}' and user_id='${U(1)}'`,
+  );
 const grantFin = insUjr(1, { user_id: U(3), owner_id: WA, workspace_id: WA, role_id: R_FIN });
 setU1("inactive", "admin");
 await run("after", "16-criador-inativo-negado", grantFin, "deny:42501");
@@ -297,7 +299,9 @@ cleanup();
 psql(`delete from public.workspace_members where workspace_id='${WA}' and user_id='${U(1)}'`);
 await run("after", "16c-criador-sem-participacao-negado", grantFin, "deny:42501");
 cleanup();
-psql(`insert into public.workspace_members(workspace_id,user_id,role,status) values ('${WA}','${U(1)}','member','active')`);
+psql(
+  `insert into public.workspace_members(workspace_id,user_id,role,status) values ('${WA}','${U(1)}','member','active')`,
+);
 await run("after", "17-criador-ativo-membro-concede", grantFin, "ok");
 cleanup();
 setU1("active", "admin");
