@@ -13,27 +13,10 @@ import { dependencyViolations } from "./permission-dependencies";
 
 const BUNDLE_MODULE = "__bundle__";
 
-async function resolveActiveWorkspace(supabase: SupabaseClient, userId: string): Promise<string> {
-  const m = await supabase
-    .from("workspace_members")
-    .select("workspace_id")
-    .eq("user_id", userId)
-    .limit(1)
-    .maybeSingle();
-  const wsId =
-    (m.data as { workspace_id?: string } | null)?.workspace_id ??
-    (
-      (
-        await supabase
-          .from("workspaces")
-          .select("id")
-          .eq("created_by", userId)
-          .limit(1)
-          .maybeSingle()
-      ).data as { id?: string } | null
-    )?.id;
-  if (!wsId) throw new Error("Workspace ativo não encontrado");
-  return wsId;
+// Resolvedor canônico (perfil ativo + membership ativa); nunca a primeira linha de membership.
+async function resolveActiveWorkspace(_supabase: SupabaseClient, userId: string): Promise<string> {
+  const { resolveActiveWorkspace: canonical } = await import("@/lib/active-workspace.server");
+  return canonical(userId);
 }
 
 async function assertWorkspaceAdmin(

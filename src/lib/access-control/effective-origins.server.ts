@@ -31,10 +31,11 @@ async function setKeys(
   if (!setIds.length) return out;
   const { data: sets } = await sb
     .from("permission_sets")
-    .select("id, workspace_id")
+    .select("id, workspace_id, module")
     .in("id", setIds);
-  const valid = ((sets ?? []) as { id: string; workspace_id: string | null }[])
-    .filter((s) => s.workspace_id === null || s.workspace_id === ws)
+  // Mesma regra do banco: global só vale se não for __bundle__; local só do próprio workspace.
+  const valid = ((sets ?? []) as { id: string; workspace_id: string | null; module: string | null }[])
+    .filter((s) => (s.workspace_id === null ? s.module !== "__bundle__" : s.workspace_id === ws))
     .map((s) => s.id);
   if (!valid.length) return out;
   const items = await fetchAllPages<{ set_id: string; permission_key: string }>((from, to) =>
@@ -59,13 +60,8 @@ export async function loadEffectiveOrigins(
   ws: string,
   targetUserId: string,
 ): Promise<EffectiveOriginsResult> {
-  const { data: wsData } = await sb
-    .from("workspaces")
-    .select("created_by")
-    .eq("id", ws)
-    .maybeSingle();
-  const creator = (wsData as { created_by?: string } | null)?.created_by ?? null;
-  const ownerFilter = creator ? `owner_id.eq.${ws},owner_id.eq.${creator}` : `owner_id.eq.${ws}`;
+  // Escopo idêntico a user_effective_permissions: workspace_id ou owner_id = workspace (nunca o criador).
+  const ownerFilter = `workspace_id.eq.${ws},owner_id.eq.${ws}`;
   const [member, wsRow, ujr, ups, dbKeys] = await Promise.all([
     sb
       .from("workspace_members")
@@ -76,9 +72,9 @@ export async function loadEffectiveOrigins(
     sb.from("workspaces").select("created_by").eq("id", ws).maybeSingle(),
     sb
       .from("user_job_roles")
-      .select("role_id, job_roles(id, name)")
+      .select("role_id, job_roles(id, name, workspace_id)")
       .eq("user_id", targetUserId)
-      .or(`workspace_id.eq.${ws},${ownerFilter}`),
+      .or(ownerFilter),
     sb
       .from("user_permission_sets")
       .select("set_id, permission_sets(id, name)")
@@ -103,9 +99,12 @@ export async function loadEffectiveOrigins(
   const roles = (
     (ujr.data ?? []) as unknown as {
       role_id: string;
-      job_roles: { id: string; name: string } | null;
+      job_roles: { id: string; name: string; workspace_id: string | null } | null;
     }[]
-  ).map((r) => ({ id: r.role_id, name: r.job_roles?.name ?? "Cargo" }));
+  )
+    // Cargo local de outro workspace não vale aqui (filtro da 0126).
+    .filter((r) => !r.job_roles?.workspace_id || r.job_roles.workspace_id === ws)
+    .map((r) => ({ id: r.role_id, name: r.job_roles?.name ?? "Cargo" }));
   const roleIds = roles.map((r) => r.id);
   const [links, overrides] = await Promise.all([
     roleIds.length
@@ -132,10 +131,19 @@ export async function loadEffectiveOrigins(
       (r) => [`${r.role_id}:${r.set_id}`, r.replacement_set_id],
     ),
   );
-  const linkRows = ((links.data ?? []) as { role_id: string; set_id: string }[]).map((l) => ({
-    role_id: l.role_id,
-    set_id: repMap.get(`${l.role_id}:${l.set_id}`) ?? l.set_id,
-  }));
+  // Substituto precisa ser pacote local deste workspace; senão o vínculo não concede nada (falha fechada).
+  const repIds = [...new Set(repMap.values())];
+  const repLocal = new Set<string>();
+  if (repIds.length) {
+    const { data: rs } = await sb.from("permission_sets").select("id, workspace_id").in("id", repIds);
+    for (const r of (rs ?? []) as { id: string; workspace_id: string | null }[])
+      if (r.workspace_id === ws) repLocal.add(r.id);
+  }
+  const linkRows = ((links.data ?? []) as { role_id: string; set_id: string }[]).flatMap((l) => {
+    const rep = repMap.get(`${l.role_id}:${l.set_id}`);
+    if (rep === undefined) return [{ role_id: l.role_id, set_id: l.set_id }];
+    return repLocal.has(rep) ? [{ role_id: l.role_id, set_id: rep }] : [];
+  });
   const extra = (
     (ups.data ?? []) as unknown as {
       set_id: string;
@@ -173,11 +181,16 @@ export async function loadEffectiveOrigins(
 
   const db = new Set(dbKeys.map(String));
   let origins = computeEffectiveOrigins(input);
-  // Chaves que só o bypass de admin concede aparecem com essa origem explícita.
+  // Chave efetiva no banco sem origem calculada: só é "admin" se a pessoa tem o bypass.
   const known = new Set(origins.map((o) => o.key));
   for (const k of db) {
     if (!known.has(k))
-      origins.push({ key: k, effective: true, sources: ["Acesso de administrador"], deniedBy: [] });
+      origins.push({
+        key: k,
+        effective: true,
+        sources: [isAdminBypass ? "Acesso de administrador" : "Origem não identificada"],
+        deniedBy: [],
+      });
   }
   origins = origins.map((o) =>
     isAdminBypass && o.effective && !o.sources.includes("Acesso de administrador")
