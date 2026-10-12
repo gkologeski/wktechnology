@@ -22345,6 +22345,10 @@ export type Database = {
       dashboard_metrics: { Args: never; Returns: Json }
       deals_hs_close_date: { Args: { _hs_raw: Json }; Returns: string }
       default_workspace_for_user: { Args: { _user: string }; Returns: string }
+      effective_permissions_array: {
+        Args: { _user_id: string; _workspace_id: string }
+        Returns: string[]
+      }
       ensure_silver_medalist_pool: { Args: { _owner: string }; Returns: string }
       esign_verify_hash: {
         Args: { _hash: string }
