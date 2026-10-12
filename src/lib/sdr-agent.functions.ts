@@ -82,13 +82,26 @@ export const deletePlaybook = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const ws = await requireSdr(supabase, userId, "delete");
-    // Playbook com histórico é desativado, não apagado.
-    const { count } = await supabase
-      .from("sdr_enrollments")
-      .select("id", { count: "exact", head: true })
-      .eq("playbook_id", data.id)
-      .eq("workspace_id", ws);
-    if ((count ?? 0) > 0) {
+    // Agente com histórico, versão publicada ou vínculo em campanha/configuração
+    // é desativado, não apagado (a exclusão apagaria versões e soltaria vínculos).
+    const head = { count: "exact" as const, head: true };
+    const [enr, pub, camp, cfg] = await Promise.all([
+      supabase
+        .from("sdr_enrollments")
+        .select("id", head)
+        .eq("playbook_id", data.id)
+        .eq("workspace_id", ws),
+      supabase
+        .from("sdr_agent_versions")
+        .select("id", head)
+        .eq("playbook_id", data.id)
+        .eq("workspace_id", ws)
+        .neq("status", "draft"),
+      supabase.from("whatsapp_campaigns").select("id", head).eq("sdr_playbook_id", data.id),
+      supabase.from("sdr_workspace_settings").select("workspace_id", head).eq("playbook_id", data.id),
+    ]);
+    const linked = [enr, pub, camp, cfg].some((r) => r.error || (r.count ?? 0) > 0);
+    if (linked) {
       const { error } = await supabase
         .from("sdr_playbooks")
         .update({ enabled: false, updated_at: new Date().toISOString() })
