@@ -4,7 +4,7 @@
 set -uo pipefail
 cd "$(dirname "$0")/../../.."
 : "${RBAC_MIGRATION:?defina RBAC_MIGRATION com o caminho do .sql}"
-RBAC_MIGRATION="$(realpath "$RBAC_MIGRATION")"
+RBAC_MIGRATION="$(echo "$RBAC_MIGRATION" | tr ":" "\n" | xargs -I{} realpath {} | paste -sd:)"
 bash scripts/isolated-db/stack/start.sh || exit 2
 . scripts/isolated-db/stack/env.sh
 iso_guard || exit 2
