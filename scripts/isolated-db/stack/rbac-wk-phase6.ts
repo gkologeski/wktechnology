@@ -108,7 +108,9 @@ delete from public.user_permission_sets where set_id='${S_FINADM}';`);
 const sessions: Record<number, SupabaseClient> = {};
 async function as(n: number) {
   if (sessions[n]) return sessions[n];
-  const c = createClient(URL_, anonKey!, { auth: { persistSession: false, autoRefreshToken: false } });
+  const c = createClient(URL_, anonKey!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
   const { error } = await c.auth.signInWithPassword({ email: EMAIL[n], password: PW });
   if (error) throw new Error(`login ${n}: ${error.message}`);
   return (sessions[n] = c);
@@ -118,43 +120,177 @@ const results: R[] = [];
 const ok = (e: { code?: string } | null) => (e ? `deny:${e.code}` : "ok");
 async function run(phase: string, id: string, fn: () => Promise<string>, expect?: string) {
   let got: string;
-  try { got = await fn(); } catch (e) { got = `ERR ${(e as Error).message}`; }
-  results.push({ id, phase, status: phase === "before" ? "observed" : got === expect ? "pass" : "fail", detail: `got=${got} expect=${expect}` });
+  try {
+    got = await fn();
+  } catch (e) {
+    got = `ERR ${(e as Error).message}`;
+  }
+  results.push({
+    id,
+    phase,
+    status: phase === "before" ? "observed" : got === expect ? "pass" : "fail",
+    detail: `got=${got} expect=${expect}`,
+  });
 }
-const cleanup = () => psql(`delete from public.user_job_roles where role_id in ('${R_FIN}','${R_B}'); delete from public.user_permission_sets where set_id='${S_FINADM}';`);
-const insUjr = (n: number, row: Record<string, unknown>) => async () => ok((await (await as(n)).from("user_job_roles").insert(row)).error);
-const insUps = (n: number, row: Record<string, unknown>) => async () => ok((await (await as(n)).from("user_permission_sets").insert(row)).error);
+const cleanup = () =>
+  psql(
+    `delete from public.user_job_roles where role_id in ('${R_FIN}','${R_B}'); delete from public.user_permission_sets where set_id='${S_FINADM}';`,
+  );
+const insUjr = (n: number, row: Record<string, unknown>) => async () =>
+  ok((await (await as(n)).from("user_job_roles").insert(row)).error);
+const insUps = (n: number, row: Record<string, unknown>) => async () =>
+  ok((await (await as(n)).from("user_permission_sets").insert(row)).error);
 const v1 = insUjr(6, { user_id: U(2), owner_id: U(6), workspace_id: WA, role_id: R_FIN });
 const v2 = insUps(6, { user_id: U(2), owner_id: U(6), workspace_id: WA, set_id: S_FINADM });
 const v3 = insUjr(1, { user_id: U(2), owner_id: WA, workspace_id: WA, role_id: R_FIN });
 
-for (const [id, f] of [["B-estrangeiro-ujr", v1], ["B-estrangeiro-ups", v2], ["B-admin-legitimo-ujr", v3]] as const) { await run("before", id, f); cleanup(); }
+for (const [id, f] of [
+  ["B-estrangeiro-ujr", v1],
+  ["B-estrangeiro-ups", v2],
+  ["B-admin-legitimo-ujr", v3],
+] as const) {
+  await run("before", id, f);
+  cleanup();
+}
 
 const mig = psqlArgs(["-f", MIGRATION]);
-if (mig.status !== 0) { console.error(`BLOQUEADO: migration falhou\n${mig.stderr}`); process.exit(2); }
+if (mig.status !== 0) {
+  console.error(`BLOQUEADO: migration falhou\n${mig.stderr}`);
+  process.exit(2);
+}
 
-await run("after", "1-estrangeiro-ujr-negado", v1, "deny:42501"); cleanup();
-await run("after", "2-estrangeiro-ups-negado", v2, "deny:42501"); cleanup();
+await run("after", "1-estrangeiro-ujr-negado", v1, "deny:42501");
+cleanup();
+await run("after", "2-estrangeiro-ups-negado", v2, "deny:42501");
+cleanup();
 await run("after", "3-admin-wk-concede-cargo", v3, "ok");
-await run("after", "3b-admin-wk-concede-pacote", insUps(1, { user_id: U(2), owner_id: WA, workspace_id: WA, set_id: S_FINADM }), "ok");
-await run("after", "4-membro-comum-negado", insUjr(2, { user_id: U(3), owner_id: WA, workspace_id: WA, role_id: R_FIN }), "deny:42501");
-await run("after", "4b-membro-com-owner-proprio-negado", insUjr(2, { user_id: U(2), owner_id: U(2), workspace_id: WA, role_id: R_FIN }), "deny:42501");
-await run("after", "5-admin-wk-owner-inconsistente", insUjr(1, { user_id: U(3), owner_id: U(1), workspace_id: WA, role_id: R_FIN }), "deny:42501");
-await run("after", "6-cargo-de-outro-ws-negado", insUjr(1, { user_id: U(3), owner_id: WA, workspace_id: WA, role_id: R_B }), "deny:42501");
-await run("after", "7-alvo-inativo-negado", insUjr(1, { user_id: U(5), owner_id: WA, workspace_id: WA, role_id: R_FIN }), "deny:42501");
-await run("after", "8-estrangeiro-nao-le-wk", async () => String(((await (await as(6)).from("user_job_roles").select("id").eq("workspace_id", WA)).data ?? []).length), "0");
-await run("after", "9-estrangeiro-nao-apaga-wk", async () => { await (await as(6)).from("user_job_roles").delete().eq("workspace_id", WA); return psql(`select count(*) from public.user_job_roles where role_id='${R_FIN}' and workspace_id='${WA}'`); }, "1");
-await run("after", "10-estrangeiro-nao-move-linha", async () => { await (await as(6)).from("user_job_roles").update({ workspace_id: WB, owner_id: WB }).eq("role_id", R_FIN); return psql(`select workspace_id from public.user_job_roles where role_id='${R_FIN}'`); }, WA);
-await run("after", "11-admin-b-concede-no-proprio-ws", insUjr(6, { user_id: U(6), owner_id: WB, workspace_id: WB, role_id: R_B }), "ok");
-await run("after", "12-admin-wk-nao-le-ws-b", async () => String(((await (await as(1)).from("user_job_roles").select("id").eq("workspace_id", WB)).data ?? []).length), "0");
-await run("after", "13-membro-le-propria", async () => String(((await (await as(2)).from("user_job_roles").select("id").eq("role_id", R_FIN)).data ?? []).length), "1");
-await run("after", "14-admin-wk-remove", async () => { await (await as(1)).from("user_job_roles").delete().eq("role_id", R_FIN); return psql(`select count(*) from public.user_job_roles where role_id='${R_FIN}'`); }, "0");
-await run("after", "15-anon-negado", async () => ok((await createClient(URL_, anonKey!, { auth: { persistSession: false } }).from("user_job_roles").insert({ user_id: U(2), owner_id: WA, workspace_id: WA, role_id: R_FIN })).error), "deny:42501");
+await run(
+  "after",
+  "3b-admin-wk-concede-pacote",
+  insUps(1, { user_id: U(2), owner_id: WA, workspace_id: WA, set_id: S_FINADM }),
+  "ok",
+);
+await run(
+  "after",
+  "4-membro-comum-negado",
+  insUjr(2, { user_id: U(3), owner_id: WA, workspace_id: WA, role_id: R_FIN }),
+  "deny:42501",
+);
+await run(
+  "after",
+  "4b-membro-com-owner-proprio-negado",
+  insUjr(2, { user_id: U(2), owner_id: U(2), workspace_id: WA, role_id: R_FIN }),
+  "deny:42501",
+);
+await run(
+  "after",
+  "5-admin-wk-owner-inconsistente",
+  insUjr(1, { user_id: U(3), owner_id: U(1), workspace_id: WA, role_id: R_FIN }),
+  "deny:42501",
+);
+await run(
+  "after",
+  "6-cargo-de-outro-ws-negado",
+  insUjr(1, { user_id: U(3), owner_id: WA, workspace_id: WA, role_id: R_B }),
+  "deny:42501",
+);
+await run(
+  "after",
+  "7-alvo-inativo-negado",
+  insUjr(1, { user_id: U(5), owner_id: WA, workspace_id: WA, role_id: R_FIN }),
+  "deny:42501",
+);
+await run(
+  "after",
+  "8-estrangeiro-nao-le-wk",
+  async () =>
+    String(
+      ((await (await as(6)).from("user_job_roles").select("id").eq("workspace_id", WA)).data ?? [])
+        .length,
+    ),
+  "0",
+);
+await run(
+  "after",
+  "9-estrangeiro-nao-apaga-wk",
+  async () => {
+    await (await as(6)).from("user_job_roles").delete().eq("workspace_id", WA);
+    return psql(
+      `select count(*) from public.user_job_roles where role_id='${R_FIN}' and workspace_id='${WA}'`,
+    );
+  },
+  "1",
+);
+await run(
+  "after",
+  "10-estrangeiro-nao-move-linha",
+  async () => {
+    await (await as(6))
+      .from("user_job_roles")
+      .update({ workspace_id: WB, owner_id: WB })
+      .eq("role_id", R_FIN);
+    return psql(`select workspace_id from public.user_job_roles where role_id='${R_FIN}'`);
+  },
+  WA,
+);
+await run(
+  "after",
+  "11-admin-b-concede-no-proprio-ws",
+  insUjr(6, { user_id: U(6), owner_id: WB, workspace_id: WB, role_id: R_B }),
+  "ok",
+);
+await run(
+  "after",
+  "12-admin-wk-nao-le-ws-b",
+  async () =>
+    String(
+      ((await (await as(1)).from("user_job_roles").select("id").eq("workspace_id", WB)).data ?? [])
+        .length,
+    ),
+  "0",
+);
+await run(
+  "after",
+  "13-membro-le-propria",
+  async () =>
+    String(
+      ((await (await as(2)).from("user_job_roles").select("id").eq("role_id", R_FIN)).data ?? [])
+        .length,
+    ),
+  "1",
+);
+await run(
+  "after",
+  "14-admin-wk-remove",
+  async () => {
+    await (await as(1)).from("user_job_roles").delete().eq("role_id", R_FIN);
+    return psql(`select count(*) from public.user_job_roles where role_id='${R_FIN}'`);
+  },
+  "0",
+);
+await run(
+  "after",
+  "15-anon-negado",
+  async () =>
+    ok(
+      (
+        await createClient(URL_, anonKey!, { auth: { persistSession: false } })
+          .from("user_job_roles")
+          .insert({ user_id: U(2), owner_id: WA, workspace_id: WA, role_id: R_FIN })
+      ).error,
+    ),
+  "deny:42501",
+);
 cleanup();
 const fails = results.filter((r) => r.status === "fail");
 mkdirSync(`${root}/artifacts`, { recursive: true });
-writeFileSync(`${root}/artifacts/rbac-wk-phase6.json`, JSON.stringify({ at: new Date().toISOString(), results }, null, 2));
+writeFileSync(
+  `${root}/artifacts/rbac-wk-phase6.json`,
+  JSON.stringify({ at: new Date().toISOString(), results }, null, 2),
+);
 for (const r of results) console.log(`${r.status.padEnd(8)} ${r.id.padEnd(38)} ${r.detail}`);
-console.log(`\n${results.filter((r) => r.status === "pass").length} pass / ${fails.length} fail / ${results.filter((r) => r.status === "observed").length} observados antes`);
+console.log(
+  `\n${results.filter((r) => r.status === "pass").length} pass / ${fails.length} fail / ${results.filter((r) => r.status === "observed").length} observados antes`,
+);
 proxy.stop();
 process.exit(fails.length ? 1 : 0);
