@@ -10,6 +10,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchAllPages } from "./fetch-all";
 import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 import { dependencyViolations } from "./permission-dependencies";
+import { computeRestoreKeys, type SetReplacementItems } from "./restore-default-keys";
 
 const BUNDLE_MODULE = "__bundle__";
 
@@ -488,12 +489,40 @@ export const restoreRoleDefaults = createServerFn({ method: "POST" })
         )
         .map((b) => b.row_data.key),
     );
-    const keys = ((defaults.data ?? []) as Array<{ permission_key: string }>)
-      .map((r) => r.permission_key)
-      .filter((k) => !removedKeys.has(k));
+    // Substituições locais (0127): chaves que o pacote local retirou do conjunto original
+    // não podem voltar pelos defaults do cargo. Derivado da tabela, não dos ocupantes.
+    const reps = await supabase
+      .from("job_role_set_replacements")
+      .select("set_id, replacement_set_id")
+      .eq("workspace_id", workspaceId)
+      .eq("role_id", data.role_id);
+    if (reps.error) throw new Error(reps.error.message);
+    const repRows = (reps.data ?? []) as Array<{ set_id: string; replacement_set_id: string }>;
+    const repItems: SetReplacementItems[] = [];
+    for (const rep of repRows) {
+      const [orig, local] = await Promise.all([
+        supabase.from("permission_set_items").select("permission_key").eq("set_id", rep.set_id),
+        supabase
+          .from("permission_set_items")
+          .select("permission_key")
+          .eq("set_id", rep.replacement_set_id),
+      ]);
+      if (orig.error) throw new Error(orig.error.message);
+      if (local.error) throw new Error(local.error.message);
+      const pick = (rows: unknown) =>
+        ((rows ?? []) as Array<{ permission_key: string }>).map((r) => r.permission_key);
+      repItems.push({ original: pick(orig.data), local: pick(local.data) });
+    }
+    const keys = computeRestoreKeys(
+      ((defaults.data ?? []) as Array<{ permission_key: string }>).map((r) => r.permission_key),
+      removedKeys,
+      repItems,
+    );
+
     if (keys.length === 0) {
       throw new Error("Padrões deste cargo indisponíveis; nada foi alterado.");
     }
+
     const setId = await ensureBundle(supabase, userId, workspaceId, data.role_id);
     const del = await supabase.from("permission_set_items").delete().eq("set_id", setId);
     if (del.error) throw new Error(del.error.message);
