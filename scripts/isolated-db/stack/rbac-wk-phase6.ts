@@ -153,10 +153,12 @@ for (const [id, f] of [
   cleanup();
 }
 
-const mig = psqlArgs(["-f", MIGRATION]);
-if (mig.status !== 0) {
-  console.error(`BLOQUEADO: migration falhou\n${mig.stderr}`);
-  process.exit(2);
+for (const file of MIGRATION.split(":")) {
+  const mig = psqlArgs(["-f", file]);
+  if (mig.status !== 0) {
+    console.error(`BLOQUEADO: migration ${file} falhou\n${mig.stderr}`);
+    process.exit(2);
+  }
 }
 
 await run("after", "1-estrangeiro-ujr-negado", v1, "deny:42501");
@@ -282,6 +284,40 @@ await run(
   "deny:42501",
 );
 cleanup();
+// Regressão 0129: criador (U1, created_by de WA) com participação inativa não administra.
+const setU1 = (status: string, role: string) =>
+  psql(
+    `update public.workspace_members set status='${status}', role='${role}' where workspace_id='${WA}' and user_id='${U(1)}'`,
+  );
+const grantFin = insUjr(1, { user_id: U(3), owner_id: WA, workspace_id: WA, role_id: R_FIN });
+setU1("inactive", "admin");
+await run("after", "16-criador-inativo-negado", grantFin, "deny:42501");
+cleanup();
+setU1("inactive", "member");
+await run("after", "16b-criador-inativo-membro-negado", grantFin, "deny:42501");
+cleanup();
+psql(`delete from public.workspace_members where workspace_id='${WA}' and user_id='${U(1)}'`);
+await run("after", "16c-criador-sem-participacao-negado", grantFin, "deny:42501");
+cleanup();
+psql(
+  `insert into public.workspace_members(workspace_id,user_id,role,status) values ('${WA}','${U(1)}','member','active')`,
+);
+await run("after", "17-criador-ativo-membro-concede", grantFin, "ok");
+cleanup();
+setU1("active", "admin");
+await run("after", "18-admin-restaurado-concede", grantFin, "ok");
+cleanup();
+await run(
+  "after",
+  "19-fn-criador-inativo-false",
+  async () => {
+    setU1("inactive", "admin");
+    const v = psql(`select public.is_active_workspace_admin('${WA}','${U(1)}')`);
+    setU1("active", "admin");
+    return v;
+  },
+  "f",
+);
 const fails = results.filter((r) => r.status === "fail");
 mkdirSync(`${root}/artifacts`, { recursive: true });
 writeFileSync(

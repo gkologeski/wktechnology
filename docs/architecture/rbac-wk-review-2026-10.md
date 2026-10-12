@@ -186,3 +186,9 @@ Gates: `bun run verify` (788 testes) e `bun run build` passaram. Sem publicaçã
 Observação de dados (somente leitura): 17 das 18 linhas de `user_job_roles` ainda têm
 `owner_id` = UID do criador (legado). Elas continuam válidas em leitura/exclusão (regra por
 `workspace_id`); a normalização de `owner_id` não foi feita por envolver atribuições de pessoas reais.
+
+## Fase 6b — 0129: administrador exige participação ativa
+
+- `is_active_workspace_admin` passou a exigir participação `active` para todos; depois, papel owner/admin **ou** criador do workspace. Criador inativo ou sem participação → `false` (mesma regra de `user_effective_permissions`).
+- Isolado (GoTrue/PostgREST, JWT real, `run-rbac-phase6.sh` com `RBAC_MIGRATION=0128:0129`): só com 0128, 19 PASS/4 FAIL (criador inativo concedia Financeiro); com 0129, 23 PASS/0 FAIL, incluindo criador inativo, criador inativo como membro e criador sem participação negados (42501), criador ativo e admin restaurado concedendo.
+- Aplicada no banco compartilhado; sem publicação.

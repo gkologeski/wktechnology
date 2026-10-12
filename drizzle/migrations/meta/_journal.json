@@ -904,6 +904,13 @@
       "when": 1791805117895,
       "tag": "0128_assignment_writes_bound_to_workspace",
       "breakpoints": true
+    },
+    {
+      "idx": 129,
+      "version": "7",
+      "when": 1791805955782,
+      "tag": "0129_active_admin_requires_active_membership",
+      "breakpoints": true
     }
   ]
 }
