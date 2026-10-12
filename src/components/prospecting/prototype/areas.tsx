@@ -14,8 +14,8 @@ export function Campaigns() {
   const [step, setStep] = useState(0);
   const [service, setService] = useState(DEMO_SERVICES[0]);
   return (
-    <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
-      <Panel>
+    <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <Panel className="min-w-0">
         <SectionHeader
           title="Campanhas"
           description="A campanha controla público, abordagem e limites. O agente controla a conversa."
@@ -26,7 +26,7 @@ export function Campaigns() {
           }
         />
         <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[640px] text-sm">
+          <table className="w-full min-w-[560px] text-sm">
             <thead className="text-left text-xs text-muted-foreground">
               <tr>
                 {[
