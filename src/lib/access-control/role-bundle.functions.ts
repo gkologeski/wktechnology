@@ -671,6 +671,7 @@ export const duplicateJobRole = createServerFn({ method: "POST" })
       .from("job_roles")
       .insert({
         owner_id: userId,
+        workspace_id: workspaceId,
         name: newName,
         description: source.description,
         color: source.color,
@@ -738,8 +739,10 @@ export const deleteJobRole = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => DeleteRoleInput.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(supabase, userId);
+    await assertWorkspaceAdmin(supabase, userId, workspaceId);
     await assertRoleEditable(supabase, data.role_id);
-    // Collect bundles owned by the caller linked to this role, so we can clean them up.
+    // Collect local bundles of this workspace linked to this role, so we can clean them up.
     const links = await supabase
       .from("job_role_sets")
       .select("set_id, permission_sets!inner(id, module, owner_id, workspace_id)")
@@ -753,7 +756,8 @@ export const deleteJobRole = createServerFn({ method: "POST" })
     )
       .filter(
         (r) =>
-          r.permission_sets?.module === BUNDLE_MODULE && r.permission_sets?.owner_id === userId,
+          r.permission_sets?.module === BUNDLE_MODULE &&
+          r.permission_sets?.workspace_id === workspaceId,
       )
       .map((r) => r.set_id);
 
