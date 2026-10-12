@@ -90,7 +90,7 @@ CREATE POLICY chat_scope_select_live_chat_messages ON public.live_chat_messages
          AND (
            s.workspace_id IN (SELECT public.my_perm_workspaces('techsales.inbox.chat.view.workspace'))
            OR (s.workspace_id IN (SELECT public.my_perm_workspaces('techsales.inbox.chat.view.team'))
-               AND (s.assignee_id = auth.uid() OR s.assignee_id IN (SELECT public.my_team_member_ids())))
+               AND (s.assignee_id IS NULL OR s.assignee_id = auth.uid() OR s.assignee_id IN (SELECT public.my_team_member_ids())))
            OR (s.workspace_id IN (SELECT public.my_perm_workspaces('techsales.inbox.chat.view.own'))
                AND s.assignee_id = auth.uid())
          )
@@ -114,7 +114,7 @@ CREATE POLICY chat_scope_insert_visible_live_chat_messages ON public.live_chat_m
          AND (
            s.workspace_id IN (SELECT public.my_perm_workspaces('techsales.inbox.chat.view.workspace'))
            OR (s.workspace_id IN (SELECT public.my_perm_workspaces('techsales.inbox.chat.view.team'))
-               AND (s.assignee_id = auth.uid() OR s.assignee_id IN (SELECT public.my_team_member_ids())))
+               AND (s.assignee_id IS NULL OR s.assignee_id = auth.uid() OR s.assignee_id IN (SELECT public.my_team_member_ids())))
            OR (s.workspace_id IN (SELECT public.my_perm_workspaces('techsales.inbox.chat.view.own'))
                AND s.assignee_id = auth.uid())
          )
