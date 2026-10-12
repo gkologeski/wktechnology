@@ -735,15 +735,9 @@ export const consumeInvite = createServerFn({ method: "POST" })
       inv.role,
     );
 
-    // Convenção do RBAC: owner_id nessas tabelas é o auth.uid do criador do
-    // workspace (é o que as policies exigem para escrita/gestão).
-    const { data: wsRow } = await supabaseAdmin
-      .from("workspaces")
-      .select("created_by")
-      .eq("id", inv.workspace_id as string)
-      .maybeSingle();
-    const workspaceOwnerId =
-      (wsRow as { created_by?: string } | null)?.created_by ?? (inv.workspace_id as string);
+    // Convenção do RBAC (0128): a atribuição pertence ao workspace, logo
+    // owner_id = workspace_id. Nada de UID de pessoa nesse campo.
+    const workspaceOwnerId = inv.workspace_id as string;
 
     const { error: jrErr } = await supabaseAdmin.from("user_job_roles").insert({
       user_id: userId,

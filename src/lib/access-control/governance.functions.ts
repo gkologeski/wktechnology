@@ -128,15 +128,16 @@ export const simulateUser = createServerFn({ method: "POST" })
 
     // Collect field rules matching the user's roles/sets
     const [rolesRes, setsRes] = await Promise.all([
+      // Namespace canônico das atribuições é workspace_id (0128); sem fallback por usuário.
       supabase
         .from("user_job_roles")
         .select("role_id")
-        .eq("owner_id", workspaceId)
+        .eq("workspace_id", workspaceId)
         .eq("user_id", data.user_id),
       supabase
         .from("user_permission_sets")
         .select("set_id")
-        .eq("owner_id", workspaceId)
+        .eq("workspace_id", workspaceId)
         .eq("user_id", data.user_id),
     ]);
     const roleIds = ((rolesRes.data ?? []) as Array<{ role_id: string }>).map((r) => r.role_id);
@@ -192,7 +193,7 @@ export const getGovernanceReport = createServerFn({ method: "GET" })
       supabase.from("job_roles").select("id, name, is_system, data_scope"),
       supabase.from("permission_sets").select("id, is_system"),
       supabase.from("field_permission_rules").select("id"),
-      supabase.from("user_job_roles").select("user_id, role_id").eq("owner_id", workspaceId),
+      supabase.from("user_job_roles").select("user_id, role_id").eq("workspace_id", workspaceId),
     ]);
 
     const members = (membersRes.data ?? []) as Array<{ user_id: string }>;

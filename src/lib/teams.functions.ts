@@ -199,18 +199,16 @@ export const listTeamMembers = createServerFn({ method: "GET" })
     );
 
     // Cargos funcionais (user_job_roles) e pacotes extras (user_permission_sets).
-    // owner_id nessas tabelas é o auth.uid do criador do workspace, então usamos
-    // supabaseAdmin para ler todos os membros do workspace.
-    const workspaceOwnerId = workspace.created_by ?? userId;
+    // Namespace canônico é workspace_id (0128); sem fallback pelo criador do workspace.
     const { data: userJobRoles } = await supabaseAdmin
       .from("user_job_roles")
       .select("user_id, role_id, is_primary")
-      .eq("owner_id", workspaceOwnerId)
+      .eq("workspace_id", workspace.id)
       .in("user_id", ids);
     const { data: userPermissionSets } = await supabaseAdmin
       .from("user_permission_sets")
       .select("user_id, set_id")
-      .eq("owner_id", workspaceOwnerId)
+      .eq("workspace_id", workspace.id)
       .in("user_id", ids);
 
     const primaryRoleByUser = new Map<string, string>();
