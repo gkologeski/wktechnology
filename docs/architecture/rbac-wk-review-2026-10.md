@@ -49,3 +49,25 @@ Não foi adotado: somar os defaults dos cargos nas permissões efetivas. Isso co
 - Fase 4: provas por cargo e leitura efetiva real.
 - Publicação coordenada.
 - Decisões humanas: 8 admins/owners, 2 admins sem cargo e admin com cargo Auditor.
+
+## Fase 2 — baseline da WK (migration 0123, aplicada)
+
+- Os pacotes locais passaram a ter `workspace_id` da WK. Pacotes de outro workspace não valem mais aqui (teste isolado `A-pacote-outro-ws`).
+- Os defaults continuam **fora** do cálculo automático: servem só de preset e restauração.
+- Execução real: 39 concessões, 1.031 proibições, 1 chave de escrita retirada do pacote local do Auditor.
+- Em seguida, 126 proibições novas foram retiradas porque a mesma chave já vinha de outro cargo acumulado da pessoa; nenhuma proibição anterior foi tocada.
+- Resultado por pessoa (antes → depois):
+  - Apontador: 0 → 12 (os 12 padrões, escopo próprio).
+  - Gerente Comercial + Financeiro + Diretor: 731 → 737 (+6 de perfis de vaga).
+  - Gerente Comercial + Head de RH: 701 → 627 (+6 perfis de vaga; −80 de configuração de sistema e financeiro).
+  - Representante de Vendas (externa): 126 → 123 (+3 perfis de vaga; −6 exclusões amplas de atividades, e-mails, reuniões, cotações, chamados e WhatsApp).
+  - QA: 23 → 23.
+- Nada foi alterado em cargos ou pacotes globais de outros workspaces.
+
+## Fase 3 — tela de permissão efetiva (preview)
+
+- `/settings/permissions` ganhou o quadro "Permissão efetiva por pessoa": mostra a lista real do banco e a origem de cada chave (cargo, conjunto extra, concessão, proibição, acesso de administrador), com aviso de acúmulo de cargos, de membro inativo e de administrador com cargo somente leitura.
+- A lista vem de `effective_permissions_array`, que devolve tudo de uma vez (a leitura em páginas cortava admins em 1.000 chaves) e só responde para a própria pessoa ou para admin do workspace.
+- Conceder/revogar passou a respeitar dependências: ações de perfis de vaga exigem a permissão de ver perfis; revogar a base é barrado enquanto houver ação dependente.
+- "Restaurar padrões" deixou de apagar proibições e ajustes do cargo: ele recompõe o pacote local pela baseline da WK e recoloca apenas o que falta.
+- Conferido no navegador com três pessoas reais: Representante de Vendas (123 chaves), administrador com cargo Auditor (1.657, com aviso de bypass) e gestora com três cargos (737, com aviso de acúmulo). As origens batem com o banco, sem divergências.

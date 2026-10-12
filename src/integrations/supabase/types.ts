@@ -22345,6 +22345,10 @@ export type Database = {
       dashboard_metrics: { Args: never; Returns: Json }
       deals_hs_close_date: { Args: { _hs_raw: Json }; Returns: string }
       default_workspace_for_user: { Args: { _user: string }; Returns: string }
+      effective_permissions_array: {
+        Args: { _user_id: string; _workspace_id: string }
+        Returns: string[]
+      }
       ensure_silver_medalist_pool: { Args: { _owner: string }; Returns: string }
       esign_verify_hash: {
         Args: { _hash: string }
@@ -22649,6 +22653,7 @@ export type Database = {
         Args: { _actor: string; _confirm_name: string; _workspace: string }
         Returns: undefined
       }
+      rbac_wk_apply_baseline_2026_10: { Args: never; Returns: Json }
       rbac_wk_restore_overrides_2026_10: { Args: never; Returns: number }
       recalc_deal_value: { Args: { _deal_id: string }; Returns: undefined }
       recalc_financial_entry: {

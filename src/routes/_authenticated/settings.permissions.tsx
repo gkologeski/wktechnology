@@ -3,6 +3,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/techhire/ui";
 import { PermissionsMatrix } from "@/components/access-control/permissions-matrix";
+import { EffectivePermissionsPanel } from "@/components/access-control/effective-permissions-panel";
 
 export const Route = createFileRoute("/_authenticated/settings/permissions")({
   head: () => ({
@@ -28,6 +29,7 @@ function PermissionsPage() {
         description="Configure quem pode ver, criar, editar e gerenciar recursos em cada módulo (TechSales, TechHire, TechPeople, TechContracts, TechFinance e TechProjects), além de atendimento e serviços."
       />
       <PermissionsMatrix />
+      <EffectivePermissionsPanel />
     </div>
   );
 }
