@@ -417,7 +417,10 @@ await run(
   "false",
 );
 // Cargo de sistema reutilizado em outro workspace não arrasta o bundle local da WA.
-psql(`insert into public.job_roles(id, name, is_system) values
+// Usuário 7 é membro comum (não dono) do workspace privado, para não cair no bypass de dono.
+psql(`insert into public.workspace_members(workspace_id, user_id, role, status)
+ values ('${WPRIV}','${U(7)}','member','active') on conflict do nothing;
+ insert into public.job_roles(id, name, is_system) values
  ('30000000-0000-4000-8000-0000000000c1','[ISO] Auditor sistema', true) on conflict (id) do nothing;
  insert into public.permission_sets(id, module, name, workspace_id) values
  ('20000000-0000-4000-8000-0000000000c1','__bundle__','[ISO] bundle WA','${WA}') on conflict do nothing;
@@ -426,34 +429,43 @@ psql(`insert into public.job_roles(id, name, is_system) values
  insert into public.job_role_sets(role_id, set_id) values
  ('30000000-0000-4000-8000-0000000000c1','20000000-0000-4000-8000-0000000000c1') on conflict do nothing;
  insert into public.user_job_roles(user_id, owner_id, workspace_id, role_id)
- select '${U(2)}','${WPRIV}','${WPRIV}','30000000-0000-4000-8000-0000000000c1'
- where not exists (select 1 from public.user_job_roles where user_id='${U(2)}'
+ select '${U(7)}','${WPRIV}','${WPRIV}','30000000-0000-4000-8000-0000000000c1'
+ where not exists (select 1 from public.user_job_roles where user_id='${U(7)}'
    and role_id='30000000-0000-4000-8000-0000000000c1' and workspace_id='${WPRIV}');`);
 await run(
   "after",
   "A-bundle-nao-vaza-cargo-sistema",
   "bundle da WA não vale em outro workspace pelo mesmo cargo de sistema",
-  async () => {
-    const own = await hasPermWs(2, WPRIV, FIN)();
-    const asg = psql(
-      `select count(*) from public.user_job_roles where user_id='${U(2)}' and role_id='30000000-0000-4000-8000-0000000000c1' and workspace_id='${WPRIV}'`,
-    );
-    return `priv=${own} atribuicoes=${asg}`;
-  },
-  "priv=true atribuicoes=1",
-);
-psql(`delete from public.permission_set_items where set_id='20000000-0000-4000-8000-0000000000c1'`);
-await run(
-  "after",
-  "A-bundle-outro-ws-sem-itens",
-  "sem itens no bundle o dono do privado perde a chave vinda da WA",
-  hasPermWs(2, WPRIV, FIN),
+  hasPermWs(7, WPRIV, FIN),
   "false",
 );
+await run(
+  "after",
+  "A-bundle-nao-vaza-para-wa",
+  "o mesmo cargo atribuído no privado não concede na WA",
+  hasPermWs(7, WA, FIN),
+  "false",
+);
+// Positivo: pacote do próprio workspace privado concede normalmente.
+psql(`insert into public.permission_sets(id, module, name, workspace_id) values
+ ('20000000-0000-4000-8000-0000000000c2','__bundle__','[ISO] bundle privado','${WPRIV}') on conflict do nothing;
+ insert into public.permission_set_items(set_id, permission_key) values
+ ('20000000-0000-4000-8000-0000000000c2','${FIN}') on conflict do nothing;
+ insert into public.job_role_sets(role_id, set_id) values
+ ('30000000-0000-4000-8000-0000000000c1','20000000-0000-4000-8000-0000000000c2') on conflict do nothing;`);
+await run(
+  "after",
+  "A-bundle-do-proprio-ws",
+  "pacote do próprio workspace concede a chave",
+  hasPermWs(7, WPRIV, FIN),
+  "true",
+);
 psql(`delete from public.user_job_roles where role_id='30000000-0000-4000-8000-0000000000c1';
- delete from public.job_role_sets where set_id='20000000-0000-4000-8000-0000000000c1';
- delete from public.permission_sets where id='20000000-0000-4000-8000-0000000000c1';
- delete from public.job_roles where id='30000000-0000-4000-8000-0000000000c1';`);
+ delete from public.job_role_sets where role_id='30000000-0000-4000-8000-0000000000c1';
+ delete from public.permission_set_items where set_id in ('20000000-0000-4000-8000-0000000000c1','20000000-0000-4000-8000-0000000000c2');
+ delete from public.permission_sets where id in ('20000000-0000-4000-8000-0000000000c1','20000000-0000-4000-8000-0000000000c2');
+ delete from public.job_roles where id='30000000-0000-4000-8000-0000000000c1';
+ delete from public.workspace_members where workspace_id='${WPRIV}' and user_id='${U(7)}';`);
 
 // 1.2 cargos
 await run(
