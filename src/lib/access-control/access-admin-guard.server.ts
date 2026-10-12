@@ -38,4 +38,3 @@ export async function assertActiveWorkspaceAdmin(supabase: SB, userId: string): 
   }
   return workspaceId;
 }
-
