@@ -280,7 +280,8 @@ psql(`update public.job_roles set name='[ISO] Cargo próprio' where id='${ROLE_O
  delete from public.deal_role_profile_versions where profile_id in ('${P1}','${P2}','${P3}');
  update public.role_profile_approval_items set status='pending', decided_by=null, decided_at=null, version=null where id in ('${I1}','${I3}');
  update public.role_profile_approval_requests set status='pending', decided_at=null where id='63000000-0000-4000-8000-0000000000a1';
- delete from public.permission_set_items where set_id='20000000-0000-4000-8000-0000000000a2' and permission_key='techsales.role_profiles.approve.workspace';`);
+ delete from public.permission_set_items where set_id='20000000-0000-4000-8000-0000000000a2' and permission_key='techsales.role_profiles.approve.workspace';
+ delete from public.access_audit_log where action='role_profile_admin_override';`);
 
 // ===== MIGRATION =====
 const mig = psqlArgs(["-f", MIGRATION]);
