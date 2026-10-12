@@ -41,12 +41,10 @@ Não foi adotado: somar os defaults dos cargos nas permissões efetivas. Isso co
   - quem não é líder (inclusive admin) recebe erro ao aprovar pelo botão antigo;
   - quem não tem a chave de chat deixa de ver as sessões.
 - Os gestores (Diretor/Gerente Comercial) têm só `chat.view`, sem `chat.create`. Por isso não enviam mais no chat, como prevê a matriz.
-- O botão de override no quadro de perfis de vaga ainda não existe (Fase 3b). Até lá, o override é só pelo banco/servidor.
+- O botão de override no quadro de perfis de vaga foi entregue na Fase 3b (diálogo com motivo obrigatório, auditado).
 
 ## Pendências
-- Fase 2: matriz dos 16 cargos.
-- Fase 3/3b: tela de permissões efetivas e o botão de override.
-- Fase 4: provas por cargo e leitura efetiva real.
+- Reteste das asserções (GoTrue + SDK) pelo usuário.
 - Publicação coordenada.
 - Decisões humanas: 8 admins/owners, 2 admins sem cargo e admin com cargo Auditor.
 
