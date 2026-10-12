@@ -10,6 +10,13 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { SdrAgentPicker } from "./sdr-agent-picker";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "@tanstack/react-router";
@@ -350,10 +357,39 @@ function SettingsPanel({ d }: { d: Overview }) {
 }
 
 function PilotReadiness({ d }: { d: Overview }) {
+  const pbs = d.readiness.playbooks;
+  const fallback = (pbs.find((p) => p.questionnaire_id) ?? pbs[0])?.id ?? "";
+  const [picked, setPicked] = useState("");
+  const id = pbs.some((p) => p.id === picked) ? picked : fallback;
+  return (
+    <div className="space-y-3">
+      {pbs.length > 1 && (
+        <div className="flex max-w-md flex-col gap-1.5">
+          <Label htmlFor="sdr-readiness-agent">Agente (playbook) desta qualificação e agenda</Label>
+          <Select value={id} onValueChange={setPicked}>
+            <SelectTrigger id="sdr-readiness-agent">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {pbs.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.name}
+                  {p.enabled ? "" : " (desativado)"}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      <PlaybookReadiness key={id} d={d} playbookId={id} />
+    </div>
+  );
+}
+
+function PlaybookReadiness({ d, playbookId }: { d: Overview; playbookId: string }) {
   const save = useServerFn(saveSdrPilotPlaybook);
   const refresh = useRefresh();
-  const pilot =
-    d.readiness.playbooks.find((p) => p.questionnaire_id) ?? d.readiness.playbooks[0] ?? null;
+  const pilot = d.readiness.playbooks.find((p) => p.id === playbookId) ?? null;
   const [threshold, setThreshold] = useState(pilot?.opportunity_min_score ?? 60);
   const [pageId, setPageId] = useState<string>(pilot?.booking_page_id ?? "");
   const m = useMutation({
@@ -367,19 +403,19 @@ function PilotReadiness({ d }: { d: Overview }) {
         },
       }),
     onSuccess: () => (
-      toast.success("Playbook do piloto atualizado (continua desativado)"),
+      toast.success("Playbook atualizado; ativação e modo não foram alterados"),
       refresh()
     ),
     onError: (e: Error) => toast.error(e.message),
   });
   if (!pilot)
-    return <EmptyState title="Sem playbook" description="Crie o playbook do piloto primeiro." />;
+    return <EmptyState title="Sem agente" description="Crie um agente (playbook) primeiro." />;
   const f = pilot.feasibility;
   const page = d.readiness.bookingPages.find((p) => p.id === pageId);
   return (
     <section className="space-y-3" aria-labelledby="sdr-pilot-title">
       <SectionHeader
-        title="Prontidão do piloto"
+        title="Qualificação e agenda do agente"
         description={`${pilot.name} · ${pilot.enabled ? "ativo" : "desativado"} · modo ${pilot.mode === "auto" ? "automático" : "supervisionado"}`}
       />
       <div className="space-y-4 rounded-lg border bg-card p-4 text-sm">

@@ -1,0 +1,1 @@
+- Prospecção (`/prospecting`) tem cinco áreas por `?area=`/`?section=` e converte `?tab=` antigo só por `src/lib/prospecting/areas.ts`; indicadores vêm de `overview.server.ts` com origem e cobertura (sem permissão/erro/limite nunca vira zero); por quê: links salvos continuam abrindo e nenhum número é inventado.

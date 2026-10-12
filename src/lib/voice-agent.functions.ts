@@ -43,8 +43,15 @@ export type VoiceAgentSettings = {
 export const getVoiceAgentSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<VoiceAgentSettings> => {
-    const sb = await sbAdmin();
     const ws = await resolveActiveWorkspace(context.userId);
+    const { assertPermission } = await import("@/lib/access-control/enforce.server");
+    await assertPermission(
+      context.supabase,
+      context.userId,
+      ws,
+      "techsales.prospecting.voice.view",
+    );
+    const sb = await sbAdmin();
     const { data } = await sb
       .from("voice_agent_settings")
       .select("*")
@@ -70,8 +77,17 @@ export const saveVoiceAgentSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => SettingsSchema.parse(i))
   .handler(async ({ data, context }) => {
-    const sb = await sbAdmin();
     const ws = await resolveActiveWorkspace(context.userId);
+    const { assertPermission } = await import("@/lib/access-control/enforce.server");
+    const { assertNotReadOnlyView } = await import("@/lib/view-as-guard.server");
+    await assertNotReadOnlyView(context.supabase);
+    await assertPermission(
+      context.supabase,
+      context.userId,
+      ws,
+      "techsales.prospecting.voice.update.workspace",
+    );
+    const sb = await sbAdmin();
     const payload = { workspace_id: ws, owner_id: ws, ...data };
     const { error } = await sb
       .from("voice_agent_settings")

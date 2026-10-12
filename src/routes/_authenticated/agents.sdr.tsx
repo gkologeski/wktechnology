@@ -131,9 +131,15 @@ function SdrAgentPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Agente SDR</h1>
         <Button variant="outline" onClick={() => setActive(empty)}>
-          <Plus className="h-4 w-4 mr-1" /> Novo playbook
+          <Plus className="h-4 w-4 mr-1" /> Novo agente
         </Button>
       </div>
+      <p className="max-w-3xl text-sm text-muted-foreground">
+        Cada agente tem uma <strong className="text-foreground">persona</strong> (identidade e tom,
+        versionada) e um <strong className="text-foreground">playbook</strong> (roteiro,
+        qualificação, agenda e passagem para humano). Público, disparos, cadência e limites são da{" "}
+        <strong className="text-foreground">campanha</strong>, que escolhe qual agente responde.
+      </p>
 
       <Tabs defaultValue="sdr-supervision">
         <TabsList className="h-auto w-full justify-start overflow-x-auto">
@@ -165,7 +171,7 @@ function SdrAgentPage() {
           <div className="grid md:grid-cols-[260px_1fr] gap-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Seus playbooks</CardTitle>
+                <CardTitle className="text-sm">Agentes (playbooks)</CardTitle>
               </CardHeader>
               <CardContent className="space-y-1">
                 {loading ? (
