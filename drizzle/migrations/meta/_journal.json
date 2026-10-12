@@ -862,6 +862,13 @@
       "when": 1791761878365,
       "tag": "0122_rbac_wk_phase1_structural",
       "breakpoints": true
+    },
+    {
+      "idx": 123,
+      "version": "7",
+      "when": 1791763608767,
+      "tag": "0123_rbac_wk_phase2_set_scope_and_baseline",
+      "breakpoints": true
     }
   ]
 }

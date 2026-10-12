@@ -22649,6 +22649,7 @@ export type Database = {
         Args: { _actor: string; _confirm_name: string; _workspace: string }
         Returns: undefined
       }
+      rbac_wk_apply_baseline_2026_10: { Args: never; Returns: Json }
       rbac_wk_restore_overrides_2026_10: { Args: never; Returns: number }
       recalc_deal_value: { Args: { _deal_id: string }; Returns: undefined }
       recalc_financial_entry: {
