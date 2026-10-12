@@ -1,9 +1,20 @@
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { SdrAgentStudio } from "./sdr-agent-studio";
 
-type PickerPlaybook = { id: string; name: string; enabled: boolean; questionnaire_id: string | null };
+type PickerPlaybook = {
+  id: string;
+  name: string;
+  enabled: boolean;
+  questionnaire_id: string | null;
+};
 
 /** Seleção explícita do agente (playbook) editado em "Persona e teste". */
 export function SdrAgentPicker({
