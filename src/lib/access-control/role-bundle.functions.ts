@@ -650,6 +650,8 @@ export const duplicateJobRole = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => DuplicateRoleInput.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(supabase, userId);
+    await assertWorkspaceAdmin(supabase, userId, workspaceId);
     const src = await supabase
       .from("job_roles")
       .select("id, name, description, color, data_scope")
