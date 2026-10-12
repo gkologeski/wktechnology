@@ -527,6 +527,8 @@ export const restoreRoleDefaults = createServerFn({ method: "POST" })
         (b) =>
           b.source === "phase2_added" &&
           b.row_data.role_id === data.role_id &&
+          // Denies de visibilidade foram trocados por pacote local (0127); não voltam.
+          !String(b.row_data.reason ?? "").startsWith("vis_total_") &&
           !reverted.has(b.row_data.key),
       )
       .map((b) => ({
