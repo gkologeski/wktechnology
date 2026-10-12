@@ -80,7 +80,10 @@ const EMAIL: Record<number, string> = {
   1: "admin-a@techerp-test.invalid",
   2: "own-a@techerp-test.invalid", // Gerente Comercial sozinho
   3: "team-a@techerp-test.invalid", // Gerente + Financeiro + Diretor
-  4: "ws-a@techerp-test.invalid", // Head RH + Gerente
+  4: "ws-a@techerp-test.invalid",
+  5: "removed-a@techerp-test.invalid", // membro inativo
+  6: "admin-b@techerp-test.invalid", // admin apenas do outro workspace
+};
 const WA = "aaaaaaaa-0000-4000-8000-00000000000a";
 const WB = "aaaaaaaa-0000-4000-8000-00000000000b";
 const R_FIN = "31000000-0000-4000-8000-0000000000e2"; // cargo global de sistema
