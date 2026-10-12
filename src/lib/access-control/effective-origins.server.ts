@@ -59,6 +59,9 @@ export async function loadEffectiveOrigins(
   ws: string,
   targetUserId: string,
 ): Promise<EffectiveOriginsResult> {
+  const { data: wsData } = await sb.from("workspaces").select("created_by").eq("id", ws).maybeSingle();
+  const creator = (wsData as { created_by?: string } | null)?.created_by ?? null;
+  const ownerFilter = creator ? `owner_id.eq.${ws},owner_id.eq.${creator}` : `owner_id.eq.${ws}`;
   const [member, wsRow, ujr, ups, dbKeys] = await Promise.all([
     sb
       .from("workspace_members")
@@ -71,7 +74,7 @@ export async function loadEffectiveOrigins(
       .from("user_job_roles")
       .select("role_id, job_roles(id, name)")
       .eq("user_id", targetUserId)
-      .or(`workspace_id.eq.${ws},owner_id.eq.${ws}`),
+      .or(`workspace_id.eq.${ws},${ownerFilter}`),
     sb
       .from("user_permission_sets")
       .select("set_id, permission_sets(id, name)")
@@ -142,7 +145,7 @@ export async function loadEffectiveOrigins(
     extraSets: extra.map((e) => ({ ...e, keys: keysBySet.get(e.id) ?? [] })),
   };
 
-  const db = new Set(((dbKeys.data ?? []) as unknown as string[]).map(String));
+  const db = new Set(dbKeys.map(String));
   let origins = computeEffectiveOrigins(input);
   // Chaves que só o bypass de admin concede aparecem com essa origem explícita.
   const known = new Set(origins.map((o) => o.key));
