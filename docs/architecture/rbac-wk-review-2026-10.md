@@ -71,3 +71,26 @@ Não foi adotado: somar os defaults dos cargos nas permissões efetivas. Isso co
 - Conceder/revogar passou a respeitar dependências: ações de perfis de vaga exigem a permissão de ver perfis; revogar a base é barrado enquanto houver ação dependente.
 - "Restaurar padrões" deixou de apagar proibições e ajustes do cargo: ele recompõe o pacote local pela baseline da WK e recoloca apenas o que falta.
 - Conferido no navegador com três pessoas reais: Representante de Vendas (123 chaves), administrador com cargo Auditor (1.657, com aviso de bypass) e gestora com três cargos (737, com aviso de acúmulo). As origens batem com o banco, sem divergências.
+
+## Fase 4 — fechamento das brechas da prova independente (migration 0125, aplicada)
+
+Origem: prova independente do usuário (GoTrue + SDK reais, 47 asserções, 12 pass / 35 fail antes das correções).
+
+O que a migration 0125 passou a garantir:
+
+- **Pacotes de permissão nunca globais.** Criar, alterar ou excluir pacote exige ser administrador do workspace e o pacote precisa ter workspace definido. Antes, um pacote criado pela tela nascia sem workspace e podia valer em outros clientes.
+- **Vínculo cargo ↔ pacote (ACL) só por administrador do workspace do pacote.** Membro comum não liga nem desliga pacote de cargo pelo SDK.
+- **Mensagens de chat seguem a visibilidade real da conversa** (permissão + escopo próprio/equipe/workspace + restrição de carteira), tanto para ler quanto para enviar. Antes bastava ser membro do workspace para ler mensagem de terceiros.
+- **Aprovação de perfil de vaga exige enxergar o negócio.** Nova verificação explícita por posse/equipe/permissão (`deal_visible_to_current_user`), usada pelo fluxo do líder, pelo caminho legado e pelo override administrativo; o legado também passou a exigir solicitação pendente.
+- **Apontador materializado em pacote local da WK**: 12 chaves no pacote do workspace e as concessões temporárias da 0123 removidas (usuário segue com 12 chaves).
+
+Código do app: pacotes de cargo passaram a nascer com o workspace ativo; criar, duplicar e excluir cargo exigem administrador e gravam o workspace no cargo.
+
+Validação executada (sem Docker, stack isolada com GoTrue + PostgREST reais e JWT de verdade):
+
+- `scripts/isolated-db/stack/rbac-wk-phase1.ts` com a 0125: **42 pass / 0 fail / 4 observações antes da migration**.
+- Casos novos: pacote criado por membro comum negado, pacote global negado mesmo para administrador, vínculo de pacote a cargo por não-admin negado, líder com a permissão mas com negócio fora do escopo negado.
+- Gates: `bun run verify` completo (779 testes) e `bun run build` completo.
+- Conferência no banco após aplicar: 12 itens no pacote local do Apontador, 0 concessões temporárias, 0 pacotes globais de cargo.
+
+Pendente: reteste das 47 asserções pelo usuário e publicação coordenada (não publicado).
