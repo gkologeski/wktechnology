@@ -1,6 +1,6 @@
 # Revisão de cargos WK (workspace 184b9435…) — outubro/2026
 
-Estado atual: as **Fases 0 e 1 foram aplicadas no banco compartilhado** (migration `0122_rbac_wk_phase1_structural`) e no código do servidor. Elas não foram publicadas. As Fases 2, 3 e 4 continuam pendentes.
+Estado atual (12/10/2026): as **Fases 0, 1, 2, 3 e 4 foram aplicadas** no banco compartilhado (migrations `0122`, `0123`, `0124`, `0125`, `0126`) e no código do servidor e da interface. Nada foi publicado. Pendem apenas o reteste das asserções pelo usuário e a publicação coordenada.
 
 ## Fase 0 — foto e reversão
 - `rbac_wk_backup_2026_10` guarda 393 linhas: overrides, cargos locais, vínculos cargo↔pacote, cargos dos usuários, conjuntos extras e o código anterior das 4 funções alteradas.
@@ -41,12 +41,10 @@ Não foi adotado: somar os defaults dos cargos nas permissões efetivas. Isso co
   - quem não é líder (inclusive admin) recebe erro ao aprovar pelo botão antigo;
   - quem não tem a chave de chat deixa de ver as sessões.
 - Os gestores (Diretor/Gerente Comercial) têm só `chat.view`, sem `chat.create`. Por isso não enviam mais no chat, como prevê a matriz.
-- O botão de override no quadro de perfis de vaga ainda não existe (Fase 3b). Até lá, o override é só pelo banco/servidor.
+- O botão de override no quadro de perfis de vaga foi entregue na Fase 3b (diálogo com motivo obrigatório, auditado).
 
 ## Pendências
-- Fase 2: matriz dos 16 cargos.
-- Fase 3/3b: tela de permissões efetivas e o botão de override.
-- Fase 4: provas por cargo e leitura efetiva real.
+- Reteste das asserções (GoTrue + SDK) pelo usuário.
 - Publicação coordenada.
 - Decisões humanas: 8 admins/owners, 2 admins sem cargo e admin com cargo Auditor.
 
