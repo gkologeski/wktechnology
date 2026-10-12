@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { SdrAgentStudio } from "./sdr-agent-studio";
+import { SdrAgentPicker } from "./sdr-agent-picker";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "@tanstack/react-router";
 import { leadScoreBandLabel, LEAD_SCORE_MAX } from "@/lib/prospecting/lead-score";
@@ -127,13 +127,7 @@ export function SdrConsoleTabs() {
       </TabsContent>
       <TabsContent value="sdr-agent" className="mt-4">
         {body((d) => (
-          <SdrAgentStudio
-            workspaceId={d.workspaceId}
-            playbookId={
-              (d.readiness.playbooks.find((p) => p.questionnaire_id) ?? d.readiness.playbooks[0])
-                ?.id ?? null
-            }
-          />
+          <SdrAgentPicker workspaceId={d.workspaceId} playbooks={d.readiness.playbooks} />
         ))}
       </TabsContent>
       <TabsContent value="sdr-results" className="mt-4">
