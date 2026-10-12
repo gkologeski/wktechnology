@@ -43,6 +43,7 @@ import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/techhire/ui";
 import {
   approveRoleProfile,
+  adminOverrideApproveRoleProfile,
   archiveRoleProfile,
   createRoleProfile,
   createRoleProfileShareLink,
@@ -132,6 +133,7 @@ type Detail = {
     "view" | "create" | "update" | "commercial" | "approve" | "early" | "forward" | "share",
     boolean
   >;
+  adminOverride: boolean;
   missing: string[];
   versions: { id: string; version: number; approved_by: string; approved_at: string }[];
   approvedVersion: number | null;
@@ -206,6 +208,7 @@ export function RoleProfileDetail({
   const fns = {
     status: useServerFn(setRoleProfileStatus),
     approve: useServerFn(approveRoleProfile),
+    override: useServerFn(adminOverrideApproveRoleProfile),
     forward: useServerFn(forwardRoleProfile),
     sync: useServerFn(syncRoleProfileAts),
     template: useServerFn(saveRoleProfileTemplate),
@@ -220,6 +223,8 @@ export function RoleProfileDetail({
   };
   const [busy, setBusy] = useState<string | null>(null);
   const [forwardOpen, setForwardOpen] = useState(false);
+  const [overrideOpen, setOverrideOpen] = useState(false);
+  const [overrideReason, setOverrideReason] = useState("");
   const [earlyReason, setEarlyReason] = useState("");
   const [shareOpen, setShareOpen] = useState(false);
   const [shareFields, setShareFields] = useState<ClientField[]>([
@@ -419,6 +424,16 @@ export function RoleProfileDetail({
                     <CheckCircle2 className="mr-1 h-3.5 w-3.5" aria-hidden />
                   )}
                   Aprovar
+                </Button>
+              ) : null}
+              {d.adminOverride && ["draft", "awaiting_info", "in_validation"].includes(p.status) ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={!!busy || d.missing.length > 0}
+                  onClick={() => setOverrideOpen(true)}
+                >
+                  Aprovar por override (admin)
                 </Button>
               ) : null}
               {d.perms.forward && p.status === "approved" && !p.ats_job_id ? (
@@ -833,6 +848,54 @@ export function RoleProfileDetail({
                 </p>
               </TabsContent>
             </Tabs>
+
+            <Dialog open={overrideOpen} onOpenChange={setOverrideOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Aprovar por override administrativo</DialogTitle>
+                  <DialogDescription>
+                    O caminho normal é a validação pelo líder da equipe do negócio. O override
+                    aprova a versão atual sem o líder e fica registrado na auditoria com o motivo.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-2">
+                  <Label htmlFor="rp-override">Motivo (mínimo 10 caracteres)</Label>
+                  <Textarea
+                    id="rp-override"
+                    rows={3}
+                    value={overrideReason}
+                    onChange={(e) => setOverrideReason(e.target.value)}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button variant="ghost" onClick={() => setOverrideOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button
+                    disabled={!!busy || overrideReason.trim().length < 10}
+                    onClick={() =>
+                      run(
+                        "override",
+                        async () => {
+                          await fns.override({
+                            data: {
+                              id: p.id,
+                              expectedRevision: p.revision,
+                              reason: overrideReason.trim(),
+                            },
+                          });
+                          setOverrideOpen(false);
+                          setOverrideReason("");
+                        },
+                        "Versão aprovada por override (registrado na auditoria)",
+                      )
+                    }
+                  >
+                    Confirmar override
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
             <Dialog open={forwardOpen} onOpenChange={setForwardOpen}>
               <DialogContent>

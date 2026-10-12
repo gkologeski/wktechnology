@@ -57,6 +57,14 @@ export async function permFlags(ctx: Ctx): Promise<PermFlags> {
   return Object.fromEntries(entries) as PermFlags;
 }
 
+async function isWorkspaceAdmin(ctx: Ctx): Promise<boolean> {
+  const { data } = await ctx.supabase.rpc("is_workspace_admin_v2", {
+    _workspace: ctx.workspaceId,
+    _user: ctx.userId,
+  });
+  return Boolean(data);
+}
+
 function friendly(e: { message?: string } | null | undefined): Error {
   const m = e?.message ?? "Erro inesperado";
   if (m.includes("STALE_REVISION"))
@@ -389,6 +397,7 @@ export async function getDetail(ctx: Ctx, id: string) {
       ? (CommercialDataZ.safeParse(commercial.data.data).data ?? null)
       : null,
     perms,
+    adminOverride: await isWorkspaceAdmin(ctx),
     missing: approvalMissing(like),
     versions: versions.data ?? [],
     approvedVersion: approved?.version ?? null,
@@ -694,6 +703,24 @@ export async function approve(ctx: Ctx, input: { id: string; expectedRevision: n
     _expected_revision: input.expectedRevision,
     _snapshot: snapshotOf(like) as unknown as Json,
     _commercial: null as unknown as Json,
+  });
+  if (error) throw friendly(error);
+  return data as { version_id: string; version: number };
+}
+
+/** Override administrativo explícito: motivo obrigatório, auditado no banco. */
+export async function adminOverrideApprove(
+  ctx: Ctx,
+  input: { id: string; expectedRevision: number; reason: string },
+) {
+  const cur = await loadProfile(ctx, input.id);
+  await loadDeal(ctx, cur.deal_id); // visibilidade do negócio pelo usuário
+  const missing = approvalMissing(rowToLike(cur));
+  if (missing.length) throw new Error(`Complete antes de aprovar: ${missing.join(", ")}.`);
+  const { data, error } = await ctx.supabase.rpc("role_profile_admin_override_approve", {
+    _profile: cur.id,
+    _expected_revision: input.expectedRevision,
+    _reason: input.reason,
   });
   if (error) throw friendly(error);
   return data as { version_id: string; version: number };

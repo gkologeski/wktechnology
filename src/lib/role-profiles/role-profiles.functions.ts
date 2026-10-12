@@ -107,6 +107,18 @@ export const approveRoleProfile = createServerFn({ method: "POST" })
     return s.approve(await ctxOf(context), data);
   });
 
+export const adminOverrideApproveRoleProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({ id, expectedRevision: z.number().int(), reason: z.string().trim().min(10).max(500) })
+      .parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const s = await import("./service.server");
+    return s.adminOverrideApprove(await ctxOf(context), data);
+  });
+
 export const forwardRoleProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
