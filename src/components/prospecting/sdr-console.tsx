@@ -127,13 +127,7 @@ export function SdrConsoleTabs() {
       </TabsContent>
       <TabsContent value="sdr-agent" className="mt-4">
         {body((d) => (
-          <SdrAgentStudio
-            workspaceId={d.workspaceId}
-            playbookId={
-              (d.readiness.playbooks.find((p) => p.questionnaire_id) ?? d.readiness.playbooks[0])
-                ?.id ?? null
-            }
-          />
+          <AgentStudioPicker d={d} />
         ))}
       </TabsContent>
       <TabsContent value="sdr-results" className="mt-4">
