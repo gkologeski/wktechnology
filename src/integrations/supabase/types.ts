@@ -22343,6 +22343,10 @@ export type Database = {
       }
       current_user_workspaces: { Args: never; Returns: string[] }
       dashboard_metrics: { Args: never; Returns: Json }
+      deal_visible_to_current_user: {
+        Args: { _deal: string }
+        Returns: boolean
+      }
       deals_hs_close_date: { Args: { _hs_raw: Json }; Returns: string }
       default_workspace_for_user: { Args: { _user: string }; Returns: string }
       effective_permissions_array: {

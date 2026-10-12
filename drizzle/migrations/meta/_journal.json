@@ -876,6 +876,13 @@
       "when": 1791764747752,
       "tag": "0124_admin_effective_permissions_array",
       "breakpoints": true
+    },
+    {
+      "idx": 125,
+      "version": "7",
+      "when": 1791766677047,
+      "tag": "0125_rbac_wk_phase4_guards",
+      "breakpoints": true
     }
   ]
 }
