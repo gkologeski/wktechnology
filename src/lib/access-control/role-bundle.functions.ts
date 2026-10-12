@@ -621,10 +621,13 @@ export const createJobRole = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => CreateRoleInput.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(supabase, userId);
+    await assertWorkspaceAdmin(supabase, userId, workspaceId);
     const { data: ins, error } = await supabase
       .from("job_roles")
       .insert({
         owner_id: userId,
+        workspace_id: workspaceId,
         name: data.name,
         description: data.description ?? null,
         color: data.color ?? null,
