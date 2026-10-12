@@ -86,23 +86,32 @@ async function assertRoleEditable(supabase: SupabaseClient, roleId: string) {
   return data as { id: string; owner_id: string | null };
 }
 
+// Pacotes de cargo são SEMPRE locais: ficam presos ao workspace ativo, nunca globais,
+// para não vazarem permissões para outros tenants pelos cargos de sistema.
 async function ensureBundle(
   supabase: SupabaseClient,
   userId: string,
+  workspaceId: string,
   roleId: string,
 ): Promise<string> {
-  // Try to find an existing bundle linked to this role owned by the current user.
   const existing = await supabase
     .from("job_role_sets")
-    .select("set_id, permission_sets!inner(id, module, owner_id)")
+    .select("set_id, permission_sets!inner(id, module, owner_id, workspace_id)")
     .eq("role_id", roleId);
   if (existing.error) throw new Error(existing.error.message);
   const rows = (existing.data ?? []) as unknown as Array<{
     set_id: string;
-    permission_sets: { id: string; module: string; owner_id: string | null };
+    permission_sets: {
+      id: string;
+      module: string;
+      owner_id: string | null;
+      workspace_id: string | null;
+    };
   }>;
   const found = rows.find(
-    (r) => r.permission_sets?.module === BUNDLE_MODULE && r.permission_sets?.owner_id === userId,
+    (r) =>
+      r.permission_sets?.module === BUNDLE_MODULE &&
+      r.permission_sets?.workspace_id === workspaceId,
   );
   if (found) return found.set_id;
 
@@ -112,6 +121,7 @@ async function ensureBundle(
     .from("permission_sets")
     .insert({
       owner_id: userId,
+      workspace_id: workspaceId,
       module: BUNDLE_MODULE,
       name,
       description: "Bundle gerado automaticamente para o cargo.",
@@ -124,7 +134,7 @@ async function ensureBundle(
     const q = await supabase
       .from("permission_sets")
       .select("id")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .eq("module", BUNDLE_MODULE)
       .eq("name", name)
       .maybeSingle();
@@ -156,7 +166,7 @@ async function applyBulkKeys(
   if (keys.length === 0) return null;
   let setId: string | null = null;
   if (granted) {
-    const grantedSetId = await ensureBundle(supabase, userId, roleId);
+    const grantedSetId = await ensureBundle(supabase, userId, workspaceId, roleId);
     setId = grantedSetId;
     const rows = keys.map((k) => ({ set_id: grantedSetId, permission_key: k }));
     const { error } = await supabase
@@ -166,15 +176,15 @@ async function applyBulkKeys(
   } else {
     const existing = await supabase
       .from("job_role_sets")
-      .select("set_id, permission_sets!inner(id, module, owner_id)")
+      .select("set_id, permission_sets!inner(id, module, owner_id, workspace_id)")
       .eq("role_id", roleId);
     if (existing.error) throw new Error(existing.error.message);
     for (const row of (existing.data ?? []) as unknown as Array<{
       set_id: string;
-      permission_sets: { module: string; owner_id: string | null };
+      permission_sets: { module: string; owner_id: string | null; workspace_id: string | null };
     }>) {
       if (row.permission_sets?.module !== BUNDLE_MODULE) continue;
-      if (row.permission_sets?.owner_id !== userId) continue;
+      if (row.permission_sets?.workspace_id !== workspaceId) continue;
       const { error } = await supabase
         .from("permission_set_items")
         .delete()
@@ -277,7 +287,7 @@ export const setRolePermission = createServerFn({ method: "POST" })
     );
     let setId: string | null = null;
     if (data.granted) {
-      setId = await ensureBundle(supabase, userId, data.role_id);
+      setId = await ensureBundle(supabase, userId, workspaceId, data.role_id);
       const { error } = await supabase
         .from("permission_set_items")
         .upsert(
@@ -296,15 +306,15 @@ export const setRolePermission = createServerFn({ method: "POST" })
     } else {
       const existing = await supabase
         .from("job_role_sets")
-        .select("set_id, permission_sets!inner(id, module, owner_id)")
+        .select("set_id, permission_sets!inner(id, module, owner_id, workspace_id)")
         .eq("role_id", data.role_id);
       if (existing.error) throw new Error(existing.error.message);
       for (const row of (existing.data ?? []) as unknown as Array<{
         set_id: string;
-        permission_sets: { module: string; owner_id: string | null };
+        permission_sets: { module: string; owner_id: string | null; workspace_id: string | null };
       }>) {
         if (row.permission_sets?.module !== BUNDLE_MODULE) continue;
-        if (row.permission_sets?.owner_id !== userId) continue;
+        if (row.permission_sets?.workspace_id !== workspaceId) continue;
         const { error } = await supabase
           .from("permission_set_items")
           .delete()
@@ -340,7 +350,7 @@ export const bulkSetRolePermissions = createServerFn({ method: "POST" })
     await assertDependencies(supabase, workspaceId, data.role_id, data.keys, data.granted);
     let setId: string | null = null;
     if (data.granted) {
-      const grantedSetId = await ensureBundle(supabase, userId, data.role_id);
+      const grantedSetId = await ensureBundle(supabase, userId, workspaceId, data.role_id);
       setId = grantedSetId;
       const rows = data.keys.map((k) => ({ set_id: grantedSetId, permission_key: k }));
       const { error } = await supabase
@@ -350,15 +360,15 @@ export const bulkSetRolePermissions = createServerFn({ method: "POST" })
     } else {
       const existing = await supabase
         .from("job_role_sets")
-        .select("set_id, permission_sets!inner(id, module, owner_id)")
+        .select("set_id, permission_sets!inner(id, module, owner_id, workspace_id)")
         .eq("role_id", data.role_id);
       if (existing.error) throw new Error(existing.error.message);
       for (const row of (existing.data ?? []) as unknown as Array<{
         set_id: string;
-        permission_sets: { module: string; owner_id: string | null };
+        permission_sets: { module: string; owner_id: string | null; workspace_id: string | null };
       }>) {
         if (row.permission_sets?.module !== BUNDLE_MODULE) continue;
-        if (row.permission_sets?.owner_id !== userId) continue;
+        if (row.permission_sets?.workspace_id !== workspaceId) continue;
         const { error } = await supabase
           .from("permission_set_items")
           .delete()
@@ -501,7 +511,7 @@ export const restoreRoleDefaults = createServerFn({ method: "POST" })
     if (keys.length === 0) {
       throw new Error("Padrões deste cargo indisponíveis; nada foi alterado.");
     }
-    const setId = await ensureBundle(supabase, userId, data.role_id);
+    const setId = await ensureBundle(supabase, userId, workspaceId, data.role_id);
     const del = await supabase.from("permission_set_items").delete().eq("set_id", setId);
     if (del.error) throw new Error(del.error.message);
     if (keys.length > 0) {
@@ -616,10 +626,13 @@ export const createJobRole = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => CreateRoleInput.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(supabase, userId);
+    await assertWorkspaceAdmin(supabase, userId, workspaceId);
     const { data: ins, error } = await supabase
       .from("job_roles")
       .insert({
         owner_id: userId,
+        workspace_id: workspaceId,
         name: data.name,
         description: data.description ?? null,
         color: data.color ?? null,
@@ -642,6 +655,8 @@ export const duplicateJobRole = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => DuplicateRoleInput.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(supabase, userId);
+    await assertWorkspaceAdmin(supabase, userId, workspaceId);
     const src = await supabase
       .from("job_roles")
       .select("id, name, description, color, data_scope")
@@ -661,6 +676,7 @@ export const duplicateJobRole = createServerFn({ method: "POST" })
       .from("job_roles")
       .insert({
         owner_id: userId,
+        workspace_id: workspaceId,
         name: newName,
         description: source.description,
         color: source.color,
@@ -687,7 +703,7 @@ export const duplicateJobRole = createServerFn({ method: "POST" })
       }
     }
     if (keys.size > 0) {
-      const setId = await ensureBundle(supabase, userId, newRoleId);
+      const setId = await ensureBundle(supabase, userId, workspaceId, newRoleId);
       const rows = Array.from(keys).map((k) => ({ set_id: setId, permission_key: k }));
       const { error: e } = await supabase
         .from("permission_set_items")
@@ -728,22 +744,25 @@ export const deleteJobRole = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => DeleteRoleInput.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(supabase, userId);
+    await assertWorkspaceAdmin(supabase, userId, workspaceId);
     await assertRoleEditable(supabase, data.role_id);
-    // Collect bundles owned by the caller linked to this role, so we can clean them up.
+    // Collect local bundles of this workspace linked to this role, so we can clean them up.
     const links = await supabase
       .from("job_role_sets")
-      .select("set_id, permission_sets!inner(id, module, owner_id)")
+      .select("set_id, permission_sets!inner(id, module, owner_id, workspace_id)")
       .eq("role_id", data.role_id);
     if (links.error) throw new Error(links.error.message);
     const bundleIds = (
       (links.data ?? []) as Array<{
         set_id: string;
-        permission_sets: { module: string; owner_id: string | null };
+        permission_sets: { module: string; owner_id: string | null; workspace_id: string | null };
       }>
     )
       .filter(
         (r) =>
-          r.permission_sets?.module === BUNDLE_MODULE && r.permission_sets?.owner_id === userId,
+          r.permission_sets?.module === BUNDLE_MODULE &&
+          r.permission_sets?.workspace_id === workspaceId,
       )
       .map((r) => r.set_id);
 
