@@ -116,8 +116,12 @@ function SdrAgentPage() {
   async function remove(id?: string) {
     if (!id) return;
     if (!(await confirmDialog("Excluir playbook?"))) return;
-    await delFn({ data: { id } });
-    toast.success("Excluído");
+    try {
+      const r = await delFn({ data: { id } });
+      toast.success(r.archived ? "Playbook desativado (tem histórico ou vínculos)" : "Excluído");
+    } catch (e) {
+      return toast.error(e instanceof Error ? e.message : "Erro ao excluir");
+    }
     setActive(empty);
     await reload();
   }
