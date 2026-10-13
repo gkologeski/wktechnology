@@ -106,9 +106,7 @@ export async function handleMessagingAction(
       const toField = action.to_field || "phone";
       const to = (ctx.after?.[toField] as string | null) ?? null;
       if (!to) throw new Error(`sem destinatário em ${toField}`);
-      const { validateWhatsAppStep, whatsAppIdempotencyKey } = await import(
-        "../whatsapp-step"
-      );
+      const { validateWhatsAppStep, whatsAppIdempotencyKey } = await import("../whatsapp-step");
       const { loadApprovedTemplates } = await import("@/lib/whatsapp/templates.server");
       // Revalida no fornecedor no momento do envio: modelo pode ter sido pausado.
       const catalog = await loadApprovedTemplates(supabase, ctx.workspaceId);

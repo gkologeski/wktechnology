@@ -165,9 +165,8 @@ export const publishWorkflow = createServerFn({ method: "POST" })
       .maybeSingle();
     if (getErr) throw new Error(getErr.message);
     if (!wf) throw new Error("Workflow não encontrado");
-    const { collectWhatsAppSteps, validateWhatsAppStep } = await import(
-      "@/lib/workflows/whatsapp-step"
-    );
+    const { collectWhatsAppSteps, validateWhatsAppStep } =
+      await import("@/lib/workflows/whatsapp-step");
     const waSteps = collectWhatsAppSteps(wf.draft_actions ?? []);
     if (waSteps.length > 0) {
       const { loadApprovedTemplates } = await import("@/lib/whatsapp/templates.server");

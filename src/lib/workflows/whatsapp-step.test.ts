@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { collectWhatsAppSteps, validateWhatsAppStep, whatsAppIdempotencyKey } from "./whatsapp-step";
+import {
+  collectWhatsAppSteps,
+  validateWhatsAppStep,
+  whatsAppIdempotencyKey,
+} from "./whatsapp-step";
 
 const tpl = {
   name: "mensagem001",
@@ -17,7 +21,9 @@ describe("passo WhatsApp do fluxo", () => {
   it("exige as 3 variáveis do modelo", () => {
     const step = { template_name: "mensagem001", template_variables: ["a", "b"] };
     expect(validateWhatsAppStep(step, [tpl])?.code).toBe("TEMPLATE_VARIABLES_INCOMPLETE");
-    expect(validateWhatsAppStep({ ...step, template_variables: ["a", "b", "c"] }, [tpl])).toBeNull();
+    expect(
+      validateWhatsAppStep({ ...step, template_variables: ["a", "b", "c"] }, [tpl]),
+    ).toBeNull();
   });
   it("encontra passos dentro de ramos", () => {
     const steps = collectWhatsAppSteps([
