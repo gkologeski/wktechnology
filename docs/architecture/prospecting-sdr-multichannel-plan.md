@@ -124,7 +124,7 @@ independentes; configuração global não sobrescreve agente. Reaproveitar
 Aceite: dois agentes coexistem com configurações distintas e o runtime usa o
 agente escolhido, não o primeiro playbook.
 
-## Fase 3 — Fluxo visual operacional (EM ANDAMENTO)
+## Fase 3 (CONCLUÍDA) — Fluxo visual operacional (EM ANDAMENTO)
 
 Entregue (ciclo 1): o passo "Enviar WhatsApp" do construtor de workflows deixou
 de ser decorativo — antes só gravava uma linha `queued` que nenhum processo
@@ -140,8 +140,18 @@ agente ativo, piloto, opt-out, um agente por conversa, idempotente) e
 "Transferir para pessoa" (pausa agente, define responsável, avisa). Publicação
 bloqueia agente ausente/sem versão publicada/de outra empresa. Teste de ponta a
 ponta no motor com banco/fornecedores falsos (`prospecting-flow.test.ts`).
-Pendente: paralelo com junção all/any, agenda e material como blocos próprios,
-espera dentro de ramos, canvas livre com zoom/pan (o editor segue em lista).
+Entregue (ciclo 3, fecha a fase): "Caminhos em paralelo" (2–5 caminhos, junção
+"todos" ou "primeiro", cancelando os demais; estado durável por caminho; erro em
+um não derruba os outros); esperas, "Aguardar resposta" e aprovação dentro de
+qualquer caminho retomam do mesmo ponto sem reavaliar condições (quadros
+`__wf_path` + estado `__wf_state` no evento de retomada); blocos "Link de
+agendamento" (página ativa da empresa → `{{vars.booking_url}}`) e "Material de
+apoio" (material aprovado → `{{vars.material_url}}`), conferidos ao publicar e na
+execução; desenho do fluxo com arrastar o fundo, trackpad, zoom (Ctrl/Cmd+roda,
+botões, teclado) e setas. Limites honestos: aprovação não pode ficar dentro de
+paralelo (publicação bloqueia); o motor é sequencial, então caminhos sem espera
+terminam na hora, na ordem; o desenho segue em colunas (zoom/arrasto da
+visualização, não posicionamento livre de cada bloco).
 
 ### Escopo original
 
