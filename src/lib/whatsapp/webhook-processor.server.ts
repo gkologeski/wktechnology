@@ -92,7 +92,19 @@ async function handleMessages(admin: Admin, value: any): Promise<string | null> 
         });
       continue;
     }
-    const from = normalizePhone(m.from);
+    // Celular BR pode chegar sem o 9º dígito: converge para a conversa já existente
+    // (com ou sem o dígito), a mais recente, para nunca dividir o histórico.
+    const rawFrom = normalizePhone(m.from);
+    const { brPhoneVariants } = await import("./phone-variants");
+    const { data: variantConv } = await admin
+      .from("whatsapp_conversations")
+      .select("contact_phone")
+      .in("contact_phone", brPhoneVariants(rawFrom))
+      .eq("twilio_number", ourPhone)
+      .order("last_message_at", { ascending: false, nullsFirst: false })
+      .limit(1)
+      .maybeSingle();
+    const from = (variantConv?.contact_phone as string | undefined) ?? rawFrom;
     const ws = await resolveWorkspace(admin, from, ourPhone, value?.metadata?.phone_number_id);
     if (!ws) throw new Retry("Workspace da conversa não identificado");
     workspaceId = ws.workspace_id;

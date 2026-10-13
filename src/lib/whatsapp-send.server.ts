@@ -55,6 +55,17 @@ export async function sendWhatsAppFromServer(params: {
 
   // Log da conversa + mensagem (best-effort; falhas não invalidam o envio real)
   try {
+    // Celular BR com ou sem o 9º dígito: reaproveita a conversa existente.
+    const { brPhoneVariants } = await import("@/lib/whatsapp/phone-variants");
+    const { data: sameConv } = await supabase
+      .from("whatsapp_conversations")
+      .select("contact_phone")
+      .eq("workspace_id", workspaceId)
+      .in("contact_phone", brPhoneVariants(toBare))
+      .eq("twilio_number", num.displayPhoneNumber)
+      .order("last_message_at", { ascending: false, nullsFirst: false })
+      .limit(1)
+      .maybeSingle();
     const { data: conv } = await supabase
       .from("whatsapp_conversations")
       .upsert(
@@ -62,7 +73,7 @@ export async function sendWhatsAppFromServer(params: {
           owner_id: workspaceId,
           workspace_id: workspaceId,
           contact_id: params.contactId ?? null,
-          contact_phone: toBare,
+          contact_phone: (sameConv?.contact_phone as string | undefined) ?? toBare,
           twilio_number: num.displayPhoneNumber,
           provider: "meta",
           wa_phone_number_id: num.phoneNumberId,
