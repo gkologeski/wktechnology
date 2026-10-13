@@ -1,6 +1,10 @@
 // Regras puras do passo "Enviar WhatsApp" do construtor de fluxos.
 // Usadas na validação de publicação (servidor) e na conferência do editor.
-import { describeTemplate, checkTemplateVariables } from "@/lib/whatsapp/template-shape";
+import {
+  describeTemplate,
+  checkTemplateVariables,
+  type TemplateShape,
+} from "@/lib/whatsapp/template-shape";
 
 export type WhatsAppStep = {
   template_name?: string;
@@ -17,7 +21,11 @@ export type WhatsAppStepIssue =
   | { code: "TEMPLATE_VARIABLES_INCOMPLETE"; message: string }
   | { code: "TEMPLATE_MEDIA_UNSUPPORTED"; message: string };
 
-export type CatalogTemplate = { name: string; language: string; components: unknown[] };
+/** Modelo do catálogo: com componentes crus (servidor) ou já descrito (interface). */
+export type CatalogTemplate = { name: string; language: string } & (
+  | { components: unknown[] }
+  | TemplateShape
+);
 
 /**
  * Fluxo roda sem interação humana e normalmente fora da janela de 24 h:
@@ -44,7 +52,7 @@ export function validateWhatsAppStep(
       code: "TEMPLATE_NOT_APPROVED",
       message: `O modelo "${name}" não está aprovado na conta WhatsApp conectada.`,
     };
-  const shape = describeTemplate(tpl.components);
+  const shape: TemplateShape = "components" in tpl ? describeTemplate(tpl.components) : tpl;
   if (shape.headerMediaRequired || shape.headerVariableCount > 0)
     return {
       code: "TEMPLATE_MEDIA_UNSUPPORTED",

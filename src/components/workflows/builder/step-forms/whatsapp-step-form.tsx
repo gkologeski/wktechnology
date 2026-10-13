@@ -13,7 +13,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getWhatsAppTemplateCatalog } from "@/lib/whatsapp.functions";
-import { describeTemplate } from "@/lib/whatsapp/template-shape";
 import { validateWhatsAppStep, type WhatsAppStep } from "@/lib/workflows/whatsapp-step";
 
 export function WhatsAppStepForm<T extends WhatsAppStep & { type: "send_whatsapp" }>({
@@ -38,7 +37,7 @@ export function WhatsAppStepForm<T extends WhatsAppStep & { type: "send_whatsapp
       t.name === action.template_name &&
       (!action.template_language || t.language === action.template_language),
   );
-  const shape = selected ? describeTemplate(selected.components) : null;
+  const shape = selected ?? null;
   const issue = q.data ? validateWhatsAppStep(action, items) : null;
 
   return (
