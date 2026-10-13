@@ -2,13 +2,17 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Megaphone, Play, Pause, X, Plus, Pencil } from "lucide-react";
+import { Megaphone, Play, Pause, X, Plus, Pencil, Copy, Trash2 } from "lucide-react";
 import {
   createWhatsAppCampaign,
+  deleteWhatsAppCampaign,
+  duplicateWhatsAppCampaign,
   listWhatsAppCampaigns,
   setWhatsAppCampaignStatus,
   updateWhatsAppCampaign,
 } from "@/lib/whatsapp-campaigns.functions";
+import { canDeleteCampaign, canEditCampaign } from "@/lib/whatsapp/campaign-actions";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { getWhatsAppTemplateCatalog } from "@/lib/whatsapp.functions";
 import { catalogMessage, composerPolicy } from "@/lib/whatsapp/composer-policy";
 import { listPlaybooks } from "@/lib/sdr-agent.functions";
@@ -212,6 +216,24 @@ function CampaignsPage() {
     mutationFn: (vars: { id: string; status: "running" | "paused" | "canceled" }) =>
       statusFn({ data: vars }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["wa-campaigns"] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const duplicateFn = useServerFn(duplicateWhatsAppCampaign);
+  const deleteFn = useServerFn(deleteWhatsAppCampaign);
+  const duplicate = useMutation({
+    mutationFn: (id: string) => duplicateFn({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Cópia criada em rascunho");
+      void qc.invalidateQueries({ queryKey: ["wa-campaigns"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const remove = useMutation({
+    mutationFn: (id: string) => deleteFn({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Campanha excluída");
+      void qc.invalidateQueries({ queryKey: ["wa-campaigns"] });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -434,11 +456,46 @@ function CampaignsPage() {
               </div>
             </div>
             <div className="flex items-center gap-1">
-              {(c.status === "draft" || c.status === "paused") && (
-                <Button size="sm" variant="ghost" onClick={() => openEdit(c)}>
-                  <Pencil className="h-4 w-4 mr-1" /> Editar
-                </Button>
-              )}
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => openEdit(c)}
+                disabled={!canEditCampaign(c.status)}
+                title={
+                  canEditCampaign(c.status)
+                    ? undefined
+                    : "Só é possível editar campanhas em rascunho ou pausadas"
+                }
+              >
+                <Pencil className="h-4 w-4 mr-1" /> Editar
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                aria-label={`Duplicar ${c.name}`}
+                title="Duplicar"
+                disabled={duplicate.isPending}
+                onClick={() => duplicate.mutate(c.id)}
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                aria-label={`Excluir ${c.name}`}
+                title={
+                  canDeleteCampaign(c.status) ? "Excluir" : "Pause a campanha antes de excluir"
+                }
+                disabled={!canDeleteCampaign(c.status) || remove.isPending}
+                onClick={async () => {
+                  const ok = await confirmDialog(
+                    `Excluir a campanha "${c.name}" e seus ${c.total} destinatário(s)? As mensagens já enviadas continuam nas conversas.`,
+                  );
+                  if (ok) remove.mutate(c.id);
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
               {c.status !== "running" && c.status !== "completed" && c.status !== "canceled" && (
                 <Button
                   size="sm"
