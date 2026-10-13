@@ -32,8 +32,10 @@ import {
   assignWhatsAppConversation,
   setWhatsAppConversationStatus,
   listWhatsAppTemplates,
+  getWhatsAppServiceWindow,
   applyTemplate,
 } from "@/lib/whatsapp.functions";
+import { useChannelAvailability } from "@/hooks/use-channel-availability";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -113,7 +115,10 @@ function WhatsAppInbox() {
     name: string;
   } | null>(composerScope, null);
   const [uploading, setUploading] = useScopedComposerValue(composerScope, false);
-  const [templateRequired, setTemplateRequired] = useScopedComposerValue(composerScope, false);
+  const [templateRequiredByServer, setTemplateRequired] = useScopedComposerValue(
+    composerScope,
+    false,
+  );
   const [templateName, setTemplateName] = useScopedComposerValue(composerScope, "");
   const [templateVars, setTemplateVars] = useScopedComposerValue<string[]>(composerScope, []);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -144,10 +149,31 @@ function WhatsAppInbox() {
       : null,
   });
   const membersQ = useQuery({ queryKey: ["wa", "members"], queryFn: () => membersFn() });
+  const current = useMemo(
+    () =>
+      conversations.find((c) => c.id === selected) ??
+      (selectedSnapshot?.id === selected ? selectedSnapshot : undefined),
+    [conversations, selectedSnapshot, selected],
+  );
+  // Janela de 24 h consultada ao abrir a conversa (o servidor revalida no envio).
+  const availabilityQ = useChannelAvailability();
+  const windowFn = useServerFn(getWhatsAppServiceWindow);
+  const currentPhone = current?.contact_phone ?? "";
+  const windowQ = useQuery({
+    queryKey: ["wa", "service-window", currentPhone],
+    queryFn: () => windowFn({ data: { to: currentPhone } }),
+    enabled: currentPhone.replace(/\D/g, "").length >= 8,
+    staleTime: 30_000,
+  });
+  const windowClosed = windowQ.isSuccess && !windowQ.data.withinWindow;
+  const windowUnknown = !!currentPhone && !windowQ.isSuccess;
+  const templateRequired = templateRequiredByServer || windowClosed;
+  const freeTextBlocked = templateRequired || windowUnknown;
   const templatesQ = useQuery({
     queryKey: ["wa", "templates"],
     queryFn: () => templatesFn(),
     enabled: templateRequired,
+    staleTime: 60_000,
   });
   const memberMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -210,6 +236,8 @@ function WhatsAppInbox() {
 
   function submitDraft() {
     if (!current) return;
+    // Fora da janela (ou sem confirmação dela) texto livre e anexo não saem.
+    if (freeTextBlocked) return;
     if (!draft.trim() && !pendingMedia) return;
     sendMut.mutate({
       to: current.contact_phone,
@@ -257,12 +285,6 @@ function WhatsAppInbox() {
   });
 
   const messages = history.items;
-  const current = useMemo(
-    () =>
-      conversations.find((c) => c.id === selected) ??
-      (selectedSnapshot?.id === selected ? selectedSnapshot : undefined),
-    [conversations, selectedSnapshot, selected],
-  );
 
   // Rascunho automático da mensagem em digitação por conversa.
   const messageDraft = useMessageDraft({
@@ -483,30 +505,73 @@ function WhatsAppInbox() {
                 ))}
               </MessageHistoryViewport>
               <div className="bg-product-panel p-4 pt-3">
+                {!templateRequired && windowUnknown && (
+                  <div
+                    role="status"
+                    aria-live="polite"
+                    className="mb-3 flex items-center justify-between gap-2 rounded-md border border-border bg-product-panel-muted p-3 text-xs"
+                  >
+                    {windowQ.isError ? (
+                      <>
+                        <span className="text-destructive">
+                          Não foi possível verificar a janela de 24 horas. O envio fica bloqueado
+                          até a verificação.
+                        </span>
+                        <Button size="sm" variant="outline" onClick={() => windowQ.refetch()}>
+                          Verificar novamente
+                        </Button>
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground">
+                        Verificando a janela de 24 horas…
+                      </span>
+                    )}
+                  </div>
+                )}
                 {templateRequired && (
-                  <div className="mb-3 space-y-3 rounded-md border border-border bg-product-panel-muted p-3">
-                    <div className="flex gap-2 text-sm text-text-primary">
-                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                      <div>
-                        <p className="font-medium">Janela de 24 horas encerrada</p>
-                        <p className="text-xs text-muted-foreground">
-                          Para iniciar uma nova conversa, escolha um modelo aprovado pela Meta.
-                        </p>
+                  <div
+                    role="region"
+                    aria-label="Envio por modelo aprovado"
+                    className="mb-3 space-y-3 rounded-md border border-border bg-product-panel-muted p-3"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex gap-2 text-sm text-text-primary">
+                        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                        <div>
+                          <p className="font-medium">Janela de 24 horas encerrada</p>
+                          <p className="text-xs text-muted-foreground">
+                            O cliente não respondeu nas últimas 24 horas. Envie um modelo aprovado
+                            pela Meta; seu texto fica guardado como rascunho.
+                          </p>
+                        </div>
                       </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => templatesQ.refetch()}
+                        disabled={templatesQ.isFetching}
+                      >
+                        {templatesQ.isFetching ? "Atualizando…" : "Atualizar modelos"}
+                      </Button>
                     </div>
-                    {templatesQ.isError ? (
+                    {availabilityQ.isSuccess && !availabilityQ.data.whatsapp.ready ? (
+                      <p className="text-xs text-destructive">
+                        WhatsApp não conectado neste workspace. Conecte o número para listar os
+                        modelos.
+                      </p>
+                    ) : templatesQ.isError ? (
                       <div className="flex items-center justify-between gap-2 text-xs text-destructive">
-                        <span>Não foi possível carregar os modelos aprovados.</span>
+                        <span>Não foi possível carregar os modelos aprovados da Meta.</span>
                         <Button size="sm" variant="outline" onClick={() => templatesQ.refetch()}>
                           Tentar novamente
                         </Button>
                       </div>
-                    ) : templatesQ.isLoading ? (
+                    ) : templatesQ.isPending ? (
                       <p className="text-xs text-muted-foreground">Carregando modelos aprovados…</p>
                     ) : approvedTemplates.length === 0 ? (
                       <p className="text-xs text-muted-foreground">
-                        Nenhum modelo aprovado está disponível. Configure um modelo na Meta antes de
-                        enviar.
+                        A conta conectada não tem nenhum modelo com status aprovado. Crie ou aprove
+                        um modelo na Meta e clique em “Atualizar modelos”.
                       </p>
                     ) : (
                       <>
@@ -606,7 +671,7 @@ function WhatsAppInbox() {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    disabled={uploading}
+                    disabled={uploading || freeTextBlocked}
                     onClick={() => fileRef.current?.click()}
                     title="Anexar mídia"
                     aria-label="Anexar mídia"
@@ -616,19 +681,31 @@ function WhatsAppInbox() {
                   <Textarea
                     value={draft}
                     onChange={(e) => setDraft(e.target.value)}
-                    placeholder="Escreva uma mensagem…"
+                    readOnly={freeTextBlocked}
+                    aria-disabled={freeTextBlocked}
+                    placeholder={
+                      templateRequired
+                        ? "Fora da janela de 24 horas: envie um modelo aprovado"
+                        : "Escreva uma mensagem…"
+                    }
                     rows={2}
                     className="min-h-12 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
                         e.preventDefault();
+                        if (freeTextBlocked) return;
                         submitDraft();
                       }
                     }}
                   />
                   <Button
                     onClick={submitDraft}
-                    disabled={(!draft.trim() && !pendingMedia) || sendMut.isPending || uploading}
+                    disabled={
+                      freeTextBlocked ||
+                      (!draft.trim() && !pendingMedia) ||
+                      sendMut.isPending ||
+                      uploading
+                    }
                     aria-label="Enviar mensagem"
                   >
                     <Send className="h-4 w-4" />
@@ -636,7 +713,9 @@ function WhatsAppInbox() {
                 </div>
                 <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
                   <p className="text-[10px] text-muted-foreground">
-                    Ctrl/Cmd + Enter para enviar · anexe imagem, áudio, vídeo ou PDF (até 16MB)
+                    {templateRequired
+                      ? "Texto livre e anexos ficam disponíveis assim que o cliente responder."
+                      : "Ctrl/Cmd + Enter para enviar · anexe imagem, áudio, vídeo ou PDF (até 16MB)"}
                   </p>
                   <div className="flex items-center gap-2">
                     <MessageDraftStatus
