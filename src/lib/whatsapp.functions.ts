@@ -84,18 +84,14 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
     }
 
     if (data.templateName) {
-      let templateQuery = supabase
-        .from("wa_templates")
-        .select("name, language")
-        .eq("workspace_id", workspaceId)
-        .eq("name", data.templateName)
-        .eq("status", "APPROVED");
-      if (data.templateLanguage)
-        templateQuery = templateQuery.eq("language", data.templateLanguage);
-      const { data: approvedTemplate, error: templateError } = await templateQuery
-        .limit(1)
-        .maybeSingle();
-      if (templateError || !approvedTemplate) {
+      const { loadApprovedTemplates } = await import("@/lib/whatsapp/templates.server");
+      const approvedList = await loadApprovedTemplates(supabase, workspaceId).catch(() => []);
+      const approvedTemplate = approvedList.find(
+        (t) =>
+          t.name === data.templateName &&
+          (!data.templateLanguage || t.language === data.templateLanguage),
+      );
+      if (!approvedTemplate) {
         return {
           ok: false as const,
           code: "TEMPLATE_NOT_APPROVED" as const,
