@@ -35,8 +35,22 @@ function fakeDb(tables: Tables) {
   return { db: { from } as never, inserts };
 }
 
-const base = { workspaceId: "wk", ownerId: "u1", runId: "r1", to: "Ana@x.com", subject: "Oi", bodyHtml: "<p>Olá</p>" };
-const account = { id: "acc", workspace_id: "wk", owner_id: "u1", provider: "gmail", status: "connected", email: "eu@wk.com" };
+const base = {
+  workspaceId: "wk",
+  ownerId: "u1",
+  runId: "r1",
+  to: "Ana@x.com",
+  subject: "Oi",
+  bodyHtml: "<p>Olá</p>",
+};
+const account = {
+  id: "acc",
+  workspace_id: "wk",
+  owner_id: "u1",
+  provider: "gmail",
+  status: "connected",
+  email: "eu@wk.com",
+};
 
 describe("sendWorkflowEmail", () => {
   it("envia pela caixa Gmail do dono no mesmo workspace", async () => {
@@ -56,7 +70,10 @@ describe("sendWorkflowEmail", () => {
     expect(send).toHaveBeenCalledOnce();
   });
   it("respeita descadastro", async () => {
-    const { db } = fakeDb({ email_accounts: [account], email_unsubscribes: [{ workspace_id: "wk", email: "ana@x.com" }] });
+    const { db } = fakeDb({
+      email_accounts: [account],
+      email_unsubscribes: [{ workspace_id: "wk", email: "ana@x.com" }],
+    });
     const send = vi.fn();
     expect((await sendWorkflowEmail(db, base, { send })).status).toBe("unsubscribed");
     expect(send).not.toHaveBeenCalled();

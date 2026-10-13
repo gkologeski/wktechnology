@@ -90,23 +90,36 @@ export async function handleMessagingAction(
       }
       subject = renderTokens(subject, ctx.after) as string;
       body = renderTokens(body, ctx.after) as string;
-      const { error } = await supabase.from("email_messages").insert(
-        withWorkflowWorkspace(ctx, {
-          owner_id: ctx.ownerId,
-          direction: "outbound",
-          to_emails: [to],
-          subject,
-          body_html: body,
-          body_text: body.replace(/<[^>]+>/g, ""),
-        }) as never,
-      );
-      if (error) throw new Error(error.message);
+      const { sendWorkflowEmail } = await import("./workflow-email.server");
+      const r = await sendWorkflowEmail(supabase, {
+        workspaceId: ctx.workspaceId,
+        ownerId: ctx.ownerId,
+        runId: ctx.runId,
+        to,
+        subject,
+        bodyHtml: body,
+      });
+      if (r.status === "unsubscribed")
+        throw new Error("Contato descadastrado: e-mail não enviado.");
+      const sent = r.status === "sent";
       return {
         at,
         ok: true,
         action: "send_email",
-        detail: { to, subject, queued: true },
-        delivery: buildDeliveryMeta(ctx, { channel: "email", provider_status: "queued_local" }),
+        detail: {
+          to,
+          subject,
+          queued: !sent,
+          ...(r.status === "queued_local"
+            ? { reason: "Sem caixa Gmail conectada do dono do fluxo" }
+            : {}),
+        },
+        delivery: buildDeliveryMeta(ctx, {
+          channel: "email",
+          provider: sent ? "gmail" : null,
+          provider_status: sent ? "sent" : r.status,
+          provider_id: sent ? r.providerId : null,
+        }),
       };
     }
     case "send_whatsapp": {

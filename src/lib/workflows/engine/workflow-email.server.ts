@@ -26,7 +26,9 @@ export type GmailSender = {
   ) => Promise<{ id: string; threadId: string }>;
 };
 
-export function workflowEmailKey(i: Pick<WorkflowEmailInput, "workspaceId" | "runId" | "to" | "subject">) {
+export function workflowEmailKey(
+  i: Pick<WorkflowEmailInput, "workspaceId" | "runId" | "to" | "subject">,
+) {
   if (!i.runId) return null;
   return `wf:${i.workspaceId}:${i.runId}:${i.to.toLowerCase()}:${i.subject}`;
 }
@@ -34,7 +36,9 @@ export function workflowEmailKey(i: Pick<WorkflowEmailInput, "workspaceId" | "ru
 const defaultSender: GmailSender = {
   async send(account, mime) {
     const g = await import("@/lib/gmail.server");
-    const token = await g.ensureAccessToken(account as unknown as import("@/lib/gmail.server").EmailAccountRow);
+    const token = await g.ensureAccessToken(
+      account as unknown as import("@/lib/gmail.server").EmailAccountRow,
+    );
     return g.gmailSendRaw(token, g.buildRawMime(mime));
   },
 };
@@ -68,14 +72,18 @@ export async function sendWorkflowEmail(
   const bodyText = input.bodyHtml.replace(/<[^>]+>/g, "");
   const { data: accounts } = await supabase
     .from("email_accounts")
-    .select("id, workspace_id, owner_id, email, access_token, refresh_token, expires_at, status, history_id")
+    .select(
+      "id, workspace_id, owner_id, email, access_token, refresh_token, expires_at, status, history_id",
+    )
     .eq("workspace_id", input.workspaceId)
     .eq("owner_id", input.ownerId)
     .eq("provider", "gmail")
     .eq("status", "connected")
     .order("created_at", { ascending: false })
     .limit(1);
-  const account = (accounts ?? [])[0] as ({ id: string; email: string } & Record<string, unknown>) | undefined;
+  const account = (accounts ?? [])[0] as
+    | ({ id: string; email: string } & Record<string, unknown>)
+    | undefined;
   const headers = key ? { "x-wf-idempotency": key } : {};
 
   if (!account) {
@@ -93,7 +101,11 @@ export async function sendWorkflowEmail(
       } as never)
       .select("id")
       .maybeSingle();
-    return { status: "queued_local", messageId: (row as { id: string } | null)?.id ?? null, reason: "no_account" };
+    return {
+      status: "queued_local",
+      messageId: (row as { id: string } | null)?.id ?? null,
+      reason: "no_account",
+    };
   }
 
   const sent = await sender.send(account, {
