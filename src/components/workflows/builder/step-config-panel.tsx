@@ -1,3 +1,4 @@
+import { BookingLinkForm, MaterialForm, ParallelForm } from "./step-forms/flow-resource-forms";
 import type { FieldOpt } from "./step-tree";
 import {
   countSteps,
@@ -910,6 +911,12 @@ function StepConfigForm({
       return <SdrAgentForm action={action} onChange={onChange} />;
     case "handoff":
       return <HandoffForm action={action} onChange={onChange} />;
+    case "parallel":
+      return <ParallelForm action={action} onChange={onChange} />;
+    case "share_booking_link":
+      return <BookingLinkForm action={action} onChange={onChange} />;
+    case "share_material":
+      return <MaterialForm action={action} onChange={onChange} />;
     case "switch_by_value":
       return (
         <SwitchByValueForm

@@ -196,6 +196,18 @@ export type WorkflowAction =
   | { type: "sdr_agent"; mode: "on" | "off"; playbook_id?: string }
   // Entrega a conversa para uma pessoa: pausa o agente, define responsável e avisa.
   | { type: "handoff"; user_id?: string; reason: string }
+  // Caminhos em paralelo: cada caminho segue sozinho (inclusive com esperas);
+  // "all" continua quando todos terminam, "any" quando o primeiro termina e
+  // cancela os demais.
+  | {
+      type: "parallel";
+      join: "all" | "any";
+      branches: { label?: string; actions: WorkflowAction[] }[];
+    }
+  // Prepara o link da página de agendamento do workspace em {{vars.booking_url}}.
+  | { type: "share_booking_link"; booking_page_id: string }
+  // Prepara o link de um material APROVADO em {{vars.material_url}} / {{vars.material_title}}.
+  | { type: "share_material"; material_id: string }
   | {
       type: "create_ats_job";
       title: string;
@@ -578,6 +590,9 @@ export const ACTION_LABELS: Record<WorkflowActionType, string> = {
   wait_for_reply: "Aguardar resposta",
   sdr_agent: "Ligar/desligar agente SDR",
   handoff: "Transferir para pessoa",
+  parallel: "Caminhos em paralelo",
+  share_booking_link: "Link de agendamento",
+  share_material: "Material de apoio",
   switch_by_value: "Ramificar por valor (switch)",
   branch_multi: "Ramificação múltipla",
   delay_until_date: "Esperar até data",
@@ -611,6 +626,7 @@ export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionTy
       "branch_if",
       "switch_by_value",
       "branch_multi",
+      "parallel",
       "approval_step",
     ],
   },
@@ -654,6 +670,8 @@ export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionTy
       "wait_for_reply",
       "sdr_agent",
       "handoff",
+      "share_booking_link",
+      "share_material",
       "send_slack",
       "send_teams",
     ],

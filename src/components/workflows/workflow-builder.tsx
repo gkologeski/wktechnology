@@ -42,6 +42,7 @@ import { useEntityFieldOptions } from "./builder/use-entity-field-options";
 
 import { EntityPickerDialog } from "./builder/entity-picker-dialog";
 import { Connector, StepsList, TriggerCard } from "./builder/canvas";
+import { PanZoomViewport } from "./builder/pan-zoom-viewport";
 import { ActionLibraryPanel } from "./builder/action-library-panel";
 import { TriggerConfigPanel } from "./builder/trigger-config-panel";
 
@@ -474,69 +475,71 @@ export function WorkflowBuilder({
             {/* Canvas central */}
             <main
               className={
-                view === "canvas" ? "flex-1 min-w-0 overflow-y-auto bg-muted/10" : "hidden"
+                view === "canvas" ? "flex-1 min-w-0 overflow-hidden bg-muted/10" : "hidden"
               }
             >
-              <div className="max-w-6xl mx-auto py-8 px-4 sm:px-8">
-                {/* Trigger card */}
-                <TriggerCard
-                  trigger={state.trigger}
-                  entity={state.entity}
-                  selected={selection === "trigger"}
-                  onSelect={() => {
-                    setSelection("trigger");
-                    setLibrary(null);
-                    setView("details");
-                  }}
-                />
-                <Connector
-                  onAdd={() => {
-                    setLibrary({ parentPath: [] });
-                    setView("details");
-                  }}
-                  active={library?.parentPath.length === 0}
-                />
-
-                {/* Steps */}
-                <StepsList
-                  entityFields={fieldOptions}
-                  actions={state.actions}
-                  path={[]}
-                  selection={selection}
-                  library={library}
-                  onSelect={(p) => {
-                    setSelection(p);
-                    setLibrary(null);
-                    setView("details");
-                  }}
-                  onRemove={(p) => {
-                    setActions((prev) => removeStep(prev, p));
-                    if (
-                      Array.isArray(selection) &&
-                      JSON.stringify(selection) === JSON.stringify(p)
-                    ) {
+              <PanZoomViewport>
+                <div className="w-[min(72rem,100vw)] py-8 px-4 sm:px-8">
+                  {/* Trigger card */}
+                  <TriggerCard
+                    trigger={state.trigger}
+                    entity={state.entity}
+                    selected={selection === "trigger"}
+                    onSelect={() => {
                       setSelection("trigger");
-                    }
-                  }}
-                  onAddAt={(parentPath) => {
-                    setLibrary({ parentPath });
-                    setView("details");
-                  }}
-                  onChangeAction={(p, na) => setActions((prev) => updateStep(prev, p, () => na))}
-                  dragging={dragging}
-                  onDragStartStep={(p) => setDragging(p)}
-                  onDragEndStep={() => setDragging(null)}
-                  onDropAt={handleDropAt}
-                  onMove={handleMove}
-                />
+                      setLibrary(null);
+                      setView("details");
+                    }}
+                  />
+                  <Connector
+                    onAdd={() => {
+                      setLibrary({ parentPath: [] });
+                      setView("details");
+                    }}
+                    active={library?.parentPath.length === 0}
+                  />
 
-                {state.actions.length === 0 && (
-                  <p className="text-center text-sm text-muted-foreground mt-6">
-                    Clique no <span className="font-medium">+</span> acima para adicionar sua
-                    primeira ação.
-                  </p>
-                )}
-              </div>
+                  {/* Steps */}
+                  <StepsList
+                    entityFields={fieldOptions}
+                    actions={state.actions}
+                    path={[]}
+                    selection={selection}
+                    library={library}
+                    onSelect={(p) => {
+                      setSelection(p);
+                      setLibrary(null);
+                      setView("details");
+                    }}
+                    onRemove={(p) => {
+                      setActions((prev) => removeStep(prev, p));
+                      if (
+                        Array.isArray(selection) &&
+                        JSON.stringify(selection) === JSON.stringify(p)
+                      ) {
+                        setSelection("trigger");
+                      }
+                    }}
+                    onAddAt={(parentPath) => {
+                      setLibrary({ parentPath });
+                      setView("details");
+                    }}
+                    onChangeAction={(p, na) => setActions((prev) => updateStep(prev, p, () => na))}
+                    dragging={dragging}
+                    onDragStartStep={(p) => setDragging(p)}
+                    onDragEndStep={() => setDragging(null)}
+                    onDropAt={handleDropAt}
+                    onMove={handleMove}
+                  />
+
+                  {state.actions.length === 0 && (
+                    <p className="text-center text-sm text-muted-foreground mt-6">
+                      Clique no <span className="font-medium">+</span> acima para adicionar sua
+                      primeira ação.
+                    </p>
+                  )}
+                </div>
+              </PanZoomViewport>
             </main>
 
             {/* Painel direito */}

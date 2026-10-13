@@ -28,3 +28,40 @@ export function collectSdrAgentIds(actions: unknown): { ids: string[]; missing: 
   });
   return { ids: [...ids], missing };
 }
+
+/** Páginas de agendamento e materiais usados no fluxo (conferidos ao publicar). */
+export function collectResourceIds(actions: unknown): {
+  bookingPages: string[];
+  materials: string[];
+  missing: boolean;
+} {
+  const pages = new Set<string>();
+  const mats = new Set<string>();
+  let missing = false;
+  walk(actions, (a) => {
+    if (a.type === "share_booking_link") {
+      const id = typeof a["booking_page_id"] === "string" ? (a["booking_page_id"] as string) : "";
+      if (id) pages.add(id);
+      else missing = true;
+    }
+    if (a.type === "share_material") {
+      const id = typeof a["material_id"] === "string" ? (a["material_id"] as string) : "";
+      if (id) mats.add(id);
+      else missing = true;
+    }
+  });
+  return { bookingPages: [...pages], materials: [...mats], missing };
+}
+
+/** Aprovação humana dentro de caminhos em paralelo não é suportada. */
+export function hasApprovalInsideParallel(actions: unknown): boolean {
+  let found = false;
+  walk(actions, (a) => {
+    if (a.type !== "parallel") return;
+    for (const b of (a["branches"] as { actions?: unknown }[] | undefined) ?? [])
+      walk(b?.actions, (x) => {
+        if (x.type === "approval_step") found = true;
+      });
+  });
+  return found;
+}

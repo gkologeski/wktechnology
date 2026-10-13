@@ -14,7 +14,16 @@ export interface RunCtx {
   /** Fase 5b — usados para vincular workflow_approvals ao run/workflow atuais. */
   workflowId?: string;
   runId?: string;
+  /**
+   * Retomada dentro de caminhos: um quadro por nível (de fora para dentro),
+   * dizendo em qual caminho e em qual passo dele continuar.
+   */
+  resumeFrames?: ResumeFrame[];
+  /** Estado durável de esperas e caminhos paralelos, por posição do passo. */
+  state?: Record<string, unknown>;
 }
+
+export type ResumeFrame = { key: string; cursor: number };
 
 export interface RunResult {
   log: LogStep[];
@@ -25,9 +34,13 @@ export interface RunResult {
     resumeCursor: number;
     /** Estado de espera (aguardar resposta), gravado no evento de retomada. */
     waitState?: { cursor: number; started_at: string; deadline: string };
+    /** Caminho até o passo pausado quando ele está dentro de um ramo. */
+    resumePath?: ResumeFrame[];
+    /** Estado durável (`ctx.state`) a gravar no evento de retomada. */
+    state?: Record<string, unknown>;
   };
   // Fase 5b: aguardando decisão de aprovação (retomada acontece via decideApproval).
-  waitingApproval?: { approvalId: string; resumeCursor: number };
+  waitingApproval?: { approvalId: string; resumeCursor: number; resumePath?: ResumeFrame[] };
 }
 
 /** Ações de passo simples (sem controle de fluxo), tratadas por `runAction`. */
@@ -40,6 +53,7 @@ export type RunnableAction = Exclude<
   | { type: "branch_multi" }
   | { type: "delay_until_date" }
   | { type: "approval_step" }
+  | { type: "parallel" }
 >;
 
 /** Contrato dos módulos de ação: devolve o passo ou `null` se não trata o tipo. */

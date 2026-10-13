@@ -34,7 +34,7 @@ describe("aguardar resposta", () => {
     expect(resolveWaitState(prior, 2, t0, 1).started_at).toBe(prior.started_at);
     expect(resolveWaitState(prior, 5, t0, 1).started_at).toBe(t0.toISOString());
   });
-  it("só é aceito no caminho principal", () => {
+  it("é aceito também dentro de caminhos", () => {
     const wait = {
       type: "wait_for_reply",
       channels: ["email"],
@@ -46,7 +46,7 @@ describe("aguardar resposta", () => {
     expect(() => parseActionsAtDepth([wait], 0)).not.toThrow();
     expect(() =>
       parseActionsAtDepth([{ type: "branch_if", filters: [], then: [wait], else: [] }], 0),
-    ).toThrow(/caminho principal/);
+    ).not.toThrow();
   });
   it("ligar agente sem escolher bloqueia publicação", () => {
     expect(collectSdrAgentIds([{ type: "sdr_agent", mode: "on" }]).missing).toBe(true);

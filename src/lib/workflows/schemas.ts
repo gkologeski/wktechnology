@@ -294,6 +294,14 @@ export const SimpleActionSchema = z.discriminatedUnion("type", [
     playbook_id: z.string().uuid().optional(),
   }),
   z.object({
+    type: z.literal("share_booking_link"),
+    booking_page_id: z.union([z.string().uuid(), z.literal("")]),
+  }),
+  z.object({
+    type: z.literal("share_material"),
+    material_id: z.union([z.string().uuid(), z.literal("")]),
+  }),
+  z.object({
     type: z.literal("handoff"),
     user_id: z.string().uuid().optional(),
     reason: z.string().min(1).max(500),
@@ -465,8 +473,7 @@ export function parseActionAtDepth(raw: unknown, depth: number): ActionInput {
       return { type: "branch_if", filters, then: thenActions, else: elseActions };
     }
     if (src.type === "wait_for_reply") {
-      // Só no nível principal: a retomada do motor não reentra em ramos.
-      if (depth > 0) throw new Error("Aguardar resposta só pode ficar no caminho principal.");
+      if (depth >= MAX_BRANCH_DEPTH) throw new Error("profundidade máxima excedida");
       const base = z
         .object({
           channels: z
@@ -500,6 +507,21 @@ export function parseActionAtDepth(raw: unknown, depth: number): ActionInput {
       const def = parseActionsAtDepth(src.default ?? [], depth + 1);
       const match = src.match === "all" ? ("all" as const) : ("any" as const);
       return { type: "switch_by_value", field, match, cases, default: def };
+    }
+    if (src.type === "parallel") {
+      if (depth >= MAX_BRANCH_DEPTH) throw new Error("profundidade máxima excedida");
+      const rawBranches = Array.isArray(src.branches) ? src.branches : [];
+      if (rawBranches.length < 2 || rawBranches.length > 5)
+        throw new Error("Caminhos em paralelo precisam de 2 a 5 caminhos.");
+      const join = z.enum(["all", "any"]).parse(src.join ?? "all");
+      const branches = rawBranches.map((b) => {
+        const bo = (b ?? {}) as ActionInput;
+        return {
+          label: typeof bo.label === "string" ? bo.label.slice(0, 80) : undefined,
+          actions: parseActionsAtDepth(bo.actions ?? [], depth + 1),
+        };
+      });
+      return { type: "parallel", join, branches };
     }
     if (src.type === "branch_multi") {
       if (depth >= MAX_BRANCH_DEPTH) throw new Error("profundidade máxima excedida");

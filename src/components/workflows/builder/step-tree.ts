@@ -40,6 +40,7 @@ import {
   Hourglass,
   Bot,
   UserCheck,
+  Paperclip,
 } from "lucide-react";
 import { ACTION_LABELS, type WorkflowAction, type WorkflowActionType } from "@/lib/workflows/types";
 import { conditionsSummary } from "@/lib/workflows/conditions";
@@ -89,6 +90,9 @@ export const ACTION_ICONS: Record<WorkflowActionType, typeof Zap> = {
   wait_for_reply: Hourglass,
   sdr_agent: Bot,
   handoff: UserCheck,
+  parallel: GitFork,
+  share_booking_link: CalendarClock,
+  share_material: Paperclip,
   switch_by_value: SplitSquareHorizontal,
   branch_multi: GitFork,
   delay_until_date: CalendarClock,
@@ -185,6 +189,19 @@ export function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
       return { type, mode: "on" };
     case "handoff":
       return { type, reason: "Cliente pediu atendimento humano" };
+    case "parallel":
+      return {
+        type,
+        join: "any",
+        branches: [
+          { label: "WhatsApp", actions: [] },
+          { label: "E-mail", actions: [] },
+        ],
+      };
+    case "share_booking_link":
+      return { type, booking_page_id: "" };
+    case "share_material":
+      return { type, material_id: "" };
     case "switch_by_value":
       return { type, field: "status", cases: [], default: [] };
     case "branch_multi":
@@ -247,7 +264,7 @@ export function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
 // Path: um passo é endereçado por um array de índices (branches criam níveis).
 // Ex: [0] = 1º passo topo. [1,"then",0] = 1º passo do ramo "sim" do 2º passo.
 // ============================================================================
-export type BranchKey = "then" | "else" | "default" | `case:${number}`;
+export type BranchKey = "then" | "else" | "default" | `case:${number}` | `par:${number}`;
 export type StepPath = Array<number | BranchKey>;
 
 export function isBranchKey(seg: unknown): seg is BranchKey {
@@ -255,12 +272,17 @@ export function isBranchKey(seg: unknown): seg is BranchKey {
     seg === "then" ||
     seg === "else" ||
     seg === "default" ||
-    (typeof seg === "string" && /^case:\d+$/.test(seg))
+    (typeof seg === "string" && /^(case|par):\d+$/.test(seg))
   );
 }
 
 /** Lista de ações filhas de um ramo (then/else de branch_if, case/default de switch). */
 export function getBranchList(a: WorkflowAction, key: BranchKey): WorkflowAction[] | null {
+  if (a.type === "parallel") {
+    if (typeof key === "string" && key.startsWith("par:"))
+      return a.branches?.[Number(key.slice(4))]?.actions ?? null;
+    return null;
+  }
   if (a.type === "branch_if" || a.type === "wait_for_reply") {
     if (key === "then" || key === "else") return a[key] ?? [];
     return null;
@@ -282,6 +304,13 @@ export function setBranchList(
   key: BranchKey,
   list: WorkflowAction[],
 ): WorkflowAction {
+  if (a.type === "parallel" && typeof key === "string" && key.startsWith("par:")) {
+    const i = Number(key.slice(4));
+    return {
+      ...a,
+      branches: (a.branches ?? []).map((b, bi) => (bi === i ? { ...b, actions: list } : b)),
+    };
+  }
   if (
     (a.type === "branch_if" || a.type === "wait_for_reply") &&
     (key === "then" || key === "else")
@@ -413,6 +442,7 @@ export function collectFlowVarNames(actions: WorkflowAction[]): string[] {
         for (const b of a.branches ?? []) walk(b.actions ?? []);
         walk(a.else ?? []);
       }
+      if (a.type === "parallel") for (const b of a.branches ?? []) walk(b.actions ?? []);
     }
   };
   walk(actions);
@@ -627,6 +657,8 @@ export function countSteps(actions: WorkflowAction[]): number {
     } else if (a.type === "branch_multi") {
       n += (a.branches ?? []).reduce((s, b) => s + countSteps(b.actions ?? []), 0);
       n += countSteps(a.else ?? []);
+    } else if (a.type === "parallel") {
+      n += (a.branches ?? []).reduce((s, b) => s + countSteps(b.actions ?? []), 0);
     }
   }
   return n;
@@ -718,6 +750,12 @@ export function describeAction(a: WorkflowAction, labels?: DescribeLabels): stri
       return a.mode === "on" ? "ligar agente" : "desligar agente";
     case "handoff":
       return `transferir: ${a.reason.slice(0, 40)}`;
+    case "parallel":
+      return `${a.branches.length} caminhos · ${a.join === "any" ? "segue no primeiro" : "espera todos"}`;
+    case "share_booking_link":
+      return a.booking_page_id ? "link da agenda em {{vars.booking_url}}" : "Escolha a agenda";
+    case "share_material":
+      return a.material_id ? "link do material em {{vars.material_url}}" : "Escolha o material";
     case "switch_by_value": {
       const li = LINE_ITEM_FIELDS.find((f) => f.name === a.field);
       const label = li
