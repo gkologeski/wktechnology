@@ -1,6 +1,7 @@
 // Blocos de prospecção do motor de workflows: ligar/desligar o agente SDR,
 // transferir para pessoa e consulta de resposta real (usada por "Aguardar resposta").
 // Sempre filtrados pelo workspace do fluxo; nada envia mensagem.
+import { buildDeliveryMeta } from "../delivery-meta";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LogStep } from "../engine-shared.server";
 import { renderTokens } from "../engine-shared.server";
@@ -101,6 +102,7 @@ export async function handleSdrAction(
           ok: true,
           action: "sdr_agent",
           detail: { mode: "off", paused: (data ?? []).length },
+          delivery: buildDeliveryMeta(ctx, { channel: "sdr_agent", provider_status: "paused" }),
         };
       }
       if (!action.playbook_id) throw new Error("Escolha o agente.");
@@ -116,8 +118,14 @@ export async function handleSdrAction(
         .select("id")
         .eq("playbook_id", pb.id)
         .eq("status", "published")
+        .order("created_at", { ascending: false })
         .limit(1);
       if ((pub ?? []).length === 0) throw new Error("Agente sem versão publicada.");
+      const agentMeta = {
+        channel: "sdr_agent" as const,
+        agent_id: pb.id as string,
+        agent_version_id: (pub![0] as { id: string }).id,
+      };
       const { data: wsCfg } = await supabase
         .from("sdr_workspace_settings")
         .select("enabled, pilot_allowlist")
@@ -140,7 +148,13 @@ export async function handleSdrAction(
         | undefined;
       if (cur?.opted_out_at) throw new Error("Contato pediu para não receber mensagens.");
       if (cur && cur.playbook_id === pb.id)
-        return { at, ok: true, action: "sdr_agent", detail: { mode: "on", skipped: "already_on" } };
+        return {
+          at,
+          ok: true,
+          action: "sdr_agent",
+          detail: { mode: "on", skipped: "already_on" },
+          delivery: buildDeliveryMeta(ctx, { ...agentMeta, provider_status: "already_on" }),
+        };
       if (cur) throw new Error("Outro agente já atende esta conversa; desligue-o antes de trocar.");
       const { data: created, error } = await supabase
         .from("sdr_enrollments")
@@ -164,6 +178,7 @@ export async function handleSdrAction(
         ok: true,
         action: "sdr_agent",
         detail: { mode: "on", enrollment_id: (created as { id: string }).id },
+        delivery: buildDeliveryMeta(ctx, { ...agentMeta, provider_status: "enrolled" }),
       };
     }
     case "handoff": {
@@ -211,6 +226,7 @@ export async function handleSdrAction(
         ok: true,
         action: "handoff",
         detail: { user_id: notify, agent_paused: paused, reason },
+        delivery: buildDeliveryMeta(ctx, { channel: "handoff", provider_status: "transferred" }),
       };
     }
     default:

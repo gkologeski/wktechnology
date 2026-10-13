@@ -6,6 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { toStr } from "../render-tokens";
 import { type LogStep, notificationLinkFor, renderTokens } from "../engine-shared.server";
 import type { RunCtx, RunnableAction } from "./run-context";
+import { buildDeliveryMeta } from "../delivery-meta";
 
 export async function handleMessagingAction(
   supabase: SupabaseClient,
@@ -100,7 +101,13 @@ export async function handleMessagingAction(
         }) as never,
       );
       if (error) throw new Error(error.message);
-      return { at, ok: true, action: "send_email", detail: { to, subject, queued: true } };
+      return {
+        at,
+        ok: true,
+        action: "send_email",
+        detail: { to, subject, queued: true },
+        delivery: buildDeliveryMeta(ctx, { channel: "email", provider_status: "queued_local" }),
+      };
     }
     case "send_whatsapp": {
       const toField = action.to_field || "phone";
@@ -136,6 +143,12 @@ export async function handleMessagingAction(
             ok: true,
             action: "send_whatsapp",
             detail: { to, template, skipped: "already_sent" },
+            delivery: buildDeliveryMeta(ctx, {
+              channel: "whatsapp",
+              provider: "meta",
+              provider_status: "skipped_duplicate",
+              provider_id: (prior[0] as { id: string }).id,
+            }),
           };
       }
       const { sendWhatsAppFromServer } = await import("@/lib/whatsapp-send.server");
@@ -159,6 +172,12 @@ export async function handleMessagingAction(
         ok: true,
         action: "send_whatsapp",
         detail: { to: res.to, template, provider_id: res.sid, status: res.status },
+        delivery: buildDeliveryMeta(ctx, {
+          channel: "whatsapp",
+          provider: "meta",
+          provider_status: res.status ?? null,
+          provider_id: res.sid ?? null,
+        }),
       };
     }
     case "send_slack": {

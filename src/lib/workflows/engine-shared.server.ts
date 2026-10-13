@@ -21,6 +21,7 @@ export type LogStep = {
   step_path?: string;
   detail?: unknown;
   error?: string;
+  delivery?: import("./delivery-meta").DeliveryMeta;
 };
 
 export function assignFieldFor(entity: WorkflowEntity): string {
