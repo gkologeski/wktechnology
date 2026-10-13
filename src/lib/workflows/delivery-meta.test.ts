@@ -5,7 +5,12 @@ describe("buildDeliveryMeta", () => {
   it("grava execução, fluxo, canal e status do provedor", () => {
     const m = buildDeliveryMeta(
       { workflowId: "wf1", runId: "run1" },
-      { channel: "whatsapp", provider: "meta", provider_status: "accepted", provider_id: "wamid.1" },
+      {
+        channel: "whatsapp",
+        provider: "meta",
+        provider_status: "accepted",
+        provider_id: "wamid.1",
+      },
     );
     expect(m).toEqual({
       channel: "whatsapp",

@@ -12,6 +12,11 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import {
+  CHANNEL_LABELS,
+  providerStatusLabel,
+  type DeliveryMeta,
+} from "@/lib/workflows/delivery-meta";
 
 type Run = {
   id: string;
@@ -32,6 +37,7 @@ type RunLogStep = {
   step_path?: string;
   error?: string;
   detail?: unknown;
+  delivery?: DeliveryMeta;
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -138,6 +144,42 @@ export function WorkflowRunsList({
                             </span>
                           )}
                         </div>
+                        {step.delivery && (
+                          <dl className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-muted-foreground">
+                            <div className="flex gap-1">
+                              <dt>Canal:</dt>
+                              <dd className="text-foreground">
+                                {CHANNEL_LABELS[step.delivery.channel] ?? step.delivery.channel}
+                              </dd>
+                            </div>
+                            {step.delivery.provider_status && (
+                              <div className="flex gap-1">
+                                <dt>Status:</dt>
+                                <dd className="text-foreground">
+                                  {providerStatusLabel(step.delivery.provider_status)}
+                                </dd>
+                              </div>
+                            )}
+                            {step.delivery.provider && (
+                              <div className="flex gap-1">
+                                <dt>Provedor:</dt>
+                                <dd>
+                                  {step.delivery.provider === "meta"
+                                    ? "Meta (WhatsApp oficial)"
+                                    : step.delivery.provider}
+                                </dd>
+                              </div>
+                            )}
+                            {step.delivery.agent_version_id && (
+                              <div className="flex gap-1">
+                                <dt>Versão do agente:</dt>
+                                <dd className="font-mono">
+                                  {step.delivery.agent_version_id.slice(0, 8)}
+                                </dd>
+                              </div>
+                            )}
+                          </dl>
+                        )}
                         {step.error && <p className="mt-1 text-destructive">{step.error}</p>}
                         {step.detail !== undefined && (
                           <details className="mt-1 text-muted-foreground">
