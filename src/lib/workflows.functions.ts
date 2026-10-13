@@ -167,6 +167,32 @@ export const publishWorkflow = createServerFn({ method: "POST" })
     if (!wf) throw new Error("Workflow não encontrado");
     const { collectWhatsAppSteps, validateWhatsAppStep } =
       await import("@/lib/workflows/whatsapp-step");
+    const { collectSdrAgentIds } = await import("@/lib/workflows/flow-checks");
+    const agentIds = collectSdrAgentIds(wf.draft_actions ?? []);
+    if (agentIds.missing)
+      throw new Error("Publicação bloqueada: escolha o agente em todo bloco 'Ligar agente'.");
+    if (agentIds.ids.length > 0) {
+      const ws = await resolveActiveWorkspace(userId);
+      const { data: pbs } = await supabase
+        .from("sdr_playbooks")
+        .select("id, enabled")
+        .eq("workspace_id", ws)
+        .in("id", agentIds.ids);
+      const { data: pubs } = await supabase
+        .from("sdr_agent_versions")
+        .select("playbook_id")
+        .in("playbook_id", agentIds.ids)
+        .eq("status", "published");
+      const pubSet = new Set((pubs ?? []).map((v) => v.playbook_id as string));
+      for (const id of agentIds.ids) {
+        const pb = (pbs ?? []).find((p) => p.id === id);
+        if (!pb) throw new Error("Publicação bloqueada: agente de outra empresa ou removido.");
+        if (!pb.enabled || !pubSet.has(id))
+          throw new Error(
+            "Publicação bloqueada: o agente escolhido precisa estar ativo e com versão publicada.",
+          );
+      }
+    }
     const waSteps = collectWhatsAppSteps(wf.draft_actions ?? []);
     if (waSteps.length > 0) {
       const { loadApprovedTemplates } = await import("@/lib/whatsapp/templates.server");

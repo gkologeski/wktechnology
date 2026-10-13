@@ -182,6 +182,20 @@ export type WorkflowAction =
       then: WorkflowAction[];
       else: WorkflowAction[];
     }
+  // Prospecção multicanal: aguarda resposta real (WhatsApp/e-mail) com prazo.
+  // `then` = respondeu; `else` = prazo esgotado sem resposta.
+  | {
+      type: "wait_for_reply";
+      channels: ("whatsapp" | "email")[];
+      timeout_amount: number;
+      timeout_unit: "hours" | "days";
+      then: WorkflowAction[];
+      else: WorkflowAction[];
+    }
+  // Liga ou desliga o agente SDR (versão publicada) na conversa de WhatsApp do registro.
+  | { type: "sdr_agent"; mode: "on" | "off"; playbook_id?: string }
+  // Entrega a conversa para uma pessoa: pausa o agente, define responsável e avisa.
+  | { type: "handoff"; user_id?: string; reason: string }
   | {
       type: "create_ats_job";
       title: string;
@@ -561,6 +575,9 @@ export const ACTION_LABELS: Record<WorkflowActionType, string> = {
   increment_field: "Incrementar campo",
   send_email: "Enviar email",
   send_whatsapp: "Enviar WhatsApp",
+  wait_for_reply: "Aguardar resposta",
+  sdr_agent: "Ligar/desligar agente SDR",
+  handoff: "Transferir para pessoa",
   switch_by_value: "Ramificar por valor (switch)",
   branch_multi: "Ramificação múltipla",
   delay_until_date: "Esperar até data",
@@ -634,6 +651,9 @@ export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionTy
       "send_notification",
       "send_email",
       "send_whatsapp",
+      "wait_for_reply",
+      "sdr_agent",
+      "handoff",
       "send_slack",
       "send_teams",
     ],

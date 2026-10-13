@@ -18,6 +18,7 @@ export type ControlAction = Extract<
   WorkflowAction,
   | { type: "delay" }
   | { type: "branch_if" }
+  | { type: "wait_for_reply" }
   | { type: "switch_by_value" }
   | { type: "branch_multi" }
   | { type: "delay_until_date" }
@@ -28,6 +29,7 @@ export function isControlAction(action: WorkflowAction): action is ControlAction
   return (
     action.type === "delay" ||
     action.type === "branch_if" ||
+    action.type === "wait_for_reply" ||
     action.type === "switch_by_value" ||
     action.type === "branch_multi" ||
     action.type === "delay_until_date" ||
@@ -141,6 +143,67 @@ export async function runControlAction(
       `${stepPath}.${branchName}`,
       logs,
       "Delays dentro de ramificações ainda não são retomáveis",
+      runActions,
+    );
+  }
+
+  // Aguardar resposta: verifica recebimento real; segue por "respondeu",
+  // "sem resposta" (prazo) ou pausa e volta a conferir no próximo ciclo.
+  if (action.type === "wait_for_reply") {
+    const { resolveWaitState, decideWait, timeoutMs } = await import("../wait-for-reply");
+    const { hasReplySince } = await import("./actions-sdr.server");
+    const now = new Date();
+    const state = resolveWaitState(
+      ctx.after?.["__wf_wait"],
+      index,
+      now,
+      timeoutMs(action.timeout_amount, action.timeout_unit),
+    );
+    const reply = await hasReplySince(supabase, ctx, action.channels, state.started_at);
+    const decision = decideWait(state, reply.replied, now);
+    if (decision.kind === "suspend") {
+      logs.push(
+        annotate({
+          at: now.toISOString(),
+          ok: true,
+          action: "wait_for_reply",
+          detail: { waiting: true, deadline: state.deadline, next_check: decision.runAtIso },
+        }),
+      );
+      return {
+        logs,
+        done: {
+          hadError: false,
+          suspendedAt: { runAtIso: decision.runAtIso, resumeCursor: index, waitState: state },
+        },
+      };
+    }
+    const branchName = decision.kind === "replied" ? "then" : "else";
+    logs.push(
+      annotate({
+        at: now.toISOString(),
+        ok: true,
+        action: "wait_for_reply",
+        detail: {
+          outcome: decision.kind,
+          channel: reply.channel ?? null,
+          started_at: state.started_at,
+        },
+      }),
+    );
+    // Retomada posterior não deve reutilizar o estado desta espera.
+    if (ctx.after && "__wf_wait" in ctx.after) {
+      const { __wf_wait: _drop, ...rest } = ctx.after as Record<string, unknown>;
+      void _drop;
+      ctx.after = rest;
+    }
+    return runBranch(
+      supabase,
+      action[branchName] ?? [],
+      ctx,
+      `${stepPath}.${branchName}`,
+      logs,
+      "Esperas dentro do resultado de Aguardar resposta ainda não são retomáveis",
       runActions,
     );
   }

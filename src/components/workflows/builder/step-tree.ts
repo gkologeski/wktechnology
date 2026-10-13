@@ -37,6 +37,9 @@ import {
   FileSignature,
   Receipt,
   KeyRound,
+  Hourglass,
+  Bot,
+  UserCheck,
 } from "lucide-react";
 import { ACTION_LABELS, type WorkflowAction, type WorkflowActionType } from "@/lib/workflows/types";
 import { conditionsSummary } from "@/lib/workflows/conditions";
@@ -83,6 +86,9 @@ export const ACTION_ICONS: Record<WorkflowActionType, typeof Zap> = {
   increment_field: PlusIcon,
   send_email: Mail,
   send_whatsapp: MessageCircle,
+  wait_for_reply: Hourglass,
+  sdr_agent: Bot,
+  handoff: UserCheck,
   switch_by_value: SplitSquareHorizontal,
   branch_multi: GitFork,
   delay_until_date: CalendarClock,
@@ -166,6 +172,19 @@ export function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
       return { type, subject: "Assunto", body: "Corpo do email" };
     case "send_whatsapp":
       return { type, body: "" };
+    case "wait_for_reply":
+      return {
+        type,
+        channels: ["whatsapp", "email"],
+        timeout_amount: 2,
+        timeout_unit: "days",
+        then: [],
+        else: [],
+      };
+    case "sdr_agent":
+      return { type, mode: "on" };
+    case "handoff":
+      return { type, reason: "Cliente pediu atendimento humano" };
     case "switch_by_value":
       return { type, field: "status", cases: [], default: [] };
     case "branch_multi":
@@ -242,7 +261,7 @@ export function isBranchKey(seg: unknown): seg is BranchKey {
 
 /** Lista de ações filhas de um ramo (then/else de branch_if, case/default de switch). */
 export function getBranchList(a: WorkflowAction, key: BranchKey): WorkflowAction[] | null {
-  if (a.type === "branch_if") {
+  if (a.type === "branch_if" || a.type === "wait_for_reply") {
     if (key === "then" || key === "else") return a[key] ?? [];
     return null;
   }
@@ -263,7 +282,10 @@ export function setBranchList(
   key: BranchKey,
   list: WorkflowAction[],
 ): WorkflowAction {
-  if (a.type === "branch_if" && (key === "then" || key === "else")) {
+  if (
+    (a.type === "branch_if" || a.type === "wait_for_reply") &&
+    (key === "then" || key === "else")
+  ) {
     return { ...a, [key]: list };
   }
   if (a.type === "switch_by_value") {
@@ -379,7 +401,7 @@ export function collectFlowVarNames(actions: WorkflowAction[]): string[] {
     for (const a of list) {
       if (!a) continue;
       if (a.type === "format_data" && a.target_var) out.push(a.target_var);
-      if (a.type === "branch_if") {
+      if (a.type === "branch_if" || a.type === "wait_for_reply") {
         walk(a.then ?? []);
         walk(a.else ?? []);
       }
@@ -597,7 +619,7 @@ export function countSteps(actions: WorkflowAction[]): number {
   let n = 0;
   for (const a of actions) {
     n += 1;
-    if (a.type === "branch_if") {
+    if (a.type === "branch_if" || a.type === "wait_for_reply") {
       n += countSteps(a.then ?? []) + countSteps(a.else ?? []);
     } else if (a.type === "switch_by_value") {
       n += (a.cases ?? []).reduce((s, c) => s + countSteps(c.actions ?? []), 0);
@@ -690,6 +712,12 @@ export function describeAction(a: WorkflowAction, labels?: DescribeLabels): stri
       return `email: ${a.subject || "—"}`;
     case "send_whatsapp":
       return `whatsapp: ${a.template_name || a.body?.slice(0, 30) || "—"}`;
+    case "wait_for_reply":
+      return `até ${a.timeout_amount} ${a.timeout_unit === "days" ? "dia(s)" : "hora(s)"} · ${a.channels.join(" + ")}`;
+    case "sdr_agent":
+      return a.mode === "on" ? "ligar agente" : "desligar agente";
+    case "handoff":
+      return `transferir: ${a.reason.slice(0, 40)}`;
     case "switch_by_value": {
       const li = LINE_ITEM_FIELDS.find((f) => f.name === a.field);
       const label = li
