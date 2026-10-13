@@ -133,8 +133,15 @@ variáveis; publicação bloqueada (servidor) sem modelo aprovado, com variávei
 incompletas, mídia/variável de cabeçalho ou catálogo indisponível; envio real
 pela API oficial com revalidação no fornecedor e chave de idempotência por
 workspace/run/registro/modelo/destino (`src/lib/workflows/whatsapp-step.ts`).
-Pendente: nós aguardar resposta/timeout, paralelo/junção, ligar/desligar
-agente, handoff, agenda e material; testar fluxo com provedores falsos.
+Entregue (ciclo 2): blocos "Aguardar resposta" (WhatsApp/e-mail reais, prazo,
+ramos Respondeu/Sem resposta, conferência a cada 10 min pelo ciclo do motor,
+só no caminho principal), "Ligar/desligar agente SDR" (só versão publicada,
+agente ativo, piloto, opt-out, um agente por conversa, idempotente) e
+"Transferir para pessoa" (pausa agente, define responsável, avisa). Publicação
+bloqueia agente ausente/sem versão publicada/de outra empresa. Teste de ponta a
+ponta no motor com banco/fornecedores falsos (`prospecting-flow.test.ts`).
+Pendente: paralelo com junção all/any, agenda e material como blocos próprios,
+espera dentro de ramos, canvas livre com zoom/pan (o editor segue em lista).
 
 ### Escopo original
 
@@ -149,7 +156,15 @@ saídas sucesso/erro/timeout. Estender o motor de workflows existente
 Aceite: um fluxo salvo executa em modo de teste com provedores falsos e o
 inspetor recusa publicar nó sem integração disponível.
 
-## Fase 4 — Multicanal real (pendente)
+## Fase 4 — Multicanal real (PARCIAL)
+
+Entregue: resposta em qualquer canal (WhatsApp ou e-mail) desvia o fluxo pelo
+ramo "Respondeu", interrompendo os passos de abordagem seguintes; envio de
+WhatsApp idempotente por run; falha de um passo registra erro no histórico.
+Pendente: ramos paralelos simultâneos, leases CAS por nó, retry/backoff
+específico e reconciliação de envio incerto no motor de workflows.
+
+### Escopo original
 
 E-mail e WhatsApp em ramos paralelos por contato com contexto unificado;
 resposta em um canal pausa/cancela abordagens nos outros conforme política;
