@@ -186,6 +186,23 @@ function Studio({ workspaceId, playbookId }: { workspaceId: string; playbookId: 
                   />
                 </div>
                 <div className="grid gap-1.5 sm:col-span-2">
+                  <Label htmlFor="pa-intent">Intenção do agente</Label>
+                  <Select
+                    value={persona.intent}
+                    onValueChange={(value) => set("intent", value as Persona["intent"])}
+                  >
+                    <SelectTrigger id="pa-intent">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="prospecting">
+                        Prospecção — persuasiva, conduz para reunião
+                      </SelectItem>
+                      <SelectItem value="service">Atendimento — apenas informa</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-1.5 sm:col-span-2">
                   <Label htmlFor="pa-tone">Tom principal</Label>
                   <Select
                     value={persona.tone}

@@ -16,6 +16,8 @@ export const GuardrailsSchema = z.object({
   no_pricing: z.boolean().default(true),
   /** Exige confirmação humana antes de criar oportunidade. */
   require_human_for_opportunity: z.boolean().default(false),
+  /** Anexa links de materiais aprovados quando o cliente pede (send_material). */
+  attach_materials: z.boolean().default(true),
   extra_rules: z.string().trim().max(2000).default(""),
 });
 export type Guardrails = z.infer<typeof GuardrailsSchema>;

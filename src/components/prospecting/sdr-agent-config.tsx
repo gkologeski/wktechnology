@@ -409,6 +409,16 @@ function AgentForm({ workspaceId, playbookId }: { workspaceId: string; playbookI
           </div>
           <div className="flex items-center gap-2">
             <Switch
+              id="cfg-attachmat"
+              checked={cfg.guardrails.attach_materials}
+              onCheckedChange={(v) => set("guardrails", { ...cfg.guardrails, attach_materials: v })}
+            />
+            <Label htmlFor="cfg-attachmat" className="text-sm">
+              Anexar links de materiais (páginas do site) quando o cliente pedir
+            </Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <Switch
               id="cfg-humanopp"
               checked={cfg.guardrails.require_human_for_opportunity}
               onCheckedChange={(v) =>
