@@ -456,14 +456,9 @@ export const listWhatsAppTemplates = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    const { data, error } = await supabase
-      .from("wa_templates")
-      .select("name, language, status, components")
-      .eq("workspace_id", workspaceId)
-      .eq("status", "APPROVED")
-      .order("name", { ascending: true });
-    if (error) throw error;
-    return (data ?? []).map((t: any) => {
+    const { loadApprovedTemplates } = await import("@/lib/whatsapp/templates.server");
+    const data = await loadApprovedTemplates(supabase, workspaceId);
+    return data.map((t: any) => {
       const comps = Array.isArray(t.components) ? t.components : [];
       const bodyComp = comps.find((c: any) => String(c?.type ?? "").toUpperCase() === "BODY") as
         | { text?: string }
