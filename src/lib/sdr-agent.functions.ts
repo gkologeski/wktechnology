@@ -247,3 +247,57 @@ export const requestHandoff = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+const AiOwnerInput = z.object({ conversation_id: z.string().uuid() });
+
+/** Quem atende a conversa de WhatsApp: agente (ai), pessoa (human) ou pausado. */
+export const getConversationAiOwner = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => AiOwnerInput.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { resolveSdrWorkspace } = await import("@/lib/prospecting/sdr/access.server");
+    const ws = await resolveSdrWorkspace(supabase, userId);
+    const { data: conv, error } = await supabase
+      .from("whatsapp_conversations")
+      .select("id, ai_owner")
+      .eq("id", data.conversation_id)
+      .eq("workspace_id", ws)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    let canSupervise = false;
+    try {
+      await requireSdr(supabase, userId, "supervise");
+      canSupervise = true;
+    } catch {
+      canSupervise = false;
+    }
+    return { owner: (conv?.ai_owner as string | null) ?? null, canSupervise };
+  });
+
+/** Devolve a conversa para o agente SDR ou passa para atendimento humano. */
+export const setConversationAiOwner = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => AiOwnerInput.extend({ owner: z.enum(["ai", "human"]) }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { assertNotReadOnlyView } = await import("@/lib/view-as-guard.server");
+    await assertNotReadOnlyView(supabase);
+    const ws = await requireSdr(supabase, userId, "supervise");
+    // Confirma via RLS do usuário que a conversa é visível e do workspace ativo.
+    const { data: conv, error } = await supabase
+      .from("whatsapp_conversations")
+      .select("id")
+      .eq("id", data.conversation_id)
+      .eq("workspace_id", ws)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!conv) throw new Error("Conversa não encontrada neste workspace.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error: rErr } = await supabaseAdmin.rpc("sdr_set_conversation_owner", {
+      p_conversation: conv.id,
+      p_owner: data.owner,
+    });
+    if (rErr) throw new Error("Não foi possível alterar quem atende a conversa.");
+    return { owner: data.owner };
+  });

@@ -60,6 +60,7 @@ import { useAuth } from "@/lib/auth";
 import { useActivityWindows } from "@/components/activity/activity-window-context";
 import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
 import { InboxIdentityLinker } from "@/components/inbox/inbox-identity-linker";
+import { ConversationAiOwnerToggle } from "@/components/inbox/conversation-ai-owner-toggle";
 import {
   InboxConversationHeader,
   InboxConversationItem,
@@ -436,6 +437,7 @@ function WhatsAppInbox() {
                 subtitle={`WhatsApp · via ${current.twilio_number}`}
                 actions={
                   <>
+                    <ConversationAiOwnerToggle conversationId={current.id} />
                     <Select
                       value={current.assigned_to ?? "_none"}
                       onValueChange={(v) =>
