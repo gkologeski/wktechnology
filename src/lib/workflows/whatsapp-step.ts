@@ -45,16 +45,13 @@ export function validateWhatsAppStep(
       message: `O modelo "${name}" não está aprovado na conta WhatsApp conectada.`,
     };
   const shape = describeTemplate(tpl.components);
-  if (shape.headerMediaRequired)
+  if (shape.headerMediaRequired || shape.headerVariableCount > 0)
     return {
       code: "TEMPLATE_MEDIA_UNSUPPORTED",
-      message: `O modelo "${name}" exige mídia no cabeçalho, ainda não suportada pelo fluxo.`,
+      message: `O modelo "${name}" exige mídia ou variável no cabeçalho, ainda não suportada pelo fluxo.`,
     };
   const check = checkTemplateVariables(shape, {
     variables: step.template_variables ?? [],
-    headerVariables: step.template_variables
-      ? step.template_variables.slice(shape.variableCount)
-      : [],
   });
   if (!check.ok)
     return {
