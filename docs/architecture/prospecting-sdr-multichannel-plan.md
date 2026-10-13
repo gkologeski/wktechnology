@@ -124,7 +124,7 @@ independentes; configuração global não sobrescreve agente. Reaproveitar
 Aceite: dois agentes coexistem com configurações distintas e o runtime usa o
 agente escolhido, não o primeiro playbook.
 
-## Fase 3 (CONCLUÍDA) — Fluxo visual operacional (EM ANDAMENTO)
+## Fase 3 — Fluxo visual operacional (CONCLUÍDA)
 
 Entregue (ciclo 1): o passo "Enviar WhatsApp" do construtor de workflows deixou
 de ser decorativo — antes só gravava uma linha `queued` que nenhum processo
