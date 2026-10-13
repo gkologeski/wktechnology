@@ -8,7 +8,12 @@ const inbound = [
   { id: "m1", direction: "inbound", body: "Queremos começar em dezembro de 2026" },
 ] as unknown as ConversationMessage[];
 const ans = (question_id: string) => [
-  { question_id, value: "Começar em dezembro de 2026", message_id: "m1", excerpt: "dezembro de 2026" },
+  {
+    question_id,
+    value: "Começar em dezembro de 2026",
+    message_id: "m1",
+    excerpt: "dezembro de 2026",
+  },
 ];
 
 describe("acceptAnswers por rótulo", () => {

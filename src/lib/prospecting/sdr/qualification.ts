@@ -83,7 +83,8 @@ export function acceptAnswers(
   // Fallback: a IA às vezes devolve o rótulo da pergunta no lugar do id.
   // Só vale quando o rótulo normalizado é único no questionário.
   const labelCount = new Map<string, number>();
-  for (const q of questions) labelCount.set(norm(q.label), (labelCount.get(norm(q.label)) ?? 0) + 1);
+  for (const q of questions)
+    labelCount.set(norm(q.label), (labelCount.get(norm(q.label)) ?? 0) + 1);
   const byLabel = new Map(
     questions.filter((q) => labelCount.get(norm(q.label)) === 1).map((q) => [norm(q.label), q]),
   );
