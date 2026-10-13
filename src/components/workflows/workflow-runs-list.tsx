@@ -17,6 +17,7 @@ import {
   providerStatusLabel,
   type DeliveryMeta,
 } from "@/lib/workflows/delivery-meta";
+import { useWorkflowDeliveryStatuses } from "@/hooks/use-workflow-delivery-statuses";
 
 type Run = {
   id: string;
@@ -52,6 +53,18 @@ const STATUS_LABELS: Record<string, string> = {
  * Execução que terminou sem executar nenhuma ação (nenhuma condição bateu e o
  * caminho padrão está vazio). O motor registra `no_op` no último passo.
  */
+function LiveWhatsAppStatus({ providerId }: { providerId: string }) {
+  const q = useWorkflowDeliveryStatuses([providerId]);
+  if (q.isLoading) return <dd className="text-muted-foreground">conferindo…</dd>;
+  if (q.isError) return <dd className="text-destructive">não foi possível conferir</dd>;
+  const st = q.data?.statuses[providerId];
+  return (
+    <dd className="text-foreground" aria-live="polite">
+      {st ? providerStatusLabel(st) : "sem aviso da Meta ainda"}
+    </dd>
+  );
+}
+
 function noOpReason(steps: RunLogStep[]): string | null {
   const last = steps[steps.length - 1];
   const detail = last?.detail as { no_op?: boolean; reason?: string } | undefined;
@@ -160,6 +173,14 @@ export function WorkflowRunsList({
                                 </dd>
                               </div>
                             )}
+                            {step.delivery.channel === "whatsapp" &&
+                              step.delivery.provider_id &&
+                              step.delivery.provider_status !== "skipped_duplicate" && (
+                                <div className="flex gap-1">
+                                  <dt>Status atual:</dt>
+                                  <LiveWhatsAppStatus providerId={step.delivery.provider_id} />
+                                </div>
+                              )}
                             {step.delivery.provider && (
                               <div className="flex gap-1">
                                 <dt>Provedor:</dt>
