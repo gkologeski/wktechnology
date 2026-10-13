@@ -179,10 +179,12 @@ duplicidade, opt-out, resposta e cancelamento.
 
 Entregue: cada passo de WhatsApp, e-mail, agente e transferência grava
 `delivery` (canal, run, fluxo, provedor, status real, id do provedor, agente e
-versão publicada), exibido na lista de execuções. E-mail de fluxo aparece como
-"Na fila interna (não enviada)" porque o motor ainda não envia e-mail.
+versão publicada), exibido na lista de execuções. E-mail de fluxo sai pela
+caixa Gmail conectada do dono do fluxo no mesmo workspace
+(`engine/workflow-email.server.ts`), respeita descadastro e é idempotente por
+execução/destinatário/assunto; sem caixa conectada fica "Na fila interna".
 Pendente: remetente/calendário por workspace, cotas comerciais, atualização do
-status do passo pelos avisos de entrega da Meta.
+status do passo pelos avisos de entrega da Meta, Outlook nos fluxos.
 
 ### Escopo original
 
