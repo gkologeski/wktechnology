@@ -52,7 +52,17 @@ export type WaSendPayload = {
   body?: string | null;
   mediaUrl?: string | null;
   mediaContentType?: string | null;
-  template?: { name: string; language?: string; variables?: string[] } | null;
+  template?: {
+    name: string;
+    language?: string;
+    variables?: string[];
+    /** Variáveis do cabeçalho de texto do modelo. */
+    headerVariables?: string[];
+    /** Link do cabeçalho de mídia (imagem, vídeo ou documento). */
+    headerMediaUrl?: string | null;
+    headerMediaContentType?: string | null;
+  } | null;
+
   contextMessageId?: string | null;
 };
 
@@ -74,6 +84,23 @@ export async function metaSend(
 
   if (payload.template) {
     const vars = payload.template.variables ?? [];
+    const headVars = payload.template.headerVariables ?? [];
+    const headMedia = payload.template.headerMediaUrl ?? null;
+    const components: any[] = [];
+    if (headVars.length)
+      components.push({
+        type: "header",
+        parameters: headVars.map((t) => ({ type: "text", text: t })),
+      });
+    else if (headMedia) {
+      const kind = mediaKind(payload.template.headerMediaContentType ?? payload.mediaContentType);
+      components.push({
+        type: "header",
+        parameters: [{ type: kind, [kind]: { link: headMedia } }],
+      });
+    }
+    if (vars.length)
+      components.push({ type: "body", parameters: vars.map((t) => ({ type: "text", text: t })) });
     body = {
       messaging_product: "whatsapp",
       to,
@@ -81,9 +108,7 @@ export async function metaSend(
       template: {
         name: payload.template.name,
         language: { code: payload.template.language || "pt_BR" },
-        components: vars.length
-          ? [{ type: "body", parameters: vars.map((t) => ({ type: "text", text: t })) }]
-          : [],
+        components,
       },
     };
   } else if (payload.mediaUrl) {

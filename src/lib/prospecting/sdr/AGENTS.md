@@ -3,3 +3,5 @@
 
 - Persona/tom vive em `sdr_agent_versions` (um rascunho e uma publicada por agente; publicar/rollback só via RPC `sdr_publish_agent_version`); o worker lê apenas a publicada e grava `sdr_turn_jobs.agent_version_id`; o teste (`testSdrAgent`) usa o mesmo `buildSystemPrompt`, não grava nada e registra IA como `sdr_agente_teste`. Por quê: editar/testar nunca muda produção e todo turno é rastreável à versão.
 - Autorização do Agente SDR (telas novas e legadas `/agents/sdr`) passa por `requireSdr`/`assertSdr` em `src/lib/prospecting/sdr/access.server.ts`, com filtro explícito por workspace; por quê: uma única matriz de permissões no servidor, sem depender só da RLS ou da UI.
+
+- Configuração por agente (catálogo, materiais, ferramentas, guardrails, fontes, responsável/agenda) vive em `sdr_playbooks` e é lida por `agent-config.ts` no runtime, no teste e na UI; `sdr_workspace_settings` só liga/desliga e impõe limites técnicos. Por quê: agentes coexistem sem que ajuste global sobrescreva um agente.

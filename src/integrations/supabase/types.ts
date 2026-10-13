@@ -17738,18 +17738,25 @@ export type Database = {
       }
       sdr_playbooks: {
         Row: {
+          allowed_tools: string[]
+          assigned_to: string | null
           booking_page_id: string | null
           business_hours: Json
           channel: string
+          channels: string[]
           created_at: string
           enabled: boolean
           follow_up_hours: number
+          guardrails: Json
           handoff_score: number
           id: string
+          kb_sources: Json
+          material_ids: string[]
           max_follow_ups: number
           max_messages: number
           mode: string
           name: string
+          offer_keys: string[]
           opportunity_min_score: number
           opt_out_phrases: string[]
           owner_id: string
@@ -17760,18 +17767,25 @@ export type Database = {
           workspace_id: string | null
         }
         Insert: {
+          allowed_tools?: string[]
+          assigned_to?: string | null
           booking_page_id?: string | null
           business_hours?: Json
           channel?: string
+          channels?: string[]
           created_at?: string
           enabled?: boolean
           follow_up_hours?: number
+          guardrails?: Json
           handoff_score?: number
           id?: string
+          kb_sources?: Json
+          material_ids?: string[]
           max_follow_ups?: number
           max_messages?: number
           mode?: string
           name: string
+          offer_keys?: string[]
           opportunity_min_score?: number
           opt_out_phrases?: string[]
           owner_id: string
@@ -17782,18 +17796,25 @@ export type Database = {
           workspace_id?: string | null
         }
         Update: {
+          allowed_tools?: string[]
+          assigned_to?: string | null
           booking_page_id?: string | null
           business_hours?: Json
           channel?: string
+          channels?: string[]
           created_at?: string
           enabled?: boolean
           follow_up_hours?: number
+          guardrails?: Json
           handoff_score?: number
           id?: string
+          kb_sources?: Json
+          material_ids?: string[]
           max_follow_ups?: number
           max_messages?: number
           mode?: string
           name?: string
+          offer_keys?: string[]
           opportunity_min_score?: number
           opt_out_phrases?: string[]
           owner_id?: string

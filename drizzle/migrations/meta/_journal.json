@@ -911,6 +911,13 @@
       "when": 1791805955782,
       "tag": "0129_active_admin_requires_active_membership",
       "breakpoints": true
+    },
+    {
+      "idx": 130,
+      "version": "7",
+      "when": 1791867751658,
+      "tag": "0130_sdr_agent_per_agent_config",
+      "breakpoints": true
     }
   ]
 }

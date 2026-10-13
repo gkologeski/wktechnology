@@ -7,6 +7,7 @@ import {
   normalizePhone,
   resolveWaNumber,
   findConversationNumber,
+  isWithinServiceWindow,
 } from "@/lib/whatsapp/meta-channel.server";
 
 export type WaSendResult = {
@@ -39,6 +40,11 @@ export async function sendWhatsAppFromServer(params: {
 
   const toBare = normalizePhone(to);
   const existing = await findConversationNumber(supabase, workspaceId, toBare);
+  // Mesma regra da interface: fora da janela de 24 h só sai modelo aprovado.
+  if (!params.metaTemplate && !isWithinServiceWindow(existing?.lastInboundAt))
+    throw new Error(
+      "Janela de 24 horas encerrada: este envio precisa de um modelo aprovado pela Meta.",
+    );
   const num = await resolveWaNumber(workspaceId, existing?.phoneNumberId ?? null);
 
   const { wamid, raw } = await metaSend(num, {

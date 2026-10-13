@@ -5,6 +5,7 @@
 type Admin = any;
 
 import { parsePersona, stripStockOpener } from "./persona";
+import { configFromRow, hasTool, scopeKnowledge } from "./agent-config";
 import { buildSystemPrompt, callSdrAgent } from "./agent.server";
 import {
   composeOutgoing,
@@ -266,7 +267,11 @@ export async function processJob(
   const history: ConversationMessage[] = ((msgs ?? []) as ConversationMessage[])
     .filter((m) => (m.body ?? "").trim())
     .reverse();
-  const { offers, materials } = await loadKnowledge(admin, job.workspace_id);
+  const agentConfig = configFromRow(playbook as Record<string, unknown>);
+  const { offers, materials } = scopeKnowledge(
+    agentConfig,
+    await loadKnowledge(admin, job.workspace_id),
+  );
   if (!offers.length) {
     await finish(admin, job.id, job.lease_token, {
       status: "skipped",
@@ -274,7 +279,9 @@ export async function processJob(
     });
     return "skipped";
   }
-  const questions = await loadQuestions(admin, job.workspace_id, playbook.questionnaire_id);
+  const questions = hasTool(agentConfig, "qualify")
+    ? await loadQuestions(admin, job.workspace_id, playbook.questionnaire_id)
+    : [];
   // Persona da versão PUBLICADA (rascunho nunca afeta produção).
   const { data: agentVersion } = await admin
     .from("sdr_agent_versions")
@@ -285,11 +292,12 @@ export async function processJob(
   const persona = parsePersona(agentVersion?.persona);
   const system = buildSystemPrompt({
     persona,
+    config: agentConfig,
     origin: enr.campaign_id ? "prospecting" : "inbound",
     offers,
     materials,
     questions,
-    bookingAvailable: !!playbook.booking_page_id,
+    bookingAvailable: !!playbook.booking_page_id && hasTool(agentConfig, "schedule"),
     extraInstructions:
       [
         playbook.qualification_prompt,
@@ -355,7 +363,7 @@ export async function processJob(
   let canonical: CanonicalScore | null = null;
   let qualificationPayload: Record<string, unknown> | null = null;
   let evidence: Record<string, unknown>[] = [];
-  if (playbook.questionnaire_id && target && questions.length) {
+  if (playbook.questionnaire_id && target && questions.length && hasTool(agentConfig, "qualify")) {
     const existing = await loadQualification(
       admin,
       job.workspace_id,
@@ -439,7 +447,7 @@ export async function processJob(
     return "opt_out";
   }
 
-  if (qualified) {
+  if (qualified && !agentConfig.guardrails.require_human_for_opportunity) {
     if ((await guard(admin, job)) !== "ok") return "discarded";
     await deps.ensureOpportunity(admin, {
       workspaceId: job.workspace_id,
@@ -449,7 +457,7 @@ export async function processJob(
     });
   }
 
-  if (out.intent === "handoff") {
+  if (out.intent === "handoff" && hasTool(agentConfig, "handoff")) {
     if ((await guard(admin, job)) !== "ok") return "discarded";
     await finish(admin, job.id, job.lease_token, {
       status: "skipped",
