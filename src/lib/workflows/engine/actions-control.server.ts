@@ -11,7 +11,7 @@ import {
   lineItemsOf,
   type LineItemRow,
 } from "../line-items";
-import type { RunCtx, RunResult } from "./run-context";
+import type { ResumeFrame, RunCtx, RunResult } from "./run-context";
 
 /** Ações que alteram o fluxo da lista de passos. */
 export type ControlAction = Extract<
@@ -23,6 +23,7 @@ export type ControlAction = Extract<
   | { type: "branch_multi" }
   | { type: "delay_until_date" }
   | { type: "approval_step" }
+  | { type: "parallel" }
 >;
 
 export function isControlAction(action: WorkflowAction): action is ControlAction {
@@ -33,7 +34,8 @@ export function isControlAction(action: WorkflowAction): action is ControlAction
     action.type === "switch_by_value" ||
     action.type === "branch_multi" ||
     action.type === "delay_until_date" ||
-    action.type === "approval_step"
+    action.type === "approval_step" ||
+    action.type === "parallel"
   );
 }
 
@@ -48,6 +50,8 @@ export interface ControlOpts {
   index: number;
   stepPath: string;
   annotate: (step: LogStep) => LogStep;
+  /** Quadro de retomada deste passo (só quando a execução volta para dentro dele). */
+  resume?: ResumeFrame;
   runActions: (
     supabase: SupabaseClient,
     actions: WorkflowAction[],
@@ -57,39 +61,92 @@ export interface ControlOpts {
   ) => Promise<RunResult>;
 }
 
-/** Executa uma ramificação e resolve o resultado no formato de ControlOutcome. */
+/**
+ * Executa um caminho. Pausas internas (espera, aguardar resposta, aprovação)
+ * sobem com o quadro {caminho, passo} para a retomada voltar ao mesmo ponto.
+ */
 async function runBranch(
   supabase: SupabaseClient,
   actions: WorkflowAction[],
   ctx: RunCtx,
   pathPrefix: string,
   logs: LogStep[],
-  notResumableError: string,
+  frame: { index: number; key: string; startCursor?: number },
   runActions: ControlOpts["runActions"],
 ): Promise<ControlOutcome> {
-  const branchRes = await runActions(supabase, actions, ctx, 0, pathPrefix);
+  const branchRes = await runActions(supabase, actions, ctx, frame.startCursor ?? 0, pathPrefix);
   logs.push(...branchRes.log);
   if (branchRes.hadError) return { logs, done: { hadError: true } };
   if (branchRes.suspendedAt) {
-    // Delays dentro de branches não são retomáveis nesta versão — reportamos e paramos.
-    logs.push({
-      at: new Date().toISOString(),
-      ok: false,
-      action: "delay",
-      error: notResumableError,
-    });
-    return { logs, done: { hadError: true } };
+    const s = branchRes.suspendedAt;
+    return {
+      logs,
+      done: {
+        hadError: false,
+        suspendedAt: {
+          runAtIso: s.runAtIso,
+          resumeCursor: frame.index,
+          resumePath: [{ key: frame.key, cursor: s.resumeCursor }, ...(s.resumePath ?? [])],
+        },
+      },
+    };
+  }
+  if (branchRes.waitingApproval) {
+    const w = branchRes.waitingApproval;
+    return {
+      logs,
+      done: {
+        hadError: false,
+        waitingApproval: {
+          approvalId: w.approvalId,
+          resumeCursor: frame.index,
+          resumePath: [{ key: frame.key, cursor: w.resumeCursor }, ...(w.resumePath ?? [])],
+        },
+      },
+    };
   }
   return { logs };
+}
+
+/** Registro da retomada de um caminho já escolhido (sem reavaliar condições). */
+function resumedStep(action: string, key: string, annotate: (s: LogStep) => LogStep): LogStep {
+  return annotate({
+    at: new Date().toISOString(),
+    ok: true,
+    action,
+    detail: { resumed: true, branch: key },
+  });
 }
 
 export async function runControlAction(
   supabase: SupabaseClient,
   action: ControlAction,
   ctx: RunCtx,
-  { index, stepPath, annotate, runActions }: ControlOpts,
+  { index, stepPath, annotate, runActions, resume }: ControlOpts,
 ): Promise<ControlOutcome> {
   const logs: LogStep[] = [];
+
+  // Retomada dentro de um caminho já escolhido: segue dele, sem reavaliar.
+  if (resume && action.type !== "parallel") {
+    const list = branchByKey(action, resume.key);
+    if (list) {
+      logs.push(resumedStep(action.type, resume.key, annotate));
+      return runBranch(
+        supabase,
+        list,
+        ctx,
+        `${stepPath}.${prefixForKey(resume.key)}`,
+        logs,
+        { index, key: resume.key, startCursor: resume.cursor },
+        runActions,
+      );
+    }
+  }
+
+  if (action.type === "parallel") {
+    const { runParallel } = await import("./actions-parallel.server");
+    return runParallel(supabase, action, ctx, { index, stepPath, annotate, runActions });
+  }
 
   // Delay: agenda retomada e para aqui.
   if (action.type === "delay") {
@@ -142,7 +199,7 @@ export async function runControlAction(
       ctx,
       `${stepPath}.${branchName}`,
       logs,
-      "Delays dentro de ramificações ainda não são retomáveis",
+      { index, key: branchName },
       runActions,
     );
   }
@@ -153,8 +210,10 @@ export async function runControlAction(
     const { resolveWaitState, decideWait, timeoutMs } = await import("../wait-for-reply");
     const { hasReplySince } = await import("./actions-sdr.server");
     const now = new Date();
+    const waitKey = `wait:${stepPath}`;
+    const legacy = stepPath.includes(".") ? undefined : ctx.after?.["__wf_wait"];
     const state = resolveWaitState(
-      ctx.after?.["__wf_wait"],
+      ctx.state?.[waitKey] ?? legacy,
       index,
       now,
       timeoutMs(action.timeout_amount, action.timeout_unit),
@@ -162,6 +221,7 @@ export async function runControlAction(
     const reply = await hasReplySince(supabase, ctx, action.channels, state.started_at);
     const decision = decideWait(state, reply.replied, now);
     if (decision.kind === "suspend") {
+      (ctx.state = ctx.state ?? {})[waitKey] = state;
       logs.push(
         annotate({
           at: now.toISOString(),
@@ -192,6 +252,7 @@ export async function runControlAction(
       }),
     );
     // Retomada posterior não deve reutilizar o estado desta espera.
+    if (ctx.state) delete ctx.state[waitKey];
     if (ctx.after && "__wf_wait" in ctx.after) {
       const { __wf_wait: _drop, ...rest } = ctx.after as Record<string, unknown>;
       void _drop;
@@ -203,7 +264,7 @@ export async function runControlAction(
       ctx,
       `${stepPath}.${branchName}`,
       logs,
-      "Esperas dentro do resultado de Aguardar resposta ainda não são retomáveis",
+      { index, key: branchName },
       runActions,
     );
   }
@@ -242,13 +303,14 @@ export async function runControlAction(
         },
       }),
     );
+    const caseIdx = matched ? action.cases.indexOf(matched) : -1;
     return runBranch(
       supabase,
       branchActions,
       ctx,
       `${stepPath}.${matched ? "case" : "default"}`,
       logs,
-      "Delays dentro de switch_by_value ainda não são retomáveis",
+      { index, key: matched ? `case:${caseIdx}` : "default" },
       runActions,
     );
   }
@@ -277,13 +339,14 @@ export async function runControlAction(
         },
       }),
     );
+    const branchIdx = matched ? action.branches.indexOf(matched) : -1;
     return runBranch(
       supabase,
       branchActions,
       ctx,
       `${stepPath}.${matched ? "branch" : "else"}`,
       logs,
-      "Delays dentro de branch_multi ainda não são retomáveis",
+      { index, key: matched ? `branch:${branchIdx}` : "else" },
       runActions,
     );
   }
@@ -384,4 +447,30 @@ export async function runControlAction(
       waitingApproval: { approvalId: appr.id as string, resumeCursor: index + 1 },
     },
   };
+}
+
+/** Lista de ações do caminho indicado pelo quadro de retomada. */
+function branchByKey(action: ControlAction, key: string): WorkflowAction[] | null {
+  if (action.type === "branch_if" || action.type === "wait_for_reply") {
+    if (key === "then") return action.then ?? [];
+    if (key === "else") return action.else ?? [];
+  }
+  if (action.type === "switch_by_value") {
+    if (key === "default") return action.default ?? [];
+    const m = /^case:(\d+)$/.exec(key);
+    if (m) return action.cases[Number(m[1])]?.actions ?? null;
+  }
+  if (action.type === "branch_multi") {
+    if (key === "else") return action.else ?? [];
+    const m = /^branch:(\d+)$/.exec(key);
+    if (m) return action.branches[Number(m[1])]?.actions ?? null;
+  }
+  return null;
+}
+
+/** Mantém os mesmos prefixos de `step_path` usados na primeira passagem. */
+function prefixForKey(key: string): string {
+  if (key.startsWith("case:")) return "case";
+  if (key.startsWith("branch:")) return "branch";
+  return key;
 }

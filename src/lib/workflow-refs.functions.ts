@@ -776,3 +776,43 @@ export const listSdrAgentsForWorkflow = createServerFn({ method: "GET" })
       published: published.has(p.id as string),
     }));
   });
+
+/** Páginas de agendamento do workspace ativo (bloco "Link de agendamento"). */
+export const listBookingPagesForWorkflow = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
+    const workspaceId = await resolveActiveWorkspace(context.userId);
+    const { data, error } = await context.supabase
+      .from("booking_pages")
+      .select("id, title, slug, active")
+      .eq("workspace_id", workspaceId)
+      .order("title");
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((p) => ({
+      id: p.id as string,
+      title: (p.title as string) ?? "Agenda",
+      slug: p.slug as string,
+      active: !!p.active,
+    }));
+  });
+
+/** Materiais do workspace ativo (bloco "Material de apoio"); só aprovados são usáveis. */
+export const listSdrMaterialsForWorkflow = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
+    const workspaceId = await resolveActiveWorkspace(context.userId);
+    const { data, error } = await context.supabase
+      .from("sdr_materials")
+      .select("id, title, kind, approved, active, url")
+      .eq("workspace_id", workspaceId)
+      .order("title");
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((m) => ({
+      id: m.id as string,
+      title: (m.title as string) ?? "Material",
+      kind: (m.kind as string | null) ?? null,
+      usable: !!m.approved && !!m.active && !!m.url,
+    }));
+  });

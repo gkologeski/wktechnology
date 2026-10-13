@@ -88,6 +88,7 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
         .select("id")
         .single();
       if (run) {
+        const { after: cleanAfter, state, frames } = splitResumeData(hydratedAfter);
         const res = await runActions(
           supabase,
           wfr.actions ?? [],
@@ -96,10 +97,12 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
             entityId: event.entity_id,
             ownerId: WORKSPACE_SCOPED_ENTITIES.has(event.entity) ? wfr.owner_id : event.owner_id,
             workspaceId: wfr.workspace_id,
-            after: hydratedAfter,
+            after: cleanAfter,
             before: event.before,
             workflowId: wfr.id,
             runId: run.id as string,
+            state,
+            resumeFrames: frames,
           },
           event.resume_cursor,
         );
@@ -218,6 +221,27 @@ async function finishRun(
 ) {
   // Se aguardando aprovação, deixa run em estado waiting (será retomado por decideApproval).
   if (res.waitingApproval) {
+    // Aprovação dentro de um caminho: a retomada precisa voltar ao mesmo ponto.
+    if (res.waitingApproval.resumePath?.length) {
+      const { data: appr } = await supabase
+        .from("workflow_approvals")
+        .select("event_snapshot")
+        .eq("id", res.waitingApproval.approvalId)
+        .maybeSingle();
+      const snap = ((appr as { event_snapshot?: Record<string, unknown> } | null)?.event_snapshot ??
+        {}) as Record<string, unknown>;
+      const snapAfter = (snap["after"] as Record<string, unknown> | null) ?? {};
+      await supabase
+        .from("workflow_approvals")
+        .update({
+          resume_cursor: res.waitingApproval.resumeCursor,
+          event_snapshot: {
+            ...snap,
+            after: { ...stripResumeKeys(snapAfter), __wf_path: res.waitingApproval.resumePath },
+          },
+        } as never)
+        .eq("id", res.waitingApproval.approvalId);
+    }
     await supabase
       .from("workflow_runs")
       .update({
@@ -237,9 +261,12 @@ async function finishRun(
       entity_id: event.entity_id,
       event_type: event.event_type,
       before: event.before,
-      after: res.suspendedAt.waitState
-        ? { ...(event.after ?? {}), __wf_wait: res.suspendedAt.waitState }
-        : event.after,
+      after: {
+        ...stripResumeKeys((event.after ?? {}) as Record<string, unknown>),
+        ...(res.suspendedAt.waitState ? { __wf_wait: res.suspendedAt.waitState } : {}),
+        ...(res.suspendedAt.state ? { __wf_state: res.suspendedAt.state } : {}),
+        ...(res.suspendedAt.resumePath?.length ? { __wf_path: res.suspendedAt.resumePath } : {}),
+      },
       run_at: res.suspendedAt.runAtIso,
       resume_workflow_id: workflowId,
       resume_cursor: res.suspendedAt.resumeCursor,
@@ -291,4 +318,41 @@ export async function tickWorkflows(supabase: SupabaseClient, limit = 50) {
 }
 
 // Os triggers baseados em tempo vivem em engine-time-triggers.server.ts.
+const RESUME_KEYS = ["__wf_wait", "__wf_state", "__wf_path"] as const;
+
+/** Remove dados internos de retomada antes de reaproveitar o `after`. */
+export function stripResumeKeys(after: Record<string, unknown>): Record<string, unknown> {
+  const out = { ...after };
+  for (const k of RESUME_KEYS) delete out[k];
+  return out;
+}
+
+/** Separa estado durável e quadros de retomada do `after` do evento. */
+export function splitResumeData(after: unknown): {
+  after: Record<string, unknown> | null;
+  state: Record<string, unknown>;
+  frames: { key: string; cursor: number }[];
+} {
+  if (!after || typeof after !== "object")
+    return { after: (after as null) ?? null, state: {}, frames: [] };
+  const a = after as Record<string, unknown>;
+  const state =
+    a["__wf_state"] && typeof a["__wf_state"] === "object"
+      ? { ...(a["__wf_state"] as Record<string, unknown>) }
+      : {};
+  const frames = Array.isArray(a["__wf_path"])
+    ? (a["__wf_path"] as unknown[]).filter(
+        (f): f is { key: string; cursor: number } =>
+          !!f &&
+          typeof (f as { key?: unknown }).key === "string" &&
+          typeof (f as { cursor?: unknown }).cursor === "number",
+      )
+    : [];
+  // `__wf_wait` legado continua no after: o bloco de espera o consome e remove.
+  const { __wf_state: _s, __wf_path: _p, ...rest } = a;
+  void _s;
+  void _p;
+  return { after: rest, state, frames };
+}
+
 export { tickTimeTriggers } from "./engine-time-triggers.server";

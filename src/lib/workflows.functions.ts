@@ -193,6 +193,48 @@ export const publishWorkflow = createServerFn({ method: "POST" })
           );
       }
     }
+    const { collectResourceIds, hasApprovalInsideParallel } =
+      await import("@/lib/workflows/flow-checks");
+    if (hasApprovalInsideParallel(wf.draft_actions ?? []))
+      throw new Error(
+        "Publicação bloqueada: aprovação humana não pode ficar dentro de caminhos em paralelo.",
+      );
+    const resources = collectResourceIds(wf.draft_actions ?? []);
+    if (resources.missing)
+      throw new Error(
+        "Publicação bloqueada: escolha a página de agendamento ou o material em todos os blocos.",
+      );
+    if (resources.bookingPages.length || resources.materials.length) {
+      const ws = await resolveActiveWorkspace(userId);
+      if (resources.bookingPages.length) {
+        const { data: pages } = await supabase
+          .from("booking_pages")
+          .select("id, active")
+          .eq("workspace_id", ws)
+          .in("id", resources.bookingPages);
+        for (const id of resources.bookingPages) {
+          const pg = (pages ?? []).find((p) => p.id === id);
+          if (!pg || !pg.active)
+            throw new Error(
+              "Publicação bloqueada: a página de agendamento precisa ser desta empresa e estar ativa.",
+            );
+        }
+      }
+      if (resources.materials.length) {
+        const { data: mats } = await supabase
+          .from("sdr_materials")
+          .select("id, approved, active, url")
+          .eq("workspace_id", ws)
+          .in("id", resources.materials);
+        for (const id of resources.materials) {
+          const m = (mats ?? []).find((x) => x.id === id);
+          if (!m || !m.approved || !m.active || !m.url)
+            throw new Error(
+              "Publicação bloqueada: o material precisa ser desta empresa, aprovado, ativo e com link.",
+            );
+        }
+      }
+    }
     const waSteps = collectWhatsAppSteps(wf.draft_actions ?? []);
     if (waSteps.length > 0) {
       const { loadApprovedTemplates } = await import("@/lib/whatsapp/templates.server");

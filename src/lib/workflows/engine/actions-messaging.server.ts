@@ -88,8 +88,8 @@ export async function handleMessagingAction(
           body = (tpl.body_html as string) || (tpl.body_text as string) || body;
         }
       }
-      subject = renderTokens(subject, ctx.after) as string;
-      body = renderTokens(body, ctx.after) as string;
+      subject = renderTokens(subject, ctx.after, ctx.vars) as string;
+      body = renderTokens(body, ctx.after, ctx.vars) as string;
       const { sendWorkflowEmail } = await import("./workflow-email.server");
       const r = await sendWorkflowEmail(supabase, {
         workspaceId: ctx.workspaceId,

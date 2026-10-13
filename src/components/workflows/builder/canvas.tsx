@@ -10,6 +10,7 @@ import {
   ArrowUp,
   Filter,
   GitBranch,
+  GitFork,
   Hourglass,
   GripVertical,
   MoreHorizontal,
@@ -206,6 +207,28 @@ export function StepsList({
               <BranchCard
                 action={action}
                 stepPath={stepPath}
+                selected={isSelected}
+                selection={selection}
+                library={library}
+                onSelect={() => onSelect(stepPath)}
+                onRemove={() => onRemove(stepPath)}
+                onSelectPath={onSelect}
+                onRemovePath={onRemove}
+                onAddAt={onAddAt}
+                canMoveUp={i > 0}
+                canMoveDown={i < actions.length - 1}
+                isDraggingSelf={isDraggingSelf}
+                dragging={dragging}
+                onDragStartStep={onDragStartStep}
+                onDragEndStep={onDragEndStep}
+                onDropAt={onDropAt}
+                onMove={onMove}
+              />
+            ) : action.type === "parallel" ? (
+              <ParallelCard
+                action={action}
+                stepPath={stepPath}
+                index={i + 1}
                 selected={isSelected}
                 selection={selection}
                 library={library}
@@ -896,6 +919,122 @@ function SwitchCard({
             />
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ParallelCard({
+  action,
+  stepPath,
+  index,
+  selected,
+  selection,
+  library,
+  onSelect,
+  onRemove,
+  onSelectPath,
+  onRemovePath,
+  onAddAt,
+  canMoveUp,
+  canMoveDown,
+  isDraggingSelf,
+  dragging,
+  onDragStartStep,
+  onDragEndStep,
+  onDropAt,
+  onMove,
+}: {
+  action: Extract<WorkflowAction, { type: "parallel" }>;
+  stepPath: StepPath;
+  index: number;
+  selected: boolean;
+  selection: StepPath | "trigger" | null;
+  library: { parentPath: StepPath } | null;
+  onSelect: () => void;
+  onRemove: () => void;
+  onSelectPath: (p: StepPath) => void;
+  onRemovePath: (p: StepPath) => void;
+  onAddAt: (parentPath: StepPath) => void;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+  isDraggingSelf: boolean;
+} & DragProps) {
+  const labels = useReferenceLabels();
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", JSON.stringify(stepPath));
+    onDragStartStep(stepPath);
+  };
+  return (
+    <div
+      className={cn(
+        "group relative rounded-lg border bg-card shadow-sm",
+        selected && "border-primary ring-2 ring-primary/20",
+        isDraggingSelf && "opacity-40",
+      )}
+    >
+      <div className="flex items-center gap-2 p-3">
+        <DragHandle
+          onDragStart={handleDragStart}
+          onDragEnd={onDragEndStep}
+          label="Arrastar caminhos em paralelo"
+        />
+        <button
+          type="button"
+          onClick={onSelect}
+          aria-pressed={selected}
+          className="flex-1 min-w-0 text-left flex items-center gap-3"
+        >
+          <div className="h-8 w-8 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <GitFork className="h-4 w-4" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">
+              Passo {index}
+            </p>
+            <p className="text-sm font-medium">Caminhos em paralelo</p>
+            <p className="text-xs text-muted-foreground truncate">
+              {describeAction(action, labels)}
+            </p>
+          </div>
+        </button>
+        <StepActions
+          onMoveUp={() => onMove(stepPath, -1)}
+          onMoveDown={() => onMove(stepPath, 1)}
+          onRemove={onRemove}
+          canMoveUp={canMoveUp}
+          canMoveDown={canMoveDown}
+        />
+      </div>
+      <div className="p-3 pt-0">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 items-start">
+          {(action.branches ?? []).map((b, bi) => (
+            <div key={bi} className="min-w-0">
+              <BranchColumn
+                title={b.label?.trim() || `Caminho ${bi + 1}`}
+                subtitle="Segue ao mesmo tempo que os outros"
+                parentPath={[...stepPath, `par:${bi}`]}
+                actions={b.actions ?? []}
+                selection={selection}
+                library={library}
+                onSelectPath={onSelectPath}
+                onRemovePath={onRemovePath}
+                onAddAt={onAddAt}
+                dragging={dragging}
+                onDragStartStep={onDragStartStep}
+                onDragEndStep={onDragEndStep}
+                onDropAt={onDropAt}
+                onMove={onMove}
+              />
+            </div>
+          ))}
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          {action.join === "any"
+            ? "Continua no primeiro caminho que terminar; os outros são cancelados."
+            : "Continua quando todos os caminhos terminarem."}
+        </p>
       </div>
     </div>
   );

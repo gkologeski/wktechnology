@@ -229,6 +229,47 @@ export async function handleSdrAction(
         delivery: buildDeliveryMeta(ctx, { channel: "handoff", provider_status: "transferred" }),
       };
     }
+    case "share_booking_link": {
+      const { data: page } = await supabase
+        .from("booking_pages")
+        .select("id, slug, title, active, workspace_id")
+        .eq("id", action.booking_page_id)
+        .maybeSingle();
+      if (!page || page.workspace_id !== ctx.workspaceId)
+        throw new Error("Página de agendamento fora da empresa ou removida.");
+      if (!page.active) throw new Error("Página de agendamento desativada.");
+      const { getPublicAppUrl } = await import("@/lib/app-url");
+      const url = `${getPublicAppUrl().replace(/\/$/, "")}/book/${page.slug as string}`;
+      const vars = (ctx.vars = ctx.vars ?? {});
+      vars["booking_url"] = url;
+      vars["booking_title"] = page.title;
+      return {
+        at,
+        ok: true,
+        action: "share_booking_link",
+        detail: { booking_page_id: page.id, booking_url: url, title: page.title },
+      };
+    }
+    case "share_material": {
+      const { data: m } = await supabase
+        .from("sdr_materials")
+        .select("id, title, url, approved, active, workspace_id")
+        .eq("id", action.material_id)
+        .maybeSingle();
+      if (!m || m.workspace_id !== ctx.workspaceId)
+        throw new Error("Material fora da empresa ou removido.");
+      if (!m.approved || !m.active || !m.url)
+        throw new Error("Material precisa estar aprovado, ativo e com link.");
+      const vars = (ctx.vars = ctx.vars ?? {});
+      vars["material_url"] = m.url;
+      vars["material_title"] = m.title;
+      return {
+        at,
+        ok: true,
+        action: "share_material",
+        detail: { material_id: m.id, material_url: m.url, title: m.title },
+      };
+    }
     default:
       return null;
   }

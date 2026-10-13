@@ -77,14 +77,24 @@ export async function runActions(
     });
 
     if (isControlAction(action)) {
+      // Quadro de retomada vale só para o passo onde a execução foi pausada.
+      const resume =
+        i === startIndex && ctx.resumeFrames?.length ? ctx.resumeFrames.shift() : undefined;
       const outcome = await runControlAction(supabase, action, ctx, {
         index: i,
         stepPath,
         annotate,
         runActions,
+        resume,
       });
       log.push(...outcome.logs);
-      if (outcome.done) return { log: rawLog, ...outcome.done };
+      if (outcome.done) {
+        const done = { ...outcome.done };
+        // No caminho principal, leva junto o estado durável para a retomada.
+        if (!pathPrefix && done.suspendedAt && ctx.state && Object.keys(ctx.state).length > 0)
+          done.suspendedAt = { ...done.suspendedAt, state: ctx.state };
+        return { log: rawLog, ...done };
+      }
       continue;
     }
 

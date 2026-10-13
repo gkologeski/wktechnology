@@ -37,7 +37,8 @@ export function WaitForReplyForm({
     <div className="space-y-3">
       <p className="text-xs text-muted-foreground">
         Pausa o fluxo até o contato responder (mensagem recebida de verdade) ou até o prazo acabar.
-        A resposta é conferida a cada 10 minutos. Precisa ficar no caminho principal do fluxo.
+        A resposta é conferida a cada 10 minutos. Pode ficar no caminho principal ou dentro de um
+        caminho.
       </p>
       <fieldset className="space-y-2">
         <legend className="text-xs font-medium">Canais que contam como resposta *</legend>
