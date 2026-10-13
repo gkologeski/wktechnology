@@ -208,6 +208,7 @@ export type WorkflowAction =
   | { type: "share_booking_link"; booking_page_id: string }
   // Prepara o link de um material APROVADO em {{vars.material_url}} / {{vars.material_title}}.
   | { type: "share_material"; material_id: string }
+  | { type: "linkedin_task"; note: string; due_in_days?: number }
   | {
       type: "create_ats_job";
       title: string;
@@ -593,6 +594,7 @@ export const ACTION_LABELS: Record<WorkflowActionType, string> = {
   parallel: "Caminhos em paralelo",
   share_booking_link: "Link de agendamento",
   share_material: "Material de apoio",
+  linkedin_task: "Tarefa de LinkedIn (manual)",
   switch_by_value: "Ramificar por valor (switch)",
   branch_multi: "Ramificação múltipla",
   delay_until_date: "Esperar até data",
@@ -672,6 +674,7 @@ export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionTy
       "handoff",
       "share_booking_link",
       "share_material",
+      "linkedin_task",
       "send_slack",
       "send_teams",
     ],

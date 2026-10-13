@@ -34,15 +34,18 @@ export function collectResourceIds(actions: unknown): {
   bookingPages: string[];
   materials: string[];
   missing: boolean;
+  /** Blocos de agenda sem página: usam a agenda padrão da empresa. */
+  bookingDefault: boolean;
 } {
   const pages = new Set<string>();
   const mats = new Set<string>();
   let missing = false;
+  let bookingDefault = false;
   walk(actions, (a) => {
     if (a.type === "share_booking_link") {
       const id = typeof a["booking_page_id"] === "string" ? (a["booking_page_id"] as string) : "";
       if (id) pages.add(id);
-      else missing = true;
+      else bookingDefault = true;
     }
     if (a.type === "share_material") {
       const id = typeof a["material_id"] === "string" ? (a["material_id"] as string) : "";
@@ -50,7 +53,7 @@ export function collectResourceIds(actions: unknown): {
       else missing = true;
     }
   });
-  return { bookingPages: [...pages], materials: [...mats], missing };
+  return { bookingPages: [...pages], materials: [...mats], missing, bookingDefault };
 }
 
 /** Aprovação humana dentro de caminhos em paralelo não é suportada. */

@@ -302,6 +302,11 @@ export const SimpleActionSchema = z.discriminatedUnion("type", [
     material_id: z.union([z.string().uuid(), z.literal("")]),
   }),
   z.object({
+    type: z.literal("linkedin_task"),
+    note: z.string().min(1).max(1000),
+    due_in_days: z.number().int().min(0).max(60).optional(),
+  }),
+  z.object({
     type: z.literal("handoff"),
     user_id: z.string().uuid().optional(),
     reason: z.string().min(1).max(500),

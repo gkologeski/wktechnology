@@ -1,3 +1,4 @@
+import { LinkedinTaskForm } from "./step-forms/flow-resource-forms";
 import { BookingLinkForm, MaterialForm, ParallelForm } from "./step-forms/flow-resource-forms";
 import type { FieldOpt } from "./step-tree";
 import {
@@ -917,6 +918,8 @@ function StepConfigForm({
       return <BookingLinkForm action={action} onChange={onChange} />;
     case "share_material":
       return <MaterialForm action={action} onChange={onChange} />;
+    case "linkedin_task":
+      return <LinkedinTaskForm action={action} onChange={onChange} />;
     case "switch_by_value":
       return (
         <SwitchByValueForm

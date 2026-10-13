@@ -201,9 +201,22 @@ export const publishWorkflow = createServerFn({ method: "POST" })
       );
     const resources = collectResourceIds(wf.draft_actions ?? []);
     if (resources.missing)
-      throw new Error(
-        "Publicação bloqueada: escolha a página de agendamento ou o material em todos os blocos.",
-      );
+      throw new Error("Publicação bloqueada: escolha o material em todos os blocos de material.");
+    if (resources.bookingDefault) {
+      const wsd = await resolveActiveWorkspace(userId);
+      const { data: pol } = await supabase
+        .from("workflow_send_policies")
+        .select("default_booking_page_id")
+        .eq("workspace_id", wsd)
+        .maybeSingle();
+      const def = (pol as { default_booking_page_id?: string | null } | null)
+        ?.default_booking_page_id;
+      if (!def)
+        throw new Error(
+          "Publicação bloqueada: escolha a página de agendamento ou defina a agenda padrão da empresa em Política de envio.",
+        );
+      resources.bookingPages.push(def);
+    }
     if (resources.bookingPages.length || resources.materials.length) {
       const ws = await resolveActiveWorkspace(userId);
       if (resources.bookingPages.length) {

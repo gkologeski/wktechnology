@@ -21,6 +21,10 @@ export interface RunCtx {
   resumeFrames?: ResumeFrame[];
   /** Estado durável de esperas e caminhos paralelos, por posição do passo. */
   state?: Record<string, unknown>;
+  /** Chave de envio reservada pelo guarda (usada pelo handler do canal). */
+  deliveryKey?: string;
+  /** Política de envio do workspace (cache do run; null = sem política). */
+  sendPolicy?: import("./delivery-policy").SendPolicy | null;
 }
 
 export type ResumeFrame = { key: string; cursor: number };

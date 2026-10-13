@@ -41,6 +41,7 @@ import {
   Bot,
   UserCheck,
   Paperclip,
+  Linkedin,
 } from "lucide-react";
 import { ACTION_LABELS, type WorkflowAction, type WorkflowActionType } from "@/lib/workflows/types";
 import { conditionsSummary } from "@/lib/workflows/conditions";
@@ -93,6 +94,7 @@ export const ACTION_ICONS: Record<WorkflowActionType, typeof Zap> = {
   parallel: GitFork,
   share_booking_link: CalendarClock,
   share_material: Paperclip,
+  linkedin_task: Linkedin,
   switch_by_value: SplitSquareHorizontal,
   branch_multi: GitFork,
   delay_until_date: CalendarClock,
@@ -202,6 +204,8 @@ export function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
       return { type, booking_page_id: "" };
     case "share_material":
       return { type, material_id: "" };
+    case "linkedin_task":
+      return { type, note: "Conectar e enviar mensagem no LinkedIn", due_in_days: 0 };
     case "switch_by_value":
       return { type, field: "status", cases: [], default: [] };
     case "branch_multi":
@@ -753,9 +757,13 @@ export function describeAction(a: WorkflowAction, labels?: DescribeLabels): stri
     case "parallel":
       return `${a.branches.length} caminhos · ${a.join === "any" ? "segue no primeiro" : "espera todos"}`;
     case "share_booking_link":
-      return a.booking_page_id ? "link da agenda em {{vars.booking_url}}" : "Escolha a agenda";
+      return a.booking_page_id
+        ? "link da agenda em {{vars.booking_url}}"
+        : "agenda padrão da empresa em {{vars.booking_url}}";
     case "share_material":
       return a.material_id ? "link do material em {{vars.material_url}}" : "Escolha o material";
+    case "linkedin_task":
+      return `tarefa manual: ${a.note.slice(0, 40)}`;
     case "switch_by_value": {
       const li = LINE_ITEM_FIELDS.find((f) => f.name === a.field);
       const label = li

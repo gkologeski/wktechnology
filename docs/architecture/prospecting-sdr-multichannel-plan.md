@@ -166,13 +166,18 @@ saídas sucesso/erro/timeout. Estender o motor de workflows existente
 Aceite: um fluxo salvo executa em modo de teste com provedores falsos e o
 inspetor recusa publicar nó sem integração disponível.
 
-## Fase 4 — Multicanal real (PARCIAL)
+## Fase 4 — Multicanal real (CONCLUÍDA)
 
-Entregue: resposta em qualquer canal (WhatsApp ou e-mail) desvia o fluxo pelo
-ramo "Respondeu", interrompendo os passos de abordagem seguintes; envio de
-WhatsApp idempotente por run; falha de um passo registra erro no histórico.
-Pendente: ramos paralelos simultâneos, leases CAS por nó, retry/backoff
-específico e reconciliação de envio incerto no motor de workflows.
+Entregue: resposta em qualquer canal desvia pelo ramo "Respondeu"; caminhos em
+paralelo com junção todos/primeiro e cancelamento; guarda de envio por nó
+(`engine/delivery-guard.server.ts` + `workflow_deliveries`): chave estável por
+fluxo/execução de origem/passo mantida entre retomadas, reserva atômica com
+lease (`workflow_delivery_claim`), 429/5xx com nova tentativa (2, 4, 8 min; até 4
+tentativas), rede/timeout = "incerto", reconciliado no histórico do canal e
+nunca reenviado às cegas; lease expirado vira incerto; falha de um caminho não
+derruba o outro. Testes com provedores falsos (`phase4-delivery.test.ts`) e
+prova da função no banco real com desfazer. Limite: o motor é sequencial (ver
+fase 3); a continuação por e-mail recebido usa a checagem periódica.
 
 ### Escopo original
 
@@ -185,16 +190,16 @@ aciona continuação.
 Aceite: E2E multicanal com provedores falsos, sem envio real, cobrindo
 duplicidade, opt-out, resposta e cancelamento.
 
-## Fase 5 — Sincronização operacional e histórico (PARCIAL)
+## Fase 5 — Sincronização operacional e histórico (CONCLUÍDA)
 
-Entregue: cada passo de WhatsApp, e-mail, agente e transferência grava
-`delivery` (canal, run, fluxo, provedor, status real, id do provedor, agente e
-versão publicada), exibido na lista de execuções. E-mail de fluxo sai pela
-caixa Gmail conectada do dono do fluxo no mesmo workspace
-(`engine/workflow-email.server.ts`), respeita descadastro e é idempotente por
-execução/destinatário/assunto; sem caixa conectada fica "Na fila interna".
-Pendente: remetente/calendário por workspace, cotas comerciais, atualização do
-Outlook nos fluxos. (Status atual do WhatsApp — entregue/lida/falhou — já é lido dos avisos da Meta na lista de execuções.)
+Entregue: `workflow_send_policies` por empresa (aba "Política de envio" em
+Workflows, só admin ativo): horário/dias/fuso (fora dele o passo espera),
+cotas diárias por canal separadas do disjuntor técnico do SDR (ao atingir,
+reagenda), deduplicação por contato em horas, remetente de e-mail (Gmail do
+dono, caixa Gmail da empresa ou Outlook do projeto — sem conexão o envio falha
+com aviso, nunca finge) e agenda padrão. LinkedIn vira "Tarefa de LinkedIn
+(manual)". Histórico mostra canal, run, fluxo, passo, agente/versão, provedor,
+status (incl. reagendado, cota, incerto, deduplicado) e tentativas.
 
 ### Escopo original
 

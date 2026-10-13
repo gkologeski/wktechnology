@@ -1,3 +1,4 @@
+import { buildDeliveryMeta } from "../delivery-meta";
 import { withWorkflowWorkspace } from "./workspace-payload";
 // Ações de atividades: criar atividade, pesquisa, tarefa e intenção de negócio.
 // Extraído de engine-actions.server.ts sem mudança de comportamento.
@@ -156,6 +157,37 @@ export async function handleActivityAction(
         .insert(withWorkflowWorkspace(ctx, row) as never);
       if (error) throw new Error(error.message);
       return { at, ok: true, action: "create_task", detail: { subject } };
+    }
+    case "linkedin_task": {
+      const note = (renderTokens(action.note, ctx.after, ctx.vars) as string).trim();
+      if (!note) throw new Error("Descreva a tarefa de LinkedIn");
+      const due = new Date(Date.now() + (action.due_in_days ?? 0) * 86_400_000).toISOString();
+      const row: Record<string, unknown> = {
+        owner_id: ctx.ownerId,
+        type: "task",
+        subject: `LinkedIn: ${note.slice(0, 180)}`,
+        body: "Contato manual pelo LinkedIn (sem envio automático).",
+        due_date: due,
+      };
+      if (ctx.entity === "leads") row.related_lead_id = ctx.entityId;
+      else if (ctx.entity === "contacts") row.related_contact_id = ctx.entityId;
+      else if (ctx.entity === "companies") row.related_company_id = ctx.entityId;
+      else if (ctx.entity === "deals") row.related_deal_id = ctx.entityId;
+      const { error } = await supabase
+        .from("activities")
+        .insert(withWorkflowWorkspace(ctx, row) as never);
+      if (error) throw new Error(error.message);
+      return {
+        at,
+        ok: true,
+        action: "linkedin_task",
+        detail: { subject: row.subject },
+        delivery: buildDeliveryMeta(ctx, {
+          channel: "linkedin",
+          provider: null,
+          provider_status: "manual_task",
+        }),
+      };
     }
     default:
       return null;

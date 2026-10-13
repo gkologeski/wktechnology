@@ -21492,6 +21492,71 @@ export type Database = {
           },
         ]
       }
+      workflow_deliveries: {
+        Row: {
+          attempts: number
+          channel: string
+          created_at: string
+          id: string
+          idempotency_key: string
+          last_error: string | null
+          lease_until: string | null
+          next_attempt_at: string | null
+          provider: string | null
+          provider_id: string | null
+          recipient: string | null
+          status: string
+          step_path: string | null
+          updated_at: string
+          workflow_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          attempts?: number
+          channel: string
+          created_at?: string
+          id?: string
+          idempotency_key: string
+          last_error?: string | null
+          lease_until?: string | null
+          next_attempt_at?: string | null
+          provider?: string | null
+          provider_id?: string | null
+          recipient?: string | null
+          status: string
+          step_path?: string | null
+          updated_at?: string
+          workflow_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          attempts?: number
+          channel?: string
+          created_at?: string
+          id?: string
+          idempotency_key?: string
+          last_error?: string | null
+          lease_until?: string | null
+          next_attempt_at?: string | null
+          provider?: string | null
+          provider_id?: string | null
+          recipient?: string | null
+          status?: string
+          step_path?: string | null
+          updated_at?: string
+          workflow_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_deliveries_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workflow_events: {
         Row: {
           after: Json | null
@@ -21616,6 +21681,62 @@ export type Database = {
             foreignKeyName: "workflow_runs_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_send_policies: {
+        Row: {
+          dedupe_hours: number
+          default_booking_page_id: string | null
+          email_account_id: string | null
+          email_daily_limit: number | null
+          email_provider: string
+          timezone: string
+          updated_at: string
+          updated_by: string | null
+          weekdays: number[]
+          whatsapp_daily_limit: number | null
+          window_end: number | null
+          window_start: number | null
+          workspace_id: string
+        }
+        Insert: {
+          dedupe_hours?: number
+          default_booking_page_id?: string | null
+          email_account_id?: string | null
+          email_daily_limit?: number | null
+          email_provider?: string
+          timezone?: string
+          updated_at?: string
+          updated_by?: string | null
+          weekdays?: number[]
+          whatsapp_daily_limit?: number | null
+          window_end?: number | null
+          window_start?: number | null
+          workspace_id: string
+        }
+        Update: {
+          dedupe_hours?: number
+          default_booking_page_id?: string | null
+          email_account_id?: string | null
+          email_daily_limit?: number | null
+          email_provider?: string
+          timezone?: string
+          updated_at?: string
+          updated_by?: string | null
+          weekdays?: number[]
+          whatsapp_daily_limit?: number | null
+          window_end?: number | null
+          window_start?: number | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_send_policies_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
             referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
@@ -23059,6 +23180,30 @@ export type Database = {
       wa_reserve_template_quota: {
         Args: { p_limit: number; p_recipient: string }
         Returns: Json
+      }
+      workflow_delivery_claim: {
+        Args: {
+          p_channel: string
+          p_key: string
+          p_lease_seconds?: number
+          p_max_attempts?: number
+          p_recipient: string
+          p_step_path: string
+          p_workflow: string
+          p_workspace: string
+        }
+        Returns: Json
+      }
+      workflow_delivery_finish: {
+        Args: {
+          p_error: string
+          p_key: string
+          p_next_attempt: string
+          p_provider: string
+          p_provider_id: string
+          p_status: string
+        }
+        Returns: undefined
       }
       workspace_for_user: { Args: { _user: string }; Returns: string }
       workspace_member_by_email: {

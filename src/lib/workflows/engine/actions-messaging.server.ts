@@ -95,6 +95,8 @@ export async function handleMessagingAction(
         workspaceId: ctx.workspaceId,
         ownerId: ctx.ownerId,
         runId: ctx.runId,
+        idempotencyKey: ctx.deliveryKey,
+        policy: ctx.sendPolicy ?? null,
         to,
         subject,
         bodyHtml: body,
@@ -111,12 +113,12 @@ export async function handleMessagingAction(
           subject,
           queued: !sent,
           ...(r.status === "queued_local"
-            ? { reason: "Sem caixa Gmail conectada do dono do fluxo" }
+            ? { reason: "Sem caixa de e-mail conectada para o remetente da empresa" }
             : {}),
         },
         delivery: buildDeliveryMeta(ctx, {
           channel: "email",
-          provider: sent ? "gmail" : null,
+          provider: r.status === "sent" ? r.provider : null,
           provider_status: sent ? "sent" : r.status,
           provider_id: sent ? r.providerId : null,
         }),
@@ -136,13 +138,15 @@ export async function handleMessagingAction(
       const variables = (action.template_variables ?? []).map((v) =>
         toStr(renderTokens(v, ctx.after, ctx.vars)),
       );
-      const key = whatsAppIdempotencyKey({
-        workspaceId: ctx.workspaceId,
-        runId: ctx.runId,
-        entityId: ctx.entityId,
-        template,
-        to,
-      });
+      const key =
+        ctx.deliveryKey ??
+        whatsAppIdempotencyKey({
+          workspaceId: ctx.workspaceId,
+          runId: ctx.runId,
+          entityId: ctx.entityId,
+          template,
+          to,
+        });
       if (key) {
         const { data: prior } = await supabase
           .from("whatsapp_messages")
