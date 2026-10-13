@@ -84,18 +84,14 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
     }
 
     if (data.templateName) {
-      let templateQuery = supabase
-        .from("wa_templates")
-        .select("name, language")
-        .eq("workspace_id", workspaceId)
-        .eq("name", data.templateName)
-        .eq("status", "APPROVED");
-      if (data.templateLanguage)
-        templateQuery = templateQuery.eq("language", data.templateLanguage);
-      const { data: approvedTemplate, error: templateError } = await templateQuery
-        .limit(1)
-        .maybeSingle();
-      if (templateError || !approvedTemplate) {
+      const { loadApprovedTemplates } = await import("@/lib/whatsapp/templates.server");
+      const approvedList = await loadApprovedTemplates(supabase, workspaceId).catch(() => []);
+      const approvedTemplate = approvedList.find(
+        (t) =>
+          t.name === data.templateName &&
+          (!data.templateLanguage || t.language === data.templateLanguage),
+      );
+      if (!approvedTemplate) {
         return {
           ok: false as const,
           code: "TEMPLATE_NOT_APPROVED" as const,
@@ -460,14 +456,9 @@ export const listWhatsAppTemplates = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    const { data, error } = await supabase
-      .from("wa_templates")
-      .select("name, language, status, components")
-      .eq("workspace_id", workspaceId)
-      .eq("status", "APPROVED")
-      .order("name", { ascending: true });
-    if (error) throw error;
-    return (data ?? []).map((t: any) => {
+    const { loadApprovedTemplates } = await import("@/lib/whatsapp/templates.server");
+    const data = await loadApprovedTemplates(supabase, workspaceId);
+    return data.map((t: any) => {
       const comps = Array.isArray(t.components) ? t.components : [];
       const bodyComp = comps.find((c: any) => String(c?.type ?? "").toUpperCase() === "BODY") as
         | { text?: string }
