@@ -6,6 +6,7 @@ import { Megaphone, Play, Pause, X, Plus, Pencil, Copy, Trash2 } from "lucide-re
 import {
   createWhatsAppCampaign,
   deleteWhatsAppCampaign,
+  getWhatsAppCampaignForEdit,
   duplicateWhatsAppCampaign,
   listWhatsAppCampaigns,
   setWhatsAppCampaignStatus,
@@ -13,6 +14,12 @@ import {
 } from "@/lib/whatsapp-campaigns.functions";
 import { canDeleteCampaign, canEditCampaign } from "@/lib/whatsapp/campaign-actions";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import {
+  CampaignAudiencePanel,
+  EMPTY_AUDIENCE,
+  audiencePayload,
+  type AudienceState,
+} from "@/components/whatsapp/campaign-audience-panel";
 import { getWhatsAppTemplateCatalog } from "@/lib/whatsapp.functions";
 import { catalogMessage, composerPolicy } from "@/lib/whatsapp/composer-policy";
 import { listPlaybooks } from "@/lib/sdr-agent.functions";
@@ -98,6 +105,8 @@ function CampaignsPage() {
   const [templateName, setTemplateName] = useState<string>("__none__");
   const [rate, setRate] = useState(10);
   const [recipientsRaw, setRecipientsRaw] = useState("");
+  const [audience, setAudience] = useState<AudienceState>(EMPTY_AUDIENCE);
+  const editFn = useServerFn(getWhatsAppCampaignForEdit);
   const [mediaUrl, setMediaUrl] = useState("");
   const [sdrPlaybook, setSdrPlaybook] = useState<string>("__none__");
   // Intervalo aleatório entre disparos: "" = usar o padrão do workspace.
@@ -126,6 +135,7 @@ function CampaignsPage() {
     setTemplateName("__none__");
     setRate(10);
     setRecipientsRaw("");
+    setAudience(EMPTY_AUDIENCE);
     setMediaUrl("");
     setSdrPlaybook("__none__");
     setIvMin("");
@@ -147,6 +157,14 @@ function CampaignsPage() {
     setMediaUrl("");
     setRecipientsRaw("");
     setOpen(true);
+    void editFn({ data: { id: c.id } })
+      .then((full) => {
+        setBody(full.body_template ?? "");
+        setTemplateName(full.template_name || "__none__");
+        setMediaUrl(full.media_url ?? "");
+        setSdrPlaybook(full.sdr_playbook_id ?? "__none__");
+      })
+      .catch(() => toast.error("Não foi possível carregar o modelo e o texto salvos."));
   }
 
   const create = useMutation({
@@ -176,8 +194,16 @@ function CampaignsPage() {
           },
         });
       }
-      const recipients = parseRecipients(recipientsRaw);
-      if (recipients.length === 0) throw new Error("Adicione pelo menos um destinatário");
+      const manual = audience.mode === "manual";
+      const recipients = manual ? parseRecipients(recipientsRaw) : [];
+      const audiencePl = manual ? undefined : audiencePayload(audience);
+      if (manual && recipients.length === 0) throw new Error("Adicione pelo menos um destinatário");
+      if (!manual && !audiencePl) throw new Error("Escolha o público da campanha");
+      if (!manual && isHsm) {
+        for (let i = 1; i <= (selectedTpl?.variableCount ?? 0); i++)
+          if (!audience.variableMap[String(i)]?.field)
+            throw new Error(`Defina o campo da variável {{${i}}}`);
+      }
 
       // Para HSM monta content_variables_template a partir de {{1}}..{{N}}
       let content_variables_template: Record<string, string> | undefined;
@@ -198,6 +224,9 @@ function CampaignsPage() {
           media_url: mediaUrl || undefined,
           rate_per_minute: rate,
           recipients,
+          audience: audiencePl,
+          variable_map: manual ? undefined : audience.variableMap,
+          skip_missing: audience.skipMissing,
           sdr_playbook_id: sdrPlaybook !== "__none__" ? sdrPlaybook : null,
           ...intervalPayload,
         },
@@ -347,18 +376,24 @@ function CampaignsPage() {
                     "Em branco usa o padrão do workspace (Agente SDR › Configuração). Cada disparo espera um tempo sorteado nesse intervalo; pode atrasar até ~1 min além do sorteado."}
                 </p>
               </fieldset>
-              {!isHsm && (
-                <div>
-                  <label className="text-xs text-muted-foreground">
-                    Mensagem (use {`{{1}}, {{2}}`} para variáveis)
-                  </label>
-                  <Textarea rows={3} value={body} onChange={(e) => setBody(e.target.value)} />
-                </div>
-              )}
+              <div>
+                <label htmlFor="camp-body" className="text-xs text-muted-foreground">
+                  Mensagem (use {`{{1}}, {{2}}`} para variáveis)
+                </label>
+                <Textarea
+                  id="camp-body"
+                  rows={isHsm ? 5 : 3}
+                  value={isHsm ? (selectedTpl?.body ?? "") : body}
+                  disabled={isHsm}
+                  aria-describedby={isHsm ? "camp-body-hint" : undefined}
+                  placeholder={isHsm ? "Prévia indisponível para este modelo" : undefined}
+                  onChange={(e) => setBody(e.target.value)}
+                />
+              </div>
               {isHsm && (
-                <p className="text-xs text-muted-foreground">
-                  Template oficial aprovado pela Meta. Use as colunas após o telefone para as{" "}
-                  {selectedTpl?.variableCount ?? 0} variáveis.
+                <p id="camp-body-hint" className="text-xs text-muted-foreground">
+                  Texto do modelo aprovado pela Meta ({selectedTpl?.language}) — não pode ser
+                  editado. Defina as {selectedTpl?.variableCount ?? 0} variáveis no quadro abaixo.
                 </p>
               )}
               {isHsm && (
@@ -393,20 +428,14 @@ function CampaignsPage() {
                 />
               </div>
               {!isEditing && (
-                <div>
-                  <label className="text-xs text-muted-foreground">
-                    Destinatários (um por linha: telefone,var1,var2…)
-                  </label>
-                  <Textarea
-                    rows={8}
-                    value={recipientsRaw}
-                    onChange={(e) => setRecipientsRaw(e.target.value)}
-                    placeholder={"+5511999999999,João,14h\n+5511888888888,Maria,16h"}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {parseRecipients(recipientsRaw).length} destinatário(s)
-                  </p>
-                </div>
+                <CampaignAudiencePanel
+                  value={audience}
+                  onChange={setAudience}
+                  variableCount={isHsm ? (selectedTpl?.variableCount ?? 0) : 0}
+                  manualRaw={recipientsRaw}
+                  onManualRaw={setRecipientsRaw}
+                  manualCount={parseRecipients(recipientsRaw).length}
+                />
               )}
               {isEditing && (
                 <p className="text-xs text-muted-foreground">

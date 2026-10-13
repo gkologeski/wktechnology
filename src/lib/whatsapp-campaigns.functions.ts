@@ -20,11 +20,38 @@ const CreateInput = z.object({
   media_content_type: z.string().max(120).optional(),
   rate_per_minute: z.number().int().min(1).max(120).default(10),
   scheduled_at: z.string().datetime().optional(),
-  recipients: z.array(RecipientInput).min(1).max(5000),
+  recipients: z.array(RecipientInput).max(5000).optional().default([]),
+  audience: z
+    .union([
+      z.object({ type: z.literal("queue"), queue_id: z.string().uuid() }),
+      z.object({
+        type: z.literal("filter"),
+        base: z.enum(["leads", "contacts", "companies", "deals"]),
+        filters: z
+          .array(
+            z.object({
+              column: z.string().max(40),
+              op: z.enum(["eq", "ilike", "gte", "lte"]),
+              value: z.string().max(200),
+            }),
+          )
+          .max(10),
+      }),
+    ])
+    .optional(),
+  variable_map: z
+    .record(
+      z.string(),
+      z.object({ field: z.string().max(60), fallback: z.string().max(200).optional() }),
+    )
+    .optional(),
+  skip_missing: z.boolean().optional(),
   sdr_playbook_id: z.string().uuid().nullable().optional(),
   send_interval_min_s: z.number().int().min(0).max(3600).nullable().optional(),
   send_interval_max_s: z.number().int().min(0).max(3600).nullable().optional(),
 });
+
+const PreviewInput = CreateInput.pick({ audience: true, variable_map: true });
 
 /** Playbook do SDR precisa existir e ser visível ao usuário (RLS). Exige template oficial. */
 async function sdrColumns(
@@ -49,6 +76,40 @@ export const createWhatsAppCampaign = createServerFn({ method: "POST" })
   .inputValidator((input) => CreateInput.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(context.userId);
+    let recipients = data.recipients.map((r) => ({
+      phone: r.phone.trim(),
+      contactId: r.contactId ?? null,
+      variables: (r.variables ?? {}) as Record<string, string>,
+    }));
+    if (data.audience) {
+      const { buildAudience, isAllowedField } = await import("@/lib/whatsapp/campaign-audience");
+      const { loadAudienceRows, loadOptedOutPhones } =
+        await import("@/lib/whatsapp/campaign-audience.server");
+      const { base, rows, truncated } = await loadAudienceRows(
+        supabase,
+        workspaceId,
+        data.audience,
+      );
+      if (truncated) throw new Error("O público passa de 5.000 destinatários. Refine os filtros.");
+      const map = data.variable_map ?? {};
+      for (const b of Object.values(map))
+        if (!isAllowedField(base, b.field)) throw new Error("Campo de variável não permitido.");
+      const summary = buildAudience(rows, map, await loadOptedOutPhones(supabase, workspaceId));
+      const kept = data.skip_missing
+        ? summary.recipients.filter((r) => r.missing.length === 0)
+        : summary.recipients;
+      if (!data.skip_missing && summary.withMissing > 0)
+        throw new Error(
+          `${summary.withMissing} destinatário(s) ficariam com variável vazia. Defina um valor se vazio ou escolha pular.`,
+        );
+      recipients = kept.map((r) => ({
+        phone: r.phone,
+        contactId: r.contactId,
+        variables: { ...r.variables, _source: r.source },
+      }));
+    }
+    if (recipients.length === 0) throw new Error("Nenhum destinatário válido no público.");
     const { data: camp, error } = await supabase
       .from("whatsapp_campaigns")
       .insert({
@@ -63,21 +124,21 @@ export const createWhatsAppCampaign = createServerFn({ method: "POST" })
         rate_per_minute: data.rate_per_minute,
         scheduled_at: data.scheduled_at ?? new Date().toISOString(),
         status: "draft",
-        total: data.recipients.length,
+        total: recipients.length,
         ...(await sdrColumns(supabase, data.sdr_playbook_id, data.template_name)),
         ...campaignIntervalColumns(data.send_interval_min_s, data.send_interval_max_s),
-        workspace_id: await resolveActiveWorkspace(context.userId),
+        workspace_id: workspaceId,
       })
       .select("id")
       .single();
     if (error) throw error;
 
-    const rows = data.recipients.map((r) => ({
+    const rows = recipients.map((r) => ({
       campaign_id: camp.id,
       owner_id: userId,
-      contact_id: r.contactId ?? null,
-      phone: r.phone.trim(),
-      variables: r.variables ?? {},
+      contact_id: r.contactId,
+      phone: r.phone,
+      variables: r.variables,
       status: "pending" as const,
     }));
     // Insere em lotes de 500 para evitar payload gigante
@@ -311,4 +372,48 @@ export const deleteWhatsAppCampaign = createServerFn({ method: "POST" })
     if (!del || del.length === 0)
       throw new Error("Você não tem permissão para excluir esta campanha.");
     return { ok: true };
+  });
+
+export const previewCampaignAudience = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => PreviewInput.parse(input))
+  .handler(async ({ data, context }) => {
+    if (!data.audience) throw new Error("Escolha um público.");
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    const { buildAudience, isAllowedField } = await import("@/lib/whatsapp/campaign-audience");
+    const { loadAudienceRows, loadOptedOutPhones } =
+      await import("@/lib/whatsapp/campaign-audience.server");
+    const { base, rows, truncated } = await loadAudienceRows(supabase, workspaceId, data.audience);
+    const map = Object.fromEntries(
+      Object.entries(data.variable_map ?? {}).filter(([, b]) => isAllowedField(base, b.field)),
+    );
+    const s = buildAudience(rows, map, await loadOptedOutPhones(supabase, workspaceId));
+    return {
+      base,
+      found: rows.length,
+      truncated,
+      included: s.recipients.length,
+      excluded: s.excluded,
+      withMissing: s.withMissing,
+      samples: s.recipients.slice(0, 3).map((r) => ({
+        label: r.label,
+        phone: r.phone,
+        variables: r.variables,
+        missing: r.missing,
+      })),
+    };
+  });
+
+export const getWhatsAppCampaignForEdit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: camp, error } = await context.supabase
+      .from("whatsapp_campaigns")
+      .select("id, body_template, template_name, media_url, sdr_playbook_id")
+      .eq("id", data.id)
+      .single();
+    if (error) throw error;
+    return camp;
   });
