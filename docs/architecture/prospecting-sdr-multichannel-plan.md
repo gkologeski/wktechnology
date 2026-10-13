@@ -68,13 +68,52 @@ Entregas da fase:
 Aceite: com a conversa fora da janela, a lista mostra os 5 modelos aprovados do
 canal correto, o texto livre fica bloqueado e o envio por modelo funciona.
 
-## Fase 1 — Consistência dos pontos de envio (pendente)
+## Fase 1 — Consistência dos pontos de envio — EXECUTADA
 
-Aplicar a mesma regra na Inbox unificada, nova conversa, diálogo de ficha,
-campanhas e ações de IA, com um único hook de janela + catálogo.
-Aceite: nenhum ponto de envio permite texto livre fora da janela.
+Entregas:
 
-## Fase 2 — `/agents/sdr`: configuração completa por agente (pendente)
+1. Política única em `src/lib/whatsapp/composer-policy.ts` (pura, testada) e
+   hook único `src/hooks/use-whatsapp-composer.ts` (janela + catálogo).
+2. Aplicada na Inbox do WhatsApp, na Inbox unificada (texto, anexo, atalho,
+   botão de IA e envio bloqueados fora da janela, com atalho para o modelo),
+   no diálogo de ficha/timeline (`send-whatsapp-dialog`) e no seletor de
+   modelos das campanhas.
+3. Estados distintos em todos: verificando, erro ao verificar, canal não
+   conectado, carregando catálogo, erro de catálogo e catálogo vazio de
+   verdade — com ação "Atualizar modelos".
+4. `catch(() => [])` removido da validação de modelo: falha de catálogo agora
+   devolve `TEMPLATE_CHECK_FAILED` (antes virava "modelo não aprovado").
+5. Variáveis completas: cabeçalho de texto, corpo, mídia obrigatória, rodapé e
+   botões lidos de `template-shape.ts`; o servidor recusa envio incompleto
+   (`TEMPLATE_VARIABLES_INCOMPLETE`) e a Meta recebe o componente de header.
+6. Chave de cache por workspace + canal (phone_number_id) + idioma.
+7. `sendWhatsAppFromServer` (régua de cobrança) também exige modelo fora da
+   janela.
+
+Prova (somente leitura, sem envio): conta conectada +55 48 6137-0317
+"WK Technology" (CLOUD_API) com 5 modelos APPROVED pt_BR, 3 variáveis cada;
+na Inbox a conversa fora da janela lista mensagem001…mensagem005, o texto
+livre fica bloqueado e "Enviar modelo" só habilita com as variáveis
+preenchidas.
+
+## Fase 2 — `/agents/sdr`: configuração completa por agente — EXECUTADA
+
+Migration aditiva `0130_sdr_agent_per_agent_config` em `sdr_playbooks`:
+`assigned_to`, `offer_keys`, `material_ids`, `allowed_tools`, `channels`,
+`guardrails`, `kb_sources` (defaults preservam o comportamento atual).
+
+Contrato único em `src/lib/prospecting/sdr/agent-config.ts` (schema, escopo de
+catálogo/materiais, trecho de prompt), usado pelo runtime (`worker.server.ts`),
+pelo teste do agente e pela nova aba "Configuração do agente". O workspace
+controla apenas liga/desliga e limites técnicos; nenhum campo global
+sobrescreve a configuração do agente. Logs por agente na mesma aba.
+
+Provas isoladas (`agent-config.test.ts`): dois agentes no mesmo workspace com
+catálogos e ferramentas distintos, persona em rascunho não vaza para produção,
+agenda só é oferecida com a ferramenta ligada e turno de outro workspace é
+descartado.
+
+### Escopo original da fase
 
 Identidade/persona/prompt, KB e catálogo ativo, ferramentas permitidas,
 qualificação/CRM/variáveis, materiais, responsável e agenda dedicados,
