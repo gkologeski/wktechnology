@@ -5,11 +5,14 @@ import { Send, MessageCircle, Paperclip, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   sendWhatsAppMessage,
-  listWhatsAppTemplates,
-  getWhatsAppServiceWindow,
   applyTemplate,
 } from "@/lib/whatsapp.functions";
-import { useChannelAvailability } from "@/hooks/use-channel-availability";
+import { useWhatsAppComposer } from "@/hooks/use-whatsapp-composer";
+import { catalogMessage } from "@/lib/whatsapp/composer-policy";
+import {
+  WhatsAppTemplateFields,
+  templateValuesComplete,
+} from "@/components/whatsapp/whatsapp-template-fields";
 import { uploadWhatsAppMedia } from "@/lib/whatsapp-media";
 import { WhatsAppMediaBubble } from "@/components/whatsapp/whatsapp-media-bubble";
 import { Button } from "@/components/ui/button";
@@ -173,34 +176,26 @@ export function SendWhatsAppDialog({
   // Pin no gatilho quando existe rascunho salvo para esta composição.
   const hasDraft = useHasMessageDraft({ scope: draftScope, enabled: draftIndicator });
 
-  const listTpl = useServerFn(listWhatsAppTemplates);
   const sendFn = useServerFn(sendWhatsAppMessage);
-  const tplQ = useQuery({ queryKey: ["wa", "templates"], queryFn: () => listTpl(), enabled: open });
-  const availabilityQ = useChannelAvailability();
-  const notConnected = availabilityQ.isSuccess && !availabilityQ.data.whatsapp.ready;
-  const windowFn = useServerFn(getWhatsAppServiceWindow);
-  const windowQ = useQuery({
-    queryKey: ["wa", "service-window", to],
-    queryFn: () => windowFn({ data: { to } }),
-    enabled: open && to.replace(/\D/g, "").length >= 8,
-    staleTime: 30_000,
+  const composer = useWhatsAppComposer({
+    to,
+    enabled: open,
+    templateRequiredByServer,
+    alwaysLoadTemplates: true,
   });
-  const windowClosed = windowQ.isSuccess && !windowQ.data.withinWindow;
-  const templateRequired = templateRequiredByServer || windowClosed;
-  const windowChecking = windowQ.isLoading;
+  const { windowQ, templatesQ: tplQ, policy } = composer;
+  const notConnected = policy.windowState === "no_channel";
+  const templateRequired = !policy.freeTextAllowed;
+  const windowChecking = policy.windowState === "checking" && to.replace(/\D/g, "").length >= 8;
 
   useEffect(() => {
     if (open) setTo(defaultTo);
   }, [open, defaultTo]);
 
-  const templates = tplQ.data ?? [];
+  const templates = composer.templates;
   const selectedTpl = templates.find((t) => t.name === templateName);
-  const placeholderCount = selectedTpl
-    ? Array.from(selectedTpl.body.matchAll(/\{\{(\d+)\}\}/g))
-        .map((m) => Number(m[1]))
-        .reduce((a, b) => Math.max(a, b), 0)
-    : 0;
-  const varCount = Math.max(placeholderCount, selectedTpl?.variableCount ?? 0);
+  const [headerVars, setHeaderVars] = useState<string[]>([]);
+  const varsComplete = templateValuesComplete(selectedTpl, { body: vars, header: headerVars });
 
   const previewBody = selectedTpl ? applyTemplate(selectedTpl.body, vars) : renderTokens(body, ctx);
   const isOfficialHsm = !!selectedTpl;
@@ -208,9 +203,15 @@ export function SendWhatsAppDialog({
   const sendMut = useMutation({
     mutationFn: async () => {
       const templateVariables =
-        isOfficialHsm && varCount > 0
-          ? Array.from({ length: varCount }, (_, i) => vars[i] ?? "")
+        isOfficialHsm && selectedTpl.variableCount > 0
+          ? Array.from({ length: selectedTpl.variableCount }, (_, i) => vars[i] ?? "")
           : undefined;
+      const templateHeaderVariables =
+        isOfficialHsm && selectedTpl.headerVariableCount > 0
+          ? Array.from({ length: selectedTpl.headerVariableCount }, (_, i) => headerVars[i] ?? "")
+          : undefined;
+      if (!isOfficialHsm && !policy.freeTextAllowed)
+        throw new Error(policy.notice || "Escolha um modelo aprovado para enviar.");
       const res = await sendFn({
         data: {
           to,
@@ -219,6 +220,7 @@ export function SendWhatsAppDialog({
           templateName: templateName || undefined,
           templateLanguage: selectedTpl?.language,
           templateVariables,
+          templateHeaderVariables,
           mediaUrl: isOfficialHsm ? undefined : media?.url,
           mediaContentType: isOfficialHsm ? undefined : media?.contentType,
         },
@@ -227,6 +229,7 @@ export function SendWhatsAppDialog({
         if (res.code === "TEMPLATE_REQUIRED") {
           setTemplateRequired(true);
           setVars([]);
+          setHeaderVars([]);
         }
         throw new Error(res.error);
       }
@@ -312,6 +315,7 @@ export function SendWhatsAppDialog({
                 const next = v === "_none" ? "" : v;
                 setTemplateName(next);
                 setVars([]);
+                setHeaderVars([]);
               }}
             >
               <SelectTrigger>
@@ -329,83 +333,44 @@ export function SendWhatsAppDialog({
             </Select>
           </div>
 
-          {templateRequired && (
+          {templateRequired && !windowChecking && (
             <div role="alert" className="rounded-md border border-border bg-muted/40 p-3 text-sm">
-              <p className="font-medium">Janela de 24 horas encerrada</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                O cliente não enviou mensagens nas últimas 24 horas. A Meta permite continuar
-                somente com um modelo aprovado.
+              <p className="font-medium">
+                {policy.windowState === "closed" ? "Janela de 24 horas encerrada" : "Envio por modelo"}
               </p>
-              {tplQ.isLoading && (
-                <p className="mt-2 text-xs text-muted-foreground">Carregando modelos aprovados…</p>
-              )}
-              {tplQ.isError && (
-                <Button className="mt-2" size="sm" variant="outline" onClick={() => tplQ.refetch()}>
-                  Tentar carregar novamente
-                </Button>
-              )}
-              {tplQ.isSuccess && templates.length === 0 && (
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Nenhum modelo aprovado está disponível no momento.
-                </p>
+              <p className="mt-1 text-xs text-muted-foreground">{policy.notice}</p>
+
+              {policy.catalogState !== "ready" && (
+                <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className={policy.catalogState === "error" ? "text-destructive" : undefined}>
+                    {catalogMessage(policy.catalogState)}
+                  </span>
+                  {(policy.catalogState === "error" || policy.catalogState === "empty") && (
+                    <Button size="sm" variant="outline" onClick={() => void composer.refreshTemplates()}>
+                      Atualizar modelos
+                    </Button>
+                  )}
+                </div>
               )}
             </div>
           )}
 
           {selectedTpl ? (
             <>
-              {Array.from({ length: varCount }).map((_, i) => (
-                <div key={i}>
-                  <Label>Variável {`{{${i + 1}}}`}</Label>
-                  <Input
-                    value={vars[i] ?? ""}
-                    onChange={(e) =>
-                      setVars((prev) => {
-                        const next = [...prev];
-                        next[i] = e.target.value;
-                        return next;
-                      })
-                    }
-                  />
-                  {quickValues.length > 0 && (
-                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                      <span className="text-[11px] font-medium text-muted-foreground mr-1">
-                        Preencher com:
-                      </span>
-                      {quickValues.map((q) => (
-                        <button
-                          key={q.label}
-                          type="button"
-                          title={q.value}
-                          onClick={() =>
-                            setVars((prev) => {
-                              const next = [...prev];
-                              next[i] = q.value;
-                              return next;
-                            })
-                          }
-                          className="rounded-md border border-border bg-muted/40 px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
-                        >
-                          {q.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-              <div>
-                <Label>Preview {isOfficialHsm ? "(template oficial)" : ""}</Label>
-                <div className="rounded-md border bg-muted/40 p-2 text-sm whitespace-pre-wrap">
-                  {previewBody || "—"}
-                </div>
-                {isOfficialHsm && (
-                  <p className="mt-1 text-[10px] text-muted-foreground">
-                    Será enviado como template aprovado ({selectedTpl!.name} ·{" "}
-                    {selectedTpl!.language}) pela API oficial da Meta. Mídia e texto livre são
-                    ignorados.
-                  </p>
-                )}
-              </div>
+              <WhatsAppTemplateFields
+                template={selectedTpl}
+                values={{ body: vars, header: headerVars }}
+                onChange={(v) => {
+                  setVars(v.body);
+                  setHeaderVars(v.header);
+                }}
+                quickValues={quickValues}
+                idPrefix="dlg-wa-tpl"
+              />
+              <p className="text-[10px] text-muted-foreground">
+                Será enviado como modelo aprovado pela API oficial da Meta. Texto livre e anexo não
+                são usados.
+              </p>
             </>
           ) : templateRequired ? null : (
             <div>
@@ -527,7 +492,7 @@ export function SendWhatsAppDialog({
               (!isOfficialHsm && !previewBody.trim() && !media) ||
               sendMut.isPending ||
               uploading ||
-              (!!selectedTpl && vars.slice(0, varCount).some((v) => !v))
+              (!!selectedTpl && !varsComplete)
             }
           >
             <Send className="mr-2 h-4 w-4" /> Enviar

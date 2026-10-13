@@ -19,6 +19,7 @@ import {
 import { sendGmailEmail } from "@/lib/email-send.functions";
 import { sendWhatsAppMessage } from "@/lib/whatsapp.functions";
 import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
+import { useWhatsAppComposer } from "@/hooks/use-whatsapp-composer";
 import { smartCompose } from "@/lib/ai-compose.functions";
 import { sendChatMessage } from "@/lib/live-chat.functions";
 import { toast } from "sonner";
@@ -173,6 +174,13 @@ function UnifiedInboxPage() {
     onRestore: (d) => setDraft(d.body_text),
   });
 
+  // Mesma política de janela/modelo dos demais compositores (servidor revalida).
+  const waComposer = useWhatsAppComposer({
+    to: current?.channel === "whatsapp" ? (current.replyTo ?? "") : "",
+    enabled: current?.channel === "whatsapp",
+  });
+  const waBlocked = current?.channel === "whatsapp" && !waComposer.policy.freeTextAllowed;
+
   const reply = useMutation({
     mutationFn: async () => {
       if (!current) throw new Error("Selecione um item.");
@@ -192,6 +200,10 @@ function UnifiedInboxPage() {
         });
       } else if (current.channel === "whatsapp") {
         if (!current.replyTo) throw new Error("Não foi possível identificar o número do cliente.");
+        if (waBlocked) {
+          setTemplateDialogOpen(true);
+          throw new Error(waComposer.policy.notice);
+        }
         const res = await sendWa({
           data: {
             to: current.replyTo,
@@ -386,11 +398,42 @@ function UnifiedInboxPage() {
                     }}
                   />
                 )}
+                {waBlocked && (
+                  <div
+                    role="status"
+                    aria-live="polite"
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-product-panel-muted p-3 text-xs"
+                  >
+                    <span
+                      className={
+                        waComposer.policy.windowState === "error"
+                          ? "text-destructive"
+                          : "text-muted-foreground"
+                      }
+                    >
+                      {waComposer.policy.notice}
+                    </span>
+                    {waComposer.policy.windowState === "error" ? (
+                      <Button size="sm" variant="outline" onClick={() => void waComposer.windowQ.refetch()}>
+                        Verificar novamente
+                      </Button>
+                    ) : waComposer.policy.templateRequired ? (
+                      <Button size="sm" variant="outline" onClick={() => setTemplateDialogOpen(true)}>
+                        Enviar modelo aprovado
+                      </Button>
+                    ) : null}
+                  </div>
+                )}
                 <Textarea
                   className="min-h-24 resize-none border-0 shadow-none focus-visible:ring-0"
                   rows={6}
                   value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
+                  readOnly={waBlocked}
+                  aria-disabled={waBlocked}
+                  onChange={(e) => {
+                    if (waBlocked) return;
+                    setDraft(e.target.value);
+                  }}
                   placeholder={
                     current.channel === "email"
                       ? "Escreva sua resposta…"
@@ -425,7 +468,7 @@ function UnifiedInboxPage() {
                       size="sm"
                       variant="ghost"
                       onClick={() => aiSuggest.mutate()}
-                      disabled={aiSuggest.isPending}
+                      disabled={aiSuggest.isPending || waBlocked}
                       title="Gerar rascunho com IA"
                     >
                       <Sparkles className="h-3.5 w-3.5 mr-1" />
@@ -438,6 +481,7 @@ function UnifiedInboxPage() {
                     disabled={
                       !draft.trim() ||
                       reply.isPending ||
+                      waBlocked ||
                       (current.channel === "email" && !current.replyTo)
                     }
                   >

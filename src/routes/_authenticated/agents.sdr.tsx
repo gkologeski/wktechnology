@@ -158,6 +158,9 @@ function SdrAgentPage() {
           <TabsTrigger className="shrink-0" value="sdr-agent">
             Persona e teste
           </TabsTrigger>
+          <TabsTrigger className="shrink-0" value="sdr-agent-config">
+            Configuração do agente
+          </TabsTrigger>
           <TabsTrigger className="shrink-0" value="playbook">
             Playbook
           </TabsTrigger>

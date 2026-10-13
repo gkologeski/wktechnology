@@ -9,7 +9,8 @@ import {
   setWhatsAppCampaignStatus,
   updateWhatsAppCampaign,
 } from "@/lib/whatsapp-campaigns.functions";
-import { listWhatsAppTemplates } from "@/lib/whatsapp.functions";
+import { getWhatsAppTemplateCatalog } from "@/lib/whatsapp.functions";
+import { catalogMessage, composerPolicy } from "@/lib/whatsapp/composer-policy";
 import { listPlaybooks } from "@/lib/sdr-agent.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,7 +59,7 @@ function parseRecipients(raw: string): { phone: string; variables: Record<string
 function CampaignsPage() {
   const qc = useQueryClient();
   const listFn = useServerFn(listWhatsAppCampaigns);
-  const tmplFn = useServerFn(listWhatsAppTemplates);
+  const tmplFn = useServerFn(getWhatsAppTemplateCatalog);
   const createFn = useServerFn(createWhatsAppCampaign);
   const updateFn = useServerFn(updateWhatsAppCampaign);
   const statusFn = useServerFn(setWhatsAppCampaignStatus);
@@ -68,10 +69,23 @@ function CampaignsPage() {
     queryFn: () => listFn(),
     refetchInterval: 5000,
   });
-  const { data: templates = [] } = useQuery({
-    queryKey: ["wa-templates"],
-    queryFn: () => tmplFn(),
+  const catalogQ = useQuery({
+    queryKey: ["wa", "templates", "campaigns"],
+    queryFn: () => tmplFn({ data: {} }),
+    staleTime: 60_000,
   });
+  const templates = catalogQ.data?.items ?? [];
+  // Erro, catálogo não sincronizado e catálogo vazio são estados distintos.
+  const catalogState = composerPolicy({
+    channelReady: catalogQ.data ? catalogQ.data.channelReady : catalogQ.isError ? false : null,
+    windowChecking: false,
+    windowError: false,
+    withinWindow: null,
+    templateRequiredByServer: false,
+    templates: catalogQ.data ? templates : null,
+    templatesLoading: catalogQ.isLoading,
+    templatesError: catalogQ.isError,
+  }).catalogState;
 
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -253,6 +267,22 @@ function CampaignsPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {catalogState !== "ready" && (
+                    <div className="mt-1 flex items-center gap-2 text-xs" aria-live="polite">
+                      <span
+                        className={
+                          catalogState === "error" ? "text-destructive" : "text-muted-foreground"
+                        }
+                      >
+                        {catalogMessage(catalogState)}
+                      </span>
+                      {(catalogState === "error" || catalogState === "empty") && (
+                        <Button size="sm" variant="outline" onClick={() => void catalogQ.refetch()}>
+                          Atualizar modelos
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground">Msgs por minuto</label>

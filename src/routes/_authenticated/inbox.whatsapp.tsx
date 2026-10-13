@@ -31,11 +31,13 @@ import {
   listAssignableMembers,
   assignWhatsAppConversation,
   setWhatsAppConversationStatus,
-  listWhatsAppTemplates,
-  getWhatsAppServiceWindow,
-  applyTemplate,
 } from "@/lib/whatsapp.functions";
 import { useChannelAvailability } from "@/hooks/use-channel-availability";
+import { useWhatsAppComposer } from "@/hooks/use-whatsapp-composer";
+import {
+  WhatsAppTemplateFields,
+  templateValuesComplete,
+} from "@/components/whatsapp/whatsapp-template-fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -103,7 +105,6 @@ function WhatsAppInbox() {
   const membersFn = useServerFn(listAssignableMembers);
   const assignFn = useServerFn(assignWhatsAppConversation);
   const statusFn = useServerFn(setWhatsAppConversationStatus);
-  const templatesFn = useServerFn(listWhatsAppTemplates);
 
   const [selected, setSelected] = useState<string | null>(null);
   const composerScope = `${user?.id ?? ""}:${selected ?? ""}`;
@@ -121,6 +122,10 @@ function WhatsAppInbox() {
   );
   const [templateName, setTemplateName] = useScopedComposerValue(composerScope, "");
   const [templateVars, setTemplateVars] = useScopedComposerValue<string[]>(composerScope, []);
+  const [templateHeaderVars, setTemplateHeaderVars] = useScopedComposerValue<string[]>(
+    composerScope,
+    [],
+  );
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [search, setSearch] = useState("");
@@ -155,26 +160,20 @@ function WhatsAppInbox() {
       (selectedSnapshot?.id === selected ? selectedSnapshot : undefined),
     [conversations, selectedSnapshot, selected],
   );
-  // Janela de 24 h consultada ao abrir a conversa (o servidor revalida no envio).
+  // Janela de 24 h + catálogo pelo hook único do compositor (o servidor revalida no envio).
   const availabilityQ = useChannelAvailability();
-  const windowFn = useServerFn(getWhatsAppServiceWindow);
   const currentPhone = current?.contact_phone ?? "";
-  const windowQ = useQuery({
-    queryKey: ["wa", "service-window", currentPhone],
-    queryFn: () => windowFn({ data: { to: currentPhone } }),
-    enabled: currentPhone.replace(/\D/g, "").length >= 8,
-    staleTime: 30_000,
+  const composer = useWhatsAppComposer({
+    to: currentPhone,
+    enabled: !!current,
+    templateRequiredByServer,
   });
-  const windowClosed = windowQ.isSuccess && !windowQ.data.withinWindow;
-  const windowUnknown = !!currentPhone && !windowQ.isSuccess;
-  const templateRequired = templateRequiredByServer || windowClosed;
-  const freeTextBlocked = templateRequired || windowUnknown;
-  const templatesQ = useQuery({
-    queryKey: ["wa", "templates"],
-    queryFn: () => templatesFn(),
-    enabled: templateRequired,
-    staleTime: 60_000,
-  });
+  const { windowQ, templatesQ } = composer;
+  const windowUnknown =
+    !!currentPhone && composer.policy.windowState !== "open" && composer.policy.windowState !== "closed";
+  const templateRequired = composer.policy.windowState === "closed";
+  const freeTextBlocked = !composer.policy.freeTextAllowed;
+
   const memberMap = useMemo(() => {
     const map = new Map<string, string>();
     (membersQ.data ?? []).forEach((m) => map.set(m.id, m.full_name || "—"));
@@ -200,6 +199,7 @@ function WhatsAppInbox() {
       templateName?: string;
       templateLanguage?: string;
       templateVariables?: string[];
+      templateHeaderVariables?: string[];
     }) =>
       sendFn({ data: input }).then((res) => {
         if (!res.ok) {
@@ -248,7 +248,7 @@ function WhatsAppInbox() {
     });
   }
 
-  const approvedTemplates = templatesQ.data ?? [];
+  const approvedTemplates = composer.templates;
   const selectedTemplate = approvedTemplates.find((template) => template.name === templateName);
   const templateVariableCount = selectedTemplate?.variableCount ?? 0;
 
@@ -263,6 +263,10 @@ function WhatsAppInbox() {
       templateVariables: Array.from(
         { length: templateVariableCount },
         (_, index) => templateVars[index] ?? "",
+      ),
+      templateHeaderVariables: Array.from(
+        { length: selectedTemplate.headerVariableCount },
+        (_, index) => templateHeaderVars[index] ?? "",
       ),
     });
   }
@@ -548,7 +552,7 @@ function WhatsAppInbox() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => templatesQ.refetch()}
+                        onClick={() => void composer.refreshTemplates()}
                         disabled={templatesQ.isFetching}
                       >
                         {templatesQ.isFetching ? "Atualizando…" : "Atualizar modelos"}
@@ -580,6 +584,7 @@ function WhatsAppInbox() {
                           onValueChange={(value) => {
                             setTemplateName(value);
                             setTemplateVars([]);
+                            setTemplateHeaderVars([]);
                           }}
                         >
                           <SelectTrigger aria-label="Modelo aprovado pela Meta">
@@ -598,31 +603,23 @@ function WhatsAppInbox() {
                         </Select>
                         {selectedTemplate && (
                           <div className="space-y-2">
-                            {Array.from({ length: templateVariableCount }, (_, index) => (
-                              <Input
-                                key={index}
-                                value={templateVars[index] ?? ""}
-                                onChange={(event) =>
-                                  setTemplateVars((previous) => {
-                                    const next = [...previous];
-                                    next[index] = event.target.value;
-                                    return next;
-                                  })
-                                }
-                                placeholder={`Valor de {{${index + 1}}}`}
-                                aria-label={`Variável ${index + 1} do modelo`}
-                              />
-                            ))}
-                            <div className="whitespace-pre-wrap rounded-md border border-border bg-background p-3 text-sm">
-                              {applyTemplate(selectedTemplate.body, templateVars)}
-                            </div>
+                            <WhatsAppTemplateFields
+                              template={selectedTemplate}
+                              values={{ body: templateVars, header: templateHeaderVars }}
+                              onChange={(v) => {
+                                setTemplateVars(v.body);
+                                setTemplateHeaderVars(v.header);
+                              }}
+                              idPrefix="inbox-wa-tpl"
+                            />
                             <Button
                               onClick={submitTemplate}
                               disabled={
                                 sendMut.isPending ||
-                                templateVars
-                                  .slice(0, templateVariableCount)
-                                  .some((value) => !value?.trim())
+                                !templateValuesComplete(selectedTemplate, {
+                                  body: templateVars,
+                                  header: templateHeaderVars,
+                                })
                               }
                             >
                               <Send className="mr-2 h-4 w-4" /> Enviar modelo

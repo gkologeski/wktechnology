@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SdrAgentPicker } from "./sdr-agent-picker";
+import { SdrAgentConfigPanel } from "./sdr-agent-config";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "@tanstack/react-router";
 import { leadScoreBandLabel, LEAD_SCORE_MAX } from "@/lib/prospecting/lead-score";
@@ -135,6 +136,11 @@ export function SdrConsoleTabs() {
       <TabsContent value="sdr-agent" className="mt-4">
         {body((d) => (
           <SdrAgentPicker workspaceId={d.workspaceId} playbooks={d.readiness.playbooks} />
+        ))}
+      </TabsContent>
+      <TabsContent value="sdr-agent-config" className="mt-4">
+        {body((d) => (
+          <SdrAgentConfigPanel workspaceId={d.workspaceId} playbooks={d.readiness.playbooks} />
         ))}
       </TabsContent>
       <TabsContent value="sdr-results" className="mt-4">

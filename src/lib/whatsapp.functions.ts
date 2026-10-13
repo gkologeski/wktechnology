@@ -38,8 +38,15 @@ export const getWhatsAppServiceWindow = createServerFn({ method: "POST" })
       normalizePhone(data.to),
     );
     const lastInboundAt = existing?.lastInboundAt ?? null;
-    return { withinWindow: isWithinServiceWindow(lastInboundAt), lastInboundAt };
+    return {
+      withinWindow: isWithinServiceWindow(lastInboundAt),
+      lastInboundAt,
+      // Chave de cache do compositor: workspace + canal da conversa.
+      workspaceId,
+      phoneNumberId: existing?.phoneNumberId ?? null,
+    };
   });
+
 
 // ---------- send (API oficial da Meta) ----------
 export const sendWhatsAppMessage = createServerFn({ method: "POST" })
@@ -55,6 +62,8 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
         templateName: z.string().optional(),
         templateLanguage: z.string().max(10).optional(),
         templateVariables: z.array(z.string().max(1024)).max(20).optional(),
+        templateHeaderVariables: z.array(z.string().max(1024)).max(3).optional(),
+
         contextMessageId: z.string().max(200).optional(),
       })
       .refine((v) => v.body.trim().length > 0 || !!v.mediaUrl || !!v.templateName, {
@@ -85,7 +94,26 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
 
     if (data.templateName) {
       const { loadApprovedTemplates } = await import("@/lib/whatsapp/templates.server");
-      const approvedList = await loadApprovedTemplates(supabase, workspaceId).catch(() => []);
+      const { describeTemplate, checkTemplateVariables } =
+        await import("@/lib/whatsapp/template-shape");
+      // Falha ao consultar o catálogo é erro de verificação, não "modelo reprovado":
+      // sem isso um problema do provedor viraria mensagem enganosa para o usuário.
+      let approvedList;
+      try {
+        approvedList = await loadApprovedTemplates(supabase, workspaceId, {
+          language: data.templateLanguage ?? null,
+        });
+      } catch (e) {
+        console.error("[whatsapp] catálogo de modelos indisponível", (e as Error).message);
+        return {
+          ok: false as const,
+          code: "TEMPLATE_CHECK_FAILED" as const,
+          error:
+            "Não foi possível confirmar o modelo na conta do WhatsApp agora. Tente novamente em instantes.",
+          sid: "",
+          conversationId: "",
+        };
+      }
       const approvedTemplate = approvedList.find(
         (t) =>
           t.name === data.templateName &&
@@ -100,7 +128,28 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
           conversationId: "",
         };
       }
+      const shape = describeTemplate(approvedTemplate.components);
+      const check = checkTemplateVariables(shape, {
+        variables: data.templateVariables,
+        headerVariables: data.templateHeaderVariables,
+        headerMediaUrl: data.mediaUrl ?? null,
+      });
+      if (!check.ok) {
+        return {
+          ok: false as const,
+          code: "TEMPLATE_VARIABLES_INCOMPLETE" as const,
+          error:
+            check.reason === "missing_media"
+              ? "Este modelo tem cabeçalho de mídia: anexe o arquivo antes de enviar."
+              : check.reason === "missing_header"
+                ? "Preencha a variável do cabeçalho do modelo."
+                : `Preencha a variável {{${check.index}}} do modelo.`,
+          sid: "",
+          conversationId: "",
+        };
+      }
     }
+
     let num: Awaited<ReturnType<typeof resolveWaNumber>>;
     try {
       num = await resolveWaNumber(workspaceId, existing?.phoneNumberId ?? null);
@@ -169,8 +218,11 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
             name: data.templateName,
             language: data.templateLanguage,
             variables: data.templateVariables ?? [],
+            headerVariables: data.templateHeaderVariables ?? [],
+            headerMediaUrl: data.mediaUrl ?? null,
           }
         : null,
+
       contextMessageId: data.contextMessageId,
     });
 
@@ -451,29 +503,53 @@ export const setWhatsAppConversationStatus = createServerFn({ method: "POST" })
   });
 
 // ---------- templates aprovados na Meta ----------
-export const listWhatsAppTemplates = createServerFn({ method: "GET" })
+// Devolve também a origem real (conta conectada × tabela local) e o canal, para
+// a interface distinguir "erro", "não sincronizado" e "catálogo vazio" e para
+// a chave de cache ficar por workspace + canal + idioma.
+export const getWhatsAppTemplateCatalog = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input) =>
+    z
+      .object({ language: z.string().max(10).nullish() })
+      .default({})
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    const { loadApprovedTemplates } = await import("@/lib/whatsapp/templates.server");
-    const data = await loadApprovedTemplates(supabase, workspaceId);
-    return data.map((t: any) => {
-      const comps = Array.isArray(t.components) ? t.components : [];
-      const bodyComp = comps.find((c: any) => String(c?.type ?? "").toUpperCase() === "BODY") as
-        | { text?: string }
-        | undefined;
-      const body = bodyComp?.text ?? "";
-      const variableCount = Array.from(body.matchAll(/\{\{(\d+)\}\}/g))
-        .map((m) => Number(m[1]))
-        .reduce((a, b) => Math.max(a, b), 0);
-      return {
-        name: t.name as string,
-        language: (t.language as string) ?? "pt_BR",
-        status: (t.status as string) ?? "PENDING",
-        approved: String(t.status ?? "").toUpperCase() === "APPROVED",
-        body,
-        variableCount,
-      };
+    const { loadTemplateCatalog } = await import("@/lib/whatsapp/templates.server");
+    const { describeTemplate } = await import("@/lib/whatsapp/template-shape");
+    const { gatewayConfigured } = await import("@/lib/whatsapp/gateway-channel.server");
+    const channelReady = gatewayConfigured();
+    const catalog = await loadTemplateCatalog(supabase, workspaceId, {
+      language: data.language ?? null,
     });
+    return {
+      workspaceId,
+      channelReady,
+      source: catalog.source,
+      language: data.language ?? null,
+      items: catalog.items.map((t) => {
+        const shape = describeTemplate(t.components);
+        return {
+          name: t.name,
+          language: t.language ?? "pt_BR",
+          status: t.status ?? "PENDING",
+          approved: String(t.status ?? "").toUpperCase() === "APPROVED",
+          body: shape.body,
+          variableCount: shape.variableCount,
+          headerType: shape.headerType,
+          headerText: shape.headerText,
+          headerVariableCount: shape.headerVariableCount,
+          headerMediaRequired: shape.headerMediaRequired,
+          footer: shape.footer,
+          buttons: shape.buttons,
+        };
+      }),
+    };
   });
+
+export type WhatsAppTemplateOption = Awaited<
+  ReturnType<typeof getWhatsAppTemplateCatalog>
+>["items"][number];
+
