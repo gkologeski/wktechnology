@@ -53,6 +53,10 @@ const TRAIT_LABELS = {
   concision: { label: "Concisão", low: "Detalhado", high: "Direto" },
 } as const;
 
+// Áreas de texto mais altas e com alça de arrastar na borda inferior
+// (teto de ~16 linhas para nenhuma caixa sair do controle da tela).
+const TEXTAREA_CLASS = "resize-y max-h-[21rem]";
+
 export function SdrAgentStudio({
   workspaceId,
   playbookId,
@@ -180,7 +184,8 @@ function Studio({ workspaceId, playbookId }: { workspaceId: string; playbookId: 
                   <Label htmlFor="pa-desc">Descrição</Label>
                   <Textarea
                     id="pa-desc"
-                    rows={2}
+                    rows={4}
+                    className={TEXTAREA_CLASS}
                     value={persona.description}
                     onChange={(e) => set("description", e.target.value)}
                   />
@@ -285,7 +290,8 @@ function Studio({ workspaceId, playbookId }: { workspaceId: string; playbookId: 
                     <Label htmlFor={`pa-${key}`}>{label}</Label>
                     <Textarea
                       id={`pa-${key}`}
-                      rows={3}
+                      rows={6}
+                      className={TEXTAREA_CLASS}
                       value={persona[key]}
                       onChange={(e) => set(key, e.target.value)}
                     />
@@ -295,7 +301,8 @@ function Studio({ workspaceId, playbookId }: { workspaceId: string; playbookId: 
                   <Label htmlFor="pa-good">Exemplos do jeito certo</Label>
                   <Textarea
                     id="pa-good"
-                    rows={4}
+                    rows={8}
+                    className={TEXTAREA_CLASS}
                     placeholder="Um exemplo por linha"
                     value={persona.good_examples.join("\n")}
                     onChange={(e) =>
@@ -539,7 +546,7 @@ function TestChat({
         <div className="flex items-end gap-2">
           <Textarea
             ref={ref}
-            rows={2}
+            rows={4}
             aria-label="Mensagem de teste"
             placeholder="Escreva uma mensagem…"
             value={text}
@@ -550,7 +557,7 @@ function TestChat({
                 void send();
               }
             }}
-            className="min-h-16 resize-none"
+            className="min-h-24 resize-y max-h-[21rem]"
           />
           <Button
             size="icon"

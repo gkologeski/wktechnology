@@ -36,6 +36,10 @@ const TOOL_LABEL: Record<SdrTool, string> = {
   handoff: "Passar para uma pessoa",
 };
 
+// Áreas de texto mais altas e com alça de arrastar na borda inferior
+// (teto de ~16 linhas para nenhuma caixa sair do controle da tela).
+const TEXTAREA_CLASS = "resize-y max-h-[21rem]";
+
 const NONE = "__none__";
 
 export function SdrAgentConfigPanel({
@@ -280,7 +284,8 @@ function AgentForm({ workspaceId, playbookId }: { workspaceId: string; playbookI
             <Label htmlFor="cfg-prompt">Orientações do roteiro (prompt do playbook)</Label>
             <Textarea
               id="cfg-prompt"
-              rows={4}
+              rows={8}
+              className={TEXTAREA_CLASS}
               value={agent.qualification_prompt}
               onChange={(e) => setAgent({ ...agent, qualification_prompt: e.target.value })}
             />
@@ -450,7 +455,8 @@ function AgentForm({ workspaceId, playbookId }: { workspaceId: string; playbookI
             <Label htmlFor="cfg-rules">Regras adicionais</Label>
             <Textarea
               id="cfg-rules"
-              rows={3}
+              rows={6}
+              className={TEXTAREA_CLASS}
               value={cfg.guardrails.extra_rules}
               onChange={(e) =>
                 set("guardrails", { ...cfg.guardrails, extra_rules: e.target.value })
