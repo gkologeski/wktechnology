@@ -57,6 +57,35 @@ export type WaPhoneInfo = {
   is_on_biz_app?: boolean;
 };
 
+export type WaGatewayTemplate = {
+  id?: string;
+  name: string;
+  language: string;
+  status: string;
+  category?: string;
+  components: Array<{ type?: string; text?: string; [k: string]: unknown }>;
+};
+
+/** Modelos da conta WhatsApp Business conectada (fonte oficial: Meta). */
+export async function listGatewayTemplates(): Promise<WaGatewayTemplate[]> {
+  const out: WaGatewayTemplate[] = [];
+  let after: string | undefined;
+  for (let page = 0; page < 10; page++) {
+    const qs = new URLSearchParams({
+      fields: "id,name,language,status,category,components",
+      limit: "100",
+    });
+    if (after) qs.set("after", after);
+    const res = await gatewayFetch(`/message_templates?${qs.toString()}`);
+    for (const t of (res?.data ?? []) as WaGatewayTemplate[]) {
+      out.push({ ...t, components: Array.isArray(t.components) ? t.components : [] });
+    }
+    after = res?.paging?.next ? res?.paging?.cursors?.after : undefined;
+    if (!after) break;
+  }
+  return out;
+}
+
 export async function getConnectedPhone(): Promise<WaPhoneInfo> {
   return gatewayFetch(
     "/phone_number?fields=id,display_phone_number,verified_name,quality_rating,platform_type,is_on_biz_app",
