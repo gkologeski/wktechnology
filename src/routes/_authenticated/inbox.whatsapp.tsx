@@ -163,8 +163,17 @@ function WhatsAppInbox() {
   // Janela de 24 h + catálogo pelo hook único do compositor (o servidor revalida no envio).
   const availabilityQ = useChannelAvailability();
   const currentPhone = current?.contact_phone ?? "";
+  // Último recebimento visto (inclusive em tempo real): ao mudar, a janela é refeita.
+  const lastInboundHint = useMemo(() => {
+    let last: string | null = null;
+    for (const m of history.items)
+      if (m.direction === "inbound" && (!last || m.created_at > last)) last = m.created_at;
+    return last;
+  }, [history.items]);
   const composer = useWhatsAppComposer({
     to: currentPhone,
+    conversationId: selected ?? null,
+    lastInboundHint,
     enabled: !!current,
     templateRequiredByServer,
   });
