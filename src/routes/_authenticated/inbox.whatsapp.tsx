@@ -500,7 +500,7 @@ function WhatsAppInbox() {
                 degraded={history.health === "degraded"}
                 onLoadOlder={() => void history.loadOlder()}
                 onRetrySync={() => void history.reconcile()}
-                className="bg-product-panel-muted px-5 py-6"
+                className="bg-product-panel-muted px-5 py-4"
               >
                 {history.initial === "loading" && !messages.length ? <InboxLoading /> : null}
                 {messages.map((m) => (
@@ -519,7 +519,7 @@ function WhatsAppInbox() {
                   </InboxMessageBubble>
                 ))}
               </MessageHistoryViewport>
-              <div className="bg-product-panel p-4 pt-3">
+              <div className="max-h-[55%] shrink-0 overflow-y-auto bg-product-panel p-4 pt-3">
                 {!templateRequired && windowUnknown && (
                   <div
                     role="status"
