@@ -80,12 +80,20 @@ export function acceptAnswers(
   inbound: ConversationMessage[],
 ): { accepted: AcceptedAnswer[]; rejected: string[] } {
   const byId = new Map(questions.map((q) => [q.id, q]));
+  // Fallback: a IA às vezes devolve o rótulo da pergunta no lugar do id.
+  // Só vale quando o rótulo normalizado é único no questionário.
+  const labelCount = new Map<string, number>();
+  for (const q of questions) labelCount.set(norm(q.label), (labelCount.get(norm(q.label)) ?? 0) + 1);
+  const byLabel = new Map(
+    questions.filter((q) => labelCount.get(norm(q.label)) === 1).map((q) => [norm(q.label), q]),
+  );
   const msgs = new Map(inbound.filter((m) => m.direction === "inbound").map((m) => [m.id, m]));
   const accepted: AcceptedAnswer[] = [];
   const rejected: string[] = [];
   for (const item of Array.isArray(raw) ? raw : []) {
     const r = (item ?? {}) as Partial<RawAnswer>;
-    const q = byId.get(String(r.question_id ?? ""));
+    const key = String(r.question_id ?? "");
+    const q = byId.get(key) ?? byLabel.get(norm(key));
     if (!q) {
       rejected.push(`Pergunta desconhecida: ${String(r.question_id ?? "")}`);
       continue;
