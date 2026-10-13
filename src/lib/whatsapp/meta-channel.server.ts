@@ -154,23 +154,45 @@ export function isWithinServiceWindow(lastInboundAt: string | null | undefined):
   return Date.now() - new Date(lastInboundAt).getTime() < 24 * 60 * 60 * 1000;
 }
 
-/** Número da Meta já usado na conversa deste telefone, se houver. */
+/**
+ * Conversa que define a janela de 24 h: a indicada (se for do workspace) ou,
+ * pelo telefone, a com recebimento mais recente — considerando o celular
+ * brasileiro com e sem o nono dígito.
+ */
 export async function findConversationNumber(
   supabase: SupabaseClient,
   workspaceId: string,
   phoneE164: string,
+  conversationId?: string | null,
 ): Promise<{ phoneNumberId: string | null; lastInboundAt: string | null } | null> {
+  const { brPhoneVariants, pickWindowConversation } = await import("./phone-variants");
+  type Row = {
+    wa_phone_number_id: string | null;
+    last_inbound_at: string | null;
+    last_message_at: string | null;
+  };
+  if (conversationId) {
+    const { data } = await supabase
+      .from("whatsapp_conversations")
+      .select("wa_phone_number_id, last_inbound_at, last_message_at")
+      .eq("workspace_id", workspaceId)
+      .eq("id", conversationId)
+      .maybeSingle();
+    if (data) {
+      const row = data as Row;
+      return { phoneNumberId: row.wa_phone_number_id ?? null, lastInboundAt: row.last_inbound_at };
+    }
+  }
   const { data } = await supabase
     .from("whatsapp_conversations")
-    .select("wa_phone_number_id, last_inbound_at")
+    .select("wa_phone_number_id, last_inbound_at, last_message_at")
     .eq("workspace_id", workspaceId)
-    .eq("contact_phone", phoneE164)
-    .order("last_message_at", { ascending: false, nullsFirst: false })
-    .limit(1)
-    .maybeSingle();
-  if (!data) return null;
+    .in("contact_phone", brPhoneVariants(phoneE164))
+    .limit(20);
+  const best = pickWindowConversation((data ?? []) as Row[]);
+  if (!best) return null;
   return {
-    phoneNumberId: (data.wa_phone_number_id as string) ?? null,
-    lastInboundAt: (data.last_inbound_at as string) ?? null,
+    phoneNumberId: best.wa_phone_number_id ?? null,
+    lastInboundAt: best.last_inbound_at ?? null,
   };
 }
