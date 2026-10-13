@@ -5,6 +5,7 @@ type Admin = any;
 
 import { getPublicAppUrl } from "@/lib/app-url";
 import { recordSdrAction } from "./ingest.server";
+import { shouldAttachMaterials, stripUrls } from "./agent-config";
 import { meetingStatus, nextFollowUpAt, type CommercialStage, type SdrIntent } from "./policy";
 
 export type DraftPayload = {
@@ -17,8 +18,6 @@ export type DraftPayload = {
 };
 
 /** Mensagem final: texto do agente + link de agenda + links de materiais aprovados. */
-import { shouldAttachMaterials, stripUrls } from "./agent-config";
-
 export async function composeOutgoing(
   admin: Admin,
   p: {
