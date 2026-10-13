@@ -175,7 +175,16 @@ aciona continuação.
 Aceite: E2E multicanal com provedores falsos, sem envio real, cobrindo
 duplicidade, opt-out, resposta e cancelamento.
 
-## Fase 5 — Sincronização operacional e histórico (pendente)
+## Fase 5 — Sincronização operacional e histórico (PARCIAL)
+
+Entregue: cada passo de WhatsApp, e-mail, agente e transferência grava
+`delivery` (canal, run, fluxo, provedor, status real, id do provedor, agente e
+versão publicada), exibido na lista de execuções. E-mail de fluxo aparece como
+"Na fila interna (não enviada)" porque o motor ainda não envia e-mail.
+Pendente: remetente/calendário por workspace, cotas comerciais, atualização do
+status do passo pelos avisos de entrega da Meta.
+
+### Escopo original
 
 Remetente/WABA por workspace, modelos, calendário, opt-out, deduplicação,
 listas, horários e cotas comerciais separadas do disjuntor técnico. Sem canais
