@@ -184,7 +184,7 @@ caixa Gmail conectada do dono do fluxo no mesmo workspace
 (`engine/workflow-email.server.ts`), respeita descadastro e é idempotente por
 execução/destinatário/assunto; sem caixa conectada fica "Na fila interna".
 Pendente: remetente/calendário por workspace, cotas comerciais, atualização do
-status do passo pelos avisos de entrega da Meta, Outlook nos fluxos.
+Outlook nos fluxos. (Status atual do WhatsApp — entregue/lida/falhou — já é lido dos avisos da Meta na lista de execuções.)
 
 ### Escopo original
 
