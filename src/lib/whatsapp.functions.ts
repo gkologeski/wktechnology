@@ -27,7 +27,11 @@ async function findContactByPhone(supabase: any, phoneE164: string): Promise<str
 // ---------- janela de atendimento de 24 horas ----------
 export const getWhatsAppServiceWindow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ to: z.string().min(5) }).parse(input))
+  .inputValidator((input) =>
+    z
+      .object({ to: z.string().min(5), conversationId: z.string().uuid().nullish() })
+      .parse(input),
+  )
   .handler(async ({ data, context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const { findConversationNumber, isWithinServiceWindow } =
@@ -36,6 +40,7 @@ export const getWhatsAppServiceWindow = createServerFn({ method: "POST" })
       context.supabase,
       workspaceId,
       normalizePhone(data.to),
+      data.conversationId ?? null,
     );
     const lastInboundAt = existing?.lastInboundAt ?? null;
     return {

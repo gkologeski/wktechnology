@@ -30,6 +30,10 @@ export function useWhatsAppComposer(opts: {
   /** Carrega o catálogo mesmo dentro da janela (seleção opcional de modelo). */
   alwaysLoadTemplates?: boolean;
   language?: string | null;
+  /** Conversa aberta: a janela é lida dela, não só do telefone. */
+  conversationId?: string | null;
+  /** Data do último recebimento visto em tempo real; mudança refaz a checagem. */
+  lastInboundHint?: string | null;
 }) {
   const enabled = opts.enabled ?? true;
   const to = (opts.to ?? "").trim();
@@ -43,8 +47,14 @@ export function useWhatsAppComposer(opts: {
 
   const windowFn = useServerFn(getWhatsAppServiceWindow);
   const windowQ = useQuery({
-    queryKey: ["wa", "service-window", to],
-    queryFn: () => windowFn({ data: { to } }),
+    queryKey: [
+      "wa",
+      "service-window",
+      to,
+      opts.conversationId ?? null,
+      opts.lastInboundHint ?? null,
+    ],
+    queryFn: () => windowFn({ data: { to, conversationId: opts.conversationId ?? null } }),
     enabled: enabled && hasRecipient && channelReady === true,
     staleTime: 30_000,
   });
