@@ -179,12 +179,16 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
     // Grava/atualiza a conversa ANTES do envio. Conversas criadas pelo sistema
     // (webhook) são atualizadas por id; novas são criadas com o usuário como dono (RLS).
     const nowIso = new Date().toISOString();
+    // Celular BR com ou sem o 9º dígito é a mesma conversa (a mais recente).
+    const { brPhoneVariants } = await import("@/lib/whatsapp/phone-variants");
     const { data: found, error: fErr } = await supabase
       .from("whatsapp_conversations")
       .select("id, contact_id")
       .eq("workspace_id", workspaceId)
-      .eq("contact_phone", toBare)
+      .in("contact_phone", brPhoneVariants(toBare))
       .eq("twilio_number", num.displayPhoneNumber)
+      .order("last_message_at", { ascending: false, nullsFirst: false })
+      .limit(1)
       .maybeSingle();
     if (fErr) throw new Error("Não foi possível localizar a conversa do WhatsApp.");
     let conversationId = found?.id as string | undefined;
