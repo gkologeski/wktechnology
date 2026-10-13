@@ -237,7 +237,9 @@ async function finishRun(
       entity_id: event.entity_id,
       event_type: event.event_type,
       before: event.before,
-      after: event.after,
+      after: res.suspendedAt.waitState
+        ? { ...(event.after ?? {}), __wf_wait: res.suspendedAt.waitState }
+        : event.after,
       run_at: res.suspendedAt.runAtIso,
       resume_workflow_id: workflowId,
       resume_cursor: res.suspendedAt.resumeCursor,

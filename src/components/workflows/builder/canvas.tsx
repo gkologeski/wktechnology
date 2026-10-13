@@ -10,6 +10,7 @@ import {
   ArrowUp,
   Filter,
   GitBranch,
+  Hourglass,
   GripVertical,
   MoreHorizontal,
   Plus,
@@ -201,7 +202,7 @@ export function StepsList({
           dragging !== null && JSON.stringify(dragging) === JSON.stringify(stepPath);
         return (
           <div key={i} data-step-path={JSON.stringify(stepPath)}>
-            {action.type === "branch_if" ? (
+            {action.type === "branch_if" || action.type === "wait_for_reply" ? (
               <BranchCard
                 action={action}
                 stepPath={stepPath}
@@ -469,7 +470,7 @@ function BranchCard({
   onDropAt,
   onMove,
 }: {
-  action: Extract<WorkflowAction, { type: "branch_if" }>;
+  action: Extract<WorkflowAction, { type: "branch_if" } | { type: "wait_for_reply" }>;
   stepPath: StepPath;
   selected: boolean;
   selection: StepPath | "trigger" | null;
@@ -483,6 +484,7 @@ function BranchCard({
   canMoveDown: boolean;
   isDraggingSelf: boolean;
 } & DragProps) {
+  const isWait = action.type === "wait_for_reply";
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", JSON.stringify(stepPath));
@@ -509,14 +511,20 @@ function BranchCard({
           className="flex-1 min-w-0 text-left flex items-center gap-3"
         >
           <div className="h-8 w-8 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <GitBranch className="h-4 w-4" />
+            {isWait ? <Hourglass className="h-4 w-4" /> : <GitBranch className="h-4 w-4" />}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">
-              Ramificação
+              {isWait ? "Aguardar resposta" : "Ramificação"}
             </p>
-            <p className="text-sm font-medium">Se / Então / Senão</p>
-            <p className="text-xs text-muted-foreground">{conditionsSummary(action.filters)}</p>
+            <p className="text-sm font-medium">
+              {isWait ? "Respondeu / Sem resposta" : "Se / Então / Senão"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {action.type === "wait_for_reply"
+                ? `${action.channels.map((c) => (c === "email" ? "e-mail" : "WhatsApp")).join(" ou ")} · prazo ${action.timeout_amount} ${action.timeout_unit === "days" ? "dia(s)" : "hora(s)"}`
+                : conditionsSummary(action.filters)}
+            </p>
           </div>
         </button>
         <StepActions
@@ -531,7 +539,15 @@ function BranchCard({
         {(["then", "else"] as const).map((branch) => (
           <BranchColumn
             key={branch}
-            title={branch === "then" ? "Sim" : "Não"}
+            title={
+              isWait
+                ? branch === "then"
+                  ? "Respondeu"
+                  : "Sem resposta no prazo"
+                : branch === "then"
+                  ? "Sim"
+                  : "Não"
+            }
             parentPath={[...stepPath, branch]}
             actions={action[branch] ?? []}
             selection={selection}

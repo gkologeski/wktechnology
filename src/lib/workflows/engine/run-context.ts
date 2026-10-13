@@ -20,7 +20,12 @@ export interface RunResult {
   log: LogStep[];
   hadError: boolean;
   // Se != null, execução foi suspensa para retomar depois desse índice na lista de ações.
-  suspendedAt?: { runAtIso: string; resumeCursor: number };
+  suspendedAt?: {
+    runAtIso: string;
+    resumeCursor: number;
+    /** Estado de espera (aguardar resposta), gravado no evento de retomada. */
+    waitState?: { cursor: number; started_at: string; deadline: string };
+  };
   // Fase 5b: aguardando decisão de aprovação (retomada acontece via decideApproval).
   waitingApproval?: { approvalId: string; resumeCursor: number };
 }
@@ -30,6 +35,7 @@ export type RunnableAction = Exclude<
   WorkflowAction,
   | { type: "delay" }
   | { type: "branch_if" }
+  | { type: "wait_for_reply" }
   | { type: "switch_by_value" }
   | { type: "branch_multi" }
   | { type: "delay_until_date" }

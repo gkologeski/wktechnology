@@ -17,6 +17,11 @@ import {
   denormalizeTopGroup,
 } from "./conditions-editor";
 import { EntityPickerDialog } from "./entity-picker-dialog";
+import {
+  HandoffForm,
+  SdrAgentForm,
+  WaitForReplyForm,
+} from "@/components/workflows/builder/step-forms/prospecting-forms";
 import { WhatsAppStepForm } from "@/components/workflows/builder/step-forms/whatsapp-step-form";
 import { HiringActionForm } from "@/components/workflows/builder/step-forms/hiring-forms";
 import { useEffect, useState } from "react";
@@ -899,6 +904,12 @@ function StepConfigForm({
       );
     case "send_whatsapp":
       return <WhatsAppStepForm action={action} onChange={onChange} />;
+    case "wait_for_reply":
+      return <WaitForReplyForm action={action} onChange={onChange} />;
+    case "sdr_agent":
+      return <SdrAgentForm action={action} onChange={onChange} />;
+    case "handoff":
+      return <HandoffForm action={action} onChange={onChange} />;
     case "switch_by_value":
       return (
         <SwitchByValueForm

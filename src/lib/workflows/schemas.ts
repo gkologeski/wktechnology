@@ -289,6 +289,16 @@ export const SimpleActionSchema = z.discriminatedUnion("type", [
     to_field: z.string().max(100).optional(),
   }),
   z.object({
+    type: z.literal("sdr_agent"),
+    mode: z.enum(["on", "off"]),
+    playbook_id: z.string().uuid().optional(),
+  }),
+  z.object({
+    type: z.literal("handoff"),
+    user_id: z.string().uuid().optional(),
+    reason: z.string().min(1).max(500),
+  }),
+  z.object({
     type: z.literal("send_whatsapp"),
     template_name: z.string().max(200).optional(),
     template_language: z.string().max(10).optional(),
@@ -453,6 +463,26 @@ export function parseActionAtDepth(raw: unknown, depth: number): ActionInput {
       const thenActions = parseActionsAtDepth(src.then ?? [], depth + 1);
       const elseActions = parseActionsAtDepth(src.else ?? [], depth + 1);
       return { type: "branch_if", filters, then: thenActions, else: elseActions };
+    }
+    if (src.type === "wait_for_reply") {
+      // Só no nível principal: a retomada do motor não reentra em ramos.
+      if (depth > 0) throw new Error("Aguardar resposta só pode ficar no caminho principal.");
+      const base = z
+        .object({
+          channels: z
+            .array(z.enum(["whatsapp", "email"]))
+            .min(1)
+            .max(2),
+          timeout_amount: z.number().int().min(1).max(720),
+          timeout_unit: z.enum(["hours", "days"]),
+        })
+        .parse(src);
+      return {
+        type: "wait_for_reply",
+        ...base,
+        then: parseActionsAtDepth(src.then ?? [], depth + 1),
+        else: parseActionsAtDepth(src.else ?? [], depth + 1),
+      };
     }
     if (src.type === "switch_by_value") {
       if (depth >= MAX_BRANCH_DEPTH) throw new Error("profundidade máxima excedida");

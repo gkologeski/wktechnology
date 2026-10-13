@@ -747,3 +747,32 @@ export const searchSimpleRefs = createServerFn({ method: "POST" })
       name: (r[src.col] ?? "")?.trim() || "(sem nome)",
     }));
   });
+
+/** Agentes SDR do workspace ativo, com indicação de versão publicada (para o construtor). */
+export const listSdrAgentsForWorkflow = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
+    const workspaceId = await resolveActiveWorkspace(context.userId);
+    const { data: pbs, error } = await context.supabase
+      .from("sdr_playbooks")
+      .select("id, name, enabled")
+      .eq("workspace_id", workspaceId)
+      .order("name");
+    if (error) throw new Error(error.message);
+    const ids = (pbs ?? []).map((p) => p.id as string);
+    const { data: pubs } = ids.length
+      ? await context.supabase
+          .from("sdr_agent_versions")
+          .select("playbook_id")
+          .in("playbook_id", ids)
+          .eq("status", "published")
+      : { data: [] as { playbook_id: string }[] };
+    const published = new Set((pubs ?? []).map((v) => v.playbook_id as string));
+    return (pbs ?? []).map((p) => ({
+      id: p.id as string,
+      name: (p.name as string) ?? "Agente",
+      enabled: !!p.enabled,
+      published: published.has(p.id as string),
+    }));
+  });
