@@ -480,6 +480,7 @@ export async function processJob(
     intent: out.intent,
     materialIds: out.material_ids,
     bookingPageId: playbook.booking_page_id,
+    attachMaterials: agentConfig.guardrails.attach_materials,
   });
   const payload: DraftPayload = {
     intent: out.intent,

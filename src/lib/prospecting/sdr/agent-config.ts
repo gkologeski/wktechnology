@@ -16,6 +16,8 @@ export const GuardrailsSchema = z.object({
   no_pricing: z.boolean().default(true),
   /** Exige confirmação humana antes de criar oportunidade. */
   require_human_for_opportunity: z.boolean().default(false),
+  /** Anexa links de materiais aprovados quando o cliente pede (send_material). */
+  attach_materials: z.boolean().default(true),
   extra_rules: z.string().trim().max(2000).default(""),
 });
 export type Guardrails = z.infer<typeof GuardrailsSchema>;
@@ -127,4 +129,21 @@ export function configFromRow(row: Record<string, unknown>): AgentConfig {
     booking_page_id: row["booking_page_id"] ?? null,
     questionnaire_id: row["questionnaire_id"] ?? null,
   });
+}
+
+/** Links de materiais só saem quando o cliente pediu (intent=send_material) e o agente permite. */
+export function shouldAttachMaterials(p: {
+  intent: string;
+  materialIds: string[];
+  attachMaterials?: boolean;
+}): boolean {
+  return p.intent === "send_material" && p.attachMaterials !== false && p.materialIds.length > 0;
+}
+
+/** Remove URLs que a IA escreva por conta própria (links só entram pelo sistema). */
+export function stripUrls(text: string): string {
+  return text
+    .replace(/\s*\(?https?:\/\/\S+\)?/gi, "")
+    .replace(/[ \t]+\n/g, "\n")
+    .trim();
 }

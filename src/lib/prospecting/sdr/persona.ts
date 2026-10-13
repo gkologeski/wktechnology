@@ -3,6 +3,8 @@
 import { z } from "zod";
 
 export const PersonaSchema = z.object({
+  /** prospecting = persuasiva, conduz para reunião; service = só informa. */
+  intent: z.enum(["prospecting", "service"]).default("prospecting"),
   assistant_name: z.string().trim().max(60).default(""),
   description: z.string().trim().max(500).default(""),
   tone: z.enum(["acolhedor", "objetivo", "consultivo"]).default("consultivo"),

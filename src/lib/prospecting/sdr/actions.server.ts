@@ -5,6 +5,7 @@ type Admin = any;
 
 import { getPublicAppUrl } from "@/lib/app-url";
 import { recordSdrAction } from "./ingest.server";
+import { shouldAttachMaterials, stripUrls } from "./agent-config";
 import { meetingStatus, nextFollowUpAt, type CommercialStage, type SdrIntent } from "./policy";
 
 export type DraftPayload = {
@@ -25,6 +26,8 @@ export async function composeOutgoing(
     intent: SdrIntent;
     materialIds: string[];
     bookingPageId: string | null;
+    /** Guardrail do agente; falso = nunca anexar links de materiais. */
+    attachMaterials?: boolean;
   },
 ): Promise<{
   text: string;
@@ -42,7 +45,7 @@ export async function composeOutgoing(
       bookingUrl = `${getPublicAppUrl().replace(/\/$/, "")}/book/${page.slug}`;
   }
   let materials: { id: string; title: string; url: string }[] = [];
-  if (p.materialIds.length) {
+  if (shouldAttachMaterials(p)) {
     const { data } = await admin
       .from("sdr_materials")
       .select("id, title, url, approved, active, workspace_id")
@@ -59,7 +62,7 @@ export async function composeOutgoing(
         url: m.url,
       }));
   }
-  const parts = [p.reply.trim()];
+  const parts = [stripUrls(p.reply)];
   if (bookingUrl) parts.push(`Agende um horário: ${bookingUrl}`);
   for (const m of materials) parts.push(`${m.title}: ${m.url}`);
   return { text: parts.filter(Boolean).join("\n\n"), bookingUrl, materials };
