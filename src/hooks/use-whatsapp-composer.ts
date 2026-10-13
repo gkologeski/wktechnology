@@ -13,7 +13,11 @@ import { composerPolicy, type ComposerPolicy } from "@/lib/whatsapp/composer-pol
 
 export type { WhatsAppTemplateOption };
 
-export function waTemplatesKey(workspaceId: string | null, channel: string | null, lang: string | null) {
+export function waTemplatesKey(
+  workspaceId: string | null,
+  channel: string | null,
+  lang: string | null,
+) {
   return ["wa", "templates", workspaceId ?? "active", channel ?? "default", lang ?? "all"] as const;
 }
 

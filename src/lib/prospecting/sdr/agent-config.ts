@@ -62,10 +62,10 @@ export function hasTool(cfg: AgentConfig, tool: SdrTool): boolean {
 }
 
 /** Catálogo e materiais deste agente (listas vazias = herdar tudo que está ativo). */
-export function scopeKnowledge<O extends Pick<SdrOffer, "offer_key">, M extends Pick<SdrMaterial, "id">>(
-  cfg: AgentConfig,
-  knowledge: { offers: O[]; materials: M[] },
-): { offers: O[]; materials: M[] } {
+export function scopeKnowledge<
+  O extends Pick<SdrOffer, "offer_key">,
+  M extends Pick<SdrMaterial, "id">,
+>(cfg: AgentConfig, knowledge: { offers: O[]; materials: M[] }): { offers: O[]; materials: M[] } {
   const offers = cfg.offer_keys.length
     ? knowledge.offers.filter((o) => cfg.offer_keys.includes(o.offer_key))
     : knowledge.offers;
@@ -115,9 +115,8 @@ export function configFromRow(row: Record<string, unknown>): AgentConfig {
         )
       : undefined,
     channels: Array.isArray(row["channels"])
-      ? (row["channels"] as string[]).filter((c) =>
-          (SDR_CHANNELS as readonly string[]).includes(c),
-        ).length
+      ? (row["channels"] as string[]).filter((c) => (SDR_CHANNELS as readonly string[]).includes(c))
+          .length
         ? (row["channels"] as string[]).filter((c) =>
             (SDR_CHANNELS as readonly string[]).includes(c),
           )

@@ -97,7 +97,10 @@ describe("forma do modelo aprovado", () => {
   });
 
   it("cabeçalho de mídia exige link", () => {
-    const s = describeTemplate([{ type: "HEADER", format: "IMAGE" }, { type: "BODY", text: "oi" }]);
+    const s = describeTemplate([
+      { type: "HEADER", format: "IMAGE" },
+      { type: "BODY", text: "oi" },
+    ]);
     expect(s.headerMediaRequired).toBe(true);
     expect(checkTemplateVariables(s, {})).toEqual({ ok: false, reason: "missing_media" });
     expect(checkTemplateVariables(s, { headerMediaUrl: "https://x/y.png" })).toEqual({ ok: true });

@@ -87,7 +87,9 @@ export function WhatsAppTemplateFields({
         </div>
       ))}
       <div>
-        <Label>Prévia do modelo ({template.name} · {template.language})</Label>
+        <Label>
+          Prévia do modelo ({template.name} · {template.language})
+        </Label>
         <div className="space-y-2 rounded-md border border-border bg-background p-3 text-sm">
           {template.headerType === "TEXT" && template.headerText && (
             <p className="font-semibold">{applyTemplate(template.headerText, values.header)}</p>

@@ -3,10 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Send, MessageCircle, Paperclip, X } from "lucide-react";
 import { toast } from "sonner";
-import {
-  sendWhatsAppMessage,
-  applyTemplate,
-} from "@/lib/whatsapp.functions";
+import { sendWhatsAppMessage, applyTemplate } from "@/lib/whatsapp.functions";
 import { useWhatsAppComposer } from "@/hooks/use-whatsapp-composer";
 import { catalogMessage } from "@/lib/whatsapp/composer-policy";
 import {
@@ -336,17 +333,25 @@ export function SendWhatsAppDialog({
           {templateRequired && !windowChecking && (
             <div role="alert" className="rounded-md border border-border bg-muted/40 p-3 text-sm">
               <p className="font-medium">
-                {policy.windowState === "closed" ? "Janela de 24 horas encerrada" : "Envio por modelo"}
+                {policy.windowState === "closed"
+                  ? "Janela de 24 horas encerrada"
+                  : "Envio por modelo"}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">{policy.notice}</p>
 
               {policy.catalogState !== "ready" && (
                 <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                  <span className={policy.catalogState === "error" ? "text-destructive" : undefined}>
+                  <span
+                    className={policy.catalogState === "error" ? "text-destructive" : undefined}
+                  >
                     {catalogMessage(policy.catalogState)}
                   </span>
                   {(policy.catalogState === "error" || policy.catalogState === "empty") && (
-                    <Button size="sm" variant="outline" onClick={() => void composer.refreshTemplates()}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => void composer.refreshTemplates()}
+                    >
                       Atualizar modelos
                     </Button>
                   )}

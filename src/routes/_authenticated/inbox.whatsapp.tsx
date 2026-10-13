@@ -170,7 +170,9 @@ function WhatsAppInbox() {
   });
   const { windowQ, templatesQ } = composer;
   const windowUnknown =
-    !!currentPhone && composer.policy.windowState !== "open" && composer.policy.windowState !== "closed";
+    !!currentPhone &&
+    composer.policy.windowState !== "open" &&
+    composer.policy.windowState !== "closed";
   const templateRequired = composer.policy.windowState === "closed";
   const freeTextBlocked = !composer.policy.freeTextAllowed;
 

@@ -47,7 +47,6 @@ export const getWhatsAppServiceWindow = createServerFn({ method: "POST" })
     };
   });
 
-
 // ---------- send (API oficial da Meta) ----------
 export const sendWhatsAppMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -552,4 +551,3 @@ export const getWhatsAppTemplateCatalog = createServerFn({ method: "POST" })
 export type WhatsAppTemplateOption = Awaited<
   ReturnType<typeof getWhatsAppTemplateCatalog>
 >["items"][number];
-

@@ -414,11 +414,19 @@ function UnifiedInboxPage() {
                       {waComposer.policy.notice}
                     </span>
                     {waComposer.policy.windowState === "error" ? (
-                      <Button size="sm" variant="outline" onClick={() => void waComposer.windowQ.refetch()}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => void waComposer.windowQ.refetch()}
+                      >
                         Verificar novamente
                       </Button>
                     ) : waComposer.policy.templateRequired ? (
-                      <Button size="sm" variant="outline" onClick={() => setTemplateDialogOpen(true)}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setTemplateDialogOpen(true)}
+                      >
                         Enviar modelo aprovado
                       </Button>
                     ) : null}

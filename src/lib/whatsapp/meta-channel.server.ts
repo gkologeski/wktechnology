@@ -94,7 +94,10 @@ export async function metaSend(
       });
     else if (headMedia) {
       const kind = mediaKind(payload.template.headerMediaContentType ?? payload.mediaContentType);
-      components.push({ type: "header", parameters: [{ type: kind, [kind]: { link: headMedia } }] });
+      components.push({
+        type: "header",
+        parameters: [{ type: kind, [kind]: { link: headMedia } }],
+      });
     }
     if (vars.length)
       components.push({ type: "body", parameters: vars.map((t) => ({ type: "text", text: t })) });
@@ -108,7 +111,6 @@ export async function metaSend(
         components,
       },
     };
-
   } else if (payload.mediaUrl) {
     const kind = mediaKind(payload.mediaContentType);
     body = {

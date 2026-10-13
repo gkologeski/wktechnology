@@ -26,11 +26,7 @@ import {
   getSdrAgentLogs,
   saveSdrAgentConfig,
 } from "@/lib/prospecting/sdr-agent.functions";
-import {
-  SDR_TOOLS,
-  type AgentConfig,
-  type SdrTool,
-} from "@/lib/prospecting/sdr/agent-config";
+import { SDR_TOOLS, type AgentConfig, type SdrTool } from "@/lib/prospecting/sdr/agent-config";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 
 const TOOL_LABEL: Record<SdrTool, string> = {
@@ -50,7 +46,8 @@ export function SdrAgentConfigPanel({
   playbooks: { id: string; name: string; enabled: boolean }[];
 }) {
   const [picked, setPicked] = useState<string | null>(null);
-  const playbookId = picked && playbooks.some((p) => p.id === picked) ? picked : (playbooks[0]?.id ?? null);
+  const playbookId =
+    picked && playbooks.some((p) => p.id === picked) ? picked : (playbooks[0]?.id ?? null);
 
   if (!playbooks.length)
     return (
@@ -78,7 +75,9 @@ export function SdrAgentConfigPanel({
           </SelectContent>
         </Select>
       </div>
-      {playbookId && <AgentForm key={playbookId} workspaceId={workspaceId} playbookId={playbookId} />}
+      {playbookId && (
+        <AgentForm key={playbookId} workspaceId={workspaceId} playbookId={playbookId} />
+      )}
     </div>
   );
 }
@@ -172,7 +171,10 @@ function AgentForm({ workspaceId, playbookId }: { workspaceId: string; playbookI
         </Button>
       </div>
 
-      <FormSection title="Ferramentas permitidas" description="O que este agente pode fazer sozinho.">
+      <FormSection
+        title="Ferramentas permitidas"
+        description="O que este agente pode fazer sozinho."
+      >
         <div className="grid gap-2 sm:grid-cols-2">
           {SDR_TOOLS.map((t) => (
             <label key={t} className="flex items-center gap-2 text-sm">
@@ -332,7 +334,10 @@ function AgentForm({ workspaceId, playbookId }: { workspaceId: string; playbookI
         </div>
       </FormSection>
 
-      <FormSection title="Handoff e ritmo" description="Quando passar para humano e com que cadência.">
+      <FormSection
+        title="Handoff e ritmo"
+        description="Quando passar para humano e com que cadência."
+      >
         <div className="grid gap-3 md:grid-cols-3">
           <div className="space-y-1.5">
             <Label htmlFor="cfg-handoff">Nota para handoff</Label>
@@ -396,9 +401,7 @@ function AgentForm({ workspaceId, playbookId }: { workspaceId: string; playbookI
             <Switch
               id="cfg-nopricing"
               checked={cfg.guardrails.no_pricing}
-              onCheckedChange={(v) =>
-                set("guardrails", { ...cfg.guardrails, no_pricing: v })
-              }
+              onCheckedChange={(v) => set("guardrails", { ...cfg.guardrails, no_pricing: v })}
             />
             <Label htmlFor="cfg-nopricing" className="text-sm">
               Nunca falar de preços, descontos ou prazos comerciais
@@ -439,7 +442,9 @@ function AgentForm({ workspaceId, playbookId }: { workspaceId: string; playbookI
               id="cfg-rules"
               rows={3}
               value={cfg.guardrails.extra_rules}
-              onChange={(e) => set("guardrails", { ...cfg.guardrails, extra_rules: e.target.value })}
+              onChange={(e) =>
+                set("guardrails", { ...cfg.guardrails, extra_rules: e.target.value })
+              }
             />
           </div>
         </div>
@@ -474,7 +479,12 @@ function AgentForm({ workspaceId, playbookId }: { workspaceId: string; playbookI
               />
               <Button
                 variant="ghost"
-                onClick={() => set("kb_sources", cfg.kb_sources.filter((_, j) => j !== i))}
+                onClick={() =>
+                  set(
+                    "kb_sources",
+                    cfg.kb_sources.filter((_, j) => j !== i),
+                  )
+                }
               >
                 Remover
               </Button>
