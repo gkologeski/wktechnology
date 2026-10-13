@@ -60,3 +60,37 @@ export function validateWhatsAppStep(
     };
   return null;
 }
+
+type AnyAction = { type: string; [k: string]: unknown };
+
+/** Coleta recursivamente os passos de WhatsApp, inclusive dentro de ramos. */
+export function collectWhatsAppSteps(actions: unknown): WhatsAppStep[] {
+  const out: WhatsAppStep[] = [];
+  const walk = (list: unknown) => {
+    if (!Array.isArray(list)) return;
+    for (const raw of list as AnyAction[]) {
+      if (!raw || typeof raw !== "object") continue;
+      if (raw.type === "send_whatsapp") out.push(raw as unknown as WhatsAppStep);
+      walk(raw["then"]);
+      walk(raw["else"]);
+      walk(raw["default"]);
+      for (const c of (raw["cases"] as { actions?: unknown }[] | undefined) ?? []) walk(c?.actions);
+      for (const b of (raw["branches"] as { actions?: unknown }[] | undefined) ?? [])
+        walk(b?.actions);
+    }
+  };
+  walk(actions);
+  return out;
+}
+
+/** Chave estável para não repetir o mesmo envio do mesmo run. */
+export function whatsAppIdempotencyKey(p: {
+  workspaceId: string;
+  runId?: string | null;
+  entityId: string;
+  template: string;
+  to: string;
+}): string | null {
+  if (!p.runId) return null;
+  return `wf:${p.workspaceId}:${p.runId}:${p.entityId}:${p.template}:${p.to.replace(/\D/g, "")}`;
+}
