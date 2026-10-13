@@ -38,6 +38,13 @@ export const AGENT_OUTPUT_SCHEMA = {
   },
 } as const;
 
+/** Intenção do agente: prospecção (persuasiva, busca reunião) ou atendimento (só informa). */
+export function intentSection(intent: "prospecting" | "service"): string {
+  return intent === "service"
+    ? "INTENÇÃO: ATENDIMENTO. Seu papel é informar e tirar dúvidas sobre a WK e o catálogo, com clareza. Não tente vender nem insista; ofereça reunião apenas se o cliente pedir para conversar com alguém."
+    : "INTENÇÃO: PROSPECÇÃO. Seja ativa e persuasiva: conecte cada oferta à dor relatada, destaque benefícios concretos (apenas fatos aprovados), contorne objeções com educação e conduza a conversa para uma reunião com um especialista assim que houver interesse. Não pressione nem faça promessas.";
+}
+
 export function buildSystemPrompt(p: {
   offers: SdrOffer[];
   materials: SdrMaterial[];
