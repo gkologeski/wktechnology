@@ -18,6 +18,7 @@ import { handleContractAction } from "./engine/actions-contracts.server";
 import { handleHiringAction } from "./engine/actions-hiring.server";
 import { handleOffboardingAction } from "./engine/actions-offboarding.server";
 import { handleSdrAction } from "./engine/actions-sdr.server";
+import { deliveryChannel, guardedDelivery } from "./engine/delivery-guard.server";
 
 export type { RunCtx, RunResult };
 
@@ -98,7 +99,27 @@ export async function runActions(
       continue;
     }
 
-    const step = annotate(await runAction(supabase, action, ctx));
+    const raw = deliveryChannel(action)
+      ? await guardedDelivery(supabase, action, ctx, stepPath, () =>
+          runAction(supabase, action, ctx, true),
+        )
+      : await runAction(supabase, action, ctx);
+    const step = annotate(raw);
+    if (step.suspend_until) {
+      // Repete este mesmo passo depois (horário, cota ou nova tentativa).
+      log.push(step);
+      return {
+        log: rawLog,
+        hadError: false,
+        suspendedAt: {
+          runAtIso: step.suspend_until,
+          resumeCursor: i,
+          ...(!pathPrefix && ctx.state && Object.keys(ctx.state).length > 0
+            ? { state: ctx.state }
+            : {}),
+        },
+      };
+    }
     log.push(step);
     if (!step.ok) return { log: rawLog, hadError: true };
   }
@@ -109,6 +130,7 @@ async function runAction(
   supabase: SupabaseClient,
   action: RunnableAction,
   ctx: RunCtx,
+  rethrow = false,
 ): Promise<LogStep> {
   const at = new Date().toISOString();
   try {
@@ -118,6 +140,8 @@ async function runAction(
     }
     return { at, ok: false, action: "unknown", error: "Ação não suportada" };
   } catch (e) {
+    // O guarda de envio precisa do erro original para classificar a falha.
+    if (rethrow) throw e;
     return {
       at,
       ok: false,

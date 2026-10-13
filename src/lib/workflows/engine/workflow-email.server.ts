@@ -11,10 +11,23 @@ export type WorkflowEmailInput = {
   to: string;
   subject: string;
   bodyHtml: string;
+  /** Chave estável reservada pelo guarda de envio (preferida à derivada). */
+  idempotencyKey?: string;
+  /** Remetente do workspace: caixa do dono, caixa escolhida ou Outlook. */
+  policy?: Pick<
+    import("./delivery-policy").SendPolicy,
+    "email_provider" | "email_account_id"
+  > | null;
 };
 
 export type WorkflowEmailResult =
-  | { status: "sent"; provider: "gmail"; providerId: string; messageId: string; from: string }
+  | {
+      status: "sent";
+      provider: "gmail" | "outlook";
+      providerId: string;
+      messageId: string;
+      from: string;
+    }
   | { status: "skipped_duplicate"; messageId: string }
   | { status: "unsubscribed" }
   | { status: "queued_local"; messageId: string | null; reason: "no_account" };
@@ -43,10 +56,57 @@ const defaultSender: GmailSender = {
   },
 };
 
+export type OutlookSender = {
+  send: (mime: { to: string[]; subject: string; bodyHtml: string }) => Promise<{ from: string }>;
+};
+
+export const OUTLOOK_NOT_CONNECTED =
+  "Outlook não conectado: conecte a conta Microsoft Outlook do projeto para enviar por ela.";
+
+/** Envio pelo Outlook conectado ao projeto (conta do workspace, via conexão). */
+const defaultOutlook: OutlookSender = {
+  async send(mime) {
+    const lovable = process.env["LOVABLE_API_KEY"];
+    const key = process.env["MICROSOFT_OUTLOOK_API_KEY"];
+    if (!lovable || !key) throw new Error(OUTLOOK_NOT_CONNECTED);
+    const base = "https://connector-gateway.lovable.dev/microsoft_outlook/v1.0";
+    const headers = {
+      Authorization: `Bearer ${lovable}`,
+      "X-Connection-Api-Key": key,
+      "Content-Type": "application/json",
+    };
+    const res = await fetch(`${base}/me/sendMail`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        message: {
+          subject: mime.subject,
+          body: { contentType: "HTML", content: mime.bodyHtml },
+          toRecipients: mime.to.map((address) => ({ emailAddress: { address } })),
+        },
+        saveToSentItems: true,
+      }),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw Object.assign(new Error(`Outlook erro [${res.status}]: ${text.slice(0, 300)}`), {
+        status: res.status,
+      });
+    }
+    const me = await fetch(`${base}/me?$select=mail,userPrincipalName`, { headers });
+    const j = (me.ok ? await me.json().catch(() => ({})) : {}) as {
+      mail?: string;
+      userPrincipalName?: string;
+    };
+    return { from: j.mail ?? j.userPrincipalName ?? "" };
+  },
+};
+
 export async function sendWorkflowEmail(
   supabase: SupabaseClient,
   input: WorkflowEmailInput,
   sender: GmailSender = defaultSender,
+  outlook: OutlookSender = defaultOutlook,
 ): Promise<WorkflowEmailResult> {
   const to = input.to.trim().toLowerCase();
   const { data: unsub } = await supabase
@@ -57,7 +117,7 @@ export async function sendWorkflowEmail(
     .limit(1);
   if ((unsub ?? []).length > 0) return { status: "unsubscribed" };
 
-  const key = workflowEmailKey({ ...input, to });
+  const key = input.idempotencyKey ?? workflowEmailKey({ ...input, to });
   if (key) {
     const { data: prior } = await supabase
       .from("email_messages")
@@ -70,17 +130,42 @@ export async function sendWorkflowEmail(
   }
 
   const bodyText = input.bodyHtml.replace(/<[^>]+>/g, "");
-  const { data: accounts } = await supabase
+  const headersEarly = key ? { "x-wf-idempotency": key } : {};
+  if (input.policy?.email_provider === "outlook") {
+    const r = await outlook.send({ to: [to], subject: input.subject, bodyHtml: input.bodyHtml });
+    const { data: row } = await supabase
+      .from("email_messages")
+      .insert({
+        workspace_id: input.workspaceId,
+        owner_id: input.ownerId,
+        direction: "outbound",
+        from_email: r.from || null,
+        to_emails: [to],
+        subject: input.subject,
+        body_html: input.bodyHtml,
+        body_text: bodyText,
+        sent_at: new Date().toISOString(),
+        headers: headersEarly,
+      } as never)
+      .select("id")
+      .maybeSingle();
+    const id = (row as { id: string } | null)?.id ?? "";
+    return { status: "sent", provider: "outlook", providerId: id, messageId: id, from: r.from };
+  }
+  let q = supabase
     .from("email_accounts")
     .select(
       "id, workspace_id, owner_id, email, access_token, refresh_token, expires_at, status, history_id",
     )
     .eq("workspace_id", input.workspaceId)
-    .eq("owner_id", input.ownerId)
     .eq("provider", "gmail")
-    .eq("status", "connected")
-    .order("created_at", { ascending: false })
-    .limit(1);
+    .eq("status", "connected");
+  // Caixa escolhida pela empresa (mesmo workspace) ou a do dono do fluxo.
+  q =
+    input.policy?.email_provider === "gmail_account" && input.policy.email_account_id
+      ? q.eq("id", input.policy.email_account_id)
+      : q.eq("owner_id", input.ownerId);
+  const { data: accounts } = await q.order("created_at", { ascending: false }).limit(1);
   const account = (accounts ?? [])[0] as
     | ({ id: string; email: string } & Record<string, unknown>)
     | undefined;

@@ -1,6 +1,6 @@
 // Metadados padronizados de entrega gravados em cada passo do histórico do
 // fluxo: execução, fluxo, canal, agente/versão e status real do provedor.
-export type DeliveryChannel = "whatsapp" | "email" | "sdr_agent" | "handoff";
+export type DeliveryChannel = "whatsapp" | "email" | "sdr_agent" | "handoff" | "linkedin";
 
 export type DeliveryMeta = {
   channel: DeliveryChannel;
@@ -36,6 +36,7 @@ export const CHANNEL_LABELS: Record<DeliveryChannel, string> = {
   email: "E-mail",
   sdr_agent: "Agente SDR",
   handoff: "Transferência",
+  linkedin: "LinkedIn (manual)",
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -50,6 +51,14 @@ const STATUS_LABELS: Record<string, string> = {
   already_on: "Agente já estava ligado",
   paused: "Agente desligado",
   transferred: "Transferida",
+  manual_task: "Tarefa manual criada",
+  outside_window: "Aguardando horário de envio",
+  quota_reached: "Cota diária atingida; reagendada",
+  retry_scheduled: "Falha temporária; nova tentativa agendada",
+  in_flight: "Envio em andamento em outro processo",
+  uncertain: "Envio incerto (não reenviado)",
+  reconciled_sent: "Confirmada no histórico do canal",
+  deduped: "Ignorada: contato já abordado no período",
 };
 
 export function providerStatusLabel(status: string | null | undefined): string | null {

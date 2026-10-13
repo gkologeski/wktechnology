@@ -230,10 +230,17 @@ export async function handleSdrAction(
       };
     }
     case "share_booking_link": {
+      // Sem página escolhida no bloco: usa a agenda padrão da empresa.
+      let pageId = action.booking_page_id;
+      if (!pageId) {
+        const { loadSendPolicy } = await import("./delivery-guard.server");
+        pageId = (await loadSendPolicy(supabase, ctx))?.default_booking_page_id ?? "";
+      }
+      if (!pageId) throw new Error("Nenhuma agenda escolhida e a empresa não tem agenda padrão.");
       const { data: page } = await supabase
         .from("booking_pages")
         .select("id, slug, title, active, workspace_id")
-        .eq("id", action.booking_page_id)
+        .eq("id", pageId)
         .maybeSingle();
       if (!page || page.workspace_id !== ctx.workspaceId)
         throw new Error("Página de agendamento fora da empresa ou removida.");

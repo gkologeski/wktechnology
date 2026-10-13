@@ -58,6 +58,7 @@ import {
   type WorkflowDraft,
 } from "@/components/workflows/workflow-builder";
 import { WorkflowRunsList } from "@/components/workflows/workflow-runs-list";
+import { SendPolicyPanel } from "@/components/workflows/send-policy-panel";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   ENTITY_LABELS,
@@ -323,6 +324,7 @@ function WorkflowsPage() {
         <TabsList>
           <TabsTrigger value="list">Workflows</TabsTrigger>
           <TabsTrigger value="runs">Execuções recentes</TabsTrigger>
+          <TabsTrigger value="policy">Política de envio</TabsTrigger>
           <TabsTrigger value="approvals">
             <ShieldCheck className="h-3.5 w-3.5 mr-1" /> Aprovações
           </TabsTrigger>
@@ -458,6 +460,10 @@ function WorkflowsPage() {
             runs={runsWorkflowId ? runs.filter((run) => run.workflow_id === runsWorkflowId) : runs}
             namesById={namesById}
           />
+        </TabsContent>
+
+        <TabsContent value="policy" className="mt-3">
+          <SendPolicyPanel />
         </TabsContent>
 
         <TabsContent value="approvals" className="mt-3">

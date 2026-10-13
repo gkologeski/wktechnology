@@ -2,3 +2,4 @@
 - Variáveis novas usam aliases PT-BR sem acentos em snake_case; o motor mantém aliases técnicos antigos para fluxos salvos.
 - Contratação/desligamento usa ações idempotentes em `engine/actions-hiring.server.ts` e eventos canônicos como gatilhos pré-configurados (`hiring-events.ts`) — fluxos seguem configuráveis por workspace.
 - Pausas dentro de caminhos sobem como quadros {caminho, passo} (`__wf_path`) e estado durável por posição (`__wf_state`) no evento de retomada; o caminho escolhido nunca é reavaliado ao retomar. Por quê: espera/aprovação em ramos sem repetir efeitos.
+- Envio de WhatsApp/e-mail dos fluxos passa sempre por `guardedDelivery` (reserva CAS em `workflow_deliveries`, política em `workflow_send_policies`); por quê: idempotência, cotas e envio incerto nunca reenviado.

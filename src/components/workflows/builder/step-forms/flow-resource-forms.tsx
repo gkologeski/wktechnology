@@ -21,6 +21,7 @@ import type { WorkflowAction } from "@/lib/workflows/types";
 type ParallelAction = Extract<WorkflowAction, { type: "parallel" }>;
 type BookingAction = Extract<WorkflowAction, { type: "share_booking_link" }>;
 type MaterialAction = Extract<WorkflowAction, { type: "share_material" }>;
+type LinkedinAction = Extract<WorkflowAction, { type: "linkedin_task" }>;
 
 function QueryState({
   loading,
@@ -150,7 +151,7 @@ export function BookingLinkForm({
       </p>
       <div className="space-y-1">
         <Label className="text-xs" htmlFor="wf-booking-page">
-          Página de agendamento *
+          Página de agendamento
         </Label>
         <QueryState
           loading={q.isLoading}
@@ -162,13 +163,16 @@ export function BookingLinkForm({
         />
         {pages.length > 0 && (
           <Select
-            value={action.booking_page_id || ""}
-            onValueChange={(v) => onChange({ ...action, booking_page_id: v })}
+            value={action.booking_page_id || "__default"}
+            onValueChange={(v) =>
+              onChange({ ...action, booking_page_id: v === "__default" ? "" : v })
+            }
           >
             <SelectTrigger id="wf-booking-page">
               <SelectValue placeholder="Escolha a agenda" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="__default">Agenda padrão da empresa</SelectItem>
               {pages.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
                   {p.title}
@@ -240,6 +244,53 @@ export function MaterialForm({
             Este material precisa estar aprovado, ativo e com link; a publicação fica bloqueada.
           </p>
         )}
+      </div>
+    </div>
+  );
+}
+
+/** LinkedIn não tem envio automático: o bloco cria uma tarefa para o responsável. */
+export function LinkedinTaskForm({
+  action,
+  onChange,
+}: {
+  action: LinkedinAction;
+  onChange: (a: WorkflowAction) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-muted-foreground">
+        Não há envio automático pelo LinkedIn. Este passo cria uma tarefa para o dono do fluxo fazer
+        o contato manualmente e registra no histórico como tarefa manual.
+      </p>
+      <div className="space-y-1">
+        <Label className="text-xs" htmlFor="wf-li-note">
+          O que fazer *
+        </Label>
+        <Input
+          id="wf-li-note"
+          value={action.note}
+          maxLength={1000}
+          onChange={(e) => onChange({ ...action, note: e.target.value })}
+        />
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs" htmlFor="wf-li-due">
+          Prazo (dias)
+        </Label>
+        <Input
+          id="wf-li-due"
+          type="number"
+          min={0}
+          max={60}
+          value={action.due_in_days ?? 0}
+          onChange={(e) =>
+            onChange({
+              ...action,
+              due_in_days: Math.max(0, Math.min(60, Number(e.target.value) || 0)),
+            })
+          }
+        />
       </div>
     </div>
   );

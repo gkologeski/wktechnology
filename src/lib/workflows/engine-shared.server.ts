@@ -22,6 +22,8 @@ export type LogStep = {
   detail?: unknown;
   error?: string;
   delivery?: import("./delivery-meta").DeliveryMeta;
+  /** Pausa o passo e o repete neste instante (janela, cota, nova tentativa). */
+  suspend_until?: string;
 };
 
 export function assignFieldFor(entity: WorkflowEntity): string {
