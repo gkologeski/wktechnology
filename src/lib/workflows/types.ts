@@ -294,6 +294,10 @@ export type WorkflowAction =
   | {
       type: "send_whatsapp";
       template_name?: string;
+      /** Idioma do modelo aprovado (ex.: pt_BR). */
+      template_language?: string;
+      /** Valores das variáveis do corpo do modelo, na ordem {{1}}, {{2}}… (aceita tokens). */
+      template_variables?: string[];
       body?: string;
       to_field?: string; // default: "phone"
     }

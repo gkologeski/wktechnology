@@ -17,6 +17,7 @@ import {
   denormalizeTopGroup,
 } from "./conditions-editor";
 import { EntityPickerDialog } from "./entity-picker-dialog";
+import { WhatsAppStepForm } from "@/components/workflows/builder/step-forms/whatsapp-step-form";
 import { HiringActionForm } from "@/components/workflows/builder/step-forms/hiring-forms";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -897,39 +898,7 @@ function StepConfigForm({
         </div>
       );
     case "send_whatsapp":
-      return (
-        <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">
-            Enfileira em whatsapp_messages (outbound, status queued). Entrega depende do provedor
-            configurado.
-          </p>
-          <div>
-            <Label className="text-xs">Template (opcional)</Label>
-            <Input
-              value={action.template_name ?? ""}
-              onChange={(e) => onChange({ ...action, template_name: e.target.value || undefined })}
-              placeholder="nome_do_template_aprovado"
-            />
-          </div>
-          <div>
-            <Label className="text-xs">Corpo (se não usar template)</Label>
-            <TokenTextarea
-              value={action.body ?? ""}
-              onValueChange={(v) => onChange({ ...action, body: v })}
-              rows={3}
-              placeholder="Olá {{first_name}}, ..."
-            />
-          </div>
-          <div>
-            <Label className="text-xs">Campo com telefone do destinatário</Label>
-            <Input
-              value={action.to_field ?? ""}
-              onChange={(e) => onChange({ ...action, to_field: e.target.value })}
-              placeholder="phone"
-            />
-          </div>
-        </div>
-      );
+      return <WhatsAppStepForm action={action} onChange={onChange} />;
     case "switch_by_value":
       return (
         <SwitchByValueForm

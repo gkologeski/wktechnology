@@ -124,7 +124,19 @@ independentes; configuração global não sobrescreve agente. Reaproveitar
 Aceite: dois agentes coexistem com configurações distintas e o runtime usa o
 agente escolhido, não o primeiro playbook.
 
-## Fase 3 — Fluxo visual operacional (pendente)
+## Fase 3 — Fluxo visual operacional (EM ANDAMENTO)
+
+Entregue (ciclo 1): o passo "Enviar WhatsApp" do construtor de workflows deixou
+de ser decorativo — antes só gravava uma linha `queued` que nenhum processo
+enviava. Agora: inspetor com modelo aprovado do canal conectado, preview e
+variáveis; publicação bloqueada (servidor) sem modelo aprovado, com variáveis
+incompletas, mídia/variável de cabeçalho ou catálogo indisponível; envio real
+pela API oficial com revalidação no fornecedor e chave de idempotência por
+workspace/run/registro/modelo/destino (`src/lib/workflows/whatsapp-step.ts`).
+Pendente: nós aguardar resposta/timeout, paralelo/junção, ligar/desligar
+agente, handoff, agenda e material; testar fluxo com provedores falsos.
+
+### Escopo original
 
 Canvas com criar/salvar/editar/duplicar/validar/testar/publicar versão, zoom,
 pan, nós arrastáveis, arestas e inspetor por tipo. Blocos: início (manual/

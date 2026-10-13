@@ -106,24 +106,59 @@ export async function handleMessagingAction(
       const toField = action.to_field || "phone";
       const to = (ctx.after?.[toField] as string | null) ?? null;
       if (!to) throw new Error(`sem destinatário em ${toField}`);
-      const body = action.body ? (renderTokens(action.body, ctx.after) as string) : null;
-      const { error } = await supabase.from("whatsapp_messages").insert(
-        withWorkflowWorkspace(ctx, {
-          owner_id: ctx.ownerId,
-          direction: "outbound",
-          to_number: to,
-          body,
-          template_name: action.template_name ?? null,
-          is_template: !!action.template_name,
-          status: "queued",
-        }) as never,
+      const { validateWhatsAppStep, whatsAppIdempotencyKey } = await import("../whatsapp-step");
+      const { loadApprovedTemplates } = await import("@/lib/whatsapp/templates.server");
+      // Revalida no fornecedor no momento do envio: modelo pode ter sido pausado.
+      const catalog = await loadApprovedTemplates(supabase, ctx.workspaceId);
+      const issue = validateWhatsAppStep(action, catalog);
+      if (issue) throw new Error(issue.message);
+      const template = action.template_name!.trim();
+      const variables = (action.template_variables ?? []).map((v) =>
+        toStr(renderTokens(v, ctx.after, ctx.vars)),
       );
-      if (error) throw new Error(error.message);
+      const key = whatsAppIdempotencyKey({
+        workspaceId: ctx.workspaceId,
+        runId: ctx.runId,
+        entityId: ctx.entityId,
+        template,
+        to,
+      });
+      if (key) {
+        const { data: prior } = await supabase
+          .from("whatsapp_messages")
+          .select("id, status")
+          .eq("workspace_id", ctx.workspaceId)
+          .eq("raw->source->>idempotency_key", key)
+          .limit(1);
+        if (prior && prior.length > 0)
+          return {
+            at,
+            ok: true,
+            action: "send_whatsapp",
+            detail: { to, template, skipped: "already_sent" },
+          };
+      }
+      const { sendWhatsAppFromServer } = await import("@/lib/whatsapp-send.server");
+      const res = await sendWhatsAppFromServer({
+        supabase,
+        workspaceId: ctx.workspaceId,
+        to,
+        body: "",
+        contactId: ctx.entity === "contacts" ? ctx.entityId : null,
+        templateName: template,
+        metaTemplate: { name: template, language: action.template_language, variables },
+        source: {
+          origin: "workflow",
+          workflow_id: ctx.workflowId ?? null,
+          run_id: ctx.runId ?? null,
+          idempotency_key: key,
+        },
+      });
       return {
         at,
         ok: true,
         action: "send_whatsapp",
-        detail: { to, template: action.template_name ?? null, queued: true },
+        detail: { to: res.to, template, provider_id: res.sid, status: res.status },
       };
     }
     case "send_slack": {

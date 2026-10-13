@@ -165,6 +165,25 @@ export const publishWorkflow = createServerFn({ method: "POST" })
       .maybeSingle();
     if (getErr) throw new Error(getErr.message);
     if (!wf) throw new Error("Workflow não encontrado");
+    const { collectWhatsAppSteps, validateWhatsAppStep } =
+      await import("@/lib/workflows/whatsapp-step");
+    const waSteps = collectWhatsAppSteps(wf.draft_actions ?? []);
+    if (waSteps.length > 0) {
+      const { loadApprovedTemplates } = await import("@/lib/whatsapp/templates.server");
+      const workspaceId = await resolveActiveWorkspace(userId);
+      let catalog: Awaited<ReturnType<typeof loadApprovedTemplates>>;
+      try {
+        catalog = await loadApprovedTemplates(supabase, workspaceId);
+      } catch {
+        throw new Error(
+          "Não foi possível conferir os modelos do WhatsApp agora. Publicação bloqueada; tente novamente.",
+        );
+      }
+      for (const step of waSteps) {
+        const issue = validateWhatsAppStep(step, catalog);
+        if (issue) throw new Error(`Publicação bloqueada: ${issue.message}`);
+      }
+    }
     const { error } = await supabase
       .from("workflows")
       .update({
