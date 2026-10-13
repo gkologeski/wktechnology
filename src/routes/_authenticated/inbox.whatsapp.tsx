@@ -519,7 +519,7 @@ function WhatsAppInbox() {
                   </InboxMessageBubble>
                 ))}
               </MessageHistoryViewport>
-              <div className="max-h-[45%] shrink-0 overflow-y-auto bg-product-panel p-4 pt-3">
+              <div className="shrink-0 bg-product-panel px-4 pb-3 pt-2">
                 {!templateRequired && windowUnknown && (
                   <div
                     role="status"
@@ -547,7 +547,7 @@ function WhatsAppInbox() {
                   <div
                     role="region"
                     aria-label="Envio por modelo aprovado"
-                    className="mb-3 space-y-3 rounded-md border border-border bg-product-panel-muted p-3"
+                    className="mb-2 max-h-[40vh] space-y-2 overflow-y-auto rounded-md border border-border bg-product-panel-muted p-2.5"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex gap-2 text-sm text-text-primary">
