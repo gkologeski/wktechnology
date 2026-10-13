@@ -291,6 +291,8 @@ export const SimpleActionSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("send_whatsapp"),
     template_name: z.string().max(200).optional(),
+    template_language: z.string().max(10).optional(),
+    template_variables: z.array(z.string().max(1000)).max(20).optional(),
     body: z.string().max(4000).optional(),
     to_field: z.string().max(100).optional(),
   }),
