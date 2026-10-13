@@ -188,7 +188,7 @@ export async function handleMessagingAction(
         delivery: buildDeliveryMeta(ctx, {
           channel: "whatsapp",
           provider: "meta",
-          provider_status: res.status ?? null,
+          provider_status: "accepted",
           provider_id: res.sid ?? null,
         }),
       };
