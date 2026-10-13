@@ -17,6 +17,8 @@ export type DraftPayload = {
 };
 
 /** Mensagem final: texto do agente + link de agenda + links de materiais aprovados. */
+import { shouldAttachMaterials, stripUrls } from "./agent-config";
+
 export async function composeOutgoing(
   admin: Admin,
   p: {
@@ -61,7 +63,7 @@ export async function composeOutgoing(
         url: m.url,
       }));
   }
-  const parts = [p.reply.trim()];
+  const parts = [stripUrls(p.reply)];
   if (bookingUrl) parts.push(`Agende um horário: ${bookingUrl}`);
   for (const m of materials) parts.push(`${m.title}: ${m.url}`);
   return { text: parts.filter(Boolean).join("\n\n"), bookingUrl, materials };
