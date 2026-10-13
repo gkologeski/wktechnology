@@ -21,7 +21,9 @@ export function ConversationAiOwnerToggle({ conversationId }: { conversationId: 
       setFn({ data: { conversation_id: conversationId, owner } }),
     onSuccess: (r) => {
       qc.setQueryData(key, { owner: r.owner, canSupervise: true });
-      toast.success(r.owner === "ai" ? "Conversa devolvida ao agente." : "Atendimento humano ativado.");
+      toast.success(
+        r.owner === "ai" ? "Conversa devolvida ao agente." : "Atendimento humano ativado.",
+      );
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -34,11 +36,13 @@ export function ConversationAiOwnerToggle({ conversationId }: { conversationId: 
       variant={isAi ? "secondary" : "outline"}
       disabled={disabled}
       title={
-        q.data.canSupervise
-          ? undefined
-          : "Você não tem permissão para supervisionar o agente SDR."
+        q.data.canSupervise ? undefined : "Você não tem permissão para supervisionar o agente SDR."
       }
-      aria-label={isAi ? "Atendido pelo agente. Assumir atendimento" : "Atendimento humano. Devolver ao agente"}
+      aria-label={
+        isAi
+          ? "Atendido pelo agente. Assumir atendimento"
+          : "Atendimento humano. Devolver ao agente"
+      }
       onClick={() => mut.mutate(isAi ? "human" : "ai")}
     >
       {isAi ? (

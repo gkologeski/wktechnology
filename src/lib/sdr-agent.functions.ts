@@ -278,9 +278,7 @@ export const getConversationAiOwner = createServerFn({ method: "POST" })
 /** Devolve a conversa para o agente SDR ou passa para atendimento humano. */
 export const setConversationAiOwner = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
-    AiOwnerInput.extend({ owner: z.enum(["ai", "human"]) }).parse(input),
-  )
+  .inputValidator((input) => AiOwnerInput.extend({ owner: z.enum(["ai", "human"]) }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { assertNotReadOnlyView } = await import("@/lib/view-as-guard.server");
