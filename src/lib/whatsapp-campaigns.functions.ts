@@ -223,3 +223,92 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true };
   });
+
+export const duplicateWhatsAppCampaign = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { duplicateCampaignRow } = await import("@/lib/whatsapp/campaign-actions");
+    const workspaceId = await resolveActiveWorkspace(userId);
+    const { data: src, error } = await supabase
+      .from("whatsapp_campaigns")
+      .select("*")
+      .eq("id", data.id)
+      .eq("workspace_id", workspaceId)
+      .single();
+    if (error || !src) throw new Error("Campanha não encontrada.");
+    const recips: { phone: string; contact_id: string | null; variables: unknown }[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data: page, error: pErr } = await supabase
+        .from("whatsapp_campaign_recipients")
+        .select("phone, contact_id, variables")
+        .eq("campaign_id", data.id)
+        .order("created_at", { ascending: true })
+        .range(from, from + 999);
+      if (pErr) throw pErr;
+      recips.push(...(page ?? []));
+      if (!page || page.length < 1000) break;
+    }
+    const { data: camp, error: cErr } = await supabase
+      .from("whatsapp_campaigns")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .insert({
+        ...duplicateCampaignRow(src, recips.length),
+        owner_id: userId,
+        workspace_id: workspaceId,
+      } as any)
+      .select("id")
+      .single();
+    if (cErr) throw cErr;
+    for (let i = 0; i < recips.length; i += 500) {
+      const slice = recips.slice(i, i + 500).map((r) => ({
+        campaign_id: camp.id,
+        owner_id: userId,
+        contact_id: r.contact_id,
+        phone: r.phone,
+        variables: r.variables ?? {},
+        status: "pending" as const,
+      }));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: rErr } = await supabase
+        .from("whatsapp_campaign_recipients")
+        .insert(slice as any);
+      if (rErr) {
+        await supabase.from("whatsapp_campaigns").delete().eq("id", camp.id);
+        throw rErr;
+      }
+    }
+    return { id: camp.id as string };
+  });
+
+export const deleteWhatsAppCampaign = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { canDeleteCampaign } = await import("@/lib/whatsapp/campaign-actions");
+    const workspaceId = await resolveActiveWorkspace(userId);
+    const { data: camp, error } = await supabase
+      .from("whatsapp_campaigns")
+      .select("id, status")
+      .eq("id", data.id)
+      .eq("workspace_id", workspaceId)
+      .single();
+    if (error || !camp) throw new Error("Campanha não encontrada.");
+    if (!canDeleteCampaign(camp.status)) throw new Error("Pause a campanha antes de excluir.");
+    const { error: rErr } = await supabase
+      .from("whatsapp_campaign_recipients")
+      .delete()
+      .eq("campaign_id", data.id);
+    if (rErr) throw rErr;
+    const { data: del, error: dErr } = await supabase
+      .from("whatsapp_campaigns")
+      .delete()
+      .eq("id", data.id)
+      .select("id");
+    if (dErr) throw dErr;
+    if (!del || del.length === 0)
+      throw new Error("Você não tem permissão para excluir esta campanha.");
+    return { ok: true };
+  });
