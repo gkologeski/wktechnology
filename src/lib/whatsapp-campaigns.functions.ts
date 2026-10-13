@@ -253,7 +253,11 @@ export const duplicateWhatsAppCampaign = createServerFn({ method: "POST" })
     const { data: camp, error: cErr } = await supabase
       .from("whatsapp_campaigns")
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .insert({ ...duplicateCampaignRow(src, recips.length), owner_id: userId, workspace_id: workspaceId } as any)
+      .insert({
+        ...duplicateCampaignRow(src, recips.length),
+        owner_id: userId,
+        workspace_id: workspaceId,
+      } as any)
       .select("id")
       .single();
     if (cErr) throw cErr;
@@ -267,7 +271,9 @@ export const duplicateWhatsAppCampaign = createServerFn({ method: "POST" })
         status: "pending" as const,
       }));
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: rErr } = await supabase.from("whatsapp_campaign_recipients").insert(slice as any);
+      const { error: rErr } = await supabase
+        .from("whatsapp_campaign_recipients")
+        .insert(slice as any);
       if (rErr) {
         await supabase.from("whatsapp_campaigns").delete().eq("id", camp.id);
         throw rErr;
@@ -290,8 +296,7 @@ export const deleteWhatsAppCampaign = createServerFn({ method: "POST" })
       .eq("workspace_id", workspaceId)
       .single();
     if (error || !camp) throw new Error("Campanha não encontrada.");
-    if (!canDeleteCampaign(camp.status))
-      throw new Error("Pause a campanha antes de excluir.");
+    if (!canDeleteCampaign(camp.status)) throw new Error("Pause a campanha antes de excluir.");
     const { error: rErr } = await supabase
       .from("whatsapp_campaign_recipients")
       .delete()

@@ -14,7 +14,13 @@ describe("ações de campanha WhatsApp", () => {
   });
   it("cópia nasce em rascunho com contadores zerados", () => {
     const row = duplicateCampaignRow(
-      { name: "Abordagem TI", status: "completed", sent: 40, failed: 2, template_name: "mensagem001" },
+      {
+        name: "Abordagem TI",
+        status: "completed",
+        sent: 40,
+        failed: 2,
+        template_name: "mensagem001",
+      },
       42,
     );
     expect(row).toMatchObject({
