@@ -20,6 +20,7 @@ export function pickWindowConversation<
   const ts = (v: string | null | undefined) => (v ? new Date(v).getTime() : 0);
   return [...rows].sort(
     (a, b) =>
-      ts(b.last_inbound_at) - ts(a.last_inbound_at) || ts(b.last_message_at) - ts(a.last_message_at),
+      ts(b.last_inbound_at) - ts(a.last_inbound_at) ||
+      ts(b.last_message_at) - ts(a.last_message_at),
   )[0]!;
 }
