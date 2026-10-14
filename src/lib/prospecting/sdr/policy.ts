@@ -108,6 +108,19 @@ export function isCourtesyOnly(text: string): boolean {
   return COURTESY_RE.test(t);
 }
 
+const WRONG_CONTACT_RE =
+  /(nao conheco (ninguem|ningue|esse|essa|este|esta)|nao (sou|e) (o|a|ele|ela)\b|numero errado|engano|nao tem ninguem com esse nome|voce errou o numero|nao e (meu|esse) (nome|numero))/;
+
+/**
+ * Pessoa errada / número errado ("Não conheço ninguém com esse nome").
+ * Não inclui "não sou o X, mas cuido da área" — aí a conversa continua.
+ */
+export function isWrongContact(text: string): boolean {
+  const t = norm(text).replace(/[^\p{L}\p{N} ]/gu, " ").replace(/\s+/g, " ").trim();
+  if (!t || !WRONG_CONTACT_RE.test(t)) return false;
+  return !/\b(mas|porem|só que|so que) .*(cuido|respondo|sou responsavel|sou eu|trabalho|posso ajudar)/.test(t);
+}
+
 /** Corrige opt-out do modelo sem pedido real de parar. */
 export function guardModelOptOut(lastInbound: string, extra: string[] = []): boolean {
   if (detectOptOut(lastInbound, extra)) return true;
