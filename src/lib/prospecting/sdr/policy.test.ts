@@ -158,3 +158,15 @@ describe("falso opt-out por agradecimento", () => {
     expect(_g("pare de me mandar mensagem")).toBe(true);
   });
 });
+
+import { isWrongContact } from "./policy";
+describe("isWrongContact", () => {
+  it("detecta pessoa errada", () => {
+    expect(isWrongContact("Oi. Não conheço ninguém com esse nome")).toBe(true);
+    expect(isWrongContact("número errado")).toBe(true);
+  });
+  it("não encerra quando a pessoa cuida da área", () => {
+    expect(isWrongContact("Não sou o Thobias, mas cuido dessa área")).toBe(false);
+    expect(isWrongContact("Tenho um projeto parado")).toBe(false);
+  });
+});
