@@ -109,6 +109,7 @@ const say = (ctx: ToolCtx, id: string, body = "ok") => {
     { id, direction: "inbound", body, created_at: new Date(NOW).toISOString() },
   ];
   ctx.jobId = `job-${id}`;
+  ctx.effects = emptyEffects(); // novo turno
 };
 const avail = (extra: Record<string, unknown> = {}) => ({
   date: null,
@@ -248,6 +249,19 @@ describe("fluxo template → inbound → Lia → agenda → reunião", () => {
     )) as { options: Opt[] };
     const seen = new Set([...first.options, ...second.options].map((o) => o.start));
     expect(third.options.some((o) => seen.has(o.start))).toBe(false);
+  });
+
+  it("não marca opção criada no mesmo turno (cliente ainda não viu)", async () => {
+    const { ctx, store } = makeCtx();
+    await executeTool(ctx, "calendar.availability", avail(), "c1");
+    const b = await executeTool(
+      ctx,
+      "calendar.book",
+      { option: 1, attendee_email: null, confirmation_message_id: "in1" },
+      "c2",
+    );
+    expect(b.status).toBe("option_not_current");
+    expect(store.meetings).toHaveLength(0);
   });
 
   it("opção que não está entre as vigentes não marca", async () => {

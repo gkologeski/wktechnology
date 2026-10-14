@@ -243,7 +243,9 @@ const availability: Handler = async (ctx, a) => {
         "Sem horários livres no período configurado. Não invente horários; ofereça falar com uma pessoa.",
     };
   }
-  ctx.effects.offerSetsThisTurn.push(await ctx.store.saveOffers(ctx.conversation.id, slots, previous));
+  ctx.effects.offerSetsThisTurn.push(
+    await ctx.store.saveOffers(ctx.conversation.id, slots, previous),
+  );
   return {
     status,
     timezone: s.timezone,
