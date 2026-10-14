@@ -17,11 +17,17 @@ describe("booking guard", () => {
   });
   it("só aceita confirmação vinda de calendar.book com status confirmed", () => {
     expect(hasConfirmedBooking([])).toBe(false);
-    expect(hasConfirmedBooking([{ tool: "calendar__availability", out: { status: "options" } }])).toBe(false);
-    expect(hasConfirmedBooking([{ tool: "calendar__book", out: { status: "pending_confirmation" } }])).toBe(false);
-    expect(hasConfirmedBooking([{ tool: "calendar__book", out: { status: "confirmed" } }])).toBe(true);
+    expect(
+      hasConfirmedBooking([{ tool: "calendar__availability", out: { status: "options" } }]),
+    ).toBe(false);
+    expect(
+      hasConfirmedBooking([{ tool: "calendar__book", out: { status: "pending_confirmation" } }]),
+    ).toBe(false);
+    expect(hasConfirmedBooking([{ tool: "calendar__book", out: { status: "confirmed" } }])).toBe(
+      true,
+    );
   });
-  it("\"6a\" resolve para a opção de sexta", () => {
+  it('"6a" resolve para a opção de sexta', () => {
     expect(resolveChoice("6a", opts)).toBe(3);
     expect(resolveChoice("quinta", opts)).toBe(2);
     expect(resolveChoice("2", opts)).toBe(2);

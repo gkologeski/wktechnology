@@ -421,7 +421,9 @@ export async function processJob(
       .map((r) => ({
         position: r.position,
         start: r.start_at,
-        timezone: (toolCfg?.scheduling as { timezone?: string } | undefined)?.timezone ?? "America/Sao_Paulo",
+        timezone:
+          (toolCfg?.scheduling as { timezone?: string } | undefined)?.timezone ??
+          "America/Sao_Paulo",
       }));
     const pos = lastIn ? resolveChoice(lastIn.body, current) : null;
     if (pos)
