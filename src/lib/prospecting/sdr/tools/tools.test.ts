@@ -15,6 +15,7 @@ import {
   generateSlots,
   localParts,
   pickDiverse,
+  windowsError,
   zonedToUtc,
   type Schedule,
 } from "./scheduling";
@@ -225,33 +226,128 @@ describe("fluxo template → inbound → Lia → agenda → reunião", () => {
     expect(text).toMatch(/Link da videoconferência: https:\/\/meet\.google\.com\//);
   });
 
-  it("recusa: nova consulta não repete horários recusados", async () => {
-    const { ctx } = makeCtx();
+  it("recusa: registra e pede dia e turno, sem novos horários", async () => {
+    const { ctx, store } = makeCtx();
     const first = (await executeTool(ctx, "calendar.availability", avail(), "c1")) as {
       options: Opt[];
     };
     say(ctx, "in2", "nenhum desses");
-    const second = (await executeTool(
+    const ask = (await executeTool(
       ctx,
       "calendar.availability",
       avail({ rejected_previous: true }),
       "c2",
-    )) as { options: Opt[] };
-    const firstStarts = new Set(first.options.map((o) => o.start));
-    expect(second.options).toHaveLength(3);
-    expect(second.options.some((o) => firstStarts.has(o.start))).toBe(false);
-    const near = (x: string) =>
-      first.options.some((f) => Math.abs(Date.parse(f.start) - Date.parse(x)) < 3600000);
-    expect(second.options.some((o) => near(o.start))).toBe(false);
-    say(ctx, "in3", "também não");
-    const third = (await executeTool(
+    )) as { status: string; options: Opt[] };
+    expect(ask.status).toBe("ask_preference");
+    expect(ask.options).toHaveLength(0);
+    expect((await store.rejectedStarts("conv1")).length).toBe(first.options.length);
+    say(ctx, "in3", "à tarde");
+    const pref = (await executeTool(
       ctx,
       "calendar.availability",
-      avail({ rejected_previous: true }),
+      avail({ part_of_day: "afternoon" }),
       "c3",
+    )) as { options: (Opt & { part_of_day: string })[] };
+    expect(pref.options.length).toBeGreaterThan(0);
+    expect(pref.options.every((o) => o.part_of_day === "afternoon")).toBe(true);
+    const near = (x: string) =>
+      first.options.some((f) => Math.abs(Date.parse(f.start) - Date.parse(x)) < 3600000);
+    expect(pref.options.some((o) => near(o.start))).toBe(false);
+  });
+
+  it("nova consulta após opções mostradas registra a recusa mesmo sem pedido explícito", async () => {
+    const { ctx, store } = makeCtx();
+    const first = (await executeTool(ctx, "calendar.availability", avail(), "c1")) as {
+      options: Opt[];
+    };
+    say(ctx, "in2", "prefiro outro dia, de manhã");
+    const r = (await executeTool(
+      ctx,
+      "calendar.availability",
+      avail({ part_of_day: "morning" }),
+      "c2",
     )) as { options: Opt[] };
-    const seen = new Set([...first.options, ...second.options].map((o) => o.start));
-    expect(third.options.some((o) => seen.has(o.start))).toBe(false);
+    const firstStarts = new Set(first.options.map((o) => o.start));
+    expect(r.options.some((o) => firstStarts.has(o.start))).toBe(false);
+    expect((await store.rejectedStarts("conv1")).length).toBe(first.options.length);
+  });
+
+  it("dia e turno pedidos: só horários daquele turno no dia", async () => {
+    const { ctx } = makeCtx();
+    const r = (await executeTool(
+      ctx,
+      "calendar.availability",
+      avail({ date: "2026-10-22", part_of_day: "afternoon" }),
+      "c1",
+    )) as { options: (Opt & { part_of_day: string })[] };
+    expect(r.options.length).toBeGreaterThan(0);
+    expect(r.options.length).toBeLessThanOrEqual(3);
+    for (const o of r.options) {
+      expect(o.part_of_day).toBe("afternoon");
+      expect(o.label).toContain("22/10/2026");
+    }
+  });
+
+  it("turno sem horário no dia: mais próximo depois, no mesmo turno", async () => {
+    const cal = new FakeCalendar();
+    cal.externalBusy.push({
+      start: Date.parse("2026-10-22T15:00:00Z"),
+      end: Date.parse("2026-10-22T21:00:00Z"),
+    });
+    const { ctx } = makeCtx({}, new MemoryStore(), cal);
+    const r = (await executeTool(
+      ctx,
+      "calendar.availability",
+      avail({ date: "2026-10-22", part_of_day: "afternoon" }),
+      "c1",
+    )) as { status: string; options: (Opt & { part_of_day: string })[] };
+    expect(r.status).toBe("requested_part_unavailable_next");
+    expect(r.options.length).toBeGreaterThan(0);
+    for (const o of r.options) {
+      expect(o.part_of_day).toBe("afternoon");
+      expect(o.label).not.toContain("22/10/2026");
+    }
+  });
+
+  it("dois períodos no dia: nenhum horário no intervalo entre eles", () => {
+    const two = {
+      ...SCHED,
+      holidays: [],
+      working_hours: {
+        thu: [
+          { start: "09:00", end: "12:00" },
+          { start: "13:00", end: "17:00" },
+        ],
+      },
+    };
+    const slots = generateSlots(two, [], NOW, { fromYmd: "2026-10-22", toYmd: "2026-10-22" });
+    expect(slots.length).toBeGreaterThan(0);
+    for (const x of slots) {
+      const h = localParts(x.start, TZ).h;
+      expect(h === 12).toBe(false);
+    }
+  });
+
+  it("valida períodos: fim antes do início, sobreposição e limite", () => {
+    expect(
+      windowsError([
+        { start: "09:00", end: "12:00" },
+        { start: "13:00", end: "17:00" },
+      ]),
+    ).toBeNull();
+    expect(windowsError([{ start: "12:00", end: "09:00" }])).toMatch(/fim/);
+    expect(
+      windowsError([
+        { start: "09:00", end: "13:00" },
+        { start: "12:00", end: "17:00" },
+      ]),
+    ).toMatch(/sobreposição/);
+    expect(
+      windowsError([
+        { start: "09:00", end: "12:00" },
+        { start: "", end: "" },
+      ]),
+    ).toMatch(/HH:MM/);
   });
 
   it("não marca opção criada no mesmo turno (cliente ainda não viu)", async () => {
