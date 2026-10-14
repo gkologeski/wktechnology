@@ -51,8 +51,9 @@ function zonedDateToUtc(
 ): Date {
   // Approach: build naive UTC then compute tz offset for that instant
   const naive = Date.UTC(year, month - 1, day, hour, minute, 0);
-  const tzOffsetMs = getTimezoneOffsetMs(timeZone, new Date(naive));
-  return new Date(naive - tzOffsetMs);
+  // Duas passadas: o offset é recalculado no instante já corrigido (DST).
+  const first = naive - getTimezoneOffsetMs(timeZone, new Date(naive));
+  return new Date(naive - getTimezoneOffsetMs(timeZone, new Date(first)));
 }
 
 // Returns the offset in ms between the given timezone and UTC at the supplied instant.
@@ -135,7 +136,7 @@ export async function computeAvailableSlots(
   if (windowStart >= windowEnd) return [];
 
   // Load busy ranges: existing bookings + mirrored calendar events
-  const [{ data: bookings }, { data: events }] = await Promise.all([
+  const [{ data: bookings, error: bErr }, { data: events, error: eErr }, { data: sdrMeetings, error: mErr }] = await Promise.all([
     supabaseAdmin
       .from("bookings")
       .select("start_at,end_at,status")
@@ -150,12 +151,29 @@ export async function computeAvailableSlots(
           .eq("calendar_account_id", page.calendar_account_id)
           .gte("end_at", windowStart.toISOString())
           .lte("start_at", windowEnd.toISOString())
-      : Promise.resolve({ data: [] as { start_at: string; end_at: string }[] }),
+      : Promise.resolve({ data: [] as { start_at: string; end_at: string }[], error: null }),
+    // Reuniões marcadas diretamente pelo Agente SDR na mesma agenda.
+    page.calendar_account_id
+      ? supabaseAdmin
+          .from("sdr_meetings")
+          .select("start_at,end_at")
+          .eq("calendar_account_id", page.calendar_account_id)
+          .in("status", ["pending", "confirmed", "reconcile"])
+          .gte("end_at", windowStart.toISOString())
+          .lte("start_at", windowEnd.toISOString())
+      : Promise.resolve({ data: [] as { start_at: string; end_at: string }[], error: null }),
   ]);
+  // Falha de leitura nunca vira "agenda livre".
+  const readErr = bErr ?? eErr ?? mErr;
+  if (readErr) throw new Error(`Falha ao consultar disponibilidade: ${readErr.message}`);
 
   type Range = { s: number; e: number };
   const busy: Range[] = [
     ...(bookings ?? []).map((b) => ({
+      s: new Date(b.start_at).getTime(),
+      e: new Date(b.end_at).getTime(),
+    })),
+    ...((sdrMeetings ?? []) as { start_at: string; end_at: string }[]).map((b) => ({
       s: new Date(b.start_at).getTime(),
       e: new Date(b.end_at).getTime(),
     })),
@@ -201,8 +219,9 @@ export async function computeAvailableSlots(
         t += step;
       }
     }
-    // Advance to next day in tz: add 24h (DST safe-ish for 15-min granularity)
-    cursor.setTime(cursor.getTime() + 86400_000);
+    // Próximo dia LOCAL (meio-dia do dia seguinte no fuso): imune a viradas de horário de verão.
+    const nd = new Date(Date.UTC(y, m - 1, d + 1));
+    cursor.setTime(zonedDateToUtc(nd.getUTCFullYear(), nd.getUTCMonth() + 1, nd.getUTCDate(), 0, 0, tz).getTime());
   }
   return slots;
 }
