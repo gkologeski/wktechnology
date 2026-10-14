@@ -17,6 +17,7 @@ import {
   type DraftPayload,
 } from "./actions.server";
 import { recordSdrAction } from "./ingest.server";
+import { resolveChoice } from "./booking-guard";
 import { parseToolConfig, type ScheduleConfig } from "./tools/catalog";
 import { emptyEffects, type ToolCtx } from "./tools/dispatcher";
 import { makeExecutor, newEventId, selectTools } from "./tools/runtime";
@@ -420,7 +421,7 @@ export async function processJob(
       .map((r) => ({
         position: r.position,
         start: r.start_at,
-        timezone: toolCfg?.scheduling?.timezone ?? "America/Sao_Paulo",
+        timezone: (toolCfg?.scheduling as { timezone?: string } | undefined)?.timezone ?? "America/Sao_Paulo",
       }));
     const pos = lastIn ? resolveChoice(lastIn.body, current) : null;
     if (pos)

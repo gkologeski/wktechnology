@@ -987,6 +987,7 @@ const SDR_REASON_LABELS: Record<string, string> = {
   owner_not_ai: "Conversa assumida por humano",
   stale_version: "Há mensagem mais recente do cliente",
   coalesced: "Agrupada na mensagem mais recente",
+  merged_into: "Mensagens agrupadas na resposta seguinte",
   invalid_origin: "Origem inválida (resposta sem mensagem recebida)",
   circuit_open: "Disjuntor técnico aberto",
   repetition_detected: "Texto idêntico à última resposta",
@@ -1007,7 +1008,11 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 function sdrReasonLabel(code: string | null | undefined): string {
   if (!code) return "";
-  const key = code.startsWith("uncertain_after_send") ? "uncertain_after_send" : code;
+  const key = code.startsWith("uncertain_after_send")
+    ? "uncertain_after_send"
+    : code.startsWith("merged_into:")
+      ? "merged_into"
+      : code;
   return SDR_REASON_LABELS[key] ?? code;
 }
 

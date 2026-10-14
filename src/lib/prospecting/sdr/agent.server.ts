@@ -6,6 +6,7 @@ import type { CanonicalQuestion } from "./qualification";
 import { DEFAULT_PERSONA, personaPromptSection, type Persona } from "./persona";
 import { agentConfigPromptSection, type AgentConfig } from "./agent-config";
 import { unverifiedTimes } from "./time-guard";
+import { claimsBooking, hasConfirmedBooking } from "./booking-guard";
 
 const MODEL = "openai/gpt-6-astra";
 
@@ -90,7 +91,7 @@ export function buildSystemPrompt(p: {
     "5. Recusa clara ou pedido para parar: intent=opt_out e reply curta de despedida.",
     "6. Peça de humano, assunto fora do catálogo, reclamação, negociação de preço ou contrato: intent=handoff.",
     p.directBooking
-      ? "7. AGENDAMENTO DIRETO: quando houver interesse, use calendar.availability e ofereça exatamente as opções numeradas devolvidas (nunca invente horários nem envie link de agendamento). Se o cliente recusar as opções, chame calendar.availability com rejected_previous=true (sem data/turno) e pergunte qual dia e turno (manhã ou tarde) ele prefere; com a resposta, consulte com date e/ou part_of_day e ofereça os horários devolvidos. Se a resposta for vaga, use só part_of_day; se não der para entender, pergunte de novo. Se pedir data/hora específica, passe a data com ano (YYYY-MM-DD) e hora; se faltar ano ou estiver ambíguo, pergunte antes. Para marcar, peça confirmação explícita e chame calendar.book com a opção e o message_id da mensagem atual; só diga que está confirmado quando a ferramenta devolver status=confirmed. Use intent=schedule_meeting nesses turnos."
+      ? "7. AGENDAMENTO DIRETO: quando houver interesse, use calendar.availability e ofereça exatamente as opções numeradas devolvidas (nunca invente horários nem envie link de agendamento). Se o cliente recusar as opções, chame calendar.availability com rejected_previous=true (sem data/turno) e pergunte qual dia e turno (manhã ou tarde) ele prefere; com a resposta, consulte com date e/ou part_of_day e ofereça os horários devolvidos. Se a resposta for vaga, use só part_of_day; se não der para entender, pergunte de novo. Se pedir data/hora específica, passe a data com ano (YYYY-MM-DD) e hora; se faltar ano ou estiver ambíguo, pergunte antes. Para marcar, peça confirmação explícita e chame calendar.book com a opção e o message_id da mensagem atual; Se ainda não souber o e-mail do cliente, peça-o ANTES de chamar calendar.book. Nunca escreva "agendado", "marcado" ou "confirmado" sem que calendar.book tenha devolvido status=confirmed NESTE turno. Use intent=schedule_meeting nesses turnos."
       : "7. Não há agendamento direto neste agente: ofereça que um especialista entrará em contato (intent=handoff). Nunca envie link de agendamento.",
     p.toolsAvailable
       ? "11. FERRAMENTAS: use as ferramentas disponíveis para consultar dados reais antes de responder; nunca afirme algo que uma ferramenta não devolveu. Ações com efeito (marcar, remarcar, cancelar, descadastro, material) exigem confirmação explícita do cliente na mensagem atual."
@@ -126,16 +127,24 @@ function questionList(questions: CanonicalQuestion[]): string {
 }
 
 export function buildMessages(system: string, history: ConversationMessage[]) {
-  return [
-    { role: "system", content: system },
-    ...history.map((m) => ({
-      role: m.direction === "inbound" ? "user" : "assistant",
-      content:
-        m.direction === "inbound"
-          ? `[message_id=${m.id}] ${m.body}`.slice(0, 4000)
-          : m.body.slice(0, 4000),
-    })),
-  ];
+  // Mensagens seguidas do cliente viram UMA só (contexto completo, nada perdido);
+  // o message_id é o da mais recente, que é a mensagem atual do turno.
+  const out: { role: string; content: string }[] = [{ role: "system", content: system }];
+  let prevInbound = false;
+  for (const m of history) {
+    if (m.direction === "inbound") {
+      const last = out[out.length - 1];
+      if (prevInbound && last) {
+        const body = last.content.replace(/^\[message_id=[^\]]+\] /, "");
+        last.content = `[message_id=${m.id}] ${body}\n${m.body}`.slice(0, 4000);
+      } else out.push({ role: "user", content: `[message_id=${m.id}] ${m.body}`.slice(0, 4000) });
+      prevInbound = true;
+    } else {
+      out.push({ role: "assistant", content: m.body.slice(0, 4000) });
+      prevInbound = false;
+    }
+  }
+  return out;
 }
 
 export type AgentCallResult =
@@ -174,6 +183,8 @@ export async function callSdrAgent(args: {
   const hasCalendar = !!tools?.some((t) => t.name.startsWith("calendar__"));
   const calendarOutputs: string[] = [];
   let timeRetry = false;
+  let bookRetry = false;
+  const toolResults: { tool: string; out: unknown }[] = [];
   for (let step = 0; step <= MAX_TOOL_STEPS; step++) {
     const allowTools = !!tools && step < MAX_TOOL_STEPS;
     const res = await aiChatFetch(
@@ -237,6 +248,7 @@ export async function callSdrAgent(args: {
         }
         const out = await args.executeTool!(tc.function.name, parsed, tc.id);
         if (tc.function.name.startsWith("calendar__")) calendarOutputs.push(JSON.stringify(out));
+        toolResults.push({ tool: tc.function.name, out });
         messages.push({
           role: "tool",
           tool_call_id: tc.id,
@@ -273,6 +285,24 @@ export async function callSdrAgent(args: {
             retryable: false,
           };
         }
+      }
+      if (claimsBooking(output.reply ?? "") && !hasConfirmedBooking(toolResults)) {
+        if (!bookRetry && allowTools && step < MAX_TOOL_STEPS - 1) {
+          bookRetry = true;
+          messages.push({ role: "assistant", content: msg.content ?? "" });
+          messages.push({
+            role: "user",
+            content:
+              "[verificação do sistema, não é o cliente] Sua resposta diz que a reunião foi marcada/confirmada, mas nenhuma reserva foi confirmada pela agenda neste turno. Se o cliente escolheu uma opção vigente e você tem o e-mail, chame calendar.book agora; senão, peça o que falta (opção ou e-mail) SEM dizer que está marcado. Responda de novo.",
+          });
+          continue;
+        }
+        return {
+          ok: false,
+          status: 200,
+          error: "Resposta afirmou reunião marcada sem reserva confirmada pela agenda",
+          retryable: false,
+        };
       }
       return { ok: true, output };
     } catch {
