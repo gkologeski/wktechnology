@@ -808,3 +808,110 @@ describe("três políticas de envio", () => {
     expect(db.find("sdr_turn_jobs", fu.id)?.status).toBe("discarded");
   });
 });
+
+describe("ferramentas reais no turno (agenda falsa)", () => {
+  it("inbound → IA escolhe opção já apresentada → rascunho com vídeo, sem link /book/", async () => {
+    const { FakeCalendar, MemoryStore } = await import("./tools/memory");
+    const { TOOL_IDS } = await import("./tools/catalog");
+    const store = new MemoryStore();
+    const cal = new FakeCalendar();
+    const WH = { start: "09:00", end: "17:00" };
+    db.t("sdr_agent_versions").push({
+      id: "v1",
+      playbook_id: "pb1",
+      workspace_id: W1,
+      status: "published",
+      persona: {},
+      tool_config: {
+        enabled_tools: TOOL_IDS,
+        allowed_tags: [],
+        scheduling: {
+          host_user_id: "00000000-0000-4000-8000-0000000000a1",
+          calendar_account_id: "00000000-0000-4000-8000-0000000000c1",
+          timezone: "America/Sao_Paulo",
+          min_notice_hours: 0,
+          horizon_days: 14,
+          working_hours: {
+            mon: [WH],
+            tue: [WH],
+            wed: [WH],
+            thu: [WH],
+            fri: [WH],
+            sat: [WH],
+            sun: [WH],
+          },
+        },
+      },
+    });
+    // Turno anterior já apresentou a opção 1 ao cliente.
+    const start = Date.now() + 86400000;
+    await store.saveOffers("c1", [{ start, end: start + 1800000 }], "superseded");
+    job(db);
+    const j = await claimOne(db);
+    const seenTools: string[][] = [];
+    const callAgent = vi.fn(
+      async (a: {
+        tools?: { name: string }[];
+        executeTool?: (n: string, x: unknown, id: string) => Promise<unknown>;
+      }) => {
+        seenTools.push((a.tools ?? []).map((t) => t.name));
+        const bk = (await a.executeTool!(
+          "calendar__book",
+          { option: 1, attendee_email: null, confirmation_message_id: "m1" },
+          "t2",
+        )) as { status: string };
+        expect(bk.status).toBe("confirmed");
+        return {
+          ok: true as const,
+          output: {
+            reply: "Reunião confirmada! Agende em https://x/book/wk",
+            intent: "schedule_meeting",
+            offer_keys: [],
+            material_ids: [],
+            answers: [],
+            handoff_reason: "",
+          },
+        };
+      },
+    );
+    const d = deps(null, {
+      callAgent: callAgent as never,
+      toolEnv: async () => ({ store, calendar: cal, calendarFacts: { ok: true } }),
+    });
+    expect(await processJob(db, j, d)).toBe("drafted");
+    expect(seenTools[0]).toContain("calendar__book");
+    const saved = db.t("sdr_turn_jobs").find((x) => x.id === j.id)!;
+    expect(saved.draft_text).not.toMatch(/\/book\//);
+    expect(saved.draft_text).toMatch(/Link da videoconferência: https:\/\/meet\.google\.com\//);
+    expect(saved.draft_payload.planned_stage).toBe("meeting_booked");
+    expect(store.meetings[0]!.status).toBe("confirmed");
+  });
+
+  it("versão publicada sem ferramentas: IA não recebe ferramentas e nada é anexado", async () => {
+    job(db);
+    const j = await claimOne(db);
+    const callAgent = vi.fn(async (a: { tools?: unknown[] }) => {
+      expect(a.tools).toBeUndefined();
+      return {
+        ok: true as const,
+        output: {
+          reply: "Vamos marcar",
+          intent: "schedule_meeting",
+          offer_keys: [],
+          material_ids: [],
+          answers: [],
+          handoff_reason: "",
+        },
+      };
+    });
+    const d = deps(null, {
+      callAgent: callAgent as never,
+      toolEnv: async () => {
+        throw new Error("não deveria");
+      },
+    });
+    await processJob(db, j, d);
+    const saved = db.t("sdr_turn_jobs").find((x) => x.id === j.id)!;
+    expect(String(saved.draft_text)).not.toMatch(/\/book\//);
+  });
+});

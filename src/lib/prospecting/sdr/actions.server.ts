@@ -3,9 +3,9 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Admin = any;
 
-import { getPublicAppUrl } from "@/lib/app-url";
 import { recordSdrAction } from "./ingest.server";
-import { shouldAttachMaterials, stripUrls } from "./agent-config";
+import { shouldAttachMaterials } from "./agent-config";
+import { buildOutgoingText } from "./outgoing";
 import { meetingStatus, nextFollowUpAt, type CommercialStage, type SdrIntent } from "./policy";
 
 export type DraftPayload = {
@@ -15,9 +15,14 @@ export type DraftPayload = {
   planned_stage: CommercialStage;
   warnings: string[];
   booking_url?: string | null;
+  tool_trace?: { tool: string; status: string }[];
 };
 
-/** Mensagem final: texto do agente + link de agenda + links de materiais aprovados. */
+/**
+ * Mensagem final: texto do agente + materiais aprovados pedidos pelo cliente.
+ * Nunca inclui link de autoagendamento; o único link de reunião permitido é o
+ * da videoconferência de um evento já confirmado pelo provedor de agenda.
+ */
 export async function composeOutgoing(
   admin: Admin,
   p: {
@@ -25,25 +30,15 @@ export async function composeOutgoing(
     reply: string;
     intent: SdrIntent;
     materialIds: string[];
-    bookingPageId: string | null;
     /** Guardrail do agente; falso = nunca anexar links de materiais. */
     attachMaterials?: boolean;
+    meeting?: { status: string; meetLink: string | null } | null;
   },
 ): Promise<{
   text: string;
-  bookingUrl: string | null;
+  bookingUrl: null;
   materials: { id: string; title: string; url: string }[];
 }> {
-  let bookingUrl: string | null = null;
-  if (p.intent === "schedule_meeting" && p.bookingPageId) {
-    const { data: page } = await admin
-      .from("booking_pages")
-      .select("slug, active, workspace_id")
-      .eq("id", p.bookingPageId)
-      .maybeSingle();
-    if (page?.active && page.workspace_id === p.workspaceId)
-      bookingUrl = `${getPublicAppUrl().replace(/\/$/, "")}/book/${page.slug}`;
-  }
   let materials: { id: string; title: string; url: string }[] = [];
   if (shouldAttachMaterials(p)) {
     const { data } = await admin
@@ -62,10 +57,11 @@ export async function composeOutgoing(
         url: m.url,
       }));
   }
-  const parts = [stripUrls(p.reply)];
-  if (bookingUrl) parts.push(`Agende um horário: ${bookingUrl}`);
-  for (const m of materials) parts.push(`${m.title}: ${m.url}`);
-  return { text: parts.filter(Boolean).join("\n\n"), bookingUrl, materials };
+  return {
+    text: buildOutgoingText({ reply: p.reply, materials, meeting: p.meeting ?? null }),
+    bookingUrl: null,
+    materials,
+  };
 }
 
 export type BlockCategory = "prospecting" | "conversation" | "technical" | "reconcile";

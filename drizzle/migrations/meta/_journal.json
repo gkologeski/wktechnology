@@ -925,6 +925,20 @@
       "when": 1791904798220,
       "tag": "0131_workflow_delivery_ledger_and_send_policy",
       "breakpoints": true
+    },
+    {
+      "idx": 132,
+      "version": "7",
+      "when": 1791947549919,
+      "tag": "0132_sdr_tools_direct_booking",
+      "breakpoints": true
+    },
+    {
+      "idx": 133,
+      "version": "7",
+      "when": 1791947680853,
+      "tag": "0133_sdr_enrollment_tags",
+      "breakpoints": true
     }
   ]
 }

@@ -161,6 +161,9 @@ function SdrAgentPage() {
           <TabsTrigger className="shrink-0" value="sdr-agent-config">
             Configuração do agente
           </TabsTrigger>
+          <TabsTrigger className="shrink-0" value="sdr-skills">
+            Habilidades e ferramentas
+          </TabsTrigger>
           <TabsTrigger className="shrink-0" value="playbook">
             Playbook
           </TabsTrigger>

@@ -63,6 +63,12 @@ export const saveSdrAgentDraft = createServerFn({ method: "POST" })
       .order("version", { ascending: false })
       .limit(1)
       .maybeSingle();
+    const { data: pubTools } = await supabaseAdmin
+      .from("sdr_agent_versions")
+      .select("tool_config")
+      .eq("playbook_id", data.playbookId)
+      .eq("status", "published")
+      .maybeSingle();
     const { data: ins, error } = await supabaseAdmin
       .from("sdr_agent_versions")
       .insert({
@@ -70,6 +76,7 @@ export const saveSdrAgentDraft = createServerFn({ method: "POST" })
         playbook_id: data.playbookId,
         version: (last?.version ?? 0) + 1,
         status: "draft",
+        tool_config: pubTools?.tool_config ?? null,
         persona,
         notes: data.notes ?? null,
         created_by: context.userId,
@@ -117,6 +124,7 @@ export const testSdrAgent = createServerFn({ method: "POST" })
       persona: z.unknown(),
       origin: z.enum(["prospecting", "inbound"]),
       messages: z.array(TestMsg).min(1).max(40),
+      sandbox_state: z.unknown().optional(),
     }).parse(i),
   )
   .handler(async ({ data, context }) => {
@@ -146,35 +154,76 @@ export const testSdrAgent = createServerFn({ method: "POST" })
     const questions = hasTool(config, "qualify")
       ? await loadQuestions(context.supabase, data.workspaceId, pb.questionnaire_id)
       : [];
-    const system = buildSystemPrompt({
-      offers,
-      materials,
-      questions,
-      config,
-      bookingAvailable: !!pb.booking_page_id && hasTool(config, "schedule"),
-      extraInstructions: pb.qualification_prompt,
-      persona,
-      origin: data.origin,
-    });
     const history = data.messages.map((m, i) => ({
       id: `test-${i}`,
       direction: m.role === "user" ? ("inbound" as const) : ("outbound" as const),
       body: m.text,
       created_at: new Date().toISOString(),
     }));
+    // Ferramentas do RASCUNHO executadas no sandbox (memória + agenda falsa).
+    const { parseToolConfig } = await import("@/lib/prospecting/sdr/tools/catalog");
+    const { createSandbox } = await import("@/lib/prospecting/sdr/tools/sandbox");
+    const { makeExecutor, toolSpecs } = await import("@/lib/prospecting/sdr/tools/runtime");
+    const { readinessFacts } = await import("@/lib/prospecting/sdr/tools/admin.server");
+    const { data: vers } = await context.supabase
+      .from("sdr_agent_versions")
+      .select("status, tool_config")
+      .eq("workspace_id", data.workspaceId)
+      .eq("playbook_id", data.playbookId)
+      .in("status", ["draft", "published"]);
+    const toolCfg =
+      parseToolConfig(vers?.find((v) => v.status === "draft")?.tool_config) ??
+      parseToolConfig(vers?.find((v) => v.status === "published")?.tool_config);
+    const sandbox = toolCfg
+      ? createSandbox({
+          workspaceId: data.workspaceId,
+          playbookId: data.playbookId,
+          config: toolCfg,
+          facts: await readinessFacts(data.workspaceId, pb as Record<string, unknown>, toolCfg),
+          history,
+          offers,
+          materials,
+          kbSources: config.kb_sources,
+          attachMaterials: config.guardrails.attach_materials,
+          questions,
+          assigneeId: config.assigned_to,
+          state: (data.sandbox_state ?? null) as never,
+        })
+      : null;
+    const { TOOL_DEFS } = await import("@/lib/prospecting/sdr/tools/catalog");
+    const specs = sandbox ? toolSpecs(TOOL_DEFS.filter((d) => sandbox.exposed.has(d.id))) : [];
+    const system = buildSystemPrompt({
+      offers,
+      materials,
+      questions,
+      config,
+      bookingAvailable: false,
+      directBooking:
+        !!sandbox?.exposed.has("calendar.availability") && !!sandbox?.exposed.has("calendar.book"),
+      toolsAvailable: specs.length > 0,
+      extraInstructions: pb.qualification_prompt,
+      persona,
+      origin: data.origin,
+    });
     const t0 = Date.now();
     const ai = await callSdrAgent({
       workspaceId: data.workspaceId,
       system,
       history,
       feature: "sdr_agente_teste",
+      ...(sandbox && specs.length ? { tools: specs, executeTool: makeExecutor(sandbox.ctx) } : {}),
     });
     const ms = Date.now() - t0;
     if (!ai.ok) return { ok: false as const, error: ai.error, status: ai.status, ms };
     const out = validateAgentOutput(ai.output, { offers, materials });
     if ("error" in out) return { ok: false as const, error: out.error, status: 200, ms };
+    const { buildOutgoingText } = await import("@/lib/prospecting/sdr/outgoing");
     const raw = out.reply;
-    const reply = stripStockOpener(raw);
+    const reply = buildOutgoingText({
+      reply: stripStockOpener(raw),
+      materials: [],
+      meeting: sandbox?.ctx.effects.meeting ?? null,
+    });
     const lastInbound = [...data.messages].reverse().find((m) => m.role === "user")?.text ?? null;
     return {
       ok: true as const,
@@ -183,6 +232,12 @@ export const testSdrAgent = createServerFn({ method: "POST" })
       trace: {
         sandbox: true,
         side_effects: "nenhum (sem WhatsApp, CRM, agenda ou notificações)",
+        tool_calls: (sandbox?.ctx.effects.trace ?? []).map((t) => ({
+          tool: t.tool,
+          status: t.status,
+          simulated: true,
+          output: JSON.stringify(t.output).slice(0, 2000),
+        })),
         intent: out.intent,
         offer_keys: out.offer_keys,
         material_ids: out.material_ids,
@@ -191,6 +246,7 @@ export const testSdrAgent = createServerFn({ method: "POST" })
         opener_removed: raw !== reply,
         tone_issues: toneIssues(reply, lastInbound, persona),
       },
+      sandbox_state: (sandbox?.snapshot() ?? null) as never,
     };
   });
 

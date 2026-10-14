@@ -68,6 +68,18 @@ async function sdrColumns(
     .eq("id", playbookId)
     .maybeSingle();
   if (error || !data) throw new Error("Playbook do SDR não encontrado.");
+  // A campanha referencia o agente; quem responde é sempre a versão PUBLICADA.
+  const { data: pub, error: vErr } = await supabase
+    .from("sdr_agent_versions")
+    .select("id")
+    .eq("playbook_id", playbookId)
+    .eq("status", "published")
+    .maybeSingle();
+  if (vErr) throw new Error(vErr.message);
+  if (!pub)
+    throw new Error(
+      "Este agente ainda não tem versão publicada; publique antes de ligá-lo à campanha.",
+    );
   return { sdr_enabled: true, sdr_playbook_id: playbookId };
 }
 
@@ -313,7 +325,7 @@ export const duplicateWhatsAppCampaign = createServerFn({ method: "POST" })
     }
     const { data: camp, error: cErr } = await supabase
       .from("whatsapp_campaigns")
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       .insert({
         ...duplicateCampaignRow(src, recips.length),
         owner_id: userId,
@@ -331,7 +343,7 @@ export const duplicateWhatsAppCampaign = createServerFn({ method: "POST" })
         variables: r.variables ?? {},
         status: "pending" as const,
       }));
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const { error: rErr } = await supabase
         .from("whatsapp_campaign_recipients")
         .insert(slice as any);
