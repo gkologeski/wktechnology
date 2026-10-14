@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useSdrPlaybooks } from "@/hooks/use-default-sdr-agent";
+import { agentOptionLabel, sortDefaultFirst } from "@/lib/prospecting/sdr/default-agent";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -117,12 +119,11 @@ function CampaignsPage() {
   const intervalPayload = ownInterval
     ? { send_interval_min_s: Number(ivMin || 0), send_interval_max_s: Number(ivMax || 0) }
     : { send_interval_min_s: null, send_interval_max_s: null };
-  const playbooksFn = useServerFn(listPlaybooks);
-  const { data: playbooksData } = useQuery({
-    queryKey: ["sdr-playbooks"],
-    queryFn: () => playbooksFn(),
-  });
-  const playbooks = (playbooksData?.items ?? []) as { id: string; name: string }[];
+  const { data: playbooksData, defaultPlaybookId } = useSdrPlaybooks();
+  const playbooks = sortDefaultFirst(
+    (playbooksData?.items ?? []) as { id: string; name: string; enabled: boolean }[],
+    defaultPlaybookId,
+  );
 
   const selectedTpl = templates.find((t) => t.name === templateName);
   const isHsm = !!selectedTpl;
@@ -137,7 +138,7 @@ function CampaignsPage() {
     setRecipientsRaw("");
     setAudience(EMPTY_AUDIENCE);
     setMediaUrl("");
-    setSdrPlaybook("__none__");
+    setSdrPlaybook(defaultPlaybookId ?? "__none__");
     setIvMin("");
     setIvMax("");
   }
@@ -409,7 +410,7 @@ function CampaignsPage() {
                       <SelectItem value="__none__">Desligado</SelectItem>
                       {playbooks.map((p) => (
                         <SelectItem key={p.id} value={p.id}>
-                          {p.name}
+                          {agentOptionLabel(p, defaultPlaybookId)}
                         </SelectItem>
                       ))}
                     </SelectContent>
