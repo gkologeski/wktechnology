@@ -212,7 +212,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
           if (sdrCfg?.sdr_enabled) {
             const { linkCampaignSend } = await import("@/lib/prospecting/sdr/ingest.server");
             await linkCampaignSend(supabaseAdmin, {
-              workspaceId: camp.owner_id,
+              workspaceId: camp.workspace_id,
               ownerId: camp.owner_id,
               campaign: {
                 id: camp.id,
