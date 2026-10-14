@@ -26,3 +26,20 @@ Permitir marcar um agente como **principal** do workspace. Ele aparece com ⭐ e
 ## Validação
 - Testes do helper; typecheck, lint, build.
 - Playwright com sessão: marcar/ver ⭐, recarregar e conferir seleção padrão em `/agents/sdr` e nova campanha. Não publicar, não enviar mensagens.
+
+---
+
+# Título da reunião marcada pela Lia
+
+## O que muda
+- Reuniões marcadas pelo agente passam a ter o título **"Reunião [empresa] <> WK Technology"** (ex.: "Reunião Acme <> WK Technology"), na agenda e na atividade do CRM.
+- Empresa vem do registro vinculado à conversa (Empresa do contato/lead/negócio). Sem empresa conhecida, usa o nome da pessoa; sem nenhum dos dois, "Reunião <> WK Technology" vira "Reunião com a WK Technology".
+- Em Habilidades e ferramentas, o campo de título vira um modelo com `{empresa}` (padrão "Reunião {empresa} <> WK Technology"), editável por agente. Configurações salvas com o título antigo padrão são tratadas como o novo modelo.
+- Vale para reuniões novas; as já criadas não mudam.
+
+## Detalhes técnicos
+- `catalog.ts`: novo padrão do `meeting_title` com `{empresa}`.
+- Helper puro `meetingTitle(template, { company, person })` + testes (com empresa, sem empresa, título antigo).
+- `dispatcher.ts` (linhas ~324 e ~374): usar o helper com a empresa resolvida do contexto CRM da conversa (somente do workspace ativo).
+- `sdr-skills-panel.tsx`: padrão novo e dica do `{empresa}`.
+- Atualizar rascunho da Lia para o novo modelo (sem publicar).
