@@ -112,19 +112,17 @@ export function createDbToolStore(
       const set = (last?.offer_set ?? 0) + 1;
       if (slots.length)
         must(
-          await admin
-            .from("sdr_slot_offers")
-            .insert(
-              slots.map((s, i) => ({
-                workspace_id: ws,
-                conversation_id: c,
-                playbook_id: ctx.playbookId,
-                offer_set: set,
-                position: i + 1,
-                start_at: new Date(s.start).toISOString(),
-                end_at: new Date(s.end).toISOString(),
-              })),
-            ),
+          await admin.from("sdr_slot_offers").insert(
+            slots.map((s, i) => ({
+              workspace_id: ws,
+              conversation_id: c,
+              playbook_id: ctx.playbookId,
+              offer_set: set,
+              position: i + 1,
+              start_at: new Date(s.start).toISOString(),
+              end_at: new Date(s.end).toISOString(),
+            })),
+          ),
         );
       return set;
     },

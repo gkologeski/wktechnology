@@ -325,7 +325,7 @@ export const duplicateWhatsAppCampaign = createServerFn({ method: "POST" })
     }
     const { data: camp, error: cErr } = await supabase
       .from("whatsapp_campaigns")
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       .insert({
         ...duplicateCampaignRow(src, recips.length),
         owner_id: userId,
@@ -343,7 +343,7 @@ export const duplicateWhatsAppCampaign = createServerFn({ method: "POST" })
         variables: r.variables ?? {},
         status: "pending" as const,
       }));
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const { error: rErr } = await supabase
         .from("whatsapp_campaign_recipients")
         .insert(slice as any);
