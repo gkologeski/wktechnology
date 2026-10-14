@@ -92,6 +92,28 @@ export function detectOptOut(text: string, extra: string[] = []): boolean {
     .some((p) => t.includes(` ${p} `) || t.trim() === p);
 }
 
+const COURTESY_RE =
+  /^(muito )?(obrigad[oa]s?|obg|valeu|vlw|grat[oa]|agradeco|perfeito|otimo|show|beleza|blz|ok|okay|combinado|certo|ate (mais|logo|breve|sexta|segunda|terca|quarta|quinta|amanha)|tchau|abracos?|abs|bom dia|boa tarde|boa noite|lia| |,|!|\.)+$/;
+
+/**
+ * Opt-out só vale com pedido real. Agradecimento/despedida cordial ("Obrigado Lia")
+ * nunca descadastra, mesmo que o modelo classifique assim.
+ */
+export function isCourtesyOnly(text: string): boolean {
+  const t = norm(text)
+    .replace(/[^\p{L}\p{N} ]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!t) return false;
+  return COURTESY_RE.test(t);
+}
+
+/** Corrige opt-out do modelo sem pedido real de parar. */
+export function guardModelOptOut(lastInbound: string, extra: string[] = []): boolean {
+  if (detectOptOut(lastInbound, extra)) return true;
+  return !isCourtesyOnly(lastInbound);
+}
+
 /** Ofertas que o agente pode usar: ativas e aprovadas. */
 export function selectableOffers<T extends Pick<SdrOffer, "status" | "approved_at" | "name">>(
   offers: T[],

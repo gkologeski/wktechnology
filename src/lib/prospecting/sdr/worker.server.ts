@@ -512,6 +512,16 @@ export async function processJob(
     out.handoff_reason = effects.handoff;
   }
   if (effects.optOut) out.intent = "opt_out";
+  else if (out.intent === "opt_out") {
+    // Agradecimento/despedida não é descadastro: segue a conversa com resposta cordial.
+    const lastIn = [...history].reverse().find((m) => m.direction === "inbound");
+    const lastText = String((lastIn as { body?: unknown } | undefined)?.body ?? "");
+    if (!guardModelOptOut(lastText, (playbook.opt_out_phrases as string[] | null) ?? [])) {
+      out.intent = "continue";
+      if (!out.reply) out.reply = "Eu que agradeço! Qualquer coisa, é só me chamar por aqui.";
+      out.warnings.push("Opt-out ignorado: mensagem era só agradecimento/despedida.");
+    }
+  }
 
   // Qualificação canônica: mesmo questionário, cálculo e linha da Prospecção.
   const inbound = history.filter((m) => m.direction === "inbound");
