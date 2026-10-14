@@ -722,6 +722,7 @@ export async function tickSdr(admin: Admin, limit = 10, deps: WorkerDeps = defau
   if (!enabled.length) return { disabled: true, claimed: 0 };
   const stranded = await sweepExhaustedJobs(admin, enabled);
   const meetings = await reconcileMeetings(admin, 50, enabled);
+  const directMeetings = await reconcileDirectMeetings(admin, enabled);
   const followUps = await scheduleFollowUps(admin, 50, enabled);
   const { data: jobs, error } = await admin.rpc("sdr_claim_jobs", {
     p_limit: limit,
@@ -743,7 +744,7 @@ export async function tickSdr(admin: Admin, limit = 10, deps: WorkerDeps = defau
     }
     results[r] = (results[r] ?? 0) + 1;
   }
-  return { meetings, followUps, stranded, claimed: jobs?.length ?? 0, ...results };
+  return { meetings, directMeetings, followUps, stranded, claimed: jobs?.length ?? 0, ...results };
 }
 
 /**
@@ -784,6 +785,33 @@ async function sweepExhaustedJobs(admin: Admin, workspaceIds: string[]): Promise
       status: "failed",
       error: "max_attempts",
     });
+  }
+  return n;
+}
+
+/**
+ * Reuniões do agendamento direto com resposta incerta do provedor: consulta o
+ * evento pelo id determinístico e só então confirma ou marca falha. Nunca recria.
+ */
+async function reconcileDirectMeetings(admin: Admin, workspaceIds: string[]): Promise<number> {
+  const { data: rows, error } = await admin
+    .from("sdr_meetings")
+    .select("id, workspace_id, playbook_id, conversation_id, enrollment_id, calendar_account_id, status, start_at, end_at, provider_event_id, meet_link, idem_key, host_user_id, timezone")
+    .eq("status", "reconcile")
+    .in("workspace_id", workspaceIds)
+    .limit(20);
+  if (error) throw new Error(error.message);
+  let n = 0;
+  const { createDbToolStore, createGoogleCalendar, primaryCalendarId } = await import("./tools/store.server");
+  const { reconcileMeeting } = await import("./tools/dispatcher");
+  for (const m of rows ?? []) {
+    const store = createDbToolStore(admin, { workspaceId: m.workspace_id, playbookId: m.playbook_id, agentVersionId: null, jobId: null, conversationId: m.conversation_id, enrollmentId: m.enrollment_id });
+    const sched = { host_user_id: m.host_user_id, calendar_account_id: m.calendar_account_id, timezone: m.timezone } as ScheduleConfig;
+    const cal = createGoogleCalendar(admin, m.workspace_id, sched, await primaryCalendarId(admin, m.workspace_id, m.calendar_account_id));
+    const r = await reconcileMeeting(store, cal, m);
+    if (r === "confirmed" && m.enrollment_id)
+      await store.setEnrollment(m.enrollment_id, { meeting_status: "confirmed", commercial_stage: "meeting_booked", follow_up_at: null, cancel_reason: "meeting" });
+    if (r !== "still_pending") n++;
   }
   return n;
 }
