@@ -420,6 +420,8 @@ function TestChat({
   persona: Persona;
 }) {
   const run = useServerFn(testSdrAgent);
+  // Estado simulado das ferramentas (horários oferecidos, reunião fictícia) entre turnos.
+  const sandboxRef = useRef<unknown>(null);
   const [origin, setOrigin] = useState<"inbound" | "prospecting">("inbound");
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [text, setText] = useState("");
@@ -441,8 +443,10 @@ function TestChat({
           persona,
           origin,
           messages: next.map(({ role, text }) => ({ role, text })),
+          sandbox_state: sandboxRef.current,
         },
       });
+      if (r.ok) sandboxRef.current = r.sandbox_state ?? null;
       if (r.ok)
         setMsgs((m) => [
           ...m,

@@ -68,6 +68,15 @@ async function sdrColumns(
     .eq("id", playbookId)
     .maybeSingle();
   if (error || !data) throw new Error("Playbook do SDR não encontrado.");
+  // A campanha referencia o agente; quem responde é sempre a versão PUBLICADA.
+  const { data: pub, error: vErr } = await supabase
+    .from("sdr_agent_versions")
+    .select("id")
+    .eq("playbook_id", playbookId)
+    .eq("status", "published")
+    .maybeSingle();
+  if (vErr) throw new Error(vErr.message);
+  if (!pub) throw new Error("Este agente ainda não tem versão publicada; publique antes de ligá-lo à campanha.");
   return { sdr_enabled: true, sdr_playbook_id: playbookId };
 }
 

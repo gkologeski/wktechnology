@@ -1,0 +1,1 @@
+ALTER TABLE public.sdr_enrollments ADD COLUMN IF NOT EXISTS tags text[] NOT NULL DEFAULT '{}'::text[];

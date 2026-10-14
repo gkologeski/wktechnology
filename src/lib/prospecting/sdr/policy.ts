@@ -230,7 +230,7 @@ export function nextStage(
 ): CommercialStage {
   if (intent === "opt_out") return "opted_out";
   if (intent === "handoff") return "handoff";
-  if (intent === "schedule_meeting") return "meeting_link_sent";
+  // Agendamento direto: o estágio só vira "meeting_booked" com reunião confirmada.
   if (intent === "send_material") return "material_sent";
   if (qualified) return "qualified";
   return current === "awaiting_reply" ? "discovery" : current;

@@ -17,6 +17,10 @@ import {
   type DraftPayload,
 } from "./actions.server";
 import { recordSdrAction } from "./ingest.server";
+import { parseToolConfig, type ScheduleConfig } from "./tools/catalog";
+import { emptyEffects, type ToolCtx } from "./tools/dispatcher";
+import { makeExecutor, newEventId, selectTools } from "./tools/runtime";
+import type { CalendarProvider, ToolStore } from "./tools/types";
 import {
   followUpIdemKey,
   isQuietHours,
@@ -93,15 +97,29 @@ type Job = {
   status: string;
 };
 
+export type ToolEnv = { store: ToolStore; calendar: CalendarProvider | null; calendarFacts: { ok: boolean; reason?: string } };
 export type WorkerDeps = {
   callAgent: typeof callSdrAgent;
+  /** Armazenamento e agenda das ferramentas (produção: banco + Google). */
+  toolEnv?: (admin: Admin, p: { workspaceId: string; playbookId: string; agentVersionId: string | null; jobId: string; conversationId: string; enrollmentId: string; scheduling: ScheduleConfig | null }) => Promise<ToolEnv>;
   ensureOpportunity: typeof ensureOpportunity;
   handoffToHuman: typeof handoffToHuman;
   sendMessage: typeof sendSdrMessage;
 };
 
+async function defaultToolEnv(admin: Admin, p: Parameters<NonNullable<WorkerDeps["toolEnv"]>>[1]): Promise<ToolEnv> {
+  const { createDbToolStore, checkHostCalendar, createGoogleCalendar, primaryCalendarId } = await import("./tools/store.server");
+  const store = createDbToolStore(admin, p);
+  const facts = await checkHostCalendar(admin, p.workspaceId, p.scheduling);
+  const calendar = facts.ok && p.scheduling
+    ? createGoogleCalendar(admin, p.workspaceId, p.scheduling, await primaryCalendarId(admin, p.workspaceId, p.scheduling.calendar_account_id))
+    : null;
+  return { store, calendar, calendarFacts: facts };
+}
+
 const defaultDeps: WorkerDeps = {
   callAgent: callSdrAgent,
+  toolEnv: defaultToolEnv,
   ensureOpportunity,
   handoffToHuman,
   sendMessage: sendSdrMessage,
@@ -189,7 +207,7 @@ export async function processJob(
   const [{ data: conv }, { data: enr }, { data: settings }] = await Promise.all([
     admin
       .from("whatsapp_conversations")
-      .select("id, workspace_id, ai_owner, ai_version, contact_id, lead_id")
+      .select("id, workspace_id, ai_owner, ai_version, contact_id, lead_id, contact_phone")
       .eq("id", job.conversation_id)
       .maybeSingle(),
     admin.from("sdr_enrollments").select("*").eq("id", job.enrollment_id).maybeSingle(),
@@ -285,11 +303,68 @@ export async function processJob(
   // Persona da versão PUBLICADA (rascunho nunca afeta produção).
   const { data: agentVersion } = await admin
     .from("sdr_agent_versions")
-    .select("id, persona")
+    .select("id, persona, tool_config")
     .eq("playbook_id", playbook.id)
     .eq("status", "published")
     .maybeSingle();
   const persona = parsePersona(agentVersion?.persona);
+
+  // Ferramentas: só as ligadas na versão PUBLICADA e prontas executam.
+  const toolCfg = parseToolConfig(agentVersion?.tool_config);
+  const effects = emptyEffects();
+  let toolCtx: ToolCtx | null = null;
+  let selected = selectTools(null, { calendar: { ok: false }, crmLinked: false, questionnaire: false, materials: false, assignee: false });
+  if (toolCfg?.enabled_tools.length && deps.toolEnv) {
+    const env = await deps.toolEnv(admin, {
+      workspaceId: job.workspace_id,
+      playbookId: playbook.id,
+      agentVersionId: agentVersion?.id ?? null,
+      jobId: job.id,
+      conversationId: conv.id,
+      enrollmentId: enr.id,
+      scheduling: toolCfg.scheduling,
+    });
+    selected = selectTools(toolCfg, {
+      calendar: env.calendarFacts,
+      crmLinked: !!(enr.lead_id || enr.contact_id || enr.deal_id),
+      questionnaire: !!playbook.questionnaire_id && questions.length > 0,
+      materials: materials.length > 0,
+      assignee: !!agentConfig.assigned_to,
+    });
+    toolCtx = {
+      mode: "live",
+      jobId: job.id,
+      jobKind: job.kind,
+      workspaceId: job.workspace_id,
+      playbookId: playbook.id,
+      agentVersionId: agentVersion?.id ?? null,
+      conversation: {
+        id: conv.id,
+        phone: conv.contact_phone ?? enr.contact_phone ?? "",
+        leadId: enr.lead_id ?? conv.lead_id ?? null,
+        contactId: enr.contact_id ?? conv.contact_id ?? null,
+        companyId: enr.company_id ?? null,
+        dealId: enr.deal_id ?? null,
+        campaignId: enr.campaign_id ?? null,
+        enrollmentId: enr.id,
+      },
+      history,
+      config: toolCfg,
+      exposed: selected.ids,
+      scheduling: toolCfg.scheduling,
+      calendar: env.calendar,
+      store: env.store,
+      offers,
+      materials,
+      kbSources: agentConfig.kb_sources,
+      attachMaterials: agentConfig.guardrails.attach_materials,
+      questions,
+      assigneeId: agentConfig.assigned_to,
+      now: () => Date.now(),
+      newEventId,
+      effects,
+    };
+  }
   const system = buildSystemPrompt({
     persona,
     config: agentConfig,
@@ -297,7 +372,9 @@ export async function processJob(
     offers,
     materials,
     questions,
-    bookingAvailable: !!playbook.booking_page_id && hasTool(agentConfig, "schedule"),
+    bookingAvailable: false,
+    directBooking: selected.directBooking,
+    toolsAvailable: selected.specs.length > 0,
     extraInstructions:
       [
         playbook.qualification_prompt,
@@ -314,7 +391,14 @@ export async function processJob(
     .update({ ai_started_at: new Date().toISOString(), agent_version_id: agentVersion?.id ?? null })
     .eq("id", job.id)
     .eq("lease_token", job.lease_token);
-  const ai = await deps.callAgent({ workspaceId: job.workspace_id, system, history });
+  const ai = await deps.callAgent({
+    workspaceId: job.workspace_id,
+    system,
+    history,
+    ...(toolCtx && selected.specs.length
+      ? { tools: selected.specs, executeTool: makeExecutor(toolCtx) }
+      : {}),
+  });
   await admin
     .from("sdr_turn_jobs")
     .update({ ai_finished_at: new Date().toISOString() })
@@ -352,6 +436,17 @@ export async function processJob(
   }
   // Abertura burocrática ("Entendi que...") é removida quando sobra mensagem completa.
   out.reply = stripStockOpener(out.reply);
+  // Efeitos registrados pelas ferramentas prevalecem sobre a intenção textual.
+  if (effects.answers.length) out.answers = [...(out.answers as unknown[]), ...effects.answers];
+  if (effects.materialIds.length) {
+    out.material_ids = [...new Set([...out.material_ids, ...effects.materialIds])];
+    if (out.intent === "continue") out.intent = "send_material";
+  }
+  if (effects.handoff) {
+    out.intent = "handoff";
+    out.handoff_reason = effects.handoff;
+  }
+  if (effects.optOut) out.intent = "opt_out";
 
   // Qualificação canônica: mesmo questionário, cálculo e linha da Prospecção.
   const inbound = history.filter((m) => m.direction === "inbound");
@@ -479,16 +574,20 @@ export async function processJob(
     reply: out.reply,
     intent: out.intent,
     materialIds: out.material_ids,
-    bookingPageId: playbook.booking_page_id,
     attachMaterials: agentConfig.guardrails.attach_materials,
+    meeting: effects.meeting,
   });
   const payload: DraftPayload = {
     intent: out.intent,
     offer_keys: out.offer_keys,
     material_ids: composed.materials.map((m) => m.id),
-    planned_stage: nextStage(enr.commercial_stage as CommercialStage, out.intent, qualified),
+    planned_stage:
+      effects.meeting?.status === "confirmed"
+        ? "meeting_booked"
+        : nextStage(enr.commercial_stage as CommercialStage, out.intent, qualified),
     warnings: out.warnings,
-    booking_url: composed.bookingUrl,
+    booking_url: null,
+    tool_trace: effects.trace.map((t) => ({ tool: t.tool, status: t.status })),
   };
   const autoAllowed =
     settings.auto_send_enabled &&

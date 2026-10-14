@@ -17339,6 +17339,7 @@ export type Database = {
           published_at: string | null
           published_by: string | null
           status: string
+          tool_config: Json | null
           updated_at: string
           version: number
           workspace_id: string
@@ -17354,6 +17355,7 @@ export type Database = {
           published_at?: string | null
           published_by?: string | null
           status?: string
+          tool_config?: Json | null
           updated_at?: string
           version: number
           workspace_id: string
@@ -17369,6 +17371,7 @@ export type Database = {
           published_at?: string | null
           published_by?: string | null
           status?: string
+          tool_config?: Json | null
           updated_at?: string
           version?: number
           workspace_id?: string
@@ -17420,6 +17423,7 @@ export type Database = {
           qualification_id: string | null
           qualification_score: number | null
           status: string
+          tags: string[]
           updated_at: string
           workspace_id: string | null
         }
@@ -17452,6 +17456,7 @@ export type Database = {
           qualification_id?: string | null
           qualification_score?: number | null
           status?: string
+          tags?: string[]
           updated_at?: string
           workspace_id?: string | null
         }
@@ -17484,6 +17489,7 @@ export type Database = {
           qualification_id?: string | null
           qualification_score?: number | null
           status?: string
+          tags?: string[]
           updated_at?: string
           workspace_id?: string | null
         }
@@ -17654,6 +17660,96 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sdr_meetings: {
+        Row: {
+          activity_id: string | null
+          attendee_email: string | null
+          buffer_after_minutes: number
+          buffer_before_minutes: number
+          calendar_account_id: string
+          campaign_id: string | null
+          company_id: string | null
+          contact_id: string | null
+          conversation_id: string
+          created_at: string
+          deal_id: string | null
+          end_at: string
+          enrollment_id: string | null
+          error: string | null
+          host_user_id: string
+          id: string
+          idem_key: string
+          lead_id: string | null
+          meet_link: string | null
+          playbook_id: string
+          provider: string
+          provider_event_id: string
+          start_at: string
+          status: string
+          timezone: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          activity_id?: string | null
+          attendee_email?: string | null
+          buffer_after_minutes?: number
+          buffer_before_minutes?: number
+          calendar_account_id: string
+          campaign_id?: string | null
+          company_id?: string | null
+          contact_id?: string | null
+          conversation_id: string
+          created_at?: string
+          deal_id?: string | null
+          end_at: string
+          enrollment_id?: string | null
+          error?: string | null
+          host_user_id: string
+          id?: string
+          idem_key: string
+          lead_id?: string | null
+          meet_link?: string | null
+          playbook_id: string
+          provider: string
+          provider_event_id: string
+          start_at: string
+          status: string
+          timezone: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          activity_id?: string | null
+          attendee_email?: string | null
+          buffer_after_minutes?: number
+          buffer_before_minutes?: number
+          calendar_account_id?: string
+          campaign_id?: string | null
+          company_id?: string | null
+          contact_id?: string | null
+          conversation_id?: string
+          created_at?: string
+          deal_id?: string | null
+          end_at?: string
+          enrollment_id?: string | null
+          error?: string | null
+          host_user_id?: string
+          id?: string
+          idem_key?: string
+          lead_id?: string | null
+          meet_link?: string | null
+          playbook_id?: string
+          provider?: string
+          provider_event_id?: string
+          start_at?: string
+          status?: string
+          timezone?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
       }
       sdr_offers: {
         Row: {
@@ -17912,6 +18008,102 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sdr_slot_offers: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          end_at: string
+          id: string
+          offer_set: number
+          playbook_id: string
+          position: number
+          start_at: string
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          end_at: string
+          id?: string
+          offer_set: number
+          playbook_id: string
+          position: number
+          start_at: string
+          status?: string
+          workspace_id: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          end_at?: string
+          id?: string
+          offer_set?: number
+          playbook_id?: string
+          position?: number
+          start_at?: string
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      sdr_tool_calls: {
+        Row: {
+          agent_version_id: string | null
+          conversation_id: string | null
+          created_at: string
+          duration_ms: number | null
+          enrollment_id: string | null
+          error: string | null
+          id: string
+          idem_key: string
+          input: Json
+          job_id: string | null
+          output: Json | null
+          playbook_id: string
+          status: string
+          tool: string
+          tool_call_id: string
+          workspace_id: string
+        }
+        Insert: {
+          agent_version_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          enrollment_id?: string | null
+          error?: string | null
+          id?: string
+          idem_key: string
+          input?: Json
+          job_id?: string | null
+          output?: Json | null
+          playbook_id: string
+          status: string
+          tool: string
+          tool_call_id: string
+          workspace_id: string
+        }
+        Update: {
+          agent_version_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          enrollment_id?: string | null
+          error?: string | null
+          id?: string
+          idem_key?: string
+          input?: Json
+          job_id?: string | null
+          output?: Json | null
+          playbook_id?: string
+          status?: string
+          tool?: string
+          tool_call_id?: string
+          workspace_id?: string
+        }
+        Relationships: []
       }
       sdr_turn_jobs: {
         Row: {
@@ -23078,6 +23270,7 @@ export type Database = {
         Args: { p_job: string; p_lease: string; p_limit: number }
         Returns: Json
       }
+      sdr_reserve_meeting: { Args: { p: Json }; Returns: Json }
       sdr_reserve_send_quota: {
         Args: { p_job: string; p_lease: string; p_limit: number }
         Returns: Json
