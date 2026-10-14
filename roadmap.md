@@ -1,3 +1,13 @@
+# Roadmap — Lia: ferramentas e agendamento direto
+
+- [x] Catálogo de habilidades/ferramentas, executor e laço de ferramentas no turno
+- [x] Agendamento direto (consulta real, 3 opções, recusa, data específica, reserva com trava, conciliação) e remoção do link /book/
+- [x] Aba "Habilidades e ferramentas" + teste simulado + registro
+- [x] Rascunho v7 da Lia configurado (anfitrião Guilherme)
+- [ ] Publicar v7 da Lia (aguarda revisão do usuário)
+- [ ] Agenda Microsoft 365 (sem conexão Microsoft no sistema)
+- [ ] Plano multicanal pendente (preservado)
+
 # Roadmap — Correção dos cargos da WK
 
 - [x] Fase 0 — foto do estado atual e reversão (0122)
