@@ -399,7 +399,7 @@ export const ScheduleConfigSchema = z.object({
     .max(60)
     .default([]),
   video: z.enum(["google_meet", "none"]).default("google_meet"),
-  meeting_title: z.string().max(120).default("Reunião com a WK Technology"),
+  meeting_title: z.string().max(120).default("Reunião {empresa} <> WK Technology"),
 });
 export type ScheduleConfig = z.infer<typeof ScheduleConfigSchema>;
 
