@@ -715,7 +715,7 @@ describe("três políticas de envio", () => {
     inboundTurn(2, { status: "queued", lease_token: null });
     const d = deps({});
     expect(await processJob(db, { ...old, status: "running" } as never, d)).toBe("discarded");
-    expect(db.find("sdr_turn_jobs", old.id)?.error).toBe("coalesced");
+    expect(db.find("sdr_turn_jobs", old.id)?.error).toMatch(/^merged_into:/);
     expect(d.callAgent).not.toHaveBeenCalled();
   });
 
