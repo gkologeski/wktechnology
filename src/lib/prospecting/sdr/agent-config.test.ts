@@ -60,23 +60,14 @@ describe("configuração por agente (pura)", () => {
     expect(hasTool(cfg, "schedule")).toBe(false);
   });
 
-  it("agenda só é oferecida quando a ferramenta está ligada", () => {
-    const base = {
-      offers: [],
-      materials: [],
-      questions: [],
-      bookingAvailable: true,
-    };
-    const withSchedule = buildSystemPrompt({
-      ...base,
-      config: parseAgentConfig({}),
-    });
-    const withoutSchedule = buildSystemPrompt({
-      ...base,
-      config: parseAgentConfig({ allowed_tools: ["qualify", "handoff"] }),
-    });
-    expect(withSchedule).toContain("intent=schedule_meeting");
-    expect(withoutSchedule).not.toContain("intent=schedule_meeting");
+  it("agendamento só com ferramentas de agenda prontas; nunca link de autoagendamento", () => {
+    const base = { offers: [], materials: [], questions: [], bookingAvailable: true, config: parseAgentConfig({}) };
+    const direct = buildSystemPrompt({ ...base, directBooking: true, toolsAvailable: true });
+    const legacy = buildSystemPrompt(base);
+    expect(direct).toContain("calendar.availability");
+    expect(legacy).not.toContain("calendar.availability");
+    expect(legacy).toContain("Nunca envie link de agendamento");
+    expect(direct).not.toMatch(/anexa o link de agenda/);
   });
 
   it("linha do banco com valores inválidos cai no padrão seguro", () => {
