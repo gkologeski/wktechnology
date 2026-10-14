@@ -116,9 +116,14 @@ const WRONG_CONTACT_RE =
  * Não inclui "não sou o X, mas cuido da área" — aí a conversa continua.
  */
 export function isWrongContact(text: string): boolean {
-  const t = norm(text).replace(/[^\p{L}\p{N} ]/gu, " ").replace(/\s+/g, " ").trim();
+  const t = norm(text)
+    .replace(/[^\p{L}\p{N} ]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
   if (!t || !WRONG_CONTACT_RE.test(t)) return false;
-  return !/\b(mas|porem|só que|so que) .*(cuido|respondo|sou responsavel|sou eu|trabalho|posso ajudar)/.test(t);
+  return !/\b(mas|porem|só que|so que) .*(cuido|respondo|sou responsavel|sou eu|trabalho|posso ajudar)/.test(
+    t,
+  );
 }
 
 /** Corrige opt-out do modelo sem pedido real de parar. */

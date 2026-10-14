@@ -518,17 +518,27 @@ export async function processJob(
     // Agradecimento/despedida não é descadastro: segue a conversa com resposta cordial.
     const lastIn = [...history].reverse().find((m) => m.direction === "inbound");
     const lastText = String((lastIn as { body?: unknown } | undefined)?.body ?? "");
-    if (!guardModelOptOut(lastText, ((playbook as Record<string, unknown>).opt_out_phrases as string[] | null) ?? [])) {
+    if (
+      !guardModelOptOut(
+        lastText,
+        ((playbook as Record<string, unknown>).opt_out_phrases as string[] | null) ?? [],
+      )
+    ) {
       out.intent = "continue";
       if (!out.reply) out.reply = "Eu que agradeço! Qualquer coisa, é só me chamar por aqui.";
       out.warnings.push("Opt-out ignorado: mensagem era só agradecimento/despedida.");
     }
   }
-  if (out.intent === "continue" || out.intent === "schedule_meeting" || out.intent === "send_material") {
+  if (
+    out.intent === "continue" ||
+    out.intent === "schedule_meeting" ||
+    out.intent === "send_material"
+  ) {
     const lastIn = [...history].reverse().find((m) => m.direction === "inbound");
     if (isWrongContact(String((lastIn as { body?: unknown } | undefined)?.body ?? ""))) {
       out.intent = "opt_out";
-      out.reply = "Peço desculpas pelo incômodo, devo ter anotado o contato errado. Obrigada pelo aviso e tenha um ótimo dia!";
+      out.reply =
+        "Peço desculpas pelo incômodo, devo ter anotado o contato errado. Obrigada pelo aviso e tenha um ótimo dia!";
       out.warnings.push("Contato errado: conversa encerrada sem novas tentativas.");
     }
   }
