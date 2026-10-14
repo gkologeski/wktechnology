@@ -38,13 +38,60 @@ export const listPlaybooks = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const ws = await requireSdr(supabase, userId, "view");
-    const { data, error } = await supabase
-      .from("sdr_playbooks")
-      .select("*")
-      .eq("workspace_id", ws)
-      .order("created_at", { ascending: false });
+    const [{ data, error }, settings] = await Promise.all([
+      supabase
+        .from("sdr_playbooks")
+        .select("*")
+        .eq("workspace_id", ws)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("sdr_workspace_settings")
+        .select("default_playbook_id")
+        .eq("workspace_id", ws)
+        .maybeSingle(),
+    ]);
     if (error) throw new Error(error.message);
-    return { items: data ?? [] };
+    return {
+      items: data ?? [],
+      defaultPlaybookId: (settings.data?.default_playbook_id as string | null) ?? null,
+    };
+  });
+
+/** Define o agente principal (⭐) do workspace. */
+export const setDefaultPlaybook = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const ws = await requireSdr(supabase, userId, "manage");
+    const { data: ro } = await supabase.rpc("is_read_only_view");
+    if (ro) throw new Error("No modo Ver como não é possível alterar o agente principal.");
+    const { data: pb, error: pbErr } = await supabase
+      .from("sdr_playbooks")
+      .select("id, enabled")
+      .eq("id", data.id)
+      .eq("workspace_id", ws)
+      .maybeSingle();
+    if (pbErr) throw new Error(pbErr.message);
+    if (!pb) throw new Error("Agente não encontrado neste workspace.");
+    if (!pb.enabled) throw new Error("Agente desativado não pode ser o principal.");
+    const { data: out, error } = await supabase
+      .from("sdr_workspace_settings")
+      .upsert(
+        {
+          workspace_id: ws,
+          default_playbook_id: data.id,
+          updated_by: userId,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "workspace_id" },
+      )
+      .select("default_playbook_id")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (out?.default_playbook_id !== data.id)
+      throw new Error("Sem permissão para alterar o agente principal.");
+    return { defaultPlaybookId: data.id };
   });
 
 export const upsertPlaybook = createServerFn({ method: "POST" })
