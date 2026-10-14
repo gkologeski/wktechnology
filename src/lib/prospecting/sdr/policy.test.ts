@@ -145,3 +145,16 @@ describe("reunião", () => {
     ).toBe("confirmed");
   });
 });
+
+import { guardModelOptOut as _g, isCourtesyOnly as _c } from "./policy";
+describe("falso opt-out por agradecimento", () => {
+  it("'Obrigado Lia' não descadastra", () => {
+    expect(_c("Obrigado Lia")).toBe(true);
+    expect(_g("Obrigado Lia")).toBe(false);
+    expect(_g("valeu, até sexta!")).toBe(false);
+  });
+  it("pedido real continua descadastrando", () => {
+    expect(_g("não tenho interesse")).toBe(true);
+    expect(_g("pare de me mandar mensagem")).toBe(true);
+  });
+});
