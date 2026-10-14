@@ -810,7 +810,7 @@ describe("três políticas de envio", () => {
 });
 
 describe("ferramentas reais no turno (agenda falsa)", () => {
-  it("inbound → IA chama availability e book → rascunho com vídeo, sem link /book/", async () => {
+  it("inbound → IA escolhe opção já apresentada → rascunho com vídeo, sem link /book/", async () => {
     const { FakeCalendar, MemoryStore } = await import("./tools/memory");
     const { TOOL_IDS } = await import("./tools/catalog");
     const store = new MemoryStore();
