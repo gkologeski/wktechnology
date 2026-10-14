@@ -843,6 +843,9 @@ describe("ferramentas reais no turno (agenda falsa)", () => {
         },
       },
     });
+    // Turno anterior já apresentou a opção 1 ao cliente.
+    const start = Date.now() + 86400000;
+    await store.saveOffers("c1", [{ start, end: start + 1800000 }], "superseded");
     job(db);
     const j = await claimOne(db);
     const seenTools: string[][] = [];
@@ -852,12 +855,6 @@ describe("ferramentas reais no turno (agenda falsa)", () => {
         executeTool?: (n: string, x: unknown, id: string) => Promise<unknown>;
       }) => {
         seenTools.push((a.tools ?? []).map((t) => t.name));
-        const av = (await a.executeTool!(
-          "calendar__availability",
-          { date: null, time: null, timezone: null, part_of_day: null, rejected_previous: false },
-          "t1",
-        )) as { options: unknown[] };
-        expect(av.options).toHaveLength(3);
         const bk = (await a.executeTool!(
           "calendar__book",
           { option: 1, attendee_email: null, confirmation_message_id: "m1" },
