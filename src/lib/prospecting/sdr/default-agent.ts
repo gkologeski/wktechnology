@@ -13,14 +13,20 @@ export function pickDefaultAgent<T extends AgentLike>(
 }
 
 /** Ordena com o agente principal no topo, preservando a ordem dos demais. */
-export function sortDefaultFirst<T extends AgentLike>(agents: T[], defaultId: string | null | undefined): T[] {
+export function sortDefaultFirst<T extends AgentLike>(
+  agents: T[],
+  defaultId: string | null | undefined,
+): T[] {
   if (!defaultId) return agents;
   const main = agents.filter((a) => a.id === defaultId);
   return [...main, ...agents.filter((a) => a.id !== defaultId)];
 }
 
 /** Rótulo do item no seletor, com ⭐ para o principal. */
-export function agentOptionLabel(a: AgentLike & { name: string }, defaultId: string | null | undefined) {
+export function agentOptionLabel(
+  a: AgentLike & { name: string },
+  defaultId: string | null | undefined,
+) {
   return `${a.id === defaultId ? "⭐ " : ""}${a.name}${a.enabled === false ? " (desativado)" : ""}`;
 }
 
@@ -32,7 +38,10 @@ export function meetingTitle(
   template: string | null | undefined,
   ctx: { company?: string | null; person?: string | null },
 ): string {
-  const t = !template?.trim() || template.trim() === LEGACY_MEETING_TITLE ? DEFAULT_MEETING_TITLE : template;
+  const t =
+    !template?.trim() || template.trim() === LEGACY_MEETING_TITLE
+      ? DEFAULT_MEETING_TITLE
+      : template;
   if (!t.includes("{empresa}")) return t;
   const who = ctx.company?.trim() || ctx.person?.trim();
   if (!who) return LEGACY_MEETING_TITLE;

@@ -37,7 +37,7 @@ const SCHED: ScheduleConfig = {
   horizon_days: 14,
   holidays: [],
   video: "google_meet",
-  meeting_title: "Reunião com a WK Technology",
+  meeting_title: "Reunião {empresa} <> WK Technology",
 };
 const ALL: ToolConfig = {
   enabled_tools: [...TOOL_IDS],

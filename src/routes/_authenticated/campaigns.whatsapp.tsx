@@ -24,7 +24,6 @@ import {
 } from "@/components/whatsapp/campaign-audience-panel";
 import { getWhatsAppTemplateCatalog } from "@/lib/whatsapp.functions";
 import { catalogMessage, composerPolicy } from "@/lib/whatsapp/composer-policy";
-import { listPlaybooks } from "@/lib/sdr-agent.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
