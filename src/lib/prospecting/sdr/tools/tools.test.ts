@@ -240,6 +240,9 @@ describe("fluxo template → inbound → Lia → agenda → reunião", () => {
     const firstStarts = new Set(first.options.map((o) => o.start));
     expect(second.options).toHaveLength(3);
     expect(second.options.some((o) => firstStarts.has(o.start))).toBe(false);
+    const near = (x: string) =>
+      first.options.some((f) => Math.abs(Date.parse(f.start) - Date.parse(x)) < 3600000);
+    expect(second.options.some((o) => near(o.start))).toBe(false);
     say(ctx, "in3", "também não");
     const third = (await executeTool(
       ctx,

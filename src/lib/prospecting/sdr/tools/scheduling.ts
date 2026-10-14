@@ -149,8 +149,8 @@ export function dayPart(ms: number, tz: string): DayPart {
  * dois dias quando a agenda permite. Nunca inventa: devolve menos se não houver.
  */
 export function pickDiverse(slots: Slot[], tz: string, n = 3, exclude: number[] = []): Slot[] {
-  const ex = new Set(exclude);
-  const pool = slots.filter((s) => !ex.has(s.start));
+  // Recusado: evita também horários a menos de 1 h dele (não reoferece "o mesmo" deslocado).
+  const pool = slots.filter((s) => !exclude.some((e) => Math.abs(e - s.start) < 3600000));
   const picked: Slot[] = [];
   const keyOf = (s: Slot) => `${localParts(s.start, tz).ymd}:${dayPart(s.start, tz)}`;
   const dayOf = (s: Slot) => localParts(s.start, tz).ymd;
