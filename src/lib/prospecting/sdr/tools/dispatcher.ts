@@ -31,6 +31,8 @@ export type TurnEffects = {
     meetLink: string | null;
   } | null;
   trace: { tool: string; status: string; simulated: boolean; output: unknown }[];
+  /** Conjuntos de opções criados NESTE turno: o cliente ainda não os viu. */
+  offerSetsThisTurn: number[];
 };
 
 export const emptyEffects = (): TurnEffects => ({
@@ -40,6 +42,7 @@ export const emptyEffects = (): TurnEffects => ({
   optOut: false,
   meeting: null,
   trace: [],
+  offerSetsThisTurn: [],
 });
 
 export type ToolCtx = {
@@ -240,7 +243,7 @@ const availability: Handler = async (ctx, a) => {
         "Sem horários livres no período configurado. Não invente horários; ofereça falar com uma pessoa.",
     };
   }
-  await ctx.store.saveOffers(ctx.conversation.id, slots, previous);
+  ctx.effects.offerSetsThisTurn.push(await ctx.store.saveOffers(ctx.conversation.id, slots, previous));
   return {
     status,
     timezone: s.timezone,
@@ -360,7 +363,9 @@ function pending(ctx: ToolCtx, s: ScheduleConfig, m: MeetingRow) {
 async function resolveOption(ctx: ToolCtx, option: number) {
   const offers = await ctx.store.getOffers(ctx.conversation.id);
   const slot = offers?.slots.find((x) => x.position === option && x.status === "offered");
-  return slot && offers ? { slot, offerSet: offers.offerSet } : null;
+  // Só vale opção já apresentada ao cliente em turno anterior.
+  if (!slot || !offers || ctx.effects.offerSetsThisTurn.includes(offers.offerSet)) return null;
+  return { slot, offerSet: offers.offerSet };
 }
 
 const book: Handler = async (ctx, a) => {
@@ -384,6 +389,7 @@ const book: Handler = async (ctx, a) => {
     return {
       __status: "error",
       status: "option_not_current",
+      hint: "Apresente as opções ao cliente e aguarde a escolha na próxima mensagem.",
       instruction: "Essa opção não está entre as vigentes. Consulte a agenda de novo.",
     };
   const { slot, offerSet } = chosen;
