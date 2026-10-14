@@ -523,6 +523,14 @@ export async function processJob(
       out.warnings.push("Opt-out ignorado: mensagem era só agradecimento/despedida.");
     }
   }
+  if (out.intent === "continue" || out.intent === "schedule_meeting" || out.intent === "send_material") {
+    const lastIn = [...history].reverse().find((m) => m.direction === "inbound");
+    if (isWrongContact(String((lastIn as { body?: unknown } | undefined)?.body ?? ""))) {
+      out.intent = "opt_out";
+      out.reply = "Peço desculpas pelo incômodo, devo ter anotado o contato errado. Obrigada pelo aviso e tenha um ótimo dia!";
+      out.warnings.push("Contato errado: conversa encerrada sem novas tentativas.");
+    }
+  }
 
   // Qualificação canônica: mesmo questionário, cálculo e linha da Prospecção.
   const inbound = history.filter((m) => m.direction === "inbound");
