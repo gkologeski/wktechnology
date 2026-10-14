@@ -84,13 +84,24 @@ function SdrAgentPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  async function reload() {
+  async function reload(attempt = 0): Promise<void> {
     setLoading(true);
     try {
       const [a, b] = await Promise.all([listFn(), enrFn({ data: {} })]);
       setItems(a.items as unknown as Playbook[]);
       setEnrollments(b.items as Array<Record<string, unknown>>);
       if ((a.items?.length ?? 0) > 0) setActive(a.items[0] as unknown as Playbook);
+    } catch (e) {
+      // Falha passageira (ex.: servidor reiniciando): tenta de novo uma vez.
+      if (attempt < 1) {
+        await new Promise((r) => setTimeout(r, 1500));
+        return reload(attempt + 1);
+      }
+      toast.error(
+        e instanceof Error
+          ? `Não foi possível carregar os agentes: ${e.message}`
+          : "Não foi possível carregar os agentes",
+      );
     } finally {
       setLoading(false);
     }
