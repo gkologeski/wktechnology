@@ -5,6 +5,7 @@ import type { ConversationMessage, SdrMaterial, SdrOffer } from "./policy";
 import type { CanonicalQuestion } from "./qualification";
 import { DEFAULT_PERSONA, personaPromptSection, type Persona } from "./persona";
 import { agentConfigPromptSection, type AgentConfig } from "./agent-config";
+import { unverifiedTimes } from "./time-guard";
 
 const MODEL = "openai/gpt-6-astra";
 
@@ -89,7 +90,7 @@ export function buildSystemPrompt(p: {
     "5. Recusa clara ou pedido para parar: intent=opt_out e reply curta de despedida.",
     "6. Peça de humano, assunto fora do catálogo, reclamação, negociação de preço ou contrato: intent=handoff.",
     p.directBooking
-      ? "7. AGENDAMENTO DIRETO: quando houver interesse, use calendar.availability e ofereça exatamente as opções numeradas devolvidas (nunca invente horários nem envie link de agendamento). Se o cliente recusar, consulte de novo com rejected_previous=true. Se pedir data/hora específica, passe a data com ano (YYYY-MM-DD) e hora; se faltar ano ou estiver ambíguo, pergunte antes. Para marcar, peça confirmação explícita e chame calendar.book com a opção e o message_id da mensagem atual; só diga que está confirmado quando a ferramenta devolver status=confirmed. Use intent=schedule_meeting nesses turnos."
+      ? "7. AGENDAMENTO DIRETO: quando houver interesse, use calendar.availability e ofereça exatamente as opções numeradas devolvidas (nunca invente horários nem envie link de agendamento). Se o cliente recusar as opções, chame calendar.availability com rejected_previous=true (sem data/turno) e pergunte qual dia e turno (manhã ou tarde) ele prefere; com a resposta, consulte com date e/ou part_of_day e ofereça os horários devolvidos. Se a resposta for vaga, use só part_of_day; se não der para entender, pergunte de novo. Se pedir data/hora específica, passe a data com ano (YYYY-MM-DD) e hora; se faltar ano ou estiver ambíguo, pergunte antes. Para marcar, peça confirmação explícita e chame calendar.book com a opção e o message_id da mensagem atual; só diga que está confirmado quando a ferramenta devolver status=confirmed. Use intent=schedule_meeting nesses turnos."
       : "7. Não há agendamento direto neste agente: ofereça que um especialista entrará em contato (intent=handoff). Nunca envie link de agendamento.",
     p.toolsAvailable
       ? "11. FERRAMENTAS: use as ferramentas disponíveis para consultar dados reais antes de responder; nunca afirme algo que uma ferramenta não devolveu. Ações com efeito (marcar, remarcar, cancelar, descadastro, material) exigem confirmação explícita do cliente na mensagem atual."
@@ -170,6 +171,9 @@ export async function callSdrAgent(args: {
     return { ok: false, status: 401, error: "LOVABLE_API_KEY ausente", retryable: false };
   const messages: ChatMsg[] = buildMessages(args.system, args.history);
   const tools = args.tools?.length && args.executeTool ? args.tools : null;
+  const hasCalendar = !!tools?.some((t) => t.name.startsWith("calendar__"));
+  const calendarOutputs: string[] = [];
+  let timeRetry = false;
   for (let step = 0; step <= MAX_TOOL_STEPS; step++) {
     const allowTools = !!tools && step < MAX_TOOL_STEPS;
     const res = await aiChatFetch(
@@ -232,6 +236,7 @@ export async function callSdrAgent(args: {
           parsed = null;
         }
         const out = await args.executeTool!(tc.function.name, parsed, tc.id);
+        if (tc.function.name.startsWith("calendar__")) calendarOutputs.push(JSON.stringify(out));
         messages.push({
           role: "tool",
           tool_call_id: tc.id,
@@ -245,7 +250,31 @@ export async function callSdrAgent(args: {
         .trim()
         .replace(/^```json|^```|```$/g, "")
         .trim();
-      return { ok: true, output: JSON.parse(content) };
+      const output = JSON.parse(content) as { reply?: string };
+      if (hasCalendar) {
+        const bad = unverifiedTimes(output.reply ?? "", [
+          ...calendarOutputs,
+          ...args.history.map((m) => m.body),
+        ]);
+        if (bad.length) {
+          if (!timeRetry && step < MAX_TOOL_STEPS - 1) {
+            timeRetry = true;
+            messages.push({ role: "assistant", content: msg.content ?? "" });
+            messages.push({
+              role: "user",
+              content: `[verificação do sistema, não é o cliente] Sua resposta citou horários que não vieram da agenda (${bad.join(", ")}). Consulte calendar.availability agora e cite somente os horários devolvidos pela ferramenta. Responda de novo ao cliente.`,
+            });
+            continue;
+          }
+          return {
+            ok: false,
+            status: 200,
+            error: `Resposta citou horários não consultados na agenda: ${bad.join(", ")}`,
+            retryable: false,
+          };
+        }
+      }
+      return { ok: true, output };
     } catch {
       return {
         ok: false,

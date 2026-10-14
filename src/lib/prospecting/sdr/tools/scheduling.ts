@@ -253,3 +253,17 @@ export function evaluateSpecific(
     return { status: "busy", alternatives: alternativesFrom(host.ymd) };
   return { status: "free", slot };
 }
+
+const HM = /^([01]\d|2[0-3]):[0-5]\d$/;
+/** Valida até dois períodos de um dia: formato, fim > início, ordem e sem sobreposição. */
+export function windowsError(ws: { start: string; end: string }[]): string | null {
+  if (ws.length > 2) return "No máximo dois períodos por dia.";
+  for (const [i, w] of ws.entries()) {
+    const n = i === 0 ? "primeiro" : "segundo";
+    if (!HM.test(w.start) || !HM.test(w.end)) return `Preencha o ${n} período no formato HH:MM.`;
+    if (w.end <= w.start) return `No ${n} período, o fim deve ser depois do início.`;
+  }
+  if (ws.length === 2 && ws[1]!.start < ws[0]!.end)
+    return "O segundo período deve começar depois do fim do primeiro, sem sobreposição.";
+  return null;
+}

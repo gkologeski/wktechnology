@@ -1,3 +1,4 @@
+import { windowsError } from "./scheduling";
 // Catálogo de ferramentas e habilidades do Agente SDR (puro). Cada ferramenta
 // tem schema tipado (JSON para a IA, zod para o servidor), efeito, requisitos
 // de prontidão e exigência de confirmação. Habilidade = grupo de ferramentas.
@@ -77,7 +78,7 @@ export const TOOL_DEFS: ToolDef[] = [
     skill: "agenda",
     name: "Consultar horários",
     description:
-      "Consulta a agenda REAL do anfitrião deste agente. Sem data específica: devolve até 3 opções em turnos e dias diferentes. Com data (YYYY-MM-DD com ano) e opcionalmente hora (HH:MM): verifica exatamente esse horário. Use rejected_previous=true quando o cliente recusou as opções vigentes. Ofereça SOMENTE as opções devolvidas, numeradas.",
+      "Consulta a agenda REAL do anfitrião deste agente. Sem data específica: devolve até 3 opções em turnos e dias diferentes. Com data (YYYY-MM-DD com ano) e opcionalmente hora (HH:MM): verifica exatamente esse horário. Quando o cliente recusar as opções vigentes, chame com rejected_previous=true SEM data/turno: a ferramenta registra a recusa e pede que você pergunte qual dia e turno (manhã/tarde) ele prefere. Com a resposta, chame com date (YYYY-MM-DD) e/ou part_of_day. Ofereça SOMENTE as opções devolvidas, numeradas.",
     effect: "read",
     confirmation: false,
     requires: ["calendar"],
@@ -380,7 +381,13 @@ export const ScheduleConfigSchema = z.object({
   working_hours: z
     .record(
       z.enum(["sun", "mon", "tue", "wed", "thu", "fri", "sat"]),
-      z.array(z.object({ start: z.string().regex(HHMM), end: z.string().regex(HHMM) })).max(4),
+      z
+        .array(z.object({ start: z.string().regex(HHMM), end: z.string().regex(HHMM) }))
+        .max(2)
+        .superRefine((ws, c) => {
+          const e = windowsError(ws);
+          if (e) c.addIssue({ code: "custom", message: e });
+        }),
     )
     .default({}),
   buffer_before_minutes: z.number().int().min(0).max(120).default(0),

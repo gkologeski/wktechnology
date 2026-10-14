@@ -210,9 +210,25 @@ const availability: Handler = async (ctx, a) => {
   const sch = schedule(s);
   const current = await ctx.store.getOffers(ctx.conversation.id);
   const rejected = new Set(await ctx.store.rejectedStarts(ctx.conversation.id));
-  if (a.rejected_previous && current)
+  // Nova consulta depois de opções já mostradas (em turno anterior) = cliente não as aceitou.
+  const shownBefore =
+    !!current &&
+    !ctx.effects.offerSetsThisTurn.includes(current.offerSet) &&
+    current.slots.some((sl) => sl.status === "offered");
+  if ((a.rejected_previous || shownBefore) && current)
     for (const sl of current.slots) if (sl.status === "offered") rejected.add(sl.start);
-  const previous = a.rejected_previous ? "rejected" : "superseded";
+  const previous = a.rejected_previous || shownBefore ? "rejected" : "superseded";
+  if (a.rejected_previous && !a.date && !a.part_of_day) {
+    // Recusa sem preferência: registra e pergunta dia e turno, sem novos horários.
+    await ctx.store.saveOffers(ctx.conversation.id, [], "rejected");
+    return {
+      status: "ask_preference",
+      options: [],
+      instruction:
+        "Registrei a recusa. Não ofereça novos horários agora: pergunte qual dia e qual turno (manhã ou tarde) o cliente prefere. Depois consulte com date e/ou part_of_day.",
+    };
+  }
+  const part = (a.part_of_day as string | null) ?? null;
   let slots: Slot[];
   let status = "options";
   if (a.date) {
@@ -229,9 +245,32 @@ const availability: Handler = async (ctx, a) => {
       slots = r.alternatives.filter((x) => !rejected.has(x.start));
       status = `requested_${r.status}`;
     }
+    if (part && !a.time && r.status !== "free") {
+      const day = String(a.date);
+      const inPart = generateSlots(sch, busy, now, { fromYmd: day, toYmd: day }).filter(
+        (x) => dayPart(x.start, s.timezone) === part && !rejected.has(x.start),
+      );
+      if (inPart.length) {
+        // Até 3 horários espalhados pelo turno.
+        const step = Math.max(1, Math.floor(inPart.length / 3));
+        slots = [0, step, step * 2]
+          .map((i) => inPart[i])
+          .filter((x): x is Slot => !!x)
+          .slice(0, 3);
+        status = "requested_part";
+      } else {
+        // Turno pedido sem horário naquele dia: mais próximo depois, no mesmo turno.
+        const from = Date.parse(`${String(a.date)}T00:00:00Z`);
+        slots = generateSlots(sch, busy, now)
+          .filter((x) => x.start >= from && dayPart(x.start, s.timezone) === part)
+          .filter((x) => !rejected.has(x.start))
+          .slice(0, 3);
+        status = "requested_part_unavailable_next";
+      }
+    }
   } else {
     let all = generateSlots(sch, busy, now);
-    if (a.part_of_day) all = all.filter((x) => dayPart(x.start, s.timezone) === a.part_of_day);
+    if (part) all = all.filter((x) => dayPart(x.start, s.timezone) === part);
     slots = pickDiverse(all, s.timezone, 3, [...rejected]);
   }
   if (!slots.length) {
@@ -251,6 +290,11 @@ const availability: Handler = async (ctx, a) => {
     timezone: s.timezone,
     duration_minutes: s.duration_minutes,
     options: present(slots, s.timezone),
+    ...(status === "requested_part_unavailable_next"
+      ? {
+          note: "Não há horário livre nesse turno no dia pedido; estes são os mais próximos depois, no mesmo turno. Informe isso.",
+        }
+      : {}),
     ...(slots.length < 3 && status === "options"
       ? { note: `Só há ${slots.length} horário(s) livre(s) no período; informe essa restrição.` }
       : {}),

@@ -26,6 +26,7 @@ import {
 } from "@/lib/prospecting/sdr-tools.functions";
 import type { getCatalog } from "@/lib/prospecting/sdr/tools/admin.server";
 import type { ToolConfig } from "@/lib/prospecting/sdr/tools/catalog";
+import { windowsError } from "@/lib/prospecting/sdr/tools/scheduling";
 
 type Catalog = Awaited<ReturnType<typeof getCatalog>>;
 const DAYS = [
@@ -231,13 +232,15 @@ function SkillsForm({ playbookId }: { playbookId: string }) {
                     calendar_account_id: c.calendars[0]!.id,
                     duration_minutes: 30,
                     timezone: "America/Sao_Paulo",
-                    working_hours: {
-                      mon: [{ start: "09:00", end: "17:00" }],
-                      tue: [{ start: "09:00", end: "17:00" }],
-                      wed: [{ start: "09:00", end: "17:00" }],
-                      thu: [{ start: "09:00", end: "17:00" }],
-                      fri: [{ start: "09:00", end: "17:00" }],
-                    },
+                    working_hours: Object.fromEntries(
+                      ["mon", "tue", "wed", "thu", "fri"].map((d) => [
+                        d,
+                        [
+                          { start: "09:00", end: "12:00" },
+                          { start: "13:00", end: "17:00" },
+                        ],
+                      ]),
+                    ),
                     buffer_before_minutes: 0,
                     buffer_after_minutes: 0,
                     min_notice_hours: 2,
@@ -327,56 +330,77 @@ function SkillsForm({ playbookId }: { playbookId: string }) {
             />
             <fieldset className="space-y-2 md:col-span-2">
               <legend className="text-sm font-medium">Expediente</legend>
+              <p className="text-xs text-muted-foreground">
+                Até dois períodos por dia (ex.: 09:00–12:00 e 13:00–17:00). Deixe o segundo vazio se
+                houver só um.
+              </p>
               {DAYS.map(([k, label]) => {
-                const w = s.working_hours[k]?.[0];
-                return (
-                  <div key={k} className="flex flex-wrap items-center gap-2">
-                    <Switch
-                      id={`sk-d-${k}`}
-                      checked={!!w}
-                      onCheckedChange={(on) =>
-                        setS({
-                          working_hours: {
-                            ...s.working_hours,
-                            [k]: on ? [{ start: "09:00", end: "17:00" }] : [],
-                          },
-                        })
-                      }
-                      aria-label={`Atende ${label}`}
+                const ws = s.working_hours[k] ?? [];
+                const on = ws.length > 0;
+                const err = windowsError(ws);
+                const setWin = (i: number, field: "start" | "end", value: string) => {
+                  const next = [...ws];
+                  next[i] = { ...(next[i] ?? { start: "", end: "" }), [field]: value };
+                  const clean = next.filter((x, j) => j === 0 || x.start || x.end);
+                  setS({ working_hours: { ...s.working_hours, [k]: clean } });
+                };
+                const win = (i: number, n: string) => (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">De</span>
+                    <Input
+                      aria-label={`Início do ${n} período de ${label}`}
+                      className="w-24"
+                      placeholder="--:--"
+                      value={ws[i]?.start ?? ""}
+                      onChange={(e) => setWin(i, "start", e.target.value)}
                     />
-                    <Label htmlFor={`sk-d-${k}`} className="w-10">
-                      {label}
-                    </Label>
-                    {w && (
-                      <>
-                        <Input
-                          aria-label={`Início ${label}`}
-                          className="w-24"
-                          value={w.start}
-                          onChange={(e) =>
+                    <span className="text-xs text-muted-foreground">até</span>
+                    <Input
+                      aria-label={`Fim do ${n} período de ${label}`}
+                      className="w-24"
+                      placeholder="--:--"
+                      value={ws[i]?.end ?? ""}
+                      onChange={(e) => setWin(i, "end", e.target.value)}
+                    />
+                  </div>
+                );
+                return (
+                  <div key={k} className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          id={`sk-d-${k}`}
+                          checked={on}
+                          onCheckedChange={(v) =>
                             setS({
                               working_hours: {
                                 ...s.working_hours,
-                                [k]: [{ ...w, start: e.target.value }],
+                                [k]: v
+                                  ? [
+                                      { start: "09:00", end: "12:00" },
+                                      { start: "13:00", end: "17:00" },
+                                    ]
+                                  : [],
                               },
                             })
                           }
+                          aria-label={`Atende ${label}`}
                         />
-                        <span className="text-muted-foreground">até</span>
-                        <Input
-                          aria-label={`Fim ${label}`}
-                          className="w-24"
-                          value={w.end}
-                          onChange={(e) =>
-                            setS({
-                              working_hours: {
-                                ...s.working_hours,
-                                [k]: [{ ...w, end: e.target.value }],
-                              },
-                            })
-                          }
-                        />
-                      </>
+                        <Label htmlFor={`sk-d-${k}`} className="w-10">
+                          {label}
+                        </Label>
+                      </div>
+                      {on && (
+                        <>
+                          {win(0, "primeiro")}
+                          {win(1, "segundo")}
+                        </>
+                      )}
+                    </div>
+                    {on && err && (
+                      <p role="alert" className="text-xs text-destructive">
+                        {err}
+                      </p>
                     )}
                   </div>
                 );
