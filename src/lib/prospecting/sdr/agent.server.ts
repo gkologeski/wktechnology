@@ -286,7 +286,7 @@ export async function callSdrAgent(args: {
           };
         }
       }
-      if (claimsBooking(output.reply ?? "") && !hasConfirmedBooking(toolResults)) {
+      if (hasCalendar && claimsBooking(output.reply ?? "") && !hasConfirmedBooking(toolResults)) {
         if (!bookRetry && allowTools && step < MAX_TOOL_STEPS - 1) {
           bookRetry = true;
           messages.push({ role: "assistant", content: msg.content ?? "" });
