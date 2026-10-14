@@ -205,7 +205,7 @@ function SkillsForm({ playbookId }: { playbookId: string }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <div className="rounded-lg border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
         Em produção vale a versão publicada {c.publishedVersion ? `(v${c.publishedVersion})` : ""}
         {c.publishedHasTools ? " com ferramentas." : ", que ainda não tem ferramentas ligadas."} As
@@ -253,8 +253,8 @@ function SkillsForm({ playbookId }: { playbookId: string }) {
             </Button>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-1.5 md:col-span-2">
+          <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="min-w-0 space-y-1.5 md:col-span-2">
               <Label htmlFor="sk-host">Anfitrião e agenda</Label>
               <Select
                 value={s.calendar_account_id}
@@ -263,7 +263,7 @@ function SkillsForm({ playbookId }: { playbookId: string }) {
                   if (a) setS({ calendar_account_id: a.id, host_user_id: a.owner_id });
                 }}
               >
-                <SelectTrigger id="sk-host">
+                <SelectTrigger id="sk-host" className="min-w-0 [&>span]:truncate">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
