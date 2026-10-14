@@ -529,17 +529,16 @@ export async function processJob(
       out.warnings.push("Opt-out ignorado: mensagem era só agradecimento/despedida.");
     }
   }
-  if (
-    out.intent === "continue" ||
-    out.intent === "schedule_meeting" ||
-    out.intent === "send_material"
-  ) {
+  // Contato errado: envia o pedido de desculpas e só depois encerra (não vira descadastro mudo).
+  let wrongContact = false;
+  if (out.intent !== "handoff") {
     const lastIn = [...history].reverse().find((m) => m.direction === "inbound");
     if (isWrongContact(String((lastIn as { body?: unknown } | undefined)?.body ?? ""))) {
-      out.intent = "opt_out";
+      wrongContact = true;
+      out.intent = "continue";
+      out.material_ids = [];
       out.reply =
         "Peço desculpas pelo incômodo, devo ter anotado o contato errado. Obrigada pelo aviso e tenha um ótimo dia!";
-      out.warnings.push("Contato errado: conversa encerrada sem novas tentativas.");
     }
   }
 
@@ -742,6 +741,27 @@ export async function processJob(
       .eq("id", job.id)
       .in("status", ["running"]);
     return obsolete ? "discarded" : "drafted";
+  }
+  if (wrongContact) {
+    await admin
+      .from("sdr_enrollments")
+      .update({
+        status: "opted_out",
+        commercial_stage: "opted_out",
+        opted_out_at: new Date().toISOString(),
+        cancel_reason: "wrong_contact",
+        follow_up_at: null,
+      })
+      .eq("id", enr.id)
+      .eq("workspace_id", job.workspace_id);
+    await admin.rpc("sdr_set_conversation_owner", { p_conversation: conv.id, p_owner: "paused" });
+    await recordSdrAction(admin, {
+      workspace_id: job.workspace_id,
+      enrollment_id: enr.id,
+      job_id: job.id,
+      kind: "opt_out",
+      status: "success",
+    });
   }
   return "sent";
 }
