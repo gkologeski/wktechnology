@@ -168,7 +168,14 @@ function needCalendar(ctx: ToolCtx): { s: ScheduleConfig; cal: CalendarProvider 
   return { s: ctx.scheduling, cal: ctx.calendar };
 }
 
-async function busyIn(ctx: ToolCtx, s: ScheduleConfig, cal: CalendarProvider, from: number, to: number, excludeId?: string) {
+async function busyIn(
+  ctx: ToolCtx,
+  s: ScheduleConfig,
+  cal: CalendarProvider,
+  from: number,
+  to: number,
+  excludeId?: string,
+) {
   const fb = await cal.freeBusy(from, to);
   if (!fb.ok) return null;
   const own = await ctx.store.activeMeetingsBusy(s.calendar_account_id, from, to, excludeId);
@@ -194,7 +201,8 @@ const availability: Handler = async (ctx, a) => {
     return {
       __status: "error",
       status: "calendar_unavailable",
-      instruction: "Não foi possível consultar a agenda. Não ofereça horários; diga que vai confirmar.",
+      instruction:
+        "Não foi possível consultar a agenda. Não ofereça horários; diga que vai confirmar.",
     };
   const sch = schedule(s);
   const current = await ctx.store.getOffers(ctx.conversation.id);
@@ -210,8 +218,7 @@ const availability: Handler = async (ctx, a) => {
       time: (a.time as string | null) ?? null,
       timezone: (a.timezone as string | null) ?? null,
     });
-    if (r.status === "invalid")
-      return { status: "need_clarification", instruction: r.reason };
+    if (r.status === "invalid") return { status: "need_clarification", instruction: r.reason };
     if (r.status === "free") {
       slots = [r.slot];
       status = "requested_free";
@@ -229,7 +236,8 @@ const availability: Handler = async (ctx, a) => {
     return {
       status: status === "options" ? "no_availability" : status,
       options: [],
-      instruction: "Sem horários livres no período configurado. Não invente horários; ofereça falar com uma pessoa.",
+      instruction:
+        "Sem horários livres no período configurado. Não invente horários; ofereça falar com uma pessoa.",
     };
   }
   await ctx.store.saveOffers(ctx.conversation.id, slots, previous);
@@ -241,12 +249,23 @@ const availability: Handler = async (ctx, a) => {
     ...(slots.length < 3 && status === "options"
       ? { note: `Só há ${slots.length} horário(s) livre(s) no período; informe essa restrição.` }
       : {}),
-    instruction: "Ofereça exatamente estas opções numeradas, na ordem. Nada de link de agendamento.",
+    instruction:
+      "Ofereça exatamente estas opções numeradas, na ordem. Nada de link de agendamento.",
   };
 };
 
-async function confirmMeeting(ctx: ToolCtx, m: MeetingRow, meetLink: string | null, s: ScheduleConfig) {
-  await ctx.store.updateMeeting(m.id, { status: "confirmed", meet_link: meetLink, error: null, updated_at: iso(ctx.now()) });
+async function confirmMeeting(
+  ctx: ToolCtx,
+  m: MeetingRow,
+  meetLink: string | null,
+  s: ScheduleConfig,
+) {
+  await ctx.store.updateMeeting(m.id, {
+    status: "confirmed",
+    meet_link: meetLink,
+    error: null,
+    updated_at: iso(ctx.now()),
+  });
   const start = Date.parse(m.start_at);
   const activityId = await ctx.store.createActivity({
     workspace_id: ctx.workspaceId,
@@ -278,12 +297,19 @@ async function confirmMeeting(ctx: ToolCtx, m: MeetingRow, meetLink: string | nu
     when: formatSlotPt(start, s.timezone),
     timezone: s.timezone,
     video_link: meetLink,
-    instruction: "Confirme a reunião ao cliente. O link da videoconferência é anexado pelo sistema.",
+    instruction:
+      "Confirme a reunião ao cliente. O link da videoconferência é anexado pelo sistema.",
   };
 }
 
 /** Reserva com envio incerto: consulta o evento pelo id determinístico antes de recriar. */
-async function settle(ctx: ToolCtx, s: ScheduleConfig, cal: CalendarProvider, m: MeetingRow, attendee: string | null) {
+async function settle(
+  ctx: ToolCtx,
+  s: ScheduleConfig,
+  cal: CalendarProvider,
+  m: MeetingRow,
+  attendee: string | null,
+) {
   if (m.status === "confirmed") return confirmMeeting(ctx, m, m.meet_link, s);
   if (m.status === "reconcile") {
     const ev = await cal.getEvent(m.provider_event_id);
@@ -311,16 +337,23 @@ async function settle(ctx: ToolCtx, s: ScheduleConfig, cal: CalendarProvider, m:
   return {
     __status: "error",
     status: "failed",
-    instruction: "A agenda recusou a marcação. Não confirme; peça desculpas e ofereça outro horário ou uma pessoa.",
+    instruction:
+      "A agenda recusou a marcação. Não confirme; peça desculpas e ofereça outro horário ou uma pessoa.",
   };
 }
 
 function pending(ctx: ToolCtx, s: ScheduleConfig, m: MeetingRow) {
-  ctx.effects.meeting = { status: "pending", start: Date.parse(m.start_at), timezone: s.timezone, meetLink: null };
+  ctx.effects.meeting = {
+    status: "pending",
+    start: Date.parse(m.start_at),
+    timezone: s.timezone,
+    meetLink: null,
+  };
   return {
     __status: "pending",
     status: "pending_confirmation",
-    instruction: "A marcação está sendo confirmada pela agenda. NÃO diga que está confirmada; avise que retorna em instantes.",
+    instruction:
+      "A marcação está sendo confirmada pela agenda. NÃO diga que está confirmada; avise que retorna em instantes.",
   };
 }
 
@@ -342,16 +375,34 @@ const book: Handler = async (ctx, a) => {
   const inflight = active.find((m) => m.status !== "confirmed");
   if (inflight) return settle(ctx, s, cal, inflight, (a.attendee_email as string | null) ?? null);
   if (active.some((m) => m.status === "confirmed"))
-    return { __status: "error", status: "already_booked", instruction: "Já existe reunião nesta conversa; use remarcar se o cliente pedir." };
+    return {
+      __status: "error",
+      status: "already_booked",
+      instruction: "Já existe reunião nesta conversa; use remarcar se o cliente pedir.",
+    };
   if (!chosen)
-    return { __status: "error", status: "option_not_current", instruction: "Essa opção não está entre as vigentes. Consulte a agenda de novo." };
+    return {
+      __status: "error",
+      status: "option_not_current",
+      instruction: "Essa opção não está entre as vigentes. Consulte a agenda de novo.",
+    };
   const { slot, offerSet } = chosen;
   const sch = schedule(s);
   const busy = await busyIn(ctx, s, cal, slot.start - 86400000, slot.end + 86400000);
-  if (!busy) return { __status: "error", status: "calendar_unavailable", instruction: "Agenda indisponível agora; não confirme." };
+  if (!busy)
+    return {
+      __status: "error",
+      status: "calendar_unavailable",
+      instruction: "Agenda indisponível agora; não confirme.",
+    };
   if (overlapsBusy(sch, slot, busy)) {
     await ctx.store.markOffer(ctx.conversation.id, offerSet, slot.position, "superseded");
-    return { __status: "error", status: "slot_taken", instruction: "O horário acabou de ser ocupado. Consulte a agenda novamente e ofereça outras opções." };
+    return {
+      __status: "error",
+      status: "slot_taken",
+      instruction:
+        "O horário acabou de ser ocupado. Consulte a agenda novamente e ofereça outras opções.",
+    };
   }
   const r = await ctx.store.reserveMeeting({
     workspace_id: ctx.workspaceId,
@@ -377,7 +428,11 @@ const book: Handler = async (ctx, a) => {
   });
   if (r.status === "conflict") {
     await ctx.store.markOffer(ctx.conversation.id, offerSet, slot.position, "superseded");
-    return { __status: "error", status: "slot_taken", instruction: "O horário acabou de ser reservado. Consulte a agenda novamente." };
+    return {
+      __status: "error",
+      status: "slot_taken",
+      instruction: "O horário acabou de ser reservado. Consulte a agenda novamente.",
+    };
   }
   const m = await ctx.store.getMeeting(r.id!);
   if (!m) return { __status: "error", error: "Reserva não encontrada." };
@@ -389,20 +444,48 @@ const reschedule: Handler = async (ctx, a) => {
   const c = needCalendar(ctx);
   if (!("s" in c)) return c;
   const { s, cal } = c as { s: ScheduleConfig; cal: CalendarProvider };
-  const current = (await ctx.store.conversationMeetings(ctx.conversation.id)).find((m) => m.status === "confirmed");
-  if (!current) return { __status: "error", status: "no_meeting", instruction: "Não há reunião marcada nesta conversa." };
+  const current = (await ctx.store.conversationMeetings(ctx.conversation.id)).find(
+    (m) => m.status === "confirmed",
+  );
+  if (!current)
+    return {
+      __status: "error",
+      status: "no_meeting",
+      instruction: "Não há reunião marcada nesta conversa.",
+    };
   const chosen = await resolveOption(ctx, Number(a.option));
-  if (!chosen) return { __status: "error", status: "option_not_current", instruction: "Consulte a agenda e ofereça opções antes." };
+  if (!chosen)
+    return {
+      __status: "error",
+      status: "option_not_current",
+      instruction: "Consulte a agenda e ofereça opções antes.",
+    };
   const { slot, offerSet } = chosen;
   const curS = Date.parse(current.start_at);
   const curE = Date.parse(current.end_at);
   const busyAll = await busyIn(ctx, s, cal, slot.start - 86400000, slot.end + 86400000, current.id);
   if (!busyAll) return { __status: "error", status: "calendar_unavailable" };
   const busy = busyAll.filter((b: Busy) => !(b.start === curS && b.end === curE));
-  if (overlapsBusy(schedule(s), slot, busy)) return { __status: "error", status: "slot_taken", instruction: "Horário ocupado; consulte de novo." };
+  if (overlapsBusy(schedule(s), slot, busy))
+    return {
+      __status: "error",
+      status: "slot_taken",
+      instruction: "Horário ocupado; consulte de novo.",
+    };
   const moved = await cal.moveEvent(current.provider_event_id, slot.start, slot.end, s.timezone);
-  if (!moved.ok) return { __status: "error", status: "failed", instruction: "A agenda não confirmou a remarcação; a reunião original continua." };
-  await ctx.store.updateMeeting(current.id, { start_at: iso(slot.start), end_at: iso(slot.end), meet_link: moved.meetLink ?? current.meet_link, idem_key: `${ctx.conversation.id}:${iso(slot.start)}`, updated_at: iso(ctx.now()) });
+  if (!moved.ok)
+    return {
+      __status: "error",
+      status: "failed",
+      instruction: "A agenda não confirmou a remarcação; a reunião original continua.",
+    };
+  await ctx.store.updateMeeting(current.id, {
+    start_at: iso(slot.start),
+    end_at: iso(slot.end),
+    meet_link: moved.meetLink ?? current.meet_link,
+    idem_key: `${ctx.conversation.id}:${iso(slot.start)}`,
+    updated_at: iso(ctx.now()),
+  });
   await ctx.store.markOffer(ctx.conversation.id, offerSet, slot.position, "chosen");
   await ctx.store.createActivity({
     workspace_id: ctx.workspaceId,
@@ -414,7 +497,12 @@ const reschedule: Handler = async (ctx, a) => {
     related_contact_id: ctx.conversation.contactId,
     related_deal_id: ctx.conversation.dealId,
   });
-  ctx.effects.meeting = { status: "confirmed", start: slot.start, timezone: s.timezone, meetLink: moved.meetLink ?? current.meet_link };
+  ctx.effects.meeting = {
+    status: "confirmed",
+    start: slot.start,
+    timezone: s.timezone,
+    meetLink: moved.meetLink ?? current.meet_link,
+  };
   return { status: "rescheduled", when: formatSlotPt(slot.start, s.timezone) };
 };
 
@@ -422,11 +510,26 @@ const cancel: Handler = async (ctx, a) => {
   const c = needCalendar(ctx);
   if (!("s" in c)) return c;
   const { s, cal } = c as { s: ScheduleConfig; cal: CalendarProvider };
-  const current = (await ctx.store.conversationMeetings(ctx.conversation.id)).find((m) => m.status === "confirmed");
-  if (!current) return { __status: "error", status: "no_meeting", instruction: "Não há reunião desta conversa para cancelar." };
+  const current = (await ctx.store.conversationMeetings(ctx.conversation.id)).find(
+    (m) => m.status === "confirmed",
+  );
+  if (!current)
+    return {
+      __status: "error",
+      status: "no_meeting",
+      instruction: "Não há reunião desta conversa para cancelar.",
+    };
   const del = await cal.deleteEvent(current.provider_event_id);
-  if (!del.ok) return { __status: "error", status: "failed", instruction: "A agenda não confirmou o cancelamento; a reunião continua marcada." };
-  await ctx.store.updateMeeting(current.id, { status: "canceled", error: (a.reason as string | null) ?? null });
+  if (!del.ok)
+    return {
+      __status: "error",
+      status: "failed",
+      instruction: "A agenda não confirmou o cancelamento; a reunião continua marcada.",
+    };
+  await ctx.store.updateMeeting(current.id, {
+    status: "canceled",
+    error: (a.reason as string | null) ?? null,
+  });
   if (ctx.conversation.enrollmentId)
     await ctx.store.setEnrollment(ctx.conversation.enrollmentId, { meeting_status: "canceled" });
   await ctx.store.createActivity({
@@ -439,7 +542,12 @@ const cancel: Handler = async (ctx, a) => {
     related_contact_id: ctx.conversation.contactId,
     related_deal_id: ctx.conversation.dealId,
   });
-  ctx.effects.meeting = { status: "canceled", start: Date.parse(current.start_at), timezone: s.timezone, meetLink: null };
+  ctx.effects.meeting = {
+    status: "canceled",
+    start: Date.parse(current.start_at),
+    timezone: s.timezone,
+    meetLink: null,
+  };
   return { status: "canceled" };
 };
 
@@ -464,7 +572,8 @@ function e164(raw: string): string | null {
 const nfd = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").replace(/\s+/g, " ").trim();
 
 const customerLookup: Handler = async (ctx, a) => {
-  const email = typeof a.email === "string" && a.email.includes("@") ? a.email.trim().toLowerCase() : null;
+  const email =
+    typeof a.email === "string" && a.email.includes("@") ? a.email.trim().toLowerCase() : null;
   const phone = typeof a.phone === "string" ? e164(a.phone) : null;
   const name = typeof a.full_name === "string" ? nfd(a.full_name) : "";
   const [first, ...rest] = name ? name.split(" ") : [];
@@ -478,28 +587,51 @@ const customerLookup: Handler = async (ctx, a) => {
   });
   if (!candidates.length) return { status: "not_found" };
   if (candidates.length > 1)
-    return { status: "ambiguous", instruction: "Há mais de um cadastro possível. Peça o e-mail corporativo; não cite nomes." };
+    return {
+      status: "ambiguous",
+      instruction: "Há mais de um cadastro possível. Peça o e-mail corporativo; não cite nomes.",
+    };
   const c = candidates[0]!;
   const convPhones = brPhoneVariants(ctx.conversation.phone);
   const linked = c.id === ctx.conversation.contactId || c.id === ctx.conversation.leadId;
   const verified = linked || c.phones.some((p) => convPhones.includes(p));
   if (!verified)
-    return { status: "found_unverified", instruction: "Cadastro não pertence a este número. Não revele nem confirme dados; ofereça falar com uma pessoa." };
-  return { status: "found", kind: c.kind === "lead" ? "lead" : "contato", first_name: c.first_name };
+    return {
+      status: "found_unverified",
+      instruction:
+        "Cadastro não pertence a este número. Não revele nem confirme dados; ofereça falar com uma pessoa.",
+    };
+  return {
+    status: "found",
+    kind: c.kind === "lead" ? "lead" : "contato",
+    first_name: c.first_name,
+  };
 };
 
 const contextRead: Handler = async (ctx) => {
   const c = ctx.conversation;
   if (!c.leadId && !c.contactId && !c.dealId && !c.companyId)
     return { status: "not_linked", instruction: "Conversa sem cliente vinculado no CRM." };
-  return { status: "ok", ...(await ctx.store.crmContext({ leadId: c.leadId, contactId: c.contactId, dealId: c.dealId, companyId: c.companyId })) };
+  return {
+    status: "ok",
+    ...(await ctx.store.crmContext({
+      leadId: c.leadId,
+      contactId: c.contactId,
+      dealId: c.dealId,
+      companyId: c.companyId,
+    })),
+  };
 };
 
 const qualification: Handler = async (ctx, a) => {
   const inbound = ctx.history.filter((m) => m.direction === "inbound");
   const { accepted, rejected } = acceptAnswers(ctx.questions, a.answers, inbound);
   ctx.effects.answers.push(...(a.answers as unknown[]));
-  return { accepted: accepted.length, rejected, note: "A nota é calculada pelo sistema ao final do turno." };
+  return {
+    accepted: accepted.length,
+    rejected,
+    note: "A nota é calculada pelo sistema ao final do turno.",
+  };
 };
 
 const kbSearch: Handler = async (ctx, a) => {
@@ -512,39 +644,82 @@ const kbSearch: Handler = async (ctx, a) => {
   const results: { source: string; title: string; excerpt: string }[] = [];
   for (const o of ctx.offers) {
     const txt = `${o.name} ${o.summary} ${o.commercial_notes ?? ""} ${(o.fit_signals ?? []).join(" ")}`;
-    if (hit(txt)) results.push({ source: `catálogo:${o.offer_key}`, title: o.name, excerpt: `${o.summary} ${o.commercial_notes ?? ""}`.trim().slice(0, 400) });
+    if (hit(txt))
+      results.push({
+        source: `catálogo:${o.offer_key}`,
+        title: o.name,
+        excerpt: `${o.summary} ${o.commercial_notes ?? ""}`.trim().slice(0, 400),
+      });
   }
   for (const s of ctx.kbSources)
-    if (hit(`${s.title} ${s.note}`)) results.push({ source: "fonte do agente", title: s.title, excerpt: s.note.slice(0, 400) });
+    if (hit(`${s.title} ${s.note}`))
+      results.push({ source: "fonte do agente", title: s.title, excerpt: s.note.slice(0, 400) });
   for (const k of await ctx.store.searchKb(String(a.query)))
     results.push({ source: `base:${k.slug}`, title: k.title, excerpt: k.excerpt.slice(0, 400) });
   if (!results.length)
-    return { status: "no_results", instruction: "Sem fonte aprovada. Não invente; diga que um especialista confirma." };
-  return { status: "ok", results: results.slice(0, 6), instruction: "Responda só com o que está nos trechos." };
+    return {
+      status: "no_results",
+      instruction: "Sem fonte aprovada. Não invente; diga que um especialista confirma.",
+    };
+  return {
+    status: "ok",
+    results: results.slice(0, 6),
+    instruction: "Responda só com o que está nos trechos.",
+  };
 };
 
 const catalogLookup: Handler = async (ctx, a) => {
   const q = a.query ? nfd(String(a.query)).toLowerCase() : "";
-  const list = ctx.offers.filter((o) => !q || nfd(`${o.name} ${o.summary}`).toLowerCase().includes(q));
-  return { offers: list.map((o) => ({ key: o.offer_key, name: o.name, summary: o.summary, approved_facts: o.commercial_notes ?? null })) };
+  const list = ctx.offers.filter(
+    (o) => !q || nfd(`${o.name} ${o.summary}`).toLowerCase().includes(q),
+  );
+  return {
+    offers: list.map((o) => ({
+      key: o.offer_key,
+      name: o.name,
+      summary: o.summary,
+      approved_facts: o.commercial_notes ?? null,
+    })),
+  };
 };
 
 const materialsFind: Handler = async (ctx, a) => {
   const q = a.query ? nfd(String(a.query)).toLowerCase() : "";
-  return { materials: ctx.materials.filter((m) => !q || nfd(m.title).toLowerCase().includes(q)).map((m) => ({ id: m.id, title: m.title })) };
+  return {
+    materials: ctx.materials
+      .filter((m) => !q || nfd(m.title).toLowerCase().includes(q))
+      .map((m) => ({ id: m.id, title: m.title })),
+  };
 };
 
 const materialsSend: Handler = async (ctx, a) => {
-  if (!ctx.attachMaterials) return { __status: "error", status: "disabled", instruction: "Envio de links desligado neste agente; ofereça que um especialista envie." };
+  if (!ctx.attachMaterials)
+    return {
+      __status: "error",
+      status: "disabled",
+      instruction: "Envio de links desligado neste agente; ofereça que um especialista envie.",
+    };
   const m = ctx.materials.find((x) => x.id === a.material_id);
-  if (!m) return { __status: "error", status: "not_allowed", instruction: "Material não aprovado para este agente." };
+  if (!m)
+    return {
+      __status: "error",
+      status: "not_allowed",
+      instruction: "Material não aprovado para este agente.",
+    };
   if (!ctx.effects.materialIds.includes(m.id)) ctx.effects.materialIds.push(m.id);
-  return { status: "attached", title: m.title, instruction: "O sistema anexa o link; não escreva URL." };
+  return {
+    status: "attached",
+    title: m.title,
+    instruction: "O sistema anexa o link; não escreva URL.",
+  };
 };
 
 const handoff: Handler = async (ctx, a) => {
   ctx.effects.handoff = String(a.reason);
-  return { status: "handoff_scheduled", instruction: "Avise que uma pessoa do time vai continuar a conversa." };
+  return {
+    status: "handoff_scheduled",
+    instruction: "Avise que uma pessoa do time vai continuar a conversa.",
+  };
 };
 
 const optout: Handler = async (ctx) => {
@@ -589,13 +764,16 @@ const summarize: Handler = async (ctx, a) => {
 };
 
 const tags: Handler = async (ctx, a) => {
-  if (!ctx.conversation.enrollmentId) return { __status: "error", error: "Conversa sem atendimento do agente." };
+  if (!ctx.conversation.enrollmentId)
+    return { __status: "error", error: "Conversa sem atendimento do agente." };
   const allowed = new Set(ctx.config.allowed_tags.map((t) => t.toLowerCase()));
   const add = (a.add as string[]).filter((t) => allowed.has(t.toLowerCase()));
   const remove = new Set((a.remove as string[]).map((t) => t.toLowerCase()));
   const refused = [...(a.add as string[])].filter((t) => !allowed.has(t.toLowerCase()));
   const cur = await ctx.store.enrollmentTags(ctx.conversation.enrollmentId);
-  const next = [...new Set([...cur, ...add])].filter((t) => !remove.has(t.toLowerCase()) || !allowed.has(t.toLowerCase()));
+  const next = [...new Set([...cur, ...add])].filter(
+    (t) => !remove.has(t.toLowerCase()) || !allowed.has(t.toLowerCase()),
+  );
   await ctx.store.setEnrollment(ctx.conversation.enrollmentId, { tags: next });
   return { tags: next, refused };
 };
@@ -632,6 +810,9 @@ export async function reconcileMeeting(
     await store.updateMeeting(m.id, { status: "confirmed", meet_link: ev.meetLink, error: null });
     return "confirmed";
   }
-  await store.updateMeeting(m.id, { status: "failed", error: "Evento não encontrado no provedor após conciliação." });
+  await store.updateMeeting(m.id, {
+    status: "failed",
+    error: "Evento não encontrado no provedor após conciliação.",
+  });
   return "failed";
 }

@@ -12,7 +12,11 @@ import {
 import { executeTool, type ToolCtx } from "./dispatcher";
 
 export function toolSpecs(defs: ToolDef[]): AgentToolSpec[] {
-  return defs.map((d) => ({ name: fnName(d.id), description: d.description, parameters: d.parameters }));
+  return defs.map((d) => ({
+    name: fnName(d.id),
+    description: d.description,
+    parameters: d.parameters,
+  }));
 }
 
 export function selectTools(cfg: ToolConfig | null, facts: ReadinessFacts) {

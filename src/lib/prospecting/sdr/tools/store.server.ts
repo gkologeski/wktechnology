@@ -26,12 +26,26 @@ function must<T>(r: { data: T; error: { message: string } | null }): T {
 
 export function createDbToolStore(
   admin: Admin,
-  ctx: { workspaceId: string; playbookId: string; agentVersionId: string | null; jobId: string | null; conversationId: string; enrollmentId: string | null },
+  ctx: {
+    workspaceId: string;
+    playbookId: string;
+    agentVersionId: string | null;
+    jobId: string | null;
+    conversationId: string;
+    enrollmentId: string | null;
+  },
 ): ToolStore {
   const ws = ctx.workspaceId;
   return {
     async getToolLog(k) {
-      const row = must(await admin.from("sdr_tool_calls").select("idem_key, tool, tool_call_id, input, output, status, error, duration_ms").eq("idem_key", k).eq("workspace_id", ws).maybeSingle());
+      const row = must(
+        await admin
+          .from("sdr_tool_calls")
+          .select("idem_key, tool, tool_call_id, input, output, status, error, duration_ms")
+          .eq("idem_key", k)
+          .eq("workspace_id", ws)
+          .maybeSingle(),
+      );
       return (row as ToolLog | null) ?? null;
     },
     async saveToolLog(l) {
@@ -47,58 +61,181 @@ export function createDbToolStore(
       if (error && error.code !== "23505") throw new Error(error.message);
     },
     async getOffers(c) {
-      const rows = must(await admin.from("sdr_slot_offers").select("offer_set, position, start_at, end_at, status").eq("workspace_id", ws).eq("conversation_id", c).order("offer_set", { ascending: false }).limit(10)) as { offer_set: number; position: number; start_at: string; end_at: string; status: string }[];
+      const rows = must(
+        await admin
+          .from("sdr_slot_offers")
+          .select("offer_set, position, start_at, end_at, status")
+          .eq("workspace_id", ws)
+          .eq("conversation_id", c)
+          .order("offer_set", { ascending: false })
+          .limit(10),
+      ) as {
+        offer_set: number;
+        position: number;
+        start_at: string;
+        end_at: string;
+        status: string;
+      }[];
       if (!rows?.length) return null;
       const set = rows[0]!.offer_set;
-      return { offerSet: set, slots: rows.filter((r) => r.offer_set === set).map((r) => ({ position: r.position, start: Date.parse(r.start_at), end: Date.parse(r.end_at), status: r.status })) };
+      return {
+        offerSet: set,
+        slots: rows
+          .filter((r) => r.offer_set === set)
+          .map((r) => ({
+            position: r.position,
+            start: Date.parse(r.start_at),
+            end: Date.parse(r.end_at),
+            status: r.status,
+          })),
+      };
     },
     async saveOffers(c, slots, previous) {
-      must(await admin.from("sdr_slot_offers").update({ status: previous }).eq("workspace_id", ws).eq("conversation_id", c).eq("status", "offered"));
-      const last = must(await admin.from("sdr_slot_offers").select("offer_set").eq("workspace_id", ws).eq("conversation_id", c).order("offer_set", { ascending: false }).limit(1).maybeSingle()) as { offer_set: number } | null;
+      must(
+        await admin
+          .from("sdr_slot_offers")
+          .update({ status: previous })
+          .eq("workspace_id", ws)
+          .eq("conversation_id", c)
+          .eq("status", "offered"),
+      );
+      const last = must(
+        await admin
+          .from("sdr_slot_offers")
+          .select("offer_set")
+          .eq("workspace_id", ws)
+          .eq("conversation_id", c)
+          .order("offer_set", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ) as { offer_set: number } | null;
       const set = (last?.offer_set ?? 0) + 1;
       if (slots.length)
-        must(await admin.from("sdr_slot_offers").insert(slots.map((s, i) => ({ workspace_id: ws, conversation_id: c, playbook_id: ctx.playbookId, offer_set: set, position: i + 1, start_at: new Date(s.start).toISOString(), end_at: new Date(s.end).toISOString() }))));
+        must(
+          await admin
+            .from("sdr_slot_offers")
+            .insert(
+              slots.map((s, i) => ({
+                workspace_id: ws,
+                conversation_id: c,
+                playbook_id: ctx.playbookId,
+                offer_set: set,
+                position: i + 1,
+                start_at: new Date(s.start).toISOString(),
+                end_at: new Date(s.end).toISOString(),
+              })),
+            ),
+        );
       return set;
     },
     async rejectedStarts(c) {
-      const rows = must(await admin.from("sdr_slot_offers").select("start_at").eq("workspace_id", ws).eq("conversation_id", c).eq("status", "rejected")) as { start_at: string }[];
+      const rows = must(
+        await admin
+          .from("sdr_slot_offers")
+          .select("start_at")
+          .eq("workspace_id", ws)
+          .eq("conversation_id", c)
+          .eq("status", "rejected"),
+      ) as { start_at: string }[];
       return (rows ?? []).map((r) => Date.parse(r.start_at));
     },
     async markOffer(c, set, pos, status) {
-      must(await admin.from("sdr_slot_offers").update({ status }).eq("workspace_id", ws).eq("conversation_id", c).eq("offer_set", set).eq("position", pos));
+      must(
+        await admin
+          .from("sdr_slot_offers")
+          .update({ status })
+          .eq("workspace_id", ws)
+          .eq("conversation_id", c)
+          .eq("offer_set", set)
+          .eq("position", pos),
+      );
     },
     async reserveMeeting(p) {
-      const data = must(await admin.rpc("sdr_reserve_meeting", { p: { ...p, workspace_id: ws } })) as { status: "reserved" | "exists" | "conflict"; id?: string; meeting_status?: string };
+      const data = must(
+        await admin.rpc("sdr_reserve_meeting", { p: { ...p, workspace_id: ws } }),
+      ) as { status: "reserved" | "exists" | "conflict"; id?: string; meeting_status?: string };
       return data;
     },
     async updateMeeting(id, patch) {
-      must(await admin.from("sdr_meetings").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", id).eq("workspace_id", ws));
+      must(
+        await admin
+          .from("sdr_meetings")
+          .update({ ...patch, updated_at: new Date().toISOString() })
+          .eq("id", id)
+          .eq("workspace_id", ws),
+      );
     },
     async getMeeting(id) {
-      return must(await admin.from("sdr_meetings").select(MEETING_COLS).eq("id", id).eq("workspace_id", ws).maybeSingle()) as MeetingRow | null;
+      return must(
+        await admin
+          .from("sdr_meetings")
+          .select(MEETING_COLS)
+          .eq("id", id)
+          .eq("workspace_id", ws)
+          .maybeSingle(),
+      ) as MeetingRow | null;
     },
     async conversationMeetings(c) {
-      return (must(await admin.from("sdr_meetings").select(MEETING_COLS).eq("workspace_id", ws).eq("conversation_id", c).order("created_at", { ascending: false }).limit(20)) ?? []) as MeetingRow[];
+      return (must(
+        await admin
+          .from("sdr_meetings")
+          .select(MEETING_COLS)
+          .eq("workspace_id", ws)
+          .eq("conversation_id", c)
+          .order("created_at", { ascending: false })
+          .limit(20),
+      ) ?? []) as MeetingRow[];
     },
     async activeMeetingsBusy(cal, from, to, excludeId) {
-      const rows = must(await admin.from("sdr_meetings").select("id, start_at, end_at").eq("calendar_account_id", cal).in("status", ["pending", "reconcile", "confirmed"]).lt("start_at", new Date(to).toISOString()).gt("end_at", new Date(from).toISOString())) as { id: string; start_at: string; end_at: string }[];
-      return (rows ?? []).filter((r) => r.id !== excludeId).map((r) => ({ start: Date.parse(r.start_at), end: Date.parse(r.end_at) }));
+      const rows = must(
+        await admin
+          .from("sdr_meetings")
+          .select("id, start_at, end_at")
+          .eq("calendar_account_id", cal)
+          .in("status", ["pending", "reconcile", "confirmed"])
+          .lt("start_at", new Date(to).toISOString())
+          .gt("end_at", new Date(from).toISOString()),
+      ) as { id: string; start_at: string; end_at: string }[];
+      return (rows ?? [])
+        .filter((r) => r.id !== excludeId)
+        .map((r) => ({ start: Date.parse(r.start_at), end: Date.parse(r.end_at) }));
     },
     async findCustomers(q: CustomerQuery) {
       // Igualdade exata (sem curinga e sem OR entre termos), sempre no workspace.
       const out: CustomerCandidate[] = [];
       for (const kind of ["lead", "contact"] as const) {
         const table = kind === "lead" ? "leads" : "contacts";
-        let query = admin.from(table).select("id, first_name, last_name, email, phone, mobile_phone").eq("workspace_id", ws).limit(5);
+        let query = admin
+          .from(table)
+          .select("id, first_name, last_name, email, phone, mobile_phone")
+          .eq("workspace_id", ws)
+          .limit(5);
         if (q.email) query = query.ilike("email", like(q.email));
         if (q.firstName) query = query.ilike("first_name", like(q.firstName));
         if (q.lastName) query = query.ilike("last_name", like(q.lastName));
-        if (q.phoneVariants.length && !q.email && !q.firstName) query = query.in("phone", q.phoneVariants);
-        const rows = (must(await query) ?? []) as { id: string; first_name: string; last_name: string | null; email: string | null; phone: string | null; mobile_phone: string | null }[];
+        if (q.phoneVariants.length && !q.email && !q.firstName)
+          query = query.in("phone", q.phoneVariants);
+        const rows = (must(await query) ?? []) as {
+          id: string;
+          first_name: string;
+          last_name: string | null;
+          email: string | null;
+          phone: string | null;
+          mobile_phone: string | null;
+        }[];
         for (const r of rows) {
-          const phones = [r.phone, r.mobile_phone].filter(Boolean).flatMap((p) => brPhoneVariants(`+${String(p).replace(/\D/g, "")}`));
+          const phones = [r.phone, r.mobile_phone]
+            .filter(Boolean)
+            .flatMap((p) => brPhoneVariants(`+${String(p).replace(/\D/g, "")}`));
           if (q.phoneVariants.length && !phones.some((p) => q.phoneVariants.includes(p))) continue;
-          out.push({ kind, id: r.id, first_name: r.first_name, last_name: r.last_name, email: r.email, phones });
+          out.push({
+            kind,
+            id: r.id,
+            first_name: r.first_name,
+            last_name: r.last_name,
+            email: r.email,
+            phones,
+          });
         }
       }
       return out;
@@ -106,60 +243,144 @@ export function createDbToolStore(
     async crmContext(link) {
       const out: Record<string, unknown> = {};
       if (link.dealId) {
-        const d = must(await admin.from("deals").select("name, stage").eq("id", link.dealId).eq("workspace_id", ws).maybeSingle()) as { name: string; stage: string } | null;
+        const d = must(
+          await admin
+            .from("deals")
+            .select("name, stage")
+            .eq("id", link.dealId)
+            .eq("workspace_id", ws)
+            .maybeSingle(),
+        ) as { name: string; stage: string } | null;
         if (d) out.deal = { name: d.name, stage: d.stage };
       }
       if (link.companyId) {
-        const c = must(await admin.from("companies").select("name").eq("id", link.companyId).eq("workspace_id", ws).maybeSingle()) as { name: string } | null;
+        const c = must(
+          await admin
+            .from("companies")
+            .select("name")
+            .eq("id", link.companyId)
+            .eq("workspace_id", ws)
+            .maybeSingle(),
+        ) as { name: string } | null;
         if (c) out.company = c.name;
       }
       const col = link.contactId ? "related_contact_id" : link.leadId ? "related_lead_id" : null;
       const val = link.contactId ?? link.leadId;
       if (col && val) {
-        const acts = must(await admin.from("activities").select("type, subject, created_at").eq("workspace_id", ws).eq(col, val).is("deleted_at", null).order("created_at", { ascending: false }).limit(5)) as { type: string; subject: string | null; created_at: string }[];
-        out.recent_activities = (acts ?? []).map((a) => ({ type: a.type, subject: a.subject, at: a.created_at.slice(0, 10) }));
+        const acts = must(
+          await admin
+            .from("activities")
+            .select("type, subject, created_at")
+            .eq("workspace_id", ws)
+            .eq(col, val)
+            .is("deleted_at", null)
+            .order("created_at", { ascending: false })
+            .limit(5),
+        ) as { type: string; subject: string | null; created_at: string }[];
+        out.recent_activities = (acts ?? []).map((a) => ({
+          type: a.type,
+          subject: a.subject,
+          at: a.created_at.slice(0, 10),
+        }));
       }
       return out;
     },
     async createActivity(a) {
       if (!a.owner_id) return null;
-      const row = must(await admin.from("activities").insert({ ...a, workspace_id: ws }).select("id").single()) as { id: string };
+      const row = must(
+        await admin
+          .from("activities")
+          .insert({ ...a, workspace_id: ws })
+          .select("id")
+          .single(),
+      ) as { id: string };
       return row.id;
     },
     async setEnrollment(eid, patch) {
       must(await admin.from("sdr_enrollments").update(patch).eq("id", eid).eq("workspace_id", ws));
     },
     async enrollmentTags(eid) {
-      const r = must(await admin.from("sdr_enrollments").select("tags").eq("id", eid).eq("workspace_id", ws).maybeSingle()) as { tags: string[] } | null;
+      const r = must(
+        await admin
+          .from("sdr_enrollments")
+          .select("tags")
+          .eq("id", eid)
+          .eq("workspace_id", ws)
+          .maybeSingle(),
+      ) as { tags: string[] } | null;
       return r?.tags ?? [];
     },
     async searchKb(query) {
-      const rows = must(await admin.from("kb_articles").select("title, excerpt, slug, body").eq("workspace_id", ws).eq("published", true).ilike("title", `%${like(query)}%`).limit(5)) as { title: string; excerpt: string | null; slug: string; body: string }[];
-      return (rows ?? []).map((r) => ({ title: r.title, slug: r.slug, excerpt: (r.excerpt || r.body || "").slice(0, 400) }));
+      const rows = must(
+        await admin
+          .from("kb_articles")
+          .select("title, excerpt, slug, body")
+          .eq("workspace_id", ws)
+          .eq("published", true)
+          .ilike("title", `%${like(query)}%`)
+          .limit(5),
+      ) as { title: string; excerpt: string | null; slug: string; body: string }[];
+      return (rows ?? []).map((r) => ({
+        title: r.title,
+        slug: r.slug,
+        excerpt: (r.excerpt || r.body || "").slice(0, 400),
+      }));
     },
   };
 }
 
 /** Prontidão da agenda do anfitrião: conta ativa, mesmo workspace, do próprio anfitrião, membro ativo. */
-export async function checkHostCalendar(admin: Admin, workspaceId: string, s: ScheduleConfig | null): Promise<{ ok: boolean; reason?: string; provider?: string }> {
+export async function checkHostCalendar(
+  admin: Admin,
+  workspaceId: string,
+  s: ScheduleConfig | null,
+): Promise<{ ok: boolean; reason?: string; provider?: string }> {
   if (!s) return { ok: false, reason: "Anfitrião e agenda não definidos no agente." };
-  const { data: acc, error } = await admin.from("calendar_accounts").select("id, provider, owner_id, workspace_id, sync_enabled, last_status, scopes, refresh_token").eq("id", s.calendar_account_id).maybeSingle();
+  const { data: acc, error } = await admin
+    .from("calendar_accounts")
+    .select(
+      "id, provider, owner_id, workspace_id, sync_enabled, last_status, scopes, refresh_token",
+    )
+    .eq("id", s.calendar_account_id)
+    .maybeSingle();
   if (error) return { ok: false, reason: `Falha ao ler a agenda: ${error.message}` };
-  if (!acc || acc.workspace_id !== workspaceId) return { ok: false, reason: "Agenda não pertence a esta empresa." };
-  if (acc.owner_id !== s.host_user_id) return { ok: false, reason: "A agenda escolhida não é do anfitrião definido." };
-  if (acc.provider !== "google") return { ok: false, reason: `Provedor ${acc.provider} sem suporte de consulta livre/ocupado neste ambiente.` };
-  if (!acc.refresh_token) return { ok: false, reason: "Agenda sem autorização ativa; o anfitrião precisa reconectar." };
+  if (!acc || acc.workspace_id !== workspaceId)
+    return { ok: false, reason: "Agenda não pertence a esta empresa." };
+  if (acc.owner_id !== s.host_user_id)
+    return { ok: false, reason: "A agenda escolhida não é do anfitrião definido." };
+  if (acc.provider !== "google")
+    return {
+      ok: false,
+      reason: `Provedor ${acc.provider} sem suporte de consulta livre/ocupado neste ambiente.`,
+    };
+  if (!acc.refresh_token)
+    return { ok: false, reason: "Agenda sem autorização ativa; o anfitrião precisa reconectar." };
   const scopes = (acc.scopes ?? []) as string[];
   if (!scopes.some((x) => x.endsWith("/auth/calendar") || x.endsWith("/auth/calendar.events")))
     return { ok: false, reason: "Agenda sem permissão de calendário." };
-  if (acc.last_status === "error") return { ok: false, reason: "A agenda do anfitrião está com erro de sincronização; reconecte." };
-  const { data: mem } = await admin.from("workspace_members").select("status").eq("workspace_id", workspaceId).eq("user_id", s.host_user_id).maybeSingle();
-  if (!mem || (mem.status && mem.status !== "active")) return { ok: false, reason: "Anfitrião não é membro ativo da empresa." };
+  if (acc.last_status === "error")
+    return {
+      ok: false,
+      reason: "A agenda do anfitrião está com erro de sincronização; reconecte.",
+    };
+  const { data: mem } = await admin
+    .from("workspace_members")
+    .select("status")
+    .eq("workspace_id", workspaceId)
+    .eq("user_id", s.host_user_id)
+    .maybeSingle();
+  if (!mem || (mem.status && mem.status !== "active"))
+    return { ok: false, reason: "Anfitrião não é membro ativo da empresa." };
   return { ok: true, provider: acc.provider };
 }
 
 async function googleToken(admin: Admin, accountId: string, workspaceId: string): Promise<string> {
-  const { data: acc, error } = await admin.from("calendar_accounts").select("id, access_token, refresh_token, expires_at, workspace_id").eq("id", accountId).eq("workspace_id", workspaceId).maybeSingle();
+  const { data: acc, error } = await admin
+    .from("calendar_accounts")
+    .select("id, access_token, refresh_token, expires_at, workspace_id")
+    .eq("id", accountId)
+    .eq("workspace_id", workspaceId)
+    .maybeSingle();
   if (error || !acc) throw new Error("Agenda não encontrada");
   const exp = acc.expires_at ? Date.parse(acc.expires_at) : 0;
   if (acc.access_token && Date.now() < exp - 60000) return acc.access_token;
@@ -169,36 +390,86 @@ async function googleToken(admin: Admin, accountId: string, workspaceId: string)
   const res = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ client_id: id, client_secret: secret, refresh_token: acc.refresh_token, grant_type: "refresh_token" }).toString(),
+    body: new URLSearchParams({
+      client_id: id,
+      client_secret: secret,
+      refresh_token: acc.refresh_token,
+      grant_type: "refresh_token",
+    }).toString(),
   });
   if (!res.ok) throw new Error(`Falha ao renovar acesso ao Google [${res.status}]`);
   const j = (await res.json()) as { access_token: string; expires_in: number };
-  await admin.from("calendar_accounts").update({ access_token: j.access_token, expires_at: new Date(Date.now() + (j.expires_in - 60) * 1000).toISOString() }).eq("id", accountId).eq("workspace_id", workspaceId);
+  await admin
+    .from("calendar_accounts")
+    .update({
+      access_token: j.access_token,
+      expires_at: new Date(Date.now() + (j.expires_in - 60) * 1000).toISOString(),
+    })
+    .eq("id", accountId)
+    .eq("workspace_id", workspaceId);
   return j.access_token;
 }
 
 /** Google Agenda real: freeBusy, events.insert (id determinístico), get, patch, delete. */
-export function createGoogleCalendar(admin: Admin, workspaceId: string, s: ScheduleConfig, calendarId: string): CalendarProvider {
+export function createGoogleCalendar(
+  admin: Admin,
+  workspaceId: string,
+  s: ScheduleConfig,
+  calendarId: string,
+): CalendarProvider {
   const base = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}`;
   const call = async (url: string, init: RequestInit = {}) => {
     const token = await googleToken(admin, s.calendar_account_id, workspaceId);
-    return fetch(url, { ...init, headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...(init.headers ?? {}) } });
+    return fetch(url, {
+      ...init,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        ...(init.headers ?? {}),
+      },
+    });
   };
-  const meet = (j: { hangoutLink?: string; conferenceData?: { entryPoints?: { entryPointType: string; uri: string }[] } }) =>
-    j.hangoutLink ?? j.conferenceData?.entryPoints?.find((e) => e.entryPointType === "video")?.uri ?? null;
-  const net = (e: unknown) => ({ ok: false as const, error: (e as Error).message, uncertain: true });
+  const meet = (j: {
+    hangoutLink?: string;
+    conferenceData?: { entryPoints?: { entryPointType: string; uri: string }[] };
+  }) =>
+    j.hangoutLink ??
+    j.conferenceData?.entryPoints?.find((e) => e.entryPointType === "video")?.uri ??
+    null;
+  const net = (e: unknown) => ({
+    ok: false as const,
+    error: (e as Error).message,
+    uncertain: true,
+  });
   return {
     kind: "google",
     simulated: false,
     async freeBusy(from, to) {
       try {
-        const res = await call("https://www.googleapis.com/calendar/v3/freeBusy", { method: "POST", body: JSON.stringify({ timeMin: new Date(from).toISOString(), timeMax: new Date(to).toISOString(), timeZone: s.timezone, items: [{ id: calendarId }] }) });
+        const res = await call("https://www.googleapis.com/calendar/v3/freeBusy", {
+          method: "POST",
+          body: JSON.stringify({
+            timeMin: new Date(from).toISOString(),
+            timeMax: new Date(to).toISOString(),
+            timeZone: s.timezone,
+            items: [{ id: calendarId }],
+          }),
+        });
         if (!res.ok) return { ok: false as const, error: `freeBusy ${res.status}` };
-        const j = (await res.json()) as { calendars?: Record<string, { busy?: { start: string; end: string }[]; errors?: unknown[] }> };
+        const j = (await res.json()) as {
+          calendars?: Record<
+            string,
+            { busy?: { start: string; end: string }[]; errors?: unknown[] }
+          >;
+        };
         const cal = j.calendars?.[calendarId];
         // Erro ou ausência da agenda nunca é interpretado como "livre".
-        if (!cal || cal.errors?.length) return { ok: false as const, error: "Agenda não devolveu disponibilidade" };
-        const busy: Busy[] = (cal.busy ?? []).map((b) => ({ start: Date.parse(b.start), end: Date.parse(b.end) }));
+        if (!cal || cal.errors?.length)
+          return { ok: false as const, error: "Agenda não devolveu disponibilidade" };
+        const busy: Busy[] = (cal.busy ?? []).map((b) => ({
+          start: Date.parse(b.start),
+          end: Date.parse(b.end),
+        }));
         return { ok: true as const, busy };
       } catch (e) {
         return { ok: false as const, error: (e as Error).message };
@@ -213,14 +484,33 @@ export function createGoogleCalendar(admin: Admin, workspaceId: string, s: Sched
           start: { dateTime: new Date(e.start).toISOString(), timeZone: e.timezone },
           end: { dateTime: new Date(e.end).toISOString(), timeZone: e.timezone },
           attendees: e.attendeeEmail ? [{ email: e.attendeeEmail }] : [],
-          ...(e.video ? { conferenceData: { createRequest: { requestId: e.eventId, conferenceSolutionKey: { type: "hangoutsMeet" } } } } : {}),
+          ...(e.video
+            ? {
+                conferenceData: {
+                  createRequest: {
+                    requestId: e.eventId,
+                    conferenceSolutionKey: { type: "hangoutsMeet" },
+                  },
+                },
+              }
+            : {}),
         };
-        const res = await call(`${base}/events?conferenceDataVersion=1&sendUpdates=${e.attendeeEmail ? "all" : "none"}`, { method: "POST", body: JSON.stringify(body) });
+        const res = await call(
+          `${base}/events?conferenceDataVersion=1&sendUpdates=${e.attendeeEmail ? "all" : "none"}`,
+          { method: "POST", body: JSON.stringify(body) },
+        );
         if (res.status === 409) {
           const g = await this.getEvent(e.eventId);
-          return g.ok && g.exists ? { ok: true as const, eventId: e.eventId, meetLink: g.meetLink } : { ok: false as const, error: "Conflito de id no provedor", uncertain: true };
+          return g.ok && g.exists
+            ? { ok: true as const, eventId: e.eventId, meetLink: g.meetLink }
+            : { ok: false as const, error: "Conflito de id no provedor", uncertain: true };
         }
-        if (!res.ok) return { ok: false as const, error: `events.insert ${res.status}`, uncertain: res.status >= 500 || res.status === 429 };
+        if (!res.ok)
+          return {
+            ok: false as const,
+            error: `events.insert ${res.status}`,
+            uncertain: res.status >= 500 || res.status === 429,
+          };
         const j = await res.json();
         return { ok: true as const, eventId: e.eventId, meetLink: meet(j) };
       } catch (err) {
@@ -230,17 +520,29 @@ export function createGoogleCalendar(admin: Admin, workspaceId: string, s: Sched
     async getEvent(id) {
       try {
         const res = await call(`${base}/events/${id}`);
-        if (res.status === 404 || res.status === 410) return { ok: true as const, exists: false, cancelled: false, meetLink: null };
+        if (res.status === 404 || res.status === 410)
+          return { ok: true as const, exists: false, cancelled: false, meetLink: null };
         if (!res.ok) return { ok: false as const, error: `events.get ${res.status}` };
         const j = await res.json();
-        return { ok: true as const, exists: true, cancelled: j.status === "cancelled", meetLink: meet(j) };
+        return {
+          ok: true as const,
+          exists: true,
+          cancelled: j.status === "cancelled",
+          meetLink: meet(j),
+        };
       } catch (err) {
         return net(err);
       }
     },
     async moveEvent(id, start, end, tz) {
       try {
-        const res = await call(`${base}/events/${id}?sendUpdates=all`, { method: "PATCH", body: JSON.stringify({ start: { dateTime: new Date(start).toISOString(), timeZone: tz }, end: { dateTime: new Date(end).toISOString(), timeZone: tz } }) });
+        const res = await call(`${base}/events/${id}?sendUpdates=all`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            start: { dateTime: new Date(start).toISOString(), timeZone: tz },
+            end: { dateTime: new Date(end).toISOString(), timeZone: tz },
+          }),
+        });
         if (!res.ok) return { ok: false as const, error: `events.patch ${res.status}` };
         return { ok: true as const, meetLink: meet(await res.json()) };
       } catch (err) {
@@ -250,7 +552,8 @@ export function createGoogleCalendar(admin: Admin, workspaceId: string, s: Sched
     async deleteEvent(id) {
       try {
         const res = await call(`${base}/events/${id}?sendUpdates=all`, { method: "DELETE" });
-        if (!res.ok && res.status !== 410) return { ok: false as const, error: `events.delete ${res.status}` };
+        if (!res.ok && res.status !== 410)
+          return { ok: false as const, error: `events.delete ${res.status}` };
         return { ok: true as const };
       } catch (err) {
         return net(err);
@@ -259,7 +562,16 @@ export function createGoogleCalendar(admin: Admin, workspaceId: string, s: Sched
   };
 }
 
-export async function primaryCalendarId(admin: Admin, workspaceId: string, accountId: string): Promise<string> {
-  const { data } = await admin.from("calendar_accounts").select("primary_calendar_id").eq("id", accountId).eq("workspace_id", workspaceId).maybeSingle();
+export async function primaryCalendarId(
+  admin: Admin,
+  workspaceId: string,
+  accountId: string,
+): Promise<string> {
+  const { data } = await admin
+    .from("calendar_accounts")
+    .select("primary_calendar_id")
+    .eq("id", accountId)
+    .eq("workspace_id", workspaceId)
+    .maybeSingle();
   return data?.primary_calendar_id || "primary";
 }

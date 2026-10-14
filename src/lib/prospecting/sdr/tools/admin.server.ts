@@ -92,7 +92,9 @@ export async function getCatalog(supabase: SupabaseClient, userId: string, playb
   const { data: booking } = pb.booking_page_id
     ? await supabase
         .from("booking_pages")
-        .select("id, title, owner_id, calendar_account_id, duration_minutes, buffer_before_minutes, buffer_after_minutes, timezone, min_notice_hours, max_advance_days, availability")
+        .select(
+          "id, title, owner_id, calendar_account_id, duration_minutes, buffer_before_minutes, buffer_after_minutes, timezone, min_notice_hours, max_advance_days, availability",
+        )
         .eq("id", String(pb.booking_page_id))
         .eq("workspace_id", ws)
         .maybeSingle()

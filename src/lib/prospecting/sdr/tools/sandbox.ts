@@ -34,7 +34,10 @@ export function createSandbox(p: {
   const calendar = new FakeCalendar();
   for (const [k, v] of p.state?.events ?? []) calendar.events.set(k, v);
   // Na simulação a agenda falsa conta como pronta se o anfitrião estiver definido.
-  const facts = { ...p.facts, calendar: { ok: !!p.config.scheduling, reason: "Defina o anfitrião e a agenda." } };
+  const facts = {
+    ...p.facts,
+    calendar: { ok: !!p.config.scheduling, reason: "Defina o anfitrião e a agenda." },
+  };
   const exposed = new Set(exposedTools(p.config, facts).map((d) => d.id));
   const ctx: ToolCtx = {
     mode: "sandbox",

@@ -61,7 +61,13 @@ describe("configuração por agente (pura)", () => {
   });
 
   it("agendamento só com ferramentas de agenda prontas; nunca link de autoagendamento", () => {
-    const base = { offers: [], materials: [], questions: [], bookingAvailable: true, config: parseAgentConfig({}) };
+    const base = {
+      offers: [],
+      materials: [],
+      questions: [],
+      bookingAvailable: true,
+      config: parseAgentConfig({}),
+    };
     const direct = buildSystemPrompt({ ...base, directBooking: true, toolsAvailable: true });
     const legacy = buildSystemPrompt(base);
     expect(direct).toContain("calendar.availability");

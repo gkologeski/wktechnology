@@ -141,7 +141,11 @@ export type AgentCallResult =
   | { ok: true; output: unknown }
   | { ok: false; status: number; error: string; retryable: boolean };
 
-export type AgentToolSpec = { name: string; description: string; parameters: Record<string, unknown> };
+export type AgentToolSpec = {
+  name: string;
+  description: string;
+  parameters: Record<string, unknown>;
+};
 export type AgentToolExecutor = (name: string, args: unknown, callId: string) => Promise<unknown>;
 
 type ChatMsg = Record<string, unknown>;
@@ -215,7 +219,11 @@ export async function callSdrAgent(args: {
       return { ok: false, status: 200, error: "Resposta da IA inválida", retryable: false };
     }
     if (allowTools && msg.tool_calls?.length) {
-      messages.push({ role: "assistant", content: msg.content ?? null, tool_calls: msg.tool_calls });
+      messages.push({
+        role: "assistant",
+        content: msg.content ?? null,
+        tool_calls: msg.tool_calls,
+      });
       for (const tc of msg.tool_calls) {
         let parsed: unknown = null;
         try {
@@ -224,7 +232,11 @@ export async function callSdrAgent(args: {
           parsed = null;
         }
         const out = await args.executeTool!(tc.function.name, parsed, tc.id);
-        messages.push({ role: "tool", tool_call_id: tc.id, content: JSON.stringify(out).slice(0, 6000) });
+        messages.push({
+          role: "tool",
+          tool_call_id: tc.id,
+          content: JSON.stringify(out).slice(0, 6000),
+        });
       }
       continue;
     }
@@ -235,8 +247,18 @@ export async function callSdrAgent(args: {
         .trim();
       return { ok: true, output: JSON.parse(content) };
     } catch {
-      return { ok: false, status: 200, error: "Resposta da IA não é JSON válido", retryable: false };
+      return {
+        ok: false,
+        status: 200,
+        error: "Resposta da IA não é JSON válido",
+        retryable: false,
+      };
     }
   }
-  return { ok: false, status: 200, error: "Limite de chamadas de ferramenta atingido", retryable: false };
+  return {
+    ok: false,
+    status: 200,
+    error: "Limite de chamadas de ferramenta atingido",
+    retryable: false,
+  };
 }

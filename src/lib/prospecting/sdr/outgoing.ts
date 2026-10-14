@@ -11,7 +11,11 @@ export function buildOutgoingText(p: {
   meeting: { status: string; meetLink: string | null } | null;
 }): string {
   const parts = [stripUrls(p.reply)];
-  if (p.meeting?.status === "confirmed" && p.meeting.meetLink && !SELF_BOOKING_RE.test(p.meeting.meetLink))
+  if (
+    p.meeting?.status === "confirmed" &&
+    p.meeting.meetLink &&
+    !SELF_BOOKING_RE.test(p.meeting.meetLink)
+  )
     parts.push(`Link da videoconferência: ${p.meeting.meetLink}`);
   for (const m of p.materials) if (!SELF_BOOKING_RE.test(m.url)) parts.push(`${m.title}: ${m.url}`);
   return parts.filter(Boolean).join("\n\n");

@@ -4,16 +4,38 @@
 import { z } from "zod";
 
 export const SKILLS = {
-  agenda: { name: "Agendamento direto", description: "Consulta a agenda do anfitrião e marca, remarca ou cancela reuniões na conversa." },
-  crm: { name: "CRM", description: "Identifica o cliente, lê o contexto autorizado e registra qualificação, tarefas, resumo e etiquetas." },
-  conhecimento: { name: "Conhecimento", description: "Responde com base no catálogo ativo e nas fontes aprovadas, com citação." },
-  materiais: { name: "Materiais", description: "Encontra e envia materiais aprovados quando o cliente pede." },
-  atendimento: { name: "Atendimento", description: "Passa a conversa para uma pessoa e registra descadastro." },
+  agenda: {
+    name: "Agendamento direto",
+    description: "Consulta a agenda do anfitrião e marca, remarca ou cancela reuniões na conversa.",
+  },
+  crm: {
+    name: "CRM",
+    description:
+      "Identifica o cliente, lê o contexto autorizado e registra qualificação, tarefas, resumo e etiquetas.",
+  },
+  conhecimento: {
+    name: "Conhecimento",
+    description: "Responde com base no catálogo ativo e nas fontes aprovadas, com citação.",
+  },
+  materiais: {
+    name: "Materiais",
+    description: "Encontra e envia materiais aprovados quando o cliente pede.",
+  },
+  atendimento: {
+    name: "Atendimento",
+    description: "Passa a conversa para uma pessoa e registra descadastro.",
+  },
   web: { name: "Web", description: "Busca e leitura de páginas externas." },
 } as const;
 export type SkillId = keyof typeof SKILLS;
 
-export type Requirement = "calendar" | "crm_link" | "questionnaire" | "materials" | "assignee" | "connector";
+export type Requirement =
+  | "calendar"
+  | "crm_link"
+  | "questionnaire"
+  | "materials"
+  | "assignee"
+  | "connector";
 
 type Json = Record<string, unknown>;
 const str = { type: "string" };
@@ -25,7 +47,10 @@ const obj = (properties: Record<string, Json>): Json => ({
   properties,
 });
 const confirmProps = {
-  confirmation_message_id: { ...str, description: "message_id da mensagem ATUAL do cliente em que ele confirmou explicitamente." },
+  confirmation_message_id: {
+    ...str,
+    description: "message_id da mensagem ATUAL do cliente em que ele confirmou explicitamente.",
+  },
 };
 
 export type ToolDef = {
@@ -58,9 +83,15 @@ export const TOOL_DEFS: ToolDef[] = [
     requires: ["calendar"],
     available: true,
     parameters: obj({
-      date: { ...nstr, description: "Data pedida pelo cliente, YYYY-MM-DD com ano. null se não pediu data." },
+      date: {
+        ...nstr,
+        description: "Data pedida pelo cliente, YYYY-MM-DD com ano. null se não pediu data.",
+      },
       time: { ...nstr, description: "Hora pedida, HH:MM. null se não pediu hora." },
-      timezone: { ...nstr, description: "Fuso IANA apenas se o cliente informou; null usa o do anfitrião." },
+      timezone: {
+        ...nstr,
+        description: "Fuso IANA apenas se o cliente informou; null usa o do anfitrião.",
+      },
       part_of_day: { type: ["string", "null"], enum: ["morning", "afternoon", null] },
       rejected_previous: { type: "boolean" },
     }),
@@ -84,7 +115,10 @@ export const TOOL_DEFS: ToolDef[] = [
     available: true,
     parameters: obj({
       option: { type: "integer", minimum: 1, maximum: 3 },
-      attendee_email: { ...nstr, description: "E-mail que o cliente informou para receber o convite; null se não informou." },
+      attendee_email: {
+        ...nstr,
+        description: "E-mail que o cliente informou para receber o convite; null se não informou.",
+      },
       ...confirmProps,
     }),
     input: z.object({ option, attendee_email: z.string().email().nullable(), ...confirm }),
@@ -93,7 +127,8 @@ export const TOOL_DEFS: ToolDef[] = [
     id: "calendar.reschedule",
     skill: "agenda",
     name: "Remarcar reunião",
-    description: "Move a reunião desta conversa para uma opção vigente, após confirmação explícita do cliente.",
+    description:
+      "Move a reunião desta conversa para uma opção vigente, após confirmação explícita do cliente.",
     effect: "write",
     confirmation: true,
     requires: ["calendar"],
@@ -136,7 +171,11 @@ export const TOOL_DEFS: ToolDef[] = [
     requires: [],
     available: true,
     parameters: obj({ full_name: nstr, email: nstr, phone: nstr }),
-    input: z.object({ full_name: z.string().max(160).nullable(), email: z.string().max(200).nullable(), phone: z.string().max(40).nullable() }),
+    input: z.object({
+      full_name: z.string().max(160).nullable(),
+      email: z.string().max(200).nullable(),
+      phone: z.string().max(40).nullable(),
+    }),
   },
   {
     id: "crm.context.read",
@@ -154,7 +193,8 @@ export const TOOL_DEFS: ToolDef[] = [
     id: "crm.qualification.update",
     skill: "crm",
     name: "Registrar qualificação",
-    description: "Registra respostas do questionário oficial com trecho literal da mensagem. A nota é calculada pelo sistema.",
+    description:
+      "Registra respostas do questionário oficial com trecho literal da mensagem. A nota é calculada pelo sistema.",
     effect: "write",
     confirmation: false,
     requires: ["questionnaire"],
@@ -166,14 +206,24 @@ export const TOOL_DEFS: ToolDef[] = [
       },
     }),
     input: z.object({
-      answers: z.array(z.object({ question_id: z.string(), value: z.string(), message_id: z.string(), excerpt: z.string() })).max(20),
+      answers: z
+        .array(
+          z.object({
+            question_id: z.string(),
+            value: z.string(),
+            message_id: z.string(),
+            excerpt: z.string(),
+          }),
+        )
+        .max(20),
     }),
   },
   {
     id: "knowledge.search",
     skill: "conhecimento",
     name: "Pesquisar conhecimento",
-    description: "Pesquisa no catálogo ativo, nas fontes do agente e na base de conhecimento publicada. Sem resultado: diga que vai confirmar com um especialista.",
+    description:
+      "Pesquisa no catálogo ativo, nas fontes do agente e na base de conhecimento publicada. Sem resultado: diga que vai confirmar com um especialista.",
     effect: "read",
     confirmation: false,
     requires: [],
@@ -209,7 +259,8 @@ export const TOOL_DEFS: ToolDef[] = [
     id: "materials.send",
     skill: "materiais",
     name: "Enviar material",
-    description: "Anexa um material aprovado à resposta. Só quando o cliente pediu ou aceitou (informe a mensagem).",
+    description:
+      "Anexa um material aprovado à resposta. Só quando o cliente pediu ou aceitou (informe a mensagem).",
     effect: "write",
     confirmation: true,
     requires: ["materials"],
@@ -251,7 +302,11 @@ export const TOOL_DEFS: ToolDef[] = [
     requires: ["assignee"],
     available: true,
     parameters: obj({ title: str, due_in_hours: { type: ["integer", "null"] }, note: nstr }),
-    input: z.object({ title: z.string().min(3).max(160), due_in_hours: z.number().int().min(1).max(720).nullable(), note: z.string().max(1000).nullable() }),
+    input: z.object({
+      title: z.string().min(3).max(160),
+      due_in_hours: z.number().int().min(1).max(720).nullable(),
+      note: z.string().max(1000).nullable(),
+    }),
   },
   {
     id: "conversation.summarize",
@@ -275,7 +330,10 @@ export const TOOL_DEFS: ToolDef[] = [
     requires: [],
     available: true,
     parameters: obj({ add: { type: "array", items: str }, remove: { type: "array", items: str } }),
-    input: z.object({ add: z.array(z.string().max(60)).max(10), remove: z.array(z.string().max(60)).max(10) }),
+    input: z.object({
+      add: z.array(z.string().max(60)).max(10),
+      remove: z.array(z.string().max(60)).max(10),
+    }),
   },
   {
     id: "web.search",
@@ -286,7 +344,8 @@ export const TOOL_DEFS: ToolDef[] = [
     confirmation: false,
     requires: ["connector"],
     available: false,
-    unavailableReason: "Nenhum conector de busca ligado ao projeto; execução não habilitada para clientes externos.",
+    unavailableReason:
+      "Nenhum conector de busca ligado ao projeto; execução não habilitada para clientes externos.",
     parameters: obj({ query: str }),
     input: z.object({ query: z.string() }),
   },
@@ -299,7 +358,8 @@ export const TOOL_DEFS: ToolDef[] = [
     confirmation: false,
     requires: ["connector"],
     available: false,
-    unavailableReason: "Nenhum conector de leitura ligado; sem lista de endereços permitidos configurada.",
+    unavailableReason:
+      "Nenhum conector de leitura ligado; sem lista de endereços permitidos configurada.",
     parameters: obj({ url: str }),
     input: z.object({ url: z.string() }),
   },
@@ -318,13 +378,19 @@ export const ScheduleConfigSchema = z.object({
   duration_minutes: z.number().int().min(15).max(240).default(30),
   timezone: z.string().min(3).default("America/Sao_Paulo"),
   working_hours: z
-    .record(z.enum(["sun", "mon", "tue", "wed", "thu", "fri", "sat"]), z.array(z.object({ start: z.string().regex(HHMM), end: z.string().regex(HHMM) })).max(4))
+    .record(
+      z.enum(["sun", "mon", "tue", "wed", "thu", "fri", "sat"]),
+      z.array(z.object({ start: z.string().regex(HHMM), end: z.string().regex(HHMM) })).max(4),
+    )
     .default({}),
   buffer_before_minutes: z.number().int().min(0).max(120).default(0),
   buffer_after_minutes: z.number().int().min(0).max(120).default(0),
   min_notice_hours: z.number().int().min(0).max(168).default(2),
   horizon_days: z.number().int().min(1).max(90).default(21),
-  holidays: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).max(60).default([]),
+  holidays: z
+    .array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/))
+    .max(60)
+    .default([]),
   video: z.enum(["google_meet", "none"]).default("google_meet"),
   meeting_title: z.string().max(120).default("Reunião com a WK Technology"),
 });
@@ -356,10 +422,14 @@ export type ToolReadiness = { ready: boolean; reason: string | null };
 export function toolReadiness(def: ToolDef, f: ReadinessFacts): ToolReadiness {
   if (!def.available) return { ready: false, reason: def.unavailableReason ?? "Indisponível" };
   for (const r of def.requires) {
-    if (r === "calendar" && !f.calendar.ok) return { ready: false, reason: f.calendar.reason ?? "Agenda do anfitrião não configurada" };
-    if (r === "questionnaire" && !f.questionnaire) return { ready: false, reason: "Agente sem questionário de qualificação" };
-    if (r === "materials" && !f.materials) return { ready: false, reason: "Nenhum material aprovado para este agente" };
-    if (r === "assignee" && !f.assignee) return { ready: false, reason: "Agente sem responsável definido" };
+    if (r === "calendar" && !f.calendar.ok)
+      return { ready: false, reason: f.calendar.reason ?? "Agenda do anfitrião não configurada" };
+    if (r === "questionnaire" && !f.questionnaire)
+      return { ready: false, reason: "Agente sem questionário de qualificação" };
+    if (r === "materials" && !f.materials)
+      return { ready: false, reason: "Nenhum material aprovado para este agente" };
+    if (r === "assignee" && !f.assignee)
+      return { ready: false, reason: "Agente sem responsável definido" };
   }
   // crm_link é verificado por conversa no momento da execução.
   return { ready: true, reason: null };

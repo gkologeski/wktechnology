@@ -831,21 +831,52 @@ describe("ferramentas reais no turno (agenda falsa)", () => {
           timezone: "America/Sao_Paulo",
           min_notice_hours: 0,
           horizon_days: 14,
-          working_hours: { mon: [WH], tue: [WH], wed: [WH], thu: [WH], fri: [WH], sat: [WH], sun: [WH] },
+          working_hours: {
+            mon: [WH],
+            tue: [WH],
+            wed: [WH],
+            thu: [WH],
+            fri: [WH],
+            sat: [WH],
+            sun: [WH],
+          },
         },
       },
     });
     job(db);
     const j = await claimOne(db);
     const seenTools: string[][] = [];
-    const callAgent = vi.fn(async (a: { tools?: { name: string }[]; executeTool?: (n: string, x: unknown, id: string) => Promise<unknown> }) => {
-      seenTools.push((a.tools ?? []).map((t) => t.name));
-      const av = (await a.executeTool!("calendar__availability", { date: null, time: null, timezone: null, part_of_day: null, rejected_previous: false }, "t1")) as { options: unknown[] };
-      expect(av.options).toHaveLength(3);
-      const bk = (await a.executeTool!("calendar__book", { option: 1, attendee_email: null, confirmation_message_id: "m1" }, "t2")) as { status: string };
-      expect(bk.status).toBe("confirmed");
-      return { ok: true as const, output: { reply: "Reunião confirmada! Agende em https://x/book/wk", intent: "schedule_meeting", offer_keys: [], material_ids: [], answers: [], handoff_reason: "" } };
-    });
+    const callAgent = vi.fn(
+      async (a: {
+        tools?: { name: string }[];
+        executeTool?: (n: string, x: unknown, id: string) => Promise<unknown>;
+      }) => {
+        seenTools.push((a.tools ?? []).map((t) => t.name));
+        const av = (await a.executeTool!(
+          "calendar__availability",
+          { date: null, time: null, timezone: null, part_of_day: null, rejected_previous: false },
+          "t1",
+        )) as { options: unknown[] };
+        expect(av.options).toHaveLength(3);
+        const bk = (await a.executeTool!(
+          "calendar__book",
+          { option: 1, attendee_email: null, confirmation_message_id: "m1" },
+          "t2",
+        )) as { status: string };
+        expect(bk.status).toBe("confirmed");
+        return {
+          ok: true as const,
+          output: {
+            reply: "Reunião confirmada! Agende em https://x/book/wk",
+            intent: "schedule_meeting",
+            offer_keys: [],
+            material_ids: [],
+            answers: [],
+            handoff_reason: "",
+          },
+        };
+      },
+    );
     const d = deps(null, {
       callAgent: callAgent as never,
       toolEnv: async () => ({ store, calendar: cal, calendarFacts: { ok: true } }),
@@ -864,9 +895,24 @@ describe("ferramentas reais no turno (agenda falsa)", () => {
     const j = await claimOne(db);
     const callAgent = vi.fn(async (a: { tools?: unknown[] }) => {
       expect(a.tools).toBeUndefined();
-      return { ok: true as const, output: { reply: "Vamos marcar", intent: "schedule_meeting", offer_keys: [], material_ids: [], answers: [], handoff_reason: "" } };
+      return {
+        ok: true as const,
+        output: {
+          reply: "Vamos marcar",
+          intent: "schedule_meeting",
+          offer_keys: [],
+          material_ids: [],
+          answers: [],
+          handoff_reason: "",
+        },
+      };
     });
-    const d = deps(null, { callAgent: callAgent as never, toolEnv: async () => { throw new Error("não deveria"); } });
+    const d = deps(null, {
+      callAgent: callAgent as never,
+      toolEnv: async () => {
+        throw new Error("não deveria");
+      },
+    });
     await processJob(db, j, d);
     const saved = db.t("sdr_turn_jobs").find((x) => x.id === j.id)!;
     expect(String(saved.draft_text)).not.toMatch(/\/book\//);

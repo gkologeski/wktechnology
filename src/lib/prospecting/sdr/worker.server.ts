@@ -97,23 +97,48 @@ type Job = {
   status: string;
 };
 
-export type ToolEnv = { store: ToolStore; calendar: CalendarProvider | null; calendarFacts: { ok: boolean; reason?: string } };
+export type ToolEnv = {
+  store: ToolStore;
+  calendar: CalendarProvider | null;
+  calendarFacts: { ok: boolean; reason?: string };
+};
 export type WorkerDeps = {
   callAgent: typeof callSdrAgent;
   /** Armazenamento e agenda das ferramentas (produção: banco + Google). */
-  toolEnv?: (admin: Admin, p: { workspaceId: string; playbookId: string; agentVersionId: string | null; jobId: string; conversationId: string; enrollmentId: string; scheduling: ScheduleConfig | null }) => Promise<ToolEnv>;
+  toolEnv?: (
+    admin: Admin,
+    p: {
+      workspaceId: string;
+      playbookId: string;
+      agentVersionId: string | null;
+      jobId: string;
+      conversationId: string;
+      enrollmentId: string;
+      scheduling: ScheduleConfig | null;
+    },
+  ) => Promise<ToolEnv>;
   ensureOpportunity: typeof ensureOpportunity;
   handoffToHuman: typeof handoffToHuman;
   sendMessage: typeof sendSdrMessage;
 };
 
-async function defaultToolEnv(admin: Admin, p: Parameters<NonNullable<WorkerDeps["toolEnv"]>>[1]): Promise<ToolEnv> {
-  const { createDbToolStore, checkHostCalendar, createGoogleCalendar, primaryCalendarId } = await import("./tools/store.server");
+async function defaultToolEnv(
+  admin: Admin,
+  p: Parameters<NonNullable<WorkerDeps["toolEnv"]>>[1],
+): Promise<ToolEnv> {
+  const { createDbToolStore, checkHostCalendar, createGoogleCalendar, primaryCalendarId } =
+    await import("./tools/store.server");
   const store = createDbToolStore(admin, p);
   const facts = await checkHostCalendar(admin, p.workspaceId, p.scheduling);
-  const calendar = facts.ok && p.scheduling
-    ? createGoogleCalendar(admin, p.workspaceId, p.scheduling, await primaryCalendarId(admin, p.workspaceId, p.scheduling.calendar_account_id))
-    : null;
+  const calendar =
+    facts.ok && p.scheduling
+      ? createGoogleCalendar(
+          admin,
+          p.workspaceId,
+          p.scheduling,
+          await primaryCalendarId(admin, p.workspaceId, p.scheduling.calendar_account_id),
+        )
+      : null;
   return { store, calendar, calendarFacts: facts };
 }
 
@@ -313,7 +338,13 @@ export async function processJob(
   const toolCfg = parseToolConfig(agentVersion?.tool_config);
   const effects = emptyEffects();
   let toolCtx: ToolCtx | null = null;
-  let selected = selectTools(null, { calendar: { ok: false }, crmLinked: false, questionnaire: false, materials: false, assignee: false });
+  let selected = selectTools(null, {
+    calendar: { ok: false },
+    crmLinked: false,
+    questionnaire: false,
+    materials: false,
+    assignee: false,
+  });
   if (toolCfg?.enabled_tools.length && deps.toolEnv) {
     const env = await deps.toolEnv(admin, {
       workspaceId: job.workspace_id,
@@ -796,21 +827,45 @@ async function sweepExhaustedJobs(admin: Admin, workspaceIds: string[]): Promise
 async function reconcileDirectMeetings(admin: Admin, workspaceIds: string[]): Promise<number> {
   const { data: rows, error } = await admin
     .from("sdr_meetings")
-    .select("id, workspace_id, playbook_id, conversation_id, enrollment_id, calendar_account_id, status, start_at, end_at, provider_event_id, meet_link, idem_key, host_user_id, timezone")
+    .select(
+      "id, workspace_id, playbook_id, conversation_id, enrollment_id, calendar_account_id, status, start_at, end_at, provider_event_id, meet_link, idem_key, host_user_id, timezone",
+    )
     .eq("status", "reconcile")
     .in("workspace_id", workspaceIds)
     .limit(20);
   if (error) throw new Error(error.message);
   let n = 0;
-  const { createDbToolStore, createGoogleCalendar, primaryCalendarId } = await import("./tools/store.server");
+  const { createDbToolStore, createGoogleCalendar, primaryCalendarId } =
+    await import("./tools/store.server");
   const { reconcileMeeting } = await import("./tools/dispatcher");
   for (const m of rows ?? []) {
-    const store = createDbToolStore(admin, { workspaceId: m.workspace_id, playbookId: m.playbook_id, agentVersionId: null, jobId: null, conversationId: m.conversation_id, enrollmentId: m.enrollment_id });
-    const sched = { host_user_id: m.host_user_id, calendar_account_id: m.calendar_account_id, timezone: m.timezone } as ScheduleConfig;
-    const cal = createGoogleCalendar(admin, m.workspace_id, sched, await primaryCalendarId(admin, m.workspace_id, m.calendar_account_id));
+    const store = createDbToolStore(admin, {
+      workspaceId: m.workspace_id,
+      playbookId: m.playbook_id,
+      agentVersionId: null,
+      jobId: null,
+      conversationId: m.conversation_id,
+      enrollmentId: m.enrollment_id,
+    });
+    const sched = {
+      host_user_id: m.host_user_id,
+      calendar_account_id: m.calendar_account_id,
+      timezone: m.timezone,
+    } as ScheduleConfig;
+    const cal = createGoogleCalendar(
+      admin,
+      m.workspace_id,
+      sched,
+      await primaryCalendarId(admin, m.workspace_id, m.calendar_account_id),
+    );
     const r = await reconcileMeeting(store, cal, m);
     if (r === "confirmed" && m.enrollment_id)
-      await store.setEnrollment(m.enrollment_id, { meeting_status: "confirmed", commercial_stage: "meeting_booked", follow_up_at: null, cancel_reason: "meeting" });
+      await store.setEnrollment(m.enrollment_id, {
+        meeting_status: "confirmed",
+        commercial_stage: "meeting_booked",
+        follow_up_at: null,
+        cancel_reason: "meeting",
+      });
     if (r !== "still_pending") n++;
   }
   return n;

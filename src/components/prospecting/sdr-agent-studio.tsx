@@ -479,7 +479,10 @@ function TestChat({
           <Button
             size="icon"
             variant="ghost"
-            onClick={() => { setMsgs([]); sandboxRef.current = null; }}
+            onClick={() => {
+              setMsgs([]);
+              sandboxRef.current = null;
+            }}
             disabled={!msgs.length}
             aria-label="Limpar conversa de teste"
             title="Limpar conversa"

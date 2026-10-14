@@ -221,7 +221,9 @@ export function evaluateSpecific(
     const sameDay = generateSlots(s, busy, now, { fromYmd: req.date, toYmd: req.date });
     return {
       status: "day_listing",
-      alternatives: sameDay.length ? pickDiverse(sameDay, s.timezone, 3) : alternativesFrom(req.date),
+      alternatives: sameDay.length
+        ? pickDiverse(sameDay, s.timezone, 3)
+        : alternativesFrom(req.date),
     };
   }
   const t = hhmm(req.time);
@@ -230,7 +232,8 @@ export function evaluateSpecific(
   const slot = { start, end: start + s.duration_minutes * 60000 };
   // Converte para o dia local do anfitrião para validar expediente e alternativas.
   const host = localParts(start, s.timezone);
-  if (start < now) return { status: "past", alternatives: alternativesFrom(ymdKey(localParts(now, s.timezone))) };
+  if (start < now)
+    return { status: "past", alternatives: alternativesFrom(ymdKey(localParts(now, s.timezone))) };
   if (start < now + s.min_notice_hours * 3600000)
     return { status: "too_soon", alternatives: alternativesFrom(host.ymd) };
   if (slot.end > now + s.horizon_days * 86400000)
@@ -246,6 +249,7 @@ export function evaluateSpecific(
       return slot.start >= ws && slot.end <= we;
     });
   if (!inHours) return { status: "outside_hours", alternatives: alternativesFrom(host.ymd) };
-  if (overlapsBusy(s, slot, busy)) return { status: "busy", alternatives: alternativesFrom(host.ymd) };
+  if (overlapsBusy(s, slot, busy))
+    return { status: "busy", alternatives: alternativesFrom(host.ymd) };
   return { status: "free", slot };
 }

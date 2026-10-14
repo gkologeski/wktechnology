@@ -76,7 +76,10 @@ async function sdrColumns(
     .eq("status", "published")
     .maybeSingle();
   if (vErr) throw new Error(vErr.message);
-  if (!pub) throw new Error("Este agente ainda não tem versão publicada; publique antes de ligá-lo à campanha.");
+  if (!pub)
+    throw new Error(
+      "Este agente ainda não tem versão publicada; publique antes de ligá-lo à campanha.",
+    );
   return { sdr_enabled: true, sdr_playbook_id: playbookId };
 }
 

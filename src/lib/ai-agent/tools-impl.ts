@@ -35,7 +35,11 @@ function scoreMatch(query: string, ...values: Array<string | null | undefined>) 
  * Antes um único termo comum ("Silva") trazia qualquer pessoa.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function applyTermFilters<Q extends { or: (f: string) => any }>(q: Q, query: string, fields: string[]): Q {
+function applyTermFilters<Q extends { or: (f: string) => any }>(
+  q: Q,
+  query: string,
+  fields: string[],
+): Q {
   let out = q;
   for (const term of searchTerms(query)) {
     const like = safeLike(term).replace(/[,()]/g, " ");
@@ -79,7 +83,10 @@ export async function searchEntityImpl(
       );
   } else if (input.kind === "company") {
     const { data: rows } = await applyTermFilters(
-      supabase.from("companies").select("id, name, cnpj, description").eq("workspace_id", workspaceId),
+      supabase
+        .from("companies")
+        .select("id, name, cnpj, description")
+        .eq("workspace_id", workspaceId),
       input.query,
       ["name", "cnpj"],
     ).limit(15);

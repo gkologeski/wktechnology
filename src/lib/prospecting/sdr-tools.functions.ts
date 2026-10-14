@@ -13,7 +13,9 @@ export const getSdrToolCatalog = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { getCatalog } = await import("@/lib/prospecting/sdr/tools/admin.server");
     // JSON string: schemas das ferramentas têm formato livre.
-    return { json: JSON.stringify(await getCatalog(context.supabase, context.userId, data.playbookId)) };
+    return {
+      json: JSON.stringify(await getCatalog(context.supabase, context.userId, data.playbookId)),
+    };
   });
 
 export const saveSdrToolConfig = createServerFn({ method: "POST" })
@@ -27,7 +29,11 @@ export const saveSdrToolConfig = createServerFn({ method: "POST" })
 export const testSdrTool = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    Pb.extend({ tool: z.string().min(3).max(60), args: z.unknown(), sandbox_state: z.unknown().optional() }).parse(i),
+    Pb.extend({
+      tool: z.string().min(3).max(60),
+      args: z.unknown(),
+      sandbox_state: z.unknown().optional(),
+    }).parse(i),
   )
   .handler(async ({ data, context }) => {
     const admin = await import("@/lib/prospecting/sdr/tools/admin.server");
@@ -49,9 +55,17 @@ export const testSdrTool = createServerFn({ method: "POST" })
       parseToolConfig(vers?.find((v) => v.status === "published")?.tool_config);
     if (!cfg) throw new Error("Configure as ferramentas do agente antes de testar.");
     const agentCfg = configFromRow(pb);
-    const { offers, materials } = scopeKnowledge(agentCfg, await loadKnowledge(context.supabase, ws));
+    const { offers, materials } = scopeKnowledge(
+      agentCfg,
+      await loadKnowledge(context.supabase, ws),
+    );
     const history = [
-      { id: "sandbox-msg-1", direction: "inbound" as const, body: "Mensagem de teste", created_at: new Date().toISOString() },
+      {
+        id: "sandbox-msg-1",
+        direction: "inbound" as const,
+        body: "Mensagem de teste",
+        created_at: new Date().toISOString(),
+      },
     ];
     const sb = createSandbox({
       workspaceId: ws,
@@ -63,7 +77,9 @@ export const testSdrTool = createServerFn({ method: "POST" })
       materials,
       kbSources: agentCfg.kb_sources,
       attachMaterials: agentCfg.guardrails.attach_materials,
-      questions: pb.questionnaire_id ? await loadQuestions(context.supabase, ws, pb.questionnaire_id) : [],
+      questions: pb.questionnaire_id
+        ? await loadQuestions(context.supabase, ws, pb.questionnaire_id)
+        : [],
       assigneeId: agentCfg.assigned_to,
       state: (data.sandbox_state ?? null) as never,
     });

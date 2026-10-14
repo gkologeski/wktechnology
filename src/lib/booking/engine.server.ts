@@ -136,7 +136,11 @@ export async function computeAvailableSlots(
   if (windowStart >= windowEnd) return [];
 
   // Load busy ranges: existing bookings + mirrored calendar events
-  const [{ data: bookings, error: bErr }, { data: events, error: eErr }, { data: sdrMeetings, error: mErr }] = await Promise.all([
+  const [
+    { data: bookings, error: bErr },
+    { data: events, error: eErr },
+    { data: sdrMeetings, error: mErr },
+  ] = await Promise.all([
     supabaseAdmin
       .from("bookings")
       .select("start_at,end_at,status")
@@ -221,7 +225,16 @@ export async function computeAvailableSlots(
     }
     // Próximo dia LOCAL (meio-dia do dia seguinte no fuso): imune a viradas de horário de verão.
     const nd = new Date(Date.UTC(y, m - 1, d + 1));
-    cursor.setTime(zonedDateToUtc(nd.getUTCFullYear(), nd.getUTCMonth() + 1, nd.getUTCDate(), 0, 0, tz).getTime());
+    cursor.setTime(
+      zonedDateToUtc(
+        nd.getUTCFullYear(),
+        nd.getUTCMonth() + 1,
+        nd.getUTCDate(),
+        0,
+        0,
+        tz,
+      ).getTime(),
+    );
   }
   return slots;
 }

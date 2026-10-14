@@ -198,7 +198,8 @@ export const testSdrAgent = createServerFn({ method: "POST" })
       questions,
       config,
       bookingAvailable: false,
-      directBooking: !!sandbox?.exposed.has("calendar.availability") && !!sandbox?.exposed.has("calendar.book"),
+      directBooking:
+        !!sandbox?.exposed.has("calendar.availability") && !!sandbox?.exposed.has("calendar.book"),
       toolsAvailable: specs.length > 0,
       extraInstructions: pb.qualification_prompt,
       persona,

@@ -77,11 +77,7 @@ let seq = 0;
 const nextId = () => `00000000-0000-4000-9000-${String(++seq).padStart(12, "0")}`;
 const ACTIVE = ["pending", "confirmed", "reconcile"];
 const norm = (s: string | null | undefined) =>
-  (s ?? "")
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .toLowerCase()
-    .trim();
+  (s ?? "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim();
 
 type OfferRow = {
   conversation_id: string;
