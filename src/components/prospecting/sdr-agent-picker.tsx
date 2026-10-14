@@ -2,7 +2,13 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, Pencil, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Star, Trash2 } from "lucide-react";
+import { useSdrPlaybooks } from "@/hooks/use-default-sdr-agent";
+import {
+  agentOptionLabel,
+  pickDefaultAgent,
+  sortDefaultFirst,
+} from "@/lib/prospecting/sdr/default-agent";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { deletePlaybook, renamePlaybook } from "@/lib/sdr-agent.functions";
+import { deletePlaybook, renamePlaybook, setDefaultPlaybook } from "@/lib/sdr-agent.functions";
 import { SdrAgentStudio } from "./sdr-agent-studio";
 
 type PickerPlaybook = {
@@ -42,13 +48,31 @@ export function SdrAgentPicker({
   const qc = useQueryClient();
   const rename = useServerFn(renamePlaybook);
   const del = useServerFn(deletePlaybook);
-  const fallback = (playbooks.find((p) => p.questionnaire_id) ?? playbooks[0])?.id ?? null;
+  const setMain = useServerFn(setDefaultPlaybook);
+  const { defaultPlaybookId } = useSdrPlaybooks();
+  const fallback = pickDefaultAgent(playbooks, defaultPlaybookId, (l) =>
+    l.find((p) => p.questionnaire_id),
+  );
   const [picked, setPicked] = useState<string | null>(null);
   const playbookId = picked && playbooks.some((p) => p.id === picked) ? picked : fallback;
   const current = playbooks.find((p) => p.id === playbookId) ?? null;
+  const isMain = !!current && current.id === defaultPlaybookId;
   const [editOpen, setEditOpen] = useState(false);
   const [name, setName] = useState("");
-  const refresh = () => qc.invalidateQueries({ queryKey: ["sdr-overview"] });
+  const refresh = () =>
+    Promise.all([
+      qc.invalidateQueries({ queryKey: ["sdr-overview"] }),
+      qc.invalidateQueries({ queryKey: ["sdr-playbooks"] }),
+    ]);
+
+  const mainM = useMutation({
+    mutationFn: (id: string) => setMain({ data: { id } }),
+    onSuccess: async () => {
+      toast.success("Agente principal definido");
+      await refresh();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const renameM = useMutation({
     mutationFn: () => rename({ data: { id: current!.id, name } }),
@@ -81,6 +105,14 @@ export function SdrAgentPicker({
     if (ok) deleteM.mutate(current.id);
   };
 
+  const onMain = async () => {
+    if (!current) return;
+    const ok = await confirmDialog(
+      `Definir "${current.name}" como agente principal? Ele virá escolhido por padrão nos seletores e atenderá conversas novas sem agente vinculado.`,
+    );
+    if (ok) mainM.mutate(current.id);
+  };
+
   return (
     <div className="space-y-4">
       {playbooks.length > 0 && (
@@ -92,15 +124,33 @@ export function SdrAgentPicker({
                 <SelectValue placeholder="Escolha o agente" />
               </SelectTrigger>
               <SelectContent>
-                {playbooks.map((p) => (
+                {sortDefaultFirst(playbooks, defaultPlaybookId).map((p) => (
                   <SelectItem key={p.id} value={p.id}>
-                    {p.name}
-                    {p.enabled ? "" : " (desativado)"}
+                    {agentOptionLabel(p, defaultPlaybookId)}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
+          <Button
+            variant="outline"
+            disabled={!current || isMain || !current.enabled || mainM.isPending}
+            onClick={onMain}
+            title={
+              current && !current.enabled
+                ? "Agente desativado não pode ser o principal"
+                : isMain
+                  ? "Este é o agente principal"
+                  : "Usar como escolha padrão"
+            }
+          >
+            {mainM.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Star className={isMain ? "h-4 w-4 fill-current text-warning" : "h-4 w-4"} />
+            )}
+            {isMain ? "Agente principal" : "Definir como principal"}
+          </Button>
           <Button
             variant="outline"
             disabled={!current}

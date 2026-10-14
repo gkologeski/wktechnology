@@ -2,6 +2,7 @@
 // argumentos de negócio; workspace, agente, conversa, anfitrião e usuário vêm
 // do servidor. Ferramenta desligada/não pronta é negada; efeitos exigem a
 // mensagem atual do cliente como confirmação; tudo fica registrado.
+import { meetingTitle } from "../default-agent";
 import { brPhoneVariants } from "@/lib/whatsapp/phone-variants";
 import { acceptAnswers, type CanonicalQuestion } from "../qualification";
 import type { ConversationMessage } from "../policy";
@@ -303,6 +304,23 @@ const availability: Handler = async (ctx, a) => {
   };
 };
 
+/** Título "Reunião [empresa] <> WK Technology" com a empresa vinculada à conversa. */
+async function titleFor(ctx: ToolCtx, s: ScheduleConfig): Promise<string> {
+  let company: string | null = null;
+  try {
+    const c = await ctx.store.crmContext({
+      leadId: ctx.conversation.leadId,
+      contactId: ctx.conversation.contactId,
+      dealId: ctx.conversation.dealId,
+      companyId: ctx.conversation.companyId,
+    });
+    company = typeof c.company === "string" ? c.company : null;
+  } catch {
+    company = null;
+  }
+  return meetingTitle(s.meeting_title, { company });
+}
+
 async function confirmMeeting(
   ctx: ToolCtx,
   m: MeetingRow,
@@ -321,7 +339,7 @@ async function confirmMeeting(
     owner_id: s.host_user_id,
     assigned_to: s.host_user_id,
     type: "meeting",
-    subject: s.meeting_title,
+    subject: await titleFor(ctx, s),
     body: `Reunião marcada pelo Agente SDR na conversa do WhatsApp. ${meetLink ? `Videoconferência: ${meetLink}` : ""}`.trim(),
     due_date: m.start_at,
     activity_date: m.start_at,
@@ -371,7 +389,7 @@ async function settle(
     start,
     end: Date.parse(m.end_at),
     timezone: s.timezone,
-    summary: s.meeting_title,
+    summary: await titleFor(ctx, s),
     description: "Reunião marcada pela assistente virtual da WK Technology.",
     attendeeEmail: attendee,
     video: s.video === "google_meet",

@@ -1,5 +1,12 @@
 // Habilidades e ferramentas por agente: liga/desliga, prontidão real,
 // anfitrião/agenda do agendamento direto, teste simulado e registro.
+import { useSdrPlaybooks } from "@/hooks/use-default-sdr-agent";
+import {
+  agentOptionLabel,
+  pickDefaultAgent,
+  sortDefaultFirst,
+  DEFAULT_MEETING_TITLE,
+} from "@/lib/prospecting/sdr/default-agent";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -51,8 +58,11 @@ export function SdrSkillsPanel({
   playbooks: { id: string; name: string; enabled: boolean }[];
 }) {
   const [picked, setPicked] = useState<string | null>(null);
+  const { defaultPlaybookId } = useSdrPlaybooks();
   const playbookId =
-    picked && playbooks.some((p) => p.id === picked) ? picked : (playbooks[0]?.id ?? null);
+    picked && playbooks.some((p) => p.id === picked)
+      ? picked
+      : pickDefaultAgent(playbooks, defaultPlaybookId);
   if (!playbooks.length)
     return <EmptyState title="Nenhum agente ainda" description="Crie um agente na aba Playbook." />;
   return (
@@ -64,10 +74,9 @@ export function SdrSkillsPanel({
             <SelectValue placeholder="Escolha o agente" />
           </SelectTrigger>
           <SelectContent>
-            {playbooks.map((p) => (
+            {sortDefaultFirst(playbooks, defaultPlaybookId).map((p) => (
               <SelectItem key={p.id} value={p.id}>
-                {p.name}
-                {p.enabled ? "" : " (desativado)"}
+                {agentOptionLabel(p, defaultPlaybookId)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -103,7 +112,7 @@ function defaultSchedule(c: Catalog): NonNullable<ToolConfig["scheduling"]> | nu
     horizon_days: Math.min(90, b.max_advance_days),
     holidays: [],
     video: "google_meet",
-    meeting_title: "Reunião com a WK Technology",
+    meeting_title: DEFAULT_MEETING_TITLE,
   };
 }
 
@@ -247,7 +256,7 @@ function SkillsForm({ playbookId }: { playbookId: string }) {
                     horizon_days: 21,
                     holidays: [],
                     video: "google_meet",
-                    meeting_title: "Reunião com a WK Technology",
+                    meeting_title: DEFAULT_MEETING_TITLE,
                   },
                 })
               }

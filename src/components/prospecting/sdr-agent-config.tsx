@@ -1,6 +1,12 @@
 // Configuração completa e independente de UM agente SDR: catálogo, materiais,
 // ferramentas, qualificação/CRM, responsável e agenda, handoff, canais,
 // guardrails, fontes e logs. Nada aqui é global — vale só para o agente aberto.
+import { useSdrPlaybooks } from "@/hooks/use-default-sdr-agent";
+import {
+  agentOptionLabel,
+  pickDefaultAgent,
+  sortDefaultFirst,
+} from "@/lib/prospecting/sdr/default-agent";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -50,8 +56,11 @@ export function SdrAgentConfigPanel({
   playbooks: { id: string; name: string; enabled: boolean }[];
 }) {
   const [picked, setPicked] = useState<string | null>(null);
+  const { defaultPlaybookId } = useSdrPlaybooks();
   const playbookId =
-    picked && playbooks.some((p) => p.id === picked) ? picked : (playbooks[0]?.id ?? null);
+    picked && playbooks.some((p) => p.id === picked)
+      ? picked
+      : pickDefaultAgent(playbooks, defaultPlaybookId);
 
   if (!playbooks.length)
     return (
@@ -70,10 +79,9 @@ export function SdrAgentConfigPanel({
             <SelectValue placeholder="Escolha o agente" />
           </SelectTrigger>
           <SelectContent>
-            {playbooks.map((p) => (
+            {sortDefaultFirst(playbooks, defaultPlaybookId).map((p) => (
               <SelectItem key={p.id} value={p.id}>
-                {p.name}
-                {p.enabled ? "" : " (desativado)"}
+                {agentOptionLabel(p, defaultPlaybookId)}
               </SelectItem>
             ))}
           </SelectContent>
