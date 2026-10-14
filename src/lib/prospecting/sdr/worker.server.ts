@@ -275,8 +275,9 @@ export async function processJob(
     });
     return "failed";
   }
-  // Coalescência de rajada: se já existe turno mais novo nesta conversa, ele
-  // responde com o histórico completo; este é descartado sem chamar a IA.
+  // Mensagens seguidas: o turno mais novo responde a TODAS de uma vez (o
+  // histórico agrupa as mensagens pendentes do cliente); este fica registrado
+  // como agrupado nele, sem chamar a IA nem enviar resposta duplicada.
   const { data: newer } = await admin
     .from("sdr_turn_jobs")
     .select("id")
@@ -288,7 +289,10 @@ export async function processJob(
     .limit(1)
     .maybeSingle();
   if (newer) {
-    await finish(admin, job.id, job.lease_token, { status: "discarded", error: "coalesced" });
+    await finish(admin, job.id, job.lease_token, {
+      status: "discarded",
+      error: `merged_into:${(newer as { id: string }).id}`,
+    });
     return "discarded";
   }
   const { data: playbook } = await admin
@@ -396,6 +400,32 @@ export async function processJob(
       effects,
     };
   }
+  // Escolha curta do cliente ("6a", "sexta", "2") resolvida contra as opções
+  // vigentes gravadas — nunca contra horários escritos pela IA.
+  let choiceHint: string | null = null;
+  if (selected.directBooking && job.kind === "reply") {
+    const lastIn = [...history].reverse().find((m) => m.direction === "inbound");
+    const { data: offerRows } = await admin
+      .from("sdr_slot_offers")
+      .select("offer_set, position, start_at, status")
+      .eq("conversation_id", conv.id)
+      .eq("status", "offered")
+      .order("offer_set", { ascending: false })
+      .limit(6);
+    const rows = (offerRows ?? []) as { offer_set: number; position: number; start_at: string }[];
+    const top = rows[0]?.offer_set;
+    const current = rows
+      .filter((r) => r.offer_set === top)
+      .sort((a, b) => a.position - b.position)
+      .map((r) => ({
+        position: r.position,
+        start: r.start_at,
+        timezone: toolCfg?.scheduling?.timezone ?? "America/Sao_Paulo",
+      }));
+    const pos = lastIn ? resolveChoice(lastIn.body, current) : null;
+    if (pos)
+      choiceHint = `[sistema] A última mensagem do cliente escolhe a opção ${pos} vigente. Se já tiver o e-mail do cliente, chame calendar.book com option=${pos}; se não tiver, peça o e-mail ANTES de reservar e NÃO diga que está marcado.`;
+  }
   const system = buildSystemPrompt({
     persona,
     config: agentConfig,
@@ -412,6 +442,7 @@ export async function processJob(
         job.kind === "follow_up"
           ? "Este é um follow-up: retome a conversa com gentileza, sem pressão."
           : null,
+        choiceHint,
       ]
         .filter(Boolean)
         .join("\n") || null,
