@@ -98,7 +98,9 @@ function SdrAgentPage() {
         return reload(attempt + 1);
       }
       toast.error(
-        e instanceof Error ? `Não foi possível carregar os agentes: ${e.message}` : "Não foi possível carregar os agentes",
+        e instanceof Error
+          ? `Não foi possível carregar os agentes: ${e.message}`
+          : "Não foi possível carregar os agentes",
       );
     } finally {
       setLoading(false);
