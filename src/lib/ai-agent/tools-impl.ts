@@ -30,32 +30,39 @@ function scoreMatch(query: string, ...values: Array<string | null | undefined>) 
   return 3;
 }
 
-function personFilters(query: string, fields: string[]) {
-  const full = safeLike(query);
-  const terms = searchTerms(query);
-  const filters = fields.map((field) => `${field}.ilike.${full}`);
-
-  terms.forEach((term) => {
-    const like = safeLike(term);
-    fields.forEach((field) => filters.push(`${field}.ilike.${like}`));
-  });
-
-  return filters.join(",");
+/**
+ * Filtros por termo: CADA termo precisa casar em algum campo (E entre termos).
+ * Antes um único termo comum ("Silva") trazia qualquer pessoa.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyTermFilters<Q extends { or: (f: string) => any }>(q: Q, query: string, fields: string[]): Q {
+  let out = q;
+  for (const term of searchTerms(query)) {
+    const like = safeLike(term).replace(/[,()]/g, " ");
+    out = out.or(fields.map((field) => `${field}.ilike.${like}`).join(","));
+  }
+  return out;
 }
 
 export async function searchEntityImpl(
   supabase: SB,
   input: { kind: "contact" | "company" | "deal" | "lead" | "ticket"; query: string },
+  /** Workspace ativo resolvido no servidor (nunca vindo da IA). */
+  workspaceId: string,
 ) {
+  if (!workspaceId) throw new Error("Workspace ativo não identificado.");
   const like = safeLike(input.query);
   const results: Array<{ id: string; label: string; extra?: string }> = [];
 
   if (input.kind === "contact") {
-    const { data: rows } = await supabase
-      .from("contacts")
-      .select("id, first_name, last_name, email, phone, company_name")
-      .or(personFilters(input.query, ["first_name", "last_name", "email", "company_name"]))
-      .limit(15);
+    const { data: rows } = await applyTermFilters(
+      supabase
+        .from("contacts")
+        .select("id, first_name, last_name, email, phone, company_name")
+        .eq("workspace_id", workspaceId),
+      input.query,
+      ["first_name", "last_name", "email", "phone", "company_name"],
+    ).limit(15);
     (rows ?? [])
       .sort(
         (a, b) =>
@@ -71,19 +78,11 @@ export async function searchEntityImpl(
         }),
       );
   } else if (input.kind === "company") {
-    const filters = [
-      `name.ilike.${like}`,
-      `cnpj.ilike.${like}`,
-      ...searchTerms(input.query).flatMap((term) => [
-        `name.ilike.${safeLike(term)}`,
-        `cnpj.ilike.${safeLike(term)}`,
-      ]),
-    ].join(",");
-    const { data: rows } = await supabase
-      .from("companies")
-      .select("id, name, cnpj, description")
-      .or(filters)
-      .limit(15);
+    const { data: rows } = await applyTermFilters(
+      supabase.from("companies").select("id, name, cnpj, description").eq("workspace_id", workspaceId),
+      input.query,
+      ["name", "cnpj"],
+    ).limit(15);
     (rows ?? [])
       .sort(
         (a, b) => scoreMatch(input.query, a.name, a.cnpj) - scoreMatch(input.query, b.name, b.cnpj),
@@ -100,17 +99,21 @@ export async function searchEntityImpl(
     const { data: rows } = await supabase
       .from("deals")
       .select("id, name, value, stage")
+      .eq("workspace_id", workspaceId)
       .ilike("name", like)
       .limit(5);
     (rows ?? []).forEach((r) =>
       results.push({ id: r.id, label: r.name, extra: `R$ ${r.value} · ${r.stage}` }),
     );
   } else if (input.kind === "lead") {
-    const { data: rows } = await supabase
-      .from("leads")
-      .select("id, first_name, last_name, email, phone, company_name, status")
-      .or(personFilters(input.query, ["first_name", "last_name", "email", "phone", "company_name"]))
-      .limit(15);
+    const { data: rows } = await applyTermFilters(
+      supabase
+        .from("leads")
+        .select("id, first_name, last_name, email, phone, company_name, status")
+        .eq("workspace_id", workspaceId),
+      input.query,
+      ["first_name", "last_name", "email", "phone", "company_name"],
+    ).limit(15);
     (rows ?? [])
       .sort(
         (a, b) =>
@@ -129,6 +132,7 @@ export async function searchEntityImpl(
     const { data: rows } = await supabase
       .from("tickets")
       .select("id, subject, status, stage")
+      .eq("workspace_id", workspaceId)
       .ilike("subject", like)
       .limit(5);
     (rows ?? []).forEach((r) =>

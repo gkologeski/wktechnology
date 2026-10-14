@@ -138,7 +138,11 @@ export const Route = createFileRoute("/api/agent/chat")({
             kind: z.enum(["contact", "company", "deal", "lead", "ticket"]),
             query: z.string(),
           }),
-          execute: async (input) => safe(() => searchEntityImpl(supabase, input)),
+          execute: async (input) =>
+            safe(async () => {
+              if (!workspaceId) throw new Error("Workspace ativo não identificado.");
+              return searchEntityImpl(supabase, input, workspaceId);
+            }),
         });
 
         const listPipelinesTool = tool({
