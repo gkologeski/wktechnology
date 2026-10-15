@@ -3,6 +3,7 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Admin = any;
 
+import { customerWaitSeconds } from "./agent-config";
 import { detectOptOut, nextFollowUpAt, turnIdemKey } from "./policy";
 
 export async function recordSdrAction(
@@ -276,6 +277,15 @@ export async function ingestInboundForSdr(
     providerPhoneId: p.providerPhoneId,
     waMessageId: p.waMessageId,
   });
+  // Tempo de aguardo do cliente (por agente): a resposta só sai após esse silêncio.
+  const { data: pb } = await admin
+    .from("sdr_playbooks")
+    .select("guardrails")
+    .eq("id", enr.playbook_id)
+    .eq("workspace_id", p.workspaceId)
+    .maybeSingle();
+  const waitSec = customerWaitSeconds(pb?.guardrails);
+  const dueAt = waitSec > 0 ? new Date(Date.now() + waitSec * 1000).toISOString() : null;
   const { data: inserted, error: jErr } = await admin
     .from("sdr_turn_jobs")
     .upsert(
@@ -287,10 +297,22 @@ export async function ingestInboundForSdr(
         idem_key: idem,
         inbound_message_id: p.messageId,
         conversation_version: conv.ai_version,
+        lease_until: dueAt,
       },
       { onConflict: "workspace_id,idem_key", ignoreDuplicates: true },
     )
     .select("id");
   if (jErr) throw new Error(jErr.message);
+  if (inserted?.length) {
+    // Reinicia o relógio dos turnos ainda em espera: todos vencem juntos e viram uma resposta.
+    await admin
+      .from("sdr_turn_jobs")
+      .update({ lease_until: dueAt })
+      .eq("conversation_id", conv.id)
+      .eq("workspace_id", p.workspaceId)
+      .eq("kind", "reply")
+      .eq("status", "queued")
+      .eq("attempts", 0);
+  }
   return inserted?.length ? "queued" : "duplicate";
 }

@@ -29,6 +29,9 @@ import {
   selectableMaterials,
   guardModelOptOut,
   isWrongContact,
+  blockingWarnings,
+  mentionsPrice,
+  PRICE_WARNING,
   selectableOffers,
   sendGuard,
   validateAgentOutput,
@@ -47,6 +50,25 @@ import {
 } from "./qualification";
 
 const LEASE_SECONDS = 120;
+const MAX_WAIT_MS = 60_000;
+
+/** Nova geração sem ferramentas (sem efeitos), só para corrigir o texto. */
+async function rewriteReply(
+  deps: WorkerDeps,
+  workspaceId: string,
+  system: string,
+  history: ConversationMessage[],
+  instruction: string,
+): Promise<string | null> {
+  const ai = await deps.callAgent({
+    workspaceId,
+    system: `${system}\n\nCORREÇÃO OBRIGATÓRIA: ${instruction} Mantenha o mesmo formato de saída e não chame ferramentas.`,
+    history,
+  });
+  if (!ai.ok) return null;
+  const reply = (ai.output as { reply?: unknown } | null)?.reply;
+  return typeof reply === "string" && reply.trim() ? stripStockOpener(reply.trim()) : null;
+}
 
 export async function loadKnowledge(admin: Admin, workspaceId: string) {
   const [{ data: offers }, { data: materials }, { data: links }] = await Promise.all([
@@ -503,6 +525,20 @@ export async function processJob(
   }
   // Abertura burocrática ("Entendi que...") é removida quando sobra mensagem completa.
   out.reply = stripStockOpener(out.reply);
+  // Valores em dinheiro: reescreve sozinha uma vez antes de recorrer a um humano.
+  if (out.warnings.includes(PRICE_WARNING) && out.reply) {
+    const alt = await rewriteReply(
+      deps,
+      job.workspace_id,
+      system,
+      history,
+      "Não mencione preços, valores ou números em reais. Diga que os valores são tratados na reunião/proposta e siga a conversa.",
+    );
+    if (alt && !mentionsPrice(alt)) {
+      out.reply = alt;
+      out.warnings = out.warnings.filter((w) => w !== PRICE_WARNING);
+    }
+  }
   // Efeitos registrados pelas ferramentas prevalecem sobre a intenção textual.
   if (effects.answers.length) out.answers = [...(out.answers as unknown[]), ...effects.answers];
   if (effects.materialIds.length) {
@@ -686,7 +722,7 @@ export async function processJob(
   const autoAllowed =
     settings.auto_send_enabled &&
     playbook.mode === "auto" &&
-    out.warnings.length === 0 &&
+    blockingWarnings(out.warnings).length === 0 &&
     // Horário de prospecção vale só para retomadas; respostas seguem a qualquer hora.
     !(
       job.kind === "follow_up" &&
@@ -715,13 +751,41 @@ export async function processJob(
     await admin.from("sdr_turn_jobs").update({ lease_token: null }).eq("id", job.id);
     return "drafted";
   }
-  const sent = await deps.sendMessage(admin, {
-    jobId: job.id,
-    expectedStatus: "running",
-    leaseToken: job.lease_token,
-    text: composed.text,
-    actorUserId: null,
-  });
+  const sendText = (text: string) =>
+    deps.sendMessage(admin, {
+      jobId: job.id,
+      expectedStatus: "running",
+      leaseToken: job.lease_token,
+      text,
+      actorUserId: null,
+    });
+  let sent = await sendText(composed.text);
+  if (!sent.ok && sent.reason === "repetition_detected") {
+    // Autonomia: reescreve uma vez sem repetir a última mensagem, em vez de pedir aprovação.
+    const alt = await rewriteReply(
+      deps,
+      job.workspace_id,
+      system,
+      history,
+      "A resposta ficou idêntica à sua mensagem anterior. Escreva outra, diferente, que avance a conversa considerando todas as mensagens do cliente.",
+    );
+    if (alt) {
+      const again = await composeOutgoing(admin, {
+        workspaceId: job.workspace_id,
+        reply: alt,
+        intent: out.intent,
+        materialIds: out.material_ids,
+        attachMaterials: agentConfig.guardrails.attach_materials,
+        meeting: effects.meeting,
+      });
+      await admin
+        .from("sdr_turn_jobs")
+        .update({ draft_text: again.text })
+        .eq("id", job.id)
+        .eq("lease_token", job.lease_token);
+      sent = await sendText(again.text);
+    }
+  }
   if (!sent.ok) {
     // Descarta trabalho obsoleto; demais falhas viram rascunho para revisão humana.
     const obsolete = [
@@ -839,27 +903,58 @@ export async function tickSdr(admin: Admin, limit = 10, deps: WorkerDeps = defau
   const meetings = await reconcileMeetings(admin, 50, enabled);
   const directMeetings = await reconcileDirectMeetings(admin, enabled);
   const followUps = await scheduleFollowUps(admin, 50, enabled);
-  const { data: jobs, error } = await admin.rpc("sdr_claim_jobs", {
-    p_limit: limit,
-    p_lease_seconds: LEASE_SECONDS,
-  });
-  if (error) throw new Error(error.message);
+  // Tempo de aguardo do cliente: respostas ficam adiadas (lease_until futuro).
+  // O despertar do enfileiramento espera aqui até a mais próxima vencer.
+  await waitForDueReply(admin, enabled);
   const results: Record<string, number> = {};
-  for (const job of (jobs ?? []) as Job[]) {
-    let r: string;
-    try {
-      r = await processJob(admin, job, deps);
-    } catch (e) {
-      r = "error";
-      await finish(admin, job.id, job.lease_token, {
-        status: "queued",
-        lease_until: new Date(Date.now() + retryDelayMs(job.attempts ?? 1)).toISOString(),
-        error: (e as Error).message.slice(0, 300),
-      });
+  let claimed = 0;
+  // Rodadas extras: quando um turno antigo é agrupado no novo, o novo sai na mesma execução.
+  for (let round = 0; round < 3; round++) {
+    const { data: jobs, error } = await admin.rpc("sdr_claim_jobs", {
+      p_limit: limit,
+      p_lease_seconds: LEASE_SECONDS,
+    });
+    if (error) throw new Error(error.message);
+    if (!jobs?.length) break;
+    claimed += jobs.length;
+    let merged = 0;
+    for (const job of jobs as Job[]) {
+      let r: string;
+      try {
+        r = await processJob(admin, job, deps);
+      } catch (e) {
+        r = "error";
+        await finish(admin, job.id, job.lease_token, {
+          status: "queued",
+          lease_until: new Date(Date.now() + retryDelayMs(job.attempts ?? 1)).toISOString(),
+          error: (e as Error).message.slice(0, 300),
+        });
+      }
+      if (r === "discarded") merged++;
+      results[r] = (results[r] ?? 0) + 1;
     }
-    results[r] = (results[r] ?? 0) + 1;
+    if (!merged) break;
   }
-  return { meetings, directMeetings, followUps, stranded, claimed: jobs?.length ?? 0, ...results };
+  return { meetings, directMeetings, followUps, stranded, claimed, ...results };
+}
+
+/** Espera (até 60 s) a resposta adiada mais próxima vencer o tempo de aguardo. */
+async function waitForDueReply(admin: Admin, workspaceIds: string[]) {
+  const now = Date.now();
+  const { data } = await admin
+    .from("sdr_turn_jobs")
+    .select("lease_until")
+    .eq("status", "queued")
+    .eq("kind", "reply")
+    .eq("attempts", 0)
+    .in("workspace_id", workspaceIds)
+    .gt("lease_until", new Date(now).toISOString())
+    .lte("lease_until", new Date(now + MAX_WAIT_MS).toISOString())
+    .order("lease_until", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  const due = data?.lease_until ? new Date(data.lease_until as string).getTime() : null;
+  if (due) await new Promise((r) => setTimeout(r, Math.min(MAX_WAIT_MS, due - now + 500)));
 }
 
 /**

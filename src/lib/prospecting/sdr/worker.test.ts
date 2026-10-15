@@ -482,6 +482,7 @@ describe("homologação sintética ponta a ponta (provedores simulados)", () => 
     Object.assign(db.t("sdr_turn_jobs")[0], {
       status: db.t("sdr_turn_jobs")[0].status ?? "queued",
       attempts: 0,
+      lease_until: null, // tempo de aguardo do cliente já transcorrido
       created_at: new Date().toISOString(),
     });
     // 2) turno supervisionado: rascunho + qualificação do servidor + oportunidade
@@ -913,5 +914,35 @@ describe("ferramentas reais no turno (agenda falsa)", () => {
     await processJob(db, j, d);
     const saved = db.t("sdr_turn_jobs").find((x) => x.id === j.id)!;
     expect(String(saved.draft_text)).not.toMatch(/\/book\//);
+  });
+});
+
+describe("tempo de aguardo do cliente (ingest)", () => {
+  const msg = (n: number) => ({
+    workspaceId: W1,
+    conversationId: "c1",
+    messageId: `m${n}`,
+    waMessageId: `wamid.wait${n}`,
+    providerPhoneId: "pn1",
+    body: `parte ${n}`,
+  });
+  it("adia a resposta e reinicia o relógio de todas as mensagens em espera", async () => {
+    db.find("sdr_playbooks", "pb1")!.guardrails = { customer_wait_seconds: 30 };
+    const t0 = Date.now();
+    expect(await ingestInboundForSdr(db, msg(1))).toBe("queued");
+    for (const j of db.t("sdr_turn_jobs")) Object.assign(j, { status: "queued", attempts: 0 });
+    const first = new Date(db.t("sdr_turn_jobs")[0].lease_until).getTime();
+    expect(first - t0).toBeGreaterThanOrEqual(29_000);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(await ingestInboundForSdr(db, msg(2))).toBe("queued");
+    for (const j of db.t("sdr_turn_jobs")) Object.assign(j, { status: "queued", attempts: 0 });
+    const [a, b] = db.t("sdr_turn_jobs");
+    expect(a.lease_until).toBe(b.lease_until);
+    expect(new Date(a.lease_until).getTime()).toBeGreaterThan(first);
+  });
+  it("aguardo 0 responde na hora", async () => {
+    db.find("sdr_playbooks", "pb1")!.guardrails = { customer_wait_seconds: 0 };
+    expect(await ingestInboundForSdr(db, msg(3))).toBe("queued");
+    expect(db.t("sdr_turn_jobs")[0].lease_until).toBeNull();
   });
 });

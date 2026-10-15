@@ -410,6 +410,30 @@ function AgentForm({ workspaceId, playbookId }: { workspaceId: string; playbookI
 
       <FormSection title="Guardrails" description="Limites fixos que o agente não pode quebrar.">
         <div className="space-y-3">
+          <div className="flex max-w-sm flex-col gap-1.5">
+            <Label htmlFor="cfg-wait">Tempo de aguardo do cliente (segundos)</Label>
+            <Input
+              id="cfg-wait"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={300}
+              step={1}
+              value={cfg.guardrails.customer_wait_seconds}
+              onChange={(e) => {
+                const n = Math.round(Number(e.target.value));
+                set("guardrails", {
+                  ...cfg.guardrails,
+                  customer_wait_seconds: Number.isFinite(n) ? Math.min(300, Math.max(0, n)) : 0,
+                });
+              }}
+              aria-describedby="cfg-wait-help"
+            />
+            <p id="cfg-wait-help" className="text-xs text-muted-foreground">
+              Após a última mensagem do cliente, o agente espera esse tempo. Mensagens que chegarem
+              nesse intervalo são juntadas e recebem uma única resposta. 0 = responde na hora.
+            </p>
+          </div>
           <div className="flex items-center gap-2">
             <Switch
               id="cfg-nopricing"

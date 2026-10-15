@@ -18,6 +18,8 @@ export const GuardrailsSchema = z.object({
   require_human_for_opportunity: z.boolean().default(false),
   /** Anexa links de materiais aprovados quando o cliente pede (send_material). */
   attach_materials: z.boolean().default(true),
+  /** Segundos de espera após a última mensagem do cliente antes de responder (agrupa mensagens). */
+  customer_wait_seconds: z.number().int().min(0).max(300).default(5),
   extra_rules: z.string().trim().max(2000).default(""),
 });
 export type Guardrails = z.infer<typeof GuardrailsSchema>;
@@ -146,4 +148,10 @@ export function stripUrls(text: string): string {
     .replace(/\s*\(?https?:\/\/\S+\)?/gi, "")
     .replace(/[ \t]+\n/g, "\n")
     .trim();
+}
+
+/** Tempo de aguardo do cliente em segundos (0–300; padrão 5). */
+export function customerWaitSeconds(guardrails: unknown): number {
+  const v = (guardrails as { customer_wait_seconds?: unknown } | null)?.customer_wait_seconds;
+  return typeof v === "number" && Number.isInteger(v) && v >= 0 && v <= 300 ? v : 5;
 }
