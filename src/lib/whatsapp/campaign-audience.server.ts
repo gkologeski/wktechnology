@@ -2,9 +2,12 @@
 // e filtro explícito por workspace. Só lê colunas da lista branca.
 import {
   fullName,
+  combineAudienceGroups,
   isAllowedFilter,
+  normalizeAudienceGroups,
   type AudienceBase,
   type AudienceFilter,
+  type AudienceGroup,
   type AudienceRow,
 } from "./campaign-audience";
 
@@ -15,7 +18,118 @@ export const MAX_AUDIENCE = 5000;
 
 export type AudienceInput =
   | { type: "queue"; queue_id: string }
-  | { type: "filter"; base: AudienceBase; filters: AudienceFilter[] };
+  | {
+      type: "filter";
+      base: AudienceBase;
+      filters?: AudienceFilter[];
+      groups?: AudienceGroup[];
+    };
+
+/** Teto de IDs lidos por filtro antes de combinar grupos. */
+const MAX_IDS_PER_FILTER = 20000;
+
+const clean = (v: string) => v.replace(/[%_,()*"\\]/g, " ").trim();
+
+function applyOp(q: Db, f: AudienceFilter): Db {
+  const col = f.column;
+  const v = f.value.trim();
+  switch (f.op) {
+    case "ilike":
+      return q.ilike(col, `%${clean(v)}%`);
+    case "not_ilike":
+      return q.or(`${col}.is.null,${col}.not.ilike.*${clean(v)}*`);
+    case "neq":
+      return q.or(`${col}.is.null,${col}.neq."${clean(v)}"`);
+    case "is_null":
+      return q.is(col, null);
+    case "is_not_null":
+      return q.not(col, "is", null);
+    default:
+      return q[f.op](col, v);
+  }
+}
+
+async function fetchColumn(build: () => Db): Promise<R[]> {
+  const out: R[] = [];
+  for (let from = 0; from < MAX_IDS_PER_FILTER; from += 1000) {
+    const { data, error } = await build()
+      .order("id", { ascending: true })
+      .range(from, from + 999);
+    if (error) throw new Error(error.message);
+    out.push(...((data ?? []) as R[]));
+    if (!data || data.length < 1000) break;
+  }
+  return out;
+}
+
+/** Como a entidade relacionada liga-se à base. */
+type Link =
+  | { kind: "direct"; col: string } // coluna da relacionada = id da base
+  | { kind: "reverse"; col: string }; // coluna da base = id da relacionada
+const LINKS: Record<AudienceBase, Partial<Record<AudienceBase, Link[]>>> = {
+  contacts: {
+    companies: [{ kind: "reverse", col: "company_id" }],
+    deals: [{ kind: "direct", col: "primary_contact_id" }],
+    leads: [{ kind: "direct", col: "converted_contact_id" }],
+  },
+  companies: {
+    contacts: [{ kind: "direct", col: "company_id" }],
+    deals: [{ kind: "direct", col: "company_id" }],
+    leads: [{ kind: "direct", col: "company_id" }],
+  },
+  deals: {
+    companies: [{ kind: "reverse", col: "company_id" }],
+    contacts: [{ kind: "reverse", col: "primary_contact_id" }],
+    leads: [{ kind: "direct", col: "converted_deal_id" }],
+  },
+  leads: {
+    companies: [{ kind: "reverse", col: "company_id" }],
+    contacts: [{ kind: "reverse", col: "converted_contact_id" }],
+    deals: [{ kind: "reverse", col: "converted_deal_id" }],
+  },
+};
+
+/** IDs da base que atendem a um filtro (próprio ou de entidade relacionada). */
+async function idsForFilter(
+  db: Db,
+  ws: string,
+  base: AudienceBase,
+  f: AudienceFilter,
+): Promise<Set<string>> {
+  const entity = f.entity ?? base;
+  const rowsOf = (t: string, cols: string) =>
+    fetchColumn(() =>
+      applyOp(db.from(t).select(cols).eq("workspace_id", ws).is("deleted_at", null), f),
+    );
+  if (entity === base) return new Set((await rowsOf(base, "id")).map((r) => r.id as string));
+
+  const links = LINKS[base][entity] ?? [];
+  const directCols = links.filter((l) => l.kind === "direct").map((l) => l.col);
+  const rel = await rowsOf(entity, ["id", ...directCols].join(", "));
+  const relIds = rel.map((r) => r.id as string);
+  const out = new Set<string>();
+  for (const l of links) {
+    if (l.kind === "direct") {
+      for (const r of rel) if (r[l.col]) out.add(r[l.col] as string);
+    } else {
+      for (const r of await fetchWhereIn(db, base, "id", l.col, relIds, ws))
+        out.add(r.id as string);
+    }
+  }
+  // Negócio ↔ contato também via deal_contacts.
+  if ((base === "contacts" && entity === "deals") || (base === "deals" && entity === "contacts")) {
+    const [from, to] = base === "contacts" ? ["deal_id", "contact_id"] : ["contact_id", "deal_id"];
+    for (let i = 0; i < relIds.length; i += 200) {
+      const { data, error } = await db
+        .from("deal_contacts")
+        .select(to)
+        .in(from, relIds.slice(i, i + 200));
+      if (error) throw new Error(error.message);
+      for (const r of (data ?? []) as R[]) if (r[to]) out.add(r[to] as string);
+    }
+  }
+  return out;
+}
 
 const SELECT: Record<AudienceBase, string> = {
   leads:
@@ -158,20 +272,28 @@ export async function loadAudienceRows(
     }
   } else {
     base = audience.base;
-    const filters = audience.filters.filter((f) => isAllowedFilter(base, f));
-    if (filters.length !== audience.filters.length) throw new Error("Filtro não permitido.");
-    raw = await fetchPaged(() => {
-      let q = db
-        .from(base)
-        .select(SELECT[base])
-        .eq("workspace_id", workspaceId)
-        .is("deleted_at", null);
-      for (const f of filters) {
-        if (f.op === "ilike") q = q.ilike(f.column, `%${f.value.replace(/[%_]/g, " ").trim()}%`);
-        else q = q[f.op](f.column, f.value);
-      }
-      return q;
-    });
+    const fBase = base;
+    const groups = normalizeAudienceGroups(audience);
+    if (groups.length > 10 || groups.some((g) => g.filters.length > 20))
+      throw new Error("Público com grupos ou filtros demais.");
+    if (groups.some((g) => g.filters.some((f) => !isAllowedFilter(fBase, f))))
+      throw new Error("Filtro não permitido.");
+    if (groups.length === 0) {
+      raw = await fetchPaged(() =>
+        db.from(fBase).select(SELECT[fBase]).eq("workspace_id", workspaceId).is("deleted_at", null),
+      );
+    } else {
+      const ids = await combineAudienceGroups(groups, (f) =>
+        idsForFilter(db, workspaceId, fBase, f),
+      );
+      raw = await fetchByIds(
+        db,
+        fBase,
+        SELECT[fBase],
+        [...ids].sort().slice(0, MAX_AUDIENCE + 1),
+        workspaceId,
+      );
+    }
   }
   const truncated = raw.length > MAX_AUDIENCE;
   raw = raw.slice(0, MAX_AUDIENCE);

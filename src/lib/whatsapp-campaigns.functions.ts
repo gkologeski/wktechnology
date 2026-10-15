@@ -30,12 +30,50 @@ const CreateInput = z.object({
         filters: z
           .array(
             z.object({
+              entity: z.enum(["leads", "contacts", "companies", "deals"]).optional(),
               column: z.string().max(40),
-              op: z.enum(["eq", "ilike", "gte", "lte"]),
+              op: z.enum([
+                "eq",
+                "neq",
+                "ilike",
+                "not_ilike",
+                "gte",
+                "lte",
+                "is_null",
+                "is_not_null",
+              ]),
               value: z.string().max(200),
             }),
           )
-          .max(10),
+          .max(20)
+          .optional(),
+        groups: z
+          .array(
+            z.object({
+              logic: z.enum(["and", "or"]),
+              filters: z
+                .array(
+                  z.object({
+                    entity: z.enum(["leads", "contacts", "companies", "deals"]).optional(),
+                    column: z.string().max(40),
+                    op: z.enum([
+                      "eq",
+                      "neq",
+                      "ilike",
+                      "not_ilike",
+                      "gte",
+                      "lte",
+                      "is_null",
+                      "is_not_null",
+                    ]),
+                    value: z.string().max(200),
+                  }),
+                )
+                .max(20),
+            }),
+          )
+          .max(10)
+          .optional(),
       }),
     ])
     .optional(),
@@ -397,7 +435,12 @@ export const previewCampaignAudience = createServerFn({ method: "POST" })
     const { buildAudience, isAllowedField } = await import("@/lib/whatsapp/campaign-audience");
     const { loadAudienceRows, loadOptedOutPhones } =
       await import("@/lib/whatsapp/campaign-audience.server");
-    const { base, rows, truncated } = await loadAudienceRows(supabase, workspaceId, data.audience, userId);
+    const { base, rows, truncated } = await loadAudienceRows(
+      supabase,
+      workspaceId,
+      data.audience,
+      userId,
+    );
     const map = Object.fromEntries(
       Object.entries(data.variable_map ?? {}).filter(([, b]) => isAllowedField(base, b.field)),
     );

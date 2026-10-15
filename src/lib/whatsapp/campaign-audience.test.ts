@@ -4,6 +4,8 @@ import {
   fieldsForBase,
   isAllowedField,
   isAllowedFilter,
+  combineAudienceGroups,
+  normalizeAudienceGroups,
   normalizeCampaignPhone,
   type AudienceRow,
 } from "./campaign-audience";
@@ -93,5 +95,51 @@ describe("variáveis livres e todas as entidades", () => {
   it("campo fora da lista é recusado e texto livre é aceito", () => {
     expect(allowed("leads", "contact.cpf")).toBe(false);
     expect(allowed("leads", FREE)).toBe(true);
+  });
+});
+
+describe("público em grupos E/OU", () => {
+  const sets: Record<string, string[]> = { a: ["1", "2", "3"], b: ["2", "3", "4"], c: ["9"] };
+  const idsFor = async (f: { column: string }) => new Set(sets[f.column]);
+  const fl = (column: string) => ({ column, op: "eq" as const, value: "x" });
+
+  it("E dentro do grupo faz intersecção", async () => {
+    const r = await combineAudienceGroups([{ logic: "and", filters: [fl("a"), fl("b")] }], idsFor);
+    expect([...r].sort()).toEqual(["2", "3"]);
+  });
+  it("OU entre grupos faz união", async () => {
+    const r = await combineAudienceGroups(
+      [
+        { logic: "and", filters: [fl("a"), fl("b")] },
+        { logic: "and", filters: [fl("c")] },
+      ],
+      idsFor,
+    );
+    expect([...r].sort()).toEqual(["2", "3", "9"]);
+  });
+  it("OU dentro do grupo faz união", async () => {
+    const r = await combineAudienceGroups([{ logic: "or", filters: [fl("a"), fl("c")] }], idsFor);
+    expect([...r].sort()).toEqual(["1", "2", "3", "9"]);
+  });
+  it("grupo vazio é ignorado e formato antigo vira um grupo E", () => {
+    expect(normalizeAudienceGroups({ groups: [{ logic: "or", filters: [] }] })).toEqual([]);
+    expect(normalizeAudienceGroups({ filters: [fl("a")] })).toEqual([
+      { logic: "and", filters: [fl("a")] },
+    ]);
+  });
+  it("valida campo de entidade relacionada pela lista branca", () => {
+    expect(
+      isAllowedFilter("contacts", {
+        entity: "companies",
+        column: "industry",
+        op: "ilike",
+        value: "soft",
+      }),
+    ).toBe(true);
+    expect(
+      isAllowedFilter("contacts", { entity: "companies", column: "secret", op: "eq", value: "x" }),
+    ).toBe(false);
+    expect(isAllowedFilter("deals", { column: "stage", op: "ilike", value: "won" })).toBe(false);
+    expect(isAllowedFilter("deals", { column: "stage", op: "is_null", value: "" })).toBe(true);
   });
 });
