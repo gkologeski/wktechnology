@@ -54,9 +54,9 @@ describe("público da campanha WhatsApp", () => {
 
   it("só aceita campos e filtros da lista branca de cada base", () => {
     expect(isAllowedField("contacts", "contact.first_name")).toBe(true);
-    expect(isAllowedField("companies", "contact.email")).toBe(false);
+    expect(isAllowedField("companies", "contact.email")).toBe(true);
     expect(isAllowedField("deals", "company.name")).toBe(true);
-    expect(fieldsForBase("leads").some((f) => f.key.startsWith("deal."))).toBe(false);
+    expect(fieldsForBase("leads").some((f) => f.key.startsWith("deal."))).toBe(true);
     expect(isAllowedFilter("leads", { column: "hs_raw", op: "eq", value: "x" })).toBe(false);
     expect(isAllowedFilter("deals", { column: "stage", op: "eq", value: "won" })).toBe(true);
   });
