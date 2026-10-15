@@ -381,7 +381,8 @@ function LiveChatInbox() {
                   {current.status === "closed" ? "Encerrada" : "Em atendimento"}
                 </p>
               </div>
-              <InboxIdentityLinker key={current.id}
+              <InboxIdentityLinker
+                key={current.id}
                 channel="chat"
                 conversationId={current.id}
                 contactId={current.contact_id}

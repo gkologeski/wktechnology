@@ -773,7 +773,8 @@ function WhatsAppInbox() {
                   {current.status === "closed" ? "Fechada" : "Aberta"}
                 </p>
               </div>
-              <InboxIdentityLinker key={current.id}
+              <InboxIdentityLinker
+                key={current.id}
                 channel="whatsapp"
                 conversationId={current.id}
                 contactId={current.contact_id}
