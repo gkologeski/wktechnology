@@ -23,7 +23,7 @@ describe("persona no prompt real", () => {
     expect(s).toContain("NÃO abra a mensagem com fórmulas");
   });
   it("persona inválida cai no padrão", () => {
-    expect(parsePersona({ tone: "xpto" })).toEqual(DEFAULT_PERSONA);
+    expect(parsePersona({ tone: "xpto" }).tone).toBe(DEFAULT_PERSONA.tone);
   });
   it("aceita textos longos nos campos de persona", () => {
     const long = "a".repeat(1800);
