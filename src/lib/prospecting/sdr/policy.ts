@@ -300,17 +300,52 @@ export const FOLLOW_UP_CANCEL_REASONS = [
   "human",
 ] as const;
 
-/** Próximo follow-up: só quando aguardando resposta e dentro do limite. */
+/** Margem antes do fim da janela de 24 h do WhatsApp para a retomada sair. */
+export const FOLLOW_UP_WINDOW_MARGIN_MS = 60 * 60_000;
+const WINDOW_MS = 24 * 3600_000;
+
+/**
+ * Próximo follow-up: só quando aguardando resposta e dentro do limite.
+ * Com `lastInboundAt`, nunca passa do fim da janela de 24 h (menos a margem) e,
+ * com `businessHours`, é antecipado para dentro do expediente.
+ * Sem horário possível na janela, devolve null.
+ */
 export function nextFollowUpAt(o: {
   now: Date;
   hours: number;
   count: number;
   max: number;
   stage: CommercialStage;
+  lastInboundAt?: string | Date | null;
+  businessHours?: { startHour: number; endHour: number; utcOffsetHours: number };
 }): Date | null {
   if (o.count >= o.max) return null;
   if (["opted_out", "handoff", "meeting_booked", "closed"].includes(o.stage)) return null;
-  return new Date(o.now.getTime() + Math.max(1, o.hours) * 3600_000);
+  let at = o.now.getTime() + Math.max(1, o.hours) * 3600_000;
+  if (o.lastInboundAt) {
+    const cap = new Date(o.lastInboundAt).getTime() + WINDOW_MS - FOLLOW_UP_WINDOW_MARGIN_MS;
+    at = Math.min(at, cap);
+  }
+  if (o.businessHours) {
+    const { startHour, endHour, utcOffsetHours } = o.businessHours;
+    const off = utcOffsetHours * 3600_000;
+    const local = new Date(at + off);
+    const h = local.getUTCHours() + local.getUTCMinutes() / 60;
+    if (h < startHour || h >= endHour) {
+      // Antecipa para 15 min antes do fim do expediente mais recente.
+      const d = new Date(local);
+      if (h < startHour) d.setUTCDate(d.getUTCDate() - 1);
+      d.setUTCHours(endHour, 0, 0, 0);
+      at = d.getTime() - off - 15 * 60_000;
+    }
+  }
+  if (at <= o.now.getTime()) return null;
+  return new Date(at);
+}
+
+/** Conta perguntas na resposta (regra: uma por mensagem). */
+export function countQuestions(text: string): number {
+  return (text.match(/\?/g) ?? []).length;
 }
 
 /** Status da reunião a partir da reserva e do retorno do Google. */

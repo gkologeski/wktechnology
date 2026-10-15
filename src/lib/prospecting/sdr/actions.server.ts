@@ -489,6 +489,9 @@ export async function sendSdrMessage(
     count: enr.follow_up_count ?? 0,
     max: pb?.max_follow_ups ?? 2,
     stage,
+    // Retomada livre só vale dentro da janela de 24 h e no expediente (8h–18h BRT).
+    lastInboundAt: conv.last_inbound_at,
+    businessHours: { startHour: 8, endHour: 18, utcOffsetHours: -3 },
   });
   await admin
     .from("sdr_turn_jobs")

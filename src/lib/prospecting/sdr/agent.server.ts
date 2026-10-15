@@ -259,7 +259,7 @@ export async function callSdrAgent(args: {
       }
       continue;
     }
-    const parsedOut = extractJsonObject(msg.content ?? "");
+    let parsedOut = extractJsonObject(msg.content ?? "");
     if (!parsedOut && !jsonRetry && step < MAX_TOOL_STEPS) {
       // Texto solto em vez do JSON: pede de novo uma vez, em vez de falhar o turno.
       jsonRetry = true;
@@ -270,6 +270,21 @@ export async function callSdrAgent(args: {
           "[verificação do sistema, não é o cliente] Responda agora SOMENTE com o objeto JSON do formato combinado (reply, intent, offer_keys, material_ids, answers, handoff_reason), sem texto fora dele.",
       });
       continue;
+    }
+    if (!parsedOut) {
+      // Etapa final: formatação estrita sem ferramentas; por fim, aproveita o texto puro.
+      parsedOut = await formatAsTurn(apiKey, args.workspaceId, msg.content ?? "", args.feature);
+      if (!parsedOut && plainReplyUsable(msg.content)) {
+        parsedOut = {
+          reply: String(msg.content).trim(),
+          intent: "continue",
+          offer_keys: [],
+          material_ids: [],
+          answers: [],
+          handoff_reason: "",
+        };
+      }
+      if (parsedOut) console.info("[sdr-agent] formato recuperado na etapa final");
     }
     try {
       if (!parsedOut) throw new Error("no_json");
@@ -333,13 +348,65 @@ export async function callSdrAgent(args: {
   };
 }
 
+/** Texto puro aproveitável como mensagem ao cliente (não é JSON quebrado nem vazio). */
+export function plainReplyUsable(content: string | null | undefined): boolean {
+  const t = (content ?? "").trim();
+  return t.length >= 2 && t.length <= 1200 && !/^[[{]/.test(t) && !t.includes('"reply"');
+}
+
+/** Converte um texto já gerado no formato do turno, sem ferramentas e com schema estrito. */
+async function formatAsTurn(
+  apiKey: string,
+  workspaceId: string,
+  content: string,
+  feature?: "sdr_agente" | "sdr_agente_teste",
+): Promise<Record<string, unknown> | null> {
+  if (!content.trim()) return null;
+  try {
+    const res = await aiChatFetch(
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: MODEL,
+          reasoning_effort: "low",
+          messages: [
+            {
+              role: "system",
+              content:
+                "Converta o texto abaixo no objeto do formato exigido. Se houver uma mensagem ao cliente, coloque-a em reply sem alterar o sentido; intent=continue salvo indicação clara; listas vazias quando não houver dados.",
+            },
+            { role: "user", content: content.slice(0, 4000) },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: { name: "sdr_turn", strict: true, schema: AGENT_OUTPUT_SCHEMA },
+          },
+        }),
+      },
+      { workspaceId, feature: feature ?? "sdr_agente", triggerSource: "automatic" },
+    );
+    if (!res.ok) return null;
+    const j = (await res.json()) as { choices?: { message?: { content?: string | null } }[] };
+    return extractJsonObject(j.choices?.[0]?.message?.content ?? "");
+  } catch {
+    return null;
+  }
+}
+
 /** Lê o objeto JSON da resposta (tolera cercas de código e texto ao redor). */
 export function extractJsonObject(raw: string): Record<string, unknown> | null {
-  const t = raw.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+  const t = raw
+    .trim()
+    .replace(/^```(?:json)?/i, "")
+    .replace(/```$/, "")
+    .trim();
   const tryParse = (x: string) => {
     try {
       const v = JSON.parse(x) as unknown;
-      return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
+      return v && typeof v === "object" && !Array.isArray(v)
+        ? (v as Record<string, unknown>)
+        : null;
     } catch {
       return null;
     }

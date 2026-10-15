@@ -30,6 +30,7 @@ import {
   guardModelOptOut,
   isWrongContact,
   blockingWarnings,
+  countQuestions,
   mentionsPrice,
   PRICE_WARNING,
   selectableOffers,
@@ -538,6 +539,17 @@ export async function processJob(
       out.reply = alt;
       out.warnings = out.warnings.filter((w) => w !== PRICE_WARNING);
     }
+  }
+  // Uma pergunta por mensagem: reescreve sozinha uma vez se vier mais de uma.
+  if (countQuestions(out.reply) > 1) {
+    const alt = await rewriteReply(
+      deps,
+      job.workspace_id,
+      system,
+      history,
+      "Sua resposta fez mais de uma pergunta. Reescreva com no máximo UMA pergunta, a mais importante para avançar.",
+    );
+    if (alt && countQuestions(alt) <= 1 && !mentionsPrice(alt)) out.reply = alt;
   }
   // Efeitos registrados pelas ferramentas prevalecem sobre a intenção textual.
   if (effects.answers.length) out.answers = [...(out.answers as unknown[]), ...effects.answers];
