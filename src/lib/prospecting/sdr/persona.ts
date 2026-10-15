@@ -6,7 +6,7 @@ export const PersonaSchema = z.object({
   /** prospecting = persuasiva, conduz para reunião; service = só informa. */
   intent: z.enum(["prospecting", "service"]).default("prospecting"),
   assistant_name: z.string().trim().max(60).default(""),
-  description: z.string().trim().max(500).default(""),
+  description: z.string().trim().max(2000).default(""),
   tone: z.enum(["acolhedor", "objetivo", "consultivo"]).default("consultivo"),
   /** 1 = bem informal, 5 = formal. */
   formality: z.number().int().min(1).max(5).default(2),
@@ -15,12 +15,12 @@ export const PersonaSchema = z.object({
   /** 1 = detalhado, 5 = bem curto. */
   concision: z.number().int().min(1).max(5).default(4),
   emojis: z.enum(["none", "discreet"]).default("none"),
-  good_examples: z.array(z.string().trim().max(400)).max(10).default([]),
+  good_examples: z.array(z.string().trim().max(1000)).max(10).default([]),
   avoid_phrases: z.array(z.string().trim().max(80)).max(30).default([]),
-  goal: z.string().trim().max(500).default(""),
-  collect: z.string().trim().max(500).default(""),
-  handoff_when: z.string().trim().max(500).default(""),
-  instructions: z.string().trim().max(4000).default(""),
+  goal: z.string().trim().max(2000).default(""),
+  collect: z.string().trim().max(2000).default(""),
+  handoff_when: z.string().trim().max(2000).default(""),
+  instructions: z.string().trim().max(8000).default(""),
 });
 export type Persona = z.infer<typeof PersonaSchema>;
 
@@ -32,7 +32,16 @@ export const DEFAULT_PERSONA: Persona = PersonaSchema.parse({
 
 export function parsePersona(raw: unknown): Persona {
   const r = PersonaSchema.safeParse(raw ?? {});
-  return r.success ? r.data : DEFAULT_PERSONA;
+  if (r.success) return r.data;
+  // Validação campo a campo: um campo inválido (ex. acima do limite) volta ao
+  // padrão sem apagar os demais campos da persona.
+  const src = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const out = { ...DEFAULT_PERSONA } as Record<string, unknown>;
+  for (const k of Object.keys(PersonaSchema.shape) as (keyof typeof PersonaSchema.shape)[]) {
+    const field = PersonaSchema.shape[k].safeParse(src[k]);
+    if (field.success) out[k] = field.data;
+  }
+  return out as Persona;
 }
 
 const TONE_TEXT: Record<Persona["tone"], string> = {
