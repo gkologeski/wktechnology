@@ -3,6 +3,7 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Admin = any;
 
+import { customerWaitSeconds } from "./agent-config";
 import { detectOptOut, nextFollowUpAt, turnIdemKey } from "./policy";
 
 export async function recordSdrAction(
