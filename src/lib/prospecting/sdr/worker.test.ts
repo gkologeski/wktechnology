@@ -482,6 +482,7 @@ describe("homologação sintética ponta a ponta (provedores simulados)", () => 
     Object.assign(db.t("sdr_turn_jobs")[0], {
       status: db.t("sdr_turn_jobs")[0].status ?? "queued",
       attempts: 0,
+      lease_until: null, // tempo de aguardo do cliente já transcorrido
       created_at: new Date().toISOString(),
     });
     // 2) turno supervisionado: rascunho + qualificação do servidor + oportunidade
