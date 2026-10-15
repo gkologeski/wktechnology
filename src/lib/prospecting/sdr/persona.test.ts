@@ -25,6 +25,28 @@ describe("persona no prompt real", () => {
   it("persona inválida cai no padrão", () => {
     expect(parsePersona({ tone: "xpto" })).toEqual(DEFAULT_PERSONA);
   });
+  it("aceita textos longos nos campos de persona", () => {
+    const long = "a".repeat(1800);
+    const p = parsePersona({
+      description: long,
+      goal: long,
+      collect: long,
+      handoff_when: long,
+      instructions: "b".repeat(7000),
+      good_examples: ["c".repeat(900)],
+    });
+    expect(p.description).toHaveLength(1800);
+    expect(p.goal).toHaveLength(1800);
+    expect(p.collect).toHaveLength(1800);
+    expect(p.handoff_when).toHaveLength(1800);
+    expect(p.instructions).toHaveLength(7000);
+    expect(p.good_examples[0]).toHaveLength(900);
+  });
+  it("campo acima do limite não apaga o resto da persona", () => {
+    const p = parsePersona({ assistant_name: "Lia", description: "x".repeat(3000) });
+    expect(p.assistant_name).toBe("Lia");
+    expect(p.description).toBe("");
+  });
 });
 
 describe("aberturas burocráticas", () => {
