@@ -18,6 +18,8 @@ export const GuardrailsSchema = z.object({
   require_human_for_opportunity: z.boolean().default(false),
   /** Anexa links de materiais aprovados quando o cliente pede (send_material). */
   attach_materials: z.boolean().default(true),
+  /** Segundos de espera após a última mensagem do cliente antes de responder (agrupa mensagens). */
+  customer_wait_seconds: z.number().int().min(0).max(300).default(5),
   extra_rules: z.string().trim().max(2000).default(""),
 });
 export type Guardrails = z.infer<typeof GuardrailsSchema>;
