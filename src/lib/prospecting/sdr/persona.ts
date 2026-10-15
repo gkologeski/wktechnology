@@ -32,7 +32,16 @@ export const DEFAULT_PERSONA: Persona = PersonaSchema.parse({
 
 export function parsePersona(raw: unknown): Persona {
   const r = PersonaSchema.safeParse(raw ?? {});
-  return r.success ? r.data : DEFAULT_PERSONA;
+  if (r.success) return r.data;
+  // Validação campo a campo: um campo inválido (ex. acima do limite) volta ao
+  // padrão sem apagar os demais campos da persona.
+  const src = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const out = { ...DEFAULT_PERSONA } as Record<string, unknown>;
+  for (const k of Object.keys(PersonaSchema.shape) as (keyof typeof PersonaSchema.shape)[]) {
+    const field = PersonaSchema.shape[k].safeParse(src[k]);
+    if (field.success) out[k] = field.data;
+  }
+  return out as Persona;
 }
 
 const TONE_TEXT: Record<Persona["tone"], string> = {
