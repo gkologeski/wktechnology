@@ -280,7 +280,7 @@ export async function combineAudienceGroups(
 ): Promise<Set<string>> {
   const out = new Set<string>();
   for (const g of groups) {
-    let acc: Set<string> | null = null;
+    let acc = null as Set<string> | null;
     for (const f of g.filters) {
       const s = await idsFor(f);
       if (acc === null) acc = new Set(s);
