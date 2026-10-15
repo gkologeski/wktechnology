@@ -213,6 +213,21 @@ export type ValidatedOutput = AgentOutput & { warnings: string[] };
 
 const PRICE_RE = /R\$\s?\d|\d+[.,]?\d*\s?(reais|mil)\b/i;
 
+export const PRICE_WARNING = "A resposta menciona valores; revise antes de enviar.";
+
+/** Menciona valores em dinheiro (proibido sem humano). */
+export function mentionsPrice(text: string): boolean {
+  return PRICE_RE.test(text);
+}
+
+/**
+ * Avisos que ainda exigem um humano. Os demais (oferta descartada, resposta de
+ * qualificação recusada, opt-out ignorado) são só registro e não travam o envio.
+ */
+export function blockingWarnings(warnings: string[]): string[] {
+  return warnings.filter((w) => w === PRICE_WARNING);
+}
+
 /**
  * Valida a saída do modelo contra o que o servidor autoriza.
  * Nunca confia em ids vindos do modelo: filtra pelas listas permitidas.
