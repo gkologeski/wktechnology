@@ -121,6 +121,28 @@ describe("público em grupos E/OU", () => {
     const r = await combineAudienceGroups([{ logic: "or", filters: [fl("a"), fl("c")] }], idsFor);
     expect([...r].sort()).toEqual(["1", "2", "3", "9"]);
   });
+  it("E entre grupos faz intersecção dos grupos", async () => {
+    const r = await combineAudienceGroups(
+      [
+        { logic: "and", filters: [fl("a")] },
+        { logic: "and", filters: [fl("b")] },
+      ],
+      idsFor,
+      "and",
+    );
+    expect([...r].sort()).toEqual(["2", "3"]);
+  });
+  it("E entre grupos sem interseção resulta vazio", async () => {
+    const r = await combineAudienceGroups(
+      [
+        { logic: "and", filters: [fl("a")] },
+        { logic: "and", filters: [fl("c")] },
+      ],
+      idsFor,
+      "and",
+    );
+    expect(r.size).toBe(0);
+  });
   it("grupo vazio é ignorado e formato antigo vira um grupo E", () => {
     expect(normalizeAudienceGroups({ groups: [{ logic: "or", filters: [] }] })).toEqual([]);
     expect(normalizeAudienceGroups({ filters: [fl("a")] })).toEqual([
