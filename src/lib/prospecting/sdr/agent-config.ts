@@ -149,3 +149,9 @@ export function stripUrls(text: string): string {
     .replace(/[ \t]+\n/g, "\n")
     .trim();
 }
+
+/** Tempo de aguardo do cliente em segundos (0–300; padrão 5). */
+export function customerWaitSeconds(guardrails: unknown): number {
+  const v = (guardrails as { customer_wait_seconds?: unknown } | null)?.customer_wait_seconds;
+  return typeof v === "number" && Number.isInteger(v) && v >= 0 && v <= 300 ? v : 5;
+}
