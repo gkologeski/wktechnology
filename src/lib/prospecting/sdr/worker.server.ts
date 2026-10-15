@@ -715,13 +715,41 @@ export async function processJob(
     await admin.from("sdr_turn_jobs").update({ lease_token: null }).eq("id", job.id);
     return "drafted";
   }
-  const sent = await deps.sendMessage(admin, {
-    jobId: job.id,
-    expectedStatus: "running",
-    leaseToken: job.lease_token,
-    text: composed.text,
-    actorUserId: null,
-  });
+  const sendText = (text: string) =>
+    deps.sendMessage(admin, {
+      jobId: job.id,
+      expectedStatus: "running",
+      leaseToken: job.lease_token,
+      text,
+      actorUserId: null,
+    });
+  let sent = await sendText(composed.text);
+  if (!sent.ok && sent.reason === "repetition_detected") {
+    // Autonomia: reescreve uma vez sem repetir a última mensagem, em vez de pedir aprovação.
+    const alt = await rewriteReply(
+      deps,
+      job.workspace_id,
+      system,
+      history,
+      "A resposta ficou idêntica à sua mensagem anterior. Escreva outra, diferente, que avance a conversa considerando todas as mensagens do cliente.",
+    );
+    if (alt) {
+      const again = await composeOutgoing(admin, {
+        workspaceId: job.workspace_id,
+        reply: alt,
+        intent: out.intent,
+        materialIds: out.material_ids,
+        attachMaterials: agentConfig.guardrails.attach_materials,
+        meeting: effects.meeting,
+      });
+      await admin
+        .from("sdr_turn_jobs")
+        .update({ draft_text: again.text })
+        .eq("id", job.id)
+        .eq("lease_token", job.lease_token);
+      sent = await sendText(again.text);
+    }
+  }
   if (!sent.ok) {
     // Descarta trabalho obsoleto; demais falhas viram rascunho para revisão humana.
     const obsolete = [
