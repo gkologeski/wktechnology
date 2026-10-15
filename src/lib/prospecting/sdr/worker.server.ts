@@ -579,7 +579,7 @@ export async function processJob(
   }
   // Contato errado: envia o pedido de desculpas e só depois encerra (não vira descadastro mudo).
   let wrongContact = false;
-  if (out.intent !== "handoff") {
+  if (job.kind === "reply" && out.intent !== "handoff" && out.intent !== "schedule_meeting") {
     const lastIn = [...history].reverse().find((m) => m.direction === "inbound");
     if (isWrongContact(String((lastIn as { body?: unknown } | undefined)?.body ?? ""))) {
       wrongContact = true;
