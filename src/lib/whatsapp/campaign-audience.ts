@@ -172,15 +172,125 @@ export const FILTER_FIELDS: Record<AudienceBase, FilterFieldDef[]> = {
   ],
 };
 
-export type AudienceFilterOp = "eq" | "ilike" | "gte" | "lte";
-export type AudienceFilter = { column: string; op: AudienceFilterOp; value: string };
+export type AudienceFilterOp =
+  | "eq"
+  | "neq"
+  | "ilike"
+  | "not_ilike"
+  | "gte"
+  | "lte"
+  | "is_null"
+  | "is_not_null";
+export const AUDIENCE_FILTER_OPS: AudienceFilterOp[] = [
+  "eq",
+  "neq",
+  "ilike",
+  "not_ilike",
+  "gte",
+  "lte",
+  "is_null",
+  "is_not_null",
+];
+/** `entity` ausente = a própria base (formato antigo). */
+export type AudienceFilter = {
+  entity?: AudienceBase;
+  column: string;
+  op: AudienceFilterOp;
+  value: string;
+};
+export const ENTITY_LABEL: Record<AudienceBase, string> = {
+  leads: "Lead",
+  contacts: "Contato",
+  companies: "Empresa",
+  deals: "Negócio",
+};
+export type AudienceGroup = { logic: "and" | "or"; filters: AudienceFilter[] };
+export const MAX_AUDIENCE_GROUPS = 10;
+export const MAX_FILTERS_PER_GROUP = 20;
+
+export const OPS_BY_KIND: Record<
+  FilterFieldDef["kind"],
+  { op: AudienceFilterOp; label: string }[]
+> = {
+  text: [
+    { op: "ilike", label: "contém" },
+    { op: "not_ilike", label: "não contém" },
+    { op: "eq", label: "é igual a" },
+    { op: "neq", label: "é diferente de" },
+    { op: "is_null", label: "está vazio" },
+    { op: "is_not_null", label: "não está vazio" },
+  ],
+  enum: [
+    { op: "eq", label: "é" },
+    { op: "neq", label: "não é" },
+    { op: "is_null", label: "está vazio" },
+    { op: "is_not_null", label: "não está vazio" },
+  ],
+  member: [
+    { op: "eq", label: "é" },
+    { op: "neq", label: "não é" },
+    { op: "is_null", label: "sem responsável" },
+    { op: "is_not_null", label: "tem responsável" },
+  ],
+  date: [
+    { op: "gte", label: "a partir de" },
+    { op: "lte", label: "até" },
+    { op: "is_null", label: "está vazio" },
+    { op: "is_not_null", label: "não está vazio" },
+  ],
+};
+
+export const opNeedsValue = (op: AudienceFilterOp) => op !== "is_null" && op !== "is_not_null";
 
 export function isAllowedFilter(base: AudienceBase, f: AudienceFilter): boolean {
-  const def = FILTER_FIELDS[base].find((d) => d.column === f.column);
-  if (!def || !f.value.trim()) return false;
-  if (def.kind === "date") return f.op === "gte" || f.op === "lte";
-  if (def.kind === "text") return f.op === "eq" || f.op === "ilike";
-  return f.op === "eq";
+  const entity = f.entity ?? base;
+  if (!FILTER_FIELDS[entity]) return false;
+  const def = FILTER_FIELDS[entity].find((d) => d.column === f.column);
+  if (!def) return false;
+  if (!OPS_BY_KIND[def.kind].some((o) => o.op === f.op)) return false;
+  if (opNeedsValue(f.op) && !f.value.trim()) return false;
+  return true;
+}
+
+/** Filtro sem valor (exceto vazio/não vazio) ainda está sendo montado: ignora. */
+export const isCompleteFilter = (f: AudienceFilter) => !opNeedsValue(f.op) || !!f.value.trim();
+
+/** Converte o formato antigo (lista simples = E) e remove grupos vazios. */
+export function normalizeAudienceGroups(input: {
+  filters?: AudienceFilter[];
+  groups?: AudienceGroup[];
+}): AudienceGroup[] {
+  const groups =
+    input.groups ?? (input.filters ? [{ logic: "and" as const, filters: input.filters }] : []);
+  return groups
+    .map((g) => ({
+      logic: g.logic === "or" ? ("or" as const) : ("and" as const),
+      filters: g.filters.filter(isCompleteFilter),
+    }))
+    .filter((g) => g.filters.length > 0);
+}
+
+/**
+ * Combina conjuntos de IDs: E/OU dentro do grupo, OU entre grupos (padrão HubSpot).
+ * `idsFor` devolve os IDs da base que atendem a um filtro.
+ */
+export async function combineAudienceGroups(
+  groups: AudienceGroup[],
+  idsFor: (f: AudienceFilter) => Promise<Set<string>>,
+): Promise<Set<string>> {
+  const out = new Set<string>();
+  for (const g of groups) {
+    let acc = null as Set<string> | null;
+    for (const f of g.filters) {
+      const s = await idsFor(f);
+      if (acc === null) acc = new Set(s);
+      else if (g.logic === "and") acc = new Set([...acc].filter((id) => s.has(id)));
+      else for (const id of s) acc.add(id);
+      if (g.logic === "and" && acc.size === 0) break;
+    }
+    for (const id of acc ?? []) out.add(id);
+  }
+  return out;
 }
 
 /** Normaliza para E.164; números BR sem DDI recebem +55. Retorna null se inválido. */

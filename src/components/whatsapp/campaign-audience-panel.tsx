@@ -2,7 +2,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,24 +23,87 @@ import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
   BASE_LABEL,
-  FILTER_FIELDS,
   FREE_TEXT_FIELD,
   FREE_TEXT_MAX,
   GROUP_LABEL,
   fieldsForBase,
   type AudienceBase,
+  normalizeAudienceGroups,
   type AudienceFilter,
+  type AudienceGroup,
   type FieldGroup,
   type VariableMap,
 } from "@/lib/whatsapp/campaign-audience";
 import { toast } from "sonner";
+import { AudienceGroupsEditor } from "./audience-groups-editor";
+
+const ENTITIES = ["leads", "contacts", "companies", "deals"] as const;
+
+/** Grupos → segmento: OU entre grupos; campo relacionado vira "entidade.coluna". */
+function groupsToSegment(groups: AudienceGroup[], base: AudienceBase) {
+  return {
+    type: "group" as const,
+    op: "or" as const,
+    conditions: normalizeAudienceGroups({ groups }).map((g) => ({
+      type: "group" as const,
+      op: g.logic,
+      conditions: g.filters.map((f) => ({
+        type: "condition" as const,
+        field: (f.entity ?? base) === base ? f.column : `${f.entity}.${f.column}`,
+        op: f.op,
+        value: f.value,
+      })),
+    })),
+  };
+}
+
+type SegCond = {
+  type?: string;
+  field?: string;
+  op?: string;
+  value?: unknown;
+  conditions?: SegCond[];
+};
+
+/** Segmento (formato antigo plano ou em grupos) → grupos do editor. */
+function segmentToGroups(raw: unknown, base: AudienceBase): AudienceGroup[] {
+  const root = (raw ?? {}) as SegCond & { op?: string };
+  const toFilter = (c: SegCond): AudienceFilter | null => {
+    if (!c.field) return null;
+    const [maybeEntity, col] = c.field.split(".");
+    const entity =
+      col && (ENTITIES as readonly string[]).includes(maybeEntity)
+        ? (maybeEntity as AudienceBase)
+        : base;
+    return {
+      entity,
+      column: col ?? c.field,
+      op: (c.op as AudienceFilter["op"]) ?? "eq",
+      value: c.value == null ? "" : String(c.value),
+    };
+  };
+  const conds = root.conditions ?? [];
+  const nested = conds.some((c) => Array.isArray(c.conditions));
+  const groups = nested
+    ? conds.map((g) => ({
+        logic: (g.op === "or" ? "or" : "and") as "and" | "or",
+        filters: (g.conditions ?? []).map(toFilter).filter((f): f is AudienceFilter => !!f),
+      }))
+    : [
+        {
+          logic: (root.op === "or" ? "or" : "and") as "and" | "or",
+          filters: conds.map(toFilter).filter((f): f is AudienceFilter => !!f),
+        },
+      ];
+  return groups.filter((g) => g.filters.length);
+}
 
 export type AudienceMode = "queue" | "filter" | "manual";
 export type AudienceState = {
   mode: AudienceMode;
   queueId: string;
   base: AudienceBase;
-  filters: AudienceFilter[];
+  groups: AudienceGroup[];
   variableMap: VariableMap;
   skipMissing: boolean;
 };
@@ -50,7 +112,7 @@ export const EMPTY_AUDIENCE: AudienceState = {
   mode: "queue",
   queueId: "",
   base: "contacts",
-  filters: [],
+  groups: [],
   variableMap: {},
   skipMissing: false,
 };
@@ -61,7 +123,7 @@ export function audiencePayload(a: AudienceState) {
     return {
       type: "filter" as const,
       base: a.base,
-      filters: a.filters.filter((f) => f.value.trim()),
+      groups: normalizeAudienceGroups({ groups: a.groups }),
     };
   return undefined;
 }
@@ -189,7 +251,7 @@ export function CampaignAudiencePanel({
                 <Select
                   value={value.base}
                   onValueChange={(b) =>
-                    set({ base: b as AudienceBase, filters: [], variableMap: {} })
+                    set({ base: b as AudienceBase, groups: [], variableMap: {} })
                   }
                 >
                   <SelectTrigger id="aud-base">
@@ -212,21 +274,7 @@ export function CampaignAudiencePanel({
                   value=""
                   onValueChange={(id) => {
                     const s = segments.find((x) => x.id === id);
-                    const conds = ((s?.filters as { conditions?: unknown[] })?.conditions ??
-                      []) as {
-                      field?: string;
-                      op?: string;
-                      value?: unknown;
-                    }[];
-                    set({
-                      filters: conds
-                        .filter((c) => c.field && typeof c.value === "string")
-                        .map((c) => ({
-                          column: c.field!,
-                          op: (c.op as AudienceFilter["op"]) ?? "eq",
-                          value: String(c.value),
-                        })),
-                    });
+                    if (s) set({ groups: segmentToGroups(s.filters, value.base) });
                   }}
                 >
                   <SelectTrigger id="aud-seg">
@@ -242,118 +290,16 @@ export function CampaignAudiencePanel({
                 </Select>
               </div>
             </div>
-            {value.filters.map((f, i) => {
-              const def = FILTER_FIELDS[value.base].find((d) => d.column === f.column);
-              const upd = (patch: Partial<AudienceFilter>) =>
-                set({ filters: value.filters.map((x, j) => (j === i ? { ...x, ...patch } : x)) });
-              return (
-                <div key={i} className="flex flex-wrap items-center gap-2">
-                  <Select
-                    value={f.column}
-                    onValueChange={(c) => {
-                      const d = FILTER_FIELDS[value.base].find((x) => x.column === c);
-                      upd({
-                        column: c,
-                        op: d?.kind === "text" ? "ilike" : d?.kind === "date" ? "gte" : "eq",
-                        value: "",
-                      });
-                    }}
-                  >
-                    <SelectTrigger className="w-40" aria-label="Campo do filtro">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {FILTER_FIELDS[value.base].map((d) => (
-                        <SelectItem key={d.column} value={d.column}>
-                          {d.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {def?.kind === "text" && (
-                    <Select
-                      value={f.op}
-                      onValueChange={(o) => upd({ op: o as AudienceFilter["op"] })}
-                    >
-                      <SelectTrigger className="w-32" aria-label="Condição">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ilike">contém</SelectItem>
-                        <SelectItem value="eq">é igual a</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                  {def?.kind === "date" && (
-                    <Select
-                      value={f.op}
-                      onValueChange={(o) => upd({ op: o as AudienceFilter["op"] })}
-                    >
-                      <SelectTrigger className="w-32" aria-label="Condição">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="gte">a partir de</SelectItem>
-                        <SelectItem value="lte">até</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                  {def?.kind === "enum" || def?.kind === "member" ? (
-                    <Select value={f.value} onValueChange={(v) => upd({ value: v })}>
-                      <SelectTrigger className="w-48" aria-label="Valor do filtro">
-                        <SelectValue placeholder="Escolha" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(def.kind === "enum"
-                          ? (def.options ?? [])
-                          : (members.data ?? []).map((m) => ({
-                              value: m.user_id,
-                              label: m.full_name || "Sem nome",
-                            }))
-                        ).map((o) => (
-                          <SelectItem key={o.value} value={o.value}>
-                            {o.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <Input
-                      className="w-48"
-                      aria-label="Valor do filtro"
-                      type={def?.kind === "date" ? "date" : "text"}
-                      value={f.value}
-                      onChange={(e) => upd({ value: e.target.value })}
-                    />
-                  )}
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    aria-label="Remover filtro"
-                    onClick={() => set({ filters: value.filters.filter((_, j) => j !== i) })}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              );
-            })}
+            <AudienceGroupsEditor
+              base={value.base}
+              groups={value.groups}
+              onChange={(groups) => set({ groups })}
+              members={(members.data ?? []).map((m) => ({
+                value: m.user_id,
+                label: m.full_name || "Sem nome",
+              }))}
+            />
             <div className="flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={value.filters.length >= 10}
-                onClick={() => {
-                  const d = FILTER_FIELDS[value.base][0];
-                  set({
-                    filters: [
-                      ...value.filters,
-                      { column: d.column, op: d.kind === "text" ? "ilike" : "eq", value: "" },
-                    ],
-                  });
-                }}
-              >
-                <Plus className="mr-1 h-4 w-4" /> Adicionar filtro
-              </Button>
               <Button
                 size="sm"
                 variant="ghost"
@@ -366,18 +312,7 @@ export function CampaignAudiencePanel({
                         name: name.trim(),
                         entity: value.base,
                         kind: "dynamic",
-                        filters: {
-                          type: "group",
-                          op: "and",
-                          conditions: value.filters
-                            .filter((f) => f.value.trim())
-                            .map((f) => ({
-                              type: "condition",
-                              field: f.column,
-                              op: f.op,
-                              value: f.value,
-                            })),
-                        },
+                        filters: groupsToSegment(value.groups, value.base),
                       },
                     });
                     toast.success("Segmento salvo");
