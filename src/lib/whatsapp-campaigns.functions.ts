@@ -271,11 +271,15 @@ export const setWhatsAppCampaignStatus = createServerFn({ method: "POST" })
     } = { status: data.status };
     if (data.status === "running") patch.started_at = new Date().toISOString();
     if (data.status === "canceled") patch.finished_at = new Date().toISOString();
-    const { error } = await context.supabase
+    const { data: rows, error } = await context.supabase
       .from("whatsapp_campaigns")
       .update(patch)
-      .eq("id", data.id);
+      .eq("id", data.id)
+      .select("id");
     if (error) throw error;
+    // RLS nega sem erro: sem linha alterada, a pausa não valeu.
+    if (!rows || rows.length === 0)
+      throw new Error("Sem permissão para alterar o status desta campanha.");
     return { ok: true };
   });
 

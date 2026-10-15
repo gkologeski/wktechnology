@@ -120,6 +120,13 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
   }
 
   for (const r of recips) {
+    // Pausa/cancelamento feitos durante a rodada valem antes de cada envio.
+    const { data: live } = await supabaseAdmin
+      .from("whatsapp_campaigns")
+      .select("status")
+      .eq("id", camp.id)
+      .maybeSingle();
+    if (live?.status !== "running") break;
     if (pol?.template_daily_limit != null) {
       const { data: q } = await supabaseAdmin.rpc("wa_reserve_template_quota", {
         p_recipient: r.id,

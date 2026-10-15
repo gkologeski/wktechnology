@@ -583,11 +583,16 @@ function PacingInfo({
     c.rate_per_minute,
   );
   const nextIn = c.next_send_at
-    ? Math.max(0, Math.round((new Date(c.next_send_at).getTime() - Date.now()) / 1000))
+    ? Math.round((new Date(c.next_send_at).getTime() - Date.now()) / 1000)
     : null;
   return (
     <>
-      {c.interval_max_s > 0 && nextIn != null && pending > 0 && ` · próximo disparo em ~${nextIn}s`}
+      {c.interval_max_s > 0 &&
+        nextIn != null &&
+        pending > 0 &&
+        (nextIn > 0
+          ? ` · próximo disparo em ~${nextIn}s`
+          : " · próximo disparo na próxima rodada (até ~2 min)")}
       {pending > 0 && ` · término previsto em ~${Math.max(1, Math.round(remaining / 60000))} min`}
     </>
   );
