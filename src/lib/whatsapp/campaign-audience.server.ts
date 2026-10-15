@@ -23,6 +23,7 @@ export type AudienceInput =
       base: AudienceBase;
       filters?: AudienceFilter[];
       groups?: AudienceGroup[];
+      groups_logic?: "and" | "or";
     };
 
 /** Teto de IDs lidos por filtro antes de combinar grupos. */
@@ -283,8 +284,10 @@ export async function loadAudienceRows(
         db.from(fBase).select(SELECT[fBase]).eq("workspace_id", workspaceId).is("deleted_at", null),
       );
     } else {
-      const ids = await combineAudienceGroups(groups, (f) =>
-        idsForFilter(db, workspaceId, fBase, f),
+      const ids = await combineAudienceGroups(
+        groups,
+        (f) => idsForFilter(db, workspaceId, fBase, f),
+        audience.groups_logic === "and" ? "and" : "or",
       );
       raw = await fetchByIds(
         db,

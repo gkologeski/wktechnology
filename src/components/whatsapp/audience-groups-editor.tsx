@@ -1,5 +1,5 @@
 // Editor de público em grupos (estilo segmentos do HubSpot): filtros dentro do
-// grupo combinados por E (ou OU), grupos ligados por OU. Só apresentação.
+// grupo combinados por E (ou OU), grupos ligados por E ou OU. Só apresentação.
 import { Copy, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,10 +36,14 @@ export function AudienceGroupsEditor({
   groups,
   onChange,
   members,
+  groupsLogic = "or",
+  onGroupsLogicChange,
 }: {
   base: AudienceBase;
   groups: AudienceGroup[];
   onChange: (g: AudienceGroup[]) => void;
+  groupsLogic?: "and" | "or";
+  onGroupsLogicChange?: (l: "and" | "or") => void;
   members: { value: string; label: string }[];
 }) {
   const setGroup = (i: number, g: AudienceGroup) =>
@@ -47,8 +51,26 @@ export function AudienceGroupsEditor({
   // Base primeiro no seletor.
   const ordered = [base, ...ENTITIES.filter((e) => e !== base)];
 
+  const between = groupsLogic === "and" ? "E" : "OU";
+
   return (
     <div className="space-y-2">
+      {groups.length > 1 && onGroupsLogicChange && (
+        <div className="flex items-center gap-2 text-xs">
+          <span id="groups-logic-label" className="text-muted-foreground">
+            Combinar grupos com
+          </span>
+          <Select value={groupsLogic} onValueChange={(l) => onGroupsLogicChange(l as "and" | "or")}>
+            <SelectTrigger aria-labelledby="groups-logic-label" className="h-8 w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="or">OU (qualquer grupo)</SelectItem>
+              <SelectItem value="and">E (todos os grupos)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       {groups.length === 0 && (
         <p className="text-xs text-muted-foreground">
           Sem filtros: entram todos os registros da base. Adicione um grupo para filtrar.
@@ -60,7 +82,7 @@ export function AudienceGroupsEditor({
             <div className="flex items-center gap-2" aria-hidden>
               <span className="h-px flex-1 bg-border" />
               <span className="rounded-full border bg-background px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
-                OU
+                {between}
               </span>
               <span className="h-px flex-1 bg-border" />
             </div>
@@ -230,7 +252,8 @@ export function AudienceGroupsEditor({
         disabled={groups.length >= MAX_AUDIENCE_GROUPS}
         onClick={() => onChange([...groups, { logic: "and", filters: [defaultFilter(base)] }])}
       >
-        <Plus className="mr-1 h-4 w-4" /> {groups.length ? "Adicionar grupo OU" : "Adicionar grupo"}
+        <Plus className="mr-1 h-4 w-4" />{" "}
+        {groups.length ? `Adicionar grupo ${between}` : "Adicionar grupo"}
       </Button>
     </div>
   );
