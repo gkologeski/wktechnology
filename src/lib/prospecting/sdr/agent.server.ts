@@ -185,6 +185,7 @@ export async function callSdrAgent(args: {
   const calendarOutputs: string[] = [];
   let timeRetry = false;
   let bookRetry = false;
+  let jsonRetry = false;
   const toolResults: { tool: string; out: unknown }[] = [];
   for (let step = 0; step <= MAX_TOOL_STEPS; step++) {
     const allowTools = !!tools && step < MAX_TOOL_STEPS;
@@ -330,4 +331,22 @@ export async function callSdrAgent(args: {
     error: "Limite de chamadas de ferramenta atingido",
     retryable: false,
   };
+}
+
+/** Lê o objeto JSON da resposta (tolera cercas de código e texto ao redor). */
+export function extractJsonObject(raw: string): Record<string, unknown> | null {
+  const t = raw.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+  const tryParse = (x: string) => {
+    try {
+      const v = JSON.parse(x) as unknown;
+      return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
+    } catch {
+      return null;
+    }
+  };
+  const direct = tryParse(t);
+  if (direct) return direct;
+  const a = t.indexOf("{");
+  const b = t.lastIndexOf("}");
+  return a >= 0 && b > a ? tryParse(t.slice(a, b + 1)) : null;
 }
