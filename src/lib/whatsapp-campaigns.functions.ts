@@ -102,6 +102,7 @@ export const createWhatsAppCampaign = createServerFn({ method: "POST" })
         supabase,
         workspaceId,
         data.audience,
+        userId,
       );
       if (truncated) throw new Error("O público passa de 5.000 destinatários. Refine os filtros.");
       const map = data.variable_map ?? {};
@@ -396,7 +397,7 @@ export const previewCampaignAudience = createServerFn({ method: "POST" })
     const { buildAudience, isAllowedField } = await import("@/lib/whatsapp/campaign-audience");
     const { loadAudienceRows, loadOptedOutPhones } =
       await import("@/lib/whatsapp/campaign-audience.server");
-    const { base, rows, truncated } = await loadAudienceRows(supabase, workspaceId, data.audience);
+    const { base, rows, truncated } = await loadAudienceRows(supabase, workspaceId, data.audience, userId);
     const map = Object.fromEntries(
       Object.entries(data.variable_map ?? {}).filter(([, b]) => isAllowedField(base, b.field)),
     );

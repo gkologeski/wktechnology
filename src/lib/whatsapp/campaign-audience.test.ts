@@ -54,10 +54,44 @@ describe("público da campanha WhatsApp", () => {
 
   it("só aceita campos e filtros da lista branca de cada base", () => {
     expect(isAllowedField("contacts", "contact.first_name")).toBe(true);
-    expect(isAllowedField("companies", "contact.email")).toBe(false);
+    expect(isAllowedField("companies", "contact.email")).toBe(true);
     expect(isAllowedField("deals", "company.name")).toBe(true);
-    expect(fieldsForBase("leads").some((f) => f.key.startsWith("deal."))).toBe(false);
+    expect(fieldsForBase("leads").some((f) => f.key.startsWith("deal."))).toBe(true);
     expect(isAllowedFilter("leads", { column: "hs_raw", op: "eq", value: "x" })).toBe(false);
     expect(isAllowedFilter("deals", { column: "stage", op: "eq", value: "won" })).toBe(true);
+  });
+});
+
+import {
+  FREE_TEXT_FIELD as FREE,
+  fieldsForBase as fieldsAll,
+  isAllowedField as allowed,
+  resolveVariables as resolveVars,
+} from "./campaign-audience";
+
+describe("variáveis livres e todas as entidades", () => {
+  it("texto livre vai igual para todos, sem quebra de linha", () => {
+    const r = resolveVars({}, { "1": { field: FREE, fallback: " Lia\nda WK " } });
+    expect(r.variables["1"]).toBe("Lia da WK");
+    expect(r.missing).toEqual([]);
+  });
+  it("texto livre vazio fica como variável faltando", () => {
+    expect(resolveVars({}, { "1": { field: FREE, fallback: "  " } }).missing).toEqual(["1"]);
+  });
+  it("qualquer base oferece todas as entidades e responsáveis", () => {
+    const keys = fieldsAll("companies").map((f) => f.key);
+    for (const k of [
+      "lead.first_name",
+      "contact.first_name",
+      "deal.name",
+      "owner_company.full_name",
+      "owner_deal.first_name",
+      "sender.full_name",
+    ])
+      expect(keys).toContain(k);
+  });
+  it("campo fora da lista é recusado e texto livre é aceito", () => {
+    expect(allowed("leads", "contact.cpf")).toBe(false);
+    expect(allowed("leads", FREE)).toBe(true);
   });
 });
