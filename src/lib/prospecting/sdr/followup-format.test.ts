@@ -8,7 +8,11 @@ const BH = { startHour: 8, endHour: 18, utcOffsetHours: -3 };
 describe("retomada dentro da janela de 24 h", () => {
   it("caso Andressa: nunca marca depois do fim da janela", () => {
     const last = "2026-10-14T20:01:46Z"; // 17:01 BRT
-    const at = nextFollowUpAt({ ...base, now: new Date("2026-10-14T20:01:52Z"), lastInboundAt: last });
+    const at = nextFollowUpAt({
+      ...base,
+      now: new Date("2026-10-14T20:01:52Z"),
+      lastInboundAt: last,
+    });
     expect(at!.toISOString()).toBe("2026-10-15T19:01:46.000Z"); // 1 h antes do fim
   });
   it("antecipa para dentro do expediente", () => {

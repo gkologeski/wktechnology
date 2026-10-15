@@ -359,7 +359,7 @@ async function formatAsTurn(
   apiKey: string,
   workspaceId: string,
   content: string,
-  feature?: string,
+  feature?: Parameters<typeof callAgent>[0]["feature"],
 ): Promise<Record<string, unknown> | null> {
   if (!content.trim()) return null;
   try {
@@ -396,11 +396,17 @@ async function formatAsTurn(
 
 /** Lê o objeto JSON da resposta (tolera cercas de código e texto ao redor). */
 export function extractJsonObject(raw: string): Record<string, unknown> | null {
-  const t = raw.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+  const t = raw
+    .trim()
+    .replace(/^```(?:json)?/i, "")
+    .replace(/```$/, "")
+    .trim();
   const tryParse = (x: string) => {
     try {
       const v = JSON.parse(x) as unknown;
-      return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
+      return v && typeof v === "object" && !Array.isArray(v)
+        ? (v as Record<string, unknown>)
+        : null;
     } catch {
       return null;
     }
