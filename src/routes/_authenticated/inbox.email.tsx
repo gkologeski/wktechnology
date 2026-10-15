@@ -390,6 +390,7 @@ function EmailInbox() {
                 </p>
               </div>
               <InboxIdentityLinker
+                key={current.thread.id}
                 channel="email"
                 conversationId={current.thread.id}
                 contactId={current.thread.contact_id}

@@ -774,6 +774,7 @@ function WhatsAppInbox() {
                 </p>
               </div>
               <InboxIdentityLinker
+                key={current.id}
                 channel="whatsapp"
                 conversationId={current.id}
                 contactId={current.contact_id}

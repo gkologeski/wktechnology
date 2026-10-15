@@ -382,6 +382,7 @@ function LiveChatInbox() {
                 </p>
               </div>
               <InboxIdentityLinker
+                key={current.id}
                 channel="chat"
                 conversationId={current.id}
                 contactId={current.contact_id}
