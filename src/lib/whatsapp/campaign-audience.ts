@@ -2,7 +2,20 @@
 // Os campos vêm de uma lista branca: nada fora dela entra na mensagem ou nos filtros.
 
 export type AudienceBase = "leads" | "contacts" | "companies" | "deals";
-export type FieldGroup = "lead" | "contact" | "company" | "deal";
+export type FieldGroup =
+  | "lead"
+  | "contact"
+  | "company"
+  | "deal"
+  | "owner_record"
+  | "owner_contact"
+  | "owner_company"
+  | "owner_deal"
+  | "sender";
+
+/** Chave especial: o texto digitado (em `fallback`) vai igual para todos. */
+export const FREE_TEXT_FIELD = "__free__";
+export const FREE_TEXT_MAX = 200;
 
 export type AudienceField = { key: string; label: string; group: FieldGroup };
 
@@ -11,7 +24,14 @@ export const GROUP_LABEL: Record<FieldGroup, string> = {
   contact: "Contato",
   company: "Empresa",
   deal: "Negócio",
+  owner_record: "Responsável pelo registro",
+  owner_contact: "Responsável pelo contato",
+  owner_company: "Responsável pela empresa",
+  owner_deal: "Responsável pelo negócio",
+  sender: "Remetente",
 };
+
+const OWNER_COLUMNS = { full_name: "Nome", first_name: "Primeiro nome" };
 
 export const BASE_LABEL: Record<AudienceBase, string> = {
   leads: "Leads",
@@ -29,6 +49,7 @@ export const FIELD_COLUMNS: Record<FieldGroup, Record<string, string>> = {
     email: "E-mail",
     company_name: "Empresa (texto)",
     source: "Origem",
+    status: "Status",
   },
   contact: {
     first_name: "Primeiro nome",
@@ -50,18 +71,31 @@ export const FIELD_COLUMNS: Record<FieldGroup, Record<string, string>> = {
     name: "Título",
     service_line: "Linha de serviço",
     source: "Origem",
+    stage: "Etapa",
+    value: "Valor",
   },
+  owner_record: OWNER_COLUMNS,
+  owner_contact: OWNER_COLUMNS,
+  owner_company: OWNER_COLUMNS,
+  owner_deal: OWNER_COLUMNS,
+  sender: OWNER_COLUMNS,
 };
 
-const GROUPS_BY_BASE: Record<AudienceBase, FieldGroup[]> = {
-  leads: ["lead", "company"],
-  contacts: ["contact", "company"],
-  companies: ["company"],
-  deals: ["deal", "contact", "company"],
-};
+/** Toda base enxerga todas as entidades (via registros relacionados). */
+const ALL_GROUPS: FieldGroup[] = [
+  "lead",
+  "contact",
+  "company",
+  "deal",
+  "owner_record",
+  "owner_contact",
+  "owner_company",
+  "owner_deal",
+  "sender",
+];
 
-export function fieldsForBase(base: AudienceBase): AudienceField[] {
-  return GROUPS_BY_BASE[base].flatMap((g) =>
+export function fieldsForBase(_base: AudienceBase): AudienceField[] {
+  return ALL_GROUPS.flatMap((g) =>
     Object.entries(FIELD_COLUMNS[g]).map(([col, label]) => ({
       key: `${g}.${col}`,
       label: `${GROUP_LABEL[g]} › ${label}`,
@@ -71,6 +105,7 @@ export function fieldsForBase(base: AudienceBase): AudienceField[] {
 }
 
 export function isAllowedField(base: AudienceBase, key: string): boolean {
+  if (key === FREE_TEXT_FIELD) return true;
   return fieldsForBase(base).some((f) => f.key === key);
 }
 
@@ -195,11 +230,19 @@ export function resolveVariables(
   const variables: Record<string, string> = {};
   const missing: string[] = [];
   for (const [k, b] of Object.entries(map)) {
-    const v = (values[b.field] ?? "").toString().trim() || (b.fallback ?? "").trim();
+    const v =
+      b.field === FREE_TEXT_FIELD
+        ? cleanFreeText(b.fallback)
+        : (values[b.field] ?? "").toString().trim() || (b.fallback ?? "").trim();
     if (v) variables[k] = v;
     else missing.push(k);
   }
   return { variables, missing };
+}
+
+/** Variáveis da Meta não aceitam quebra de linha nem espaços longos. */
+export function cleanFreeText(v: string | null | undefined): string {
+  return (v ?? "").replace(/\s+/g, " ").trim().slice(0, FREE_TEXT_MAX);
 }
 
 /** Telefones equivalentes (celular BR com/sem 9º dígito) contam como o mesmo. */

@@ -25,6 +25,8 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
   BASE_LABEL,
   FILTER_FIELDS,
+  FREE_TEXT_FIELD,
+  FREE_TEXT_MAX,
   GROUP_LABEL,
   fieldsForBase,
   type AudienceBase,
@@ -451,6 +453,10 @@ export function CampaignAudiencePanel({
                     <SelectValue placeholder="Escolha o campo" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Livre</SelectLabel>
+                      <SelectItem value={FREE_TEXT_FIELD}>Texto livre</SelectItem>
+                    </SelectGroup>
                     {groups.map((g) => (
                       <SelectGroup key={g}>
                         <SelectLabel>{GROUP_LABEL[g]}</SelectLabel>
@@ -465,12 +471,24 @@ export function CampaignAudiencePanel({
                     ))}
                   </SelectContent>
                 </Select>
-                <Input
-                  aria-label={`Valor se vazio para a variável ${k}`}
-                  placeholder="Valor se vazio (opcional)"
-                  value={value.variableMap[k]?.fallback ?? ""}
-                  onChange={(e) => setVar(k, { fallback: e.target.value })}
-                />
+                {value.variableMap[k]?.field === FREE_TEXT_FIELD ? (
+                  <Input
+                    aria-label={`Texto da variável ${k}`}
+                    placeholder="Texto da variável (obrigatório)"
+                    maxLength={FREE_TEXT_MAX}
+                    value={value.variableMap[k]?.fallback ?? ""}
+                    onChange={(e) =>
+                      setVar(k, { fallback: e.target.value.replace(/[\r\n]+/g, " ") })
+                    }
+                  />
+                ) : (
+                  <Input
+                    aria-label={`Valor se vazio para a variável ${k}`}
+                    placeholder="Valor se vazio (opcional)"
+                    value={value.variableMap[k]?.fallback ?? ""}
+                    onChange={(e) => setVar(k, { fallback: e.target.value })}
+                  />
+                )}
               </div>
             ))
           )}

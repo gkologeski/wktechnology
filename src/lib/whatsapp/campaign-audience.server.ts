@@ -18,11 +18,13 @@ export type AudienceInput =
   | { type: "filter"; base: AudienceBase; filters: AudienceFilter[] };
 
 const SELECT: Record<AudienceBase, string> = {
-  leads: "id, first_name, last_name, email, phone, mobile_phone, company_name, source, company_id",
+  leads:
+    "id, first_name, last_name, email, phone, mobile_phone, company_name, source, status, company_id, assigned_to, converted_contact_id, converted_deal_id, created_at",
   contacts:
-    "id, first_name, last_name, email, phone, mobile_phone, job_title, city, state, company_id",
-  companies: "id, name, industry, city, state, website, phone",
-  deals: "id, name, service_line, source, company_id, primary_contact_id",
+    "id, first_name, last_name, email, phone, mobile_phone, job_title, city, state, company_id, assigned_to, created_at",
+  companies: "id, name, industry, city, state, website, phone, assigned_to",
+  deals:
+    "id, name, service_line, source, stage, value, company_id, primary_contact_id, assigned_to, created_at, closed_at",
 };
 
 type R = Record<string, string | null>;
@@ -67,6 +69,43 @@ async function fetchByIds(db: Db, table: string, cols: string, ids: string[], ws
   return out;
 }
 
+/** Lê registros onde `col` está em `ids` (workspace ativo, não excluídos). */
+async function fetchWhereIn(
+  db: Db,
+  table: string,
+  cols: string,
+  col: string,
+  ids: string[],
+  ws: string,
+  openDealsOnly = false,
+) {
+  const out: R[] = [];
+  const uniq = [...new Set(ids.filter(Boolean))];
+  for (let i = 0; i < uniq.length; i += 200) {
+    let q = db
+      .from(table)
+      .select(cols)
+      .eq("workspace_id", ws)
+      .is("deleted_at", null)
+      .in(col, uniq.slice(i, i + 200));
+    if (openDealsOnly) q = q.is("closed_at", null);
+    const { data, error } = await q.order("created_at", { ascending: false }).limit(5000);
+    if (error) throw new Error(error.message);
+    out.push(...((data ?? []) as R[]));
+  }
+  return out;
+}
+
+/** Primeiro registro (mais recente) por valor de `key`. */
+function firstBy(rows: R[], key: string, pred: (r: R) => boolean = () => true) {
+  const m = new Map<string, R>();
+  for (const r of rows) {
+    const k = r[key];
+    if (k && !m.has(k) && pred(r)) m.set(k, r);
+  }
+  return m;
+}
+
 async function fetchPaged(build: () => Db): Promise<R[]> {
   const out: R[] = [];
   for (let from = 0; from <= MAX_AUDIENCE; from += 1000) {
@@ -84,6 +123,7 @@ export async function loadAudienceRows(
   db: Db,
   workspaceId: string,
   audience: AudienceInput,
+  senderId?: string,
 ): Promise<{ base: AudienceBase; rows: AudienceRow[]; truncated: boolean }> {
   let base: AudienceBase;
   let raw: R[];
@@ -136,29 +176,138 @@ export async function loadAudienceRows(
   const truncated = raw.length > MAX_AUDIENCE;
   raw = raw.slice(0, MAX_AUDIENCE);
 
-  // Registros relacionados (empresa e contato principal), lidos em lote.
-  const companyIds = raw.map((r) => r.company_id).filter(Boolean) as string[];
-  const contactIds =
-    base === "deals" ? (raw.map((r) => r.primary_contact_id).filter(Boolean) as string[]) : [];
-  const companies = new Map(
-    (base === "companies"
-      ? []
-      : await fetchByIds(db, "companies", SELECT.companies, companyIds, workspaceId)
-    ).map((c) => [c.id as string, c]),
-  );
+  // Registros relacionados, lidos em lote (todas as entidades para qualquer base).
+  const ids = (k: string) => raw.map((r) => r[k]).filter(Boolean) as string[];
+  const selfIds = ids("id");
+
+  // Contatos
+  let contactIds: string[] = [];
+  if (base === "leads") contactIds = ids("converted_contact_id");
+  if (base === "deals") contactIds = ids("primary_contact_id");
   const contacts = new Map(
     (await fetchByIds(db, "contacts", SELECT.contacts, contactIds, workspaceId)).map((c) => [
       c.id as string,
       c,
     ]),
   );
+  const companyContacts =
+    base === "companies"
+      ? firstBy(
+          await fetchWhereIn(db, "contacts", SELECT.contacts, "company_id", selfIds, workspaceId),
+          "company_id",
+          (c) => !!(c.mobile_phone || c.phone),
+        )
+      : new Map<string, R>();
 
+  // Negócios
+  const dealById =
+    base === "leads"
+      ? new Map(
+          (await fetchByIds(db, "deals", SELECT.deals, ids("converted_deal_id"), workspaceId)).map(
+            (d) => [d.id as string, d],
+          ),
+        )
+      : new Map<string, R>();
+  const dealsByContact =
+    base === "contacts"
+      ? firstBy(
+          await fetchWhereIn(
+            db,
+            "deals",
+            SELECT.deals,
+            "primary_contact_id",
+            selfIds,
+            workspaceId,
+            true,
+          ),
+          "primary_contact_id",
+        )
+      : new Map<string, R>();
+  const dealsByCompany =
+    base === "companies"
+      ? firstBy(
+          await fetchWhereIn(db, "deals", SELECT.deals, "company_id", selfIds, workspaceId, true),
+          "company_id",
+        )
+      : new Map<string, R>();
+
+  // Empresas
+  const relatedContacts = [...contacts.values(), ...companyContacts.values()];
+  const companyIds =
+    base === "companies"
+      ? []
+      : [...ids("company_id"), ...relatedContacts.map((c) => c.company_id!)];
+  const companies = new Map(
+    (await fetchByIds(db, "companies", SELECT.companies, companyIds, workspaceId)).map((c) => [
+      c.id as string,
+      c,
+    ]),
+  );
+
+  // Leads (convertidos no contato), quando a base não é de leads
+  const contactKeys =
+    base === "contacts" ? selfIds : [...contacts.keys(), ...relatedContacts.map((c) => c.id!)];
+  const leadsByContact =
+    base === "leads"
+      ? new Map<string, R>()
+      : firstBy(
+          await fetchWhereIn(
+            db,
+            "leads",
+            SELECT.leads,
+            "converted_contact_id",
+            contactKeys,
+            workspaceId,
+          ),
+          "converted_contact_id",
+        );
+
+  // Responsáveis e remetente (nome do perfil)
+  const allRecords = [
+    ...raw,
+    ...contacts.values(),
+    ...companyContacts.values(),
+    ...companies.values(),
+    ...dealById.values(),
+    ...dealsByContact.values(),
+    ...dealsByCompany.values(),
+  ];
+  const userIds = [
+    ...new Set([...allRecords.map((r) => r.assigned_to), senderId].filter(Boolean) as string[]),
+  ];
+  const people = new Map<string, string>();
+  for (let i = 0; i < userIds.length; i += 200) {
+    const { data, error } = await db
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", userIds.slice(i, i + 200));
+    if (error) throw new Error(error.message);
+    for (const p of (data ?? []) as R[]) if (p.full_name) people.set(p.id!, p.full_name);
+  }
+  const owner = (group: string, uid?: string | null) => {
+    const n = uid ? people.get(uid) : undefined;
+    return {
+      [`${group}.full_name`]: n,
+      [`${group}.first_name`]: n?.split(/\s+/)[0],
+    };
+  };
+
+  const leadValues = (l?: R) => ({
+    "lead.first_name": l?.first_name,
+    "lead.last_name": l?.last_name,
+    "lead.full_name": l ? fullName(l.first_name, l.last_name) : null,
+    "lead.email": l?.email,
+    "lead.company_name": l?.company_name,
+    "lead.source": l?.source,
+    "lead.status": l?.status ? (LEAD_STATUS[l.status] ?? l.status) : null,
+  });
   const companyValues = (c?: R) => ({
     "company.name": c?.name,
     "company.industry": c?.industry,
     "company.city": c?.city,
     "company.state": c?.state,
     "company.website": c?.website,
+    ...owner("owner_company", c?.assigned_to),
   });
   const contactValues = (c?: R) => ({
     "contact.first_name": c?.first_name,
@@ -168,46 +317,76 @@ export async function loadAudienceRows(
     "contact.job_title": c?.job_title,
     "contact.city": c?.city,
     "contact.state": c?.state,
+    ...owner("owner_contact", c?.assigned_to),
+  });
+  const dealValues = (d?: R) => ({
+    "deal.name": d?.name,
+    "deal.service_line": d?.service_line,
+    "deal.source": d?.source,
+    "deal.stage": d?.stage ? (DEAL_STAGE[d.stage] ?? d.stage) : null,
+    "deal.value": d?.value != null && d.value !== "" ? formatBRL(d.value) : null,
+    ...owner("owner_deal", d?.assigned_to),
+  });
+  const common = (r: R) => ({
+    ...owner("owner_record", r.assigned_to),
+    ...owner("sender", senderId),
   });
 
   const rows: AudienceRow[] = raw.map((r) => {
-    const company = r.company_id ? companies.get(r.company_id) : undefined;
-    if (base === "leads")
+    if (base === "leads") {
+      const contact = r.converted_contact_id ? contacts.get(r.converted_contact_id) : undefined;
+      const company = companies.get((r.company_id || contact?.company_id) ?? "");
       return {
         sourceType: "lead",
         sourceId: r.id!,
-        contactId: null,
+        contactId: contact?.id ?? null,
         phone: r.mobile_phone || r.phone,
         label: fullName(r.first_name, r.last_name) || r.email || "Lead",
         values: {
-          "lead.first_name": r.first_name,
-          "lead.last_name": r.last_name,
-          "lead.full_name": fullName(r.first_name, r.last_name),
-          "lead.email": r.email,
-          "lead.company_name": r.company_name,
-          "lead.source": r.source,
+          ...contactValues(contact),
           ...companyValues(company),
+          ...dealValues(r.converted_deal_id ? dealById.get(r.converted_deal_id) : undefined),
+          ...leadValues(r),
+          ...common(r),
         },
       };
-    if (base === "contacts")
+    }
+    if (base === "contacts") {
+      const company = r.company_id ? companies.get(r.company_id) : undefined;
       return {
         sourceType: "contact",
         sourceId: r.id!,
         contactId: r.id!,
         phone: r.mobile_phone || r.phone,
         label: fullName(r.first_name, r.last_name) || r.email || "Contato",
-        values: { ...contactValues(r), ...companyValues(company) },
+        values: {
+          ...leadValues(leadsByContact.get(r.id!)),
+          ...companyValues(company),
+          ...dealValues(dealsByContact.get(r.id!)),
+          ...contactValues(r),
+          ...common(r),
+        },
       };
-    if (base === "companies")
+    }
+    if (base === "companies") {
+      const contact = companyContacts.get(r.id!);
       return {
         sourceType: "company",
         sourceId: r.id!,
         contactId: null,
         phone: r.phone,
         label: r.name || "Empresa",
-        values: companyValues(r),
+        values: {
+          ...leadValues(contact ? leadsByContact.get(contact.id!) : undefined),
+          ...contactValues(contact),
+          ...dealValues(dealsByCompany.get(r.id!)),
+          ...companyValues(r),
+          ...common(r),
+        },
       };
+    }
     const contact = r.primary_contact_id ? contacts.get(r.primary_contact_id) : undefined;
+    const company = companies.get((r.company_id || contact?.company_id) ?? "");
     return {
       sourceType: "deal",
       sourceId: r.id!,
@@ -215,15 +394,37 @@ export async function loadAudienceRows(
       phone: contact ? contact.mobile_phone || contact.phone : null,
       label: r.name || "Negócio",
       values: {
-        "deal.name": r.name,
-        "deal.service_line": r.service_line,
-        "deal.source": r.source,
+        ...leadValues(contact ? leadsByContact.get(contact.id!) : undefined),
         ...contactValues(contact),
         ...companyValues(company),
+        ...dealValues(r),
+        ...common(r),
       },
     };
   });
   return { base, rows, truncated };
+}
+
+const LEAD_STATUS: Record<string, string> = {
+  new: "Novo",
+  contacted: "Contatado",
+  qualified: "Qualificado",
+  disqualified: "Desqualificado",
+  nurturing: "Em nutrição",
+};
+const DEAL_STAGE: Record<string, string> = {
+  new: "Novo",
+  qualified: "Qualificado",
+  proposal: "Proposta",
+  negotiation: "Negociação",
+  won: "Ganho",
+  lost: "Perdido",
+};
+function formatBRL(v: string | number): string {
+  const n = Number(v);
+  return Number.isFinite(n)
+    ? n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+    : String(v);
 }
 
 /** Telefones que pediram para não receber mensagens (opt-out do SDR) no workspace. */

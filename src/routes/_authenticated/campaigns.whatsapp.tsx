@@ -200,9 +200,12 @@ function CampaignsPage() {
       if (manual && recipients.length === 0) throw new Error("Adicione pelo menos um destinatário");
       if (!manual && !audiencePl) throw new Error("Escolha o público da campanha");
       if (!manual && isHsm) {
-        for (let i = 1; i <= (selectedTpl?.variableCount ?? 0); i++)
-          if (!audience.variableMap[String(i)]?.field)
-            throw new Error(`Defina o campo da variável {{${i}}}`);
+        for (let i = 1; i <= (selectedTpl?.variableCount ?? 0); i++) {
+          const b = audience.variableMap[String(i)];
+          if (!b?.field) throw new Error(`Defina o campo da variável {{${i}}}`);
+          if (b.field === "__free__" && !b.fallback?.trim())
+            throw new Error(`Escreva o texto da variável {{${i}}}`);
+        }
       }
 
       // Para HSM monta content_variables_template a partir de {{1}}..{{N}}
