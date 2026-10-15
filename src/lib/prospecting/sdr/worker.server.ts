@@ -839,27 +839,58 @@ export async function tickSdr(admin: Admin, limit = 10, deps: WorkerDeps = defau
   const meetings = await reconcileMeetings(admin, 50, enabled);
   const directMeetings = await reconcileDirectMeetings(admin, enabled);
   const followUps = await scheduleFollowUps(admin, 50, enabled);
-  const { data: jobs, error } = await admin.rpc("sdr_claim_jobs", {
-    p_limit: limit,
-    p_lease_seconds: LEASE_SECONDS,
-  });
-  if (error) throw new Error(error.message);
+  // Tempo de aguardo do cliente: respostas ficam adiadas (lease_until futuro).
+  // O despertar do enfileiramento espera aqui até a mais próxima vencer.
+  await waitForDueReply(admin, enabled);
   const results: Record<string, number> = {};
-  for (const job of (jobs ?? []) as Job[]) {
-    let r: string;
-    try {
-      r = await processJob(admin, job, deps);
-    } catch (e) {
-      r = "error";
-      await finish(admin, job.id, job.lease_token, {
-        status: "queued",
-        lease_until: new Date(Date.now() + retryDelayMs(job.attempts ?? 1)).toISOString(),
-        error: (e as Error).message.slice(0, 300),
-      });
+  let claimed = 0;
+  // Rodadas extras: quando um turno antigo é agrupado no novo, o novo sai na mesma execução.
+  for (let round = 0; round < 3; round++) {
+    const { data: jobs, error } = await admin.rpc("sdr_claim_jobs", {
+      p_limit: limit,
+      p_lease_seconds: LEASE_SECONDS,
+    });
+    if (error) throw new Error(error.message);
+    if (!jobs?.length) break;
+    claimed += jobs.length;
+    let merged = 0;
+    for (const job of jobs as Job[]) {
+      let r: string;
+      try {
+        r = await processJob(admin, job, deps);
+      } catch (e) {
+        r = "error";
+        await finish(admin, job.id, job.lease_token, {
+          status: "queued",
+          lease_until: new Date(Date.now() + retryDelayMs(job.attempts ?? 1)).toISOString(),
+          error: (e as Error).message.slice(0, 300),
+        });
+      }
+      if (r === "discarded") merged++;
+      results[r] = (results[r] ?? 0) + 1;
     }
-    results[r] = (results[r] ?? 0) + 1;
+    if (!merged) break;
   }
-  return { meetings, directMeetings, followUps, stranded, claimed: jobs?.length ?? 0, ...results };
+  return { meetings, directMeetings, followUps, stranded, claimed, ...results };
+}
+
+/** Espera (até 60 s) a resposta adiada mais próxima vencer o tempo de aguardo. */
+async function waitForDueReply(admin: Admin, workspaceIds: string[]) {
+  const now = Date.now();
+  const { data } = await admin
+    .from("sdr_turn_jobs")
+    .select("lease_until")
+    .eq("status", "queued")
+    .eq("kind", "reply")
+    .eq("attempts", 0)
+    .in("workspace_id", workspaceIds)
+    .gt("lease_until", new Date(now).toISOString())
+    .lte("lease_until", new Date(now + MAX_WAIT_MS).toISOString())
+    .order("lease_until", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  const due = data?.lease_until ? new Date(data.lease_until as string).getTime() : null;
+  if (due) await new Promise((r) => setTimeout(r, Math.min(MAX_WAIT_MS, due - now + 500)));
 }
 
 /**
