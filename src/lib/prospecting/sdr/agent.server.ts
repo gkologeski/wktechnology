@@ -185,6 +185,7 @@ export async function callSdrAgent(args: {
   const calendarOutputs: string[] = [];
   let timeRetry = false;
   let bookRetry = false;
+  let jsonRetry = false;
   const toolResults: { tool: string; out: unknown }[] = [];
   for (let step = 0; step <= MAX_TOOL_STEPS; step++) {
     const allowTools = !!tools && step < MAX_TOOL_STEPS;
@@ -258,12 +259,21 @@ export async function callSdrAgent(args: {
       }
       continue;
     }
+    const parsedOut = extractJsonObject(msg.content ?? "");
+    if (!parsedOut && !jsonRetry && step < MAX_TOOL_STEPS) {
+      // Texto solto em vez do JSON: pede de novo uma vez, em vez de falhar o turno.
+      jsonRetry = true;
+      if (msg.content) messages.push({ role: "assistant", content: msg.content });
+      messages.push({
+        role: "user",
+        content:
+          "[verificação do sistema, não é o cliente] Responda agora SOMENTE com o objeto JSON do formato combinado (reply, intent, offer_keys, material_ids, answers, handoff_reason), sem texto fora dele.",
+      });
+      continue;
+    }
     try {
-      const content = (msg.content ?? "")
-        .trim()
-        .replace(/^```json|^```|```$/g, "")
-        .trim();
-      const output = JSON.parse(content) as { reply?: string };
+      if (!parsedOut) throw new Error("no_json");
+      const output = parsedOut as { reply?: string };
       if (hasCalendar) {
         const bad = unverifiedTimes(output.reply ?? "", [
           ...calendarOutputs,
@@ -321,4 +331,22 @@ export async function callSdrAgent(args: {
     error: "Limite de chamadas de ferramenta atingido",
     retryable: false,
   };
+}
+
+/** Lê o objeto JSON da resposta (tolera cercas de código e texto ao redor). */
+export function extractJsonObject(raw: string): Record<string, unknown> | null {
+  const t = raw.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+  const tryParse = (x: string) => {
+    try {
+      const v = JSON.parse(x) as unknown;
+      return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
+    } catch {
+      return null;
+    }
+  };
+  const direct = tryParse(t);
+  if (direct) return direct;
+  const a = t.indexOf("{");
+  const b = t.lastIndexOf("}");
+  return a >= 0 && b > a ? tryParse(t.slice(a, b + 1)) : null;
 }

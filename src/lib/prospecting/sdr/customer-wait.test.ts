@@ -27,3 +27,12 @@ describe("autonomia: avisos que travam envio", () => {
     expect(mentionsPrice("os valores ficam para a reunião")).toBe(false);
   });
 });
+
+describe("resposta da IA fora do JSON", () => {
+  it("extrai o objeto mesmo com texto ou cercas ao redor", async () => {
+    const { extractJsonObject } = await import("./agent.server");
+    expect(extractJsonObject('```json\n{"reply":"oi"}\n```')).toEqual({ reply: "oi" });
+    expect(extractJsonObject('Claro! {"reply":"oi"} ok')).toEqual({ reply: "oi" });
+    expect(extractJsonObject("Hunting é ótimo")).toBeNull();
+  });
+});
