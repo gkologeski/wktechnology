@@ -359,7 +359,7 @@ async function formatAsTurn(
   apiKey: string,
   workspaceId: string,
   content: string,
-  feature?: Parameters<typeof callAgent>[0]["feature"],
+  feature?: "sdr_agente" | "sdr_agente_teste",
 ): Promise<Record<string, unknown> | null> {
   if (!content.trim()) return null;
   try {
