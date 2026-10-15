@@ -6,7 +6,7 @@ export const PersonaSchema = z.object({
   /** prospecting = persuasiva, conduz para reunião; service = só informa. */
   intent: z.enum(["prospecting", "service"]).default("prospecting"),
   assistant_name: z.string().trim().max(60).default(""),
-  description: z.string().trim().max(500).default(""),
+  description: z.string().trim().max(2000).default(""),
   tone: z.enum(["acolhedor", "objetivo", "consultivo"]).default("consultivo"),
   /** 1 = bem informal, 5 = formal. */
   formality: z.number().int().min(1).max(5).default(2),
@@ -15,7 +15,7 @@ export const PersonaSchema = z.object({
   /** 1 = detalhado, 5 = bem curto. */
   concision: z.number().int().min(1).max(5).default(4),
   emojis: z.enum(["none", "discreet"]).default("none"),
-  good_examples: z.array(z.string().trim().max(400)).max(10).default([]),
+  good_examples: z.array(z.string().trim().max(1000)).max(10).default([]),
   avoid_phrases: z.array(z.string().trim().max(80)).max(30).default([]),
   goal: z.string().trim().max(500).default(""),
   collect: z.string().trim().max(500).default(""),
