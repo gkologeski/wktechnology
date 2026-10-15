@@ -29,6 +29,9 @@ import {
   selectableMaterials,
   guardModelOptOut,
   isWrongContact,
+  blockingWarnings,
+  mentionsPrice,
+  PRICE_WARNING,
   selectableOffers,
   sendGuard,
   validateAgentOutput,
@@ -47,6 +50,25 @@ import {
 } from "./qualification";
 
 const LEASE_SECONDS = 120;
+const MAX_WAIT_MS = 60_000;
+
+/** Nova geração sem ferramentas (sem efeitos), só para corrigir o texto. */
+async function rewriteReply(
+  deps: WorkerDeps,
+  workspaceId: string,
+  system: string,
+  history: ConversationMessage[],
+  instruction: string,
+): Promise<string | null> {
+  const ai = await deps.callAgent({
+    workspaceId,
+    system: `${system}\n\nCORREÇÃO OBRIGATÓRIA: ${instruction} Mantenha o mesmo formato de saída e não chame ferramentas.`,
+    history,
+  });
+  if (!ai.ok) return null;
+  const reply = (ai.output as { reply?: unknown } | null)?.reply;
+  return typeof reply === "string" && reply.trim() ? stripStockOpener(reply.trim()) : null;
+}
 
 export async function loadKnowledge(admin: Admin, workspaceId: string) {
   const [{ data: offers }, { data: materials }, { data: links }] = await Promise.all([
@@ -503,6 +525,20 @@ export async function processJob(
   }
   // Abertura burocrática ("Entendi que...") é removida quando sobra mensagem completa.
   out.reply = stripStockOpener(out.reply);
+  // Valores em dinheiro: reescreve sozinha uma vez antes de recorrer a um humano.
+  if (out.warnings.includes(PRICE_WARNING) && out.reply) {
+    const alt = await rewriteReply(
+      deps,
+      job.workspace_id,
+      system,
+      history,
+      "Não mencione preços, valores ou números em reais. Diga que os valores são tratados na reunião/proposta e siga a conversa.",
+    );
+    if (alt && !mentionsPrice(alt)) {
+      out.reply = alt;
+      out.warnings = out.warnings.filter((w) => w !== PRICE_WARNING);
+    }
+  }
   // Efeitos registrados pelas ferramentas prevalecem sobre a intenção textual.
   if (effects.answers.length) out.answers = [...(out.answers as unknown[]), ...effects.answers];
   if (effects.materialIds.length) {
@@ -686,7 +722,7 @@ export async function processJob(
   const autoAllowed =
     settings.auto_send_enabled &&
     playbook.mode === "auto" &&
-    out.warnings.length === 0 &&
+    blockingWarnings(out.warnings).length === 0 &&
     // Horário de prospecção vale só para retomadas; respostas seguem a qualquer hora.
     !(
       job.kind === "follow_up" &&
