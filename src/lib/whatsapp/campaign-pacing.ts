@@ -4,8 +4,12 @@
 export type PacingInterval = { min: number; max: number };
 
 export const PACING_MAX_SECONDS = 3600;
-/** Tempo máximo que uma execução da rotina espera entre envios. */
-export const PACING_RUN_BUDGET_MS = 45_000;
+/**
+ * Tempo máximo que uma execução da rotina espera entre envios. Fica abaixo do
+ * tempo limite da chamada agendada (poucos segundos): esperas longas eram
+ * cortadas no meio, sem enviar e sem liberar o lease.
+ */
+export const PACING_RUN_BUDGET_MS = 4_000;
 
 /** Intervalo efetivo: o da campanha quando definido, senão o padrão do workspace. */
 export function resolveInterval(
