@@ -1,6 +1,6 @@
 import { CompanyAvatarFromInfo } from "@/components/companies/company-avatar";
 import { useLinkedCompany } from "@/hooks/use-company-logos";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link2, Users } from "lucide-react";
@@ -29,6 +29,10 @@ export function InboxIdentityLinker({
   const associate = useServerFn(associateInboxIdentity);
   const [entityType, setEntityType] = useState<EntityType>(contactId ? "contact" : "lead");
   const [entityId, setEntityId] = useState<string | null>(contactId ?? leadId ?? null);
+  useEffect(() => {
+    setEntityType(contactId ? "contact" : "lead");
+    setEntityId(contactId ?? leadId ?? null);
+  }, [conversationId, contactId, leadId]);
   const mutation = useMutation({
     mutationFn: () => {
       if (!entityId) throw new Error("Selecione um contato ou lead.");
