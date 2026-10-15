@@ -17,10 +17,10 @@ export const PersonaSchema = z.object({
   emojis: z.enum(["none", "discreet"]).default("none"),
   good_examples: z.array(z.string().trim().max(1000)).max(10).default([]),
   avoid_phrases: z.array(z.string().trim().max(80)).max(30).default([]),
-  goal: z.string().trim().max(500).default(""),
-  collect: z.string().trim().max(500).default(""),
-  handoff_when: z.string().trim().max(500).default(""),
-  instructions: z.string().trim().max(4000).default(""),
+  goal: z.string().trim().max(2000).default(""),
+  collect: z.string().trim().max(2000).default(""),
+  handoff_when: z.string().trim().max(2000).default(""),
+  instructions: z.string().trim().max(8000).default(""),
 });
 export type Persona = z.infer<typeof PersonaSchema>;
 
