@@ -1,7 +1,7 @@
 # Tempo de aguardo do cliente e Lia mais autônoma
 
 ## O que muda para você
-1. **Novo campo "Tempo de aguardo do cliente (segundos)"** em `/agents/sdr`, na configuração de cada agente (aba Habilidades/Atendimento). Padrão: 20 s. Faixa permitida: 0 a 300 s (0 = responde na hora).
+1. **Novo campo "Tempo de aguardo do cliente (segundos)"** em `/agents/sdr`, na configuração de cada agente (aba Habilidades/Atendimento). Padrão: 5 s. Faixa permitida: 0 a 300 s (0 = responde na hora).
 2. **Como funciona:** quando o cliente manda uma mensagem, a Lia espera esse tempo. Se chegar outra mensagem nesse intervalo, o relógio recomeça a contar a partir da última. Quando o cliente ficar quieto pelo tempo definido, a Lia lê **todas** as mensagens juntas e manda **uma única resposta**.
 3. **Menos aprovação humana:** hoje qualquer aviso interno (por exemplo "resposta parecida com a anterior") faz a mensagem ficar parada em Supervisão. Passa a ser assim:
    - Avisos leves (repetição, texto longo demais, link removido, horário não confirmado): a Lia **reescreve sozinha** a resposta uma vez, corrigindo o problema, e envia.
