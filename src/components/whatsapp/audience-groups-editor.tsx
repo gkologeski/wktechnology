@@ -60,10 +60,7 @@ export function AudienceGroupsEditor({
           <span id="groups-logic-label" className="text-muted-foreground">
             Combinar grupos com
           </span>
-          <Select
-            value={groupsLogic}
-            onValueChange={(l) => onGroupsLogicChange(l as "and" | "or")}
-          >
+          <Select value={groupsLogic} onValueChange={(l) => onGroupsLogicChange(l as "and" | "or")}>
             <SelectTrigger aria-labelledby="groups-logic-label" className="h-8 w-40">
               <SelectValue />
             </SelectTrigger>
@@ -255,7 +252,8 @@ export function AudienceGroupsEditor({
         disabled={groups.length >= MAX_AUDIENCE_GROUPS}
         onClick={() => onChange([...groups, { logic: "and", filters: [defaultFilter(base)] }])}
       >
-        <Plus className="mr-1 h-4 w-4" /> {groups.length ? `Adicionar grupo ${between}` : "Adicionar grupo"}
+        <Plus className="mr-1 h-4 w-4" />{" "}
+        {groups.length ? `Adicionar grupo ${between}` : "Adicionar grupo"}
       </Button>
     </div>
   );
