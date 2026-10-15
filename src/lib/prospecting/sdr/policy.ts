@@ -108,8 +108,10 @@ export function isCourtesyOnly(text: string): boolean {
   return COURTESY_RE.test(t);
 }
 
+// Só frases inequívocas de pessoa/número errado. "não é o momento", "não é a minha área"
+// ou "não é a terça" NÃO podem casar (seriam respostas comerciais legítimas).
 const WRONG_CONTACT_RE =
-  /(nao conheco (ninguem|ningue|esse|essa|este|esta)|nao (sou|e) (o|a|ele|ela)\b|numero errado|engano|nao tem ninguem com esse nome|voce errou o numero|nao e (meu|esse) (nome|numero))/;
+  /(\bnao conheco (ninguem|ningue|esse|essa|este|esta)\b|\bnao sou (ele|ela)\b|\bnumero errado\b|\bcontato errado\b|\bpessoa errada\b|\b(foi|e|por|deve ser|mandou|enviou|enviada|enviado) (por )?engano\b|\bnao tem ninguem com esse nome\b|\bvoce errou o numero\b|\bnao e (meu|esse) (nome|numero)\b|\bnao e (ele|ela) (aqui|nao)\b)/;
 
 /**
  * Pessoa errada / número errado ("Não conheço ninguém com esse nome").

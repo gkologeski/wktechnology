@@ -169,4 +169,12 @@ describe("isWrongContact", () => {
     expect(isWrongContact("Não sou o Thobias, mas cuido dessa área")).toBe(false);
     expect(isWrongContact("Tenho um projeto parado")).toBe(false);
   });
+  it("respostas comerciais comuns não são contato errado", () => {
+    expect(isWrongContact("Não é o momento")).toBe(false);
+    expect(isWrongContact("não é a minha área")).toBe(false);
+    expect(isWrongContact("Não é a terça, prefiro quarta")).toBe(false);
+    expect(isWrongContact("Acho que me enganei no horário")).toBe(false);
+    expect(isWrongContact("Mensagem enviada por engano")).toBe(true);
+    expect(isWrongContact("Não sou ele")).toBe(true);
+  });
 });
