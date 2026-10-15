@@ -271,14 +271,15 @@ export function normalizeAudienceGroups(input: {
 }
 
 /**
- * Combina conjuntos de IDs: E/OU dentro do grupo, OU entre grupos (padrão HubSpot).
+ * Combina conjuntos de IDs: E/OU dentro do grupo e entre grupos (padrão OU entre grupos).
  * `idsFor` devolve os IDs da base que atendem a um filtro.
  */
 export async function combineAudienceGroups(
   groups: AudienceGroup[],
   idsFor: (f: AudienceFilter) => Promise<Set<string>>,
+  groupsLogic: "and" | "or" = "or",
 ): Promise<Set<string>> {
-  const out = new Set<string>();
+  let out = null as Set<string> | null;
   for (const g of groups) {
     let acc = null as Set<string> | null;
     for (const f of g.filters) {
@@ -288,9 +289,13 @@ export async function combineAudienceGroups(
       else for (const id of s) acc.add(id);
       if (g.logic === "and" && acc.size === 0) break;
     }
-    for (const id of acc ?? []) out.add(id);
+    const gs = acc ?? new Set<string>();
+    if (out === null) out = gs;
+    else if (groupsLogic === "and") out = new Set([...out].filter((id) => gs.has(id)));
+    else for (const id of gs) out.add(id);
+    if (groupsLogic === "and" && out.size === 0) break;
   }
-  return out;
+  return out ?? new Set<string>();
 }
 
 /** Normaliza para E.164; números BR sem DDI recebem +55. Retorna null se inválido. */

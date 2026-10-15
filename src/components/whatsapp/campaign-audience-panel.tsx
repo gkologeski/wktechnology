@@ -40,10 +40,14 @@ import { AudienceGroupsEditor } from "./audience-groups-editor";
 const ENTITIES = ["leads", "contacts", "companies", "deals"] as const;
 
 /** Grupos → segmento: OU entre grupos; campo relacionado vira "entidade.coluna". */
-function groupsToSegment(groups: AudienceGroup[], base: AudienceBase) {
+function groupsToSegment(
+  groups: AudienceGroup[],
+  base: AudienceBase,
+  groupsLogic: "and" | "or" = "or",
+) {
   return {
     type: "group" as const,
-    op: "or" as const,
+    op: groupsLogic,
     conditions: normalizeAudienceGroups({ groups }).map((g) => ({
       type: "group" as const,
       op: g.logic,
@@ -98,12 +102,20 @@ function segmentToGroups(raw: unknown, base: AudienceBase): AudienceGroup[] {
   return groups.filter((g) => g.filters.length);
 }
 
+/** Operador entre grupos salvo no segmento (só no formato em grupos; padrão OU). */
+function segmentGroupsLogic(raw: unknown): "and" | "or" {
+  const root = (raw ?? {}) as SegCond;
+  const nested = (root.conditions ?? []).some((c) => Array.isArray(c.conditions));
+  return nested && root.op === "and" ? "and" : "or";
+}
+
 export type AudienceMode = "queue" | "filter" | "manual";
 export type AudienceState = {
   mode: AudienceMode;
   queueId: string;
   base: AudienceBase;
   groups: AudienceGroup[];
+  groupsLogic: "and" | "or";
   variableMap: VariableMap;
   skipMissing: boolean;
 };
@@ -113,6 +125,7 @@ export const EMPTY_AUDIENCE: AudienceState = {
   queueId: "",
   base: "contacts",
   groups: [],
+  groupsLogic: "or",
   variableMap: {},
   skipMissing: false,
 };
@@ -124,6 +137,7 @@ export function audiencePayload(a: AudienceState) {
       type: "filter" as const,
       base: a.base,
       groups: normalizeAudienceGroups({ groups: a.groups }),
+      groups_logic: a.groupsLogic,
     };
   return undefined;
 }
@@ -251,7 +265,7 @@ export function CampaignAudiencePanel({
                 <Select
                   value={value.base}
                   onValueChange={(b) =>
-                    set({ base: b as AudienceBase, groups: [], variableMap: {} })
+                    set({ base: b as AudienceBase, groups: [], groupsLogic: "or", variableMap: {} })
                   }
                 >
                   <SelectTrigger id="aud-base">
@@ -274,7 +288,11 @@ export function CampaignAudiencePanel({
                   value=""
                   onValueChange={(id) => {
                     const s = segments.find((x) => x.id === id);
-                    if (s) set({ groups: segmentToGroups(s.filters, value.base) });
+                    if (s)
+                      set({
+                        groups: segmentToGroups(s.filters, value.base),
+                        groupsLogic: segmentGroupsLogic(s.filters),
+                      });
                   }}
                 >
                   <SelectTrigger id="aud-seg">
@@ -294,6 +312,8 @@ export function CampaignAudiencePanel({
               base={value.base}
               groups={value.groups}
               onChange={(groups) => set({ groups })}
+              groupsLogic={value.groupsLogic}
+              onGroupsLogicChange={(groupsLogic) => set({ groupsLogic })}
               members={(members.data ?? []).map((m) => ({
                 value: m.user_id,
                 label: m.full_name || "Sem nome",
@@ -312,7 +332,7 @@ export function CampaignAudiencePanel({
                         name: name.trim(),
                         entity: value.base,
                         kind: "dynamic",
-                        filters: groupsToSegment(value.groups, value.base),
+                        filters: groupsToSegment(value.groups, value.base, value.groupsLogic),
                       },
                     });
                     toast.success("Segmento salvo");

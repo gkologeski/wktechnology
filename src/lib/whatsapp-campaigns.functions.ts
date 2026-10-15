@@ -47,6 +47,7 @@ const CreateInput = z.object({
           )
           .max(20)
           .optional(),
+        groups_logic: z.enum(["and", "or"]).optional(),
         groups: z
           .array(
             z.object({
