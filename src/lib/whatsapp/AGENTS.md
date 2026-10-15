@@ -5,3 +5,5 @@
 - Todo compositor de WhatsApp (Inbox, Inbox unificada, ficha/timeline, campanhas) decide janela de 24 h e catálogo por `composer-policy.ts` + `use-whatsapp-composer.ts`, e o servidor revalida janela, modelo aprovado e variáveis completas antes do envio. Por quê: uma única regra evita texto livre fora da janela e distingue erro de catálogo vazio.
 
 - Público das campanhas WhatsApp (fila de prospecção ou filtro próprio) e variáveis do modelo são resolvidos no servidor ao salvar, por lista branca de campos em `campaign-audience.ts`, e gravados em `whatsapp_campaign_recipients.variables`; por quê: o disparo continua igual e nenhum campo fora da lista entra na mensagem.
+
+- Cada rodada do disparo espaçado espera no máximo `PACING_RUN_BUDGET_MS` (abaixo do tempo limite da chamada agendada) e relê o status da campanha antes de cada envio; por quê: esperas longas eram cortadas sem liberar o lease e uma pausa precisa valer na hora.
