@@ -8,6 +8,7 @@ export const PROPERTY_LABELS: Record<string, string> = {
   email: "Email",
   phone: "Telefone",
   mobile_phone: "Celular",
+  whatsapp_e164: "WhatsApp",
   company_name: "Empresa",
   company: "Empresa",
   company_id: "Empresa",

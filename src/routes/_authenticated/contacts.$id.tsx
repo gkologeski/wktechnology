@@ -186,6 +186,7 @@ function ContactDetail() {
               { key: "email", label: "Email", type: "email", primary: true },
               { key: "phone", label: "Telefone", type: "tel", primary: true },
               { key: "mobile_phone", label: "Celular", type: "tel", primary: true },
+              { key: "whatsapp_e164", label: "WhatsApp", type: "tel", primary: true },
               { key: "job_title", label: "Cargo", primary: true },
               { key: "notes", label: "Notas" },
             ]}

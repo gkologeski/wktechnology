@@ -10,7 +10,9 @@ import { brPhoneVariants } from "@/lib/whatsapp/phone-variants";
 
 function recordPhone(ctx: RunCtx): string | null {
   const a = ctx.after ?? {};
-  const raw = (a["mobile_phone"] ?? a["phone"] ?? a["whatsapp"] ?? null) as string | null;
+  const raw = (a["whatsapp_e164"] ?? a["mobile_phone"] ?? a["phone"] ?? a["whatsapp"] ?? null) as
+    | string
+    | null;
   if (!raw) return null;
   const d = String(raw).replace(/\D/g, "");
   return d.length >= 10 ? `+${d.startsWith("55") || d.length > 11 ? d : `55${d}`}` : null;

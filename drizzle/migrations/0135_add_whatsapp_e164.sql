@@ -1,0 +1,10 @@
+ALTER TABLE public.contacts ADD COLUMN IF NOT EXISTS whatsapp_e164 text;
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS whatsapp_e164 text;
+ALTER TABLE public.contacts ADD COLUMN IF NOT EXISTS whatsapp_digits text GENERATED ALWAYS AS (regexp_replace(coalesce(whatsapp_e164,''), '\D', '', 'g')) STORED;
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS whatsapp_digits text GENERATED ALWAYS AS (regexp_replace(coalesce(whatsapp_e164,''), '\D', '', 'g')) STORED;
+ALTER TABLE public.contacts ADD CONSTRAINT contacts_whatsapp_e164_format CHECK (whatsapp_e164 IS NULL OR whatsapp_e164 ~ '^\+[1-9][0-9]{7,14}$') NOT VALID;
+ALTER TABLE public.leads ADD CONSTRAINT leads_whatsapp_e164_format CHECK (whatsapp_e164 IS NULL OR whatsapp_e164 ~ '^\+[1-9][0-9]{7,14}$') NOT VALID;
+CREATE INDEX IF NOT EXISTS contacts_ws_whatsapp_digits_idx ON public.contacts (workspace_id, whatsapp_digits) WHERE whatsapp_e164 IS NOT NULL;
+CREATE INDEX IF NOT EXISTS leads_ws_whatsapp_digits_idx ON public.leads (workspace_id, whatsapp_digits) WHERE whatsapp_e164 IS NOT NULL;
+COMMENT ON COLUMN public.contacts.whatsapp_e164 IS 'Número de WhatsApp (celular) normalizado em E.164';
+COMMENT ON COLUMN public.leads.whatsapp_e164 IS 'Número de WhatsApp (celular) normalizado em E.164';

@@ -1,3 +1,4 @@
+import { pickWhatsAppNumber } from "@/lib/phone/whatsapp-e164";
 // Carrega o público de uma campanha de WhatsApp com o cliente do usuário (RLS)
 // e filtro explícito por workspace. Só lê colunas da lista branca.
 import {
@@ -134,9 +135,9 @@ async function idsForFilter(
 
 const SELECT: Record<AudienceBase, string> = {
   leads:
-    "id, first_name, last_name, email, phone, mobile_phone, company_name, source, status, company_id, assigned_to, converted_contact_id, converted_deal_id, created_at",
+    "id, first_name, last_name, email, phone, mobile_phone, whatsapp_e164, company_name, source, status, company_id, assigned_to, converted_contact_id, converted_deal_id, created_at",
   contacts:
-    "id, first_name, last_name, email, phone, mobile_phone, job_title, city, state, company_id, assigned_to, created_at",
+    "id, first_name, last_name, email, phone, mobile_phone, whatsapp_e164, job_title, city, state, company_id, assigned_to, created_at",
   companies: "id, name, industry, city, state, website, phone, assigned_to",
   deals:
     "id, name, service_line, source, stage, value, company_id, primary_contact_id, assigned_to, created_at, closed_at",
@@ -320,7 +321,7 @@ export async function loadAudienceRows(
       ? firstBy(
           await fetchWhereIn(db, "contacts", SELECT.contacts, "company_id", selfIds, workspaceId),
           "company_id",
-          (c) => !!(c.mobile_phone || c.phone),
+          (c) => pickWhatsAppNumber([c.whatsapp_e164, c.mobile_phone, c.phone]).status === "ok",
         )
       : new Map<string, R>();
 
@@ -465,7 +466,8 @@ export async function loadAudienceRows(
         sourceType: "lead",
         sourceId: r.id!,
         contactId: contact?.id ?? null,
-        phone: r.mobile_phone || r.phone,
+        phone: r.whatsapp_e164 || r.mobile_phone || r.phone,
+        phones: [r.whatsapp_e164, r.mobile_phone, r.phone],
         label: fullName(r.first_name, r.last_name) || r.email || "Lead",
         values: {
           ...contactValues(contact),
@@ -482,7 +484,8 @@ export async function loadAudienceRows(
         sourceType: "contact",
         sourceId: r.id!,
         contactId: r.id!,
-        phone: r.mobile_phone || r.phone,
+        phone: r.whatsapp_e164 || r.mobile_phone || r.phone,
+        phones: [r.whatsapp_e164, r.mobile_phone, r.phone],
         label: fullName(r.first_name, r.last_name) || r.email || "Contato",
         values: {
           ...leadValues(leadsByContact.get(r.id!)),
@@ -499,7 +502,8 @@ export async function loadAudienceRows(
         sourceType: "company",
         sourceId: r.id!,
         contactId: null,
-        phone: r.phone,
+        phone: contact?.whatsapp_e164 || contact?.mobile_phone || r.phone,
+        phones: [contact?.whatsapp_e164, contact?.mobile_phone, contact?.phone, r.phone],
         label: r.name || "Empresa",
         values: {
           ...leadValues(contact ? leadsByContact.get(contact.id!) : undefined),
@@ -516,7 +520,8 @@ export async function loadAudienceRows(
       sourceType: "deal",
       sourceId: r.id!,
       contactId: contact?.id ?? null,
-      phone: contact ? contact.mobile_phone || contact.phone : null,
+      phone: contact ? contact.whatsapp_e164 || contact.mobile_phone || contact.phone : null,
+      phones: contact ? [contact.whatsapp_e164, contact.mobile_phone, contact.phone] : [],
       label: r.name || "Negócio",
       values: {
         ...leadValues(contact ? leadsByContact.get(contact.id!) : undefined),

@@ -5128,6 +5128,8 @@ export type Database = {
           twitter_handle: string | null
           updated_at: string
           website: string | null
+          whatsapp_digits: string | null
+          whatsapp_e164: string | null
           workspace_id: string
         }
         Insert: {
@@ -5173,6 +5175,8 @@ export type Database = {
           twitter_handle?: string | null
           updated_at?: string
           website?: string | null
+          whatsapp_digits?: string | null
+          whatsapp_e164?: string | null
           workspace_id?: string
         }
         Update: {
@@ -5218,6 +5222,8 @@ export type Database = {
           twitter_handle?: string | null
           updated_at?: string
           website?: string | null
+          whatsapp_digits?: string | null
+          whatsapp_e164?: string | null
           workspace_id?: string
         }
         Relationships: [
@@ -10570,6 +10576,8 @@ export type Database = {
           stage_substatus_id: string | null
           status: Database["public"]["Enums"]["lead_status"]
           updated_at: string
+          whatsapp_digits: string | null
+          whatsapp_e164: string | null
           workspace_id: string
         }
         Insert: {
@@ -10611,6 +10619,8 @@ export type Database = {
           stage_substatus_id?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string
+          whatsapp_digits?: string | null
+          whatsapp_e164?: string | null
           workspace_id?: string
         }
         Update: {
@@ -10652,6 +10662,8 @@ export type Database = {
           stage_substatus_id?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string
+          whatsapp_digits?: string | null
+          whatsapp_e164?: string | null
           workspace_id?: string
         }
         Relationships: [
@@ -23370,6 +23382,8 @@ export type Database = {
         Args: { p_campaign: string; p_seconds: number }
         Returns: boolean
       }
+      wa_classify_phone: { Args: { _raw: string }; Returns: string[] }
+      wa_pick_mobile: { Args: { _fields: string[] }; Returns: string }
       wa_reserve_template_quota: {
         Args: { p_limit: number; p_recipient: string }
         Returns: Json

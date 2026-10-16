@@ -11,6 +11,7 @@ export const LABELS: Record<string, string> = {
   email: "Email",
   phone: "Telefone",
   mobile_phone: "Celular",
+  whatsapp_e164: "WhatsApp",
   company: "Empresa",
   company_name: "Empresa (texto livre)",
   company_id: "Empresa",
