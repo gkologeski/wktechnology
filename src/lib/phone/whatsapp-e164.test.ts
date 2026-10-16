@@ -13,9 +13,11 @@ describe("whatsapp-e164", () => {
     expect(toWhatsAppE164("5548991104003")).toBe("+5548991104003");
     expect(toWhatsAppE164("+55-51-99301-6927")).toBe("+5551993016927");
   });
-  it("formato antigo sem o 9º dígito é recusado", () => {
-    expect(toWhatsAppE164("(51) 9301-6927")).toBeNull();
-    expect(toWhatsAppE164("+557863742930")).toBeNull();
+  it("formato antigo sem o 9º dígito ganha o 9", () => {
+    expect(toWhatsAppE164("(51) 9301-6927")).toBe("+5551993016927");
+    expect(toWhatsAppE164("99 8888-8888")).toBe("+5599988888888");
+    expect(toWhatsAppE164("+55 51 9301-6927")).toBe("+5551993016927");
+    expect(toWhatsAppE164("+557863742930")).toBe("+5578963742930");
   });
   it("estrangeiro é recusado", () => {
     expect(toWhatsAppE164("+16035551234")).toBeNull();

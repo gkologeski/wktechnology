@@ -974,6 +974,13 @@
       "when": 1792162559268,
       "tag": "0138_wa_trigger_br_only",
       "breakpoints": true
+    },
+    {
+      "idx": 139,
+      "version": "7",
+      "when": 1792163363573,
+      "tag": "0139_wa_accept_old_mobile",
+      "breakpoints": true
     }
   ]
 }
