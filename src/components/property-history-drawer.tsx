@@ -56,19 +56,21 @@ export function PropertyHistoryDrawer({
           {rows.length === 0 && (
             <p className="text-sm text-muted-foreground">Sem alterações registradas.</p>
           )}
-          {rows.filter((h) => !isInternalProperty(h.property)).map((h) => (
-            <li key={h.id} className="rounded border p-3 text-sm">
-              <div className="font-medium">{labelProperty(h.property)}</div>
-              <div className="text-xs text-muted-foreground mt-1">
-                <span className="line-through">{display(h.property, h.old_value)}</span>
-                {" → "}
-                <span className="text-foreground">{display(h.property, h.new_value)}</span>
-              </div>
-              <div className="text-[11px] text-muted-foreground mt-1">
-                {resolveActor(h.changed_by)} · {formatDateTime(h.changed_at)}
-              </div>
-            </li>
-          ))}
+          {rows
+            .filter((h) => !isInternalProperty(h.property))
+            .map((h) => (
+              <li key={h.id} className="rounded border p-3 text-sm">
+                <div className="font-medium">{labelProperty(h.property)}</div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  <span className="line-through">{display(h.property, h.old_value)}</span>
+                  {" → "}
+                  <span className="text-foreground">{display(h.property, h.new_value)}</span>
+                </div>
+                <div className="text-[11px] text-muted-foreground mt-1">
+                  {resolveActor(h.changed_by)} · {formatDateTime(h.changed_at)}
+                </div>
+              </li>
+            ))}
         </ol>
       </SheetContent>
     </Sheet>
