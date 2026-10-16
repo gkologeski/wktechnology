@@ -21188,6 +21188,7 @@ export type Database = {
       }
       whatsapp_campaigns: {
         Row: {
+          audience_config: Json | null
           body_template: string | null
           content_sid: string | null
           content_variables_template: Json
@@ -21219,6 +21220,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          audience_config?: Json | null
           body_template?: string | null
           content_sid?: string | null
           content_variables_template?: Json
@@ -21250,6 +21252,7 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          audience_config?: Json | null
           body_template?: string | null
           content_sid?: string | null
           content_variables_template?: Json

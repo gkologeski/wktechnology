@@ -4,6 +4,11 @@ export function canEditCampaign(status: string): boolean {
   return status === "draft" || status === "paused";
 }
 
+/** Trocar o público só em rascunho: pausada já tem envios e não mistura listas. */
+export function canReplaceAudience(status: string): boolean {
+  return status === "draft";
+}
+
 /** Campanha em envio precisa ser pausada antes de excluir. */
 export function canDeleteCampaign(status: string): boolean {
   return status !== "running";

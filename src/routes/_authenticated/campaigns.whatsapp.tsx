@@ -20,6 +20,8 @@ import {
   CampaignAudiencePanel,
   EMPTY_AUDIENCE,
   audiencePayload,
+  hydrateAudienceConfig,
+  toAudienceConfig,
   type AudienceState,
 } from "@/components/whatsapp/campaign-audience-panel";
 import { getWhatsAppTemplateCatalog } from "@/lib/whatsapp.functions";
@@ -127,9 +129,18 @@ function CampaignsPage() {
   const selectedTpl = templates.find((t) => t.name === templateName);
   const isHsm = !!selectedTpl;
   const isEditing = editingId !== null;
+  // Estado da campanha em edição: rascunho troca o público; pausada só exibe.
+  const [editStatus, setEditStatus] = useState<string>("");
+  const [editTotal, setEditTotal] = useState(0);
+  const [hasStoredAudience, setHasStoredAudience] = useState(false);
+  const [audienceTouched, setAudienceTouched] = useState(false);
 
   function resetForm() {
     setEditingId(null);
+    setEditStatus("");
+    setEditTotal(0);
+    setHasStoredAudience(false);
+    setAudienceTouched(false);
     setName("");
     setBody("");
     setTemplateName("__none__");
@@ -156,15 +167,33 @@ function CampaignsPage() {
     setTemplateName("__none__");
     setMediaUrl("");
     setRecipientsRaw("");
+    setAudience(EMPTY_AUDIENCE);
+    setEditStatus(c.status);
+    setEditTotal(c.total ?? 0);
+    setHasStoredAudience(false);
+    setAudienceTouched(false);
     setOpen(true);
     void editFn({ data: { id: c.id } })
       .then((full) => {
+        const cfg = hydrateAudienceConfig(full.audience_config);
+        setEditStatus(full.status);
+        setEditTotal(full.total ?? 0);
+        if (cfg) {
+          setAudience({
+            ...cfg.state,
+            recentDays: full.recent_contact_days ?? cfg.state.recentDays,
+          });
+          setRecipientsRaw(cfg.manualRaw);
+          setHasStoredAudience(true);
+        } else {
+          setAudience({ ...EMPTY_AUDIENCE, recentDays: full.recent_contact_days ?? 7 });
+        }
         setBody(full.body_template ?? "");
         setTemplateName(full.template_name || "__none__");
         setMediaUrl(full.media_url ?? "");
         setSdrPlaybook(full.sdr_playbook_id ?? "__none__");
       })
-      .catch(() => toast.error("Não foi possível carregar o modelo e o texto salvos."));
+      .catch(() => toast.error("Não foi possível carregar os dados salvos da campanha."));
   }
 
   const create = useMutation({
@@ -179,8 +208,36 @@ function CampaignsPage() {
             content_variables_template[String(i)] = `{{${i}}}`;
           }
         }
+        let replace_audience: Record<string, unknown> | undefined;
+        if (editStatus === "draft" && audienceTouched) {
+          const manualE = audience.mode === "manual";
+          const recipientsE = manualE ? parseRecipients(recipientsRaw) : [];
+          const audE = manualE ? undefined : audiencePayload(audience);
+          if (manualE && recipientsE.length === 0)
+            throw new Error("Adicione pelo menos um destinatário");
+          if (!manualE && !audE) throw new Error("Escolha o público da campanha");
+          if (!manualE && isHsm) {
+            for (let i = 1; i <= (selectedTpl?.variableCount ?? 0); i++) {
+              const b = audience.variableMap[String(i)];
+              if (!b?.field) throw new Error(`Defina o campo da variável {{${i}}}`);
+              if (b.field === "__free__" && !b.fallback?.trim())
+                throw new Error(`Escreva o texto da variável {{${i}}}`);
+            }
+          }
+          replace_audience = {
+            recipients: recipientsE,
+            audience: audE,
+            variable_map: manualE ? undefined : audience.variableMap,
+            skip_missing: audience.skipMissing,
+            recent_contact_days: audience.recentDays,
+            recent_overrides: audience.recentOverrides,
+            audience_config: toAudienceConfig(audience, recipientsRaw),
+          };
+        }
         return updateFn({
           data: {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            replace_audience: replace_audience as any,
             id: editingId,
             name,
             body_template: selectedTpl?.body ?? body,
@@ -189,7 +246,7 @@ function CampaignsPage() {
             content_variables_template,
             media_url: mediaUrl || null,
             rate_per_minute: rate,
-            sdr_playbook_id: sdrPlaybook !== "__none__" ? sdrPlaybook : null,
+            sdr_playbook_id: isHsm && sdrPlaybook !== "__none__" ? sdrPlaybook : null,
             ...intervalPayload,
           },
         });
@@ -232,7 +289,8 @@ function CampaignsPage() {
           skip_missing: audience.skipMissing,
           recent_contact_days: audience.recentDays,
           recent_overrides: audience.recentOverrides,
-          sdr_playbook_id: sdrPlaybook !== "__none__" ? sdrPlaybook : null,
+          audience_config: toAudienceConfig(audience, recipientsRaw),
+          sdr_playbook_id: isHsm && sdrPlaybook !== "__none__" ? sdrPlaybook : null,
           ...intervalPayload,
         },
       });
@@ -432,21 +490,31 @@ function CampaignsPage() {
                   placeholder="https://..."
                 />
               </div>
-              {!isEditing && (
+              {isEditing && !hasStoredAudience && (
+                <p className="text-xs text-muted-foreground" role="note">
+                  O público desta campanha não foi registrado (criada antes desta versão). Ela tem{" "}
+                  {editTotal} destinatário(s).
+                  {editStatus === "draft"
+                    ? " Para trocar, monte um novo público abaixo."
+                    : " Para mudar a lista, duplique a campanha."}
+                </p>
+              )}
+              {(!isEditing || editStatus === "draft" || hasStoredAudience) && (
                 <CampaignAudiencePanel
                   value={audience}
-                  onChange={setAudience}
+                  onChange={(v) => {
+                    setAudienceTouched(true);
+                    setAudience(v);
+                  }}
+                  readOnly={isEditing && editStatus !== "draft"}
                   variableCount={isHsm ? (selectedTpl?.variableCount ?? 0) : 0}
                   manualRaw={recipientsRaw}
-                  onManualRaw={setRecipientsRaw}
+                  onManualRaw={(r) => {
+                    setAudienceTouched(true);
+                    setRecipientsRaw(r);
+                  }}
                   manualCount={parseRecipients(recipientsRaw).length}
                 />
-              )}
-              {isEditing && (
-                <p className="text-xs text-muted-foreground">
-                  A lista de destinatários não pode ser alterada após a criação. Cancele e crie uma
-                  nova campanha caso precise mudar os destinatários.
-                </p>
               )}
             </div>
             <DialogFooter>

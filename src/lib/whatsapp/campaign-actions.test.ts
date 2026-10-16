@@ -34,3 +34,12 @@ describe("ações de campanha WhatsApp", () => {
     });
   });
 });
+
+import { canReplaceAudience } from "./campaign-actions";
+describe("canReplaceAudience", () => {
+  it("só rascunho troca o público", () => {
+    expect(canReplaceAudience("draft")).toBe(true);
+    expect(canReplaceAudience("paused")).toBe(false);
+    expect(canReplaceAudience("running")).toBe(false);
+  });
+});

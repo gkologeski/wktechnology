@@ -988,6 +988,13 @@
       "when": 1792174999393,
       "tag": "0140_campaign_recent_contact_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 141,
+      "version": "7",
+      "when": 1792186571374,
+      "tag": "0141_whatsapp_campaign_audience_config",
+      "breakpoints": true
     }
   ]
 }
