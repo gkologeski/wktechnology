@@ -177,3 +177,14 @@ describe("público em grupos E/OU", () => {
     expect(isAllowedFilter("deals", { column: "stage", op: "is_null", value: "" })).toBe(true);
   });
 });
+
+import { distinctValues, isSuggestField } from "./campaign-audience";
+describe("valores conhecidos dos filtros", () => {
+  it("Setor de empresas tem lista; campo fora da lista não", () => {
+    expect(isSuggestField("companies", "industry")).toBe(true);
+    expect(isSuggestField("companies", "name")).toBe(false);
+  });
+  it("remove vazios e repetidos sem diferenciar maiúsculas", () => {
+    expect(distinctValues(["TI", " ti ", "", null, "Saúde"])).toEqual(["Saúde", "TI"]);
+  });
+});

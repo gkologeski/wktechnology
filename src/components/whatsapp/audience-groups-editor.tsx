@@ -212,7 +212,7 @@ export function AudienceGroupsEditor({
                             ))}
                           </SelectContent>
                         </Select>
-                      ) : def?.suggest && (f.op === "eq" || f.op === "neq") ? (
+                      ) : def?.suggest ? (
                         <AudienceValueCombobox
                           entity={entity}
                           column={f.column}
