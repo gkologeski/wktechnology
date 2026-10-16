@@ -378,7 +378,7 @@ export function CampaignAudiencePanel({
                 </div>
                 <div className="text-muted-foreground">
                   Fora: {p.excluded.no_phone} sem telefone · {p.excluded.invalid_phone} telefone
-                  inválido · {p.excluded.landline ?? 0} telefone fixo (sem WhatsApp) ·{" "}
+                  inválido · {p.excluded.landline ?? 0} fixo, estrangeiro ou fora do padrão ·{" "}
                   {p.excluded.duplicate} duplicado · {p.excluded.opted_out} descadastrado
                 </div>
               </div>
