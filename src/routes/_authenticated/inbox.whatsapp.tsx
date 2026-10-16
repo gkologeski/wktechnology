@@ -33,6 +33,8 @@ import {
   setWhatsAppConversationStatus,
 } from "@/lib/whatsapp.functions";
 import { useChannelAvailability } from "@/hooks/use-channel-availability";
+import { useInboxIdentityNames } from "@/hooks/use-inbox-identity-names";
+import { conversationDisplayName } from "@/lib/inbox/identity-names";
 import { useWhatsAppComposer } from "@/hooks/use-whatsapp-composer";
 import {
   WhatsAppTemplateFields,
@@ -161,6 +163,11 @@ function WhatsAppInbox() {
       (selectedSnapshot?.id === selected ? selectedSnapshot : undefined),
     [conversations, selectedSnapshot, selected],
   );
+  const identityNames = useInboxIdentityNames(current ? [...conversations, current] : conversations);
+  const nameOf = (c: { contact_id?: string | null; lead_id?: string | null; contact_phone: string }) =>
+    conversationDisplayName(c, identityNames.contacts, identityNames.leads);
+  const currentName = current ? nameOf(current) : "";
+  const currentNamed = !!current && currentName !== current.contact_phone;
   // Janela de 24 h + catálogo pelo hook único do compositor (o servidor revalida no envio).
   const availabilityQ = useChannelAvailability();
   const currentPhone = current?.contact_phone ?? "";
@@ -378,7 +385,8 @@ function WhatsAppInbox() {
               {conversations.map((c) => (
                 <InboxConversationItem
                   key={c.id}
-                  label={c.contact_phone}
+                  label={nameOf(c)}
+                  title={nameOf(c) !== c.contact_phone ? c.contact_phone : undefined}
                   preview={c.last_message_preview || "—"}
                   when={c.last_message_at}
                   whenTitle={c.last_message_at ? formatDateTime(c.last_message_at) : undefined}
@@ -433,8 +441,12 @@ function WhatsAppInbox() {
           ) : (
             <>
               <InboxConversationHeader
-                label={current.contact_phone}
-                subtitle={`WhatsApp · via ${current.twilio_number}`}
+                label={currentName}
+                subtitle={
+                  currentNamed
+                    ? `WhatsApp · ${current.contact_phone} · via ${current.twilio_number}`
+                    : `WhatsApp · via ${current.twilio_number}`
+                }
                 actions={
                   <>
                     <ConversationAiOwnerToggle conversationId={current.id} />
@@ -754,9 +766,21 @@ function WhatsAppInbox() {
       context={
         current ? (
           <InboxContext
-            initials={current.contact_phone.slice(-2)}
-            title={current.contact_phone}
-            subtitle={`via ${current.twilio_number}`}
+            initials={
+              currentNamed
+                ? currentName
+                    .split(/\s+/)
+                    .slice(0, 2)
+                    .map((w) => w[0]?.toUpperCase() ?? "")
+                    .join("")
+                : current.contact_phone.slice(-2)
+            }
+            title={currentName}
+            subtitle={
+              currentNamed
+                ? `${current.contact_phone} · via ${current.twilio_number}`
+                : `via ${current.twilio_number}`
+            }
           >
             <div className="space-y-3 border-t border-border pt-4 text-sm">
               <div>
