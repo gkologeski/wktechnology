@@ -114,7 +114,7 @@ export function isAllowedField(base: AudienceBase, key: string): boolean {
 export type FilterFieldDef = {
   column: string;
   label: string;
-  kind: "text" | "enum" | "date" | "member";
+  kind: "text" | "enum" | "date" | "member" | "number" | "boolean";
   options?: { value: string; label: string }[];
   /** Mostra lista com os valores já existentes no workspace (texto livre continua aceito). */
   suggest?: boolean;
@@ -237,6 +237,19 @@ export const OPS_BY_KIND: Record<
     { op: "is_null", label: "sem responsável" },
     { op: "is_not_null", label: "tem responsável" },
   ],
+  number: [
+    { op: "eq", label: "é igual a" },
+    { op: "neq", label: "é diferente de" },
+    { op: "gte", label: "maior ou igual a" },
+    { op: "lte", label: "menor ou igual a" },
+    { op: "is_null", label: "está vazio" },
+    { op: "is_not_null", label: "não está vazio" },
+  ],
+  boolean: [
+    { op: "eq", label: "é" },
+    { op: "is_null", label: "está vazio" },
+    { op: "is_not_null", label: "não está vazio" },
+  ],
   date: [
     { op: "gte", label: "a partir de" },
     { op: "lte", label: "até" },
@@ -247,13 +260,104 @@ export const OPS_BY_KIND: Record<
 
 export const opNeedsValue = (op: AudienceFilterOp) => op !== "is_null" && op !== "is_not_null";
 
-export function isAllowedFilter(base: AudienceBase, f: AudienceFilter): boolean {
+export type FilterFieldCatalog = Record<AudienceBase, FilterFieldDef[]>;
+
+/** Prefixo de campo personalizado (`custom_fields->>chave`). */
+export const CUSTOM_FIELD_PREFIX = "cf:";
+const CUSTOM_KEY_RE = /^[a-z0-9_]{1,60}$/i;
+
+/** Colunas nunca oferecidas nem aceitas em filtros (internas, sensíveis ou técnicas). */
+export function isBlockedFilterColumn(col: string): boolean {
+  return (
+    /^(id|owner_id|workspace_id|deleted_at|portal_token|hs_raw|external_ids|custom_fields|import_batch_id|sync_state_id)$/.test(
+      col,
+    ) ||
+    /_digits$/.test(col) ||
+    /(token|secret|password|hash)/i.test(col) ||
+    /^(hs_|hubspot_)/.test(col)
+  );
+}
+
+/** Campo do catálogo de entidades (cliente: getEntityFieldCatalog; servidor: tipo da coluna). */
+export type CatalogFieldLike = {
+  name: string;
+  label: string;
+  type: "text" | "number" | "currency" | "date" | "select" | "boolean";
+  options?: { value: string; label: string }[];
+  ref?: string;
+};
+
+/** Lista completa de filtros da entidade: fixos primeiro, depois o catálogo e os personalizados. */
+export function buildFilterFields(
+  entity: AudienceBase,
+  catalog: CatalogFieldLike[],
+  custom: { key: string; label: string }[] = [],
+): FilterFieldDef[] {
+  const out: FilterFieldDef[] = [...FILTER_FIELDS[entity]];
+  const seen = new Set(out.map((d) => d.column));
+  for (const c of catalog) {
+    if (seen.has(c.name) || isBlockedFilterColumn(c.name)) continue;
+    let def: FilterFieldDef | null = null;
+    if (c.ref) def = c.ref === "user" ? { column: c.name, label: c.label, kind: "member" } : null;
+    else if (c.type === "select" && c.options?.length)
+      def = { column: c.name, label: c.label, kind: "enum", options: c.options };
+    else if (c.type === "number" || c.type === "currency")
+      def = { column: c.name, label: c.label, kind: "number" };
+    else if (c.type === "date") def = { column: c.name, label: c.label, kind: "date" };
+    else if (c.type === "boolean") def = { column: c.name, label: c.label, kind: "boolean" };
+    else def = { column: c.name, label: c.label, kind: "text", suggest: true };
+    if (!def) continue;
+    seen.add(c.name);
+    out.push(def);
+  }
+  for (const cf of custom) {
+    if (!CUSTOM_KEY_RE.test(cf.key)) continue;
+    const column = `${CUSTOM_FIELD_PREFIX}${cf.key}`;
+    if (seen.has(column)) continue;
+    seen.add(column);
+    out.push({ column, label: `${cf.label} (personalizado)`, kind: "text", suggest: true });
+  }
+  return out;
+}
+
+/** Tipo da coluna (information_schema) → tipo do catálogo, usado na validação do servidor. */
+export function catalogTypeFromDataType(dt: string): CatalogFieldLike["type"] {
+  if (dt === "boolean") return "boolean";
+  if (/^(integer|numeric|bigint|double precision|real|smallint)$/.test(dt)) return "number";
+  if (dt.startsWith("timestamp") || dt === "date") return "date";
+  return "text";
+}
+
+/** Coluna física usada na consulta (campo personalizado vira caminho JSON). */
+export function filterColumnPath(column: string): string {
+  if (column.startsWith(CUSTOM_FIELD_PREFIX)) {
+    const key = column.slice(CUSTOM_FIELD_PREFIX.length);
+    if (!CUSTOM_KEY_RE.test(key)) throw new Error("Campo personalizado inválido.");
+    return `custom_fields->>${key}`;
+  }
+  return column;
+}
+
+/**
+ * Valida contra a lista do servidor. Tipos compatíveis: "enum" do cliente é
+ * texto no banco, então o servidor aceita os operadores de texto.
+ */
+export function isAllowedFilter(
+  base: AudienceBase,
+  f: AudienceFilter,
+  fields: FilterFieldCatalog = FILTER_FIELDS,
+): boolean {
   const entity = f.entity ?? base;
-  if (!FILTER_FIELDS[entity]) return false;
-  const def = FILTER_FIELDS[entity].find((d) => d.column === f.column);
+  if (!fields[entity]) return false;
+  if (isBlockedFilterColumn(f.column)) return false;
+  const def = fields[entity].find((d) => d.column === f.column);
   if (!def) return false;
   if (!OPS_BY_KIND[def.kind].some((o) => o.op === f.op)) return false;
   if (opNeedsValue(f.op) && !f.value.trim()) return false;
+  if (def.kind === "boolean" && opNeedsValue(f.op) && !/^(true|false)$/.test(f.value.trim()))
+    return false;
+  if (def.kind === "number" && opNeedsValue(f.op) && !Number.isFinite(Number(f.value.trim())))
+    return false;
   return true;
 }
 
@@ -424,8 +528,12 @@ export function fullName(first?: string | null, last?: string | null): string {
 }
 
 /** Campo com lista de valores conhecidos permitido para a entidade. */
-export function isSuggestField(base: AudienceBase, column: string): boolean {
-  return FILTER_FIELDS[base].some((f) => f.column === column && f.suggest);
+export function isSuggestField(
+  base: AudienceBase,
+  column: string,
+  fields: FilterFieldCatalog = FILTER_FIELDS,
+): boolean {
+  return fields[base].some((f) => f.column === column && f.suggest);
 }
 
 /** Valores únicos, sem vazios, ordenados em PT-BR. */

@@ -6,6 +6,10 @@ import {
   combineAudienceGroups,
   isAllowedFilter,
   normalizeAudienceGroups,
+  buildFilterFields,
+  catalogTypeFromDataType,
+  filterColumnPath,
+  type FilterFieldCatalog,
   type AudienceBase,
   type AudienceFilter,
   type AudienceGroup,
@@ -32,8 +36,48 @@ const MAX_IDS_PER_FILTER = 20000;
 
 const clean = (v: string) => v.replace(/[%_,()*"\\]/g, " ").trim();
 
+/**
+ * Lista de filtros aceitos no servidor: fixos + colunas reais da tabela (tipo do banco)
+ * + campos personalizados ativos do workspace. RLS continua valendo na consulta.
+ */
+export async function loadServerFilterFields(
+  db: Db,
+  workspaceId: string,
+  userId: string,
+): Promise<FilterFieldCatalog> {
+  const { REF_COLUMNS } = await import("@/lib/entity-fields-refs");
+  const entities: AudienceBase[] = ["leads", "contacts", "companies", "deals"];
+  const { data: cps } = await db
+    .from("custom_properties")
+    .select("entity, key, label")
+    .eq("workspace_id", workspaceId)
+    .eq("enabled", true)
+    .in("entity", entities);
+  const out = {} as FilterFieldCatalog;
+  await Promise.all(
+    entities.map(async (e) => {
+      const { data, error } = await db.rpc("get_entity_field_catalog", {
+        p_table: e,
+        p_owner_id: userId,
+      });
+      if (error) throw new Error(error.message);
+      const catalog = ((data ?? []) as { column_name: string; data_type: string }[]).map((r) => ({
+        name: r.column_name,
+        label: r.column_name,
+        type: catalogTypeFromDataType(r.data_type),
+        ref: (REF_COLUMNS as Record<string, string | undefined>)[r.column_name],
+      }));
+      const custom = ((cps ?? []) as { entity: string; key: string; label: string }[])
+        .filter((c) => c.entity === e)
+        .map((c) => ({ key: c.key, label: c.label }));
+      out[e] = buildFilterFields(e, catalog, custom);
+    }),
+  );
+  return out;
+}
+
 function applyOp(q: Db, f: AudienceFilter): Db {
-  const col = f.column;
+  const col = filterColumnPath(f.column);
   const v = f.value.trim();
   switch (f.op) {
     case "ilike":
@@ -278,7 +322,11 @@ export async function loadAudienceRows(
     const groups = normalizeAudienceGroups(audience);
     if (groups.length > 10 || groups.some((g) => g.filters.length > 20))
       throw new Error("Público com grupos ou filtros demais.");
-    if (groups.some((g) => g.filters.some((f) => !isAllowedFilter(fBase, f))))
+    const allowed =
+      groups.length && senderId
+        ? await loadServerFilterFields(db, workspaceId, senderId)
+        : undefined;
+    if (groups.some((g) => g.filters.some((f) => !isAllowedFilter(fBase, f, allowed))))
       throw new Error("Filtro não permitido.");
     if (groups.length === 0) {
       raw = await fetchPaged(() =>

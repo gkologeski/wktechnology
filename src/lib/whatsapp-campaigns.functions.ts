@@ -31,7 +31,7 @@ const CreateInput = z.object({
           .array(
             z.object({
               entity: z.enum(["leads", "contacts", "companies", "deals"]).optional(),
-              column: z.string().max(40),
+              column: z.string().max(80),
               op: z.enum([
                 "eq",
                 "neq",
@@ -56,7 +56,7 @@ const CreateInput = z.object({
                 .array(
                   z.object({
                     entity: z.enum(["leads", "contacts", "companies", "deals"]).optional(),
-                    column: z.string().max(40),
+                    column: z.string().max(80),
                     op: z.enum([
                       "eq",
                       "neq",
@@ -562,20 +562,26 @@ export const listAudienceFieldValues = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { isSuggestField, distinctValues } = await import("@/lib/whatsapp/campaign-audience");
-    if (!isSuggestField(data.entity, data.column)) throw new Error("Campo não permitido.");
+    const { isSuggestField, distinctValues, filterColumnPath, CUSTOM_FIELD_PREFIX } =
+      await import("@/lib/whatsapp/campaign-audience");
+    const { loadServerFilterFields } = await import("@/lib/whatsapp/campaign-audience.server");
     const workspaceId = await resolveActiveWorkspace(context.userId);
+    const fields = await loadServerFilterFields(context.supabase, workspaceId, context.userId);
+    if (!isSuggestField(data.entity, data.column, fields)) throw new Error("Campo não permitido.");
+    const path = filterColumnPath(data.column);
+    const isCustom = data.column.startsWith(CUSTOM_FIELD_PREFIX);
+    const alias = isCustom ? "v" : data.column;
     let q = (context.supabase as any)
       .from(data.entity)
-      .select(data.column)
+      .select(isCustom ? `v:${path}` : data.column)
       .eq("workspace_id", workspaceId)
-      .not(data.column, "is", null)
-      .neq(data.column, "")
-      .order(data.column, { ascending: true })
+      .not(path, "is", null)
+      .neq(path, "")
+      .order(path, { ascending: true })
       .limit(5000);
     const term = (data.search ?? "").replace(/[%_,()]/g, " ").trim();
-    if (term) q = q.ilike(data.column, `%${term}%`);
+    if (term) q = q.ilike(path, `%${term}%`);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    return distinctValues(((rows ?? []) as Record<string, unknown>[]).map((r) => r[data.column]));
+    return distinctValues(((rows ?? []) as Record<string, unknown>[]).map((r) => r[alias]));
   });

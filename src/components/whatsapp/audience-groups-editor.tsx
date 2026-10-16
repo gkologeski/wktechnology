@@ -1,15 +1,24 @@
 // Editor de público em grupos (estilo segmentos do HubSpot): filtros dentro do
 // grupo combinados por E (ou OU), grupos ligados por E ou OU. Só apresentação.
-import { Copy, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { Check, ChevronsUpDown, Copy, Plus, Trash2 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AudienceValueCombobox } from "./audience-value-combobox";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -23,9 +32,82 @@ import {
   type AudienceBase,
   type AudienceFilter,
   type AudienceGroup,
+  type FilterFieldCatalog,
 } from "@/lib/whatsapp/campaign-audience";
 
 const ENTITIES = Object.keys(ENTITY_LABEL) as AudienceBase[];
+
+function FieldPicker({
+  entity,
+  column,
+  label,
+  ordered,
+  base,
+  fields,
+  onPick,
+}: {
+  entity: AudienceBase;
+  column: string;
+  label: string;
+  ordered: AudienceBase[];
+  base: AudienceBase;
+  fields: FilterFieldCatalog;
+  onPick: (e: AudienceBase, c: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          aria-label="Entidade e campo do filtro"
+          className="w-60 justify-between font-normal"
+        >
+          <span className="truncate">
+            {ENTITY_LABEL[entity]} › {label}
+          </span>
+          <ChevronsUpDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Buscar campo…" />
+          <CommandList className="max-h-80">
+            <CommandEmpty>Nenhum campo encontrado.</CommandEmpty>
+            {ordered.map((e) => (
+              <CommandGroup
+                key={e}
+                heading={`${ENTITY_LABEL[e]}${e !== base ? " (relacionado)" : ""}`}
+              >
+                {fields[e].map((d) => (
+                  <CommandItem
+                    key={`${e}.${d.column}`}
+                    value={`${ENTITY_LABEL[e]} ${d.label} ${e}.${d.column}`}
+                    onSelect={() => {
+                      onPick(e, d.column);
+                      setOpen(false);
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        e === entity && d.column === column ? "opacity-100" : "opacity-0",
+                      )}
+                    />
+                    <span className="truncate">{d.label}</span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            ))}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export function defaultFilter(base: AudienceBase): AudienceFilter {
   const d = FILTER_FIELDS[base][0];
@@ -39,6 +121,7 @@ export function AudienceGroupsEditor({
   members,
   groupsLogic = "or",
   onGroupsLogicChange,
+  fields = FILTER_FIELDS,
 }: {
   base: AudienceBase;
   groups: AudienceGroup[];
@@ -46,6 +129,8 @@ export function AudienceGroupsEditor({
   groupsLogic?: "and" | "or";
   onGroupsLogicChange?: (l: "and" | "or") => void;
   members: { value: string; label: string }[];
+  /** Campos disponíveis por entidade (padrão: lista fixa). */
+  fields?: FilterFieldCatalog;
 }) {
   const setGroup = (i: number, g: AudienceGroup) =>
     onChange(groups.map((x, j) => (j === i ? g : x)));
@@ -138,7 +223,7 @@ export function AudienceGroupsEditor({
 
             {g.filters.map((f, fi) => {
               const entity = f.entity ?? base;
-              const def = FILTER_FIELDS[entity].find((d) => d.column === f.column);
+              const def = fields[entity]?.find((d) => d.column === f.column);
               const ops = def ? OPS_BY_KIND[def.kind] : [];
               const upd = (patch: Partial<AudienceFilter>) =>
                 setGroup(gi, {
@@ -153,36 +238,19 @@ export function AudienceGroupsEditor({
                     </span>
                   )}
                   <div className="flex flex-wrap items-center gap-2">
-                    <Select
-                      value={`${entity}.${f.column}`}
-                      onValueChange={(key) => {
-                        const [e, c] = key.split(".") as [AudienceBase, string];
-                        const d = FILTER_FIELDS[e].find((x) => x.column === c);
+                    <FieldPicker
+                      entity={entity}
+                      column={f.column}
+                      label={def?.label ?? f.column}
+                      ordered={ordered}
+                      base={base}
+                      fields={fields}
+                      onPick={(e, c) => {
+                        const d = fields[e].find((x) => x.column === c);
                         if (!d) return;
                         upd({ entity: e, column: c, op: OPS_BY_KIND[d.kind][0].op, value: "" });
                       }}
-                    >
-                      <SelectTrigger className="w-52" aria-label="Entidade e campo do filtro">
-                        <SelectValue>
-                          {ENTITY_LABEL[entity]} › {def?.label ?? f.column}
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ordered.map((e) => (
-                          <SelectGroup key={e}>
-                            <SelectLabel>
-                              {ENTITY_LABEL[e]}
-                              {e !== base ? " (relacionado)" : ""}
-                            </SelectLabel>
-                            {FILTER_FIELDS[e].map((d) => (
-                              <SelectItem key={`${e}.${d.column}`} value={`${e}.${d.column}`}>
-                                {d.label}
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    />
                     <Select
                       value={f.op}
                       onValueChange={(o) => upd({ op: o as AudienceFilter["op"] })}
@@ -199,7 +267,17 @@ export function AudienceGroupsEditor({
                       </SelectContent>
                     </Select>
                     {opNeedsValue(f.op) &&
-                      (def?.kind === "enum" || def?.kind === "member" ? (
+                      (def?.kind === "boolean" ? (
+                        <Select value={f.value} onValueChange={(v) => upd({ value: v })}>
+                          <SelectTrigger className="w-48" aria-label="Valor do filtro">
+                            <SelectValue placeholder="Escolha" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="true">Sim</SelectItem>
+                            <SelectItem value="false">Não</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : def?.kind === "enum" || def?.kind === "member" ? (
                         <Select value={f.value} onValueChange={(v) => upd({ value: v })}>
                           <SelectTrigger className="w-48" aria-label="Valor do filtro">
                             <SelectValue placeholder="Escolha" />
@@ -224,7 +302,13 @@ export function AudienceGroupsEditor({
                         <Input
                           className="w-48"
                           aria-label="Valor do filtro"
-                          type={def?.kind === "date" ? "date" : "text"}
+                          type={
+                            def?.kind === "date"
+                              ? "date"
+                              : def?.kind === "number"
+                                ? "number"
+                                : "text"
+                          }
                           maxLength={200}
                           value={f.value}
                           onChange={(e) => upd({ value: e.target.value })}
