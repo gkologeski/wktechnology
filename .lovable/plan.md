@@ -13,6 +13,12 @@
 - O servidor confere de novo na hora do envio: quem recebeu mensagem de outra campanha depois da montagem é pulado com o motivo "Envio recente".
 - Envios já feitos não mudam; nada será disparado durante a implementação.
 
+## Parte 3 — Lista de opções nos filtros de público (WhatsApp)
+- Campos como **Setor**, Status, Origem, Cidade/UF e Responsável passam a mostrar uma lista com os valores já existentes no workspace, igual aos Workflows.
+- A lista tem busca; você também pode digitar um valor que não esteja nela.
+- Com "é qualquer um de", dá para marcar vários valores.
+- Campos livres (nome, e-mail, telefone) continuam como texto.
+
 ## Fora do escopo
 - Lista de conversas e cabeçalho da conversa; mensagens manuais da Inbox (não contam como campanha).
 
@@ -20,6 +26,7 @@
 - Parte 1: `Link` do TanStack em `inbox.whatsapp.tsx` (`/contacts/$id` prioritário, `/leads/$id`), confirmando a rota de lead.
 - Parte 2: migration aditiva com `whatsapp_campaigns.recent_contact_days int default 7` e `email_broadcasts.recent_contact_days int default 7`, mais `override_recent boolean default false` nos destinatários. Verificação por variantes de telefone (`whatsapp_campaign_recipients` com status enviado, mesmo workspace) e por e-mail (`email_broadcast_recipients`), em `campaign-audience.server.ts` ao salvar e no disparo antes de cada envio. Sem tocar RLS; consultas pelo cliente do usuário.
 - Testes unitários da regra: dentro do período retira; fora inclui; exceção manual inclui; outro canal não bloqueia.
+- Parte 3: reaproveitar `getEntityFieldCatalog` (opções canônicas/registro/valores distintos, já usado em `conditions-editor.tsx`) no `audience-groups-editor.tsx`. Os Workflows só listam até 20 valores distintos; para Setor e similares com mais valores, adicionar uma consulta paginada de valores distintos com busca, limitada ao workspace e às colunas da lista branca de `campaign-audience.ts`, renderizada em combobox pesquisável.
 
 ## Validação
 - Typecheck, lint e testes com resultados reais.
