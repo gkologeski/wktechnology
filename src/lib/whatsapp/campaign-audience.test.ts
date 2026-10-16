@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  distinctValues,
+  isSuggestField,
   buildAudience,
   fieldsForBase,
   isAllowedField,
@@ -178,7 +180,6 @@ describe("público em grupos E/OU", () => {
   });
 });
 
-import { distinctValues, isSuggestField } from "./campaign-audience";
 describe("valores conhecidos dos filtros", () => {
   it("Setor de empresas tem lista; campo fora da lista não", () => {
     expect(isSuggestField("companies", "industry")).toBe(true);
