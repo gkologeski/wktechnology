@@ -47,6 +47,8 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
         if (!row.processed_at) await processEvent(admin, row);
         // Recuperação de pendências antigas (limitada para caber no prazo).
         await processPending(admin, 5).catch(() => {});
+        const { processPendingInboundMedia } = await import("@/lib/whatsapp/inbound-media.server");
+        await processPendingInboundMedia(admin, 2).catch(() => {});
         // Recebimento durável garantido; pendências são retomadas depois.
         return new Response("ok", { status: 200 });
       },

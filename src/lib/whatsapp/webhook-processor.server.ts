@@ -7,6 +7,8 @@ import { normalizePhone } from "@/lib/whatsapp/meta-channel.server";
 import { identityColumns, resolveInboxIdentity } from "@/lib/inbox/identity-resolution.server";
 import { autoAssignInboxConversation } from "@/lib/inbox-auto-assignment.server";
 import { ingestInboundForSdr } from "@/lib/prospecting/sdr/ingest.server";
+import { inboundBody } from "./inbound-media";
+import { storeInboundMedia } from "./inbound-media.server";
 
 // Tabela whatsapp_webhook_events só entra nos tipos após aceitar o rascunho.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -59,15 +61,6 @@ async function resolveWorkspace(
 
 async function autoAssignConversation(admin: Admin, workspaceId: string, convId: string) {
   await autoAssignInboxConversation(admin, workspaceId, "whatsapp_conversations", convId);
-}
-
-function inboundBody(m: any): string {
-  if (m.type === "text") return m.text?.body ?? "";
-  if (m.type === "button") return m.button?.text ?? "";
-  if (m.type === "interactive")
-    return m.interactive?.button_reply?.title || m.interactive?.list_reply?.title || "";
-  const media = m[m.type];
-  return media?.caption ? `[${m.type}] ${media.caption}` : `[${m.type}]`;
 }
 
 async function handleMessages(admin: Admin, value: any): Promise<string | null> {
@@ -175,6 +168,13 @@ async function handleMessages(admin: Admin, value: any): Promise<string | null> 
       .select("id")
       .single();
     if (mErr) throw new Retry(mErr.message);
+    // Arquivo baixado na hora; falha fica para a recuperação (media_url nulo).
+    if (media?.id)
+      await storeInboundMedia(admin, {
+        id: inserted.id,
+        workspace_id: ws.workspace_id,
+        raw: m,
+      }).catch((e) => console.error("[whatsapp-media]", (e as Error).message));
     await sdrIngest(admin, {
       workspaceId: ws.workspace_id,
       conversationId: conv.id,
