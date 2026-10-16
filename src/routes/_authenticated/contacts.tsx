@@ -465,6 +465,12 @@ function ContactsHubspotView() {
         },
       },
       {
+        key: "whatsapp_e164",
+        label: "WhatsApp",
+        className: "text-muted-foreground",
+        render: (c) => c.whatsapp_e164 ?? "—",
+      },
+      {
         key: "job_title",
         label: "Cargo",
         className: "text-muted-foreground",

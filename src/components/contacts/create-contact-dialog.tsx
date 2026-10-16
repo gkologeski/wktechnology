@@ -18,6 +18,7 @@ import { PhoneInput } from "@/components/ui/phone-input";
 import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
 import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialogs";
 import { isEmail, toE164 } from "@/lib/validators";
+import { validateWhatsAppInput } from "@/lib/phone/whatsapp-e164";
 import { useToastCreated } from "@/lib/toast-nav";
 import { OnboardingGuidedEntry } from "@/components/onboarding/onboarding-guided-entry";
 
@@ -40,6 +41,7 @@ export function CreateContactDialog({
     last_name: "",
     email: "",
     phone: "",
+    whatsapp: "",
     job_title: "",
   });
   const [company, setCompany] = useState<CompanyPickerValue>({ id: null, name: "" });
@@ -47,7 +49,7 @@ export function CreateContactDialog({
   const [pendingCompanyName, setPendingCompanyName] = useState("");
 
   const reset = () => {
-    setForm({ first_name: "", last_name: "", email: "", phone: "", job_title: "" });
+    setForm({ first_name: "", last_name: "", email: "", phone: "", whatsapp: "", job_title: "" });
     setCompany({ id: null, name: "" });
   };
 
@@ -66,6 +68,11 @@ export function CreateContactDialog({
       toast.error("Telefone inválido. Use o formato E.164 (ex.: +5511999998888).");
       return;
     }
+    const wa = form.whatsapp.trim() ? validateWhatsAppInput(form.whatsapp.trim()) : null;
+    if (wa && !wa.ok) {
+      toast.error(wa.message);
+      return;
+    }
     setSaving(true);
     try {
       const { data, error } = await supabase
@@ -76,6 +83,7 @@ export function CreateContactDialog({
           last_name: form.last_name.trim() || null,
           email: form.email.trim() || null,
           phone: phoneE164,
+          ...(wa?.ok ? { whatsapp_e164: wa.e164 } : {}),
           job_title: form.job_title.trim() || null,
           company_id: company.id,
           company_name: company.name.trim() || null,
@@ -167,6 +175,14 @@ export function CreateContactDialog({
                 id="phone"
                 value={form.phone}
                 onChange={(v) => setForm({ ...form, phone: v })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="whatsapp">WhatsApp (celular)</Label>
+              <PhoneInput
+                id="whatsapp"
+                value={form.whatsapp}
+                onChange={(v) => setForm({ ...form, whatsapp: v })}
               />
             </div>
             <div className="space-y-1.5">
