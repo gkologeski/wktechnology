@@ -40,9 +40,9 @@ describe("público da campanha WhatsApp", () => {
     expect(s.recipients[0].missing).toEqual(["1"]);
   });
 
-  it("exclui sem telefone, inválido, duplicado (com/sem 9º dígito) e descadastrado", () => {
+  it("exclui sem telefone, inválido, duplicado  e descadastrado", () => {
     const s = buildAudience(
-      [row(null), row("123"), row("+5548991104003"), row("+554891104003"), row("(11) 98888-7777")],
+      [row(null), row("123"), row("+5548991104003"), row("+5548991104003"), row("(11) 98888-7777")],
       {},
       new Set(["+5511988887777"]),
     );
