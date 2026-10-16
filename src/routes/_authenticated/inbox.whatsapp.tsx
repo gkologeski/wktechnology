@@ -20,7 +20,8 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadWhatsAppMedia } from "@/lib/whatsapp-media";
-import { WhatsAppMediaBubble } from "@/components/whatsapp/whatsapp-media-bubble";
+import { WhatsAppMediaBubble, LinkifiedText } from "@/components/whatsapp/whatsapp-media-bubble";
+import { isLegacyPlaceholder } from "@/lib/whatsapp/inbound-media";
 import { useScopedComposerValue } from "@/hooks/use-scoped-composer-value";
 import { useMessageDraft } from "@/hooks/use-message-draft";
 import { MessageDraftStatus } from "@/components/message-draft-status";
@@ -531,10 +532,18 @@ function WhatsAppInbox() {
                   >
                     {m.media_url && (
                       <div className="mb-1">
-                        <WhatsAppMediaBubble url={m.media_url} contentType={m.media_content_type} />
+                        <WhatsAppMediaBubble
+                          url={m.media_url}
+                          contentType={m.media_content_type}
+                          filename={m.body?.match(/^📎 Documento: (.+)$/m)?.[1] ?? null}
+                        />
                       </div>
                     )}
-                    {m.body && <div className="whitespace-pre-wrap">{m.body}</div>}
+                    {m.body && !(m.media_url && isLegacyPlaceholder(m.body)) && (
+                      <div className="whitespace-pre-wrap">
+                        <LinkifiedText text={m.body} />
+                      </div>
+                    )}
                   </InboxMessageBubble>
                 ))}
               </MessageHistoryViewport>
@@ -715,8 +724,8 @@ function WhatsAppInbox() {
                         ? "Fora da janela de 24 horas: envie um modelo aprovado"
                         : "Escreva uma mensagem…"
                     }
-                    rows={2}
-                    className="min-h-12 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
+                    rows={3}
+                    className="field-sizing-content min-h-20 max-h-60 resize-none overflow-y-auto border-0 bg-transparent shadow-none focus-visible:ring-0"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
                         e.preventDefault();
