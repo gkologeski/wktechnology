@@ -149,6 +149,32 @@ export function audiencePayload(a: AudienceState) {
   return undefined;
 }
 
+/** Configuração guardada na campanha para reabrir o quadro Público na edição. */
+export type StoredAudienceConfig = { state: AudienceState; manualRaw: string };
+
+export function toAudienceConfig(a: AudienceState, manualRaw: string): StoredAudienceConfig {
+  return { state: a, manualRaw: a.mode === "manual" ? manualRaw : "" };
+}
+
+/** Lê a configuração salva; formatos ausentes ou antigos viram null. */
+export function hydrateAudienceConfig(raw: unknown): StoredAudienceConfig | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as { state?: Partial<AudienceState>; manualRaw?: unknown };
+  const st = r.state;
+  if (!st || (st.mode !== "queue" && st.mode !== "filter" && st.mode !== "manual")) return null;
+  return {
+    state: {
+      ...EMPTY_AUDIENCE,
+      ...st,
+      groups: normalizeAudienceGroups({ groups: st.groups ?? [] }),
+      groupsLogic: st.groupsLogic === "and" ? "and" : "or",
+      variableMap: st.variableMap ?? {},
+      recentOverrides: Array.isArray(st.recentOverrides) ? st.recentOverrides : [],
+    } as AudienceState,
+    manualRaw: typeof r.manualRaw === "string" ? r.manualRaw : "",
+  };
+}
+
 type QueueRow = { id: string; name: string; entity: string; kind: string };
 type SegmentRow = { id: string; name: string; entity: string; filters: unknown };
 
@@ -159,7 +185,9 @@ export function CampaignAudiencePanel({
   manualRaw,
   onManualRaw,
   manualCount,
+  readOnly = false,
 }: {
+  readOnly?: boolean;
   value: AudienceState;
   onChange: (v: AudienceState) => void;
   variableCount: number;
@@ -220,7 +248,12 @@ export function CampaignAudiencePanel({
   const p = previewQ.data;
 
   return (
-    <div className="space-y-4">
+    <fieldset disabled={readOnly} aria-readonly={readOnly} className="min-w-0 space-y-4">
+      {readOnly && (
+        <p className="text-xs text-muted-foreground">
+          Campanha pausada: o público e as variáveis ficam somente para leitura.
+        </p>
+      )}
       <fieldset className="space-y-2 rounded-md border p-3">
         <legend className="px-1 text-sm font-medium">Público</legend>
         <Tabs value={value.mode} onValueChange={(m) => set({ mode: m as AudienceMode })}>
@@ -549,6 +582,6 @@ export function CampaignAudiencePanel({
           )}
         </fieldset>
       )}
-    </div>
+    </fieldset>
   );
 }

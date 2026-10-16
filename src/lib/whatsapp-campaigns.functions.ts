@@ -92,6 +92,8 @@ const CreateInput = z.object({
   recent_contact_days: z.number().int().min(0).max(365).optional(),
   /** Telefones liberados manualmente apesar do envio recente. */
   recent_overrides: z.array(z.string().max(40)).max(5000).optional(),
+  /** Estado do quadro Público para reabrir na edição (opaco, só exibição). */
+  audience_config: z.record(z.string(), z.unknown()).nullable().optional(),
 });
 
 const PreviewInput = CreateInput.pick({
@@ -153,69 +155,93 @@ async function sdrColumns(
   return { sdr_enabled: true, sdr_playbook_id: playbookId };
 }
 
+/** Resolve, valida e filtra (reenvio recente) os destinatários de uma campanha. */
+async function resolveCampaignRecipients(
+  supabase: any,
+  workspaceId: string,
+  userId: string,
+  data: Pick<
+    z.infer<typeof CreateInput>,
+    | "recipients"
+    | "audience"
+    | "variable_map"
+    | "skip_missing"
+    | "recent_contact_days"
+    | "recent_overrides"
+  >,
+) {
+  const { toWhatsAppE164 } = await import("@/lib/phone/whatsapp-e164");
+  const seenManual = new Set<string>();
+  let recipients = data.recipients.flatMap((r) => {
+    // Lista manual: só celular (ou número estrangeiro) em E.164; fixo fica de fora.
+    const phone = toWhatsAppE164(r.phone);
+    if (!phone || seenManual.has(phone)) return [];
+    seenManual.add(phone);
+    return [
+      {
+        phone,
+        contactId: r.contactId ?? null,
+        variables: (r.variables ?? {}) as Record<string, string>,
+      },
+    ];
+  });
+  if (data.audience) {
+    const { buildAudience, isAllowedField } = await import("@/lib/whatsapp/campaign-audience");
+    const { loadAudienceRows, loadOptedOutPhones } =
+      await import("@/lib/whatsapp/campaign-audience.server");
+    const { base, rows, truncated } = await loadAudienceRows(
+      supabase,
+      workspaceId,
+      data.audience,
+      userId,
+    );
+    if (truncated) throw new Error("O público passa de 5.000 destinatários. Refine os filtros.");
+    const map = data.variable_map ?? {};
+    for (const b of Object.values(map))
+      if (!isAllowedField(base, b.field)) throw new Error("Campo de variável não permitido.");
+    const summary = buildAudience(rows, map, await loadOptedOutPhones(supabase, workspaceId));
+    const kept = data.skip_missing
+      ? summary.recipients.filter((r) => r.missing.length === 0)
+      : summary.recipients;
+    if (!data.skip_missing && summary.withMissing > 0)
+      throw new Error(
+        `${summary.withMissing} destinatário(s) ficariam com variável vazia. Defina um valor se vazio ou escolha pular.`,
+      );
+    recipients = kept.map((r) => ({
+      phone: r.phone,
+      contactId: r.contactId,
+      variables: { ...r.variables, _source: r.source },
+    }));
+  }
+  const recentDays = data.recent_contact_days ?? 7;
+  const guarded = await applyRecentGuard(
+    supabase,
+    workspaceId,
+    recentDays,
+    data.recent_overrides,
+    recipients,
+  );
+  if (guarded.kept.length === 0)
+    throw new Error(
+      guarded.removed.length > 0
+        ? "Todos os destinatários receberam mensagem recentemente. Libere manualmente ou reduza o período."
+        : "Nenhum destinatário válido no público.",
+    );
+  return { guarded, recentDays };
+}
+
 export const createWhatsAppCampaign = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => CreateInput.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(context.userId);
-    const { toWhatsAppE164 } = await import("@/lib/phone/whatsapp-e164");
-    const seenManual = new Set<string>();
-    let recipients = data.recipients.flatMap((r) => {
-      // Lista manual: só celular (ou número estrangeiro) em E.164; fixo fica de fora.
-      const phone = toWhatsAppE164(r.phone);
-      if (!phone || seenManual.has(phone)) return [];
-      seenManual.add(phone);
-      return [
-        {
-          phone,
-          contactId: r.contactId ?? null,
-          variables: (r.variables ?? {}) as Record<string, string>,
-        },
-      ];
-    });
-    if (data.audience) {
-      const { buildAudience, isAllowedField } = await import("@/lib/whatsapp/campaign-audience");
-      const { loadAudienceRows, loadOptedOutPhones } =
-        await import("@/lib/whatsapp/campaign-audience.server");
-      const { base, rows, truncated } = await loadAudienceRows(
-        supabase,
-        workspaceId,
-        data.audience,
-        userId,
-      );
-      if (truncated) throw new Error("O público passa de 5.000 destinatários. Refine os filtros.");
-      const map = data.variable_map ?? {};
-      for (const b of Object.values(map))
-        if (!isAllowedField(base, b.field)) throw new Error("Campo de variável não permitido.");
-      const summary = buildAudience(rows, map, await loadOptedOutPhones(supabase, workspaceId));
-      const kept = data.skip_missing
-        ? summary.recipients.filter((r) => r.missing.length === 0)
-        : summary.recipients;
-      if (!data.skip_missing && summary.withMissing > 0)
-        throw new Error(
-          `${summary.withMissing} destinatário(s) ficariam com variável vazia. Defina um valor se vazio ou escolha pular.`,
-        );
-      recipients = kept.map((r) => ({
-        phone: r.phone,
-        contactId: r.contactId,
-        variables: { ...r.variables, _source: r.source },
-      }));
-    }
-    const recentDays = data.recent_contact_days ?? 7;
-    const guarded = await applyRecentGuard(
+    const { guarded, recentDays } = await resolveCampaignRecipients(
       supabase,
       workspaceId,
-      recentDays,
-      data.recent_overrides,
-      recipients,
+      userId,
+      data,
     );
-    if (guarded.kept.length === 0)
-      throw new Error(
-        guarded.removed.length > 0
-          ? "Todos os destinatários receberam mensagem recentemente. Libere manualmente ou reduza o período."
-          : "Nenhum destinatário válido no público.",
-      );
     const { data: camp, error } = await supabase
       .from("whatsapp_campaigns")
       .insert({
@@ -232,6 +258,8 @@ export const createWhatsAppCampaign = createServerFn({ method: "POST" })
         status: "draft",
         total: guarded.kept.length,
         recent_contact_days: recentDays,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        audience_config: (data.audience_config ?? null) as any,
         ...(await sdrColumns(supabase, data.sdr_playbook_id, data.template_name)),
         ...campaignIntervalColumns(data.send_interval_min_s, data.send_interval_max_s),
         workspace_id: workspaceId,
@@ -353,6 +381,16 @@ const UpdateInput = z.object({
   sdr_playbook_id: z.string().uuid().nullable().optional(),
   send_interval_min_s: z.number().int().min(0).max(3600).nullable().optional(),
   send_interval_max_s: z.number().int().min(0).max(3600).nullable().optional(),
+  /** Quando presente, refaz a lista de pendentes (só rascunho). */
+  replace_audience: CreateInput.pick({
+    recipients: true,
+    audience: true,
+    variable_map: true,
+    skip_missing: true,
+    recent_contact_days: true,
+    recent_overrides: true,
+    audience_config: true,
+  }).optional(),
 });
 
 export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
@@ -387,6 +425,50 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
       patch,
       campaignIntervalColumns(data.send_interval_min_s, data.send_interval_max_s),
     );
+    if (data.replace_audience) {
+      const { canReplaceAudience } = await import("@/lib/whatsapp/campaign-actions");
+      if (!canReplaceAudience(existing.status))
+        throw new Error("O público só pode ser alterado em campanhas em rascunho.");
+      const workspaceId = await resolveActiveWorkspace(context.userId);
+      const ra = data.replace_audience;
+      const { guarded, recentDays } = await resolveCampaignRecipients(
+        supabase,
+        workspaceId,
+        context.userId,
+        { ...ra, recipients: ra.recipients ?? [] },
+      );
+      // Exclusão negada por RLS não gera erro: confere se sobrou alguma linha.
+      const { error: dErr } = await supabase
+        .from("whatsapp_campaign_recipients")
+        .delete()
+        .eq("campaign_id", data.id)
+        .eq("status", "pending");
+      if (dErr) throw dErr;
+      const { count: left } = await supabase
+        .from("whatsapp_campaign_recipients")
+        .select("id", { count: "exact", head: true })
+        .eq("campaign_id", data.id);
+      if ((left ?? 0) > 0)
+        throw new Error("Não foi possível substituir os destinatários (permissão insuficiente).");
+      const rows = guarded.kept.map((r) => ({
+        campaign_id: data.id,
+        owner_id: context.userId,
+        contact_id: r.contactId,
+        phone: r.phone,
+        variables: r.variables,
+        override_recent: r.overrideRecent,
+        status: "pending" as const,
+      }));
+      for (let i = 0; i < rows.length; i += 500) {
+        const { error: rErr } = await supabase
+          .from("whatsapp_campaign_recipients")
+          .insert(rows.slice(i, i + 500));
+        if (rErr) throw rErr;
+      }
+      patch.total = rows.length;
+      patch.recent_contact_days = recentDays;
+      patch.audience_config = ra.audience_config ?? null;
+    }
     if (Object.keys(patch).length === 0) return { ok: true };
     const { error } = await supabase
       .from("whatsapp_campaigns")
@@ -543,7 +625,9 @@ export const getWhatsAppCampaignForEdit = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: camp, error } = await context.supabase
       .from("whatsapp_campaigns")
-      .select("id, body_template, template_name, media_url, sdr_playbook_id")
+      .select(
+        "id, status, total, body_template, template_name, media_url, sdr_playbook_id, recent_contact_days, audience_config",
+      )
       .eq("id", data.id)
       .single();
     if (error) throw error;
