@@ -97,6 +97,9 @@ export function validateWhatsAppInput(
   if (p.kind === "landline")
     return { ok: false, message: "Telefone fixo não pode ser usado como WhatsApp." };
   if (p.kind !== "mobile" || !p.e164)
-    return { ok: false, message: "Use celular do Brasil: DDD + 9 + 8 dígitos, ex.: (11) 91234-5678." };
+    return {
+      ok: false,
+      message: "Use celular do Brasil: DDD + 9 + 8 dígitos, ex.: (11) 91234-5678.",
+    };
   return { ok: true, e164: p.e164 };
 }
