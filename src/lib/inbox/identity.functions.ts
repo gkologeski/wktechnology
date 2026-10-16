@@ -69,8 +69,8 @@ export const getWhatsAppConversationOrigin = createServerFn({ method: "POST" })
     const variants = brPhoneVariants(conv.contact_phone);
     const { data: recips } = await sb
       .from("whatsapp_campaign_recipients")
-      .select("variables, created_at, whatsapp_campaigns!inner(workspace_id)")
-      .eq("whatsapp_campaigns.workspace_id", conv.workspace_id)
+      .select("variables, created_at")
+      .eq("workspace_id", conv.workspace_id)
       .in("phone", [...variants, ...variants.map((v: string) => v.replace(/^\+/, ""))])
       .order("created_at", { ascending: false })
       .limit(10);

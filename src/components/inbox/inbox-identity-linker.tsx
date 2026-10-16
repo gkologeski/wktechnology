@@ -7,7 +7,8 @@ import { Link2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
-import { associateInboxIdentity } from "@/lib/inbox/identity.functions";
+import { associateInboxIdentity, getWhatsAppConversationOrigin } from "@/lib/inbox/identity.functions";
+import { useQuery } from "@tanstack/react-query";
 
 type EntityType = "contact" | "lead";
 
@@ -27,10 +28,10 @@ export function InboxIdentityLinker({
   onLinked: () => void;
 }) {
   const associate = useServerFn(associateInboxIdentity);
-  const [entityType, setEntityType] = useState<EntityType>(contactId ? "contact" : "lead");
+  const [entityType, setEntityType] = useState<EntityType>(contactId || !leadId ? "contact" : "lead");
   const [entityId, setEntityId] = useState<string | null>(contactId ?? leadId ?? null);
   useEffect(() => {
-    setEntityType(contactId ? "contact" : "lead");
+    setEntityType(contactId || !leadId ? "contact" : "lead");
     setEntityId(contactId ?? leadId ?? null);
   }, [conversationId, contactId, leadId]);
   const mutation = useMutation({
@@ -47,6 +48,14 @@ export function InboxIdentityLinker({
 
   const linked = !!contactId || !!leadId;
   const { data: linkedCompany } = useLinkedCompany(contactId, leadId);
+  const originFn = useServerFn(getWhatsAppConversationOrigin);
+  const { data: originCompany } = useQuery({
+    queryKey: ["inbox-channel", "whatsapp", "origin", conversationId],
+    enabled: channel === "whatsapp" && !linked,
+    staleTime: 5 * 60_000,
+    queryFn: () => originFn({ data: { conversationId } }),
+  });
+  const suggestCompany = !linked && originCompany && entityType === "contact";
   const label =
     status === "ambiguous"
       ? "Mais de um registro corresponde. Escolha manualmente."
@@ -72,6 +81,23 @@ export function InboxIdentityLinker({
             size="sm"
           />
           <span className="min-w-0 truncate text-xs font-medium">{linkedCompany.name}</span>
+        </div>
+      )}
+      {!linked && originCompany && (
+        <div className="space-y-1 rounded-md border border-dashed border-border p-2">
+          <p className="text-xs text-muted-foreground">Origem da campanha</p>
+          <div className="flex items-center gap-2">
+            <CompanyAvatarFromInfo
+              id={originCompany.id}
+              name={originCompany.name}
+              info={originCompany as never}
+              size="sm"
+            />
+            <span className="min-w-0 truncate text-xs font-medium">{originCompany.name}</span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Escolha um contato desta empresa{entityType === "lead" ? " (selecione Contato)" : ""}.
+          </p>
         </div>
       )}
       <div className="grid grid-cols-2 gap-1 rounded-md bg-muted p-1" aria-label="Tipo de registro">
@@ -103,6 +129,7 @@ export function InboxIdentityLinker({
         select="id, first_name, last_name, email"
         searchColumn="first_name"
         searchColumns={["first_name", "last_name", "email", "phone"]}
+        filters={suggestCompany ? { company_id: originCompany.id } : undefined}
         value={entityId}
         onChange={(id) => setEntityId(id)}
         labelFrom={(row) =>
