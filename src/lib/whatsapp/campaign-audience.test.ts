@@ -3,7 +3,6 @@ import {
   buildFilterFields,
   filterColumnPath,
   FILTER_FIELDS,
-  isAllowedFilter,
   distinctValues,
   isSuggestField,
   buildAudience,
