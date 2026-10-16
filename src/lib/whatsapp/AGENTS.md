@@ -8,4 +8,4 @@
 
 - Cada rodada do disparo espaçado espera no máximo `PACING_RUN_BUDGET_MS` (abaixo do tempo limite da chamada agendada) e relê o status da campanha antes de cada envio; por quê: esperas longas eram cortadas sem liberar o lease e uma pausa precisa valer na hora.
 
-- Número de WhatsApp de Contatos/Leads vive em `whatsapp_e164` (E.164, só celular do Brasil +55 DDD 9XXXXXXXX; fixo, estrangeiro e formato antigo sem o 9 são recusados), normalizado por gatilho no banco e por `src/lib/phone/whatsapp-e164.ts` no app; todo disparo escolhe WhatsApp → Celular → Telefone e nunca usa fixo; por quê: fixo quase nunca tem WhatsApp e gerava falhas em massa.
+- Número de WhatsApp de Contatos/Leads vive em `whatsapp_e164` (E.164, só celular do Brasil +55 DDD 9XXXXXXXX; formato antigo de 8 dígitos 6–9 ganha o 9; fixo e estrangeiro são recusados), normalizado por gatilho no banco e por `src/lib/phone/whatsapp-e164.ts` no app; todo disparo escolhe WhatsApp → Celular → Telefone e nunca usa fixo; por quê: fixo quase nunca tem WhatsApp e gerava falhas em massa.

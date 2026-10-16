@@ -49,7 +49,8 @@ export function classifyPhone(raw: string | null | undefined): ParsedPhone {
       ? { kind: "mobile", e164: `+55${ddd}${local}` }
       : { kind: "invalid", e164: null };
   }
-  // 8 dígitos: 2–5 = fixo; 6–9 = formato antigo sem o 9 (não aceito)
+  // 8 dígitos: 6–9 = celular no formato antigo (ganha o 9); 2–5 = fixo
+  if (/^[6-9]/.test(local)) return { kind: "mobile", e164: `+55${ddd}9${local}` };
   if (/^[2-5]/.test(local)) return { kind: "landline", e164: `+55${ddd}${local}` };
   return { kind: "invalid", e164: null };
 }
