@@ -134,11 +134,13 @@ export const FILTER_FIELDS: Record<AudienceBase, FilterFieldDef[]> = {
     },
     { column: "source", label: "Origem", kind: "text" },
     { column: "company_name", label: "Empresa", kind: "text" },
+    { column: "whatsapp_e164", label: "WhatsApp", kind: "text" },
     { column: "assigned_to", label: "Responsável", kind: "member" },
     { column: "created_at", label: "Criado em", kind: "date" },
   ],
   contacts: [
     { column: "job_title", label: "Cargo", kind: "text" },
+    { column: "whatsapp_e164", label: "WhatsApp", kind: "text" },
     { column: "city", label: "Cidade", kind: "text" },
     { column: "state", label: "Estado", kind: "text" },
     { column: "lifecyclestage", label: "Estágio do ciclo", kind: "text" },
