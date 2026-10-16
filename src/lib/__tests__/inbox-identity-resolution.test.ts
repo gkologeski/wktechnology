@@ -54,3 +54,32 @@ describe("inbox identity resolution", () => {
     expect(buildBrPhoneVariants("+44 20 7946 0958")).toEqual(["442079460958"]);
   });
 });
+
+import {
+  buildBrPhoneVariants as variantsE164,
+  normalizeInboxPhone as normPhone,
+  parseRecipientSource,
+} from "@/lib/inbox/identity-resolution.server";
+
+describe("associação por telefone após disparo", () => {
+  it("encontra com e sem o 9º dígito", () => {
+    const v = variantsE164("+552194025475");
+    expect(v).toContain("5521994025475");
+    expect(v).toContain("21994025475");
+    expect(v).toContain("2194025475");
+  });
+  it("aceita formatos sujos e código de operadora", () => {
+    expect(variantsE164("+55-51-99301-6927")).toContain("5551993016927");
+    expect(variantsE164("(51) 9301-6927")).toContain("5551993016927");
+    expect(variantsE164("0 15 51 99301-6927")).toContain("5551993016927");
+  });
+  it("ignora valores lixo", () => {
+    expect(normPhone("--")).toBeNull();
+    expect(normPhone("0")).toBeNull();
+  });
+  it("lê a origem do destinatário", () => {
+    const id = "02da043e-c44f-4c40-9a6e-13722ce0e1cd";
+    expect(parseRecipientSource(`company:${id}`)).toEqual({ kind: "company", id });
+    expect(parseRecipientSource("manual")).toBeNull();
+  });
+});
