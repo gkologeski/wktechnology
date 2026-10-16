@@ -13,7 +13,10 @@ describe("inboundBody", () => {
   });
   it("localização gera link do mapa", () => {
     expect(
-      inboundBody({ type: "location", location: { latitude: -27.5, longitude: -48.5, name: "WK" } }),
+      inboundBody({
+        type: "location",
+        location: { latitude: -27.5, longitude: -48.5, name: "WK" },
+      }),
     ).toContain("https://maps.google.com/?q=-27.5,-48.5");
   });
   it("contato compartilhado lista nome e telefone", () => {

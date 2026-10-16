@@ -48,7 +48,9 @@ export async function storeInboundMedia(
   const media = m[m.type];
   if (!media?.id) return "skip";
   const h = headers();
-  const metaRes = await fetch(`${GATEWAY_URL}/media/${encodeURIComponent(media.id)}`, { headers: h });
+  const metaRes = await fetch(`${GATEWAY_URL}/media/${encodeURIComponent(media.id)}`, {
+    headers: h,
+  });
   if (metaRes.status === 404 || metaRes.status === 400) {
     await admin
       .from("whatsapp_messages")
@@ -67,8 +69,13 @@ export async function storeInboundMedia(
   if (!dl.ok) throw new Error(`Download [${dl.status}]: ${await dl.text()}`);
   const bytes = await readLimited(dl);
   const contentType =
-    info.mime_type || media.mime_type || dl.headers.get("content-type") || "application/octet-stream";
-  const safe = String(media.filename ?? `${m.type}`).replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 80);
+    info.mime_type ||
+    media.mime_type ||
+    dl.headers.get("content-type") ||
+    "application/octet-stream";
+  const safe = String(media.filename ?? `${m.type}`)
+    .replace(/[^a-zA-Z0-9._-]/g, "_")
+    .slice(0, 80);
   const path = `${msg.workspace_id}/in/${msg.id}-${safe}`;
   const up = await admin.storage.from(BUCKET).upload(path, bytes, { contentType, upsert: true });
   if (up.error) throw new Error(up.error.message);

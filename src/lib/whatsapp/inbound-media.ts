@@ -18,7 +18,8 @@ export function inboundBody(m: any): string {
   if (m.type === "button") return m.button?.text ?? "";
   if (m.type === "interactive")
     return m.interactive?.button_reply?.title || m.interactive?.list_reply?.title || "";
-  if (m.type === "reaction") return m.reaction?.emoji ? `Reagiu com ${m.reaction.emoji}` : "Reação removida";
+  if (m.type === "reaction")
+    return m.reaction?.emoji ? `Reagiu com ${m.reaction.emoji}` : "Reação removida";
   if (m.type === "location") {
     const l = m.location ?? {};
     const name = [l.name, l.address].filter(Boolean).join(" — ");
@@ -31,7 +32,10 @@ export function inboundBody(m: any): string {
   if (m.type === "contacts") {
     const list = (m.contacts ?? []).map((c: any) => {
       const n = c?.name?.formatted_name ?? "Contato";
-      const p = (c?.phones ?? []).map((x: any) => x?.phone).filter(Boolean).join(", ");
+      const p = (c?.phones ?? [])
+        .map((x: any) => x?.phone)
+        .filter(Boolean)
+        .join(", ");
       return p ? `${n}: ${p}` : n;
     });
     return ["👤 Contato compartilhado", ...list].join("\n");

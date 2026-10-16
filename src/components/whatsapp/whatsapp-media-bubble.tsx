@@ -57,7 +57,9 @@ export function WhatsAppMediaBubble({ url, contentType, filename, className }: P
       }`}
     >
       <Icon className="h-4 w-4 shrink-0" aria-hidden />
-      <span className="truncate">{filename || (kind === "pdf" ? "Abrir PDF" : "Baixar anexo")}</span>
+      <span className="truncate">
+        {filename || (kind === "pdf" ? "Abrir PDF" : "Baixar anexo")}
+      </span>
     </a>
   );
 }
