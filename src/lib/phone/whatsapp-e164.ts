@@ -34,9 +34,8 @@ export function classifyPhone(raw: string | null | undefined): ParsedPhone {
     else d = d.replace(/^0+/, "");
   }
   if ((hadPlus || d.length > 13) && !d.startsWith("55")) {
-    return d.length >= 8 && d.length <= 15
-      ? { kind: "foreign", e164: `+${d}` }
-      : { kind: "invalid", e164: null };
+    // Estrangeiro: campanhas WhatsApp só aceitam celular do Brasil.
+    return { kind: d.length >= 8 && d.length <= 15 ? "foreign" : "invalid", e164: null };
   }
   if (d.length === 10 || d.length === 11) d = `55${d}`;
   if (!d.startsWith("55") || (d.length !== 12 && d.length !== 13)) {
@@ -50,8 +49,7 @@ export function classifyPhone(raw: string | null | undefined): ParsedPhone {
       ? { kind: "mobile", e164: `+55${ddd}${local}` }
       : { kind: "invalid", e164: null };
   }
-  // 8 dígitos: 6–9 = celular antigo (sem o 9); 2–5 = fixo
-  if (/^[6-9]/.test(local)) return { kind: "mobile", e164: `+55${ddd}9${local}` };
+  // 8 dígitos: 2–5 = fixo; 6–9 = formato antigo sem o 9 (não aceito)
   if (/^[2-5]/.test(local)) return { kind: "landline", e164: `+55${ddd}${local}` };
   return { kind: "invalid", e164: null };
 }
@@ -59,7 +57,7 @@ export function classifyPhone(raw: string | null | undefined): ParsedPhone {
 /** E.164 do celular (ou número estrangeiro); null para fixo/inválido. */
 export function toWhatsAppE164(raw: string | null | undefined): string | null {
   const p = classifyPhone(raw);
-  return p.kind === "mobile" || p.kind === "foreign" ? p.e164 : null;
+  return p.kind === "mobile" ? p.e164 : null;
 }
 
 export function isBrMobile(raw: string | null | undefined): boolean {
@@ -81,7 +79,7 @@ export function pickWhatsAppNumber(fields: Array<string | null | undefined>): Wh
     for (const c of parsePhoneCandidates(f)) {
       sawAny = true;
       const p = classifyPhone(c);
-      if ((p.kind === "mobile" || p.kind === "foreign") && p.e164) {
+      if (p.kind === "mobile" && p.e164) {
         return { status: "ok", e164: p.e164 };
       }
       if (p.kind === "landline") sawLandline = true;
@@ -98,7 +96,10 @@ export function validateWhatsAppInput(
   const p = classifyPhone(raw);
   if (p.kind === "landline")
     return { ok: false, message: "Telefone fixo não pode ser usado como WhatsApp." };
-  if (!p.e164 || p.kind === "invalid")
-    return { ok: false, message: "Número inválido. Use DDD + celular, ex.: (11) 91234-5678." };
+  if (p.kind !== "mobile" || !p.e164)
+    return {
+      ok: false,
+      message: "Use celular do Brasil: DDD + 9 + 8 dígitos, ex.: (11) 91234-5678.",
+    };
   return { ok: true, e164: p.e164 };
 }
