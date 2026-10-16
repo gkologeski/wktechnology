@@ -550,3 +550,33 @@ export const getWhatsAppCampaignForEdit = createServerFn({ method: "POST" })
     if (error) throw error;
     return camp;
   });
+
+export const listAudienceFieldValues = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        entity: z.enum(["leads", "contacts", "companies", "deals"]),
+        column: z.string().max(60),
+        search: z.string().max(100).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { isSuggestField, distinctValues } = await import("@/lib/whatsapp/campaign-audience");
+    if (!isSuggestField(data.entity, data.column)) throw new Error("Campo não permitido.");
+    const workspaceId = await resolveActiveWorkspace(context.userId);
+    let q = (context.supabase as any)
+      .from(data.entity)
+      .select(data.column)
+      .eq("workspace_id", workspaceId)
+      .not(data.column, "is", null)
+      .neq(data.column, "")
+      .order(data.column, { ascending: true })
+      .limit(5000);
+    const term = (data.search ?? "").replace(/[%_,()]/g, " ").trim();
+    if (term) q = q.ilike(data.column, `%${term}%`);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    return distinctValues(((rows ?? []) as Record<string, unknown>[]).map((r) => r[data.column]));
+  });

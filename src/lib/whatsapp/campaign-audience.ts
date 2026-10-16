@@ -116,6 +116,8 @@ export type FilterFieldDef = {
   label: string;
   kind: "text" | "enum" | "date" | "member";
   options?: { value: string; label: string }[];
+  /** Mostra lista com os valores já existentes no workspace (texto livre continua aceito). */
+  suggest?: boolean;
 };
 
 export const FILTER_FIELDS: Record<AudienceBase, FilterFieldDef[]> = {
@@ -132,25 +134,25 @@ export const FILTER_FIELDS: Record<AudienceBase, FilterFieldDef[]> = {
         { value: "nurturing", label: "Em nutrição" },
       ],
     },
-    { column: "source", label: "Origem", kind: "text" },
-    { column: "company_name", label: "Empresa", kind: "text" },
+    { column: "source", suggest: true, label: "Origem", kind: "text" },
+    { column: "company_name", suggest: true, label: "Empresa", kind: "text" },
     { column: "whatsapp_e164", label: "WhatsApp", kind: "text" },
     { column: "assigned_to", label: "Responsável", kind: "member" },
     { column: "created_at", label: "Criado em", kind: "date" },
   ],
   contacts: [
-    { column: "job_title", label: "Cargo", kind: "text" },
+    { column: "job_title", suggest: true, label: "Cargo", kind: "text" },
     { column: "whatsapp_e164", label: "WhatsApp", kind: "text" },
-    { column: "city", label: "Cidade", kind: "text" },
-    { column: "state", label: "Estado", kind: "text" },
-    { column: "lifecyclestage", label: "Estágio do ciclo", kind: "text" },
+    { column: "city", suggest: true, label: "Cidade", kind: "text" },
+    { column: "state", suggest: true, label: "Estado", kind: "text" },
+    { column: "lifecyclestage", suggest: true, label: "Estágio do ciclo", kind: "text" },
     { column: "assigned_to", label: "Responsável", kind: "member" },
     { column: "created_at", label: "Criado em", kind: "date" },
   ],
   companies: [
-    { column: "industry", label: "Setor", kind: "text" },
-    { column: "city", label: "Cidade", kind: "text" },
-    { column: "state", label: "Estado", kind: "text" },
+    { column: "industry", suggest: true, label: "Setor", kind: "text" },
+    { column: "city", suggest: true, label: "Cidade", kind: "text" },
+    { column: "state", suggest: true, label: "Estado", kind: "text" },
     { column: "assigned_to", label: "Responsável", kind: "member" },
     { column: "created_at", label: "Criado em", kind: "date" },
   ],
@@ -168,8 +170,8 @@ export const FILTER_FIELDS: Record<AudienceBase, FilterFieldDef[]> = {
         { value: "lost", label: "Perdido" },
       ],
     },
-    { column: "source", label: "Origem", kind: "text" },
-    { column: "service_line", label: "Linha de serviço", kind: "text" },
+    { column: "source", suggest: true, label: "Origem", kind: "text" },
+    { column: "service_line", suggest: true, label: "Linha de serviço", kind: "text" },
     { column: "assigned_to", label: "Responsável", kind: "member" },
     { column: "created_at", label: "Criado em", kind: "date" },
   ],
@@ -419,4 +421,21 @@ export function buildAudience(
 
 export function fullName(first?: string | null, last?: string | null): string {
   return [first, last].filter((s) => s && s.trim()).join(" ");
+}
+
+/** Campo com lista de valores conhecidos permitido para a entidade. */
+export function isSuggestField(base: AudienceBase, column: string): boolean {
+  return FILTER_FIELDS[base].some((f) => f.column === column && f.suggest);
+}
+
+/** Valores únicos, sem vazios, ordenados em PT-BR. */
+export function distinctValues(raw: unknown[], max = 200): string[] {
+  const seen = new Map<string, string>();
+  for (const v of raw) {
+    const s = typeof v === "string" ? v.trim() : v == null ? "" : String(v).trim();
+    if (!s) continue;
+    const k = s.toLocaleLowerCase("pt-BR");
+    if (!seen.has(k)) seen.set(k, s);
+  }
+  return [...seen.values()].sort((a, b) => a.localeCompare(b, "pt-BR")).slice(0, max);
 }
