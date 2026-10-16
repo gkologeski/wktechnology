@@ -960,6 +960,13 @@
       "when": 1792149366096,
       "tag": "0136_whatsapp_e164_normalize_trigger",
       "breakpoints": true
+    },
+    {
+      "idx": 137,
+      "version": "7",
+      "when": 1792162537685,
+      "tag": "0137_wa_strict_br_mobile",
+      "breakpoints": true
     }
   ]
 }
