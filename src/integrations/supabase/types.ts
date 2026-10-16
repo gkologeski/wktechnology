@@ -7869,6 +7869,7 @@ export type Database = {
           id: string
           lead_id: string | null
           name: string | null
+          override_recent: boolean
           owner_id: string
           sent_at: string | null
           status: Database["public"]["Enums"]["email_broadcast_recipient_status"]
@@ -7884,6 +7885,7 @@ export type Database = {
           id?: string
           lead_id?: string | null
           name?: string | null
+          override_recent?: boolean
           owner_id: string
           sent_at?: string | null
           status?: Database["public"]["Enums"]["email_broadcast_recipient_status"]
@@ -7899,6 +7901,7 @@ export type Database = {
           id?: string
           lead_id?: string | null
           name?: string | null
+          override_recent?: boolean
           owner_id?: string
           sent_at?: string | null
           status?: Database["public"]["Enums"]["email_broadcast_recipient_status"]
@@ -7950,6 +7953,7 @@ export type Database = {
           name: string
           owner_id: string
           rate_per_minute: number
+          recent_contact_days: number
           reply_to: string | null
           scheduled_at: string
           segment_id: string | null
@@ -7975,6 +7979,7 @@ export type Database = {
           name: string
           owner_id?: string
           rate_per_minute?: number
+          recent_contact_days?: number
           reply_to?: string | null
           scheduled_at?: string
           segment_id?: string | null
@@ -8000,6 +8005,7 @@ export type Database = {
           name?: string
           owner_id?: string
           rate_per_minute?: number
+          recent_contact_days?: number
           reply_to?: string | null
           scheduled_at?: string
           segment_id?: string | null
@@ -21118,6 +21124,7 @@ export type Database = {
           created_at: string
           error: string | null
           id: string
+          override_recent: boolean
           owner_id: string
           phone: string
           quota_reserved_until: string | null
@@ -21134,6 +21141,7 @@ export type Database = {
           created_at?: string
           error?: string | null
           id?: string
+          override_recent?: boolean
           owner_id: string
           phone: string
           quota_reserved_until?: string | null
@@ -21150,6 +21158,7 @@ export type Database = {
           created_at?: string
           error?: string | null
           id?: string
+          override_recent?: boolean
           owner_id?: string
           phone?: string
           quota_reserved_until?: string | null
@@ -21194,6 +21203,7 @@ export type Database = {
           next_send_at: string | null
           owner_id: string
           rate_per_minute: number
+          recent_contact_days: number
           scheduled_at: string | null
           sdr_enabled: boolean
           sdr_playbook_id: string | null
@@ -21224,6 +21234,7 @@ export type Database = {
           next_send_at?: string | null
           owner_id: string
           rate_per_minute?: number
+          recent_contact_days?: number
           scheduled_at?: string | null
           sdr_enabled?: boolean
           sdr_playbook_id?: string | null
@@ -21254,6 +21265,7 @@ export type Database = {
           next_send_at?: string | null
           owner_id?: string
           rate_per_minute?: number
+          recent_contact_days?: number
           scheduled_at?: string | null
           sdr_enabled?: boolean
           sdr_playbook_id?: string | null

@@ -38,6 +38,7 @@ type Campaign = {
   send_interval_min_s: number | null;
   send_interval_max_s: number | null;
   next_send_at: string | null;
+  recent_contact_days?: number | null;
 };
 
 /** Variáveis posicionais do template, renderizadas com os dados do destinatário. */
@@ -64,7 +65,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
   const batch = Math.min(allowed, batchOverride ?? 20);
   const { data: recips } = await supabaseAdmin
     .from("whatsapp_campaign_recipients")
-    .select("id, phone, variables, contact_id")
+    .select("id, phone, variables, contact_id, override_recent")
     .eq("campaign_id", camp.id)
     .eq("status", "pending")
     .limit(batch);
@@ -135,6 +136,27 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
         .update({ status: "skipped", error: "Telefone fixo ou inválido (sem WhatsApp)" })
         .eq("id", r.id);
       continue;
+    }
+    // Terceira proteção: mesmo telefone recebeu WhatsApp de OUTRA campanha há pouco.
+    const recentDays = camp.recent_contact_days ?? 0;
+    if (recentDays > 0 && !r.override_recent) {
+      const { brPhoneVariants } = await import("@/lib/whatsapp/phone-variants");
+      const since = new Date(Date.now() - recentDays * 86_400_000).toISOString();
+      const { count: recentHits } = await supabaseAdmin
+        .from("whatsapp_campaign_recipients")
+        .select("id", { count: "exact", head: true })
+        .eq("workspace_id", camp.workspace_id)
+        .eq("status", "sent")
+        .neq("campaign_id", camp.id)
+        .gte("sent_at", since)
+        .in("phone", brPhoneVariants(r.phone));
+      if ((recentHits ?? 0) > 0) {
+        await supabaseAdmin
+          .from("whatsapp_campaign_recipients")
+          .update({ status: "skipped", error: "Envio recente" })
+          .eq("id", r.id);
+        continue;
+      }
     }
     if (pol?.template_daily_limit != null) {
       const { data: q } = await supabaseAdmin.rpc("wa_reserve_template_quota", {
@@ -343,7 +365,7 @@ export const Route = createFileRoute("/api/public/hooks/whatsapp-campaign-tick")
           const { data: camps, error } = await supabaseAdmin
             .from("whatsapp_campaigns")
             .select(
-              "id, owner_id, body_template, template_name, template_language, content_variables_template, media_url, media_content_type, rate_per_minute, total, sent, failed, scheduled_at, workspace_id, send_interval_min_s, send_interval_max_s, next_send_at",
+              "id, owner_id, body_template, template_name, template_language, content_variables_template, media_url, media_content_type, rate_per_minute, total, sent, failed, scheduled_at, workspace_id, send_interval_min_s, send_interval_max_s, next_send_at, recent_contact_days",
             )
             .eq("status", "running")
             .or(`scheduled_at.is.null,scheduled_at.lte.${nowIso}`)

@@ -88,9 +88,40 @@ const CreateInput = z.object({
   sdr_playbook_id: z.string().uuid().nullable().optional(),
   send_interval_min_s: z.number().int().min(0).max(3600).nullable().optional(),
   send_interval_max_s: z.number().int().min(0).max(3600).nullable().optional(),
+  /** Dias sem reenviar a quem recebeu WhatsApp de outra campanha (0 desliga). */
+  recent_contact_days: z.number().int().min(0).max(365).optional(),
+  /** Telefones liberados manualmente apesar do envio recente. */
+  recent_overrides: z.array(z.string().max(40)).max(5000).optional(),
 });
 
-const PreviewInput = CreateInput.pick({ audience: true, variable_map: true });
+const PreviewInput = CreateInput.pick({
+  audience: true,
+  variable_map: true,
+  recent_contact_days: true,
+  recent_overrides: true,
+});
+
+/** Separa quem recebeu WhatsApp de campanha nos últimos N dias (mesmo canal). */
+async function applyRecentGuard<T extends { phone: string }>(
+  supabase: unknown,
+  workspaceId: string,
+  days: number,
+  overrides: string[] | undefined,
+  items: T[],
+) {
+  const { recentSince, splitRecent, phoneRecentKey } =
+    await import("@/lib/campaigns/recent-contact");
+  const since = recentSince(days);
+  if (!since) return { kept: items.map((i) => ({ ...i, overrideRecent: false })), removed: [] };
+  const { loadRecentWhatsAppSends } = await import("@/lib/whatsapp/campaign-audience.server");
+  const recent = await loadRecentWhatsAppSends(supabase, workspaceId, since);
+  return splitRecent(
+    items,
+    (i) => phoneRecentKey(i.phone),
+    recent,
+    new Set((overrides ?? []).map(phoneRecentKey)),
+  );
+}
 
 /** Playbook do SDR precisa existir e ser visível ao usuário (RLS). Exige template oficial. */
 async function sdrColumns(
@@ -171,7 +202,20 @@ export const createWhatsAppCampaign = createServerFn({ method: "POST" })
         variables: { ...r.variables, _source: r.source },
       }));
     }
-    if (recipients.length === 0) throw new Error("Nenhum destinatário válido no público.");
+    const recentDays = data.recent_contact_days ?? 7;
+    const guarded = await applyRecentGuard(
+      supabase,
+      workspaceId,
+      recentDays,
+      data.recent_overrides,
+      recipients,
+    );
+    if (guarded.kept.length === 0)
+      throw new Error(
+        guarded.removed.length > 0
+          ? "Todos os destinatários receberam mensagem recentemente. Libere manualmente ou reduza o período."
+          : "Nenhum destinatário válido no público.",
+      );
     const { data: camp, error } = await supabase
       .from("whatsapp_campaigns")
       .insert({
@@ -186,7 +230,8 @@ export const createWhatsAppCampaign = createServerFn({ method: "POST" })
         rate_per_minute: data.rate_per_minute,
         scheduled_at: data.scheduled_at ?? new Date().toISOString(),
         status: "draft",
-        total: recipients.length,
+        total: guarded.kept.length,
+        recent_contact_days: recentDays,
         ...(await sdrColumns(supabase, data.sdr_playbook_id, data.template_name)),
         ...campaignIntervalColumns(data.send_interval_min_s, data.send_interval_max_s),
         workspace_id: workspaceId,
@@ -195,12 +240,13 @@ export const createWhatsAppCampaign = createServerFn({ method: "POST" })
       .single();
     if (error) throw error;
 
-    const rows = recipients.map((r) => ({
+    const rows = guarded.kept.map((r) => ({
       campaign_id: camp.id,
       owner_id: userId,
       contact_id: r.contactId,
       phone: r.phone,
       variables: r.variables,
+      override_recent: r.overrideRecent,
       status: "pending" as const,
     }));
     // Insere em lotes de 500 para evitar payload gigante
@@ -460,11 +506,26 @@ export const previewCampaignAudience = createServerFn({ method: "POST" })
       Object.entries(data.variable_map ?? {}).filter(([, b]) => isAllowedField(base, b.field)),
     );
     const s = buildAudience(rows, map, await loadOptedOutPhones(supabase, workspaceId));
+    const guarded = await applyRecentGuard(
+      supabase,
+      workspaceId,
+      data.recent_contact_days ?? 7,
+      data.recent_overrides,
+      s.recipients,
+    );
     return {
       base,
       found: rows.length,
       truncated,
-      included: s.recipients.length,
+      included: guarded.kept.length,
+      recentRemovedCount: guarded.removed.length,
+      recentOverriddenCount: guarded.kept.filter((r) => r.overrideRecent).length,
+      recentRemoved: guarded.removed.slice(0, 200).map((r) => ({
+        label: r.label,
+        phone: r.phone,
+        at: r.at,
+        campaignName: r.campaignName,
+      })),
       excluded: s.excluded,
       withMissing: s.withMissing,
       samples: s.recipients.slice(0, 3).map((r) => ({
@@ -487,4 +548,34 @@ export const getWhatsAppCampaignForEdit = createServerFn({ method: "POST" })
       .single();
     if (error) throw error;
     return camp;
+  });
+
+export const listAudienceFieldValues = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        entity: z.enum(["leads", "contacts", "companies", "deals"]),
+        column: z.string().max(60),
+        search: z.string().max(100).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { isSuggestField, distinctValues } = await import("@/lib/whatsapp/campaign-audience");
+    if (!isSuggestField(data.entity, data.column)) throw new Error("Campo não permitido.");
+    const workspaceId = await resolveActiveWorkspace(context.userId);
+    let q = (context.supabase as any)
+      .from(data.entity)
+      .select(data.column)
+      .eq("workspace_id", workspaceId)
+      .not(data.column, "is", null)
+      .neq(data.column, "")
+      .order(data.column, { ascending: true })
+      .limit(5000);
+    const term = (data.search ?? "").replace(/[%_,()]/g, " ").trim();
+    if (term) q = q.ilike(data.column, `%${term}%`);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    return distinctValues(((rows ?? []) as Record<string, unknown>[]).map((r) => r[data.column]));
   });

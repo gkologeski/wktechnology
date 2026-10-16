@@ -568,3 +568,30 @@ export async function loadOptedOutPhones(db: Db, workspaceId: string): Promise<S
   if (error) throw new Error(error.message);
   return new Set(((data ?? []) as R[]).map((r) => r.contact_phone).filter(Boolean) as string[]);
 }
+
+/** Envios de WhatsApp de campanhas do workspace desde `since` (mesmo canal), por telefone. */
+export async function loadRecentWhatsAppSends(
+  db: Db,
+  workspaceId: string,
+  since: string,
+  excludeCampaignId?: string,
+) {
+  const { indexRecent, phoneRecentKey } = await import("@/lib/campaigns/recent-contact");
+  let q = db
+    .from("whatsapp_campaign_recipients")
+    .select("phone, sent_at, campaign_id, whatsapp_campaigns(name)")
+    .eq("workspace_id", workspaceId)
+    .eq("status", "sent")
+    .gte("sent_at", since)
+    .limit(20000);
+  if (excludeCampaignId) q = q.neq("campaign_id", excludeCampaignId);
+  const { data, error } = await q;
+  if (error) throw new Error(error.message);
+  return indexRecent(
+    ((data ?? []) as Db[]).map((r) => ({
+      key: phoneRecentKey(String(r.phone ?? "")),
+      at: (r.sent_at as string | null) ?? null,
+      campaignName: (r.whatsapp_campaigns?.name as string | undefined) ?? null,
+    })),
+  );
+}

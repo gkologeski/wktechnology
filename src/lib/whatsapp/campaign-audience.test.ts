@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  distinctValues,
+  isSuggestField,
   buildAudience,
   fieldsForBase,
   isAllowedField,
@@ -175,5 +177,15 @@ describe("público em grupos E/OU", () => {
     ).toBe(false);
     expect(isAllowedFilter("deals", { column: "stage", op: "ilike", value: "won" })).toBe(false);
     expect(isAllowedFilter("deals", { column: "stage", op: "is_null", value: "" })).toBe(true);
+  });
+});
+
+describe("valores conhecidos dos filtros", () => {
+  it("Setor de empresas tem lista; campo fora da lista não", () => {
+    expect(isSuggestField("companies", "industry")).toBe(true);
+    expect(isSuggestField("companies", "name")).toBe(false);
+  });
+  it("remove vazios e repetidos sem diferenciar maiúsculas", () => {
+    expect(distinctValues(["TI", " ti ", "", null, "Saúde"])).toEqual(["Saúde", "TI"]);
   });
 });

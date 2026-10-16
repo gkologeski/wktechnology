@@ -260,11 +260,14 @@ export function InboxAvatar({ label, className }: { label: string; className?: s
 export function InboxContext({
   initials,
   title,
+  titleSlot,
   subtitle,
   children,
 }: {
   initials: string;
   title: string;
+  /** Substitui o texto do título (ex.: link para a ficha), mantendo o estilo. */
+  titleSlot?: ReactNode;
   subtitle?: string;
   children?: ReactNode;
 }) {
@@ -276,7 +279,7 @@ export function InboxContext({
             {initials}
           </div>
           <h2 className="mt-4 truncate font-[var(--font-heading)] font-semibold text-foreground">
-            {title}
+            {titleSlot ?? title}
           </h2>
           {subtitle ? (
             <p className="mt-1 truncate text-xs text-muted-foreground">{subtitle}</p>
