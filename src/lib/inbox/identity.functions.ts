@@ -84,14 +84,15 @@ export const getWhatsAppConversationOrigin = createServerFn({ method: "POST" })
         .eq("id", m[1])
         .eq("workspace_id", conv.workspace_id)
         .maybeSingle();
-      if (company) return company as {
-        id: string;
-        name: string;
-        logo_url: string | null;
-        logo_source: string | null;
-        domain: string | null;
-        website: string | null;
-      };
+      if (company)
+        return company as {
+          id: string;
+          name: string;
+          logo_url: string | null;
+          logo_source: string | null;
+          domain: string | null;
+          website: string | null;
+        };
     }
     return null;
   });

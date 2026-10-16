@@ -7,7 +7,10 @@ import { Link2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
-import { associateInboxIdentity, getWhatsAppConversationOrigin } from "@/lib/inbox/identity.functions";
+import {
+  associateInboxIdentity,
+  getWhatsAppConversationOrigin,
+} from "@/lib/inbox/identity.functions";
 import { useQuery } from "@tanstack/react-query";
 
 type EntityType = "contact" | "lead";
@@ -28,7 +31,9 @@ export function InboxIdentityLinker({
   onLinked: () => void;
 }) {
   const associate = useServerFn(associateInboxIdentity);
-  const [entityType, setEntityType] = useState<EntityType>(contactId || !leadId ? "contact" : "lead");
+  const [entityType, setEntityType] = useState<EntityType>(
+    contactId || !leadId ? "contact" : "lead",
+  );
   const [entityId, setEntityId] = useState<string | null>(contactId ?? leadId ?? null);
   useEffect(() => {
     setEntityType(contactId || !leadId ? "contact" : "lead");

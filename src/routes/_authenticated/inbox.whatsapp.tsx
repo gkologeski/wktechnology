@@ -163,9 +163,14 @@ function WhatsAppInbox() {
       (selectedSnapshot?.id === selected ? selectedSnapshot : undefined),
     [conversations, selectedSnapshot, selected],
   );
-  const identityNames = useInboxIdentityNames(current ? [...conversations, current] : conversations);
-  const nameOf = (c: { contact_id?: string | null; lead_id?: string | null; contact_phone: string }) =>
-    conversationDisplayName(c, identityNames.contacts, identityNames.leads);
+  const identityNames = useInboxIdentityNames(
+    current ? [...conversations, current] : conversations,
+  );
+  const nameOf = (c: {
+    contact_id?: string | null;
+    lead_id?: string | null;
+    contact_phone: string;
+  }) => conversationDisplayName(c, identityNames.contacts, identityNames.leads);
   const currentName = current ? nameOf(current) : "";
   const currentNamed = !!current && currentName !== current.contact_phone;
   // Janela de 24 h + catálogo pelo hook único do compositor (o servidor revalida no envio).
