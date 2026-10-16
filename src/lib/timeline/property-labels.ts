@@ -160,3 +160,8 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 export function isUuid(v: unknown): v is string {
   return typeof v === "string" && UUID_RE.test(v);
 }
+
+/** Colunas derivadas pelo banco (ex.: `*_digits`) não aparecem no histórico. */
+export function isInternalProperty(key: string): boolean {
+  return key.endsWith("_digits");
+}

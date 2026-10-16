@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { formatDateTime } from "@/lib/crm";
-import { labelProperty, labelValue } from "@/lib/timeline/property-labels";
+import { isInternalProperty, labelProperty, labelValue } from "@/lib/timeline/property-labels";
 import { useHistoryLabels } from "@/components/activity/use-history-labels";
 
 type Row = {
@@ -56,7 +56,7 @@ export function PropertyHistoryDrawer({
           {rows.length === 0 && (
             <p className="text-sm text-muted-foreground">Sem alterações registradas.</p>
           )}
-          {rows.map((h) => (
+          {rows.filter((h) => !isInternalProperty(h.property)).map((h) => (
             <li key={h.id} className="rounded border p-3 text-sm">
               <div className="font-medium">{labelProperty(h.property)}</div>
               <div className="text-xs text-muted-foreground mt-1">

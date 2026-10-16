@@ -6,7 +6,12 @@ import { ArrowRight, ChevronDown, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatDateTime } from "@/lib/crm";
-import { MOVEMENT_PROPERTIES, labelProperty, labelValue } from "@/lib/timeline/property-labels";
+import {
+  MOVEMENT_PROPERTIES,
+  isInternalProperty,
+  labelProperty,
+  labelValue,
+} from "@/lib/timeline/property-labels";
 import type { HistoryGroup, PropertyChangeRow } from "@/lib/timeline/history-groups";
 
 const COLLAPSED_COUNT = 3;
@@ -22,8 +27,9 @@ export function HistoryTimelineItem({
 }) {
   const [expanded, setExpanded] = useState(false);
   const actor = resolveActor(group.changed_by);
-  const total = group.changes.length;
-  const visible = expanded ? group.changes : group.changes.slice(0, COLLAPSED_COUNT);
+  const changes = group.changes.filter((c) => !isInternalProperty(c.property));
+  const total = changes.length;
+  const visible = expanded ? changes : changes.slice(0, COLLAPSED_COUNT);
   const hidden = total - visible.length;
 
   const display = (c: PropertyChangeRow, which: "old" | "new") => {
@@ -33,7 +39,7 @@ export function HistoryTimelineItem({
 
   const headline =
     total === 1
-      ? `${actor} alterou ${labelProperty(group.changes[0].property)}`
+      ? `${actor} alterou ${labelProperty(changes[0]?.property ?? "")}`
       : `${actor} atualizou ${total} propriedades`;
 
   return (
