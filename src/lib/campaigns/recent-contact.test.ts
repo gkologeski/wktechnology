@@ -21,7 +21,11 @@ describe("controle de reenvio recente", () => {
 
   it("retira quem recebeu dentro do período", () => {
     const recent = indexRecent([
-      { key: phoneRecentKey("+5548991864243"), at: "2026-10-15T10:00:00Z", campaignName: "ICP 001" },
+      {
+        key: phoneRecentKey("+5548991864243"),
+        at: "2026-10-15T10:00:00Z",
+        campaignName: "ICP 001",
+      },
     ]);
     const r = splitRecent(items, key, recent, new Set());
     expect(r.removed.map((x) => x.phone)).toEqual(["+5548991864243"]);

@@ -109,9 +109,8 @@ async function applyRecentGuard<T extends { phone: string }>(
   overrides: string[] | undefined,
   items: T[],
 ) {
-  const { recentSince, splitRecent, phoneRecentKey } = await import(
-    "@/lib/campaigns/recent-contact"
-  );
+  const { recentSince, splitRecent, phoneRecentKey } =
+    await import("@/lib/campaigns/recent-contact");
   const since = recentSince(days);
   if (!since) return { kept: items.map((i) => ({ ...i, overrideRecent: false })), removed: [] };
   const { loadRecentWhatsAppSends } = await import("@/lib/whatsapp/campaign-audience.server");
