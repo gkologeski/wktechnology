@@ -58,21 +58,21 @@ export function InboxWorkspace({
   return (
     <div className="relative flex h-full min-h-[32rem] flex-col overflow-hidden bg-product-canvas font-[var(--font-body)]">
       <header className="mb-2 shrink-0 overflow-hidden rounded-md bg-product-header ring-1 ring-border-subtle">
-        <div className="grid min-w-0 gap-3 p-3 xl:px-4">
-          <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-            <div className="min-w-0">
-              <h1 className="truncate font-[var(--font-heading)] text-base font-semibold text-text-primary">
-                {title}
-              </h1>
-              <p className="mt-0.5 truncate text-xs text-text-tertiary">{description}</p>
-            </div>
-            {actions ? (
-              <div className="grid min-w-0 grid-cols-2 items-center gap-2 sm:flex sm:justify-end [&_[data-slot=button]]:min-w-0 sm:[&_[data-slot=button]]:shrink-0">
-                {actions}
-              </div>
-            ) : null}
+        <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 px-3 py-1.5 xl:px-4">
+          <div className="min-w-0 shrink-0" title={description}>
+            <h1 className="truncate font-[var(--font-heading)] text-sm font-semibold text-text-primary">
+              {title}
+            </h1>
+            <p className="sr-only">{description}</p>
           </div>
-          <InboxChannelTabs />
+          <div className="min-w-0 flex-1">
+            <InboxChannelTabs />
+          </div>
+          {actions ? (
+            <div className="flex min-w-0 items-center gap-2 [&_[data-slot=button]]:h-8 [&_[data-slot=button]]:shrink-0">
+              {actions}
+            </div>
+          ) : null}
         </div>
       </header>
       <div

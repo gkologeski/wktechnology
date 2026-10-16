@@ -715,8 +715,8 @@ function WhatsAppInbox() {
                         ? "Fora da janela de 24 horas: envie um modelo aprovado"
                         : "Escreva uma mensagem…"
                     }
-                    rows={2}
-                    className="min-h-12 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
+                    rows={3}
+                    className="field-sizing-content min-h-20 max-h-60 resize-none overflow-y-auto border-0 bg-transparent shadow-none focus-visible:ring-0"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
                         e.preventDefault();
