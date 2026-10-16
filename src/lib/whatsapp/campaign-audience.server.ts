@@ -323,7 +323,9 @@ export async function loadAudienceRows(
     if (groups.length > 10 || groups.some((g) => g.filters.length > 20))
       throw new Error("Público com grupos ou filtros demais.");
     const allowed =
-      groups.length && senderId ? await loadServerFilterFields(db, workspaceId, senderId) : undefined;
+      groups.length && senderId
+        ? await loadServerFilterFields(db, workspaceId, senderId)
+        : undefined;
     if (groups.some((g) => g.filters.some((f) => !isAllowedFilter(fBase, f, allowed))))
       throw new Error("Filtro não permitido.");
     if (groups.length === 0) {

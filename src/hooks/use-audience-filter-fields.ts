@@ -37,7 +37,9 @@ export function useAudienceFilterFields(): { fields: FilterFieldCatalog; isLoadi
         out[e] = FILTER_FIELDS[e];
         return;
       }
-      const cps = ((custom.data ?? []) as { entity: string; key: string; label: string; enabled: boolean }[])
+      const cps = (
+        (custom.data ?? []) as { entity: string; key: string; label: string; enabled: boolean }[]
+      )
         .filter((c) => c.entity === e && c.enabled)
         .map((c) => ({ key: c.key, label: c.label }));
       out[e] = buildFilterFields(e, cat, cps);

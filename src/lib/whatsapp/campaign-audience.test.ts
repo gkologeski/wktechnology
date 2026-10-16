@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildFilterFields,
+  filterColumnPath,
+  FILTER_FIELDS,
+  isAllowedFilter,
   distinctValues,
   isSuggestField,
   buildAudience,
@@ -207,23 +211,39 @@ describe("filtros com catálogo completo", () => {
     expect(deals.some((d) => d.column === "cf:nps")).toBe(true);
   });
   it("exclui referências não-usuário, *_digits e tokens", () => {
-    expect(deals.some((d) => ["company_id", "mobile_digits", "portal_token"].includes(d.column))).toBe(false);
+    expect(
+      deals.some((d) => ["company_id", "mobile_digits", "portal_token"].includes(d.column)),
+    ).toBe(false);
   });
   it("aceita campo do catálogo e recusa fora dele", () => {
-    expect(isAllowedFilter("deals", { column: "amount", op: "gte", value: "1000" }, fields)).toBe(true);
-    expect(isAllowedFilter("deals", { column: "inexistente", op: "eq", value: "x" }, fields)).toBe(false);
-    expect(isAllowedFilter("deals", { column: "mobile_digits", op: "eq", value: "1" }, fields)).toBe(false);
+    expect(isAllowedFilter("deals", { column: "amount", op: "gte", value: "1000" }, fields)).toBe(
+      true,
+    );
+    expect(isAllowedFilter("deals", { column: "inexistente", op: "eq", value: "x" }, fields)).toBe(
+      false,
+    );
+    expect(
+      isAllowedFilter("deals", { column: "mobile_digits", op: "eq", value: "1" }, fields),
+    ).toBe(false);
   });
   it("recusa operador incompatível e valor inválido", () => {
-    expect(isAllowedFilter("deals", { column: "amount", op: "ilike", value: "1" }, fields)).toBe(false);
-    expect(isAllowedFilter("deals", { column: "amount", op: "gte", value: "abc" }, fields)).toBe(false);
-    expect(isAllowedFilter("deals", { column: "is_active", op: "eq", value: "talvez" }, fields)).toBe(false);
+    expect(isAllowedFilter("deals", { column: "amount", op: "ilike", value: "1" }, fields)).toBe(
+      false,
+    );
+    expect(isAllowedFilter("deals", { column: "amount", op: "gte", value: "abc" }, fields)).toBe(
+      false,
+    );
+    expect(
+      isAllowedFilter("deals", { column: "is_active", op: "eq", value: "talvez" }, fields),
+    ).toBe(false);
   });
   it("campo personalizado vira caminho JSON", () => {
     expect(filterColumnPath("cf:nps")).toBe("custom_fields->>nps");
     expect(() => filterColumnPath("cf:a;drop")).toThrow();
   });
   it("filtro antigo continua válido na lista padrão", () => {
-    expect(isAllowedFilter("companies", { column: "industry", op: "ilike", value: "soft" })).toBe(true);
+    expect(isAllowedFilter("companies", { column: "industry", op: "ilike", value: "soft" })).toBe(
+      true,
+    );
   });
 });
