@@ -72,7 +72,7 @@ export async function sendWhatsAppFromServer(params: {
         {
           owner_id: workspaceId,
           workspace_id: workspaceId,
-          contact_id: params.contactId ?? null,
+          ...(params.contactId ? { contact_id: params.contactId } : {}),
           contact_phone: (sameConv?.contact_phone as string | undefined) ?? toBare,
           twilio_number: num.displayPhoneNumber,
           provider: "meta",
@@ -88,6 +88,11 @@ export async function sendWhatsAppFromServer(params: {
       .single();
 
     if (conv?.id) {
+      const { ensureWhatsAppConversationIdentity } =
+        await import("@/lib/inbox/identity-resolution.server");
+      await ensureWhatsAppConversationIdentity(supabase as any, conv.id, {
+        contactId: params.contactId ?? null,
+      }).catch(() => null);
       await supabase.from("whatsapp_messages").insert({
         conversation_id: conv.id,
         owner_id: workspaceId,
