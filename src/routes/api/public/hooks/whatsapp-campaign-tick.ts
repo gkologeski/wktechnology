@@ -161,7 +161,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
           {
             owner_id: camp.owner_id,
             workspace_id: camp.workspace_id,
-            contact_id: r.contact_id,
+            ...(r.contact_id ? { contact_id: r.contact_id } : {}),
             contact_phone: toBare,
             twilio_number: num.displayPhoneNumber,
             provider: "meta",
@@ -177,6 +177,12 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
         .single();
 
       if (conv) {
+        const { ensureWhatsAppConversationIdentity } =
+          await import("@/lib/inbox/identity-resolution.server");
+        await ensureWhatsAppConversationIdentity(supabaseAdmin as any, conv.id, {
+          contactId: r.contact_id,
+          source: (r.variables as Record<string, unknown> | null)?._source,
+        }).catch(() => null);
         await supabaseAdmin.from("whatsapp_messages").insert({
           conversation_id: conv.id,
           owner_id: camp.owner_id,

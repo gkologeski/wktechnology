@@ -213,6 +213,13 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
       conversationId = created.id as string;
     }
     const conv = { id: conversationId };
+    {
+      const { ensureWhatsAppConversationIdentity } =
+        await import("@/lib/inbox/identity-resolution.server");
+      await ensureWhatsAppConversationIdentity(supabase as any, conversationId, {
+        contactId,
+      }).catch(() => null);
+    }
 
     const { wamid, raw } = await metaSend(num, {
       to: toBare,
