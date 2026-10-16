@@ -3,6 +3,7 @@
 import { Copy, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AudienceValueCombobox } from "./audience-value-combobox";
 import {
   Select,
   SelectContent,
@@ -211,6 +212,14 @@ export function AudienceGroupsEditor({
                             ))}
                           </SelectContent>
                         </Select>
+                      ) : def?.suggest && (f.op === "eq" || f.op === "neq") ? (
+                        <AudienceValueCombobox
+                          entity={entity}
+                          column={f.column}
+                          label={def.label}
+                          value={f.value}
+                          onChange={(v) => upd({ value: v })}
+                        />
                       ) : (
                         <Input
                           className="w-48"
