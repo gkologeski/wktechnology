@@ -20,7 +20,8 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadWhatsAppMedia } from "@/lib/whatsapp-media";
-import { WhatsAppMediaBubble } from "@/components/whatsapp/whatsapp-media-bubble";
+import { WhatsAppMediaBubble, LinkifiedText } from "@/components/whatsapp/whatsapp-media-bubble";
+import { isLegacyPlaceholder } from "@/lib/whatsapp/inbound-media";
 import { useScopedComposerValue } from "@/hooks/use-scoped-composer-value";
 import { useMessageDraft } from "@/hooks/use-message-draft";
 import { MessageDraftStatus } from "@/components/message-draft-status";
@@ -531,10 +532,18 @@ function WhatsAppInbox() {
                   >
                     {m.media_url && (
                       <div className="mb-1">
-                        <WhatsAppMediaBubble url={m.media_url} contentType={m.media_content_type} />
+                        <WhatsAppMediaBubble
+                          url={m.media_url}
+                          contentType={m.media_content_type}
+                          filename={m.body?.match(/^📎 Documento: (.+)$/m)?.[1] ?? null}
+                        />
                       </div>
                     )}
-                    {m.body && <div className="whitespace-pre-wrap">{m.body}</div>}
+                    {m.body && !(m.media_url && isLegacyPlaceholder(m.body)) && (
+                      <div className="whitespace-pre-wrap">
+                        <LinkifiedText text={m.body} />
+                      </div>
+                    )}
                   </InboxMessageBubble>
                 ))}
               </MessageHistoryViewport>
