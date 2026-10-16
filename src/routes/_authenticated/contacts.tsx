@@ -116,6 +116,7 @@ const BASE_CONTACT_KEYS = [
   "email",
   "phone",
   "mobile_phone",
+  "whatsapp_e164",
   "job_title",
   "company_id",
   "company_name",

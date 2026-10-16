@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { toWhatsAppE164 } from "@/lib/phone/whatsapp-e164";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireCronAuth } from "@/lib/cron-auth.server";
 import { runCronWithLogging } from "@/lib/cron-observability.server";
@@ -127,6 +128,14 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
       .eq("id", camp.id)
       .maybeSingle();
     if (live?.status !== "running") break;
+    // Segunda proteção: telefone fixo/inválido nunca é disparado no WhatsApp.
+    if (!toWhatsAppE164(r.phone)) {
+      await supabaseAdmin
+        .from("whatsapp_campaign_recipients")
+        .update({ status: "skipped", error: "Telefone fixo ou inválido (sem WhatsApp)" })
+        .eq("id", r.id);
+      continue;
+    }
     if (pol?.template_daily_limit != null) {
       const { data: q } = await supabaseAdmin.rpc("wa_reserve_template_quota", {
         p_recipient: r.id,

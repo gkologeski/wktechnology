@@ -46,8 +46,20 @@ describe("público da campanha WhatsApp", () => {
       {},
       new Set(["+5511988887777"]),
     );
-    expect(s.excluded).toEqual({ no_phone: 1, invalid_phone: 1, duplicate: 1, opted_out: 1 });
+    expect(s.excluded).toEqual({
+      no_phone: 1,
+      invalid_phone: 1,
+      landline: 0,
+      duplicate: 1,
+      opted_out: 1,
+    });
     expect(s.recipients).toHaveLength(1);
+  });
+
+  it("exclui telefone fixo do público", () => {
+    const s = buildAudience([row("(11) 3333-4444")], {}, new Set());
+    expect(s.excluded.landline).toBe(1);
+    expect(s.recipients).toHaveLength(0);
   });
 
   it("normaliza número brasileiro sem DDI", () => {

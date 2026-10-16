@@ -1,3 +1,4 @@
+import { pickWhatsAppNumber, toWhatsAppE164 } from "@/lib/phone/whatsapp-e164";
 // Público e variáveis das campanhas de WhatsApp (regras puras, tela + servidor).
 // Os campos vêm de uma lista branca: nada fora dela entra na mensagem ou nos filtros.
 
@@ -298,16 +299,9 @@ export async function combineAudienceGroups(
   return out ?? new Set<string>();
 }
 
-/** Normaliza para E.164; números BR sem DDI recebem +55. Retorna null se inválido. */
+/** E.164 apto a WhatsApp (celular BR ou estrangeiro). Fixo e inválido → null. */
 export function normalizeCampaignPhone(raw: string | null | undefined): string | null {
-  if (!raw) return null;
-  const hasPlus = raw.trim().startsWith("+");
-  let d = raw.replace(/\D/g, "");
-  if (!d) return null;
-  if (!hasPlus && (d.length === 10 || d.length === 11)) d = `55${d}`;
-  if (d.startsWith("55") && d.length !== 12 && d.length !== 13) return null;
-  if (d.length < 10 || d.length > 15) return null;
-  return `+${d}`;
+  return toWhatsAppE164(raw);
 }
 
 /** Linha bruta do público: valores já achatados por chave "grupo.coluna". */
@@ -316,6 +310,8 @@ export type AudienceRow = {
   sourceId: string;
   contactId: string | null;
   phone: string | null;
+  /** Candidatos em ordem de preferência (WhatsApp → Celular → Telefone). */
+  phones?: Array<string | null | undefined>;
   label: string;
   values: Record<string, string | null | undefined>;
 };
@@ -334,7 +330,13 @@ export type BuiltRecipient = {
 
 export type AudienceSummary = {
   recipients: BuiltRecipient[];
-  excluded: { no_phone: number; invalid_phone: number; duplicate: number; opted_out: number };
+  excluded: {
+    no_phone: number;
+    invalid_phone: number;
+    landline: number;
+    duplicate: number;
+    opted_out: number;
+  };
   withMissing: number;
 };
 
@@ -371,20 +373,25 @@ export function buildAudience(
   map: VariableMap,
   optedOut: Set<string>,
 ): AudienceSummary {
-  const excluded = { no_phone: 0, invalid_phone: 0, duplicate: 0, opted_out: 0 };
+  const excluded = { no_phone: 0, invalid_phone: 0, landline: 0, duplicate: 0, opted_out: 0 };
   const seen = new Set<string>();
   const optKeys = new Set([...optedOut].map(phoneKey));
   const recipients: BuiltRecipient[] = [];
   for (const r of rows) {
-    if (!r.phone || !r.phone.trim()) {
+    const pick = pickWhatsAppNumber(r.phones ?? [r.phone]);
+    if (pick.status === "empty") {
       excluded.no_phone++;
       continue;
     }
-    const phone = normalizeCampaignPhone(r.phone);
-    if (!phone) {
+    if (pick.status === "landline") {
+      excluded.landline++;
+      continue;
+    }
+    if (pick.status !== "ok") {
       excluded.invalid_phone++;
       continue;
     }
+    const phone = pick.e164;
     const key = phoneKey(phone);
     if (optKeys.has(key)) {
       excluded.opted_out++;

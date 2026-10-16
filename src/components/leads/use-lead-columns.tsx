@@ -119,6 +119,12 @@ export function useLeadColumns({
           lead.mobile_phone ? (toE164(lead.mobile_phone) ?? lead.mobile_phone) : "—",
       },
       {
+        key: "whatsapp_e164",
+        label: "WhatsApp",
+        className: "text-muted-foreground",
+        render: (lead) => lead.whatsapp_e164 ?? "—",
+      },
+      {
         key: "linkedin_url",
         label: "LinkedIn",
         className: "text-muted-foreground",

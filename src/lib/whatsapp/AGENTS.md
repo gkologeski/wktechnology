@@ -7,3 +7,5 @@
 - Público das campanhas WhatsApp (fila de prospecção ou filtro próprio) e variáveis do modelo são resolvidos no servidor ao salvar, por lista branca de campos em `campaign-audience.ts`, e gravados em `whatsapp_campaign_recipients.variables`; por quê: o disparo continua igual e nenhum campo fora da lista entra na mensagem.
 
 - Cada rodada do disparo espaçado espera no máximo `PACING_RUN_BUDGET_MS` (abaixo do tempo limite da chamada agendada) e relê o status da campanha antes de cada envio; por quê: esperas longas eram cortadas sem liberar o lease e uma pausa precisa valer na hora.
+
+- Número de WhatsApp de Contatos/Leads vive em `whatsapp_e164` (E.164, só celular ou estrangeiro), normalizado por gatilho no banco e por `src/lib/phone/whatsapp-e164.ts` no app; todo disparo escolhe WhatsApp → Celular → Telefone e nunca usa fixo; por quê: fixo quase nunca tem WhatsApp e gerava falhas em massa.

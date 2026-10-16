@@ -83,7 +83,11 @@ async function findMatches(
   const variants = buildBrPhoneVariants(phone);
   if (variants.length > 0) {
     const list = `(${variants.join(",")})`;
-    filters.push(`phone_digits.in.${list}`, `mobile_phone_digits.in.${list}`);
+    filters.push(
+      `whatsapp_digits.in.${list}`,
+      `phone_digits.in.${list}`,
+      `mobile_phone_digits.in.${list}`,
+    );
   }
   if (email) filters.push(`email.ilike.${email}`);
   if (filters.length === 0) return [];
@@ -171,7 +175,7 @@ export async function ensureWhatsAppConversationIdentity(
         .eq("workspace_id", conv.workspace_id)
         .eq("company_id", src.id)
         .is("deleted_at", null)
-        .or(`phone_digits.in.${list},mobile_phone_digits.in.${list}`)
+        .or(`whatsapp_digits.in.${list},phone_digits.in.${list},mobile_phone_digits.in.${list}`)
         .limit(3);
       const ids = (data ?? []).map((r: { id: string }) => r.id);
       if (ids.length) resolution = chooseInboxIdentity(ids, []);

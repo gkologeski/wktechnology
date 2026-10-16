@@ -128,11 +128,21 @@ export const createWhatsAppCampaign = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(context.userId);
-    let recipients = data.recipients.map((r) => ({
-      phone: r.phone.trim(),
-      contactId: r.contactId ?? null,
-      variables: (r.variables ?? {}) as Record<string, string>,
-    }));
+    const { toWhatsAppE164 } = await import("@/lib/phone/whatsapp-e164");
+    const seenManual = new Set<string>();
+    let recipients = data.recipients.flatMap((r) => {
+      // Lista manual: só celular (ou número estrangeiro) em E.164; fixo fica de fora.
+      const phone = toWhatsAppE164(r.phone);
+      if (!phone || seenManual.has(phone)) return [];
+      seenManual.add(phone);
+      return [
+        {
+          phone,
+          contactId: r.contactId ?? null,
+          variables: (r.variables ?? {}) as Record<string, string>,
+        },
+      ];
+    });
     if (data.audience) {
       const { buildAudience, isAllowedField } = await import("@/lib/whatsapp/campaign-audience");
       const { loadAudienceRows, loadOptedOutPhones } =

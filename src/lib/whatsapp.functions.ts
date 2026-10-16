@@ -18,7 +18,7 @@ async function findContactByPhone(supabase: any, phoneE164: string): Promise<str
     .from("contacts")
     .select("id")
     .or(
-      `phone.eq.${phoneE164},phone.eq.${noPlus},mobile_phone.eq.${phoneE164},mobile_phone.eq.${noPlus}`,
+      `whatsapp_e164.eq.${phoneE164},phone.eq.${phoneE164},phone.eq.${noPlus},mobile_phone.eq.${phoneE164},mobile_phone.eq.${noPlus}`,
     )
     .maybeSingle();
   return data?.id ?? null;
