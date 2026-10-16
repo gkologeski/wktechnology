@@ -20,6 +20,7 @@ import { listQueues } from "@/lib/prospecting/queues.functions";
 import { listSegments, upsertSegment } from "@/lib/segments.functions";
 import { previewCampaignAudience } from "@/lib/whatsapp-campaigns.functions";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
+import { useAudienceFilterFields } from "@/hooks/use-audience-filter-fields";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
   BASE_LABEL,
@@ -171,6 +172,7 @@ export function CampaignAudiencePanel({
   const saveSegFn = useServerFn(upsertSegment);
   const previewFn = useServerFn(previewCampaignAudience);
   const members = useWorkspaceMembers();
+  const filterFields = useAudienceFilterFields();
   const queuesQ = useQuery({ queryKey: ["wa-camp-queues"], queryFn: () => queuesFn() });
   const segmentsQ = useQuery({ queryKey: ["wa-camp-segments"], queryFn: () => segmentsFn() });
   const queues = (queuesQ.data ?? []) as QueueRow[];
@@ -324,6 +326,7 @@ export function CampaignAudiencePanel({
               groups={value.groups}
               onChange={(groups) => set({ groups })}
               groupsLogic={value.groupsLogic}
+              fields={filterFields.fields}
               onGroupsLogicChange={(groupsLogic) => set({ groupsLogic })}
               members={(members.data ?? []).map((m) => ({
                 value: m.user_id,

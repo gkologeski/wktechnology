@@ -189,3 +189,41 @@ describe("valores conhecidos dos filtros", () => {
     expect(distinctValues(["TI", " ti ", "", null, "Saúde"])).toEqual(["Saúde", "TI"]);
   });
 });
+
+describe("filtros com catálogo completo", () => {
+  const cat = [
+    { name: "email", label: "E-mail", type: "text" as const },
+    { name: "amount", label: "Valor", type: "currency" as const },
+    { name: "is_active", label: "Ativo", type: "boolean" as const },
+    { name: "company_id", label: "Empresa", type: "text" as const, ref: "company" },
+    { name: "mobile_digits", label: "x", type: "text" as const },
+    { name: "portal_token", label: "x", type: "text" as const },
+  ];
+  const deals = buildFilterFields("deals", cat, [{ key: "nps", label: "NPS" }]);
+  const fields = { ...FILTER_FIELDS, deals };
+  it("inclui campos do catálogo e personalizados", () => {
+    expect(deals.find((d) => d.column === "email")?.kind).toBe("text");
+    expect(deals.find((d) => d.column === "amount")?.kind).toBe("number");
+    expect(deals.some((d) => d.column === "cf:nps")).toBe(true);
+  });
+  it("exclui referências não-usuário, *_digits e tokens", () => {
+    expect(deals.some((d) => ["company_id", "mobile_digits", "portal_token"].includes(d.column))).toBe(false);
+  });
+  it("aceita campo do catálogo e recusa fora dele", () => {
+    expect(isAllowedFilter("deals", { column: "amount", op: "gte", value: "1000" }, fields)).toBe(true);
+    expect(isAllowedFilter("deals", { column: "inexistente", op: "eq", value: "x" }, fields)).toBe(false);
+    expect(isAllowedFilter("deals", { column: "mobile_digits", op: "eq", value: "1" }, fields)).toBe(false);
+  });
+  it("recusa operador incompatível e valor inválido", () => {
+    expect(isAllowedFilter("deals", { column: "amount", op: "ilike", value: "1" }, fields)).toBe(false);
+    expect(isAllowedFilter("deals", { column: "amount", op: "gte", value: "abc" }, fields)).toBe(false);
+    expect(isAllowedFilter("deals", { column: "is_active", op: "eq", value: "talvez" }, fields)).toBe(false);
+  });
+  it("campo personalizado vira caminho JSON", () => {
+    expect(filterColumnPath("cf:nps")).toBe("custom_fields->>nps");
+    expect(() => filterColumnPath("cf:a;drop")).toThrow();
+  });
+  it("filtro antigo continua válido na lista padrão", () => {
+    expect(isAllowedFilter("companies", { column: "industry", op: "ilike", value: "soft" })).toBe(true);
+  });
+});
