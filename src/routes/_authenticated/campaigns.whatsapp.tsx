@@ -230,6 +230,8 @@ function CampaignsPage() {
           audience: audiencePl,
           variable_map: manual ? undefined : audience.variableMap,
           skip_missing: audience.skipMissing,
+          recent_contact_days: audience.recentDays,
+          recent_overrides: audience.recentOverrides,
           sdr_playbook_id: sdrPlaybook !== "__none__" ? sdrPlaybook : null,
           ...intervalPayload,
         },

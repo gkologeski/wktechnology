@@ -981,6 +981,13 @@
       "when": 1792163363573,
       "tag": "0139_wa_accept_old_mobile",
       "breakpoints": true
+    },
+    {
+      "idx": 140,
+      "version": "7",
+      "when": 1792174999393,
+      "tag": "0140_campaign_recent_contact_guard",
+      "breakpoints": true
     }
   ]
 }

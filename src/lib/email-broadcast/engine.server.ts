@@ -61,7 +61,7 @@ export async function resolveBroadcastRecipients(
 ): Promise<{ added: number; skipped: number }> {
   const { data: b, error: bErr } = await admin
     .from("email_broadcasts")
-    .select("id, workspace_id, owner_id, segment_id")
+    .select("id, workspace_id, owner_id, segment_id, recent_contact_days")
     .eq("id", broadcastId)
     .single();
   if (bErr || !b) throw new Error(bErr?.message ?? "Broadcast não encontrado");
@@ -140,6 +140,23 @@ export async function resolveBroadcastRecipients(
     .eq("owner_id", b.owner_id);
   const blocked = new Set((unsubs ?? []).map((u: { email: string }) => u.email.toLowerCase()));
 
+  // Controle de reenvio: e-mail de OUTRA campanha nos últimos N dias (mesmo canal).
+  const recentKeys = new Set<string>();
+  const recentDays = b.recent_contact_days ?? 0;
+  if (recentDays > 0) {
+    const since = new Date(Date.now() - recentDays * 86_400_000).toISOString();
+    const { data: sentRows } = await admin
+      .from("email_broadcast_recipients")
+      .select("email")
+      .eq("workspace_id", b.workspace_id)
+      .neq("broadcast_id", broadcastId)
+      .not("sent_at", "is", null)
+      .gte("sent_at", since)
+      .limit(50000);
+    for (const r of (sentRows ?? []) as Array<{ email: string }>)
+      recentKeys.add(r.email.toLowerCase());
+  }
+
   // dedupe por email
   const seen = new Set<string>();
   const rows = [] as Array<{
@@ -151,15 +168,20 @@ export async function resolveBroadcastRecipients(
     contact_id: string | null;
     lead_id: string | null;
     variables: Json;
-    status: "pending" | "unsubscribed";
+    status: "pending" | "unsubscribed" | "skipped";
+    error?: string;
   }>;
   let skipped = 0;
   for (const r of list) {
     const k = r.email.toLowerCase();
     if (seen.has(k)) continue;
     seen.add(k);
-    const status: "pending" | "unsubscribed" = blocked.has(k) ? "unsubscribed" : "pending";
-    if (status === "unsubscribed") skipped++;
+    const status: "pending" | "unsubscribed" | "skipped" = blocked.has(k)
+      ? "unsubscribed"
+      : recentKeys.has(k)
+        ? "skipped"
+        : "pending";
+    if (status !== "pending") skipped++;
     rows.push({
       workspace_id: b.workspace_id,
       broadcast_id: broadcastId,
@@ -170,6 +192,7 @@ export async function resolveBroadcastRecipients(
       lead_id: r.lead_id,
       variables: r.variables,
       status,
+      ...(status === "skipped" ? { error: "Envio recente" } : {}),
     });
   }
 

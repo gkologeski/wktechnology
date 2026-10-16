@@ -118,6 +118,10 @@ export type AudienceState = {
   groupsLogic: "and" | "or";
   variableMap: VariableMap;
   skipMissing: boolean;
+  /** Dias sem reenviar a quem recebeu WhatsApp de outra campanha (0 desliga). */
+  recentDays: number;
+  /** Telefones liberados manualmente apesar do envio recente. */
+  recentOverrides: string[];
 };
 
 export const EMPTY_AUDIENCE: AudienceState = {
@@ -128,6 +132,8 @@ export const EMPTY_AUDIENCE: AudienceState = {
   groupsLogic: "or",
   variableMap: {},
   skipMissing: false,
+  recentDays: 7,
+  recentOverrides: [],
 };
 
 export function audiencePayload(a: AudienceState) {
@@ -181,7 +187,12 @@ export function CampaignAudiencePanel({
   const fields = effectiveBase ? fieldsForBase(effectiveBase) : [];
   const payload = audiencePayload(value);
   const debounced = useDebouncedValue(
-    JSON.stringify({ audience: payload, variable_map: value.variableMap }),
+    JSON.stringify({
+      audience: payload,
+      variable_map: value.variableMap,
+      recent_contact_days: value.recentDays,
+      recent_overrides: value.recentOverrides,
+    }),
     500,
   );
   const previewQ = useQuery({
@@ -362,6 +373,24 @@ export function CampaignAudiencePanel({
           </TabsContent>
         </Tabs>
 
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <label htmlFor="aud-recent-days" className="text-muted-foreground">
+            Não enviar para quem recebeu WhatsApp de outra campanha nos últimos
+          </label>
+          <Input
+            id="aud-recent-days"
+            type="number"
+            min={0}
+            max={365}
+            className="h-8 w-20"
+            value={value.recentDays}
+            onChange={(e) =>
+              set({ recentDays: Math.max(0, Math.min(365, Number(e.target.value) || 0)) })
+            }
+          />
+          <span className="text-muted-foreground">dias (0 desliga)</span>
+        </div>
+
         {payload && (
           <div className="rounded-md bg-muted/50 p-2 text-xs" aria-live="polite">
             {previewQ.isLoading || previewQ.isFetching ? (
@@ -379,8 +408,55 @@ export function CampaignAudiencePanel({
                 <div className="text-muted-foreground">
                   Fora: {p.excluded.no_phone} sem telefone · {p.excluded.invalid_phone} telefone
                   inválido · {p.excluded.landline ?? 0} fixo, estrangeiro ou fora do padrão ·{" "}
-                  {p.excluded.duplicate} duplicado · {p.excluded.opted_out} descadastrado
+                  {p.excluded.duplicate} duplicado · {p.excluded.opted_out} descadastrado ·{" "}
+                  {p.recentRemovedCount} por envio recente
+                  {p.recentOverriddenCount > 0
+                    ? ` · ${p.recentOverriddenCount} liberado(s) manualmente`
+                    : ""}
                 </div>
+                {(p.recentRemovedCount > 0 || value.recentOverrides.length > 0) && (
+                  <details className="pt-1">
+                    <summary className="cursor-pointer font-medium">
+                      {p.recentRemovedCount} contato(s) retirado(s) por envio recente
+                    </summary>
+                    <ul className="mt-1 max-h-48 space-y-1 overflow-auto">
+                      {value.recentOverrides.map((ph) => (
+                        <li key={`ov-${ph}`} className="flex items-center gap-2">
+                          <input
+                            id={`ov-${ph}`}
+                            type="checkbox"
+                            checked
+                            onChange={() =>
+                              set({
+                                recentOverrides: value.recentOverrides.filter((x) => x !== ph),
+                              })
+                            }
+                          />
+                          <label htmlFor={`ov-${ph}`}>{ph} — liberado manualmente</label>
+                        </li>
+                      ))}
+                      {p.recentRemoved.map((r) => (
+                        <li key={r.phone} className="flex items-center gap-2">
+                          <input
+                            id={`rr-${r.phone}`}
+                            type="checkbox"
+                            checked={false}
+                            onChange={() =>
+                              set({ recentOverrides: [...value.recentOverrides, r.phone] })
+                            }
+                          />
+                          <label htmlFor={`rr-${r.phone}`}>
+                            {r.label || r.phone} · {r.phone} — {r.campaignName} em{" "}
+                            {new Date(r.at).toLocaleDateString("pt-BR")}
+                          </label>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-1 text-muted-foreground">
+                      Marque para incluir mesmo assim; a liberação fica registrada no destinatário.
+                    </p>
+                  </details>
+                )}
               </div>
             ) : null}
           </div>

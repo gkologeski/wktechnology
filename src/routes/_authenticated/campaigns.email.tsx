@@ -133,6 +133,7 @@ function EmailBroadcastsPage() {
   const [bodyText, setBodyText] = useState("");
   const [segmentId, setSegmentId] = useState<string>("");
   const [ratePerMinute, setRatePerMinute] = useState(30);
+  const [recentDays, setRecentDays] = useState(7);
   const [scheduleType, setScheduleType] = useState<"now" | "later">("now");
   const [scheduledAt, setScheduledAt] = useState("");
   const [testTo, setTestTo] = useState("");
@@ -159,6 +160,7 @@ function EmailBroadcastsPage() {
     setBodyText("");
     setSegmentId("");
     setRatePerMinute(30);
+    setRecentDays(7);
     setScheduleType("now");
     setScheduledAt("");
     setTestTo("");
@@ -176,6 +178,7 @@ function EmailBroadcastsPage() {
           body_text: bodyText,
           segment_id: segmentId,
           rate_per_minute: ratePerMinute,
+          recent_contact_days: recentDays,
         },
       });
       const sched =
@@ -356,6 +359,25 @@ function EmailBroadcastsPage() {
                   tokens={CAMPAIGN_TOKENS}
                   onInsert={bodyTextInserter.insert}
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="email-recent-days">
+                  Não enviar para quem recebeu e-mail de outra campanha nos últimos (dias)
+                </Label>
+                <Input
+                  id="email-recent-days"
+                  type="number"
+                  min={0}
+                  max={365}
+                  value={recentDays}
+                  onChange={(e) =>
+                    setRecentDays(Math.max(0, Math.min(365, Number(e.target.value) || 0)))
+                  }
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  0 desliga. Os retirados aparecem como “Envio recente” na lista de destinatários.
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

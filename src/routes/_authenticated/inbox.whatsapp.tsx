@@ -790,6 +790,27 @@ function WhatsAppInbox() {
                 : current.contact_phone.slice(-2)
             }
             title={currentName}
+            titleSlot={
+              current.contact_id ? (
+                <Link
+                  to="/contacts/$id"
+                  params={{ id: current.contact_id }}
+                  aria-label={`Abrir contato ${currentName}`}
+                  className="rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {currentName}
+                </Link>
+              ) : current.lead_id ? (
+                <Link
+                  to="/leads/$id"
+                  params={{ id: current.lead_id }}
+                  aria-label={`Abrir lead ${currentName}`}
+                  className="rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {currentName}
+                </Link>
+              ) : undefined
+            }
             subtitle={
               currentNamed
                 ? `${current.contact_phone} · via ${current.twilio_number}`

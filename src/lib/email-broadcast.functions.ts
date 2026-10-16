@@ -18,6 +18,8 @@ const CreateInput = z.object({
   rate_per_minute: z.number().int().min(1).max(600).default(30),
   scheduled_at: z.string().datetime().optional(),
   reply_to: z.string().email().nullable().optional(),
+  /** Dias sem reenviar a quem recebeu e-mail de outra campanha (0 desliga). */
+  recent_contact_days: z.number().int().min(0).max(365).optional(),
 });
 
 export const listEmailBroadcasts = createServerFn({ method: "GET" })
@@ -73,6 +75,7 @@ export const createEmailBroadcast = createServerFn({ method: "POST" })
         rate_per_minute: data.rate_per_minute,
         scheduled_at: data.scheduled_at ?? new Date().toISOString(),
         reply_to: data.reply_to ?? null,
+        recent_contact_days: data.recent_contact_days ?? 7,
         status: "draft",
         workspace_id: await resolveActiveWorkspace(context.userId),
       })
