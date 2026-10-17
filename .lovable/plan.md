@@ -41,3 +41,9 @@ As duas estão com "Humano atendendo". Não envio nada a elas sem sua ordem.
 - `worker.server.ts` (só jobs `reply`): no primeiro sinal sem recusa, uma pergunta fixa de indicação, com a marca `referral_asked` no enrollment/metadados. Na próxima resposta, ou com recusa imediata, faz o encerramento cordial com o motivo. Se vier um telefone, ele é guardado como observação.
 - `agent.server.ts`: regra no prompt.
 - Sem migration. O estado fica nos metadados existentes do enrollment.
+
+## Não fazer perguntas de qualificação a quem não é o responsável (caso Danilo, 15/10)
+- Depois que alguém diz que o número não é do responsável, a Lia fala com essa pessoa **só sobre a indicação**: se conhece o responsável e se pode passar o contato. Ela não pergunta qual é a necessidade, o projeto ou o desafio de TI, e não tenta qualificar quem atendeu.
+- Se essa pessoa perguntar por que a WK entrou em contato, a Lia explica numa frase curta, sem perguntar nada sobre demandas, e volta ao pedido de indicação ou encerra.
+- A conversa fica marcada como "falando com terceiro". Nesse estado, o servidor bloqueia as perguntas de qualificação. Se a IA gerar uma, a resposta é reescrita uma vez e, se ainda assim falhar, vira o agradecimento e o encerramento.
+- Teste automático com as mensagens exatas do Danilo: "Posso saber qual a necessidade de TI do responsável?" e "Você gostaria de falar sobre algum desafio..." devem ser bloqueadas.
