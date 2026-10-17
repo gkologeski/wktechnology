@@ -6,6 +6,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Check, ChevronsUpDown, Info, Plus, Trash2 } from "lucide-react";
+import { startOfDay } from "date-fns";
+import { DatePicker } from "@/components/date-picker";
+
+/** Campos só de data (sem hora): usam o seletor padrão pt-BR. */
+const DATE_ONLY_FIELDS = new Set(["expires_at"]);
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -158,6 +163,20 @@ function FieldEditor({
         value={strVal}
         onChange={(e) => onChange(e.target.value)}
         placeholder="0"
+      />
+    );
+  }
+
+  if (field.type === "date" && DATE_ONLY_FIELDS.has(field.name)) {
+    const parsed = strVal ? new Date(strVal) : undefined;
+    return (
+      <DatePicker
+        value={parsed && !Number.isNaN(parsed.getTime()) ? parsed : undefined}
+        onChange={(d) => onChange(startOfDay(d).toISOString())}
+        onClear={() => onChange("")}
+        placeholder="Selecionar data"
+        ariaLabel={field.label}
+        className="w-full justify-start"
       />
     );
   }

@@ -12,8 +12,10 @@ import {
   FileText,
   ListTodo,
   Layers,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -72,6 +74,7 @@ export function AiSummaryPanel({ entity, entityId }: { entity: Entity; entityId:
 
   const [rows, setRows] = useState<SummaryRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [openIds, setOpenIds] = useState<Record<string, boolean>>({});
   const [generating, setGenerating] = useState(false);
   const [kind, setKind] = useState<Kind>("conversation");
   const [windowDays, setWindowDays] = useState(60);
@@ -181,54 +184,82 @@ export function AiSummaryPanel({ entity, entityId }: { entity: Entity; entityId:
             das interações.
           </p>
         )}
-        {rows.map((r) => (
-          <div key={r.id} className="rounded-md border p-3 space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="outline" className="text-[10px] uppercase">
-                  {KIND_LABEL[r.kind] ?? r.kind}
-                </Badge>
-                {r.sentiment && (
-                  <Badge
-                    variant={SENTIMENT_VARIANT[r.sentiment] ?? "outline"}
-                    className="text-[10px]"
+        {rows.map((r, idx) => {
+          const open = openIds[r.id] ?? idx === 0;
+          return (
+            <Collapsible
+              key={r.id}
+              open={open}
+              onOpenChange={(v) => setOpenIds((s) => ({ ...s, [r.id]: v }))}
+              className="rounded-md border p-3 space-y-2"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <CollapsibleTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex min-w-0 flex-1 items-center gap-2 flex-wrap rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    aria-label={open ? "Recolher resumo" : "Expandir resumo"}
                   >
-                    {r.sentiment}
-                  </Badge>
+                    <ChevronDown
+                      className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${open ? "" : "-rotate-90"}`}
+                    />
+                    <Badge variant="outline" className="text-[10px] uppercase">
+                      {KIND_LABEL[r.kind] ?? r.kind}
+                    </Badge>
+                    {r.sentiment && (
+                      <Badge
+                        variant={SENTIMENT_VARIANT[r.sentiment] ?? "outline"}
+                        className="text-[10px]"
+                      >
+                        {r.sentiment}
+                      </Badge>
+                    )}
+                    <span className="text-[11px] text-muted-foreground">
+                      {r.source_count} msg · {formatDateTime(r.created_at)}
+                    </span>
+                  </button>
+                </CollapsibleTrigger>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  aria-label="Excluir resumo"
+                  onClick={() => remove(r.id)}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+              {!open && <p className="text-xs text-muted-foreground line-clamp-2">{r.summary}</p>}
+              <CollapsibleContent className="space-y-2">
+                <p className="text-sm whitespace-pre-wrap">{r.summary}</p>
+                {r.key_points.length > 0 && (
+                  <div>
+                    <p className="text-[11px] font-medium text-muted-foreground mb-1">
+                      Pontos-chave
+                    </p>
+                    <ul className="list-disc pl-4 space-y-0.5 text-xs">
+                      {r.key_points.map((k, i) => (
+                        <li key={i}>{k}</li>
+                      ))}
+                    </ul>
+                  </div>
                 )}
-                <span className="text-[11px] text-muted-foreground">
-                  {r.source_count} msg · {formatDateTime(r.created_at)}
-                </span>
-              </div>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => remove(r.id)}>
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            </div>
-            <p className="text-sm whitespace-pre-wrap">{r.summary}</p>
-            {r.key_points.length > 0 && (
-              <div>
-                <p className="text-[11px] font-medium text-muted-foreground mb-1">Pontos-chave</p>
-                <ul className="list-disc pl-4 space-y-0.5 text-xs">
-                  {r.key_points.map((k, i) => (
-                    <li key={i}>{k}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {r.next_actions.length > 0 && (
-              <div>
-                <p className="text-[11px] font-medium text-muted-foreground mb-1">
-                  Próximos passos
-                </p>
-                <ul className="list-disc pl-4 space-y-0.5 text-xs">
-                  {r.next_actions.map((k, i) => (
-                    <li key={i}>{k}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        ))}
+                {r.next_actions.length > 0 && (
+                  <div>
+                    <p className="text-[11px] font-medium text-muted-foreground mb-1">
+                      Próximos passos
+                    </p>
+                    <ul className="list-disc pl-4 space-y-0.5 text-xs">
+                      {r.next_actions.map((k, i) => (
+                        <li key={i}>{k}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
+          );
+        })}
       </CardContent>
     </Card>
   );
