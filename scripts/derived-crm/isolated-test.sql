@@ -57,4 +57,22 @@ SET LOCAL ROLE authenticated;
 SELECT pg_temp.assert_ok(NOT EXISTS(SELECT 1 FROM contacts WHERE id='90000000-0000-4000-8000-000000000005'),'RLS hides other workspace');
 SELECT pg_temp.assert_ok(NOT public.crm_is_derivation_backfill('{"workspace_id":"184b9435-0a9b-4334-9e89-8854dc883f5d"}','{"workspace_id":"184b9435-0a9b-4334-9e89-8854dc883f5d"}'),'authenticated cannot suppress audit');
 RESET ROLE;
+-- Explicit clear to an already NULL canonical field still records intent.
+INSERT INTO leads(id,workspace_id,owner_id,first_name,hs_raw) VALUES('90000000-0000-4000-8000-000000000006','184b9435-0a9b-4334-9e89-8854dc883f5d','10000000-0000-4000-8000-000000000091','ISO empty','{}');
+UPDATE leads SET job_title=NULL WHERE id='90000000-0000-4000-8000-000000000006';
+UPDATE leads SET hs_raw='{"properties":{"hs_contact_job_title":"CTO"}}' WHERE id='90000000-0000-4000-8000-000000000006';
+SELECT pg_temp.assert_ok(job_title IS NULL AND job_title_source='explicit','NULL-to-NULL clear survives later import') FROM leads WHERE id='90000000-0000-4000-8000-000000000006';
+INSERT INTO view_as_sessions(id,workspace_id,admin_id,target_user_id,mode,read_only,nonce,session_id,expires_at) VALUES('91000000-0000-4000-8000-000000000001','184b9435-0a9b-4334-9e89-8854dc883f5d','10000000-0000-4000-8000-000000000091','10000000-0000-4000-8000-000000000091','role',true,'iso-derived','92000000-0000-4000-8000-000000000001',now()+interval '1 hour');
+SELECT set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000091","role":"authenticated","session_id":"92000000-0000-4000-8000-000000000001"}',true);
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.assert_ok(public.is_read_only_view(),'readonly session recognized');
+DO $$ DECLARE n integer; BEGIN
+ UPDATE contacts SET job_title='FORGED' WHERE id='90000000-0000-4000-8000-000000000001';
+ GET DIAGNOSTICS n=ROW_COUNT;
+ PERFORM pg_temp.assert_ok(n=0,'readonly cannot update real CRM row');
+ UPDATE crm_derivation_catalog SET active=false WHERE workspace_id='184b9435-0a9b-4334-9e89-8854dc883f5d';
+ GET DIAGNOSTICS n=ROW_COUNT;
+ PERFORM pg_temp.assert_ok(n=0,'readonly cannot activate catalog');
+END $$;
+RESET ROLE;
 ROLLBACK;

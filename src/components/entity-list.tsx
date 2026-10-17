@@ -39,6 +39,7 @@ import { exportRows, type ExportFormat } from "@/lib/export/export-rows";
 import { BulkEditDialog, type BulkField } from "@/components/bulk-edit-dialog";
 import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
 import { isBulkEditEntity } from "@/lib/grid/bulk-edit-fields";
+import { isDerivedCrmField } from "@/lib/entity/derived-fields";
 
 import { ConfirmCountDialog } from "@/components/confirm-count-dialog";
 import { useActivityWindows } from "@/components/activity/activity-window-context";
@@ -387,6 +388,7 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
 
   // Inline edit
   const inlineUpdate = async (id: string, field: string, value: unknown) => {
+    if (isDerivedCrmField(field)) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any)
       .from(table)
@@ -869,7 +871,7 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
                       </TableCell>
                       {visibleColumns.map((c, ci) => {
                         const k = String(c.key);
-                        const editable = inlineEditable?.includes(k);
+                        const editable = inlineEditable?.includes(k) && !isDerivedCrmField(k);
                         const isFirst = ci === 0;
                         const cellContent = editable ? (
                           <InlineCell
