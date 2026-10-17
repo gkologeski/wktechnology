@@ -169,6 +169,31 @@ function WhatsAppInbox() {
       : null,
   });
   const membersQ = useQuery({ queryKey: ["wa", "members"], queryFn: () => membersFn() });
+  // Conversa vinda do endereço fora da página atual: lida com RLS do usuário.
+  useEffect(() => {
+    if (!urlConversation || conversationsQ.isPending) return;
+    if (conversations.some((c) => c.id === urlConversation)) return;
+    if (selectedSnapshot?.id === urlConversation) return;
+    let cancelled = false;
+    void supabase
+      .from("whatsapp_conversations")
+      .select("*")
+      .eq("id", urlConversation)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error || !data) {
+          toast.error("Conversa não encontrada ou sem acesso.");
+          setSelected(null);
+          navigate({ search: {}, replace: true });
+          return;
+        }
+        setSelectedSnapshot(data as unknown as WaConversationRow);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [urlConversation, conversations, conversationsQ.isPending, selectedSnapshot?.id, navigate]);
   const current = useMemo(
     () =>
       conversations.find((c) => c.id === selected) ??
