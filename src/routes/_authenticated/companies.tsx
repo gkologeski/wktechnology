@@ -77,7 +77,16 @@ import {
 } from "@/components/crm/hubspot-shell";
 
 export const Route = createFileRoute("/_authenticated/companies")({
-  head: () => ({ meta: [{ title: "Empresas | TechSales" }, { name: "description", content: "Empresas e faixas de funcionários no TechSales." }, { property: "og:title", content: "Empresas | TechSales" }, { property: "og:description", content: "Empresas com Porte Descritivo por funcionários." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
+  head: () => ({
+    meta: [
+      { title: "Empresas | TechSales" },
+      { name: "description", content: "Empresas e faixas de funcionários no TechSales." },
+      { property: "og:title", content: "Empresas | TechSales" },
+      { property: "og:description", content: "Empresas com Porte Descritivo por funcionários." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: CompaniesPage,
 });
 

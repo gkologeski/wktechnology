@@ -158,7 +158,19 @@ const ENTITY_FIELDS: Record<
 };
 
 export const Route = createFileRoute("/_authenticated/settings/segments")({
-  head: () => ({ meta: [{ title: "Segmentos | TechSales" }, { name: "description", content: "Segmentação da base comercial por Cargo e Porte Descritivo." }, { property: "og:title", content: "Segmentos | TechSales" }, { property: "og:description", content: "Segmentação da base comercial." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
+  head: () => ({
+    meta: [
+      { title: "Segmentos | TechSales" },
+      {
+        name: "description",
+        content: "Segmentação da base comercial por Cargo e Porte Descritivo.",
+      },
+      { property: "og:title", content: "Segmentos | TechSales" },
+      { property: "og:description", content: "Segmentação da base comercial." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: SegmentsPage,
 });
 

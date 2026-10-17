@@ -79,7 +79,16 @@ import {
 } from "@/lib/entity/responsible";
 
 export const Route = createFileRoute("/_authenticated/contacts")({
-  head: () => ({ meta: [{ title: "Contatos | TechSales" }, { name: "description", content: "Contatos e classificação profissional no TechSales." }, { property: "og:title", content: "Contatos | TechSales" }, { property: "og:description", content: "Base de Contatos e classificação profissional." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
+  head: () => ({
+    meta: [
+      { title: "Contatos | TechSales" },
+      { name: "description", content: "Contatos e classificação profissional no TechSales." },
+      { property: "og:title", content: "Contatos | TechSales" },
+      { property: "og:description", content: "Base de Contatos e classificação profissional." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: ContactsPage,
 });
 
