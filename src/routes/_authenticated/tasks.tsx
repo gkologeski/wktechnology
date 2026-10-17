@@ -1034,7 +1034,7 @@ function TasksHubspotView() {
                       colSpan={visibleColumns.length + 2}
                       className="px-3 py-16 text-center text-sm"
                     >
-                      <p className="text-muted-foreground">Não foi possível carregar as tarefas.</p>
+                      <p className="text-muted-foreground">A lista de tarefas demorou para responder ou falhou.</p>
                       <Button
                         variant="outline"
                         size="sm"
