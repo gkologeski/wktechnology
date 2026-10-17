@@ -47,3 +47,14 @@ As duas estão com "Humano atendendo". Não envio nada a elas sem sua ordem.
 - Se essa pessoa perguntar por que a WK entrou em contato, a Lia explica numa frase curta, sem perguntar nada sobre demandas, e volta ao pedido de indicação ou encerra.
 - A conversa fica marcada como "falando com terceiro". Nesse estado, o servidor bloqueia as perguntas de qualificação. Se a IA gerar uma, a resposta é reescrita uma vez e, se ainda assim falhar, vira o agradecimento e o encerramento.
 - Teste automático com as mensagens exatas do Danilo: "Posso saber qual a necessidade de TI do responsável?" e "Você gostaria de falar sobre algum desafio..." devem ser bloqueadas.
+
+## Reconhecer atendimento automático e encerrar (caso Rodrigo Nunes, 15/10)
+- Quando a resposta for de um robô ou de uma URA, a Lia encerra a conversa **sem responder**. Ela não escolhe opção de menu e não manda mensagem ao robô.
+- Sinais que indicam atendimento automático:
+  - menu numerado ("1 - … 2 - …", "digite/escolha uma opção", "escolha uma fila");
+  - saudações-padrão ("seja bem-vindo", "mensagem automática", "nosso horário de atendimento é", "em breve retornaremos", "protocolo nº");
+  - resposta chegando em poucos segundos depois do envio, como reforço.
+- A conversa fecha como "atendimento automático" no CRM. Isso não conta como pedido de parar e não gera retomada.
+- Se, depois do robô, chegar uma mensagem de uma pessoa, a Lia volta a atender normalmente.
+- Teste automático com o texto exato do Rodrigo e variações. Mensagens normais com listas, por exemplo "1) React 2) Node", não podem cair nessa regra.
+- Detalhe técnico: `isAutoResponder(text)` em `policy.ts`; tratada no `worker.server.ts` antes da IA, com motivo `auto_responder`.
