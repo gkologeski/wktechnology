@@ -1,0 +1,3 @@
+CREATE INDEX IF NOT EXISTS activities_tasks_assigned_created_idx ON public.activities (assigned_to, created_at DESC) WHERE type = 'task'::activity_type AND deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS activities_tasks_unassigned_owner_created_idx ON public.activities (owner_id, created_at DESC) WHERE type = 'task'::activity_type AND deleted_at IS NULL AND assigned_to IS NULL;
+CREATE INDEX IF NOT EXISTS activities_tasks_open_assigned_due_idx ON public.activities (assigned_to, due_date) WHERE type = 'task'::activity_type AND deleted_at IS NULL AND completed = false;
