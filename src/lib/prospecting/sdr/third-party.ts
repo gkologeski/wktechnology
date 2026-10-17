@@ -46,7 +46,7 @@ const AUTO_PATTERNS: RegExp[] = [
 function hasNumberedMenu(raw: string): boolean {
   const lines = String(raw ?? "")
     .split(/\n/)
-    .filter((l) => /^\s*\d{1,2}\s*[-–.)️⃣]\s*\S/.test(l));
+    .filter((l) => /^\s*\d{1,2}\s*[-–.)]\s*\S/.test(l));
   return lines.length >= 2;
 }
 
