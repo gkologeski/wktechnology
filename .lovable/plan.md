@@ -19,6 +19,15 @@ Hoje a regra de contato errado só reconhece frases como "número errado" ou "n�
 5. A regra fica no prompt da Lia e também tem garantia no servidor. Se a IA tentar insistir uma segunda vez, a mensagem é trocada pelo agradecimento e encerramento.
 6. Quem disser "não sou o Rafael, mas cuido da TI" continua a conversa normalmente.
 
+## Guardar no TechERP o contato indicado (caso Danilo Aguiar, 15/10)
+7. Quando a pessoa indicar alguém, por texto ("fala com a Ana, 48 99999-0000") ou por **cartão de contato compartilhado** do WhatsApp, a Lia guarda esse contato no TechERP:
+   - O telefone é normalizado para o padrão do WhatsApp brasileiro. Se esse número já existir num Contato ou Lead do workspace, a Lia usa o registro que já existe e não cria outro.
+   - Se não existir, ela cria um **Lead** com o nome, o celular, a empresa de origem e a observação "Indicado por <quem indicou> via Lia em <data>", com o mesmo responsável da conversa.
+   - Se houver mais de um registro possível, ela não escolhe sozinha. Deixa a indicação registrada na conversa para você escolher.
+   - A indicação também aparece na linha do tempo do contato que indicou.
+8. A Lia agradece a indicação. Ela **não envia mensagem ao indicado** sozinha: o primeiro contato continua sendo por campanha ou modelo aprovado, pela regra das 24 horas do WhatsApp.
+9. O cartão do Danilo (+55 15 98144-1500) já está gravado na conversa. Com o seu aceite, posso cadastrá-lo pela mesma regra, sem enviar mensagem.
+
 ## Conversas do Andre e do Rafael
 As duas estão com "Humano atendendo". Não envio nada a elas sem sua ordem.
 
