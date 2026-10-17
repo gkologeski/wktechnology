@@ -229,9 +229,7 @@ export function AiSummaryPanel({ entity, entityId }: { entity: Entity; entityId:
                   <Trash2 className="h-3 w-3" />
                 </Button>
               </div>
-              {!open && (
-                <p className="text-xs text-muted-foreground line-clamp-2">{r.summary}</p>
-              )}
+              {!open && <p className="text-xs text-muted-foreground line-clamp-2">{r.summary}</p>}
               <CollapsibleContent className="space-y-2">
                 <p className="text-sm whitespace-pre-wrap">{r.summary}</p>
                 {r.key_points.length > 0 && (
