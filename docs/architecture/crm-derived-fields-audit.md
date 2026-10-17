@@ -50,10 +50,10 @@ DDL em `scripts/derived-crm/classifier-v2.sql`, dados em `catalog-v2.sql`, lotes
 
 Referências independentes antes da migração (fornecidas pelo usuário, **ainda não comparadas**):
 
-| Fonte | Registros ativos | Hash informado |
-| --- | ---: | --- |
-| contacts.job_title | 51.144 | efa1f80d23891b892c58dbd851e32429 |
-| leads raw job title + cargo_formatado | 5.924 | 6388feddeef982281c78c71a10acf066 |
-| companies.size | 32.044 | 867df8a861fcd7e1fed2914459a3c935 |
+| Fonte                                 | Registros ativos | Hash informado                   |
+| ------------------------------------- | ---------------: | -------------------------------- |
+| contacts.job_title                    |           51.144 | efa1f80d23891b892c58dbd851e32429 |
+| leads raw job title + cargo_formatado |            5.924 | 6388feddeef982281c78c71a10acf066 |
+| companies.size                        |           32.044 | 867df8a861fcd7e1fed2914459a3c935 |
 
 Comparar fontes linha a linha com `crm_derivation_backup` e reproduzir a mesma ordenação/serialização do hash independente antes de declarar igualdade; nenhum hash atual foi obtido. Não interpretar a indisponibilidade como fonte preservada comprovada. Ainda pendentes: aplicar DDL/v2, terminar preenchimento WK, métricas finais, integridade/efeitos/outros workspaces, REST autenticado e navegador com valores reais. Publicação segue bloqueada pelo aceite do usuário.
