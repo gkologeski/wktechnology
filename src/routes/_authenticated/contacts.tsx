@@ -784,7 +784,11 @@ function ContactsHubspotView() {
           </FilterGroup>
 
           <FilterGroup title="Responsável" defaultOpen>
-            <DerivedFilterFields entity="contacts" value={filters.derived} onChange={(derived) => setFilters((f) => ({ ...f, derived }))} />
+            <DerivedFilterFields
+              entity="contacts"
+              value={filters.derived}
+              onChange={(derived) => setFilters((f) => ({ ...f, derived }))}
+            />
             <OwnerFilter
               value={{ ownerIds: filters.ownerIds, includeUnassigned: filters.includeUnassigned }}
               onChange={(v: OwnerFilterValue) =>

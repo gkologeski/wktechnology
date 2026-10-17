@@ -47,7 +47,11 @@ export function LeadsFiltersSidebar({
       <Separator />
       <div className="flex-1 overflow-y-auto px-3 py-2">
         <FilterGroup title="Cargo e classificação">
-          <DerivedFilterFields entity="leads" value={filters.derived} onChange={(derived) => setFilters((f) => ({ ...f, derived }))} />
+          <DerivedFilterFields
+            entity="leads"
+            value={filters.derived}
+            onChange={(derived) => setFilters((f) => ({ ...f, derived }))}
+          />
         </FilterGroup>
         <FilterGroup title="Etapa do lead" defaultOpen>
           {stages.map((s) => {

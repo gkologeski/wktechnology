@@ -786,7 +786,11 @@ function CompaniesHubspotView() {
           </FilterGroup>
 
           <FilterGroup title="Porte">
-            <DerivedFilterFields entity="companies" value={filters.derived} onChange={(derived) => setFilters((f) => ({ ...f, derived }))} />
+            <DerivedFilterFields
+              entity="companies"
+              value={filters.derived}
+              onChange={(derived) => setFilters((f) => ({ ...f, derived }))}
+            />
             {(facets?.size ?? []).map((s) => (
               <CheckboxFilter
                 key={s.value}
