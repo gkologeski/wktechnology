@@ -33,6 +33,8 @@ INSERT INTO leads(id,workspace_id,owner_id,first_name,hs_raw) VALUES('90000000-0
 SELECT pg_temp.assert_ok(job_title='CTO' AND job_title_source='legacy','legacy primary precedence') FROM leads WHERE id='90000000-0000-4000-8000-000000000002';
 UPDATE leads SET hs_raw=jsonb_set(hs_raw,'{properties,hs_contact_job_title}','"CIO"') WHERE id='90000000-0000-4000-8000-000000000002';
 SELECT pg_temp.assert_ok(job_title='CIO','raw import synchronizes') FROM leads WHERE id='90000000-0000-4000-8000-000000000002';
+UPDATE leads SET job_title=job_title,hs_raw=jsonb_set(hs_raw,'{properties,hs_contact_job_title}','"CTO"') WHERE id='90000000-0000-4000-8000-000000000002';
+SELECT pg_temp.assert_ok(job_title='CTO' AND job_title_source='legacy','unchanged title resent by import stays legacy') FROM leads WHERE id='90000000-0000-4000-8000-000000000002';
 UPDATE leads SET job_title='IT Manager' WHERE id='90000000-0000-4000-8000-000000000002';
 UPDATE leads SET hs_raw=jsonb_set(hs_raw,'{properties,hs_contact_job_title}','"CFO"') WHERE id='90000000-0000-4000-8000-000000000002';
 SELECT pg_temp.assert_ok(job_title='IT Manager' AND job_title_source='explicit','explicit edit survives raw import') FROM leads WHERE id='90000000-0000-4000-8000-000000000002';

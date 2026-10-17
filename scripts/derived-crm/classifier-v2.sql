@@ -1,4 +1,10 @@
 -- Invoker-only, deterministic; occupational exclusions are workspace catalog data.
+-- UPDATE OF still captures NULL-to-NULL clears, while integrations resending the same non-empty title remain legacy.
+CREATE OR REPLACE FUNCTION public.crm_mark_explicit_title() RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path=pg_catalog AS $$
+BEGIN
+ IF NEW.job_title IS DISTINCT FROM OLD.job_title OR NEW.job_title IS NULL THEN NEW.job_title_source:='explicit'; END IF;
+ RETURN NEW;
+END $$;
 CREATE OR REPLACE FUNCTION public.crm_classify_title(v text,rules jsonb) RETURNS jsonb
 LANGUAGE plpgsql IMMUTABLE SECURITY INVOKER SET search_path=pg_catalog AS $$
 DECLARE s text:=public.crm_normalize_title(v); r jsonb; hit jsonb;
