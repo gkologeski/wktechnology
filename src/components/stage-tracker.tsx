@@ -31,7 +31,7 @@ export function StageTracker({
             disabled={disabled}
             onClick={() => onChange?.(s.value)}
             className={cn(
-              "flex-1 min-w-[110px] px-3 py-2 text-xs font-medium border-r last:border-r-0 transition-colors text-left",
+              "flex-1 min-w-[110px] px-3 py-0.5 text-xs leading-4 font-medium border-r last:border-r-0 transition-colors text-left",
               active && (activeClassName ?? "bg-slate-700 text-white"),
               passed && "bg-muted text-foreground hover:bg-slate-700 hover:text-white",
               !active && !passed && "text-muted-foreground hover:bg-slate-700 hover:text-white",
