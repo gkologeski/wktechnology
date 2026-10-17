@@ -260,8 +260,8 @@ function DealDetail() {
   };
 
   const header = (
-    <header className="bg-product-header px-4 py-4 md:px-6">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 sm:flex sm:flex-wrap sm:justify-between">
+    <header className="bg-product-header px-4 py-2 md:px-6">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:flex-nowrap sm:justify-between">
         <div className="flex min-w-0 items-center gap-3">
           <Button
             variant="ghost"
@@ -274,13 +274,12 @@ function DealDetail() {
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
             <Briefcase className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-medium text-text-tertiary">Negócios</p>
             <div className="flex min-w-0 flex-wrap items-center gap-2">
-              <h1 className="truncate text-xl font-semibold text-text-primary">{deal.name}</h1>
+              <h1 className="truncate text-lg font-semibold text-text-primary">{deal.name}</h1>
               <Badge
                 variant="outline"
                 className="border-primary/20 bg-primary/10 px-2.5 text-primary"
@@ -288,7 +287,7 @@ function DealDetail() {
                 {stages.find((s) => s.value === currentStage)?.label ?? deal.stage}
               </Badge>
             </div>
-            <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-text-secondary">
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-text-secondary">
               <span className="inline-flex items-center gap-1">
                 <DollarSign className="h-3.5 w-3.5" />
                 {formatCurrency(deal.value, deal.currency)}
@@ -317,7 +316,7 @@ function DealDetail() {
             </div>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-2">
           {pipelines.length > 0 && (
             <Select
               value={(deal as unknown as { pipeline_id?: string | null }).pipeline_id ?? ""}
@@ -358,15 +357,17 @@ function DealDetail() {
           </TooltipProvider>
         </div>
       </div>
-      <div className="mt-4 border-t border-product-divider pt-4">
-        <StageTracker stages={stages} current={currentStage} onChange={setStage} />
-        <div className="mt-3 max-w-xs">
+      <div className="mt-2 flex flex-col gap-2 border-t border-product-divider pt-2 lg:flex-row lg:items-center">
+        <div className="min-w-0 flex-1">
+          <StageTracker stages={stages} current={currentStage} onChange={setStage} />
+        </div>
+        <div className="w-full shrink-0 lg:w-56 [&_button]:h-8">
           <SubstatusSelect
             pipelineId={dealPipeline?.id ?? null}
             stageValue={currentStage}
             value={(deal as unknown as { stage_substatus_id?: string | null }).stage_substatus_id}
             onChange={setSubstatus}
-            className="space-y-1"
+            label={null}
           />
         </div>
       </div>
