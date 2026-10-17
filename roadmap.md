@@ -3,6 +3,9 @@
 - [x] Auditar fontes, gravadores, gatilhos e candidatos agregados
 - [x] Implementar catálogo versionado, derivação e precedência no banco (0142/0143)
 - [x] Provar INSERT/UPDATE/UPSERT/clear/legado/isolamento/readonly em banco descartável
+- [x] Preparar catálogo v2 e classificador corrigidos; provar HRBP/Business Partner, Product Owner, Partner Manager, desenvolvimento de negócios e Diretor Técnico em 92 assertions SQL isoladas
+- [ ] Aplicar migration complementar e catálogo v2 WK (bloqueado: Cloud inacessível confirmado por cloud_status; nenhum DDL/v2 aplicado)
+- [ ] Comparar hashes das fontes com referências independentes e recalcular WK com catálogo corrigido
 - [ ] Concluir backfill WK e conferir cobertura/fontes/efeitos (bloqueado: conexão do banco indisponível; migrações e backup já aplicados)
 - [x] Integrar fichas, filtros, grids, públicos, exportação e lookup
 - [x] Validar testes, lint e sinais completos de compilação; documentar resultados

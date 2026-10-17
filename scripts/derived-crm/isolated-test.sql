@@ -7,9 +7,11 @@ INSERT INTO public.workspaces(id,name,slug,created_by) VALUES('184b9435-0a9b-433
 INSERT INTO public.workspace_members(workspace_id,user_id,role,status) VALUES('184b9435-0a9b-4334-9e89-8854dc883f5d','10000000-0000-4000-8000-000000000091','admin','active');
 UPDATE public.profiles SET active_workspace_id='184b9435-0a9b-4334-9e89-8854dc883f5d' WHERE id='10000000-0000-4000-8000-000000000091';
 \i /tmp/derived-catalog-seed.sql
+\i scripts/derived-crm/catalog-v2.sql
 DO $$ DECLARE x record; d jsonb; rules jsonb; BEGIN
  SELECT c.rules INTO rules FROM public.crm_derivation_catalog c WHERE active;
  FOR x IN SELECT * FROM (VALUES
+ ('HR Business Partner','HR Business Partner','Recursos humanos','Especialista'),('HRBP','HR Business Partner','Recursos humanos','Especialista'),('Business Partner de RH','HR Business Partner','Recursos humanos','Especialista'),('Parceiro de negócios de recursos humanos','HR Business Partner','Recursos humanos','Especialista'),('People Partner','People Partner','Recursos humanos','Especialista'),('Talent Acquisition Partner','Talent Acquisition Partner','Recursos humanos','Especialista'),('Product Owner','Product Owner','Produto','Especialista'),('Partner Manager','Gerente de Parcerias','Comercial','Gerência'),('Gerente de desenvolvimento de negócios','Gerente de Desenvolvimento de Negócios','Comercial','Gerência'),('Business Development Manager','Gerente de Desenvolvimento de Negócios','Comercial','Gerência'),('Co-Founder & CTO','CTO','Tecnologia','C-Level'),('CEO & CTO','Classificação ambígua','Classificação ambígua','Classificação ambígua'),('Diretor Técnico','Diretor Técnico','Não classificado','Diretoria'),('Analista suporte técnico','Analista','Não classificado','Operacional'),('Sócio','Sócio','Não classificado','Societário'),('Partner','Sócio','Não classificado','Societário'),('Business Partner','Business Partner','Não classificado','Especialista'),
  ('CTO','CTO','Tecnologia','C-Level'),(' cTo ','CTO','Tecnologia','C-Level'),('ＣＴＯ','CTO','Tecnologia','C-Level'),('CIO','CIO','Tecnologia','C-Level'),('CEO','CEO','Direção geral','C-Level'),('CFO','CFO','Finanças','C-Level'),('COO','COO','Operações','C-Level'),('CHRO','CHRO','Recursos humanos','C-Level'),('CISO','CISO','Segurança da informação','C-Level'),('CDO','CDO','Dados','C-Level'),
  ('IT Manager','Gerente de TI','Tecnologia','Gerência'),('Gerente TI','Gerente de TI','Tecnologia','Gerência'),('Gerente Tecnologia','Gerente de TI','Tecnologia','Gerência'),('Gerente de Projetos','Gerente de Projetos','Projetos','Gerência'),('Técnico','Técnico','Não classificado','Operacional'),('Analista Sênior','Analista','Não classificado','Operacional'),('PM','Não classificado','Não classificado','Não classificado'),('PO','Não classificado','Não classificado','Não classificado'),('astronauta','Não classificado','Não classificado','Não classificado'),('Sócio / C-Level / Presidente / Diretor','Classificação ambígua','Classificação ambígua','Classificação ambígua'),('CTO / CFO','Classificação ambígua','Classificação ambígua','Classificação ambígua'),('','', '', '')) q(src,title,area,level) LOOP
   d:=public.crm_classify_title(x.src,rules);
@@ -21,6 +23,9 @@ DO $$ DECLARE x record; d jsonb; rules jsonb; BEGIN
 END $$;
 INSERT INTO public.contacts(id,workspace_id,owner_id,first_name,job_title,cargo_resumido) VALUES('90000000-0000-4000-8000-000000000001','184b9435-0a9b-4334-9e89-8854dc883f5d','10000000-0000-4000-8000-000000000091','ISO','CTO','FORGED');
 SELECT pg_temp.assert_ok(cargo_resumido='CTO','INSERT contacts overrides forged') FROM contacts WHERE id='90000000-0000-4000-8000-000000000001';
+UPDATE contacts SET job_title='HR Business Partner' WHERE id='90000000-0000-4000-8000-000000000001';
+SELECT pg_temp.assert_ok(cargo_resumido='HR Business Partner' AND area_atuacao='Recursos humanos' AND nivel_hierarquico='Especialista' AND cargo_catalog_version=2,'HRBP row trigger uses v2 without JS') FROM contacts WHERE id='90000000-0000-4000-8000-000000000001';
+UPDATE contacts SET job_title='CTO' WHERE id='90000000-0000-4000-8000-000000000001';
 UPDATE contacts SET area_atuacao='FORGED' WHERE id='90000000-0000-4000-8000-000000000001';
 SELECT pg_temp.assert_ok(area_atuacao='Tecnologia','UPDATE derived overwrite') FROM contacts WHERE id='90000000-0000-4000-8000-000000000001';
 INSERT INTO contacts(id,workspace_id,owner_id,first_name,job_title) VALUES('90000000-0000-4000-8000-000000000001','184b9435-0a9b-4334-9e89-8854dc883f5d','10000000-0000-4000-8000-000000000091','ISO','CFO') ON CONFLICT(id) DO UPDATE SET job_title=EXCLUDED.job_title;
@@ -31,6 +36,8 @@ INSERT INTO leads(id,workspace_id,owner_id,first_name,hs_raw) VALUES('90000000-0
 SELECT pg_temp.assert_ok(job_title='CTO' AND job_title_source='legacy','legacy primary precedence') FROM leads WHERE id='90000000-0000-4000-8000-000000000002';
 UPDATE leads SET hs_raw=jsonb_set(hs_raw,'{properties,hs_contact_job_title}','"CIO"') WHERE id='90000000-0000-4000-8000-000000000002';
 SELECT pg_temp.assert_ok(job_title='CIO','raw import synchronizes') FROM leads WHERE id='90000000-0000-4000-8000-000000000002';
+UPDATE leads SET job_title=job_title,hs_raw=jsonb_set(hs_raw,'{properties,hs_contact_job_title}','"CTO"') WHERE id='90000000-0000-4000-8000-000000000002';
+SELECT pg_temp.assert_ok(job_title='CTO' AND job_title_source='legacy','unchanged title resent by import stays legacy') FROM leads WHERE id='90000000-0000-4000-8000-000000000002';
 UPDATE leads SET job_title='IT Manager' WHERE id='90000000-0000-4000-8000-000000000002';
 UPDATE leads SET hs_raw=jsonb_set(hs_raw,'{properties,hs_contact_job_title}','"CFO"') WHERE id='90000000-0000-4000-8000-000000000002';
 SELECT pg_temp.assert_ok(job_title='IT Manager' AND job_title_source='explicit','explicit edit survives raw import') FROM leads WHERE id='90000000-0000-4000-8000-000000000002';
