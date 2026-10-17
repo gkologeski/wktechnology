@@ -4,6 +4,7 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Admin = any;
 
+import { decideThirdParty, isAutoResponder, type Referral } from "./third-party";
 import { parsePersona, stripStockOpener } from "./persona";
 import { configFromRow, hasTool, scopeKnowledge } from "./agent-config";
 import { buildSystemPrompt, callSdrAgent } from "./agent.server";
@@ -340,6 +341,26 @@ export async function processJob(
   const history: ConversationMessage[] = ((msgs ?? []) as ConversationMessage[])
     .filter((m) => (m.body ?? "").trim())
     .reverse();
+  // Atendimento automático (robô/URA): encerra este turno sem responder ao robô.
+  if (job.kind === "reply") {
+    const lastInbound = [...history].reverse().find((m) => m.direction === "inbound");
+    if (lastInbound && isAutoResponder(String(lastInbound.body ?? ""))) {
+      await admin
+        .from("sdr_enrollments")
+        .update({ follow_up_at: null, cancel_reason: "auto_responder" })
+        .eq("id", enr.id)
+        .eq("workspace_id", job.workspace_id);
+      await finish(admin, job.id, job.lease_token, { status: "skipped", error: "auto_responder" });
+      await recordSdrAction(admin, {
+        workspace_id: job.workspace_id,
+        enrollment_id: enr.id,
+        job_id: job.id,
+        kind: "auto_responder",
+        status: "success",
+      });
+      return "skipped";
+    }
+  }
   const agentConfig = configFromRow(playbook as Record<string, unknown>);
   const { offers, materials } = scopeKnowledge(
     agentConfig,
@@ -577,12 +598,27 @@ export async function processJob(
       out.warnings.push("Opt-out ignorado: mensagem era só agradecimento/despedida.");
     }
   }
-  // Contato errado: envia o pedido de desculpas e só depois encerra (não vira descadastro mudo).
+  // Terceiros (não é o responsável): indicação, saída da empresa, número de outra pessoa.
   let wrongContact = false;
-  if (job.kind === "reply" && out.intent !== "handoff" && out.intent !== "schedule_meeting") {
+  let closeReason: string | null = null;
+  let referralToSave: Referral | null = null;
+  if (job.kind === "reply" && out.intent !== "schedule_meeting") {
     const lastIn = [...history].reverse().find((m) => m.direction === "inbound");
-    if (isWrongContact(String((lastIn as { body?: unknown } | undefined)?.body ?? ""))) {
+    const lastText = String((lastIn as { body?: unknown } | undefined)?.body ?? "");
+    const tp = decideThirdParty(history as { direction: string; body?: string | null }[]);
+    if (tp.action !== "none") {
+      out.intent = "continue";
+      out.material_ids = [];
+      out.answers = [];
+      out.reply = tp.reply;
+      if (tp.action === "close" || tp.action === "save_referral") {
+        wrongContact = true;
+        closeReason = tp.reason;
+      }
+      if (tp.action === "save_referral") referralToSave = tp.referral;
+    } else if (out.intent !== "handoff" && isWrongContact(lastText)) {
       wrongContact = true;
+      closeReason = "wrong_contact";
       out.intent = "continue";
       out.material_ids = [];
       out.reply =
@@ -818,16 +854,41 @@ export async function processJob(
       .in("status", ["running"]);
     return obsolete ? "discarded" : "drafted";
   }
+  if (referralToSave) {
+    const { saveReferral } = await import("./third-party.server");
+    const saved = await saveReferral(admin, {
+      workspaceId: job.workspace_id,
+      ownerId: enr.owner_id as string,
+      referral: referralToSave,
+      referrerLabel: conv.contact_phone ?? "contato da campanha",
+      companyId: (enr.company_id as string | null) ?? null,
+      referrer: target,
+    });
+    await recordSdrAction(admin, {
+      workspace_id: job.workspace_id,
+      enrollment_id: enr.id,
+      job_id: job.id,
+      kind: "referral_saved",
+      status: saved.status === "failed" ? "failed" : "success",
+      payload: { ...saved, phone: referralToSave.phoneE164, name: referralToSave.name },
+      error: saved.status === "failed" ? saved.error : null,
+    });
+  }
   if (wrongContact) {
+    const thirdParty = closeReason === "left_company" || closeReason === "not_this_person";
     await admin
       .from("sdr_enrollments")
-      .update({
-        status: "opted_out",
-        commercial_stage: "opted_out",
-        opted_out_at: new Date().toISOString(),
-        cancel_reason: "wrong_contact",
-        follow_up_at: null,
-      })
+      .update(
+        thirdParty
+          ? { status: "paused", cancel_reason: closeReason, follow_up_at: null }
+          : {
+              status: "opted_out",
+              commercial_stage: "opted_out",
+              opted_out_at: new Date().toISOString(),
+              cancel_reason: "wrong_contact",
+              follow_up_at: null,
+            },
+      )
       .eq("id", enr.id)
       .eq("workspace_id", job.workspace_id);
     await admin.rpc("sdr_set_conversation_owner", { p_conversation: conv.id, p_owner: "paused" });
@@ -835,8 +896,9 @@ export async function processJob(
       workspace_id: job.workspace_id,
       enrollment_id: enr.id,
       job_id: job.id,
-      kind: "opt_out",
+      kind: thirdParty ? "closed_third_party" : "opt_out",
       status: "success",
+      payload: { reason: closeReason },
     });
   }
   return "sent";
