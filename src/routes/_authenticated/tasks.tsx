@@ -66,10 +66,7 @@ import { TablePagination } from "@/components/table-pagination";
 import { SortableColumnHeader, SortableColumns } from "@/components/grid/sortable-columns";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { deleteRowGuarded, deleteRowsGuarded, partialDeleteMessage } from "@/lib/delete-guard";
-import {
-  responsibleId,
-  responsibleOrExpr,
-} from "@/lib/entity/responsible";
+import { responsibleId, responsibleOrExpr } from "@/lib/entity/responsible";
 
 // Em tarefas, toda inserção já grava o responsável (gatilho copia o criador);
 // filtrar só por assigned_to usa índice e evita o OU com owner_id que estourava o tempo.
@@ -1034,7 +1031,9 @@ function TasksHubspotView() {
                       colSpan={visibleColumns.length + 2}
                       className="px-3 py-16 text-center text-sm"
                     >
-                      <p className="text-muted-foreground">A lista de tarefas demorou para responder ou falhou.</p>
+                      <p className="text-muted-foreground">
+                        A lista de tarefas demorou para responder ou falhou.
+                      </p>
                       <Button
                         variant="outline"
                         size="sm"
