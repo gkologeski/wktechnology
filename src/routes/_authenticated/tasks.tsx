@@ -67,10 +67,13 @@ import { SortableColumnHeader, SortableColumns } from "@/components/grid/sortabl
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { deleteRowGuarded, deleteRowsGuarded, partialDeleteMessage } from "@/lib/delete-guard";
 import {
-  RESPONSIBLE_COLUMNS_BASIC,
   responsibleId,
   responsibleOrExpr,
 } from "@/lib/entity/responsible";
+
+// Em tarefas, toda inserção já grava o responsável (gatilho copia o criador);
+// filtrar só por assigned_to usa índice e evita o OU com owner_id que estourava o tempo.
+const TASK_RESPONSIBLE_COLUMNS = ["assigned_to"] as const;
 
 export const Route = createFileRoute("/_authenticated/tasks")({
   component: TasksPage,
@@ -276,7 +279,7 @@ function TasksHubspotView() {
 
     if (activeView === "mine_open" && user?.id) {
       q = q
-        .or(responsibleOrExpr([user.id], { columns: RESPONSIBLE_COLUMNS_BASIC }))
+        .or(responsibleOrExpr([user.id], { columns: TASK_RESPONSIBLE_COLUMNS }))
         .eq("completed", false)
         .neq("task_status", "COMPLETED");
     } else if (activeView === "due_today") {
@@ -308,16 +311,16 @@ function TasksHubspotView() {
 
     // Responsável efetivo (assigned_to com fallback para owner_id), respeitando o escopo.
     if (assignee === ASSIGNEE_ME && user?.id)
-      q = q.or(responsibleOrExpr([user.id], { columns: RESPONSIBLE_COLUMNS_BASIC }));
+      q = q.or(responsibleOrExpr([user.id], { columns: TASK_RESPONSIBLE_COLUMNS }));
     else if (assignee === ASSIGNEE_NONE)
       q = q.or(
-        responsibleOrExpr([], { columns: RESPONSIBLE_COLUMNS_BASIC, includeUnassigned: true }),
+        responsibleOrExpr([], { columns: TASK_RESPONSIBLE_COLUMNS, includeUnassigned: true }),
       );
     else if (assignee !== ASSIGNEE_ALL)
-      q = q.or(responsibleOrExpr([assignee], { columns: RESPONSIBLE_COLUMNS_BASIC }));
+      q = q.or(responsibleOrExpr([assignee], { columns: TASK_RESPONSIBLE_COLUMNS }));
 
     const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
-    if (term) {
+    if (term.length >= 2) {
       q = q.or([`subject.ilike.%${term}%`, `body.ilike.%${term}%`].join(","));
     }
     return q;
@@ -348,6 +351,9 @@ function TasksHubspotView() {
     enabled: !projection.isLoading,
     // Mantém os registros anteriores ao trocar filtro/aba/página.
     placeholderData: keepPreviousData,
+    // Estouro de tempo não melhora repetindo a mesma busca: mostra o erro e deixa tentar de novo.
+    retry: (failures, error) =>
+      (error as { code?: string } | null)?.code !== "57014" && failures < 1,
     queryFn: async () => {
       let q = supabase.from("activities").select(
         // Projeção sob demanda: colunas base + colunas visíveis do catálogo.
@@ -355,7 +361,7 @@ function TasksHubspotView() {
           customFields: projection.needsCustomFields,
           allowed: projection.knownColumns,
         }),
-        { count: "exact" },
+        { count: "estimated" },
       );
       q = applyTaskFilters(q);
       q =
