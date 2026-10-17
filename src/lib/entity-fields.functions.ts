@@ -11,6 +11,7 @@ import {
   type RefKind,
 } from "./entity-fields-refs";
 import { isMoneyField } from "./format/money-fields";
+import { INTERNAL_DERIVATION_FIELDS, isDerivedCrmField } from "./entity/derived-fields";
 
 import { toLabel, UUID_RE, LEGACY_SYSTEM_FIELDS } from "./entity-fields-meta";
 import {
@@ -33,6 +34,7 @@ export type EntityFieldDef = {
   ref?: RefKind;
   /** Campo normalmente preenchido pelo sistema/integração — vai em bloco colapsado. */
   system?: boolean;
+  readonly?: boolean;
   /** Campo de texto rico (HTML) — renderiza editor WYSIWYG. */
   richText?: boolean;
 };
@@ -247,7 +249,11 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
       const isPipelineStageField =
         r.column_name === "stage_id" &&
         (data.entity === "deals" || data.entity === "leads" || data.entity === "tickets");
-      if ((HIDDEN.has(r.column_name) && !isPipelineStageField) || isSyncColumn(r.column_name))
+      if (
+        INTERNAL_DERIVATION_FIELDS.has(r.column_name) ||
+        (HIDDEN.has(r.column_name) && !isPipelineStageField) ||
+        isSyncColumn(r.column_name)
+      )
         continue;
       const inferred = inferType(r.data_type);
       // Colunas numéricas com nome de dinheiro viram "currency" (formatação BRL).
@@ -259,6 +265,7 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
         label: toLabel(r.column_name, data.entity),
         type,
         required: r.is_nullable === "NO" && !r.has_default,
+        readonly: isDerivedCrmField(r.column_name),
       };
       if (
         systemFields.has(r.column_name) ||

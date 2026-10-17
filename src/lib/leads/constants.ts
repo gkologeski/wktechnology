@@ -52,6 +52,10 @@ export const BASE_LEAD_KEYS = [
   "email",
   "phone",
   "mobile_phone",
+  "job_title",
+  "cargo_resumido",
+  "area_atuacao",
+  "nivel_hierarquico",
   "linkedin_url",
 
   "company_name",

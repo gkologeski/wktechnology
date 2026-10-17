@@ -50,6 +50,7 @@ import { AssigneeField } from "@/components/entity/assignee-field";
 import { CreatorField } from "@/components/entity/creator-field";
 import { creatorId, responsibleId } from "@/lib/entity/responsible";
 import { readViewAs } from "@/lib/view-as-client";
+import { isDerivedCrmField } from "@/lib/entity/derived-fields";
 
 // E.164-compliant chars only: digits, leading +, plus visual separators.
 const PHONE_INPUT_RE = /[^\d+\s\-()]/g;
@@ -283,17 +284,21 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
   const propsByKey = new Map(props.map((p) => [p.key, p]));
   const renderableSections: { title: string; items: PropDef[] }[] = (() => {
     if (!layoutSections || layoutSections.length === 0) return [];
-    return layoutSections
+    const sections = layoutSections
       .map((s) => ({
         title: s.title,
         items: s.keys.map((k) => propsByKey.get(k)).filter((p): p is PropDef => !!p),
       }))
       .filter((s) => s.items.length > 0);
+    const listed = new Set(sections.flatMap((s) => s.items.map((p) => p.key)));
+    const missingDerived = props.filter((p) => isDerivedCrmField(p.key) && !listed.has(p.key));
+    if (missingDerived.length) sections.push({ title: "Classificação", items: missingDerived });
+    return sections;
   })();
   const useSections = renderableSections.length > 0;
 
   const save = async (key: string) => {
-    if (readOnly) return;
+    if (readOnly || isDerivedCrmField(key)) return;
     const def = props.find((p) => p.key === key);
     let toSave: string | null = value || null;
     if (def?.type === "tel" && toSave) {
@@ -506,7 +511,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
               })()}
             </span>
 
-            {!readOnly && (
+            {!readOnly && !isDerivedCrmField(p.key) && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -631,7 +636,9 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
             {props.map((p) => (
               <div key={p.key} className="space-y-1">
                 <Label className="text-xs text-muted-foreground">{p.label}</Label>
-                {p.type === "company" ? (
+                {isDerivedCrmField(p.key) ? (
+                  <Input aria-label={p.label} readOnly value={String(row[p.key] ?? "")} />
+                ) : p.type === "company" ? (
                   <CompanyFieldAll
                     table={table}
                     rowId={row.id}

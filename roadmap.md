@@ -1,3 +1,13 @@
+# Roadmap — Cargo e porte derivados (prioridade atual)
+
+- [ ] Auditar fontes, gravadores, gatilhos e candidatos agregados
+- [ ] Implementar catálogo versionado, derivação e precedência no banco
+- [ ] Provar INSERT/UPDATE/UPSERT/clear/legado/isolamento em banco descartável
+- [ ] Aplicar migração, backup e backfill WK sem efeitos comerciais
+- [ ] Integrar fichas, filtros, grids, públicos, exportação e lookup
+- [ ] Validar testes, lint e sinais completos de compilação; documentar resultados
+- [ ] Publicar app (bloqueado até verificação do usuário)
+
 # Roadmap — Lia: ferramentas e agendamento direto
 
 - [x] Catálogo de habilidades/ferramentas, executor e laço de ferramentas no turno

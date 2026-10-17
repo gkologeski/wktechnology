@@ -72,6 +72,10 @@ const ENTITY_FIELDS: Record<
   { name: string; label: string; type?: string; options?: { value: string; label: string }[] }[]
 > = {
   leads: [
+    { name: "job_title", label: "Cargo", type: "text" },
+    { name: "cargo_resumido", label: "Cargo resumido", type: "text" },
+    { name: "area_atuacao", label: "Área de atuação", type: "text" },
+    { name: "nivel_hierarquico", label: "Nível hierárquico", type: "text" },
     { name: "first_name", label: "Nome", type: "text" },
     { name: "last_name", label: "Sobrenome", type: "text" },
     { name: "email", label: "Email", type: "text" },
@@ -93,11 +97,14 @@ const ENTITY_FIELDS: Record<
     { name: "created_at", label: "Criado em", type: "date" },
   ],
   contacts: [
+    { name: "cargo_resumido", label: "Cargo resumido", type: "text" },
+    { name: "area_atuacao", label: "Área de atuação", type: "text" },
+    { name: "nivel_hierarquico", label: "Nível hierárquico", type: "text" },
     { name: "first_name", label: "Nome", type: "text" },
     { name: "last_name", label: "Sobrenome", type: "text" },
     { name: "email", label: "Email", type: "text" },
     { name: "phone", label: "Telefone", type: "text" },
-    { name: "title", label: "Cargo", type: "text" },
+    { name: "job_title", label: "Cargo", type: "text" },
     { name: "score", label: "Score", type: "number" },
     {
       name: "marketing_status",
@@ -112,6 +119,7 @@ const ENTITY_FIELDS: Record<
     { name: "created_at", label: "Criado em", type: "date" },
   ],
   companies: [
+    { name: "size_description", label: "Porte Descritivo", type: "text" },
     { name: "name", label: "Nome", type: "text" },
     { name: "domain", label: "Domínio", type: "text" },
     { name: "industry", label: "Setor", type: "text" },
@@ -150,6 +158,7 @@ const ENTITY_FIELDS: Record<
 };
 
 export const Route = createFileRoute("/_authenticated/settings/segments")({
+  head: () => ({ meta: [{ title: "Segmentos | TechSales" }, { name: "description", content: "Segmentação da base comercial por Cargo e Porte Descritivo." }, { property: "og:title", content: "Segmentos | TechSales" }, { property: "og:description", content: "Segmentação da base comercial." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: SegmentsPage,
 });
 

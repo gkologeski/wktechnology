@@ -77,6 +77,7 @@ import {
 } from "@/components/crm/hubspot-shell";
 
 export const Route = createFileRoute("/_authenticated/companies")({
+  head: () => ({ meta: [{ title: "Empresas | TechSales" }, { name: "description", content: "Empresas e faixas de funcionários no TechSales." }, { property: "og:title", content: "Empresas | TechSales" }, { property: "og:description", content: "Empresas com Porte Descritivo por funcionários." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: CompaniesPage,
 });
 
@@ -115,6 +116,7 @@ const BASE_COMPANY_KEYS = [
   "logo_source",
   "industry",
   "size",
+  "size_description",
   "city",
   "state",
   "country",
@@ -376,6 +378,7 @@ function CompaniesHubspotView() {
         { header: "Nome", value: (r) => r["name"] },
         { header: "Domínio", value: (r) => r["domain"] },
         { header: "Setor", value: (r) => r["industry"] },
+        { header: "Porte Descritivo", value: (r) => r["size_description"] },
         { header: "Telefone", value: (r) => r["phone"] },
         { header: "Cidade", value: (r) => r["city"] },
         { header: "Estado", value: (r) => r["state"] },

@@ -240,6 +240,18 @@ export function createDbToolStore(
     },
     async crmContext(link) {
       const out: Record<string, unknown> = {};
+      const personId = link.contactId ?? link.leadId;
+      if (personId) {
+        const person = must(
+          await admin
+            .from(link.contactId ? "contacts" : "leads")
+            .select("job_title, cargo_resumido, area_atuacao, nivel_hierarquico")
+            .eq("id", personId)
+            .eq("workspace_id", ws)
+            .maybeSingle(),
+        );
+        if (person) out.professional_profile = person;
+      }
       if (link.dealId) {
         const d = must(
           await admin
@@ -255,12 +267,15 @@ export function createDbToolStore(
         const c = must(
           await admin
             .from("companies")
-            .select("name")
+            .select("name, size_description")
             .eq("id", link.companyId)
             .eq("workspace_id", ws)
             .maybeSingle(),
-        ) as { name: string } | null;
-        if (c) out.company = c.name;
+        ) as { name: string; size_description: string | null } | null;
+        if (c) {
+          out.company = c.name;
+          out.size_description = c.size_description;
+        }
       }
       const col = link.contactId ? "related_contact_id" : link.leadId ? "related_lead_id" : null;
       const val = link.contactId ?? link.leadId;

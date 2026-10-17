@@ -179,10 +179,10 @@ async function idsForFilter(
 
 const SELECT: Record<AudienceBase, string> = {
   leads:
-    "id, first_name, last_name, email, phone, mobile_phone, whatsapp_e164, company_name, source, status, company_id, assigned_to, converted_contact_id, converted_deal_id, created_at",
+    "id, first_name, last_name, email, phone, mobile_phone, whatsapp_e164, job_title, cargo_resumido, area_atuacao, nivel_hierarquico, company_name, source, status, company_id, assigned_to, converted_contact_id, converted_deal_id, created_at",
   contacts:
-    "id, first_name, last_name, email, phone, mobile_phone, whatsapp_e164, job_title, city, state, company_id, assigned_to, created_at",
-  companies: "id, name, industry, city, state, website, phone, assigned_to",
+    "id, first_name, last_name, email, phone, mobile_phone, whatsapp_e164, job_title, cargo_resumido, area_atuacao, nivel_hierarquico, city, state, company_id, assigned_to, created_at",
+  companies: "id, name, industry, size_description, city, state, website, phone, assigned_to",
   deals:
     "id, name, service_line, source, stage, value, company_id, primary_contact_id, assigned_to, created_at, closed_at",
 };
@@ -471,12 +471,17 @@ export async function loadAudienceRows(
     "lead.last_name": l?.last_name,
     "lead.full_name": l ? fullName(l.first_name, l.last_name) : null,
     "lead.email": l?.email,
+    "lead.job_title": l?.job_title,
+    "lead.cargo_resumido": l?.cargo_resumido,
+    "lead.area_atuacao": l?.area_atuacao,
+    "lead.nivel_hierarquico": l?.nivel_hierarquico,
     "lead.company_name": l?.company_name,
     "lead.source": l?.source,
     "lead.status": l?.status ? (LEAD_STATUS[l.status] ?? l.status) : null,
   });
   const companyValues = (c?: R) => ({
     "company.name": c?.name,
+    "company.size_description": c?.size_description,
     "company.industry": c?.industry,
     "company.city": c?.city,
     "company.state": c?.state,
@@ -489,6 +494,9 @@ export async function loadAudienceRows(
     "contact.full_name": c ? fullName(c.first_name, c.last_name) : null,
     "contact.email": c?.email,
     "contact.job_title": c?.job_title,
+    "contact.cargo_resumido": c?.cargo_resumido,
+    "contact.area_atuacao": c?.area_atuacao,
+    "contact.nivel_hierarquico": c?.nivel_hierarquico,
     "contact.city": c?.city,
     "contact.state": c?.state,
     ...owner("owner_contact", c?.assigned_to),

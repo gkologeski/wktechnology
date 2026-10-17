@@ -13,6 +13,7 @@ export const LEAD_KEYS = [
   "email",
   "phone",
   "mobile_phone",
+  "job_title",
   "company_name",
   "linkedin_url",
 ] as const;

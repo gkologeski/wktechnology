@@ -111,6 +111,7 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
           clean.lastName ||
           (clean.name ? clean.name.split(" ").slice(1).join(" ") || null : null);
         const company = clean.company || clean.company_name || null;
+        const jobTitle = clean.job_title || clean.cargo || null;
 
         if (form.target === "lead") {
           // Visitante nunca deve ver erro interno de duplicidade: se o lead já
@@ -127,6 +128,7 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
               .from("leads")
               .select(
                 "id, first_name, last_name, email, phone, company_name, assigned_to, owner_id",
+                // Cargo canônico somente quando informado no formulário.
               )
               .eq("id", leadId)
               .maybeSingle();
@@ -136,12 +138,14 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
                 email?: string;
                 phone?: string;
                 company_name?: string;
+                job_title?: string;
                 last_form_submission_at?: string;
               } = { last_form_submission_at: new Date().toISOString() };
               if (!existing.last_name && lastName) patch.last_name = lastName;
               if (!existing.email && email) patch.email = email;
               if (!existing.phone && phone) patch.phone = phone;
               if (!existing.company_name && company) patch.company_name = company;
+              if (jobTitle) patch.job_title = jobTitle;
               const { error: uerr } = await supabaseAdmin
                 .from("leads")
                 .update(patch)
@@ -186,6 +190,7 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
                 email: email || null,
                 phone: phone || null,
                 company_name: company,
+                job_title: jobTitle,
                 source: `form:${params.slug}`,
                 custom_fields: clean,
                 last_form_submission_at: new Date().toISOString(),

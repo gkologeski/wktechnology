@@ -79,6 +79,7 @@ import {
 } from "@/lib/entity/responsible";
 
 export const Route = createFileRoute("/_authenticated/contacts")({
+  head: () => ({ meta: [{ title: "Contatos | TechSales" }, { name: "description", content: "Contatos e classificação profissional no TechSales." }, { property: "og:title", content: "Contatos | TechSales" }, { property: "og:description", content: "Base de Contatos e classificação profissional." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: ContactsPage,
 });
 
@@ -118,6 +119,9 @@ const BASE_CONTACT_KEYS = [
   "mobile_phone",
   "whatsapp_e164",
   "job_title",
+  "cargo_resumido",
+  "area_atuacao",
+  "nivel_hierarquico",
   "company_id",
   "company_name",
   "lifecyclestage",
@@ -388,6 +392,9 @@ function ContactsHubspotView() {
         { header: "Email", value: (r) => r["email"] },
         { header: "Telefone", value: (r) => r["phone"] },
         { header: "Cargo", value: (r) => r["job_title"] },
+        { header: "Cargo resumido", value: (r) => r["cargo_resumido"] },
+        { header: "Área de atuação", value: (r) => r["area_atuacao"] },
+        { header: "Nível hierárquico", value: (r) => r["nivel_hierarquico"] },
         { header: "Estágio", value: (r) => r["lifecycle_stage"] },
         { header: "Criado em", value: (r) => r["created_at"] },
         { header: "Atualizado em", value: (r) => r["updated_at"] },

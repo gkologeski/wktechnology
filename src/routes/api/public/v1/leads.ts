@@ -11,6 +11,7 @@ const CreateLead = z.object({
   last_name: z.string().max(120).optional(),
   email: z.string().email().optional(),
   phone: z.string().max(40).optional(),
+  job_title: z.string().max(2000).nullable().optional(),
   company_name: z.string().max(200).optional(),
   source: z.string().max(80).optional(),
 });
@@ -28,7 +29,7 @@ export const Route = createFileRoute("/api/public/v1/leads")({
         let query = supabaseAdmin
           .from("leads")
           .select(
-            "id, first_name, last_name, email, phone, company_name, status, source, created_at",
+            "id, first_name, last_name, email, phone, job_title, cargo_resumido, area_atuacao, nivel_hierarquico, company_name, status, source, created_at",
             { count: "exact" },
           )
           .eq("workspace_id", auth.workspaceId);
@@ -84,7 +85,7 @@ export const Route = createFileRoute("/api/public/v1/leads")({
           })
 
           .select(
-            "id, first_name, last_name, email, phone, company_name, status, source, created_at",
+            "id, first_name, last_name, email, phone, job_title, cargo_resumido, area_atuacao, nivel_hierarquico, company_name, status, source, created_at",
           )
           .single();
         if (error) return new Response(JSON.stringify({ error: error.message }), { status: 400 });

@@ -201,6 +201,7 @@ export const SimpleActionSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("create_lead"),
     first_name: z.string().min(1).max(120),
+    job_title: z.string().max(2000).optional(),
     last_name: z.string().max(120).optional(),
     email: z.string().max(200).optional(),
     phone: z.string().max(50).optional(),

@@ -14,6 +14,7 @@ export default defineTool({
     last_name: z.string().trim().optional().describe("Sobrenome do lead."),
     email: z.string().trim().email().optional().describe("E-mail do lead."),
     phone: z.string().trim().optional().describe("Telefone do lead."),
+    job_title: z.string().optional().describe("Cargo original informado pelo lead."),
     company_name: z.string().trim().optional().describe("Nome da empresa informada pelo lead."),
     source: z.string().trim().optional().describe("Origem do lead (ex.: indicação, site, evento)."),
     notes: z.string().trim().optional().describe("Observações iniciais sobre o lead."),
@@ -26,7 +27,8 @@ export default defineTool({
   },
   handler: async (input, ctx) => {
     if (!ctx.isAuthenticated()) return unauthenticated();
-    const userId = ctx.getUserId()!;
+    const userId = ctx.getUserId();
+    if (!userId) return unauthenticated();
     const supabase = supabaseForUser(ctx);
     const workspaceId = await resolveWorkspaceId(supabase, userId);
     const dup = await checkLeadDuplicate(supabase, {
@@ -47,6 +49,7 @@ export default defineTool({
         last_name: input.last_name ?? null,
         email: input.email ?? null,
         phone: input.phone ?? null,
+        job_title: input.job_title ?? null,
         company_name: input.company_name ?? null,
         source: input.source ?? null,
         notes: input.notes ?? null,

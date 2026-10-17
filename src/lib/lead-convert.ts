@@ -65,6 +65,7 @@ export async function convertLead(lead: Lead, ownerId: string): Promise<ConvertR
         last_name: lead.last_name,
         email: lead.email,
         phone: lead.phone,
+        job_title: lead.job_title,
         company_id: companyId,
       })
       .select("id")

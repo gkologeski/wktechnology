@@ -67,6 +67,19 @@ import { LeadsDialogs, type PendingAction } from "@/components/leads/leads-dialo
 import { useLeadColumns } from "@/components/leads/use-lead-columns";
 
 export const Route = createFileRoute("/_authenticated/leads")({
+  head: () => ({
+    meta: [
+      { title: "Leads | TechSales" },
+      {
+        name: "description",
+        content: "Base de Leads com Cargo e classificação profissional no TechSales.",
+      },
+      { property: "og:title", content: "Leads | TechSales" },
+      { property: "og:description", content: "Base de Leads com classificação profissional." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: LeadsPage,
 });
 
@@ -499,6 +512,10 @@ function LeadsHubspotView() {
       { key: "email", label: "Email" },
       { key: "phone", label: "Telefone" },
       { key: "mobile_phone", label: "Celular" },
+      { key: "job_title", label: "Cargo" },
+      { key: "cargo_resumido", label: "Cargo resumido" },
+      { key: "area_atuacao", label: "Área de atuação" },
+      { key: "nivel_hierarquico", label: "Nível hierárquico" },
       { key: "company", label: "Empresa" },
 
       { key: "status", label: "Status" },
