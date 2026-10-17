@@ -57,3 +57,25 @@ Referências independentes antes da migração (fornecidas pelo usuário, **aind
 | companies.size                        |           32.044 | 867df8a861fcd7e1fed2914459a3c935 |
 
 Comparar fontes linha a linha com `crm_derivation_backup` e reproduzir a mesma ordenação/serialização do hash independente antes de declarar igualdade; nenhum hash atual foi obtido. Não interpretar a indisponibilidade como fonte preservada comprovada. Ainda pendentes: aplicar DDL/v2, terminar preenchimento WK, métricas finais, integridade/efeitos/outros workspaces, REST autenticado e navegador com valores reais. Publicação segue bloqueada pelo aceite do usuário.
+
+## Estado confirmado — continuidade autorizada 17/10/2026
+
+Esta seção substitui o estado operacional anterior, preservado como histórico.
+
+| Entidade | Ativos | Derivação conferida | Fontes diferentes do backup | Datas diferentes do backup |
+| --- | ---: | ---: | ---: | ---: |
+| Contatos | 51.144 | 51.144 v2 | 0 | 18.200 |
+| Leads | 5.924 | 5.924 v2 | 0 | 5.924 |
+| Empresas | 32.044 | 32.044 conformes (inclui NULL válido) | 0 | 252 |
+
+Hashes JSON ordenados iguais entre base e backup: Contatos 63c898efaf868ed98a4ecee4f0fa6d27; Leads 911d2642f91ba11e581750bc4e687709; Empresas 3c1a888f6457dd8bd27cd345f5b19275. Método md5(string_agg(jsonb_build_array(id, fonte...)::text,'|' ORDER BY id)). Não afirmar igualdade com hashes independentes do usuário: serialização original desconhecida. Comparação linha a linha retornou zero diferenças nas fontes.
+
+Catálogo v2 ativo com 45 regras. Playwright autenticado confirmou 51.144 Contatos e ficha HR Business Partner / Recursos humanos / Especialista. Compostos conflitantes continuam ambíguos. Sem prova isolada REST/JWT completa nesta continuidade. Leitura agregada encontrou zero registros dessas três entidades em outros workspaces.
+
+Migrações presentes/aplicadas: 0144_crm_reconcile_generated_backfill_guard.sql e 0145_crm_preserve_responsible_during_derivation_backfill.sql. Arquivos criados: duas fixtures SQL e dois testes de regressão; nenhum removido. Alterados: README, roadmap, esta auditoria e src/lib/entity/AGENTS.md; metadados/types gerados pela ferramenta.
+
+Validações reais: 8 assertions novas PostgreSQL descartável (sem service_role); bunx vitest run 147 arquivos/1.004 testes passaram; bun run lint 0 erros/1.325 avisos. Compilação automática build OK às 14:06:17 UTC; verify/typecheck manual não executados por restrição do sandbox.
+
+**Incidente/risco:** sincronização antiga de assigned_user_id invalidou a guarda AFTER e criou 48.004 eventos de derivação/espelho ainda não processados. Remoção restrita por workspace/período/entidades/ausência de processamento/comparação completa das demais propriedades; zero desses eventos restantes. Eventos de score não removidos, audit logs preservados. Proteção nova impede repetição. Datas/espelhos históricos não restaurados: falta cadeia segura contra alterações posteriores. Pedido integral permanece parcial apesar de derivados 100% preenchidos.
+
+Pendências: remediação histórica auditável, serialização dos hashes independentes, prova REST/JWT completa e verificação humana antes de publicar. Validar manualmente abrindo ficha com HR Business Partner e conferindo três campos somente leitura. Nenhuma campanha/Lia ativada, nenhuma publicação/envio realizado.

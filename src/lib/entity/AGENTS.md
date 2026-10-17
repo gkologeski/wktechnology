@@ -1,4 +1,4 @@
 - CRM classifications are database-owned through invoker row triggers and workspace-versioned catalogs; Lead Cargo explicit-edit provenance uses target-column triggers. Why: SQL/REST/import paths must share rules without resurrecting cleared values.
 - Shared UI and bulk writers keep derived fields read-only while catalogs expose them for reads/filters. Why: database-owned values cannot be forged.
-- Derivation backfill suppresses only audit/workflow/timestamp effects for backend SQL and authorized new-field-only changes, never RLS/readonly guards. Why: preserve commercial history and other tenants.
+- Derivation backfill skips responsibility mirroring and audit/workflow/timestamp effects for authorized backend SQL, accounting for generated NEW phone indexes, never RLS/readonly guards. Why: stale mirrors otherwise cause unrelated writes/events.
 - Catalog exclusions are evaluated centrally by the invoker classifier and validated alongside inclusion patterns; immutable catalog revisions ship as separate data scripts. Why: occupational exceptions must work identically for SQL, imports and REST without editing old catalog versions.

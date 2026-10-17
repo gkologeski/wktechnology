@@ -42,3 +42,11 @@ HRBP/Business Partner, People Partner, Talent Acquisition Partner, Product Owner
 `backfill-v2.sql` limita cada transação a 1.000 linhas por entidade, só WK, sem escrever cargo/size originais, e exige v2 ativo. Reclassifica inclusive registros preenchidos com v1, não só campos vazios. Não foi executado em produção: Cloud indisponível. O preenchimento original permanece pendente, não substituído por esta revisão.
 
 Provas atualizadas: 92 assertions isoladas, incluindo HRBP via UPDATE real do gatilho; nenhum uso de service_role nas assertions. `bunx vitest run`: 1.004 testes passaram; `bun run lint`: 0 erros/1.325 avisos. Verify completo não executado manualmente pois inclui typecheck, vedado pelo harness; build/typecheck dependem de sinais automáticos.
+
+## Estado confirmado — continuidade 17/10/2026
+
+Substitui as pendências operacionais anteriores: catálogo v2 ativo confirmado; preenchimento completo de 51.144 Contatos, 5.924 Leads, 32.044 Empresas. Fontes iguais ao backup linha a linha e por hashes JSON ordenados.
+
+Migrações atuais presentes/aplicadas: 0144_crm_reconcile_generated_backfill_guard.sql e 0145_crm_preserve_responsible_during_derivation_backfill.sql. As anteriores 0144/0145 relatadas não estavam no checkout; não usar relatos como prova de arquivo. Testes novos: generated-columns-guard-test.sql (5 assertions) e responsible-backfill-guard-test.sql (3 assertions), executados em PostgreSQL descartável sem service_role.
+
+Incidente: sincronização de espelho assigned_user_id invalidava a guarda AFTER e gerava eventos. Foram removidos somente eventos não processados com diferenças limitadas à derivação/espelho, zero desses eventos restantes. Eventos de score e audit logs preservados. Datas e espelhos históricos ainda exigem reconstrução segura; não restaurar cegamente. Nada publicado ou enviado.
