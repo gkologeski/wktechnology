@@ -3,6 +3,8 @@
 - [x] Auditar fontes, gravadores, gatilhos e candidatos agregados
 - [x] Implementar catálogo versionado, derivação e precedência no banco (0142/0143)
 - [x] Provar INSERT/UPDATE/UPSERT/clear/legado/isolamento/readonly em banco descartável
+- [ ] Corrigir HRBP/Business Partner, Product Owner, Partner Manager, desenvolvimento de negócios e Diretor Técnico; versionar catálogo e testar SQL
+- [ ] Comparar hashes das fontes com referências independentes e recalcular WK com catálogo corrigido
 - [ ] Concluir backfill WK e conferir cobertura/fontes/efeitos (bloqueado: conexão do banco indisponível; migrações e backup já aplicados)
 - [x] Integrar fichas, filtros, grids, públicos, exportação e lookup
 - [x] Validar testes, lint e sinais completos de compilação; documentar resultados
