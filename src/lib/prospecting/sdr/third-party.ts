@@ -110,16 +110,20 @@ export function extractReferral(text: string): Referral | null {
   const phone = toWhatsAppE164(m[1]);
   if (!phone) return null;
   const before = raw.slice(0, m.index).replace(/[:\-–,]+\s*$/, "");
-  const nm = before.match(/(?:com (?:o|a)?\s*|e (?:o|a)\s+|^)\s*([A-ZÀ-Ú][\p{L}]+(?: [A-ZÀ-Ú][\p{L}]+){0,3})\s*$/u);
+  const nm = before.match(
+    /(?:com (?:o|a)?\s*|e (?:o|a)\s+|^)\s*([A-ZÀ-Ú][\p{L}]+(?: [A-ZÀ-Ú][\p{L}]+){0,3})\s*$/u,
+  );
   return { name: nm?.[1]?.trim() ?? null, phoneE164: phone };
 }
 
 /** Pergunta de qualificação (necessidade/projeto/desafio) — proibida com terceiros. */
 export function isQualificationQuestion(reply: string): boolean {
   const t = norm(reply);
-  return /\b(necessidade|demanda|desafio|projeto|planejando|dor|precisam|precisando|vaga|profissional)\b/.test(
-    t,
-  ) && /\?/.test(reply);
+  return (
+    /\b(necessidade|demanda|desafio|projeto|planejando|dor|precisam|precisando|vaga|profissional)\b/.test(
+      t,
+    ) && /\?/.test(reply)
+  );
 }
 
 export type ThirdPartyDecision =
@@ -151,7 +155,8 @@ export function decideThirdParty(history: Msg[]): ThirdPartyDecision {
   const referral = extractReferral(lastText);
   if (referral) return { action: "save_referral", reason, reply: REFERRAL_THANKS, referral };
   if (declinesReferral(lastText)) return { action: "close", reason, reply: CLOSE_THANKS };
-  if (promisesReferral(lastText)) return { action: "wait_referral", reason, reply: "Obrigada! Fico no aguardo do contato." };
+  if (promisesReferral(lastText))
+    return { action: "wait_referral", reason, reply: "Obrigada! Fico no aguardo do contato." };
   if (asked) return { action: "close", reason, reply: CLOSE_THANKS };
   return { action: "ask_referral", reason, reply: REFERRAL_QUESTION };
 }

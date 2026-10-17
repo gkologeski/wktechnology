@@ -14,15 +14,17 @@ const inn = (body: string) => ({ direction: "inbound", body });
 describe("detectNotTarget", () => {
   it("reconhece quem saiu da empresa (Andre)", () => {
     expect(
-      detectNotTarget("boa tarde Lia, não sei te dizer, pois já faz uns 5 anos que saí da Opentech"),
+      detectNotTarget(
+        "boa tarde Lia, não sei te dizer, pois já faz uns 5 anos que saí da Opentech",
+      ),
     ).toBe("left_company");
     expect(detectNotTarget("Não trabalho mais lá")).toBe("left_company");
   });
   it("reconhece número de outra pessoa (Rafael, Danilo)", () => {
     expect(detectNotTarget("Esse telefone não é de Rafael")).toBe("not_this_person");
-    expect(detectNotTarget("Olá Lia! Esse não é o contato do Danilo. Vou te encaminhar o correto.")).toBe(
-      "not_this_person",
-    );
+    expect(
+      detectNotTarget("Olá Lia! Esse não é o contato do Danilo. Vou te encaminhar o correto."),
+    ).toBe("not_this_person");
   });
   it("não encerra conversas legítimas", () => {
     expect(detectNotTarget("Não é o momento")).toBeNull();
@@ -88,9 +90,13 @@ describe("extractReferral", () => {
 
 describe("isQualificationQuestion", () => {
   it("bloqueia as perguntas do caso Danilo", () => {
-    expect(isQualificationQuestion("Posso saber qual a necessidade de TI do responsável?")).toBe(true);
+    expect(isQualificationQuestion("Posso saber qual a necessidade de TI do responsável?")).toBe(
+      true,
+    );
     expect(
-      isQualificationQuestion("Você gostaria de falar sobre algum desafio específico ou projeto que estejam planejando?"),
+      isQualificationQuestion(
+        "Você gostaria de falar sobre algum desafio específico ou projeto que estejam planejando?",
+      ),
     ).toBe(true);
   });
 });
