@@ -41,3 +41,19 @@ Faixas: 0–50,51–100,101–200,201–500,501–1.000,1.001–5.000,5.001–10
 ## Pendências essenciais
 
 Recuperar acesso e concluir backfill; conferir cardinalidade/cobertura final por Cargo/Área/Nível e faixas; comprovar fontes/updated_at/ausência de efeitos via backup, outros workspaces intactos, REST autenticado e browser com dados reais. Não publicar até verificação do usuário.
+
+## Correção independente — 17/10/2026 (não concluída na base)
+
+Correção v2 preparada e testada no banco isolado: HR Business Partner/HRBP → HR Business Partner / Recursos humanos / Especialista; People/Talent Acquisition Partner não são societários; Product Owner → Produto/Especialista; Partner Manager e desenvolvimento de negócios → Comercial/Gerência; Co-Founder & CTO → CTO/Tecnologia/C-Level; CEO & CTO continua ambíguo; Diretor Técnico conserva título e área indeterminada sem contexto. Catálogo v1 preservado, v2 com exclusões validadas e 45 regras, somente WK.
+
+DDL em `scripts/derived-crm/classifier-v2.sql`, dados em `catalog-v2.sql`, lotes em `backfill-v2.sql`. Nenhuma nova migration foi aplicada e v2 não foi ativado: consultas repetidas falharam e `cloud_status` confirmou backend inacessível. Não iniciar migração/escrita pesada em estado indisponível. 92 assertions isoladas; 1.004 testes unitários passando; lint 0 erros/1.325 avisos. Playwright autenticado mostrou os filtros derivados mas nenhum contato carregado: não prova preenchimento nem ficha real. Verify composto não executado; compilação/tipos seguem validação automática, sem alegação de nova execução manual.
+
+Referências independentes antes da migração (fornecidas pelo usuário, **ainda não comparadas**):
+
+| Fonte | Registros ativos | Hash informado |
+| --- | ---: | --- |
+| contacts.job_title | 51.144 | efa1f80d23891b892c58dbd851e32429 |
+| leads raw job title + cargo_formatado | 5.924 | 6388feddeef982281c78c71a10acf066 |
+| companies.size | 32.044 | 867df8a861fcd7e1fed2914459a3c935 |
+
+Comparar fontes linha a linha com `crm_derivation_backup` e reproduzir a mesma ordenação/serialização do hash independente antes de declarar igualdade; nenhum hash atual foi obtido. Não interpretar a indisponibilidade como fonte preservada comprovada. Ainda pendentes: aplicar DDL/v2, terminar preenchimento WK, métricas finais, integridade/efeitos/outros workspaces, REST autenticado e navegador com valores reais. Publicação segue bloqueada pelo aceite do usuário.

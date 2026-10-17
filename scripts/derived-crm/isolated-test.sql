@@ -23,6 +23,9 @@ DO $$ DECLARE x record; d jsonb; rules jsonb; BEGIN
 END $$;
 INSERT INTO public.contacts(id,workspace_id,owner_id,first_name,job_title,cargo_resumido) VALUES('90000000-0000-4000-8000-000000000001','184b9435-0a9b-4334-9e89-8854dc883f5d','10000000-0000-4000-8000-000000000091','ISO','CTO','FORGED');
 SELECT pg_temp.assert_ok(cargo_resumido='CTO','INSERT contacts overrides forged') FROM contacts WHERE id='90000000-0000-4000-8000-000000000001';
+UPDATE contacts SET job_title='HR Business Partner' WHERE id='90000000-0000-4000-8000-000000000001';
+SELECT pg_temp.assert_ok(cargo_resumido='HR Business Partner' AND area_atuacao='Recursos humanos' AND nivel_hierarquico='Especialista' AND cargo_catalog_version=2,'HRBP row trigger uses v2 without JS') FROM contacts WHERE id='90000000-0000-4000-8000-000000000001';
+UPDATE contacts SET job_title='CTO' WHERE id='90000000-0000-4000-8000-000000000001';
 UPDATE contacts SET area_atuacao='FORGED' WHERE id='90000000-0000-4000-8000-000000000001';
 SELECT pg_temp.assert_ok(area_atuacao='Tecnologia','UPDATE derived overwrite') FROM contacts WHERE id='90000000-0000-4000-8000-000000000001';
 INSERT INTO contacts(id,workspace_id,owner_id,first_name,job_title) VALUES('90000000-0000-4000-8000-000000000001','184b9435-0a9b-4334-9e89-8854dc883f5d','10000000-0000-4000-8000-000000000091','ISO','CFO') ON CONFLICT(id) DO UPDATE SET job_title=EXCLUDED.job_title;
