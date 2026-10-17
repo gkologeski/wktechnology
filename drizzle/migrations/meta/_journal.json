@@ -1030,6 +1030,13 @@
       "when": 1792254212764,
       "tag": "0146_notify_inbox_link_conversation",
       "breakpoints": true
+    },
+    {
+      "idx": 147,
+      "version": "7",
+      "when": 1792258317550,
+      "tag": "0147_tasks_list_responsible_indexes",
+      "breakpoints": true
     }
   ]
 }
