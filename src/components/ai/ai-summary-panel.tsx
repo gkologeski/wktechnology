@@ -74,6 +74,7 @@ export function AiSummaryPanel({ entity, entityId }: { entity: Entity; entityId:
 
   const [rows, setRows] = useState<SummaryRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [openIds, setOpenIds] = useState<Record<string, boolean>>({});
   const [generating, setGenerating] = useState(false);
   const [kind, setKind] = useState<Kind>("conversation");
   const [windowDays, setWindowDays] = useState(60);
