@@ -4,12 +4,14 @@
 - [x] Implementar catálogo versionado, derivação e precedência no banco (0142/0143)
 - [x] Provar INSERT/UPDATE/UPSERT/clear/legado/isolamento/readonly em banco descartável
 - [x] Preparar catálogo v2 e classificador corrigidos; provar HRBP/Business Partner, Product Owner, Partner Manager, desenvolvimento de negócios e Diretor Técnico em 92 assertions SQL isoladas
-- [ ] Aplicar migration complementar e catálogo v2 WK (bloqueado: Cloud inacessível confirmado por cloud_status; nenhum DDL/v2 aplicado)
-- [ ] Comparar hashes das fontes com referências independentes e recalcular WK com catálogo corrigido
-- [ ] Concluir backfill WK e conferir cobertura/fontes/efeitos (bloqueado: conexão do banco indisponível; migrações e backup já aplicados)
+- [x] Confirmar classificador/catalogo v2 ativo; proteções atuais aplicadas em 0144/0145
+- [x] Concluir recalculo: 51.144 Contatos, 5.924 Leads, 32.044 Empresas; fontes iguais ao backup linha a linha e por hashes JSON ordenados
+- [ ] Comparar hashes independentes (bloqueado: serialização original desconhecida)
+- [ ] Remediar datas/espelhos históricos com cadeia auditável; bloqueado por falta de prova de ausência de edições posteriores, não restaurar cegamente
 - [x] Integrar fichas, filtros, grids, públicos, exportação e lookup
 - [x] Validar testes, lint e sinais completos de compilação; documentar resultados
-- [ ] Validar REST autenticado e navegador com dados reais (bloqueado: acesso ao banco)
+- [x] Playwright autenticado: lista real e ficha HR Business Partner / Recursos humanos / Especialista
+- [ ] Prova isolada REST/JWT completa (não executada nesta continuidade)
 - [ ] Publicar app (bloqueado até verificação do usuário)
 
 # Roadmap — Lia: ferramentas e agendamento direto
