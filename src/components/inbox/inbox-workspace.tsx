@@ -57,8 +57,8 @@ export function InboxWorkspace({
 
   return (
     <div className="relative flex h-full min-h-[32rem] flex-col overflow-hidden bg-product-canvas font-[var(--font-body)]">
-      <header className="mb-2 shrink-0 overflow-hidden rounded-md bg-product-header ring-1 ring-border-subtle">
-        <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 px-3 py-1.5 xl:px-4">
+      <header className="mb-1.5 shrink-0 overflow-hidden rounded-md bg-product-header ring-1 ring-border-subtle">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-0.5 px-3 py-0.5 xl:px-4">
           <div className="min-w-0 shrink-0" title={description}>
             <h1 className="truncate font-[var(--font-heading)] text-sm font-semibold text-text-primary">
               {title}
@@ -69,7 +69,7 @@ export function InboxWorkspace({
             <InboxChannelTabs />
           </div>
           {actions ? (
-            <div className="flex min-w-0 items-center gap-2 [&_[data-slot=button]]:h-8 [&_[data-slot=button]]:shrink-0">
+            <div className="flex min-w-0 items-center gap-2 [&_[data-slot=button]]:h-6 [&_[data-slot=button]]:text-xs [&_[data-slot=button]]:shrink-0">
               {actions}
             </div>
           ) : null}
@@ -144,7 +144,7 @@ function InboxChannelTabs() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   return (
     <nav
-      className="flex min-w-0 items-center gap-1 overflow-x-auto pb-0.5"
+      className="flex min-w-0 items-center gap-1 overflow-x-auto"
       aria-label="Canais da Inbox"
     >
       {CHANNELS.map(({ to, label, icon: Icon }) => {
@@ -156,13 +156,13 @@ function InboxChannelTabs() {
             to={to}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "relative inline-flex min-h-9 shrink-0 items-center justify-center gap-2 rounded-[calc(var(--radius)+0.5rem)] px-3 py-2 text-xs font-medium transition-[background-color,color,box-shadow,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none sm:text-sm",
+              "relative inline-flex h-6 shrink-0 items-center justify-center gap-1.5 rounded-[calc(var(--radius)+0.25rem)] px-2.5 py-0 text-xs font-medium transition-[background-color,color,box-shadow,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none",
               active
                 ? "bg-surface-2 text-accent-foreground shadow-sm ring-1 ring-border-subtle"
                 : "text-text-secondary hover:bg-product-panel-muted hover:text-text-primary",
             )}
           >
-            <Icon className={cn("h-4 w-4 shrink-0", active && "text-primary")} />
+            <Icon className={cn("h-3.5 w-3.5 shrink-0", active && "text-primary")} />
             <span className="truncate">{label}</span>
           </Link>
         );
