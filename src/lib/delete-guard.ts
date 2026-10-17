@@ -43,7 +43,9 @@ export async function deleteRowsGuarded(
         ok: false,
         deleted,
         requested: ids.length,
-        message: deleted ? `${deleted} excluído(s) antes da falha: ${error.message}` : error.message,
+        message: deleted
+          ? `${deleted} excluído(s) antes da falha: ${error.message}`
+          : error.message,
       };
     deleted += Array.isArray(data) ? data.length : 0;
   }
