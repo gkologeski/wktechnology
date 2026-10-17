@@ -64,6 +64,16 @@ import { useCanDelete, DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
 
 export const Route = createFileRoute("/_authenticated/leads/$id")({
+  head: () => ({
+    meta: [
+      { title: "Lead | TechSales" },
+      { name: "description", content: "Ficha do Lead e classificação profissional no TechSales." },
+      { property: "og:title", content: "Lead | TechSales" },
+      { property: "og:description", content: "Ficha do Lead e classificação profissional." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: LeadDetail,
 });
 
@@ -382,6 +392,10 @@ function LeadDetail() {
             props={[
               { key: "first_name", label: "Nome", primary: true },
               { key: "last_name", label: "Sobrenome", primary: true },
+              { key: "job_title", label: "Cargo", primary: true },
+              { key: "cargo_resumido", label: "Cargo resumido", primary: true },
+              { key: "area_atuacao", label: "Área de atuação", primary: true },
+              { key: "nivel_hierarquico", label: "Nível hierárquico", primary: true },
               { key: "email", label: "Email", type: "email", primary: true },
               { key: "phone", label: "Telefone", type: "tel", primary: true },
               { key: "mobile_phone", label: "Celular", type: "tel", primary: true },

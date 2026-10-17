@@ -17,7 +17,7 @@ export async function upsertByHsId(
 ): Promise<UpsertResult> {
   const normalizedPayload = withOriginalCreatedAt(payload);
   const compareKeys = Object.keys(normalizedPayload).filter(
-    (k) => k !== "owner_id" && k !== "external_ids" && k !== "hs_raw",
+    (k) => k !== "owner_id" && k !== "external_ids" && (k !== "hs_raw" || table === "leads"),
   );
   const selectCols = ["id", ...compareKeys].join(",");
   const { data: existing } = await supabase
@@ -69,7 +69,7 @@ export async function upsertBatchByHsId(
     new Set(
       normalizedTasks.flatMap((t) =>
         Object.keys(t.payload).filter(
-          (k) => k !== "owner_id" && k !== "external_ids" && k !== "hs_raw",
+          (k) => k !== "owner_id" && k !== "external_ids" && (k !== "hs_raw" || table === "leads"),
         ),
       ),
     ),

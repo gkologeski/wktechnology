@@ -291,6 +291,7 @@ export const agentCreateLead = createServerFn({ method: "POST" })
         email: z.string().email().optional(),
         phone: z.string().max(40).optional(),
         source: z.string().max(80).optional(),
+        job_title: z.string().max(2000).nullable().optional(),
         company_name: z.string().max(200).optional(),
       })
       .parse(d),

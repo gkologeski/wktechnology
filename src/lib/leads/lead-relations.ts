@@ -25,6 +25,7 @@ export type LeadRelationsInput = {
   last_name?: string | null;
   email?: string | null;
   phone?: string | null;
+  job_title?: string | null;
   company_id?: string | null;
   company_name?: string | null;
   converted_contact_id?: string | null;
@@ -40,7 +41,7 @@ export type LeadRelationsResult = {
 };
 
 const LEAD_COLUMNS =
-  "id, workspace_id, owner_id, assigned_user_id, first_name, last_name, email, phone, company_id, company_name, converted_contact_id";
+  "id, workspace_id, owner_id, assigned_user_id, first_name, last_name, email, phone, job_title, company_id, company_name, converted_contact_id";
 
 function text(v: unknown): string | null {
   if (typeof v !== "string") return null;
@@ -157,6 +158,7 @@ export async function ensureLeadRelations(
           last_name: text(row.last_name),
           email,
           phone,
+          job_title: row.job_title ?? null,
           company_id: companyId,
           company_name: companyId ? null : companyName,
         } as never)

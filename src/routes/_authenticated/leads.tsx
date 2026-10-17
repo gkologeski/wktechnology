@@ -63,10 +63,24 @@ import { LeadsTable } from "@/components/leads/leads-table";
 import { LeadsBoard } from "@/components/leads/leads-board";
 import { Button } from "@/components/ui/button";
 import { LayoutGrid, Table as TableIcon } from "lucide-react";
+import { applyDerivedFilters } from "@/lib/entity/derived-filter-query";
 import { LeadsDialogs, type PendingAction } from "@/components/leads/leads-dialogs";
 import { useLeadColumns } from "@/components/leads/use-lead-columns";
 
 export const Route = createFileRoute("/_authenticated/leads")({
+  head: () => ({
+    meta: [
+      { title: "Leads | TechSales" },
+      {
+        name: "description",
+        content: "Base de Leads com Cargo e classificação profissional no TechSales.",
+      },
+      { property: "og:title", content: "Leads | TechSales" },
+      { property: "og:description", content: "Base de Leads com classificação profissional." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: LeadsPage,
 });
 
@@ -241,6 +255,7 @@ function LeadsHubspotView() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const applyFilters = (q: any, ignoreStatusView = false) => {
+    q = applyDerivedFilters(q, filters.derived);
     // View
     if (activeView === "mine" && user?.id)
       q = q.or(responsibleOrExpr([user.id], { columns: RESPONSIBLE_COLUMNS_FULL }));
@@ -499,6 +514,10 @@ function LeadsHubspotView() {
       { key: "email", label: "Email" },
       { key: "phone", label: "Telefone" },
       { key: "mobile_phone", label: "Celular" },
+      { key: "job_title", label: "Cargo" },
+      { key: "cargo_resumido", label: "Cargo resumido" },
+      { key: "area_atuacao", label: "Área de atuação" },
+      { key: "nivel_hierarquico", label: "Nível hierárquico" },
       { key: "company", label: "Empresa" },
 
       { key: "status", label: "Status" },
@@ -577,6 +596,7 @@ function LeadsHubspotView() {
   });
 
   const hasActiveFilters =
+    Object.values(filters.derived ?? {}).some((v) => v.trim()) ||
     filters.status.length > 0 ||
     filters.substatusIds.length > 0 ||
     filters.source.length > 0 ||

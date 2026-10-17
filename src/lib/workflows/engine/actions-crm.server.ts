@@ -25,6 +25,9 @@ export async function handleCrmAction(
       const base: Record<string, unknown> = {
         owner_id: owner,
         status: "new",
+        job_title: action.job_title
+          ? (renderTokens(action.job_title, ctx.after) as string) || null
+          : null,
         first_name: first,
         last_name: action.last_name
           ? (renderTokens(action.last_name, ctx.after) as string) || null

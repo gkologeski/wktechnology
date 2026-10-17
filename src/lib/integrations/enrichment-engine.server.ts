@@ -152,7 +152,7 @@ const PROVIDER_FN: Record<EnrichProvider, typeof apolloMatch> = {
 
 // Campos atualizáveis por entidade.
 const UPDATABLE_FIELDS: Record<EnrichEntity, (keyof EnrichedPerson)[]> = {
-  lead: ["email", "phone", "first_name", "last_name", "company_name"],
+  lead: ["email", "phone", "first_name", "last_name", "company_name", "job_title", "linkedin_url"],
   contact: ["email", "phone", "first_name", "last_name", "job_title", "linkedin_url"],
 };
 
@@ -209,7 +209,7 @@ export async function runEnrichmentBatch(opts: RunBatchOpts): Promise<RunBatchRe
 
   const cols =
     entity === "lead"
-      ? "id, workspace_id, first_name, last_name, email, phone, company_name"
+      ? "id, workspace_id, first_name, last_name, email, phone, company_name, job_title, linkedin_url"
       : "id, workspace_id, first_name, last_name, email, phone, job_title, linkedin_url, company_name";
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: rows, error } = await (supabase as any)

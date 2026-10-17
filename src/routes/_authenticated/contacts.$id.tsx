@@ -20,6 +20,19 @@ import { useIsLinkedOnly } from "@/hooks/use-rep-restricted";
 import { LinkedContactSummary } from "@/components/record/linked-record-summary";
 
 export const Route = createFileRoute("/_authenticated/contacts/$id")({
+  head: () => ({
+    meta: [
+      { title: "Contato | TechSales" },
+      {
+        name: "description",
+        content: "Ficha do contato e classificação profissional no TechSales.",
+      },
+      { property: "og:title", content: "Contato | TechSales" },
+      { property: "og:description", content: "Ficha e classificação profissional do contato." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: ContactDetail,
 });
 
@@ -48,10 +61,12 @@ function ContactDetail() {
     queryKey: qk.company(contact?.company_id ?? "none"),
     enabled: !!contact?.company_id,
     queryFn: async () => {
+      const companyId = contact?.company_id;
+      if (!companyId) return null;
       const { data } = await supabase
         .from("companies")
         .select("*")
-        .eq("id", contact!.company_id!)
+        .eq("id", companyId)
         .maybeSingle();
       return (data as Company | null) ?? null;
     },
@@ -188,6 +203,9 @@ function ContactDetail() {
               { key: "mobile_phone", label: "Celular", type: "tel", primary: true },
               { key: "whatsapp_e164", label: "WhatsApp", type: "tel", primary: true },
               { key: "job_title", label: "Cargo", primary: true },
+              { key: "cargo_resumido", label: "Cargo resumido", primary: true },
+              { key: "area_atuacao", label: "Área de atuação", primary: true },
+              { key: "nivel_hierarquico", label: "Nível hierárquico", primary: true },
               { key: "notes", label: "Notas" },
             ]}
             onSaved={load}

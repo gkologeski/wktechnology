@@ -1,4 +1,6 @@
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
+import { applyDerivedFilters } from "@/lib/entity/derived-filter-query";
+import { DerivedFilterFields } from "@/components/entity/derived-filter-fields";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -79,6 +81,16 @@ import {
 } from "@/lib/entity/responsible";
 
 export const Route = createFileRoute("/_authenticated/contacts")({
+  head: () => ({
+    meta: [
+      { title: "Contatos | TechSales" },
+      { name: "description", content: "Contatos e classificação profissional no TechSales." },
+      { property: "og:title", content: "Contatos | TechSales" },
+      { property: "og:description", content: "Base de Contatos e classificação profissional." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: ContactsPage,
 });
 
@@ -118,6 +130,9 @@ const BASE_CONTACT_KEYS = [
   "mobile_phone",
   "whatsapp_e164",
   "job_title",
+  "cargo_resumido",
+  "area_atuacao",
+  "nivel_hierarquico",
   "company_id",
   "company_name",
   "lifecyclestage",
@@ -130,6 +145,7 @@ const BASE_CONTACT_KEYS = [
 ] as const;
 
 type Filters = {
+  derived?: Record<string, string>;
   lifecycle: string[];
   companyIds: string[];
   createdPreset: DatePreset;
@@ -247,6 +263,7 @@ function ContactsHubspotView() {
         const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
         q = q.gte("created_at", since);
       }
+      q = applyDerivedFilters(q, filters.derived);
       if (filters.lifecycle.length) q = q.in("lifecyclestage", filters.lifecycle);
       if (filters.companyIds.length) q = q.in("company_id", filters.companyIds);
       if (filters.createdPreset !== "any") {
@@ -313,6 +330,7 @@ function ContactsHubspotView() {
         const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
         q = q.gte("created_at", since);
       }
+      q = applyDerivedFilters(q, filters.derived);
       if (filters.lifecycle.length) q = q.in("lifecyclestage", filters.lifecycle);
       if (filters.companyIds.length) q = q.in("company_id", filters.companyIds);
       if (filters.createdPreset !== "any") {
@@ -388,6 +406,9 @@ function ContactsHubspotView() {
         { header: "Email", value: (r) => r["email"] },
         { header: "Telefone", value: (r) => r["phone"] },
         { header: "Cargo", value: (r) => r["job_title"] },
+        { header: "Cargo resumido", value: (r) => r["cargo_resumido"] },
+        { header: "Área de atuação", value: (r) => r["area_atuacao"] },
+        { header: "Nível hierárquico", value: (r) => r["nivel_hierarquico"] },
         { header: "Estágio", value: (r) => r["lifecycle_stage"] },
         { header: "Criado em", value: (r) => r["created_at"] },
         { header: "Atualizado em", value: (r) => r["updated_at"] },
@@ -664,6 +685,7 @@ function ContactsHubspotView() {
                   const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
                   q = q.gte("created_at", since);
                 }
+                q = applyDerivedFilters(q, filters.derived);
                 if (filters.lifecycle.length) q = q.in("lifecyclestage", filters.lifecycle);
                 if (filters.companyIds.length) q = q.in("company_id", filters.companyIds);
                 if (filters.createdPreset !== "any") {
@@ -762,6 +784,11 @@ function ContactsHubspotView() {
           </FilterGroup>
 
           <FilterGroup title="Responsável" defaultOpen>
+            <DerivedFilterFields
+              entity="contacts"
+              value={filters.derived}
+              onChange={(derived) => setFilters((f) => ({ ...f, derived }))}
+            />
             <OwnerFilter
               value={{ ownerIds: filters.ownerIds, includeUnassigned: filters.includeUnassigned }}
               onChange={(v: OwnerFilterValue) =>

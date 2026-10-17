@@ -164,6 +164,10 @@
               "type": "string",
               "description": "Telefone do lead."
             },
+            "job_title": {
+              "type": "string",
+              "description": "Cargo original informado pelo lead."
+            },
             "company_name": {
               "type": "string",
               "description": "Nome da empresa informada pelo lead."

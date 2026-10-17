@@ -238,6 +238,7 @@ export type WorkflowAction =
   | {
       type: "create_lead";
       first_name: string;
+      job_title?: string;
       last_name?: string;
       email?: string;
       phone?: string;

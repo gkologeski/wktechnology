@@ -6,6 +6,8 @@
  * Entidades habilitadas para edição em massa. Deve permanecer alinhada com a
  * lista de tabelas aceitas por `public.get_entity_field_catalog`.
  */
+import { isDerivedCrmField } from "@/lib/entity/derived-fields";
+
 export const BULK_EDIT_ENTITIES = [
   "leads",
   "contacts",
@@ -59,7 +61,7 @@ export const BULK_EDIT_DENIED_COLUMNS = new Set<string>([
 
 /** Bloqueia também qualquer resquício de sincronização (`hs_*` / `hubspot_*`). */
 export function isBulkEditDeniedColumn(col: string): boolean {
-  return BULK_EDIT_DENIED_COLUMNS.has(col) || /^(hs_|hubspot_)/.test(col);
+  return isDerivedCrmField(col) || BULK_EDIT_DENIED_COLUMNS.has(col) || /^(hs_|hubspot_)/.test(col);
 }
 
 export class BulkEditValidationError extends Error {}

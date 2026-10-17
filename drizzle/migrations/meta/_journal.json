@@ -995,6 +995,20 @@
       "when": 1792186571374,
       "tag": "0141_whatsapp_campaign_audience_config",
       "breakpoints": true
+    },
+    {
+      "idx": 142,
+      "version": "7",
+      "when": 1792193590375,
+      "tag": "0142_crm_cargo_porte_derivation",
+      "breakpoints": true
+    },
+    {
+      "idx": 143,
+      "version": "7",
+      "when": 1792194859304,
+      "tag": "0143_crm_explicit_cargo_catalog_validation",
+      "breakpoints": true
     }
   ]
 }

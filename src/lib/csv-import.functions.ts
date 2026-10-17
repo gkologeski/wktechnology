@@ -14,6 +14,7 @@ export const ENTITY_FIELDS: Record<
   { key: string; label: string; required?: boolean }[]
 > = {
   leads: [
+    { key: "job_title", label: "Cargo" },
     { key: "first_name", label: "Nome", required: true },
     { key: "last_name", label: "Sobrenome" },
     { key: "email", label: "Email" },

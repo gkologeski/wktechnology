@@ -28,6 +28,16 @@ import { useIsLinkedOnly } from "@/hooks/use-rep-restricted";
 import { LinkedCompanySummary } from "@/components/record/linked-record-summary";
 
 export const Route = createFileRoute("/_authenticated/companies/$id")({
+  head: () => ({
+    meta: [
+      { title: "Empresa | TechSales" },
+      { name: "description", content: "Dados da empresa e faixa de funcionários no TechSales." },
+      { property: "og:title", content: "Empresa | TechSales" },
+      { property: "og:description", content: "Dados da empresa e Porte Descritivo." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: CompanyDetail,
 });
 
@@ -194,6 +204,7 @@ function CompanyDetail() {
               { key: "website", label: "Website", type: "url", primary: true },
               { key: "industry", label: "Indústria", primary: true },
               { key: "size", label: "Tamanho", primary: true },
+              { key: "size_description", label: "Porte Descritivo", primary: true },
               { key: "phone", label: "Telefone", type: "tel", primary: true },
               { key: "cnpj", label: "CNPJ", type: "cnpj", primary: true },
               { key: "cep", label: "CEP", type: "cep", primary: true },

@@ -4877,6 +4877,7 @@ export type Database = {
           phone: string | null
           score: number
           size: string | null
+          size_description: string | null
           state: string | null
           target_account_tier: string | null
           timezone: string | null
@@ -4924,6 +4925,7 @@ export type Database = {
           phone?: string | null
           score?: number
           size?: string | null
+          size_description?: string | null
           state?: string | null
           target_account_tier?: string | null
           timezone?: string | null
@@ -4971,6 +4973,7 @@ export type Database = {
           phone?: string | null
           score?: number
           size?: string | null
+          size_description?: string | null
           state?: string | null
           target_account_tier?: string | null
           timezone?: string | null
@@ -5087,8 +5090,11 @@ export type Database = {
       contacts: {
         Row: {
           address: string | null
+          area_atuacao: string | null
           assigned_to: string | null
           assigned_user_id: string | null
+          cargo_catalog_version: number | null
+          cargo_resumido: string | null
           cep: string | null
           city: string | null
           company_id: string | null
@@ -5117,6 +5123,7 @@ export type Database = {
           marketing_status: string | null
           mobile_phone: string | null
           mobile_phone_digits: string | null
+          nivel_hierarquico: string | null
           notes: string | null
           owner_id: string
           phone: string | null
@@ -5134,8 +5141,11 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          area_atuacao?: string | null
           assigned_to?: string | null
           assigned_user_id?: string | null
+          cargo_catalog_version?: number | null
+          cargo_resumido?: string | null
           cep?: string | null
           city?: string | null
           company_id?: string | null
@@ -5164,6 +5174,7 @@ export type Database = {
           marketing_status?: string | null
           mobile_phone?: string | null
           mobile_phone_digits?: string | null
+          nivel_hierarquico?: string | null
           notes?: string | null
           owner_id: string
           phone?: string | null
@@ -5181,8 +5192,11 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          area_atuacao?: string | null
           assigned_to?: string | null
           assigned_user_id?: string | null
+          cargo_catalog_version?: number | null
+          cargo_resumido?: string | null
           cep?: string | null
           city?: string | null
           company_id?: string | null
@@ -5211,6 +5225,7 @@ export type Database = {
           marketing_status?: string | null
           mobile_phone?: string | null
           mobile_phone_digits?: string | null
+          nivel_hierarquico?: string | null
           notes?: string | null
           owner_id?: string
           phone?: string | null
@@ -6047,6 +6062,65 @@ export type Database = {
           },
           {
             foreignKeyName: "credit_limits_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_derivation_backup: {
+        Row: {
+          captured_at: string
+          entity: string
+          record_id: string
+          run_key: string
+          snapshot: Json
+          workspace_id: string
+        }
+        Insert: {
+          captured_at?: string
+          entity: string
+          record_id: string
+          run_key: string
+          snapshot: Json
+          workspace_id: string
+        }
+        Update: {
+          captured_at?: string
+          entity?: string
+          record_id?: string
+          run_key?: string
+          snapshot?: Json
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      crm_derivation_catalog: {
+        Row: {
+          active: boolean
+          created_at: string
+          rules: Json
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          rules: Json
+          version: number
+          workspace_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          rules?: Json
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_derivation_catalog_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -10544,8 +10618,11 @@ export type Database = {
       }
       leads: {
         Row: {
+          area_atuacao: string | null
           assigned_to: string | null
           assigned_user_id: string | null
+          cargo_catalog_version: number | null
+          cargo_resumido: string | null
           company_id: string | null
           company_name: string | null
           converted_at: string | null
@@ -10564,12 +10641,15 @@ export type Database = {
           hs_raw: Json | null
           hubspot_owner_id: string | null
           id: string
+          job_title: string | null
+          job_title_source: string | null
           label: string | null
           last_form_submission_at: string | null
           last_name: string | null
           linkedin_url: string | null
           mobile_phone: string | null
           mobile_phone_digits: string | null
+          nivel_hierarquico: string | null
           notes: string | null
           nurture_started_at: string | null
           owner_id: string
@@ -10587,8 +10667,11 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          area_atuacao?: string | null
           assigned_to?: string | null
           assigned_user_id?: string | null
+          cargo_catalog_version?: number | null
+          cargo_resumido?: string | null
           company_id?: string | null
           company_name?: string | null
           converted_at?: string | null
@@ -10607,12 +10690,15 @@ export type Database = {
           hs_raw?: Json | null
           hubspot_owner_id?: string | null
           id?: string
+          job_title?: string | null
+          job_title_source?: string | null
           label?: string | null
           last_form_submission_at?: string | null
           last_name?: string | null
           linkedin_url?: string | null
           mobile_phone?: string | null
           mobile_phone_digits?: string | null
+          nivel_hierarquico?: string | null
           notes?: string | null
           nurture_started_at?: string | null
           owner_id: string
@@ -10630,8 +10716,11 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          area_atuacao?: string | null
           assigned_to?: string | null
           assigned_user_id?: string | null
+          cargo_catalog_version?: number | null
+          cargo_resumido?: string | null
           company_id?: string | null
           company_name?: string | null
           converted_at?: string | null
@@ -10650,12 +10739,15 @@ export type Database = {
           hs_raw?: Json | null
           hubspot_owner_id?: string | null
           id?: string
+          job_title?: string | null
+          job_title_source?: string | null
           label?: string | null
           last_form_submission_at?: string | null
           last_name?: string | null
           linkedin_url?: string | null
           mobile_phone?: string | null
           mobile_phone_digits?: string | null
+          nivel_hierarquico?: string | null
           notes?: string | null
           nurture_started_at?: string | null
           owner_id?: string
@@ -22785,6 +22877,15 @@ export type Database = {
           owner_name: string
         }[]
       }
+      crm_classify_title: { Args: { rules: Json; v: string }; Returns: Json }
+      crm_employee_band: { Args: { n: number }; Returns: string }
+      crm_employee_integer: { Args: { v: string }; Returns: number }
+      crm_is_derivation_backfill: {
+        Args: { new_row: Json; old_row: Json }
+        Returns: boolean
+      }
+      crm_normalize_title: { Args: { v: string }; Returns: string }
+      crm_size_description: { Args: { v: string }; Returns: string }
       current_role_test_session: { Args: never; Returns: string }
       current_user_permissions: {
         Args: { _workspace_id: string }

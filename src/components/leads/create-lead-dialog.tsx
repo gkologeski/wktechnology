@@ -43,6 +43,7 @@ const EMPTY_FORM = {
   linkedin_url: "",
   email: "",
   phone: "",
+  job_title: "",
   company_name: "",
   source: "",
 };
@@ -180,6 +181,7 @@ export function CreateLeadDialog({
         put("last_name", str(result.lead.last_name), "sobrenome");
         put("email", str(result.lead.email), "e-mail");
         put("phone", str(result.lead.phone), "telefone");
+        put("job_title", str(result.lead.job_title), "cargo");
         put("company_name", str(result.lead.company_name), "empresa");
         return next;
       });
@@ -307,6 +309,7 @@ export function CreateLeadDialog({
           email: form.email.trim() || null,
           phone: phoneE164,
           company_id: company.id ?? null,
+          job_title: form.job_title || null,
           company_name: company.name.trim() || null,
           source: form.source.trim() || null,
         })
@@ -500,6 +503,14 @@ export function CreateLeadDialog({
                       {dupError.message}
                     </p>
                   )}
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="lead-job-title">Cargo</Label>
+                  <Input
+                    id="lead-job-title"
+                    value={form.job_title}
+                    onChange={(e) => setForm({ ...form, job_title: e.target.value })}
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="company_name">Empresa</Label>

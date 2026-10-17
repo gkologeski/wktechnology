@@ -64,7 +64,7 @@ export const enrichWithApollo = createServerFn({ method: "POST" })
 
     const cols =
       data.entity === "lead"
-        ? "id, first_name, last_name, email, phone, company_name"
+        ? "id, first_name, last_name, email, phone, company_name, job_title"
         : "id, first_name, last_name, email, phone, job_title";
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: rows, error } = await (supabase as any)
@@ -118,8 +118,7 @@ export const enrichWithApollo = createServerFn({ method: "POST" })
         const update: Record<string, unknown> = {};
         if (!r.email && mapped.email) update.email = mapped.email;
         if (!r.phone && mapped.phone) update.phone = mapped.phone;
-        if (data.entity === "contact" && !r.job_title && mapped.job_title)
-          update.job_title = mapped.job_title;
+        if (!r.job_title && mapped.job_title) update.job_title = mapped.job_title;
         if (data.entity === "lead" && !r.company_name && mapped.company_name)
           update.company_name = mapped.company_name;
         if (Object.keys(update).length > 0) {

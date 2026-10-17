@@ -29,5 +29,6 @@
 
 
 - Rotas só exportam `Route` (outro export anula o code-splitting); gate = `verify`+`build`, `verify:changed` é só feedback.
+- Subdirectories have their own AGENTS.md; read before edits. CRM derived-field rules: src/lib/entity/AGENTS.md.
 - RBAC: permissões efetivas exigem membership `active` (inclusive bypass admin) e deny prevalece; cargos só escritos por owner/admin; ajustes por workspace só em overrides/pacotes locais com foto `rbac_wk_backup_2026_10`; por quê: inativo/comum não herda nem altera acesso e outros tenants não são afetados.
 - O protótipo da Prospecção (`/prospecting/prototype`) usa apenas dados demonstrativos de `src/components/prospecting/prototype/`, sem leitura/escrita real; por quê: aprovar o redesign antes de mexer na rota produtiva.
