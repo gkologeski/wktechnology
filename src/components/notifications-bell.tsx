@@ -19,6 +19,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
+import { notificationHref } from "@/lib/notification-href";
 
 function playBeep() {
   try {
@@ -175,9 +176,16 @@ export function NotificationsBell() {
                 const handle = () => {
                   if (!n.read_at) mark.mutate(n.id);
                 };
+                const target = notificationHref(n);
                 return (
                   <li key={n.id} onClick={handle}>
-                    {n.link ? <Link to={n.link as never}>{inner}</Link> : inner}
+                    {target ? (
+                      <Link to={target.to as never} search={target.search as never}>
+                        {inner}
+                      </Link>
+                    ) : (
+                      inner
+                    )}
                   </li>
                 );
               })}

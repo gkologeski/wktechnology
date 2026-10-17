@@ -78,6 +78,7 @@ import {
 } from "@/components/inbox/inbox-workspace";
 
 type WaConversationRow = Awaited<ReturnType<typeof listWhatsAppConversations>>[number];
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const Route = createFileRoute("/_authenticated/inbox/whatsapp")({
   head: () => ({
@@ -96,6 +97,10 @@ export const Route = createFileRoute("/_authenticated/inbox/whatsapp")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>): { conversation?: string } => {
+    const c = search.conversation;
+    return typeof c === "string" && UUID_RE.test(c) ? { conversation: c } : {};
+  },
   component: WhatsAppInbox,
 });
 
@@ -110,7 +115,13 @@ function WhatsAppInbox() {
   const assignFn = useServerFn(assignWhatsAppConversation);
   const statusFn = useServerFn(setWhatsAppConversationStatus);
 
-  const [selected, setSelected] = useState<string | null>(null);
+  const { conversation: urlConversation } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const [selected, setSelected] = useState<string | null>(urlConversation ?? null);
+  // Clique em notificação (ou link compartilhado): a conversa do endereço é aberta.
+  useEffect(() => {
+    if (urlConversation) setSelected(urlConversation);
+  }, [urlConversation]);
   const composerScope = `${user?.id ?? ""}:${selected ?? ""}`;
   const [draft, setDraft] = useScopedComposerValue(composerScope, "");
   const [filter, setFilter] = useState<"mine" | "unassigned" | "all">("all");
@@ -158,6 +169,31 @@ function WhatsAppInbox() {
       : null,
   });
   const membersQ = useQuery({ queryKey: ["wa", "members"], queryFn: () => membersFn() });
+  // Conversa vinda do endereço fora da página atual: lida com RLS do usuário.
+  useEffect(() => {
+    if (!urlConversation || conversationsQ.isPending) return;
+    if (conversations.some((c) => c.id === urlConversation)) return;
+    if (selectedSnapshot?.id === urlConversation) return;
+    let cancelled = false;
+    void supabase
+      .from("whatsapp_conversations")
+      .select("*")
+      .eq("id", urlConversation)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error || !data) {
+          toast.error("Conversa não encontrada ou sem acesso.");
+          setSelected(null);
+          navigate({ search: {}, replace: true });
+          return;
+        }
+        setSelectedSnapshot(data as unknown as WaConversationRow);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [urlConversation, conversations, conversationsQ.isPending, selectedSnapshot?.id, navigate]);
   const current = useMemo(
     () =>
       conversations.find((c) => c.id === selected) ??
@@ -400,6 +436,7 @@ function WhatsAppInbox() {
                   onClick={() => {
                     setSelected(c.id);
                     setSelectedSnapshot(c);
+                    navigate({ search: { conversation: c.id }, replace: true });
                   }}
                   unread={c.unread_count}
                   badge={
