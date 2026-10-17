@@ -113,7 +113,7 @@ export function InboxWorkspace({
               type="button"
               size="icon"
               variant="ghost"
-              className="absolute right-4 top-4 z-20 hidden rounded-full xl:inline-flex"
+              className="absolute right-2 top-1.5 z-20 hidden h-7 w-7 rounded-full xl:inline-flex"
               onClick={() => setContextOpen(!resolvedContextOpen)}
               aria-label={resolvedContextOpen ? "Ocultar contexto" : "Mostrar contexto"}
               title={resolvedContextOpen ? "Ocultar contexto" : "Mostrar contexto"}
@@ -143,10 +143,7 @@ export function InboxWorkspace({
 function InboxChannelTabs() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   return (
-    <nav
-      className="flex min-w-0 items-center gap-1 overflow-x-auto"
-      aria-label="Canais da Inbox"
-    >
+    <nav className="flex min-w-0 items-center gap-1 overflow-x-auto" aria-label="Canais da Inbox">
       {CHANNELS.map(({ to, label, icon: Icon }) => {
         const active =
           to === "/inbox" ? pathname === "/inbox" || pathname === "/inbox/" : pathname === to;
@@ -390,16 +387,23 @@ export function InboxConversationHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="grid min-h-20 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 bg-product-panel px-5 py-4 sm:flex sm:flex-wrap">
-      <InboxAvatar label={label} className="h-11 w-11" />
-      <div className="min-w-0 flex-1">
-        <div className="truncate font-[var(--font-heading)] font-semibold text-foreground">
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 bg-product-panel px-3 py-1">
+      <InboxAvatar
+        label={label}
+        className="h-7 w-7 shrink-0 rounded-[calc(var(--radius)+0.35rem)] text-[11px]"
+      />
+      <div className="min-w-[9rem] flex-1">
+        <div className="truncate font-[var(--font-heading)] text-sm leading-tight font-semibold text-foreground">
           {label}
         </div>
-        {subtitle ? <div className="truncate text-xs text-muted-foreground">{subtitle}</div> : null}
+        {subtitle ? (
+          <div className="truncate text-[11px] leading-tight text-muted-foreground">{subtitle}</div>
+        ) : null}
       </div>
       {actions ? (
-        <div className="flex shrink-0 flex-wrap items-center gap-2 pr-10">{actions}</div>
+        <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1.5 pr-8 [&_[data-slot=button]]:h-6 [&_[data-slot=button]]:text-xs">
+          {actions}
+        </div>
       ) : null}
     </div>
   );
