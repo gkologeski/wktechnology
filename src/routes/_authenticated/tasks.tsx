@@ -66,6 +66,8 @@ import { TablePagination } from "@/components/table-pagination";
 import { SortableColumnHeader, SortableColumns } from "@/components/grid/sortable-columns";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { deleteRowGuarded, deleteRowsGuarded, partialDeleteMessage } from "@/lib/delete-guard";
+import { chunkIds } from "@/lib/chunk-ids";
+import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
 import { responsibleId, responsibleOrExpr } from "@/lib/entity/responsible";
 
 // Em tarefas, toda inserção já grava o responsável (gatilho copia o criador);
@@ -534,17 +536,50 @@ function TasksHubspotView() {
     toast.success("Removida");
     qc.invalidateQueries({ queryKey: ["tasks"] });
   };
+  const [completing, setCompleting] = useState(false);
   const bulkComplete = async () => {
     const ids = Array.from(selectedIds);
-    if (!ids.length) return;
-    const { error } = await supabase
-      .from("activities")
-      .update({ completed: true, task_status: "COMPLETED" })
-      .in("id", ids);
-    if (error) return toast.error(error.message);
-    toast.success(`${ids.length} concluída(s)`);
-    clearSelection();
-    qc.invalidateQueries({ queryKey: ["tasks"] });
+    if (!ids.length || completing) return;
+    setCompleting(true);
+    const toastId = toast.loading(`Concluindo 0 de ${ids.length}…`);
+    let changed = 0;
+    let done = 0;
+    try {
+      for (const part of chunkIds(ids)) {
+        const { data, error } = await supabase
+          .from("activities")
+          .update({ completed: true, task_status: "COMPLETED" })
+          .in("id", part)
+          .select("id");
+        if (error) {
+          toast.error(
+            changed
+              ? `${changed} concluída(s) antes da falha: ${error.message}`
+              : error.message,
+            { id: toastId },
+          );
+          qc.invalidateQueries({ queryKey: ["tasks"] });
+          return;
+        }
+        changed += data?.length ?? 0;
+        done += part.length;
+        toast.loading(`Concluindo ${done} de ${ids.length}…`, { id: toastId });
+      }
+      if (changed === 0) {
+        toast.dismiss(toastId);
+        deniedIfUnaffected([]);
+        return;
+      }
+      if (changed < ids.length)
+        toast.warning(`${changed} de ${ids.length} concluída(s). Verifique suas permissões.`, {
+          id: toastId,
+        });
+      else toast.success(`${changed} concluída(s)`, { id: toastId });
+      clearSelection();
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+    } finally {
+      setCompleting(false);
+    }
   };
   const bulkDelete = async () => {
     const ids = Array.from(selectedIds);

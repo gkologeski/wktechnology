@@ -30,10 +30,23 @@ export async function deleteRowsGuarded(
 ): Promise<GuardedDeleteResult & { requested: number }> {
   if (ids.length === 0)
     return { ok: false, deleted: 0, requested: 0, message: "Nenhum registro selecionado." };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any).from(table).delete().in("id", ids).select("id");
-  if (error) return { ok: false, deleted: 0, requested: ids.length, message: error.message };
-  const deleted = Array.isArray(data) ? data.length : 0;
+  let deleted = 0;
+  for (let i = 0; i < ids.length; i += 200) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
+      .from(table)
+      .delete()
+      .in("id", ids.slice(i, i + 200))
+      .select("id");
+    if (error)
+      return {
+        ok: false,
+        deleted,
+        requested: ids.length,
+        message: deleted ? `${deleted} excluído(s) antes da falha: ${error.message}` : error.message,
+      };
+    deleted += Array.isArray(data) ? data.length : 0;
+  }
   if (deleted === 0)
     return {
       ok: false,
