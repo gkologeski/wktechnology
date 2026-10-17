@@ -63,6 +63,7 @@ import { LeadsTable } from "@/components/leads/leads-table";
 import { LeadsBoard } from "@/components/leads/leads-board";
 import { Button } from "@/components/ui/button";
 import { LayoutGrid, Table as TableIcon } from "lucide-react";
+import { applyDerivedFilters } from "@/lib/entity/derived-filter-query";
 import { LeadsDialogs, type PendingAction } from "@/components/leads/leads-dialogs";
 import { useLeadColumns } from "@/components/leads/use-lead-columns";
 
@@ -254,6 +255,7 @@ function LeadsHubspotView() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const applyFilters = (q: any, ignoreStatusView = false) => {
+    q = applyDerivedFilters(q, filters.derived);
     // View
     if (activeView === "mine" && user?.id)
       q = q.or(responsibleOrExpr([user.id], { columns: RESPONSIBLE_COLUMNS_FULL }));
@@ -594,6 +596,7 @@ function LeadsHubspotView() {
   });
 
   const hasActiveFilters =
+    Object.values(filters.derived ?? {}).some((v) => v.trim()) ||
     filters.status.length > 0 ||
     filters.substatusIds.length > 0 ||
     filters.source.length > 0 ||

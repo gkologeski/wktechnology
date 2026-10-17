@@ -10,6 +10,7 @@ import type { LeadStage } from "@/lib/leads/stages";
 import { DEFAULT_FILTERS, STATUS_TONE, type Filters } from "@/lib/leads/constants";
 import { FilterGroup } from "@/components/leads/table-primitives";
 import type { StageSubstatus } from "@/lib/pipelines/substatuses";
+import { DerivedFilterFields } from "@/components/entity/derived-filter-fields";
 
 export function LeadsFiltersSidebar({
   filters,
@@ -45,6 +46,9 @@ export function LeadsFiltersSidebar({
       </div>
       <Separator />
       <div className="flex-1 overflow-y-auto px-3 py-2">
+        <FilterGroup title="Cargo e classificação">
+          <DerivedFilterFields entity="leads" value={filters.derived} onChange={(derived) => setFilters((f) => ({ ...f, derived }))} />
+        </FilterGroup>
         <FilterGroup title="Etapa do lead" defaultOpen>
           {stages.map((s) => {
             const checked = filters.status.includes(s.value);

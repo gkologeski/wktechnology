@@ -1,5 +1,7 @@
 import { CompanyAvatar } from "@/components/companies/company-avatar";
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
+import { applyDerivedFilters } from "@/lib/entity/derived-filter-query";
+import { DerivedFilterFields } from "@/components/entity/derived-filter-fields";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -142,6 +144,7 @@ const BASE_COMPANY_KEYS = [
 ] as const;
 
 type Filters = {
+  derived?: Record<string, string>;
   industry: string[];
   size: string[];
   state: string[];
@@ -278,6 +281,7 @@ function CompaniesHubspotView() {
         const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
         q = q.gte("created_at", since);
       }
+      q = applyDerivedFilters(q, filters.derived);
       if (filters.industry.length) q = q.in("industry", filters.industry);
       if (filters.size.length) q = q.in("size", filters.size);
       if (filters.state.length) q = q.in("state", filters.state);
@@ -332,6 +336,7 @@ function CompaniesHubspotView() {
         const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
         q = q.gte("created_at", since);
       }
+      q = applyDerivedFilters(q, filters.derived);
       if (filters.industry.length) q = q.in("industry", filters.industry);
       if (filters.size.length) q = q.in("size", filters.size);
       if (filters.state.length) q = q.in("state", filters.state);
@@ -661,6 +666,7 @@ function CompaniesHubspotView() {
           const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
           q = q.gte("created_at", since);
         }
+        q = applyDerivedFilters(q, filters.derived);
         if (filters.industry.length) q = q.in("industry", filters.industry);
         if (filters.size.length) q = q.in("size", filters.size);
         if (filters.state.length) q = q.in("state", filters.state);
@@ -780,6 +786,7 @@ function CompaniesHubspotView() {
           </FilterGroup>
 
           <FilterGroup title="Porte">
+            <DerivedFilterFields entity="companies" value={filters.derived} onChange={(derived) => setFilters((f) => ({ ...f, derived }))} />
             {(facets?.size ?? []).map((s) => (
               <CheckboxFilter
                 key={s.value}
