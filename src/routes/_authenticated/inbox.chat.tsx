@@ -156,8 +156,8 @@ function LiveChatInbox() {
         <>
           <InboxListHeader>
             <Tabs value={filter} onValueChange={(value) => setFilter(value as typeof filter)}>
-              <TabsList className="grid h-auto w-full grid-cols-3">
-                <TabsTrigger className="flex-col gap-0 px-1" value="mine">
+              <TabsList className="grid h-auto w-full grid-cols-3 p-0.5">
+                <TabsTrigger className="h-5 gap-1 px-1 py-0 text-[11px]" value="mine">
                   Minhas
                   {counts ? (
                     <span className="block text-[10px] font-normal text-muted-foreground">
@@ -166,7 +166,7 @@ function LiveChatInbox() {
                   ) : null}
                 </TabsTrigger>
                 <TabsTrigger
-                  className="flex-col gap-0 px-1"
+                  className="h-5 gap-1 px-1 py-0 text-[11px]"
                   value="unassigned"
                   title="Sem responsável"
                 >
@@ -177,7 +177,7 @@ function LiveChatInbox() {
                     </span>
                   ) : null}
                 </TabsTrigger>
-                <TabsTrigger className="flex-col gap-0 px-1" value="all">
+                <TabsTrigger className="h-5 gap-1 px-1 py-0 text-[11px]" value="all">
                   Todas
                   {counts ? (
                     <span className="block text-[10px] font-normal text-muted-foreground">
