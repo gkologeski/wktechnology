@@ -1,3 +1,4 @@
+import { usePersonPhotos } from "@/hooks/use-person-photos";
 import { formatDateTime } from "@/lib/crm";
 import { compactCount } from "@/lib/inbox/channel-page";
 import { useInboxChannelPage } from "@/hooks/use-inbox-channel-page";
@@ -144,6 +145,15 @@ function LiveChatInbox() {
   const current =
     sessions.find((s) => s.id === selected) ??
     (selectedSnapshot?.id === selected ? selectedSnapshot : undefined);
+  const photoRows = current ? [...sessions, current] : sessions;
+  const photos = usePersonPhotos(
+    photoRows.map((r) => r.contact_id),
+    photoRows.filter((r) => !r.contact_id).map((r) => r.lead_id),
+  );
+  const photoOf = (r?: { contact_id?: string | null; lead_id?: string | null } | null) =>
+    (r?.contact_id && photos[`contact:${r.contact_id}`]) ||
+    (r?.lead_id && photos[`lead:${r.lead_id}`]) ||
+    null;
   const memberNames = new Map(
     (membersQ.data ?? []).map((member) => [member.user_id, member.full_name]),
   );
@@ -207,6 +217,7 @@ function LiveChatInbox() {
               {sessions.map((s) => (
                 <InboxConversationItem
                   key={s.id}
+                  photoUrl={photoOf(s)}
                   label={s.visitor_name || s.visitor_email || "Visitante anônimo"}
                   preview={s.visitor_email || "Sem email informado"}
                   when={s.last_message_at}
@@ -252,6 +263,7 @@ function LiveChatInbox() {
           ) : (
             <>
               <InboxConversationHeader
+                photoUrl={photoOf(current)}
                 label={current.visitor_name || current.visitor_email || "Visitante anônimo"}
                 subtitle={`Chat ao vivo${current.visitor_email ? ` · ${current.visitor_email}` : ""}${current.visitor_url ? ` · ${current.visitor_url}` : ""}`}
                 actions={
@@ -362,6 +374,7 @@ function LiveChatInbox() {
       context={
         current ? (
           <InboxContext
+            photoUrl={photoOf(current)}
             initials={(current.visitor_name || current.visitor_email || "VA")
               .slice(0, 2)
               .toUpperCase()}
