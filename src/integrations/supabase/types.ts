@@ -5128,6 +5128,9 @@ export type Database = {
           owner_id: string
           phone: string | null
           phone_digits: string | null
+          photo_source: string | null
+          photo_updated_at: string | null
+          photo_url: string | null
           portal_enabled: boolean
           portal_token: string | null
           score: number
@@ -5179,6 +5182,9 @@ export type Database = {
           owner_id: string
           phone?: string | null
           phone_digits?: string | null
+          photo_source?: string | null
+          photo_updated_at?: string | null
+          photo_url?: string | null
           portal_enabled?: boolean
           portal_token?: string | null
           score?: number
@@ -5230,6 +5236,9 @@ export type Database = {
           owner_id?: string
           phone?: string | null
           phone_digits?: string | null
+          photo_source?: string | null
+          photo_updated_at?: string | null
+          photo_url?: string | null
           portal_enabled?: boolean
           portal_token?: string | null
           score?: number
@@ -10734,6 +10743,9 @@ export type Database = {
           owner_id: string
           phone: string | null
           phone_digits: string | null
+          photo_source: string | null
+          photo_updated_at: string | null
+          photo_url: string | null
           pipeline_id: string | null
           score: number
           source: string | null
@@ -10783,6 +10795,9 @@ export type Database = {
           owner_id: string
           phone?: string | null
           phone_digits?: string | null
+          photo_source?: string | null
+          photo_updated_at?: string | null
+          photo_url?: string | null
           pipeline_id?: string | null
           score?: number
           source?: string | null
@@ -10832,6 +10847,9 @@ export type Database = {
           owner_id?: string
           phone?: string | null
           phone_digits?: string | null
+          photo_source?: string | null
+          photo_updated_at?: string | null
+          photo_url?: string | null
           pipeline_id?: string | null
           score?: number
           source?: string | null
