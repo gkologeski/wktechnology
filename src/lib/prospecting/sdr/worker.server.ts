@@ -617,7 +617,7 @@ export async function processJob(
         closeReason = tp.reason;
       }
       if (tp.action === "save_referral") referralToSave = tp.referral;
-    } else if (out.intent !== "handoff" && isWrongContact(lastText)) {
+    } else if (isWrongContact(lastText)) {
       wrongContact = true;
       closeReason = "wrong_contact";
       out.intent = "continue";
