@@ -5,6 +5,7 @@ O WhatsApp oficial da Meta não entrega a foto de perfil do cliente, só o nome.
 
 ## O que muda
 1. **Campo de foto em Contato e Lead.** Na ficha, ao passar o mouse sobre o avatar, aparecem as opções Enviar foto, Trocar e Remover. A imagem é reduzida no navegador e guardada de forma privada. A troca pede confirmação e fica registrada na linha do tempo.
+   - **Foto automática ao enriquecer:** quando o enriquecimento (Apollo ou a conexão LinkedIn já usada no TechHire) devolver a foto do perfil do LinkedIn, o sistema baixa a imagem, guarda uma cópia privada e preenche a foto. Isso acontece só se o registro não tiver foto enviada manualmente, porque a foto manual nunca é substituída. A origem fica registrada como "LinkedIn" ou "Manual". O enriquecimento em massa faz o mesmo para cada registro. Se o provedor não devolver foto, ou o link estiver expirado, nada muda.
 2. **Uma única forma de exibir a pessoa.** Um avatar padrão mostra a foto. Sem foto, mostra as iniciais com uma cor fixa para cada contato. Ele aparece em:
    - Inbox WhatsApp, E-mail e Chat: lista de conversas, cabeçalho e painel do cliente;
    - listas de Contatos e Leads;
@@ -14,7 +15,7 @@ O WhatsApp oficial da Meta não entrega a foto de perfil do cliente, só o nome.
 4. **Ao converter um Lead em Contato**, a foto vai junto.
 
 ## Fora do escopo
-- Buscar a foto no WhatsApp ou no LinkedIn automaticamente, porque não há meio oficial.
+- Buscar a foto no WhatsApp, porque não há meio oficial.
 - Fotos de candidatos e de pessoas do TechPeople, que já têm foto própria.
 
 ## Detalhes técnicos
@@ -22,6 +23,7 @@ O WhatsApp oficial da Meta não entrega a foto de perfil do cliente, só o nome.
 - Bucket privado `contact-photos`, com limite de 2 MB. As políticas em `storage.objects` usam o caminho `<workspace_id>/<entity>/<id>.webp`: leitura para membros do workspace e escrita para quem pode editar o registro (`user_can_act`).
 - `PersonAvatar` em `src/components/people/person-avatar.tsx` recebe nome, semente e caminho. As URLs assinadas são carregadas em lote pelo hook `usePersonPhotos(ids)`, como no `useCompanyLogos`, com cache de 50 minutos.
 - Upload por server function autenticada, que valida a permissão, o tipo de imagem e o tamanho, e grava a timeline. Depois do upload, o app atualiza as consultas `person-photos`, `inbox-channel` e as listas.
+- Enriquecimento: `enrichment-engine.server.ts` lê `photo_url` (Apollo) e `profile_picture_url` (Unipile). O servidor baixa a imagem com limite de 2 MB e só aceita arquivos de imagem, grava no bucket e marca `photo_source='linkedin'` somente quando a origem atual estiver vazia ou já for `linkedin`. A coluna `photo_source` é aditiva.
 - A conversão de Lead em Contato, em `sales-flow`/convert, copia o caminho da foto.
 
 ## Validação
