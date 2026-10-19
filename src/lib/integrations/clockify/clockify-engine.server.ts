@@ -453,6 +453,20 @@ export class ClockifyEngine {
     if (variant >= spec.variants.length) {
       const caps = (this.run.counts.capabilities ?? {}) as Record<string, { status: string; count: number }>;
       if (!caps[spec.entity]) this.setCapability(spec.entity, "empty", 0);
+      else if (caps[spec.entity].count > 0) {
+        // Variações de filtro (ex.: ativos + arquivados) podem repetir itens: conta os distintos.
+        const seen = await fetchAll<{ external_id: string }>((f, t) =>
+          this.db
+            .from("clockify_staging_records")
+            .select("external_id")
+            .eq("workspace_id", this.run.workspace_id)
+            .eq("source_workspace_id", this.ws)
+            .eq("entity_type", spec.entity)
+            .eq("last_run_id", this.run.id)
+            .range(f, t),
+        );
+        caps[spec.entity].count = seen.length;
+      }
       this.nextPhase(DRY_PHASES);
       return false;
     }
