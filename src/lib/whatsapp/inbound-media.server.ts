@@ -194,7 +194,7 @@ export async function ensureAudioTranscripts(
     const mime = (info.mime_type || media.mime_type || "audio/ogg").split(";")[0];
     const form = new FormData();
     form.append("model", STT_MODEL);
-    form.append("file", new Blob([bytes], { type: mime }), `audio.${mime.includes("ogg") ? "ogg" : "mp3"}`);
+    form.append("file", new Blob([bytes as BlobPart], { type: mime }), `audio.${mime.includes("ogg") ? "ogg" : "mp3"}`);
     form.append("response_format", "json");
     form.append("stream", "true");
     form.append("languages", "pt");
