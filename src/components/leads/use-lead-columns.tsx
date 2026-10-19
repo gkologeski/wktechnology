@@ -11,6 +11,7 @@ import type { LeadGridRow, SortDir, SortKey } from "@/lib/leads/constants";
 import { StagePill, ScoreCell, Th } from "@/components/leads/table-primitives";
 import { CompanyAvatar, CompanyAvatarFromInfo } from "@/components/companies/company-avatar";
 import type { CompanyLogoInfo } from "@/hooks/use-company-logos";
+import { EnrichedBadge } from "@/components/enrichment/enriched-badge";
 
 /** Colunas visíveis por padrão no grid de leads. */
 const DEFAULT_LEAD_COLS = [
@@ -38,6 +39,7 @@ export function useLeadColumns({
   hsOwners,
   companyLogos,
   photos,
+  enrichedAt,
 }: {
   sortKey: SortKey;
   sortDir: SortDir;
@@ -55,6 +57,8 @@ export function useLeadColumns({
   companyLogos?: Map<string, CompanyLogoInfo>;
   /** URLs assinadas das fotos (chave `lead:<id>`). */
   photos?: Record<string, string>;
+  /** Data do enriquecimento recente por lead (selo ✨). */
+  enrichedAt?: Map<string, string>;
 }) {
   /** Cabeçalho ordenável para as colunas do catálogo dinâmico ("Outros campos"). */
   const autoSortHeader = useCallback(
@@ -99,6 +103,7 @@ export function useLeadColumns({
               >
                 {full}
               </Link>
+              <EnrichedBadge at={enrichedAt?.get(lead.id)} />
             </div>
           );
         },
@@ -276,7 +281,7 @@ export function useLeadColumns({
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [sortKey, sortDir, nameFor, initialsFor, companyLogos, photos],
+    [sortKey, sortDir, nameFor, initialsFor, companyLogos, photos, enrichedAt],
   );
 
   return useGridColumns<LeadGridRow>({

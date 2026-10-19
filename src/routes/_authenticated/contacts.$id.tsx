@@ -1,4 +1,5 @@
 import { PersonPhotoEditor } from "@/components/people/person-photo-editor";
+import { RecordEnrichedBadge } from "@/components/enrichment/record-enriched-badge";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -153,7 +154,10 @@ function ContactDetail() {
           onChanged={load}
         />
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-foreground truncate">{fullName}</h1>
+          <div className="flex items-center gap-2 min-w-0">
+            <h1 className="text-2xl font-bold text-foreground truncate">{fullName}</h1>
+            <RecordEnrichedBadge entity="contact" id={contact.id} />
+          </div>
           <p className="text-muted-foreground text-sm truncate">
             {contact.job_title && <span>{contact.job_title}</span>}
             {contact.job_title && company && <span> em </span>}

@@ -50,7 +50,9 @@ export function useRecentEnrichment(entity: EnrichEntity, ids: Array<string | nu
           ]);
           if (items.error) throw items.error;
           if (photos.error) throw photos.error;
-          (items.data ?? []).forEach((r) => r.entity_id && mergeLatest(map, r.entity_id, r.created_at));
+          (items.data ?? []).forEach(
+            (r) => r.entity_id && mergeLatest(map, r.entity_id, r.created_at),
+          );
           (photos.data ?? []).forEach((r) => {
             if (isRecentAutoPhoto(r.photo_source, r.photo_updated_at))
               mergeLatest(map, r.id, r.photo_updated_at);

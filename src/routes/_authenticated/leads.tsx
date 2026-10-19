@@ -444,6 +444,10 @@ function LeadsHubspotView() {
 
   const rows = result?.rows ?? [];
   const { data: leadCompanyLogos } = useCompanyLogos(rows.map((r) => r.company_id));
+  const { data: leadEnrichedAt } = useRecentEnrichment(
+    "lead",
+    rows.map((r) => r.id),
+  );
   const leadPhotos = usePersonPhotos(
     [],
     rows.map((r) => r.id),
@@ -599,6 +603,7 @@ function LeadsHubspotView() {
     hsOwners,
     companyLogos: leadCompanyLogos,
     photos: leadPhotos,
+    enrichedAt: leadEnrichedAt,
   });
 
   const hasActiveFilters =

@@ -1,4 +1,6 @@
 import { PersonAvatar } from "@/components/people/person-avatar";
+import { EnrichedBadge } from "@/components/enrichment/enriched-badge";
+import { useRecentEnrichment } from "@/hooks/use-recent-enrichment";
 import { usePersonPhotos } from "@/hooks/use-person-photos";
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { applyDerivedFilters } from "@/lib/entity/derived-filter-query";
@@ -387,6 +389,10 @@ function ContactsHubspotView() {
     [rows],
   );
   const { data: pageCompanyLogos } = useCompanyLogos(pageCompanyIds);
+  const { data: contactEnrichedAt } = useRecentEnrichment(
+    "contact",
+    rows.map((r) => r.id),
+  );
   const contactPhotos = usePersonPhotos(rows.map((r) => r.id));
   const companyMap = useMemo(() => {
     const m = new Map<string, string>();
@@ -473,6 +479,7 @@ function ContactsHubspotView() {
               >
                 {full}
               </Link>
+              <EnrichedBadge at={contactEnrichedAt?.get(c.id)} />
             </div>
           );
         },
@@ -596,7 +603,16 @@ function ContactsHubspotView() {
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [sortKey, sortDir, nameFor, initialsFor, companyMap, pageCompanyLogos, contactPhotos],
+    [
+      sortKey,
+      sortDir,
+      nameFor,
+      initialsFor,
+      companyMap,
+      pageCompanyLogos,
+      contactPhotos,
+      contactEnrichedAt,
+    ],
   );
   const DEFAULT_CONTACT_COLS = [
     "name",

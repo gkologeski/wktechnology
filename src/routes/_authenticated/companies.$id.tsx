@@ -11,6 +11,7 @@ import { PropertiesPanel } from "@/components/properties-panel";
 import { RecordLayout } from "@/components/record/record-layout";
 import { AssociationsPanel } from "@/components/record/associations-panel";
 import { CompanyLogoEditor } from "@/components/companies/company-logo-editor";
+import { RecordEnrichedBadge } from "@/components/enrichment/record-enriched-badge";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { useAuth } from "@/lib/auth";
 import { CompanyHierarchy } from "@/components/companies/company-hierarchy";
@@ -135,7 +136,10 @@ function CompanyDetail() {
         </Button>
         <CompanyLogoEditor company={company} canEdit={canEditLogo} onChanged={load} />
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-foreground truncate">{company.name}</h1>
+          <div className="flex items-center gap-2 min-w-0">
+            <h1 className="text-2xl font-bold text-foreground truncate">{company.name}</h1>
+            <RecordEnrichedBadge entity="company" id={company.id} />
+          </div>
           <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap mt-0.5">
             {company.industry && (
               <Badge variant="outline" className="rounded-full">

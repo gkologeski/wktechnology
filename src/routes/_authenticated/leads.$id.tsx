@@ -1,4 +1,5 @@
 import { PersonPhotoEditor } from "@/components/people/person-photo-editor";
+import { RecordEnrichedBadge } from "@/components/enrichment/record-enriched-badge";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -328,6 +329,7 @@ function LeadDetail() {
               <h1 className="text-2xl font-bold text-foreground truncate">
                 {lead.first_name} {lead.last_name ?? ""}
               </h1>
+              <RecordEnrichedBadge entity="lead" id={lead.id} />
               <Badge
                 variant="outline"
                 className="rounded-full px-3 bg-primary/10 text-primary border-primary/20"

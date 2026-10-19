@@ -1,4 +1,4 @@
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 /** Selo ✨ para registros enriquecidos nos últimos 30 dias. */
@@ -6,6 +6,7 @@ export function EnrichedBadge({ at, className }: { at?: string | null; className
   if (!at) return null;
   const label = `Enriquecido em ${new Date(at).toLocaleDateString("pt-BR")}`;
   return (
+    <TooltipProvider delayDuration={200}>
     <Tooltip>
       <TooltipTrigger asChild>
         <span
@@ -22,5 +23,6 @@ export function EnrichedBadge({ at, className }: { at?: string | null; className
       </TooltipTrigger>
       <TooltipContent>{label}</TooltipContent>
     </Tooltip>
+    </TooltipProvider>
   );
 }
