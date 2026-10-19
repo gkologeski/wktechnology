@@ -265,9 +265,8 @@ export function BulkEnrichDialog({
             <div className="space-y-1.5" aria-live="polite">
               <Progress value={(progress.done / Math.max(ids.length, 1)) * 100} />
               <p className="text-xs text-muted-foreground">
-                Lote {progress.batch} de {progress.total} ·{" "}
-                {progress.done.toLocaleString("pt-BR")} de {ids.length.toLocaleString("pt-BR")}{" "}
-                processados
+                Lote {progress.batch} de {progress.total} · {progress.done.toLocaleString("pt-BR")}{" "}
+                de {ids.length.toLocaleString("pt-BR")} processados
               </p>
             </div>
           )}
