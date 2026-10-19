@@ -94,7 +94,8 @@ const NOT_COMPANY = /^(teams|zoom|meet|google|whatsapp|grupo|reuniao|sistema|ar)
 
 /** "saí da Opentech": 1ª pessoa + nome próprio no texto original. */
 function leftNamedCompany(raw: string): boolean {
-  const re = /\b(?:sa[ií]|deixei) (?:da|do|de) ([A-ZÀ-Ú][\p{L}\d&.-]+)/gu;
+  const re =
+    /\b(?:sa[ií]|deixei|[Nn][aã]o (?:trabalho|atuo|estou) mais (?:na|no|em|pela|pelo)) (?:(?:da|do|de) )?([A-ZÀ-Ú][\p{L}\d&.-]+)/gu;
   for (const m of String(raw ?? "").matchAll(re)) {
     const name = m[1].normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     if (!NOT_COMPANY.test(name)) return true;
@@ -216,4 +217,33 @@ export function decideThirdParty(history: Msg[]): ThirdPartyDecision {
     return { action: "wait_referral", reason, reply: WAIT_REFERRAL_REPLY };
   if (asked) return { action: "close", reason, reply: CLOSE_THANKS };
   return { action: "ask_referral", reason, reply: REFERRAL_QUESTION };
+}
+
+/**
+ * Nome da nova empresa citada ("agora estou na Xpto", "fui para a Xpto").
+ * Devolve só o nome (até 5 palavras), sem pontuação final; null se não houver.
+ */
+export function extractNewCompany(text: string): string | null {
+  const raw = String(text ?? "");
+  const re =
+    /\b(?:agora|hoje|atualmente)?\s*(?:estou|trabalho|atuo)(?: agora| hoje| atualmente)? (?:na|no|em|pela|pelo) ([^\n.,;!?]{2,60})|\b(?:fui|mudei|entrei) (?:para|pra|na|no) (?:a |o )?([^\n.,;!?]{2,60})/giu;
+  for (const m of raw.matchAll(re)) {
+    const prefix = raw.slice(0, m.index ?? 0).toLowerCase();
+    if (/n[aã]o\s*$/.test(prefix) || /\bmais\b/.test(m[0].toLowerCase())) continue;
+    const name = (m[1] ?? m[2] ?? "")
+      .split(/\s+(?:e|mas|como|onde|desde|há|faz|agora)\s+/i)[0]
+      .trim()
+      .split(/\s+/)
+      .slice(0, 5)
+      .join(" ");
+    if (!name || !/^[\p{Lu}\d]/u.test(name)) continue;
+    return name;
+  }
+  return null;
+}
+
+/** "Saiu da empresa" (+ nova empresa, se citada) para sugerir troca de cadastro. */
+export function detectCompanyLeft(text: string): { newCompany: string | null } | null {
+  if (detectNotTarget(text) !== "left_company") return null;
+  return { newCompany: extractNewCompany(text) };
 }
