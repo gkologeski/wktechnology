@@ -169,7 +169,13 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
     // Foto do LinkedIn: preenche Lead/Contato sem foto manual (cópia privada).
     if (result.photoUrl && lead.workspace_id) {
       const { applyLinkedinPhoto } = await import("@/lib/people/person-photo.server");
-      await applyLinkedinPhoto(supabase as never, lead.workspace_id, "lead", data.leadId, result.photoUrl);
+      await applyLinkedinPhoto(
+        supabase as never,
+        lead.workspace_id,
+        "lead",
+        data.leadId,
+        result.photoUrl,
+      );
       if (lead.converted_contact_id) {
         await applyLinkedinPhoto(
           supabase as never,

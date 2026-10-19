@@ -444,7 +444,10 @@ function LeadsHubspotView() {
 
   const rows = result?.rows ?? [];
   const { data: leadCompanyLogos } = useCompanyLogos(rows.map((r) => r.company_id));
-  const leadPhotos = usePersonPhotos([], rows.map((r) => r.id));
+  const leadPhotos = usePersonPhotos(
+    [],
+    rows.map((r) => r.id),
+  );
   const total = result?.count ?? 0;
 
   /**

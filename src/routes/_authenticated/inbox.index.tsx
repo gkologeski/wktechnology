@@ -146,7 +146,10 @@ function UnifiedInboxPage() {
   const current =
     items.find((i) => i.id === selected) ??
     (selectedSnapshot?.id === selected ? selectedSnapshot : null);
-  const photoRows = (current ? [...items, current] : items).map((i) => ({ contact_id: i.contactId ?? null, lead_id: i.leadId ?? null }));
+  const photoRows = (current ? [...items, current] : items).map((i) => ({
+    contact_id: i.contactId ?? null,
+    lead_id: i.leadId ?? null,
+  }));
   const photos = usePersonPhotos(
     photoRows.map((r) => r.contact_id),
     photoRows.filter((r) => !r.contact_id).map((r) => r.lead_id),
