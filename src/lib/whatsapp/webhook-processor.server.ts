@@ -75,14 +75,25 @@ async function handleMessages(admin: Admin, value: any): Promise<string | null> 
     if (dup) {
       // Reentrega: reenfileira de forma idempotente caso a tentativa anterior tenha parado no meio.
       if (dup.workspace_id && dup.conversation_id)
-        await sdrIngest(admin, {
-          workspaceId: dup.workspace_id,
-          conversationId: dup.conversation_id,
-          messageId: dup.id,
-          waMessageId: m.id,
-          providerPhoneId: value?.metadata?.phone_number_id ?? null,
-          body: dup.body ?? "",
-        });
+        // Sugestão da IA ("saiu da empresa"): falha não bloqueia o recebimento.
+        await import("@/lib/inbox/ai-suggestions.server")
+          .then((m) =>
+            m.suggestCompanyLeft(admin, {
+              workspaceId: ws.workspace_id,
+              conversationId: conv.id,
+              messageId: inserted.id,
+              body,
+            }),
+          )
+          .catch((e) => console.error("[inbox-ai-suggestion]", (e as Error).message));
+      await sdrIngest(admin, {
+        workspaceId: dup.workspace_id,
+        conversationId: dup.conversation_id,
+        messageId: dup.id,
+        waMessageId: m.id,
+        providerPhoneId: value?.metadata?.phone_number_id ?? null,
+        body: dup.body ?? "",
+      });
       continue;
     }
     // Celular BR pode chegar sem o 9º dígito: converge para a conversa já existente

@@ -5,7 +5,7 @@ import { InboxListFooter } from "@/components/inbox/inbox-list-footer";
 import { InboxListSearch } from "@/components/inbox/inbox-list-search";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Send,
@@ -63,6 +63,11 @@ import { useAuth } from "@/lib/auth";
 import { useActivityWindows } from "@/components/activity/activity-window-context";
 import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
 import { InboxIdentityLinker } from "@/components/inbox/inbox-identity-linker";
+import {
+  InboxAiSuggestionCard,
+  SdrMaterialLink,
+  useConversationSuggestions,
+} from "@/components/inbox/inbox-ai-suggestions";
 import { ConversationAiOwnerToggle } from "@/components/inbox/conversation-ai-owner-toggle";
 import {
   InboxConversationHeader,
@@ -99,10 +104,16 @@ export const Route = createFileRoute("/_authenticated/inbox/whatsapp")({
   }),
   validateSearch: (
     search: Record<string, unknown>,
-  ): { conversation?: string; state?: "open" | "closed" } => {
+  ): {
+    conversation?: string;
+    state?: "open" | "closed";
+    who?: "mine" | "unassigned" | "interacted";
+  } => {
     const c = search.conversation;
     const st = search.state;
+    const who = search.who;
     return {
+      ...(who === "mine" || who === "unassigned" || who === "interacted" ? { who } : {}),
       ...(typeof c === "string" && UUID_RE.test(c) ? { conversation: c } : {}),
       ...(st === "open" || st === "closed" ? { state: st } : {}),
     };
@@ -121,7 +132,7 @@ function WhatsAppInbox() {
   const assignFn = useServerFn(assignWhatsAppConversation);
   const statusFn = useServerFn(setWhatsAppConversationStatus);
 
-  const { conversation: urlConversation, state: urlState } = Route.useSearch();
+  const { conversation: urlConversation, state: urlState, who: urlWho } = Route.useSearch();
   const stateFilter = urlState ?? "all";
   const navigate = Route.useNavigate();
   const [selected, setSelected] = useState<string | null>(urlConversation ?? null);
@@ -131,7 +142,9 @@ function WhatsAppInbox() {
   }, [urlConversation]);
   const composerScope = `${user?.id ?? ""}:${selected ?? ""}`;
   const [draft, setDraft] = useScopedComposerValue(composerScope, "");
-  const [filter, setFilter] = useState<"mine" | "unassigned" | "interacted" | "all">("all");
+  const filter = urlWho ?? "all";
+  const setFilter = (v: "mine" | "unassigned" | "interacted" | "all") =>
+    navigate({ search: (prev) => ({ ...prev, who: v === "all" ? undefined : v }), replace: true });
   const [pendingMedia, setPendingMedia] = useScopedComposerValue<{
     url: string;
     contentType: string;
@@ -193,7 +206,7 @@ function WhatsAppInbox() {
         if (error || !data) {
           toast.error("Conversa não encontrada ou sem acesso.");
           setSelected(null);
-          navigate({ search: {}, replace: true });
+          navigate({ search: (prev) => ({ ...prev, conversation: undefined }), replace: true });
           return;
         }
         setSelectedSnapshot(data as unknown as WaConversationRow);
@@ -217,6 +230,16 @@ function WhatsAppInbox() {
     contact_phone: string;
   }) => conversationDisplayName(c, identityNames.contacts, identityNames.leads);
   const currentName = current ? nameOf(current) : "";
+  const suggestionsQ = useConversationSuggestions(selected);
+  const suggestionsByMsg = useMemo(() => {
+    const map = new Map<string, NonNullable<typeof suggestionsQ.data>>();
+    for (const sg of suggestionsQ.data ?? []) {
+      const list = map.get(sg.message_id) ?? [];
+      list.push(sg);
+      map.set(sg.message_id, list);
+    }
+    return map;
+  }, [suggestionsQ.data]);
   const currentNamed = !!current && currentName !== current.contact_phone;
   // Janela de 24 h + catálogo pelo hook único do compositor (o servidor revalida no envio).
   const availabilityQ = useChannelAvailability();
@@ -490,7 +513,10 @@ function WhatsAppInbox() {
                   onClick={() => {
                     setSelected(c.id);
                     setSelectedSnapshot(c);
-                    navigate({ search: { conversation: c.id }, replace: true });
+                    navigate({
+                      search: (prev) => ({ ...prev, conversation: c.id }),
+                      replace: true,
+                    });
                   }}
                   unread={c.unread_count}
                   badge={
@@ -615,27 +641,41 @@ function WhatsAppInbox() {
               >
                 {history.initial === "loading" && !messages.length ? <InboxLoading /> : null}
                 {messages.map((m) => (
-                  <InboxMessageBubble
-                    key={m.id}
-                    outbound={m.direction === "outbound"}
-                    when={m.created_at}
-                    status={m.direction === "outbound" ? m.status : null}
-                  >
-                    {m.media_url && (
-                      <div className="mb-1">
-                        <WhatsAppMediaBubble
-                          url={m.media_url}
-                          contentType={m.media_content_type}
-                          filename={m.body?.match(/^📎 Documento: (.+)$/m)?.[1] ?? null}
-                        />
-                      </div>
-                    )}
-                    {m.body && !(m.media_url && isLegacyPlaceholder(m.body)) && (
-                      <div className="whitespace-pre-wrap">
-                        <LinkifiedText text={m.body} />
-                      </div>
-                    )}
-                  </InboxMessageBubble>
+                  <Fragment key={m.id}>
+                    <InboxMessageBubble
+                      key={m.id}
+                      outbound={m.direction === "outbound"}
+                      when={m.created_at}
+                      status={m.direction === "outbound" ? m.status : null}
+                    >
+                      {m.media_url && (
+                        <div className="mb-1">
+                          <WhatsAppMediaBubble
+                            url={m.media_url}
+                            contentType={m.media_content_type}
+                            filename={m.body?.match(/^📎 Documento: (.+)$/m)?.[1] ?? null}
+                          />
+                        </div>
+                      )}
+                      {m.body && !(m.media_url && isLegacyPlaceholder(m.body)) && (
+                        <div className="whitespace-pre-wrap">
+                          <LinkifiedText
+                            text={sdrMaterialOf(m) ? stripMaterialLine(m.body) : m.body}
+                          />
+                        </div>
+                      )}
+                      {sdrMaterialOf(m) ? (
+                        <SdrMaterialLink messageId={m.id} label={sdrMaterialOf(m)!} />
+                      ) : null}
+                    </InboxMessageBubble>
+                    {suggestionsByMsg.get(m.id)?.map((sg) => (
+                      <InboxAiSuggestionCard
+                        key={sg.id}
+                        s={sg}
+                        personName={currentName || "O cliente"}
+                      />
+                    ))}
+                  </Fragment>
                 ))}
               </MessageHistoryViewport>
               <div className="shrink-0 bg-product-panel px-4 pb-3 pt-2">
@@ -975,3 +1015,13 @@ const WA_PATCH_KEYS = [
   "media_url",
   "media_content_type",
 ] as const;
+
+/** Material da Lia: anexo de saída sem arquivo guardado na mensagem, com linha "📎 Nome". */
+function sdrMaterialOf(m: WaMessageRow): string | null {
+  if (m.direction !== "outbound" || m.media_url || !m.media_content_type) return null;
+  const hit = m.body?.match(/^📎 (?!Documento:)(.+)$/m);
+  return hit?.[1]?.trim() || null;
+}
+function stripMaterialLine(body: string): string {
+  return body.replace(/\n?^📎 (?!Documento:).+$/m, "").trimEnd();
+}
