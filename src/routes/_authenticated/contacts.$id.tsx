@@ -1,3 +1,4 @@
+import { PersonPhotoEditor } from "@/components/people/person-photo-editor";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -143,12 +144,14 @@ function ContactDetail() {
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
-        <div className="relative shrink-0">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-primary/20 border-4 border-card">
-            {(contact.first_name?.[0] ?? "?").toUpperCase()}
-            {(contact.last_name?.[0] ?? "").toUpperCase()}
-          </div>
-        </div>
+        <PersonPhotoEditor
+          entity="contact"
+          id={contact.id}
+          name={fullName}
+          hasPhoto={!!contact.photo_url}
+          photoSource={contact.photo_source}
+          onChanged={load}
+        />
         <div className="min-w-0">
           <h1 className="text-2xl font-bold text-foreground truncate">{fullName}</h1>
           <p className="text-muted-foreground text-sm truncate">
