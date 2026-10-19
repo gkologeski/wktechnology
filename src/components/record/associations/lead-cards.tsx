@@ -137,7 +137,7 @@ export function LeadContactsCard({
                     className="rounded-xl border border-border/60 p-3 group hover:border-border transition-colors"
                   >
                     <div className="flex items-start gap-3">
-                      <EntityAvatar initials={initials} tone="primary" />
+                      <EntityAvatar initials={initials} tone="primary" person={{ entity: "contact", id: c.id }} />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <Link
@@ -415,7 +415,7 @@ export function RecordLeadsCard({
                   className="rounded-xl border border-border/60 p-3 group hover:border-border transition-colors"
                 >
                   <div className="flex items-start gap-3">
-                    <EntityAvatar initials={initials} tone="primary" />
+                    <EntityAvatar initials={initials} tone="primary" person={{ entity: "lead", id: l.id }} />
                     <div className="min-w-0 flex-1">
                       <Link
                         to="/leads/$id"

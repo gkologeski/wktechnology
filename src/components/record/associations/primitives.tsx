@@ -1,3 +1,4 @@
+import { usePersonPhotos } from "@/hooks/use-person-photos";
 import type { AssociationEntity } from "../associations-panel";
 import { useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
@@ -212,10 +213,28 @@ export function ViewAllFooter({ href, label }: { href: string; label: string }) 
 export function EntityAvatar({
   initials,
   tone = "muted",
+  person,
 }: {
   initials: string;
   tone?: "muted" | "primary";
+  /** Contato/Lead: exibe a foto do cadastro quando houver. */
+  person?: { entity: "contact" | "lead"; id: string };
 }) {
+  const photos = usePersonPhotos(
+    person?.entity === "contact" ? [person.id] : [],
+    person?.entity === "lead" ? [person.id] : [],
+  );
+  const url = person ? photos[`${person.entity}:${person.id}`] : undefined;
+  if (url) {
+    return (
+      <img
+        src={url}
+        alt=""
+        referrerPolicy="no-referrer"
+        className="h-9 w-9 shrink-0 rounded-lg object-cover"
+      />
+    );
+  }
   return (
     <div
       className={
