@@ -1,3 +1,4 @@
+import { useRecentEnrichment } from "@/hooks/use-recent-enrichment";
 import { usePersonPhotos } from "@/hooks/use-person-photos";
 import { createFileRoute, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
