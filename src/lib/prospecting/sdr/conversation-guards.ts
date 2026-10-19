@@ -185,3 +185,41 @@ export function repeatsIdenticalInbound(history: Msg[]): boolean {
   }
   return false;
 }
+
+/**
+ * Mensagem claramente destinada a outra pessoa (caso Otávio Chaves, 19/10):
+ * vocativo afetivo no início ("Amor, ...", "Meu bem", "Mãe"). Ambíguo segue normal.
+ */
+export function isOffTopic(text: string): boolean {
+  const t = norm(text);
+  if (!t) return false;
+  return /^(amor|meu amor|amorzinho|mozao|mor|meu bem|bebe|vida|minha vida|querida|querido|gata|gato|mae|mamae|pai|papai|filha|filho|mana|mano)\b/.test(
+    t,
+  );
+}
+
+/**
+ * Função fora do público da prospecção (caso Jhoni Conzatti): desenvolvedor,
+ * programador, estagiário, suporte, sem cargo de gestão/decisão na mesma mensagem.
+ */
+export function outOfIcpRole(text: string): boolean {
+  const t = norm(text);
+  if (!/\bsou (o |a |um |uma )?(desenvolvedor|desenvolvedora|dev|programador|programadora|estagiari[oa]|analista de suporte|tecnico de suporte|suporte tecnico|atendente)\b/.test(t))
+    return false;
+  return !/\b(gestor|gestora|gerente|coordenador|coordenadora|diretor|diretora|cto|head|lider|socio|socia|dono|dona|fundador|fundadora|responsavel|decido|cuido da (ti|area))\b/.test(
+    t,
+  );
+}
+
+export const OUT_OF_ICP_CLOSE =
+  "Obrigada pelo retorno! Peço desculpas pelo contato. Tenha um ótimo dia!";
+
+/** "Como conseguiu meu contato?", "quem me indicou?" (caso Luiz Cezar). */
+export function asksContactSource(text: string): boolean {
+  return /\b(quem (te |lhe )?(indicou|passou|deu)|quem foi a indicacao|como (voce |vc )?(conseguiu|chegou|achou|obteve) (o |a )?(meu|minha|esse|este) (contato|numero|telefone)|onde (voce |vc )?(conseguiu|pegou|achou) (o |a )?(meu|esse) (contato|numero)|nao sei como (voce |vc )?chegou)/.test(
+    norm(text),
+  );
+}
+
+export const CONTACT_SOURCE_REPLY =
+  "Seu contato veio de uma pesquisa em bases comerciais e perfis profissionais públicos, sem indicação de uma pessoa específica. Se preferir não receber mensagens, é só me avisar e não volto a escrever. Obrigada!";
