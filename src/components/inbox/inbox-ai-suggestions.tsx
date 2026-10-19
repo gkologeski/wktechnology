@@ -45,9 +45,11 @@ export function InboxAiSuggestionCard({
 }) {
   const qc = useQueryClient();
   const resolveFn = useServerFn(resolveSuggestion);
-  const [confirm, setConfirm] = useState<{ action: Action; companyId?: string; label: string } | null>(
-    null,
-  );
+  const [confirm, setConfirm] = useState<{
+    action: Action;
+    companyId?: string;
+    label: string;
+  } | null>(null);
   const m = useMutation({
     mutationFn: (v: { action: Action; companyId?: string }) =>
       resolveFn({ data: { id: s.id, ...v } }),
@@ -82,9 +84,7 @@ export function InboxAiSuggestionCard({
               variant="outline"
               className="h-7 text-xs"
               disabled={m.isPending}
-              onClick={() =>
-                setConfirm({ action: "unlink", label: `Desassociar da ${oldName}` })
-              }
+              onClick={() => setConfirm({ action: "unlink", label: `Desassociar da ${oldName}` })}
             >
               Desassociar da {oldName}
             </Button>
@@ -97,7 +97,11 @@ export function InboxAiSuggestionCard({
               className="h-7 text-xs"
               disabled={m.isPending}
               onClick={() =>
-                setConfirm({ action: "link_existing", companyId: c.id, label: `Trocar para ${c.name}` })
+                setConfirm({
+                  action: "link_existing",
+                  companyId: c.id,
+                  label: `Trocar para ${c.name}`,
+                })
               }
             >
               Trocar para {c.name}
@@ -135,7 +139,9 @@ export function InboxAiSuggestionCard({
           >
             Abrir ficha
           </Link>
-          {m.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-label="Aplicando" /> : null}
+          {m.isPending ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-label="Aplicando" />
+          ) : null}
         </div>
       ) : (
         <p className="mt-1 text-muted-foreground">

@@ -513,7 +513,10 @@ function WhatsAppInbox() {
                   onClick={() => {
                     setSelected(c.id);
                     setSelectedSnapshot(c);
-                    navigate({ search: (prev) => ({ ...prev, conversation: c.id }), replace: true });
+                    navigate({
+                      search: (prev) => ({ ...prev, conversation: c.id }),
+                      replace: true,
+                    });
                   }}
                   unread={c.unread_count}
                   badge={
@@ -639,33 +642,39 @@ function WhatsAppInbox() {
                 {history.initial === "loading" && !messages.length ? <InboxLoading /> : null}
                 {messages.map((m) => (
                   <Fragment key={m.id}>
-                  <InboxMessageBubble
-                    key={m.id}
-                    outbound={m.direction === "outbound"}
-                    when={m.created_at}
-                    status={m.direction === "outbound" ? m.status : null}
-                  >
-                    {m.media_url && (
-                      <div className="mb-1">
-                        <WhatsAppMediaBubble
-                          url={m.media_url}
-                          contentType={m.media_content_type}
-                          filename={m.body?.match(/^📎 Documento: (.+)$/m)?.[1] ?? null}
-                        />
-                      </div>
-                    )}
-                    {m.body && !(m.media_url && isLegacyPlaceholder(m.body)) && (
-                      <div className="whitespace-pre-wrap">
-                        <LinkifiedText text={sdrMaterialOf(m) ? stripMaterialLine(m.body) : m.body} />
-                      </div>
-                    )}
-                    {sdrMaterialOf(m) ? (
-                      <SdrMaterialLink messageId={m.id} label={sdrMaterialOf(m)!} />
-                    ) : null}
-                  </InboxMessageBubble>
-                  {suggestionsByMsg.get(m.id)?.map((sg) => (
-                    <InboxAiSuggestionCard key={sg.id} s={sg} personName={currentName || "O cliente"} />
-                  ))}
+                    <InboxMessageBubble
+                      key={m.id}
+                      outbound={m.direction === "outbound"}
+                      when={m.created_at}
+                      status={m.direction === "outbound" ? m.status : null}
+                    >
+                      {m.media_url && (
+                        <div className="mb-1">
+                          <WhatsAppMediaBubble
+                            url={m.media_url}
+                            contentType={m.media_content_type}
+                            filename={m.body?.match(/^📎 Documento: (.+)$/m)?.[1] ?? null}
+                          />
+                        </div>
+                      )}
+                      {m.body && !(m.media_url && isLegacyPlaceholder(m.body)) && (
+                        <div className="whitespace-pre-wrap">
+                          <LinkifiedText
+                            text={sdrMaterialOf(m) ? stripMaterialLine(m.body) : m.body}
+                          />
+                        </div>
+                      )}
+                      {sdrMaterialOf(m) ? (
+                        <SdrMaterialLink messageId={m.id} label={sdrMaterialOf(m)!} />
+                      ) : null}
+                    </InboxMessageBubble>
+                    {suggestionsByMsg.get(m.id)?.map((sg) => (
+                      <InboxAiSuggestionCard
+                        key={sg.id}
+                        s={sg}
+                        personName={currentName || "O cliente"}
+                      />
+                    ))}
                   </Fragment>
                 ))}
               </MessageHistoryViewport>
