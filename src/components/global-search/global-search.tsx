@@ -223,7 +223,14 @@ export function GlobalSearch() {
   const groups = results.data?.groups ?? [];
   const hasQuery = debouncedQ.trim().length > 0;
   const hasResults = groups.some((g) => g.items.length > 0);
-  const showEmpty = hasQuery && !isCommandMode && !results.isLoading && !hasResults && !aiMode;
+  const showEmpty =
+    hasQuery &&
+    debouncedQ.trim().length >= MIN_QUERY &&
+    !isCommandMode &&
+    !results.isFetchingSome &&
+    !results.failed &&
+    !hasResults &&
+    !aiMode;
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
@@ -378,9 +385,22 @@ export function GlobalSearch() {
         {/* Search results */}
         {!aiMode && !isCommandMode && hasQuery && (
           <>
-            {results.isLoading && (
-              <div className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" /> Buscando…
+            {debouncedQ.trim().length < MIN_QUERY && (
+              <div className="p-4 text-sm text-muted-foreground">
+                Digite pelo menos {MIN_QUERY} letras para buscar.
+              </div>
+            )}
+            {results.isFetchingSome && (
+              <div
+                className="flex items-center gap-2 px-4 py-2 text-xs text-muted-foreground"
+                aria-live="polite"
+              >
+                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Buscando…
+              </div>
+            )}
+            {results.failed && !results.isFetchingSome && (
+              <div className="px-4 py-2 text-xs text-muted-foreground" role="status">
+                Alguns grupos não puderam ser buscados agora. Tente de novo em instantes.
               </div>
             )}
             {groups.map((g) => {
