@@ -5,12 +5,15 @@
 // o corpo das mensagens NÃO é pesquisado — igual à Inbox unificada.
 export type ChannelKind = "email" | "whatsapp" | "chat";
 export type AssigneeFilter = "all" | "mine" | "unassigned" | "interacted";
+export type StateFilter = "all" | "open" | "closed";
+export type StateCounts = { all: number; open: number; closed: number };
 export type ChannelCursor = { at: string; id: string };
 export type ChannelCounts = { all: number; mine: number; unassigned: number; interacted: number };
 
 export type ChannelPage<Row> = {
   items: Row[];
   counts: ChannelCounts;
+  stateCounts: StateCounts;
   total: number;
   hasMore: boolean;
   nextCursor: ChannelCursor | null;
@@ -25,6 +28,7 @@ export function parseChannelPage<Row extends { id: string }>(raw: unknown): Chan
       typeof (it as { sort_at?: unknown }).sort_at === "string",
   );
   const c = (r.counts ?? {}) as Record<string, unknown>;
+  const sc = (r.state_counts ?? {}) as Record<string, unknown>;
   const nc = r.next_cursor as Record<string, unknown> | null | undefined;
   const nextCursor =
     nc && typeof nc.at === "string" && typeof nc.id === "string" ? { at: nc.at, id: nc.id } : null;
@@ -35,6 +39,11 @@ export function parseChannelPage<Row extends { id: string }>(raw: unknown): Chan
       mine: Number(c.mine) || 0,
       unassigned: Number(c.unassigned) || 0,
       interacted: Number(c.interacted) || 0,
+    },
+    stateCounts: {
+      all: Number(sc.all) || 0,
+      open: Number(sc.open) || 0,
+      closed: Number(sc.closed) || 0,
     },
     total: Number(r.total) || 0,
     hasMore: r.has_more === true && nextCursor !== null,
@@ -60,8 +69,9 @@ export function channelPageKey(
   channel: ChannelKind,
   assignee: AssigneeFilter,
   search: string,
+  state: StateFilter = "all",
 ) {
-  return ["inbox-channel", channel, userId ?? "anon", assignee, search.trim()] as const;
+  return ["inbox-channel", channel, userId ?? "anon", assignee, search.trim(), state] as const;
 }
 
 /** Filtro realtime das caixas de e-mail do próprio usuário (null = não assinar). */
