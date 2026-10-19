@@ -479,6 +479,20 @@ export async function sendSdrMessage(
       raw: { sdr: true, job_id: job.id, response: raw },
     });
     if (insErr) console.error("[sdr] falha ao gravar mensagem enviada", insErr.message);
+    // Arquivos aprovados seguem como anexo logo após o texto (falha é registrada, não reenvia o texto).
+    const files = await sendMaterialFiles(admin, {
+      num,
+      metaSend,
+      workspaceId: job.workspace_id,
+      materialIds: ((job.draft_payload as { material_ids?: string[] } | null)?.material_ids ?? []),
+      conv: { id: conv.id, contact_phone: conv.contact_phone },
+      ownerId: enr.owner_id,
+      actorUserId: p.actorUserId,
+      fromNumber: num.displayPhoneNumber ?? null,
+      jobId: job.id,
+    });
+    if (files.failed.length)
+      await admin.from("activities").select("id").limit(0); // no-op: falha já registrada em log
     await admin
       .from("whatsapp_conversations")
       .update({
