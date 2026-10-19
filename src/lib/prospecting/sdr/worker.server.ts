@@ -22,8 +22,13 @@ import {
   asksDecisionMaker,
   claimsMaterialSent,
   correctedName,
+  asksContactSource,
+  CONTACT_SOURCE_REPLY,
   dedupeRepeatedWords,
   extractCorporatePhone,
+  isOffTopic,
+  OUT_OF_ICP_CLOSE,
+  outOfIcpRole,
   fixVocative,
   greetingName,
   isAiIdentityQuestion,
@@ -422,6 +427,26 @@ export async function processJob(
       return "skipped";
     }
   }
+  // Mensagem destinada a outra pessoa: não responde nem agenda retomada.
+  if (job.kind === "reply") {
+    const lastInbound = [...history].reverse().find((m) => m.direction === "inbound");
+    if (lastInbound && isOffTopic(String(lastInbound.body ?? ""))) {
+      await admin
+        .from("sdr_enrollments")
+        .update({ follow_up_at: null })
+        .eq("id", enr.id)
+        .eq("workspace_id", job.workspace_id);
+      await finish(admin, job.id, job.lease_token, { status: "skipped", error: "off_topic" });
+      await recordSdrAction(admin, {
+        workspace_id: job.workspace_id,
+        enrollment_id: enr.id,
+        job_id: job.id,
+        kind: "off_topic",
+        status: "success",
+      });
+      return "skipped";
+    }
+  }
   const agentConfig = configFromRow(playbook as Record<string, unknown>);
   const { offers, materials } = scopeKnowledge(
     agentConfig,
@@ -663,6 +688,7 @@ export async function processJob(
   let wrongContact = false;
   let closeReason: string | null = null;
   let referralToSave: Referral | null = null;
+  let stopFollowUps = false;
   // Handoff (pedido de humano, negociação) e agendamento nunca são sobrescritos.
   if (job.kind === "reply" && out.intent !== "schedule_meeting" && out.intent !== "handoff") {
     const lastIn = [...history].reverse().find((m) => m.direction === "inbound");
@@ -678,6 +704,19 @@ export async function processJob(
         closeReason = tp.reason;
       }
       if (tp.action === "save_referral") referralToSave = tp.referral;
+    } else if (outOfIcpRole(lastText)) {
+      wrongContact = true;
+      closeReason = "out_of_icp";
+      out.intent = "continue";
+      out.material_ids = [];
+      out.answers = [];
+      out.reply = OUT_OF_ICP_CLOSE;
+    } else if (asksContactSource(lastText)) {
+      // Resposta honesta e fixa; sem retomadas automáticas depois disso.
+      stopFollowUps = true;
+      out.intent = "continue";
+      out.material_ids = [];
+      out.reply = CONTACT_SOURCE_REPLY;
     } else if (isWrongContact(lastText)) {
       wrongContact = true;
       closeReason = "wrong_contact";
@@ -995,7 +1034,10 @@ export async function processJob(
     });
   }
   if (wrongContact) {
-    const thirdParty = closeReason === "left_company" || closeReason === "not_this_person";
+    const thirdParty =
+      closeReason === "left_company" ||
+      closeReason === "not_this_person" ||
+      closeReason === "out_of_icp";
     await admin
       .from("sdr_enrollments")
       .update(
@@ -1021,6 +1063,13 @@ export async function processJob(
       payload: { reason: closeReason },
     });
   }
+  if (stopFollowUps && !wrongContact) {
+    await admin
+      .from("sdr_enrollments")
+      .update({ follow_up_at: null, cancel_reason: "asked_contact_source" })
+      .eq("id", enr.id)
+      .eq("workspace_id", job.workspace_id);
+  }
   return "sent";
 }
 
@@ -1043,11 +1092,12 @@ async function scheduleFollowUps(
     if (!e.conversation_id) continue;
     const { data: conv } = await admin
       .from("whatsapp_conversations")
-      .select("ai_owner, ai_version, last_inbound_at")
+      .select("ai_owner, ai_version, last_inbound_at, status")
       .eq("id", e.conversation_id)
       .maybeSingle();
     const clear = { follow_up_at: null };
-    if (!conv || conv.ai_owner !== "ai") {
+    // Conversa fechada na Inbox não recebe retomada automática.
+    if (!conv || conv.ai_owner !== "ai" || conv.status === "closed") {
       await admin.from("sdr_enrollments").update(clear).eq("id", e.id);
       continue;
     }
