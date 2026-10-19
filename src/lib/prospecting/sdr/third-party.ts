@@ -195,6 +195,18 @@ export function decideThirdParty(history: Msg[]): ThirdPartyDecision {
       reason = detectNotTarget(String(m.body ?? "")) ?? reason;
     }
   }
+  // Cartão de contato compartilhado = indicação do responsável, mesmo sem "não sou eu"
+  // (caso Thiago Debs, 19/10): agradece e encerra, sem qualificar quem indicou.
+  if (!reason && /Contato compartilhado/.test(lastText)) {
+    const shared = extractReferral(lastText);
+    if (shared)
+      return {
+        action: "save_referral",
+        reason: "not_this_person",
+        reply: REFERRAL_THANKS,
+        referral: shared,
+      };
+  }
   if (!reason) return { action: "none" };
   const asked = lastOutBody.includes(REFERRAL_MARK);
   const referral = extractReferral(lastText);

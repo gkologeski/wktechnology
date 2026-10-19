@@ -97,9 +97,15 @@ export const Route = createFileRoute("/_authenticated/inbox/whatsapp")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  validateSearch: (search: Record<string, unknown>): { conversation?: string } => {
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { conversation?: string; state?: "open" | "closed" } => {
     const c = search.conversation;
-    return typeof c === "string" && UUID_RE.test(c) ? { conversation: c } : {};
+    const st = search.state;
+    return {
+      ...(typeof c === "string" && UUID_RE.test(c) ? { conversation: c } : {}),
+      ...(st === "open" || st === "closed" ? { state: st } : {}),
+    };
   },
   component: WhatsAppInbox,
 });
@@ -115,7 +121,8 @@ function WhatsAppInbox() {
   const assignFn = useServerFn(assignWhatsAppConversation);
   const statusFn = useServerFn(setWhatsAppConversationStatus);
 
-  const { conversation: urlConversation } = Route.useSearch();
+  const { conversation: urlConversation, state: urlState } = Route.useSearch();
+  const stateFilter = urlState ?? "all";
   const navigate = Route.useNavigate();
   const [selected, setSelected] = useState<string | null>(urlConversation ?? null);
   // Clique em notificação (ou link compartilhado): a conversa do endereço é aberta.
@@ -148,9 +155,10 @@ function WhatsAppInbox() {
   const {
     rows: conversations,
     counts,
+    stateCounts,
     total,
     query: conversationsQ,
-  } = useInboxChannelPage<WaConversationRow>("whatsapp", filter, debouncedSearch);
+  } = useInboxChannelPage<WaConversationRow>("whatsapp", filter, debouncedSearch, stateFilter);
   const [selectedSnapshot, setSelectedSnapshot] = useState<WaConversationRow | null>(null);
   const history = useMessageHistory<WaMessageRow>({
     contextKey: selected && user?.id ? `${user.id}:whatsapp:${selected}` : null,
@@ -379,6 +387,44 @@ function WhatsAppInbox() {
       list={
         <>
           <InboxListHeader>
+            <Tabs
+              value={stateFilter}
+              onValueChange={(v) =>
+                navigate({
+                  search: (prev) => ({
+                    ...prev,
+                    state: v === "open" || v === "closed" ? v : undefined,
+                  }),
+                  replace: true,
+                })
+              }
+            >
+              <TabsList
+                aria-label="Situação da conversa"
+                className="grid h-auto w-full grid-cols-3 p-0.5"
+              >
+                {(
+                  [
+                    ["open", "Abertas"],
+                    ["closed", "Fechadas"],
+                    ["all", "Todas"],
+                  ] as const
+                ).map(([value, label]) => (
+                  <TabsTrigger
+                    key={value}
+                    className="h-5 gap-1 px-1 py-0 text-[11px]"
+                    value={value}
+                  >
+                    {label}
+                    {stateCounts ? (
+                      <span className="text-[10px] font-normal text-muted-foreground">
+                        {compactCount(stateCounts[value])}
+                      </span>
+                    ) : null}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
             <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
               <TabsList className="grid h-auto w-full grid-cols-4 p-0.5">
                 <TabsTrigger className="h-5 gap-1 px-1 py-0 text-[11px]" value="mine">

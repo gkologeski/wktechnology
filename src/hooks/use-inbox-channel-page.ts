@@ -14,6 +14,7 @@ import {
   type ChannelCursor,
   type ChannelKind,
   type ChannelPage,
+  type StateFilter,
 } from "@/lib/inbox/channel-page";
 import { useRealtimeInvalidate, type RealtimeSubscription } from "@/hooks/use-realtime-invalidate";
 
@@ -58,17 +59,18 @@ export function useInboxChannelPage<Row extends { id: string }>(
   channel: ChannelKind,
   assignee: AssigneeFilter,
   search: string,
+  state: StateFilter = "all",
 ) {
   const { user } = useAuth();
   const listFn = useServerFn(listInboxChannelPage);
   const q = useInfiniteQuery({
-    queryKey: channelPageKey(user?.id, channel, assignee, search),
+    queryKey: channelPageKey(user?.id, channel, assignee, search, state),
     enabled: !!user?.id,
     initialPageParam: null as ChannelCursor | null,
     placeholderData: (prev) => prev,
     queryFn: async ({ pageParam, signal }): Promise<ChannelPage<Row>> => {
       const raw = await listFn({
-        data: { channel, assignee, search: search.trim() || undefined, cursor: pageParam },
+        data: { channel, assignee, search: search.trim() || undefined, state, cursor: pageParam },
         signal,
       });
       return parseChannelPage<Row>(raw);
@@ -78,5 +80,11 @@ export function useInboxChannelPage<Row extends { id: string }>(
   useInboxListRealtime([channel], [["inbox-channel", channel, user?.id ?? "anon"]]);
   const rows = useMemo(() => mergeChannelPages(q.data?.pages ?? []), [q.data]);
   const first = q.data?.pages[0];
-  return { rows, counts: first?.counts ?? null, total: first?.total ?? null, query: q };
+  return {
+    rows,
+    counts: first?.counts ?? null,
+    stateCounts: first?.stateCounts ?? null,
+    total: first?.total ?? null,
+    query: q,
+  };
 }

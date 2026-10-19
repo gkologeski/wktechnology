@@ -12,6 +12,7 @@ export const listInboxChannelPage = createServerFn({ method: "POST" })
       .object({
         channel: z.enum(["email", "whatsapp", "chat"]),
         assignee: z.enum(["all", "mine", "unassigned", "interacted"]),
+        state: z.enum(["all", "open", "closed"]).optional(),
         search: z.string().max(200).optional(),
         cursor: z
           .object({ at: z.string().max(40), id: z.string().uuid() })
@@ -33,6 +34,7 @@ export const listInboxChannelPage = createServerFn({ method: "POST" })
       p_cursor_at: data.cursor?.at,
       p_cursor_id: data.cursor?.id,
       p_page_size: data.pageSize ?? 50,
+      p_state: data.state ?? "all",
     });
     if (error) throw new Error(error.message);
     return (page ?? null) as Json;

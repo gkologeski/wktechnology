@@ -1079,6 +1079,13 @@
       "when": 1792433666037,
       "tag": "0153_inbox_channel_interacted_filter",
       "breakpoints": true
+    },
+    {
+      "idx": 154,
+      "version": "7",
+      "when": 1792436936469,
+      "tag": "0154_inbox_channel_state_filter",
+      "breakpoints": true
     }
   ]
 }
