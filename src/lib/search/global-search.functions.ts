@@ -35,23 +35,37 @@ export const globalSearch = createServerFn({ method: "POST" })
       return await builder;
     };
 
+    // Tabelas grandes: IDs candidatos via índice (função restrita aos workspaces
+    // do usuário) e depois leitura normal com RLS, que decide o que ele vê.
+    const candidateIds = async (entity: "contact" | "company" | "activity") => {
+      const { data: ids } = await supabase.rpc("global_search_candidate_ids", {
+        _entity: entity,
+        _q: data.q,
+      });
+      return ((ids ?? []) as string[]).slice(0, 200);
+    };
+    const viaIds = async <T>(
+      entity: "contact" | "company" | "activity",
+      read: (ids: string[]) => PromiseLike<{ data: T | null }>,
+    ) => {
+      const ids = await candidateIds(entity);
+      if (ids.length === 0) return { data: [] as unknown as T };
+      return await read(ids);
+    };
+
     const [contacts, companies, deals, tickets, activities, candidates, jobs] = await Promise.all([
       allow("contact")
-        ? run(
+        ? viaIds("contact", (ids) =>
             supabase
               .from("contacts")
               .select("id, first_name, last_name, email, job_title")
-              .or(`first_name.ilike.${pattern},last_name.ilike.${pattern},email.ilike.${pattern}`)
+              .in("id", ids)
               .limit(limit),
           )
         : run(null),
       allow("company")
-        ? run(
-            supabase
-              .from("companies")
-              .select("id, name, domain")
-              .or(`name.ilike.${pattern},domain.ilike.${pattern}`)
-              .limit(limit),
+        ? viaIds("company", (ids) =>
+            supabase.from("companies").select("id, name, domain").in("id", ids).limit(limit),
           )
         : run(null),
       allow("deal")
@@ -73,12 +87,12 @@ export const globalSearch = createServerFn({ method: "POST" })
           )
         : run(null),
       allow("activity")
-        ? run(
+        ? viaIds("activity", (ids) =>
             supabase
               .from("activities")
-              .select("id, subject, type, due_date")
               // Só o assunto (indexado): `body` sem índice varria 460 mil linhas (~37 s).
-              .ilike("subject", pattern)
+              .select("id, subject, type, due_date")
+              .in("id", ids)
               .limit(limit),
           )
         : run(null),
