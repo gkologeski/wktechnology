@@ -64,8 +64,38 @@ export function isAutoResponder(text: string): boolean {
   return false;
 }
 
-const LEFT_RE =
-  /\b(sai|saiu|desliguei|desligado|desligada) (da|do|de la|dela|dessa|desta|de lá)\b|\bnao (trabalho|estou|atuo) mais (la|ai|na|no|nessa|nesta)\b|\bja (faz|tem) .{0,15}(anos?|meses) que (sai|deixei)\b|\bnao faco mais parte\b|\bmudei de empresa\b|\bme aposentei\b|\bdeixei a empresa\b|\bsai de la\b|\bnao sou mais (da|do|funcionari)/;
+/**
+ * Saída da empresa. "sai/saiu da X" sozinho é ambíguo ("o sistema saiu do ar",
+ * "saí da reunião"), então exige contexto de vínculo: a palavra empresa, um
+ * tempo decorrido, um nome próprio (no texto original) ou frase inequívoca.
+ */
+const COMPANY_NOUN = "(empresa|companhia|firma|organizacao|instituicao)";
+const LEFT_RE = new RegExp(
+  [
+    `\\b(sai|saiu|desliguei|deixei|deixou) (da|dessa|desta|daquela) ${COMPANY_NOUN}\\b`,
+    `\\b(faz|tem|ha) .{0,20}(anos?|meses) que (eu )?(sai|deixei|nao trabalho)\\b`,
+    `\\b(fui|foi) (desligado|desligada|demitido|demitida)\\b`,
+    `\\bnao (trabalho|atuo) mais (la|ai|nessa|nesta|naquela|na ${COMPANY_NOUN}|com voces)\\b`,
+    `\\bnao faco mais parte (da|dessa|desta) (${COMPANY_NOUN}|equipe|quadro)\\b`,
+    `\\bnao sou mais (funcionari|colaborador)`,
+    `\\bnao sou mais (da|dessa|desta) ${COMPANY_NOUN}\\b`,
+    `\\bmudei de (empresa|emprego)\\b`,
+    `\\bme aposentei\\b`,
+  ].join("|"),
+);
+
+/** Palavras capitalizadas que não são empresas ("saí do Teams"). */
+const NOT_COMPANY = /^(teams|zoom|meet|google|whatsapp|grupo|reuniao|sistema|ar)$/i;
+
+/** "saí da Opentech": 1ª pessoa + nome próprio no texto original. */
+function leftNamedCompany(raw: string): boolean {
+  const re = /\b(?:sa[ií]|deixei) (?:da|do|de) ([A-ZÀ-Ú][\p{L}\d&.-]+)/gu;
+  for (const m of String(raw ?? "").matchAll(re)) {
+    const name = m[1].normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    if (!NOT_COMPANY.test(name)) return true;
+  }
+  return false;
+}
 
 const NOT_PERSON_RE =
   /\b(telefone|numero|celular|whats|whatsapp|contato) nao e (de|do|da|o|a)\b|\baqui nao e (o|a)\b|\bnao e o contato (de|do|da)\b|\bpessoa errada\b/;
@@ -77,10 +107,13 @@ export function detectNotTarget(text: string): ThirdPartyReason | null {
   // "não sou o X, mas cuido da TI" continua normalmente.
   if (/\b(mas|porem|so que) .*(cuido|respondo|sou responsavel|sou eu|posso ajudar)/.test(t))
     return null;
-  if (LEFT_RE.test(t)) return "left_company";
+  if (LEFT_RE.test(t) || leftNamedCompany(text)) return "left_company";
   if (NOT_PERSON_RE.test(t) || isWrongContact(text)) return "not_this_person";
   return null;
 }
+
+/** Nossas mensagens que mantêm o estado "falando com terceiro". */
+const WAIT_REFERRAL_REPLY = "Obrigada! Fico no aguardo do contato.";
 
 /** Recusa/indisponibilidade de indicação. */
 export function declinesReferral(text: string): boolean {
@@ -143,20 +176,27 @@ export function decideThirdParty(history: Msg[]): ThirdPartyDecision {
   if (!last) return { action: "none" };
   const lastText = String(last.body ?? "");
   const lastIdx = history.lastIndexOf(last);
-  let reason: ThirdPartyReason | null = null;
-  for (const m of inbound) {
-    const r = detectNotTarget(String(m.body ?? ""));
-    if (r) reason = reason ?? r;
+  const before = history.slice(0, lastIdx);
+  // O estado "terceiro" só vale se o sinal está na mensagem atual ou se a nossa
+  // última mensagem foi a pergunta/aguardo fixos — um sinal antigo não "gruda".
+  let reason: ThirdPartyReason | null = detectNotTarget(lastText);
+  const lastOut = [...before].reverse().find((m) => m.direction !== "inbound");
+  const lastOutBody = String(lastOut?.body ?? "");
+  const inThirdPartyState =
+    lastOutBody.includes(REFERRAL_MARK) || lastOutBody.includes(WAIT_REFERRAL_REPLY);
+  if (!reason && inThirdPartyState) {
+    for (const m of before) {
+      if (m.direction !== "inbound") continue;
+      reason = detectNotTarget(String(m.body ?? "")) ?? reason;
+    }
   }
   if (!reason) return { action: "none" };
-  const asked = history
-    .slice(0, lastIdx)
-    .some((m) => m.direction !== "inbound" && String(m.body ?? "").includes(REFERRAL_MARK));
+  const asked = lastOutBody.includes(REFERRAL_MARK);
   const referral = extractReferral(lastText);
   if (referral) return { action: "save_referral", reason, reply: REFERRAL_THANKS, referral };
   if (declinesReferral(lastText)) return { action: "close", reason, reply: CLOSE_THANKS };
   if (promisesReferral(lastText))
-    return { action: "wait_referral", reason, reply: "Obrigada! Fico no aguardo do contato." };
+    return { action: "wait_referral", reason, reply: WAIT_REFERRAL_REPLY };
   if (asked) return { action: "close", reason, reply: CLOSE_THANKS };
   return { action: "ask_referral", reason, reply: REFERRAL_QUESTION };
 }
