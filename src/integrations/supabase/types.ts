@@ -21216,6 +21216,7 @@ export type Database = {
           created_at: string
           error: string | null
           id: string
+          override_commercial: boolean
           override_recent: boolean
           owner_id: string
           phone: string
@@ -21233,6 +21234,7 @@ export type Database = {
           created_at?: string
           error?: string | null
           id?: string
+          override_commercial?: boolean
           override_recent?: boolean
           owner_id: string
           phone: string
@@ -21250,6 +21252,7 @@ export type Database = {
           created_at?: string
           error?: string | null
           id?: string
+          override_commercial?: boolean
           override_recent?: boolean
           owner_id?: string
           phone?: string
@@ -21286,6 +21289,8 @@ export type Database = {
           content_variables_template: Json
           created_at: string
           dispatch_lease_until: string | null
+          exclude_customers: boolean
+          exclude_open_deals: boolean
           failed: number
           finished_at: string | null
           id: string
@@ -21318,6 +21323,8 @@ export type Database = {
           content_variables_template?: Json
           created_at?: string
           dispatch_lease_until?: string | null
+          exclude_customers?: boolean
+          exclude_open_deals?: boolean
           failed?: number
           finished_at?: string | null
           id?: string
@@ -21350,6 +21357,8 @@ export type Database = {
           content_variables_template?: Json
           created_at?: string
           dispatch_lease_until?: string | null
+          exclude_customers?: boolean
+          exclude_open_deals?: boolean
           failed?: number
           finished_at?: string | null
           id?: string
