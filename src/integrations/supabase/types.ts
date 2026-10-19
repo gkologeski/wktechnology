@@ -23003,6 +23003,7 @@ export type Database = {
           p_cursor_id?: string
           p_page_size?: number
           p_search?: string
+          p_state?: string
           p_workspace_id?: string
         }
         Returns: Json
