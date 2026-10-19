@@ -17711,10 +17711,13 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string
+          file_name: string | null
+          file_size: number | null
           id: string
           kind: string
           media_asset_id: string | null
           mime: string | null
+          storage_path: string | null
           title: string
           updated_at: string
           url: string | null
@@ -17728,10 +17731,13 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string
+          file_name?: string | null
+          file_size?: number | null
           id?: string
           kind?: string
           media_asset_id?: string | null
           mime?: string | null
+          storage_path?: string | null
           title: string
           updated_at?: string
           url?: string | null
@@ -17745,10 +17751,13 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string
+          file_name?: string | null
+          file_size?: number | null
           id?: string
           kind?: string
           media_asset_id?: string | null
           mime?: string | null
+          storage_path?: string | null
           title?: string
           updated_at?: string
           url?: string | null

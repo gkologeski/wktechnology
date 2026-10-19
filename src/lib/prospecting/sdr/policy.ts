@@ -21,6 +21,8 @@ export type SdrMaterial = {
   approved: boolean;
   active: boolean;
   url: string | null;
+  /** Arquivo no bucket privado (kind=file). */
+  storage_path?: string | null;
   offer_ids: string[];
 };
 
@@ -150,7 +152,7 @@ export function selectableMaterials(materials: SdrMaterial[], offerIds?: string[
     (m) =>
       m.approved &&
       m.active &&
-      !!m.url &&
+      (!!m.url || !!m.storage_path) &&
       (!offerIds?.length || m.offer_ids.some((id) => offerIds.includes(id))),
   );
 }

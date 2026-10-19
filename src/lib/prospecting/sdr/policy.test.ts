@@ -178,3 +178,14 @@ describe("isWrongContact", () => {
     expect(isWrongContact("Não sou ele")).toBe(true);
   });
 });
+
+import { selectableMaterials as pickMaterials } from "./policy";
+describe("materiais em arquivo", () => {
+  it("arquivo aprovado sem link é selecionável", () => {
+    const r = pickMaterials([
+      { id: "f", title: "PDF", approved: true, active: true, url: null, storage_path: "ws/x.pdf", offer_ids: [] },
+      { id: "v", title: "Vazio", approved: true, active: true, url: null, offer_ids: [] },
+    ]);
+    expect(r.map((m) => m.id)).toEqual(["f"]);
+  });
+});

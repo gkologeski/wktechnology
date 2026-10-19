@@ -21,6 +21,7 @@ import { SdrAgentPicker } from "./sdr-agent-picker";
 import { SdrAgentConfigPanel } from "./sdr-agent-config";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SdrSkillsPanel } from "./sdr-skills-panel";
+import { SdrMaterialsPanel, type SdrMaterialRow } from "./sdr-materials-panel";
 import { Link } from "@tanstack/react-router";
 import { leadScoreBandLabel, LEAD_SCORE_MAX } from "@/lib/prospecting/lead-score";
 import { EmptyState, MetricCard, SectionHeader } from "@/components/techhire/ui";
@@ -30,7 +31,6 @@ import {
   discardSdrDraft,
   getSdrOverview,
   retrySdrMeetingSync,
-  saveSdrMaterial,
   saveSdrPilotPlaybook,
   saveSdrSettings,
   setSdrOfferActive,
@@ -536,7 +536,6 @@ function NumField(p: {
 
 function CatalogPanel({ d }: { d: Overview }) {
   const setActive = useServerFn(setSdrOfferActive);
-  const saveMat = useServerFn(saveSdrMaterial);
   const setApproval = useServerFn(setSdrOfferApproval);
   const refresh = useRefresh();
   const approve = useMutation({
@@ -551,32 +550,12 @@ function CatalogPanel({ d }: { d: Overview }) {
   const pendingIds = d.offers
     .filter((o) => o.status === "active" && !o.approved_at)
     .map((o) => o.id);
-  const [mat, setMat] = useState({ title: "", url: "", offerIds: [] as string[] });
   const toggle = useMutation({
     mutationFn: (v: { id: string; active: boolean }) =>
       setActive({ data: { workspaceId: d.workspaceId, ...v } }),
     onSuccess: refresh,
     onError: (e: Error) => toast.error(e.message),
   });
-  const addMat = useMutation({
-    mutationFn: () =>
-      saveMat({ data: { workspaceId: d.workspaceId, ...mat, approved: true, active: true } }),
-    onSuccess: () => (
-      toast.success("Material salvo"),
-      setMat({ title: "", url: "", offerIds: [] }),
-      refresh()
-    ),
-    onError: (e: Error) => toast.error(e.message),
-  });
-  const approveMat = useMutation({
-    mutationFn: (m: { id: string; title: string; url: string; offerIds: string[] }) =>
-      saveMat({ data: { workspaceId: d.workspaceId, ...m, approved: true, active: true } }),
-    onSuccess: () => (toast.success("Material aprovado"), refresh()),
-    onError: (e: Error) => toast.error(e.message),
-  });
-  const linksBy = (mid: string) =>
-    d.links.filter((l) => l.material_id === mid).map((l) => l.offer_id);
-  const name = (id: string) => d.offers.find((o) => o.id === id)?.name ?? "?";
   return (
     <div className="space-y-8">
       <section className="space-y-3">
@@ -641,101 +620,14 @@ function CatalogPanel({ d }: { d: Overview }) {
           </ul>
         )}
       </section>
-      <section className="space-y-3">
-        <SectionHeader
-          title="Materiais aprovados"
-          description="Um material pode atender vários serviços. Só links https aprovados são enviados."
-        />
-        {d.materials.length === 0 ? (
-          <EmptyState
-            title="Nenhum material"
-            description="Sem material, o SDR não oferece envio de arquivos."
-          />
-        ) : (
-          <ul className="divide-y rounded-lg border bg-card">
-            {d.materials.map((m) => (
-              <li key={m.id} className="p-3 text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{m.title}</span>
-                  <Badge variant={m.approved && m.active ? "secondary" : "outline"}>
-                    {!m.active ? "Inativo" : m.approved ? "Aprovado" : "Aguardando aprovação"}
-                  </Badge>
-                  {d.canManage && m.active && !m.approved && m.url && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="ml-auto"
-                      disabled={approveMat.isPending}
-                      onClick={() =>
-                        approveMat.mutate({
-                          id: m.id,
-                          title: m.title,
-                          url: m.url as string,
-                          offerIds: linksBy(m.id),
-                        })
-                      }
-                    >
-                      Aprovar para envio
-                    </Button>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {linksBy(m.id).map(name).join(", ") || "Sem serviço vinculado"}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-        {d.canManage && (
-          <div className="space-y-3 rounded-lg border bg-card p-4">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label htmlFor="mat-t">Título</Label>
-                <Input
-                  id="mat-t"
-                  value={mat.title}
-                  onChange={(e) => setMat({ ...mat, title: e.target.value })}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="mat-u">Link (https)</Label>
-                <Input
-                  id="mat-u"
-                  value={mat.url}
-                  onChange={(e) => setMat({ ...mat, url: e.target.value })}
-                />
-              </div>
-            </div>
-            <fieldset className="grid gap-2 sm:grid-cols-2">
-              <legend className="mb-1 text-sm font-medium">Serviços atendidos</legend>
-              {d.offers
-                .filter((o) => o.status === "active")
-                .map((o) => (
-                  <label key={o.id} className="flex items-center gap-2 text-sm">
-                    <Checkbox
-                      checked={mat.offerIds.includes(o.id)}
-                      onCheckedChange={(v) =>
-                        setMat({
-                          ...mat,
-                          offerIds: v
-                            ? [...mat.offerIds, o.id]
-                            : mat.offerIds.filter((x) => x !== o.id),
-                        })
-                      }
-                    />
-                    {o.name}
-                  </label>
-                ))}
-            </fieldset>
-            <Button
-              disabled={!mat.title || !mat.url || addMat.isPending}
-              onClick={() => addMat.mutate()}
-            >
-              Adicionar material
-            </Button>
-          </div>
-        )}
-      </section>
+      <SdrMaterialsPanel
+        workspaceId={d.workspaceId}
+        canManage={d.canManage}
+        materials={d.materials as SdrMaterialRow[]}
+        offers={d.offers}
+        links={d.links}
+        onChanged={refresh}
+      />
     </div>
   );
 }

@@ -1,0 +1,2 @@
+ALTER TABLE public.sdr_materials ADD COLUMN IF NOT EXISTS storage_path text, ADD COLUMN IF NOT EXISTS file_name text, ADD COLUMN IF NOT EXISTS file_size integer;
+COMMENT ON COLUMN public.sdr_materials.storage_path IS 'Caminho no bucket privado sdr-materials (<workspace_id>/...); kind=file';

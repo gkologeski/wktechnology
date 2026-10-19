@@ -245,32 +245,68 @@ export const saveSdrMaterial = createServerFn({ method: "POST" })
         workspaceId: z.string().uuid(),
         id: z.string().uuid().optional(),
         title: z.string().trim().min(1).max(200),
+        description: z.string().trim().max(1000).optional().nullable(),
+        kind: z.enum(["link", "file"]).default("link"),
         url: z
           .string()
           .url()
-          .refine((u) => u.startsWith("https://"), "Use um link https"),
+          .refine((u) => u.startsWith("https://"), "Use um link https")
+          .optional()
+          .nullable(),
+        file: z
+          .object({
+            storagePath: z.string().min(3).max(500),
+            fileName: z.string().trim().min(1).max(200),
+            mime: z.string().trim().min(3).max(120),
+            size: z
+              .number()
+              .int()
+              .min(1)
+              .max(16 * 1024 * 1024),
+          })
+          .optional()
+          .nullable(),
         approved: z.boolean(),
         active: z.boolean(),
         offerIds: z.array(z.string().uuid()).max(50),
+      })
+      .refine((d) => (d.kind === "link" ? !!d.url : !!d.file || !!d.id), {
+        message: "Informe o link ou envie o arquivo.",
       })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await assertAdmin(supabase, userId, data.workspaceId);
-    const row = {
+    if (data.file && !data.file.storagePath.startsWith(`${data.workspaceId}/`))
+      throw new Error("Arquivo fora do workspace.");
+    const row: Record<string, unknown> = {
       ...(data.id ? { id: data.id } : {}),
       workspace_id: data.workspaceId,
       title: data.title,
-      url: data.url,
+      kind: data.kind,
       approved: data.approved,
       approved_by: data.approved ? userId : null,
       approved_at: data.approved ? new Date().toISOString() : null,
       active: data.active,
     };
+    if (data.description !== undefined) row.description = data.description || null;
+    if (data.kind === "link") {
+      row.url = data.url;
+      row.storage_path = null;
+      row.file_name = null;
+      row.file_size = null;
+      row.mime = null;
+    } else if (data.file) {
+      row.url = null;
+      row.storage_path = data.file.storagePath;
+      row.file_name = data.file.fileName;
+      row.file_size = data.file.size;
+      row.mime = data.file.mime;
+    }
     const { data: saved, error } = await supabase
       .from("sdr_materials")
-      .upsert(row)
+      .upsert(row as never)
       .select("id")
       .single();
     if (error) throw new Error(error.message);
@@ -290,6 +326,73 @@ export const saveSdrMaterial = createServerFn({ method: "POST" })
       if (lErr) throw new Error(lErr.message);
     }
     return { id: saved.id as string };
+  });
+
+/** URL de envio direto ao armazenamento privado (só administradores do workspace). */
+export const createSdrMaterialUpload = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        workspaceId: z.string().uuid(),
+        fileName: z.string().trim().min(1).max(200),
+        mime: z.string().trim().min(3).max(120),
+        size: z
+          .number()
+          .int()
+          .min(1)
+          .max(16 * 1024 * 1024, "Arquivo acima de 16 MB."),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId, data.workspaceId);
+    const allowed =
+      /^(application\/pdf|application\/(msword|vnd\.openxmlformats-officedocument\.[a-z.]+|vnd\.ms-(excel|powerpoint))|image\/(jpeg|png|webp)|video\/(mp4|3gpp)|text\/plain)$/;
+    if (!allowed.test(data.mime)) throw new Error("Tipo de arquivo não suportado pelo WhatsApp.");
+    const safe = data.fileName
+      .normalize("NFD")
+      .replace(/[^\w.-]+/g, "_")
+      .slice(-120);
+    const path = `${data.workspaceId}/${crypto.randomUUID()}/${safe}`;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: up, error } = await supabaseAdmin.storage
+      .from("sdr-materials")
+      .createSignedUploadUrl(path);
+    if (error || !up) throw new Error(error?.message ?? "Falha ao preparar envio.");
+    return { path, token: up.token };
+  });
+
+/** Exclui um material (e o arquivo, se houver). Histórico de envios é preservado. */
+export const deleteSdrMaterial = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({ workspaceId: z.string().uuid(), id: z.string().uuid() }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId, data.workspaceId);
+    const { data: row, error: rErr } = await supabase
+      .from("sdr_materials")
+      .select("id, storage_path")
+      .eq("id", data.id)
+      .eq("workspace_id", data.workspaceId)
+      .maybeSingle();
+    if (rErr) throw new Error(rErr.message);
+    if (!row) throw new Error("Material não encontrado.");
+    const { error } = await supabase
+      .from("sdr_materials")
+      .delete()
+      .eq("id", data.id)
+      .eq("workspace_id", data.workspaceId)
+      .select("id")
+      .single();
+    if (error) throw new Error("Não foi possível excluir: " + error.message);
+    if (row.storage_path?.startsWith(`${data.workspaceId}/`)) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await supabaseAdmin.storage.from("sdr-materials").remove([row.storage_path]);
+    }
+    return { ok: true };
   });
 
 const JobInput = z.object({ jobId: z.string().uuid() });

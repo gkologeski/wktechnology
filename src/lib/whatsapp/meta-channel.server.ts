@@ -52,6 +52,8 @@ export type WaSendPayload = {
   body?: string | null;
   mediaUrl?: string | null;
   mediaContentType?: string | null;
+  /** Nome exibido do documento anexado. */
+  fileName?: string | null;
   template?: {
     name: string;
     language?: string;
