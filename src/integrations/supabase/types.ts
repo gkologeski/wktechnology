@@ -23102,6 +23102,10 @@ export type Database = {
         Returns: Json
       }
       get_workspace_plan: { Args: { _workspace: string }; Returns: string }
+      global_search_candidate_ids: {
+        Args: { _entity: string; _limit?: number; _q: string }
+        Returns: string[]
+      }
       has_entitlement: {
         Args: { _key: string; _workspace: string }
         Returns: boolean
