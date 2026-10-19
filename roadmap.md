@@ -146,3 +146,16 @@
 
 - [x] ID 1 (parcial; aguarda decisão sobre Inbox/histórico em cargo restrito): criar conta QA "[TESTE] Validação TechSales" (techerp-permissions-qa@techerp-test.invalid) e validar permissões reais com sessão própria; relatório docs/architecture/task-1-real-user-validation.md
 - [ ] Otimização do banco: aguardando decisão do usuário sobre retenção de logs e frequência das tarefas agendadas
+
+# Roadmap — Importador Clockify → TechProjects (WK)
+
+- [ ] Migration aditiva: conexão cifrada, execuções, staging, vínculos, mapeamentos, RPC de escrita sem workflows
+- [ ] Adaptador Clockify somente leitura (allowlist de URLs, 429/Retry-After, Last-Page)
+- [ ] Motor retomável: inventário → prévia (dry run) → importação em lotes idempotentes com checkpoint/cancelamento
+- [ ] Segmentação por dia no fuso (meia-noite/DST), segundos preservados, sobreposições e timers abertos em staging
+- [ ] Mapeamento de usuários/clientes/projetos com revisão manual
+- [ ] Tela em /projects/settings/imports/clockify + item no menu e na central de importações
+- [ ] Testes com fixture (sem chamadas reais) e guia de migração
+- [ ] Conectar Clockify, escolher workspace de origem e rodar inventário real (bloqueado: aguarda chave/acesso admin do usuário)
+- [ ] Importação real (bloqueado: aguarda prévia conferida pelo usuário)
+- [ ] Agendar tick em segundo plano (bloqueado: depende de publicação aprovada)
