@@ -4,9 +4,9 @@
 // (assunto/trecho/telefone/prévia/visitante + nome/e-mail de contato e lead visíveis);
 // o corpo das mensagens NÃO é pesquisado — igual à Inbox unificada.
 export type ChannelKind = "email" | "whatsapp" | "chat";
-export type AssigneeFilter = "all" | "mine" | "unassigned";
+export type AssigneeFilter = "all" | "mine" | "unassigned" | "interacted";
 export type ChannelCursor = { at: string; id: string };
-export type ChannelCounts = { all: number; mine: number; unassigned: number };
+export type ChannelCounts = { all: number; mine: number; unassigned: number; interacted: number };
 
 export type ChannelPage<Row> = {
   items: Row[];
@@ -34,6 +34,7 @@ export function parseChannelPage<Row extends { id: string }>(raw: unknown): Chan
       all: Number(c.all) || 0,
       mine: Number(c.mine) || 0,
       unassigned: Number(c.unassigned) || 0,
+      interacted: Number(c.interacted) || 0,
     },
     total: Number(r.total) || 0,
     hasMore: r.has_more === true && nextCursor !== null,

@@ -11,7 +11,7 @@ export const listInboxChannelPage = createServerFn({ method: "POST" })
     z
       .object({
         channel: z.enum(["email", "whatsapp", "chat"]),
-        assignee: z.enum(["all", "mine", "unassigned"]),
+        assignee: z.enum(["all", "mine", "unassigned", "interacted"]),
         search: z.string().max(200).optional(),
         cursor: z
           .object({ at: z.string().max(40), id: z.string().uuid() })

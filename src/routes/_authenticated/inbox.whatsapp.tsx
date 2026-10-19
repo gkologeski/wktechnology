@@ -124,7 +124,7 @@ function WhatsAppInbox() {
   }, [urlConversation]);
   const composerScope = `${user?.id ?? ""}:${selected ?? ""}`;
   const [draft, setDraft] = useScopedComposerValue(composerScope, "");
-  const [filter, setFilter] = useState<"mine" | "unassigned" | "all">("all");
+  const [filter, setFilter] = useState<"mine" | "unassigned" | "interacted" | "all">("all");
   const [pendingMedia, setPendingMedia] = useScopedComposerValue<{
     url: string;
     contentType: string;
@@ -380,7 +380,7 @@ function WhatsAppInbox() {
         <>
           <InboxListHeader>
             <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
-              <TabsList className="grid h-auto w-full grid-cols-3 p-0.5">
+              <TabsList className="grid h-auto w-full grid-cols-4 p-0.5">
                 <TabsTrigger className="h-5 gap-1 px-1 py-0 text-[11px]" value="mine">
                   Minhas
                   {counts ? (
@@ -394,6 +394,14 @@ function WhatsAppInbox() {
                   {counts ? (
                     <span className="text-[10px] font-normal text-muted-foreground">
                       {compactCount(counts.unassigned)}
+                    </span>
+                  ) : null}
+                </TabsTrigger>
+                <TabsTrigger className="h-5 gap-1 px-1 py-0 text-[11px]" value="interacted">
+                  Interagiu
+                  {counts ? (
+                    <span className="text-[10px] font-normal text-muted-foreground">
+                      {compactCount(counts.interacted)}
                     </span>
                   ) : null}
                 </TabsTrigger>
