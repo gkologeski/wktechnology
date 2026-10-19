@@ -18,6 +18,23 @@ import {
   type DraftPayload,
 } from "./actions.server";
 import { recordSdrAction } from "./ingest.server";
+import {
+  asksDecisionMaker,
+  claimsMaterialSent,
+  correctedName,
+  dedupeRepeatedWords,
+  extractCorporatePhone,
+  fixVocative,
+  greetingName,
+  MATERIAL_HANDOFF_REPLY,
+  NOT_NOW_CLOSE,
+  notTheMoment,
+  offersToKeepContact,
+  refusedMeeting,
+  repeatsIdenticalInbound,
+  selfIdentifiedResponsible,
+  showsBusinessInterest,
+} from "./conversation-guards";
 import { resolveChoice } from "./booking-guard";
 import { parseToolConfig, type ScheduleConfig } from "./tools/catalog";
 import { emptyEffects, type ToolCtx } from "./tools/dispatcher";
@@ -344,7 +361,11 @@ export async function processJob(
   // Atendimento automático (robô/URA): encerra este turno sem responder ao robô.
   if (job.kind === "reply") {
     const lastInbound = [...history].reverse().find((m) => m.direction === "inbound");
-    if (lastInbound && isAutoResponder(String(lastInbound.body ?? ""))) {
+    if (
+      lastInbound &&
+      (isAutoResponder(String(lastInbound.body ?? "")) ||
+        repeatsIdenticalInbound(history as { direction: string; body?: string | null }[]))
+    ) {
       await admin
         .from("sdr_enrollments")
         .update({ follow_up_at: null, cancel_reason: "auto_responder" })
@@ -627,6 +648,45 @@ export async function processJob(
     }
   }
 
+  // Garantias da conversa (casos 16–19/10): nome, repetição, reunião recusada,
+  // decisor já identificado, "não é o momento" e material prometido sem envio.
+  let corporatePhone: string | null = null;
+  if (job.kind === "reply" && !wrongContact && out.intent !== "opt_out") {
+    const h = history as { direction: string; body?: string | null }[];
+    const lastIn = [...h].reverse().find((m) => m.direction === "inbound");
+    const lastText = String(lastIn?.body ?? "");
+    out.reply = dedupeRepeatedWords(out.reply);
+    out.reply = fixVocative(out.reply, [correctedName(h) ?? "", greetingName(h) ?? ""]);
+    corporatePhone = extractCorporatePhone(lastText);
+    if (out.intent !== "handoff" && out.intent !== "schedule_meeting") {
+      if (notTheMoment(lastText) && offersToKeepContact(out.reply)) {
+        out.reply = NOT_NOW_CLOSE;
+        out.material_ids = [];
+      } else if (refusedMeeting(h) && showsBusinessInterest(h)) {
+        out.intent = "handoff";
+        out.handoff_reason =
+          "Cliente recusou reunião, mas pediu informações/orçamento por mensagem: atendimento humano.";
+      } else if (
+        claimsMaterialSent(out.reply) &&
+        !(agentConfig.guardrails.attach_materials && out.material_ids.length)
+      ) {
+        out.intent = "handoff";
+        out.reply = MATERIAL_HANDOFF_REPLY;
+        out.handoff_reason =
+          "Cliente pediu material e o envio automático de materiais não está disponível para este agente.";
+      } else if (selfIdentifiedResponsible(h) && asksDecisionMaker(out.reply)) {
+        const alt = await rewriteReply(
+          deps,
+          job.workspace_id,
+          system,
+          history,
+          "O cliente JÁ disse que é o responsável pela área de TI. Não pergunte cargo, se é decisor ou quem decide. Siga a conversa com a próxima pergunta útil.",
+        );
+        if (alt && !asksDecisionMaker(alt) && !mentionsPrice(alt)) out.reply = dedupeRepeatedWords(alt);
+      }
+    }
+  }
+
   // Qualificação canônica: mesmo questionário, cálculo e linha da Prospecção.
   const inbound = history.filter((m) => m.direction === "inbound");
   const target = enr.lead_id
@@ -854,6 +914,24 @@ export async function processJob(
       .eq("id", job.id)
       .in("status", ["running"]);
     return obsolete ? "discarded" : "drafted";
+  }
+  if (corporatePhone && target) {
+    const { saveCorporatePhone } = await import("./third-party.server");
+    const st = await saveCorporatePhone(admin, {
+      workspaceId: job.workspace_id,
+      ownerId: (enr.owner_id as string | null) ?? null,
+      target,
+      companyId: (enr.company_id as string | null) ?? null,
+      phoneE164: corporatePhone,
+    }).catch(() => "failed" as const);
+    await recordSdrAction(admin, {
+      workspace_id: job.workspace_id,
+      enrollment_id: enr.id,
+      job_id: job.id,
+      kind: "corporate_phone_saved",
+      status: st === "failed" ? "failed" : "success",
+      payload: { phone: corporatePhone, result: st },
+    });
   }
   if (referralToSave) {
     const { saveReferral } = await import("./third-party.server");
