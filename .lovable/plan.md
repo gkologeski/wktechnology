@@ -5,6 +5,7 @@ O WhatsApp oficial da Meta não entrega a foto de perfil do cliente, só o nome.
 
 ## O que muda
 1. **Campo de foto em Contato e Lead.** Na ficha, ao passar o mouse sobre o avatar, aparecem as opções Enviar foto, Trocar e Remover. A imagem é reduzida no navegador e guardada de forma privada. A troca pede confirmação e fica registrada na linha do tempo.
+   - **Foto automática ao enriquecer:** quando o enriquecimento (Apollo ou a conexão LinkedIn já usada no TechHire) devolver a foto do perfil do LinkedIn, o sistema baixa a imagem, guarda uma cópia privada e preenche a foto. Isso acontece só se o registro não tiver foto enviada manualmente, porque a foto manual nunca é substituída. A origem fica registrada como "LinkedIn" ou "Manual". O enriquecimento em massa faz o mesmo para cada registro. Se o provedor não devolver foto, ou o link estiver expirado, nada muda.
 2. **Uma única forma de exibir a pessoa.** Um avatar padrão mostra a foto. Sem foto, mostra as iniciais com uma cor fixa para cada contato. Ele aparece em:
    - Inbox WhatsApp, E-mail e Chat: lista de conversas, cabeçalho e painel do cliente;
    - listas de Contatos e Leads;
