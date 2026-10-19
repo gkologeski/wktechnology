@@ -444,15 +444,21 @@ export const listAssignableMembers = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    const { data: members } = await supabase
-      .from("team_members")
-      .select("member_user_id")
-      .eq("workspace_owner_id", workspaceId);
-    const ids = new Set<string>([userId, ...(members ?? []).map((m: any) => m.member_user_id)]);
-    const { data: profs } = await supabase
+    // Membros ativos do workspace atual (inativos não podem receber conversas).
+    const { data: members, error: mErr } = await supabase
+      .from("workspace_members")
+      .select("user_id")
+      .eq("workspace_id", workspaceId)
+      .eq("status", "active");
+    if (mErr) throw new Error(mErr.message);
+    const ids = new Set<string>([userId, ...(members ?? []).map((m: any) => m.user_id)]);
+    const { data: rawProfs } = await supabase
       .from("profiles")
       .select("id, full_name")
       .in("id", Array.from(ids));
+    const profs = (rawProfs ?? []).sort((a: any, b: any) =>
+      a.id === userId ? -1 : b.id === userId ? 1 : (a.full_name ?? "").localeCompare(b.full_name ?? "", "pt-BR"),
+    );
     return (profs ?? []) as { id: string; full_name: string | null }[];
   });
 
