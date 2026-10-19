@@ -95,7 +95,7 @@ export async function loadKnowledge(admin: Admin, workspaceId: string) {
     admin.from("sdr_offers").select("*").eq("workspace_id", workspaceId).order("position"),
     admin
       .from("sdr_materials")
-      .select("id, title, approved, active, url")
+      .select("id, title, approved, active, url, storage_path")
       .eq("workspace_id", workspaceId),
     admin
       .from("sdr_material_offers")
