@@ -127,8 +127,7 @@ export function GlobalSearch() {
   }, [open]);
 
   const isCommandMode = debouncedQ.startsWith("/");
-  const searchEnabled =
-    open && !isCommandMode && debouncedQ.trim().length >= MIN_QUERY && !aiMode;
+  const searchEnabled = open && !isCommandMode && debouncedQ.trim().length >= MIN_QUERY && !aiMode;
 
   // Uma consulta por tipo: cada grupo aparece assim que fica pronto e uma
   // falha isolada não derruba os demais.
