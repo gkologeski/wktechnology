@@ -697,7 +697,7 @@ export const getWhatsAppCampaignForEdit = createServerFn({ method: "POST" })
     const { data: camp, error } = await context.supabase
       .from("whatsapp_campaigns")
       .select(
-        "id, status, total, body_template, template_name, media_url, sdr_playbook_id, recent_contact_days, audience_config",
+        "id, status, total, body_template, template_name, media_url, sdr_playbook_id, recent_contact_days, exclude_customers, exclude_open_deals, audience_config",
       )
       .eq("id", data.id)
       .single();

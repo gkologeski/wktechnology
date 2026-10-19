@@ -182,11 +182,18 @@ function CampaignsPage() {
           setAudience({
             ...cfg.state,
             recentDays: full.recent_contact_days ?? cfg.state.recentDays,
+            excludeCustomers: full.exclude_customers ?? true,
+            excludeOpenDeals: full.exclude_open_deals ?? true,
           });
           setRecipientsRaw(cfg.manualRaw);
           setHasStoredAudience(true);
         } else {
-          setAudience({ ...EMPTY_AUDIENCE, recentDays: full.recent_contact_days ?? 7 });
+          setAudience({
+            ...EMPTY_AUDIENCE,
+            recentDays: full.recent_contact_days ?? 7,
+            excludeCustomers: full.exclude_customers ?? true,
+            excludeOpenDeals: full.exclude_open_deals ?? true,
+          });
         }
         setBody(full.body_template ?? "");
         setTemplateName(full.template_name || "__none__");
