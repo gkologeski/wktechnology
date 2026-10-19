@@ -204,7 +204,11 @@ export function isOffTopic(text: string): boolean {
  */
 export function outOfIcpRole(text: string): boolean {
   const t = norm(text);
-  if (!/\bsou (o |a |um |uma )?(desenvolvedor|desenvolvedora|dev|programador|programadora|estagiari[oa]|analista de suporte|tecnico de suporte|suporte tecnico|atendente)\b/.test(t))
+  if (
+    !/\bsou (o |a |um |uma )?(desenvolvedor|desenvolvedora|dev|programador|programadora|estagiari[oa]|analista de suporte|tecnico de suporte|suporte tecnico|atendente)\b/.test(
+      t,
+    )
+  )
     return false;
   return !/\b(gestor|gestora|gerente|coordenador|coordenadora|diretor|diretora|cto|head|lider|socio|socia|dono|dona|fundador|fundadora|responsavel|decido|cuido da (ti|area))\b/.test(
     t,

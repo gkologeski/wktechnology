@@ -80,6 +80,11 @@ export function useInboxChannelPage<Row extends { id: string }>(
   useInboxListRealtime([channel], [["inbox-channel", channel, user?.id ?? "anon"]]);
   const rows = useMemo(() => mergeChannelPages(q.data?.pages ?? []), [q.data]);
   const first = q.data?.pages[0];
-  return { rows, counts: first?.counts ?? null,
-    stateCounts: first?.stateCounts ?? null, total: first?.total ?? null, query: q };
+  return {
+    rows,
+    counts: first?.counts ?? null,
+    stateCounts: first?.stateCounts ?? null,
+    total: first?.total ?? null,
+    query: q,
+  };
 }
