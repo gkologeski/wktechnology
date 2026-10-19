@@ -690,7 +690,8 @@ export async function processJob(
           history,
           "O cliente JÁ disse que é o responsável pela área de TI. Não pergunte cargo, se é decisor ou quem decide. Siga a conversa com a próxima pergunta útil.",
         );
-        if (alt && !asksDecisionMaker(alt) && !mentionsPrice(alt)) out.reply = dedupeRepeatedWords(alt);
+        if (alt && !asksDecisionMaker(alt) && !mentionsPrice(alt))
+          out.reply = dedupeRepeatedWords(alt);
       }
     }
   }
@@ -1133,7 +1134,11 @@ async function handoffSilentAfterAiQuestion(
     .order("created_at", { ascending: false })
     .limit(500);
   const candidates = new Map<string, string>();
-  for (const r of (rows ?? []) as { conversation_id: string; body: string | null; created_at: string }[])
+  for (const r of (rows ?? []) as {
+    conversation_id: string;
+    body: string | null;
+    created_at: string;
+  }[])
     if (!candidates.has(r.conversation_id) && isAiIdentityQuestion(String(r.body ?? "")))
       candidates.set(r.conversation_id, r.created_at);
   let n = 0;

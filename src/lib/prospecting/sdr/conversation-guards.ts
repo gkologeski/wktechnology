@@ -65,7 +65,9 @@ export function selfIdentifiedResponsible(history: Msg[]): boolean {
     const cur = history[i];
     if (cur.direction !== "inbound" || prev.direction === "inbound") continue;
     if (
-      /essa area fica com voce|voce (e|esta a frente|responde)/.test(norm(String(prev.body ?? ""))) &&
+      /essa area fica com voce|voce (e|esta a frente|responde)/.test(
+        norm(String(prev.body ?? "")),
+      ) &&
       /^(sim|isso|correto|exato|sou|eu mesmo|sim sou)\b/.test(norm(String(cur.body ?? "")))
     )
       return true;
@@ -150,7 +152,11 @@ export function correctedName(history: Msg[]): string | null {
 /** Número corporativo/alternativo informado pelo próprio cliente. */
 export function extractCorporatePhone(text: string): string | null {
   const raw = String(text ?? "");
-  if (!/corporativ|comercial|outro n[uú]mero|novo n[uú]mero|meu n[uú]mero|whats(app)?|celular|contato/i.test(raw))
+  if (
+    !/corporativ|comercial|outro n[uú]mero|novo n[uú]mero|meu n[uú]mero|whats(app)?|celular|contato/i.test(
+      raw,
+    )
+  )
     return null;
   const m = /(\+?55\s*)?\(?\d{2}\)?[\s.-]*9?\s?\d{4}[\s.-]?\d{4}/.exec(raw);
   if (!m) return null;
@@ -160,9 +166,10 @@ export function extractCorporatePhone(text: string): string | null {
 /** Nome usado na abertura do modelo ("Olá, Luiz, tudo bem?"). */
 export function greetingName(history: Msg[]): string | null {
   const first = history.find((m) => m.direction !== "inbound");
-  const r = /^\s*(?:[Oo]l[aá]|[Oo]i|[Bb]om dia|[Bb]oa tarde|[Bb]oa noite)[,!]?\s+([A-ZÀ-Ú][\p{L}]{1,20})\b/u.exec(
-    String(first?.body ?? ""),
-  );
+  const r =
+    /^\s*(?:[Oo]l[aá]|[Oo]i|[Bb]om dia|[Bb]oa tarde|[Bb]oa noite)[,!]?\s+([A-ZÀ-Ú][\p{L}]{1,20})\b/u.exec(
+      String(first?.body ?? ""),
+    );
   return r ? r[1] : null;
 }
 

@@ -173,9 +173,15 @@ export async function ensureAudioTranscripts(
     const lov = process.env.LOVABLE_API_KEY;
     if (!media?.id || !lov) continue;
     const setBody = (body: string) =>
-      admin.from("whatsapp_messages").update({ body }).eq("id", row.id).eq("body", AUDIO_PLACEHOLDER);
+      admin
+        .from("whatsapp_messages")
+        .update({ body })
+        .eq("id", row.id)
+        .eq("body", AUDIO_PLACEHOLDER);
     const h = headers();
-    const metaRes = await fetch(`${GATEWAY_URL}/media/${encodeURIComponent(media.id)}`, { headers: h });
+    const metaRes = await fetch(`${GATEWAY_URL}/media/${encodeURIComponent(media.id)}`, {
+      headers: h,
+    });
     if (metaRes.status === 404 || metaRes.status === 400) {
       await setBody(`${AUDIO_PLACEHOLDER} (não foi possível transcrever)`);
       continue;
@@ -194,7 +200,11 @@ export async function ensureAudioTranscripts(
     const mime = (info.mime_type || media.mime_type || "audio/ogg").split(";")[0];
     const form = new FormData();
     form.append("model", STT_MODEL);
-    form.append("file", new Blob([bytes as BlobPart], { type: mime }), `audio.${mime.includes("ogg") ? "ogg" : "mp3"}`);
+    form.append(
+      "file",
+      new Blob([bytes as BlobPart], { type: mime }),
+      `audio.${mime.includes("ogg") ? "ogg" : "mp3"}`,
+    );
     form.append("response_format", "json");
     form.append("stream", "true");
     form.append("languages", "pt");
@@ -212,7 +222,9 @@ export async function ensureAudioTranscripts(
     }
     const text = await readTranscript(res);
     await setBody(
-      text ? `${AUDIO_PLACEHOLDER}: "${text.slice(0, 3000)}"` : `${AUDIO_PLACEHOLDER} (não foi possível transcrever)`,
+      text
+        ? `${AUDIO_PLACEHOLDER}: "${text.slice(0, 3000)}"`
+        : `${AUDIO_PLACEHOLDER} (não foi possível transcrever)`,
     );
     n++;
   }

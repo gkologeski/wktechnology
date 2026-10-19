@@ -166,7 +166,8 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
       !r.override_commercial
     ) {
       const { loadCommercialFlags } = await import("@/lib/campaigns/commercial-status.server");
-      const { commercialBlock, COMMERCIAL_LABEL } = await import("@/lib/campaigns/commercial-status");
+      const { commercialBlock, COMMERCIAL_LABEL } =
+        await import("@/lib/campaigns/commercial-status");
       const e164 = toWhatsAppE164(r.phone) as string;
       const flags = await loadCommercialFlags(supabaseAdmin, camp.workspace_id, [e164]);
       const reason = commercialBlock(flags.get(e164), {

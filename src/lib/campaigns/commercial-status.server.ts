@@ -69,7 +69,12 @@ export async function loadCommercialFlags(
   const DEAL_COLS = "id, stage, company_id, primary_contact_id, lead_id";
   for (const part of chunkIds(companyIds, 150)) {
     const [{ data: ds }, { data: ks }] = await Promise.all([
-      db.from("deals").select(DEAL_COLS).eq("workspace_id", workspaceId).is("deleted_at", null).in("company_id", part),
+      db
+        .from("deals")
+        .select(DEAL_COLS)
+        .eq("workspace_id", workspaceId)
+        .is("deleted_at", null)
+        .in("company_id", part),
       db
         .from("contracts")
         .select("counterparty_company_id")
@@ -82,7 +87,12 @@ export async function loadCommercialFlags(
   }
   for (const part of chunkIds(contactIds, 150)) {
     const [{ data: ds }, { data: links }] = await Promise.all([
-      db.from("deals").select(DEAL_COLS).eq("workspace_id", workspaceId).is("deleted_at", null).in("primary_contact_id", part),
+      db
+        .from("deals")
+        .select(DEAL_COLS)
+        .eq("workspace_id", workspaceId)
+        .is("deleted_at", null)
+        .in("primary_contact_id", part),
       db.from("deal_contacts").select("deal_id, contact_id").in("contact_id", part),
     ]);
     for (const d of ds ?? []) mark(d.stage, (f) => add(contactFlags, d.primary_contact_id, f));
@@ -96,7 +106,8 @@ export async function loadCommercialFlags(
         .in("id", dp);
       const st = new Map((ld ?? []).map((d: { id: string; stage: string }) => [d.id, d.stage]));
       for (const l of links ?? [])
-        if (st.has(l.deal_id)) mark(st.get(l.deal_id) as string, (f) => add(contactFlags, l.contact_id, f));
+        if (st.has(l.deal_id))
+          mark(st.get(l.deal_id) as string, (f) => add(contactFlags, l.contact_id, f));
     }
   }
   for (const part of chunkIds(leadIds, 150)) {

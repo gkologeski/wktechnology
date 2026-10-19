@@ -116,7 +116,11 @@ const PreviewInput = CreateInput.pick({
 async function applyCommercialGuard<T extends { phone: string }>(
   supabase: unknown,
   workspaceId: string,
-  opts: { exclude_customers?: boolean; exclude_open_deals?: boolean; commercial_overrides?: string[] },
+  opts: {
+    exclude_customers?: boolean;
+    exclude_open_deals?: boolean;
+    commercial_overrides?: string[];
+  },
   items: T[],
 ) {
   const excludeCustomers = opts.exclude_customers ?? true;
@@ -127,7 +131,13 @@ async function applyCommercialGuard<T extends { phone: string }>(
     return {
       excludeCustomers,
       excludeOpenDeals,
-      ...splitCommercial(items, (i) => i.phone, new Map(), { excludeCustomers, excludeOpenDeals }, new Set()),
+      ...splitCommercial(
+        items,
+        (i) => i.phone,
+        new Map(),
+        { excludeCustomers, excludeOpenDeals },
+        new Set(),
+      ),
     };
   const { loadCommercialFlags } = await import("@/lib/campaigns/commercial-status.server");
   const flags = await loadCommercialFlags(
@@ -276,8 +286,8 @@ async function resolveCampaignRecipients(
       commercial.removed.length > 0 && guarded.removed.length === 0
         ? "Todos os destinatários são clientes ou estão em negociação aberta. Libere manualmente ou desligue o bloqueio."
         : guarded.removed.length > 0
-        ? "Todos os destinatários receberam mensagem recentemente. Libere manualmente ou reduza o período."
-        : "Nenhum destinatário válido no público.",
+          ? "Todos os destinatários receberam mensagem recentemente. Libere manualmente ou reduza o período."
+          : "Nenhum destinatário válido no público.",
     );
   return { guarded, recentDays, commercial };
 }

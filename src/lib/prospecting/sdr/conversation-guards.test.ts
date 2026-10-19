@@ -25,7 +25,9 @@ describe("Pedro Lanna", () => {
     out("Olá, Pedro, tudo bem?  Aqui é Lia, da WK Technology."),
     inn("sou eu mesmo"),
     inn("Me chamo Pedro.  Acho que não é necessário uma reunião."),
-    inn("Não é necessário uma reunião. Qualquer informação necessária para o orçamento, pode me solicitar"),
+    inn(
+      "Não é necessário uma reunião. Qualquer informação necessária para o orçamento, pode me solicitar",
+    ),
   ];
   it("corrige palavra duplicada", () => {
     expect(dedupeRepeatedWords("O custo varia conforme senioridade e senioridade, mas")).toBe(
@@ -33,9 +35,12 @@ describe("Pedro Lanna", () => {
     );
   });
   it("troca vocativo errado pelo nome do cliente", () => {
-    expect(fixVocative("José, entendo sua preocupação.", [correctedName(h) ?? "", greetingName(h) ?? ""])).toBe(
-      "Pedro, entendo sua preocupação.",
-    );
+    expect(
+      fixVocative("José, entendo sua preocupação.", [
+        correctedName(h) ?? "",
+        greetingName(h) ?? "",
+      ]),
+    ).toBe("Pedro, entendo sua preocupação.");
     expect(fixVocative("Claro, entendo.", ["Pedro"])).toBe("Claro, entendo.");
   });
   it("reconhece recusa de reunião com interesse real", () => {
@@ -46,9 +51,7 @@ describe("Pedro Lanna", () => {
   it("não pergunta decisor de quem já é responsável", () => {
     expect(selfIdentifiedResponsible(h)).toBe(true);
     expect(asksDecisionMaker("Qual seu cargo na RLM e quem será o decisor final?")).toBe(true);
-    expect(
-      selfIdentifiedResponsible([out("Essa área fica com você?"), inn("Sim")]),
-    ).toBe(true);
+    expect(selfIdentifiedResponsible([out("Essa área fica com você?"), inn("Sim")])).toBe(true);
     expect(selfIdentifiedResponsible([inn("Bom dia")])).toBe(false);
   });
 });
@@ -57,7 +60,9 @@ describe("Rafael Acacio / Henrique", () => {
   it("'não é o momento' não oferece manter contato", () => {
     expect(notTheMoment("Não no momento. Nem para os próximos 2 anos")).toBe(true);
     expect(
-      offersToKeepContact("Posso anotar para não enviar mais mensagens, ou prefere receber novidades?"),
+      offersToKeepContact(
+        "Posso anotar para não enviar mais mensagens, ou prefere receber novidades?",
+      ),
     ).toBe(true);
     expect(notTheMoment("Sim, temos demanda agora")).toBe(false);
   });

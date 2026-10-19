@@ -142,7 +142,9 @@ export async function saveCorporatePhone(
     completed: true,
     subject: "Número corporativo informado na conversa com a Lia",
     body: `O cliente informou o número ${p.phoneE164} para seguir o contato.${
-      status === "saved" ? " Gravado no campo WhatsApp." : " O campo WhatsApp já tinha outro número e não foi alterado."
+      status === "saved"
+        ? " Gravado no campo WhatsApp."
+        : " O campo WhatsApp já tinha outro número e não foi alterado."
     }`,
     [p.target.entity === "lead" ? "related_lead_id" : "related_contact_id"]: p.target.id,
     related_company_id: p.companyId,
