@@ -1,3 +1,5 @@
+import { PersonAvatar } from "@/components/people/person-avatar";
+import { usePersonPhotos } from "@/hooks/use-person-photos";
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { applyDerivedFilters } from "@/lib/entity/derived-filter-query";
 import { DerivedFilterFields } from "@/components/entity/derived-filter-fields";
@@ -385,6 +387,7 @@ function ContactsHubspotView() {
     [rows],
   );
   const { data: pageCompanyLogos } = useCompanyLogos(pageCompanyIds);
+  const contactPhotos = usePersonPhotos(rows.map((r) => r.id));
   const companyMap = useMemo(() => {
     const m = new Map<string, string>();
     pageCompanyLogos?.forEach((c, id) => m.set(id, c.name ?? ""));
@@ -455,10 +458,14 @@ function ContactsHubspotView() {
         ),
         render: (c) => {
           const full = `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "Sem nome";
-          const initials = ((c.first_name ?? "")[0] ?? "") + ((c.last_name ?? "")[0] ?? "");
           return (
             <div className="flex items-center gap-2.5">
-              <InitialsAvatar text={initials.toUpperCase() || "?"} seed={c.id} />
+              <PersonAvatar
+                name={full}
+                seed={c.id}
+                photoUrl={contactPhotos[`contact:${c.id}`]}
+                className="h-7 w-7 text-[10px]"
+              />
               <Link
                 to="/contacts/$id"
                 params={{ id: c.id }}
@@ -589,7 +596,7 @@ function ContactsHubspotView() {
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [sortKey, sortDir, nameFor, initialsFor, companyMap, pageCompanyLogos],
+    [sortKey, sortDir, nameFor, initialsFor, companyMap, pageCompanyLogos, contactPhotos],
   );
   const DEFAULT_CONTACT_COLS = [
     "name",

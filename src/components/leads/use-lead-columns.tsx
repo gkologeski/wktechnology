@@ -1,3 +1,4 @@
+import { PersonAvatar } from "@/components/people/person-avatar";
 import { useCallback, useMemo } from "react";
 import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +37,7 @@ export function useLeadColumns({
   initialsFor,
   hsOwners,
   companyLogos,
+  photos,
 }: {
   sortKey: SortKey;
   sortDir: SortDir;
@@ -51,6 +53,8 @@ export function useLeadColumns({
   };
   /** Logotipos das empresas vinculadas aos leads da página. */
   companyLogos?: Map<string, CompanyLogoInfo>;
+  /** URLs assinadas das fotos (chave `lead:<id>`). */
+  photos?: Record<string, string>;
 }) {
   /** Cabeçalho ordenável para as colunas do catálogo dinâmico ("Outros campos"). */
   const autoSortHeader = useCallback(
@@ -82,12 +86,12 @@ export function useLeadColumns({
           const full = `${lead.first_name ?? ""} ${lead.last_name ?? ""}`.trim() || "Sem nome";
           return (
             <div className="flex items-center gap-2.5">
-              <span
-                className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-                style={{ background: colorFromString(lead.id) }}
-              >
-                {initialsOf(lead)}
-              </span>
+              <PersonAvatar
+                name={full}
+                seed={lead.id}
+                photoUrl={photos?.[`lead:${lead.id}`]}
+                className="h-7 w-7 text-[10px]"
+              />
               <Link
                 to="/leads/$id"
                 params={{ id: lead.id }}
@@ -272,7 +276,7 @@ export function useLeadColumns({
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [sortKey, sortDir, nameFor, initialsFor, companyLogos],
+    [sortKey, sortDir, nameFor, initialsFor, companyLogos, photos],
   );
 
   return useGridColumns<LeadGridRow>({
