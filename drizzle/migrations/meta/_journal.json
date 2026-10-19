@@ -1051,6 +1051,13 @@
       "when": 1792409054715,
       "tag": "0149_global_search_candidate_ids",
       "breakpoints": true
+    },
+    {
+      "idx": 150,
+      "version": "7",
+      "when": 1792415129667,
+      "tag": "0150_global_search_activity_body_fts",
+      "breakpoints": true
     }
   ]
 }

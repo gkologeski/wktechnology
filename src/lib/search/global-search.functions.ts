@@ -87,14 +87,35 @@ export const globalSearch = createServerFn({ method: "POST" })
           )
         : run(null),
       allow("activity")
-        ? viaIds("activity", (ids) =>
-            supabase
+        ? (async () => {
+            // Assunto (trigram) + texto (busca por palavras, índice FTS). O texto
+            // tem limite de tempo: se estourar, o grupo fica só com o assunto.
+            const bodyRpc = Promise.resolve(
+              supabase.rpc("global_search_activity_body_ids", { _q: data.q, _limit: 40 }),
+            ).then((r) => (r.data ?? []) as Array<{ id: string; snippet: string | null }>);
+            const timeout = new Promise<null>((res) => setTimeout(() => res(null), 4000));
+            const [subjectIds, bodyHits] = await Promise.all([
+              candidateIds("activity"),
+              Promise.race([bodyRpc.catch(() => null), timeout]),
+            ]);
+            const snippets = new Map<string, string>();
+            for (const h of bodyHits ?? []) if (h.snippet) snippets.set(h.id, h.snippet);
+            const order = [...new Set([...subjectIds, ...(bodyHits ?? []).map((h) => h.id)])];
+            if (order.length === 0) return { data: [], bodyPartial: bodyHits === null };
+            const { data: rows } = await supabase
               .from("activities")
-              // Só o assunto (indexado): `body` sem índice varria 460 mil linhas (~37 s).
               .select("id, subject, type, due_date")
-              .in("id", ids)
-              .limit(limit),
-          )
+              .in("id", order.slice(0, 200));
+            const byId = new Map(
+              ((rows ?? []) as Array<Record<string, unknown>>).map((r) => [String(r.id), r]),
+            );
+            const sorted = order
+              .map((id) => byId.get(id))
+              .filter((r): r is Record<string, unknown> => !!r)
+              .slice(0, limit)
+              .map((r) => ({ ...r, snippet: snippets.get(String(r.id)) ?? null }));
+            return { data: sorted, bodyPartial: bodyHits === null };
+          })()
         : run(null),
       allow("candidate")
         ? run(
@@ -177,7 +198,9 @@ export const globalSearch = createServerFn({ method: "POST" })
         entity_type: "activity" as const,
         entity_id: String(r.id),
         title: String(r.subject ?? "Atividade"),
-        subtitle: [r.type, r.due_date].filter(Boolean).join(" · ") || undefined,
+        subtitle: r.snippet
+          ? `…${String(r.snippet).replace(/\s+/g, " ").trim()}…`
+          : [r.type, r.due_date].filter(Boolean).join(" · ") || undefined,
         url: `/activities?highlight=${r.id}`,
       })),
     );
