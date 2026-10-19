@@ -320,20 +320,30 @@ export class ClockifyEngine {
 
   private async save(extra: Record<string, unknown>) {
     this.cp.lastRequestAt = this.client.lastRequestAt;
-    const { error } = await this.db
+    const base = {
+      phase: this.run.phase,
+      checkpoint: this.cp,
+      counts: this.run.counts,
+      heartbeat_at: new Date(this.now()).toISOString(),
+      updated_at: new Date(this.now()).toISOString(),
+    };
+    // Pausa/cancelamento pedidos durante o trabalho prevalecem sobre o estado em memória.
+    const from = this.run.status === "cancelled" ? ["queued", "running", "cancel_requested"] : ["queued", "running"];
+    const { data, error } = await this.db
       .from("clockify_import_runs")
-      .update({
-        status: this.run.status,
-        phase: this.run.phase,
-        checkpoint: this.cp,
-        counts: this.run.counts,
-        heartbeat_at: new Date(this.now()).toISOString(),
-        updated_at: new Date(this.now()).toISOString(),
-        ...extra,
-      })
+      .update({ ...base, status: this.run.status, ...extra })
       .eq("id", this.run.id)
-      .neq("status", "cancelled");
+      .in("status", from)
+      .select("id");
     if (error) throw new Error(error.message);
+    if (!data?.length) {
+      const { error: e2 } = await this.db
+        .from("clockify_import_runs")
+        .update(base)
+        .eq("id", this.run.id)
+        .in("status", ["paused", "cancel_requested"]);
+      if (e2) throw new Error(e2.message);
+    }
   }
 
   private nextPhase(list: readonly string[]) {
