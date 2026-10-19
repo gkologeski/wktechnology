@@ -178,20 +178,27 @@ export function decideThirdParty(history: Msg[]): ThirdPartyDecision {
   if (!last) return { action: "none" };
   const lastText = String(last.body ?? "");
   const lastIdx = history.lastIndexOf(last);
-  let reason: ThirdPartyReason | null = null;
-  for (const m of inbound) {
-    const r = detectNotTarget(String(m.body ?? ""));
-    if (r) reason = reason ?? r;
+  const before = history.slice(0, lastIdx);
+  // O estado "terceiro" só vale se o sinal está na mensagem atual ou se a nossa
+  // última mensagem foi a pergunta/aguardo fixos — um sinal antigo não "gruda".
+  let reason: ThirdPartyReason | null = detectNotTarget(lastText);
+  const lastOut = [...before].reverse().find((m) => m.direction !== "inbound");
+  const lastOutBody = String(lastOut?.body ?? "");
+  const inThirdPartyState =
+    lastOutBody.includes(REFERRAL_MARK) || lastOutBody.includes(WAIT_REFERRAL_REPLY);
+  if (!reason && inThirdPartyState) {
+    for (const m of before) {
+      if (m.direction !== "inbound") continue;
+      reason = detectNotTarget(String(m.body ?? "")) ?? reason;
+    }
   }
   if (!reason) return { action: "none" };
-  const asked = history
-    .slice(0, lastIdx)
-    .some((m) => m.direction !== "inbound" && String(m.body ?? "").includes(REFERRAL_MARK));
+  const asked = lastOutBody.includes(REFERRAL_MARK);
   const referral = extractReferral(lastText);
   if (referral) return { action: "save_referral", reason, reply: REFERRAL_THANKS, referral };
   if (declinesReferral(lastText)) return { action: "close", reason, reply: CLOSE_THANKS };
   if (promisesReferral(lastText))
-    return { action: "wait_referral", reason, reply: "Obrigada! Fico no aguardo do contato." };
+    return { action: "wait_referral", reason, reply: WAIT_REFERRAL_REPLY };
   if (asked) return { action: "close", reason, reply: CLOSE_THANKS };
   return { action: "ask_referral", reason, reply: REFERRAL_QUESTION };
 }

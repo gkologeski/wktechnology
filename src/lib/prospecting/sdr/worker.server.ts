@@ -602,7 +602,8 @@ export async function processJob(
   let wrongContact = false;
   let closeReason: string | null = null;
   let referralToSave: Referral | null = null;
-  if (job.kind === "reply" && out.intent !== "schedule_meeting") {
+  // Handoff (pedido de humano, negociação) e agendamento nunca são sobrescritos.
+  if (job.kind === "reply" && out.intent !== "schedule_meeting" && out.intent !== "handoff") {
     const lastIn = [...history].reverse().find((m) => m.direction === "inbound");
     const lastText = String((lastIn as { body?: unknown } | undefined)?.body ?? "");
     const tp = decideThirdParty(history as { direction: string; body?: string | null }[]);
