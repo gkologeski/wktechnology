@@ -1065,6 +1065,13 @@
       "when": 1792421992808,
       "tag": "0151_whatsapp_campaign_commercial_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 152,
+      "version": "7",
+      "when": 1792423743013,
+      "tag": "0152_sdr_material_files",
+      "breakpoints": true
     }
   ]
 }
