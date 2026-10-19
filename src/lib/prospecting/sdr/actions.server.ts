@@ -37,31 +37,114 @@ export async function composeOutgoing(
 ): Promise<{
   text: string;
   bookingUrl: null;
-  materials: { id: string; title: string; url: string }[];
+  materials: { id: string; title: string; url: string | null; kind: string }[];
 }> {
-  let materials: { id: string; title: string; url: string }[] = [];
+  let materials: { id: string; title: string; url: string | null; kind: string }[] = [];
   if (shouldAttachMaterials(p)) {
     const { data } = await admin
       .from("sdr_materials")
-      .select("id, title, url, approved, active, workspace_id")
+      .select("id, title, url, kind, storage_path, approved, active, workspace_id")
       .in("id", p.materialIds)
       .eq("workspace_id", p.workspaceId);
     materials = (data ?? [])
       .filter(
-        (m: { approved: boolean; active: boolean; url: string | null }) =>
-          m.approved && m.active && m.url,
+        (m: {
+          approved: boolean;
+          active: boolean;
+          url: string | null;
+          storage_path: string | null;
+        }) => m.approved && m.active && (m.url || m.storage_path),
       )
-      .map((m: { id: string; title: string; url: string }) => ({
+      .map((m: { id: string; title: string; url: string | null; kind: string }) => ({
         id: m.id,
         title: m.title,
-        url: m.url,
+        url: m.kind === "file" ? null : m.url,
+        kind: m.kind,
       }));
   }
+  // Links entram no texto; arquivos vão como anexo do WhatsApp em sendSdrMessage.
+  const links = materials
+    .filter((m) => m.kind !== "file" && m.url)
+    .map((m) => ({ title: m.title, url: m.url as string }));
   return {
-    text: buildOutgoingText({ reply: p.reply, materials, meeting: p.meeting ?? null }),
+    text: buildOutgoingText({ reply: p.reply, materials: links, meeting: p.meeting ?? null }),
     bookingUrl: null,
     materials,
   };
+}
+
+/**
+ * Envia os arquivos (PDF, documento, imagem, vídeo) aprovados como anexo.
+ * URL assinada curta do bucket privado; nunca reenviado em retomadas.
+ */
+async function sendMaterialFiles(
+  admin: Admin,
+  p: {
+    num: unknown;
+    metaSend: (num: any, payload: any) => Promise<{ wamid: string | null; raw: any }>;
+    workspaceId: string;
+    materialIds: string[];
+    conv: { id: string; contact_phone: string };
+    ownerId: string;
+    actorUserId: string | null;
+    fromNumber: string | null;
+    jobId: string;
+  },
+): Promise<{ sent: number; failed: string[] }> {
+  const out = { sent: 0, failed: [] as string[] };
+  if (!p.materialIds.length) return out;
+  const { data } = await admin
+    .from("sdr_materials")
+    .select("id, title, kind, storage_path, mime, file_name, approved, active")
+    .in("id", p.materialIds)
+    .eq("workspace_id", p.workspaceId)
+    .eq("kind", "file");
+  for (const m of (data ?? []) as {
+    id: string;
+    title: string;
+    storage_path: string | null;
+    mime: string | null;
+    file_name: string | null;
+    approved: boolean;
+    active: boolean;
+  }[]) {
+    if (!m.approved || !m.active || !m.storage_path) continue;
+    if (!m.storage_path.startsWith(`${p.workspaceId}/`)) continue;
+    try {
+      const { data: signed, error } = await admin.storage
+        .from("sdr-materials")
+        .createSignedUrl(m.storage_path, 600);
+      if (error || !signed?.signedUrl) throw new Error(error?.message ?? "sem URL");
+      const res = await p.metaSend(p.num, {
+        to: p.conv.contact_phone,
+        body: m.title,
+        mediaUrl: signed.signedUrl,
+        mediaContentType: m.mime ?? "application/pdf",
+        fileName: m.file_name ?? undefined,
+      });
+      if (!res.wamid) throw new Error("sem id da Meta");
+      await admin.from("whatsapp_messages").insert({
+        conversation_id: p.conv.id,
+        owner_id: p.ownerId,
+        workspace_id: p.workspaceId,
+        direction: "outbound",
+        body: `📎 ${m.title}`,
+        from_number: p.fromNumber,
+        to_number: p.conv.contact_phone,
+        provider: "meta",
+        wa_message_id: res.wamid,
+        status: "accepted",
+        sent_by: p.actorUserId,
+        sent_at: new Date().toISOString(),
+        raw: { sdr: true, job_id: p.jobId, material_id: m.id, response: res.raw },
+      });
+      out.sent++;
+    } catch (e) {
+      console.error("[sdr] falha ao enviar material", { material: m.id, err: (e as Error).message });
+      out.failed.push(m.title);
+    }
+  }
+  return out;
 }
 
 export type BlockCategory = "prospecting" | "conversation" | "technical" | "reconcile";
