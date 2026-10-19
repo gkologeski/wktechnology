@@ -95,7 +95,7 @@ const NOT_COMPANY = /^(teams|zoom|meet|google|whatsapp|grupo|reuniao|sistema|ar)
 /** "saí da Opentech": 1ª pessoa + nome próprio no texto original. */
 function leftNamedCompany(raw: string): boolean {
   const re =
-    /\b(?:sa[ií]|deixei|[Nn][aã]o (?:trabalho|atuo|estou) mais (?:na|no|em|pela|pelo)) (?:(?:da|do|de) )?([A-ZÀ-Ú][\p{L}\d&.-]+)/gu;
+    /\b(?:[Ss]a[ií]|[Dd]eixei|[Nn][aã]o (?:trabalho|atuo|estou) mais (?:na|no|em|pela|pelo)) (?:(?:da|do|de) )?([A-ZÀ-Ú][\p{L}\d&.-]+)/gu;
   for (const m of String(raw ?? "").matchAll(re)) {
     const name = m[1].normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     if (!NOT_COMPANY.test(name)) return true;
