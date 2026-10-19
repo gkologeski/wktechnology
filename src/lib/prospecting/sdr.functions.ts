@@ -258,7 +258,11 @@ export const saveSdrMaterial = createServerFn({ method: "POST" })
             storagePath: z.string().min(3).max(500),
             fileName: z.string().trim().min(1).max(200),
             mime: z.string().trim().min(3).max(120),
-            size: z.number().int().min(1).max(16 * 1024 * 1024),
+            size: z
+              .number()
+              .int()
+              .min(1)
+              .max(16 * 1024 * 1024),
           })
           .optional()
           .nullable(),
@@ -333,15 +337,23 @@ export const createSdrMaterialUpload = createServerFn({ method: "POST" })
         workspaceId: z.string().uuid(),
         fileName: z.string().trim().min(1).max(200),
         mime: z.string().trim().min(3).max(120),
-        size: z.number().int().min(1).max(16 * 1024 * 1024, "Arquivo acima de 16 MB."),
+        size: z
+          .number()
+          .int()
+          .min(1)
+          .max(16 * 1024 * 1024, "Arquivo acima de 16 MB."),
       })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId, data.workspaceId);
-    const allowed = /^(application\/pdf|application\/(msword|vnd\.openxmlformats-officedocument\.[a-z.]+|vnd\.ms-(excel|powerpoint))|image\/(jpeg|png|webp)|video\/(mp4|3gpp)|text\/plain)$/;
+    const allowed =
+      /^(application\/pdf|application\/(msword|vnd\.openxmlformats-officedocument\.[a-z.]+|vnd\.ms-(excel|powerpoint))|image\/(jpeg|png|webp)|video\/(mp4|3gpp)|text\/plain)$/;
     if (!allowed.test(data.mime)) throw new Error("Tipo de arquivo não suportado pelo WhatsApp.");
-    const safe = data.fileName.normalize("NFD").replace(/[^\w.-]+/g, "_").slice(-120);
+    const safe = data.fileName
+      .normalize("NFD")
+      .replace(/[^\w.-]+/g, "_")
+      .slice(-120);
     const path = `${data.workspaceId}/${crypto.randomUUID()}/${safe}`;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: up, error } = await supabaseAdmin.storage

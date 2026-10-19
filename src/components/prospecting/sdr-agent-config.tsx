@@ -232,9 +232,12 @@ function AgentForm({ workspaceId, playbookId }: { workspaceId: string; playbookI
           <div className="space-y-1.5">
             <Label>Materiais liberados</Label>
             {cfg.allowed_tools.includes("material") && !cfg.guardrails.attach_materials && (
-              <p role="status" className="rounded-md border border-warning/40 bg-warning/10 p-2 text-xs">
-                Materiais ligados, mas o envio está desligado em Regras — a Lia só oferecerá, sem enviar.
-                Ligue “Enviar materiais … quando o cliente pedir”.
+              <p
+                role="status"
+                className="rounded-md border border-warning/40 bg-warning/10 p-2 text-xs"
+              >
+                Materiais ligados, mas o envio está desligado em Regras — a Lia só oferecerá, sem
+                enviar. Ligue “Enviar materiais … quando o cliente pedir”.
               </p>
             )}
             {opts.materials.length === 0 ? (

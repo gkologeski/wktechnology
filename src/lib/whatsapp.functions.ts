@@ -457,7 +457,11 @@ export const listAssignableMembers = createServerFn({ method: "GET" })
       .select("id, full_name")
       .in("id", Array.from(ids));
     const profs = (rawProfs ?? []).sort((a: any, b: any) =>
-      a.id === userId ? -1 : b.id === userId ? 1 : (a.full_name ?? "").localeCompare(b.full_name ?? "", "pt-BR"),
+      a.id === userId
+        ? -1
+        : b.id === userId
+          ? 1
+          : (a.full_name ?? "").localeCompare(b.full_name ?? "", "pt-BR"),
     );
     return (profs ?? []) as { id: string; full_name: string | null }[];
   });

@@ -107,8 +107,7 @@ export function SdrMaterialsPanel(p: Props) {
 
   const submit = useMutation({
     mutationFn: async () => {
-      let file: { storagePath: string; fileName: string; mime: string; size: number } | null =
-        null;
+      let file: { storagePath: string; fileName: string; mime: string; size: number } | null = null;
       if (form.kind === "file" && form.file) {
         const f = form.file;
         if (f.size > MAX_BYTES) throw new Error("Arquivo acima de 16 MB.");
@@ -137,7 +136,11 @@ export function SdrMaterialsPanel(p: Props) {
         },
       });
     },
-    onSuccess: () => (toast.success(form.id ? "Material atualizado" : "Material salvo"), reset(), p.onChanged()),
+    onSuccess: () => (
+      toast.success(form.id ? "Material atualizado" : "Material salvo"),
+      reset(),
+      p.onChanged()
+    ),
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -263,7 +266,9 @@ export function SdrMaterialsPanel(p: Props) {
               aria-label="Tipo de material"
             >
               <ToggleGroupItem value="link">Link</ToggleGroupItem>
-              <ToggleGroupItem value="file">Arquivo (PDF, documento, imagem, vídeo)</ToggleGroupItem>
+              <ToggleGroupItem value="file">
+                Arquivo (PDF, documento, imagem, vídeo)
+              </ToggleGroupItem>
             </ToggleGroup>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -342,7 +347,11 @@ export function SdrMaterialsPanel(p: Props) {
           </fieldset>
           <div className="flex gap-2">
             <Button disabled={!canSubmit} onClick={() => submit.mutate()}>
-              {submit.isPending ? "Salvando…" : form.id ? "Salvar alterações" : "Adicionar material"}
+              {submit.isPending
+                ? "Salvando…"
+                : form.id
+                  ? "Salvar alterações"
+                  : "Adicionar material"}
             </Button>
             {form.id && (
               <Button variant="outline" onClick={reset}>

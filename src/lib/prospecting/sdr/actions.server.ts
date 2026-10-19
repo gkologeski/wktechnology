@@ -140,7 +140,10 @@ async function sendMaterialFiles(
       });
       out.sent++;
     } catch (e) {
-      console.error("[sdr] falha ao enviar material", { material: m.id, err: (e as Error).message });
+      console.error("[sdr] falha ao enviar material", {
+        material: m.id,
+        err: (e as Error).message,
+      });
       out.failed.push(m.title);
     }
   }
@@ -485,7 +488,7 @@ export async function sendSdrMessage(
       num,
       metaSend,
       workspaceId: job.workspace_id,
-      materialIds: ((job.draft_payload as { material_ids?: string[] } | null)?.material_ids ?? []),
+      materialIds: (job.draft_payload as { material_ids?: string[] } | null)?.material_ids ?? [],
       conv: { id: conv.id, contact_phone: conv.contact_phone },
       ownerId: enr.owner_id,
       actorUserId: p.actorUserId,
