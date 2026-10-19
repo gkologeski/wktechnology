@@ -77,7 +77,8 @@ export const globalSearch = createServerFn({ method: "POST" })
             supabase
               .from("activities")
               .select("id, subject, type, due_date")
-              .or(`subject.ilike.${pattern},body.ilike.${pattern}`)
+              // Só o assunto (indexado): `body` sem índice varria 460 mil linhas (~37 s).
+              .ilike("subject", pattern)
               .limit(limit),
           )
         : run(null),

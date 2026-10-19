@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import {
   CommandDialog,
   CommandEmpty,
@@ -58,6 +58,18 @@ const TYPE_LABELS: Array<{ id: SearchHit["entity_type"]; label: string }> = [
   { id: "job", label: "Vagas" },
 ];
 
+/** Mínimo de caracteres: 1 letra casa com quase tudo e não ajuda a achar. */
+const MIN_QUERY = 2;
+const SEARCH_TYPES: SearchHit["entity_type"][] = [
+  "contact",
+  "company",
+  "deal",
+  "ticket",
+  "activity",
+  "candidate",
+  "job",
+];
+
 function useDebounced<T>(value: T, delay = 150): T {
   const [v, setV] = useState(value);
   useEffect(() => {
@@ -75,7 +87,7 @@ export function GlobalSearch() {
   const [aiAnswer, setAiAnswer] = useState<string>("");
   const [aiLoading, setAiLoading] = useState(false);
 
-  const debouncedQ = useDebounced(q, 150);
+  const debouncedQ = useDebounced(q, 250);
   const navigate = useNavigate();
 
   const search = useServerFn(globalSearch);
@@ -115,13 +127,32 @@ export function GlobalSearch() {
   }, [open]);
 
   const isCommandMode = debouncedQ.startsWith("/");
+  const searchEnabled =
+    open && !isCommandMode && debouncedQ.trim().length >= MIN_QUERY && !aiMode;
 
-  const results = useQuery({
-    queryKey: ["global-search", debouncedQ, types],
-    queryFn: () => search({ data: { q: debouncedQ, types } }),
-    enabled: open && !isCommandMode && debouncedQ.trim().length > 0 && !aiMode,
-    staleTime: 30_000,
+  // Uma consulta por tipo: cada grupo aparece assim que fica pronto e uma
+  // falha isolada não derruba os demais.
+  const activeTypes = types.length ? types : SEARCH_TYPES;
+  const perType = useQueries({
+    queries: activeTypes.map((t) => ({
+      queryKey: ["global-search", debouncedQ, t],
+      queryFn: () => search({ data: { q: debouncedQ, types: [t] } }),
+      enabled: searchEnabled,
+      staleTime: 30_000,
+      retry: false,
+    })),
   });
+  const results = {
+    isLoading: searchEnabled && perType.every((r) => r.isLoading),
+    isFetchingSome: searchEnabled && perType.some((r) => r.isFetching),
+    failed: perType.some((r) => r.isError),
+    data: {
+      groups: SEARCH_TYPES.flatMap((t) => {
+        const i = activeTypes.indexOf(t);
+        return i < 0 ? [] : (perType[i]?.data?.groups ?? []);
+      }),
+    },
+  };
 
   const recents = useQuery({
     queryKey: ["global-search-recent"],

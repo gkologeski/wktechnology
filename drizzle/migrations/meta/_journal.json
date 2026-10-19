@@ -1037,6 +1037,13 @@
       "when": 1792258317550,
       "tag": "0147_tasks_list_responsible_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 148,
+      "version": "7",
+      "when": 1792408019898,
+      "tag": "0148_global_search_companies_domain_trgm",
+      "breakpoints": true
     }
   ]
 }

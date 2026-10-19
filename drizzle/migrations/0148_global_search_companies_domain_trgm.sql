@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS idx_search_companies_domain ON public.companies USING gin (domain gin_trgm_ops);
