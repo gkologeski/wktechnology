@@ -354,13 +354,8 @@ export async function runEnrichmentBatch(opts: RunBatchOpts): Promise<RunBatchRe
       if (dryRun) {
         finalUpdate.photo_url = remotePhoto;
       } else if (typeof row.workspace_id === "string") {
-        const { storeRemotePersonPhoto } = await import("@/lib/people/person-photo.server");
-        const path = await storeRemotePersonPhoto(row.workspace_id, entity, row.id, remotePhoto);
-        if (path) {
-          finalUpdate.photo_url = path;
-          finalUpdate.photo_source = "linkedin";
-          finalUpdate.photo_updated_at = new Date().toISOString();
-        }
+        const { applyLinkedinPhoto } = await import("@/lib/people/person-photo.server");
+        await applyLinkedinPhoto(supabase, row.workspace_id, entity, row.id, remotePhoto);
       }
     }
 
