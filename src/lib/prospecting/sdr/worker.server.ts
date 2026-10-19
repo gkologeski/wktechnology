@@ -26,6 +26,7 @@ import {
   extractCorporatePhone,
   fixVocative,
   greetingName,
+  isAiIdentityQuestion,
   MATERIAL_HANDOFF_REPLY,
   NOT_NOW_CLOSE,
   notTheMoment,
@@ -352,7 +353,9 @@ export async function processJob(
   // Áudios do cliente viram texto antes da Lia ler a conversa.
   if (job.kind === "reply") {
     const { ensureAudioTranscripts } = await import("@/lib/whatsapp/inbound-media.server");
-    await ensureAudioTranscripts(admin, conv.id);
+    await ensureAudioTranscripts(admin, conv.id).catch((e: Error) =>
+      console.error("[sdr] transcrição de áudio falhou", e.message),
+    );
   }
   const { data: msgs } = await admin
     .from("whatsapp_messages")
@@ -1061,6 +1064,9 @@ export async function tickSdr(admin: Admin, limit = 10, deps: WorkerDeps = defau
   const meetings = await reconcileMeetings(admin, 50, enabled);
   const directMeetings = await reconcileDirectMeetings(admin, enabled);
   const followUps = await scheduleFollowUps(admin, 50, enabled);
+  const aiQuestionHandoffs = await handoffSilentAfterAiQuestion(admin, enabled, deps).catch(
+    () => 0,
+  );
   // Tempo de aguardo do cliente: respostas ficam adiadas (lease_until futuro).
   // O despertar do enfileiramento espera aqui até a mais próxima vencer.
   await waitForDueReply(admin, enabled);
@@ -1093,7 +1099,74 @@ export async function tickSdr(admin: Admin, limit = 10, deps: WorkerDeps = defau
     }
     if (!merged) break;
   }
-  return { meetings, directMeetings, followUps, stranded, claimed, ...results };
+  return {
+    meetings,
+    directMeetings,
+    followUps,
+    aiQuestionHandoffs,
+    stranded,
+    claimed,
+    ...results,
+  };
+}
+
+/** Tempo sem resposta depois de "você é uma IA?" até passar a uma pessoa. */
+export const AI_QUESTION_SILENCE_MS = 30 * 60_000;
+
+/**
+ * Cliente perguntou se fala com uma IA, a Lia respondeu e ele parou de
+ * responder: a conversa passa para uma pessoa da equipe (retomadas canceladas).
+ */
+async function handoffSilentAfterAiQuestion(
+  admin: Admin,
+  workspaceIds: string[],
+  deps: WorkerDeps,
+): Promise<number> {
+  const now = Date.now();
+  const { data: rows } = await admin
+    .from("whatsapp_messages")
+    .select("conversation_id, body, created_at")
+    .in("workspace_id", workspaceIds)
+    .eq("direction", "inbound")
+    .gte("created_at", new Date(now - 3 * 86_400_000).toISOString())
+    .lte("created_at", new Date(now - AI_QUESTION_SILENCE_MS).toISOString())
+    .order("created_at", { ascending: false })
+    .limit(500);
+  const candidates = new Map<string, string>();
+  for (const r of (rows ?? []) as { conversation_id: string; body: string | null; created_at: string }[])
+    if (!candidates.has(r.conversation_id) && isAiIdentityQuestion(String(r.body ?? "")))
+      candidates.set(r.conversation_id, r.created_at);
+  let n = 0;
+  for (const [convId, askedAt] of candidates) {
+    const { data: conv } = await admin
+      .from("whatsapp_conversations")
+      .select("id, workspace_id, ai_owner, sdr_enrollment_id")
+      .eq("id", convId)
+      .maybeSingle();
+    if (!conv || conv.ai_owner !== "ai" || !conv.sdr_enrollment_id) continue;
+    const { data: later } = await admin
+      .from("whatsapp_messages")
+      .select("direction, created_at")
+      .eq("conversation_id", convId)
+      .gt("created_at", askedAt)
+      .order("created_at", { ascending: true })
+      .limit(20);
+    const after = (later ?? []) as { direction: string; created_at: string }[];
+    if (after.some((m) => m.direction === "inbound")) continue; // cliente voltou a falar
+    const answered = after.find((m) => m.direction !== "inbound");
+    if (!answered || now - new Date(answered.created_at).getTime() < AI_QUESTION_SILENCE_MS)
+      continue;
+    await deps.handoffToHuman(admin, {
+      workspaceId: conv.workspace_id,
+      enrollmentId: conv.sdr_enrollment_id,
+      conversationId: convId,
+      reason:
+        "Cliente perguntou se estava falando com uma IA e parou de responder: atendimento humano.",
+      actorUserId: null,
+    });
+    n++;
+  }
+  return n;
 }
 
 /** Espera (até 60 s) a resposta adiada mais próxima vencer o tempo de aguardo. */
