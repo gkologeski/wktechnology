@@ -92,6 +92,12 @@ const CreateInput = z.object({
   recent_contact_days: z.number().int().min(0).max(365).optional(),
   /** Telefones liberados manualmente apesar do envio recente. */
   recent_overrides: z.array(z.string().max(40)).max(5000).optional(),
+  /** Não enviar a quem já é cliente (negócio ganho ou contrato ativo). */
+  exclude_customers: z.boolean().optional(),
+  /** Não enviar a quem tem negociação aberta. */
+  exclude_open_deals: z.boolean().optional(),
+  /** Telefones liberados manualmente apesar do bloqueio comercial. */
+  commercial_overrides: z.array(z.string().max(40)).max(5000).optional(),
   /** Estado do quadro Público para reabrir na edição (opaco, só exibição). */
   audience_config: z.record(z.string(), z.unknown()).nullable().optional(),
 });
@@ -101,7 +107,46 @@ const PreviewInput = CreateInput.pick({
   variable_map: true,
   recent_contact_days: true,
   recent_overrides: true,
+  exclude_customers: true,
+  exclude_open_deals: true,
+  commercial_overrides: true,
 });
+
+/** Bloqueio comercial: clientes e negociações abertas (padrão: ambos ligados). */
+async function applyCommercialGuard<T extends { phone: string }>(
+  supabase: unknown,
+  workspaceId: string,
+  opts: { exclude_customers?: boolean; exclude_open_deals?: boolean; commercial_overrides?: string[] },
+  items: T[],
+) {
+  const excludeCustomers = opts.exclude_customers ?? true;
+  const excludeOpenDeals = opts.exclude_open_deals ?? true;
+  const { splitCommercial } = await import("@/lib/campaigns/commercial-status");
+  const { phoneRecentKey } = await import("@/lib/campaigns/recent-contact");
+  if (!excludeCustomers && !excludeOpenDeals)
+    return {
+      excludeCustomers,
+      excludeOpenDeals,
+      ...splitCommercial(items, (i) => i.phone, new Map(), { excludeCustomers, excludeOpenDeals }, new Set()),
+    };
+  const { loadCommercialFlags } = await import("@/lib/campaigns/commercial-status.server");
+  const flags = await loadCommercialFlags(
+    supabase,
+    workspaceId,
+    items.map((i) => phoneRecentKey(i.phone)),
+  );
+  return {
+    excludeCustomers,
+    excludeOpenDeals,
+    ...splitCommercial(
+      items,
+      (i) => phoneRecentKey(i.phone),
+      flags,
+      { excludeCustomers, excludeOpenDeals },
+      new Set((opts.commercial_overrides ?? []).map(phoneRecentKey)),
+    ),
+  };
+}
 
 /** Separa quem recebeu WhatsApp de campanha nos últimos N dias (mesmo canal). */
 async function applyRecentGuard<T extends { phone: string }>(
@@ -168,6 +213,9 @@ async function resolveCampaignRecipients(
     | "skip_missing"
     | "recent_contact_days"
     | "recent_overrides"
+    | "exclude_customers"
+    | "exclude_open_deals"
+    | "commercial_overrides"
   >,
 ) {
   const { toWhatsAppE164 } = await import("@/lib/phone/whatsapp-e164");
@@ -214,20 +262,24 @@ async function resolveCampaignRecipients(
     }));
   }
   const recentDays = data.recent_contact_days ?? 7;
-  const guarded = await applyRecentGuard(
+  const recentGuard = await applyRecentGuard(
     supabase,
     workspaceId,
     recentDays,
     data.recent_overrides,
     recipients,
   );
+  const commercial = await applyCommercialGuard(supabase, workspaceId, data, recentGuard.kept);
+  const guarded = { kept: commercial.kept, removed: recentGuard.removed };
   if (guarded.kept.length === 0)
     throw new Error(
-      guarded.removed.length > 0
+      commercial.removed.length > 0 && guarded.removed.length === 0
+        ? "Todos os destinatários são clientes ou estão em negociação aberta. Libere manualmente ou desligue o bloqueio."
+        : guarded.removed.length > 0
         ? "Todos os destinatários receberam mensagem recentemente. Libere manualmente ou reduza o período."
         : "Nenhum destinatário válido no público.",
     );
-  return { guarded, recentDays };
+  return { guarded, recentDays, commercial };
 }
 
 export const createWhatsAppCampaign = createServerFn({ method: "POST" })
@@ -236,7 +288,7 @@ export const createWhatsAppCampaign = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(context.userId);
-    const { guarded, recentDays } = await resolveCampaignRecipients(
+    const { guarded, recentDays, commercial } = await resolveCampaignRecipients(
       supabase,
       workspaceId,
       userId,
@@ -258,6 +310,8 @@ export const createWhatsAppCampaign = createServerFn({ method: "POST" })
         status: "draft",
         total: guarded.kept.length,
         recent_contact_days: recentDays,
+        exclude_customers: commercial.excludeCustomers,
+        exclude_open_deals: commercial.excludeOpenDeals,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         audience_config: (data.audience_config ?? null) as any,
         ...(await sdrColumns(supabase, data.sdr_playbook_id, data.template_name)),
@@ -275,6 +329,7 @@ export const createWhatsAppCampaign = createServerFn({ method: "POST" })
       phone: r.phone,
       variables: r.variables,
       override_recent: r.overrideRecent,
+      override_commercial: r.overrideCommercial,
       status: "pending" as const,
     }));
     // Insere em lotes de 500 para evitar payload gigante
@@ -389,6 +444,9 @@ const UpdateInput = z.object({
     skip_missing: true,
     recent_contact_days: true,
     recent_overrides: true,
+    exclude_customers: true,
+    exclude_open_deals: true,
+    commercial_overrides: true,
     audience_config: true,
   }).optional(),
 });
@@ -431,7 +489,7 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
         throw new Error("O público só pode ser alterado em campanhas em rascunho.");
       const workspaceId = await resolveActiveWorkspace(context.userId);
       const ra = data.replace_audience;
-      const { guarded, recentDays } = await resolveCampaignRecipients(
+      const { guarded, recentDays, commercial } = await resolveCampaignRecipients(
         supabase,
         workspaceId,
         context.userId,
@@ -457,6 +515,7 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
         phone: r.phone,
         variables: r.variables,
         override_recent: r.overrideRecent,
+        override_commercial: r.overrideCommercial,
         status: "pending" as const,
       }));
       for (let i = 0; i < rows.length; i += 500) {
@@ -467,6 +526,8 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
       }
       patch.total = rows.length;
       patch.recent_contact_days = recentDays;
+      patch.exclude_customers = commercial.excludeCustomers;
+      patch.exclude_open_deals = commercial.excludeOpenDeals;
       patch.audience_config = ra.audience_config ?? null;
     }
     if (Object.keys(patch).length === 0) return { ok: true };
@@ -588,14 +649,24 @@ export const previewCampaignAudience = createServerFn({ method: "POST" })
       Object.entries(data.variable_map ?? {}).filter(([, b]) => isAllowedField(base, b.field)),
     );
     const s = buildAudience(rows, map, await loadOptedOutPhones(supabase, workspaceId));
-    const guarded = await applyRecentGuard(
+    const recentGuard = await applyRecentGuard(
       supabase,
       workspaceId,
       data.recent_contact_days ?? 7,
       data.recent_overrides,
       s.recipients,
     );
+    const commercial = await applyCommercialGuard(supabase, workspaceId, data, recentGuard.kept);
+    const guarded = { kept: commercial.kept, removed: recentGuard.removed };
+    const { COMMERCIAL_LABEL } = await import("@/lib/campaigns/commercial-status");
     return {
+      commercialRemovedCount: commercial.removed.length,
+      commercialOverriddenCount: commercial.kept.filter((r) => r.overrideCommercial).length,
+      commercialRemoved: commercial.removed.slice(0, 200).map((r) => ({
+        label: r.label,
+        phone: r.phone,
+        reason: COMMERCIAL_LABEL[r.commercialReason],
+      })),
       base,
       found: rows.length,
       truncated,
