@@ -1,4 +1,6 @@
 import { CompanyAvatar } from "@/components/companies/company-avatar";
+import { EnrichedBadge } from "@/components/enrichment/enriched-badge";
+import { useRecentEnrichment } from "@/hooks/use-recent-enrichment";
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { applyDerivedFilters } from "@/lib/entity/derived-filter-query";
 import { DerivedFilterFields } from "@/components/entity/derived-filter-fields";
@@ -322,6 +324,10 @@ function CompaniesHubspotView() {
   });
 
   const rows = result?.rows ?? [];
+  const { data: companyEnrichedAt } = useRecentEnrichment(
+    "company",
+    rows.map((r) => r.id),
+  );
   const total = result?.count ?? 0;
   const selection = useGridSelection(rows, {
     buildIdQuery: idQueryFor("companies", (query) => {
@@ -460,6 +466,7 @@ function CompaniesHubspotView() {
                 >
                   {c.name}
                 </Link>
+                <EnrichedBadge at={companyEnrichedAt?.get(c.id)} />
               </div>
             );
           },
@@ -575,7 +582,7 @@ function CompaniesHubspotView() {
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [sortKey, sortDir, nameFor, initialsFor],
+    [sortKey, sortDir, nameFor, initialsFor, companyEnrichedAt],
   );
   const DEFAULT_COMPANY_COLS = [
     "name",
