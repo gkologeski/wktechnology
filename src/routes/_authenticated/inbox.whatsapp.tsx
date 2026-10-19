@@ -35,6 +35,7 @@ import {
 } from "@/lib/whatsapp.functions";
 import { useChannelAvailability } from "@/hooks/use-channel-availability";
 import { useInboxIdentityNames } from "@/hooks/use-inbox-identity-names";
+import { usePersonPhotos } from "@/hooks/use-person-photos";
 import { conversationDisplayName } from "@/lib/inbox/identity-names";
 import { useWhatsAppComposer } from "@/hooks/use-whatsapp-composer";
 import {
@@ -230,6 +231,15 @@ function WhatsAppInbox() {
     contact_phone: string;
   }) => conversationDisplayName(c, identityNames.contacts, identityNames.leads);
   const currentName = current ? nameOf(current) : "";
+  const photoRows = current ? [...conversations, current] : conversations;
+  const photos = usePersonPhotos(
+    photoRows.map((c) => c.contact_id),
+    photoRows.filter((c) => !c.contact_id).map((c) => c.lead_id),
+  );
+  const photoOf = (c: { contact_id?: string | null; lead_id?: string | null }) =>
+    (c.contact_id && photos[`contact:${c.contact_id}`]) ||
+    (c.lead_id && photos[`lead:${c.lead_id}`]) ||
+    null;
   const suggestionsQ = useConversationSuggestions(selected);
   const suggestionsByMsg = useMemo(() => {
     const map = new Map<string, NonNullable<typeof suggestionsQ.data>>();
@@ -505,6 +515,7 @@ function WhatsAppInbox() {
                 <InboxConversationItem
                   key={c.id}
                   label={nameOf(c)}
+                  photoUrl={photoOf(c)}
                   title={nameOf(c) !== c.contact_phone ? c.contact_phone : undefined}
                   preview={c.last_message_preview || "—"}
                   when={c.last_message_at}
@@ -565,6 +576,7 @@ function WhatsAppInbox() {
             <>
               <InboxConversationHeader
                 label={currentName}
+                photoUrl={photoOf(current)}
                 subtitle={
                   currentNamed
                     ? `WhatsApp · ${current.contact_phone} · via ${current.twilio_number}`
@@ -911,6 +923,7 @@ function WhatsAppInbox() {
       context={
         current ? (
           <InboxContext
+            photoUrl={photoOf(current)}
             initials={
               currentNamed
                 ? currentName

@@ -282,7 +282,9 @@ export function InboxContext({
   titleSlot,
   subtitle,
   children,
+  photoUrl,
 }: {
+  photoUrl?: string | null;
   initials: string;
   title: string;
   /** Substitui o texto do título (ex.: link para a ficha), mantendo o estilo. */
@@ -294,9 +296,18 @@ export function InboxContext({
     <ScrollArea className="flex-1">
       <div className="space-y-6 p-5">
         <div className="text-center">
-          <div className="mx-auto grid h-20 w-20 place-items-center rounded-[calc(var(--radius)+1rem)] bg-accent text-xl font-semibold text-accent-foreground shadow-inner">
-            {initials}
-          </div>
+          {photoUrl ? (
+            <img
+              src={photoUrl}
+              alt={`Foto de ${title}`}
+              referrerPolicy="no-referrer"
+              className="mx-auto h-20 w-20 rounded-[calc(var(--radius)+1rem)] object-cover shadow-inner"
+            />
+          ) : (
+            <div className="mx-auto grid h-20 w-20 place-items-center rounded-[calc(var(--radius)+1rem)] bg-accent text-xl font-semibold text-accent-foreground shadow-inner">
+              {initials}
+            </div>
+          )}
           <h2 className="mt-4 truncate font-[var(--font-heading)] font-semibold text-foreground">
             {titleSlot ?? title}
           </h2>
