@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -26,6 +26,15 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { enrichBatch } from "@/lib/integrations/enrichment.functions";
 import { listIntegrations } from "@/lib/integrations/core.functions";
+import { Progress } from "@/components/ui/progress";
+import {
+  ENRICH_BATCH_SIZE,
+  addTotals,
+  chunkIds,
+  emptyTotals,
+} from "@/lib/integrations/enrichment-batching";
+
+const PREVIEW_LIMIT = 200;
 
 type Mode = "fill_empty" | "overwrite";
 
@@ -76,25 +85,76 @@ export function BulkEnrichDialog({
     ...(useLusha && lushaConnected ? (["lusha"] as const) : []),
   ];
 
+  const cancelRef = useRef(false);
+  const [progress, setProgress] = useState<{ batch: number; total: number; done: number } | null>(
+    null,
+  );
+
   const mut = useMutation({
-    mutationFn: async () =>
-      enrich({
-        data: { entity, ids, providers: [...providers], mode, dryRun },
-      }),
-    onSuccess: (r) => {
-      if (r.dryRun) {
-        setPreview(r.preview ?? []);
-        toast.message(`Simulação: ${r.succeeded} alterações em ${ids.length} registros`);
+    mutationFn: async () => {
+      const batches = chunkIds(ids, ENRICH_BATCH_SIZE);
+      cancelRef.current = false;
+      let totals = emptyTotals();
+      const prev: NonNullable<typeof preview> = [];
+      let done = 0;
+      let cancelled = false;
+      for (let i = 0; i < batches.length; i++) {
+        if (cancelRef.current) {
+          cancelled = true;
+          break;
+        }
+        setProgress({ batch: i + 1, total: batches.length, done });
+        let r;
+        try {
+          r = await enrich({
+            data: { entity, ids: batches[i], providers: [...providers], mode, dryRun },
+          });
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : "erro inesperado";
+          throw new Error(
+            `Falha no lote ${i + 1} de ${batches.length}: ${msg}${i > 0 ? ` (${done} registros já processados foram mantidos)` : ""}`,
+          );
+        }
+        totals = addTotals(totals, r);
+        if (r.dryRun && prev.length < PREVIEW_LIMIT) {
+          prev.push(...(r.preview ?? []).slice(0, PREVIEW_LIMIT - prev.length));
+        }
+        done += batches[i].length;
+        setProgress({ batch: i + 1, total: batches.length, done });
+      }
+      return { totals, prev, done, cancelled };
+    },
+    onSuccess: ({ totals: r, prev, done, cancelled }) => {
+      setProgress(null);
+      const prefix = cancelled ? `Interrompido após ${done} de ${ids.length} · ` : "";
+      if (dryRun) {
+        setPreview(prev);
+        toast.message(`${prefix}Simulação: ${r.succeeded} alterações em ${done} registros`);
       } else {
         toast.success(
-          `${r.succeeded} atualizados · ${r.unchanged} sem mudanças · ${r.failed} falhas · ${r.creditsUsed} crédito(s)${r.phonePending ? ` · ${r.phonePending} telefone(s) solicitado(s), chegam em alguns minutos` : ""}`,
+          `${prefix}${r.succeeded} atualizados · ${r.unchanged} sem mudanças · ${r.failed} falhas · ${r.creditsUsed} crédito(s)${r.phonePending ? ` · ${r.phonePending} telefone(s) solicitado(s), chegam em alguns minutos` : ""}`,
         );
         onDone?.();
         onOpenChange(false);
       }
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      setProgress(null);
+      toast.error(e.message);
+      if (!dryRun) onDone?.();
+    },
   });
+
+  const batchCount = Math.ceil(ids.length / ENRICH_BATCH_SIZE);
+  const start = () => {
+    if (!dryRun && ids.length > ENRICH_BATCH_SIZE) {
+      const ok = window.confirm(
+        `Aplicar enriquecimento em ${ids.length.toLocaleString("pt-BR")} registros, em ${batchCount} lotes de até ${ENRICH_BATCH_SIZE}?\nTeto estimado: ${ids.length.toLocaleString("pt-BR")} crédito(s) (1 por registro encontrado).`,
+      );
+      if (!ok) return;
+    }
+    mut.mutate();
+  };
 
   const noneConnected = !apolloConnected && !lushaConnected && !integrationsQ.isLoading;
 
@@ -102,6 +162,11 @@ export function BulkEnrichDialog({
     <Dialog
       open={open}
       onOpenChange={(o) => {
+        if (!o && mut.isPending) {
+          if (!window.confirm("Interromper o enriquecimento após o lote atual?")) return;
+          cancelRef.current = true;
+          return;
+        }
         if (!o) setPreview(null);
         onOpenChange(o);
       }}
@@ -136,7 +201,7 @@ export function BulkEnrichDialog({
             <div className="flex flex-col gap-2">
               <label className="flex items-center gap-2 text-sm">
                 <Checkbox
-                  checked={useApollo}
+                  checked={useApollo && apolloConnected}
                   disabled={!apolloConnected}
                   onCheckedChange={(v) => setUseApollo(!!v)}
                 />
@@ -149,7 +214,7 @@ export function BulkEnrichDialog({
               </label>
               <label className="flex items-center gap-2 text-sm">
                 <Checkbox
-                  checked={useLusha}
+                  checked={useLusha && lushaConnected}
                   disabled={!lushaConnected}
                   onCheckedChange={(v) => setUseLusha(!!v)}
                 />
@@ -189,6 +254,22 @@ export function BulkEnrichDialog({
               </Select>
             </div>
           </div>
+
+          {ids.length > ENRICH_BATCH_SIZE && !progress && (
+            <p className="text-xs text-muted-foreground">
+              Será processado em {batchCount} lotes de até {ENRICH_BATCH_SIZE} registros.
+            </p>
+          )}
+
+          {progress && (
+            <div className="space-y-1.5" aria-live="polite">
+              <Progress value={(progress.done / Math.max(ids.length, 1)) * 100} />
+              <p className="text-xs text-muted-foreground">
+                Lote {progress.batch} de {progress.total} · {progress.done.toLocaleString("pt-BR")}{" "}
+                de {ids.length.toLocaleString("pt-BR")} processados
+              </p>
+            </div>
+          )}
 
           {preview && (
             <div className="border rounded-md max-h-64 overflow-y-auto">
@@ -234,10 +315,22 @@ export function BulkEnrichDialog({
             </Link>
           </Button>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={() => mut.mutate()} disabled={providers.length === 0 || mut.isPending}>
+            {mut.isPending ? (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  cancelRef.current = true;
+                  toast.message("Interrompendo após o lote atual…");
+                }}
+              >
+                Interromper
+              </Button>
+            ) : (
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Cancelar
+              </Button>
+            )}
+            <Button onClick={start} disabled={providers.length === 0 || mut.isPending}>
               {mut.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {dryRun ? "Simular" : "Enriquecer"}
             </Button>
