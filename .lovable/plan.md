@@ -15,7 +15,7 @@ O WhatsApp oficial da Meta não entrega a foto de perfil do cliente, só o nome.
 4. **Ao converter um Lead em Contato**, a foto vai junto.
 
 ## Fora do escopo
-- Buscar a foto no WhatsApp ou no LinkedIn automaticamente, porque não há meio oficial.
+- Buscar a foto no WhatsApp, porque não há meio oficial.
 - Fotos de candidatos e de pessoas do TechPeople, que já têm foto própria.
 
 ## Detalhes técnicos
