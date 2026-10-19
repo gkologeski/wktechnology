@@ -64,8 +64,40 @@ export function isAutoResponder(text: string): boolean {
   return false;
 }
 
-const LEFT_RE =
-  /\b(sai|saiu|desliguei|desligado|desligada) (da|do|de la|dela|dessa|desta|de lá)\b|\bnao (trabalho|estou|atuo) mais (la|ai|na|no|nessa|nesta)\b|\bja (faz|tem) .{0,15}(anos?|meses) que (sai|deixei)\b|\bnao faco mais parte\b|\bmudei de empresa\b|\bme aposentei\b|\bdeixei a empresa\b|\bsai de la\b|\bnao sou mais (da|do|funcionari)/;
+/**
+ * Saída da empresa. "sai/saiu da X" sozinho é ambíguo ("o sistema saiu do ar",
+ * "saí da reunião"), então exige contexto de vínculo: a palavra empresa, um
+ * tempo decorrido, um nome próprio (no texto original) ou frase inequívoca.
+ */
+const COMPANY_NOUN = "(empresa|companhia|firma|organizacao|instituicao)";
+const LEFT_RE = new RegExp(
+  [
+    `\\b(sai|saiu|desliguei|deixei|deixou) (da|dessa|desta|daquela) ${COMPANY_NOUN}\\b`,
+    `\\b(faz|tem|ha) .{0,20}(anos?|meses) que (eu )?(sai|deixei|nao trabalho)\\b`,
+    `\\b(fui|foi) (desligado|desligada|demitido|demitida)\\b`,
+    `\\bnao (trabalho|atuo) mais (la|ai|nessa|nesta|naquela|na ${COMPANY_NOUN}|com voces)\\b`,
+    `\\bnao faco mais parte (da|dessa|desta) (${COMPANY_NOUN}|equipe|quadro)\\b`,
+    `\\bnao sou mais (funcionari|colaborador)`,
+    `\\bnao sou mais (da|dessa|desta) ${COMPANY_NOUN}\\b`,
+    `\\bmudei de (empresa|emprego)\\b`,
+    `\\bme aposentei\\b`,
+  ].join("|"),
+);
+
+/** Palavras capitalizadas que não são empresas ("saí do Teams"). */
+const NOT_COMPANY = /^(teams|zoom|meet|google|whatsapp|grupo|reuniao|sistema|ar)$/i;
+
+/** "saí da Opentech": 1ª pessoa + nome próprio no texto original. */
+function leftNamedCompany(raw: string): boolean {
+  const re = /\b(?:sa[ií]|deixei) (?:da|do|de) ([A-ZÀ-Ú][\p{L}\d&.-]+)/gu;
+  for (const m of String(raw ?? "").matchAll(re)) {
+    const name = m[1]
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+    if (!NOT_COMPANY.test(name)) return true;
+  }
+  return false;
+}
 
 const NOT_PERSON_RE =
   /\b(telefone|numero|celular|whats|whatsapp|contato) nao e (de|do|da|o|a)\b|\baqui nao e (o|a)\b|\bnao e o contato (de|do|da)\b|\bpessoa errada\b/;
@@ -77,10 +109,13 @@ export function detectNotTarget(text: string): ThirdPartyReason | null {
   // "não sou o X, mas cuido da TI" continua normalmente.
   if (/\b(mas|porem|so que) .*(cuido|respondo|sou responsavel|sou eu|posso ajudar)/.test(t))
     return null;
-  if (LEFT_RE.test(t)) return "left_company";
+  if (LEFT_RE.test(t) || leftNamedCompany(text)) return "left_company";
   if (NOT_PERSON_RE.test(t) || isWrongContact(text)) return "not_this_person";
   return null;
 }
+
+/** Nossas mensagens que mantêm o estado "falando com terceiro". */
+const WAIT_REFERRAL_REPLY = "Obrigada! Fico no aguardo do contato.";
 
 /** Recusa/indisponibilidade de indicação. */
 export function declinesReferral(text: string): boolean {
