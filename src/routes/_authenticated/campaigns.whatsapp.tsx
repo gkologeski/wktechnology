@@ -231,6 +231,12 @@ function CampaignsPage() {
             skip_missing: audience.skipMissing,
             recent_contact_days: audience.recentDays,
             recent_overrides: audience.recentOverrides,
+          exclude_customers: audience.excludeCustomers,
+          exclude_open_deals: audience.excludeOpenDeals,
+          commercial_overrides: audience.commercialOverrides,
+            exclude_customers: audience.excludeCustomers,
+            exclude_open_deals: audience.excludeOpenDeals,
+            commercial_overrides: audience.commercialOverrides,
             audience_config: toAudienceConfig(audience, recipientsRaw),
           };
         }
