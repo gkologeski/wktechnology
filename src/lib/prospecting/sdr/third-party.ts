@@ -91,9 +91,7 @@ const NOT_COMPANY = /^(teams|zoom|meet|google|whatsapp|grupo|reuniao|sistema|ar)
 function leftNamedCompany(raw: string): boolean {
   const re = /\b(?:sa[ií]|deixei) (?:da|do|de) ([A-ZÀ-Ú][\p{L}\d&.-]+)/gu;
   for (const m of String(raw ?? "").matchAll(re)) {
-    const name = m[1]
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
+    const name = m[1].normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     if (!NOT_COMPANY.test(name)) return true;
   }
   return false;

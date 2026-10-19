@@ -31,6 +31,38 @@ describe("detectNotTarget", () => {
     expect(detectNotTarget("Não sou o Rafael, mas cuido da TI")).toBeNull();
     expect(detectNotTarget("sou eu quem cuida da área")).toBeNull();
   });
+  it("frases comuns com 'saí/saiu' não são saída da empresa", () => {
+    expect(detectNotTarget("nosso sistema saiu do ar ontem")).toBeNull();
+    expect(detectNotTarget("Acabei de sair, saí da reunião agora")).toBeNull();
+    expect(detectNotTarget("saí do Teams, pode ligar")).toBeNull();
+    expect(detectNotTarget("o projeto saiu do papel")).toBeNull();
+    expect(detectNotTarget("não estou mais na reunião")).toBeNull();
+  });
+  it("saída da empresa com contexto continua reconhecida", () => {
+    expect(detectNotTarget("saí da empresa ano passado")).toBe("left_company");
+    expect(detectNotTarget("Já saí da Opentech")).toBe("left_company");
+    expect(detectNotTarget("fui desligado mês passado")).toBe("left_company");
+    expect(detectNotTarget("mudei de empresa")).toBe("left_company");
+  });
+});
+
+describe("decideThirdParty — sinal antigo não gruda", () => {
+  it("conversa que seguiu normalmente não é tratada como terceiro", () => {
+    const d = decideThirdParty([
+      inn("faz uns 5 anos que saí da Opentech"),
+      out("Entendi! E hoje, onde você atua?"),
+      inn("Hoje sou CTO na Acme, não sei se vocês atendem"),
+    ]);
+    expect(d.action).toBe("none");
+  });
+  it("'saiu do ar' seguido de 'não sei' não encerra", () => {
+    const d = decideThirdParty([
+      inn("nosso sistema saiu do ar"),
+      out("Poxa! Quer conversar sobre isso?"),
+      inn("não sei, talvez"),
+    ]);
+    expect(d.action).toBe("none");
+  });
 });
 
 describe("decideThirdParty", () => {
