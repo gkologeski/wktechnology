@@ -22845,6 +22845,8 @@ export type Database = {
         Args: { p_event_id: string }
         Returns: boolean
       }
+      activity_body_plain: { Args: { _body: string }; Returns: string }
+      activity_body_search_doc: { Args: { _body: string }; Returns: unknown }
       anonymize_ats_candidate: {
         Args: { _candidate_id: string }
         Returns: undefined
@@ -23102,6 +23104,13 @@ export type Database = {
         Returns: Json
       }
       get_workspace_plan: { Args: { _workspace: string }; Returns: string }
+      global_search_activity_body_ids: {
+        Args: { _limit?: number; _q: string }
+        Returns: {
+          id: string
+          snippet: string
+        }[]
+      }
       global_search_candidate_ids: {
         Args: { _entity: string; _limit?: number; _q: string }
         Returns: string[]
@@ -23411,6 +23420,7 @@ export type Database = {
         Args: { p_conversation: string; p_owner: string }
         Returns: number
       }
+      search_fold: { Args: { _t: string }; Returns: string }
       security_scan_collect: { Args: never; Returns: Json }
       seed_access_profiles: { Args: { _workspace: string }; Returns: undefined }
       seed_quote_templates: {
