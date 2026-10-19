@@ -98,6 +98,7 @@ type ApolloPerson = {
   email?: string | null;
   title?: string | null;
   linkedin_url?: string | null;
+  photo_url?: string | null;
   twitter_url?: string | null;
   city?: string | null;
   state?: string | null;
@@ -303,6 +304,7 @@ export async function apolloPeopleMatch(input: {
   company: ApolloCompanyData | null;
   /** Id da pessoa na Apollo — chave de correlação do webhook de telefone. */
   personId: string | null;
+  photoUrl?: string | null;
   /** Indica se a revelação assíncrona de telefone foi solicitada. */
   phoneRevealRequested: boolean;
 } | null> {
@@ -365,6 +367,7 @@ export async function apolloPeopleMatch(input: {
     },
     company: mapOrg(p.organization),
     personId: p.id ?? null,
+    photoUrl: p.photo_url ?? null,
     phoneRevealRequested: !!webhookUrl,
   };
 }
@@ -376,6 +379,8 @@ export type ApolloCascadeResult = {
   company: ApolloCompanyData | null;
   /** Id da pessoa na Apollo (correlação da entrega assíncrona de telefone). */
   personId?: string | null;
+  /** Foto de perfil do LinkedIn devolvida pela Apollo. */
+  photoUrl?: string | null;
   /** Revelação de telefone pedida à Apollo (chega depois, via webhook). */
   phoneRevealRequested?: boolean;
   /** Falhas parciais do provedor (créditos, permissão, indisponibilidade). */
@@ -490,6 +495,7 @@ export async function runApolloCascade(input: {
     person: matched?.person ?? null,
     company,
     personId: matched?.personId ?? null,
+    photoUrl: matched?.photoUrl ?? null,
     phoneRevealRequested: !!matched?.phoneRevealRequested,
     warnings,
   };

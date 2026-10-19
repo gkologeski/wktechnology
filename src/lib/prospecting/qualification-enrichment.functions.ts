@@ -166,6 +166,21 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
       domain,
     });
 
+    // Foto do LinkedIn: preenche Lead/Contato sem foto manual (cópia privada).
+    if (result.photoUrl && lead.workspace_id) {
+      const { applyLinkedinPhoto } = await import("@/lib/people/person-photo.server");
+      await applyLinkedinPhoto(supabase as never, lead.workspace_id, "lead", data.leadId, result.photoUrl);
+      if (lead.converted_contact_id) {
+        await applyLinkedinPhoto(
+          supabase as never,
+          lead.workspace_id,
+          "contact",
+          lead.converted_contact_id,
+          result.photoUrl,
+        );
+      }
+    }
+
     const companySuggestions = pick(result.company as Record<string, unknown> | null, COMPANY_KEYS);
     const personSuggestions = result.person as Record<string, unknown> | null;
 
