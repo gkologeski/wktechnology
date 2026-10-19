@@ -12,3 +12,5 @@
 
 - Controle de reenvio recente das campanhas (WhatsApp e e-mail) usa `src/lib/campaigns/recent-contact.ts`: confere ao montar o público e de novo no disparo, só no mesmo canal, com liberação manual gravada em `override_recent`; por quê: não repetir mensagem a quem acabou de receber, sem bloquear exceções conscientes.
 - Filtros de público com `suggest` mostram valores já existentes via `listAudienceFieldValues` (só colunas da lista branca, workspace ativo); por quê: o usuário vê as opções reais sem liberar leitura de colunas arbitrárias.
+- Campanhas WhatsApp bloqueiam por padrão quem já é cliente (negócio ganho ou contrato ativo) e quem tem negociação aberta, via `src/lib/campaigns/commercial-status*.ts`, ao montar o público e de novo no disparo, com liberação manual em `override_commercial`; por quê: não abordar em massa quem já está em relação comercial.
+- Áudios recebidos são transcritos no servidor (`ensureAudioTranscripts`) antes da Lia ler a conversa, gravando a transcrição no corpo da mensagem; por quê: a Lia responde ao conteúdo sem pedir que o cliente escreva.
