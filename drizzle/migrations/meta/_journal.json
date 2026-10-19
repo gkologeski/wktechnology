@@ -1086,6 +1086,13 @@
       "when": 1792436936469,
       "tag": "0154_inbox_channel_state_filter",
       "breakpoints": true
+    },
+    {
+      "idx": 155,
+      "version": "7",
+      "when": 1792437942702,
+      "tag": "0155_inbox_ai_suggestions",
+      "breakpoints": true
     }
   ]
 }

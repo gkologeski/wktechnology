@@ -9984,6 +9984,85 @@ export type Database = {
         }
         Relationships: []
       }
+      inbox_ai_suggestions: {
+        Row: {
+          applied_company_id: string | null
+          conversation_id: string
+          created_at: string
+          id: string
+          kind: string
+          matched_company_ids: string[]
+          message_id: string
+          new_company_name: string | null
+          old_company_id: string | null
+          old_company_name: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          target_entity: string
+          target_id: string
+          workspace_id: string
+        }
+        Insert: {
+          applied_company_id?: string | null
+          conversation_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          matched_company_ids?: string[]
+          message_id: string
+          new_company_name?: string | null
+          old_company_id?: string | null
+          old_company_name?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          target_entity: string
+          target_id: string
+          workspace_id: string
+        }
+        Update: {
+          applied_company_id?: string | null
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          matched_company_ids?: string[]
+          message_id?: string
+          new_company_name?: string | null
+          old_company_id?: string | null
+          old_company_name?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          target_entity?: string
+          target_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inbox_ai_suggestions_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inbox_ai_suggestions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inbox_ai_suggestions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       integrations: {
         Row: {
           config: Json
