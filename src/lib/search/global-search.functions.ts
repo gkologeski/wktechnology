@@ -92,7 +92,7 @@ export const globalSearch = createServerFn({ method: "POST" })
             // tem limite de tempo: se estourar, o grupo fica só com o assunto.
             const bodyRpc = Promise.resolve(
               supabase.rpc("global_search_activity_body_ids", { _q: data.q, _limit: 40 }),
-            ).then((r) => ((r.data ?? []) as Array<{ id: string; snippet: string | null }>));
+            ).then((r) => (r.data ?? []) as Array<{ id: string; snippet: string | null }>);
             const timeout = new Promise<null>((res) => setTimeout(() => res(null), 4000));
             const [subjectIds, bodyHits] = await Promise.all([
               candidateIds("activity"),
@@ -106,7 +106,9 @@ export const globalSearch = createServerFn({ method: "POST" })
               .from("activities")
               .select("id, subject, type, due_date")
               .in("id", order.slice(0, 200));
-            const byId = new Map(((rows ?? []) as Array<Record<string, unknown>>).map((r) => [String(r.id), r]));
+            const byId = new Map(
+              ((rows ?? []) as Array<Record<string, unknown>>).map((r) => [String(r.id), r]),
+            );
             const sorted = order
               .map((id) => byId.get(id))
               .filter((r): r is Record<string, unknown> => !!r)
