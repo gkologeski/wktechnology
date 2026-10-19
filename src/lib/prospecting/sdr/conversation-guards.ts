@@ -139,7 +139,7 @@ export function fixVocative(text: string, allowedNames: string[]): string {
 export function correctedName(history: Msg[]): string | null {
   let found: string | null = null;
   for (const m of inbound(history)) {
-    const r = /\b(?:me chamo|meu nome (?:é|e)|sou o|sou a)\s+([A-ZÀ-Ú][\p{L}]{1,20})/u.exec(
+    const r = /\b(?:[Mm]e chamo|[Mm]eu nome (?:é|e))\s+([A-ZÀ-Ú][\p{L}]{1,20})/u.exec(
       String(m.body ?? ""),
     );
     if (r) found = r[1];
@@ -160,7 +160,7 @@ export function extractCorporatePhone(text: string): string | null {
 /** Nome usado na abertura do modelo ("Olá, Luiz, tudo bem?"). */
 export function greetingName(history: Msg[]): string | null {
   const first = history.find((m) => m.direction !== "inbound");
-  const r = /^\s*(?:ol[aá]|oi|bom dia|boa tarde|boa noite)[,!]?\s+([A-ZÀ-Ú][\p{L}]{1,20})\b/u.exec(
+  const r = /^\s*(?:[Oo]l[aá]|[Oo]i|[Bb]om dia|[Bb]oa tarde|[Bb]oa noite)[,!]?\s+([A-ZÀ-Ú][\p{L}]{1,20})\b/u.exec(
     String(first?.body ?? ""),
   );
   return r ? r[1] : null;
