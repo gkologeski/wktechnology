@@ -281,11 +281,7 @@ async function adoptLatestInbound(admin: Admin, job: Job): Promise<void> {
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    admin
-      .from("sdr_turn_jobs")
-      .select("inbound_message_id")
-      .eq("id", job.id)
-      .maybeSingle(),
+    admin.from("sdr_turn_jobs").select("inbound_message_id").eq("id", job.id).maybeSingle(),
   ]);
   const latestId = (lastIn as { id: string } | null)?.id;
   const currentId = (current as { inbound_message_id: string | null } | null)?.inbound_message_id;
