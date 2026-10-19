@@ -340,6 +340,13 @@ export async function processJob(
     });
     return "discarded";
   }
+  // Mensagens quase simultâneas podem gerar turnos fora de ordem (o da última
+  // mensagem criado antes do da primeira). Sem turno mais novo na fila, este é o
+  // que responde por todas: passa a apontar para a mensagem mais recente do
+  // cliente, senão o envio seria barrado como obsoleto e ninguém responderia.
+  if (job.kind === "reply") {
+    await adoptLatestInbound(admin, job);
+  }
   const { data: playbook } = await admin
     .from("sdr_playbooks")
     .select("*")
