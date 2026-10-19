@@ -5,6 +5,7 @@
 // É importado por server fns; não roda em código de cliente.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { apolloPhoneWebhookUrl } from "./apollo-enrich.server";
+import { canAutoReplacePhoto } from "@/lib/people/person-photo";
 
 export type EnrichProvider = "apollo" | "lusha";
 export type EnrichEntity = "lead" | "contact";
@@ -22,6 +23,8 @@ export type EnrichedPerson = {
   apollo_person_id?: string | null;
   /** A Apollo foi instruída a entregar o telefone via webhook. */
   phone_reveal_requested?: boolean;
+  /** Foto de perfil (LinkedIn) devolvida pelo provedor. */
+  photo_url?: string | null;
 };
 
 import { apolloRawRequest } from "./apollo-gateway.server";
@@ -34,6 +37,7 @@ type ApolloPerson = {
   last_name?: string | null;
   title?: string | null;
   linkedin_url?: string | null;
+  photo_url?: string | null;
   phone_numbers?: { sanitized_number?: string; raw_number?: string }[];
   organization?: { name?: string | null; primary_domain?: string | null } | null;
 };
@@ -91,6 +95,7 @@ export async function apolloMatch(input: {
     company_name: p.organization?.name ?? null,
     linkedin_url: p.linkedin_url ?? null,
     apollo_person_id: p.id ?? null,
+    photo_url: p.photo_url ?? null,
     phone_reveal_requested: !!phoneWebhook,
   };
 }
@@ -209,8 +214,8 @@ export async function runEnrichmentBatch(opts: RunBatchOpts): Promise<RunBatchRe
 
   const cols =
     entity === "lead"
-      ? "id, workspace_id, first_name, last_name, email, phone, company_name, job_title, linkedin_url"
-      : "id, workspace_id, first_name, last_name, email, phone, job_title, linkedin_url, company_name";
+      ? "id, workspace_id, first_name, last_name, email, phone, company_name, job_title, linkedin_url, photo_url, photo_source"
+      : "id, workspace_id, first_name, last_name, email, phone, job_title, linkedin_url, company_name, photo_url, photo_source";
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: rows, error } = await (supabase as any)
     .from(table)
@@ -260,6 +265,7 @@ export async function runEnrichmentBatch(opts: RunBatchOpts): Promise<RunBatchRe
     let finalUpdate: Record<string, unknown> = {};
     let lastError: string | null = null;
     let currentBefore: Record<string, unknown> = { ...row };
+    let remotePhoto: string | null = null;
 
     for (const provider of providers) {
       try {
@@ -277,6 +283,7 @@ export async function runEnrichmentBatch(opts: RunBatchOpts): Promise<RunBatchRe
           continue;
         }
         const update = computeUpdate(currentBefore, enriched, entity, mode);
+        if (!remotePhoto && enriched.photo_url) remotePhoto = enriched.photo_url;
         // Telefone pedido à Apollo chega depois via webhook: registra o destino
         // para o número ser gravado no contato/lead quando for entregue.
         if (
@@ -335,6 +342,25 @@ export async function runEnrichmentBatch(opts: RunBatchOpts): Promise<RunBatchRe
         }
         perJobCounts[j] ??= { ok: 0, ko: 0, cr: 0 };
         perJobCounts[j].ko++;
+      }
+    }
+
+    // Foto do LinkedIn: só preenche quando não houver foto manual (nunca a substitui).
+    if (
+      remotePhoto &&
+      canAutoReplacePhoto(row.photo_source as string | null) &&
+      (mode === "overwrite" || !row.photo_url)
+    ) {
+      if (dryRun) {
+        finalUpdate.photo_url = remotePhoto;
+      } else if (typeof row.workspace_id === "string") {
+        const { storeRemotePersonPhoto } = await import("@/lib/people/person-photo.server");
+        const path = await storeRemotePersonPhoto(row.workspace_id, entity, row.id, remotePhoto);
+        if (path) {
+          finalUpdate.photo_url = path;
+          finalUpdate.photo_source = "linkedin";
+          finalUpdate.photo_updated_at = new Date().toISOString();
+        }
       }
     }
 
