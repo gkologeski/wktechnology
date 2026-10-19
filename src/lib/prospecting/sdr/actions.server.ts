@@ -454,6 +454,7 @@ export async function sendSdrMessage(
 
   let wamid: string | null = null;
   let raw: unknown = null;
+  let failedFiles: string[] = [];
   try {
     const num = await resolveWaNumber(job.workspace_id);
     const res = await metaSend(num, { to: conv.contact_phone, body: p.text });
@@ -491,8 +492,7 @@ export async function sendSdrMessage(
       fromNumber: num.displayPhoneNumber ?? null,
       jobId: job.id,
     });
-    if (files.failed.length)
-      await admin.from("whatsapp_conversations").update({ ai_owner: null }).eq("id", conv.id);
+    failedFiles = files.failed;
     await admin
       .from("whatsapp_conversations")
       .update({
@@ -608,6 +608,14 @@ export async function sendSdrMessage(
       follow_up_at: fu?.toISOString() ?? null,
     })
     .eq("id", enr.id);
+  if (failedFiles.length)
+    await handoffToHuman(admin, {
+      workspaceId: job.workspace_id,
+      enrollmentId: enr.id,
+      conversationId: conv.id,
+      reason: `Falha ao enviar material: ${failedFiles.join(", ")}`,
+      actorUserId: null,
+    });
   return { ok: true, wamid };
 }
 
