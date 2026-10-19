@@ -1,6 +1,7 @@
 import {
   PERSON_PHOTO_BUCKET,
   PERSON_PHOTO_MAX_BYTES,
+  canAutoReplacePhoto,
   isAcceptedPhotoType,
   photoPath,
   type PersonEntity,
@@ -62,4 +63,41 @@ export async function storeRemotePersonPhoto(
     .from(PERSON_PHOTO_BUCKET)
     .upload(path, bytes, { contentType: type!.split(";")[0], upsert: true });
   return error ? null : path;
+}
+
+/**
+ * Aplica a foto do LinkedIn a um Contato/Lead usando o cliente do usuário (RLS).
+ * Não faz nada quando já existe foto manual. Falhas não interrompem o enriquecimento.
+ */
+export async function applyLinkedinPhoto(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  workspaceId: string,
+  entity: PersonEntity,
+  id: string,
+  url: string,
+): Promise<boolean> {
+  try {
+    const table = entity === "contact" ? "contacts" : "leads";
+    const { data: row } = await supabase
+      .from(table)
+      .select("photo_source")
+      .eq("id", id)
+      .maybeSingle();
+    if (!row || !canAutoReplacePhoto(row.photo_source)) return false;
+    const path = await storeRemotePersonPhoto(workspaceId, entity, id, url);
+    if (!path) return false;
+    const { data } = await supabase
+      .from(table)
+      .update({
+        photo_url: path,
+        photo_source: "linkedin",
+        photo_updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select("id");
+    return !!data?.length;
+  } catch {
+    return false;
+  }
 }
