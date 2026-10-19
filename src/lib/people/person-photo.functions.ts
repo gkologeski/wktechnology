@@ -106,7 +106,12 @@ export const setPersonPhoto = createServerFn({ method: "POST" })
       .select("id");
     if (upErr) throw new Error(upErr.message);
     if (!updated?.length) throw new Error("Você não tem permissão para editar este registro.");
-    if (row.photo_url && row.photo_url !== path) {
+    // Só apaga arquivos do próprio registro (fotos herdadas na conversão são compartilhadas).
+    if (
+      row.photo_url &&
+      row.photo_url !== path &&
+      row.photo_url.startsWith(`${row.workspace_id}/${data.entity}/${data.id}.`)
+    ) {
       await supabaseAdmin.storage.from(PERSON_PHOTO_BUCKET).remove([row.photo_url]);
     }
     return { ok: true, path };
