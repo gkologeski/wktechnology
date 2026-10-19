@@ -2,9 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-
-const entity = z.enum(["user", "client", "project"]);
-const id24 = z.string().regex(/^[0-9a-f]{24}$/i);
+import { clockifyEntitySchema as entity, clockifyIdSchema as id24 } from "./clockify-schemas";
 
 export const getClockifyImportStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
