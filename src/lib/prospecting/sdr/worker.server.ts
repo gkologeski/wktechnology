@@ -349,6 +349,11 @@ export async function processJob(
     return "skipped";
   }
 
+  // Áudios do cliente viram texto antes da Lia ler a conversa.
+  if (job.kind === "reply") {
+    const { ensureAudioTranscripts } = await import("@/lib/whatsapp/inbound-media.server");
+    await ensureAudioTranscripts(admin, conv.id);
+  }
   const { data: msgs } = await admin
     .from("whatsapp_messages")
     .select("id, direction, body, created_at")
