@@ -269,6 +269,31 @@ export function retryDelayMs(attempt: number): number {
   return Math.min(600_000, 30_000 * 2 ** Math.max(0, attempt - 1));
 }
 
+/** Re-aponta o turno sobrevivente para a mensagem recebida mais recente da conversa. */
+async function adoptLatestInbound(admin: Admin, job: Job): Promise<void> {
+  const [{ data: lastIn }, { data: current }] = await Promise.all([
+    admin
+      .from("whatsapp_messages")
+      .select("id")
+      .eq("conversation_id", job.conversation_id)
+      .eq("workspace_id", job.workspace_id)
+      .eq("direction", "inbound")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    admin.from("sdr_turn_jobs").select("inbound_message_id").eq("id", job.id).maybeSingle(),
+  ]);
+  const latestId = (lastIn as { id: string } | null)?.id;
+  const currentId = (current as { inbound_message_id: string | null } | null)?.inbound_message_id;
+  if (!latestId || !currentId || latestId === currentId) return;
+  const { error } = await admin
+    .from("sdr_turn_jobs")
+    .update({ inbound_message_id: latestId, updated_at: new Date().toISOString() })
+    .eq("id", job.id)
+    .eq("lease_token", job.lease_token);
+  if (error) console.error("[sdr] não foi possível assumir a mensagem mais recente", error.message);
+}
+
 export async function processJob(
   admin: Admin,
   job: Job,
@@ -339,6 +364,13 @@ export async function processJob(
       error: `merged_into:${(newer as { id: string }).id}`,
     });
     return "discarded";
+  }
+  // Mensagens quase simultâneas podem gerar turnos fora de ordem (o da última
+  // mensagem criado antes do da primeira). Sem turno mais novo na fila, este é o
+  // que responde por todas: passa a apontar para a mensagem mais recente do
+  // cliente, senão o envio seria barrado como obsoleto e ninguém responderia.
+  if (job.kind === "reply") {
+    await adoptLatestInbound(admin, job);
   }
   const { data: playbook } = await admin
     .from("sdr_playbooks")

@@ -720,6 +720,38 @@ describe("três políticas de envio", () => {
     expect(d.callAgent).not.toHaveBeenCalled();
   });
 
+  it("mensagens simultâneas fora de ordem: o turno restante responde por todas", async () => {
+    // Caso real: "Olá, boa tarde!" e "Sim" chegaram juntos; o turno do "Sim"
+    // (mais recente) foi criado antes do turno do "Olá".
+    const ola = inboundTurn(1, {
+      status: "queued",
+      lease_token: null,
+      created_at: new Date(base + 50_000).toISOString(),
+    });
+    const sim = inboundTurn(2, { created_at: new Date(base + 40_000).toISOString() });
+    expect(await processJob(db, sim as never, deps({}))).toBe("discarded");
+    Object.assign(db.find("sdr_turn_jobs", ola.id)!, { status: "running", lease_token: "LO" });
+    const d = deps({
+      reply: "Que ótimo, Simone!",
+      intent: "continue",
+      offer_keys: [],
+      material_ids: [],
+      answers: [],
+      handoff_reason: "",
+    });
+    expect(await processJob(db, { ...ola, status: "running", lease_token: "LO" } as never, d)).toBe(
+      "drafted",
+    );
+    expect(db.find("sdr_turn_jobs", ola.id)?.inbound_message_id).toBe(sim.inbound_message_id);
+    const r = await sendSdrMessage(db, {
+      jobId: ola.id,
+      expectedStatus: "drafted",
+      text: "Que ótimo, Simone!",
+      actorUserId: "u1",
+    });
+    expect(r.ok).toBe(true);
+  });
+
   it("resposta para mensagem que não é a mais recente fica obsoleta", async () => {
     const old = inboundTurn(1);
     db.t("whatsapp_messages").push({
