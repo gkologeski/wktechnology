@@ -1,3 +1,4 @@
+import { usePersonPhotos } from "@/hooks/use-person-photos";
 import { formatDateTime } from "@/lib/crm";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
@@ -145,6 +146,18 @@ function UnifiedInboxPage() {
   const current =
     items.find((i) => i.id === selected) ??
     (selectedSnapshot?.id === selected ? selectedSnapshot : null);
+  const photoRows = (current ? [...items, current] : items).map((i) => ({
+    contact_id: i.contactId ?? null,
+    lead_id: i.leadId ?? null,
+  }));
+  const photos = usePersonPhotos(
+    photoRows.map((r) => r.contact_id),
+    photoRows.filter((r) => !r.contact_id).map((r) => r.lead_id),
+  );
+  const photoOf = (r?: { contact_id?: string | null; lead_id?: string | null } | null) =>
+    (r?.contact_id && photos[`contact:${r.contact_id}`]) ||
+    (r?.lead_id && photos[`lead:${r.lead_id}`]) ||
+    null;
 
   // Rascunho automático da resposta inline, por conversa selecionada.
   const messageDraft = useMessageDraft({
@@ -304,6 +317,7 @@ function UnifiedInboxPage() {
                 {items.map((it) => (
                   <li key={it.id}>
                     <InboxConversationItem
+                      photoUrl={photoOf({ contact_id: it.contactId, lead_id: it.leadId })}
                       label={it.contactLabel}
                       title={it.title}
                       preview={it.snippet && it.snippet !== it.title ? it.snippet : undefined}
@@ -365,6 +379,7 @@ function UnifiedInboxPage() {
           ) : (
             <div className="flex min-h-0 flex-1 flex-col">
               <InboxConversationHeader
+                photoUrl={photoOf({ contact_id: current.contactId, lead_id: current.leadId })}
                 label={current.contactLabel}
                 subtitle={`${current.channel === "email" ? "Email" : current.channel === "whatsapp" ? "WhatsApp" : "Chat ao vivo"}${current.replyTo ? ` · ${current.replyTo}` : ""}`}
                 actions={
@@ -505,6 +520,7 @@ function UnifiedInboxPage() {
       context={
         current ? (
           <InboxContext
+            photoUrl={photoOf({ contact_id: current.contactId, lead_id: current.leadId })}
             initials={current.contactLabel.slice(0, 2).toUpperCase()}
             title={current.contactLabel}
             subtitle={current.replyTo || undefined}

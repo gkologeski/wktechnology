@@ -67,6 +67,10 @@ export async function convertLead(lead: Lead, ownerId: string): Promise<ConvertR
         phone: lead.phone,
         job_title: lead.job_title,
         company_id: companyId,
+        // A foto acompanha a conversão (mesmo arquivo privado; nunca é apagado pelo contato).
+        photo_url: lead.photo_url ?? null,
+        photo_source: lead.photo_source ?? null,
+        photo_updated_at: lead.photo_url ? new Date().toISOString() : null,
       })
       .select("id")
       .single();

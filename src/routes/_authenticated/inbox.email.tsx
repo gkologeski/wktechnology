@@ -1,3 +1,4 @@
+import { usePersonPhotos } from "@/hooks/use-person-photos";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -151,6 +152,15 @@ function EmailInbox() {
 
   const thread = threadQ.data;
   const current = thread ? { thread, messages: history.items } : undefined;
+  const photoRows = thread ? [...threads, thread] : threads;
+  const photos = usePersonPhotos(
+    photoRows.map((r) => r.contact_id),
+    photoRows.filter((r) => !r.contact_id).map((r) => r.lead_id),
+  );
+  const photoOf = (r?: { contact_id?: string | null; lead_id?: string | null } | null) =>
+    (r?.contact_id && photos[`contact:${r.contact_id}`]) ||
+    (r?.lead_id && photos[`lead:${r.lead_id}`]) ||
+    null;
   const memberNames = new Map(
     (membersQ.data ?? []).map((member) => [member.user_id, member.full_name]),
   );
@@ -248,6 +258,7 @@ function EmailInbox() {
               {threads.map((t) => (
                 <InboxConversationItem
                   key={t.id}
+                  photoUrl={photoOf(t)}
                   label={t.subject || "(sem assunto)"}
                   preview={t.snippet || "—"}
                   when={t.last_message_at}
@@ -299,6 +310,7 @@ function EmailInbox() {
           ) : (
             <>
               <InboxConversationHeader
+                photoUrl={photoOf(current.thread)}
                 label={
                   lastMsg?.from_name ||
                   lastMsg?.from_email ||
@@ -374,6 +386,7 @@ function EmailInbox() {
       context={
         current ? (
           <InboxContext
+            photoUrl={photoOf(current.thread)}
             initials={(lastMsg?.from_name || lastMsg?.from_email || "E").slice(0, 2).toUpperCase()}
             title={lastMsg?.from_name || lastMsg?.from_email || "Contato por email"}
             subtitle={lastMsg?.from_email || undefined}

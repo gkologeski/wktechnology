@@ -1,3 +1,4 @@
+import { PersonPhotoEditor } from "@/components/people/person-photo-editor";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -314,10 +315,14 @@ function LeadDetail() {
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <div className="w-16 h-16 shrink-0 rounded-full bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-primary/20 border-4 border-card">
-            {(lead.first_name?.[0] ?? "?").toUpperCase()}
-            {(lead.last_name?.[0] ?? "").toUpperCase()}
-          </div>
+          <PersonPhotoEditor
+            entity="lead"
+            id={lead.id}
+            name={`${lead.first_name ?? ""} ${lead.last_name ?? ""}`.trim() || "Lead"}
+            hasPhoto={!!lead.photo_url}
+            photoSource={lead.photo_source}
+            onChanged={load}
+          />
           <div className="min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-bold text-foreground truncate">
