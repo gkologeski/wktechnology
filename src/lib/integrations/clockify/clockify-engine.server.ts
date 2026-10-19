@@ -469,11 +469,18 @@ export class ClockifyEngine {
       } else this.cp.page = page + 1;
     } catch (e) {
       if (!(e instanceof ClockifyApiError) || e.code === "rate_limited" || e.code === "network" || e.code === "server") throw e;
-      if (spec.required && (e.code === "unauthorized" || e.code === "forbidden")) {
+      if (spec.required && variant === 0 && (e.code === "unauthorized" || e.code === "forbidden")) {
         throw new Error(`${spec.label}: ${e.message}`);
       }
-      const cap: Capability = e.code === "forbidden" || e.code === "unauthorized" ? "forbidden" : e.code === "not_found" || e.code === "bad_request" ? "not_available" : "failed";
-      this.setCapability(spec.entity, cap, undefined, e.message);
+      const caps = (this.run.counts.capabilities ?? {}) as Record<string, { count?: number }>;
+      if ((caps[spec.entity]?.count ?? 0) > 0) {
+        // Uma variação do filtro falhou, mas outra já trouxe dados: registra sem zerar.
+        const c = caps[spec.entity] as { detail?: string | null };
+        c.detail = `Filtro ${variant + 1}: ${e.message}`;
+      } else {
+        const cap: Capability = e.code === "forbidden" || e.code === "unauthorized" ? "forbidden" : e.code === "not_found" || e.code === "bad_request" ? "not_available" : "failed";
+        this.setCapability(spec.entity, cap, undefined, e.message);
+      }
       this.cp.variant = variant + 1;
       this.cp.page = 1;
     }
@@ -543,7 +550,8 @@ export class ClockifyEngine {
     }
     const page = this.cp.page ?? 1;
     try {
-      const r = await this.client.page<CkTimeEntry>(`/workspaces/${this.ws}/user/${ids[i]}/time-entries`, page, 200, { hydrated: false });
+      const size = (this.run.counts.entry_page_size as number | undefined) ?? 200;
+      const r = await this.client.page<CkTimeEntry>(`/workspaces/${this.ws}/user/${ids[i]}/time-entries`, page, size, { hydrated: false });
       const n = await this.stage("time_entry", r.items);
       this.bumpCount("time_entry", n);
       for (const e of r.items) {
@@ -565,6 +573,12 @@ export class ClockifyEngine {
     } catch (e) {
       if (!(e instanceof ClockifyApiError) || ["rate_limited", "network", "server"].includes(e.code)) throw e;
       if (e.code === "unauthorized") throw new Error(`Apontamentos: ${e.message}`);
+      if (e.code === "bad_request" && (this.run.counts.entry_page_size ?? 200) !== 50) {
+        // Tamanho de página recusado: volta ao padrão documentado (50) e repete.
+        this.run.counts.entry_page_size = 50;
+        this.cp.page = 1;
+        return false;
+      }
       // 403 de um usuário específico: registra e segue (diagnóstico, não zero silencioso).
       const failed = ((this.run.counts.time_entry_user_errors ??= []) as Array<{ user: string; error: string }>);
       failed.push({ user: ids[i], error: e.message });
