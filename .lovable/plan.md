@@ -22,6 +22,15 @@
 3. **Não vou ligar o envio sozinho**: ligar o anexo volta a permitir links do site (inclusive o de hunting, que você pediu para não ir). Depois da mudança, você liga a chave e publica a Lia, ou me autoriza a fazer isso.
 4. Encaminhamento do Eduardo Porto (pediu material no e-mail eduardo@epsystem.com.br): opcionalmente criar uma tarefa para um humano enviar — só com seu aceite.
 
+## Materiais completos (documentos, PDFs, imagens e links)
+
+Hoje os 6 materiais da WK são todos links. A ficha de material já aceita arquivo, mas a Lia só manda texto com link.
+
+5. **Tela de Agentes, aba Materiais**: cadastrar material como Link, PDF/Documento, Imagem ou Vídeo (envio de arquivo privado até 16 MB, mesmo limite do WhatsApp), com título, descrição (usada pela Lia para escolher), aprovação e ativo. Editar, desativar e excluir com confirmação.
+6. **Por agente**: escolher quais materiais a Lia pode enviar e um controle único "Enviar materiais quando o cliente pedir", substituindo a chave atual de só links. Links do site (ex.: hunting) só saem se estiverem marcados para o agente.
+7. **Envio real**: quando o cliente pede e aceita, arquivos vão como anexo do WhatsApp (documento com nome do arquivo, imagem ou vídeo) e links como texto; a mensagem da Lia só diz "enviei" depois do envio confirmado. Falha vira aviso na conversa e passa para humano. Fora da janela de 24 h, nada é enviado.
+8. **Teste do agente**: simula o envio sem mandar nada.
+
 ## Validação
 - Teste para a lista: membro ativo aparece, inativo não, outro workspace não.
 - Playwright: Eduarda Astran no seletor; aviso visível na config da Lia.
