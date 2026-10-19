@@ -385,6 +385,7 @@ import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/em
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as AuthenticatedatsSourcingSequencesIdRouteImport } from './routes/_authenticated/(ats)/sourcing/sequences_.$id'
+import { Route as AuthenticatedProjectsSettingsImportsClockifyRouteImport } from './routes/_authenticated/projects.settings.imports.clockify'
 import { Route as AuthenticatedProspectingQueuesQueueIdPlayRouteImport } from './routes/_authenticated/prospecting.queues.$queueId.play'
 import { Route as AuthenticatedTasksQueuesQueueIdPlayRouteImport } from './routes/_authenticated/tasks.queues.$queueId.play'
 import { Route as ApiPublicBookingSlugSubmitRouteImport } from './routes/api/public/booking/$slug/submit'
@@ -2556,6 +2557,12 @@ const AuthenticatedatsSourcingSequencesIdRoute =
     path: '/sourcing/sequences/$id',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedProjectsSettingsImportsClockifyRoute =
+  AuthenticatedProjectsSettingsImportsClockifyRouteImport.update({
+    id: '/projects/settings/imports/clockify',
+    path: '/projects/settings/imports/clockify',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProspectingQueuesQueueIdPlayRoute =
   AuthenticatedProspectingQueuesQueueIdPlayRouteImport.update({
     id: '/queues/$queueId/play',
@@ -3054,6 +3061,7 @@ export interface FileRoutesByFullPath {
   '/settings/marketplace/': typeof AuthenticatedSettingsMarketplaceIndexRoute
   '/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
   '/sourcing/sequences/$id': typeof AuthenticatedatsSourcingSequencesIdRoute
+  '/projects/settings/imports/clockify': typeof AuthenticatedProjectsSettingsImportsClockifyRoute
   '/prospecting/queues/$queueId/play': typeof AuthenticatedProspectingQueuesQueueIdPlayRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
@@ -3445,6 +3453,7 @@ export interface FileRoutesByTo {
   '/settings/marketplace': typeof AuthenticatedSettingsMarketplaceIndexRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesIndexRoute
   '/sourcing/sequences/$id': typeof AuthenticatedatsSourcingSequencesIdRoute
+  '/projects/settings/imports/clockify': typeof AuthenticatedProjectsSettingsImportsClockifyRoute
   '/prospecting/queues/$queueId/play': typeof AuthenticatedProspectingQueuesQueueIdPlayRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
@@ -3845,6 +3854,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/marketplace/': typeof AuthenticatedSettingsMarketplaceIndexRoute
   '/_authenticated/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
   '/_authenticated/(ats)/sourcing/sequences_/$id': typeof AuthenticatedatsSourcingSequencesIdRoute
+  '/_authenticated/projects/settings/imports/clockify': typeof AuthenticatedProjectsSettingsImportsClockifyRoute
   '/_authenticated/prospecting/queues/$queueId/play': typeof AuthenticatedProspectingQueuesQueueIdPlayRoute
   '/_authenticated/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
@@ -4245,6 +4255,7 @@ export interface FileRouteTypes {
     | '/settings/marketplace/'
     | '/settings/roles/'
     | '/sourcing/sequences/$id'
+    | '/projects/settings/imports/clockify'
     | '/prospecting/queues/$queueId/play'
     | '/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
@@ -4636,6 +4647,7 @@ export interface FileRouteTypes {
     | '/settings/marketplace'
     | '/settings/roles'
     | '/sourcing/sequences/$id'
+    | '/projects/settings/imports/clockify'
     | '/prospecting/queues/$queueId/play'
     | '/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
@@ -5035,6 +5047,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/marketplace/'
     | '/_authenticated/settings/roles/'
     | '/_authenticated/(ats)/sourcing/sequences_/$id'
+    | '/_authenticated/projects/settings/imports/clockify'
     | '/_authenticated/prospecting/queues/$queueId/play'
     | '/_authenticated/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
@@ -7822,6 +7835,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedatsSourcingSequencesIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/projects/settings/imports/clockify': {
+      id: '/_authenticated/projects/settings/imports/clockify'
+      path: '/projects/settings/imports/clockify'
+      fullPath: '/projects/settings/imports/clockify'
+      preLoaderRoute: typeof AuthenticatedProjectsSettingsImportsClockifyRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/prospecting/queues/$queueId/play': {
       id: '/_authenticated/prospecting/queues/$queueId/play'
       path: '/queues/$queueId/play'
@@ -8604,6 +8624,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedatsSourcingIndexRoute: typeof AuthenticatedatsSourcingIndexRoute
   AuthenticatedContractsTemplatesIndexRoute: typeof AuthenticatedContractsTemplatesIndexRoute
   AuthenticatedatsSourcingSequencesIdRoute: typeof AuthenticatedatsSourcingSequencesIdRoute
+  AuthenticatedProjectsSettingsImportsClockifyRoute: typeof AuthenticatedProjectsSettingsImportsClockifyRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -8762,6 +8783,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedContractsTemplatesIndexRoute,
   AuthenticatedatsSourcingSequencesIdRoute:
     AuthenticatedatsSourcingSequencesIdRoute,
+  AuthenticatedProjectsSettingsImportsClockifyRoute:
+    AuthenticatedProjectsSettingsImportsClockifyRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
