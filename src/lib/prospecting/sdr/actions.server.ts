@@ -492,7 +492,7 @@ export async function sendSdrMessage(
       jobId: job.id,
     });
     if (files.failed.length)
-      await admin.from("activities").select("id").limit(0); // no-op: falha já registrada em log
+      await admin.from("whatsapp_conversations").update({ ai_owner: null }).eq("id", conv.id);
     await admin
       .from("whatsapp_conversations")
       .update({
