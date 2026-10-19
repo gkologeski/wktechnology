@@ -123,6 +123,12 @@ export type AudienceState = {
   recentDays: number;
   /** Telefones liberados manualmente apesar do envio recente. */
   recentOverrides: string[];
+  /** Não enviar a quem já é cliente (negócio ganho ou contrato ativo). */
+  excludeCustomers: boolean;
+  /** Não enviar a quem tem negociação aberta. */
+  excludeOpenDeals: boolean;
+  /** Telefones liberados manualmente apesar do bloqueio comercial. */
+  commercialOverrides: string[];
 };
 
 export const EMPTY_AUDIENCE: AudienceState = {
@@ -135,6 +141,9 @@ export const EMPTY_AUDIENCE: AudienceState = {
   skipMissing: false,
   recentDays: 7,
   recentOverrides: [],
+  excludeCustomers: true,
+  excludeOpenDeals: true,
+  commercialOverrides: [],
 };
 
 export function audiencePayload(a: AudienceState) {
@@ -170,6 +179,9 @@ export function hydrateAudienceConfig(raw: unknown): StoredAudienceConfig | null
       groupsLogic: st.groupsLogic === "and" ? "and" : "or",
       variableMap: st.variableMap ?? {},
       recentOverrides: Array.isArray(st.recentOverrides) ? st.recentOverrides : [],
+      excludeCustomers: st.excludeCustomers !== false,
+      excludeOpenDeals: st.excludeOpenDeals !== false,
+      commercialOverrides: Array.isArray(st.commercialOverrides) ? st.commercialOverrides : [],
     } as AudienceState,
     manualRaw: typeof r.manualRaw === "string" ? r.manualRaw : "",
   };
@@ -222,6 +234,9 @@ export function CampaignAudiencePanel({
       variable_map: value.variableMap,
       recent_contact_days: value.recentDays,
       recent_overrides: value.recentOverrides,
+      exclude_customers: value.excludeCustomers,
+      exclude_open_deals: value.excludeOpenDeals,
+      commercial_overrides: value.commercialOverrides,
     }),
     500,
   );
@@ -427,6 +442,29 @@ export function CampaignAudiencePanel({
           <span className="text-muted-foreground">dias (0 desliga)</span>
         </div>
 
+        <div className="flex flex-wrap items-center gap-4 text-xs">
+          <label htmlFor="aud-excl-customers" className="flex items-center gap-2">
+            <input
+              id="aud-excl-customers"
+              type="checkbox"
+              disabled={readOnly}
+              checked={value.excludeCustomers}
+              onChange={(e) => set({ excludeCustomers: e.target.checked })}
+            />
+            Não enviar a quem já é cliente (negócio ganho ou contrato ativo)
+          </label>
+          <label htmlFor="aud-excl-open" className="flex items-center gap-2">
+            <input
+              id="aud-excl-open"
+              type="checkbox"
+              disabled={readOnly}
+              checked={value.excludeOpenDeals}
+              onChange={(e) => set({ excludeOpenDeals: e.target.checked })}
+            />
+            Não enviar a quem está em negociação aberta
+          </label>
+        </div>
+
         {payload && (
           <div className="rounded-md bg-muted/50 p-2 text-xs" aria-live="polite">
             {previewQ.isLoading || previewQ.isFetching ? (
@@ -448,8 +486,56 @@ export function CampaignAudiencePanel({
                   {p.recentRemovedCount} por envio recente
                   {p.recentOverriddenCount > 0
                     ? ` · ${p.recentOverriddenCount} liberado(s) manualmente`
+                    : ""}{" "}
+                  · {p.commercialRemovedCount} cliente ou em negociação
+                  {p.commercialOverriddenCount > 0
+                    ? ` (${p.commercialOverriddenCount} liberado(s))`
                     : ""}
                 </div>
+                {(p.commercialRemovedCount > 0 || value.commercialOverrides.length > 0) && (
+                  <details className="pt-1">
+                    <summary className="cursor-pointer font-medium">
+                      {p.commercialRemovedCount} contato(s) retirado(s) por ser cliente ou estar em
+                      negociação
+                    </summary>
+                    <ul className="mt-1 max-h-48 space-y-1 overflow-auto">
+                      {value.commercialOverrides.map((ph) => (
+                        <li key={`cov-${ph}`} className="flex items-center gap-2">
+                          <input
+                            id={`cov-${ph}`}
+                            type="checkbox"
+                            checked
+                            disabled={readOnly}
+                            onChange={() =>
+                              set({
+                                commercialOverrides: value.commercialOverrides.filter(
+                                  (x) => x !== ph,
+                                ),
+                              })
+                            }
+                          />
+                          <label htmlFor={`cov-${ph}`}>{ph} — liberado manualmente</label>
+                        </li>
+                      ))}
+                      {p.commercialRemoved.map((r) => (
+                        <li key={`cr-${r.phone}`} className="flex items-center gap-2">
+                          <input
+                            id={`cr-${r.phone}`}
+                            type="checkbox"
+                            checked={false}
+                            disabled={readOnly}
+                            onChange={() =>
+                              set({ commercialOverrides: [...value.commercialOverrides, r.phone] })
+                            }
+                          />
+                          <label htmlFor={`cr-${r.phone}`}>
+                            {r.label || r.phone} · {r.phone} — {r.reason}
+                          </label>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
                 {(p.recentRemovedCount > 0 || value.recentOverrides.length > 0) && (
                   <details className="pt-1">
                     <summary className="cursor-pointer font-medium">

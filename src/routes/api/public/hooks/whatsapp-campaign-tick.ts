@@ -39,6 +39,8 @@ type Campaign = {
   send_interval_max_s: number | null;
   next_send_at: string | null;
   recent_contact_days?: number | null;
+  exclude_customers?: boolean | null;
+  exclude_open_deals?: boolean | null;
 };
 
 /** Variáveis posicionais do template, renderizadas com os dados do destinatário. */
@@ -65,7 +67,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
   const batch = Math.min(allowed, batchOverride ?? 20);
   const { data: recips } = await supabaseAdmin
     .from("whatsapp_campaign_recipients")
-    .select("id, phone, variables, contact_id, override_recent")
+    .select("id, phone, variables, contact_id, override_recent, override_commercial")
     .eq("campaign_id", camp.id)
     .eq("status", "pending")
     .limit(batch);
@@ -154,6 +156,28 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
         await supabaseAdmin
           .from("whatsapp_campaign_recipients")
           .update({ status: "skipped", error: "Envio recente" })
+          .eq("id", r.id);
+        continue;
+      }
+    }
+    // Quarta proteção: cliente (negócio ganho/contrato ativo) ou negociação aberta.
+    if (
+      (camp.exclude_customers !== false || camp.exclude_open_deals !== false) &&
+      !r.override_commercial
+    ) {
+      const { loadCommercialFlags } = await import("@/lib/campaigns/commercial-status.server");
+      const { commercialBlock, COMMERCIAL_LABEL } =
+        await import("@/lib/campaigns/commercial-status");
+      const e164 = toWhatsAppE164(r.phone) as string;
+      const flags = await loadCommercialFlags(supabaseAdmin, camp.workspace_id, [e164]);
+      const reason = commercialBlock(flags.get(e164), {
+        excludeCustomers: camp.exclude_customers !== false,
+        excludeOpenDeals: camp.exclude_open_deals !== false,
+      });
+      if (reason) {
+        await supabaseAdmin
+          .from("whatsapp_campaign_recipients")
+          .update({ status: "skipped", error: COMMERCIAL_LABEL[reason] })
           .eq("id", r.id);
         continue;
       }
@@ -365,7 +389,7 @@ export const Route = createFileRoute("/api/public/hooks/whatsapp-campaign-tick")
           const { data: camps, error } = await supabaseAdmin
             .from("whatsapp_campaigns")
             .select(
-              "id, owner_id, body_template, template_name, template_language, content_variables_template, media_url, media_content_type, rate_per_minute, total, sent, failed, scheduled_at, workspace_id, send_interval_min_s, send_interval_max_s, next_send_at, recent_contact_days",
+              "id, owner_id, body_template, template_name, template_language, content_variables_template, media_url, media_content_type, rate_per_minute, total, sent, failed, scheduled_at, workspace_id, send_interval_min_s, send_interval_max_s, next_send_at, recent_contact_days, exclude_customers, exclude_open_deals",
             )
             .eq("status", "running")
             .or(`scheduled_at.is.null,scheduled_at.lte.${nowIso}`)

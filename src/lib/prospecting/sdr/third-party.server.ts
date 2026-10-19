@@ -103,3 +103,51 @@ export async function saveReferral(
   }
   return result;
 }
+
+/**
+ * Número corporativo informado pelo próprio cliente: grava no campo WhatsApp
+ * do cadastro só se estiver vazio (não troca o número em uso na conversa) e
+ * sempre registra uma observação na linha do tempo. Nunca envia mensagem.
+ */
+export async function saveCorporatePhone(
+  admin: any,
+  p: {
+    workspaceId: string;
+    ownerId: string | null;
+    target: { entity: "lead" | "contact"; id: string };
+    companyId: string | null;
+    phoneE164: string;
+  },
+): Promise<"saved" | "noted"> {
+  const table = p.target.entity === "lead" ? "leads" : "contacts";
+  const { data: row } = await admin
+    .from(table)
+    .select("id, whatsapp_e164")
+    .eq("id", p.target.id)
+    .eq("workspace_id", p.workspaceId)
+    .maybeSingle();
+  let status: "saved" | "noted" = "noted";
+  if (row && !row.whatsapp_e164) {
+    const { error } = await admin
+      .from(table)
+      .update({ whatsapp_e164: p.phoneE164 })
+      .eq("id", p.target.id)
+      .eq("workspace_id", p.workspaceId);
+    if (!error) status = "saved";
+  }
+  await admin.from("activities").insert({
+    workspace_id: p.workspaceId,
+    owner_id: p.ownerId,
+    type: "note",
+    completed: true,
+    subject: "Número corporativo informado na conversa com a Lia",
+    body: `O cliente informou o número ${p.phoneE164} para seguir o contato.${
+      status === "saved"
+        ? " Gravado no campo WhatsApp."
+        : " O campo WhatsApp já tinha outro número e não foi alterado."
+    }`,
+    [p.target.entity === "lead" ? "related_lead_id" : "related_contact_id"]: p.target.id,
+    related_company_id: p.companyId,
+  });
+  return status;
+}

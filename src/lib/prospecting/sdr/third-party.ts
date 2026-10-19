@@ -40,13 +40,18 @@ const AUTO_PATTERNS: RegExp[] = [
   /\bprotocolo (n|no|numero)?\s?\d/,
   /\bassistente virtual\b/,
   /\bfora do horario de atendimento\b/,
+  /\b(prefere|deseja|quer) que (eu )?(te |o |a )?transfira\b/,
+  /\btransfir\w* para um dos nossos (especialistas|atendentes|consultores)\b/,
+  /\bvoce ainda esta ai\b/,
+  /\b(sou o|sou a|sou um|sou uma) (bot|robo|assistente virtual)\b/,
+  /\batendimento (automatizado|automatico|virtual)\b/,
 ];
 
 /** Menu de URA: 2+ linhas iniciadas por "N -" / "N." / "N)". */
 function hasNumberedMenu(raw: string): boolean {
   const lines = String(raw ?? "")
     .split(/\n/)
-    .filter((l) => /^\s*\d{1,2}\s*[-–.)]\s*\S/.test(l));
+    .filter((l) => /^\s*(\d{1,2}|\d\uFE0F?\u20E3)\s*[-–.)]?\s*[-–]?\s*\S/u.test(l) && /\d/.test(l));
   return lines.length >= 2;
 }
 

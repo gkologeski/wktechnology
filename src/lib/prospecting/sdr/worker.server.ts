@@ -18,6 +18,24 @@ import {
   type DraftPayload,
 } from "./actions.server";
 import { recordSdrAction } from "./ingest.server";
+import {
+  asksDecisionMaker,
+  claimsMaterialSent,
+  correctedName,
+  dedupeRepeatedWords,
+  extractCorporatePhone,
+  fixVocative,
+  greetingName,
+  isAiIdentityQuestion,
+  MATERIAL_HANDOFF_REPLY,
+  NOT_NOW_CLOSE,
+  notTheMoment,
+  offersToKeepContact,
+  refusedMeeting,
+  repeatsIdenticalInbound,
+  selfIdentifiedResponsible,
+  showsBusinessInterest,
+} from "./conversation-guards";
 import { resolveChoice } from "./booking-guard";
 import { parseToolConfig, type ScheduleConfig } from "./tools/catalog";
 import { emptyEffects, type ToolCtx } from "./tools/dispatcher";
@@ -332,6 +350,13 @@ export async function processJob(
     return "skipped";
   }
 
+  // Áudios do cliente viram texto antes da Lia ler a conversa.
+  if (job.kind === "reply") {
+    const { ensureAudioTranscripts } = await import("@/lib/whatsapp/inbound-media.server");
+    await ensureAudioTranscripts(admin, conv.id).catch((e: Error) =>
+      console.error("[sdr] transcrição de áudio falhou", e.message),
+    );
+  }
   const { data: msgs } = await admin
     .from("whatsapp_messages")
     .select("id, direction, body, created_at")
@@ -344,7 +369,11 @@ export async function processJob(
   // Atendimento automático (robô/URA): encerra este turno sem responder ao robô.
   if (job.kind === "reply") {
     const lastInbound = [...history].reverse().find((m) => m.direction === "inbound");
-    if (lastInbound && isAutoResponder(String(lastInbound.body ?? ""))) {
+    if (
+      lastInbound &&
+      (isAutoResponder(String(lastInbound.body ?? "")) ||
+        repeatsIdenticalInbound(history as { direction: string; body?: string | null }[]))
+    ) {
       await admin
         .from("sdr_enrollments")
         .update({ follow_up_at: null, cancel_reason: "auto_responder" })
@@ -627,6 +656,46 @@ export async function processJob(
     }
   }
 
+  // Garantias da conversa (casos 16–19/10): nome, repetição, reunião recusada,
+  // decisor já identificado, "não é o momento" e material prometido sem envio.
+  let corporatePhone: string | null = null;
+  if (job.kind === "reply" && !wrongContact && out.intent !== "opt_out") {
+    const h = history as { direction: string; body?: string | null }[];
+    const lastIn = [...h].reverse().find((m) => m.direction === "inbound");
+    const lastText = String(lastIn?.body ?? "");
+    out.reply = dedupeRepeatedWords(out.reply);
+    out.reply = fixVocative(out.reply, [correctedName(h) ?? "", greetingName(h) ?? ""]);
+    corporatePhone = extractCorporatePhone(lastText);
+    if (out.intent !== "handoff" && out.intent !== "schedule_meeting") {
+      if (notTheMoment(lastText) && offersToKeepContact(out.reply)) {
+        out.reply = NOT_NOW_CLOSE;
+        out.material_ids = [];
+      } else if (refusedMeeting(h) && showsBusinessInterest(h)) {
+        out.intent = "handoff";
+        out.handoff_reason =
+          "Cliente recusou reunião, mas pediu informações/orçamento por mensagem: atendimento humano.";
+      } else if (
+        claimsMaterialSent(out.reply) &&
+        !(agentConfig.guardrails.attach_materials && out.material_ids.length)
+      ) {
+        out.intent = "handoff";
+        out.reply = MATERIAL_HANDOFF_REPLY;
+        out.handoff_reason =
+          "Cliente pediu material e o envio automático de materiais não está disponível para este agente.";
+      } else if (selfIdentifiedResponsible(h) && asksDecisionMaker(out.reply)) {
+        const alt = await rewriteReply(
+          deps,
+          job.workspace_id,
+          system,
+          history,
+          "O cliente JÁ disse que é o responsável pela área de TI. Não pergunte cargo, se é decisor ou quem decide. Siga a conversa com a próxima pergunta útil.",
+        );
+        if (alt && !asksDecisionMaker(alt) && !mentionsPrice(alt))
+          out.reply = dedupeRepeatedWords(alt);
+      }
+    }
+  }
+
   // Qualificação canônica: mesmo questionário, cálculo e linha da Prospecção.
   const inbound = history.filter((m) => m.direction === "inbound");
   const target = enr.lead_id
@@ -855,6 +924,24 @@ export async function processJob(
       .in("status", ["running"]);
     return obsolete ? "discarded" : "drafted";
   }
+  if (corporatePhone && target) {
+    const { saveCorporatePhone } = await import("./third-party.server");
+    const st = await saveCorporatePhone(admin, {
+      workspaceId: job.workspace_id,
+      ownerId: (enr.owner_id as string | null) ?? null,
+      target,
+      companyId: (enr.company_id as string | null) ?? null,
+      phoneE164: corporatePhone,
+    }).catch(() => "failed" as const);
+    await recordSdrAction(admin, {
+      workspace_id: job.workspace_id,
+      enrollment_id: enr.id,
+      job_id: job.id,
+      kind: "corporate_phone_saved",
+      status: st === "failed" ? "failed" : "success",
+      payload: { phone: corporatePhone, result: st },
+    });
+  }
   if (referralToSave) {
     const { saveReferral } = await import("./third-party.server");
     const saved = await saveReferral(admin, {
@@ -978,6 +1065,9 @@ export async function tickSdr(admin: Admin, limit = 10, deps: WorkerDeps = defau
   const meetings = await reconcileMeetings(admin, 50, enabled);
   const directMeetings = await reconcileDirectMeetings(admin, enabled);
   const followUps = await scheduleFollowUps(admin, 50, enabled);
+  const aiQuestionHandoffs = await handoffSilentAfterAiQuestion(admin, enabled, deps).catch(
+    () => 0,
+  );
   // Tempo de aguardo do cliente: respostas ficam adiadas (lease_until futuro).
   // O despertar do enfileiramento espera aqui até a mais próxima vencer.
   await waitForDueReply(admin, enabled);
@@ -1010,7 +1100,78 @@ export async function tickSdr(admin: Admin, limit = 10, deps: WorkerDeps = defau
     }
     if (!merged) break;
   }
-  return { meetings, directMeetings, followUps, stranded, claimed, ...results };
+  return {
+    meetings,
+    directMeetings,
+    followUps,
+    aiQuestionHandoffs,
+    stranded,
+    claimed,
+    ...results,
+  };
+}
+
+/** Tempo sem resposta depois de "você é uma IA?" até passar a uma pessoa. */
+export const AI_QUESTION_SILENCE_MS = 30 * 60_000;
+
+/**
+ * Cliente perguntou se fala com uma IA, a Lia respondeu e ele parou de
+ * responder: a conversa passa para uma pessoa da equipe (retomadas canceladas).
+ */
+async function handoffSilentAfterAiQuestion(
+  admin: Admin,
+  workspaceIds: string[],
+  deps: WorkerDeps,
+): Promise<number> {
+  const now = Date.now();
+  const { data: rows } = await admin
+    .from("whatsapp_messages")
+    .select("conversation_id, body, created_at")
+    .in("workspace_id", workspaceIds)
+    .eq("direction", "inbound")
+    .gte("created_at", new Date(now - 3 * 86_400_000).toISOString())
+    .lte("created_at", new Date(now - AI_QUESTION_SILENCE_MS).toISOString())
+    .order("created_at", { ascending: false })
+    .limit(500);
+  const candidates = new Map<string, string>();
+  for (const r of (rows ?? []) as {
+    conversation_id: string;
+    body: string | null;
+    created_at: string;
+  }[])
+    if (!candidates.has(r.conversation_id) && isAiIdentityQuestion(String(r.body ?? "")))
+      candidates.set(r.conversation_id, r.created_at);
+  let n = 0;
+  for (const [convId, askedAt] of candidates) {
+    const { data: conv } = await admin
+      .from("whatsapp_conversations")
+      .select("id, workspace_id, ai_owner, sdr_enrollment_id")
+      .eq("id", convId)
+      .maybeSingle();
+    if (!conv || conv.ai_owner !== "ai" || !conv.sdr_enrollment_id) continue;
+    const { data: later } = await admin
+      .from("whatsapp_messages")
+      .select("direction, created_at")
+      .eq("conversation_id", convId)
+      .gt("created_at", askedAt)
+      .order("created_at", { ascending: true })
+      .limit(20);
+    const after = (later ?? []) as { direction: string; created_at: string }[];
+    if (after.some((m) => m.direction === "inbound")) continue; // cliente voltou a falar
+    const answered = after.find((m) => m.direction !== "inbound");
+    if (!answered || now - new Date(answered.created_at).getTime() < AI_QUESTION_SILENCE_MS)
+      continue;
+    await deps.handoffToHuman(admin, {
+      workspaceId: conv.workspace_id,
+      enrollmentId: conv.sdr_enrollment_id,
+      conversationId: convId,
+      reason:
+        "Cliente perguntou se estava falando com uma IA e parou de responder: atendimento humano.",
+      actorUserId: null,
+    });
+    n++;
+  }
+  return n;
 }
 
 /** Espera (até 60 s) a resposta adiada mais próxima vencer o tempo de aguardo. */
