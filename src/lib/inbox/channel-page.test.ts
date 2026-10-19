@@ -16,13 +16,13 @@ describe("parseChannelPage", () => {
   it("lê contagens exatas, total e cursor; descarta linhas sem id/sort_at", () => {
     const p = parseChannelPage<{ id: string }>({
       items: [row("a"), { id: "b" }, null],
-      counts: { all: 7463, mine: 12, unassigned: 7000 },
+      counts: { all: 7463, mine: 12, unassigned: 7000, interacted: 40 },
       total: 12,
       has_more: true,
       next_cursor: { at: "2026-10-01T00:00:00Z", id: "a" },
     });
     expect(p.items.map((i) => i.id)).toEqual(["a"]);
-    expect(p.counts).toEqual({ all: 7463, mine: 12, unassigned: 7000 });
+    expect(p.counts).toEqual({ all: 7463, mine: 12, unassigned: 7000, interacted: 40 });
     expect(p.total).toBe(12);
     expect(p.hasMore).toBe(true);
   });
