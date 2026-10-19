@@ -232,7 +232,29 @@ export function InboxError({
   );
 }
 
-export function InboxAvatar({ label, className }: { label: string; className?: string }) {
+export function InboxAvatar({
+  label,
+  className,
+  photoUrl,
+}: {
+  label: string;
+  className?: string;
+  photoUrl?: string | null;
+}) {
+  if (photoUrl) {
+    return (
+      <img
+        src={photoUrl}
+        alt={`Foto de ${label}`}
+        loading="lazy"
+        referrerPolicy="no-referrer"
+        className={cn(
+          "h-10 w-10 shrink-0 rounded-[calc(var(--radius)+0.65rem)] object-cover",
+          className,
+        )}
+      />
+    );
+  }
   const initials = label
     .replace(/[^\p{L} ]/gu, "")
     .split(" ")
@@ -309,7 +331,9 @@ export function InboxConversationItem({
   meta,
   channelIcon,
   unread,
+  photoUrl,
 }: {
+  photoUrl?: string | null;
   label: string;
   title?: string;
   preview?: string;
@@ -335,7 +359,7 @@ export function InboxConversationItem({
       )}
     >
       <div className="relative">
-        <InboxAvatar label={label} />
+        <InboxAvatar label={label} photoUrl={photoUrl} />
         {channelIcon ? (
           <span className="absolute -bottom-0.5 -right-0.5 grid h-5 w-5 place-items-center rounded-full border-2 border-product-panel bg-card">
             {channelIcon}
@@ -381,8 +405,10 @@ export function InboxConversationHeader({
   label,
   subtitle,
   actions,
+  photoUrl,
 }: {
   label: string;
+  photoUrl?: string | null;
   subtitle?: ReactNode;
   actions?: ReactNode;
 }) {
@@ -390,6 +416,7 @@ export function InboxConversationHeader({
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 bg-product-panel px-3 py-1">
       <InboxAvatar
         label={label}
+        photoUrl={photoUrl}
         className="h-7 w-7 shrink-0 rounded-[calc(var(--radius)+0.35rem)] text-[11px]"
       />
       <div className="min-w-[9rem] flex-1">
