@@ -85,6 +85,13 @@ export async function applyLinkedinPhoto(
       .eq("id", id)
       .maybeSingle();
     if (!row || !canAutoReplacePhoto(row.photo_source)) return false;
+    // Confirma permissão de edição antes de gravar o arquivo.
+    const probe = await supabase
+      .from(table)
+      .update({ photo_updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select("id");
+    if (!probe.data?.length) return false;
     const path = await storeRemotePersonPhoto(workspaceId, entity, id, url);
     if (!path) return false;
     const { data } = await supabase
