@@ -9,6 +9,7 @@ import {
   Timer,
   CheckCheck,
   LayoutDashboard,
+  Download,
 } from "lucide-react";
 import type { SidebarGroup } from "@/lib/menu-config";
 
@@ -101,6 +102,17 @@ export const PROJECTS_SIDEBAR_GROUPS: SidebarGroup[] = [
           "techprojects.timesheet.view.team",
           "techprojects.timesheet.view.workspace",
         ],
+      },
+    ],
+  },
+  {
+    label: "Configurações",
+    items: [
+      {
+        title: "Importar do Clockify",
+        url: "/projects/settings/imports/clockify",
+        need: "admin",
+        icon: Download,
       },
     ],
   },
