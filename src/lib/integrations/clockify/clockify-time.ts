@@ -67,7 +67,12 @@ function clockToSeconds(hms: string): number {
 
 /** Primeiro instante (segundos) cuja data local é posterior à data local de `t`. */
 export function nextLocalDayStart(t: number, tz: string): number {
-  const day = localParts(t, tz).date;
+  const here = localParts(t, tz);
+  const day = here.date;
+  // Caminho rápido: sem transição de fuso no dia, a virada fica no fim do relógio local.
+  const guess = t + (86400 - clockToSeconds(here.time));
+  if (localParts(guess, tz).date !== day && localParts(guess - 1, tz).date === day) return guess;
+  // Transição de DST: busca binária ao segundo.
   let lo = t;
   let hi = t + 27 * 3600; // nenhum dia civil passa de 25 h
   while (localParts(hi, tz).date === day) hi += 3600;
