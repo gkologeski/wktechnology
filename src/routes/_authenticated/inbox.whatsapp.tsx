@@ -414,7 +414,6 @@ function WhatsAppInbox() {
                   ) : null}
                 </TabsTrigger>
               </TabsList>
-
             </Tabs>
             <InboxListSearch
               value={search}
