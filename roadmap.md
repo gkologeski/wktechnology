@@ -149,13 +149,13 @@
 
 # Roadmap — Importador Clockify → TechProjects (WK)
 
-- [ ] Migration aditiva: conexão cifrada, execuções, staging, vínculos, mapeamentos, RPC de escrita sem workflows
-- [ ] Adaptador Clockify somente leitura (allowlist de URLs, 429/Retry-After, Last-Page)
-- [ ] Motor retomável: inventário → prévia (dry run) → importação em lotes idempotentes com checkpoint/cancelamento
-- [ ] Segmentação por dia no fuso (meia-noite/DST), segundos preservados, sobreposições e timers abertos em staging
-- [ ] Mapeamento de usuários/clientes/projetos com revisão manual
-- [ ] Tela em /projects/settings/imports/clockify + item no menu e na central de importações
-- [ ] Testes com fixture (sem chamadas reais) e guia de migração
+- [x] Migration aditiva: conexão cifrada, execuções, staging, vínculos, mapeamentos, RPC de escrita sem workflows
+- [x] Adaptador Clockify somente leitura (allowlist de URLs, 429/Retry-After, Last-Page)
+- [x] Motor retomável: inventário → prévia (dry run) → importação em lotes idempotentes com checkpoint/cancelamento
+- [x] Segmentação por dia no fuso (meia-noite/DST), segundos preservados, sobreposições e timers abertos em staging
+- [x] Mapeamento de usuários/clientes/projetos com revisão manual
+- [x] Tela em /projects/settings/imports/clockify + item no menu e na central de importações
+- [x] Testes com fixture (sem chamadas reais) e guia de migração
 - [ ] Conectar Clockify, escolher workspace de origem e rodar inventário real (bloqueado: aguarda chave/acesso admin do usuário)
 - [ ] Importação real (bloqueado: aguarda prévia conferida pelo usuário)
 - [ ] Agendar tick em segundo plano (bloqueado: depende de publicação aprovada)
