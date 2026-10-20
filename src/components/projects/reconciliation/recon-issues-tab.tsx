@@ -42,6 +42,7 @@ import {
   type ReconProvider,
 } from "@/lib/projects/reconciliation-labels";
 import { NoteDialog } from "./note-dialog";
+import { Pager } from "./pager";
 import {
   ACTION_LABEL,
   PAGE,
@@ -315,29 +316,12 @@ export function ReconIssuesTab({
               ))}
             </TableBody>
           </Table>
-          <div className="flex items-center justify-between text-sm text-text-secondary">
-            <span aria-live="polite">
-              {(q.data?.total ?? 0).toLocaleString("pt-BR")} alertas · página {page} de {pages}
-            </span>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => p - 1)}
-              >
-                Anterior
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={page >= pages}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Próxima
-              </Button>
-            </div>
-          </div>
+          <Pager
+            label={`${(q.data?.total ?? 0).toLocaleString("pt-BR")} alertas`}
+            page={page}
+            pages={pages}
+            onPage={setPage}
+          />
         </>
       )}
       <NoteDialog
