@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # Runner da prova isolada do ciclo 1 (TechProjects). Exige o harness em scripts/isolated-db.
-# Uso: bash tests/sql/project-reconciliation-isolated.sh <arquivo-da-migração.sql>
+# Uso: bash tests/sql/project-reconciliation-isolated.sh <migração.sql> [<migração.sql> ...]
 set -euo pipefail
 cd "$(dirname "$0")/../.."
-MIG="${1:?informe o arquivo da migração}"
+[ "$#" -ge 1 ] || { echo "informe as migrações"; exit 2; }
 . scripts/isolated-db/env.sh
 bash scripts/isolated-db/stop.sh >/dev/null 2>&1 || true
 rm -rf "$ISO_DATA"
 bash scripts/isolated-db/start.sh >/dev/null
 iso_guard
 iso_psql -f scripts/isolated-db/seed.sql >/dev/null
-iso_psql -f "$MIG" >/dev/null 2>&1
+for MIG in "$@"; do iso_psql -v ON_ERROR_STOP=1 -f "$MIG" >/dev/null 2>&1 || { echo "FALHOU ao aplicar $MIG"; exit 1; }; done
 OUT=$(mktemp)
 iso_psql -f tests/sql/project-reconciliation-isolated.sql 2>&1 | tee "$OUT" | grep -E "ok:|FALHOU|ERROR" || true
 grep -q "concurrency-point" "$OUT" || { echo "FALHOU antes do ponto de concorrência"; exit 1; }

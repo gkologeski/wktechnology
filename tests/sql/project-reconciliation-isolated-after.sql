@@ -52,7 +52,18 @@ ROLLBACK;
 BEGIN;
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claims', '{"sub":"10000000-0000-4000-8000-000000000004","role":"authenticated"}', true) \g /dev/null
-SELECT t_recon.ok('não-admin não vê staging/links na visão geral', (public.project_reconciliation_overview(:A)->'clockify'->>'linked_entries')::int = 0);
+DO $$ BEGIN
+  PERFORM public.project_reconciliation_overview('aaaaaaaa-0000-4000-8000-00000000000a');
+  RAISE EXCEPTION 'FALHOU: não-admin leu a visão geral';
+EXCEPTION WHEN insufficient_privilege THEN RAISE NOTICE 'ok: não-admin não lê a visão geral'; END $$;
+DO $$ BEGIN
+  PERFORM * FROM public.project_reconciliation_breakdown('aaaaaaaa-0000-4000-8000-00000000000a', 'all', '2020-01-01', '2027-12-31', 'month');
+  RAISE EXCEPTION 'FALHOU: não-admin leu a conferência';
+EXCEPTION WHEN insufficient_privilege THEN RAISE NOTICE 'ok: não-admin não lê a conferência'; END $$;
+DO $$ BEGIN
+  PERFORM public.project_reconciliation_overview_body('aaaaaaaa-0000-4000-8000-00000000000a');
+  RAISE EXCEPTION 'FALHOU: corpo interno exposto';
+EXCEPTION WHEN insufficient_privilege THEN RAISE NOTICE 'ok: corpo interno não é executável pelo usuário'; END $$;
 DO $$ BEGIN
   PERFORM public.project_links_apply_exact('aaaaaaaa-0000-4000-8000-00000000000a');
   RAISE EXCEPTION 'FALHOU: não-admin vinculou';
