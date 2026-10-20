@@ -25,36 +25,7 @@ import {
 } from "@/lib/projects/reconciliation.functions";
 import { PROVIDER_LABEL, type ReconProvider } from "@/lib/projects/reconciliation-labels";
 import { NoteDialog } from "./note-dialog";
-
-const CRITERION_LABEL: Record<string, string> = {
-  name_exact: "Mesmo nome",
-  email_ambiguous: "E-mail repetido (ambíguo)",
-  source_conflict: "Origem e mapeamento divergem",
-};
-const BATCH_LABEL: Record<string, string> = {
-  apply_exact: "Vínculos exatos",
-  confirm_suggestion: "Sugestões confirmadas",
-  reject_suggestion: "Sugestões recusadas",
-  revert: "Desvinculação",
-};
-const COUNT_LABEL: Record<string, string> = {
-  company_links: "empresas ligadas",
-  person_links: "apontamentos com pessoa",
-  allocation_links: "com alocação",
-  suggestions_new: "novas sugestões",
-  company_conflicts_new: "conflitos de empresa",
-  person_exact_subjects: "usuários com e-mail único",
-  person_ambiguous_subjects: "usuários ambíguos",
-  confirmed: "confirmadas",
-  rows_linked: "registros ligados",
-  rejected: "recusadas",
-  reverted: "desfeitos",
-  skipped_changed_since: "mantidos (mudaram depois)",
-};
-const MEMBER_LABEL: Record<string, string> = {
-  active: "Ativo",
-  inactive: "Histórico (sem acesso)",
-};
+import { BATCH_LABEL, COUNT_LABEL, CRITERION_LABEL, MEMBER_LABEL } from "./recon-links-labels";
 
 function toggle(set: Set<string>, id: string, on: boolean) {
   const n = new Set(set);
