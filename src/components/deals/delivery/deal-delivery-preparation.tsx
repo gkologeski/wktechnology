@@ -162,9 +162,8 @@ export function DealDeliveryPreparation({ dealId }: { dealId: string }) {
   }
 
   const head = deliveryHeadline(o);
-  const pending = o.pending.filter(
-    (p) => p !== "no_contract" || o.projects.length > 0 || o.deal.stage_type === "won",
-  );
+  // "Ganho sem projeto" já está no cabeçalho; não repete como pendência.
+  const pending = o.pending.filter((p) => p !== "won_without_project");
 
   return (
     <section className="space-y-3" aria-label="Preparação da entrega">

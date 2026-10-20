@@ -86,7 +86,7 @@ export function DealHistoryRow({
                   label={CRITERION_LABEL[c.criterion] ?? c.criterion}
                 />
                 <span className="text-xs text-muted-foreground">
-                  {formatHms(c.logged_seconds ?? 0)} h
+                  {formatHms(c.logged_seconds ?? 0)} apontadas
                   {c.days_from_close !== null
                     ? ` · 1º apontamento ${c.days_from_close >= 0 ? `${c.days_from_close} dia(s) depois` : `${-c.days_from_close} dia(s) antes`} do ganho`
                     : ""}
