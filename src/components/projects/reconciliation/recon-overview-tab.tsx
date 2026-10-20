@@ -64,7 +64,7 @@ function ProviderCard({
       <dl className="grid grid-cols-2 gap-3 md:grid-cols-3">
         {[
           ["Coletados (bruto)", collected],
-          ["Importados para o ERP", imported],
+          ["Registros ligados ao ERP", imported],
           ["Só no staging", stagedOnly],
           ["Pendentes de revisão", pending],
           ["Inacessíveis (403)", forbidden.length],
