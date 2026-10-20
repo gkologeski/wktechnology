@@ -52,6 +52,12 @@ cliente consome por polling e abre um diálogo:
 Padrão para novas ações desse tipo: gravar a intenção, o cliente detecta e
 abre; nunca depender de push para correção do fluxo.
 
+`ensure_deal_delivery` (Projetos › "Criar ou vincular projeto de entrega") chama
+a mesma porta do banco usada pela fila automática de negócio ganho
+(`deal_delivery_workflow_ensure`): confere workspace do run, política ativa,
+origem "workflow" permitida e etapa do tipo ganho; repetir devolve o mesmo
+projeto. Detalhes em `docs/architecture/deal-delivery.md`.
+
 ## 4. Workflow Builder
 
 `src/components/workflows/**`:

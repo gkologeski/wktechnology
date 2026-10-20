@@ -184,9 +184,10 @@
 
 # Roadmap — TechProjects Ciclo 2 (negócio ganho → entrega)
 
-- [ ] Banco: vínculo direto/relacional negócio↔projeto, política por workspace, fila com retry/lease, eventos/revisões, guardas de coerência
-- [ ] Ação central criar-ou-vincular (trigger de transição, worker no banco, ação de workflow)
-- [ ] Telas: negócio (Entrega/Preparação), projeto (origem), empresa, contrato, política, central › Negócios
-- [ ] Histórico: candidatos com explicação, vínculos exatos auditados/reversíveis, prévia e lote, criar faltante
-- [ ] Prova isolada SQL/RLS + testes + verify/build + Playwright; ativar política WK sem replay
+- [x] Banco: vínculo direto/relacional negócio↔projeto, política por workspace, fila com retry/lease, eventos/revisões, guardas de coerência
+- [x] Ação central criar-ou-vincular (trigger de transição, worker no banco, ação de workflow)
+- [x] Telas: negócio (Entrega/Preparação), projeto (origem), empresa, contrato, política, central › Negócios
+- [x] Histórico: candidatos com explicação, vínculos exatos auditados/reversíveis, prévia e lote, criar faltante
+- [x] Prova isolada SQL/RLS + testes + verify/build + Playwright; ativar política WK sem replay
+- [ ] Prova ponta a ponta de um ganho real no WK (aguarda o primeiro negócio ganho de verdade; não criei negócio de teste no WK)
 - [ ] Publicar (aguarda revisão do usuário)
