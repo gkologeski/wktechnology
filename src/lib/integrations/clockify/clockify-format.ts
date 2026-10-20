@@ -111,3 +111,16 @@ export const MAPPING_NOTE_LABEL: Record<string, string> = {
   sem_membro: "Nenhum membro com este e-mail",
   membro_duplicado: "Dois usuários do Clockify no mesmo membro",
 };
+
+/** Tom do selo de situação (StatusBadge) para conexões e execuções. */
+type Tone = "open" | "onhold" | "closed" | "draft";
+
+export function toneFor(status: string): Tone {
+  if (["connected", "completed"].includes(status)) return "open";
+  if (["failed", "cancelled"].includes(status)) return "closed";
+  if (
+    ["running", "queued", "connecting", "paused", "cancel_requested", "configured"].includes(status)
+  )
+    return "onhold";
+  return "draft";
+}

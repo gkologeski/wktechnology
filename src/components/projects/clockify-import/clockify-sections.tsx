@@ -36,21 +36,10 @@ import {
   RUN_STATUS_LABEL,
   formatMoney,
   formatSeconds,
+  toneFor,
 } from "@/lib/integrations/clockify/clockify-format";
 import { ENTRY_REASON_LABEL } from "@/lib/integrations/clockify/clockify-map";
 import { CLOCKIFY_REGIONS, CLOCKIFY_REGION_LABEL } from "@/lib/integrations/clockify/clockify-urls";
-
-type Tone = "open" | "onhold" | "closed" | "draft";
-
-export function toneFor(status: string): Tone {
-  if (["connected", "completed"].includes(status)) return "open";
-  if (["failed", "cancelled"].includes(status)) return "closed";
-  if (
-    ["running", "queued", "connecting", "paused", "cancel_requested", "configured"].includes(status)
-  )
-    return "onhold";
-  return "draft";
-}
 
 const CONN_LABEL: Record<string, string> = {
   not_configured: "Não configurado",
