@@ -127,6 +127,7 @@ class Query {
 
 export class FakeDb {
   tables: Record<string, Row[]> = {};
+  catalogCalls: string[] = [];
 
   from(table: string) {
     const q = new Query(this, table) as any;
