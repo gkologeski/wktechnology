@@ -6,7 +6,13 @@ import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { assertNotReadOnlyView } from "@/lib/view-as-guard.server";
 import { decryptApiKey, encryptApiKey } from "@/lib/ai/provider-resolver.server";
 import { ClockifyApiError, ClockifyClient, minIntervalForPlan } from "./clockify-client";
-import { assertRegion, clockifyBases, isClockifyId, normalizeSubdomain, type ClockifyRegion } from "./clockify-urls";
+import {
+  assertRegion,
+  clockifyBases,
+  isClockifyId,
+  normalizeSubdomain,
+  type ClockifyRegion,
+} from "./clockify-urls";
 import { normalizeEmail } from "./clockify-map";
 import { ClockifyEngine, defaultOptions, type Db, type RunOptions } from "./clockify-engine.server";
 
@@ -32,7 +38,9 @@ export async function requireClockifyAdmin(
     _user: userId,
   });
   if (error || data !== true) {
-    throw new Error("Apenas administradores ativos do workspace podem usar o importador do Clockify.");
+    throw new Error(
+      "Apenas administradores ativos do workspace podem usar o importador do Clockify.",
+    );
   }
   if (opts.write) await assertNotReadOnlyView(supabase);
   return { workspaceId, userId };
@@ -98,7 +106,9 @@ export async function getClockifyStatus(ctx: Ctx) {
   const conn = await loadConn(ctx.workspaceId);
   const { data: runs } = await db
     .from("clockify_import_runs")
-    .select("id, kind, status, phase, counts, error, created_at, started_at, finished_at, preview_confirmed_at, source_workspace_id, options")
+    .select(
+      "id, kind, status, phase, counts, error, created_at, started_at, finished_at, preview_confirmed_at, source_workspace_id, options",
+    )
     .eq("workspace_id", ctx.workspaceId)
     .order("created_at", { ascending: false })
     .limit(10);
@@ -127,7 +137,9 @@ export async function saveClockifyConnection(
   const key = input.apiKey?.trim();
   if (key) {
     if (!/^[A-Za-z0-9+/=_-]{20,200}$/.test(key)) {
-      throw new Error("Chave do Clockify em formato inválido. Copie a chave completa em Profile settings › API.");
+      throw new Error(
+        "Chave do Clockify em formato inválido. Copie a chave completa em Profile settings › API.",
+      );
     }
     patch.key_ciphertext = await encryptApiKey(key);
     patch.key_last4 = key.slice(-4);
@@ -144,7 +156,9 @@ export async function saveClockifyConnection(
     patch.status = "configured";
   }
   if (!current) patch.created_by = ctx.userId;
-  const { error } = await db.from("clockify_connections").upsert(patch, { onConflict: "workspace_id" });
+  const { error } = await db
+    .from("clockify_connections")
+    .upsert(patch, { onConflict: "workspace_id" });
   if (error) throw new Error(error.message);
   return maskConnection(await loadConn(ctx.workspaceId));
 }
@@ -166,7 +180,12 @@ export async function removeClockifyConnection(ctx: Ctx) {
   return { ok: true };
 }
 
-type CkWorkspace = { id: string; name: string; featureSubscriptionType?: string | null; subdomain?: unknown };
+type CkWorkspace = {
+  id: string;
+  name: string;
+  featureSubscriptionType?: string | null;
+  subdomain?: unknown;
+};
 
 /** Testa a chave (somente GET) e lista os workspaces que ela enxerga. */
 export async function testClockifyConnection(ctx: Ctx) {
@@ -177,7 +196,9 @@ export async function testClockifyConnection(ctx: Ctx) {
   const now = new Date().toISOString();
   try {
     const client = await clientFor(conn, null);
-    const { data: me } = await client.get<{ id?: string; name?: string; activeWorkspace?: string }>("/user");
+    const { data: me } = await client.get<{ id?: string; name?: string; activeWorkspace?: string }>(
+      "/user",
+    );
     const { data: wss } = await client.get<CkWorkspace[]>("/workspaces");
     const workspaces = (Array.isArray(wss) ? wss : [])
       .filter((w) => isClockifyId(w.id))
@@ -188,12 +209,17 @@ export async function testClockifyConnection(ctx: Ctx) {
       .eq("id", conn.id);
     return { ok: true, userName: me?.name ?? null, workspaces };
   } catch (e) {
-    const msg = e instanceof ClockifyApiError ? e.message : "Falha ao testar a conexão com o Clockify.";
+    const msg =
+      e instanceof ClockifyApiError ? e.message : "Falha ao testar a conexão com o Clockify.";
     await db
       .from("clockify_connections")
       .update({ status: "failed", last_error: msg, last_tested_at: now })
       .eq("id", conn.id);
-    return { ok: false, message: msg, workspaces: [] as Array<{ id: string; name: string; plan: string | null }> };
+    return {
+      ok: false,
+      message: msg,
+      workspaces: [] as Array<{ id: string; name: string; plan: string | null }>,
+    };
   }
 }
 
@@ -253,14 +279,16 @@ export async function startClockifyRun(
       .order("finished_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    if (latest?.id !== pv.id) throw new Error("Existe uma prévia mais recente. Confira e confirme a última.");
+    if (latest?.id !== pv.id)
+      throw new Error("Existe uma prévia mais recente. Confira e confirme a última.");
     const { count } = await db
       .from("clockify_mappings")
       .select("id", { count: "exact", head: true })
       .eq("workspace_id", ctx.workspaceId)
       .eq("source_workspace_id", conn.source_workspace_id)
       .gt("updated_at", pv.finished_at as string);
-    if ((count ?? 0) > 0) throw new Error("Mapeamentos mudaram depois da prévia. Gere uma nova prévia.");
+    if ((count ?? 0) > 0)
+      throw new Error("Mapeamentos mudaram depois da prévia. Gere uma nova prévia.");
     options = defaultOptions({ ...(pv.options as Partial<RunOptions>), refetch: false });
     previewRunId = pv.id;
   }
@@ -280,7 +308,9 @@ export async function startClockifyRun(
     .single();
   if (error) {
     if (/clockify_import_runs_one_active/.test(error.message)) {
-      throw new Error("Já existe uma execução em andamento. Aguarde, retome ou cancele antes de iniciar outra.");
+      throw new Error(
+        "Já existe uma execução em andamento. Aguarde, retome ou cancele antes de iniciar outra.",
+      );
     }
     throw new Error(error.message);
   }
@@ -329,7 +359,10 @@ export async function advanceClockifyRun(workspaceId: string, runId: string) {
     if (!conn?.key_ciphertext) {
       await db
         .from("clockify_import_runs")
-        .update({ status: "paused", error: "Chave do Clockify removida. Cadastre de novo para retomar." })
+        .update({
+          status: "paused",
+          error: "Chave do Clockify removida. Cadastre de novo para retomar.",
+        })
         .eq("id", runId);
       return { advanced: false };
     }
@@ -348,10 +381,13 @@ export async function advanceClockifyRun(workspaceId: string, runId: string) {
   }
 }
 
-export async function setClockifyRunState(ctx: Ctx, runId: string, action: "cancel" | "pause" | "resume") {
+export async function setClockifyRunState(
+  ctx: Ctx,
+  runId: string,
+  action: "cancel" | "pause" | "resume",
+) {
   const db = await admin();
-  const next =
-    action === "cancel" ? "cancel_requested" : action === "pause" ? "paused" : "running";
+  const next = action === "cancel" ? "cancel_requested" : action === "pause" ? "paused" : "running";
   const from = action === "resume" ? ["paused", "failed"] : ["queued", "running", "paused"];
   const { data, error } = await db
     .from("clockify_import_runs")
@@ -386,13 +422,20 @@ export async function getClockifyRun(ctx: Ctx, runId: string) {
   const db = await admin();
   const { data, error } = await db
     .from("clockify_import_runs")
-    .select("id, kind, status, phase, counts, report, error, created_at, started_at, finished_at, heartbeat_at, preview_confirmed_at, options, checkpoint")
+    .select(
+      "id, kind, status, phase, counts, report, error, created_at, started_at, finished_at, heartbeat_at, preview_confirmed_at, options, checkpoint",
+    )
     .eq("id", runId)
     .eq("workspace_id", ctx.workspaceId)
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Execução não encontrada.");
-  const cp = (data.checkpoint ?? {}) as { waitUntil?: number; index?: number; ids?: string[]; page?: number };
+  const cp = (data.checkpoint ?? {}) as {
+    waitUntil?: number;
+    index?: number;
+    ids?: string[];
+    page?: number;
+  };
   return {
     ...data,
     checkpoint: undefined,
@@ -424,11 +467,18 @@ export async function listClockifyMappings(ctx: Ctx, entity: "user" | "client" |
 
 export async function setClockifyMapping(
   ctx: Ctx,
-  input: { entity: "user" | "client" | "project"; externalId: string; decision: "confirmed" | "ignore" | "create" | "pending"; targetId?: string | null },
+  input: {
+    entity: "user" | "client" | "project";
+    externalId: string;
+    decision: "confirmed" | "ignore" | "create" | "pending";
+    targetId?: string | null;
+  },
 ) {
   if (!isClockifyId(input.externalId)) throw new Error("Identificador inválido.");
-  if (input.entity !== "project" && input.decision === "create") throw new Error("Decisão inválida.");
-  if (input.decision === "confirmed" && !input.targetId) throw new Error("Escolha o registro de destino.");
+  if (input.entity !== "project" && input.decision === "create")
+    throw new Error("Decisão inválida.");
+  if (input.decision === "confirmed" && !input.targetId)
+    throw new Error("Escolha o registro de destino.");
   const db = await admin();
   const conn = await loadConn(ctx.workspaceId);
   if (!conn?.source_workspace_id) throw new Error("Escolha o workspace de origem.");
@@ -447,12 +497,21 @@ export async function setClockifyMapping(
     .eq("external_id", input.externalId.toLowerCase())
     .select("external_id")
     .maybeSingle();
-  if (error) throw new Error(/fora do workspace/.test(error.message) ? "Destino não pertence a este workspace." : error.message);
+  if (error)
+    throw new Error(
+      /fora do workspace/.test(error.message)
+        ? "Destino não pertence a este workspace."
+        : error.message,
+    );
   if (!data) throw new Error("Mapeamento não encontrado. Gere uma prévia primeiro.");
   return { ok: true };
 }
 
-export async function clockifyTargetOptions(ctx: Ctx, entity: "user" | "client" | "project", q: string) {
+export async function clockifyTargetOptions(
+  ctx: Ctx,
+  entity: "user" | "client" | "project",
+  q: string,
+) {
   const db = await admin();
   const term = q.replace(/[%_\\,()]/g, "").trim();
   if (entity === "user") {
@@ -465,22 +524,42 @@ export async function clockifyTargetOptions(ctx: Ctx, entity: "user" | "client" 
     const { data: profiles } = ids.length
       ? await db.from("profiles").select("id, full_name").in("id", ids)
       : { data: [] as Array<{ id: string; full_name: string | null }> };
-    const names = new Map((profiles ?? []).map((p) => [p.id as string, (p.full_name as string | null) ?? null]));
+    const names = new Map(
+      (profiles ?? []).map((p) => [p.id as string, (p.full_name as string | null) ?? null]),
+    );
     return (members ?? [])
-      .map((m) => ({ id: m.user_id as string, label: names.get(m.user_id as string) ?? "Sem nome", status: m.status as string }))
+      .map((m) => ({
+        id: m.user_id as string,
+        label: names.get(m.user_id as string) ?? "Sem nome",
+        status: m.status as string,
+      }))
       .filter((o) => !term || o.label.toLowerCase().includes(term.toLowerCase()))
       .slice(0, 50);
   }
   if (entity === "client") {
-    let qb = db.from("companies").select("id, name").eq("workspace_id", ctx.workspaceId).order("name").limit(30);
+    let qb = db
+      .from("companies")
+      .select("id, name")
+      .eq("workspace_id", ctx.workspaceId)
+      .order("name")
+      .limit(30);
     if (term) qb = qb.ilike("name", `%${term}%`);
     const { data } = await qb;
     return (data ?? []).map((c) => ({ id: c.id as string, label: c.name as string, status: null }));
   }
-  let qb = db.from("projects").select("id, name, status").eq("workspace_id", ctx.workspaceId).order("name").limit(30);
+  let qb = db
+    .from("projects")
+    .select("id, name, status")
+    .eq("workspace_id", ctx.workspaceId)
+    .order("name")
+    .limit(30);
   if (term) qb = qb.ilike("name", `%${term}%`);
   const { data } = await qb;
-  return (data ?? []).map((p) => ({ id: p.id as string, label: p.name as string, status: p.status as string }));
+  return (data ?? []).map((p) => ({
+    id: p.id as string,
+    label: p.name as string,
+    status: p.status as string,
+  }));
 }
 
 export async function listClockifyStaging(
@@ -493,7 +572,9 @@ export async function listClockifyStaging(
   const size = 50;
   let qb = db
     .from("clockify_staging_records")
-    .select("external_id, entity_type, status, reason_code, reason_detail, last_seen_at, payload", { count: "exact" })
+    .select("external_id, entity_type, status, reason_code, reason_detail, last_seen_at, payload", {
+      count: "exact",
+    })
     .eq("workspace_id", ctx.workspaceId)
     .eq("source_workspace_id", conn.source_workspace_id)
     .eq("entity_type", input.entity)
@@ -506,7 +587,9 @@ export async function listClockifyStaging(
   return {
     total: count ?? 0,
     rows: (data ?? []).map((r) => {
-      const p = r.payload as Record<string, unknown> & { timeInterval?: { start?: string; end?: string | null } };
+      const p = r.payload as Record<string, unknown> & {
+        timeInterval?: { start?: string; end?: string | null };
+      };
       return {
         externalId: r.external_id as string,
         status: r.status as string,
@@ -567,7 +650,13 @@ export async function createClockifyHistoricalIdentity(ctx: Ctx, externalId: str
   if (mErr) throw new Error(mErr.message);
   const { error } = await db
     .from("clockify_mappings")
-    .update({ target_id: newId, decision: "confirmed", method: "created", decided_by: ctx.userId, decided_at: new Date().toISOString() })
+    .update({
+      target_id: newId,
+      decision: "confirmed",
+      method: "created",
+      decided_by: ctx.userId,
+      decided_at: new Date().toISOString(),
+    })
     .eq("workspace_id", ctx.workspaceId)
     .eq("source_workspace_id", conn.source_workspace_id)
     .eq("entity_type", "user")

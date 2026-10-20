@@ -10,7 +10,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { EmptyState, StatusBadge } from "@/components/techhire/ui";
 import {
   DECISION_LABEL,
@@ -32,7 +39,13 @@ export type MappingRow = {
 export type TargetOption = { id: string; label: string; status: string | null };
 
 const decisionTone = (d: string) =>
-  d === "auto" || d === "confirmed" ? "open" : d === "pending" ? "onhold" : d === "create" ? "draft" : "closed";
+  d === "auto" || d === "confirmed"
+    ? "open"
+    : d === "pending"
+      ? "onhold"
+      : d === "create"
+        ? "draft"
+        : "closed";
 
 export function MappingsTable({
   entity,
@@ -47,7 +60,11 @@ export function MappingsTable({
   rows: MappingRow[];
   options: TargetOption[];
   onSearch: (q: string) => void;
-  onDecide: (externalId: string, decision: "confirmed" | "ignore" | "create" | "pending", targetId?: string | null) => void;
+  onDecide: (
+    externalId: string,
+    decision: "confirmed" | "ignore" | "create" | "pending",
+    targetId?: string | null,
+  ) => void;
   onCreateIdentity?: (externalId: string) => void;
   busy: boolean;
 }) {
@@ -59,7 +76,13 @@ export function MappingsTable({
   );
   const optionLabel = new Map(options.map((o) => [o.id, o.label]));
   if (!rows.length) {
-    return <EmptyState compact title="Nada para mapear ainda" description="Gere uma prévia para listar os itens do Clockify." />;
+    return (
+      <EmptyState
+        compact
+        title="Nada para mapear ainda"
+        description="Gere uma prévia para listar os itens do Clockify."
+      />
+    );
   }
   return (
     <div className="space-y-3">
@@ -78,7 +101,11 @@ export function MappingsTable({
         </div>
         <div className="min-w-0 flex-1 space-y-1.5">
           <Label htmlFor={`s-${entity}`}>Buscar destino no ERP</Label>
-          <Input id={`s-${entity}`} placeholder="Digite parte do nome" onChange={(e) => onSearch(e.target.value)} />
+          <Input
+            id={`s-${entity}`}
+            placeholder="Digite parte do nome"
+            onChange={(e) => onSearch(e.target.value)}
+          />
         </div>
       </div>
       {visible.length === 0 ? (
@@ -101,10 +128,17 @@ export function MappingsTable({
                   <TableRow key={r.external_id}>
                     <TableCell className="max-w-[14rem]">
                       <div className="truncate font-medium">{r.label ?? r.external_id}</div>
-                      {r.note && <div className="text-xs text-text-tertiary">{MAPPING_NOTE_LABEL[r.note] ?? r.note}</div>}
+                      {r.note && (
+                        <div className="text-xs text-text-tertiary">
+                          {MAPPING_NOTE_LABEL[r.note] ?? r.note}
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell>
-                      <StatusBadge status={decisionTone(r.decision)} label={DECISION_LABEL[r.decision] ?? r.decision} />
+                      <StatusBadge
+                        status={decisionTone(r.decision)}
+                        label={DECISION_LABEL[r.decision] ?? r.decision}
+                      />
                       {r.target_id && (
                         <div className="mt-1 max-w-[12rem] truncate text-xs text-text-secondary">
                           → {optionLabel.get(r.target_id) ?? "registro vinculado"}
@@ -113,7 +147,12 @@ export function MappingsTable({
                     </TableCell>
                     <TableCell className="max-w-[16rem] text-xs text-text-secondary">
                       {r.candidates.length
-                        ? r.candidates.map((c) => `${c.name ?? "Sem nome"}${c.status && c.status !== "active" ? ` (${c.status === "inactive" ? "inativo" : c.status})` : ""}`).join(", ")
+                        ? r.candidates
+                            .map(
+                              (c) =>
+                                `${c.name ?? "Sem nome"}${c.status && c.status !== "active" ? ` (${c.status === "inactive" ? "inativo" : c.status})` : ""}`,
+                            )
+                            .join(", ")
                         : "—"}
                     </TableCell>
                     <TableCell>
@@ -122,12 +161,24 @@ export function MappingsTable({
                           value={sel}
                           onValueChange={(v) => setPicked((p) => ({ ...p, [r.external_id]: v }))}
                         >
-                          <SelectTrigger className="w-52" aria-label={`Destino de ${r.label ?? r.external_id}`}>
+                          <SelectTrigger
+                            className="w-52"
+                            aria-label={`Destino de ${r.label ?? r.external_id}`}
+                          >
                             <SelectValue placeholder="Escolher destino" />
                           </SelectTrigger>
                           <SelectContent>
-                            {[...r.candidates.map((c) => ({ id: (c.user_id ?? c.id) as string, label: c.name ?? "Sem nome", status: c.status ?? null })), ...options]
-                              .filter((o, i, arr) => o.id && arr.findIndex((x) => x.id === o.id) === i)
+                            {[
+                              ...r.candidates.map((c) => ({
+                                id: (c.user_id ?? c.id) as string,
+                                label: c.name ?? "Sem nome",
+                                status: c.status ?? null,
+                              })),
+                              ...options,
+                            ]
+                              .filter(
+                                (o, i, arr) => o.id && arr.findIndex((x) => x.id === o.id) === i,
+                              )
                               .map((o) => (
                                 <SelectItem key={o.id} value={o.id}>
                                   {o.label}
@@ -136,20 +187,39 @@ export function MappingsTable({
                               ))}
                           </SelectContent>
                         </Select>
-                        <Button size="sm" disabled={busy || !sel} onClick={() => onDecide(r.external_id, "confirmed", sel)}>
+                        <Button
+                          size="sm"
+                          disabled={busy || !sel}
+                          onClick={() => onDecide(r.external_id, "confirmed", sel)}
+                        >
                           Vincular
                         </Button>
                         {entity === "project" && (
-                          <Button size="sm" variant="outline" disabled={busy} onClick={() => onDecide(r.external_id, "create")}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={busy}
+                            onClick={() => onDecide(r.external_id, "create")}
+                          >
                             Criar novo
                           </Button>
                         )}
                         {entity === "user" && onCreateIdentity && r.decision === "pending" && (
-                          <Button size="sm" variant="outline" disabled={busy} onClick={() => onCreateIdentity(r.external_id)}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={busy}
+                            onClick={() => onCreateIdentity(r.external_id)}
+                          >
                             Identidade histórica
                           </Button>
                         )}
-                        <Button size="sm" variant="ghost" disabled={busy} onClick={() => onDecide(r.external_id, "ignore")}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={busy}
+                          onClick={() => onDecide(r.external_id, "ignore")}
+                        >
                           Ignorar
                         </Button>
                       </div>
@@ -170,7 +240,12 @@ export type StagingRow = {
   status: string;
   reason: string | null;
   detail: string | null;
-  summary: { name: string | null; description: string | null; start: string | null; end: string | null };
+  summary: {
+    name: string | null;
+    description: string | null;
+    start: string | null;
+    end: string | null;
+  };
 };
 
 export function StagingTable({
@@ -206,7 +281,9 @@ export function StagingTable({
             {rows.map((r) => (
               <TableRow key={r.externalId}>
                 <TableCell className="max-w-[18rem]">
-                  <div className="truncate">{r.summary.name ?? r.summary.description ?? "Sem descrição"}</div>
+                  <div className="truncate">
+                    {r.summary.name ?? r.summary.description ?? "Sem descrição"}
+                  </div>
                   <div className="font-mono text-[11px] text-text-tertiary">{r.externalId}</div>
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-xs tabular-nums">
@@ -229,10 +306,20 @@ export function StagingTable({
           {total.toLocaleString("pt-BR")} registro(s) · página {page + 1} de {pages}
         </span>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" disabled={page === 0 || loading} onClick={() => onPage(page - 1)}>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={page === 0 || loading}
+            onClick={() => onPage(page - 1)}
+          >
             Anterior
           </Button>
-          <Button size="sm" variant="outline" disabled={page + 1 >= pages || loading} onClick={() => onPage(page + 1)}>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={page + 1 >= pages || loading}
+            onClick={() => onPage(page + 1)}
+          >
             Próxima
           </Button>
         </div>

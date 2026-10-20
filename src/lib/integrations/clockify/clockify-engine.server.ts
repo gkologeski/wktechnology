@@ -58,7 +58,13 @@ export type StagingEntity =
   | "holiday"
   | "time_off_policy";
 
-export type Capability = "collected" | "empty" | "forbidden" | "not_available" | "failed" | "not_collected";
+export type Capability =
+  | "collected"
+  | "empty"
+  | "forbidden"
+  | "not_available"
+  | "failed"
+  | "not_collected";
 
 type Q = Record<string, string | number | boolean | string[] | undefined>;
 
@@ -75,25 +81,148 @@ type CollectSpec = {
 
 /** Inventário por capacidade. Itens fora desta lista aparecem como "não coletado". */
 export const COLLECT_SPECS: CollectSpec[] = [
-  { phase: "users", entity: "user", label: "Usuários e vínculos", path: (w) => `/workspaces/${w}/users`, variants: [{ status: "ALL", memberships: "ALL", "include-roles": "false" }, { status: "ALL", "account-statuses": "LIMITED", memberships: "ALL", "include-roles": "false" }], paged: true, pageSize: 100, required: true },
-  { phase: "groups", entity: "group", label: "Grupos", path: (w) => `/workspaces/${w}/user-groups`, variants: [{}], paged: true, pageSize: 100, required: false },
-  { phase: "clients", entity: "client", label: "Clientes", path: (w) => `/workspaces/${w}/clients`, variants: [{ archived: "false" }, { archived: "true" }], paged: true, pageSize: 100, required: false },
-  { phase: "projects", entity: "project", label: "Projetos (inclui arquivados)", path: (w) => `/workspaces/${w}/projects`, variants: [{ hydrated: true }, { hydrated: true, archived: true }], paged: true, pageSize: 100, required: true },
-  { phase: "tags", entity: "tag", label: "Etiquetas", path: (w) => `/workspaces/${w}/tags`, variants: [{ archived: false }, { archived: true }], paged: true, pageSize: 100, required: false },
-  { phase: "custom_fields", entity: "custom_field", label: "Campos personalizados", path: (w) => `/workspaces/${w}/custom-fields`, variants: [{}], paged: false, pageSize: 0, required: false },
-  { phase: "approvals", entity: "approval_request", label: "Aprovações", path: (w) => `/workspaces/${w}/approval-requests`, variants: [{ status: "PENDING" }, { status: "APPROVED" }, { status: "WITHDRAWN_APPROVAL" }], paged: true, pageSize: 100, required: false },
-  { phase: "expenses", entity: "expense", label: "Despesas", path: (w) => `/workspaces/${w}/expenses`, variants: [{}], paged: true, pageSize: 100, required: false },
-  { phase: "invoices", entity: "invoice", label: "Faturas", path: (w) => `/workspaces/${w}/invoices`, variants: [{}], paged: true, pageSize: 100, required: false },
-  { phase: "holidays", entity: "holiday", label: "Feriados", path: (w) => `/workspaces/${w}/holidays`, variants: [{}], paged: false, pageSize: 0, required: false },
-  { phase: "time_off_policies", entity: "time_off_policy", label: "Políticas de folga", path: (w) => `/workspaces/${w}/time-off/policies`, variants: [{}], paged: true, pageSize: 50, required: false },
+  {
+    phase: "users",
+    entity: "user",
+    label: "Usuários e vínculos",
+    path: (w) => `/workspaces/${w}/users`,
+    variants: [
+      { status: "ALL", memberships: "ALL", "include-roles": "false" },
+      {
+        status: "ALL",
+        "account-statuses": "LIMITED",
+        memberships: "ALL",
+        "include-roles": "false",
+      },
+    ],
+    paged: true,
+    pageSize: 100,
+    required: true,
+  },
+  {
+    phase: "groups",
+    entity: "group",
+    label: "Grupos",
+    path: (w) => `/workspaces/${w}/user-groups`,
+    variants: [{}],
+    paged: true,
+    pageSize: 100,
+    required: false,
+  },
+  {
+    phase: "clients",
+    entity: "client",
+    label: "Clientes",
+    path: (w) => `/workspaces/${w}/clients`,
+    variants: [{ archived: "false" }, { archived: "true" }],
+    paged: true,
+    pageSize: 100,
+    required: false,
+  },
+  {
+    phase: "projects",
+    entity: "project",
+    label: "Projetos (inclui arquivados)",
+    path: (w) => `/workspaces/${w}/projects`,
+    variants: [{ hydrated: true }, { hydrated: true, archived: true }],
+    paged: true,
+    pageSize: 100,
+    required: true,
+  },
+  {
+    phase: "tags",
+    entity: "tag",
+    label: "Etiquetas",
+    path: (w) => `/workspaces/${w}/tags`,
+    variants: [{ archived: false }, { archived: true }],
+    paged: true,
+    pageSize: 100,
+    required: false,
+  },
+  {
+    phase: "custom_fields",
+    entity: "custom_field",
+    label: "Campos personalizados",
+    path: (w) => `/workspaces/${w}/custom-fields`,
+    variants: [{}],
+    paged: false,
+    pageSize: 0,
+    required: false,
+  },
+  {
+    phase: "approvals",
+    entity: "approval_request",
+    label: "Aprovações",
+    path: (w) => `/workspaces/${w}/approval-requests`,
+    variants: [{ status: "PENDING" }, { status: "APPROVED" }, { status: "WITHDRAWN_APPROVAL" }],
+    paged: true,
+    pageSize: 100,
+    required: false,
+  },
+  {
+    phase: "expenses",
+    entity: "expense",
+    label: "Despesas",
+    path: (w) => `/workspaces/${w}/expenses`,
+    variants: [{}],
+    paged: true,
+    pageSize: 100,
+    required: false,
+  },
+  {
+    phase: "invoices",
+    entity: "invoice",
+    label: "Faturas",
+    path: (w) => `/workspaces/${w}/invoices`,
+    variants: [{}],
+    paged: true,
+    pageSize: 100,
+    required: false,
+  },
+  {
+    phase: "holidays",
+    entity: "holiday",
+    label: "Feriados",
+    path: (w) => `/workspaces/${w}/holidays`,
+    variants: [{}],
+    paged: false,
+    pageSize: 0,
+    required: false,
+  },
+  {
+    phase: "time_off_policies",
+    entity: "time_off_policy",
+    label: "Políticas de folga",
+    path: (w) => `/workspaces/${w}/time-off/policies`,
+    variants: [{}],
+    paged: true,
+    pageSize: 50,
+    required: false,
+  },
 ];
 
 /** Dados que esta versão não coleta, com o motivo (mostrados no inventário). */
 export const NOT_COLLECTED: Array<{ entity: string; label: string; reason: string }> = [
-  { entity: "time_off_requests", label: "Pedidos de folga", reason: "A leitura no Clockify é por POST de consulta; fica para uma próxima versão." },
-  { entity: "attendance", label: "Presença (attendance)", reason: "Disponível só como relatório; não é importado." },
-  { entity: "logins", label: "Logins e senhas", reason: "Autenticação do Clockify não é transferível." },
-  { entity: "roles", label: "Papéis de administrador do Clockify", reason: "Não são replicados: o acesso no ERP segue o RBAC do workspace." },
+  {
+    entity: "time_off_requests",
+    label: "Pedidos de folga",
+    reason: "A leitura no Clockify é por POST de consulta; fica para uma próxima versão.",
+  },
+  {
+    entity: "attendance",
+    label: "Presença (attendance)",
+    reason: "Disponível só como relatório; não é importado.",
+  },
+  {
+    entity: "logins",
+    label: "Logins e senhas",
+    reason: "Autenticação do Clockify não é transferível.",
+  },
+  {
+    entity: "roles",
+    label: "Papéis de administrador do Clockify",
+    reason: "Não são replicados: o acesso no ERP segue o RBAC do workspace.",
+  },
 ];
 
 export const DRY_PHASES = [
@@ -109,7 +238,13 @@ export const DRY_PHASES = [
   "done",
 ] as const;
 
-export const IMPORT_PHASES = ["projects_write", "members_write", "tasks_write", "entries_write", "done"] as const;
+export const IMPORT_PHASES = [
+  "projects_write",
+  "members_write",
+  "tasks_write",
+  "entries_write",
+  "done",
+] as const;
 
 export type RunOptions = {
   refetch: boolean;
@@ -207,7 +342,13 @@ const BUDGET_MS = 18_000;
 class Pause extends Error {}
 
 // ------------------------------------------------------------------ helpers de banco
-async function fetchAll<T>(build: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>, max = 200_000): Promise<T[]> {
+async function fetchAll<T>(
+  build: (
+    from: number,
+    to: number,
+  ) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
+  max = 200_000,
+): Promise<T[]> {
   const out: T[] = [];
   for (let from = 0; from < max; from += 1000) {
     const { data, error } = await build(from, from + 999);
@@ -304,7 +445,10 @@ export class ClockifyEngine {
       } else {
         this.run.status = "failed";
         const msg = e instanceof Error ? e.message : String(e);
-        await this.save({ error: msg.slice(0, 500), finished_at: new Date(this.now()).toISOString() });
+        await this.save({
+          error: msg.slice(0, 500),
+          finished_at: new Date(this.now()).toISOString(),
+        });
         return this.run;
       }
     }
@@ -314,7 +458,11 @@ export class ClockifyEngine {
   }
 
   private async cancelRequested(): Promise<boolean> {
-    const { data } = await this.db.from("clockify_import_runs").select("status").eq("id", this.run.id).maybeSingle();
+    const { data } = await this.db
+      .from("clockify_import_runs")
+      .select("status")
+      .eq("id", this.run.id)
+      .maybeSingle();
     return data?.status === "cancel_requested";
   }
 
@@ -328,7 +476,10 @@ export class ClockifyEngine {
       updated_at: new Date(this.now()).toISOString(),
     };
     // Pausa/cancelamento pedidos durante o trabalho prevalecem sobre o estado em memória.
-    const from = this.run.status === "cancelled" ? ["queued", "running", "cancel_requested"] : ["queued", "running"];
+    const from =
+      this.run.status === "cancelled"
+        ? ["queued", "running", "cancel_requested"]
+        : ["queued", "running"];
     const { data, error } = await this.db
       .from("clockify_import_runs")
       .update({ ...base, status: this.run.status, ...extra })
@@ -349,7 +500,16 @@ export class ClockifyEngine {
   private nextPhase(list: readonly string[]) {
     const i = list.indexOf(this.run.phase);
     this.run.phase = list[i + 1] ?? "done";
-    for (const k of ["variant", "page", "index", "ids", "offset", "lastEnd", "reportChunk"] as const) delete this.cp[k];
+    for (const k of [
+      "variant",
+      "page",
+      "index",
+      "ids",
+      "offset",
+      "lastEnd",
+      "reportChunk",
+    ] as const)
+      delete this.cp[k];
   }
 
   private setCapability(entity: string, cap: Capability, count?: number, detail?: string) {
@@ -359,14 +519,23 @@ export class ClockifyEngine {
   }
 
   private bumpCount(entity: string, n: number) {
-    const caps = (this.run.counts.capabilities ??= {}) as Record<string, { status: Capability; count: number; detail: string | null }>;
+    const caps = (this.run.counts.capabilities ??= {}) as Record<
+      string,
+      { status: Capability; count: number; detail: string | null }
+    >;
     const c = (caps[entity] ??= { status: "collected", count: 0, detail: null });
     c.count += n;
     if (c.status === "empty" && c.count > 0) c.status = "collected";
   }
 
   private async step(): Promise<boolean> {
-    if (this.run.phase === "start") this.run.phase = this.run.kind === "dry_run" ? (this.opts.refetch ? "workspace" : "mappings") : "projects_write";
+    if (this.run.phase === "start")
+      this.run.phase =
+        this.run.kind === "dry_run"
+          ? this.opts.refetch
+            ? "workspace"
+            : "mappings"
+          : "projects_write";
     if (this.run.phase === "done") return this.finish();
     if (this.run.kind === "dry_run") return this.dryStep();
     return this.importStep();
@@ -374,7 +543,8 @@ export class ClockifyEngine {
 
   private async finish(): Promise<boolean> {
     this.run.status = "completed";
-    const report = this.run.kind === "dry_run" ? await this.buildPreviewReport() : this.buildImportReport();
+    const report =
+      this.run.kind === "dry_run" ? await this.buildPreviewReport() : this.buildImportReport();
     await this.save({ report, finished_at: new Date(this.now()).toISOString() });
     return true;
   }
@@ -397,7 +567,11 @@ export class ClockifyEngine {
     if (phase === "time_entries") return this.collectEntries();
     if (phase === "in_progress") {
       try {
-        const r = await this.client.page<unknown>(`/workspaces/${this.ws}/time-entries/status/in-progress`, 1, 1000);
+        const r = await this.client.page<unknown>(
+          `/workspaces/${this.ws}/time-entries/status/in-progress`,
+          1,
+          1000,
+        );
         this.cp.inProgress = r.items.length;
       } catch (e) {
         if (!(e instanceof ClockifyApiError) || e.code === "rate_limited") throw e;
@@ -441,7 +615,9 @@ export class ClockifyEngine {
     for (let i = 0; i < unique.length; i += 500) {
       const { error } = await this.db
         .from("clockify_staging_records")
-        .upsert(unique.slice(i, i + 500), { onConflict: "workspace_id,source_workspace_id,entity_type,external_id" });
+        .upsert(unique.slice(i, i + 500), {
+          onConflict: "workspace_id,source_workspace_id,entity_type,external_id",
+        });
       if (error) throw new Error(error.message);
     }
     return unique.length;
@@ -451,7 +627,10 @@ export class ClockifyEngine {
     const variant = this.cp.variant ?? 0;
     const page = this.cp.page ?? 1;
     if (variant >= spec.variants.length) {
-      const caps = (this.run.counts.capabilities ?? {}) as Record<string, { status: string; count: number }>;
+      const caps = (this.run.counts.capabilities ?? {}) as Record<
+        string,
+        { status: string; count: number }
+      >;
       if (!caps[spec.entity]) this.setCapability(spec.entity, "empty", 0);
       else if (caps[spec.entity].count > 0) {
         // Variações de filtro (ex.: ativos + arquivados) podem repetir itens: conta os distintos.
@@ -474,11 +653,21 @@ export class ClockifyEngine {
       let items: unknown[];
       let last: boolean;
       if (spec.paged) {
-        const r = await this.client.page<unknown>(spec.path(this.ws), page, spec.pageSize, spec.variants[variant]);
+        const r = await this.client.page<unknown>(
+          spec.path(this.ws),
+          page,
+          spec.pageSize,
+          spec.variants[variant],
+        );
         items = extractItems(r.items);
         last = r.lastPage;
         // Proteção: endpoint que ignora paginação devolve sempre a mesma página.
-        if (page > 1 && items.length && items.every((i) => (this.cp.ids ?? []).includes(itemId(i) ?? ""))) last = true;
+        if (
+          page > 1 &&
+          items.length &&
+          items.every((i) => (this.cp.ids ?? []).includes(itemId(i) ?? ""))
+        )
+          last = true;
         this.cp.ids = items.map((i) => itemId(i) ?? "").slice(0, 200);
       } else {
         const { data } = await this.client.get<unknown>(spec.path(this.ws), spec.variants[variant]);
@@ -492,7 +681,13 @@ export class ClockifyEngine {
         this.cp.page = 1;
       } else this.cp.page = page + 1;
     } catch (e) {
-      if (!(e instanceof ClockifyApiError) || e.code === "rate_limited" || e.code === "network" || e.code === "server") throw e;
+      if (
+        !(e instanceof ClockifyApiError) ||
+        e.code === "rate_limited" ||
+        e.code === "network" ||
+        e.code === "server"
+      )
+        throw e;
       if (spec.required && variant === 0 && (e.code === "unauthorized" || e.code === "forbidden")) {
         throw new Error(`${spec.label}: ${e.message}`);
       }
@@ -502,7 +697,12 @@ export class ClockifyEngine {
         const c = caps[spec.entity] as { detail?: string | null };
         c.detail = `Filtro ${variant + 1}: ${e.message}`;
       } else {
-        const cap: Capability = e.code === "forbidden" || e.code === "unauthorized" ? "forbidden" : e.code === "not_found" || e.code === "bad_request" ? "not_available" : "failed";
+        const cap: Capability =
+          e.code === "forbidden" || e.code === "unauthorized"
+            ? "forbidden"
+            : e.code === "not_found" || e.code === "bad_request"
+              ? "not_available"
+              : "failed";
         this.setCapability(spec.entity, cap, undefined, e.message);
       }
       this.cp.variant = variant + 1;
@@ -540,15 +740,26 @@ export class ClockifyEngine {
     }
     const page = this.cp.page ?? 1;
     try {
-      const r = await this.client.page<CkTask>(`/workspaces/${this.ws}/projects/${ids[i]}/tasks`, page, 200);
-      const n = await this.stage("task", r.items.map((t) => ({ ...t, projectId: t.projectId ?? ids[i] })));
+      const r = await this.client.page<CkTask>(
+        `/workspaces/${this.ws}/projects/${ids[i]}/tasks`,
+        page,
+        200,
+      );
+      const n = await this.stage(
+        "task",
+        r.items.map((t) => ({ ...t, projectId: t.projectId ?? ids[i] })),
+      );
       this.bumpCount("task", n);
       if (r.lastPage) {
         this.cp.index = i + 1;
         this.cp.page = 1;
       } else this.cp.page = page + 1;
     } catch (e) {
-      if (!(e instanceof ClockifyApiError) || ["rate_limited", "network", "server"].includes(e.code)) throw e;
+      if (
+        !(e instanceof ClockifyApiError) ||
+        ["rate_limited", "network", "server"].includes(e.code)
+      )
+        throw e;
       this.setCapability("task", "failed", undefined, e.message);
       this.cp.index = i + 1;
       this.cp.page = 1;
@@ -575,11 +786,18 @@ export class ClockifyEngine {
     const page = this.cp.page ?? 1;
     try {
       const size = (this.run.counts.entry_page_size as number | undefined) ?? 200;
-      const r = await this.client.page<CkTimeEntry>(`/workspaces/${this.ws}/user/${ids[i]}/time-entries`, page, size, { hydrated: false });
+      const r = await this.client.page<CkTimeEntry>(
+        `/workspaces/${this.ws}/user/${ids[i]}/time-entries`,
+        page,
+        size,
+        { hydrated: false },
+      );
       const n = await this.stage("time_entry", r.items);
       this.bumpCount("time_entry", n);
       for (const e of r.items) {
-        const s = e.timeInterval?.start ? Math.round(Date.parse(e.timeInterval.start) / 1000) : null;
+        const s = e.timeInterval?.start
+          ? Math.round(Date.parse(e.timeInterval.start) / 1000)
+          : null;
         const en = e.timeInterval?.end ? Math.round(Date.parse(e.timeInterval.end) / 1000) : null;
         if (s !== null) {
           this.cp.minStart = this.cp.minStart == null ? s : Math.min(this.cp.minStart, s);
@@ -595,7 +813,11 @@ export class ClockifyEngine {
         this.cp.page = 1;
       } else this.cp.page = page + 1;
     } catch (e) {
-      if (!(e instanceof ClockifyApiError) || ["rate_limited", "network", "server"].includes(e.code)) throw e;
+      if (
+        !(e instanceof ClockifyApiError) ||
+        ["rate_limited", "network", "server"].includes(e.code)
+      )
+        throw e;
       if (e.code === "unauthorized") throw new Error(`Apontamentos: ${e.message}`);
       if (e.code === "bad_request" && (this.run.counts.entry_page_size ?? 200) !== 50) {
         // Tamanho de página recusado: volta ao padrão documentado (50) e repete.
@@ -604,9 +826,17 @@ export class ClockifyEngine {
         return false;
       }
       // 403 de um usuário específico: registra e segue (diagnóstico, não zero silencioso).
-      const failed = ((this.run.counts.time_entry_user_errors ??= []) as Array<{ user: string; error: string }>);
+      const failed = (this.run.counts.time_entry_user_errors ??= []) as Array<{
+        user: string;
+        error: string;
+      }>;
       failed.push({ user: ids[i], error: e.message });
-      this.setCapability("time_entry", "collected", undefined, `${failed.length} pessoa(s) sem acesso aos apontamentos`);
+      this.setCapability(
+        "time_entry",
+        "collected",
+        undefined,
+        `${failed.length} pessoa(s) sem acesso aos apontamentos`,
+      );
       this.cp.index = i + 1;
       this.cp.page = 1;
     }
@@ -632,25 +862,34 @@ export class ClockifyEngine {
     }
     const to = Math.min(from + YEAR, max + 86400 * 2);
     try {
-      const res = await this.client.report<{ groupOne?: Array<{ _id?: string; duration?: number }> }>(
-        `/workspaces/${this.ws}/reports/summary`,
-        {
-          dateRangeStart: new Date(from * 1000).toISOString(),
-          dateRangeEnd: new Date(to * 1000 - 1).toISOString(),
-          timeZone: "UTC",
-          amountShown: "HIDE_AMOUNT",
-          exportType: "JSON",
-          summaryFilter: { groups: ["USER"] },
-        },
-      );
+      const res = await this.client.report<{
+        groupOne?: Array<{ _id?: string; duration?: number }>;
+      }>(`/workspaces/${this.ws}/reports/summary`, {
+        dateRangeStart: new Date(from * 1000).toISOString(),
+        dateRangeEnd: new Date(to * 1000 - 1).toISOString(),
+        timeZone: "UTC",
+        amountShown: "HIDE_AMOUNT",
+        exportType: "JSON",
+        summaryFilter: { groups: ["USER"] },
+      });
       const byU = (this.cp.reportedByUser ??= {});
       for (const g of res.groupOne ?? []) {
-        if (g._id && typeof g.duration === "number") byU[g._id] = (byU[g._id] ?? 0) + Math.round(g.duration);
+        if (g._id && typeof g.duration === "number")
+          byU[g._id] = (byU[g._id] ?? 0) + Math.round(g.duration);
       }
       this.cp.reportChunk = chunk + 1;
     } catch (e) {
-      if (!(e instanceof ClockifyApiError) || ["rate_limited", "network", "server"].includes(e.code)) throw e;
-      this.setCapability("report_summary", e.code === "forbidden" ? "forbidden" : "not_available", 0, e.message);
+      if (
+        !(e instanceof ClockifyApiError) ||
+        ["rate_limited", "network", "server"].includes(e.code)
+      )
+        throw e;
+      this.setCapability(
+        "report_summary",
+        e.code === "forbidden" ? "forbidden" : "not_available",
+        0,
+        e.message,
+      );
       this.cp.reportedByUser = undefined;
       this.nextPhase(DRY_PHASES);
     }
@@ -658,7 +897,11 @@ export class ClockifyEngine {
   }
 
   // ------------------------------------------------------------ mapeamentos
-  private async loadStaging<T>(entity: StagingEntity): Promise<Array<{ id: string; external_id: string; payload: T; payload_hash: string; status: string }>> {
+  private async loadStaging<T>(
+    entity: StagingEntity,
+  ): Promise<
+    Array<{ id: string; external_id: string; payload: T; payload_hash: string; status: string }>
+  > {
     return fetchAll((f, t) =>
       this.db
         .from("clockify_staging_records")
@@ -672,7 +915,13 @@ export class ClockifyEngine {
   }
 
   private async loadMappings(entity: "user" | "client" | "project") {
-    return fetchAll<{ external_id: string; target_id: string | null; decision: string; method: string; label: string | null }>((f, t) =>
+    return fetchAll<{
+      external_id: string;
+      target_id: string | null;
+      decision: string;
+      method: string;
+      label: string | null;
+    }>((f, t) =>
       this.db
         .from("clockify_mappings")
         .select("external_id, target_id, decision, method, label")
@@ -685,9 +934,9 @@ export class ClockifyEngine {
 
   private async upsertMappings(rows: Array<Record<string, unknown>>) {
     for (let i = 0; i < rows.length; i += 500) {
-      const { error } = await this.db
-        .from("clockify_mappings")
-        .upsert(rows.slice(i, i + 500), { onConflict: "workspace_id,source_workspace_id,entity_type,external_id" });
+      const { error } = await this.db.from("clockify_mappings").upsert(rows.slice(i, i + 500), {
+        onConflict: "workspace_id,source_workspace_id,entity_type,external_id",
+      });
       if (error) throw new Error(error.message);
     }
   }
@@ -697,7 +946,11 @@ export class ClockifyEngine {
     // Usuários: e-mail normalizado contra membros do workspace (qualquer status).
     const users = (await this.loadStaging<CkUser>("user")).map((r) => r.payload);
     const members = await fetchAll<{ user_id: string; status: string }>((f, t) =>
-      this.db.from("workspace_members").select("user_id, status").eq("workspace_id", ws).range(f, t),
+      this.db
+        .from("workspace_members")
+        .select("user_id, status")
+        .eq("workspace_id", ws)
+        .range(f, t),
     );
     const ids = members.map((m) => m.user_id);
     const emails = await this.deps.memberEmails(ids);
@@ -731,7 +984,9 @@ export class ClockifyEngine {
     );
 
     // Clientes: só sugestões por nome exato normalizado; nunca vínculo automático.
-    const clients = (await this.loadStaging<{ id: string; name: string }>("client")).map((r) => r.payload);
+    const clients = (await this.loadStaging<{ id: string; name: string }>("client")).map(
+      (r) => r.payload,
+    );
     const prevClients = new Map((await this.loadMappings("client")).map((m) => [m.external_id, m]));
     const clientRows: Array<Record<string, unknown>> = [];
     for (let i = 0; i < clients.length; i += 10) {
@@ -740,7 +995,12 @@ export class ClockifyEngine {
         part.map(async (c) => {
           const term = (c.name ?? "").replace(/[%_\\]/g, "").trim();
           if (!term) return [] as Array<{ id: string; name: string }>;
-          const { data } = await this.db.from("companies").select("id, name").eq("workspace_id", ws).ilike("name", term).limit(10);
+          const { data } = await this.db
+            .from("companies")
+            .select("id, name")
+            .eq("workspace_id", ws)
+            .ilike("name", term)
+            .limit(10);
           return (data ?? []) as Array<{ id: string; name: string }>;
         }),
       );
@@ -767,7 +1027,9 @@ export class ClockifyEngine {
     const erpProjects = await fetchAll<{ id: string; name: string }>((f, t) =>
       this.db.from("projects").select("id, name").eq("workspace_id", ws).range(f, t),
     );
-    const prevProjects = new Map((await this.loadMappings("project")).map((m) => [m.external_id, m]));
+    const prevProjects = new Map(
+      (await this.loadMappings("project")).map((m) => [m.external_id, m]),
+    );
     await this.upsertMappings(
       projects.map((p) => {
         const prev = prevProjects.get(p.id);
@@ -824,7 +1086,12 @@ export class ClockifyEngine {
       .order("external_id", { ascending: true })
       .range(offset, offset + size - 1);
     if (error) throw new Error(error.message);
-    return (data ?? []) as Array<{ id: string; external_id: string; payload: CkTimeEntry; payload_hash: string }>;
+    return (data ?? []) as Array<{
+      id: string;
+      external_id: string;
+      payload: CkTimeEntry;
+      payload_hash: string;
+    }>;
   }
 
   private async linksFor(externalIds: string[]) {
@@ -849,7 +1116,9 @@ export class ClockifyEngine {
     for (let i = 0; i < ids.length; i += 200) {
       const { data, error } = await this.db
         .from("project_time_entries")
-        .select("id, project_id, task_id, user_id, entry_date, start_time, end_time, duration_minutes, description, billable, hourly_rate, status")
+        .select(
+          "id, project_id, task_id, user_id, entry_date, start_time, end_time, duration_minutes, description, billable, hourly_rate, status",
+        )
         .eq("workspace_id", this.run.workspace_id)
         .in("id", ids.slice(i, i + 200));
       if (error) throw new Error(error.message);
@@ -860,7 +1129,12 @@ export class ClockifyEngine {
 
   /** Apontamentos já existentes no ERP da pessoa (para prever sobreposições). */
   private async erpIntervals(userId: string) {
-    const rows = await fetchAll<{ id: string; entry_date: string; start_time: string | null; end_time: string | null }>((f, t) =>
+    const rows = await fetchAll<{
+      id: string;
+      entry_date: string;
+      start_time: string | null;
+      end_time: string | null;
+    }>((f, t) =>
       this.db
         .from("project_time_entries")
         .select("id, entry_date, start_time, end_time")
@@ -872,7 +1146,10 @@ export class ClockifyEngine {
     const byDate = new Map<string, Array<{ id: string; s: string; e: string }>>();
     for (const r of rows) {
       if (!r.start_time || !r.end_time) continue;
-      byDate.set(r.entry_date, [...(byDate.get(r.entry_date) ?? []), { id: r.id, s: r.start_time, e: r.end_time }]);
+      byDate.set(r.entry_date, [
+        ...(byDate.get(r.entry_date) ?? []),
+        { id: r.id, s: r.start_time, e: r.end_time },
+      ]);
     }
     return byDate;
   }
@@ -883,7 +1160,12 @@ export class ClockifyEngine {
       for (let i = 0; i < ids.length; i += 200) {
         const { error } = await this.db
           .from("clockify_staging_records")
-          .update({ status, reason_code: reason || null, reason_detail: detail || null, last_run_id: this.run.id })
+          .update({
+            status,
+            reason_code: reason || null,
+            reason_detail: detail || null,
+            last_run_id: this.run.id,
+          })
           .in("id", ids.slice(i, i + 200));
         if (error) throw new Error(error.message);
       }
@@ -901,12 +1183,18 @@ export class ClockifyEngine {
       if (write) this.cp.importTotals ??= emptyImportTotals();
       else {
         this.cp.totals = emptyTotals();
-        this.cp.preview = { segmentsToInsert: 0, entriesToUpdate: 0, entriesUnchanged: 0, conflicts: {}, overlapExisting: 0 };
+        this.cp.preview = {
+          segmentsToInsert: 0,
+          entriesToUpdate: 0,
+          entriesUnchanged: 0,
+          conflicts: {},
+          overlapExisting: 0,
+        };
       }
     }
     const projectTargets = write ? await this.projectTargets() : new Map<string, string>();
     const taskTargets = write ? await this.taskTargets() : new Map<string, string>();
-    const fallbackProject = write ? projectTargets.get(this.ws) ?? null : null;
+    const fallbackProject = write ? (projectTargets.get(this.ws) ?? null) : null;
 
     while (this.timeLeft()) {
       if (await this.cancelRequested()) throw new Pause();
@@ -933,16 +1221,22 @@ export class ClockifyEngine {
       this.cp.lastEnd = lastEnd.get(ckUser) ?? null;
 
       const links = await this.linksFor(rows.map((r) => r.external_id));
-      const linkedTargets = Array.from(links.values()).flat().map((l) => l.target_id);
+      const linkedTargets = Array.from(links.values())
+        .flat()
+        .map((l) => l.target_id);
       const current = await this.erpRows(linkedTargets);
       const erpByDate = target && !write ? await this.erpIntervals(target) : null;
       const ownTargets = new Set(linkedTargets);
 
       const statusGroups = new Map<string, string[]>();
-      const push = (k: string, id: string) => statusGroups.set(k, [...(statusGroups.get(k) ?? []), id]);
+      const push = (k: string, id: string) =>
+        statusGroups.set(k, [...(statusGroups.get(k) ?? []), id]);
       const inserts: Array<{ _key: string; row: Record<string, unknown> }> = [];
       const updates: Array<{ _key: string; id: string; row: Record<string, unknown> }> = [];
-      const meta = new Map<string, { plan: EntryPlan; hash: string; staging: string; entry: CkTimeEntry }>();
+      const meta = new Map<
+        string,
+        { plan: EntryPlan; hash: string; staging: string; entry: CkTimeEntry }
+      >();
 
       rows.forEach((r, k) => {
         const p = plans[k];
@@ -953,9 +1247,16 @@ export class ClockifyEngine {
         }
         // Sobreposição com o ERP (prévia): ignora os próprios trechos já importados.
         if (erpByDate) {
-          const hit = p.segments.find((s) =>
-            !s.tooShort && !s.dstMismatch &&
-            (erpByDate.get(s.localDate) ?? []).some((x) => !ownTargets.has(x.id) && x.s < (s.endTime === "24:00:00" ? "24:00:00" : s.endTime) && x.e > s.startTime),
+          const hit = p.segments.find(
+            (s) =>
+              !s.tooShort &&
+              !s.dstMismatch &&
+              (erpByDate.get(s.localDate) ?? []).some(
+                (x) =>
+                  !ownTargets.has(x.id) &&
+                  x.s < (s.endTime === "24:00:00" ? "24:00:00" : s.endTime) &&
+                  x.e > s.startTime,
+              ),
           );
           if (hit) {
             this.cp.preview!.overlapExisting++;
@@ -992,7 +1293,9 @@ export class ClockifyEngine {
           push(`pending_review|${decision.reason}|`, r.id);
           return;
         }
-        const projectId = r.payload.projectId ? projectTargets.get(r.payload.projectId) : fallbackProject;
+        const projectId = r.payload.projectId
+          ? projectTargets.get(r.payload.projectId)
+          : fallbackProject;
         if (!projectId || !target) {
           push(`pending_review|${!target ? "unmapped_user" : "project_not_found"}|`, r.id);
           return;
@@ -1001,7 +1304,8 @@ export class ClockifyEngine {
         const segLinks = new Map((links.get(r.external_id) ?? []).map((l) => [l.segment, l]));
         for (const s of p.segments) {
           if (!decision.segments.includes(s.index)) continue;
-          const rate = p.rate && p.rate.currency === this.opts.targetCurrency ? p.rate.amount : null;
+          const rate =
+            p.rate && p.rate.currency === this.opts.targetCurrency ? p.rate.amount : null;
           const row: Record<string, unknown> = {
             project_id: projectId,
             task_id: r.payload.taskId ? (taskTargets.get(r.payload.taskId) ?? null) : null,
@@ -1020,7 +1324,8 @@ export class ClockifyEngine {
             stopped_at: epochToIso(s.endUtc),
           };
           const key = `${r.external_id}:${s.index}`;
-          if (decision.kind === "update") updates.push({ _key: key, id: segLinks.get(s.index)!.target_id, row });
+          if (decision.kind === "update")
+            updates.push({ _key: key, id: segLinks.get(s.index)!.target_id, row });
           else inserts.push({ _key: key, row });
         }
       });
@@ -1043,7 +1348,10 @@ export class ClockifyEngine {
   ) {
     const it = this.cp.importTotals!;
     const results: Array<{ _key: string; id?: string; error?: string }> = [];
-    for (const [op, list] of [["insert", inserts], ["update", updates]] as const) {
+    for (const [op, list] of [
+      ["insert", inserts],
+      ["update", updates],
+    ] as const) {
       for (let i = 0; i < list.length; i += 200) {
         const { data, error } = await this.db.rpc("clockify_import_apply", {
           p_workspace: this.run.workspace_id,
@@ -1066,8 +1374,15 @@ export class ClockifyEngine {
       const seg = m.plan.segments.find((s) => s.index === Number(segRaw))!;
       if (r.error || !r.id) {
         it.failed++;
-        const reason = /Já existe um apontamento/.test(r.error ?? "") ? "overlap_existing" : "write_error";
-        failedEntries.set(extId, reason === "overlap_existing" ? `${reason}|${seg.localDate}` : `${reason}|${(r.error ?? "").slice(0, 160)}`);
+        const reason = /Já existe um apontamento/.test(r.error ?? "")
+          ? "overlap_existing"
+          : "write_error";
+        failedEntries.set(
+          extId,
+          reason === "overlap_existing"
+            ? `${reason}|${seg.localDate}`
+            : `${reason}|${(r.error ?? "").slice(0, 160)}`,
+        );
         if (it.errors.length < 200) it.errors.push({ entry: extId, reason });
         continue;
       }
@@ -1110,13 +1425,19 @@ export class ClockifyEngine {
     for (let i = 0; i < linkRows.length; i += 500) {
       const { error } = await this.db
         .from("clockify_import_links")
-        .upsert(linkRows.slice(i, i + 500), { onConflict: "workspace_id,source_workspace_id,entity_type,external_id,segment" });
+        .upsert(linkRows.slice(i, i + 500), {
+          onConflict: "workspace_id,source_workspace_id,entity_type,external_id,segment",
+        });
       if (error) throw new Error(error.message);
     }
     for (const [extId, m] of meta) {
       const f = failedEntries.get(extId);
       if (f) push(`pending_review|${f}`, m.staging);
-      else push(`imported|${m.plan.reasons.includes("segment_too_short") ? "segment_too_short" : ""}|`, m.staging);
+      else
+        push(
+          `imported|${m.plan.reasons.includes("segment_too_short") ? "segment_too_short" : ""}|`,
+          m.staging,
+        );
     }
   }
 
@@ -1147,7 +1468,11 @@ export class ClockifyEngine {
     return new Map(rows.map((r) => [r.external_id, r.target_id]));
   }
 
-  private async apply(table: string, op: "insert" | "update", rows: Array<Record<string, unknown>>) {
+  private async apply(
+    table: string,
+    op: "insert" | "update",
+    rows: Array<Record<string, unknown>>,
+  ) {
     const out: Array<{ _key: string; id?: string; error?: string }> = [];
     for (let i = 0; i < rows.length; i += 100) {
       const { data, error } = await this.db.rpc("clockify_import_apply", {
@@ -1164,9 +1489,9 @@ export class ClockifyEngine {
 
   private async insertLinks(rows: Array<Record<string, unknown>>) {
     for (let i = 0; i < rows.length; i += 500) {
-      const { error } = await this.db
-        .from("clockify_import_links")
-        .upsert(rows.slice(i, i + 500), { onConflict: "workspace_id,source_workspace_id,entity_type,external_id,segment" });
+      const { error } = await this.db.from("clockify_import_links").upsert(rows.slice(i, i + 500), {
+        onConflict: "workspace_id,source_workspace_id,entity_type,external_id,segment",
+      });
       if (error) throw new Error(error.message);
     }
   }
@@ -1183,7 +1508,8 @@ export class ClockifyEngine {
       const toCreate: Array<Record<string, unknown>> = [];
       const linkRows: Array<Record<string, unknown>> = [];
       const statusGroups = new Map<string, string[]>();
-      const push = (k: string, id: string) => statusGroups.set(k, [...(statusGroups.get(k) ?? []), id]);
+      const push = (k: string, id: string) =>
+        statusGroups.set(k, [...(statusGroups.get(k) ?? []), id]);
       for (const p of projects) {
         const m = mappings.get(p.external_id);
         if (!m || m.decision === "ignore") {
@@ -1197,7 +1523,11 @@ export class ClockifyEngine {
         const client = p.payload.clientId ? clientMap.get(p.payload.clientId) : undefined;
         const companyId = client && client.decision === "confirmed" ? client.target_id : null;
         if (m.decision === "confirmed" && m.target_id) {
-          linkRows.push(this.linkRow("project", p.external_id, "projects", m.target_id, p.payload_hash, { linked_existing: true }));
+          linkRows.push(
+            this.linkRow("project", p.external_id, "projects", m.target_id, p.payload_hash, {
+              linked_existing: true,
+            }),
+          );
           it.projectsLinked++;
           push("imported||", p.id);
           continue;
@@ -1236,7 +1566,9 @@ export class ClockifyEngine {
           continue;
         }
         it.projectsCreated++;
-        linkRows.push(this.linkRow("project", r._key, "projects", r.id, sp?.payload_hash ?? "fallback", {}));
+        linkRows.push(
+          this.linkRow("project", r._key, "projects", r.id, sp?.payload_hash ?? "fallback", {}),
+        );
         if (sp) push("imported||", sp.id);
       }
       await this.insertLinks(linkRows);
@@ -1263,8 +1595,10 @@ export class ClockifyEngine {
               project_id: pid,
               user_id: m.target_id,
               role_in_project: "contributor",
-              bill_rate_hour: bill && bill.currency === this.opts.targetCurrency ? bill.amount : null,
-              cost_rate_hour: cost && cost.currency === this.opts.targetCurrency ? cost.amount : null,
+              bill_rate_hour:
+                bill && bill.currency === this.opts.targetCurrency ? bill.amount : null,
+              cost_rate_hour:
+                cost && cost.currency === this.opts.targetCurrency ? cost.amount : null,
             },
           });
         }
@@ -1280,7 +1614,8 @@ export class ClockifyEngine {
       const existing = await this.taskTargets();
       const um = new Map((await this.loadMappings("user")).map((m) => [m.external_id, m]));
       const statusGroups = new Map<string, string[]>();
-      const push = (k: string, id: string) => statusGroups.set(k, [...(statusGroups.get(k) ?? []), id]);
+      const push = (k: string, id: string) =>
+        statusGroups.set(k, [...(statusGroups.get(k) ?? []), id]);
       const rows: Array<Record<string, unknown>> = [];
       const staged = new Map(tasks.map((t) => [t.external_id, t]));
       for (const t of tasks) {
@@ -1333,7 +1668,14 @@ export class ClockifyEngine {
     return false;
   }
 
-  private linkRow(entity: string, externalId: string, table: string, targetId: string, hash: string, meta: Record<string, unknown>) {
+  private linkRow(
+    entity: string,
+    externalId: string,
+    table: string,
+    targetId: string,
+    hash: string,
+    meta: Record<string, unknown>,
+  ) {
     return {
       workspace_id: this.run.workspace_id,
       source_workspace_id: this.ws,
@@ -1353,7 +1695,12 @@ export class ClockifyEngine {
   private async statusCounts() {
     const out: Record<string, Record<string, number>> = {};
     const reasons: Record<string, number> = {};
-    const rows = await fetchAll<{ entity_type: string; status: string; reason_code: string | null; last_run_id: string | null }>((f, t) =>
+    const rows = await fetchAll<{
+      entity_type: string;
+      status: string;
+      reason_code: string | null;
+      last_run_id: string | null;
+    }>((f, t) =>
       this.db
         .from("clockify_staging_records")
         .select("entity_type, status, reason_code, last_run_id")
@@ -1365,10 +1712,16 @@ export class ClockifyEngine {
     for (const r of rows) {
       const e = (out[r.entity_type] ??= {});
       e[r.status] = (e[r.status] ?? 0) + 1;
-      if (r.entity_type === "time_entry" && r.reason_code) reasons[r.reason_code] = (reasons[r.reason_code] ?? 0) + 1;
-      if (this.opts.refetch && r.last_run_id !== this.run.id && r.entity_type !== "time_entry") missing++;
+      if (r.entity_type === "time_entry" && r.reason_code)
+        reasons[r.reason_code] = (reasons[r.reason_code] ?? 0) + 1;
+      if (this.opts.refetch && r.last_run_id !== this.run.id && r.entity_type !== "time_entry")
+        missing++;
     }
-    return { byEntity: out, entryReasons: reasons, notSeenThisRun: this.run.kind === "dry_run" && this.opts.refetch ? missing : null };
+    return {
+      byEntity: out,
+      entryReasons: reasons,
+      notSeenThisRun: this.run.kind === "dry_run" && this.opts.refetch ? missing : null,
+    };
   }
 
   private async buildPreviewReport() {
@@ -1397,7 +1750,10 @@ export class ClockifyEngine {
       totals: this.cp.totals ?? emptyTotals(),
       preview: this.cp.preview ?? null,
       reconciliation: this.cp.reportedByUser
-        ? { status: "ok", diffs: reconcileByUser(this.cp.collectedByUser ?? {}, this.cp.reportedByUser) }
+        ? {
+            status: "ok",
+            diffs: reconcileByUser(this.cp.collectedByUser ?? {}, this.cp.reportedByUser),
+          }
         : { status: "unavailable", diffs: [] },
       staging: await this.statusCounts(),
       range: { min: this.cp.minStart ?? null, max: this.cp.maxStart ?? null },

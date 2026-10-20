@@ -1,6 +1,11 @@
 // Testes do importador Clockify com fixtures locais. Nenhuma chamada real ao Clockify.
 import { describe, expect, it } from "vitest";
-import { ClockifyApiError, ClockifyClient, minIntervalForPlan, type FetchLike } from "./clockify-client";
+import {
+  ClockifyApiError,
+  ClockifyClient,
+  minIntervalForPlan,
+  type FetchLike,
+} from "./clockify-client";
 import { assertRegion, buildClockifyUrl, clockifyBases, normalizeSubdomain } from "./clockify-urls";
 import {
   accumulate,
@@ -29,19 +34,36 @@ const bases = clockifyBases("global", null);
 function fakeFetch(handler: (url: URL, init: RequestInit) => Response) {
   const calls: Array<{ url: string; method: string; headers: Record<string, string> }> = [];
   const f: FetchLike = async (u, init) => {
-    calls.push({ url: u, method: init.method ?? "GET", headers: init.headers as Record<string, string> });
+    calls.push({
+      url: u,
+      method: init.method ?? "GET",
+      headers: init.headers as Record<string, string>,
+    });
     return handler(new URL(u), init);
   };
   return { f, calls };
 }
 
 const json = (body: unknown, headers: Record<string, string> = {}, status = 200) =>
-  new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", ...headers } });
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json", ...headers },
+  });
 
 const noSleep = async () => {};
 
-function client(f: FetchLike, extra: Partial<ConstructorParameters<typeof ClockifyClient>[0]> = {}) {
-  return new ClockifyClient({ apiKey: KEY, bases, fetch: f, sleep: noSleep, minIntervalMs: 0, ...extra });
+function client(
+  f: FetchLike,
+  extra: Partial<ConstructorParameters<typeof ClockifyClient>[0]> = {},
+) {
+  return new ClockifyClient({
+    apiKey: KEY,
+    bases,
+    fetch: f,
+    sleep: noSleep,
+    minIntervalMs: 0,
+    ...extra,
+  });
 }
 
 function ctx(over: Partial<EntryContext> = {}): EntryContext {
@@ -108,7 +130,11 @@ describe("cliente somente leitura", () => {
 
   it("ritmo do plano Free vale entre chamadas (retomada respeita o checkpoint)", async () => {
     const { f, calls } = fakeFetch(() => json([]));
-    const c = client(f, { minIntervalMs: minIntervalForPlan("FREE"), lastRequestAt: 1_000_000, now: () => 1_010_000 });
+    const c = client(f, {
+      minIntervalMs: minIntervalForPlan("FREE"),
+      lastRequestAt: 1_000_000,
+      now: () => 1_010_000,
+    });
     const err = await c.page(`/workspaces/${WS}/tags`, 1, 50).catch((e) => e);
     expect(err.code).toBe("rate_limited");
     expect(calls).toHaveLength(0);
@@ -122,18 +148,26 @@ describe("cliente somente leitura", () => {
     expect(calls.map((x) => x.method)).toEqual(["GET", "POST"]);
     expect(calls[1].url.startsWith("https://reports.api.clockify.me/v1/")).toBe(true);
     expect(() => buildClockifyUrl(bases, "api", `/workspaces/${WS}/time-entries`)).toThrow();
-    expect(() => buildClockifyUrl(bases, "reports", `/workspaces/${WS}/reports/detailed/export`)).toThrow();
+    expect(() =>
+      buildClockifyUrl(bases, "reports", `/workspaces/${WS}/reports/detailed/export`),
+    ).toThrow();
   });
 
   it("redirecionamento é bloqueado (a chave não segue para outro host)", async () => {
-    const { f } = fakeFetch(() => new Response(null, { status: 302, headers: { location: "https://evil.example" } }));
-    const err = await client(f).get("/user").catch((e) => e);
+    const { f } = fakeFetch(
+      () => new Response(null, { status: 302, headers: { location: "https://evil.example" } }),
+    );
+    const err = await client(f)
+      .get("/user")
+      .catch((e) => e);
     expect(err.code).toBe("redirect_blocked");
   });
 
   it("a chave só vai no cabeçalho e nunca aparece em URL ou erro", async () => {
     const { f, calls } = fakeFetch(() => json({ message: "nope" }, {}, 401));
-    const err = await client(f).get("/user").catch((e) => e);
+    const err = await client(f)
+      .get("/user")
+      .catch((e) => e);
     expect(calls[0].headers["X-Api-Key"]).toBe(KEY);
     expect(calls[0].url).not.toContain(KEY);
     expect(String(err.message)).not.toContain(KEY);
@@ -185,7 +219,10 @@ describe("pessoas", () => {
   it("pessoa desconhecida fica pendente; nunca cai em quem importa", () => {
     const [p] = planUserMappings([{ id: U1, email: "novo@x.com", name: "Novo" }], members, []);
     expect(p).toMatchObject({ target_id: null, decision: "pending", note: "sem_membro" });
-    const plan = planTimeEntry(entry("2026-01-05T12:00:00Z", "2026-01-05T13:00:00Z", { userId: U2 }), ctx());
+    const plan = planTimeEntry(
+      entry("2026-01-05T12:00:00Z", "2026-01-05T13:00:00Z", { userId: U2 }),
+      ctx(),
+    );
     expect(plan.status).toBe("pending_review");
     expect(plan.reasons).toContain("unmapped_user");
   });
@@ -212,9 +249,19 @@ describe("pessoas", () => {
 
 describe("projetos", () => {
   it("projeto arquivado vira concluído e guarda o arquivamento e o cliente", () => {
-    const p = { id: P1, name: "Antigo", archived: true, clientId: "9d1a2b3c4d5e6f7a8b9c0d11", clientName: "ACME" };
+    const p = {
+      id: P1,
+      name: "Antigo",
+      archived: true,
+      clientId: "9d1a2b3c4d5e6f7a8b9c0d11",
+      clientName: "ACME",
+    };
     expect(projectStatusFor(p)).toBe("done");
-    expect(projectMetadata(p, null).clockify).toMatchObject({ archived: true, client_name: "ACME", company_id: null });
+    expect(projectMetadata(p, null).clockify).toMatchObject({
+      archived: true,
+      client_name: "ACME",
+      company_id: null,
+    });
   });
 });
 
@@ -239,7 +286,11 @@ describe("apontamentos", () => {
 
   it("DST: segundos reais prevalecem e o trecho é marcado", () => {
     // Nova York, 2024-11-03: 00:30 EDT → 03:00 EST = 3h30 reais, 2h30 no relógio.
-    const segs = segmentByLocalDay(toEpochSeconds("2024-11-03T04:30:00Z")!, toEpochSeconds("2024-11-03T08:00:00Z")!, "America/New_York");
+    const segs = segmentByLocalDay(
+      toEpochSeconds("2024-11-03T04:30:00Z")!,
+      toEpochSeconds("2024-11-03T08:00:00Z")!,
+      "America/New_York",
+    );
     expect(segs).toHaveLength(1);
     expect(segs[0].seconds).toBe(12600);
     expect(segs[0].wallSeconds).toBe(9000);
@@ -259,7 +310,10 @@ describe("apontamentos", () => {
   });
 
   it("pausa e folga não viram horas de projeto", () => {
-    const p = planTimeEntry(entry("2026-01-05T12:00:00Z", "2026-01-05T13:00:00Z", { type: "BREAK" }), ctx());
+    const p = planTimeEntry(
+      entry("2026-01-05T12:00:00Z", "2026-01-05T13:00:00Z", { type: "BREAK" }),
+      ctx(),
+    );
     expect(p.status).toBe("unsupported");
   });
 
@@ -273,7 +327,10 @@ describe("apontamentos", () => {
 
   it("sobreposição dentro do Clockify vai para revisão, sem ajustar horários", () => {
     const a = planTimeEntry(entry("2026-01-05T12:00:00Z", "2026-01-05T14:00:00Z"), ctx());
-    const b = planTimeEntry(entry("2026-01-05T13:00:00Z", "2026-01-05T15:00:00Z", { id: "8c1a2b3c4d5e6f7a8b9c0d99" }), ctx());
+    const b = planTimeEntry(
+      entry("2026-01-05T13:00:00Z", "2026-01-05T15:00:00Z", { id: "8c1a2b3c4d5e6f7a8b9c0d99" }),
+      ctx(),
+    );
     markSourceOverlaps([a, b]);
     expect(a.status).toBe("ready");
     expect(b.status).toBe("pending_review");
@@ -283,8 +340,24 @@ describe("apontamentos", () => {
 
   it("moedas diferentes nunca são somadas", () => {
     const t = emptyTotals();
-    accumulate(t, planTimeEntry(entry("2026-01-05T12:00:00Z", "2026-01-05T13:00:00Z", { hourlyRate: { amount: 10000, currency: "BRL" } }), ctx()));
-    accumulate(t, planTimeEntry(entry("2026-01-05T14:00:00Z", "2026-01-05T16:00:00Z", { hourlyRate: { amount: 5000, currency: "USD" } }), ctx()));
+    accumulate(
+      t,
+      planTimeEntry(
+        entry("2026-01-05T12:00:00Z", "2026-01-05T13:00:00Z", {
+          hourlyRate: { amount: 10000, currency: "BRL" },
+        }),
+        ctx(),
+      ),
+    );
+    accumulate(
+      t,
+      planTimeEntry(
+        entry("2026-01-05T14:00:00Z", "2026-01-05T16:00:00Z", {
+          hourlyRate: { amount: 5000, currency: "USD" },
+        }),
+        ctx(),
+      ),
+    );
     expect(t.earnedByCurrency).toEqual({ BRL: 100, USD: 100 });
   });
 
@@ -294,7 +367,8 @@ describe("apontamentos", () => {
       entry("2026-01-05T12:00:00Z", "2026-01-05T13:00:01Z"),
       entry("2026-01-05T14:00:00Z", null),
       entry("2026-01-06T02:59:45Z", "2026-01-06T03:10:00Z"),
-    ]) accumulate(t, planTimeEntry(e, ctx()));
+    ])
+      accumulate(t, planTimeEntry(e, ctx()));
     expect(t.importableSeconds + t.stagedSeconds).toBe(t.sourceSeconds);
     expect(t.sourceSeconds).toBe(3601 + 615);
     expect(reconcileByUser({ [U1]: 4216 }, { [U1]: 4216 })).toEqual([]);
@@ -303,8 +377,26 @@ describe("apontamentos", () => {
 });
 
 describe("reexecução idempotente", () => {
-  const row = { id: "t1", project_id: "p", task_id: null, user_id: "u", entry_date: "2026-01-05", start_time: "09:00:00", end_time: "10:00:00", duration_minutes: 60, description: "x", billable: true, hourly_rate: 100, status: "locked" };
-  const link = { segment: 0, target_id: "t1", source_hash: "h1", imported_snapshot: snapshotOf(row) };
+  const row = {
+    id: "t1",
+    project_id: "p",
+    task_id: null,
+    user_id: "u",
+    entry_date: "2026-01-05",
+    start_time: "09:00:00",
+    end_time: "10:00:00",
+    duration_minutes: 60,
+    description: "x",
+    billable: true,
+    hourly_rate: 100,
+    status: "locked",
+  };
+  const link = {
+    segment: 0,
+    target_id: "t1",
+    source_hash: "h1",
+    imported_snapshot: snapshotOf(row),
+  };
 
   it("primeira vez insere; repetir sem mudança não duplica", () => {
     expect(decideRerun([0], "h1", [], new Map())).toEqual({ kind: "insert", segments: [0] });
@@ -312,20 +404,35 @@ describe("reexecução idempotente", () => {
   });
 
   it("campo mudou no Clockify e o ERP não foi editado: atualiza", () => {
-    expect(decideRerun([0], "h2", [link], new Map([["t1", row]]))).toEqual({ kind: "update", segments: [0] });
+    expect(decideRerun([0], "h2", [link], new Map([["t1", row]]))).toEqual({
+      kind: "update",
+      segments: [0],
+    });
   });
 
   it("editado no ERP: não sobrescreve", () => {
     const edited = { ...row, description: "ajuste manual" };
-    expect(decideRerun([0], "h2", [link], new Map([["t1", edited]]))).toEqual({ kind: "conflict", reason: "manual_edit_conflict" });
+    expect(decideRerun([0], "h2", [link], new Map([["t1", edited]]))).toEqual({
+      kind: "conflict",
+      reason: "manual_edit_conflict",
+    });
   });
 
   it("excluído no ERP: não recria; mudou de dia: revisão", () => {
-    expect(decideRerun([0], "h2", [link], new Map())).toEqual({ kind: "conflict", reason: "erp_deleted" });
-    expect(decideRerun([0, 1], "h2", [link], new Map([["t1", row]]))).toEqual({ kind: "conflict", reason: "segments_changed" });
+    expect(decideRerun([0], "h2", [link], new Map())).toEqual({
+      kind: "conflict",
+      reason: "erp_deleted",
+    });
+    expect(decideRerun([0, 1], "h2", [link], new Map([["t1", row]]))).toEqual({
+      kind: "conflict",
+      reason: "segments_changed",
+    });
   });
 
   it("trecho que falhou antes é tentado de novo sem duplicar os outros", () => {
-    expect(decideRerun([0, 1], "h1", [link], new Map([["t1", row]]))).toEqual({ kind: "insert", segments: [1] });
+    expect(decideRerun([0, 1], "h1", [link], new Map([["t1", row]]))).toEqual({
+      kind: "insert",
+      segments: [1],
+    });
   });
 });

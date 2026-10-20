@@ -9,7 +9,10 @@ export function parseIsoDuration(value: string | null | undefined): number | nul
   if (!m || value.trim() === "P" || value.trim() === "PT") return null;
   const [, d, h, mi, s] = m;
   return (
-    Number(d ?? 0) * 86400 + Number(h ?? 0) * 3600 + Number(mi ?? 0) * 60 + Math.round(Number(s ?? 0))
+    Number(d ?? 0) * 86400 +
+    Number(h ?? 0) * 3600 +
+    Number(mi ?? 0) * 60 +
+    Math.round(Number(s ?? 0))
   );
 }
 
@@ -111,8 +114,7 @@ export function segmentByLocalDay(startUtc: number, endUtc: number, tz: string):
     const s = localParts(cur, tz);
     const endsAtBoundary = segEnd === boundary;
     const endTime = endsAtBoundary ? "24:00:00" : localParts(segEnd, tz).time;
-    const wallSeconds =
-      (endsAtBoundary ? 86400 : clockToSeconds(endTime)) - clockToSeconds(s.time);
+    const wallSeconds = (endsAtBoundary ? 86400 : clockToSeconds(endTime)) - clockToSeconds(s.time);
     const seconds = segEnd - cur;
     out.push({
       index: out.length,

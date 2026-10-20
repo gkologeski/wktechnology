@@ -38,7 +38,8 @@ const MESSAGES: Record<ClockifyErrorCode, string> = {
   bad_request: "O Clockify recusou os parâmetros da consulta (400).",
   server: "O Clockify está instável no momento (5xx). Tente de novo em instantes.",
   network: "Sem resposta do Clockify (rede ou tempo esgotado).",
-  redirect_blocked: "O Clockify redirecionou a chamada; redirecionamentos são bloqueados por segurança.",
+  redirect_blocked:
+    "O Clockify redirecionou a chamada; redirecionamentos são bloqueados por segurança.",
   invalid_response: "Resposta inesperada do Clockify.",
 };
 
@@ -153,7 +154,11 @@ export class ClockifyClient {
         throw new ClockifyApiError("network", null, clockifyErrorMessage("network"));
       }
       if (res.status >= 300 && res.status < 400) {
-        throw new ClockifyApiError("redirect_blocked", res.status, clockifyErrorMessage("redirect_blocked"));
+        throw new ClockifyApiError(
+          "redirect_blocked",
+          res.status,
+          clockifyErrorMessage("redirect_blocked"),
+        );
       }
       if (res.status === 429 || res.status === 503) {
         const wait = retryAfterMs(res, this.now()) ?? Math.min(60_000, 1000 * 2 ** attempt);
@@ -189,7 +194,10 @@ export class ClockifyClient {
     }
   }
 
-  async get<T>(path: string, query?: Record<string, string | number | boolean | string[] | undefined>) {
+  async get<T>(
+    path: string,
+    query?: Record<string, string | number | boolean | string[] | undefined>,
+  ) {
     const res = await this.request(buildClockifyUrl(this.opts.bases, "api", path, query), {
       method: "GET",
     });
@@ -197,7 +205,11 @@ export class ClockifyClient {
     try {
       data = (await res.json()) as T;
     } catch {
-      throw new ClockifyApiError("invalid_response", res.status, clockifyErrorMessage("invalid_response"));
+      throw new ClockifyApiError(
+        "invalid_response",
+        res.status,
+        clockifyErrorMessage("invalid_response"),
+      );
     }
     return { data, res };
   }
@@ -211,7 +223,11 @@ export class ClockifyClient {
   ): Promise<PageResult<T>> {
     const { data, res } = await this.get<T[]>(path, { ...query, page, "page-size": pageSize });
     if (!Array.isArray(data)) {
-      throw new ClockifyApiError("invalid_response", res.status, clockifyErrorMessage("invalid_response"));
+      throw new ClockifyApiError(
+        "invalid_response",
+        res.status,
+        clockifyErrorMessage("invalid_response"),
+      );
     }
     const header = res.headers.get("last-page");
     const lastPage =
@@ -228,7 +244,11 @@ export class ClockifyClient {
     try {
       return (await res.json()) as T;
     } catch {
-      throw new ClockifyApiError("invalid_response", res.status, clockifyErrorMessage("invalid_response"));
+      throw new ClockifyApiError(
+        "invalid_response",
+        res.status,
+        clockifyErrorMessage("invalid_response"),
+      );
     }
   }
 }

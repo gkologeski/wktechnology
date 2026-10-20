@@ -180,13 +180,37 @@ export function planUserMappings(
       };
     }
     if (!email) {
-      return { external_id: u.id, label, target_id: null, method: "none", decision: "pending", note: "sem_email", candidates };
+      return {
+        external_id: u.id,
+        label,
+        target_id: null,
+        method: "none",
+        decision: "pending",
+        note: "sem_email",
+        candidates,
+      };
     }
     if ((ckByEmail.get(email) ?? 0) > 1) {
-      return { external_id: u.id, label, target_id: null, method: "none", decision: "pending", note: "email_duplicado_origem", candidates };
+      return {
+        external_id: u.id,
+        label,
+        target_id: null,
+        method: "none",
+        decision: "pending",
+        note: "email_duplicado_origem",
+        candidates,
+      };
     }
     if (matches.length === 1) {
-      return { external_id: u.id, label, target_id: matches[0].user_id, method: "email", decision: "auto", note: null, candidates };
+      return {
+        external_id: u.id,
+        label,
+        target_id: matches[0].user_id,
+        method: "email",
+        decision: "auto",
+        note: null,
+        candidates,
+      };
     }
     return {
       external_id: u.id,
@@ -201,7 +225,8 @@ export function planUserMappings(
   // Dois usuários do Clockify no mesmo membro do ERP: os dois voltam para revisão.
   const targetCount = new Map<string, number>();
   for (const p of plans) {
-    if (p.target_id && p.decision === "auto") targetCount.set(p.target_id, (targetCount.get(p.target_id) ?? 0) + 1);
+    if (p.target_id && p.decision === "auto")
+      targetCount.set(p.target_id, (targetCount.get(p.target_id) ?? 0) + 1);
   }
   return plans.map((p) =>
     p.target_id && p.decision === "auto" && (targetCount.get(p.target_id) ?? 0) > 1
@@ -225,7 +250,8 @@ export function projectStatusFor(p: CkProject): "active" | "done" {
 }
 
 export function projectPlannedHours(p: CkProject): number | null {
-  const iso = p.timeEstimate?.active === false ? null : (p.timeEstimate?.estimate ?? p.estimate?.estimate);
+  const iso =
+    p.timeEstimate?.active === false ? null : (p.timeEstimate?.estimate ?? p.estimate?.estimate);
   const secs = parseIsoDuration(iso ?? null);
   return secs && secs > 0 ? Math.round((secs / 3600) * 100) / 100 : null;
 }
@@ -323,7 +349,10 @@ export function planTimeEntry(e: CkTimeEntry, ctx: EntryContext): EntryPlan {
   const tzRaw = ctx.userTimeZone(e.userId);
   const timeZone = isValidTimeZone(tzRaw) ? tzRaw : ctx.defaultTimeZone;
   if (tzRaw && !isValidTimeZone(tzRaw)) reasons.push("timezone_fallback");
-  const base: Omit<EntryPlan, "status" | "reasons" | "segments" | "importableSeconds" | "stagedSeconds" | "sourceSeconds"> = {
+  const base: Omit<
+    EntryPlan,
+    "status" | "reasons" | "segments" | "importableSeconds" | "stagedSeconds" | "sourceSeconds"
+  > = {
     id: e.id,
     userId: e.userId,
     projectId: e.projectId ?? null,
@@ -334,15 +363,39 @@ export function planTimeEntry(e: CkTimeEntry, ctx: EntryContext): EntryPlan {
     cost: rateToUnits(e.costRate),
   };
   if (start === null) {
-    return { ...base, status: "pending_review", reasons: [...reasons, "invalid_interval"], segments: [], sourceSeconds: 0, importableSeconds: 0, stagedSeconds: 0 };
+    return {
+      ...base,
+      status: "pending_review",
+      reasons: [...reasons, "invalid_interval"],
+      segments: [],
+      sourceSeconds: 0,
+      importableSeconds: 0,
+      stagedSeconds: 0,
+    };
   }
   if (end === null) {
     // Timer aberto: nunca inventa fim nem para o cronômetro na origem.
-    return { ...base, status: "pending_review", reasons: [...reasons, "running_timer"], segments: [], sourceSeconds: 0, importableSeconds: 0, stagedSeconds: 0 };
+    return {
+      ...base,
+      status: "pending_review",
+      reasons: [...reasons, "running_timer"],
+      segments: [],
+      sourceSeconds: 0,
+      importableSeconds: 0,
+      stagedSeconds: 0,
+    };
   }
   const sourceSeconds = Math.max(0, end - start);
   if (end < start) {
-    return { ...base, status: "pending_review", reasons: [...reasons, "invalid_interval"], segments: [], sourceSeconds: 0, importableSeconds: 0, stagedSeconds: 0 };
+    return {
+      ...base,
+      status: "pending_review",
+      reasons: [...reasons, "invalid_interval"],
+      segments: [],
+      sourceSeconds: 0,
+      importableSeconds: 0,
+      stagedSeconds: 0,
+    };
   }
   const type = (e.type ?? "REGULAR").toUpperCase();
   const blockers: string[] = [];
@@ -391,7 +444,10 @@ export function planTimeEntry(e: CkTimeEntry, ctx: EntryContext): EntryPlan {
 }
 
 /** Marca sobreposições dentro da própria origem (mesma pessoa). Entrada ordenada por início. */
-export function markSourceOverlaps(plans: EntryPlan[], lastEndByUser = new Map<string, { end: number; id: string }>()) {
+export function markSourceOverlaps(
+  plans: EntryPlan[],
+  lastEndByUser = new Map<string, { end: number; id: string }>(),
+) {
   for (const p of plans) {
     if (p.startUtc === null || p.endUtc === null || p.endUtc <= p.startUtc) continue;
     const prev = lastEndByUser.get(p.userId);
@@ -453,15 +509,18 @@ export function accumulate(t: Totals, p: EntryPlan) {
   add(t.byProject, p.projectId ?? "sem_projeto", p.sourceSeconds);
   for (const s of p.segments) add(t.byMonth, monthOf(s.localDate), s.seconds);
   t.segments += p.status === "ready" ? p.segments.filter((s) => !s.tooShort).length : 0;
-  const reasonKey = p.status === "ready" ? null : (p.reasons.find((r) => r !== "timezone_fallback") ?? "outro");
+  const reasonKey =
+    p.status === "ready" ? null : (p.reasons.find((r) => r !== "timezone_fallback") ?? "outro");
   if (reasonKey) {
     const r = (t.byReason[reasonKey] ??= { entries: 0, seconds: 0 });
     r.entries++;
     r.seconds += p.sourceSeconds;
   }
   // Valores por moeda: nunca somar moedas diferentes.
-  if (p.rate) add(t.earnedByCurrency, p.rate.currency, round2((p.rate.amount * p.sourceSeconds) / 3600));
-  if (p.cost) add(t.costByCurrency, p.cost.currency, round2((p.cost.amount * p.sourceSeconds) / 3600));
+  if (p.rate)
+    add(t.earnedByCurrency, p.rate.currency, round2((p.rate.amount * p.sourceSeconds) / 3600));
+  if (p.cost)
+    add(t.costByCurrency, p.cost.currency, round2((p.cost.amount * p.sourceSeconds) / 3600));
 }
 
 function round2(n: number) {

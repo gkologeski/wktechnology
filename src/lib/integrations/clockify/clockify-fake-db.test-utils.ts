@@ -18,7 +18,13 @@ export const uuid = () => `00000000-0000-4000-8000-${String(++seq).padStart(12, 
 const UNIQUE: Record<string, string[]> = {
   clockify_staging_records: ["workspace_id", "source_workspace_id", "entity_type", "external_id"],
   clockify_mappings: ["workspace_id", "source_workspace_id", "entity_type", "external_id"],
-  clockify_import_links: ["workspace_id", "source_workspace_id", "entity_type", "external_id", "segment"],
+  clockify_import_links: [
+    "workspace_id",
+    "source_workspace_id",
+    "entity_type",
+    "external_id",
+    "segment",
+  ],
 };
 
 class Query {
@@ -31,7 +37,10 @@ class Query {
   private returning = false;
   private single: "maybe" | "one" | null = null;
 
-  constructor(private db: FakeDb, private table: string) {}
+  constructor(
+    private db: FakeDb,
+    private table: string,
+  ) {}
 
   select(_cols?: string, _opts?: unknown) {
     this.returning = true;
@@ -126,9 +135,17 @@ export class FakeDb {
       const t = (this.tables[table] ??= []);
       const keys = UNIQUE[table];
       for (const r of list) {
-        const found = keys ? t.find((x) => keys.every((k) => x[k] === (r[k] ?? (k === "segment" ? 0 : undefined)))) : undefined;
+        const found = keys
+          ? t.find((x) => keys.every((k) => x[k] === (r[k] ?? (k === "segment" ? 0 : undefined))))
+          : undefined;
         if (found) Object.assign(found, structuredClone(r));
-        else t.push({ id: uuid(), status: table === "clockify_staging_records" ? "staged" : undefined, segment: 0, ...structuredClone(r) });
+        else
+          t.push({
+            id: uuid(),
+            status: table === "clockify_staging_records" ? "staged" : undefined,
+            segment: 0,
+            ...structuredClone(r),
+          });
       }
       return Promise.resolve({ data: null, error: null });
     };
@@ -142,19 +159,38 @@ export class FakeDb {
   }
 
   /** Simula clockify_import_apply: grava linha a linha e devolve erro por linha. */
-  rpc(name: string, args: { p_workspace: string; p_table: string; p_op: string; p_rows: Array<{ _key: string; id?: string; row: Row }> }) {
+  rpc(
+    name: string,
+    args: {
+      p_workspace: string;
+      p_table: string;
+      p_op: string;
+      p_rows: Array<{ _key: string; id?: string; row: Row }>;
+    },
+  ) {
     if (name !== "clockify_import_apply") throw new Error(`rpc desconhecida ${name}`);
     const t = (this.tables[args.p_table] ??= []);
     const out = args.p_rows.map((r) => {
-      const row = { ...r.row, workspace_id: args.p_workspace };
+      const row: Row = { ...r.row, workspace_id: args.p_workspace };
       if (args.p_table === "project_time_entries") {
         if (row.start_time && row.end_time) {
-          const sec = (s: string) => s.split(":").reduce((a, x, i) => a + Number(x) * [3600, 60, 1][i], 0);
+          const sec = (s: string) =>
+            s.split(":").reduce((a, x, i) => a + Number(x) * [3600, 60, 1][i], 0);
           row.duration_minutes = Math.round((sec(row.end_time) - sec(row.start_time)) / 60);
           const clash = t.find(
-            (x) => x.id !== r.id && x.user_id === row.user_id && x.entry_date === row.entry_date && x.start_time && x.start_time < row.end_time && x.end_time > row.start_time,
+            (x) =>
+              x.id !== r.id &&
+              x.user_id === row.user_id &&
+              x.entry_date === row.entry_date &&
+              x.start_time &&
+              x.start_time < row.end_time &&
+              x.end_time > row.start_time,
           );
-          if (clash) return { _key: r._key, error: `Já existe um apontamento entre ${clash.start_time} e ${clash.end_time} neste dia.` };
+          if (clash)
+            return {
+              _key: r._key,
+              error: `Já existe um apontamento entre ${clash.start_time} e ${clash.end_time} neste dia.`,
+            };
         }
         if (!(row.duration_minutes > 0)) return { _key: r._key, error: "hours_check" };
         row.hours = Math.round((row.duration_minutes / 60) * 100) / 100;

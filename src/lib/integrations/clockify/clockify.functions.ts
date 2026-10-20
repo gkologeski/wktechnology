@@ -66,7 +66,10 @@ export const startClockifyImportRun = createServerFn({ method: "POST" })
             refetch: z.boolean().optional(),
             noProjectPolicy: z.enum(["stage", "fallback"]).optional(),
             erpStatus: z.enum(["locked", "draft"]).optional(),
-            targetCurrency: z.string().regex(/^[A-Za-z]{3}$/).optional(),
+            targetCurrency: z
+              .string()
+              .regex(/^[A-Za-z]{3}$/)
+              .optional(),
             defaultTimeZone: z.string().max(64).optional(),
           })
           .optional(),
@@ -160,8 +163,16 @@ export const listClockifyImportStaging = createServerFn({ method: "GET" })
     z
       .object({
         entity: z.string().regex(/^[a-z_]{3,30}$/),
-        status: z.string().regex(/^[a-z_]{3,30}$/).nullable().optional(),
-        reason: z.string().regex(/^[a-z_]{3,40}$/).nullable().optional(),
+        status: z
+          .string()
+          .regex(/^[a-z_]{3,30}$/)
+          .nullable()
+          .optional(),
+        reason: z
+          .string()
+          .regex(/^[a-z_]{3,40}$/)
+          .nullable()
+          .optional(),
         page: z.number().int().min(0).max(10_000).default(0),
       })
       .parse(d),

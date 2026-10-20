@@ -13,9 +13,8 @@ export const Route = createFileRoute("/api/public/hooks/clockify-import-tick")({
         if (unauth) return unauth;
         const run = await runCronWithLogging("clockify-import-tick", async () => {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-          const { advanceClockifyRun } = await import(
-            "@/lib/integrations/clockify/clockify-service.server"
-          );
+          const { advanceClockifyRun } =
+            await import("@/lib/integrations/clockify/clockify-service.server");
           const { data: runs } = await supabaseAdmin
             .from("clockify_import_runs")
             .select("id, workspace_id")
@@ -23,7 +22,9 @@ export const Route = createFileRoute("/api/public/hooks/clockify-import-tick")({
             .limit(5);
           let advanced = 0;
           for (const r of runs ?? []) {
-            const res = await advanceClockifyRun(r.workspace_id, r.id).catch(() => ({ advanced: false }));
+            const res = await advanceClockifyRun(r.workspace_id, r.id).catch(() => ({
+              advanced: false,
+            }));
             if (res.advanced) advanced++;
           }
           return { runs: runs?.length ?? 0, advanced } as Record<string, unknown>;

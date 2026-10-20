@@ -46,9 +46,36 @@ import {
   type ConnectionView,
   type RunView,
 } from "./clockify-sections";
-import { MappingsTable, StagingTable, type MappingRow, type StagingRow, type TargetOption } from "./clockify-review";
+import {
+  MappingsTable,
+  StagingTable,
+  type MappingRow,
+  type StagingRow,
+  type TargetOption,
+} from "./clockify-review";
 
-const DRY = ["start", "workspace", "users", "groups", "clients", "projects", "tasks", "tags", "custom_fields", "approvals", "expenses", "invoices", "holidays", "time_off_policies", "time_entries", "in_progress", "reconcile", "mappings", "plan", "done"];
+const DRY = [
+  "start",
+  "workspace",
+  "users",
+  "groups",
+  "clients",
+  "projects",
+  "tasks",
+  "tags",
+  "custom_fields",
+  "approvals",
+  "expenses",
+  "invoices",
+  "holidays",
+  "time_off_policies",
+  "time_entries",
+  "in_progress",
+  "reconcile",
+  "mappings",
+  "plan",
+  "done",
+];
 const IMP = ["start", "projects_write", "members_write", "tasks_write", "entries_write", "done"];
 const ACTIVE = ["queued", "running", "cancel_requested"];
 
@@ -73,7 +100,11 @@ export function ClockifyImportPage() {
   const fIdentity = useServerFn(createClockifyImportIdentity);
 
   const status = useQuery({ queryKey: ["clockify-import", "status"], queryFn: () => fStatus() });
-  const [workspaces, setWorkspaces] = useState<Array<{ id: string; name: string; plan: string | null }> | null>(null);
+  const [workspaces, setWorkspaces] = useState<Array<{
+    id: string;
+    name: string;
+    plan: string | null;
+  }> | null>(null);
   const [noProjectPolicy, setNoProjectPolicy] = useState<"stage" | "fallback">("stage");
   const [erpStatus, setErpStatus] = useState<"locked" | "draft">("locked");
   const [checked, setChecked] = useState(false);
@@ -101,7 +132,8 @@ export function ClockifyImportPage() {
   });
   const liveRun = (live.data as RunView | undefined) ?? activeRun;
   useEffect(() => {
-    if (liveRun && !ACTIVE.includes(liveRun.status) && liveRun.status !== "paused" && activeRun) refresh();
+    if (liveRun && !ACTIVE.includes(liveRun.status) && liveRun.status !== "paused" && activeRun)
+      refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveRun?.status]);
 
@@ -116,14 +148,38 @@ export function ClockifyImportPage() {
     queryFn: () => fRun({ data: { runId: lastImport!.id } }),
   });
 
-  const userMaps = useQuery({ queryKey: ["clockify-import", "map", "user"], enabled: !!lastPreview, queryFn: () => fMappings({ data: { entity: "user" } }) });
-  const clientMaps = useQuery({ queryKey: ["clockify-import", "map", "client"], enabled: !!lastPreview, queryFn: () => fMappings({ data: { entity: "client" } }) });
-  const projectMaps = useQuery({ queryKey: ["clockify-import", "map", "project"], enabled: !!lastPreview, queryFn: () => fMappings({ data: { entity: "project" } }) });
+  const userMaps = useQuery({
+    queryKey: ["clockify-import", "map", "user"],
+    enabled: !!lastPreview,
+    queryFn: () => fMappings({ data: { entity: "user" } }),
+  });
+  const clientMaps = useQuery({
+    queryKey: ["clockify-import", "map", "client"],
+    enabled: !!lastPreview,
+    queryFn: () => fMappings({ data: { entity: "client" } }),
+  });
+  const projectMaps = useQuery({
+    queryKey: ["clockify-import", "map", "project"],
+    enabled: !!lastPreview,
+    queryFn: () => fMappings({ data: { entity: "project" } }),
+  });
 
   const [optQ, setOptQ] = useState<Record<string, string>>({ user: "", client: "", project: "" });
-  const userOpts = useQuery({ queryKey: ["clockify-import", "opt", "user", optQ.user], enabled: !!lastPreview, queryFn: () => fOptions({ data: { entity: "user", q: optQ.user } }) });
-  const clientOpts = useQuery({ queryKey: ["clockify-import", "opt", "client", optQ.client], enabled: !!lastPreview, queryFn: () => fOptions({ data: { entity: "client", q: optQ.client } }) });
-  const projectOpts = useQuery({ queryKey: ["clockify-import", "opt", "project", optQ.project], enabled: !!lastPreview, queryFn: () => fOptions({ data: { entity: "project", q: optQ.project } }) });
+  const userOpts = useQuery({
+    queryKey: ["clockify-import", "opt", "user", optQ.user],
+    enabled: !!lastPreview,
+    queryFn: () => fOptions({ data: { entity: "user", q: optQ.user } }),
+  });
+  const clientOpts = useQuery({
+    queryKey: ["clockify-import", "opt", "client", optQ.client],
+    enabled: !!lastPreview,
+    queryFn: () => fOptions({ data: { entity: "client", q: optQ.client } }),
+  });
+  const projectOpts = useQuery({
+    queryKey: ["clockify-import", "opt", "project", optQ.project],
+    enabled: !!lastPreview,
+    queryFn: () => fOptions({ data: { entity: "project", q: optQ.project } }),
+  });
 
   const [stEntity, setStEntity] = useState("time_entry");
   const [stStatus, setStStatus] = useState<string>("pending_review");
@@ -131,13 +187,27 @@ export function ClockifyImportPage() {
   const staging = useQuery({
     queryKey: ["clockify-import", "staging", stEntity, stStatus, stPage],
     enabled: !!lastPreview,
-    queryFn: () => fStaging({ data: { entity: stEntity, status: stStatus === "all" ? null : stStatus, page: stPage } }),
+    queryFn: () =>
+      fStaging({
+        data: { entity: stEntity, status: stStatus === "all" ? null : stStatus, page: stPage },
+      }),
   });
 
   const nameOf = useMemo(() => {
-    const u = new Map(((userMaps.data?.rows ?? []) as MappingRow[]).map((r) => [r.external_id, r.label ?? r.external_id]));
-    const p = new Map(((projectMaps.data?.rows ?? []) as MappingRow[]).map((r) => [r.external_id, r.label ?? r.external_id]));
-    return (kind: "user" | "project", id: string) => (kind === "user" ? u.get(id) : p.get(id)) ?? id;
+    const u = new Map(
+      ((userMaps.data?.rows ?? []) as MappingRow[]).map((r) => [
+        r.external_id,
+        r.label ?? r.external_id,
+      ]),
+    );
+    const p = new Map(
+      ((projectMaps.data?.rows ?? []) as MappingRow[]).map((r) => [
+        r.external_id,
+        r.label ?? r.external_id,
+      ]),
+    );
+    return (kind: "user" | "project", id: string) =>
+      (kind === "user" ? u.get(id) : p.get(id)) ?? id;
   }, [userMaps.data, projectMaps.data]);
 
   const act = useMutation({
@@ -192,7 +262,12 @@ export function ClockifyImportPage() {
         conn={conn}
         encryptionReady={status.data!.encryptionReady}
         busy={busy}
-        onSave={(v) => act.mutate(async () => { await fSave({ data: v }); toast.success("Conexão salva. Agora teste a chave."); })}
+        onSave={(v) =>
+          act.mutate(async () => {
+            await fSave({ data: v });
+            toast.success("Conexão salva. Agora teste a chave.");
+          })
+        }
         onTest={() =>
           act.mutate(async () => {
             const r = await fTest();
@@ -203,7 +278,15 @@ export function ClockifyImportPage() {
           })
         }
         onRemove={async () => {
-          if (!(await confirmDialog({ title: "Remover a chave do Clockify?", description: "O staging e o histórico de execuções continuam guardados.", confirmLabel: "Remover", variant: "destructive" }))) return;
+          if (
+            !(await confirmDialog({
+              title: "Remover a chave do Clockify?",
+              description: "O staging e o histórico de execuções continuam guardados.",
+              confirmLabel: "Remover",
+              variant: "destructive",
+            }))
+          )
+            return;
           act.mutate(() => fRemove());
         }}
       />
@@ -213,7 +296,12 @@ export function ClockifyImportPage() {
           conn={conn}
           workspaces={workspaces}
           busy={busy}
-          onSelect={(id) => act.mutate(async () => { await fSelect({ data: { sourceWorkspaceId: id } }); toast.success("Workspace de origem definido."); })}
+          onSelect={(id) =>
+            act.mutate(async () => {
+              await fSelect({ data: { sourceWorkspaceId: id } });
+              toast.success("Workspace de origem definido.");
+            })
+          }
         />
       )}
 
@@ -224,8 +312,13 @@ export function ClockifyImportPage() {
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="ck-noproj">Apontamentos sem projeto</Label>
-            <Select value={noProjectPolicy} onValueChange={(v) => setNoProjectPolicy(v as "stage" | "fallback")}>
-              <SelectTrigger id="ck-noproj"><SelectValue /></SelectTrigger>
+            <Select
+              value={noProjectPolicy}
+              onValueChange={(v) => setNoProjectPolicy(v as "stage" | "fallback")}
+            >
+              <SelectTrigger id="ck-noproj">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="stage">Manter no staging para revisão</SelectItem>
                 <SelectItem value="fallback">Criar o projeto “Clockify — sem projeto”</SelectItem>
@@ -235,7 +328,9 @@ export function ClockifyImportPage() {
           <div className="space-y-1.5">
             <Label htmlFor="ck-status">Situação das horas no ERP</Label>
             <Select value={erpStatus} onValueChange={(v) => setErpStatus(v as "locked" | "draft")}>
-              <SelectTrigger id="ck-status"><SelectValue /></SelectTrigger>
+              <SelectTrigger id="ck-status">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="locked">Travado (histórico, sem aprovação comercial)</SelectItem>
                 <SelectItem value="draft">Rascunho (editável)</SelectItem>
@@ -246,28 +341,60 @@ export function ClockifyImportPage() {
         <div className="flex flex-wrap gap-2">
           <Button
             disabled={busy || !connected || !!activeRun}
-            onClick={() => act.mutate(() => fStart({ data: { kind: "dry_run", options: { refetch: true, noProjectPolicy, erpStatus } } }))}
+            onClick={() =>
+              act.mutate(() =>
+                fStart({
+                  data: { kind: "dry_run", options: { refetch: true, noProjectPolicy, erpStatus } },
+                }),
+              )
+            }
           >
             <Eye className="mr-1.5 h-4 w-4" aria-hidden /> Gerar prévia completa
           </Button>
           <Button
             variant="outline"
             disabled={busy || !connected || !!activeRun || !lastPreview}
-            onClick={() => act.mutate(() => fStart({ data: { kind: "dry_run", options: { refetch: false, noProjectPolicy, erpStatus } } }))}
+            onClick={() =>
+              act.mutate(() =>
+                fStart({
+                  data: {
+                    kind: "dry_run",
+                    options: { refetch: false, noProjectPolicy, erpStatus },
+                  },
+                }),
+              )
+            }
           >
             Recalcular com os mapeamentos atuais
           </Button>
         </div>
-        {!connected && <p className="text-sm text-text-tertiary">Disponível depois de conectar e escolher o workspace de origem.</p>}
+        {!connected && (
+          <p className="text-sm text-text-tertiary">
+            Disponível depois de conectar e escolher o workspace de origem.
+          </p>
+        )}
         {liveRun && (
           <RunProgress
             run={liveRun}
             phases={liveRun.kind === "import" ? IMP : DRY}
             busy={busy}
-            onPause={() => act.mutate(() => fState({ data: { runId: liveRun.id, action: "pause" } }))}
-            onResume={() => act.mutate(() => fState({ data: { runId: liveRun.id, action: "resume" } }))}
+            onPause={() =>
+              act.mutate(() => fState({ data: { runId: liveRun.id, action: "pause" } }))
+            }
+            onResume={() =>
+              act.mutate(() => fState({ data: { runId: liveRun.id, action: "resume" } }))
+            }
             onCancel={async () => {
-              if (!(await confirmDialog({ title: "Cancelar a execução?", description: "Para depois do lote atual. O que já foi gravado continua salvo e uma nova execução não duplica.", confirmLabel: "Cancelar execução", variant: "destructive" }))) return;
+              if (
+                !(await confirmDialog({
+                  title: "Cancelar a execução?",
+                  description:
+                    "Para depois do lote atual. O que já foi gravado continua salvo e uma nova execução não duplica.",
+                  confirmLabel: "Cancelar execução",
+                  variant: "destructive",
+                }))
+              )
+                return;
               act.mutate(() => fState({ data: { runId: liveRun.id, action: "cancel" } }));
             }}
           />
@@ -275,7 +402,10 @@ export function ClockifyImportPage() {
       </FormSection>
 
       {lastPreview && (
-        <FormSection title="4. Conferir a prévia" description={`Prévia concluída em ${new Date(lastPreview.finished_at ?? lastPreview.created_at).toLocaleString("pt-BR")}.`}>
+        <FormSection
+          title="4. Conferir a prévia"
+          description={`Prévia concluída em ${new Date(lastPreview.finished_at ?? lastPreview.created_at).toLocaleString("pt-BR")}.`}
+        >
           <Tabs defaultValue="resumo">
             <TabsList className="flex-wrap">
               <TabsTrigger value="resumo">Resumo</TabsTrigger>
@@ -285,11 +415,17 @@ export function ClockifyImportPage() {
               <TabsTrigger value="staging">Staging</TabsTrigger>
             </TabsList>
             <TabsContent value="resumo" className="pt-4">
-              {previewDetail.isLoading ? <Skeletons.Card /> : previewReport ? <PreviewReport report={previewReport} nameOf={nameOf} /> : null}
+              {previewDetail.isLoading ? (
+                <Skeletons.Card />
+              ) : previewReport ? (
+                <PreviewReport report={previewReport} nameOf={nameOf} />
+              ) : null}
             </TabsContent>
             <TabsContent value="pessoas" className="pt-4">
               <p className="mb-3 text-sm text-text-secondary">
-                Vínculo automático só por e-mail igual a um membro do workspace. Ninguém ganha acesso: pessoas inativas continuam inativas e mantêm a autoria das horas. Horas nunca são atribuídas a quem importa.
+                Vínculo automático só por e-mail igual a um membro do workspace. Ninguém ganha
+                acesso: pessoas inativas continuam inativas e mantêm a autoria das horas. Horas
+                nunca são atribuídas a quem importa.
               </p>
               <MappingsTable
                 entity="user"
@@ -297,63 +433,113 @@ export function ClockifyImportPage() {
                 options={(userOpts.data ?? []) as TargetOption[]}
                 busy={busy}
                 onSearch={(q) => setOptQ((s) => ({ ...s, user: q }))}
-                onDecide={(externalId, decision, targetId) => act.mutate(() => fSetMapping({ data: { entity: "user", externalId, decision, targetId } }))}
+                onDecide={(externalId, decision, targetId) =>
+                  act.mutate(() =>
+                    fSetMapping({ data: { entity: "user", externalId, decision, targetId } }),
+                  )
+                }
                 onCreateIdentity={async (externalId) => {
-                  if (!(await confirmDialog({ title: "Criar identidade histórica inativa?", description: "Cria um registro sem acesso (conta bloqueada e membro inativo), sem convite e sem papel do Clockify, só para guardar a autoria das horas.", confirmLabel: "Criar sem acesso" }))) return;
+                  if (
+                    !(await confirmDialog({
+                      title: "Criar identidade histórica inativa?",
+                      description:
+                        "Cria um registro sem acesso (conta bloqueada e membro inativo), sem convite e sem papel do Clockify, só para guardar a autoria das horas.",
+                      confirmLabel: "Criar sem acesso",
+                    }))
+                  )
+                    return;
                   act.mutate(() => fIdentity({ data: { externalId } }));
                 }}
               />
             </TabsContent>
             <TabsContent value="clientes" className="pt-4">
-              <p className="mb-3 text-sm text-text-secondary">Opcional. Nome parecido é só sugestão: o vínculo com uma empresa precisa ser escolhido aqui. Sem vínculo, o nome do cliente fica guardado no projeto.</p>
+              <p className="mb-3 text-sm text-text-secondary">
+                Opcional. Nome parecido é só sugestão: o vínculo com uma empresa precisa ser
+                escolhido aqui. Sem vínculo, o nome do cliente fica guardado no projeto.
+              </p>
               <MappingsTable
                 entity="client"
                 rows={(clientMaps.data?.rows ?? []) as MappingRow[]}
                 options={(clientOpts.data ?? []) as TargetOption[]}
                 busy={busy}
                 onSearch={(q) => setOptQ((s) => ({ ...s, client: q }))}
-                onDecide={(externalId, decision, targetId) => act.mutate(() => fSetMapping({ data: { entity: "client", externalId, decision, targetId } }))}
+                onDecide={(externalId, decision, targetId) =>
+                  act.mutate(() =>
+                    fSetMapping({ data: { entity: "client", externalId, decision, targetId } }),
+                  )
+                }
               />
             </TabsContent>
             <TabsContent value="projetos" className="pt-4">
-              <p className="mb-3 text-sm text-text-secondary">Por padrão cada projeto do Clockify vira um projeto novo, inclusive os arquivados. Nome igual a um projeto do ERP aparece como sugestão, nunca é vinculado sozinho.</p>
+              <p className="mb-3 text-sm text-text-secondary">
+                Por padrão cada projeto do Clockify vira um projeto novo, inclusive os arquivados.
+                Nome igual a um projeto do ERP aparece como sugestão, nunca é vinculado sozinho.
+              </p>
               <MappingsTable
                 entity="project"
                 rows={(projectMaps.data?.rows ?? []) as MappingRow[]}
                 options={(projectOpts.data ?? []) as TargetOption[]}
                 busy={busy}
                 onSearch={(q) => setOptQ((s) => ({ ...s, project: q }))}
-                onDecide={(externalId, decision, targetId) => act.mutate(() => fSetMapping({ data: { entity: "project", externalId, decision, targetId } }))}
+                onDecide={(externalId, decision, targetId) =>
+                  act.mutate(() =>
+                    fSetMapping({ data: { entity: "project", externalId, decision, targetId } }),
+                  )
+                }
               />
             </TabsContent>
             <TabsContent value="staging" className="space-y-3 pt-4">
               <div className="flex flex-col gap-2 sm:flex-row">
                 <div className="space-y-1.5">
                   <Label htmlFor="st-ent">Dado</Label>
-                  <Select value={stEntity} onValueChange={(v) => { setStEntity(v); setStPage(0); }}>
-                    <SelectTrigger id="st-ent" className="w-56"><SelectValue /></SelectTrigger>
+                  <Select
+                    value={stEntity}
+                    onValueChange={(v) => {
+                      setStEntity(v);
+                      setStPage(0);
+                    }}
+                  >
+                    <SelectTrigger id="st-ent" className="w-56">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
-                      {Object.entries(ENTITY_LABEL).filter(([k]) => k !== "report_summary").map(([k, v]) => (
-                        <SelectItem key={k} value={k}>{v}</SelectItem>
-                      ))}
+                      {Object.entries(ENTITY_LABEL)
+                        .filter(([k]) => k !== "report_summary")
+                        .map(([k, v]) => (
+                          <SelectItem key={k} value={k}>
+                            {v}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="st-st">Situação</Label>
-                  <Select value={stStatus} onValueChange={(v) => { setStStatus(v); setStPage(0); }}>
-                    <SelectTrigger id="st-st" className="w-56"><SelectValue /></SelectTrigger>
+                  <Select
+                    value={stStatus}
+                    onValueChange={(v) => {
+                      setStStatus(v);
+                      setStPage(0);
+                    }}
+                  >
+                    <SelectTrigger id="st-st" className="w-56">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todas</SelectItem>
                       {Object.entries(STAGING_STATUS_LABEL).map(([k, v]) => (
-                        <SelectItem key={k} value={k}>{v}</SelectItem>
+                        <SelectItem key={k} value={k}>
+                          {v}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               {staging.isError ? (
-                <Alert variant="destructive"><AlertDescription>{errMsg(staging.error)}</AlertDescription></Alert>
+                <Alert variant="destructive">
+                  <AlertDescription>{errMsg(staging.error)}</AlertDescription>
+                </Alert>
               ) : (
                 <StagingTable
                   rows={(staging.data?.rows ?? []) as StagingRow[]}
@@ -369,27 +555,48 @@ export function ClockifyImportPage() {
           <div className="space-y-3 rounded-lg border border-border-subtle bg-surface-1 p-4">
             {previewConfirmed ? (
               <p className="flex items-center gap-2 text-sm">
-                <ClipboardCheck className="h-4 w-4 text-status-open" aria-hidden /> Prévia conferida em {new Date(lastPreview.preview_confirmed_at!).toLocaleString("pt-BR")}.
+                <ClipboardCheck className="h-4 w-4 text-status-open" aria-hidden /> Prévia conferida
+                em {new Date(lastPreview.preview_confirmed_at!).toLocaleString("pt-BR")}.
               </p>
             ) : (
               <div className="flex items-start gap-2">
-                <Checkbox id="ck-confirm" checked={checked} onCheckedChange={(v) => setChecked(v === true)} />
+                <Checkbox
+                  id="ck-confirm"
+                  checked={checked}
+                  onCheckedChange={(v) => setChecked(v === true)}
+                />
                 <Label htmlFor="ck-confirm" className="text-sm font-normal leading-snug">
-                  Conferi inventário, pessoas, projetos, pendências e totais em segundos. Sei que horas de pessoas sem vínculo, cronômetros abertos e sobreposições ficam no staging.
+                  Conferi inventário, pessoas, projetos, pendências e totais em segundos. Sei que
+                  horas de pessoas sem vínculo, cronômetros abertos e sobreposições ficam no
+                  staging.
                 </Label>
               </div>
             )}
             <div className="flex flex-wrap gap-2">
               {!previewConfirmed && (
-                <Button variant="outline" disabled={busy || !checked} onClick={() => act.mutate(() => fConfirm({ data: { runId: lastPreview.id } }))}>
+                <Button
+                  variant="outline"
+                  disabled={busy || !checked}
+                  onClick={() => act.mutate(() => fConfirm({ data: { runId: lastPreview.id } }))}
+                >
                   Confirmar prévia
                 </Button>
               )}
               <Button
                 disabled={busy || !previewConfirmed || !!activeRun}
                 onClick={async () => {
-                  if (!(await confirmDialog({ title: "Importar para o TechProjects?", description: "Grava projetos, tarefas, membros e horas em lotes. Reexecutar não duplica e não sobrescreve edições feitas no ERP. Nenhum workflow, cobrança ou convite é disparado.", confirmLabel: "Importar agora" }))) return;
-                  act.mutate(() => fStart({ data: { kind: "import", previewRunId: lastPreview.id } }));
+                  if (
+                    !(await confirmDialog({
+                      title: "Importar para o TechProjects?",
+                      description:
+                        "Grava projetos, tarefas, membros e horas em lotes. Reexecutar não duplica e não sobrescreve edições feitas no ERP. Nenhum workflow, cobrança ou convite é disparado.",
+                      confirmLabel: "Importar agora",
+                    }))
+                  )
+                    return;
+                  act.mutate(() =>
+                    fStart({ data: { kind: "import", previewRunId: lastPreview.id } }),
+                  );
                 }}
               >
                 <Download className="mr-1.5 h-4 w-4" aria-hidden /> Importar
@@ -400,7 +607,10 @@ export function ClockifyImportPage() {
       )}
 
       {importReport && (
-        <FormSection title="5. Resultado da última importação" description={`Concluída em ${new Date(lastImport!.finished_at ?? lastImport!.created_at).toLocaleString("pt-BR")}.`}>
+        <FormSection
+          title="5. Resultado da última importação"
+          description={`Concluída em ${new Date(lastImport!.finished_at ?? lastImport!.created_at).toLocaleString("pt-BR")}.`}
+        >
           <ImportReport report={importReport} nameOf={nameOf} />
         </FormSection>
       )}
