@@ -744,3 +744,113 @@ export async function createClockifyHistoricalIdentity(ctx: Ctx, externalId: str
   if (error) throw new Error(error.message);
   return { ok: true };
 }
+
+export type BulkIdentityResult = {
+  processed: number;
+  created: number;
+  failed: Array<{ externalId: string; name: string | null; reason: string }>;
+  remaining: number;
+  newUserIds: string[];
+};
+
+/**
+ * Cria identidades históricas inativas para pessoas pendentes, em blocos pequenos.
+ * Reaproveita `createClockifyHistoricalIdentity`; falha de uma não para as outras;
+ * quem já tem vínculo não é tocado (idempotente). `skip` evita repetir as que já falharam.
+ */
+export async function createClockifyHistoricalIdentitiesBulk(
+  ctx: Ctx,
+  opts: { limit: number; skip: string[] },
+): Promise<BulkIdentityResult> {
+  const db = await admin();
+  const conn = await loadConn(ctx.workspaceId);
+  if (!conn?.source_workspace_id) throw new Error("Escolha o workspace de origem.");
+  const skip = new Set(opts.skip.map((s) => s.toLowerCase()));
+  const { data: pend, error } = await db
+    .from("clockify_mappings")
+    .select("external_id, label")
+    .eq("workspace_id", ctx.workspaceId)
+    .eq("source_workspace_id", conn.source_workspace_id)
+    .eq("entity_type", "user")
+    .eq("decision", "pending")
+    .is("target_id", null)
+    .order("external_id");
+  if (error) throw new Error(error.message);
+  const queue = ((pend ?? []) as Array<{ external_id: string; label: string | null }>).filter(
+    (p) => !skip.has(p.external_id),
+  );
+  const batch = queue.slice(0, opts.limit);
+  const out: BulkIdentityResult = {
+    processed: 0,
+    created: 0,
+    failed: [],
+    remaining: 0,
+    newUserIds: [],
+  };
+  for (const p of batch) {
+    out.processed++;
+    try {
+      await createClockifyHistoricalIdentity(ctx, p.external_id);
+      out.created++;
+      out.newUserIds.push(p.external_id);
+    } catch (e) {
+      out.failed.push({
+        externalId: p.external_id,
+        name: p.label,
+        reason: e instanceof Error ? e.message : "Falha desconhecida.",
+      });
+    }
+  }
+  out.remaining = queue.length - batch.length;
+  return out;
+}
+
+/**
+ * Reabre a fase de gravação de horas da última importação concluída, só para as
+ * pessoas informadas, sem criar outra execução. O vínculo idempotente evita duplicar.
+ */
+export async function reopenClockifyEntriesForUsers(ctx: Ctx, externalIds: string[]) {
+  if (!externalIds.length) throw new Error("Nenhuma pessoa informada.");
+  if (!externalIds.every(isClockifyId)) throw new Error("Identificador inválido.");
+  const db = await admin();
+  const conn = await loadConn(ctx.workspaceId);
+  if (!conn?.source_workspace_id) throw new Error("Escolha o workspace de origem.");
+  if (!canReadWholeWorkspace(conn.source_access as ClockifyAccess))
+    throw new Error("Acesso de administrador na origem não comprovado.");
+  const { data: run, error } = await db
+    .from("clockify_import_runs")
+    .select("id, checkpoint")
+    .eq("workspace_id", ctx.workspaceId)
+    .eq("source_workspace_id", conn.source_workspace_id)
+    .eq("kind", "import")
+    .eq("status", "completed")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!run) throw new Error("Nenhuma importação concluída para retomar.");
+  const cp = { ...((run.checkpoint ?? {}) as Record<string, unknown>) };
+  for (const k of ["variant", "page", "index", "ids", "offset", "lastEnd", "reportChunk"])
+    delete cp[k];
+  cp.ids = externalIds.map((x) => x.toLowerCase());
+  cp.index = 0;
+  cp.offset = 0;
+  cp.lastEnd = null;
+  const { data: upd, error: uErr } = await db
+    .from("clockify_import_runs")
+    .update({
+      status: "running",
+      phase: "entries_write",
+      checkpoint: cp,
+      finished_at: null,
+      error: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", run.id)
+    .eq("status", "completed")
+    .select("id")
+    .maybeSingle();
+  if (uErr) throw new Error(uErr.message);
+  if (!upd) throw new Error("A importação mudou de estado; atualize a tela.");
+  return { runId: run.id as string };
+}

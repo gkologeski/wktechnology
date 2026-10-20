@@ -191,3 +191,28 @@ export const createClockifyImportIdentity = createServerFn({ method: "POST" })
     const ctx = await s.requireClockifyAdmin(context.supabase, context.userId, { write: true });
     return s.createClockifyHistoricalIdentity(ctx, data.externalId);
   });
+
+export const createClockifyImportIdentitiesBulk = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        limit: z.number().int().min(1).max(25).default(15),
+        skip: z.array(id24).max(500).default([]),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const s = await import("./clockify-service.server");
+    const ctx = await s.requireClockifyAdmin(context.supabase, context.userId, { write: true });
+    return s.createClockifyHistoricalIdentitiesBulk(ctx, data);
+  });
+
+export const reopenClockifyImportEntries = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ externalIds: z.array(id24).min(1).max(500) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const s = await import("./clockify-service.server");
+    const ctx = await s.requireClockifyAdmin(context.supabase, context.userId, { write: true });
+    return s.reopenClockifyEntriesForUsers(ctx, data.externalIds);
+  });
