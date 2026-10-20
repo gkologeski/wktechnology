@@ -1177,6 +1177,13 @@
       "when": 1792506054633,
       "tag": "0167_time_entries_allow_zero_import",
       "breakpoints": true
+    },
+    {
+      "idx": 168,
+      "version": "7",
+      "when": 1792506568710,
+      "tag": "0168_clockify_force_import_null_tags",
+      "breakpoints": true
     }
   ]
 }
