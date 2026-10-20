@@ -1,6 +1,6 @@
 -- Prova isolada do importador Clockify (banco descartável local, nunca o compartilhado).
 -- Uso: psql -f tests/sql/clockify-importer-isolated.sql após 0157/0158, com a estrutura mínima abaixo.
--- Resultado de 2026-10-20: 23 checagens 't' e 8 avisos 'ok', nenhum 'FALHOU'.
+-- Resultado de 2026-10-20: 19 checagens 't' e 8 avisos 'ok', nenhum 'FALHOU'.
 
 -- Estrutura mínima espelhando as colunas reais usadas (auditadas no catálogo de produção).
 do $r$ begin if not exists (select 1 from pg_roles where rolname=$q$anon$q$) then create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls; end if; end $r$;
