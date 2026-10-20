@@ -220,7 +220,9 @@ async function workspaceIdsWithRole(client: ClockifyClient, role: "OWNER" | "WOR
   try {
     const { data } = await client.get<CkWorkspace[]>("/workspaces", { roles: role });
     return new Set(
-      (Array.isArray(data) ? data : []).filter((w) => isClockifyId(w.id)).map((w) => w.id.toLowerCase()),
+      (Array.isArray(data) ? data : [])
+        .filter((w) => isClockifyId(w.id))
+        .map((w) => w.id.toLowerCase()),
     );
   } catch {
     return null;
