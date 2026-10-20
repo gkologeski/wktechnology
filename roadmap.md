@@ -157,7 +157,7 @@
 - [x] Tela em /projects/settings/imports/clockify + item no menu e na central de importações
 - [x] Testes com fixture (sem chamadas reais) e guia de migração
 - [x] Teste lista workspaces reais com papel verificado (proprietário/admin/sem admin/não verificado); prévia bloqueada sem admin comprovado; origem escolhida manualmente por ID
-- [ ] Conectar Clockify e escolher "WK Technology" por ID confirmado (bloqueado: aguarda chave do usuário e comprovação de acesso admin)
+- [ ] Conectar Clockify e escolher "WK Technology" por ID confirmado (bloqueado: aguarda o usuário colar a chave na tela; ele se declarou administrador, o teste da chave comprova)
 - [ ] Rodar inventário/prévia real (bloqueado: depende do item acima)
 - [ ] Importação real (bloqueado: aguarda prévia conferida pelo usuário)
 - [ ] Agendar tick em segundo plano (bloqueado: depende de publicação aprovada)
