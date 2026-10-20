@@ -3,6 +3,7 @@
  * (`/api/public/forms/$slug/submit`): CORS restrito ao site institucional,
  * IP do visitante e verificação do Cloudflare Turnstile no servidor.
  */
+import { INSTITUTIONAL_SITE_ORIGINS } from "@/lib/platform-domains";
 
 export const TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 
@@ -10,10 +11,7 @@ export const TURNSTILE_FAILED_MESSAGE =
   "Verificação de segurança falhou. Recarregue a página e tente novamente.";
 
 /** Origens autorizadas a ler a resposta do endpoint no navegador. */
-export const FORM_SUBMIT_ALLOWED_ORIGINS: readonly string[] = [
-  "https://www.wktechnology.com.br",
-  "https://wktechnology.com.br",
-];
+export const FORM_SUBMIT_ALLOWED_ORIGINS = INSTITUTIONAL_SITE_ORIGINS;
 
 /** Cabeçalhos CORS: só ecoa a origem quando ela está na lista permitida. */
 export function formSubmitCorsHeaders(origin: string | null): Record<string, string> {
