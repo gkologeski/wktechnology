@@ -168,6 +168,10 @@ export class FakeDb {
       p_rows: Array<{ _key: string; id?: string; row: Row }>;
     },
   ) {
+    if (name === "clockify_import_catalogs") {
+      this.catalogCalls.push(args.p_workspace);
+      return Promise.resolve({ data: {}, error: null });
+    }
     if (name !== "clockify_import_apply") throw new Error(`rpc desconhecida ${name}`);
     const t = (this.tables[args.p_table] ??= []);
     const out = args.p_rows.map((r) => {

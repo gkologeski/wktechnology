@@ -543,6 +543,15 @@ export class ClockifyEngine {
 
   private async finish(): Promise<boolean> {
     this.run.status = "completed";
+    if (this.run.kind !== "dry_run") {
+      // Tags, grupos (informativos) e clientes sem empresa de nome igual; idempotente.
+      const { error } = await this.db.rpc("clockify_import_catalogs", {
+        p_workspace: this.run.workspace_id,
+        p_source: this.ws,
+        p_owner: this.run.requested_by,
+      });
+      if (error) throw new Error(`Falha ao importar tags, grupos e clientes: ${error.message}`);
+    }
     const report =
       this.run.kind === "dry_run" ? await this.buildPreviewReport() : this.buildImportReport();
     await this.save({ report, finished_at: new Date(this.now()).toISOString() });
