@@ -23,6 +23,8 @@ import {
   clockifyImportTargetOptions,
   confirmClockifyImportPreview,
   createClockifyImportIdentity,
+  createClockifyImportIdentitiesBulk,
+  reopenClockifyImportEntries,
   getClockifyImportRun,
   getClockifyImportStatus,
   listClockifyImportMappings,
@@ -100,6 +102,9 @@ export function ClockifyImportPage() {
   const fOptions = useServerFn(clockifyImportTargetOptions);
   const fStaging = useServerFn(listClockifyImportStaging);
   const fIdentity = useServerFn(createClockifyImportIdentity);
+  const fIdentityBulk = useServerFn(createClockifyImportIdentitiesBulk);
+  const fReopen = useServerFn(reopenClockifyImportEntries);
+  const [bulk, setBulk] = useState<{ done: number; total: number } | null>(null);
 
   const status = useQuery({ queryKey: ["clockify-import", "status"], queryFn: () => fStatus() });
   const [workspaces, setWorkspaces] = useState<SourceWorkspaceView[] | null>(null);
@@ -214,7 +219,51 @@ export function ClockifyImportPage() {
     onError: (e) => toast.error(errMsg(e)),
     onSettled: () => refresh(),
   });
-  const busy = act.isPending;
+  const busy = act.isPending || bulk !== null;
+
+  const runBulkIdentities = async (total: number) => {
+    if (
+      !(await confirmDialog({
+        title: `Criar ${total} identidades históricas inativas?`,
+        description:
+          "Cada pessoa pendente ganha um registro sem acesso (conta bloqueada e membro inativo), sem convite, sem e-mail e sem papel do Clockify. Depois, as horas dessas pessoas são gravadas na mesma importação.",
+        confirmLabel: "Criar sem acesso",
+      }))
+    )
+      return;
+    const skip: string[] = [];
+    const created: string[] = [];
+    const failed: Array<{ name: string | null; reason: string }> = [];
+    setBulk({ done: 0, total });
+    try {
+      for (let guard = 0; guard < 100; guard++) {
+        const r = await fIdentityBulk({ data: { limit: 15, skip } });
+        created.push(...r.newUserIds);
+        for (const f of r.failed) {
+          skip.push(f.externalId);
+          failed.push({ name: f.name, reason: f.reason });
+        }
+        setBulk({ done: created.length + failed.length, total });
+        if (r.processed === 0 || r.remaining === 0) break;
+      }
+      if (created.length) await fReopen({ data: { externalIds: created } });
+      toast.success(
+        `${created.length} identidades criadas${failed.length ? `; ${failed.length} continuam pendentes` : ""}.${created.length ? " Gravando as horas dessas pessoas." : ""}`,
+      );
+      if (failed.length)
+        toast.warning(
+          `Pendentes: ${failed
+            .slice(0, 5)
+            .map((f) => f.name ?? "?")
+            .join(", ")}${failed.length > 5 ? "…" : ""}`,
+        );
+    } catch (e) {
+      toast.error(errMsg(e));
+    } finally {
+      setBulk(null);
+      refresh();
+    }
+  };
 
   if (status.isLoading) {
     return (
@@ -430,6 +479,30 @@ export function ClockifyImportPage() {
                 acesso: pessoas inativas continuam inativas e mantêm a autoria das horas. Horas
                 nunca são atribuídas a quem importa.
               </p>
+              {(() => {
+                const pendingCount = (userMaps.data?.rows ?? []).filter(
+                  (r) => (r as MappingRow).decision === "pending",
+                ).length;
+                if (!pendingCount && !bulk) return null;
+                return (
+                  <div className="mb-3 flex flex-wrap items-center gap-3 rounded-md border border-border bg-muted/40 p-3">
+                    <p className="text-sm text-text-secondary" aria-live="polite">
+                      {bulk
+                        ? `Criando identidades: ${bulk.done} de ${bulk.total}…`
+                        : `${pendingCount} pessoas sem vínculo.`}
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busy || !lastImport}
+                      title={lastImport ? undefined : "Requer uma importação concluída"}
+                      onClick={() => runBulkIdentities(pendingCount)}
+                    >
+                      Criar identidade histórica para todos os pendentes
+                    </Button>
+                  </div>
+                );
+              })()}
               <MappingsTable
                 entity="user"
                 rows={(userMaps.data?.rows ?? []) as MappingRow[]}
