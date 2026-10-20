@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { requireCronAuth } from "@/lib/cron-auth.server";
 import { runCronWithLogging } from "@/lib/cron-observability.server";
 
-// Avança em segundo plano execuções do importador Clockify já iniciadas por um admin.
+// Avança em segundo plano execuções de importação de horas (Clockify e Jibble) já iniciadas
+// por um admin.
 // Nunca inicia importação sozinho. Exige Bearer CRON_SECRET.
 export const Route = createFileRoute("/api/public/hooks/clockify-import-tick")({
   server: {
@@ -27,7 +28,25 @@ export const Route = createFileRoute("/api/public/hooks/clockify-import-tick")({
             }));
             if (res.advanced) advanced++;
           }
-          return { runs: runs?.length ?? 0, advanced } as Record<string, unknown>;
+          // Mesmo agendador para o Jibble (tabelas multi-provedor), sem job paralelo.
+          const { advanceJibbleRun } =
+            await import("@/lib/integrations/jibble/jibble-service.server");
+          const { data: jbRuns } = await supabaseAdmin
+            .from("time_import_runs")
+            .select("id, workspace_id")
+            .eq("provider", "jibble")
+            .in("status", ["queued", "running", "cancel_requested"])
+            .limit(5);
+          for (const r of jbRuns ?? []) {
+            const res = await advanceJibbleRun(r.workspace_id, r.id).catch(() => ({
+              advanced: false,
+            }));
+            if (res.advanced) advanced++;
+          }
+          return {
+            runs: (runs?.length ?? 0) + (jbRuns?.length ?? 0),
+            advanced,
+          } as Record<string, unknown>;
         });
         if (run.status === "error")
           return Response.json({ ok: false, error: run.error }, { status: 500 });

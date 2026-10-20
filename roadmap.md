@@ -161,3 +161,18 @@
 - [ ] Rodar inventário/prévia real (bloqueado: depende do item acima)
 - [ ] Importação real (bloqueado: aguarda prévia conferida pelo usuário)
 - [ ] Agendar tick em segundo plano (bloqueado: depende de publicação aprovada)
+
+# Roadmap — Importador Jibble → TechProjects (WK)
+
+- [x] Validar endpoints na documentação oficial (OAuth, OData, async 202/303)
+- [x] Tabelas multi-provedor `time_import_*` com RLS admin-only e desfazer protegido (0160–0162)
+- [x] Cliente somente leitura (allowlist, nextLink, reautenticação, 429/5xx, export assíncrono)
+- [x] Reconstrução In/Out/pausa, virada de dia/DST, conciliação com timesheets, duplicidade entre fontes
+- [x] Motor retomável (prévia, recálculo, importação, desfazer) + tela + menu + agendador compartilhado
+- [x] Testes (urls/cliente/reconstrução/conciliação/mapeamento/motor) e prova de acesso no banco
+- [ ] Conectar o Jibble (bloqueado: aguarda o proprietário criar Client ID/Secret e colar na tela)
+- [ ] Confirmar papel Owner/Admin e organização pelo ID (bloqueado: depende da conexão)
+- [ ] Confirmar com dados reais o formato das pausas (não documentado na coleção pública)
+- [ ] Prévia real, revisão de mapeamentos/duplicidades e importação (bloqueado: depende da conexão)
+- [ ] Download privado de capturas de tela (não implementado; exige aprovação de armazenamento)
+- [ ] Agendar o avanço em segundo plano (exige publicação aprovada)
