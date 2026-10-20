@@ -10,6 +10,7 @@ import {
   CheckCheck,
   LayoutDashboard,
   Download,
+  ShieldCheck,
 } from "lucide-react";
 import type { SidebarGroup } from "@/lib/menu-config";
 
@@ -119,6 +120,12 @@ export const PROJECTS_SIDEBAR_GROUPS: SidebarGroup[] = [
         url: "/projects/settings/imports/jibble",
         need: "admin",
         icon: Download,
+      },
+      {
+        title: "Conciliação de horas",
+        url: "/projects/settings/imports/reconciliation",
+        need: "admin",
+        icon: ShieldCheck,
       },
     ],
   },

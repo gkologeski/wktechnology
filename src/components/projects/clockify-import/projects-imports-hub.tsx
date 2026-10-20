@@ -1,6 +1,6 @@
 // Lista de fontes de importação do TechProjects.
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Fingerprint, Timer } from "lucide-react";
+import { ArrowRight, Fingerprint, ShieldCheck, Timer } from "lucide-react";
 import { PageHeader, StatusBadge } from "@/components/techhire/ui";
 
 export function ProjectsImportsHub() {
@@ -54,6 +54,28 @@ export function ProjectsImportsHub() {
               <span className="mt-1 block text-sm text-text-secondary">
                 Pessoas, projetos, atividades e eventos de ponto reconstruídos em intervalos, com
                 conciliação de timesheets e checagem de duplicidade com o Clockify.
+              </span>
+            </span>
+            <ArrowRight
+              className="mt-1 h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary"
+              aria-hidden
+            />
+          </Link>
+        </li>
+        <li className="sm:col-span-2">
+          <Link
+            to="/projects/settings/imports/reconciliation"
+            className="group flex h-full items-start gap-3 rounded-lg border border-border-subtle bg-surface-1 p-4 transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label="Abrir a conciliação de horas importadas"
+          >
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary">
+              <ShieldCheck className="h-5 w-5" aria-hidden />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="font-medium">Conciliação de horas</span>
+              <span className="mt-1 block text-sm text-text-secondary">
+                Cobertura do que veio de cada fonte, conferência mensal em segundos, fila de
+                pendências e vínculos com empresas e pessoas.
               </span>
             </span>
             <ArrowRight

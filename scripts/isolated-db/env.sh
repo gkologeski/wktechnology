@@ -1,6 +1,8 @@
 # Ambiente do banco ISOLADO. Sempre socket local; nunca herda PG* do projeto compartilhado.
 unset PGHOST PGPORT PGUSER PGPASSWORD PGDATABASE PGSERVICE PGSSLMODE DATABASE_URL SUPABASE_DB_URL
-export PATH="/nix/store/avg1rhq9w93k03qmdaklazcsapn45zpd-postgresql-17.9/bin:$PATH"
+# Binários reais do PostgreSQL (o caminho da loja nix muda entre ambientes; $libdir depende dele).
+_iso_pg_bin="$(dirname "$(readlink -f "$(command -v initdb 2>/dev/null || echo /usr/bin/initdb)")")"
+export PATH="$_iso_pg_bin:$PATH"
 export ISO_ROOT="${ISO_ROOT:-/tmp/techerp-isolated}"
 export ISO_DATA="$ISO_ROOT/data"
 export ISO_SOCK="$ISO_ROOT/sock"

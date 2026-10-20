@@ -1,0 +1,7 @@
+# TechProjects
+
+- Painel (`project_dashboard_summary`) agrega no banco como o usuário (RLS, negações, membership ativo), por segundos exatos de início/fim, com período e fuso validados; importado bloqueado (`locked_import`) nunca conta como aprovado; por quê: números completos sem limite de linhas e sem vazar escopo.
+- Conciliação (`reconciliation.*`, guia em `docs/architecture/project-reconciliation.md`): leituras e ações só para admin ativo do workspace ativo via funções que chamam `project_recon_assert_admin`; Ver Como bloqueia gravação; por quê: staging/vínculos são dados de administrador.
+- Vínculos canônicos (`projects.company_id`, `project_time_entries.person_id/allocation_id`) só por evidência exata (FK da origem sem conflito, e-mail único nos dois lados, alocação única na vigência) ou sugestão confirmada; cada mudança vai para `project_link_changes` e a reversão só desfaz o que ainda tem o valor gravado; por quê: nunca mesclar por nome nem perder edição posterior.
+- Gravação de vínculo usa `app.project_link_backfill` apenas dentro das funções de vínculo: não recalcula duração, não muda `updated_at`, não gera auditoria genérica nem workflow; por quê: ligar registros não é editar o apontamento.
+- Fila `project_reconciliation_issues` é derivada e idempotente (chave `dedupe_key`), aceita vários alertas por registro e nunca altera apontamento nem bruto; decisões exigem justificativa e ficam em `project_reconciliation_issue_events`.

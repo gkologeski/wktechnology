@@ -170,6 +170,7 @@ export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
   "/projects/hours-review": ["techprojects.time_entries", "techprojects.timesheet"],
   "/projects/settings/imports/clockify": ["system.import"],
   "/projects/settings/imports/jibble": ["system.import"],
+  "/projects/settings/imports/reconciliation": ["system.import"],
 
   // --- TechFinance -----------------------------------------------------------
   "/finance": ["techfinance.entries"],

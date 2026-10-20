@@ -1,86 +1,104 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { ProjectDashboardData, ProjectDashboardItem } from "./dashboard.types";
+import type { Database } from "@/integrations/supabase/types";
+import type { ProjectDashboardData } from "./dashboard.types";
 
-type ProjectRow = {
-  id: string;
-  name: string;
-  status: string;
-  progress: number | null;
-  due_at: string | null;
-};
-type TaskRow = { status: string; due_at: string | null };
-type TimeRow = { status: string; duration_minutes: number | null; hours: number | null };
-
-function projectItem(row: ProjectRow): ProjectDashboardItem {
-  return {
-    id: row.id,
-    name: row.name,
-    status: row.status,
-    progress: Number(row.progress ?? 0),
-    dueAt: row.due_at,
+type Raw = {
+  from: string;
+  to: string;
+  tz: string;
+  today: string;
+  generated_at: string;
+  projects: { total: number; by_status: Record<string, number> };
+  in_progress_total: number;
+  in_progress: Array<{
+    id: string;
+    name: string;
+    status: string;
+    dueAt: string | null;
+    tasksTotal: number;
+    tasksDone: number;
+    periodSeconds: number;
+  }>;
+  active_with_task_base: number;
+  active_task_completion: number | null;
+  attention_total: number;
+  attention: Array<{ id: string; name: string; status: string; dueAt: string | null }>;
+  tasks: { open: number; overdue: number };
+  period: {
+    rows: number;
+    seconds: number;
+    rows_in_review: number;
+    seconds_in_review: number;
+    by_status: Array<{ status: string; rows: number; seconds: number }>;
   };
-}
+  coverage: {
+    issues_visible: boolean;
+    can_open_center: boolean;
+    open_issues: number;
+    last_refresh_at: string | null;
+  };
+};
 
+/**
+ * Agregação exata no banco (sem limites de linhas), com o mesmo escopo visível das
+ * listas: a função roda como o usuário (RLS, negações e workspace ativo).
+ */
 export async function loadProjectDashboard(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<Database>,
   from: string,
   to: string,
+  tz: string,
 ): Promise<ProjectDashboardData> {
-  const [projectsResult, tasksResult, timeResult] = await Promise.all([
-    supabase
-      .from("projects")
-      .select("id, name, status, progress, due_at")
-      .order("updated_at", { ascending: false })
-      .limit(1000),
-    supabase.from("project_tasks").select("status, due_at").limit(5000),
-    supabase
-      .from("project_time_entries")
-      .select("status, duration_minutes, hours")
-      .gte("entry_date", from)
-      .lte("entry_date", to)
-      .limit(5000),
-  ]);
-  const firstError = projectsResult.error ?? tasksResult.error ?? timeResult.error;
-  if (firstError) throw new Error(`Não foi possível carregar os projetos: ${firstError.message}`);
-
-  const projects = (projectsResult.data ?? []) as ProjectRow[];
-  const tasks = (tasksResult.data ?? []) as TaskRow[];
-  const times = (timeResult.data ?? []) as TimeRow[];
-  const active = projects.filter((row) => row.status === "active");
-  const today = new Date().toISOString().slice(0, 10);
-  const openTasks = tasks.filter((row) => row.status !== "done");
-  const byStatus = new Map<string, number>();
-  let trackedMinutes = 0;
-  for (const row of times) {
-    const minutes = Number(row.duration_minutes ?? 0) || Number(row.hours ?? 0) * 60;
-    trackedMinutes += minutes;
-    byStatus.set(row.status, (byStatus.get(row.status) ?? 0) + minutes);
-  }
-  const attention = projects
-    .filter(
-      (row) =>
-        row.status === "on_hold" ||
-        ((row.status === "active" || row.status === "planning") &&
-          Boolean(row.due_at) &&
-          String(row.due_at).slice(0, 10) < today),
-    )
-    .sort((a, b) => String(a.due_at).localeCompare(String(b.due_at)));
-
+  const { data, error } = await supabase.rpc("project_dashboard_summary", {
+    p_from: from,
+    p_to: to,
+    p_tz: tz,
+  });
+  if (error) throw new Error(`Não foi possível carregar os projetos: ${error.message}`);
+  const r = data as unknown as Raw;
   return {
-    activeCount: active.length,
-    averageProgress:
-      active.length > 0
-        ? active.reduce((sum, row) => sum + Number(row.progress ?? 0), 0) / active.length
-        : 0,
-    openTasks: openTasks.length,
-    overdueTasks: openTasks.filter(
-      (row) => Boolean(row.due_at) && String(row.due_at).slice(0, 10) < today,
-    ).length,
-    trackedMinutes,
-    statusMinutes: Array.from(byStatus, ([status, minutes]) => ({ status, minutes })).sort(
-      (a, b) => b.minutes - a.minutes,
-    ),
-    projects: projects.slice(0, 8).map(projectItem),
-    attention: attention.slice(0, 8).map(projectItem),
+    from: r.from,
+    to: r.to,
+    tz: r.tz,
+    today: r.today,
+    generatedAt: r.generated_at,
+    activeCount: Number(r.projects.by_status.active ?? 0),
+    projectsTotal: Number(r.projects.total),
+    activeWithTaskBase: Number(r.active_with_task_base),
+    activeTaskCompletion:
+      r.active_task_completion === null ? null : Number(r.active_task_completion),
+    openTasks: Number(r.tasks.open),
+    overdueTasks: Number(r.tasks.overdue),
+    period: {
+      rows: Number(r.period.rows),
+      seconds: Number(r.period.seconds),
+      rowsInReview: Number(r.period.rows_in_review),
+      secondsInReview: Number(r.period.seconds_in_review),
+      byStatus: r.period.by_status.map((s) => ({
+        status: s.status,
+        rows: Number(s.rows),
+        seconds: Number(s.seconds),
+      })),
+    },
+    coverage: {
+      issuesVisible: Boolean(r.coverage.issues_visible),
+      canOpenCenter: Boolean(r.coverage.can_open_center),
+      openIssues: Number(r.coverage.open_issues),
+      lastRefreshAt: r.coverage.last_refresh_at,
+    },
+    inProgressTotal: Number(r.in_progress_total),
+    projects: r.in_progress.map((p) => ({
+      id: p.id,
+      name: p.name,
+      status: p.status,
+      dueAt: p.dueAt,
+      tasksTotal: Number(p.tasksTotal),
+      tasksDone: Number(p.tasksDone),
+      progressPct:
+        Number(p.tasksTotal) > 0 ? (Number(p.tasksDone) / Number(p.tasksTotal)) * 100 : null,
+      periodSeconds: Number(p.periodSeconds),
+    })),
+    attentionTotal: Number(r.attention_total),
+    attention: r.attention,
   };
 }
