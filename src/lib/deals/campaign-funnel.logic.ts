@@ -40,7 +40,12 @@ export function stepConversion(prev: number | null, cur: number | null): number 
   return Math.round((cur / prev) * 1000) / 10;
 }
 
-export function step(key: string, label: string, value: number | null, coverage?: Coverage): FunnelStep {
+export function step(
+  key: string,
+  label: string,
+  value: number | null,
+  coverage?: Coverage,
+): FunnelStep {
   return { key, label, value, coverage: coverage ?? (value == null ? "none" : "ok") };
 }
 

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { classifyBlock, mergeSteps, step, stepConversion, summarizeBlocks } from "./campaign-funnel.logic";
+import {
+  classifyBlock,
+  mergeSteps,
+  step,
+  stepConversion,
+  summarizeBlocks,
+} from "./campaign-funnel.logic";
 
 describe("campaign funnel logic", () => {
   it("classifica motivos reais de bloqueio", () => {

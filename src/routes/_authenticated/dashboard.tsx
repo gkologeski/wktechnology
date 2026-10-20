@@ -295,7 +295,6 @@ function DashboardPage() {
           <ClosingsByMonthCard />
 
           <CampaignsBlock from={fromIso} to={toIso} assignee={data.effectiveAssignee ?? assignee} />
-
         </>
       )}
     </div>

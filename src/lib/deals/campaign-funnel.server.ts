@@ -39,8 +39,21 @@ export async function loadCampaignFunnel(
   const waIds = (waC.data ?? []).map((c) => c.id);
   const emIds = (emC.data ?? []).map((c) => c.id);
 
-  type WaR = { campaign_id: string; status: string; error: string | null; sent_at: string | null; created_at: string; wa_message_id: string | null };
-  type EmR = { broadcast_id: string; status: string; error: string | null; sent_at: string | null; created_at: string };
+  type WaR = {
+    campaign_id: string;
+    status: string;
+    error: string | null;
+    sent_at: string | null;
+    created_at: string;
+    wa_message_id: string | null;
+  };
+  type EmR = {
+    broadcast_id: string;
+    status: string;
+    error: string | null;
+    sent_at: string | null;
+    created_at: string;
+  };
   const waRows: WaR[] = [];
   const emRows: EmR[] = [];
   let previousSent = 0;
@@ -76,15 +89,22 @@ export async function loadCampaignFunnel(
 
   const waSent = waRows.filter((r) => r.status === "sent" && inRange(r.sent_at));
   const emSent = emRows.filter((r) => r.status === "sent" && inRange(r.sent_at));
-  const waNot = waRows.filter((r) => r.status !== "sent" && r.status !== "pending" && inRange(r.created_at));
-  const emNot = emRows.filter((r) => r.status !== "sent" && r.status !== "pending" && inRange(r.created_at));
+  const waNot = waRows.filter(
+    (r) => r.status !== "sent" && r.status !== "pending" && inRange(r.created_at),
+  );
+  const emNot = emRows.filter(
+    (r) => r.status !== "sent" && r.status !== "pending" && inRange(r.created_at),
+  );
 
   // Entrega/leitura pelas mensagens do WhatsApp.
   let waDelivered = 0;
   let waRead = 0;
   const msgIds = waSent.map((r) => r.wa_message_id).filter((v): v is string => !!v);
   for (const ids of chunks(msgIds)) {
-    const r = await sb.from("whatsapp_messages").select("status,delivered_at,read_at").in("wa_message_id", ids);
+    const r = await sb
+      .from("whatsapp_messages")
+      .select("status,delivered_at,read_at")
+      .in("wa_message_id", ids);
     if (r.error) throw new Error(r.error.message);
     for (const m of r.data ?? []) {
       const read = m.status === "read" || !!m.read_at;
@@ -94,7 +114,13 @@ export async function loadCampaignFunnel(
   }
 
   // Conversas originadas pelas campanhas no período.
-  type Conv = { id: string; origin_campaign_id: string | null; ai_owner: string | null; last_inbound_at: string | null; created_at: string };
+  type Conv = {
+    id: string;
+    origin_campaign_id: string | null;
+    ai_owner: string | null;
+    last_inbound_at: string | null;
+    created_at: string;
+  };
   const convs: Conv[] = [];
   for (const ids of chunks(waIds)) {
     const r = await sb
@@ -113,9 +139,16 @@ export async function loadCampaignFunnel(
   type Mt = { conversation_id: string | null; deal_id: string | null; status: string };
   const meetings: Mt[] = [];
   for (const ids of chunks(convs.map((c) => c.id))) {
-    const r = await sb.from("sdr_meetings").select("conversation_id,deal_id,status").in("conversation_id", ids);
+    const r = await sb
+      .from("sdr_meetings")
+      .select("conversation_id,deal_id,status")
+      .in("conversation_id", ids);
     if (r.error) throw new Error(r.error.message);
-    meetings.push(...((r.data as Mt[]) ?? []).filter((m) => m.status !== "canceled" && m.status !== "cancelled"));
+    meetings.push(
+      ...((r.data as Mt[]) ?? []).filter(
+        (m) => m.status !== "canceled" && m.status !== "cancelled",
+      ),
+    );
   }
 
   // Respostas por dia (mensagens recebidas nas conversas de campanha).
@@ -130,7 +163,8 @@ export async function loadCampaignFunnel(
       .lte("created_at", to)
       .limit(LIMIT);
     if (r.error) throw new Error(r.error.message);
-    for (const m of r.data ?? []) replyDays.set(dayKey(m.created_at), (replyDays.get(dayKey(m.created_at)) ?? 0) + 1);
+    for (const m of r.data ?? [])
+      replyDays.set(dayKey(m.created_at), (replyDays.get(dayKey(m.created_at)) ?? 0) + 1);
   }
 
   const waSteps = [
@@ -159,29 +193,69 @@ export async function loadCampaignFunnel(
   const byDay = new Map<string, CampaignDay>();
   for (let d = start; d <= end && days.length < 120; d = new Date(d.getTime() + 86400_000)) {
     const k = d.toISOString().slice(0, 10);
-    const row = { day: k, label: `${k.slice(8, 10)}/${k.slice(5, 7)}`, whatsapp: 0, email: 0, replies: replyDays.get(k) ?? 0 };
+    const row = {
+      day: k,
+      label: `${k.slice(8, 10)}/${k.slice(5, 7)}`,
+      whatsapp: 0,
+      email: 0,
+      replies: replyDays.get(k) ?? 0,
+    };
     days.push(row);
     byDay.set(k, row);
   }
-  for (const r of waSent) { const d = byDay.get(dayKey(r.sent_at!)); if (d) d.whatsapp++; }
-  for (const r of emSent) { const d = byDay.get(dayKey(r.sent_at!)); if (d) d.email++; }
+  for (const r of waSent) {
+    const d = byDay.get(dayKey(r.sent_at!));
+    if (d) d.whatsapp++;
+  }
+  for (const r of emSent) {
+    const d = byDay.get(dayKey(r.sent_at!));
+    if (d) d.email++;
+  }
 
   // Ranking.
   const rank = new Map<string, CampaignRank>();
-  for (const c of waC.data ?? []) rank.set(c.id, { id: c.id, name: c.name, channel: "whatsapp", sent: 0, replied: 0, meetings: 0, failed: 0 });
-  for (const c of emC.data ?? []) rank.set(c.id, { id: c.id, name: c.name, channel: "email", sent: 0, replied: null, meetings: null, failed: 0 });
+  for (const c of waC.data ?? [])
+    rank.set(c.id, {
+      id: c.id,
+      name: c.name,
+      channel: "whatsapp",
+      sent: 0,
+      replied: 0,
+      meetings: 0,
+      failed: 0,
+    });
+  for (const c of emC.data ?? [])
+    rank.set(c.id, {
+      id: c.id,
+      name: c.name,
+      channel: "email",
+      sent: 0,
+      replied: null,
+      meetings: null,
+      failed: 0,
+    });
   for (const r of waSent) rank.get(r.campaign_id)!.sent++;
   for (const r of emSent) rank.get(r.broadcast_id)!.sent++;
   for (const r of waNot) if (r.status === "failed") rank.get(r.campaign_id)!.failed++;
   for (const r of emNot) if (r.status === "failed") rank.get(r.broadcast_id)!.failed++;
   const convCampaign = new Map(convs.map((c) => [c.id, c.origin_campaign_id]));
-  for (const c of replied) { const x = c.origin_campaign_id && rank.get(c.origin_campaign_id); if (x && x.replied != null) x.replied++; }
-  for (const m of meetings) { const cid = m.conversation_id && convCampaign.get(m.conversation_id); const x = cid && rank.get(cid); if (x && x.meetings != null) x.meetings++; }
+  for (const c of replied) {
+    const x = c.origin_campaign_id && rank.get(c.origin_campaign_id);
+    if (x && x.replied != null) x.replied++;
+  }
+  for (const m of meetings) {
+    const cid = m.conversation_id && convCampaign.get(m.conversation_id);
+    const x = cid && rank.get(cid);
+    if (x && x.meetings != null) x.meetings++;
+  }
 
   return {
     funnel: { whatsapp: waSteps, email: emSteps, all: mergeSteps(waSteps, emSteps) },
     daily: days,
-    ranking: [...rank.values()].filter((r) => r.sent > 0 || r.failed > 0).sort((a, b) => b.sent - a.sent).slice(0, 10),
+    ranking: [...rank.values()]
+      .filter((r) => r.sent > 0 || r.failed > 0)
+      .sort((a, b) => b.sent - a.sent)
+      .slice(0, 10),
     blocks: summarizeBlocks([...waNot, ...emNot]),
     aiVsHuman: { ai: convs.length - human.length, human: human.length },
     previousSent,

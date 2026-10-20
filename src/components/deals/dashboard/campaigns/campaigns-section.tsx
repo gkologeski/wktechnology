@@ -46,7 +46,10 @@ export function CampaignsSection({ data }: { data: CampaignFunnelData }) {
   const compare = ["delivered", "replied", "meeting"].map((k) => {
     const label = find(all, k)!.label;
     const pct = (ch: "whatsapp" | "email") =>
-      stepConversion(find(data.funnel[ch], "sent")?.value ?? null, find(data.funnel[ch], k)?.value ?? null);
+      stepConversion(
+        find(data.funnel[ch], "sent")?.value ?? null,
+        find(data.funnel[ch], k)?.value ?? null,
+      );
     return { label, whatsapp: pct("whatsapp"), email: pct("email") };
   });
   const totalBlocks = data.blocks.reduce((a, b) => a + b.value, 0);
@@ -79,22 +82,52 @@ export function CampaignsSection({ data }: { data: CampaignFunnelData }) {
               : undefined
           }
         />
-        <MetricCard label="Entregues" value={fmt(find(all, "delivered"))} hint={`${rate(sent, find(all, "delivered"))} dos disparos · e-mail não rastreado`} icon={CheckCheck} tone="neutral" />
-        <MetricCard label="Respondidos" value={fmt(find(all, "replied"))} hint={`Taxa ${rate(sent, find(all, "replied"))} · só WhatsApp`} icon={MessageCircleReply} tone="neutral" />
-        <MetricCard label="Atendidos por humano" value={fmt(find(all, "human"))} hint="Conversas assumidas pela equipe" icon={UserRound} tone="neutral" />
-        <MetricCard label="Reuniões agendadas" value={fmt(find(all, "meeting"))} hint="Agendadas a partir das conversas" icon={CalendarCheck} tone="neutral" />
+        <MetricCard
+          label="Entregues"
+          value={fmt(find(all, "delivered"))}
+          hint={`${rate(sent, find(all, "delivered"))} dos disparos · e-mail não rastreado`}
+          icon={CheckCheck}
+          tone="neutral"
+        />
+        <MetricCard
+          label="Respondidos"
+          value={fmt(find(all, "replied"))}
+          hint={`Taxa ${rate(sent, find(all, "replied"))} · só WhatsApp`}
+          icon={MessageCircleReply}
+          tone="neutral"
+        />
+        <MetricCard
+          label="Atendidos por humano"
+          value={fmt(find(all, "human"))}
+          hint="Conversas assumidas pela equipe"
+          icon={UserRound}
+          tone="neutral"
+        />
+        <MetricCard
+          label="Reuniões agendadas"
+          value={fmt(find(all, "meeting"))}
+          hint="Agendadas a partir das conversas"
+          icon={CalendarCheck}
+          tone="neutral"
+        />
       </div>
 
       {empty ? (
         <div className={card}>
-          <SectionHeader title="Sem envios no período" description="Nenhuma campanha de WhatsApp ou e-mail disparou neste intervalo." />
+          <SectionHeader
+            title="Sem envios no período"
+            description="Nenhuma campanha de WhatsApp ou e-mail disparou neste intervalo."
+          />
         </div>
       ) : (
         <>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div className={card}>
               <div className="flex flex-wrap items-start justify-between gap-2">
-                <SectionHeader title="Funil de campanhas" description="Conversão de cada etapa sobre a anterior." />
+                <SectionHeader
+                  title="Funil de campanhas"
+                  description="Conversão de cada etapa sobre a anterior."
+                />
                 <div role="group" aria-label="Canal do funil" className="flex gap-1">
                   {CHANNELS.map((c) => (
                     <button
@@ -111,11 +144,17 @@ export function CampaignsSection({ data }: { data: CampaignFunnelData }) {
               </div>
               <ol className="mt-3 flex flex-col gap-2">
                 {steps.map((s, i) => (
-                  <li key={s.key} className="grid grid-cols-[8.5rem_1fr_auto] items-center gap-2 text-xs">
+                  <li
+                    key={s.key}
+                    className="grid grid-cols-[8.5rem_1fr_auto] items-center gap-2 text-xs"
+                  >
                     <span className="truncate text-text-secondary">{s.label}</span>
                     <div className="h-3 rounded bg-surface-2">
                       {s.value != null && (
-                        <div className="h-3 rounded bg-primary" style={{ width: `${Math.max(2, (s.value / max) * 100)}%` }} />
+                        <div
+                          className="h-3 rounded bg-primary"
+                          style={{ width: `${Math.max(2, (s.value / max) * 100)}%` }}
+                        />
                       )}
                     </div>
                     <span className="w-28 text-right tabular-nums text-text-primary">
@@ -124,32 +163,88 @@ export function CampaignsSection({ data }: { data: CampaignFunnelData }) {
                       ) : (
                         <>
                           {nf.format(s.value)}
-                          {i > 0 && <span className="ml-1 text-text-tertiary">{rate(steps[i - 1], s)}</span>}
-                          {s.coverage === "partial" && <span className="ml-1 text-text-tertiary" title="Cobertura parcial">*</span>}
+                          {i > 0 && (
+                            <span className="ml-1 text-text-tertiary">{rate(steps[i - 1], s)}</span>
+                          )}
+                          {s.coverage === "partial" && (
+                            <span className="ml-1 text-text-tertiary" title="Cobertura parcial">
+                              *
+                            </span>
+                          )}
                         </>
                       )}
                     </span>
                   </li>
                 ))}
               </ol>
-              <p className="mt-2 text-xs text-text-tertiary">* cobertura parcial: algum canal não informa esta etapa.</p>
+              <p className="mt-2 text-xs text-text-tertiary">
+                * cobertura parcial: algum canal não informa esta etapa.
+              </p>
             </div>
 
             <div className={card}>
-              <SectionHeader title="Envios por dia" description="Disparos por canal e respostas recebidas." />
+              <SectionHeader
+                title="Envios por dia"
+                description="Disparos por canal e respostas recebidas."
+              />
               <div className="mt-3 h-56">
                 <LazyChart>
-                  {({ ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, Legend, CartesianGrid }) => (
+                  {({
+                    ResponsiveContainer,
+                    ComposedChart,
+                    Bar,
+                    Line,
+                    XAxis,
+                    YAxis,
+                    Tooltip,
+                    Legend,
+                    CartesianGrid,
+                  }) => (
                     <ResponsiveContainer width="100%" height="100%">
-                      <ComposedChart data={data.daily} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-subtle)" vertical={false} />
-                        <XAxis dataKey="label" tick={{ fontSize: 11, fill: "var(--color-text-tertiary)" }} tickLine={false} axisLine={false} />
-                        <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "var(--color-text-tertiary)" }} tickLine={false} axisLine={false} />
+                      <ComposedChart
+                        data={data.daily}
+                        margin={{ top: 8, right: 8, bottom: 0, left: -16 }}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          stroke="var(--color-border-subtle)"
+                          vertical={false}
+                        />
+                        <XAxis
+                          dataKey="label"
+                          tick={{ fontSize: 11, fill: "var(--color-text-tertiary)" }}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis
+                          allowDecimals={false}
+                          tick={{ fontSize: 11, fill: "var(--color-text-tertiary)" }}
+                          tickLine={false}
+                          axisLine={false}
+                        />
                         <Tooltip contentStyle={tip} />
                         <Legend wrapperStyle={{ fontSize: 11 }} />
-                        <Bar dataKey="whatsapp" name="WhatsApp" stackId="s" fill="var(--color-chart-1)" />
-                        <Bar dataKey="email" name="E-mail" stackId="s" fill="var(--color-chart-2)" radius={[3, 3, 0, 0]} />
-                        <Line dataKey="replies" name="Respostas" type="monotone" stroke="var(--color-chart-4)" strokeWidth={2} dot={false} />
+                        <Bar
+                          dataKey="whatsapp"
+                          name="WhatsApp"
+                          stackId="s"
+                          fill="var(--color-chart-1)"
+                        />
+                        <Bar
+                          dataKey="email"
+                          name="E-mail"
+                          stackId="s"
+                          fill="var(--color-chart-2)"
+                          radius={[3, 3, 0, 0]}
+                        />
+                        <Line
+                          dataKey="replies"
+                          name="Respostas"
+                          type="monotone"
+                          stroke="var(--color-chart-4)"
+                          strokeWidth={2}
+                          dot={false}
+                        />
                       </ComposedChart>
                     </ResponsiveContainer>
                   )}
@@ -160,19 +255,58 @@ export function CampaignsSection({ data }: { data: CampaignFunnelData }) {
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div className={card}>
-              <SectionHeader title="Comparativo por canal" description="Taxas sobre os disparos. E-mail sem rastreio de entrega/resposta." />
+              <SectionHeader
+                title="Comparativo por canal"
+                description="Taxas sobre os disparos. E-mail sem rastreio de entrega/resposta."
+              />
               <div className="mt-3 h-48">
                 <LazyChart>
-                  {({ ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid }) => (
+                  {({
+                    ResponsiveContainer,
+                    BarChart,
+                    Bar,
+                    XAxis,
+                    YAxis,
+                    Tooltip,
+                    Legend,
+                    CartesianGrid,
+                  }) => (
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={compare} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-subtle)" vertical={false} />
-                        <XAxis dataKey="label" tick={{ fontSize: 11, fill: "var(--color-text-tertiary)" }} tickLine={false} axisLine={false} />
-                        <YAxis unit="%" tick={{ fontSize: 11, fill: "var(--color-text-tertiary)" }} tickLine={false} axisLine={false} />
-                        <Tooltip contentStyle={tip} formatter={(v) => (v == null ? "não rastreado" : `${v}%`)} />
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          stroke="var(--color-border-subtle)"
+                          vertical={false}
+                        />
+                        <XAxis
+                          dataKey="label"
+                          tick={{ fontSize: 11, fill: "var(--color-text-tertiary)" }}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis
+                          unit="%"
+                          tick={{ fontSize: 11, fill: "var(--color-text-tertiary)" }}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <Tooltip
+                          contentStyle={tip}
+                          formatter={(v) => (v == null ? "não rastreado" : `${v}%`)}
+                        />
                         <Legend wrapperStyle={{ fontSize: 11 }} />
-                        <Bar dataKey="whatsapp" name="WhatsApp" fill="var(--color-chart-1)" radius={[3, 3, 0, 0]} />
-                        <Bar dataKey="email" name="E-mail" fill="var(--color-chart-2)" radius={[3, 3, 0, 0]} />
+                        <Bar
+                          dataKey="whatsapp"
+                          name="WhatsApp"
+                          fill="var(--color-chart-1)"
+                          radius={[3, 3, 0, 0]}
+                        />
+                        <Bar
+                          dataKey="email"
+                          name="E-mail"
+                          fill="var(--color-chart-2)"
+                          radius={[3, 3, 0, 0]}
+                        />
                       </BarChart>
                     </ResponsiveContainer>
                   )}
@@ -181,22 +315,39 @@ export function CampaignsSection({ data }: { data: CampaignFunnelData }) {
             </div>
 
             <div className={card}>
-              <SectionHeader title="Falhas e bloqueios" description={`${nf.format(totalBlocks)} destinatários não receberam.`} />
+              <SectionHeader
+                title="Falhas e bloqueios"
+                description={`${nf.format(totalBlocks)} destinatários não receberam.`}
+              />
               {totalBlocks === 0 ? (
-                <p className="mt-3 text-sm text-text-tertiary">Nenhuma falha ou bloqueio no período.</p>
+                <p className="mt-3 text-sm text-text-tertiary">
+                  Nenhuma falha ou bloqueio no período.
+                </p>
               ) : (
                 <div className="mt-3 h-48">
                   <LazyChart>
                     {({ ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend }) => (
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
-                          <Pie data={data.blocks} dataKey="value" nameKey="label" innerRadius="55%" outerRadius="85%" paddingAngle={2}>
+                          <Pie
+                            data={data.blocks}
+                            dataKey="value"
+                            nameKey="label"
+                            innerRadius="55%"
+                            outerRadius="85%"
+                            paddingAngle={2}
+                          >
                             {data.blocks.map((b, i) => (
                               <Cell key={b.key} fill={`var(--color-chart-${(i % 5) + 1})`} />
                             ))}
                           </Pie>
                           <Tooltip contentStyle={tip} />
-                          <Legend wrapperStyle={{ fontSize: 11 }} layout="vertical" align="right" verticalAlign="middle" />
+                          <Legend
+                            wrapperStyle={{ fontSize: 11 }}
+                            layout="vertical"
+                            align="right"
+                            verticalAlign="middle"
+                          />
                         </PieChart>
                       </ResponsiveContainer>
                     )}
@@ -208,7 +359,10 @@ export function CampaignsSection({ data }: { data: CampaignFunnelData }) {
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <div className={`${card} lg:col-span-2`}>
-              <SectionHeader title="Ranking de campanhas" description="Top 10 por disparos no período." />
+              <SectionHeader
+                title="Ranking de campanhas"
+                description="Top 10 por disparos no período."
+              />
               <div className="mt-3 overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead className="text-text-tertiary">
@@ -226,15 +380,31 @@ export function CampaignsSection({ data }: { data: CampaignFunnelData }) {
                       <tr key={r.id} className="border-t border-border-subtle">
                         <td className="max-w-56 truncate py-1.5">
                           {r.channel === "whatsapp" ? (
-                            <Link to="/campaigns/whatsapp" className="text-text-primary hover:underline focus-visible:underline">{r.name}</Link>
+                            <Link
+                              to="/campaigns/whatsapp"
+                              className="text-text-primary hover:underline focus-visible:underline"
+                            >
+                              {r.name}
+                            </Link>
                           ) : (
-                            <Link to="/campaigns/email" className="text-text-primary hover:underline focus-visible:underline">{r.name}</Link>
+                            <Link
+                              to="/campaigns/email"
+                              className="text-text-primary hover:underline focus-visible:underline"
+                            >
+                              {r.name}
+                            </Link>
                           )}
                         </td>
-                        <td className="py-1.5 text-text-secondary">{r.channel === "whatsapp" ? "WhatsApp" : "E-mail"}</td>
+                        <td className="py-1.5 text-text-secondary">
+                          {r.channel === "whatsapp" ? "WhatsApp" : "E-mail"}
+                        </td>
                         <td className="py-1.5 text-right tabular-nums">{nf.format(r.sent)}</td>
                         <td className="py-1.5 text-right tabular-nums">
-                          {r.replied == null ? "—" : r.sent ? `${Math.round((r.replied / r.sent) * 1000) / 10}%` : "—"}
+                          {r.replied == null
+                            ? "—"
+                            : r.sent
+                              ? `${Math.round((r.replied / r.sent) * 1000) / 10}%`
+                              : "—"}
                         </td>
                         <td className="py-1.5 text-right tabular-nums">{r.meetings ?? "—"}</td>
                         <td className="py-1.5 text-right tabular-nums">{r.failed}</td>
@@ -246,18 +416,47 @@ export function CampaignsSection({ data }: { data: CampaignFunnelData }) {
             </div>
 
             <div className={card}>
-              <SectionHeader title="Lia × humano" description="Conversas de campanhas no período." />
+              <SectionHeader
+                title="Lia × humano"
+                description="Conversas de campanhas no período."
+              />
               {convTotal === 0 ? (
-                <p className="mt-3 text-sm text-text-tertiary">Sem conversas iniciadas por campanhas.</p>
+                <p className="mt-3 text-sm text-text-tertiary">
+                  Sem conversas iniciadas por campanhas.
+                </p>
               ) : (
                 <div className="mt-4 flex flex-col gap-3">
-                  <div className="flex h-4 overflow-hidden rounded" role="img" aria-label={`Lia ${data.aiVsHuman.ai}, humano ${data.aiVsHuman.human}`}>
-                    <div style={{ width: `${(data.aiVsHuman.ai / convTotal) * 100}%`, background: "var(--color-chart-1)" }} />
-                    <div style={{ width: `${(data.aiVsHuman.human / convTotal) * 100}%`, background: "var(--color-chart-4)" }} />
+                  <div
+                    className="flex h-4 overflow-hidden rounded"
+                    role="img"
+                    aria-label={`Lia ${data.aiVsHuman.ai}, humano ${data.aiVsHuman.human}`}
+                  >
+                    <div
+                      style={{
+                        width: `${(data.aiVsHuman.ai / convTotal) * 100}%`,
+                        background: "var(--color-chart-1)",
+                      }}
+                    />
+                    <div
+                      style={{
+                        width: `${(data.aiVsHuman.human / convTotal) * 100}%`,
+                        background: "var(--color-chart-4)",
+                      }}
+                    />
                   </div>
                   <dl className="grid grid-cols-2 gap-2 text-xs">
-                    <div><dt className="text-text-tertiary">Com a Lia</dt><dd className="text-base font-semibold tabular-nums">{nf.format(data.aiVsHuman.ai)}</dd></div>
-                    <div><dt className="text-text-tertiary">Com humano</dt><dd className="text-base font-semibold tabular-nums">{nf.format(data.aiVsHuman.human)}</dd></div>
+                    <div>
+                      <dt className="text-text-tertiary">Com a Lia</dt>
+                      <dd className="text-base font-semibold tabular-nums">
+                        {nf.format(data.aiVsHuman.ai)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-text-tertiary">Com humano</dt>
+                      <dd className="text-base font-semibold tabular-nums">
+                        {nf.format(data.aiVsHuman.human)}
+                      </dd>
+                    </div>
                   </dl>
                 </div>
               )}
