@@ -35,3 +35,13 @@ export function detailText(type: string, d: Record<string, unknown>): string {
     return `Duração ${formatSeconds(Number(d.seconds))}${d.forced_reason ? " · gravado por exceção autorizada" : ""}.`;
   return String(d.reason_detail ?? d.event_type ?? "");
 }
+
+/** Baixa um CSV no navegador (BOM para o Excel abrir acentos). */
+export function downloadCsv(csv: string, filename: string) {
+  const url = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}

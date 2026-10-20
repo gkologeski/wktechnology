@@ -47,6 +47,7 @@ import {
   PAGE,
   STATUS_FILTER_LABEL,
   detailText,
+  downloadCsv,
   tone,
   type StatusFilter,
 } from "./recon-issues-format";
@@ -97,14 +98,7 @@ export function ReconIssuesTab({
   const exp = useMutation({
     mutationFn: () => exportFn({ data: filters }),
     onSuccess: (r) => {
-      const url = URL.createObjectURL(
-        new Blob(["\ufeff" + r.csv], { type: "text/csv;charset=utf-8" }),
-      );
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `pendencias-horas-${new Date().toISOString().slice(0, 10)}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
+      downloadCsv(r.csv, `pendencias-horas-${new Date().toISOString().slice(0, 10)}.csv`);
       toast.success(`${r.rows} alertas exportados.`);
     },
     onError: (e: Error) => toast.error(e.message),
