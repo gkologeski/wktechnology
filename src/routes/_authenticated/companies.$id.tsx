@@ -10,6 +10,7 @@ import { ActivityTimeline } from "@/components/activity-timeline";
 import { PropertiesPanel } from "@/components/properties-panel";
 import { RecordLayout } from "@/components/record/record-layout";
 import { AssociationsPanel } from "@/components/record/associations-panel";
+import { LinkedProjectsCard } from "@/components/projects/linked-projects-card";
 import { CompanyLogoEditor } from "@/components/companies/company-logo-editor";
 import { RecordEnrichedBadge } from "@/components/enrichment/record-enriched-badge";
 import { usePermissions } from "@/lib/access-control/use-permissions";
@@ -236,6 +237,7 @@ function CompanyDetail() {
               ownerId={company.owner_id}
             />
             <AssociationsPanel entity="company" entityId={company.id} />
+            <LinkedProjectsCard companyId={company.id} />
           </div>
         }
       />

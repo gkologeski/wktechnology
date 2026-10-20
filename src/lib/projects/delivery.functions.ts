@@ -62,12 +62,22 @@ export const getDealDelivery = createServerFn({ method: "POST" })
       .eq("deal_id", data.dealId);
     if (cErr) throw cErr;
     const contractIds = (contracts ?? []).map((c) => c.id);
-    if (contractIds.length === 0) return { projects: [] as DeliveryProject[] };
 
+    // Ciclo 2: além da ponte pelo contrato, projetos ligados direto ao negócio (principal ou consolidado).
+    const { data: links, error: lErr } = await supabase
+      .from("project_deal_links")
+      .select("project_id")
+      .eq("deal_id", data.dealId);
+    if (lErr) throw lErr;
+    const linkedIds = (links ?? []).map((l) => l.project_id);
+
+    const filters = [`deal_id.eq.${data.dealId}`];
+    if (contractIds.length > 0) filters.push(`contract_id.in.(${contractIds.join(",")})`);
+    if (linkedIds.length > 0) filters.push(`id.in.(${linkedIds.join(",")})`);
     const { data: projects, error: pErr } = await supabase
       .from("projects")
       .select("id, name, status, progress, due_at, contract_id")
-      .in("contract_id", contractIds)
+      .or(filters.join(","))
       .order("created_at", { ascending: false });
     if (pErr) throw pErr;
     if (!projects || projects.length === 0) return { projects: [] as DeliveryProject[] };

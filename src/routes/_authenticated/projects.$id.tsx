@@ -58,6 +58,7 @@ import {
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { ProjectOriginCard } from "@/components/projects/project-origin-card";
 
 export const Route = createFileRoute("/_authenticated/projects/$id")({
   component: ProjectDetailPage,
@@ -194,6 +195,8 @@ function ProjectDetailPage() {
           {p.due_at && <span>Prazo: {formatDateTime(p.due_at).split(" ")[0]}</span>}
         </div>
       </div>
+
+      <ProjectOriginCard projectId={id} />
 
       <Tabs defaultValue="tasks">
         <TabsList>

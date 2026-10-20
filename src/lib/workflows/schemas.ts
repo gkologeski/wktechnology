@@ -398,6 +398,7 @@ export const SimpleActionSchema = z.discriminatedUnion("type", [
     copy_line_items: z.boolean().optional(),
     skip_if_exists: z.boolean().optional(),
   }),
+  z.object({ type: z.literal("ensure_deal_delivery") }),
   // Contratação e desligamento — Fase 1
   z.object({
     type: z.literal("create_person_from_candidate"),

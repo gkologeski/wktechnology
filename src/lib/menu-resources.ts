@@ -171,6 +171,7 @@ export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
   "/projects/settings/imports/clockify": ["system.import"],
   "/projects/settings/imports/jibble": ["system.import"],
   "/projects/settings/imports/reconciliation": ["system.import"],
+  "/projects/settings/delivery": ["techprojects.projects"],
 
   // --- TechFinance -----------------------------------------------------------
   "/finance": ["techfinance.entries"],

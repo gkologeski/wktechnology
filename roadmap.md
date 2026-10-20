@@ -181,3 +181,13 @@
 # Clockify — catálogos
 - [x] 82 tags, 6 grupos e 99 clientes concluídos (0163–0165)
 - [ ] Revisar manualmente 5 membros de grupos sem pessoa mapeada (aguarda decisão do usuário)
+
+# Roadmap — TechProjects Ciclo 2 (negócio ganho → entrega)
+
+- [x] Banco: vínculo direto/relacional negócio↔projeto, política por workspace, fila com retry/lease, eventos/revisões, guardas de coerência
+- [x] Ação central criar-ou-vincular (trigger de transição, worker no banco, ação de workflow)
+- [x] Telas: negócio (Entrega/Preparação), projeto (origem), empresa, contrato, política, central › Negócios
+- [x] Histórico: candidatos com explicação, vínculos exatos auditados/reversíveis, prévia e lote, criar faltante
+- [x] Prova isolada SQL/RLS + testes + verify/build + Playwright; ativar política WK sem replay
+- [ ] Prova ponta a ponta de um ganho real no WK (aguarda o primeiro negócio ganho de verdade; não criei negócio de teste no WK)
+- [ ] Publicar (aguarda revisão do usuário)

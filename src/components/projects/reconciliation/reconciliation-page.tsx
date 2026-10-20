@@ -5,9 +5,10 @@ import { ReconOverviewTab } from "./recon-overview-tab";
 import { ReconBreakdownTab } from "./recon-breakdown-tab";
 import { ReconIssuesTab } from "./recon-issues-tab";
 import { ReconLinksTab } from "./recon-links-tab";
+import { ReconDealsTab } from "./recon-deals-tab";
 
 export type ReconSearch = {
-  tab?: "overview" | "breakdown" | "issues" | "links";
+  tab?: "overview" | "breakdown" | "issues" | "links" | "deals";
   from?: string;
   to?: string;
 };
@@ -25,7 +26,7 @@ export function ReconciliationPage({
       <PageHeader
         eyebrow="TechProjects · Configurações · Importações"
         title="Conciliação de horas"
-        description="O que foi coletado do Clockify e do Jibble, o que virou apontamento, o que está em revisão e os vínculos com empresas e pessoas. Nada aqui altera a origem."
+        description="O que foi coletado do Clockify e do Jibble, o que virou apontamento, o que está em revisão, os vínculos com empresas e pessoas e os negócios ganhos sem projeto. Nada aqui altera a origem."
       />
       <Tabs value={tab} onValueChange={(v) => onSearch({ tab: v as ReconSearch["tab"] })}>
         <TabsList className="h-auto flex-wrap justify-start">
@@ -33,6 +34,7 @@ export function ReconciliationPage({
           <TabsTrigger value="breakdown">Conferência</TabsTrigger>
           <TabsTrigger value="issues">Pendências</TabsTrigger>
           <TabsTrigger value="links">Vínculos</TabsTrigger>
+          <TabsTrigger value="deals">Negócios</TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="mt-4">
           <ReconOverviewTab onOpenIssues={() => onSearch({ tab: "issues" })} />
@@ -53,6 +55,9 @@ export function ReconciliationPage({
         </TabsContent>
         <TabsContent value="links" className="mt-4">
           <ReconLinksTab />
+        </TabsContent>
+        <TabsContent value="deals" className="mt-4">
+          <ReconDealsTab />
         </TabsContent>
       </Tabs>
     </div>

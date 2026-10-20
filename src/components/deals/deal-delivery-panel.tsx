@@ -1,4 +1,5 @@
-// Painel de entrega no negócio: evolução macro dos projetos gerados pelo contrato.
+// Painel de entrega no negócio: preparação (projeto criado/vinculado, pendências, ações) e a
+// evolução macro dos projetos ligados ao negócio (direto ou pelo contrato).
 import { useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -22,6 +23,7 @@ import {
   type DeliveryHealth,
 } from "@/lib/projects/delivery-labels";
 import { usePermissions } from "@/lib/access-control/use-permissions";
+import { DealDeliveryPreparation } from "@/components/deals/delivery/deal-delivery-preparation";
 
 export function DealDeliveryPanel({ dealId }: { dealId: string }) {
   const qc = useQueryClient();
@@ -39,39 +41,21 @@ export function DealDeliveryPanel({ dealId }: { dealId: string }) {
 
   const projects = useMemo(() => query.data?.projects ?? [], [query.data]);
 
-  if (query.isLoading) {
-    return (
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Entrega</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Skeleton className="h-4 w-40" />
-          <Skeleton className="h-16 w-full" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (query.isError) {
-    return (
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Entrega</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Não foi possível carregar o acompanhamento de entrega.
-          </p>
-          <Button variant="outline" size="sm" onClick={() => void query.refetch()}>
-            Tentar novamente
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (projects.length === 0) return null;
+  const timelines = query.isLoading ? (
+    <div className="space-y-3">
+      <Skeleton className="h-4 w-40" />
+      <Skeleton className="h-16 w-full" />
+    </div>
+  ) : query.isError ? (
+    <div className="space-y-3">
+      <p className="text-sm text-muted-foreground">
+        Não foi possível carregar o acompanhamento de entrega.
+      </p>
+      <Button variant="outline" size="sm" onClick={() => void query.refetch()}>
+        Tentar novamente
+      </Button>
+    </div>
+  ) : null;
 
   const onDelete = async (id: string) => {
     try {
@@ -89,6 +73,8 @@ export function DealDeliveryPanel({ dealId }: { dealId: string }) {
         <CardTitle className="text-base">Entrega</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        <DealDeliveryPreparation dealId={dealId} />
+        {timelines}
         {projects.map((p) => {
           const latest = p.updates.find((u) => u.health) ?? p.updates[0] ?? null;
           const expected =

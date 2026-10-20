@@ -1014,6 +1014,14 @@ function StepConfigForm({
       return <GenericRecordForm action={action} onChange={onChange} triggerEntity={entity} />;
     case "create_contract_from_deal":
       return <CreateContractFromDealForm action={action} onChange={onChange} />;
+    case "ensure_deal_delivery":
+      return (
+        <p className="text-sm text-muted-foreground">
+          Cria o projeto de entrega em planejamento ou reconhece o projeto já vinculado, conforme a
+          política de entrega do workspace (TechProjects › Configurações › Entrega de negócios). Só
+          age em negócios ganhos e nunca duplica: repetir o fluxo devolve o mesmo projeto.
+        </p>
+      );
     case "create_person_from_candidate":
     case "create_contract_document":
     case "create_allocation":

@@ -442,6 +442,10 @@ export type WorkflowAction =
        */
       extra_fields?: Record<string, unknown>;
     }
+  // Projetos — criar ou vincular a entrega do negócio ganho (política do workspace)
+  | {
+      type: "ensure_deal_delivery";
+    }
   // Contratação e desligamento — Fase 1 (valores aceitam tokens)
   | {
       type: "create_person_from_candidate";
@@ -607,6 +611,7 @@ export const ACTION_LABELS: Record<WorkflowActionType, string> = {
   update_record: "Atualizar registro (qualquer módulo)",
   delete_record: "Excluir registro (qualquer módulo)",
   create_contract_from_deal: "Criar contrato a partir do negócio",
+  ensure_deal_delivery: "Criar ou vincular projeto de entrega",
   create_person_from_candidate: "Criar pessoa a partir do candidato",
   create_contract_document: "Gerar contrato do profissional",
   create_allocation: "Criar alocação",
@@ -691,6 +696,7 @@ export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionTy
     ],
   },
   { label: "Contratos", actions: ["create_contract_from_deal"] },
+  { label: "Projetos", actions: ["ensure_deal_delivery"] },
   {
     label: "Contratação e desligamento",
     actions: [
