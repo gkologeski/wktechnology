@@ -45,7 +45,9 @@ import {
   type ClockifyReport,
   type ConnectionView,
   type RunView,
+  type SourceWorkspaceView,
 } from "./clockify-sections";
+import { canReadWholeWorkspace } from "@/lib/integrations/clockify/clockify-access";
 import {
   MappingsTable,
   StagingTable,

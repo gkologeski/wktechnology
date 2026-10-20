@@ -49,9 +49,10 @@ import {
 function AccessBadge({ access }: { access: ClockifyAccess | null }) {
   const a = access ?? "unknown";
   return (
-    <StatusBadge tone={canReadWholeWorkspace(a) ? "success" : a === "not_admin" ? "danger" : "warning"}>
-      {CLOCKIFY_ACCESS_LABEL[a]}
-    </StatusBadge>
+    <StatusBadge
+      status={canReadWholeWorkspace(a) ? "open" : a === "not_admin" ? "closed" : "onhold"}
+      label={CLOCKIFY_ACCESS_LABEL[a]}
+    />
   );
 }
 
