@@ -1,7 +1,7 @@
 // Hub de importações de dados — vive dentro de Configurações porque exige
 // conhecimento de administrador (mapeamento de campos, credenciais, deduplicação).
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Building2, Database, RefreshCw } from "lucide-react";
+import { ArrowRight, Building2, Database, RefreshCw, Timer } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,6 +13,8 @@ type ImportSource = {
   description: string;
   icon: React.ComponentType<{ className?: string }>;
   status: "disponivel" | "em-breve";
+  /** Rota própria quando a fonte não vive em /settings/integrations/$slug. */
+  href?: "/projects/settings/imports/clockify";
 };
 
 const SOURCES: ImportSource[] = [
@@ -32,6 +34,15 @@ const SOURCES: ImportSource[] = [
     icon: Building2,
     status: "disponivel",
   },
+  {
+    slug: "clockify",
+    name: "Clockify",
+    description:
+      "Traz clientes, projetos, tarefas, pessoas e horas para o TechProjects, com prévia conferida antes de gravar.",
+    icon: Timer,
+    status: "disponivel",
+    href: "/projects/settings/imports/clockify",
+  },
 ];
 
 export function ImportHubPage() {
@@ -48,8 +59,9 @@ export function ImportHubPage() {
           return (
             <Link
               key={s.slug}
-              to="/settings/integrations/$slug"
-              params={{ slug: s.slug }}
+              {...(s.href
+                ? { to: s.href }
+                : { to: "/settings/integrations/$slug" as const, params: { slug: s.slug } })}
               className="group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl"
               aria-label={`Configurar importação do ${s.name}`}
             >

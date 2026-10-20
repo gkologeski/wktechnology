@@ -8,6 +8,7 @@ desenvolvedores. Ponto de entrada: `CLAUDE.md` na raiz do repositório.
 | [overview.md](./overview.md)                         | precisa entender módulos, rotas e fluxos de negócio        |
 | [data-model.md](./data-model.md)                     | vai tocar banco, migrations, queries ou tipos              |
 | [security-rbac.md](./security-rbac.md)               | vai mexer em acesso, RLS, permissões ou rotas públicas     |
+| [clockify-import.md](./clockify-import.md)           | vai importar ou mexer no importador do Clockify            |
 | [server-functions.md](./server-functions.md)         | vai criar/alterar lógica de servidor, API ou webhook       |
 | [frontend-conventions.md](./frontend-conventions.md) | vai criar/alterar tela, grid, kanban ou formulário         |
 | [integrations.md](./integrations.md)                 | vai mexer em IA, enriquecimento, e-mail, calendário ou MCP |

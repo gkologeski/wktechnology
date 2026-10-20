@@ -4838,6 +4838,364 @@ export type Database = {
           },
         ]
       }
+      clockify_connections: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          key_ciphertext: string | null
+          key_last4: string | null
+          last_error: string | null
+          last_tested_at: string | null
+          region: string
+          source_plan: string | null
+          source_workspace_id: string | null
+          source_workspace_name: string | null
+          status: string
+          subdomain: string | null
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          key_ciphertext?: string | null
+          key_last4?: string | null
+          last_error?: string | null
+          last_tested_at?: string | null
+          region?: string
+          source_plan?: string | null
+          source_workspace_id?: string | null
+          source_workspace_name?: string | null
+          status?: string
+          subdomain?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          key_ciphertext?: string | null
+          key_last4?: string | null
+          last_error?: string | null
+          last_tested_at?: string | null
+          region?: string
+          source_plan?: string | null
+          source_workspace_id?: string | null
+          source_workspace_name?: string | null
+          status?: string
+          subdomain?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clockify_connections_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clockify_import_links: {
+        Row: {
+          created_at: string
+          entity_type: string
+          external_id: string
+          id: string
+          imported_snapshot: Json
+          last_run_id: string | null
+          local_date: string | null
+          meta: Json
+          segment: number
+          source_end_utc: string | null
+          source_hash: string
+          source_seconds: number | null
+          source_start_utc: string | null
+          source_timezone: string | null
+          source_workspace_id: string
+          target_id: string
+          target_table: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          entity_type: string
+          external_id: string
+          id?: string
+          imported_snapshot?: Json
+          last_run_id?: string | null
+          local_date?: string | null
+          meta?: Json
+          segment?: number
+          source_end_utc?: string | null
+          source_hash: string
+          source_seconds?: number | null
+          source_start_utc?: string | null
+          source_timezone?: string | null
+          source_workspace_id: string
+          target_id: string
+          target_table: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          entity_type?: string
+          external_id?: string
+          id?: string
+          imported_snapshot?: Json
+          last_run_id?: string | null
+          local_date?: string | null
+          meta?: Json
+          segment?: number
+          source_end_utc?: string | null
+          source_hash?: string
+          source_seconds?: number | null
+          source_start_utc?: string | null
+          source_timezone?: string | null
+          source_workspace_id?: string
+          target_id?: string
+          target_table?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clockify_import_links_last_run_id_fkey"
+            columns: ["last_run_id"]
+            isOneToOne: false
+            referencedRelation: "clockify_import_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clockify_import_links_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clockify_import_runs: {
+        Row: {
+          checkpoint: Json
+          counts: Json
+          created_at: string
+          error: string | null
+          finished_at: string | null
+          heartbeat_at: string | null
+          id: string
+          kind: string
+          lease_until: string | null
+          options: Json
+          phase: string
+          preview_confirmed_at: string | null
+          preview_confirmed_by: string | null
+          preview_run_id: string | null
+          report: Json | null
+          requested_by: string
+          source_workspace_id: string
+          started_at: string | null
+          status: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          checkpoint?: Json
+          counts?: Json
+          created_at?: string
+          error?: string | null
+          finished_at?: string | null
+          heartbeat_at?: string | null
+          id?: string
+          kind: string
+          lease_until?: string | null
+          options?: Json
+          phase?: string
+          preview_confirmed_at?: string | null
+          preview_confirmed_by?: string | null
+          preview_run_id?: string | null
+          report?: Json | null
+          requested_by: string
+          source_workspace_id: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          checkpoint?: Json
+          counts?: Json
+          created_at?: string
+          error?: string | null
+          finished_at?: string | null
+          heartbeat_at?: string | null
+          id?: string
+          kind?: string
+          lease_until?: string | null
+          options?: Json
+          phase?: string
+          preview_confirmed_at?: string | null
+          preview_confirmed_by?: string | null
+          preview_run_id?: string | null
+          report?: Json | null
+          requested_by?: string
+          source_workspace_id?: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clockify_import_runs_preview_run_id_fkey"
+            columns: ["preview_run_id"]
+            isOneToOne: false
+            referencedRelation: "clockify_import_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clockify_import_runs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clockify_mappings: {
+        Row: {
+          candidates: Json
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision: string
+          entity_type: string
+          external_id: string
+          id: string
+          label: string | null
+          method: string
+          note: string | null
+          source_workspace_id: string
+          target_id: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          candidates?: Json
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string
+          entity_type: string
+          external_id: string
+          id?: string
+          label?: string | null
+          method?: string
+          note?: string | null
+          source_workspace_id: string
+          target_id?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          candidates?: Json
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string
+          entity_type?: string
+          external_id?: string
+          id?: string
+          label?: string | null
+          method?: string
+          note?: string | null
+          source_workspace_id?: string
+          target_id?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clockify_mappings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clockify_staging_records: {
+        Row: {
+          entity_type: string
+          external_id: string
+          first_seen_at: string
+          id: string
+          last_run_id: string | null
+          last_seen_at: string
+          payload: Json
+          payload_hash: string
+          reason_code: string | null
+          reason_detail: string | null
+          source_workspace_id: string
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          entity_type: string
+          external_id: string
+          first_seen_at?: string
+          id?: string
+          last_run_id?: string | null
+          last_seen_at?: string
+          payload: Json
+          payload_hash: string
+          reason_code?: string | null
+          reason_detail?: string | null
+          source_workspace_id: string
+          status?: string
+          workspace_id: string
+        }
+        Update: {
+          entity_type?: string
+          external_id?: string
+          first_seen_at?: string
+          id?: string
+          last_run_id?: string | null
+          last_seen_at?: string
+          payload?: Json
+          payload_hash?: string
+          reason_code?: string | null
+          reason_detail?: string | null
+          source_workspace_id?: string
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clockify_staging_records_last_run_id_fkey"
+            columns: ["last_run_id"]
+            isOneToOne: false
+            referencedRelation: "clockify_import_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clockify_staging_records_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           address: string | null
@@ -22977,6 +23335,19 @@ export type Database = {
       }
       can_write_owner: {
         Args: { _owner: string; _user: string }
+        Returns: boolean
+      }
+      clockify_import_apply: {
+        Args: {
+          p_op: string
+          p_rows: Json
+          p_table: string
+          p_workspace: string
+        }
+        Returns: Json
+      }
+      clockify_target_in_workspace: {
+        Args: { p_id: string; p_table: string; p_ws: string }
         Returns: boolean
       }
       companies_facets: {

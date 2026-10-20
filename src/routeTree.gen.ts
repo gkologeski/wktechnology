@@ -295,6 +295,7 @@ import { Route as AuthenticatedContractsTemplatesIdRouteImport } from './routes/
 import { Route as AuthenticatedFinanceBankingReconciliationRouteImport } from './routes/_authenticated/finance.banking.reconciliation'
 import { Route as AuthenticatedFinanceEntriesIdRouteImport } from './routes/_authenticated/finance.entries.$id'
 import { Route as AuthenticatedProjectsListsIdRouteImport } from './routes/_authenticated/projects.lists.$id'
+import { Route as AuthenticatedProjectsSettingsIndexRouteImport } from './routes/_authenticated/projects.settings.index'
 import { Route as AuthenticatedProjectsIdEntregaRouteImport } from './routes/_authenticated/projects_.$id.entrega'
 import { Route as AuthenticatedProspectingCampaignsIndexRouteImport } from './routes/_authenticated/prospecting.campaigns.index'
 import { Route as AuthenticatedProspectingCampaignsIdRouteImport } from './routes/_authenticated/prospecting.campaigns.$id'
@@ -330,6 +331,7 @@ import { Route as ApiPublicHooksBugReportAnalyzeRouteImport } from './routes/api
 import { Route as ApiPublicHooksCalendarRecordingsTickRouteImport } from './routes/api/public/hooks/calendar-recordings-tick'
 import { Route as ApiPublicHooksCalendarTickRouteImport } from './routes/api/public/hooks/calendar-tick'
 import { Route as ApiPublicHooksChannelHealthRouteImport } from './routes/api/public/hooks/channel-health'
+import { Route as ApiPublicHooksClockifyImportTickRouteImport } from './routes/api/public/hooks/clockify-import-tick'
 import { Route as ApiPublicHooksContaazulTickRouteImport } from './routes/api/public/hooks/contaazul-tick'
 import { Route as ApiPublicHooksDunningTickRouteImport } from './routes/api/public/hooks/dunning-tick'
 import { Route as ApiPublicHooksEmailBroadcastTickRouteImport } from './routes/api/public/hooks/email-broadcast-tick'
@@ -384,6 +386,8 @@ import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/em
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as AuthenticatedatsSourcingSequencesIdRouteImport } from './routes/_authenticated/(ats)/sourcing/sequences_.$id'
+import { Route as AuthenticatedProjectsSettingsImportsIndexRouteImport } from './routes/_authenticated/projects.settings.imports.index'
+import { Route as AuthenticatedProjectsSettingsImportsClockifyRouteImport } from './routes/_authenticated/projects.settings.imports.clockify'
 import { Route as AuthenticatedProspectingQueuesQueueIdPlayRouteImport } from './routes/_authenticated/prospecting.queues.$queueId.play'
 import { Route as AuthenticatedTasksQueuesQueueIdPlayRouteImport } from './routes/_authenticated/tasks.queues.$queueId.play'
 import { Route as ApiPublicBookingSlugSubmitRouteImport } from './routes/api/public/booking/$slug/submit'
@@ -2037,6 +2041,12 @@ const AuthenticatedProjectsListsIdRoute =
     path: '/projects/lists/$id',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedProjectsSettingsIndexRoute =
+  AuthenticatedProjectsSettingsIndexRouteImport.update({
+    id: '/projects/settings/',
+    path: '/projects/settings/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProjectsIdEntregaRoute =
   AuthenticatedProjectsIdEntregaRouteImport.update({
     id: '/projects_/$id/entrega',
@@ -2241,6 +2251,12 @@ const ApiPublicHooksChannelHealthRoute =
   ApiPublicHooksChannelHealthRouteImport.update({
     id: '/api/public/hooks/channel-health',
     path: '/api/public/hooks/channel-health',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksClockifyImportTickRoute =
+  ApiPublicHooksClockifyImportTickRouteImport.update({
+    id: '/api/public/hooks/clockify-import-tick',
+    path: '/api/public/hooks/clockify-import-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksContaazulTickRoute =
@@ -2547,6 +2563,18 @@ const AuthenticatedatsSourcingSequencesIdRoute =
   AuthenticatedatsSourcingSequencesIdRouteImport.update({
     id: '/(ats)/sourcing/sequences_/$id',
     path: '/sourcing/sequences/$id',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedProjectsSettingsImportsIndexRoute =
+  AuthenticatedProjectsSettingsImportsIndexRouteImport.update({
+    id: '/projects/settings/imports/',
+    path: '/projects/settings/imports/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedProjectsSettingsImportsClockifyRoute =
+  AuthenticatedProjectsSettingsImportsClockifyRouteImport.update({
+    id: '/projects/settings/imports/clockify',
+    path: '/projects/settings/imports/clockify',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedProspectingQueuesQueueIdPlayRoute =
@@ -2982,6 +3010,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/calendar-recordings-tick': typeof ApiPublicHooksCalendarRecordingsTickRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
   '/api/public/hooks/channel-health': typeof ApiPublicHooksChannelHealthRoute
+  '/api/public/hooks/clockify-import-tick': typeof ApiPublicHooksClockifyImportTickRoute
   '/api/public/hooks/contaazul-tick': typeof ApiPublicHooksContaazulTickRoute
   '/api/public/hooks/dunning-tick': typeof ApiPublicHooksDunningTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
@@ -3041,11 +3070,13 @@ export interface FileRoutesByFullPath {
   '/sourcing/': typeof AuthenticatedatsSourcingIndexRoute
   '/agents/prototype/': typeof AuthenticatedAgentsPrototypeIndexRoute
   '/contracts/templates/': typeof AuthenticatedContractsTemplatesIndexRoute
+  '/projects/settings/': typeof AuthenticatedProjectsSettingsIndexRoute
   '/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/settings/integrations/': typeof AuthenticatedSettingsIntegrationsIndexRoute
   '/settings/marketplace/': typeof AuthenticatedSettingsMarketplaceIndexRoute
   '/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
   '/sourcing/sequences/$id': typeof AuthenticatedatsSourcingSequencesIdRoute
+  '/projects/settings/imports/clockify': typeof AuthenticatedProjectsSettingsImportsClockifyRoute
   '/prospecting/queues/$queueId/play': typeof AuthenticatedProspectingQueuesQueueIdPlayRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
@@ -3063,6 +3094,7 @@ export interface FileRoutesByFullPath {
   '/api/public/v1/ats/jobs': typeof ApiPublicV1AtsJobsRoute
   '/api/public/zapier/triggers/$event': typeof ApiPublicZapierTriggersEventRoute
   '/api/public/zapier/unsubscribe/$id': typeof ApiPublicZapierUnsubscribeIdRoute
+  '/projects/settings/imports/': typeof AuthenticatedProjectsSettingsImportsIndexRoute
   '/api/public/scim/v2/Users/$id': typeof ApiPublicScimV2UsersIdRoute
   '/api/public/v1/meetings/$id/cancel': typeof ApiPublicV1MeetingsIdCancelRoute
   '/api/public/v1/meetings/$id/reschedule': typeof ApiPublicV1MeetingsIdRescheduleRoute
@@ -3372,6 +3404,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/calendar-recordings-tick': typeof ApiPublicHooksCalendarRecordingsTickRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
   '/api/public/hooks/channel-health': typeof ApiPublicHooksChannelHealthRoute
+  '/api/public/hooks/clockify-import-tick': typeof ApiPublicHooksClockifyImportTickRoute
   '/api/public/hooks/contaazul-tick': typeof ApiPublicHooksContaazulTickRoute
   '/api/public/hooks/dunning-tick': typeof ApiPublicHooksDunningTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
@@ -3431,11 +3464,13 @@ export interface FileRoutesByTo {
   '/sourcing': typeof AuthenticatedatsSourcingIndexRoute
   '/agents/prototype': typeof AuthenticatedAgentsPrototypeIndexRoute
   '/contracts/templates': typeof AuthenticatedContractsTemplatesIndexRoute
+  '/projects/settings': typeof AuthenticatedProjectsSettingsIndexRoute
   '/prospecting/campaigns': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/settings/integrations': typeof AuthenticatedSettingsIntegrationsIndexRoute
   '/settings/marketplace': typeof AuthenticatedSettingsMarketplaceIndexRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesIndexRoute
   '/sourcing/sequences/$id': typeof AuthenticatedatsSourcingSequencesIdRoute
+  '/projects/settings/imports/clockify': typeof AuthenticatedProjectsSettingsImportsClockifyRoute
   '/prospecting/queues/$queueId/play': typeof AuthenticatedProspectingQueuesQueueIdPlayRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
@@ -3453,6 +3488,7 @@ export interface FileRoutesByTo {
   '/api/public/v1/ats/jobs': typeof ApiPublicV1AtsJobsRoute
   '/api/public/zapier/triggers/$event': typeof ApiPublicZapierTriggersEventRoute
   '/api/public/zapier/unsubscribe/$id': typeof ApiPublicZapierUnsubscribeIdRoute
+  '/projects/settings/imports': typeof AuthenticatedProjectsSettingsImportsIndexRoute
   '/api/public/scim/v2/Users/$id': typeof ApiPublicScimV2UsersIdRoute
   '/api/public/v1/meetings/$id/cancel': typeof ApiPublicV1MeetingsIdCancelRoute
   '/api/public/v1/meetings/$id/reschedule': typeof ApiPublicV1MeetingsIdRescheduleRoute
@@ -3771,6 +3807,7 @@ export interface FileRoutesById {
   '/api/public/hooks/calendar-recordings-tick': typeof ApiPublicHooksCalendarRecordingsTickRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
   '/api/public/hooks/channel-health': typeof ApiPublicHooksChannelHealthRoute
+  '/api/public/hooks/clockify-import-tick': typeof ApiPublicHooksClockifyImportTickRoute
   '/api/public/hooks/contaazul-tick': typeof ApiPublicHooksContaazulTickRoute
   '/api/public/hooks/dunning-tick': typeof ApiPublicHooksDunningTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
@@ -3830,11 +3867,13 @@ export interface FileRoutesById {
   '/_authenticated/(ats)/sourcing/': typeof AuthenticatedatsSourcingIndexRoute
   '/_authenticated/agents/prototype/': typeof AuthenticatedAgentsPrototypeIndexRoute
   '/_authenticated/contracts/templates/': typeof AuthenticatedContractsTemplatesIndexRoute
+  '/_authenticated/projects/settings/': typeof AuthenticatedProjectsSettingsIndexRoute
   '/_authenticated/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/_authenticated/settings/integrations/': typeof AuthenticatedSettingsIntegrationsIndexRoute
   '/_authenticated/settings/marketplace/': typeof AuthenticatedSettingsMarketplaceIndexRoute
   '/_authenticated/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
   '/_authenticated/(ats)/sourcing/sequences_/$id': typeof AuthenticatedatsSourcingSequencesIdRoute
+  '/_authenticated/projects/settings/imports/clockify': typeof AuthenticatedProjectsSettingsImportsClockifyRoute
   '/_authenticated/prospecting/queues/$queueId/play': typeof AuthenticatedProspectingQueuesQueueIdPlayRoute
   '/_authenticated/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
@@ -3852,6 +3891,7 @@ export interface FileRoutesById {
   '/api/public/v1/ats/jobs': typeof ApiPublicV1AtsJobsRoute
   '/api/public/zapier/triggers/$event': typeof ApiPublicZapierTriggersEventRoute
   '/api/public/zapier/unsubscribe/$id': typeof ApiPublicZapierUnsubscribeIdRoute
+  '/_authenticated/projects/settings/imports/': typeof AuthenticatedProjectsSettingsImportsIndexRoute
   '/api/public/scim/v2/Users/$id': typeof ApiPublicScimV2UsersIdRoute
   '/api/public/v1/meetings/$id/cancel': typeof ApiPublicV1MeetingsIdCancelRoute
   '/api/public/v1/meetings/$id/reschedule': typeof ApiPublicV1MeetingsIdRescheduleRoute
@@ -4170,6 +4210,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/calendar-recordings-tick'
     | '/api/public/hooks/calendar-tick'
     | '/api/public/hooks/channel-health'
+    | '/api/public/hooks/clockify-import-tick'
     | '/api/public/hooks/contaazul-tick'
     | '/api/public/hooks/dunning-tick'
     | '/api/public/hooks/email-broadcast-tick'
@@ -4229,11 +4270,13 @@ export interface FileRouteTypes {
     | '/sourcing/'
     | '/agents/prototype/'
     | '/contracts/templates/'
+    | '/projects/settings/'
     | '/prospecting/campaigns/'
     | '/settings/integrations/'
     | '/settings/marketplace/'
     | '/settings/roles/'
     | '/sourcing/sequences/$id'
+    | '/projects/settings/imports/clockify'
     | '/prospecting/queues/$queueId/play'
     | '/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
@@ -4251,6 +4294,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/ats/jobs'
     | '/api/public/zapier/triggers/$event'
     | '/api/public/zapier/unsubscribe/$id'
+    | '/projects/settings/imports/'
     | '/api/public/scim/v2/Users/$id'
     | '/api/public/v1/meetings/$id/cancel'
     | '/api/public/v1/meetings/$id/reschedule'
@@ -4560,6 +4604,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/calendar-recordings-tick'
     | '/api/public/hooks/calendar-tick'
     | '/api/public/hooks/channel-health'
+    | '/api/public/hooks/clockify-import-tick'
     | '/api/public/hooks/contaazul-tick'
     | '/api/public/hooks/dunning-tick'
     | '/api/public/hooks/email-broadcast-tick'
@@ -4619,11 +4664,13 @@ export interface FileRouteTypes {
     | '/sourcing'
     | '/agents/prototype'
     | '/contracts/templates'
+    | '/projects/settings'
     | '/prospecting/campaigns'
     | '/settings/integrations'
     | '/settings/marketplace'
     | '/settings/roles'
     | '/sourcing/sequences/$id'
+    | '/projects/settings/imports/clockify'
     | '/prospecting/queues/$queueId/play'
     | '/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
@@ -4641,6 +4688,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/ats/jobs'
     | '/api/public/zapier/triggers/$event'
     | '/api/public/zapier/unsubscribe/$id'
+    | '/projects/settings/imports'
     | '/api/public/scim/v2/Users/$id'
     | '/api/public/v1/meetings/$id/cancel'
     | '/api/public/v1/meetings/$id/reschedule'
@@ -4958,6 +5006,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/calendar-recordings-tick'
     | '/api/public/hooks/calendar-tick'
     | '/api/public/hooks/channel-health'
+    | '/api/public/hooks/clockify-import-tick'
     | '/api/public/hooks/contaazul-tick'
     | '/api/public/hooks/dunning-tick'
     | '/api/public/hooks/email-broadcast-tick'
@@ -5017,11 +5066,13 @@ export interface FileRouteTypes {
     | '/_authenticated/(ats)/sourcing/'
     | '/_authenticated/agents/prototype/'
     | '/_authenticated/contracts/templates/'
+    | '/_authenticated/projects/settings/'
     | '/_authenticated/prospecting/campaigns/'
     | '/_authenticated/settings/integrations/'
     | '/_authenticated/settings/marketplace/'
     | '/_authenticated/settings/roles/'
     | '/_authenticated/(ats)/sourcing/sequences_/$id'
+    | '/_authenticated/projects/settings/imports/clockify'
     | '/_authenticated/prospecting/queues/$queueId/play'
     | '/_authenticated/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
@@ -5039,6 +5090,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/ats/jobs'
     | '/api/public/zapier/triggers/$event'
     | '/api/public/zapier/unsubscribe/$id'
+    | '/_authenticated/projects/settings/imports/'
     | '/api/public/scim/v2/Users/$id'
     | '/api/public/v1/meetings/$id/cancel'
     | '/api/public/v1/meetings/$id/reschedule'
@@ -5107,6 +5159,7 @@ export interface RootRouteChildren {
   ApiPublicHooksCalendarRecordingsTickRoute: typeof ApiPublicHooksCalendarRecordingsTickRoute
   ApiPublicHooksCalendarTickRoute: typeof ApiPublicHooksCalendarTickRoute
   ApiPublicHooksChannelHealthRoute: typeof ApiPublicHooksChannelHealthRoute
+  ApiPublicHooksClockifyImportTickRoute: typeof ApiPublicHooksClockifyImportTickRoute
   ApiPublicHooksContaazulTickRoute: typeof ApiPublicHooksContaazulTickRoute
   ApiPublicHooksDunningTickRoute: typeof ApiPublicHooksDunningTickRoute
   ApiPublicHooksEmailBroadcastTickRoute: typeof ApiPublicHooksEmailBroadcastTickRoute
@@ -7178,6 +7231,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsListsIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/projects/settings/': {
+      id: '/_authenticated/projects/settings/'
+      path: '/projects/settings'
+      fullPath: '/projects/settings/'
+      preLoaderRoute: typeof AuthenticatedProjectsSettingsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/projects_/$id/entrega': {
       id: '/_authenticated/projects_/$id/entrega'
       path: '/projects/$id/entrega'
@@ -7421,6 +7481,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/channel-health'
       fullPath: '/api/public/hooks/channel-health'
       preLoaderRoute: typeof ApiPublicHooksChannelHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/clockify-import-tick': {
+      id: '/api/public/hooks/clockify-import-tick'
+      path: '/api/public/hooks/clockify-import-tick'
+      fullPath: '/api/public/hooks/clockify-import-tick'
+      preLoaderRoute: typeof ApiPublicHooksClockifyImportTickRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/contaazul-tick': {
@@ -7799,6 +7866,20 @@ declare module '@tanstack/react-router' {
       path: '/sourcing/sequences/$id'
       fullPath: '/sourcing/sequences/$id'
       preLoaderRoute: typeof AuthenticatedatsSourcingSequencesIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/projects/settings/imports/': {
+      id: '/_authenticated/projects/settings/imports/'
+      path: '/projects/settings/imports'
+      fullPath: '/projects/settings/imports/'
+      preLoaderRoute: typeof AuthenticatedProjectsSettingsImportsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/projects/settings/imports/clockify': {
+      id: '/_authenticated/projects/settings/imports/clockify'
+      path: '/projects/settings/imports/clockify'
+      fullPath: '/projects/settings/imports/clockify'
+      preLoaderRoute: typeof AuthenticatedProjectsSettingsImportsClockifyRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/prospecting/queues/$queueId/play': {
@@ -8582,7 +8663,10 @@ interface AuthenticatedRouteChildren {
   AuthenticatedatsJobsIndexRoute: typeof AuthenticatedatsJobsIndexRoute
   AuthenticatedatsSourcingIndexRoute: typeof AuthenticatedatsSourcingIndexRoute
   AuthenticatedContractsTemplatesIndexRoute: typeof AuthenticatedContractsTemplatesIndexRoute
+  AuthenticatedProjectsSettingsIndexRoute: typeof AuthenticatedProjectsSettingsIndexRoute
   AuthenticatedatsSourcingSequencesIdRoute: typeof AuthenticatedatsSourcingSequencesIdRoute
+  AuthenticatedProjectsSettingsImportsClockifyRoute: typeof AuthenticatedProjectsSettingsImportsClockifyRoute
+  AuthenticatedProjectsSettingsImportsIndexRoute: typeof AuthenticatedProjectsSettingsImportsIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -8739,8 +8823,14 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedatsSourcingIndexRoute: AuthenticatedatsSourcingIndexRoute,
   AuthenticatedContractsTemplatesIndexRoute:
     AuthenticatedContractsTemplatesIndexRoute,
+  AuthenticatedProjectsSettingsIndexRoute:
+    AuthenticatedProjectsSettingsIndexRoute,
   AuthenticatedatsSourcingSequencesIdRoute:
     AuthenticatedatsSourcingSequencesIdRoute,
+  AuthenticatedProjectsSettingsImportsClockifyRoute:
+    AuthenticatedProjectsSettingsImportsClockifyRoute,
+  AuthenticatedProjectsSettingsImportsIndexRoute:
+    AuthenticatedProjectsSettingsImportsIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
@@ -8885,6 +8975,7 @@ const rootRouteChildren: RootRouteChildren = {
     ApiPublicHooksCalendarRecordingsTickRoute,
   ApiPublicHooksCalendarTickRoute: ApiPublicHooksCalendarTickRoute,
   ApiPublicHooksChannelHealthRoute: ApiPublicHooksChannelHealthRoute,
+  ApiPublicHooksClockifyImportTickRoute: ApiPublicHooksClockifyImportTickRoute,
   ApiPublicHooksContaazulTickRoute: ApiPublicHooksContaazulTickRoute,
   ApiPublicHooksDunningTickRoute: ApiPublicHooksDunningTickRoute,
   ApiPublicHooksEmailBroadcastTickRoute: ApiPublicHooksEmailBroadcastTickRoute,

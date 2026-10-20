@@ -37,6 +37,8 @@ export const SEGMENT_LABELS: Record<string, string> = {
   "my-bug-reports": "Meus chamados",
   "import-hubspot": "Importar HubSpot",
   "import-csv": "Importar CSV",
+  imports: "Importações",
+  clockify: "Clockify",
   workspaces: "Workspaces",
   alerts: "Alertas",
   quotas: "Cotas",
