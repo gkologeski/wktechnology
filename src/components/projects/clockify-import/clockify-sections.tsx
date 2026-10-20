@@ -40,6 +40,20 @@ import {
 } from "@/lib/integrations/clockify/clockify-format";
 import { ENTRY_REASON_LABEL } from "@/lib/integrations/clockify/clockify-map";
 import { CLOCKIFY_REGIONS, CLOCKIFY_REGION_LABEL } from "@/lib/integrations/clockify/clockify-urls";
+import {
+  CLOCKIFY_ACCESS_LABEL,
+  canReadWholeWorkspace,
+  type ClockifyAccess,
+} from "@/lib/integrations/clockify/clockify-access";
+
+function AccessBadge({ access }: { access: ClockifyAccess | null }) {
+  const a = access ?? "unknown";
+  return (
+    <StatusBadge tone={canReadWholeWorkspace(a) ? "success" : a === "not_admin" ? "danger" : "warning"}>
+      {CLOCKIFY_ACCESS_LABEL[a]}
+    </StatusBadge>
+  );
+}
 
 const CONN_LABEL: Record<string, string> = {
   not_configured: "Não configurado",
@@ -58,7 +72,20 @@ export type ConnectionView = {
   status: string;
   lastError: string | null;
   lastTestedAt: string | null;
-  source: { id: string; name: string | null; plan: string | null } | null;
+  source: {
+    id: string;
+    name: string | null;
+    plan: string | null;
+    access: ClockifyAccess | null;
+    verifiedAt: string | null;
+  } | null;
+};
+
+export type SourceWorkspaceView = {
+  id: string;
+  name: string;
+  plan: string | null;
+  access: ClockifyAccess;
 };
 
 export function ConnectionSection({
@@ -200,33 +227,52 @@ export function ConnectionSection({
 export function SourceSection({
   conn,
   workspaces,
+  suggestedId,
   busy,
   onSelect,
 }: {
   conn: ConnectionView;
-  workspaces: Array<{ id: string; name: string; plan: string | null }> | null;
+  workspaces: SourceWorkspaceView[] | null;
+  suggestedId: string | null;
   busy: boolean;
   onSelect: (id: string) => void;
 }) {
+  // Nunca pré-seleciona: a sugestão pelo nome só é destacada, a escolha é do usuário.
   const [choice, setChoice] = useState(conn.source?.id ?? "");
+  const chosen = workspaces?.find((w) => w.id.toLowerCase() === choice.toLowerCase()) ?? null;
   return (
     <FormSection
       title="2. Workspace de origem"
-      description="Escolha de qual workspace do Clockify os dados vêm. O destino é sempre o workspace atual do ERP."
+      description="Depois do teste, escolha pelo ID de qual workspace do Clockify os dados vêm. O destino é sempre o workspace atual do ERP."
     >
       {conn.source ? (
-        <p className="text-sm">
-          Origem: <strong>{conn.source.name ?? conn.source.id}</strong>
-          {conn.source.plan ? (
-            <span className="text-text-tertiary"> · plano {conn.source.plan}</span>
-          ) : null}
-        </p>
+        <div className="space-y-1 text-sm">
+          <p className="flex flex-wrap items-center gap-2">
+            Origem: <strong>{conn.source.name ?? conn.source.id}</strong>
+            {conn.source.plan ? (
+              <span className="text-text-tertiary">· plano {conn.source.plan}</span>
+            ) : null}
+            <AccessBadge access={conn.source.access} />
+          </p>
+          <p className="font-mono text-xs text-text-tertiary">ID {conn.source.id}</p>
+          {!canReadWholeWorkspace(conn.source.access) && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" aria-hidden />
+              <AlertTitle>Prévia bloqueada</AlertTitle>
+              <AlertDescription>
+                {conn.source.access === "not_admin"
+                  ? "A chave não é de proprietário nem administrador deste workspace. Sem isso, o Clockify não entrega as horas de todos os usuários. Salve a chave de um administrador e teste de novo."
+                  : "Ainda não foi possível comprovar acesso administrativo nesta origem. Teste a conexão de novo; sem a comprovação a prévia não começa."}
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
       ) : (
         <p className="text-sm text-text-secondary">Nenhum workspace de origem escolhido.</p>
       )}
       {workspaces === null ? (
         <p className="text-sm text-text-tertiary">
-          Teste a conexão para listar os workspaces que a chave enxerga.
+          Teste a conexão para listar os workspaces reais que a chave enxerga.
         </p>
       ) : workspaces.length === 0 ? (
         <EmptyState
@@ -235,25 +281,41 @@ export function SourceSection({
           description="A chave não tem acesso a nenhum workspace."
         />
       ) : (
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-          <div className="min-w-0 flex-1 space-y-1.5">
-            <Label htmlFor="ck-src">Workspace do Clockify</Label>
-            <Select value={choice} onValueChange={setChoice}>
-              <SelectTrigger id="ck-src">
-                <SelectValue placeholder="Escolha o workspace" />
-              </SelectTrigger>
-              <SelectContent>
-                {workspaces.map((w) => (
-                  <SelectItem key={w.id} value={w.id}>
-                    {w.name} {w.plan ? `(${w.plan})` : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="space-y-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <Label htmlFor="ck-src">Workspace do Clockify</Label>
+              <Select value={choice} onValueChange={setChoice}>
+                <SelectTrigger id="ck-src">
+                  <SelectValue placeholder="Escolha o workspace" />
+                </SelectTrigger>
+                <SelectContent>
+                  {workspaces.map((w) => (
+                    <SelectItem key={w.id} value={w.id}>
+                      {w.name}
+                      {w.plan ? ` (${w.plan})` : ""} · {CLOCKIFY_ACCESS_LABEL[w.access]}
+                      {w.id === suggestedId ? " · mesmo nome do ERP" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button disabled={busy || !chosen} onClick={() => chosen && onSelect(chosen.id)}>
+              Usar como origem
+            </Button>
           </div>
-          <Button disabled={busy || !choice} onClick={() => onSelect(choice)}>
-            Usar como origem
-          </Button>
+          {chosen ? (
+            <p className="flex flex-wrap items-center gap-2 text-xs text-text-secondary">
+              <span>
+                Confirme o ID antes de usar: <span className="font-mono">{chosen.id}</span>
+              </span>
+              <AccessBadge access={chosen.access} />
+            </p>
+          ) : suggestedId ? (
+            <p className="text-xs text-text-tertiary">
+              Há um workspace com o mesmo nome do ERP; ele não foi escolhido automaticamente.
+            </p>
+          ) : null}
         </div>
       )}
     </FormSection>
