@@ -14466,6 +14466,175 @@ export type Database = {
           },
         ]
       }
+      project_link_batches: {
+        Row: {
+          actor: string | null
+          counts: Json
+          created_at: string
+          id: string
+          kind: string
+          workspace_id: string
+        }
+        Insert: {
+          actor?: string | null
+          counts?: Json
+          created_at?: string
+          id?: string
+          kind: string
+          workspace_id: string
+        }
+        Update: {
+          actor?: string | null
+          counts?: Json
+          created_at?: string
+          id?: string
+          kind?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_link_batches_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_link_changes: {
+        Row: {
+          actor: string | null
+          batch_id: string
+          created_at: string
+          criterion: string
+          evidence: Json
+          field: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          provider: string | null
+          revert_batch_id: string | null
+          reverted_at: string | null
+          reverted_by: string | null
+          subject_id: string | null
+          target_id: string
+          target_table: string
+          workspace_id: string
+        }
+        Insert: {
+          actor?: string | null
+          batch_id: string
+          created_at?: string
+          criterion: string
+          evidence?: Json
+          field: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          provider?: string | null
+          revert_batch_id?: string | null
+          reverted_at?: string | null
+          reverted_by?: string | null
+          subject_id?: string | null
+          target_id: string
+          target_table: string
+          workspace_id: string
+        }
+        Update: {
+          actor?: string | null
+          batch_id?: string
+          created_at?: string
+          criterion?: string
+          evidence?: Json
+          field?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          provider?: string | null
+          revert_batch_id?: string | null
+          reverted_at?: string | null
+          reverted_by?: string | null
+          subject_id?: string | null
+          target_id?: string
+          target_table?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_link_changes_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "project_link_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_link_changes_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_link_suggestions: {
+        Row: {
+          candidate_id: string
+          created_at: string
+          criterion: string
+          decided_at: string | null
+          decided_by: string | null
+          detail: Json
+          id: string
+          kind: string
+          note: string | null
+          provider: string
+          status: string
+          subject_id: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          candidate_id: string
+          created_at?: string
+          criterion: string
+          decided_at?: string | null
+          decided_by?: string | null
+          detail?: Json
+          id?: string
+          kind: string
+          note?: string | null
+          provider: string
+          status?: string
+          subject_id: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          candidate_id?: string
+          created_at?: string
+          criterion?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          detail?: Json
+          id?: string
+          kind?: string
+          note?: string | null
+          provider?: string
+          status?: string
+          subject_id?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_link_suggestions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_list_custom_fields: {
         Row: {
           created_at: string
@@ -14835,6 +15004,185 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "project_people_groups_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_reconciliation_issue_events: {
+        Row: {
+          action: string
+          actor: string | null
+          created_at: string
+          from_status: string | null
+          id: string
+          issue_id: string
+          note: string | null
+          to_status: string | null
+          workspace_id: string
+        }
+        Insert: {
+          action: string
+          actor?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          issue_id: string
+          note?: string | null
+          to_status?: string | null
+          workspace_id: string
+        }
+        Update: {
+          action?: string
+          actor?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          issue_id?: string
+          note?: string | null
+          to_status?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_reconciliation_issue_events_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
+            referencedRelation: "project_reconciliation_issues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_reconciliation_issue_events_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_reconciliation_issues: {
+        Row: {
+          created_at: string
+          dedupe_key: string
+          detail: Json
+          entry_date: string | null
+          first_detected_at: string
+          id: string
+          issue_type: string
+          last_detected_at: string
+          present: boolean
+          project_id: string | null
+          provider: string
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          seconds_impact: number
+          source_external_id: string | null
+          staging_id: string | null
+          staging_table: string | null
+          status: string
+          time_entry_id: string | null
+          updated_at: string
+          user_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          dedupe_key: string
+          detail?: Json
+          entry_date?: string | null
+          first_detected_at?: string
+          id?: string
+          issue_type: string
+          last_detected_at?: string
+          present?: boolean
+          project_id?: string | null
+          provider: string
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          seconds_impact?: number
+          source_external_id?: string | null
+          staging_id?: string | null
+          staging_table?: string | null
+          status?: string
+          time_entry_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          dedupe_key?: string
+          detail?: Json
+          entry_date?: string | null
+          first_detected_at?: string
+          id?: string
+          issue_type?: string
+          last_detected_at?: string
+          present?: boolean
+          project_id?: string | null
+          provider?: string
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          seconds_impact?: number
+          source_external_id?: string | null
+          staging_id?: string | null
+          staging_table?: string | null
+          status?: string
+          time_entry_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_reconciliation_issues_time_entry_id_fkey"
+            columns: ["time_entry_id"]
+            isOneToOne: false
+            referencedRelation: "project_time_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_reconciliation_issues_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_reconciliation_refreshes: {
+        Row: {
+          actor: string | null
+          counts: Json
+          finished_at: string | null
+          id: string
+          started_at: string
+          workspace_id: string
+        }
+        Insert: {
+          actor?: string | null
+          counts?: Json
+          finished_at?: string | null
+          id?: string
+          started_at?: string
+          workspace_id: string
+        }
+        Update: {
+          actor?: string | null
+          counts?: Json
+          finished_at?: string | null
+          id?: string
+          started_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_reconciliation_refreshes_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -15454,6 +15802,7 @@ export type Database = {
       projects: {
         Row: {
           assigned_to: string | null
+          company_id: string | null
           contract_id: string | null
           created_at: string
           description: string | null
@@ -15474,6 +15823,7 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
+          company_id?: string | null
           contract_id?: string | null
           created_at?: string
           description?: string | null
@@ -15494,6 +15844,7 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
+          company_id?: string | null
           contract_id?: string | null
           created_at?: string
           description?: string | null
@@ -15513,6 +15864,13 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "projects_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "projects_contract_id_fkey"
             columns: ["contract_id"]
@@ -24285,6 +24643,7 @@ export type Database = {
         Args: { _user: string; _workspace: string }
         Returns: boolean
       }
+      iso8601_duration_seconds: { Args: { p: string }; Returns: number }
       job_role_usable_in_workspace: {
         Args: { _role: string; _workspace: string }
         Returns: boolean
@@ -24345,6 +24704,95 @@ export type Database = {
           status: string
         }[]
       }
+      project_dashboard_summary: {
+        Args: { p_from: string; p_to: string; p_tz: string }
+        Returns: Json
+      }
+      project_entry_seconds: {
+        Args: {
+          p_hours: number
+          p_minutes: number
+          p_started: string
+          p_stopped: string
+        }
+        Returns: number
+      }
+      project_is_link_backfill: {
+        Args: { new_row: Json; old_row: Json; p_fields: string[] }
+        Returns: boolean
+      }
+      project_link_people_overview: {
+        Args: { p_ws: string }
+        Returns: {
+          entries: number
+          entries_with_person: number
+          linked_by_trace: number
+          member_status: string
+          person_ids: string[]
+          suggestions: number
+          user_id: string
+          user_name: string
+        }[]
+      }
+      project_link_suggestions_decide: {
+        Args: {
+          p_action: string
+          p_ids: string[]
+          p_note: string
+          p_ws: string
+        }
+        Returns: Json
+      }
+      project_links_apply_exact: { Args: { p_ws: string }; Returns: Json }
+      project_links_revert: {
+        Args: {
+          p_batch?: string
+          p_kind: string
+          p_subject_ids: string[]
+          p_ws: string
+        }
+        Returns: Json
+      }
+      project_recon_assert_admin: {
+        Args: { p_write: boolean; p_ws: string }
+        Returns: undefined
+      }
+      project_reconciliation_breakdown: {
+        Args: {
+          p_from: string
+          p_group: string
+          p_limit?: number
+          p_offset?: number
+          p_project?: string
+          p_provider: string
+          p_to: string
+          p_user?: string
+          p_ws: string
+        }
+        Returns: {
+          diff_seconds: number
+          erp_rows: number
+          erp_seconds: number
+          group_key: string
+          label: string
+          linked_erp_seconds: number
+          linked_rows: number
+          rows_with_open_issues: number
+          source_seconds: number
+          total_groups: number
+        }[]
+      }
+      project_reconciliation_decide: {
+        Args: {
+          p_action: string
+          p_ids: string[]
+          p_note: string
+          p_ws: string
+        }
+        Returns: Json
+      }
+      project_reconciliation_overview: { Args: { p_ws: string }; Returns: Json }
+      project_reconciliation_refresh: { Args: { p_ws: string }; Returns: Json }
       propagate_activity_assoc: {
         Args: {
           p_batch?: number
@@ -24581,6 +25029,7 @@ export type Database = {
         }
         Returns: Json
       }
+      try_iso_date: { Args: { p: string }; Returns: string }
       user_can_act: {
         Args: {
           _action: string

@@ -389,6 +389,7 @@ import { Route as AuthenticatedatsSourcingSequencesIdRouteImport } from './route
 import { Route as AuthenticatedProjectsSettingsImportsIndexRouteImport } from './routes/_authenticated/projects.settings.imports.index'
 import { Route as AuthenticatedProjectsSettingsImportsClockifyRouteImport } from './routes/_authenticated/projects.settings.imports.clockify'
 import { Route as AuthenticatedProjectsSettingsImportsJibbleRouteImport } from './routes/_authenticated/projects.settings.imports.jibble'
+import { Route as AuthenticatedProjectsSettingsImportsReconciliationRouteImport } from './routes/_authenticated/projects.settings.imports.reconciliation'
 import { Route as AuthenticatedProspectingQueuesQueueIdPlayRouteImport } from './routes/_authenticated/prospecting.queues.$queueId.play'
 import { Route as AuthenticatedTasksQueuesQueueIdPlayRouteImport } from './routes/_authenticated/tasks.queues.$queueId.play'
 import { Route as ApiPublicBookingSlugSubmitRouteImport } from './routes/api/public/booking/$slug/submit'
@@ -2584,6 +2585,12 @@ const AuthenticatedProjectsSettingsImportsJibbleRoute =
     path: '/projects/settings/imports/jibble',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedProjectsSettingsImportsReconciliationRoute =
+  AuthenticatedProjectsSettingsImportsReconciliationRouteImport.update({
+    id: '/projects/settings/imports/reconciliation',
+    path: '/projects/settings/imports/reconciliation',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProspectingQueuesQueueIdPlayRoute =
   AuthenticatedProspectingQueuesQueueIdPlayRouteImport.update({
     id: '/queues/$queueId/play',
@@ -3085,6 +3092,7 @@ export interface FileRoutesByFullPath {
   '/sourcing/sequences/$id': typeof AuthenticatedatsSourcingSequencesIdRoute
   '/projects/settings/imports/clockify': typeof AuthenticatedProjectsSettingsImportsClockifyRoute
   '/projects/settings/imports/jibble': typeof AuthenticatedProjectsSettingsImportsJibbleRoute
+  '/projects/settings/imports/reconciliation': typeof AuthenticatedProjectsSettingsImportsReconciliationRoute
   '/prospecting/queues/$queueId/play': typeof AuthenticatedProspectingQueuesQueueIdPlayRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
@@ -3480,6 +3488,7 @@ export interface FileRoutesByTo {
   '/sourcing/sequences/$id': typeof AuthenticatedatsSourcingSequencesIdRoute
   '/projects/settings/imports/clockify': typeof AuthenticatedProjectsSettingsImportsClockifyRoute
   '/projects/settings/imports/jibble': typeof AuthenticatedProjectsSettingsImportsJibbleRoute
+  '/projects/settings/imports/reconciliation': typeof AuthenticatedProjectsSettingsImportsReconciliationRoute
   '/prospecting/queues/$queueId/play': typeof AuthenticatedProspectingQueuesQueueIdPlayRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
@@ -3884,6 +3893,7 @@ export interface FileRoutesById {
   '/_authenticated/(ats)/sourcing/sequences_/$id': typeof AuthenticatedatsSourcingSequencesIdRoute
   '/_authenticated/projects/settings/imports/clockify': typeof AuthenticatedProjectsSettingsImportsClockifyRoute
   '/_authenticated/projects/settings/imports/jibble': typeof AuthenticatedProjectsSettingsImportsJibbleRoute
+  '/_authenticated/projects/settings/imports/reconciliation': typeof AuthenticatedProjectsSettingsImportsReconciliationRoute
   '/_authenticated/prospecting/queues/$queueId/play': typeof AuthenticatedProspectingQueuesQueueIdPlayRoute
   '/_authenticated/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
@@ -4288,6 +4298,7 @@ export interface FileRouteTypes {
     | '/sourcing/sequences/$id'
     | '/projects/settings/imports/clockify'
     | '/projects/settings/imports/jibble'
+    | '/projects/settings/imports/reconciliation'
     | '/prospecting/queues/$queueId/play'
     | '/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
@@ -4683,6 +4694,7 @@ export interface FileRouteTypes {
     | '/sourcing/sequences/$id'
     | '/projects/settings/imports/clockify'
     | '/projects/settings/imports/jibble'
+    | '/projects/settings/imports/reconciliation'
     | '/prospecting/queues/$queueId/play'
     | '/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
@@ -5086,6 +5098,7 @@ export interface FileRouteTypes {
     | '/_authenticated/(ats)/sourcing/sequences_/$id'
     | '/_authenticated/projects/settings/imports/clockify'
     | '/_authenticated/projects/settings/imports/jibble'
+    | '/_authenticated/projects/settings/imports/reconciliation'
     | '/_authenticated/prospecting/queues/$queueId/play'
     | '/_authenticated/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
@@ -7902,6 +7915,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsSettingsImportsJibbleRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/projects/settings/imports/reconciliation': {
+      id: '/_authenticated/projects/settings/imports/reconciliation'
+      path: '/projects/settings/imports/reconciliation'
+      fullPath: '/projects/settings/imports/reconciliation'
+      preLoaderRoute: typeof AuthenticatedProjectsSettingsImportsReconciliationRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/prospecting/queues/$queueId/play': {
       id: '/_authenticated/prospecting/queues/$queueId/play'
       path: '/queues/$queueId/play'
@@ -8687,6 +8707,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedatsSourcingSequencesIdRoute: typeof AuthenticatedatsSourcingSequencesIdRoute
   AuthenticatedProjectsSettingsImportsClockifyRoute: typeof AuthenticatedProjectsSettingsImportsClockifyRoute
   AuthenticatedProjectsSettingsImportsJibbleRoute: typeof AuthenticatedProjectsSettingsImportsJibbleRoute
+  AuthenticatedProjectsSettingsImportsReconciliationRoute: typeof AuthenticatedProjectsSettingsImportsReconciliationRoute
   AuthenticatedProjectsSettingsImportsIndexRoute: typeof AuthenticatedProjectsSettingsImportsIndexRoute
 }
 
@@ -8852,6 +8873,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedProjectsSettingsImportsClockifyRoute,
   AuthenticatedProjectsSettingsImportsJibbleRoute:
     AuthenticatedProjectsSettingsImportsJibbleRoute,
+  AuthenticatedProjectsSettingsImportsReconciliationRoute:
+    AuthenticatedProjectsSettingsImportsReconciliationRoute,
   AuthenticatedProjectsSettingsImportsIndexRoute:
     AuthenticatedProjectsSettingsImportsIndexRoute,
 }

@@ -1,10 +1,19 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { AlertTriangle, CheckCircle2, Clock3, FolderKanban, RefreshCw } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Clock3,
+  FolderKanban,
+  RefreshCw,
+  ShieldAlert,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState, MetricCard, PageHeader, Skeletons } from "@/components/techhire/ui";
 import { DashboardError } from "@/components/dashboard/dashboard-error";
+import { IsoDateRangePicker } from "@/components/iso-date-range-picker";
 import {
   DistributionBar,
   OverviewList,
@@ -12,24 +21,28 @@ import {
   OverviewPanel,
 } from "@/components/dashboard/overview-panel";
 import { getProjectDashboard } from "@/lib/projects/dashboard.functions";
+import {
+  DASHBOARD_HOURS_STATUS_LABEL,
+  PROJECT_STATUS_LABEL,
+  formatHours,
+  isIanaTimeZone,
+  monthRangeInTimeZone,
+  validateIsoRange,
+} from "@/lib/projects/reconciliation-labels";
 
-const STATUS: Record<string, string> = {
-  planning: "Planejamento",
-  active: "Ativo",
-  on_hold: "Em espera",
-  done: "Concluído",
-  cancelled: "Cancelado",
-  draft: "Rascunho",
-  submitted: "Enviado",
-  approved: "Aprovado",
-  rejected: "Rejeitado",
-};
+type Search = { from?: string; to?: string };
+const ISO = /^\d{4}-\d{2}-\d{2}$/;
+
 const date = (value: string | null) =>
-  value ? new Date(value).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "Sem prazo";
-const hours = (minutes: number) =>
-  `${(minutes / 60).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} h`;
+  value ? new Date(`${value.slice(0, 10)}T12:00:00Z`).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "Sem prazo";
+const dateTime = (value: string | null) =>
+  value ? new Date(value).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) : "nunca";
 
 export const Route = createFileRoute("/_authenticated/projects/dashboard")({
+  validateSearch: (s: Record<string, unknown>): Search => ({
+    from: typeof s.from === "string" && ISO.test(s.from) ? s.from : undefined,
+    to: typeof s.to === "string" && ISO.test(s.to) ? s.to : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Dashboard | TechProjects" },
@@ -46,23 +59,36 @@ export const Route = createFileRoute("/_authenticated/projects/dashboard")({
   component: ProjectsDashboard,
 });
 
+function useTimeZone() {
+  return useMemo(() => {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return tz && isIanaTimeZone(tz) ? tz : "America/Sao_Paulo";
+  }, []);
+}
+
 function ProjectsDashboard() {
-  const now = new Date();
-  const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-  const to = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+  const search = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
+  const tz = useTimeZone();
+  const fallback = monthRangeInTimeZone(new Date(), tz);
+  const valid = search.from && search.to && !validateIsoRange(search.from, search.to);
+  const from = valid ? (search.from as string) : fallback.from;
+  const to = valid ? (search.to as string) : fallback.to;
   const get = useServerFn(getProjectDashboard);
   const query = useQuery({
-    queryKey: ["projects-dashboard", from, to],
-    queryFn: () => get({ data: { from, to } }),
+    queryKey: ["projects-dashboard", from, to, tz],
+    queryFn: () => get({ data: { from, to, tz } }),
     staleTime: 60_000,
   });
   const data = query.data;
+  const periodLabel = `${date(from)} a ${date(to)}`;
+  const reviewSearch = { tab: "issues" as const, from, to };
   return (
     <div className="flex flex-col gap-6 pb-10">
       <PageHeader
         eyebrow="TechProjects · Projetos"
         title="Dashboard"
-        description="Visão geral de execução, prazos e esforço do mês."
+        description="Situação atual dos projetos e horas do período escolhido."
         primaryAction={
           <Button asChild size="sm">
             <Link to="/projects">
@@ -72,17 +98,29 @@ function ProjectsDashboard() {
           </Button>
         }
         secondaryActions={
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => void query.refetch()}
-            disabled={query.isFetching}
-          >
-            <RefreshCw
-              className={query.isFetching ? "mr-2 h-4 w-4 animate-spin" : "mr-2 h-4 w-4"}
+          <div className="flex flex-wrap items-center gap-2">
+            <IsoDateRangePicker
+              size="sm"
+              align="end"
+              ariaLabel="Período das horas"
+              from={from}
+              to={to}
+              defaultPreset="thisMonth"
+              onChange={(r) => void navigate({ search: { from: r.from, to: r.to } })}
+              onClear={() => void navigate({ search: {} })}
             />
-            Atualizar
-          </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => void query.refetch()}
+              disabled={query.isFetching}
+            >
+              <RefreshCw
+                className={query.isFetching ? "mr-2 h-4 w-4 animate-spin" : "mr-2 h-4 w-4"}
+              />
+              Atualizar
+            </Button>
+          </div>
         }
       />
       {query.isLoading ? (
@@ -99,41 +137,45 @@ function ProjectsDashboard() {
         <>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <MetricCard
-              label="Projetos ativos"
+              label="Projetos ativos agora"
               value={data.activeCount}
-              hint="Em execução agora"
+              hint={`Situação atual, não depende do período · ${data.projectsTotal} no total`}
               icon={FolderKanban}
               tone="positive"
             />
             <MetricCard
-              label="Progresso médio"
-              value={`${Math.round(data.averageProgress)}%`}
-              hint="Média dos projetos ativos"
+              label="Conclusão de tarefas"
+              value={
+                data.activeTaskCompletion === null
+                  ? "Sem base"
+                  : `${Math.round(data.activeTaskCompletion * 100)}%`
+              }
+              hint={`Tarefas concluídas dos ativos com tarefas (${data.activeWithTaskBase} de ${data.activeCount})`}
               icon={CheckCircle2}
             />
             <MetricCard
               label="Tarefas em aberto"
-              value={data.openTasks}
-              hint={`${data.overdueTasks} atrasadas`}
+              value={data.openTasks.toLocaleString("pt-BR")}
+              hint={`${data.overdueTasks.toLocaleString("pt-BR")} atrasadas em ${date(data.today)}`}
               icon={AlertTriangle}
               tone={data.overdueTasks > 0 ? "warning" : "neutral"}
             />
             <MetricCard
-              label="Horas no mês"
-              value={hours(data.trackedMinutes)}
-              hint="Registros visíveis no período"
+              label="Horas no período"
+              value={formatHours(data.period.seconds)}
+              hint={`${periodLabel} · ${data.period.rows.toLocaleString("pt-BR")} apontamentos`}
               icon={Clock3}
             />
           </div>
+
+          <CoverageStrip data={data} reviewSearch={reviewSearch} />
+
           <div className="grid gap-4 lg:grid-cols-2">
             <OverviewPanel
               title="Projetos em andamento"
-              description="Progresso e prazo dos projetos mais recentes."
+              description={`${data.inProgressTotal} projetos com situação Ativo; os 8 mais recentes.`}
               action={
-                <Link
-                  to="/projects"
-                  className="text-xs text-text-secondary hover:text-text-primary"
-                >
+                <Link to="/projects" className="text-xs text-text-secondary hover:text-text-primary">
                   Ver projetos →
                 </Link>
               }
@@ -142,8 +184,8 @@ function ProjectsDashboard() {
                 <EmptyState
                   compact
                   icon={FolderKanban}
-                  title="Nenhum projeto"
-                  description="Crie um projeto para começar a acompanhar a execução."
+                  title="Nenhum projeto ativo"
+                  description="Projetos com situação Ativo aparecem aqui."
                 />
               ) : (
                 <OverviewList>
@@ -157,18 +199,35 @@ function ProjectsDashboard() {
                         >
                           {row.name}
                         </Link>
-                        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-sunken">
+                        {row.progressPct === null ? (
+                          <p className="mt-1 text-xs text-text-tertiary">
+                            Sem base de progresso (nenhuma tarefa)
+                          </p>
+                        ) : (
                           <div
-                            className="h-full rounded-full bg-primary"
-                            style={{ width: `${Math.max(0, Math.min(100, row.progress))}%` }}
-                          />
-                        </div>
+                            className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-sunken"
+                            role="progressbar"
+                            aria-label={`Tarefas concluídas de ${row.name}`}
+                            aria-valuenow={Math.round(row.progressPct)}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                          >
+                            <div
+                              className="h-full rounded-full bg-primary"
+                              style={{ width: `${Math.max(0, Math.min(100, row.progressPct))}%` }}
+                            />
+                          </div>
+                        )}
                       </div>
                       <div className="shrink-0 text-right">
                         <p className="text-xs font-medium tabular-nums text-text-primary">
-                          {Math.round(row.progress)}%
+                          {row.progressPct === null
+                            ? "—"
+                            : `${Math.round(row.progressPct)}% · ${row.tasksDone}/${row.tasksTotal}`}
                         </p>
-                        <p className="text-xs text-text-tertiary">{date(row.dueAt)}</p>
+                        <p className="text-xs text-text-tertiary">
+                          {date(row.dueAt)} · {formatHours(row.periodSeconds)}
+                        </p>
                       </div>
                     </OverviewListItem>
                   ))}
@@ -177,7 +236,7 @@ function ProjectsDashboard() {
             </OverviewPanel>
             <OverviewPanel
               title="Precisam de atenção"
-              description="Projetos pausados ou com prazo ultrapassado."
+              description={`${data.attentionTotal} projetos pausados ou com prazo ultrapassado.`}
             >
               {data.attention.length === 0 ? (
                 <EmptyState
@@ -199,7 +258,7 @@ function ProjectsDashboard() {
                           {row.name}
                         </Link>
                         <p className="text-xs text-text-tertiary">
-                          {STATUS[row.status] ?? row.status}
+                          {PROJECT_STATUS_LABEL[row.status] ?? row.status}
                         </p>
                       </div>
                       <span className="shrink-0 text-xs tabular-nums text-text-secondary">
@@ -213,23 +272,34 @@ function ProjectsDashboard() {
           </div>
           <OverviewPanel
             title="Horas por situação"
-            description="Distribuição das horas registradas neste mês."
+            description={`Apontamentos de ${periodLabel}. Importado bloqueado não é aprovação nem faturamento.`}
+            action={
+              data.coverage.canOpenCenter ? (
+                <Link
+                  to="/projects/settings/imports/reconciliation"
+                  search={{ tab: "breakdown", from, to }}
+                  className="text-xs text-text-secondary hover:text-text-primary"
+                >
+                  Conferir registros →
+                </Link>
+              ) : undefined
+            }
           >
-            {data.statusMinutes.length === 0 ? (
+            {data.period.byStatus.length === 0 ? (
               <EmptyState
                 compact
                 icon={Clock3}
                 title="Sem horas registradas"
-                description="Ainda não há apontamentos no período atual."
+                description="Não há apontamentos visíveis no período escolhido."
               />
             ) : (
               <div className="grid gap-3 md:grid-cols-2">
-                {data.statusMinutes.map((row) => (
+                {data.period.byStatus.map((row) => (
                   <DistributionBar
                     key={row.status}
-                    label={STATUS[row.status] ?? row.status}
-                    value={Math.round(row.minutes / 60)}
-                    total={Math.max(1, Math.round(data.trackedMinutes / 60))}
+                    label={`${DASHBOARD_HOURS_STATUS_LABEL[row.status] ?? row.status} · ${formatHours(row.seconds)}`}
+                    value={row.rows}
+                    total={Math.max(1, data.period.rows)}
                   />
                 ))}
               </div>
@@ -238,5 +308,63 @@ function ProjectsDashboard() {
         </>
       )}
     </div>
+  );
+}
+
+function CoverageStrip({
+  data,
+  reviewSearch,
+}: {
+  data: NonNullable<Awaited<ReturnType<typeof getProjectDashboard>>>;
+  reviewSearch: { tab: "issues"; from: string; to: string };
+}) {
+  const validated = data.period.seconds - data.period.secondsInReview;
+  return (
+    <section
+      aria-label="Cobertura e pendências das horas"
+      className="flex flex-col gap-3 rounded-lg border border-border-subtle bg-surface-2 p-4 shadow-xs md:flex-row md:items-center md:justify-between"
+    >
+      <dl className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-3">
+        <div>
+          <dt className="text-xs text-text-tertiary">Total bruto no período</dt>
+          <dd className="text-sm font-medium tabular-nums text-text-primary">
+            {formatHours(data.period.seconds)} · {data.period.rows.toLocaleString("pt-BR")} registros
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs text-text-tertiary">Sem alerta aberto</dt>
+          <dd className="text-sm font-medium tabular-nums text-text-primary">
+            {data.coverage.issuesVisible ? formatHours(validated) : "Não disponível para seu acesso"}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs text-text-tertiary">Em revisão (alerta aberto)</dt>
+          <dd className="text-sm font-medium tabular-nums text-text-primary">
+            {data.coverage.issuesVisible
+              ? `${formatHours(data.period.secondsInReview)} · ${data.period.rowsInReview.toLocaleString("pt-BR")} registros`
+              : "Não disponível para seu acesso"}
+          </dd>
+        </div>
+      </dl>
+      <div className="flex flex-col items-start gap-1 md:items-end">
+        {data.coverage.issuesVisible ? (
+          <p className="flex items-center gap-1.5 text-xs text-text-secondary">
+            <ShieldAlert className="h-3.5 w-3.5" aria-hidden />
+            {data.coverage.openIssues.toLocaleString("pt-BR")} pendências abertas · fila conferida em{" "}
+            {dateTime(data.coverage.lastRefreshAt)}
+          </p>
+        ) : null}
+        <p className="text-xs text-text-tertiary">Dados atualizados em {dateTime(data.generatedAt)}</p>
+        {data.coverage.canOpenCenter ? (
+          <Link
+            to="/projects/settings/imports/reconciliation"
+            search={reviewSearch}
+            className="text-xs font-medium text-primary hover:underline"
+          >
+            Abrir pendências do período →
+          </Link>
+        ) : null}
+      </div>
+    </section>
   );
 }
