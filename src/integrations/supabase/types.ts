@@ -24734,6 +24734,19 @@ export type Database = {
           user_name: string
         }[]
       }
+      project_link_people_overview_body: {
+        Args: { p_ws: string }
+        Returns: {
+          entries: number
+          entries_with_person: number
+          linked_by_trace: number
+          member_status: string
+          person_ids: string[]
+          suggestions: number
+          user_id: string
+          user_name: string
+        }[]
+      }
       project_link_suggestions_decide: {
         Args: {
           p_action: string
@@ -24782,6 +24795,31 @@ export type Database = {
           total_groups: number
         }[]
       }
+      project_reconciliation_breakdown_body: {
+        Args: {
+          p_from: string
+          p_group: string
+          p_limit?: number
+          p_offset?: number
+          p_project?: string
+          p_provider: string
+          p_to: string
+          p_user?: string
+          p_ws: string
+        }
+        Returns: {
+          diff_seconds: number
+          erp_rows: number
+          erp_seconds: number
+          group_key: string
+          label: string
+          linked_erp_seconds: number
+          linked_rows: number
+          rows_with_open_issues: number
+          source_seconds: number
+          total_groups: number
+        }[]
+      }
       project_reconciliation_decide: {
         Args: {
           p_action: string
@@ -24792,6 +24830,10 @@ export type Database = {
         Returns: Json
       }
       project_reconciliation_overview: { Args: { p_ws: string }; Returns: Json }
+      project_reconciliation_overview_body: {
+        Args: { p_ws: string }
+        Returns: Json
+      }
       project_reconciliation_refresh: { Args: { p_ws: string }; Returns: Json }
       propagate_activity_assoc: {
         Args: {

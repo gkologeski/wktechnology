@@ -39,6 +39,7 @@ export const SEGMENT_LABELS: Record<string, string> = {
   "import-csv": "Importar CSV",
   imports: "Importações",
   clockify: "Clockify",
+  reconciliation: "Conciliação",
   workspaces: "Workspaces",
   alerts: "Alertas",
   quotas: "Cotas",
