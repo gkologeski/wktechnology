@@ -27,6 +27,33 @@ import {
   LeadJourneyOverview,
 } from "@/components/deals/dashboard/lead-journey-panels";
 import type { LeadChannel } from "@/lib/deals/sales-dashboard.types";
+import { getCampaignFunnel } from "@/lib/deals/campaign-funnel.functions";
+import { CampaignsSection } from "@/components/deals/dashboard/campaigns/campaigns-section";
+
+function CampaignsBlock({ from, to, assignee }: { from: string; to: string; assignee: string }) {
+  const fetchFunnel = useServerFn(getCampaignFunnel);
+  const { workspaceId } = usePermissions();
+  const q = useQuery({
+    queryKey: ["campaign-funnel", workspaceId, from, to, assignee],
+    queryFn: () => fetchFunnel({ data: { from, to, assignee } }),
+    enabled: !!workspaceId,
+    staleTime: 60_000,
+  });
+  if (q.isLoading) return <Skeletons.Card />;
+  if (q.isError || !q.data)
+    return (
+      <EmptyState
+        title="Não foi possível carregar as campanhas"
+        description={q.error instanceof Error ? q.error.message : "Tente novamente."}
+        action={
+          <Button type="button" size="sm" onClick={() => q.refetch()}>
+            Tentar novamente
+          </Button>
+        }
+      />
+    );
+  return <CampaignsSection data={q.data} />;
+}
 
 const SearchSchema = z.object({
   preset: z.string().max(20).optional(),
@@ -266,6 +293,9 @@ function DashboardPage() {
           </div>
 
           <ClosingsByMonthCard />
+
+          <CampaignsBlock from={fromIso} to={toIso} assignee={data.effectiveAssignee ?? assignee} />
+
         </>
       )}
     </div>

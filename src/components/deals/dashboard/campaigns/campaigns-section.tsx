@@ -228,7 +228,7 @@ export function CampaignsSection({ data }: { data: CampaignFunnelData }) {
                           {r.channel === "whatsapp" ? (
                             <Link to="/campaigns/whatsapp" className="text-text-primary hover:underline focus-visible:underline">{r.name}</Link>
                           ) : (
-                            <span className="text-text-primary">{r.name}</span>
+                            <Link to="/campaigns/email" className="text-text-primary hover:underline focus-visible:underline">{r.name}</Link>
                           )}
                         </td>
                         <td className="py-1.5 text-text-secondary">{r.channel === "whatsapp" ? "WhatsApp" : "E-mail"}</td>
