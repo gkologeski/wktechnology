@@ -23975,6 +23975,10 @@ export type Database = {
         Args: { p_owner: string; p_source: string; p_workspace: string }
         Returns: Json
       }
+      clockify_import_force_pending: {
+        Args: { p_run: string; p_workspace: string }
+        Returns: Json
+      }
       clockify_target_in_workspace: {
         Args: { p_id: string; p_table: string; p_ws: string }
         Returns: boolean

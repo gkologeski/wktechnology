@@ -1163,6 +1163,20 @@
       "when": 1792503538455,
       "tag": "0165_clockify_catalogs_no_client_link",
       "breakpoints": true
+    },
+    {
+      "idx": 166,
+      "version": "7",
+      "when": 1792505784914,
+      "tag": "0166_clockify_force_import_pending",
+      "breakpoints": true
+    },
+    {
+      "idx": 167,
+      "version": "7",
+      "when": 1792506054633,
+      "tag": "0167_time_entries_allow_zero_import",
+      "breakpoints": true
     }
   ]
 }
