@@ -20450,6 +20450,479 @@ export type Database = {
           },
         ]
       }
+      time_import_connections: {
+        Row: {
+          client_id_hint: string | null
+          created_at: string
+          created_by: string | null
+          credentials_ciphertext: string | null
+          id: string
+          last_error: string | null
+          last_tested_at: string | null
+          provider: string
+          secret_last4: string | null
+          source_access: string | null
+          source_org_id: string | null
+          source_org_name: string | null
+          source_person_id: string | null
+          source_role: string | null
+          source_verified_at: string | null
+          status: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        Insert: {
+          client_id_hint?: string | null
+          created_at?: string
+          created_by?: string | null
+          credentials_ciphertext?: string | null
+          id?: string
+          last_error?: string | null
+          last_tested_at?: string | null
+          provider: string
+          secret_last4?: string | null
+          source_access?: string | null
+          source_org_id?: string | null
+          source_org_name?: string | null
+          source_person_id?: string | null
+          source_role?: string | null
+          source_verified_at?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id: string
+        }
+        Update: {
+          client_id_hint?: string | null
+          created_at?: string
+          created_by?: string | null
+          credentials_ciphertext?: string | null
+          id?: string
+          last_error?: string | null
+          last_tested_at?: string | null
+          provider?: string
+          secret_last4?: string | null
+          source_access?: string | null
+          source_org_id?: string | null
+          source_org_name?: string | null
+          source_person_id?: string | null
+          source_role?: string | null
+          source_verified_at?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_import_connections_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      time_import_duplicates: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision: string
+          existing_entry_id: string
+          existing_external_id: string | null
+          existing_source: string | null
+          external_id: string
+          id: string
+          kind: string
+          overlap_seconds: number
+          provider: string
+          segment: number
+          source_org_id: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string
+          existing_entry_id: string
+          existing_external_id?: string | null
+          existing_source?: string | null
+          external_id: string
+          id?: string
+          kind: string
+          overlap_seconds: number
+          provider: string
+          segment?: number
+          source_org_id: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string
+          existing_entry_id?: string
+          existing_external_id?: string | null
+          existing_source?: string | null
+          external_id?: string
+          id?: string
+          kind?: string
+          overlap_seconds?: number
+          provider?: string
+          segment?: number
+          source_org_id?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_import_duplicates_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      time_import_links: {
+        Row: {
+          created_at: string
+          created_run_id: string | null
+          entity_type: string
+          external_id: string
+          id: string
+          imported_snapshot: Json
+          last_run_id: string | null
+          link_kind: string
+          local_date: string | null
+          meta: Json
+          provider: string
+          segment: number
+          source_end_utc: string | null
+          source_hash: string
+          source_offset: string | null
+          source_org_id: string
+          source_seconds: number | null
+          source_start_utc: string | null
+          target_id: string
+          target_table: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_run_id?: string | null
+          entity_type: string
+          external_id: string
+          id?: string
+          imported_snapshot?: Json
+          last_run_id?: string | null
+          link_kind?: string
+          local_date?: string | null
+          meta?: Json
+          provider: string
+          segment?: number
+          source_end_utc?: string | null
+          source_hash: string
+          source_offset?: string | null
+          source_org_id: string
+          source_seconds?: number | null
+          source_start_utc?: string | null
+          target_id: string
+          target_table: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_run_id?: string | null
+          entity_type?: string
+          external_id?: string
+          id?: string
+          imported_snapshot?: Json
+          last_run_id?: string | null
+          link_kind?: string
+          local_date?: string | null
+          meta?: Json
+          provider?: string
+          segment?: number
+          source_end_utc?: string | null
+          source_hash?: string
+          source_offset?: string | null
+          source_org_id?: string
+          source_seconds?: number | null
+          source_start_utc?: string | null
+          target_id?: string
+          target_table?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_import_links_created_run_id_fkey"
+            columns: ["created_run_id"]
+            isOneToOne: false
+            referencedRelation: "time_import_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_import_links_last_run_id_fkey"
+            columns: ["last_run_id"]
+            isOneToOne: false
+            referencedRelation: "time_import_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_import_links_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      time_import_mappings: {
+        Row: {
+          candidates: Json
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision: string
+          entity_type: string
+          external_id: string
+          id: string
+          label: string | null
+          method: string
+          note: string | null
+          provider: string
+          source_org_id: string
+          target_id: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          candidates?: Json
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string
+          entity_type: string
+          external_id: string
+          id?: string
+          label?: string | null
+          method?: string
+          note?: string | null
+          provider: string
+          source_org_id: string
+          target_id?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          candidates?: Json
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string
+          entity_type?: string
+          external_id?: string
+          id?: string
+          label?: string | null
+          method?: string
+          note?: string | null
+          provider?: string
+          source_org_id?: string
+          target_id?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_import_mappings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      time_import_runs: {
+        Row: {
+          checkpoint: Json
+          counts: Json
+          created_at: string
+          error: string | null
+          finished_at: string | null
+          heartbeat_at: string | null
+          id: string
+          kind: string
+          lease_until: string | null
+          options: Json
+          phase: string
+          preview_confirmed_at: string | null
+          preview_confirmed_by: string | null
+          preview_run_id: string | null
+          provider: string
+          report: Json | null
+          requested_by: string
+          source_org_id: string
+          started_at: string | null
+          status: string
+          target_run_id: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          checkpoint?: Json
+          counts?: Json
+          created_at?: string
+          error?: string | null
+          finished_at?: string | null
+          heartbeat_at?: string | null
+          id?: string
+          kind: string
+          lease_until?: string | null
+          options?: Json
+          phase?: string
+          preview_confirmed_at?: string | null
+          preview_confirmed_by?: string | null
+          preview_run_id?: string | null
+          provider: string
+          report?: Json | null
+          requested_by: string
+          source_org_id: string
+          started_at?: string | null
+          status?: string
+          target_run_id?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          checkpoint?: Json
+          counts?: Json
+          created_at?: string
+          error?: string | null
+          finished_at?: string | null
+          heartbeat_at?: string | null
+          id?: string
+          kind?: string
+          lease_until?: string | null
+          options?: Json
+          phase?: string
+          preview_confirmed_at?: string | null
+          preview_confirmed_by?: string | null
+          preview_run_id?: string | null
+          provider?: string
+          report?: Json | null
+          requested_by?: string
+          source_org_id?: string
+          started_at?: string | null
+          status?: string
+          target_run_id?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_import_runs_preview_run_id_fkey"
+            columns: ["preview_run_id"]
+            isOneToOne: false
+            referencedRelation: "time_import_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_import_runs_target_run_id_fkey"
+            columns: ["target_run_id"]
+            isOneToOne: false
+            referencedRelation: "time_import_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_import_runs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      time_import_staging: {
+        Row: {
+          entity_type: string
+          external_id: string
+          first_seen_at: string
+          id: string
+          last_run_id: string | null
+          last_seen_at: string
+          payload: Json
+          payload_hash: string
+          period: string | null
+          person_external_id: string | null
+          provider: string
+          reason_code: string | null
+          reason_detail: string | null
+          source_org_id: string
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          entity_type: string
+          external_id: string
+          first_seen_at?: string
+          id?: string
+          last_run_id?: string | null
+          last_seen_at?: string
+          payload: Json
+          payload_hash: string
+          period?: string | null
+          person_external_id?: string | null
+          provider: string
+          reason_code?: string | null
+          reason_detail?: string | null
+          source_org_id: string
+          status?: string
+          workspace_id: string
+        }
+        Update: {
+          entity_type?: string
+          external_id?: string
+          first_seen_at?: string
+          id?: string
+          last_run_id?: string | null
+          last_seen_at?: string
+          payload?: Json
+          payload_hash?: string
+          period?: string | null
+          person_external_id?: string | null
+          provider?: string
+          reason_code?: string | null
+          reason_detail?: string | null
+          source_org_id?: string
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_import_staging_last_run_id_fkey"
+            columns: ["last_run_id"]
+            isOneToOne: false
+            referencedRelation: "time_import_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_import_staging_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       timeline_pins: {
         Row: {
           entity_id: string
@@ -23944,6 +24417,16 @@ export type Database = {
             Returns: boolean
           }
         | { Args: { _perm: string; _user: string }; Returns: boolean }
+      time_import_rollback: {
+        Args: {
+          p_entries: string[]
+          p_members: string[]
+          p_projects: string[]
+          p_tasks: string[]
+          p_workspace: string
+        }
+        Returns: Json
+      }
       user_can_act: {
         Args: {
           _action: string

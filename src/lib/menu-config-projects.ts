@@ -114,6 +114,12 @@ export const PROJECTS_SIDEBAR_GROUPS: SidebarGroup[] = [
         need: "admin",
         icon: Download,
       },
+      {
+        title: "Importar do Jibble",
+        url: "/projects/settings/imports/jibble",
+        need: "admin",
+        icon: Download,
+      },
     ],
   },
 ];

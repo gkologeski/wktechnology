@@ -55,7 +55,10 @@ export function MappingsTable({
   onDecide,
   onCreateIdentity,
   busy,
+  sourceLabel = "Clockify",
 }: {
+  /** Nome da ferramenta de origem exibido nos títulos (padrão: Clockify). */
+  sourceLabel?: string;
   entity: "user" | "client" | "project";
   rows: MappingRow[];
   options: TargetOption[];
@@ -80,7 +83,7 @@ export function MappingsTable({
       <EmptyState
         compact
         title="Nada para mapear ainda"
-        description="Gere uma prévia para listar os itens do Clockify."
+        description={`Gere uma prévia para listar os itens do ${sourceLabel}.`}
       />
     );
   }
@@ -115,7 +118,7 @@ export function MappingsTable({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>No Clockify</TableHead>
+                <TableHead>No {sourceLabel}</TableHead>
                 <TableHead>Situação</TableHead>
                 <TableHead>Sugestões (não vinculadas sozinhas)</TableHead>
                 <TableHead className="min-w-[18rem]">Decisão</TableHead>
@@ -254,7 +257,11 @@ export function StagingTable({
   page,
   onPage,
   loading,
+  reasonLabels = ENTRY_REASON_LABEL,
+  periodHeader = "Início / fim (UTC)",
 }: {
+  reasonLabels?: Record<string, string>;
+  periodHeader?: string;
   rows: StagingRow[];
   total: number;
   page: number;
@@ -272,7 +279,7 @@ export function StagingTable({
           <TableHeader>
             <TableRow>
               <TableHead>Registro</TableHead>
-              <TableHead>Início / fim (UTC)</TableHead>
+              <TableHead>{periodHeader}</TableHead>
               <TableHead>Situação</TableHead>
               <TableHead>Motivo</TableHead>
             </TableRow>
@@ -293,7 +300,7 @@ export function StagingTable({
                 </TableCell>
                 <TableCell>{STAGING_STATUS_LABEL[r.status] ?? r.status}</TableCell>
                 <TableCell className="max-w-[16rem] text-xs text-text-secondary">
-                  {r.reason ? (ENTRY_REASON_LABEL[r.reason] ?? r.reason) : "—"}
+                  {r.reason ? (reasonLabels[r.reason] ?? r.reason) : "—"}
                   {r.detail ? <div className="text-text-tertiary">{r.detail}</div> : null}
                 </TableCell>
               </TableRow>
