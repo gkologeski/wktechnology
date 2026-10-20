@@ -7,7 +7,9 @@ import {
 } from "./public-submit-guard.server";
 
 const okFetch = (payload: unknown) =>
-  vi.fn(async () => new Response(JSON.stringify(payload), { status: 200 })) as unknown as typeof fetch;
+  vi.fn(
+    async () => new Response(JSON.stringify(payload), { status: 200 }),
+  ) as unknown as typeof fetch;
 
 describe("verifyTurnstileToken", () => {
   it("envia secret, response e remoteip para o siteverify", async () => {
@@ -68,14 +70,18 @@ describe("getVisitorIp", () => {
 
 describe("formSubmitCorsHeaders", () => {
   it("libera somente www.wktechnology.com.br e wktechnology.com.br em HTTPS", () => {
-    expect(formSubmitCorsHeaders("https://www.wktechnology.com.br")["Access-Control-Allow-Origin"]).toBe(
-      "https://www.wktechnology.com.br",
-    );
-    expect(formSubmitCorsHeaders("https://wktechnology.com.br")["Access-Control-Allow-Origin"]).toBe(
-      "https://wktechnology.com.br",
-    );
-    expect(formSubmitCorsHeaders("https://evil.example")["Access-Control-Allow-Origin"]).toBeUndefined();
-    expect(formSubmitCorsHeaders("http://wktechnology.com.br")["Access-Control-Allow-Origin"]).toBeUndefined();
+    expect(
+      formSubmitCorsHeaders("https://www.wktechnology.com.br")["Access-Control-Allow-Origin"],
+    ).toBe("https://www.wktechnology.com.br");
+    expect(
+      formSubmitCorsHeaders("https://wktechnology.com.br")["Access-Control-Allow-Origin"],
+    ).toBe("https://wktechnology.com.br");
+    expect(
+      formSubmitCorsHeaders("https://evil.example")["Access-Control-Allow-Origin"],
+    ).toBeUndefined();
+    expect(
+      formSubmitCorsHeaders("http://wktechnology.com.br")["Access-Control-Allow-Origin"],
+    ).toBeUndefined();
     expect(formSubmitCorsHeaders(null)["Access-Control-Allow-Origin"]).toBeUndefined();
   });
 });
