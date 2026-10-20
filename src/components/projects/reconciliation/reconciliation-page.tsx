@@ -28,7 +28,7 @@ export function ReconciliationPage({
         description="O que foi coletado do Clockify e do Jibble, o que virou apontamento, o que está em revisão e os vínculos com empresas e pessoas. Nada aqui altera a origem."
       />
       <Tabs value={tab} onValueChange={(v) => onSearch({ tab: v as ReconSearch["tab"] })}>
-        <TabsList className="flex-wrap">
+        <TabsList className="h-auto flex-wrap justify-start">
           <TabsTrigger value="overview">Cobertura</TabsTrigger>
           <TabsTrigger value="breakdown">Conferência</TabsTrigger>
           <TabsTrigger value="issues">Pendências</TabsTrigger>

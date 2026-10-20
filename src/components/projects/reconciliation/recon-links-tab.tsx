@@ -30,6 +30,20 @@ const BATCH_LABEL: Record<string, string> = {
   reject_suggestion: "Sugestões recusadas",
   revert: "Desvinculação",
 };
+const COUNT_LABEL: Record<string, string> = {
+  company_links: "empresas ligadas",
+  person_links: "apontamentos com pessoa",
+  allocation_links: "com alocação",
+  suggestions_new: "novas sugestões",
+  company_conflicts_new: "conflitos de empresa",
+  person_exact_subjects: "usuários com e-mail único",
+  person_ambiguous_subjects: "usuários ambíguos",
+  confirmed: "confirmadas",
+  rows_linked: "registros ligados",
+  rejected: "recusadas",
+  reverted: "desfeitos",
+  skipped_changed_since: "mantidos (mudaram depois)",
+};
 const MEMBER_LABEL: Record<string, string> = { active: "Ativo", inactive: "Histórico (sem acesso)" };
 
 function toggle(set: Set<string>, id: string, on: boolean) {
@@ -99,7 +113,7 @@ export function ReconLinksTab() {
             {d.batches.slice(0, 6).map((b) => (
               <li key={b.id}>
                 {new Date(b.created_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })} · {BATCH_LABEL[b.kind] ?? b.kind} ·{" "}
-                {Object.entries((b.counts ?? {}) as Record<string, unknown>).map(([k, v]) => `${k}: ${String(v)}`).join(", ")}
+                {Object.entries((b.counts ?? {}) as Record<string, unknown>).map(([k, v]) => `${Number(v).toLocaleString("pt-BR")} ${COUNT_LABEL[k] ?? k}`).join(" · ")}
               </li>
             ))}
           </ul>
@@ -127,7 +141,7 @@ export function ReconLinksTab() {
                   <TableCell className="max-w-48 truncate">{s.subjectName ?? "Sem nome"}</TableCell>
                   <TableCell className="max-w-48 truncate">{s.candidateName ?? "Sem nome"}</TableCell>
                   <TableCell>{CRITERION_LABEL[s.criterion] ?? s.criterion}</TableCell>
-                  <TableCell>{PROVIDER_LABEL[s.provider as ReconProvider] ?? s.provider}</TableCell>
+                  <TableCell>{s.provider === "erp" ? "Cadastro" : (PROVIDER_LABEL[s.provider as ReconProvider] ?? s.provider)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
