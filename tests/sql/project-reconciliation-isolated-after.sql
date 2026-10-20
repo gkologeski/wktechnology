@@ -27,13 +27,27 @@ SELECT public.project_link_suggestions_decide(:A,
 COMMIT;
 SELECT t_recon.ok('confirmação aplica pessoa do u2 com rastreio', (:'cf'::jsonb->>'rows_linked')::int = 3
   AND (SELECT count(*) FROM public.project_link_changes WHERE criterion = 'confirmed_suggestion') = 3);
+INSERT INTO public.project_link_suggestions (workspace_id, kind, provider, subject_id, candidate_id, criterion)
+VALUES (:A, 'person', 'erp', :U7, '70000000-0000-4000-8000-000000000004', 'name_exact');
+BEGIN;
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claims', '{"sub":"10000000-0000-4000-8000-000000000001","role":"authenticated"}', true) \g /dev/null
+DO $$ BEGIN
+  PERFORM public.project_link_suggestions_decide('aaaaaaaa-0000-4000-8000-00000000000a',
+    ARRAY(SELECT id FROM public.project_link_suggestions WHERE subject_id = '10000000-0000-4000-8000-000000000007'
+           AND candidate_id = '70000000-0000-4000-8000-000000000004'), 'confirm', 'teste');
+  RAISE EXCEPTION 'FALHOU: pessoa já usada foi confirmada';
+EXCEPTION WHEN invalid_parameter_value THEN RAISE NOTICE 'ok: pessoa já ligada a outro usuário não é confirmada'; END $$;
+ROLLBACK;
+SELECT t_recon.ok('sugestão recusada na confirmação continua pendente', (SELECT status FROM public.project_link_suggestions
+  WHERE subject_id = :U7 AND candidate_id = '70000000-0000-4000-8000-000000000004') = 'suggested');
 BEGIN;
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claims', '{"sub":"10000000-0000-4000-8000-000000000001","role":"authenticated"}', true) \g /dev/null
 SELECT public.project_link_suggestions_decide(:A,
   ARRAY(SELECT id FROM public.project_link_suggestions WHERE subject_id = :U7), 'reject', 'Homônimos') AS rj \gset
 COMMIT;
-SELECT t_recon.ok('recusa em lote', (:'rj'::jsonb->>'rejected')::int = 2);
+SELECT t_recon.ok('recusa em lote', (:'rj'::jsonb->>'rejected')::int = 3);
 
 -- leituras do administrador: visão geral e conferência mensal (ERP x fonte coletada)
 BEGIN;
