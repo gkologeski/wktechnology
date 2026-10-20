@@ -2,12 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ensureLeadRelationsSafe } from "@/lib/leads/lead-relations";
 import { checkLeadDuplicate } from "@/lib/leads/lead-duplicate-check";
-
-const cors = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
+import {
+  formSubmitCorsHeaders,
+  getVisitorIp,
+  TURNSTILE_FAILED_MESSAGE,
+  verifyTurnstileToken,
+} from "@/lib/forms/public-submit-guard.server";
 
 type FormField = {
   key: string;
@@ -19,8 +19,14 @@ type FormField = {
 export const Route = createFileRoute("/api/public/forms/$slug/submit")({
   server: {
     handlers: {
-      OPTIONS: async () => new Response(null, { status: 204, headers: cors }),
+      OPTIONS: async ({ request }) =>
+        new Response(null, {
+          status: 204,
+          headers: formSubmitCorsHeaders(request.headers.get("origin")),
+        }),
       POST: async ({ request, params }) => {
+        // CORS restrito ao site institucional (www e raiz, HTTPS).
+        const cors = formSubmitCorsHeaders(request.headers.get("origin"));
         let body: Record<string, unknown> = {};
         const ct = request.headers.get("content-type") ?? "";
         try {
@@ -48,8 +54,20 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
           }
         }
 
-        const ip =
-          request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for") || null;
+        const ip = getVisitorIp(request.headers);
+
+        // Cloudflare Turnstile: validado no servidor antes de qualquer gravação.
+        const turnstile = await verifyTurnstileToken(body["cf-turnstile-response"], ip);
+        if (!turnstile.success) {
+          console.warn("[forms.submit] Turnstile recusado", {
+            slug: params.slug,
+            codes: turnstile.errorCodes,
+          });
+          return Response.json(
+            { ok: false, error: TURNSTILE_FAILED_MESSAGE },
+            { status: 400, headers: cors },
+          );
+        }
 
         const { data: form, error: ferr } = await supabaseAdmin
           .from("forms")

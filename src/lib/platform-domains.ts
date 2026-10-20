@@ -4,7 +4,8 @@
 // - origem OAuth Google: callback registrado no Google Cloud (não trocar sem
 //   atualizar o cliente OAuth);
 // - domínio de envio: subdomínio verificado para e-mails;
-// - domínios internos: e-mails da própria empresa, ignorados em sincronizações.
+// - domínios internos: e-mails da própria empresa, ignorados em sincronizações;
+// - site institucional: origens autorizadas a enviar formulários públicos.
 // Alterar um valor aqui afeta todos os consumidores da categoria.
 
 export const CANONICAL_APP_HOST = "app.wktechnology.com.br";
@@ -24,4 +25,9 @@ export const EMAIL_SENDER_DOMAIN = "notify.crm.wktechnology.com.br";
 export const INTERNAL_EMAIL_DOMAINS: readonly string[] = [
   "wktechnology.com.br",
   "wkconsultoria.com.br",
+];
+
+export const INSTITUTIONAL_SITE_ORIGINS: readonly string[] = [
+  "https://www.wktechnology.com.br",
+  "https://wktechnology.com.br",
 ];
