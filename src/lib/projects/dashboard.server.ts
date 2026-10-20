@@ -94,7 +94,8 @@ export async function loadProjectDashboard(
       dueAt: p.dueAt,
       tasksTotal: Number(p.tasksTotal),
       tasksDone: Number(p.tasksDone),
-      progressPct: Number(p.tasksTotal) > 0 ? (Number(p.tasksDone) / Number(p.tasksTotal)) * 100 : null,
+      progressPct:
+        Number(p.tasksTotal) > 0 ? (Number(p.tasksDone) / Number(p.tasksTotal)) * 100 : null,
       periodSeconds: Number(p.periodSeconds),
     })),
     attentionTotal: Number(r.attention_total),

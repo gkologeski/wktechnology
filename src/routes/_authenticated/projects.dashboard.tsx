@@ -34,9 +34,13 @@ type Search = { from?: string; to?: string };
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
 const date = (value: string | null) =>
-  value ? new Date(`${value.slice(0, 10)}T12:00:00Z`).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "Sem prazo";
+  value
+    ? new Date(`${value.slice(0, 10)}T12:00:00Z`).toLocaleDateString("pt-BR", { timeZone: "UTC" })
+    : "Sem prazo";
 const dateTime = (value: string | null) =>
-  value ? new Date(value).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) : "nunca";
+  value
+    ? new Date(value).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })
+    : "nunca";
 
 export const Route = createFileRoute("/_authenticated/projects/dashboard")({
   validateSearch: (s: Record<string, unknown>): Search => ({
@@ -175,7 +179,10 @@ function ProjectsDashboard() {
               title="Projetos em andamento"
               description={`${data.inProgressTotal} projetos com situação Ativo; os 8 mais recentes.`}
               action={
-                <Link to="/projects" className="text-xs text-text-secondary hover:text-text-primary">
+                <Link
+                  to="/projects"
+                  className="text-xs text-text-secondary hover:text-text-primary"
+                >
                   Ver projetos →
                 </Link>
               }
@@ -328,13 +335,16 @@ function CoverageStrip({
         <div>
           <dt className="text-xs text-text-tertiary">Total bruto no período</dt>
           <dd className="text-sm font-medium tabular-nums text-text-primary">
-            {formatHours(data.period.seconds)} · {data.period.rows.toLocaleString("pt-BR")} registros
+            {formatHours(data.period.seconds)} · {data.period.rows.toLocaleString("pt-BR")}{" "}
+            registros
           </dd>
         </div>
         <div>
           <dt className="text-xs text-text-tertiary">Sem alerta aberto</dt>
           <dd className="text-sm font-medium tabular-nums text-text-primary">
-            {data.coverage.issuesVisible ? formatHours(validated) : "Não disponível para seu acesso"}
+            {data.coverage.issuesVisible
+              ? formatHours(validated)
+              : "Não disponível para seu acesso"}
           </dd>
         </div>
         <div>
@@ -350,11 +360,13 @@ function CoverageStrip({
         {data.coverage.issuesVisible ? (
           <p className="flex items-center gap-1.5 text-xs text-text-secondary">
             <ShieldAlert className="h-3.5 w-3.5" aria-hidden />
-            {data.coverage.openIssues.toLocaleString("pt-BR")} pendências abertas · fila conferida em{" "}
-            {dateTime(data.coverage.lastRefreshAt)}
+            {data.coverage.openIssues.toLocaleString("pt-BR")} pendências abertas · fila conferida
+            em {dateTime(data.coverage.lastRefreshAt)}
           </p>
         ) : null}
-        <p className="text-xs text-text-tertiary">Dados atualizados em {dateTime(data.generatedAt)}</p>
+        <p className="text-xs text-text-tertiary">
+          Dados atualizados em {dateTime(data.generatedAt)}
+        </p>
         {data.coverage.canOpenCenter ? (
           <Link
             to="/projects/settings/imports/reconciliation"

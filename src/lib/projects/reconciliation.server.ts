@@ -55,13 +55,15 @@ async function connectionStatus(workspaceId: string) {
       .eq("provider", "jibble")
       .maybeSingle(),
   ]);
-  const view = (r: {
-    status: string;
-    source_access: string | null;
-    last_tested_at: string | null;
-    source_verified_at: string | null;
-    hasKey: boolean;
-  } | null) =>
+  const view = (
+    r: {
+      status: string;
+      source_access: string | null;
+      last_tested_at: string | null;
+      source_verified_at: string | null;
+      hasKey: boolean;
+    } | null,
+  ) =>
     r
       ? {
           status: r.status,
@@ -231,14 +233,26 @@ export async function exportIssuesCsv(supabase: Db, ctx: ReconCtx, f: IssueFilte
   return {
     rows: out.length,
     csv: toCsv(
-      ["id", "alerta", "fonte", "data", "segundos_impacto", "situacao", "apontamento", "id_origem", "justificativa"],
+      [
+        "id",
+        "alerta",
+        "fonte",
+        "data",
+        "segundos_impacto",
+        "situacao",
+        "apontamento",
+        "id_origem",
+        "justificativa",
+      ],
       out,
     ),
   };
 }
 
 export async function refreshIssues(supabase: Db, ctx: ReconCtx) {
-  const { data, error } = await supabase.rpc("project_reconciliation_refresh", { p_ws: ctx.workspaceId });
+  const { data, error } = await supabase.rpc("project_reconciliation_refresh", {
+    p_ws: ctx.workspaceId,
+  });
   if (error) fail("Não foi possível atualizar a fila", error);
   return data as { [key: string]: Json };
 }
@@ -259,7 +273,9 @@ export async function decideIssues(
 }
 
 export async function applyExactLinks(supabase: Db, ctx: ReconCtx) {
-  const { data, error } = await supabase.rpc("project_links_apply_exact", { p_ws: ctx.workspaceId });
+  const { data, error } = await supabase.rpc("project_links_apply_exact", {
+    p_ws: ctx.workspaceId,
+  });
   if (error) fail("Não foi possível aplicar os vínculos", error);
   return data as Record<string, number | string>;
 }
@@ -290,15 +306,24 @@ export async function loadLinks(supabase: Db, ctx: ReconCtx) {
   if (err) fail("Não foi possível carregar os vínculos", err);
   const personIds = new Set<string>();
   const companyIds = new Set<string>();
-  for (const s of sugg.data ?? []) (s.kind === "person" ? personIds : companyIds).add(s.candidate_id);
+  for (const s of sugg.data ?? [])
+    (s.kind === "person" ? personIds : companyIds).add(s.candidate_id);
   for (const p of people.data ?? []) for (const id of p.person_ids ?? []) personIds.add(id);
   for (const p of projects.data ?? []) if (p.company_id) companyIds.add(p.company_id);
   const [pe, co] = await Promise.all([
     personIds.size
-      ? supabase.from("people").select("id, full_name, email").in("id", [...personIds])
-      : Promise.resolve({ data: [] as Array<{ id: string; full_name: string; email: string | null }> }),
+      ? supabase
+          .from("people")
+          .select("id, full_name, email")
+          .in("id", [...personIds])
+      : Promise.resolve({
+          data: [] as Array<{ id: string; full_name: string; email: string | null }>,
+        }),
     companyIds.size
-      ? supabase.from("companies").select("id, name").in("id", [...companyIds])
+      ? supabase
+          .from("companies")
+          .select("id, name")
+          .in("id", [...companyIds])
       : Promise.resolve({ data: [] as Array<{ id: string; name: string }> }),
   ]);
   const personName = new Map((pe.data ?? []).map((r) => [r.id, r.full_name]));
@@ -330,9 +355,13 @@ export async function loadLinks(supabase: Db, ctx: ReconCtx) {
     suggestions: (sugg.data ?? []).map((s) => ({
       ...s,
       subjectName:
-        s.kind === "person" ? (userName.get(s.subject_id) ?? null) : (projectName.get(s.subject_id) ?? null),
+        s.kind === "person"
+          ? (userName.get(s.subject_id) ?? null)
+          : (projectName.get(s.subject_id) ?? null),
       candidateName:
-        s.kind === "person" ? (personName.get(s.candidate_id) ?? null) : (companyName.get(s.candidate_id) ?? null),
+        s.kind === "person"
+          ? (personName.get(s.candidate_id) ?? null)
+          : (companyName.get(s.candidate_id) ?? null),
     })),
     batches: batches.data ?? [],
   };

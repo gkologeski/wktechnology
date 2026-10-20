@@ -12,7 +12,8 @@ export const getProjectDashboard = createServerFn({ method: "POST" })
       .superRefine((v, ctx) => {
         const msg = validateIsoRange(v.from, v.to);
         if (msg) ctx.addIssue({ code: z.ZodIssueCode.custom, message: msg });
-        if (!isIanaTimeZone(v.tz)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Fuso horário inválido." });
+        if (!isIanaTimeZone(v.tz))
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Fuso horário inválido." });
       })
       .parse(input),
   )

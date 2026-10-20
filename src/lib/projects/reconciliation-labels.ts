@@ -132,7 +132,10 @@ export function formatHours(seconds: number | null | undefined): string {
 }
 
 /** CSV com separador ";" (Excel PT-BR) e escape de aspas/quebras. */
-export function toCsv(header: string[], rows: Array<Array<string | number | null | undefined>>): string {
+export function toCsv(
+  header: string[],
+  rows: Array<Array<string | number | null | undefined>>,
+): string {
   const cell = (v: string | number | null | undefined) => {
     const s = v === null || v === undefined ? "" : String(v);
     return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;

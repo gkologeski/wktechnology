@@ -45,11 +45,21 @@ export function NoteDialog({
           <Label htmlFor="recon-note">
             Justificativa{requireNote ? " (obrigatória, mínimo 5 caracteres)" : " (opcional)"}
           </Label>
-          <Textarea id="recon-note" value={note} onChange={(e) => setNote(e.target.value)} rows={3} maxLength={2000} />
+          <Textarea
+            id="recon-note"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            rows={3}
+            maxLength={2000}
+          />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel} disabled={busy}>Cancelar</Button>
-          <Button onClick={() => onConfirm(note.trim() || null)} disabled={busy || tooShort}>Confirmar</Button>
+          <Button variant="outline" onClick={onCancel} disabled={busy}>
+            Cancelar
+          </Button>
+          <Button onClick={() => onConfirm(note.trim() || null)} disabled={busy || tooShort}>
+            Confirmar
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

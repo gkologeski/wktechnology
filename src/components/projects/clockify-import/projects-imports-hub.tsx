@@ -74,7 +74,8 @@ export function ProjectsImportsHub() {
             <span className="min-w-0 flex-1">
               <span className="font-medium">Conciliação de horas</span>
               <span className="mt-1 block text-sm text-text-secondary">
-                Cobertura do que veio de cada fonte, conferência mensal em segundos, fila de pendências e vínculos com empresas e pessoas.
+                Cobertura do que veio de cada fonte, conferência mensal em segundos, fila de
+                pendências e vínculos com empresas e pessoas.
               </span>
             </span>
             <ArrowRight

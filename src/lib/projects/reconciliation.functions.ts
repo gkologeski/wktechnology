@@ -14,7 +14,12 @@ import {
   requireReconAdmin,
   revertLinks,
 } from "./reconciliation.server";
-import { ISSUE_ACTIONS, ISSUE_STATUSES, ISSUE_TYPES, RECON_PROVIDERS } from "./reconciliation-labels";
+import {
+  ISSUE_ACTIONS,
+  ISSUE_STATUSES,
+  ISSUE_TYPES,
+  RECON_PROVIDERS,
+} from "./reconciliation-labels";
 
 const isoDay = z.string().date();
 const uuid = z.string().uuid();
@@ -61,7 +66,10 @@ export const listReconciliationIssues = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
     issueFilters
-      .extend({ page: z.number().int().min(1).max(10_000), pageSize: z.number().int().min(1).max(200) })
+      .extend({
+        page: z.number().int().min(1).max(10_000),
+        pageSize: z.number().int().min(1).max(200),
+      })
       .parse(input),
   )
   .handler(async ({ context, data }) => {

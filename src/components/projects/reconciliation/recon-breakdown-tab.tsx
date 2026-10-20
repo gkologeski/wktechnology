@@ -12,7 +12,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { EmptyState, FilterBar, Skeletons } from "@/components/techhire/ui";
 import { IsoDateRangePicker, isoDay } from "@/components/iso-date-range-picker";
 import { getReconciliationBreakdown } from "@/lib/projects/reconciliation.functions";
@@ -53,31 +60,74 @@ export function ReconBreakdownTab({
       <FilterBar
         chips={
           <>
-            <Label className="sr-only" htmlFor="recon-bd-provider">Fonte</Label>
-            <Select value={provider} onValueChange={(v) => { setProvider(v as ReconProvider); setPage(1); }}>
-              <SelectTrigger id="recon-bd-provider" className="h-8 w-44"><SelectValue /></SelectTrigger>
+            <Label className="sr-only" htmlFor="recon-bd-provider">
+              Fonte
+            </Label>
+            <Select
+              value={provider}
+              onValueChange={(v) => {
+                setProvider(v as ReconProvider);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger id="recon-bd-provider" className="h-8 w-44">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                {RECON_PROVIDERS.map((p) => <SelectItem key={p} value={p}>{PROVIDER_LABEL[p]}</SelectItem>)}
+                {RECON_PROVIDERS.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {PROVIDER_LABEL[p]}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
-            <Label className="sr-only" htmlFor="recon-bd-group">Agrupar por</Label>
-            <Select value={group} onValueChange={(v) => { setGroup(v as Group); setPage(1); }}>
-              <SelectTrigger id="recon-bd-group" className="h-8 w-36"><SelectValue /></SelectTrigger>
+            <Label className="sr-only" htmlFor="recon-bd-group">
+              Agrupar por
+            </Label>
+            <Select
+              value={group}
+              onValueChange={(v) => {
+                setGroup(v as Group);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger id="recon-bd-group" className="h-8 w-36">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                {(Object.keys(GROUP_LABEL) as Group[]).map((g) => <SelectItem key={g} value={g}>Por {GROUP_LABEL[g].toLowerCase()}</SelectItem>)}
+                {(Object.keys(GROUP_LABEL) as Group[]).map((g) => (
+                  <SelectItem key={g} value={g}>
+                    Por {GROUP_LABEL[g].toLowerCase()}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
-            <IsoDateRangePicker size="sm" ariaLabel="Período da conferência" from={f} to={t} onChange={(r) => { setPage(1); onPeriod(r.from, r.to); }} />
+            <IsoDateRangePicker
+              size="sm"
+              ariaLabel="Período da conferência"
+              from={f}
+              to={t}
+              onChange={(r) => {
+                setPage(1);
+                onPeriod(r.from, r.to);
+              }}
+            />
           </>
         }
       />
       <p className="text-xs text-text-tertiary">
-        ERP = soma exata dos carimbos de início e fim. Coletado = segundos guardados da origem no momento da importação. A diferença só aparece para registros com origem comprovada.
+        ERP = soma exata dos carimbos de início e fim. Coletado = segundos guardados da origem no
+        momento da importação. A diferença só aparece para registros com origem comprovada.
       </p>
       {q.isLoading ? (
         <Skeletons.Card lines={8} />
       ) : q.isError ? (
-        <EmptyState icon={AlertTriangle} title="Não foi possível carregar a conferência" description={(q.error as Error).message} action={<Button onClick={() => void q.refetch()}>Tentar novamente</Button>} />
+        <EmptyState
+          icon={AlertTriangle}
+          title="Não foi possível carregar a conferência"
+          description={(q.error as Error).message}
+          action={<Button onClick={() => void q.refetch()}>Tentar novamente</Button>}
+        />
       ) : (q.data?.rows.length ?? 0) === 0 ? (
         <EmptyState title="Nada no período" description="Ajuste a fonte ou o período." />
       ) : (
@@ -98,23 +148,55 @@ export function ReconBreakdownTab({
               {q.data!.rows.map((r) => (
                 <TableRow key={r.key}>
                   <TableCell className="max-w-64 truncate">{r.label ?? "Sem nome"}</TableCell>
-                  <TableCell className="text-right tabular-nums">{r.erpRows.toLocaleString("pt-BR")}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatSeconds(r.erpSeconds)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{r.linkedRows.toLocaleString("pt-BR")}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatSeconds(r.sourceSeconds)}</TableCell>
-                  <TableCell className={r.diffSeconds ? "text-right tabular-nums text-status-onhold" : "text-right tabular-nums"}>
+                  <TableCell className="text-right tabular-nums">
+                    {r.erpRows.toLocaleString("pt-BR")}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {formatSeconds(r.erpSeconds)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {r.linkedRows.toLocaleString("pt-BR")}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {formatSeconds(r.sourceSeconds)}
+                  </TableCell>
+                  <TableCell
+                    className={
+                      r.diffSeconds
+                        ? "text-right tabular-nums text-status-onhold"
+                        : "text-right tabular-nums"
+                    }
+                  >
                     {r.diffSeconds === null ? "Sem origem" : formatSeconds(r.diffSeconds)}
                   </TableCell>
-                  <TableCell className="text-right tabular-nums">{r.rowsWithOpenIssues.toLocaleString("pt-BR")}</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {r.rowsWithOpenIssues.toLocaleString("pt-BR")}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
           <div className="flex items-center justify-between text-sm text-text-secondary">
-            <span>{q.data!.total.toLocaleString("pt-BR")} grupos · página {page} de {pages}</span>
+            <span>
+              {q.data!.total.toLocaleString("pt-BR")} grupos · página {page} de {pages}
+            </span>
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Anterior</Button>
-              <Button size="sm" variant="outline" disabled={page >= pages} onClick={() => setPage((p) => p + 1)}>Próxima</Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+              >
+                Anterior
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={page >= pages}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Próxima
+              </Button>
             </div>
           </div>
         </>

@@ -24,7 +24,8 @@ export const Route = createFileRoute("/_authenticated/projects/settings/imports/
       { property: "og:title", content: "Conciliação de horas importadas — TechProjects" },
       {
         property: "og:description",
-        content: "Cobertura, conferência mensal, fila de revisão e vínculos das importações de horas.",
+        content:
+          "Cobertura, conferência mensal, fila de revisão e vínculos das importações de horas.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
