@@ -27,10 +27,14 @@ export function ProjectsImportsHub() {
                 <StatusBadge status="open" label="Disponível" />
               </span>
               <span className="mt-1 block text-sm text-text-secondary">
-                Clientes, projetos (inclusive arquivados), tarefas, pessoas e horas com segundos exatos.
+                Clientes, projetos (inclusive arquivados), tarefas, pessoas e horas com segundos
+                exatos.
               </span>
             </span>
-            <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary" aria-hidden />
+            <ArrowRight
+              className="mt-1 h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary"
+              aria-hidden
+            />
           </Link>
         </li>
       </ul>
