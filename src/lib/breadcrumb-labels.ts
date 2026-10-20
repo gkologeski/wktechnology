@@ -40,6 +40,7 @@ export const SEGMENT_LABELS: Record<string, string> = {
   imports: "Importações",
   clockify: "Clockify",
   reconciliation: "Conciliação",
+  delivery: "Entrega de negócios",
   workspaces: "Workspaces",
   alerts: "Alertas",
   quotas: "Cotas",

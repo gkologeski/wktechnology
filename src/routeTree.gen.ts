@@ -296,6 +296,7 @@ import { Route as AuthenticatedFinanceBankingReconciliationRouteImport } from '.
 import { Route as AuthenticatedFinanceEntriesIdRouteImport } from './routes/_authenticated/finance.entries.$id'
 import { Route as AuthenticatedProjectsListsIdRouteImport } from './routes/_authenticated/projects.lists.$id'
 import { Route as AuthenticatedProjectsSettingsIndexRouteImport } from './routes/_authenticated/projects.settings.index'
+import { Route as AuthenticatedProjectsSettingsDeliveryRouteImport } from './routes/_authenticated/projects.settings.delivery'
 import { Route as AuthenticatedProjectsIdEntregaRouteImport } from './routes/_authenticated/projects_.$id.entrega'
 import { Route as AuthenticatedProspectingCampaignsIndexRouteImport } from './routes/_authenticated/prospecting.campaigns.index'
 import { Route as AuthenticatedProspectingCampaignsIdRouteImport } from './routes/_authenticated/prospecting.campaigns.$id'
@@ -2049,6 +2050,12 @@ const AuthenticatedProjectsSettingsIndexRoute =
     path: '/projects/settings/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedProjectsSettingsDeliveryRoute =
+  AuthenticatedProjectsSettingsDeliveryRouteImport.update({
+    id: '/projects/settings/delivery',
+    path: '/projects/settings/delivery',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProjectsIdEntregaRoute =
   AuthenticatedProjectsIdEntregaRouteImport.update({
     id: '/projects_/$id/entrega',
@@ -2993,6 +3000,7 @@ export interface FileRoutesByFullPath {
   '/finance/banking/reconciliation': typeof AuthenticatedFinanceBankingReconciliationRoute
   '/finance/entries/$id': typeof AuthenticatedFinanceEntriesIdRoute
   '/projects/lists/$id': typeof AuthenticatedProjectsListsIdRoute
+  '/projects/settings/delivery': typeof AuthenticatedProjectsSettingsDeliveryRoute
   '/projects/$id/entrega': typeof AuthenticatedProjectsIdEntregaRoute
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/settings/integrations/$slug': typeof AuthenticatedSettingsIntegrationsSlugRoute
@@ -3389,6 +3397,7 @@ export interface FileRoutesByTo {
   '/finance/banking/reconciliation': typeof AuthenticatedFinanceBankingReconciliationRoute
   '/finance/entries/$id': typeof AuthenticatedFinanceEntriesIdRoute
   '/projects/lists/$id': typeof AuthenticatedProjectsListsIdRoute
+  '/projects/settings/delivery': typeof AuthenticatedProjectsSettingsDeliveryRoute
   '/projects/$id/entrega': typeof AuthenticatedProjectsIdEntregaRoute
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/settings/integrations/$slug': typeof AuthenticatedSettingsIntegrationsSlugRoute
@@ -3794,6 +3803,7 @@ export interface FileRoutesById {
   '/_authenticated/finance/banking/reconciliation': typeof AuthenticatedFinanceBankingReconciliationRoute
   '/_authenticated/finance/entries/$id': typeof AuthenticatedFinanceEntriesIdRoute
   '/_authenticated/projects/lists/$id': typeof AuthenticatedProjectsListsIdRoute
+  '/_authenticated/projects/settings/delivery': typeof AuthenticatedProjectsSettingsDeliveryRoute
   '/_authenticated/projects_/$id/entrega': typeof AuthenticatedProjectsIdEntregaRoute
   '/_authenticated/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/_authenticated/settings/integrations/$slug': typeof AuthenticatedSettingsIntegrationsSlugRoute
@@ -4199,6 +4209,7 @@ export interface FileRouteTypes {
     | '/finance/banking/reconciliation'
     | '/finance/entries/$id'
     | '/projects/lists/$id'
+    | '/projects/settings/delivery'
     | '/projects/$id/entrega'
     | '/prospecting/campaigns/$id'
     | '/settings/integrations/$slug'
@@ -4595,6 +4606,7 @@ export interface FileRouteTypes {
     | '/finance/banking/reconciliation'
     | '/finance/entries/$id'
     | '/projects/lists/$id'
+    | '/projects/settings/delivery'
     | '/projects/$id/entrega'
     | '/prospecting/campaigns/$id'
     | '/settings/integrations/$slug'
@@ -4999,6 +5011,7 @@ export interface FileRouteTypes {
     | '/_authenticated/finance/banking/reconciliation'
     | '/_authenticated/finance/entries/$id'
     | '/_authenticated/projects/lists/$id'
+    | '/_authenticated/projects/settings/delivery'
     | '/_authenticated/projects_/$id/entrega'
     | '/_authenticated/prospecting/campaigns/$id'
     | '/_authenticated/settings/integrations/$slug'
@@ -7264,6 +7277,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/projects/settings/delivery': {
+      id: '/_authenticated/projects/settings/delivery'
+      path: '/projects/settings/delivery'
+      fullPath: '/projects/settings/delivery'
+      preLoaderRoute: typeof AuthenticatedProjectsSettingsDeliveryRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/projects_/$id/entrega': {
       id: '/_authenticated/projects_/$id/entrega'
       path: '/projects/$id/entrega'
@@ -8697,6 +8717,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedContractsTemplatesIdRoute: typeof AuthenticatedContractsTemplatesIdRoute
   AuthenticatedFinanceEntriesIdRoute: typeof AuthenticatedFinanceEntriesIdRoute
   AuthenticatedProjectsListsIdRoute: typeof AuthenticatedProjectsListsIdRoute
+  AuthenticatedProjectsSettingsDeliveryRoute: typeof AuthenticatedProjectsSettingsDeliveryRoute
   AuthenticatedProjectsIdEntregaRoute: typeof AuthenticatedProjectsIdEntregaRoute
   AuthenticatedatsCandidatesIndexRoute: typeof AuthenticatedatsCandidatesIndexRoute
   AuthenticatedatsHuntingIndexRoute: typeof AuthenticatedatsHuntingIndexRoute
@@ -8858,6 +8879,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedContractsTemplatesIdRoute,
   AuthenticatedFinanceEntriesIdRoute: AuthenticatedFinanceEntriesIdRoute,
   AuthenticatedProjectsListsIdRoute: AuthenticatedProjectsListsIdRoute,
+  AuthenticatedProjectsSettingsDeliveryRoute:
+    AuthenticatedProjectsSettingsDeliveryRoute,
   AuthenticatedProjectsIdEntregaRoute: AuthenticatedProjectsIdEntregaRoute,
   AuthenticatedatsCandidatesIndexRoute: AuthenticatedatsCandidatesIndexRoute,
   AuthenticatedatsHuntingIndexRoute: AuthenticatedatsHuntingIndexRoute,

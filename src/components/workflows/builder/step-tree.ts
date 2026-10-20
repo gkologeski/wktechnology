@@ -106,6 +106,7 @@ export const ACTION_ICONS: Record<WorkflowActionType, typeof Zap> = {
   update_record: Sparkles,
   delete_record: Eraser,
   create_contract_from_deal: FileSignature,
+  ensure_deal_delivery: Briefcase,
   create_person_from_candidate: UserPlus,
   create_contract_document: FileSignature,
   create_allocation: Briefcase,
@@ -238,6 +239,8 @@ export function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
         copy_line_items: true,
         skip_if_exists: true,
       };
+    case "ensure_deal_delivery":
+      return { type };
     case "create_person_from_candidate":
       return { type, employment_type: "pj", department: "" };
     case "create_contract_document":
@@ -775,6 +778,8 @@ export function describeAction(a: WorkflowAction, labels?: DescribeLabels): stri
       return `${a.branches.length} ramo(s) + senão`;
     case "delay_until_date":
       return `até ${a.field}${a.offset_amount ? ` ${a.offset_amount > 0 ? "+" : ""}${a.offset_amount}${(a.offset_unit ?? "days")[0]}` : ""}`;
+    case "ensure_deal_delivery":
+      return "segue a política de entrega do workspace";
     case "create_person_from_candidate":
       return (
         [a.department, a.employment_type?.toUpperCase()].filter(Boolean).join(" · ") ||

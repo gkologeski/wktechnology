@@ -7099,6 +7099,305 @@ export type Database = {
           },
         ]
       }
+      deal_delivery_events: {
+        Row: {
+          actor: string | null
+          after: Json | null
+          batch_id: string | null
+          before: Json | null
+          created_at: string
+          deal_id: string | null
+          id: string
+          job_id: string | null
+          kind: string
+          needs_review: boolean
+          note: string | null
+          origin: string | null
+          project_id: string | null
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          reverted_at: string | null
+          reverted_by: string | null
+          workspace_id: string
+        }
+        Insert: {
+          actor?: string | null
+          after?: Json | null
+          batch_id?: string | null
+          before?: Json | null
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          job_id?: string | null
+          kind: string
+          needs_review?: boolean
+          note?: string | null
+          origin?: string | null
+          project_id?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          reverted_at?: string | null
+          reverted_by?: string | null
+          workspace_id: string
+        }
+        Update: {
+          actor?: string | null
+          after?: Json | null
+          batch_id?: string | null
+          before?: Json | null
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          job_id?: string | null
+          kind?: string
+          needs_review?: boolean
+          note?: string | null
+          origin?: string | null
+          project_id?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          reverted_at?: string | null
+          reverted_by?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_delivery_events_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_delivery_events_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "deal_delivery_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_delivery_events_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_delivery_events_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_delivery_items: {
+        Row: {
+          deal_id: string
+          group_key: string
+          group_label: string | null
+          line_item_id: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        Insert: {
+          deal_id: string
+          group_key: string
+          group_label?: string | null
+          line_item_id: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id: string
+        }
+        Update: {
+          deal_id?: string
+          group_key?: string
+          group_label?: string | null
+          line_item_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_delivery_items_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_delivery_items_line_item_id_fkey"
+            columns: ["line_item_id"]
+            isOneToOne: true
+            referencedRelation: "deal_line_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_delivery_items_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_delivery_jobs: {
+        Row: {
+          actor: string | null
+          attempts: number
+          created_at: string
+          deal_id: string
+          finished_at: string | null
+          id: string
+          last_error: string | null
+          lease_token: string | null
+          lease_until: string | null
+          max_attempts: number
+          next_run_at: string
+          origin: string
+          result: Json | null
+          skip_reason: string | null
+          status: string
+          transition_key: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          actor?: string | null
+          attempts?: number
+          created_at?: string
+          deal_id: string
+          finished_at?: string | null
+          id?: string
+          last_error?: string | null
+          lease_token?: string | null
+          lease_until?: string | null
+          max_attempts?: number
+          next_run_at?: string
+          origin: string
+          result?: Json | null
+          skip_reason?: string | null
+          status?: string
+          transition_key: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          actor?: string | null
+          attempts?: number
+          created_at?: string
+          deal_id?: string
+          finished_at?: string | null
+          id?: string
+          last_error?: string | null
+          lease_token?: string | null
+          lease_until?: string | null
+          max_attempts?: number
+          next_run_at?: string
+          origin?: string
+          result?: Json | null
+          skip_reason?: string | null
+          status?: string
+          transition_key?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_delivery_jobs_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_delivery_jobs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_delivery_policies: {
+        Row: {
+          activated_at: string | null
+          allow_groups: boolean
+          created_at: string
+          created_by: string | null
+          default_operational_owner_id: string | null
+          enabled: boolean
+          origins: Json
+          project_creator_id: string | null
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        Insert: {
+          activated_at?: string | null
+          allow_groups?: boolean
+          created_at?: string
+          created_by?: string | null
+          default_operational_owner_id?: string | null
+          enabled?: boolean
+          origins?: Json
+          project_creator_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id: string
+        }
+        Update: {
+          activated_at?: string | null
+          allow_groups?: boolean
+          created_at?: string
+          created_by?: string | null
+          default_operational_owner_id?: string | null
+          enabled?: boolean
+          origins?: Json
+          project_creator_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_delivery_policies_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_delivery_worker_state: {
+        Row: {
+          id: number
+          last_processed: number
+          last_run_at: string | null
+          last_work_at: string | null
+          runs: number
+        }
+        Insert: {
+          id?: number
+          last_processed?: number
+          last_run_at?: string | null
+          last_work_at?: string | null
+          runs?: number
+        }
+        Update: {
+          id?: number
+          last_processed?: number
+          last_run_at?: string | null
+          last_work_at?: string | null
+          runs?: number
+        }
+        Relationships: []
+      }
       deal_line_items: {
         Row: {
           billing_model: Database["public"]["Enums"]["billing_model"] | null
@@ -14415,6 +14714,61 @@ export type Database = {
           },
         ]
       }
+      project_deal_links: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deal_id: string
+          delivery_group_key: string
+          id: string
+          note: string | null
+          project_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deal_id: string
+          delivery_group_key?: string
+          id?: string
+          note?: string | null
+          project_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string
+          delivery_group_key?: string
+          id?: string
+          note?: string | null
+          project_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_deal_links_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_deal_links_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_deal_links_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_folders: {
         Row: {
           archived_at: string | null
@@ -15802,20 +16156,25 @@ export type Database = {
       projects: {
         Row: {
           assigned_to: string | null
+          client_contact_id: string | null
           company_id: string | null
           contract_id: string | null
           created_at: string
+          deal_id: string | null
+          delivery_group_key: string | null
           description: string | null
           due_at: string | null
           id: string
           metadata: Json
           name: string
+          origin: string | null
           owner_id: string
           planned_cost: number | null
           planned_hours: number | null
           progress: number
           role: Database["public"]["Enums"]["contract_role"]
           service_id: string | null
+          source_line_item_id: string | null
           starts_at: string | null
           status: Database["public"]["Enums"]["project_status"]
           updated_at: string
@@ -15823,20 +16182,25 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
+          client_contact_id?: string | null
           company_id?: string | null
           contract_id?: string | null
           created_at?: string
+          deal_id?: string | null
+          delivery_group_key?: string | null
           description?: string | null
           due_at?: string | null
           id?: string
           metadata?: Json
           name: string
+          origin?: string | null
           owner_id: string
           planned_cost?: number | null
           planned_hours?: number | null
           progress?: number
           role?: Database["public"]["Enums"]["contract_role"]
           service_id?: string | null
+          source_line_item_id?: string | null
           starts_at?: string | null
           status?: Database["public"]["Enums"]["project_status"]
           updated_at?: string
@@ -15844,26 +16208,38 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
+          client_contact_id?: string | null
           company_id?: string | null
           contract_id?: string | null
           created_at?: string
+          deal_id?: string | null
+          delivery_group_key?: string | null
           description?: string | null
           due_at?: string | null
           id?: string
           metadata?: Json
           name?: string
+          origin?: string | null
           owner_id?: string
           planned_cost?: number | null
           planned_hours?: number | null
           progress?: number
           role?: Database["public"]["Enums"]["contract_role"]
           service_id?: string | null
+          source_line_item_id?: string | null
           starts_at?: string | null
           status?: Database["public"]["Enums"]["project_status"]
           updated_at?: string
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "projects_client_contact_id_fkey"
+            columns: ["client_contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "projects_company_id_fkey"
             columns: ["company_id"]
@@ -15879,10 +16255,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "projects_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "projects_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
             referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_source_line_item_id_fkey"
+            columns: ["source_line_item_id"]
+            isOneToOne: false
+            referencedRelation: "deal_line_items"
             referencedColumns: ["id"]
           },
           {
@@ -24376,6 +24766,143 @@ export type Database = {
       }
       current_user_workspaces: { Args: never; Returns: string[] }
       dashboard_metrics: { Args: never; Returns: Json }
+      deal_delivery_assert_user: {
+        Args: { p_write: boolean; p_ws: string }
+        Returns: undefined
+      }
+      deal_delivery_attempt: { Args: { p_job: string }; Returns: Json }
+      deal_delivery_can_create_project: {
+        Args: { _ws: string }
+        Returns: boolean
+      }
+      deal_delivery_can_edit_deal: { Args: { _deal: string }; Returns: boolean }
+      deal_delivery_create_project: {
+        Args: { p_deal: string; p_operational_owner?: string }
+        Returns: Json
+      }
+      deal_delivery_ensure_internal: {
+        Args: {
+          p_audit_actor: string
+          p_creator: string
+          p_deal: string
+          p_job: string
+          p_operational_owner?: string
+          p_origin: string
+        }
+        Returns: Json
+      }
+      deal_delivery_history_apply: {
+        Args: { p_note: string; p_pairs: Json; p_ws: string }
+        Returns: Json
+      }
+      deal_delivery_history_apply_exact: {
+        Args: { p_ws: string }
+        Returns: Json
+      }
+      deal_delivery_history_create: {
+        Args: { p_deals: string[]; p_note: string; p_ws: string }
+        Returns: Json
+      }
+      deal_delivery_history_list: {
+        Args: {
+          p_filter?: string
+          p_from?: string
+          p_page?: number
+          p_q?: string
+          p_size?: number
+          p_to?: string
+          p_ws: string
+        }
+        Returns: Json
+      }
+      deal_delivery_history_preview: {
+        Args: { p_pairs: Json; p_ws: string }
+        Returns: Json
+      }
+      deal_delivery_history_revert: {
+        Args: { p_events: string[]; p_note: string; p_ws: string }
+        Returns: Json
+      }
+      deal_delivery_is_active_member: {
+        Args: { p_user: string; p_ws: string }
+        Returns: boolean
+      }
+      deal_delivery_link_core: {
+        Args: {
+          p_actor: string
+          p_batch: string
+          p_deal: string
+          p_evidence: Json
+          p_group: string
+          p_kind: string
+          p_note: string
+          p_project: string
+        }
+        Returns: Json
+      }
+      deal_delivery_link_project: {
+        Args: {
+          p_deal: string
+          p_group?: string
+          p_note?: string
+          p_project: string
+        }
+        Returns: Json
+      }
+      deal_delivery_overview: { Args: { p_deal: string }; Returns: Json }
+      deal_delivery_pair_check: {
+        Args: { p_deal: string; p_project: string; p_ws: string }
+        Returns: Json
+      }
+      deal_delivery_pair_snapshot: {
+        Args: { p_deal: string; p_project: string }
+        Returns: string
+      }
+      deal_delivery_policy_get: { Args: { p_ws: string }; Returns: Json }
+      deal_delivery_policy_save: {
+        Args: {
+          p_allow_groups: boolean
+          p_creator: string
+          p_default_owner: string
+          p_enabled: boolean
+          p_origins: Json
+          p_reset_activation?: boolean
+          p_ws: string
+        }
+        Returns: Json
+      }
+      deal_delivery_process_job: { Args: { p_job: string }; Returns: Json }
+      deal_delivery_resolve_review: {
+        Args: { p_event: string; p_note: string }
+        Returns: Json
+      }
+      deal_delivery_retry: { Args: { p_deal: string }; Returns: Json }
+      deal_delivery_run_jobs: { Args: { p_limit?: number }; Returns: Json }
+      deal_delivery_set_groups: {
+        Args: { p_deal: string; p_items: Json }
+        Returns: Json
+      }
+      deal_delivery_set_operational_owner: {
+        Args: { p_project: string; p_user: string }
+        Returns: Json
+      }
+      deal_delivery_unlink_project: {
+        Args: { p_deal: string; p_note: string; p_project: string }
+        Returns: Json
+      }
+      deal_delivery_workflow_ensure: {
+        Args: { p_deal: string; p_workspace: string }
+        Returns: Json
+      }
+      deal_delivery_write_origin: {
+        Args: { p_import_hint: boolean }
+        Returns: string
+      }
+      deal_delivery_ws_of_deal: { Args: { p_deal: string }; Returns: string }
+      deal_stage_type: {
+        Args: { p_pipeline: string; p_stage: string; p_stage_id: string }
+        Returns: string
+      }
       deal_visible_to_current_user: {
         Args: { _deal: string }
         Returns: boolean
@@ -24708,6 +25235,11 @@ export type Database = {
         Args: { p_from: string; p_to: string; p_tz: string }
         Returns: Json
       }
+      project_delivery_origin: { Args: { p_project: string }; Returns: Json }
+      project_editable_by_current_user: {
+        Args: { _project: string }
+        Returns: boolean
+      }
       project_entry_seconds: {
         Args: {
           p_hours: number
@@ -24835,6 +25367,28 @@ export type Database = {
         Returns: Json
       }
       project_reconciliation_refresh: { Args: { p_ws: string }; Returns: Json }
+      project_visible_to_current_user: {
+        Args: { _project: string }
+        Returns: boolean
+      }
+      projects_delivery_validate: {
+        Args: {
+          p_chk_contact: boolean
+          p_chk_contract: boolean
+          p_chk_deal: boolean
+          p_chk_line: boolean
+          p_chk_service: boolean
+          p_company: string
+          p_contact: string
+          p_contract: string
+          p_deal: string
+          p_group: string
+          p_line: string
+          p_service: string
+          p_ws: string
+        }
+        Returns: undefined
+      }
       propagate_activity_assoc: {
         Args: {
           p_batch?: number

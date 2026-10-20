@@ -5,7 +5,7 @@ import {
 } from "@/components/projects/reconciliation/reconciliation-page";
 
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
-const TABS = ["overview", "breakdown", "issues", "links"] as const;
+const TABS = ["overview", "breakdown", "issues", "links", "deals"] as const;
 
 export const Route = createFileRoute("/_authenticated/projects/settings/imports/reconciliation")({
   validateSearch: (s: Record<string, unknown>): ReconSearch => ({

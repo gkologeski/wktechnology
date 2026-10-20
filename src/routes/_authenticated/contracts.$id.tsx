@@ -40,6 +40,7 @@ import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { useCanDelete, DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { DEFAULT_CONTRACTS_SEARCH } from "@/lib/contracts/list-search";
+import { LinkedProjectsCard } from "@/components/projects/linked-projects-card";
 
 export const Route = createFileRoute("/_authenticated/contracts/$id")({
   head: () => ({ meta: [{ title: "Contrato" }] }),
@@ -459,6 +460,8 @@ function ContractDetail() {
         }
         canEdit={canUpdateContract}
       />
+
+      <LinkedProjectsCard contractId={contract.id} />
 
       <ContractLinksHistoryCard contractId={contract.id} />
 

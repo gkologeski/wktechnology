@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   Download,
   ShieldCheck,
+  Handshake,
 } from "lucide-react";
 import type { SidebarGroup } from "@/lib/menu-config";
 
@@ -126,6 +127,12 @@ export const PROJECTS_SIDEBAR_GROUPS: SidebarGroup[] = [
         url: "/projects/settings/imports/reconciliation",
         need: "admin",
         icon: ShieldCheck,
+      },
+      {
+        title: "Entrega de negócios",
+        url: "/projects/settings/delivery",
+        need: "admin",
+        icon: Handshake,
       },
     ],
   },
