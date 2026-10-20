@@ -14774,6 +14774,74 @@ export type Database = {
           },
         ]
       }
+      project_people_group_members: {
+        Row: {
+          group_id: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          group_id: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          group_id?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_people_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "project_people_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_people_group_members_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_people_groups: {
+        Row: {
+          created_at: string
+          external_id: string | null
+          id: string
+          name: string
+          source: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          name: string
+          source?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          name?: string
+          source?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_people_groups_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_spaces: {
         Row: {
           archived_at: string | null
@@ -15233,6 +15301,84 @@ export type Database = {
           },
           {
             foreignKeyName: "project_time_entries_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_time_entry_tags: {
+        Row: {
+          tag_id: string
+          time_entry_id: string
+          workspace_id: string
+        }
+        Insert: {
+          tag_id: string
+          time_entry_id: string
+          workspace_id: string
+        }
+        Update: {
+          tag_id?: string
+          time_entry_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_time_entry_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "project_time_tags"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_time_entry_tags_time_entry_id_fkey"
+            columns: ["time_entry_id"]
+            isOneToOne: false
+            referencedRelation: "project_time_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_time_entry_tags_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_time_tags: {
+        Row: {
+          archived: boolean
+          created_at: string
+          external_id: string | null
+          id: string
+          name: string
+          source: string
+          workspace_id: string
+        }
+        Insert: {
+          archived?: boolean
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          name: string
+          source?: string
+          workspace_id: string
+        }
+        Update: {
+          archived?: boolean
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          name?: string
+          source?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_time_tags_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -23823,6 +23969,10 @@ export type Database = {
           p_table: string
           p_workspace: string
         }
+        Returns: Json
+      }
+      clockify_import_catalogs: {
+        Args: { p_owner: string; p_source: string; p_workspace: string }
         Returns: Json
       }
       clockify_target_in_workspace: {

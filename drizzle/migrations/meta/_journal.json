@@ -1142,6 +1142,27 @@
       "when": 1792492273461,
       "tag": "0162_time_import_rollback_guards",
       "breakpoints": true
+    },
+    {
+      "idx": 163,
+      "version": "7",
+      "when": 1792503411126,
+      "tag": "0163_clockify_catalogs",
+      "breakpoints": true
+    },
+    {
+      "idx": 164,
+      "version": "7",
+      "when": 1792503487011,
+      "tag": "0164_clockify_catalogs_hash",
+      "breakpoints": true
+    },
+    {
+      "idx": 165,
+      "version": "7",
+      "when": 1792503538455,
+      "tag": "0165_clockify_catalogs_no_client_link",
+      "breakpoints": true
     }
   ]
 }

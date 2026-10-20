@@ -176,3 +176,8 @@
 - [ ] Prévia real, revisão de mapeamentos/duplicidades e importação (bloqueado: depende da conexão)
 - [ ] Download privado de capturas de tela (não implementado; exige aprovação de armazenamento)
 - [ ] Agendar o avanço em segundo plano (exige publicação aprovada)
+- [x] Referência do nome da organização Jibble "WK" registrada (só destaca; seleção continua por ID + papel Owner/Admin)
+
+# Clockify — catálogos
+- [x] 82 tags, 6 grupos e 99 clientes concluídos (0163–0165)
+- [ ] Revisar manualmente 5 membros de grupos sem pessoa mapeada (aguarda decisão do usuário)
