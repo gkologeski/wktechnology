@@ -10,7 +10,9 @@ Guia do importador. Ele lê o Clockify somente com consultas, guarda tudo num st
 1. No Clockify, gere a chave em *Profile settings › API*. Use a conta de um administrador do workspace de origem. Workspace com subdomínio exige a chave gerada no próprio subdomínio.
 2. Na tela, cole a chave no campo de senha e escolha a região (Global, euc1, use2, euw2, apse2). Informe o subdomínio, se houver.
 3. Salve. A chave é cifrada no servidor com AES-GCM (`AI_KEYS_ENCRYPTION_KEY`, o mesmo padrão das chaves de IA). Ela fica em `clockify_connections`, que não tem GRANT para `authenticated`: o navegador só vê `••••1234`.
-4. Clique em **Testar** (faz só `GET /user` e `GET /workspaces`) e escolha o workspace de origem. O destino é sempre o workspace ativo do ERP.
+4. Clique em **Testar** (faz só `GET /user`, `GET /workspaces` e `GET /workspaces?roles=OWNER|WORKSPACE_ADMIN`). A tela lista os workspaces reais com o papel comprovado da chave em cada um: Proprietário, Administrador, Sem acesso administrativo ou Permissão não verificada (filtro indisponível — nunca presumido admin).
+5. Escolha a origem manualmente e confira o ID exibido. Um workspace com o mesmo nome do ERP é apenas destacado, nunca pré-selecionado. O destino é sempre o workspace ativo do ERP.
+6. A prévia e a importação só começam com papel Proprietário/Administrador comprovado (`clockify_connections.source_access`). Salvar outra chave ou mudar a região apaga essa comprovação; cada novo teste a recalcula.
 
 Nunca peça a chave no chat nem a grave em código, secrets compartilhados ou logs.
 

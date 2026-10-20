@@ -14,6 +14,12 @@ import {
   type ClockifyRegion,
 } from "./clockify-urls";
 import { normalizeEmail } from "./clockify-map";
+import {
+  canReadWholeWorkspace,
+  classifyAccess,
+  suggestSourceId,
+  type ClockifyAccess,
+} from "./clockify-access";
 import { ClockifyEngine, defaultOptions, type Db, type RunOptions } from "./clockify-engine.server";
 
 const BAN_FOREVER = "876000h";
@@ -55,6 +61,8 @@ type ConnRow = {
   source_workspace_id: string | null;
   source_workspace_name: string | null;
   source_plan: string | null;
+  source_access: string | null;
+  source_verified_at: string | null;
   status: string;
   last_error: string | null;
   last_tested_at: string | null;
@@ -66,7 +74,7 @@ async function loadConn(workspaceId: string): Promise<ConnRow | null> {
   const { data, error } = await db
     .from("clockify_connections")
     .select(
-      "id, key_ciphertext, key_last4, region, subdomain, source_workspace_id, source_workspace_name, source_plan, status, last_error, last_tested_at, updated_at",
+      "id, key_ciphertext, key_last4, region, subdomain, source_workspace_id, source_workspace_name, source_plan, source_access, source_verified_at, status, last_error, last_tested_at, updated_at",
     )
     .eq("workspace_id", workspaceId)
     .maybeSingle();
@@ -85,7 +93,13 @@ export function maskConnection(c: ConnRow | null) {
     lastError: c?.last_error ?? null,
     lastTestedAt: c?.last_tested_at ?? null,
     source: c?.source_workspace_id
-      ? { id: c.source_workspace_id, name: c.source_workspace_name, plan: c.source_plan }
+      ? {
+          id: c.source_workspace_id,
+          name: c.source_workspace_name,
+          plan: c.source_plan,
+          access: (c.source_access ?? null) as ClockifyAccess | null,
+          verifiedAt: c.source_verified_at ?? null,
+        }
       : null,
   };
 }
@@ -145,6 +159,9 @@ export async function saveClockifyConnection(
     patch.key_last4 = key.slice(-4);
     patch.status = "configured";
     patch.last_error = null;
+    // Chave nova pode ser de outra conta: o papel na origem precisa ser verificado de novo.
+    patch.source_access = null;
+    patch.source_verified_at = null;
   } else if (!current?.key_ciphertext) {
     throw new Error("Informe a chave de API do Clockify.");
   }
@@ -153,6 +170,8 @@ export async function saveClockifyConnection(
     patch.source_workspace_id = null;
     patch.source_workspace_name = null;
     patch.source_plan = null;
+    patch.source_access = null;
+    patch.source_verified_at = null;
     patch.status = "configured";
   }
   if (!current) patch.created_by = ctx.userId;
@@ -170,6 +189,8 @@ export async function removeClockifyConnection(ctx: Ctx) {
     .update({
       key_ciphertext: null,
       key_last4: null,
+      source_access: null,
+      source_verified_at: null,
       status: "not_configured",
       last_error: null,
       updated_by: ctx.userId,
@@ -187,7 +208,31 @@ type CkWorkspace = {
   subdomain?: unknown;
 };
 
-/** Testa a chave (somente GET) e lista os workspaces que ela enxerga. */
+type CkWorkspaceView = {
+  id: string;
+  name: string;
+  plan: string | null;
+  access: ClockifyAccess;
+};
+
+/** Ids dos workspaces em que a chave tem o papel; null quando o filtro falha (sem presumir). */
+async function workspaceIdsWithRole(client: ClockifyClient, role: "OWNER" | "WORKSPACE_ADMIN") {
+  try {
+    const { data } = await client.get<CkWorkspace[]>("/workspaces", { roles: role });
+    return new Set(
+      (Array.isArray(data) ? data : [])
+        .filter((w) => isClockifyId(w.id))
+        .map((w) => w.id.toLowerCase()),
+    );
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Testa a chave (somente GET), lista os workspaces reais que ela enxerga e o papel em cada um.
+ * Nenhuma origem é escolhida aqui: `suggestedId` é só destaque pelo nome do workspace do ERP.
+ */
 export async function testClockifyConnection(ctx: Ctx) {
   const db = await admin();
   const conn = await loadConn(ctx.workspaceId);
@@ -200,14 +245,41 @@ export async function testClockifyConnection(ctx: Ctx) {
       "/user",
     );
     const { data: wss } = await client.get<CkWorkspace[]>("/workspaces");
-    const workspaces = (Array.isArray(wss) ? wss : [])
+    const [owners, admins] = await Promise.all([
+      workspaceIdsWithRole(client, "OWNER"),
+      workspaceIdsWithRole(client, "WORKSPACE_ADMIN"),
+    ]);
+    const workspaces: CkWorkspaceView[] = (Array.isArray(wss) ? wss : [])
       .filter((w) => isClockifyId(w.id))
-      .map((w) => ({ id: w.id, name: w.name, plan: w.featureSubscriptionType ?? null }));
-    await db
-      .from("clockify_connections")
-      .update({ status: "connected", last_error: null, last_tested_at: now })
-      .eq("id", conn.id);
-    return { ok: true, userName: me?.name ?? null, workspaces };
+      .map((w) => ({
+        id: w.id,
+        name: w.name,
+        plan: w.featureSubscriptionType ?? null,
+        access: classifyAccess(w.id, owners, admins),
+      }));
+    const { data: erpWs } = await db
+      .from("workspaces")
+      .select("name")
+      .eq("id", ctx.workspaceId)
+      .maybeSingle();
+    const patch: Record<string, unknown> = {
+      status: "connected",
+      last_error: null,
+      last_tested_at: now,
+    };
+    // Mantém o papel da origem já escolhida sempre igual ao da chave atual.
+    if (conn.source_workspace_id) {
+      const cur = workspaces.find((w) => w.id.toLowerCase() === conn.source_workspace_id);
+      patch.source_access = cur ? cur.access : "not_admin";
+      patch.source_verified_at = now;
+    }
+    await db.from("clockify_connections").update(patch).eq("id", conn.id);
+    return {
+      ok: true,
+      userName: me?.name ?? null,
+      workspaces,
+      suggestedId: suggestSourceId(workspaces, (erpWs as { name?: string } | null)?.name ?? null),
+    };
   } catch (e) {
     const msg =
       e instanceof ClockifyApiError ? e.message : "Falha ao testar a conexão com o Clockify.";
@@ -218,7 +290,8 @@ export async function testClockifyConnection(ctx: Ctx) {
     return {
       ok: false,
       message: msg,
-      workspaces: [] as Array<{ id: string; name: string; plan: string | null }>,
+      workspaces: [] as CkWorkspaceView[],
+      suggestedId: null as string | null,
     };
   }
 }
@@ -236,6 +309,8 @@ export async function selectClockifySource(ctx: Ctx, sourceWorkspaceId: string) 
       source_workspace_id: ws.id.toLowerCase(),
       source_workspace_name: ws.name,
       source_plan: ws.plan,
+      source_access: ws.access,
+      source_verified_at: new Date().toISOString(),
       updated_by: ctx.userId,
       updated_at: new Date().toISOString(),
     })
@@ -253,6 +328,11 @@ export async function startClockifyRun(
   const conn = await loadConn(ctx.workspaceId);
   if (!conn?.key_ciphertext || conn.status !== "connected" || !conn.source_workspace_id) {
     throw new Error("Conecte o Clockify e escolha o workspace de origem antes de começar.");
+  }
+  if (!canReadWholeWorkspace(conn.source_access)) {
+    throw new Error(
+      "A chave não comprovou acesso de proprietário ou administrador no workspace de origem. Use a chave de um administrador e teste a conexão de novo.",
+    );
   }
   let options = defaultOptions(input.options);
   let previewRunId: string | null = null;

@@ -4848,7 +4848,9 @@ export type Database = {
           last_error: string | null
           last_tested_at: string | null
           region: string
+          source_access: string | null
           source_plan: string | null
+          source_verified_at: string | null
           source_workspace_id: string | null
           source_workspace_name: string | null
           status: string
@@ -4866,7 +4868,9 @@ export type Database = {
           last_error?: string | null
           last_tested_at?: string | null
           region?: string
+          source_access?: string | null
           source_plan?: string | null
+          source_verified_at?: string | null
           source_workspace_id?: string | null
           source_workspace_name?: string | null
           status?: string
@@ -4884,7 +4888,9 @@ export type Database = {
           last_error?: string | null
           last_tested_at?: string | null
           region?: string
+          source_access?: string | null
           source_plan?: string | null
+          source_verified_at?: string | null
           source_workspace_id?: string | null
           source_workspace_name?: string | null
           status?: string

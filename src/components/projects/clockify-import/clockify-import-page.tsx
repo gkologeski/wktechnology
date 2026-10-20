@@ -45,7 +45,9 @@ import {
   type ClockifyReport,
   type ConnectionView,
   type RunView,
+  type SourceWorkspaceView,
 } from "./clockify-sections";
+import { canReadWholeWorkspace } from "@/lib/integrations/clockify/clockify-access";
 import {
   MappingsTable,
   StagingTable,
@@ -100,11 +102,8 @@ export function ClockifyImportPage() {
   const fIdentity = useServerFn(createClockifyImportIdentity);
 
   const status = useQuery({ queryKey: ["clockify-import", "status"], queryFn: () => fStatus() });
-  const [workspaces, setWorkspaces] = useState<Array<{
-    id: string;
-    name: string;
-    plan: string | null;
-  }> | null>(null);
+  const [workspaces, setWorkspaces] = useState<SourceWorkspaceView[] | null>(null);
+  const [suggestedId, setSuggestedId] = useState<string | null>(null);
   const [noProjectPolicy, setNoProjectPolicy] = useState<"stage" | "fallback">("stage");
   const [erpStatus, setErpStatus] = useState<"locked" | "draft">("locked");
   const [checked, setChecked] = useState(false);
@@ -245,7 +244,8 @@ export function ClockifyImportPage() {
   }
 
   const conn = status.data!.connection as ConnectionView;
-  const connected = conn.status === "connected" && !!conn.source;
+  const connected =
+    conn.status === "connected" && !!conn.source && canReadWholeWorkspace(conn.source.access);
   const previewReport = (previewDetail.data?.report ?? null) as ClockifyReport | null;
   const importReport = (importDetail.data?.report ?? null) as ClockifyReport | null;
   const previewConfirmed = !!lastPreview?.preview_confirmed_at;
@@ -273,6 +273,7 @@ export function ClockifyImportPage() {
             const r = await fTest();
             if (r.ok) {
               setWorkspaces(r.workspaces);
+              setSuggestedId(r.suggestedId);
               toast.success(`Conexão funcionando${r.userName ? ` como ${r.userName}` : ""}.`);
             } else toast.error(r.message ?? "Falha no teste.");
           })
@@ -295,6 +296,7 @@ export function ClockifyImportPage() {
         <SourceSection
           conn={conn}
           workspaces={workspaces}
+          suggestedId={suggestedId}
           busy={busy}
           onSelect={(id) =>
             act.mutate(async () => {
@@ -370,7 +372,8 @@ export function ClockifyImportPage() {
         </div>
         {!connected && (
           <p className="text-sm text-text-tertiary">
-            Disponível depois de conectar e escolher o workspace de origem.
+            Disponível depois de conectar, escolher o workspace de origem e comprovar acesso de
+            proprietário ou administrador nele.
           </p>
         )}
         {liveRun && (

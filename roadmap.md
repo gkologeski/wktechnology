@@ -156,6 +156,8 @@
 - [x] Mapeamento de usuários/clientes/projetos com revisão manual
 - [x] Tela em /projects/settings/imports/clockify + item no menu e na central de importações
 - [x] Testes com fixture (sem chamadas reais) e guia de migração
-- [ ] Conectar Clockify, escolher workspace de origem e rodar inventário real (bloqueado: aguarda chave/acesso admin do usuário)
+- [x] Teste lista workspaces reais com papel verificado (proprietário/admin/sem admin/não verificado); prévia bloqueada sem admin comprovado; origem escolhida manualmente por ID
+- [ ] Conectar Clockify e escolher "WK Technology" por ID confirmado (bloqueado: aguarda chave do usuário e comprovação de acesso admin)
+- [ ] Rodar inventário/prévia real (bloqueado: depende do item acima)
 - [ ] Importação real (bloqueado: aguarda prévia conferida pelo usuário)
 - [ ] Agendar tick em segundo plano (bloqueado: depende de publicação aprovada)
