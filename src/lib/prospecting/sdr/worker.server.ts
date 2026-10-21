@@ -4,7 +4,13 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Admin = any;
 
-import { decideThirdParty, isAutoResponder, type Referral } from "./third-party";
+import {
+  decideThirdParty,
+  isAutoResponder,
+  isPostCloseQuestion,
+  POST_CLOSE_REPLY,
+  type Referral,
+} from "./third-party";
 import { parsePersona, stripStockOpener } from "./persona";
 import { configFromRow, hasTool, scopeKnowledge } from "./agent-config";
 import { buildSystemPrompt, callSdrAgent } from "./agent.server";
@@ -52,7 +58,10 @@ import {
   nextStage,
   selectableMaterials,
   guardModelOptOut,
+  detectOptOut,
   isWrongContact,
+  OPT_OUT_CONFIRM,
+  isUnavailabilityHandoff,
   blockingWarnings,
   countQuestions,
   mentionsPrice,
@@ -668,6 +677,25 @@ export async function processJob(
     out.intent = "handoff";
     out.handoff_reason = effects.handoff;
   }
+  // Pedido explícito de parar sempre vira opt-out (com confirmação ao cliente).
+  if (job.kind === "reply" && !effects.optOut && out.intent !== "opt_out") {
+    const lastIn = [...history].reverse().find((m) => m.direction === "inbound");
+    const lastText = String((lastIn as { body?: unknown } | undefined)?.body ?? "");
+    const phrases =
+      ((playbook as Record<string, unknown>).opt_out_phrases as string[] | null) ?? [];
+    if (detectOptOut(lastText, phrases)) out.intent = "opt_out";
+  }
+  // "Sem disponibilidade no horário pedido" não é motivo de passar para humano:
+  // a Lia segue oferecendo horários (caso Gilzon, 21/10).
+  if (
+    out.intent === "handoff" &&
+    !effects.handoff &&
+    isUnavailabilityHandoff(out.handoff_reason) &&
+    /\?/.test(out.reply)
+  ) {
+    out.intent = "continue";
+    out.warnings.push("Handoff por indisponibilidade de horário ignorado: Lia segue agendando.");
+  }
   if (effects.optOut) out.intent = "opt_out";
   else if (out.intent === "opt_out") {
     // Agradecimento/despedida não é descadastro: segue a conversa com resposta cordial.
@@ -694,7 +722,16 @@ export async function processJob(
     const lastIn = [...history].reverse().find((m) => m.direction === "inbound");
     const lastText = String((lastIn as { body?: unknown } | undefined)?.body ?? "");
     const tp = decideThirdParty(history as { direction: string; body?: string | null }[]);
-    if (tp.action !== "none") {
+    if (isPostCloseQuestion(history as { direction: string; body?: string | null }[])) {
+      // Já encerramos e o cliente perguntou algo ("precisa de algo em infra?"):
+      // responde que não e se despede, uma única vez (caso Wiltomar, 21/10).
+      wrongContact = true;
+      closeReason = "post_close";
+      out.intent = "continue";
+      out.material_ids = [];
+      out.answers = [];
+      out.reply = POST_CLOSE_REPLY;
+    } else if (tp.action !== "none") {
       out.intent = "continue";
       out.material_ids = [];
       out.answers = [];
@@ -725,6 +762,17 @@ export async function processJob(
       out.reply =
         "Peço desculpas pelo incômodo, devo ter anotado o contato errado. Obrigada pelo aviso e tenha um ótimo dia!";
     }
+  }
+
+  // Opt-out em resposta: confirma ao cliente que não haverá novos contatos e
+  // só então marca o opt-out (caso Ricardo Oliveira, 21/10).
+  if (job.kind === "reply" && out.intent === "opt_out" && !wrongContact) {
+    wrongContact = true;
+    closeReason = "opt_out";
+    out.intent = "continue";
+    out.material_ids = [];
+    out.answers = [];
+    out.reply = OPT_OUT_CONFIRM;
   }
 
   // Garantias da conversa (casos 16–19/10): nome, repetição, reunião recusada,
@@ -936,8 +984,25 @@ export async function processJob(
     .eq("lease_token", job.lease_token)
     .select("id");
   if (!saved?.length) return "lease_lost";
+  const applyOptOutNow = async () => {
+    if (closeReason !== "opt_out") return;
+    await admin
+      .from("sdr_enrollments")
+      .update({
+        status: "opted_out",
+        commercial_stage: "opted_out",
+        opted_out_at: new Date().toISOString(),
+        cancel_reason: "opt_out",
+        follow_up_at: null,
+      })
+      .eq("id", enr.id)
+      .eq("workspace_id", job.workspace_id);
+    await admin.rpc("sdr_set_conversation_owner", { p_conversation: conv.id, p_owner: "paused" });
+  };
   if (!autoAllowed) {
     await admin.from("sdr_turn_jobs").update({ lease_token: null }).eq("id", job.id);
+    // O pedido de parar vale mesmo que a confirmação fique para revisão.
+    await applyOptOutNow();
     return "drafted";
   }
   const sendText = (text: string) =>
@@ -993,6 +1058,7 @@ export async function processJob(
       })
       .eq("id", job.id)
       .in("status", ["running"]);
+    await applyOptOutNow();
     return obsolete ? "discarded" : "drafted";
   }
   if (corporatePhone && target) {
@@ -1037,7 +1103,8 @@ export async function processJob(
     const thirdParty =
       closeReason === "left_company" ||
       closeReason === "not_this_person" ||
-      closeReason === "out_of_icp";
+      closeReason === "out_of_icp" ||
+      closeReason === "post_close";
     await admin
       .from("sdr_enrollments")
       .update(
@@ -1047,7 +1114,7 @@ export async function processJob(
               status: "opted_out",
               commercial_stage: "opted_out",
               opted_out_at: new Date().toISOString(),
-              cancel_reason: "wrong_contact",
+              cancel_reason: closeReason === "opt_out" ? "opt_out" : "wrong_contact",
               follow_up_at: null,
             },
       )

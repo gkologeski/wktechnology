@@ -73,6 +73,14 @@ const DEFAULT_OPT_OUT = [
   "nao me mande",
   "remova meu número",
   "remova meu numero",
+  "não temos interesse",
+  "nao temos interesse",
+  "não entre mais em contato",
+  "nao entre mais em contato",
+  "não me procure mais",
+  "nao me procure mais",
+  "não me chame mais",
+  "nao me chame mais",
   "stop",
 ];
 
@@ -127,6 +135,17 @@ export function isWrongContact(text: string): boolean {
   if (!t || !WRONG_CONTACT_RE.test(t)) return false;
   return !/\b(mas|porem|só que|so que) .*(cuido|respondo|sou responsavel|sou eu|trabalho|posso ajudar)/.test(
     t,
+  );
+}
+
+/** Confirmação fixa ao cliente que pediu para não ser mais contatado. */
+export const OPT_OUT_CONFIRM =
+  "Entendido! Não entraremos mais em contato. Desculpe o incômodo e tenha um ótimo dia!";
+
+/** Handoff só porque o horário pedido está ocupado (a Lia deve oferecer outros). */
+export function isUnavailabilityHandoff(reason: string | null | undefined): boolean {
+  return /\b(sem|nao ha|não há|indisponibilidade|indisponivel|indisponível|disponibilidade)\b.*\b(horario|horário|agenda|disponibilidade|data)\b|\bindisponib/i.test(
+    String(reason ?? ""),
   );
 }
 

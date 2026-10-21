@@ -163,6 +163,8 @@ export type IngestResult =
   | "queued"
   | "duplicate";
 
+const REOPEN_ON_QUESTION = ["out_of_icp", "left_company", "not_this_person"];
+
 /**
  * Resposta recebida numa conversa do SDR. Idempotente: a chave inclui
  * workspace, número do provedor e id da mensagem. Contexto ambíguo é ignorado.
@@ -189,7 +191,7 @@ export async function ingestInboundForSdr(
   const { data: enr, error: eErr } = await admin
     .from("sdr_enrollments")
     .select(
-      "id, workspace_id, status, conversation_id, playbook_id, lead_id, contact_id, follow_up_at",
+      "id, workspace_id, status, conversation_id, playbook_id, lead_id, contact_id, follow_up_at, cancel_reason",
     )
     .eq("id", conv.sdr_enrollment_id)
     .maybeSingle();
@@ -197,13 +199,32 @@ export async function ingestInboundForSdr(
   // Conservador: vínculo inconsistente não aciona o agente.
   if (!enr || enr.workspace_id !== p.workspaceId || enr.conversation_id !== conv.id)
     return "not_sdr";
-  if (enr.status !== "active") return "inactive";
-
   const { data: settings } = await admin
     .from("sdr_workspace_settings")
     .select("enabled")
     .eq("workspace_id", p.workspaceId)
     .maybeSingle();
+
+  // Encerrada pela Lia (fora do ICP / terceiro) e o cliente perguntou algo:
+  // reabre só para uma resposta curta de despedida (o worker volta a encerrar
+  // como "post_close", que não reabre de novo).
+  if (
+    enr.status === "paused" &&
+    REOPEN_ON_QUESTION.includes(String(enr.cancel_reason ?? "")) &&
+    conv.ai_owner === "paused" &&
+    settings?.enabled &&
+    /\?/.test(p.body)
+  ) {
+    await admin
+      .from("sdr_enrollments")
+      .update({ status: "active", cancel_reason: null })
+      .eq("id", enr.id)
+      .eq("status", "paused");
+    await admin.rpc("sdr_set_conversation_owner", { p_conversation: conv.id, p_owner: "ai" });
+    conv.ai_owner = "ai";
+    enr.status = "active";
+  }
+  if (enr.status !== "active") return "inactive";
 
   // Resposta do cliente: cancela follow-up e cadências anteriores.
   await admin
@@ -244,7 +265,13 @@ export async function ingestInboundForSdr(
     .select("opt_out_phrases")
     .eq("id", enr.playbook_id)
     .maybeSingle();
-  if (detectOptOut(p.body, (playbook?.opt_out_phrases as string[] | null) ?? [])) {
+  // Com a Lia atendendo, o opt-out é confirmado ao cliente pelo worker antes de
+  // encerrar; sem ela (desligada ou humano), encerra aqui mesmo.
+  const aiWillConfirm = !!settings?.enabled && conv.ai_owner === "ai";
+  if (
+    !aiWillConfirm &&
+    detectOptOut(p.body, (playbook?.opt_out_phrases as string[] | null) ?? [])
+  ) {
     await admin
       .from("sdr_enrollments")
       .update({

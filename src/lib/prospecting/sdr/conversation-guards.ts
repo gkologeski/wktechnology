@@ -55,20 +55,26 @@ export function showsBusinessInterest(history: Msg[]): boolean {
 
 /** Cliente já disse que é o responsável/decisor. */
 const SELF_RESPONSIBLE_RE =
-  /\b(sou (eu )?(o |a )?(um dos |uma das )?(responsave(l|is)|decisor|gestor|gerente|diretor|cto|cio|head)|eu (sou|que) (o |a )?responsavel|sou eu mesmo|sou eu quem (cuida|responde|decide)|eu (cuido|respondo) (da|pela) (area|ti|tecnologia)|fica comigo|sim sou eu)\b/;
+  /\b(sou (eu )?(o |a )?(um dos |uma das )?(responsave(l|is)|decisor|gestor|gerente|diretor|cto|cio|head)|eu (sou|que) (o |a )?responsavel|sou eu mesmo|sou eu quem (cuida|responde|decide)|eu (cuido|respondo) (da|pela) (area|ti|tecnologia)|fica comigo|sim sou eu|sou (um|uma) (dos|das)( responsaveis| que cuidam| que respondem)?)\b/;
 export function selfIdentifiedResponsible(history: Msg[]): boolean {
   const msgs = inbound(history);
   if (msgs.some((m) => SELF_RESPONSIBLE_RE.test(norm(String(m.body ?? ""))))) return true;
   // "Sim" logo após a abertura "Essa área fica com você?"
   for (let i = 1; i < history.length; i++) {
-    const prev = history[i - 1];
     const cur = history[i];
-    if (cur.direction !== "inbound" || prev.direction === "inbound") continue;
+    if (cur.direction !== "inbound") continue;
+    // Pergunta nossa mais recente antes desta resposta (pula "Bom dia" etc.).
+    let j = i - 1;
+    while (j >= 0 && history[j].direction === "inbound") j--;
+    if (j < 0) continue;
+    const prev = history[j];
     if (
       /essa area fica com voce|voce (e|esta a frente|responde)/.test(
         norm(String(prev.body ?? "")),
       ) &&
-      /^(sim|isso|correto|exato|sou|eu mesmo|sim sou)\b/.test(norm(String(cur.body ?? "")))
+      /^(sim|isso|correto|exato|sou|eu mesmo|sim sou|sou (um|uma) (dos|das))\b/.test(
+        norm(String(cur.body ?? "")),
+      )
     )
       return true;
   }
@@ -76,7 +82,7 @@ export function selfIdentifiedResponsible(history: Msg[]): boolean {
 }
 
 export function asksDecisionMaker(text: string): boolean {
-  return /\b(decisor|quem (decide|sera o decisor|aprova)|qual (e )?(o )?seu cargo|voce (e|esta a frente|responde)( pela| da)? (area|ti)|responsavel pela (area|ti|decisao))\b/.test(
+  return /\b(decisor(a|es)?|quem (decide|sera o decisor|aprova)|qual (e )?(o )?seu cargo|voce (e|esta a frente|responde)( pela| da)? (area|ti)|responsavel pela (area|ti|decisao))\b/.test(
     norm(text),
   );
 }

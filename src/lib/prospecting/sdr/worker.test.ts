@@ -201,7 +201,12 @@ describe("entrada (ingest)", () => {
     expect(await ingestInboundForSdr(db, { ...p, workspaceId: W2 })).toBe("not_sdr");
     expect(db.t("sdr_turn_jobs")).toHaveLength(0);
   });
-  it("recusa encerra sem enfileirar", async () => {
+  it("recusa com a Lia atendendo vai para o turno (que confirma ao cliente)", async () => {
+    expect(await ingestInboundForSdr(db, { ...p, body: "não tenho interesse" })).toBe("queued");
+    expect(db.find("sdr_enrollments", "e1")?.status).toBe("active");
+  });
+  it("recusa sem a Lia atendendo encerra sem enfileirar", async () => {
+    db.t("sdr_workspace_settings")[0].enabled = false;
     expect(await ingestInboundForSdr(db, { ...p, body: "não tenho interesse" })).toBe("opted_out");
     expect(db.find("sdr_enrollments", "e1")?.status).toBe("opted_out");
     expect(db.t("sdr_turn_jobs")).toHaveLength(0);
@@ -373,7 +378,7 @@ describe("qualificação canônica", () => {
 });
 
 describe("recusa, falhas e desligado", () => {
-  it("opt-out da IA encerra, pausa a conversa e não envia", async () => {
+  it("opt-out da IA confirma ao cliente, encerra e pausa a conversa", async () => {
     job(db);
     const j = await claimOne(db);
     const d = deps({
@@ -384,10 +389,10 @@ describe("recusa, falhas e desligado", () => {
       answers: [],
       handoff_reason: "",
     });
-    expect(await processJob(db, j, d)).toBe("opt_out");
+    await processJob(db, j, d);
     expect(db.find("sdr_enrollments", "e1")?.status).toBe("opted_out");
+    expect(db.find("sdr_enrollments", "e1")?.opted_out_at).toBeTruthy();
     expect(db.find("whatsapp_conversations", "c1")?.ai_owner).toBe("paused");
-    expect(d.sendMessage).not.toHaveBeenCalled();
     expect(d.handoffToHuman).not.toHaveBeenCalled();
   });
 
@@ -528,7 +533,8 @@ describe("homologação sintética ponta a ponta (provedores simulados)", () => 
       answers: [],
       handoff_reason: "",
     });
-    expect(await processJob(db, c2, d2)).toBe("opt_out");
+    // Envio manual (sem envio automático): a confirmação vira rascunho, mas o opt-out já vale.
+    expect(await processJob(db, c2, d2)).toBe("drafted");
     expect(db.find("sdr_enrollments", "e1")).toMatchObject({
       status: "opted_out",
       follow_up_at: null,

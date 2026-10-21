@@ -86,16 +86,24 @@ const LEFT_RE = new RegExp(
     `\\bnao sou mais (da|dessa|desta) ${COMPANY_NOUN}\\b`,
     `\\bmudei de (empresa|emprego)\\b`,
     `\\bme aposentei\\b`,
+    // Casos 20–21/10: "já não faço parte do X há 2 anos", "Não sou mais", "não sei que empresa é essa".
+    `\\bnao faco mais parte\\b`,
+    `\\bnao faco parte (da|do|dessa|desta|desse|deste) .{1,50}\\b(ha|a|faz) \\d+ (anos?|mes|meses)\\b`,
+    `\\bnao faco parte (da|dessa|desta) ${COMPANY_NOUN}\\b`,
+    `^nao sou mais( nao)?$`,
+    `\\bnao (sei|conheco) (que|qual) empresa (e|eh) (essa|esta)\\b`,
+    `\\bnao conheco (essa|esta) empresa\\b`,
+    `\\bnunca (trabalhei|trabalhou|atuei) (la|ai|nessa|nesta|na|no)\\b`,
   ].join("|"),
 );
 
 /** Palavras capitalizadas que não são empresas ("saí do Teams"). */
-const NOT_COMPANY = /^(teams|zoom|meet|google|whatsapp|grupo|reuniao|sistema|ar)$/i;
+const NOT_COMPANY = /^(teams|zoom|meet|google|whatsapp|grupo|reuniao|sistema|ar|ti|area|empresa)$/i;
 
 /** "saí da Opentech": 1ª pessoa + nome próprio no texto original. */
 function leftNamedCompany(raw: string): boolean {
   const re =
-    /\b(?:[Ss]a[ií]|[Dd]eixei|[Nn][aã]o (?:trabalho|atuo|estou) mais (?:na|no|em|pela|pelo)) (?:(?:da|do|de) )?([A-ZÀ-Ú][\p{L}\d&.-]+)/gu;
+    /\b(?:[Ss]a[ií]|[Dd]eixei|[Nn][aã]o (?:trabalho|atuo|estou)(?: mais)? (?:na|no|em|pela|pelo)) (?:(?:da|do|de) )?([A-ZÀ-Ú][\p{L}\d&.-]+)/gu;
   for (const m of String(raw ?? "").matchAll(re)) {
     const name = m[1].normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     if (!NOT_COMPANY.test(name)) return true;
@@ -104,7 +112,7 @@ function leftNamedCompany(raw: string): boolean {
 }
 
 const NOT_PERSON_RE =
-  /\b(telefone|numero|celular|whats|whatsapp|contato) nao e (de|do|da|o|a)\b|\baqui nao e (o|a)\b|\bnao e o contato (de|do|da)\b|\bpessoa errada\b/;
+  /\b(telefone|numero|celular|whats|whatsapp|contato) nao (pertence|e mais)\b|\b(telefone|numero|celular|whats|whatsapp|contato) nao e (de|do|da|o|a)\b|\baqui nao e (o|a)\b|\bnao e o contato (de|do|da)\b|\bpessoa errada\b/;
 
 /** Não é quem buscamos: saiu da empresa ou o número é de outra pessoa. */
 export function detectNotTarget(text: string): ThirdPartyReason | null {
@@ -114,8 +122,40 @@ export function detectNotTarget(text: string): ThirdPartyReason | null {
   if (/\b(mas|porem|so que) .*(cuido|respondo|sou responsavel|sou eu|posso ajudar)/.test(t))
     return null;
   if (LEFT_RE.test(t) || leftNamedCompany(text)) return "left_company";
-  if (NOT_PERSON_RE.test(t) || isWrongContact(text)) return "not_this_person";
+  if (NOT_PERSON_RE.test(t) || isWrongContact(text) || isPrivateNumber(text))
+    return "not_this_person";
   return null;
+}
+
+/** "Este número é particular/pessoal" (caso Ricardo Silveira, 21/10). */
+export function isPrivateNumber(text: string): boolean {
+  return /\b(numero|telefone|celular|whats|whatsapp|contato) (e |eh )?(particular|pessoal)\b/.test(
+    norm(text),
+  );
+}
+
+export const PRIVATE_NUMBER_CLOSE =
+  "Peço desculpas por ter entrado em contato pelo seu número particular! Não vamos mais chamar por aqui. Tenha um ótimo dia!";
+
+/** Encerramentos fixos nossos: depois deles, só respondemos uma pergunta direta. */
+export const CLOSING_MARKS = [
+  "Obrigada pelo retorno! Peço desculpas pelo contato.",
+  "Obrigada pela atenção e desculpe o incômodo.",
+  "Muito obrigada pela indicação!",
+  "Não vamos mais chamar por aqui.",
+];
+
+export const POST_CLOSE_REPLY =
+  "Não, obrigada! Não precisamos de nada no momento. Agradeço a atenção e tenha um ótimo dia!";
+
+/** Pergunta do cliente logo após nosso encerramento ("precisa de algo em infra?"). */
+export function isPostCloseQuestion(history: Msg[]): boolean {
+  const lastIdx = history.length - 1;
+  const last = history[lastIdx];
+  if (!last || last.direction !== "inbound" || !/\?/.test(String(last.body ?? ""))) return false;
+  const lastOut = [...history].reverse().find((m) => m.direction !== "inbound");
+  const body = String(lastOut?.body ?? "");
+  return CLOSING_MARKS.some((m) => body.includes(m));
 }
 
 /** Nossas mensagens que mantêm o estado "falando com terceiro". */
@@ -209,6 +249,10 @@ export function decideThirdParty(history: Msg[]): ThirdPartyDecision {
       };
   }
   if (!reason) return { action: "none" };
+  // Número particular: desculpa e encerra, sem pedir indicação.
+  const recentInbound = history.slice(history.lastIndexOf(lastOut as Msg) + 1);
+  if (recentInbound.some((m) => m.direction === "inbound" && isPrivateNumber(String(m.body ?? ""))))
+    return { action: "close", reason, reply: PRIVATE_NUMBER_CLOSE };
   const asked = lastOutBody.includes(REFERRAL_MARK);
   const referral = extractReferral(lastText);
   if (referral) return { action: "save_referral", reason, reply: REFERRAL_THANKS, referral };
