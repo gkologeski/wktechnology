@@ -29,13 +29,55 @@ type Q = {
 };
 
 const QUERIES: Q[] = [
-  { table: "deals", key: "deals_open", cols: ["assigned_to", "assigned_user_id"], apply: (q) => q.is("closed_at", null), scope: "openDeals" },
-  { table: "deals", key: "deals_closed", cols: ["assigned_to", "assigned_user_id"], apply: (q) => q.not("closed_at", "is", null), scope: "closedDeals" },
-  { table: "leads", key: "leads_active", cols: ["assigned_to", "assigned_user_id"], apply: (q) => q.neq("status", "disqualified"), scope: "leads" },
-  { table: "contacts", key: "contacts", cols: ["assigned_to", "assigned_user_id"], apply: (q) => q, scope: "contactsCompanies" },
-  { table: "companies", key: "companies", cols: ["assigned_to", "assigned_user_id"], apply: (q) => q, scope: "contactsCompanies" },
-  { table: "activities", key: "pending_activities", cols: ["assigned_to"], apply: (q) => q.eq("completed", false), scope: "pendingActivities" },
-  { table: "whatsapp_conversations", key: "open_conversations", cols: ["assigned_to"], apply: (q) => q.eq("status", "open"), scope: "openConversations" },
+  {
+    table: "deals",
+    key: "deals_open",
+    cols: ["assigned_to", "assigned_user_id"],
+    apply: (q) => q.is("closed_at", null),
+    scope: "openDeals",
+  },
+  {
+    table: "deals",
+    key: "deals_closed",
+    cols: ["assigned_to", "assigned_user_id"],
+    apply: (q) => q.not("closed_at", "is", null),
+    scope: "closedDeals",
+  },
+  {
+    table: "leads",
+    key: "leads_active",
+    cols: ["assigned_to", "assigned_user_id"],
+    apply: (q) => q.neq("status", "disqualified"),
+    scope: "leads",
+  },
+  {
+    table: "contacts",
+    key: "contacts",
+    cols: ["assigned_to", "assigned_user_id"],
+    apply: (q) => q,
+    scope: "contactsCompanies",
+  },
+  {
+    table: "companies",
+    key: "companies",
+    cols: ["assigned_to", "assigned_user_id"],
+    apply: (q) => q,
+    scope: "contactsCompanies",
+  },
+  {
+    table: "activities",
+    key: "pending_activities",
+    cols: ["assigned_to"],
+    apply: (q) => q.eq("completed", false),
+    scope: "pendingActivities",
+  },
+  {
+    table: "whatsapp_conversations",
+    key: "open_conversations",
+    cols: ["assigned_to"],
+    apply: (q) => q.eq("status", "open"),
+    scope: "openConversations",
+  },
 ];
 
 function orFilter(cols: string[], userId: string) {

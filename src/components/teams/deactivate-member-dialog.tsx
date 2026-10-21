@@ -25,7 +25,12 @@ import {
   getMemberDeactivationInventory,
 } from "@/lib/teams.functions";
 
-type Member = { user_id: string; full_name?: string | null; email?: string | null; status?: string };
+type Member = {
+  user_id: string;
+  full_name?: string | null;
+  email?: string | null;
+  status?: string;
+};
 type Inventory = Awaited<ReturnType<typeof getMemberDeactivationInventory>>;
 type ScopeKey =
   | "openDeals"
@@ -44,9 +49,21 @@ const ITEMS: { key: ScopeKey; label: string; count: (i: Inventory) => number; hi
     hint: "Desmarcado por padrão para preservar o histórico de vendas.",
   },
   { key: "leads", label: "Leads ativos", count: (i) => i.leads_active },
-  { key: "contactsCompanies", label: "Contatos e empresas", count: (i) => i.contacts + i.companies },
-  { key: "pendingActivities", label: "Tarefas e atividades pendentes", count: (i) => i.pending_activities },
-  { key: "openConversations", label: "Conversas abertas na Inbox", count: (i) => i.open_conversations },
+  {
+    key: "contactsCompanies",
+    label: "Contatos e empresas",
+    count: (i) => i.contacts + i.companies,
+  },
+  {
+    key: "pendingActivities",
+    label: "Tarefas e atividades pendentes",
+    count: (i) => i.pending_activities,
+  },
+  {
+    key: "openConversations",
+    label: "Conversas abertas na Inbox",
+    count: (i) => i.open_conversations,
+  },
 ];
 
 const DEFAULT_SCOPE: Record<ScopeKey, boolean> = {
@@ -104,7 +121,9 @@ export function DeactivateMemberDialog({
       });
       const moved = Object.values(res.transferred).reduce((s, n) => s + n, 0);
       toast.success(
-        transfer ? `Usuário desativado. ${moved} registro(s) transferido(s).` : "Usuário desativado",
+        transfer
+          ? `Usuário desativado. ${moved} registro(s) transferido(s).`
+          : "Usuário desativado",
       );
       await onDone();
       onClose();
