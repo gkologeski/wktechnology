@@ -114,7 +114,7 @@ const upsertSchema = z.object({
   tags: z.array(z.string().min(1).max(40)).max(20).default([]),
   notes: z.string().max(4000).nullable().optional(),
   education: z.string().max(120).nullable().optional(),
-  shirt_size: z.string().max(20).nullable().optional(),
+  shirt_size: z.string().max(120).nullable().optional(),
   emergency_phone: z.string().max(40).nullable().optional(),
   emergency_relationship: z.string().max(120).nullable().optional(),
   marital_status: z.string().max(60).nullable().optional(),
