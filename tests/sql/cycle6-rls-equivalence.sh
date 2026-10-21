@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Equivalência da RLS de apontamentos antes/depois da otimização (0181), em banco descartável.
-# Carrega as provas C5 e C6 (perfis próprio/equipe/workspace/inativo/outro tenant/negação), registra
+# Carrega a prova C5 (> 5.000 apontamentos; perfis próprio/líder/workspace/inativo/outro tenant/negação), registra
 # para cada usuário o conjunto EXATO de apontamentos visíveis/alteráveis/excluíveis pela regra antiga,
-# aplica a migração e confere que o conjunto é idêntico. Depois roda a prova C6 de novo.
+# aplica a migração e confere que o conjunto é idêntico (a prova C6 roda à parte com as 3 migrações).
 # Uso: bash tests/sql/cycle6-rls-equivalence.sh <0179> <0180> <0181>
 set -euo pipefail
 cd "$(dirname "$0")/../.."
@@ -14,7 +14,7 @@ iso_guard
 iso_psql -f scripts/isolated-db/seed.sql >/dev/null
 M1=$1; M2=$2; M3=$3
 for MIG in "$M1" "$M2"; do iso_psql -v ON_ERROR_STOP=1 -f "$MIG" >/dev/null 2>&1 || { echo "FALHOU ao aplicar $MIG"; exit 1; }; done
-for PRE in tests/sql/project-dashboard-isolated.sql tests/sql/cycle6-isolated.sql; do
+for PRE in tests/sql/project-dashboard-isolated.sql; do
   O=$(mktemp); iso_psql -f "$PRE" > "$O" 2>&1 || true
   grep -qE "FALHOU|ERROR" "$O" && { echo "FALHOU na pré-condição $PRE"; grep -m3 -E "FALHOU|ERROR" "$O"; exit 1; }
   echo "pré-condição $PRE: $(grep -c 'ok:' "$O") asserções ok"
@@ -49,7 +49,4 @@ NONEMPTY=$(iso_psql -tAc "select count(*) from t_eq.fp where phase='old' and fp 
 CHANGED=$(iso_psql -tAc "select count(*) from t_eq.q o join t_eq.q n on n.cmd=o.cmd and n.phase='new' where o.phase='old' and o.restr <> n.restr")
 [ "$CHANGED" = 3 ] || { echo "FALHOU: políticas não foram trocadas ($CHANGED)"; exit 1; }
 [ "$DIFF" = 0 ] && echo "ok: $N combinações (usuário × sessão × comando) idênticas antes/depois; $NONEMPTY com linhas visíveis" || { echo "FALHOU: $DIFF combinações divergentes"; iso_psql -c "select o.cmd, o.uid, o.session, o.fp old, n.fp new from t_eq.fp o join t_eq.fp n on n.phase='new' and n.cmd=o.cmd and n.uid=o.uid and n.session is not distinct from o.session where o.phase='old' and o.fp<>n.fp limit 10"; exit 1; }
-O=$(mktemp); iso_psql -f tests/sql/cycle6-isolated.sql > "$O" 2>&1 || true
-grep -qE "FALHOU|ERROR" "$O" && { echo "FALHOU: prova C6 depois da troca"; grep -m3 -E "FALHOU|ERROR" "$O"; exit 1; }
-echo "ok: prova C6 repetida depois da troca ($(grep -c 'ok:' "$O") asserções)"
 echo "FIM: equivalência da RLS comprovada"
