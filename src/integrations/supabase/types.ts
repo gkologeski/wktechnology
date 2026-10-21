@@ -14742,6 +14742,133 @@ export type Database = {
           },
         ]
       }
+      project_billing_configs: {
+        Row: {
+          contract_id: string
+          created_at: string
+          created_by: string
+          currency: string
+          id: string
+          model: string
+          params: Json
+          reason: string
+          service_id: string | null
+          status: string
+          supersedes_id: string | null
+          valid_from: string
+          valid_to: string | null
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          created_by: string
+          currency: string
+          id?: string
+          model: string
+          params?: Json
+          reason: string
+          service_id?: string | null
+          status?: string
+          supersedes_id?: string | null
+          valid_from: string
+          valid_to?: string | null
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          created_by?: string
+          currency?: string
+          id?: string
+          model?: string
+          params?: Json
+          reason?: string
+          service_id?: string | null
+          status?: string
+          supersedes_id?: string | null
+          valid_from?: string
+          valid_to?: string | null
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_billing_configs_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_billing_configs_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_billing_configs_supersedes_id_fkey"
+            columns: ["supersedes_id"]
+            isOneToOne: false
+            referencedRelation: "project_billing_configs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_billing_configs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_billing_events: {
+        Row: {
+          action: string
+          actor: string | null
+          created_at: string
+          detail: Json
+          entity_id: string | null
+          entity_type: string
+          id: string
+          reason: string | null
+          workspace_id: string
+        }
+        Insert: {
+          action: string
+          actor?: string | null
+          created_at?: string
+          detail?: Json
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          reason?: string | null
+          workspace_id: string
+        }
+        Update: {
+          action?: string
+          actor?: string | null
+          created_at?: string
+          detail?: Json
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          reason?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_billing_events_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_client_acceptances: {
         Row: {
           client_contact_id: string | null
@@ -15404,6 +15531,339 @@ export type Database = {
           },
         ]
       }
+      project_measurement_financial_links: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string
+          financial_entry_id: string
+          id: string
+          kind: string
+          measurement_id: string
+          unlink_reason: string | null
+          unlinked_at: string | null
+          unlinked_by: string | null
+          workspace_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by: string
+          financial_entry_id: string
+          id?: string
+          kind: string
+          measurement_id: string
+          unlink_reason?: string | null
+          unlinked_at?: string | null
+          unlinked_by?: string | null
+          workspace_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string
+          financial_entry_id?: string
+          id?: string
+          kind?: string
+          measurement_id?: string
+          unlink_reason?: string | null
+          unlinked_at?: string | null
+          unlinked_by?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_measurement_financial_links_financial_entry_id_fkey"
+            columns: ["financial_entry_id"]
+            isOneToOne: false
+            referencedRelation: "financial_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_measurement_financial_links_measurement_id_fkey"
+            columns: ["measurement_id"]
+            isOneToOne: false
+            referencedRelation: "project_measurements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_measurement_financial_links_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_measurement_lines: {
+        Row: {
+          active: boolean
+          amount: number | null
+          billed_seconds: number | null
+          created_at: string
+          description: string | null
+          detail: Json
+          id: string
+          included: boolean
+          issue: string | null
+          line_no: number
+          measurement_id: string
+          project_id: string | null
+          quantity: number | null
+          rate_amount: number | null
+          rate_id: string | null
+          seconds: number | null
+          source_id: string | null
+          source_revision: number | null
+          source_type: string
+          unit: string | null
+          user_id: string | null
+          work_date: string | null
+          workspace_id: string
+        }
+        Insert: {
+          active: boolean
+          amount?: number | null
+          billed_seconds?: number | null
+          created_at?: string
+          description?: string | null
+          detail?: Json
+          id?: string
+          included: boolean
+          issue?: string | null
+          line_no: number
+          measurement_id: string
+          project_id?: string | null
+          quantity?: number | null
+          rate_amount?: number | null
+          rate_id?: string | null
+          seconds?: number | null
+          source_id?: string | null
+          source_revision?: number | null
+          source_type: string
+          unit?: string | null
+          user_id?: string | null
+          work_date?: string | null
+          workspace_id: string
+        }
+        Update: {
+          active?: boolean
+          amount?: number | null
+          billed_seconds?: number | null
+          created_at?: string
+          description?: string | null
+          detail?: Json
+          id?: string
+          included?: boolean
+          issue?: string | null
+          line_no?: number
+          measurement_id?: string
+          project_id?: string | null
+          quantity?: number | null
+          rate_amount?: number | null
+          rate_id?: string | null
+          seconds?: number | null
+          source_id?: string | null
+          source_revision?: number | null
+          source_type?: string
+          unit?: string | null
+          user_id?: string | null
+          work_date?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_measurement_lines_measurement_id_fkey"
+            columns: ["measurement_id"]
+            isOneToOne: false
+            referencedRelation: "project_measurements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_measurement_lines_rate_id_fkey"
+            columns: ["rate_id"]
+            isOneToOne: false
+            referencedRelation: "project_rates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_measurement_lines_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_measurements: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          attempts: number
+          auto_hash: string | null
+          blockers: Json
+          closed_at: string | null
+          closed_by: string | null
+          closed_reason: string | null
+          company_id: string | null
+          config_id: string
+          config_version: number
+          contract_id: string
+          created_at: string
+          created_by: string
+          currency: string
+          failed_at: string | null
+          failure_reason: string | null
+          financial_entry_id: string | null
+          gates: Json
+          generated_at: string | null
+          generated_by: string | null
+          id: string
+          kind: string
+          lines_hash: string
+          model: string
+          period_from: string
+          period_to: string
+          revision: number
+          rules_snapshot: Json
+          service_id: string | null
+          status: string
+          submitted_at: string | null
+          submitted_by: string | null
+          timezone: string
+          total_amount: number | null
+          total_seconds: number
+          updated_at: string
+          warnings: Json
+          workspace_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          attempts?: number
+          auto_hash?: string | null
+          blockers?: Json
+          closed_at?: string | null
+          closed_by?: string | null
+          closed_reason?: string | null
+          company_id?: string | null
+          config_id: string
+          config_version: number
+          contract_id: string
+          created_at?: string
+          created_by: string
+          currency: string
+          failed_at?: string | null
+          failure_reason?: string | null
+          financial_entry_id?: string | null
+          gates?: Json
+          generated_at?: string | null
+          generated_by?: string | null
+          id?: string
+          kind?: string
+          lines_hash?: string
+          model: string
+          period_from: string
+          period_to: string
+          revision?: number
+          rules_snapshot?: Json
+          service_id?: string | null
+          status?: string
+          submitted_at?: string | null
+          submitted_by?: string | null
+          timezone: string
+          total_amount?: number | null
+          total_seconds?: number
+          updated_at?: string
+          warnings?: Json
+          workspace_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          attempts?: number
+          auto_hash?: string | null
+          blockers?: Json
+          closed_at?: string | null
+          closed_by?: string | null
+          closed_reason?: string | null
+          company_id?: string | null
+          config_id?: string
+          config_version?: number
+          contract_id?: string
+          created_at?: string
+          created_by?: string
+          currency?: string
+          failed_at?: string | null
+          failure_reason?: string | null
+          financial_entry_id?: string | null
+          gates?: Json
+          generated_at?: string | null
+          generated_by?: string | null
+          id?: string
+          kind?: string
+          lines_hash?: string
+          model?: string
+          period_from?: string
+          period_to?: string
+          revision?: number
+          rules_snapshot?: Json
+          service_id?: string | null
+          status?: string
+          submitted_at?: string | null
+          submitted_by?: string | null
+          timezone?: string
+          total_amount?: number | null
+          total_seconds?: number
+          updated_at?: string
+          warnings?: Json
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_measurements_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_measurements_config_id_fkey"
+            columns: ["config_id"]
+            isOneToOne: false
+            referencedRelation: "project_billing_configs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_measurements_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_measurements_financial_entry_id_fkey"
+            columns: ["financial_entry_id"]
+            isOneToOne: false
+            referencedRelation: "financial_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_measurements_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_measurements_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_members: {
         Row: {
           bill_rate_hour: number | null
@@ -15530,6 +15990,76 @@ export type Database = {
           },
           {
             foreignKeyName: "project_milestones_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_package_balances: {
+        Row: {
+          active: boolean
+          carry_in: Json
+          carry_in_seconds: number
+          carry_out: Json
+          config_id: string
+          consumed_seconds: number
+          created_at: string
+          id: string
+          included_seconds: number
+          measurement_id: string
+          overage_seconds: number
+          period_from: string
+          workspace_id: string
+        }
+        Insert: {
+          active?: boolean
+          carry_in?: Json
+          carry_in_seconds?: number
+          carry_out?: Json
+          config_id: string
+          consumed_seconds: number
+          created_at?: string
+          id?: string
+          included_seconds: number
+          measurement_id: string
+          overage_seconds: number
+          period_from: string
+          workspace_id: string
+        }
+        Update: {
+          active?: boolean
+          carry_in?: Json
+          carry_in_seconds?: number
+          carry_out?: Json
+          config_id?: string
+          consumed_seconds?: number
+          created_at?: string
+          id?: string
+          included_seconds?: number
+          measurement_id?: string
+          overage_seconds?: number
+          period_from?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_package_balances_config_id_fkey"
+            columns: ["config_id"]
+            isOneToOne: false
+            referencedRelation: "project_billing_configs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_package_balances_measurement_id_fkey"
+            columns: ["measurement_id"]
+            isOneToOne: false
+            referencedRelation: "project_measurements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_package_balances_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -15682,6 +16212,141 @@ export type Database = {
           },
           {
             foreignKeyName: "project_period_closings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_rates: {
+        Row: {
+          allocation_id: string | null
+          amount: number
+          confirmed_by: string | null
+          created_at: string
+          created_by: string
+          currency: string
+          id: string
+          kind: string
+          person_id: string | null
+          project_id: string | null
+          proration: string | null
+          reason: string
+          scope: string
+          service_catalog_id: string | null
+          service_id: string | null
+          status: string
+          supersedes_id: string | null
+          unit: string
+          user_id: string | null
+          valid_from: string
+          valid_to: string | null
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          allocation_id?: string | null
+          amount: number
+          confirmed_by?: string | null
+          created_at?: string
+          created_by: string
+          currency: string
+          id?: string
+          kind: string
+          person_id?: string | null
+          project_id?: string | null
+          proration?: string | null
+          reason: string
+          scope: string
+          service_catalog_id?: string | null
+          service_id?: string | null
+          status?: string
+          supersedes_id?: string | null
+          unit: string
+          user_id?: string | null
+          valid_from: string
+          valid_to?: string | null
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          allocation_id?: string | null
+          amount?: number
+          confirmed_by?: string | null
+          created_at?: string
+          created_by?: string
+          currency?: string
+          id?: string
+          kind?: string
+          person_id?: string | null
+          project_id?: string | null
+          proration?: string | null
+          reason?: string
+          scope?: string
+          service_catalog_id?: string | null
+          service_id?: string | null
+          status?: string
+          supersedes_id?: string | null
+          unit?: string
+          user_id?: string | null
+          valid_from?: string
+          valid_to?: string | null
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_rates_allocation_id_fkey"
+            columns: ["allocation_id"]
+            isOneToOne: false
+            referencedRelation: "people_allocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_rates_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_rates_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people_total_cost"
+            referencedColumns: ["person_id"]
+          },
+          {
+            foreignKeyName: "project_rates_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_rates_service_catalog_id_fkey"
+            columns: ["service_catalog_id"]
+            isOneToOne: false
+            referencedRelation: "service_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_rates_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_rates_supersedes_id_fkey"
+            columns: ["supersedes_id"]
+            isOneToOne: false
+            referencedRelation: "project_rates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_rates_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -26107,6 +26772,45 @@ export type Database = {
           status: string
         }[]
       }
+      project_bill_assert: {
+        Args: { p_key: string; p_write: boolean; p_ws: string }
+        Returns: undefined
+      }
+      project_bill_log: {
+        Args: {
+          p_action: string
+          p_detail: Json
+          p_id: string
+          p_reason: string
+          p_type: string
+          p_ws: string
+        }
+        Returns: undefined
+      }
+      project_billing_config_end: {
+        Args: { p_end: string; p_id: string; p_reason: string }
+        Returns: undefined
+      }
+      project_billing_config_save: {
+        Args: {
+          p_contract: string
+          p_model: string
+          p_params: Json
+          p_reason: string
+          p_service: string
+          p_valid_from: string
+          p_ws: string
+        }
+        Returns: Json
+      }
+      project_billing_params_check: {
+        Args: { p: Json; p_model: string }
+        Returns: string
+      }
+      project_billing_service_owned: {
+        Args: { p_date: string; p_service: string }
+        Returns: boolean
+      }
       project_client_acceptance_record: {
         Args: {
           p_client_email: string
@@ -26252,6 +26956,199 @@ export type Database = {
         }
         Returns: Json
       }
+      project_measurement_add_adjustment: {
+        Args: {
+          p_amount: number
+          p_description: string
+          p_id: string
+          p_reason: string
+        }
+        Returns: undefined
+      }
+      project_measurement_add_success_event: {
+        Args: {
+          p_base: number
+          p_id: string
+          p_reason: string
+          p_ref: string
+          p_ref_type: string
+        }
+        Returns: undefined
+      }
+      project_measurement_approve: {
+        Args: { p_hash: string; p_id: string }
+        Returns: string
+      }
+      project_measurement_assert_chain: {
+        Args: { m: Database["public"]["Tables"]["project_measurements"]["Row"] }
+        Returns: undefined
+      }
+      project_measurement_assert_fresh: {
+        Args: {
+          m: Database["public"]["Tables"]["project_measurements"]["Row"]
+          p_hash: string
+        }
+        Returns: undefined
+      }
+      project_measurement_build: {
+        Args: { p_cfg: string; p_kind: string; p_month: string; p_tz: string }
+        Returns: string
+      }
+      project_measurement_cancel: {
+        Args: { p_id: string; p_reason: string }
+        Returns: undefined
+      }
+      project_measurement_compute: {
+        Args: {
+          p_cfg: string
+          p_from: string
+          p_kind: string
+          p_self: string
+          p_to: string
+          p_tz: string
+        }
+        Returns: {
+          amount: number
+          billed_seconds: number
+          description: string
+          detail: Json
+          included: boolean
+          issue: string
+          project_id: string
+          quantity: number
+          rate_amount: number
+          rate_id: string
+          seconds: number
+          source_id: string
+          source_revision: number
+          source_type: string
+          unit: string
+          user_id: string
+          work_date: string
+        }[]
+      }
+      project_measurement_fill: { Args: { p_id: string }; Returns: undefined }
+      project_measurement_generate: {
+        Args: { p_due: string; p_hash: string; p_id: string }
+        Returns: Json
+      }
+      project_measurement_issues: { Args: { p_id: string }; Returns: Json }
+      project_measurement_link_legacy: {
+        Args: {
+          p_entry: string
+          p_hash: string
+          p_id: string
+          p_reason: string
+        }
+        Returns: undefined
+      }
+      project_measurement_live_hash: { Args: { p_id: string }; Returns: string }
+      project_measurement_lock: {
+        Args: { p_id: string; p_key: string; p_statuses: string[] }
+        Returns: {
+          approved_at: string | null
+          approved_by: string | null
+          attempts: number
+          auto_hash: string | null
+          blockers: Json
+          closed_at: string | null
+          closed_by: string | null
+          closed_reason: string | null
+          company_id: string | null
+          config_id: string
+          config_version: number
+          contract_id: string
+          created_at: string
+          created_by: string
+          currency: string
+          failed_at: string | null
+          failure_reason: string | null
+          financial_entry_id: string | null
+          gates: Json
+          generated_at: string | null
+          generated_by: string | null
+          id: string
+          kind: string
+          lines_hash: string
+          model: string
+          period_from: string
+          period_to: string
+          revision: number
+          rules_snapshot: Json
+          service_id: string | null
+          status: string
+          submitted_at: string | null
+          submitted_by: string | null
+          timezone: string
+          total_amount: number | null
+          total_seconds: number
+          updated_at: string
+          warnings: Json
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "project_measurements"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      project_measurement_recalc: { Args: { p_id: string }; Returns: undefined }
+      project_measurement_recheck: { Args: { p_id: string }; Returns: string }
+      project_measurement_refresh: { Args: { p_id: string }; Returns: Json }
+      project_measurement_release: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
+      project_measurement_remove_line: {
+        Args: { p_line: string; p_reason: string }
+        Returns: undefined
+      }
+      project_measurement_return: {
+        Args: { p_id: string; p_reason: string }
+        Returns: undefined
+      }
+      project_measurement_reverse: {
+        Args: { p_id: string; p_reason: string }
+        Returns: Json
+      }
+      project_measurement_set: {
+        Args: { p_id: string; p_patch: Json }
+        Returns: undefined
+      }
+      project_measurement_sig: {
+        Args: {
+          p_amount: number
+          p_billed: number
+          p_included: boolean
+          p_issue: string
+          p_rate: string
+          p_rate_amount: number
+          p_rev: number
+          p_secs: number
+          p_source: string
+          p_type: string
+        }
+        Returns: string
+      }
+      project_measurement_submit: {
+        Args: { p_hash: string; p_id: string }
+        Returns: undefined
+      }
+      project_measurements_list: {
+        Args: {
+          p_contract: string
+          p_limit: number
+          p_offset: number
+          p_project: string
+          p_ws: string
+        }
+        Returns: Json
+      }
+      project_package_carry_in: {
+        Args: { p_cfg: string; p_from: string }
+        Returns: Json
+      }
       project_period_close: {
         Args: {
           p_from: string
@@ -26358,6 +27255,97 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      project_profitability: {
+        Args: {
+          p_contract: string
+          p_currency: string
+          p_from: string
+          p_project: string
+          p_to: string
+          p_ws: string
+        }
+        Returns: Json
+      }
+      project_rate_assert_free: {
+        Args: {
+          p_currency: string
+          p_from: string
+          p_ignore: string
+          p_key: string
+          p_kind: string
+          p_scope: string
+          p_to: string
+          p_unit: string
+          p_ws: string
+        }
+        Returns: undefined
+      }
+      project_rate_create: {
+        Args: {
+          p_amount: number
+          p_confirm_retroactive: boolean
+          p_currency: string
+          p_from: string
+          p_kind: string
+          p_proration: string
+          p_reason: string
+          p_scope: string
+          p_target: Json
+          p_to: string
+          p_unit: string
+          p_ws: string
+        }
+        Returns: string
+      }
+      project_rate_end: {
+        Args: {
+          p_confirm_retroactive: boolean
+          p_end: string
+          p_rate: string
+          p_reason: string
+        }
+        Returns: undefined
+      }
+      project_rate_impact: {
+        Args: {
+          p_from: string
+          p_scope: string
+          p_target: Json
+          p_to: string
+          p_ws: string
+        }
+        Returns: Json
+      }
+      project_rate_key_of: {
+        Args: { r: Database["public"]["Tables"]["project_rates"]["Row"] }
+        Returns: string
+      }
+      project_rate_legacy_candidates: { Args: { p_ws: string }; Returns: Json }
+      project_rate_pick: {
+        Args: {
+          p_currency: string
+          p_date: string
+          p_kind: string
+          p_project: string
+          p_user: string
+          p_ws: string
+        }
+        Returns: Record<string, unknown>
+      }
+      project_rate_split: {
+        Args: {
+          p_amount: number
+          p_confirm_retroactive: boolean
+          p_effective: string
+          p_rate: string
+          p_reason: string
+        }
+        Returns: string
+      }
+      project_rate_target_key: {
+        Args: { p_scope: string; p_target: Json; p_ws: string }
+        Returns: string
       }
       project_recon_assert_admin: {
         Args: { p_write: boolean; p_ws: string }
@@ -27058,6 +28046,7 @@ export type Database = {
         | "project_milestone"
         | "manual"
         | "expense"
+        | "project_measurement"
       goal_metric:
         | "deals_won_count"
         | "deals_won_value"
@@ -27369,6 +28358,7 @@ export const Constants = {
         "project_milestone",
         "manual",
         "expense",
+        "project_measurement",
       ],
       goal_metric: [
         "deals_won_count",

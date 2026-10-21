@@ -1,3 +1,13 @@
+# Roadmap — TechProjects Ciclo 4 (itens 10–11)
+
+- [x] Banco: tarifas com vigência, modelo de cobrança (dono por serviço/período), medições, saldo de pacote, vínculo com o Financeiro, guardas entre mecanismos, rentabilidade (0175, correção 0176)
+- [x] Provas SQL isoladas (99 + concorrência) e regressões C1 (65) / C2 (83) / C3 (116)
+- [x] Servidor: funções de tarifas/medições/rentabilidade; geradores antigos respeitam o dono da cobrança; consolidador antigo de horas desativado
+- [x] Telas: Tarifas e custos, Medições do contrato, Medições e rentabilidade do projeto, indicadores da ficha do projeto, origem no Financeiro
+- [ ] Cadastrar tarifas, modelos de cobrança e conceder permissões do ciclo 4 (decisão do usuário; nada criado automaticamente)
+- [ ] Teste com perfil não admin real e medição real (só provado em banco isolado)
+- [ ] Publicação (aguarda aceite do usuário)
+
 # Roadmap — TechProjects Ciclo 3 (itens 7–9)
 
 - [x] Banco: política versionada, modelos por serviço, aprovadores/delegação, alocação com vigência/capacidade, apontamento por duração/segundos/fuso, cronômetro com pausas, envio/aprovação versionados, aceite manual, fechamento/reabertura, prévia Jibble sem horário (0173/0174)

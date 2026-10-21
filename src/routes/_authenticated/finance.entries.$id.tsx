@@ -180,7 +180,25 @@ function EntryDetailsPage() {
           <Row label="Categoria" value={entry.financial_categories?.name ?? "—"} />
           <Row label="Competência" value={formatDateTime(entry.competence_date).split(" ")[0]} />
           <Row label="Vencimento" value={formatDateTime(entry.due_date).split(" ")[0]} />
-          <Row label="Origem" value={entry.origin_type} />
+          <Row
+            label="Origem"
+            value={ORIGIN_LABEL[entry.origin_type as string] ?? entry.origin_type}
+          />
+          {entry.origin_type === "project_measurement" && entry.contract_id && (
+            <div className="sm:col-span-2 text-xs">
+              <Link
+                to="/contracts/$id/medicoes"
+                params={{ id: entry.contract_id }}
+                className="underline-offset-2 hover:underline"
+              >
+                Abrir as medições do contrato
+              </Link>
+              <span className="text-muted-foreground">
+                {" "}
+                · título interno: não é nota fiscal nem cobrança enviada.
+              </span>
+            </div>
+          )}
           <Row
             label="Contrato / Serviço"
             value={
@@ -344,3 +362,12 @@ function Row({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+const ORIGIN_LABEL: Record<string, string> = {
+  contract: "Contrato",
+  service: "Serviço",
+  project_milestone: "Marco de projeto",
+  project_measurement: "Medição (TechProjects)",
+  manual: "Manual",
+  expense: "Despesa",
+};

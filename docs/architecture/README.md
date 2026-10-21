@@ -14,6 +14,7 @@ desenvolvedores. Ponto de entrada: `CLAUDE.md` na raiz do repositório.
 | [frontend-conventions.md](./frontend-conventions.md) | vai criar/alterar tela, grid, kanban ou formulário         |
 | [integrations.md](./integrations.md)                 | vai mexer em IA, enriquecimento, e-mail, calendário ou MCP |
 | [workflows-automation.md](./workflows-automation.md) | vai mexer em automação, eventos ou cron                    |
+| [billing-measurements.md](./billing-measurements.md) | vai mexer em tarifas, medições, cobrança de projetos ou rentabilidade |
 | [testing-and-ops.md](./testing-and-ops.md)           | vai validar, testar ou operar o sistema                    |
 
 Documentos complementares fora deste diretório estão listados no fim de

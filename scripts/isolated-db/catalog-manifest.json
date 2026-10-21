@@ -1,49 +1,49 @@
 {
-  "generatedAt": "2026-10-10T14:05:09.294Z",
+  "generatedAt": "2026-10-21T05:20:35.615Z",
   "categories": {
     "policies": {
-      "count": 2203,
-      "sha256": "07b5066f601f6305c08c92514bcea42962fb28293da854a120003045b5ce2aac"
+      "count": 2293,
+      "sha256": "db6a9697a8ba528574fc0c8e8dd61fcd061d6cc18b15c20ebef841c64371472c"
     },
     "functions": {
-      "count": 205,
-      "sha256": "392c31c4afa91a63f1000c4f232f81cb79ef316509d2f3afdd70d51e2f5270eb"
+      "count": 413,
+      "sha256": "51de6a14d0394a3f3ef207b60798dacbdb4a3156f58b0e8c8d403e1e8346c5e0"
     },
     "columns": {
-      "count": 4822,
-      "sha256": "91040af59192b8cb30176fdd27faddb677a58cece39265684ca876be7a8555e9"
+      "count": 5666,
+      "sha256": "70abdf6a1015ee756808a7dfbfa545a80d3683b36982d9e0ad5157f6d0c94735"
     },
     "table_grants": {
-      "count": 8152,
-      "sha256": "a977e05e419738fe97e916552c51a1993ccf15b92873ecad49aab3b32bf49cec"
+      "count": 9571,
+      "sha256": "e691038f076faa53798b62fca048a918f86e3a5ed5258b32815d8b474bb512f8"
     },
     "function_grants": {
-      "count": 646,
-      "sha256": "ae67d4f09ee6ee92452776d34a3a29dee7c56b4240b457fa7f5f545d7dbb6119"
+      "count": 1112,
+      "sha256": "d954ff66b0a257a2e85f4726c789742fd18c7693a663b268fa578e251b275fb0"
     },
     "rls": {
-      "count": 348,
-      "sha256": "aba9cd77daca0408d4a337481a5243cf3e5c1968ec62e1d847c8e91c0ec8fb45"
+      "count": 407,
+      "sha256": "d5bcb40d80e1136165612b4349ea0bd4279969e7b834b7a839e29bb7dc84633d"
     },
     "triggers": {
-      "count": 526,
-      "sha256": "c7b4f890f6aab9e348e753d5d0ec7beea762c5d463e2c70b5e8810d5aa5bf5cf"
+      "count": 566,
+      "sha256": "fe86f7515167d13539c6825bb624d07d302762d5ba8b4fbda314b9077f7126ef"
     },
     "constraints": {
-      "count": 1425,
-      "sha256": "e7ca7ba9f82b7af6260566ae271ae3387c9d0ea6669efbb15b41d3ea7257823c"
+      "count": 1768,
+      "sha256": "d2c60a6f416ab879111f496d88637face09889af00436d808a2d9fb6448ce45e"
     },
     "indexes": {
-      "count": 1354,
-      "sha256": "56f0de798908193a072cf3d8436553773a6b1d77b849640cb15f2dbf11534909"
+      "count": 1523,
+      "sha256": "a90b321919bb5e6f2e9c42bc2f66ca751dc489bab3c8eb007a50e9fa15a314e1"
     },
     "views": {
       "count": 5,
       "sha256": "061cd4ae2c01d66c1271116ca4f551d786e6bc247aeba0dd5397157203cdfb1f"
     },
     "publication": {
-      "count": 27,
-      "sha256": "e7d8ce8d4ef176d8315e3be30b022e9597d453c03728b1c127ce2f3ef8b9f85b"
+      "count": 30,
+      "sha256": "82409c7c598499953d4cc0419e5189274347fad546f3f4a175aa72033fbe419d"
     }
   }
 }

@@ -48,11 +48,16 @@ function makeAdminMock(opts: {
   due: Service[];
   upsertBehavior?: "insert" | "duplicate";
   updateShouldFail?: boolean;
+  ownedIds?: string[];
 }) {
   const upsertCalls: unknown[] = [];
   const updateCalls: unknown[] = [];
 
   const client = {
+    rpc(fn: string, args: { p_service: string }) {
+      if (fn !== "project_billing_service_owned") throw new Error("unexpected rpc: " + fn);
+      return Promise.resolve({ data: (opts.ownedIds ?? []).includes(args.p_service), error: null });
+    },
     from(table: string) {
       if (table === "services") {
         // Two shapes are used against `services`:
@@ -110,6 +115,7 @@ describe("tickServicesBilling", () => {
       generated: 1,
       scanned: 1,
       skippedDuplicates: 0,
+      skippedOwned: 0,
       updateErrors: 0,
     });
     expect(upsertCalls).toHaveLength(1);
@@ -137,6 +143,21 @@ describe("tickServicesBilling", () => {
     expect(res.generated).toBe(0);
     expect(res.skippedDuplicates).toBe(1);
     expect(res.scanned).toBe(1);
+  });
+
+  it("não gera título nem avança cursor quando a cobrança do serviço pertence às Medições", async () => {
+    const svc = makeService({ id: "svc-owned" });
+    const { client, upsertCalls, updateCalls } = makeAdminMock({
+      due: [svc],
+      ownedIds: ["svc-owned"],
+    });
+
+    const res = await tickServicesBilling(client);
+
+    expect(res.generated).toBe(0);
+    expect(res.skippedOwned).toBe(1);
+    expect(upsertCalls).toHaveLength(0);
+    expect(updateCalls).toHaveLength(0);
   });
 
   it("marca status completed quando o próximo ciclo ultrapassa ends_at", async () => {
@@ -176,7 +197,13 @@ describe("tickServicesBilling", () => {
   it("retorna zeros quando não há serviços vencendo", async () => {
     const { client, upsertCalls } = makeAdminMock({ due: [] });
     const res = await tickServicesBilling(client);
-    expect(res).toEqual({ generated: 0, scanned: 0, skippedDuplicates: 0, updateErrors: 0 });
+    expect(res).toEqual({
+      generated: 0,
+      scanned: 0,
+      skippedDuplicates: 0,
+      skippedOwned: 0,
+      updateErrors: 0,
+    });
     expect(upsertCalls).toHaveLength(0);
   });
 });

@@ -66,63 +66,21 @@ export const listTimesheet = createServerFn({ method: "POST" })
     return rows ?? [];
   });
 
-// ============= BILLABLE → FINANCIAL ENTRIES (MVP) =============
-// Consolida horas billable aprovadas (approved_at not null) e sem financial_entry_id em um único
-// financial_entry por projeto (receita a receber).
+// ============= BILLABLE → FINANCIAL ENTRIES (desativado no Ciclo 4) =============
+// O antigo consolidador de horas billable gravava título sem tarifa vigente, sem trava e com
+// `origin_type='service'` apontando para o projeto, podendo cobrar em dobro junto das Medições.
+// Mantido o nome para não quebrar importações; a cobrança por hora agora é feita pelas Medições
+// (contrato → Medições), com tarifa por data do apontamento, aprovação e geração idempotente.
 
 export const generateFinancialFromBillable = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
     z.object({ projectId: z.string().uuid(), from: z.string(), to: z.string() }).parse(input),
   )
-  .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
-
-    const { data: entries, error } = await supabase
-      .from("project_time_entries")
-      .select("id, hours, hourly_rate, billable, financial_entry_id, approved_at")
-      .eq("project_id", data.projectId)
-      .gte("entry_date", data.from)
-      .lte("entry_date", data.to)
-      .eq("billable", true)
-      .is("financial_entry_id", null)
-      .not("approved_at", "is", null);
-    if (error) throw error;
-
-    const eligible = (entries ?? []).filter((e) => (e.hours ?? 0) > 0 && (e.hourly_rate ?? 0) > 0);
-    if (eligible.length === 0) return { created: 0, amount: 0 };
-
-    const amount = eligible.reduce((acc, e) => acc + (e.hours ?? 0) * (e.hourly_rate ?? 0), 0);
-
-    const { data: fin, error: finErr } = await supabase
-      .from("financial_entries")
-      .insert({
-        workspace_id: workspaceId,
-        owner_id: userId,
-        direction: "receivable",
-        status: "open",
-        amount: Number(amount.toFixed(2)),
-        competence_date: data.to,
-        due_date: data.to,
-        description: `Horas billable ${data.from} a ${data.to}`,
-        origin_type: "service",
-        origin_id: data.projectId,
-        project_id: data.projectId,
-      })
-      .select("id")
-      .single();
-    if (finErr) throw finErr;
-
-    await supabase
-      .from("project_time_entries")
-      .update({ financial_entry_id: fin.id })
-      .in(
-        "id",
-        eligible.map((e) => e.id),
-      );
-
-    return { created: 1, amount: Number(amount.toFixed(2)), financialEntryId: fin.id };
+  .handler(async (): Promise<{ created: number; amount: number; financialEntryId?: string }> => {
+    throw new Error(
+      "A cobrança de horas agora é feita pelas Medições do contrato (TechProjects › Medições e rentabilidade).",
+    );
   });
 
 // Aprovação de horas: ver src/lib/projects/time-approval.functions.ts (fluxo versionado no banco).

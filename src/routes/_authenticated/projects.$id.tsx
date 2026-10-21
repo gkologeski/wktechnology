@@ -56,6 +56,8 @@ import {
   getProjectFinancials,
 } from "@/lib/projects.functions";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
+import { getProfitability } from "@/lib/projects/billing.functions";
+import { formatMoney } from "@/lib/projects/billing.shared";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { ProjectOriginCard } from "@/components/projects/project-origin-card";
@@ -119,6 +121,11 @@ function ProjectDetailPage() {
                 Horas e aprovação
               </Link>
             </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/projects/$id/financeiro" params={{ id }}>
+                Medições e rentabilidade
+              </Link>
+            </Button>
             <Select
               value={p.status}
               onValueChange={async (v) => {
@@ -147,21 +154,9 @@ function ProjectDetailPage() {
           label="Horas apontadas"
           value={`${(financials?.loggedHours ?? 0).toFixed(1)}h`}
         />
-        <MetricTile
-          label="Custo realizado"
-          value={financials?.hasRates ? formatCurrency(financials.realizedCost) : "n/d"}
-          hint={!financials?.hasRates ? "Sem custo/hora definido" : undefined}
-        />
-        <MetricTile
-          label="Receita billable"
-          value={financials?.hasRates ? formatCurrency(financials.totalRevenue) : "n/d"}
-        />
-        <MetricTile
-          label="Margem"
-          value={financials?.hasRates ? formatCurrency(financials.margin) : "n/d"}
-          tone={
-            financials?.hasRates ? (financials.margin >= 0 ? "positive" : "negative") : undefined
-          }
+        <ProjectProfitabilityTiles
+          projectId={id}
+          currency={p.contracts?.currency ?? p.services?.currency ?? "BRL"}
         />
       </div>
 
@@ -852,5 +847,73 @@ function MembersPanel({ projectId }: { projectId: string }) {
         )}
       </div>
     </div>
+  );
+}
+
+// Custo, receita medida e margem dos últimos 3 meses pela rentabilidade do Ciclo 4 (tarifa vigente
+// por data, custo ausente = desconhecido). Sem permissão, mostra o motivo em vez de números.
+function ProjectProfitabilityTiles({
+  projectId,
+  currency,
+}: {
+  projectId: string;
+  currency: string;
+}) {
+  const fn = useServerFn(getProfitability);
+  const now = new Date();
+  const ym = (offset: number) => {
+    const x = new Date(now.getFullYear(), now.getMonth() + offset, 1, 12);
+    return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}`;
+  };
+  const q = useQuery({
+    queryKey: ["profitability", projectId, null, ym(-2), ym(0), currency, "tiles"],
+    queryFn: () => fn({ data: { projectId, fromMonth: ym(-2), toMonth: ym(0), currency } }),
+    retry: false,
+  });
+  if (q.isError) {
+    return (
+      <MetricTile label="Rentabilidade (3 meses)" value="—" hint={(q.error as Error).message} />
+    );
+  }
+  const d = q.data;
+  return (
+    <>
+      <MetricTile
+        label="Custo estimado (3 meses)"
+        value={
+          !d
+            ? "…"
+            : d.effort.total_seconds > 0 &&
+                d.effort.cost_covered_seconds === 0 &&
+                d.cost.monthly_rates === 0
+              ? "desconhecido"
+              : formatMoney(d.cost.estimated, d.currency)
+        }
+        hint={d ? `Cobertura de custo: ${d.coverage.cost_pct ?? "n/a"}%` : undefined}
+      />
+      <MetricTile
+        label="Receita medida aprovada"
+        value={d ? formatMoney(d.revenue.approved, d.currency) : "…"}
+        hint={d ? `Recebida: ${formatMoney(d.finance.received, d.currency)}` : undefined}
+      />
+      <MetricTile
+        label="Margem estimada"
+        value={
+          d
+            ? d.margin.estimated === null
+              ? "desconhecida"
+              : formatMoney(d.margin.estimated, d.currency)
+            : "…"
+        }
+        hint={d && d.margin.estimated === null ? "Falta custo para parte das horas" : undefined}
+        tone={
+          d && d.margin.estimated !== null
+            ? d.margin.estimated >= 0
+              ? "positive"
+              : "negative"
+            : undefined
+        }
+      />
+    </>
   );
 }

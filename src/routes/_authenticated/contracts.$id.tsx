@@ -251,6 +251,11 @@ function ContractDetail() {
                 <GitBranch className="h-4 w-4 mr-1" aria-hidden="true" /> Fluxo do contrato
               </Link>
             </Button>
+            <Button variant="outline" asChild>
+              <Link to="/contracts/$id/medicoes" params={{ id: contract.id }}>
+                Medições
+              </Link>
+            </Button>
             {contract.source_file_path ? (
               <Button variant="outline" onClick={() => setViewerOpen(true)}>
                 <Eye className="h-4 w-4 mr-1" /> Visualizar

@@ -26,6 +26,7 @@ export async function tickServicesBilling(
   generated: number;
   scanned: number;
   skippedDuplicates: number;
+  skippedOwned: number;
   updateErrors: number;
 }> {
   const today = new Date().toISOString().slice(0, 10);
@@ -43,6 +44,7 @@ export async function tickServicesBilling(
 
   let generated = 0;
   let skippedDuplicates = 0;
+  let skippedOwned = 0;
   let updateErrors = 0;
 
   for (const svc of due ?? []) {
@@ -50,6 +52,24 @@ export async function tickServicesBilling(
     const upcoming = next(svc.next_billing_at as string, svc.cadence as Cadence | null);
     const stops = svc.ends_at ? Boolean(upcoming && upcoming > (svc.ends_at as string)) : false;
     const competence = svc.next_billing_at as string;
+
+    // Dono da cobrança: se o serviço/competência pertence às Medições do TechProjects (Ciclo 4),
+    // o tick legado não gera título nem avança o cursor (o banco também recusa por gatilho).
+    const { data: owned, error: oErr } = await admin.rpc("project_billing_service_owned", {
+      p_service: svc.id,
+      p_date: competence,
+    });
+    if (oErr) {
+      console.error("[services-billing] ownership check failed", {
+        service_id: svc.id,
+        error: oErr.message,
+      });
+      continue;
+    }
+    if (owned) {
+      skippedOwned += 1;
+      continue;
+    }
 
     // Upsert idempotente: (service_id, competence_date) tem índice único parcial
     // para origin_type='service'. Se ticks concorrentes/retry acontecerem,
@@ -120,8 +140,9 @@ export async function tickServicesBilling(
     scanned: (due ?? []).length,
     generated,
     skippedDuplicates,
+    skippedOwned,
     updateErrors,
   });
 
-  return { generated, scanned: (due ?? []).length, skippedDuplicates, updateErrors };
+  return { generated, scanned: (due ?? []).length, skippedDuplicates, skippedOwned, updateErrors };
 }
