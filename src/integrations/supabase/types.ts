@@ -14742,6 +14742,218 @@ export type Database = {
           },
         ]
       }
+      project_alert_events: {
+        Row: {
+          actor: string | null
+          after: Json | null
+          alert_id: string
+          before: Json | null
+          created_at: string
+          id: string
+          kind: string
+          note: string | null
+          run_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          actor?: string | null
+          after?: Json | null
+          alert_id: string
+          before?: Json | null
+          created_at?: string
+          id?: string
+          kind: string
+          note?: string | null
+          run_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          actor?: string | null
+          after?: Json | null
+          alert_id?: string
+          before?: Json | null
+          created_at?: string
+          id?: string
+          kind?: string
+          note?: string | null
+          run_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_alert_events_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "project_alerts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_alert_events_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_alert_runs: {
+        Row: {
+          actor: string | null
+          counts: Json
+          evaluated_on: string
+          finished_at: string | null
+          id: string
+          started_at: string
+          trigger: string
+          tz: string
+          workspace_id: string
+        }
+        Insert: {
+          actor?: string | null
+          counts?: Json
+          evaluated_on: string
+          finished_at?: string | null
+          id?: string
+          started_at?: string
+          trigger?: string
+          tz: string
+          workspace_id: string
+        }
+        Update: {
+          actor?: string | null
+          counts?: Json
+          evaluated_on?: string
+          finished_at?: string | null
+          id?: string
+          started_at?: string
+          trigger?: string
+          tz?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_alert_runs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_alerts: {
+        Row: {
+          deal_id: string | null
+          dedupe_key: string
+          evidence: Json
+          first_detected_at: string
+          id: string
+          last_detected_at: string
+          owner_user_id: string | null
+          period_from: string | null
+          period_to: string | null
+          person_id: string | null
+          present: boolean
+          project_id: string | null
+          reopened_count: number
+          resolution: string | null
+          resolved_at: string | null
+          rule_key: string
+          rule_version: number | null
+          severity: string
+          snoozed_until: string | null
+          status: string
+          subject_user_id: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          deal_id?: string | null
+          dedupe_key: string
+          evidence?: Json
+          first_detected_at?: string
+          id?: string
+          last_detected_at?: string
+          owner_user_id?: string | null
+          period_from?: string | null
+          period_to?: string | null
+          person_id?: string | null
+          present?: boolean
+          project_id?: string | null
+          reopened_count?: number
+          resolution?: string | null
+          resolved_at?: string | null
+          rule_key: string
+          rule_version?: number | null
+          severity: string
+          snoozed_until?: string | null
+          status?: string
+          subject_user_id?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          deal_id?: string | null
+          dedupe_key?: string
+          evidence?: Json
+          first_detected_at?: string
+          id?: string
+          last_detected_at?: string
+          owner_user_id?: string | null
+          period_from?: string | null
+          period_to?: string | null
+          person_id?: string | null
+          present?: boolean
+          project_id?: string | null
+          reopened_count?: number
+          resolution?: string | null
+          resolved_at?: string | null
+          rule_key?: string
+          rule_version?: number | null
+          severity?: string
+          snoozed_until?: string | null
+          status?: string
+          subject_user_id?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_alerts_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_alerts_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_alerts_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people_total_cost"
+            referencedColumns: ["person_id"]
+          },
+          {
+            foreignKeyName: "project_alerts_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_alerts_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_billing_configs: {
         Row: {
           contract_id: string
@@ -16526,6 +16738,54 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "project_reconciliation_refreshes_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_risk_rule_versions: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          note: string
+          project_id: string | null
+          rules: Json
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          note: string
+          project_id?: string | null
+          rules: Json
+          version: number
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          note?: string
+          project_id?: string | null
+          rules?: Json
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_risk_rule_versions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_risk_rule_versions_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -26772,6 +27032,31 @@ export type Database = {
           status: string
         }[]
       }
+      project_alert_act: {
+        Args: {
+          p_action: string
+          p_alert: string
+          p_note: string
+          p_until?: string
+        }
+        Returns: Json
+      }
+      project_alert_can_act: { Args: { p_alert: string }; Returns: boolean }
+      project_alert_default_rules: { Args: never; Returns: Json }
+      project_alert_evaluate: {
+        Args: { p_actor: string; p_trigger: string; p_tz: string; p_ws: string }
+        Returns: Json
+      }
+      project_alert_refresh: { Args: { p_tz: string }; Returns: Json }
+      project_alert_rules_effective: {
+        Args: { p_project: string; p_ws: string }
+        Returns: Json
+      }
+      project_alert_scheduled_tick: {
+        Args: { p_limit?: number }
+        Returns: Json
+      }
+      project_alert_visible_ids: { Args: never; Returns: string[] }
       project_bill_assert: {
         Args: { p_key: string; p_write: boolean; p_ws: string }
         Returns: undefined
@@ -26829,6 +27114,282 @@ export type Database = {
         Args: { p_id: string; p_reason: string }
         Returns: undefined
       }
+      project_dash_capacity_base: {
+        Args: { f: Json; p_view: string }
+        Returns: {
+          allocated_scope: number
+          allocated_total: number
+          allocations_scope: number
+          contracted: number
+          expected_scope_to_date: number
+          max_load_pct: number
+          name: string
+          overbooked_days: number
+          person_id: string
+          person_status: string
+          schedule_known: boolean
+          unquantified: number
+          user_id: string
+        }[]
+      }
+      project_dash_drill: {
+        Args: {
+          p_dataset: string
+          p_filters: Json
+          p_limit?: number
+          p_metric: string
+          p_offset?: number
+          p_view: string
+        }
+        Returns: Json
+      }
+      project_dash_ds_alerts: {
+        Args: { f: Json; p_view: string }
+        Returns: {
+          deal_id: string
+          evidence: Json
+          first_detected_at: string
+          id: string
+          last_detected_at: string
+          m: string[]
+          owner_user_id: string
+          period_from: string
+          period_to: string
+          person_id: string
+          project_id: string
+          reopened_count: number
+          rule_key: string
+          severity: string
+          snoozed_until: string
+          status: string
+          subject_user_id: string
+        }[]
+      }
+      project_dash_ds_cost: {
+        Args: { f: Json }
+        Returns: {
+          cost_status: string
+          entry_date: string
+          m: string[]
+          n: number
+          project_id: string
+          secs: number
+          user_id: string
+        }[]
+      }
+      project_dash_ds_deals: {
+        Args: { f: Json }
+        Returns: {
+          after_policy: boolean
+          closed_at: string
+          company_id: string
+          contract_status: string
+          id: string
+          job_status: string
+          m: string[]
+          name: string
+          owner_id: string
+          project_count: number
+          project_status: string
+          transition_seconds: number
+          visible_project_id: string
+          visible_project_name: string
+        }[]
+      }
+      project_dash_ds_entries: {
+        Args: { f: Json; p_prev?: boolean; p_view: string }
+        Returns: {
+          billable: boolean
+          entry_date: string
+          id: string
+          k: string
+          m: string[]
+          origin: string
+          project_id: string
+          secs: number
+          user_id: string
+        }[]
+      }
+      project_dash_ds_forecast: {
+        Args: { f: Json; p_view: string }
+        Returns: {
+          alloc_week_secs: number
+          consumed_secs: number
+          cut_date: string
+          due_at: string
+          est_tasks: number
+          eta_high: string
+          eta_low: string
+          eta_mid: string
+          id: string
+          kind: string
+          m: string[]
+          method: string
+          ms_done: number
+          ms_total: number
+          name: string
+          open_tasks: number
+          planned_hours: number
+          reason: string
+          remaining_secs: number
+          status: string
+          tasks_done: number
+          tasks_total: number
+          w_p25: number
+          w_p50: number
+          w_p75: number
+          weeks_with_hours: number
+        }[]
+      }
+      project_dash_ds_measurements: {
+        Args: { f: Json }
+        Returns: {
+          company_id: string
+          contract_id: string
+          currency: string
+          id: string
+          kind: string
+          m: string[]
+          period_from: string
+          received: number
+          service_id: string
+          status: string
+          total_amount: number
+        }[]
+      }
+      project_dash_ds_milestones: {
+        Args: { f: Json; p_view: string }
+        Returns: {
+          assigned_to: string
+          due_at: string
+          id: string
+          m: string[]
+          name: string
+          project_id: string
+          status: string
+        }[]
+      }
+      project_dash_ds_people: {
+        Args: { f: Json; p_view: string }
+        Returns: {
+          allocated_scope: number
+          allocated_total: number
+          available: number
+          contracted: number
+          gap: number
+          m: string[]
+          max_load_pct: number
+          name: string
+          other_allocated: number
+          overbooked_days: number
+          person_id: string
+          person_status: string
+          registered: number
+          schedule_known: boolean
+          secs: number
+          submitted: number
+          user_id: string
+        }[]
+      }
+      project_dash_ds_projects: {
+        Args: { f: Json; p_view: string }
+        Returns: {
+          assigned_to: string
+          company_id: string
+          created_at: string
+          deal_id: string
+          due_at: string
+          id: string
+          kind: string
+          m: string[]
+          name: string
+          planned_hours: number
+          status: string
+        }[]
+      }
+      project_dash_ds_tasks: {
+        Args: { f: Json; p_view: string }
+        Returns: {
+          assignee_id: string
+          due_at: string
+          estimated_hours: number
+          id: string
+          m: string[]
+          project_id: string
+          status: string
+          title: string
+        }[]
+      }
+      project_dash_f: { Args: { p: Json }; Returns: Json }
+      project_dash_filter_options: {
+        Args: { p_kind: string; p_q: string }
+        Returns: Json
+      }
+      project_dash_full: { Args: { p_ws: string }; Returns: boolean }
+      project_dash_leader_projects: {
+        Args: { p_user: string; p_ws: string }
+        Returns: string[]
+      }
+      project_dash_my_allocations: {
+        Args: { f: Json }
+        Returns: {
+          allocation_pct: number
+          can_track_time: boolean
+          ends_at: string
+          hours_per_week: number
+          id: string
+          project_id: string
+          project_name: string
+          role_title: string
+          starts_at: string
+        }[]
+      }
+      project_dash_my_projects: { Args: { p_ws: string }; Returns: string[] }
+      project_dash_pending_approvals: {
+        Args: { p_ws: string }
+        Returns: number
+      }
+      project_dash_person_in_led: {
+        Args: { p_person: string; p_ws: string }
+        Returns: boolean
+      }
+      project_dash_person_projects: {
+        Args: { p_from: string; p_to: string; p_user: string; p_ws: string }
+        Returns: string[]
+      }
+      project_dash_project_week_alloc: {
+        Args: { p_from: string; p_project: string; p_ws: string }
+        Returns: number
+      }
+      project_dash_scope: { Args: never; Returns: Json }
+      project_dash_summary: {
+        Args: { p_filters: Json; p_view: string }
+        Returns: Json
+      }
+      project_dash_team_projects: { Args: { p_ws: string }; Returns: string[] }
+      project_dash_vis: {
+        Args: never
+        Returns: {
+          dl_own: boolean
+          dl_restricted: boolean
+          dl_team: boolean
+          dl_team_ids: string[]
+          dl_ws: boolean
+          mine: string[]
+          ms_all: boolean
+          pr_all: boolean
+          recon: boolean
+          te_full: boolean
+          te_led: string[]
+          te_pairs: string[]
+          te_perm: boolean
+          team: string[]
+          tk_all: boolean
+          uid: string
+          ws: string
+        }[]
+      }
+      project_dash_ws: { Args: never; Returns: string }
       project_dashboard_summary: {
         Args: { p_from: string; p_to: string; p_tz: string }
         Returns: Json
@@ -27416,6 +27977,11 @@ export type Database = {
         Returns: Json
       }
       project_reconciliation_refresh: { Args: { p_ws: string }; Returns: Json }
+      project_risk_rules_get: { Args: { p_project?: string }; Returns: Json }
+      project_risk_rules_save: {
+        Args: { p_note: string; p_project: string; p_rules: Json }
+        Returns: Json
+      }
       project_time_approver_revoke: {
         Args: { p_id: string; p_reason: string }
         Returns: undefined
