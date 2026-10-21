@@ -880,7 +880,15 @@ function ProjectProfitabilityTiles({
     <>
       <MetricTile
         label="Custo estimado (3 meses)"
-        value={d ? formatMoney(d.cost.estimated, d.currency) : "…"}
+        value={
+          !d
+            ? "…"
+            : d.effort.total_seconds > 0 &&
+                d.effort.cost_covered_seconds === 0 &&
+                d.cost.monthly_rates === 0
+              ? "desconhecido"
+              : formatMoney(d.cost.estimated, d.currency)
+        }
         hint={d ? `Cobertura de custo: ${d.coverage.cost_pct ?? "n/a"}%` : undefined}
       />
       <MetricTile

@@ -169,7 +169,7 @@ export function ProfitabilityPanel({
             />
             <MetricCard
               label="Custo estimado"
-              value={formatMoney(p.cost.estimated, cur)}
+              value={costLabel}
               hint={`Cobertura de custo: ${formatPct(p.coverage.cost_pct)}`}
               tone={
                 p.coverage.cost_pct !== null && p.coverage.cost_pct < 100 ? "warning" : "neutral"
@@ -214,7 +214,10 @@ export function ProfitabilityPanel({
               <div className="flex justify-between gap-3">
                 <dt className="text-muted-foreground">Custo por hora · custo mensal alocado</dt>
                 <dd className="tabular-nums">
-                  {formatMoney(p.cost.hourly, cur)} · {formatMoney(p.cost.monthly_allocated, cur)}
+                  {p.effort.cost_covered_seconds === 0 && p.effort.total_seconds > 0
+                    ? "desconhecido"
+                    : formatMoney(p.cost.hourly, cur)}{" "}
+                  · {formatMoney(p.cost.monthly_allocated, cur)}
                 </dd>
               </div>
               <div className="flex justify-between gap-3">
@@ -234,9 +237,15 @@ export function ProfitabilityPanel({
                   Margem parcial das horas com custo e preço
                 </dt>
                 <dd className="tabular-nums">
-                  {formatMoney(p.margin.partial_hours.margin, cur)} (
-                  {formatPct(p.margin.partial_hours.margin_pct)}) em{" "}
-                  {formatSeconds(p.margin.partial_hours.seconds)}
+                  {p.margin.partial_hours.seconds > 0 ? (
+                    <>
+                      {formatMoney(p.margin.partial_hours.margin, cur)} (
+                      {formatPct(p.margin.partial_hours.margin_pct)}) em{" "}
+                      {formatSeconds(p.margin.partial_hours.seconds)}
+                    </>
+                  ) : (
+                    "sem horas com custo e preço"
+                  )}
                 </dd>
               </div>
               <div className="flex justify-between gap-3">
@@ -315,7 +324,9 @@ export function ProfitabilityPanel({
                         {formatSeconds(r.covered_seconds ?? 0)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {formatMoney(r.cost_hourly, cur)}
+                        {(r.covered_seconds ?? 0) === 0
+                          ? "desconhecido"
+                          : `${formatMoney(r.cost_hourly, cur)}${(r.covered_seconds ?? 0) < r.seconds ? " (parcial)" : ""}`}
                       </TableCell>
                     </TableRow>
                   ))}
