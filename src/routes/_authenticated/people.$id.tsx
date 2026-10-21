@@ -18,6 +18,16 @@ import {
 } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
+import { PersonOptionCombobox } from "@/components/people/person-option-combobox";
+import { PersonRolePicker } from "@/components/people/person-role-picker";
+import {
+  EDUCATION_OPTIONS,
+  MARITAL_STATUS_OPTIONS,
+  RELATIONSHIP_OPTIONS,
+  SENIORITY_LABELS,
+  SHIRT_SIZE_OPTIONS,
+  nextSeniority,
+} from "@/lib/people/person-field-options";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -336,18 +346,23 @@ function PersonForm({
               </div>
               <div className="space-y-2">
                 <Label>Cargo</Label>
-                <Input
+                <PersonRolePicker
                   value={roleTitle}
                   disabled={!canWrite}
-                  onChange={(e) => setRoleTitle(e.target.value)}
+                  onChange={(name, sen) => {
+                    setRoleTitle(name);
+                    if (name) setSeniority((cur) => nextSeniority(cur, sen));
+                  }}
                 />
               </div>
               <div className="space-y-2">
                 <Label>Senioridade</Label>
-                <Input
+                <PersonOptionCombobox
+                  label="Senioridade"
                   value={seniority}
+                  options={SENIORITY_LABELS}
                   disabled={!canWrite}
-                  onChange={(e) => setSeniority(e.target.value)}
+                  onChange={setSeniority}
                 />
               </div>
               <div className="space-y-2">
@@ -398,18 +413,22 @@ function PersonForm({
               </div>
               <div className="space-y-2">
                 <Label>Escolaridade</Label>
-                <Input
+                <PersonOptionCombobox
+                  label="Escolaridade"
                   value={education}
+                  options={EDUCATION_OPTIONS}
                   disabled={!canWrite}
-                  onChange={(e) => setEducation(e.target.value)}
+                  onChange={setEducation}
                 />
               </div>
               <div className="space-y-2">
                 <Label>Camiseta</Label>
-                <Input
+                <PersonOptionCombobox
+                  label="Camiseta"
                   value={shirtSize}
+                  options={SHIRT_SIZE_OPTIONS}
                   disabled={!canWrite}
-                  onChange={(e) => setShirtSize(e.target.value)}
+                  onChange={setShirtSize}
                 />
               </div>
               <div className="space-y-2">
@@ -422,18 +441,22 @@ function PersonForm({
               </div>
               <div className="space-y-2">
                 <Label>Parentesco do telefone de recado</Label>
-                <Input
+                <PersonOptionCombobox
+                  label="Parentesco do telefone de recado"
                   value={emergencyRelationship}
+                  options={RELATIONSHIP_OPTIONS}
                   disabled={!canWrite}
-                  onChange={(e) => setEmergencyRelationship(e.target.value)}
+                  onChange={setEmergencyRelationship}
                 />
               </div>
               <div className="space-y-2">
                 <Label>Estado civil</Label>
-                <Input
+                <PersonOptionCombobox
+                  label="Estado civil"
                   value={maritalStatus}
+                  options={MARITAL_STATUS_OPTIONS}
                   disabled={!canWrite}
-                  onChange={(e) => setMaritalStatus(e.target.value)}
+                  onChange={setMaritalStatus}
                 />
               </div>
               <div className="space-y-2">

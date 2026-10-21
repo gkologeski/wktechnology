@@ -70,7 +70,9 @@ export function PersonOptionCombobox({
             <CommandGroup>
               {options.map((o) => (
                 <CommandItem key={o} value={o} onSelect={() => pick(o)}>
-                  <Check className={cn("mr-2 h-4 w-4", value === o ? "opacity-100" : "opacity-0")} />
+                  <Check
+                    className={cn("mr-2 h-4 w-4", value === o ? "opacity-100" : "opacity-0")}
+                  />
                   {o}
                 </CommandItem>
               ))}

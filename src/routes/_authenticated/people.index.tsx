@@ -1,4 +1,7 @@
 // /people — lista de pessoas (TechPeople).
+import { PersonOptionCombobox } from "@/components/people/person-option-combobox";
+import { PersonRolePicker } from "@/components/people/person-role-picker";
+import { SENIORITY_LABELS, nextSeniority } from "@/lib/people/person-field-options";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useGridFilters } from "@/hooks/use-grid-filters";
 import type { GridFilterField } from "@/lib/grid-filters";
@@ -651,15 +654,23 @@ function NewPersonDialog({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="p-role">Cargo / posição</Label>
-                <Input id="p-role" value={role} onChange={(e) => setRole(e.target.value)} />
+                <PersonRolePicker
+                  id="p-role"
+                  value={role}
+                  onChange={(name, sen) => {
+                    setRole(name);
+                    if (name) setSeniority((cur) => nextSeniority(cur, sen));
+                  }}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="p-seniority">Senioridade</Label>
-                <Input
+                <PersonOptionCombobox
                   id="p-seniority"
+                  label="Senioridade"
                   value={seniority}
-                  onChange={(e) => setSeniority(e.target.value)}
-                  placeholder="Ex: Pleno, Sênior"
+                  options={SENIORITY_LABELS}
+                  onChange={setSeniority}
                 />
               </div>
               <div className="space-y-2">
