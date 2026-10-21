@@ -50,10 +50,10 @@ manifest() { # $1 = função psql; $2 = arquivo
   # Impressão de RLS: quanto cada perfil enxerga, como ele mesmo.
   for u in 1 2 3 4 5 6 7 8; do
     local uid="10000000-0000-4000-8000-00000000000$u"
-    echo "rls_u$u $($q -tAc "begin; set local role authenticated; select set_config('request.jwt.claims','{\"sub\":\"$uid\",\"role\":\"authenticated\"}',true) \\g /dev/null
+    echo "rls_u$u $($q -tAc "begin; set local role authenticated; select set_config('request.jwt.claims','{\"sub\":\"$uid\",\"role\":\"authenticated\"}',true) ; 
       select (select count(*) from public.project_time_entries)||'/'||(select count(*) from public.projects)||'/'||(select count(*) from public.project_time_client_requests)||'/'||(select count(*) from public.financial_entries); rollback;" | tail -1)" >> "$out"
   done
-  echo "api_port_u2 $($q -tAc "begin; set local role service_role; select set_config('request.jwt.claims','{\"role\":\"service_role\"}',true) \\g /dev/null
+  echo "api_port_u2 $($q -tAc "begin; set local role service_role; select set_config('request.jwt.claims','{\"role\":\"service_role\"}',true) ; 
     select public.project_api_list_time_entries('c6200000-0000-4000-8000-000000000002','10000000-0000-4000-8000-000000000002','aaaaaaaa-0000-4000-8000-00000000000a',null,null,null,null,null,false,200,0)->>'total'; rollback;" | tail -1)" >> "$out"
 }
 src_q() { iso_psql "$@"; }
@@ -73,7 +73,7 @@ grep -qiE "password|secret_value|lvb_[0-9a-f]{20}" "$ART/roles.sql" && { echo "F
 T1=$(date +%s%N)
 rm -rf "$DST_ROOT"; mkdir -p "$DST_ROOT/data" "$DST_ROOT/sock"; chown "$ISO_OS_USER" "$DST_ROOT/data" "$DST_ROOT/sock"
 runuser -u "$ISO_OS_USER" -- env PATH="$PATH" initdb -D "$DST_ROOT/data" -U postgres -A trust --no-sync >/dev/null
-runuser -u "$ISO_OS_USER" -- env PATH="$PATH" pg_ctl -D "$DST_ROOT/data" -l "$DST_ROOT/pg.log" -w \
+runuser -u "$ISO_OS_USER" -- env PATH="$PATH" pg_ctl -D "$DST_ROOT/data" -l "$DST_ROOT/data/pg.log" -w \
   -o "-p $DST_PORT -k $DST_ROOT/sock -c listen_addresses='' -c wal_level=logical" start >/dev/null
 dst_q() { psql -X -q -h "$DST_ROOT/sock" -p "$DST_PORT" -U postgres -d postgres "$@"; }
 dst_q -f "$ART/roles.sql" > "$ART/restore-roles.log" 2>&1
@@ -89,7 +89,7 @@ manifest dst_q "$ART/manifest-after.txt"
 META_OK=$(dst_q -tAc "select string_agg(name||' '||(metadata->>'sha256'), E'\n' order by name) from storage.objects where bucket_id='iso-private'" | while read -r n h; do
   [ "$(sha256sum "$DST_STORE/iso-private/$n" | cut -d' ' -f1)" = "$h" ] && echo ok || echo bad; done | sort | uniq -c | tr '\n' ' ')
 # Fluxo depois de restaurar: API e fila continuam funcionando com as mesmas regras.
-FLOW=$(dst_q -tAc "begin; set local role authenticated; select set_config('request.jwt.claims','{\"sub\":\"10000000-0000-4000-8000-000000000002\",\"role\":\"authenticated\"}',true) \\g /dev/null
+FLOW=$(dst_q -tAc "begin; set local role authenticated; select set_config('request.jwt.claims','{\"sub\":\"10000000-0000-4000-8000-000000000002\",\"role\":\"authenticated\"}',true) ; 
   select (public.project_time_entry_sync('aaaaaaaa-0000-4000-8000-00000000000a','c6400000-0000-4000-8000-000000000001',repeat('1',64),'{}'::jsonb)->>'replay'); rollback;" 2>&1 | tail -1)
 DIFF=$(diff "$ART/manifest-before.txt" "$ART/manifest-after.txt"; diff "$ART/files-before.txt" "$ART/files-after.txt")
 runuser -u "$ISO_OS_USER" -- env PATH="$PATH" pg_ctl -D "$DST_ROOT/data" -m fast stop >/dev/null
