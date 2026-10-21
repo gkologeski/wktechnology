@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { MetricCard } from "@/components/techhire/ui";
 import { formatMinutes } from "@/lib/projects/time-entry.shared";
 
-export type WeekDay = { date: string; tracked: number; expected: number };
+export type WeekDay = { date: string; tracked: number; expected: number | null };
 
 export function MyHoursWeek({
   from,
@@ -18,26 +18,32 @@ export function MyHoursWeek({
   from: string;
   to: string;
   tracked: number;
-  expected: number;
+  /** null = jornada não configurada no People. */
+  expected: number | null;
   byDay: WeekDay[];
   onPickDay?: (date: string) => void;
 }) {
-  const pct = expected > 0 ? Math.min(100, Math.round((tracked / expected) * 100)) : 0;
-  const diff = tracked - expected;
+  const known = expected !== null;
+  const pct = known && expected > 0 ? Math.min(100, Math.round((tracked / expected) * 100)) : 0;
+  const diff = tracked - (expected ?? 0);
 
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-3">
         <MetricCard label="Total da semana" value={formatMinutes(tracked)} />
-        <MetricCard label="Meta semanal" value={formatMinutes(expected)} />
         <MetricCard
-          label={diff >= 0 ? "Excedente" : "Faltam"}
-          value={formatMinutes(Math.abs(diff))}
-          tone={diff >= 0 ? "positive" : "warning"}
+          label="Meta semanal"
+          value={known ? formatMinutes(expected) : "Não configurada"}
+          hint={known ? undefined : "Jornada não cadastrada no TechPeople"}
+        />
+        <MetricCard
+          label={!known ? "Saldo" : diff >= 0 ? "Excedente" : "Faltam"}
+          value={known ? formatMinutes(Math.abs(diff)) : "—"}
+          tone={!known ? undefined : diff >= 0 ? "positive" : "warning"}
         />
       </div>
 
-      <Progress value={pct} aria-label={`Progresso da semana: ${pct}%`} />
+      {known && <Progress value={pct} aria-label={`Progresso da semana: ${pct}%`} />}
 
       <p className="text-xs text-muted-foreground">
         Período de {formatDay(from)} a {formatDay(to)}
@@ -50,7 +56,7 @@ export function MyHoursWeek({
               <p className="text-xs capitalize text-muted-foreground">{formatWeekday(d.date)}</p>
               <p className="text-lg font-semibold tabular-nums">{formatMinutes(d.tracked)}</p>
               <p className="text-xs text-muted-foreground tabular-nums">
-                meta {formatMinutes(d.expected)}
+                {d.expected === null ? "meta não configurada" : `meta ${formatMinutes(d.expected)}`}
               </p>
               <Button
                 variant="ghost"

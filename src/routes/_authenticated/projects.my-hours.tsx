@@ -60,6 +60,17 @@ function MyHoursPage() {
         }
       />
 
+      {summary.data && !summary.data.scheduleConfigured && (
+        <p
+          className="mb-4 rounded-md border border-dashed p-3 text-sm text-muted-foreground"
+          role="status"
+        >
+          {summary.data.personLinked
+            ? "Sua jornada de trabalho não está cadastrada no TechPeople, então a meta de horas aparece como não configurada (nenhuma jornada é presumida)."
+            : "Seu login ainda não está ligado a uma pessoa do TechPeople: a meta de horas aparece como não configurada."}
+        </p>
+      )}
+
       <Tabs value={tab} onValueChange={setTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="dia">Hoje</TabsTrigger>
@@ -119,7 +130,7 @@ function MyHoursPage() {
             <MyHoursDay
               date={date}
               tracked={summary.data?.today.tracked ?? 0}
-              expected={summary.data?.today.expected ?? 0}
+              expected={summary.data?.today.expected ?? null}
             />
           )}
         </TabsContent>

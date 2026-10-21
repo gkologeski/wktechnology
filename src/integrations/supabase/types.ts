@@ -13076,6 +13076,7 @@ export type Database = {
           timezone: string | null
           trade_name: string | null
           updated_at: string
+          work_schedule: Json | null
           workspace_id: string
         }
         Insert: {
@@ -13123,6 +13124,7 @@ export type Database = {
           timezone?: string | null
           trade_name?: string | null
           updated_at?: string
+          work_schedule?: Json | null
           workspace_id: string
         }
         Update: {
@@ -13170,6 +13172,7 @@ export type Database = {
           timezone?: string | null
           trade_name?: string | null
           updated_at?: string
+          work_schedule?: Json | null
           workspace_id?: string
         }
         Relationships: [
@@ -13201,6 +13204,8 @@ export type Database = {
           allocation_pct: number
           assigned_to: string | null
           billable_rate: number | null
+          calendar: Json | null
+          can_track_time: boolean
           competencies: string[]
           contract_id: string | null
           contracting_preset_id: string | null
@@ -13208,14 +13213,18 @@ export type Database = {
           created_at: string
           currency: string
           ends_at: string | null
+          hours_per_month: number | null
+          hours_per_week: number | null
           id: string
           manager_id: string | null
           notes: string | null
+          overbook_justification: string | null
           owner_id: string
           person_id: string
           project_id: string | null
           purchase_contract_id: string | null
           role_title: string | null
+          service_id: string | null
           starts_at: string
           status: Database["public"]["Enums"]["allocation_status"]
           updated_at: string
@@ -13225,6 +13234,8 @@ export type Database = {
           allocation_pct?: number
           assigned_to?: string | null
           billable_rate?: number | null
+          calendar?: Json | null
+          can_track_time?: boolean
           competencies?: string[]
           contract_id?: string | null
           contracting_preset_id?: string | null
@@ -13232,14 +13243,18 @@ export type Database = {
           created_at?: string
           currency?: string
           ends_at?: string | null
+          hours_per_month?: number | null
+          hours_per_week?: number | null
           id?: string
           manager_id?: string | null
           notes?: string | null
+          overbook_justification?: string | null
           owner_id?: string
           person_id: string
           project_id?: string | null
           purchase_contract_id?: string | null
           role_title?: string | null
+          service_id?: string | null
           starts_at?: string
           status?: Database["public"]["Enums"]["allocation_status"]
           updated_at?: string
@@ -13249,6 +13264,8 @@ export type Database = {
           allocation_pct?: number
           assigned_to?: string | null
           billable_rate?: number | null
+          calendar?: Json | null
+          can_track_time?: boolean
           competencies?: string[]
           contract_id?: string | null
           contracting_preset_id?: string | null
@@ -13256,14 +13273,18 @@ export type Database = {
           created_at?: string
           currency?: string
           ends_at?: string | null
+          hours_per_month?: number | null
+          hours_per_week?: number | null
           id?: string
           manager_id?: string | null
           notes?: string | null
+          overbook_justification?: string | null
           owner_id?: string
           person_id?: string
           project_id?: string | null
           purchase_contract_id?: string | null
           role_title?: string | null
+          service_id?: string | null
           starts_at?: string
           status?: Database["public"]["Enums"]["allocation_status"]
           updated_at?: string
@@ -13324,6 +13345,13 @@ export type Database = {
             columns: ["purchase_contract_id"]
             isOneToOne: false
             referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "people_allocations_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
             referencedColumns: ["id"]
           },
         ]
@@ -14714,6 +14742,97 @@ export type Database = {
           },
         ]
       }
+      project_client_acceptances: {
+        Row: {
+          client_contact_id: string | null
+          client_email: string | null
+          client_name: string
+          entries_snapshot: Json
+          entry_count: number
+          evidence: string
+          evidence_reference: string | null
+          id: string
+          method: string
+          period_from: string
+          period_to: string
+          project_id: string
+          recorded_at: string
+          recorded_by: string
+          status: string
+          total_seconds: number
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
+          workspace_id: string
+        }
+        Insert: {
+          client_contact_id?: string | null
+          client_email?: string | null
+          client_name: string
+          entries_snapshot?: Json
+          entry_count?: number
+          evidence: string
+          evidence_reference?: string | null
+          id?: string
+          method?: string
+          period_from: string
+          period_to: string
+          project_id: string
+          recorded_at?: string
+          recorded_by: string
+          status: string
+          total_seconds?: number
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+          workspace_id: string
+        }
+        Update: {
+          client_contact_id?: string | null
+          client_email?: string | null
+          client_name?: string
+          entries_snapshot?: Json
+          entry_count?: number
+          evidence?: string
+          evidence_reference?: string | null
+          id?: string
+          method?: string
+          period_from?: string
+          period_to?: string
+          project_id?: string
+          recorded_at?: string
+          recorded_by?: string
+          status?: string
+          total_seconds?: number
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_client_acceptances_client_contact_id_fkey"
+            columns: ["client_contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_client_acceptances_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_client_acceptances_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_deal_links: {
         Row: {
           created_at: string
@@ -14762,6 +14881,124 @@ export type Database = {
           },
           {
             foreignKeyName: "project_deal_links_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_delivery_template_services: {
+        Row: {
+          created_at: string
+          service_catalog_id: string
+          template_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          service_catalog_id: string
+          template_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          service_catalog_id?: string
+          template_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_delivery_template_service_workspace_id_template_id_fkey"
+            columns: ["workspace_id", "template_id"]
+            isOneToOne: false
+            referencedRelation: "project_delivery_templates"
+            referencedColumns: ["workspace_id", "id"]
+          },
+          {
+            foreignKeyName: "project_delivery_template_services_service_catalog_id_fkey"
+            columns: ["service_catalog_id"]
+            isOneToOne: false
+            referencedRelation: "service_catalog"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_delivery_template_versions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          definition: Json
+          id: string
+          template_id: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          definition?: Json
+          id?: string
+          template_id: string
+          version: number
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          definition?: Json
+          id?: string
+          template_id?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_delivery_template_version_workspace_id_template_id_fkey"
+            columns: ["workspace_id", "template_id"]
+            isOneToOne: false
+            referencedRelation: "project_delivery_templates"
+            referencedColumns: ["workspace_id", "id"]
+          },
+        ]
+      }
+      project_delivery_templates: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          delivery_kind: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          delivery_kind: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          delivery_kind?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_delivery_templates_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -15236,6 +15473,7 @@ export type Database = {
           project_id: string
           sort_order: number
           status: Database["public"]["Enums"]["project_milestone_status"]
+          template_item_key: string | null
           updated_at: string
           workspace_id: string
         }
@@ -15253,6 +15491,7 @@ export type Database = {
           project_id: string
           sort_order?: number
           status?: Database["public"]["Enums"]["project_milestone_status"]
+          template_item_key?: string | null
           updated_at?: string
           workspace_id: string
         }
@@ -15270,6 +15509,7 @@ export type Database = {
           project_id?: string
           sort_order?: number
           status?: Database["public"]["Enums"]["project_milestone_status"]
+          template_item_key?: string | null
           updated_at?: string
           workspace_id?: string
         }
@@ -15358,6 +15598,90 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "project_people_groups_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_period_closings: {
+        Row: {
+          closed_at: string
+          closed_by: string
+          entries_snapshot: Json
+          entry_count: number
+          excluded_import_count: number
+          excluded_import_seconds: number
+          id: string
+          period_from: string
+          period_to: string
+          policy_version: number
+          project_id: string | null
+          reopen_reason: string | null
+          reopened_at: string | null
+          reopened_by: string | null
+          scope: string
+          status: string
+          timezone: string
+          total_seconds: number
+          user_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          closed_at?: string
+          closed_by: string
+          entries_snapshot: Json
+          entry_count: number
+          excluded_import_count?: number
+          excluded_import_seconds?: number
+          id?: string
+          period_from: string
+          period_to: string
+          policy_version?: number
+          project_id?: string | null
+          reopen_reason?: string | null
+          reopened_at?: string | null
+          reopened_by?: string | null
+          scope: string
+          status: string
+          timezone: string
+          total_seconds: number
+          user_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          closed_at?: string
+          closed_by?: string
+          entries_snapshot?: Json
+          entry_count?: number
+          excluded_import_count?: number
+          excluded_import_seconds?: number
+          id?: string
+          period_from?: string
+          period_to?: string
+          policy_version?: number
+          project_id?: string | null
+          reopen_reason?: string | null
+          reopened_at?: string | null
+          reopened_by?: string | null
+          scope?: string
+          status?: string
+          timezone?: string
+          total_seconds?: number
+          user_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_period_closings_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_period_closings_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -15757,6 +16081,7 @@ export type Database = {
           start_at: string | null
           status: Database["public"]["Enums"]["project_task_status"]
           tags: string[]
+          template_item_key: string | null
           title: string
           updated_at: string
           workspace_id: string
@@ -15780,6 +16105,7 @@ export type Database = {
           start_at?: string | null
           status?: Database["public"]["Enums"]["project_task_status"]
           tags?: string[]
+          template_item_key?: string | null
           title: string
           updated_at?: string
           workspace_id: string
@@ -15803,6 +16129,7 @@ export type Database = {
           start_at?: string | null
           status?: Database["public"]["Enums"]["project_task_status"]
           tags?: string[]
+          template_item_key?: string | null
           title?: string
           updated_at?: string
           workspace_id?: string
@@ -15852,18 +16179,97 @@ export type Database = {
           },
         ]
       }
+      project_time_approvers: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          delegate_of: string | null
+          id: string
+          project_id: string
+          reason: string | null
+          revoke_reason: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          role: string
+          subject_user_id: string | null
+          user_id: string
+          valid_from: string
+          valid_to: string | null
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          delegate_of?: string | null
+          id?: string
+          project_id: string
+          reason?: string | null
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          role: string
+          subject_user_id?: string | null
+          user_id: string
+          valid_from?: string
+          valid_to?: string | null
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          delegate_of?: string | null
+          id?: string
+          project_id?: string
+          reason?: string | null
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          role?: string
+          subject_user_id?: string | null
+          user_id?: string
+          valid_from?: string
+          valid_to?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_time_approvers_delegate_of_fkey"
+            columns: ["delegate_of"]
+            isOneToOne: false
+            referencedRelation: "project_time_approvers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_time_approvers_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_time_approvers_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_time_entries: {
         Row: {
           allocation_id: string | null
           approved_at: string | null
           approved_by: string | null
           billable: boolean
+          client_acceptance_id: string | null
           created_at: string
           created_by: string | null
           description: string | null
           duration_minutes: number | null
+          duration_seconds: number | null
           end_time: string | null
           entry_date: string | null
+          entry_kind: string | null
           external_id: string | null
           financial_entry_id: string | null
           hourly_rate: number | null
@@ -15872,18 +16278,24 @@ export type Database = {
           invoice_id: string | null
           invoiced_at: string | null
           locked_at: string | null
+          period_closing_id: string | null
           person_id: string | null
           project_id: string
           reject_reason: string | null
           rejected_at: string | null
           rejected_by: string | null
+          review_flags: string[] | null
+          revision: number
           source: string
           start_time: string | null
           started_at: string | null
           status: string
           stopped_at: string | null
+          submission_id: string | null
           submitted_at: string | null
           task_id: string | null
+          timer_session_id: string | null
+          timezone: string | null
           updated_at: string
           user_id: string
           workspace_id: string
@@ -15893,12 +16305,15 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           billable?: boolean
+          client_acceptance_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           duration_minutes?: number | null
+          duration_seconds?: number | null
           end_time?: string | null
           entry_date?: string | null
+          entry_kind?: string | null
           external_id?: string | null
           financial_entry_id?: string | null
           hourly_rate?: number | null
@@ -15907,18 +16322,24 @@ export type Database = {
           invoice_id?: string | null
           invoiced_at?: string | null
           locked_at?: string | null
+          period_closing_id?: string | null
           person_id?: string | null
           project_id: string
           reject_reason?: string | null
           rejected_at?: string | null
           rejected_by?: string | null
+          review_flags?: string[] | null
+          revision?: number
           source?: string
           start_time?: string | null
           started_at?: string | null
           status?: string
           stopped_at?: string | null
+          submission_id?: string | null
           submitted_at?: string | null
           task_id?: string | null
+          timer_session_id?: string | null
+          timezone?: string | null
           updated_at?: string
           user_id: string
           workspace_id: string
@@ -15928,12 +16349,15 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           billable?: boolean
+          client_acceptance_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           duration_minutes?: number | null
+          duration_seconds?: number | null
           end_time?: string | null
           entry_date?: string | null
+          entry_kind?: string | null
           external_id?: string | null
           financial_entry_id?: string | null
           hourly_rate?: number | null
@@ -15942,28 +16366,48 @@ export type Database = {
           invoice_id?: string | null
           invoiced_at?: string | null
           locked_at?: string | null
+          period_closing_id?: string | null
           person_id?: string | null
           project_id?: string
           reject_reason?: string | null
           rejected_at?: string | null
           rejected_by?: string | null
+          review_flags?: string[] | null
+          revision?: number
           source?: string
           start_time?: string | null
           started_at?: string | null
           status?: string
           stopped_at?: string | null
+          submission_id?: string | null
           submitted_at?: string | null
           task_id?: string | null
+          timer_session_id?: string | null
+          timezone?: string | null
           updated_at?: string
           user_id?: string
           workspace_id?: string
         }
         Relationships: [
           {
+            foreignKeyName: "project_time_entries_acceptance_fk"
+            columns: ["client_acceptance_id"]
+            isOneToOne: false
+            referencedRelation: "project_client_acceptances"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "project_time_entries_allocation_id_fkey"
             columns: ["allocation_id"]
             isOneToOne: false
             referencedRelation: "people_allocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_time_entries_closing_fk"
+            columns: ["period_closing_id"]
+            isOneToOne: false
+            referencedRelation: "project_period_closings"
             referencedColumns: ["id"]
           },
           {
@@ -15995,10 +16439,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "project_time_entries_submission_fk"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "project_timesheet_submissions"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "project_time_entries_task_id_fkey"
             columns: ["task_id"]
             isOneToOne: false
             referencedRelation: "project_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_time_entries_timer_session_id_fkey"
+            columns: ["timer_session_id"]
+            isOneToOne: false
+            referencedRelation: "project_timer_sessions"
             referencedColumns: ["id"]
           },
           {
@@ -16050,6 +16508,80 @@ export type Database = {
           },
         ]
       }
+      project_time_favorites: {
+        Row: {
+          created_at: string
+          project_id: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          project_id: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          project_id?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_time_favorites_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_time_favorites_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_time_policies: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string | null
+          rules: Json
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          rules: Json
+          version: number
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          rules?: Json
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_time_policies_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_time_tags: {
         Row: {
           archived: boolean
@@ -16081,6 +16613,322 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "project_time_tags_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_time_workflow_events: {
+        Row: {
+          action: string
+          actor: string | null
+          created_at: string
+          detail: Json
+          entity_id: string | null
+          entity_type: string
+          id: string
+          project_id: string | null
+          reason: string | null
+          subject_user_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          action: string
+          actor?: string | null
+          created_at?: string
+          detail?: Json
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          project_id?: string | null
+          reason?: string | null
+          subject_user_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          action?: string
+          actor?: string | null
+          created_at?: string
+          detail?: Json
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          project_id?: string | null
+          reason?: string | null
+          subject_user_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_time_workflow_events_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_timer_segments: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          id: string
+          kind: string
+          session_id: string
+          started_at: string
+          task_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          kind: string
+          session_id: string
+          started_at: string
+          task_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          kind?: string
+          session_id?: string
+          started_at?: string
+          task_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_timer_segments_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "project_timer_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_timer_segments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "project_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_timer_segments_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_timer_sessions: {
+        Row: {
+          billable: boolean
+          client_request_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          policy_version: number | null
+          project_id: string
+          started_at: string
+          state: string
+          stopped_at: string | null
+          task_id: string | null
+          timezone: string
+          updated_at: string
+          user_id: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          billable?: boolean
+          client_request_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          policy_version?: number | null
+          project_id: string
+          started_at?: string
+          state: string
+          stopped_at?: string | null
+          task_id?: string | null
+          timezone: string
+          updated_at?: string
+          user_id: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          billable?: boolean
+          client_request_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          policy_version?: number | null
+          project_id?: string
+          started_at?: string
+          state?: string
+          stopped_at?: string | null
+          task_id?: string | null
+          timezone?: string
+          updated_at?: string
+          user_id?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_timer_sessions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_timer_sessions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "project_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_timer_sessions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_timesheet_submission_items: {
+        Row: {
+          decided_at: string | null
+          decided_by: string | null
+          decision: string
+          duration_seconds: number
+          entry_date: string
+          entry_revision: number
+          id: string
+          project_id: string
+          reason: string | null
+          submission_id: string
+          time_entry_id: string | null
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string
+          duration_seconds: number
+          entry_date: string
+          entry_revision: number
+          id?: string
+          project_id: string
+          reason?: string | null
+          submission_id: string
+          time_entry_id?: string | null
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string
+          duration_seconds?: number
+          entry_date?: string
+          entry_revision?: number
+          id?: string
+          project_id?: string
+          reason?: string | null
+          submission_id?: string
+          time_entry_id?: string | null
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_timesheet_submission_items_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "project_timesheet_submissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_timesheet_submission_items_time_entry_id_fkey"
+            columns: ["time_entry_id"]
+            isOneToOne: false
+            referencedRelation: "project_time_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_timesheet_submission_items_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_timesheet_submissions: {
+        Row: {
+          entries_hash: string
+          entry_count: number
+          id: string
+          period_from: string
+          period_to: string
+          policy_version: number
+          status: string
+          submitted_at: string
+          submitted_by: string | null
+          timezone: string | null
+          total_seconds: number
+          updated_at: string
+          user_id: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          entries_hash: string
+          entry_count: number
+          id?: string
+          period_from: string
+          period_to: string
+          policy_version?: number
+          status: string
+          submitted_at?: string
+          submitted_by?: string | null
+          timezone?: string | null
+          total_seconds: number
+          updated_at?: string
+          user_id: string
+          version: number
+          workspace_id: string
+        }
+        Update: {
+          entries_hash?: string
+          entry_count?: number
+          id?: string
+          period_from?: string
+          period_to?: string
+          policy_version?: number
+          status?: string
+          submitted_at?: string
+          submitted_by?: string | null
+          timezone?: string | null
+          total_seconds?: number
+          updated_at?: string
+          user_id?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_timesheet_submissions_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -16156,12 +17004,16 @@ export type Database = {
       projects: {
         Row: {
           assigned_to: string | null
+          client_acceptance_required: boolean
           client_contact_id: string | null
           company_id: string | null
           contract_id: string | null
           created_at: string
           deal_id: string | null
           delivery_group_key: string | null
+          delivery_template_applied_at: string | null
+          delivery_template_applied_by: string | null
+          delivery_template_version_id: string | null
           description: string | null
           due_at: string | null
           id: string
@@ -16182,12 +17034,16 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
+          client_acceptance_required?: boolean
           client_contact_id?: string | null
           company_id?: string | null
           contract_id?: string | null
           created_at?: string
           deal_id?: string | null
           delivery_group_key?: string | null
+          delivery_template_applied_at?: string | null
+          delivery_template_applied_by?: string | null
+          delivery_template_version_id?: string | null
           description?: string | null
           due_at?: string | null
           id?: string
@@ -16208,12 +17064,16 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
+          client_acceptance_required?: boolean
           client_contact_id?: string | null
           company_id?: string | null
           contract_id?: string | null
           created_at?: string
           deal_id?: string | null
           delivery_group_key?: string | null
+          delivery_template_applied_at?: string | null
+          delivery_template_applied_by?: string | null
+          delivery_template_version_id?: string | null
           description?: string | null
           due_at?: string | null
           id?: string
@@ -16259,6 +17119,13 @@ export type Database = {
             columns: ["deal_id"]
             isOneToOne: false
             referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_delivery_template_version_id_fkey"
+            columns: ["delivery_template_version_id"]
+            isOneToOne: false
+            referencedRelation: "project_delivery_template_versions"
             referencedColumns: ["id"]
           },
           {
@@ -25204,6 +26071,15 @@ export type Database = {
           workspace_id: string
         }[]
       }
+      people_allocation_capacity: {
+        Args: {
+          p_exclude: string
+          p_from: string
+          p_person: string
+          p_to: string
+        }
+        Returns: Json
+      }
       people_document_derive_status: {
         Args: { _expires: string }
         Returns: Database["public"]["Enums"]["people_doc_status"]
@@ -25231,11 +26107,58 @@ export type Database = {
           status: string
         }[]
       }
+      project_client_acceptance_record: {
+        Args: {
+          p_client_email: string
+          p_client_name: string
+          p_contact: string
+          p_evidence: string
+          p_from: string
+          p_project: string
+          p_reference: string
+          p_status: string
+          p_to: string
+        }
+        Returns: Json
+      }
+      project_client_acceptance_void: {
+        Args: { p_id: string; p_reason: string }
+        Returns: undefined
+      }
       project_dashboard_summary: {
         Args: { p_from: string; p_to: string; p_tz: string }
         Returns: Json
       }
       project_delivery_origin: { Args: { p_project: string }; Returns: Json }
+      project_delivery_template_apply: {
+        Args: {
+          p_confirm_imported: boolean
+          p_project: string
+          p_version: string
+        }
+        Returns: Json
+      }
+      project_delivery_template_save: {
+        Args: {
+          p_active: boolean
+          p_definition: Json
+          p_description: string
+          p_kind: string
+          p_name: string
+          p_service_ids: string[]
+          p_template: string
+          p_ws: string
+        }
+        Returns: Json
+      }
+      project_delivery_template_suggest: {
+        Args: { p_project: string }
+        Returns: Json
+      }
+      project_delivery_template_validate_definition: {
+        Args: { p_def: Json }
+        Returns: undefined
+      }
       project_editable_by_current_user: {
         Args: { _project: string }
         Returns: boolean
@@ -25252,6 +26175,37 @@ export type Database = {
       project_is_link_backfill: {
         Args: { new_row: Json; old_row: Json; p_fields: string[] }
         Returns: boolean
+      }
+      project_jibble_hour_classify: {
+        Args: { p_ws: string }
+        Returns: {
+          classification: string
+          day_erp_seconds: number
+          day_hour_seconds: number
+          day_interval_seconds: number
+          entry_date: string
+          external_id: string
+          note: string
+          person_external_id: string
+          project_external_id: string
+          project_id: string
+          seconds: number
+          staging_id: string
+          user_id: string
+        }[]
+      }
+      project_jibble_hour_materialize: {
+        Args: { p_note: string; p_staging_ids: string[]; p_ws: string }
+        Returns: Json
+      }
+      project_jibble_hour_preview: {
+        Args: {
+          p_classification: string
+          p_limit: number
+          p_offset: number
+          p_ws: string
+        }
+        Returns: Json
       }
       project_link_people_overview: {
         Args: { p_ws: string }
@@ -25297,6 +26251,113 @@ export type Database = {
           p_ws: string
         }
         Returns: Json
+      }
+      project_period_close: {
+        Args: {
+          p_from: string
+          p_project: string
+          p_scope: string
+          p_to: string
+          p_tz: string
+          p_user: string
+          p_ws: string
+        }
+        Returns: Json
+      }
+      project_period_close_assert: {
+        Args: {
+          p_project: string
+          p_scope: string
+          p_user: string
+          p_ws: string
+        }
+        Returns: undefined
+      }
+      project_period_close_check: {
+        Args: {
+          p_from: string
+          p_project: string
+          p_scope: string
+          p_to: string
+          p_user: string
+          p_ws: string
+        }
+        Returns: Json
+      }
+      project_period_close_preview: {
+        Args: {
+          p_from: string
+          p_project: string
+          p_scope: string
+          p_to: string
+          p_user: string
+          p_ws: string
+        }
+        Returns: Json
+      }
+      project_period_reopen: {
+        Args: { p_closing: string; p_reason: string }
+        Returns: Json
+      }
+      project_period_scope_entries: {
+        Args: {
+          p_from: string
+          p_project: string
+          p_scope: string
+          p_to: string
+          p_user: string
+          p_ws: string
+        }
+        Returns: {
+          allocation_id: string | null
+          approved_at: string | null
+          approved_by: string | null
+          billable: boolean
+          client_acceptance_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          duration_minutes: number | null
+          duration_seconds: number | null
+          end_time: string | null
+          entry_date: string | null
+          entry_kind: string | null
+          external_id: string | null
+          financial_entry_id: string | null
+          hourly_rate: number | null
+          hours: number | null
+          id: string
+          invoice_id: string | null
+          invoiced_at: string | null
+          locked_at: string | null
+          period_closing_id: string | null
+          person_id: string | null
+          project_id: string
+          reject_reason: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          review_flags: string[] | null
+          revision: number
+          source: string
+          start_time: string | null
+          started_at: string | null
+          status: string
+          stopped_at: string | null
+          submission_id: string | null
+          submitted_at: string | null
+          task_id: string | null
+          timer_session_id: string | null
+          timezone: string | null
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "project_time_entries"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       project_recon_assert_admin: {
         Args: { p_write: boolean; p_ws: string }
@@ -25367,6 +26428,196 @@ export type Database = {
         Returns: Json
       }
       project_reconciliation_refresh: { Args: { p_ws: string }; Returns: Json }
+      project_time_approver_revoke: {
+        Args: { p_id: string; p_reason: string }
+        Returns: undefined
+      }
+      project_time_approver_row_active: {
+        Args: {
+          a: Database["public"]["Tables"]["project_time_approvers"]["Row"]
+          p_day: string
+        }
+        Returns: boolean
+      }
+      project_time_approver_set: {
+        Args: {
+          p_delegate_of: string
+          p_from: string
+          p_project: string
+          p_reason: string
+          p_role: string
+          p_subject: string
+          p_to: string
+          p_user: string
+        }
+        Returns: string
+      }
+      project_time_assert_actor: {
+        Args: { p_write: boolean; p_ws: string }
+        Returns: undefined
+      }
+      project_time_can_approve: {
+        Args: { p_actor: string; p_project: string; p_subject: string }
+        Returns: boolean
+      }
+      project_time_can_track: {
+        Args: { p_day: string; p_project: string; p_user: string }
+        Returns: boolean
+      }
+      project_time_denied: {
+        Args: { p_key: string; p_user: string; p_ws: string }
+        Returns: boolean
+      }
+      project_time_full_scope_workspaces: { Args: never; Returns: string[] }
+      project_time_has_approver: {
+        Args: { p_project: string; p_subject: string }
+        Returns: boolean
+      }
+      project_time_is_config_admin: { Args: { p_ws: string }; Returns: boolean }
+      project_time_led_scope: {
+        Args: never
+        Returns: {
+          project_id: string
+          subject_user_id: string
+        }[]
+      }
+      project_time_log: {
+        Args: {
+          p_action: string
+          p_detail: Json
+          p_id: string
+          p_project: string
+          p_reason: string
+          p_subject: string
+          p_type: string
+          p_ws: string
+        }
+        Returns: undefined
+      }
+      project_time_pending_for_me: {
+        Args: {
+          p_limit: number
+          p_offset: number
+          p_project: string
+          p_user: string
+          p_ws: string
+        }
+        Returns: Json
+      }
+      project_time_policy_defaults: { Args: never; Returns: Json }
+      project_time_policy_get: { Args: { p_ws: string }; Returns: Json }
+      project_time_policy_save: {
+        Args: { p_note: string; p_rules: Json; p_ws: string }
+        Returns: Json
+      }
+      project_time_reopen_approval: {
+        Args: { p_ids: string[]; p_reason: string; p_ws: string }
+        Returns: Json
+      }
+      project_time_schedule_valid: { Args: { p: Json }; Returns: boolean }
+      project_time_trackable_projects: { Args: { p_ws: string }; Returns: Json }
+      project_time_tz_valid: { Args: { p: string }; Returns: boolean }
+      project_timer_get: { Args: { p_ws: string }; Returns: Json }
+      project_timer_json: { Args: { p_session: string }; Returns: Json }
+      project_timer_lock: {
+        Args: { p_session: string }
+        Returns: {
+          billable: boolean
+          client_request_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          policy_version: number | null
+          project_id: string
+          started_at: string
+          state: string
+          stopped_at: string | null
+          task_id: string | null
+          timezone: string
+          updated_at: string
+          user_id: string
+          version: number
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "project_timer_sessions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      project_timer_pause: {
+        Args: { p_paid: boolean; p_session: string; p_version: number }
+        Returns: Json
+      }
+      project_timer_resume: {
+        Args: { p_session: string; p_version: number }
+        Returns: Json
+      }
+      project_timer_start: {
+        Args: {
+          p_billable: boolean
+          p_description: string
+          p_project: string
+          p_request_id: string
+          p_task: string
+          p_tz: string
+          p_ws: string
+        }
+        Returns: Json
+      }
+      project_timer_stop: {
+        Args: { p_discard: boolean; p_session: string; p_version: number }
+        Returns: Json
+      }
+      project_timer_switch: {
+        Args: { p_session: string; p_task: string; p_version: number }
+        Returns: Json
+      }
+      project_timesheet_decide: {
+        Args: {
+          p_action: string
+          p_items: Json
+          p_reason: string
+          p_ws: string
+        }
+        Returns: Json
+      }
+      project_timesheet_overview: {
+        Args: {
+          p_from: string
+          p_project: string
+          p_to: string
+          p_user: string
+        }
+        Returns: Json
+      }
+      project_timesheet_preview: {
+        Args: { p_from: string; p_to: string; p_ws: string }
+        Returns: Json
+      }
+      project_timesheet_refresh_submission: {
+        Args: { p_sub: string }
+        Returns: undefined
+      }
+      project_timesheet_scan: {
+        Args: { p_from: string; p_to: string; p_user: string; p_ws: string }
+        Returns: Json
+      }
+      project_timesheet_submit: {
+        Args: {
+          p_expected_hash: string
+          p_from: string
+          p_to: string
+          p_tz: string
+          p_ws: string
+        }
+        Returns: Json
+      }
+      project_timesheet_withdraw: {
+        Args: { p_submission: string }
+        Returns: Json
+      }
       project_visible_to_current_user: {
         Args: { _project: string }
         Returns: boolean

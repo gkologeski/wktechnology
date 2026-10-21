@@ -90,9 +90,12 @@ export const PROJECTS_SIDEBAR_GROUPS: SidebarGroup[] = [
         url: "/projects/hours-review",
         need: "manager",
         icon: CheckCheck,
+        // Líder/aprovador nomeado no projeto pode não ter papel de gestor: a fila só
+        // mostra o que ele pode decidir (validado no banco).
         permissionAny: [
           "techprojects.time_entries.approve.workspace",
           "techprojects.timesheet.approve.workspace",
+          "techprojects.time_entries.view.own",
         ],
       },
       {
@@ -133,6 +136,12 @@ export const PROJECTS_SIDEBAR_GROUPS: SidebarGroup[] = [
         url: "/projects/settings/delivery",
         need: "admin",
         icon: Handshake,
+      },
+      {
+        title: "Política de horas e modelos",
+        url: "/projects/settings/time",
+        need: "admin",
+        icon: Clock,
       },
     ],
   },

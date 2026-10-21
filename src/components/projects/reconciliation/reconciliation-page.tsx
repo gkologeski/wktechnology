@@ -6,9 +6,10 @@ import { ReconBreakdownTab } from "./recon-breakdown-tab";
 import { ReconIssuesTab } from "./recon-issues-tab";
 import { ReconLinksTab } from "./recon-links-tab";
 import { ReconDealsTab } from "./recon-deals-tab";
+import { ReconJibbleHoursTab } from "./recon-jibble-hours-tab";
 
 export type ReconSearch = {
-  tab?: "overview" | "breakdown" | "issues" | "links" | "deals";
+  tab?: "overview" | "breakdown" | "issues" | "links" | "deals" | "jibble-hours";
   from?: string;
   to?: string;
 };
@@ -35,6 +36,7 @@ export function ReconciliationPage({
           <TabsTrigger value="issues">Pendências</TabsTrigger>
           <TabsTrigger value="links">Vínculos</TabsTrigger>
           <TabsTrigger value="deals">Negócios</TabsTrigger>
+          <TabsTrigger value="jibble-hours">Horas sem horário</TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="mt-4">
           <ReconOverviewTab onOpenIssues={() => onSearch({ tab: "issues" })} />
@@ -58,6 +60,9 @@ export function ReconciliationPage({
         </TabsContent>
         <TabsContent value="deals" className="mt-4">
           <ReconDealsTab />
+        </TabsContent>
+        <TabsContent value="jibble-hours" className="mt-4">
+          <ReconJibbleHoursTab />
         </TabsContent>
       </Tabs>
     </div>

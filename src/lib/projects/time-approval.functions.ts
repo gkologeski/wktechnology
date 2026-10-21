@@ -1,123 +1,67 @@
-// TechProjects — fluxo de aprovação de horas.
-// Rascunho → Enviado → Aprovado (travado) | Rejeitado → volta a Rascunho ao editar.
+// TechProjects — fluxo de aprovação de horas (compatível com as telas que passam ids de apontamento).
+// Rascunho → Enviado (envio versionado) → Aprovado | Devolvido → editar volta a Rascunho.
+// Tudo passa pelas funções do banco: autoaprovação proibida, aprovador explícito, conflito de versão.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { cleanDbError, browserTimeZone } from "@/lib/projects/time-entry.shared";
+import type { SubmissionPreview } from "@/lib/projects/time-workflow.types";
+import { emitTimeEntryEvent, pendingItemsFor } from "@/lib/projects/time-approval.server";
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida");
 const ids = z.array(z.string().uuid()).min(1).max(500);
 
-async function emitTimeEntryEvent(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: any,
-  workspaceId: string | null,
-  eventName: string,
-  entryIds: string[],
-) {
-  if (!workspaceId) return;
-  const { emitEvent } = await import("@/lib/events.server");
-  for (const id of entryIds) {
-    try {
-      await emitEvent(supabase, {
-        ownerId: workspaceId,
-        eventName,
-        source: "techprojects",
-        entityType: "project_time_entry",
-        entityId: id,
-        payload: { time_entry_id: id },
-      });
-    } catch (err) {
-      console.error("[time-approval] evento falhou", {
-        eventName,
-        id,
-        error: (err as Error).message,
-      });
-    }
-  }
-}
-
-/** Profissional envia os apontamentos de um período para aprovação. */
+/** Profissional envia o período: prévia e envio atômico com o mesmo hash (falha se mudou). */
 export const submitTimeEntries = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z
-      .object({
-        from: isoDate.optional(),
-        to: isoDate.optional(),
-        ids: ids.optional(),
-      })
-      .refine((v) => v.ids || (v.from && v.to), {
-        message: "Informe o período ou os apontamentos.",
-      })
-      .parse(i),
+    z.object({ from: isoDate, to: isoDate, timezone: z.string().max(64).optional() }).parse(i),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const now = new Date().toISOString();
-    let q = supabase
-      .from("project_time_entries")
-      .update({ status: "submitted", submitted_at: now, rejected_at: null, reject_reason: null })
-      .eq("user_id", userId)
-      .in("status", ["draft", "rejected"]);
-    if (data.ids) q = q.in("id", data.ids);
-    else q = q.gte("entry_date", data.from!).lte("entry_date", data.to!);
-    const { data: rows, error } = await q.select("id, workspace_id");
-    if (error) throw new Error(error.message);
-    const updated = rows ?? [];
-    await emitTimeEntryEvent(
-      supabase,
-      updated[0]?.workspace_id ?? null,
-      "time_entry.updated",
-      updated.map((r) => r.id),
-    );
-    return { submitted: updated.length };
+    const ws = await resolveActiveWorkspace(userId);
+    const { data: pv, error: pErr } = await supabase.rpc("project_timesheet_preview", {
+      p_ws: ws,
+      p_from: data.from,
+      p_to: data.to,
+    });
+    if (pErr) throw new Error(cleanDbError(pErr.message));
+    const preview = pv as unknown as SubmissionPreview;
+    if (preview.blockers.length > 0)
+      throw new Error(preview.blockers.map((b) => b.message).join(" "));
+    if (preview.entry_count === 0) return { submitted: 0 };
+    const { data: row, error } = await supabase.rpc("project_timesheet_submit", {
+      p_ws: ws,
+      p_from: data.from,
+      p_to: data.to,
+      p_expected_hash: preview.hash,
+      p_tz: data.timezone ?? browserTimeZone(),
+    });
+    if (error) throw new Error(cleanDbError(error.message));
+    return { submitted: (row as unknown as { entries: number }).entries };
   });
 
-/** Gestor aprova apontamentos: marca aprovado e trava para edição. */
+/** Aprovador explícito aprova; autoaprovação e conflito de versão são recusados no banco. */
 export const approveTimeEntriesV2 = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ ids }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { data: targets, error: tErr } = await supabase
-      .from("project_time_entries")
-      .select("workspace_id, project_id")
-      .in("id", data.ids);
-    if (tErr) throw new Error(tErr.message);
-    const { assertProjectManagerFor } = await import("@/lib/projects/project-authz.server");
-    await assertProjectManagerFor(supabase, userId, targets ?? [], [
-      "techprojects.time_entries.approve.workspace",
-      "techprojects.timesheet.approve.workspace",
-      "techprojects.projects.manage.workspace",
-    ]);
-    const now = new Date().toISOString();
-    const { data: rows, error } = await supabase
-      .from("project_time_entries")
-      .update({
-        status: "approved",
-        approved_at: now,
-        approved_by: userId,
-        rejected_at: null,
-        reject_reason: null,
-        locked_at: now,
-      })
-      .in("id", data.ids)
-      .select("id, workspace_id");
-    if (error) throw new Error(error.message);
-    const updated = rows ?? [];
-    if (updated.length === 0) {
-      throw new Error("Nenhum apontamento aprovado: você não tem permissão para aprovar horas.");
-    }
-    await emitTimeEntryEvent(
-      supabase,
-      updated[0]?.workspace_id ?? null,
-      "time_entry.approved",
-      updated.map((r) => r.id),
-    );
-    return { approved: updated.length };
+    const ws = await resolveActiveWorkspace(userId);
+    const items = await pendingItemsFor(supabase, data.ids);
+    const { data: row, error } = await supabase.rpc("project_timesheet_decide", {
+      p_ws: ws,
+      p_items: items,
+      p_action: "approve",
+      p_reason: null as never,
+    });
+    if (error) throw new Error(cleanDbError(error.message));
+    await emitTimeEntryEvent(supabase, ws, "time_entry.approved", data.ids);
+    return { approved: (row as unknown as { decided: number }).decided };
   });
 
-/** Gestor rejeita apontamentos com motivo; voltam a ser editáveis. */
+/** Aprovador devolve com motivo; o profissional corrige e reenvia. */
 export const rejectTimeEntries = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
@@ -125,54 +69,33 @@ export const rejectTimeEntries = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const now = new Date().toISOString();
-    const { data: rows, error } = await supabase
-      .from("project_time_entries")
-      .update({
-        status: "rejected",
-        rejected_at: now,
-        rejected_by: userId,
-        reject_reason: data.reason,
-        approved_at: null,
-        approved_by: null,
-        locked_at: null,
-      })
-      .in("id", data.ids)
-      .select("id, workspace_id");
-    if (error) throw new Error(error.message);
-    const updated = rows ?? [];
-    if (updated.length === 0) {
-      throw new Error("Nenhum apontamento rejeitado: você não tem permissão para revisar horas.");
-    }
-    await emitTimeEntryEvent(
-      supabase,
-      updated[0]?.workspace_id ?? null,
-      "time_entry.updated",
-      updated.map((r) => r.id),
-    );
-    return { rejected: updated.length };
+    const ws = await resolveActiveWorkspace(userId);
+    const items = await pendingItemsFor(supabase, data.ids);
+    const { data: row, error } = await supabase.rpc("project_timesheet_decide", {
+      p_ws: ws,
+      p_items: items,
+      p_action: "reject",
+      p_reason: data.reason,
+    });
+    if (error) throw new Error(cleanDbError(error.message));
+    await emitTimeEntryEvent(supabase, ws, "time_entry.updated", data.ids);
+    return { rejected: (row as unknown as { decided: number }).decided };
   });
 
-/** Reabre apontamentos aprovados (desfaz a aprovação e o travamento). */
+/** Reabre aprovações (fora de competência fechada), com motivo e trilha. */
 export const reopenTimeEntries = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) => z.object({ ids }).parse(i))
+  .inputValidator((i: unknown) =>
+    z.object({ ids, reason: z.string().trim().min(5).max(500) }).parse(i),
+  )
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
-    const { data: rows, error } = await supabase
-      .from("project_time_entries")
-      .update({
-        status: "draft",
-        approved_at: null,
-        approved_by: null,
-        locked_at: null,
-        submitted_at: null,
-      })
-      .in("id", data.ids)
-      .select("id");
-    if (error) throw new Error(error.message);
-    if ((rows ?? []).length === 0) {
-      throw new Error("Nenhum apontamento reaberto: você não tem permissão.");
-    }
-    return { reopened: (rows ?? []).length };
+    const { supabase, userId } = context;
+    const ws = await resolveActiveWorkspace(userId);
+    const { data: row, error } = await supabase.rpc("project_time_reopen_approval", {
+      p_ws: ws,
+      p_ids: data.ids,
+      p_reason: data.reason,
+    });
+    if (error) throw new Error(cleanDbError(error.message));
+    return { reopened: (row as unknown as { reopened: number }).reopened };
   });

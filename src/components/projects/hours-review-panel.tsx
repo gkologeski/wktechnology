@@ -1,4 +1,6 @@
-// Visão do gestor — revisão e aprovação de horas do TechProjects.
+// Fila do aprovador: só itens enviados que o usuário pode decidir (aprovador explícito do
+// projeto/profissional, delegação vigente, deny e autoaprovação respeitados no banco).
+// Cada decisão confere a revisão do apontamento: se mudou desde a leitura, o banco recusa.
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -6,16 +8,8 @@ import { toast } from "sonner";
 
 import { MetricCard, EmptyState, RowSkeleton } from "@/components/techhire/ui";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -24,224 +18,244 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getTeamTimeOverview } from "@/lib/projects/time-metrics.functions";
-import { approveTimeEntriesV2, rejectTimeEntries } from "@/lib/projects/time-approval.functions";
 import {
-  formatMinutes,
-  TIME_ENTRY_STATUS,
-  TIME_ENTRY_STATUS_LABEL,
-  type TimeEntryStatus,
-} from "@/lib/projects/time-entry.shared";
+  decidePendingItems,
+  getTimesheetOverview,
+  listPendingApprovals,
+} from "@/lib/projects/time-workflow.functions";
+import { formatSeconds, REVIEW_FLAG_LABEL } from "@/lib/projects/time-entry.shared";
+import type { PendingItem } from "@/lib/projects/time-workflow.types";
+
+const PAGE = 50;
+const br = (iso: string) => iso.split("-").reverse().join("/");
 
 export function HoursReviewPanel({ from, to }: { from: string; to: string }) {
   const qc = useQueryClient();
-  const overviewFn = useServerFn(getTeamTimeOverview);
-  const approveFn = useServerFn(approveTimeEntriesV2);
-  const rejectFn = useServerFn(rejectTimeEntries);
+  const pendingFn = useServerFn(listPendingApprovals);
+  const overviewFn = useServerFn(getTimesheetOverview);
+  const decideFn = useServerFn(decidePendingItems);
 
-  const [status, setStatus] = useState<string>("all");
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(0);
+  const [selected, setSelected] = useState<Map<string, PendingItem>>(new Map());
   const [reason, setReason] = useState("");
 
-  const query = useQuery({
-    queryKey: ["team-time-overview", from, to, status],
-    queryFn: () =>
-      overviewFn({ data: { from, to, status: status === "all" ? undefined : status } }),
+  const pending = useQuery({
+    queryKey: ["pending-approvals", page],
+    queryFn: () => pendingFn({ data: { page, pageSize: PAGE } }),
+  });
+  const overview = useQuery({
+    queryKey: ["timesheet-overview", from, to, "review"],
+    queryFn: () => overviewFn({ data: { from, to } }),
   });
 
   const done = () => {
-    setSelected(new Set());
+    setSelected(new Map());
     setReason("");
-    void qc.invalidateQueries({ queryKey: ["team-time-overview"] });
-    void qc.invalidateQueries({ queryKey: ["time-entries"] });
+    for (const k of ["pending-approvals", "timesheet-overview", "time-entries", "timesheet"]) {
+      void qc.invalidateQueries({ queryKey: [k] });
+    }
   };
-
-  const approve = useMutation({
-    mutationFn: (ids: string[]) => approveFn({ data: { ids } }),
+  const decide = useMutation({
+    mutationFn: (action: "approve" | "reject") =>
+      decideFn({
+        data: {
+          items: Array.from(selected.values()).map((i) => ({
+            itemId: i.item_id,
+            revision: i.revision,
+          })),
+          action,
+          reason: action === "reject" ? reason.trim() : undefined,
+        },
+      }),
     onSuccess: (r) => {
-      toast.success(`${r.approved} apontamento(s) aprovado(s)`);
+      toast.success(
+        `${r.decided} apontamento(s) ${r.action === "approve" ? "aprovado(s)" : "devolvido(s)"}`,
+      );
       done();
     },
-    onError: (e: Error) => toast.error(e.message),
-  });
-  const reject = useMutation({
-    mutationFn: (ids: string[]) => rejectFn({ data: { ids, reason: reason.trim() } }),
-    onSuccess: (r) => {
-      toast.success(`${r.rejected} apontamento(s) rejeitado(s)`);
-      done();
+    onError: (e: Error) => {
+      toast.error(e.message);
+      void pending.refetch();
     },
-    onError: (e: Error) => toast.error(e.message),
   });
 
-  const entries = query.data?.entries ?? [];
-  const ids = Array.from(selected);
-
-  const toggle = (id: string) =>
+  const items = pending.data?.items ?? [];
+  const total = pending.data?.total ?? 0;
+  const toggle = (i: PendingItem) =>
     setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      const next = new Map(prev);
+      if (next.has(i.item_id)) next.delete(i.item_id);
+      else next.set(i.item_id, i);
       return next;
     });
+  const allOnPage = items.length > 0 && items.every((i) => selected.has(i.item_id));
+  const t = overview.data?.totals;
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-3">
-        <MetricCard label="Total no período" value={formatMinutes(query.data?.total ?? 0)} />
-        <MetricCard label="Profissionais" value={String(query.data?.byUser.length ?? 0)} />
-        <MetricCard label="Projetos" value={String(query.data?.byProject.length ?? 0)} />
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <MetricCard
+          label="Aguardando sua decisão"
+          value={String(total)}
+          hint={formatSeconds(pending.data?.total_seconds ?? 0)}
+        />
+        <MetricCard label="Enviado no período" value={formatSeconds(t?.submitted ?? 0)} />
+        <MetricCard
+          label="Aprovado no período"
+          value={formatSeconds(t?.approved ?? 0)}
+          tone="positive"
+        />
+        <MetricCard
+          label="Importado (histórico)"
+          value={formatSeconds(t?.locked_import ?? 0)}
+          hint="Bloqueado, não aprovado"
+        />
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="w-48" aria-label="Filtrar por situação">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas as situações</SelectItem>
-            {TIME_ENTRY_STATUS.map((s) => (
-              <SelectItem key={s} value={s}>
-                {TIME_ENTRY_STATUS_LABEL[s]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {query.isLoading ? (
+      {pending.isLoading ? (
         <div className="space-y-2">
           <RowSkeleton />
           <RowSkeleton />
           <RowSkeleton />
         </div>
-      ) : query.isError ? (
+      ) : pending.isError ? (
         <EmptyState
-          title="Não foi possível carregar as horas"
-          description="Tente novamente em instantes."
+          title="Não foi possível carregar a fila"
+          description={(pending.error as Error).message}
           action={
-            <Button variant="outline" onClick={() => void query.refetch()}>
+            <Button variant="outline" onClick={() => void pending.refetch()}>
               Tentar novamente
             </Button>
           }
         />
-      ) : entries.length === 0 ? (
+      ) : items.length === 0 ? (
         <EmptyState
-          title="Nenhum apontamento no período"
-          description="Ajuste o período ou a situação para ver resultados."
+          title="Nada aguardando sua decisão"
+          description="Aparecem aqui só os envios dos projetos e profissionais em que você é aprovador (ou delegado vigente). Você nunca aprova as próprias horas."
         />
       ) : (
-        <>
-          <div className="grid gap-3 lg:grid-cols-2">
-            <SummaryList
-              title="Por profissional"
-              rows={(query.data?.byUser ?? []).map((u) => ({ label: u.name, minutes: u.minutes }))}
-            />
-            <SummaryList
-              title="Por projeto"
-              rows={(query.data?.byProject ?? []).map((p) => ({
-                label: p.name,
-                minutes: p.minutes,
-              }))}
-            />
-          </div>
-
-          <div className="overflow-x-auto rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-10" />
-                  <TableHead>Data</TableHead>
-                  <TableHead>Projeto</TableHead>
-                  <TableHead>Atividade</TableHead>
-                  <TableHead className="text-right">Horas</TableHead>
-                  <TableHead>Situação</TableHead>
+        <div className="overflow-x-auto rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={allOnPage}
+                    aria-label="Selecionar todos da página"
+                    onCheckedChange={(v) =>
+                      setSelected((prev) => {
+                        const next = new Map(prev);
+                        for (const i of items) {
+                          if (v) next.set(i.item_id, i);
+                          else next.delete(i.item_id);
+                        }
+                        return next;
+                      })
+                    }
+                  />
+                </TableHead>
+                <TableHead>Data</TableHead>
+                <TableHead>Profissional</TableHead>
+                <TableHead>Projeto · atividade</TableHead>
+                <TableHead>Horário</TableHead>
+                <TableHead className="text-right">Duração</TableHead>
+                <TableHead>Alertas</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {items.map((i) => (
+                <TableRow key={i.item_id}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selected.has(i.item_id)}
+                      onCheckedChange={() => toggle(i)}
+                      aria-label={`Selecionar ${i.user_name} em ${br(i.entry_date)}`}
+                    />
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap tabular-nums">
+                    {br(i.entry_date)}
+                  </TableCell>
+                  <TableCell className="max-w-[160px] truncate">{i.user_name}</TableCell>
+                  <TableCell className="max-w-[260px]">
+                    <span className="block truncate">{i.project_name}</span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {i.task_title ?? "—"}
+                      {i.description ? ` · ${i.description}` : ""}
+                    </span>
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap text-sm tabular-nums">
+                    {i.start_time && i.end_time
+                      ? `${i.start_time.slice(0, 5)}–${i.end_time.slice(0, 5)}`
+                      : "sem horário"}
+                    {i.timezone && (
+                      <span className="block text-xs text-muted-foreground">{i.timezone}</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {formatSeconds(i.seconds)}
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {(i.review_flags ?? []).map((f) => REVIEW_FLAG_LABEL[f] ?? f).join(" · ") ||
+                      "—"}
+                    {!i.billable && <span className="block">Interno (não faturável)</span>}
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {entries.map((e) => (
-                  <TableRow key={e.id}>
-                    <TableCell>
-                      <Checkbox
-                        checked={selected.has(e.id)}
-                        onCheckedChange={() => toggle(e.id)}
-                        aria-label={`Selecionar apontamento de ${e.entry_date}`}
-                      />
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap tabular-nums">
-                      {(e.entry_date ?? "").split("-").reverse().join("/")}
-                    </TableCell>
-                    <TableCell className="max-w-[200px] truncate">
-                      {e.projects?.name ?? "—"}
-                    </TableCell>
-                    <TableCell className="max-w-[240px] truncate">
-                      {e.project_tasks?.title ?? e.description ?? "—"}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {formatMinutes(e.duration_minutes)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">
-                        {TIME_ENTRY_STATUS_LABEL[(e.status ?? "draft") as TimeEntryStatus]}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+              ))}
+            </TableBody>
+          </Table>
+          <div className="flex items-center justify-between gap-2 border-t p-2 text-sm">
+            <span className="text-muted-foreground">
+              {page * PAGE + 1}–{Math.min(total, (page + 1) * PAGE)} de {total}
+            </span>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={page === 0}
+                onClick={() => setPage((p) => p - 1)}
+              >
+                Anterior
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={(page + 1) * PAGE >= total}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Próxima
+              </Button>
+            </div>
           </div>
-        </>
+        </div>
       )}
 
-      {ids.length > 0 && (
+      {selected.size > 0 && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 p-3 backdrop-blur">
           <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-2">
-            <span className="text-sm">{ids.length} selecionado(s)</span>
+            <span className="text-sm">{selected.size} selecionado(s)</span>
             <Input
               className="w-full sm:w-64"
-              placeholder="Motivo da rejeição"
+              placeholder="Motivo da devolução"
               value={reason}
               onChange={(ev) => setReason(ev.target.value)}
-              aria-label="Motivo da rejeição"
+              aria-label="Motivo da devolução"
             />
             <Button
               variant="outline"
-              disabled={reason.trim().length < 3 || reject.isPending}
-              onClick={() => reject.mutate(ids)}
+              disabled={reason.trim().length < 3 || decide.isPending}
+              onClick={() => decide.mutate("reject")}
             >
-              Rejeitar
+              Devolver
             </Button>
-            <Button disabled={approve.isPending} onClick={() => approve.mutate(ids)}>
+            <Button disabled={decide.isPending} onClick={() => decide.mutate("approve")}>
               Aprovar
             </Button>
-            <Button variant="ghost" onClick={() => setSelected(new Set())}>
+            <Button variant="ghost" onClick={() => setSelected(new Map())}>
               Limpar
             </Button>
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function SummaryList({
-  title,
-  rows,
-}: {
-  title: string;
-  rows: { label: string; minutes: number }[];
-}) {
-  return (
-    <div className="rounded-md border p-3">
-      <p className="mb-2 text-sm font-medium">{title}</p>
-      <ul className="space-y-1">
-        {rows.slice(0, 8).map((r) => (
-          <li key={r.label} className="flex justify-between gap-2 text-sm">
-            <span className="truncate text-muted-foreground">{r.label}</span>
-            <span className="tabular-nums">{formatMinutes(r.minutes)}</span>
-          </li>
-        ))}
-        {rows.length === 0 && <li className="text-sm text-muted-foreground">Sem dados</li>}
-      </ul>
     </div>
   );
 }

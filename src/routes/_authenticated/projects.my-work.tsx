@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { listAllProjectTasks } from "@/lib/projects.functions";
 import { getRunningTimer, listTimesheet } from "@/lib/project-timer.functions";
+import { formatSeconds } from "@/lib/projects/time-entry.shared";
 
 export const Route = createFileRoute("/_authenticated/projects/my-work")({
   head: () => ({
@@ -40,11 +41,6 @@ function fmtHours(h: number): string {
   const hh = Math.floor(h);
   const mm = Math.round((h - hh) * 60);
   return `${hh}h${String(mm).padStart(2, "0")}`;
-}
-function fmtElapsed(startedAt: string | null | undefined): string {
-  if (!startedAt) return "0h00";
-  const diff = (Date.now() - new Date(startedAt).getTime()) / 3_600_000;
-  return fmtHours(Math.max(0, diff));
 }
 
 type Task = {
@@ -93,13 +89,7 @@ function MyWorkPage() {
     return d > todayIso && d <= toIsoDate(weekEnd);
   });
 
-  const running = timerQuery.data as
-    | (Record<string, unknown> & {
-        started_at?: string | null;
-        project_tasks?: { title?: string } | null;
-        projects?: { name?: string } | null;
-      })
-    | null;
+  const running = timerQuery.data ?? null;
 
   const weekEntries = (weekQuery.data ?? []) as Array<{
     hours: number | null;
@@ -130,11 +120,15 @@ function MyWorkPage() {
         <MetricCard
           icon={<TimerIcon className="h-4 w-4" />}
           label="Timer ativo"
-          value={running ? fmtElapsed(running.started_at) : "—"}
+          value={
+            running
+              ? `${running.state === "paused" ? "Pausado · " : ""}${formatSeconds(running.work_seconds)}`
+              : "—"
+          }
           hint={
             running
-              ? (running.project_tasks?.title ?? running.projects?.name ?? "Sem tarefa")
-              : "Nenhum timer em execução"
+              ? (running.task_title ?? running.project_name ?? "Sem tarefa")
+              : "Nenhum cronômetro em execução"
           }
         />
         <MetricCard

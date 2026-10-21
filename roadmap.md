@@ -1,3 +1,14 @@
+# Roadmap — TechProjects Ciclo 3 (itens 7–9) — em andamento
+
+- [ ] Banco: política versionada, modelos por serviço, aprovadores/delegação, alocação com vigência/capacidade, apontamento por duração/segundos/fuso, cronômetro com pausas, envio/aprovação versionados, aceite manual, fechamento/reabertura, prévia Jibble sem horário
+- [ ] Provas SQL isoladas (perfis, deny, self-approval, corrida, DST/virada, cronômetro concorrente, fechamento)
+- [ ] Servidor: funções novas e rotas antigas redirecionadas ao fluxo
+- [ ] Telas: apontamento (duração/recentes/favoritos), cronômetro (pausa/troca), Minhas Horas sem 8h presumidas, timesheet (envio/cópia com prévia), aprovação, ficha do projeto (aprovadores/aceite/fechamento/modelo), configurações (política/modelos), conciliação (horas sem horário)
+- [ ] WK: modelos dos 6 serviços ativos (sem BPO/sob medida); nada de alocação fictícia, fechamento real ou materialização Jibble automática
+- [ ] verify + build + Playwright desktop/mobile/claro/escuro; hashes antes/depois
+- [ ] Publicação (aguarda aceite do usuário)
+
+Pendências preservadas: C1 (68 sugestões, divergência Clockify 12 pessoas, 403 em 5 categorias, Jibble não reconciliado); C2 (ganho real e UI não admin não validados; não publicado).
 # Roadmap — Cargo e porte derivados (prioridade atual)
 
 - [x] Auditar fontes, gravadores, gatilhos e candidatos agregados
