@@ -27070,6 +27070,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      inbox_assign_conversation: {
+        Args: { p_assignee: string; p_channel: string; p_id: string }
+        Returns: boolean
+      }
       inbox_phone_digits: { Args: { _value: string }; Returns: string }
       increment_snippet_usage: { Args: { _id: string }; Returns: undefined }
       increment_wat_usage: { Args: { _id: string }; Returns: undefined }
