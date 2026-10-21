@@ -1,0 +1,5 @@
+## Detalhes técnicos
+- Migration aditiva (aplicada ao aceitar o rascunho): função `security definer` `inbox_assign_conversation(p_channel, p_id, p_assignee)` que exige `is_workspace_member` ativo, `NOT is_read_only_view()`, `my_perm_workspaces('techsales.inbox.<canal>.update.<escopo>')` com regras de equipe via `my_team_member_ids()`, valida o novo responsável como membro ativo e faz `UPDATE ... SET assigned_to` apenas. `GRANT EXECUTE` só para `authenticated`. RLS existente não é alterada.
+- `src/lib/whatsapp.functions.ts` (`assignWhatsAppConversation`) e `src/lib/inbox-assignment.functions.ts` (e-mail/chat) passam a chamar o RPC; resultado 0 linhas vira erro amigável.
+- Concessão para Aline (`cba8e2c2-…`) apenas na WK `184b9435-…` via override individual existente (mecanismo de overrides/pacotes locais do RBAC), sem alterar cargo, papel ou outros tenants. É uma escrita de dados real e será feita após o aceite deste plano.
+- Testes SQL isolados para os escopos e casos negativos; teste unitário do mapeamento de erro.
