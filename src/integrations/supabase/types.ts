@@ -20723,6 +20723,77 @@ export type Database = {
           },
         ]
       }
+      sdr_agent_identities: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          display_name: string
+          mirrored_from: string | null
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          display_name?: string
+          mirrored_from?: string | null
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          display_name?: string
+          mirrored_from?: string | null
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sdr_agent_identities_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sdr_agent_reassign_backup: {
+        Row: {
+          column_name: string
+          created_at: string
+          id: number
+          old_value: string | null
+          row_id: string
+          run_id: string
+          table_name: string
+          undone_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          column_name: string
+          created_at?: string
+          id?: number
+          old_value?: string | null
+          row_id: string
+          run_id: string
+          table_name: string
+          undone_at?: string | null
+          workspace_id: string
+        }
+        Update: {
+          column_name?: string
+          created_at?: string
+          id?: number
+          old_value?: string | null
+          row_id?: string
+          run_id?: string
+          table_name?: string
+          undone_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       sdr_agent_versions: {
         Row: {
           created_at: string
@@ -28613,6 +28684,14 @@ export type Database = {
         Returns: number
       }
       schedule_platform_alerts_cron: { Args: never; Returns: Json }
+      sdr_agent_reassign_history: {
+        Args: { p_apply: boolean; p_workspace: string }
+        Returns: Json
+      }
+      sdr_agent_reassign_undo: {
+        Args: { p_run: string; p_workspace: string }
+        Returns: Json
+      }
       sdr_claim_jobs: {
         Args: { p_lease_seconds: number; p_limit: number }
         Returns: {
