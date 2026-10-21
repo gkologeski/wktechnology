@@ -186,6 +186,10 @@ export function QuickTimeEntryDialog({
   };
 
   const mutation = useMutation({
+    // "always": sem isso o React Query PAUSA a gravação enquanto o aparelho está sem conexão e a
+    // envia sozinha quando a rede volta — fora da fila, sem aviso e com a janela travada.
+    // Assim, sem conexão: vai para a fila (se o usuário optou) ou falha com mensagem clara.
+    networkMode: "always",
     mutationFn: async (input: { keepOpen: boolean }) => {
       if (offlineEligible && typeof navigator !== "undefined" && navigator.onLine === false) {
         await keepOffline();
