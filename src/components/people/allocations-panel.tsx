@@ -54,9 +54,16 @@ import {
   type ContractRoleSuggestion,
 } from "@/lib/people/allocations.functions";
 import { SENIORITY_OPTIONS, SENIORITY_LABEL } from "@/lib/job-profiles-shared";
-import { listContracts, listOwnContractingPurchaseContracts } from "@/lib/contracts.functions";
+import { listContracts } from "@/lib/contracts.functions";
+import {
+  CompanySplitEditor,
+  ProjectSelect,
+  PurchaseContractSelect,
+  type SplitDraft,
+} from "@/components/people/allocation-fields";
+import { PersonRolePicker } from "@/components/people/person-role-picker";
+import { splitsError } from "@/lib/people/allocation-rules";
 
-import { listProjects } from "@/lib/projects.functions";
 import { listPeople } from "@/lib/people/people.functions";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
@@ -340,6 +347,32 @@ function AllocationDialog({
     justification: extra.overbook_justification ?? "",
   });
 
+  const [splits, setSplits] = useState<SplitDraft[]>([]);
+  const splitsFn = useServerFn(listAllocationSplits);
+  const splitsQ = useQuery({
+    queryKey: ["allocation-splits", editing?.id ?? "new"],
+    queryFn: async () => {
+      if (!editing?.id) return { available: true, splits: [] };
+      return splitsFn({ data: { allocation_id: editing.id } });
+    },
+    enabled: open,
+    staleTime: 0,
+  });
+  const [splitsLoadedFor, setSplitsLoadedFor] = useState<string | null>(null);
+  if (splitsQ.data && splitsLoadedFor !== (editing?.id ?? "new")) {
+    setSplitsLoadedFor(editing?.id ?? "new");
+    setSplits(
+      splitsQ.data.splits.map((x) => ({
+        company_id: x.company_id,
+        company_name: x.company_name,
+        pct: String(x.pct),
+      })),
+    );
+  }
+  const splitsAvailable = splitsQ.data?.available ?? true;
+  const parsedSplits = splits.map((x) => ({ company_id: x.company_id, pct: Number(x.pct) || 0 }));
+  const splitsInvalid = splits.length > 0 && splitsError(parsedSplits) !== null;
+
   const suggestFn = useServerFn(listContractRoleSuggestions);
   const { data: suggestions = [] } = useQuery({
     queryKey: ["allocation-role-suggestions", contractId],
@@ -390,6 +423,8 @@ function AllocationDialog({
           hours_per_week: capacity.hoursPerWeek ? Number(capacity.hoursPerWeek) : null,
           can_track_time: capacity.canTrackTime,
           overbook_justification: capacity.justification.trim() || null,
+          // Só envia o rateio quando o recurso existe no banco.
+          ...(splitsAvailable ? { company_splits: parsedSplits } : {}),
         },
       }),
     onSuccess: () => {
@@ -428,7 +463,14 @@ function AllocationDialog({
 
           <div className="space-y-2 md:col-span-2">
             <Label>Projeto (opcional)</Label>
-            <ProjectSelect value={projectId} onChange={setProjectId} />
+            <ProjectSelect value={projectId} onChange={setProjectId} contractId={contractId} />
+          </div>
+          <div className="md:col-span-2">
+            <CompanySplitEditor
+              value={splits}
+              onChange={setSplits}
+              unavailable={!splitsAvailable}
+            />
           </div>
           <div className="space-y-2 md:col-span-2">
             <Label>Gestor</Label>
@@ -436,11 +478,13 @@ function AllocationDialog({
           </div>
           <div className="space-y-2 md:col-span-2">
             <Label htmlFor="alloc-role-title">Cargo/Função na alocação</Label>
-            <Input
+            <PersonRolePicker
               id="alloc-role-title"
               value={roleTitle}
-              onChange={(e) => setRoleTitle(e.target.value)}
-              placeholder="Ex.: Desenvolvedor Sênior"
+              onChange={(name, sen) => {
+                setRoleTitle(name);
+                if (sen && !seniority) setSeniority(sen);
+              }}
             />
             {usable.length > 0 ? (
               <div className="rounded-md border bg-muted/40 p-2.5">
@@ -621,7 +665,10 @@ function ContractSelect({
     title: string;
     metadata?: Record<string, unknown> | null;
   };
-  const items = rows as ContractOption[];
+  // Aditivos não entram na alocação (o servidor também recusa).
+  const items = (rows as Array<ContractOption & { document_kind?: string | null }>).filter(
+    (c) => c.document_kind !== "amendment",
+  );
   const label = (c: { number: string | null; title: string }) =>
     `${c.number ? `${c.number} · ` : ""}${c.title}`;
   const matchInput = (c: ContractOption) => {
@@ -704,74 +751,6 @@ function ContractSelect({
         </Command>
       </PopoverContent>
     </Popover>
-  );
-}
-
-function PurchaseContractSelect({
-  value,
-  onChange,
-}: {
-  value: string | null;
-  onChange: (v: string | null) => void;
-}) {
-  const listFn = useServerFn(listOwnContractingPurchaseContracts);
-  const { data: rows = [], isLoading } = useQuery({
-    queryKey: ["allocations-purchase-contracts"],
-    queryFn: () => listFn({ data: {} }),
-    staleTime: 60_000,
-  });
-  const items = rows as Array<{
-    id: string;
-    number: string | null;
-    title: string;
-    company_name: string | null;
-  }>;
-  return (
-    <Select value={value ?? "__none"} onValueChange={(v) => onChange(v === "__none" ? null : v)}>
-      <SelectTrigger>
-        <SelectValue placeholder={isLoading ? "Carregando…" : "Selecionar contrato de compra…"} />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="__none">Sem contrato de compra</SelectItem>
-        {items.map((c) => (
-          <SelectItem key={c.id} value={c.id}>
-            {c.number ? `${c.number} · ` : ""}
-            {c.title}
-            {c.company_name ? ` — ${c.company_name}` : ""}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
-
-function ProjectSelect({
-  value,
-  onChange,
-}: {
-  value: string | null;
-  onChange: (v: string | null) => void;
-}) {
-  const listFn = useServerFn(listProjects);
-  const { data: rows = [] } = useQuery({
-    queryKey: ["allocations-projects"],
-    queryFn: () => listFn({ data: {} }),
-    staleTime: 60_000,
-  });
-  return (
-    <Select value={value ?? "__none"} onValueChange={(v) => onChange(v === "__none" ? null : v)}>
-      <SelectTrigger>
-        <SelectValue placeholder="Selecionar projeto…" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="__none">Sem projeto</SelectItem>
-        {(rows as Array<{ id: string; name: string }>).map((p) => (
-          <SelectItem key={p.id} value={p.id}>
-            {p.name}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
   );
 }
 
