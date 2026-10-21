@@ -172,6 +172,8 @@ export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
   "/projects/settings/imports/jibble": ["system.import"],
   "/projects/settings/imports/reconciliation": ["system.import"],
   "/projects/settings/delivery": ["techprojects.projects"],
+  // Leitura de agendamentos/filas; a tela e a função exigem administrador ativo do workspace.
+  "/projects/settings/operations": ["system.automation"],
   "/projects/settings/time": ["techprojects.time_entries", "techprojects.timesheet"],
   "/projects/settings/rates": ["techprojects.rates"],
 

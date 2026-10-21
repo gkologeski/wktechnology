@@ -177,7 +177,9 @@ function PersonForm({
   const [email, setEmail] = useState(p.email ?? "");
   const [phone, setPhone] = useState(p.phone ?? "");
   const [roleTitle, setRoleTitle] = useState(p.role_title ?? "");
-  const [seniority, setSeniority] = useState(seniorityLabelFromProfile(p.seniority) ?? p.seniority ?? "");
+  const [seniority, setSeniority] = useState(
+    seniorityLabelFromProfile(p.seniority) ?? p.seniority ?? "",
+  );
   const [location, setLocation] = useState(p.location ?? "");
   const [status, setStatus] = useState<PeopleStatus>(p.status);
   const [employment, setEmployment] = useState<PeopleEmploymentType>(p.employment_type);

@@ -14,6 +14,7 @@ import { MyHoursDay } from "@/components/projects/my-hours-day";
 import { MyHoursWeek } from "@/components/projects/my-hours-week";
 import { MyHoursCalendar } from "@/components/projects/my-hours-calendar";
 import { QuickTimeEntryDialog } from "@/components/projects/quick-time-entry-dialog";
+import { OfflineTimeQueuePanel } from "@/components/projects/offline-time-queue-panel";
 
 export const Route = createFileRoute("/_authenticated/projects/my-hours")({
   head: () => ({
@@ -70,6 +71,10 @@ function MyHoursPage() {
             : "Seu login ainda não está ligado a uma pessoa do TechPeople: a meta de horas aparece como não configurada."}
         </p>
       )}
+
+      <div className="mb-4">
+        <OfflineTimeQueuePanel />
+      </div>
 
       <Tabs value={tab} onValueChange={setTab} className="space-y-4">
         <TabsList>

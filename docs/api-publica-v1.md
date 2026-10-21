@@ -546,3 +546,47 @@ curl -s -X POST "$BASE_URL/api/public/v1/deals" \
 
 A família `api/public/v1/ats/*` (vagas, candidaturas, contratação) segue o mesmo
 modelo de autenticação por API key e isolamento por workspace.
+
+## 11. TechProjects — projetos, tarefas e apontamentos (v1.6, ciclo 6)
+
+Contrato completo (OpenAPI 3.1): `GET /api/public/v1/openapi.json`.
+
+**Quem vê o quê.** A chave age como o **dono da chave**: mesmas permissões, negações, membership
+ativo e escopo de líder/aprovador da tela. Dono inativo → `403`; chave revogada/vencida → `401`. O
+workspace é o da chave (não o workspace ativo no perfil). Custos, tarifas e títulos financeiros
+nunca são devolvidos.
+
+| Método | Caminho | Escopo | Observação |
+| ------ | ------- | ------ | ---------- |
+| GET | `/projects?status=&q=&limit=&offset=` | read | `can_track` indica se o dono pode apontar hoje |
+| GET | `/project-tasks?project_id=&status=&q=` | read | |
+| GET | `/time-entries?project_id=&user_id=&status=&from=&to=&order=` | read | só o que o dono enxerga |
+| POST | `/time-entries` | write | cria **rascunho** do dono (envio/aprovação só pela tela) |
+
+**Criação (POST).** Exige `Idempotency-Key` (8–200 caracteres) ou `external_id`. Mesmo conteúdo com
+a mesma chave → `200` + `Idempotent-Replayed: true` (mesmo registro); conteúdo diferente → `409
+idempotency_conflict`. Chaves valem 7 dias. Campos: `project_id`, `task_id` (obrigatórios),
+`entry_date`, `start_time`+`end_time` **ou** `duration_seconds` (60–86400), `timezone`,
+`description`, `billable`. `status`, `user_id` ou custos no corpo → `400`. Regras do fluxo de horas
+valem igual à tela: vínculo/alocação vigente (`403`), sobreposição (`409 overlap`), competência
+fechada (`409 period_closed`), atividade de outro projeto (`404`).
+
+**Limite.** 120 requisições por minuto por chave (`X-RateLimit-Limit/Remaining/Reset`; `429` com
+`Retry-After`). Toda resposta traz `X-Request-Id` para suporte.
+
+**Mudança de contrato:** o POST de apontamentos agora exige `task_id` e chave de idempotência e
+grava como o dono da chave com as validações do fluxo (antes gravava sem essas guardas; não havia
+apontamentos criados pela API no workspace WK).
+
+```bash
+curl -X POST "$BASE/time-entries" \
+  -H "Authorization: Bearer $API_KEY" -H "Content-Type: application/json" \
+  -H "Idempotency-Key: integracao-exemplo-0001" \
+  -d '{"project_id":"00000000-0000-4000-8000-000000000001","task_id":"00000000-0000-4000-8000-000000000002","entry_date":"2026-03-04","start_time":"09:00:00","end_time":"10:30:15","timezone":"America/Sao_Paulo"}'
+```
+
+**Webhook `project.time_entry.created`** (opcional, cadastrado por administrador em Webhooks):
+carga mínima `{entry_id, project_id, task_id, user_id, entry_date, duration_seconds, status, source}`.
+Cabeçalhos: `X-TechERP-Event-Id` (deduplicar), `X-TechERP-Timestamp` e
+`X-TechERP-Signature: t=<unix>,v1=<hex>` = HMAC-SHA256(segredo, `"<t>.<corpo>"`); recuse carimbos
+com mais de 5 minutos. Destino só HTTPS público; redirecionamentos não são seguidos.

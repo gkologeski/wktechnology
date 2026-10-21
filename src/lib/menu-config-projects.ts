@@ -13,6 +13,7 @@ import {
   Download,
   ShieldCheck,
   Handshake,
+  Activity,
 } from "lucide-react";
 import type { SidebarGroup } from "@/lib/menu-config";
 
@@ -149,6 +150,12 @@ export const PROJECTS_SIDEBAR_GROUPS: SidebarGroup[] = [
         url: "/projects/settings/rates",
         need: "admin",
         icon: Coins,
+      },
+      {
+        title: "Operação e saúde",
+        url: "/projects/settings/operations",
+        need: "admin",
+        icon: Activity,
       },
     ],
   },

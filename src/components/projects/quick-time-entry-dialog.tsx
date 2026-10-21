@@ -37,6 +37,8 @@ import {
   saveTimeEntry,
 } from "@/lib/projects/time-tracking.functions";
 import { toggleFavoriteProject } from "@/lib/projects/time-workflow.functions";
+import { useOfflineTimeQueue } from "@/hooks/use-offline-time-queue";
+import { classifyError, type OfflinePayload } from "@/lib/projects/offline-queue";
 import {
   browserTimeZone,
   durationMinutes,
@@ -78,6 +80,7 @@ export function QuickTimeEntryDialog({
   const tasksFn = useServerFn(listTrackableTasks);
   const saveFn = useServerFn(saveTimeEntry);
   const favFn = useServerFn(toggleFavoriteProject);
+  const offline = useOfflineTimeQueue();
 
   const [projectId, setProjectId] = useState<string>("");
   const [taskId, setTaskId] = useState<string>("");
@@ -153,9 +156,46 @@ export function QuickTimeEntryDialog({
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // Fila offline (opt-in): só apontamento NOVO com atividade já existente; nada é dado como salvo
+  // antes da confirmação do servidor.
+  const offlineEligible = !draft?.id && !!taskId && offline.optIn && offline.ready;
+  const offlinePayload = (): OfflinePayload => ({
+    project_id: projectId,
+    task_id: taskId,
+    entry_date: entryDate,
+    mode,
+    ...(mode === "interval"
+      ? {
+          start_time: startTime.length === 5 ? `${startTime}:00` : startTime,
+          end_time: endTime.length === 5 ? `${endTime}:00` : endTime,
+        }
+      : { duration_seconds: durationSeconds ?? undefined }),
+    timezone,
+    ...(description.trim() ? { description: description.trim() } : {}),
+    billable,
+  });
+  const keepOffline = async () => {
+    const proj = projects.find((p) => p.id === projectId)?.name ?? "Projeto";
+    const task = tasks.find((t) => t.id === taskId)?.title ?? "Atividade";
+    await offline.enqueueEntry(offlinePayload(), `${proj} · ${task}`);
+    toast.warning("Sem conexão: guardado neste aparelho", {
+      description:
+        "Ainda NÃO foi enviado. Será enviado e conferido pelo servidor quando a conexão voltar (veja em Minhas Horas).",
+    });
+    onOpenChange(false);
+  };
+
   const mutation = useMutation({
-    mutationFn: (input: { keepOpen: boolean }) =>
-      saveFn({
+    // "always": sem isso o React Query PAUSA a gravação enquanto o aparelho está sem conexão e a
+    // envia sozinha quando a rede volta — fora da fila, sem aviso e com a janela travada.
+    // Assim, sem conexão: vai para a fila (se o usuário optou) ou falha com mensagem clara.
+    networkMode: "always",
+    mutationFn: async (input: { keepOpen: boolean }) => {
+      if (offlineEligible && typeof navigator !== "undefined" && navigator.onLine === false) {
+        await keepOffline();
+        return { res: null, keepOpen: false, offline: true as const };
+      }
+      return saveFn({
         data: {
           id: draft?.id,
           projectId,
@@ -170,8 +210,10 @@ export function QuickTimeEntryDialog({
           description: description.trim() || null,
           billable,
         },
-      }).then((res) => ({ res, keepOpen: input.keepOpen })),
-    onSuccess: ({ keepOpen, res }) => {
+      }).then((res) => ({ res, keepOpen: input.keepOpen, offline: false as const }));
+    },
+    onSuccess: ({ keepOpen, res, offline: wasOffline }) => {
+      if (wasOffline || !res) return;
       const flags = (res.entry as { review_flags?: string[] | null }).review_flags ?? [];
       toast.success(draft?.id ? "Apontamento atualizado" : "Horas apontadas", {
         description: flags.includes("daily_excess")
@@ -200,7 +242,24 @@ export function QuickTimeEntryDialog({
         onOpenChange(false);
       }
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: async (err: Error) => {
+      if (!draft?.id && offline.optIn && classifyError(err).kind === "retry") {
+        if (!taskId) {
+          toast.error("Sem conexão", {
+            description:
+              "Para guardar no aparelho, escolha uma atividade já existente (nova atividade exige conexão).",
+          });
+          return;
+        }
+        try {
+          await keepOffline();
+        } catch (e) {
+          toast.error((e as Error).message);
+        }
+        return;
+      }
+      toast.error(err.message);
+    },
   });
 
   const timeInvalid =
@@ -416,6 +475,21 @@ export function QuickTimeEntryDialog({
               <Switch id="tt-billable" checked={billable} onCheckedChange={setBillable} />
               <Label htmlFor="tt-billable">Faturável</Label>
             </div>
+            {!draft?.id && offline.supported && offline.ready && (
+              <div className="flex items-start gap-2 rounded-md border border-dashed p-2">
+                <Switch
+                  id="tt-offline"
+                  checked={offline.optIn}
+                  onCheckedChange={offline.setOptIn}
+                />
+                <div className="grid gap-0.5">
+                  <Label htmlFor="tt-offline">Guardar neste aparelho se a conexão cair</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Só para atividade existente. Fica pendente até o servidor confirmar.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
