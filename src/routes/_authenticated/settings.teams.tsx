@@ -94,6 +94,7 @@ import { useEntitlements } from "@/lib/use-entitlements";
 import { ENT, PLAN_LABELS } from "@/lib/entitlements";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { UnlinkedAccountsCard } from "@/components/teams/unlinked-accounts-card";
+import { DeactivateMemberDialog } from "@/components/teams/deactivate-member-dialog";
 
 export const Route = createFileRoute("/_authenticated/settings/teams")({
   component: UsersPage,
@@ -144,6 +145,7 @@ function UsersPage() {
   const removeFn = useServerFn(removeTeamMember);
   const setStatusFn = useServerFn(setWorkspaceMemberStatus);
   const [statusBusy, setStatusBusy] = useState<string | null>(null);
+  const [toDeactivate, setToDeactivate] = useState<(typeof rows)[number] | null>(null);
   const listRolesFn = useServerFn(listWorkspaceJobRoles);
   const listSetsFn = useServerFn(listWorkspacePermissionSets);
   const setMemberRolesFn = useServerFn(setMemberJobRoles);
@@ -410,6 +412,10 @@ function UsersPage() {
 
   const toggleStatus = async (r: { user_id: string; status: "active" | "inactive" }) => {
     const next = r.status === "inactive" ? "active" : "inactive";
+    if (next === "inactive") {
+      setToDeactivate(r as (typeof rows)[number]);
+      return;
+    }
     setStatusBusy(r.user_id);
     try {
       await setStatusFn({ data: { userId: r.user_id, status: next } });
@@ -995,6 +1001,13 @@ function UsersPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <DeactivateMemberDialog
+        member={toDeactivate}
+        candidates={rows}
+        onClose={() => setToDeactivate(null)}
+        onDone={refresh}
+      />
 
       {/* Remove confirm with impact + reassign */}
       <AlertDialog open={!!toRemove} onOpenChange={(o) => !o && !removing && setToRemove(null)}>

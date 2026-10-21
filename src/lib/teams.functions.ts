@@ -896,3 +896,71 @@ export const setMemberJobRoles = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+const TransferScopeSchema = z.object({
+  openDeals: z.boolean(),
+  closedDeals: z.boolean(),
+  leads: z.boolean(),
+  contactsCompanies: z.boolean(),
+  pendingActivities: z.boolean(),
+  openConversations: z.boolean(),
+});
+
+/** Inventário da carteira de um membro antes da desativação. */
+export const getMemberDeactivationInventory = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ member_user_id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const workspace = await resolveActiveWorkspace(context.userId);
+    await assertCanManageWorkspace(workspace.id, context.userId);
+    await assertTargetMember(workspace.id, data.member_user_id);
+    const { getDeactivationInventory } = await import("@/lib/teams/deactivation.server");
+    return getDeactivationInventory(workspace.id, data.member_user_id);
+  });
+
+/** Transfere a carteira selecionada e desativa o membro (preserva histórico e nome). */
+export const deactivateMemberWithTransfer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        member_user_id: z.string().uuid(),
+        reassign_to: z.string().uuid().nullable(),
+        scope: TransferScopeSchema,
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    if (data.member_user_id === userId) throw new Error("Você não pode desativar a si mesmo.");
+    const { data: ro } = await (context.supabase as any).rpc("is_read_only_view");
+    if (ro === true) throw new Error("Ação indisponível no modo Ver como.");
+    const workspace = await resolveActiveWorkspace(userId);
+    await assertCanManageWorkspace(workspace.id, userId);
+    await assertTargetMember(workspace.id, data.member_user_id);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    let transferred: Record<string, number> = {};
+    if (data.reassign_to) {
+      if (data.reassign_to === data.member_user_id)
+        throw new Error("Escolha um responsável diferente.");
+      const { data: target } = await supabaseAdmin
+        .from("workspace_members")
+        .select("status")
+        .eq("workspace_id", workspace.id)
+        .eq("user_id", data.reassign_to)
+        .maybeSingle();
+      if (!target || (target as { status?: string }).status === "inactive")
+        throw new Error("O novo responsável precisa ser um membro ativo do workspace.");
+      const { transferPortfolio } = await import("@/lib/teams/deactivation.server");
+      transferred = await transferPortfolio(
+        workspace.id,
+        data.member_user_id,
+        data.reassign_to,
+        data.scope,
+      );
+    }
+    const { setMemberStatus } = await import("@/lib/integrations/hubspot-owner-provision.server");
+    await setMemberStatus(workspace.id, data.member_user_id, "inactive");
+    return { ok: true, transferred };
+  });
