@@ -4,11 +4,15 @@
 - [x] Provas: SQL isolada C6 + concorrência; HTTP com GoTrue/PostgREST reais; regressões C1–C5
 - [x] Servidor: rotas v1 (projetos, tarefas, apontamentos, OpenAPI), saúde/prontidão, webhooks com guarda SSRF/assinatura/sem redirecionamento, assistente somente leitura
 - [x] Telas: fila offline (Minhas Horas + janela de apontamento), assistente no painel, Operação e saúde
-- [ ] Fluxo integrado não admin (negócio→…→painel) em banco isolado
-- [ ] Desempenho: 1 milhão de apontamentos / 100 sessões em banco isolado
-- [ ] Ensaio de backup/restauração em banco descartável + runbook
-- [ ] Playwright (claro/escuro/celular/teclado/offline), verify e build completos
-- [ ] Documentação, AGENTS e relatório unificado C1–C6
+- [x] Fluxo integrado não admin (negócio→…→painel) em banco isolado
+- [x] Desempenho: 1 milhão de apontamentos / 100 sessões em banco isolado (0180/0181); visão de equipe sob carga mista ainda acima da meta
+- [x] Ensaio de backup/restauração em banco descartável + runbook
+- [x] Playwright (claro/escuro/celular/teclado/offline), verify e build completos
+- [x] Documentação, AGENTS e relatório unificado C1–C6
+- [ ] Visão "Equipe" do admin com 1 milhão de apontamentos e 100 sessões mistas: p95 ~9,8 s (meta 2 s) — precisa de consumo por projeto pré-calculado (decisão de arquitetura)
+- [ ] Teste no navegador com usuário comum real e chave de API real (só provado em banco isolado; nenhuma conta/chave real criada)
+- [ ] Backup gerenciado: conferir no painel o horário do último backup; PITR/RPO 1 h/RTO 4 h/99,9% exigem plano e monitor externo (não contratados)
+- [ ] Webhook real: aguarda destino autorizado por administrador
 - [ ] Publicação (aguarda aceite do usuário)
 
 # Roadmap — TechProjects Ciclo 4 (itens 10–11)
