@@ -52,7 +52,7 @@ export function AllocationCapacityFields({
   const over = active && peak > 100;
 
   return (
-    <div className="space-y-3 rounded-md border p-3 sm:col-span-2">
+    <div className="space-y-3 rounded-md border p-3 md:col-span-2">
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="alloc-hours-week">Horas contratadas por semana (opcional)</Label>

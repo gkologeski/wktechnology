@@ -1,11 +1,14 @@
-# Roadmap — TechProjects Ciclo 3 (itens 7–9) — em andamento
+# Roadmap — TechProjects Ciclo 3 (itens 7–9)
 
-- [ ] Banco: política versionada, modelos por serviço, aprovadores/delegação, alocação com vigência/capacidade, apontamento por duração/segundos/fuso, cronômetro com pausas, envio/aprovação versionados, aceite manual, fechamento/reabertura, prévia Jibble sem horário
-- [ ] Provas SQL isoladas (perfis, deny, self-approval, corrida, DST/virada, cronômetro concorrente, fechamento)
-- [ ] Servidor: funções novas e rotas antigas redirecionadas ao fluxo
-- [ ] Telas: apontamento (duração/recentes/favoritos), cronômetro (pausa/troca), Minhas Horas sem 8h presumidas, timesheet (envio/cópia com prévia), aprovação, ficha do projeto (aprovadores/aceite/fechamento/modelo), configurações (política/modelos), conciliação (horas sem horário)
-- [ ] WK: modelos dos 6 serviços ativos (sem BPO/sob medida); nada de alocação fictícia, fechamento real ou materialização Jibble automática
-- [ ] verify + build + Playwright desktop/mobile/claro/escuro; hashes antes/depois
+- [x] Banco: política versionada, modelos por serviço, aprovadores/delegação, alocação com vigência/capacidade, apontamento por duração/segundos/fuso, cronômetro com pausas, envio/aprovação versionados, aceite manual, fechamento/reabertura, prévia Jibble sem horário (0173/0174)
+- [x] Provas SQL isoladas (116 + concorrência) e regressão C1 (65) / C2 (83)
+- [x] Servidor: funções novas e rotas antigas redirecionadas ao fluxo
+- [x] Telas: apontamento, Minhas Horas sem 8h presumidas, timesheet, aprovação, ficha do projeto, configurações, conciliação, capacidade na alocação
+- [x] WK: modelos dos 6 serviços ativos (sem BPO/sob medida)
+- [ ] Reativar o widget do cronômetro no layout (oculto por decisão anterior; aguarda o usuário)
+- [ ] Nomear aprovadores nos projetos WK e cadastrar jornadas no TechPeople (decisão do usuário; envios ficam bloqueados até lá)
+- [ ] Materializar os 504 candidatos Jibble sem horário (aguarda revisão humana na conciliação)
+- [ ] Teste com perfil não admin real e fluxo de envio/aprovação/fechamento com dados reais (só provado em banco isolado)
 - [ ] Publicação (aguarda aceite do usuário)
 
 Pendências preservadas: C1 (68 sugestões, divergência Clockify 12 pessoas, 403 em 5 categorias, Jibble não reconciliado); C2 (ganho real e UI não admin não validados; não publicado).
