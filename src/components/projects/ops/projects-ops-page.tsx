@@ -141,9 +141,7 @@ export function ProjectsOpsPage() {
               <ul className="divide-y divide-border rounded-md border border-border">
                 {d.queues.imports.map((r, i) => (
                   <li key={i} className="flex flex-wrap gap-3 p-3 text-sm">
-                    <span className="font-medium">
-                      {IMPORT_STATUS_LABEL[r.status] ?? r.status}
-                    </span>
+                    <span className="font-medium">{IMPORT_STATUS_LABEL[r.status] ?? r.status}</span>
                     <span className="text-muted-foreground">Início {fmt(r.started_at)}</span>
                     <span className="text-muted-foreground">Fim {fmt(r.finished_at)}</span>
                   </li>

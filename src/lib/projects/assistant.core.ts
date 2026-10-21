@@ -114,9 +114,7 @@ export function validateToolArgs(
   name: string,
   args: Record<string, unknown> | null,
   allowedViews: DashView[],
-):
-  | { ok: true; name: AssistantToolName; args: ToolArgs }
-  | { ok: false; error: string } {
+): { ok: true; name: AssistantToolName; args: ToolArgs } | { ok: false; error: string } {
   if (!(ASSISTANT_TOOL_NAMES as readonly string[]).includes(name))
     return { ok: false, error: "Ferramenta desconhecida." };
   if (!args) return { ok: false, error: "Argumentos inválidos." };
