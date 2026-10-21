@@ -1,6 +1,6 @@
 # TechProjects — Tarifas, Medições, Financeiro e Rentabilidade (Ciclo 4)
 
-Migração: `drizzle/migrations/0175_techprojects_cycle4_billing.sql` (aditiva). Prova isolada:
+Migrações: `drizzle/migrations/0175_techprojects_cycle4_billing.sql` (aditiva) e `0176_techprojects_cycle4_profitability_safeupdate.sql` (o banco gerenciado recusa UPDATE sem WHERE nas chamadas da API). Prova isolada:
 `tests/sql/project-billing-isolated.sh` (dados sintéticos, banco descartável).
 
 ## Tabelas
