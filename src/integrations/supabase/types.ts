@@ -13199,6 +13199,58 @@ export type Database = {
           },
         ]
       }
+      people_allocation_company_splits: {
+        Row: {
+          allocation_id: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          pct: number
+          workspace_id: string
+        }
+        Insert: {
+          allocation_id: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          pct: number
+          workspace_id: string
+        }
+        Update: {
+          allocation_id?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          pct?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "people_allocation_company_splits_allocation_id_fkey"
+            columns: ["allocation_id"]
+            isOneToOne: false
+            referencedRelation: "people_allocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "people_allocation_company_splits_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "people_allocation_company_splits_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       people_allocations: {
         Row: {
           allocation_pct: number
@@ -27008,6 +27060,10 @@ export type Database = {
       people_document_derive_status: {
         Args: { _expires: string }
         Returns: Database["public"]["Enums"]["people_doc_status"]
+      }
+      people_timesheet_email_user: {
+        Args: { _person_id: string }
+        Returns: string
       }
       permission_set_usable_in_workspace: {
         Args: { _set: string; _workspace: string }

@@ -1,6 +1,3 @@
--- Rateio da alocação por empresa cliente + leitura de horas por e-mail exato no timesheet.
--- Aditivo: não altera dados existentes.
-
 CREATE TABLE IF NOT EXISTS public.people_allocation_company_splits (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   workspace_id uuid NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
@@ -19,7 +16,6 @@ GRANT ALL ON public.people_allocation_company_splits TO service_role;
 
 ALTER TABLE public.people_allocation_company_splits ENABLE ROW LEVEL SECURITY;
 
--- Leitura: quem enxerga a alocação (RLS de people_allocations) enxerga o rateio.
 CREATE POLICY alloc_splits_select ON public.people_allocation_company_splits
   FOR SELECT TO authenticated
   USING (EXISTS (
@@ -27,7 +23,6 @@ CREATE POLICY alloc_splits_select ON public.people_allocation_company_splits
     WHERE a.id = allocation_id AND a.workspace_id = people_allocation_company_splits.workspace_id
   ));
 
--- Escrita: mesma regra de edição da alocação; empresa precisa ser do mesmo workspace.
 CREATE POLICY alloc_splits_write ON public.people_allocation_company_splits
   FOR ALL TO authenticated
   USING (EXISTS (
@@ -66,10 +61,6 @@ CREATE POLICY view_as_ro_upd ON public.people_allocation_company_splits
 CREATE POLICY view_as_ro_del ON public.people_allocation_company_splits
   AS RESTRICTIVE FOR DELETE TO authenticated USING (NOT public.is_read_only_view());
 
--- Timesheet: login ligado à pessoa por e-mail exato e único (somente leitura).
--- Retorna o user_id apenas quando: o chamador vê a pessoa; exatamente uma pessoa do workspace
--- tem esse e-mail; exatamente um membro do workspace tem esse e-mail; e a pessoa não está
--- ligada a outro login. Não grava nada.
 CREATE OR REPLACE FUNCTION public.people_timesheet_email_user(_person_id uuid)
 RETURNS uuid
 LANGUAGE plpgsql
