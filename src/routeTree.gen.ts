@@ -345,6 +345,7 @@ import { Route as ApiPublicHooksEmailSyncTickRouteImport } from './routes/api/pu
 import { Route as ApiPublicHooksHubspotTickRouteImport } from './routes/api/public/hooks/hubspot-tick'
 import { Route as ApiPublicHooksLinkedinApplicantsSyncRouteImport } from './routes/api/public/hooks/linkedin-applicants-sync'
 import { Route as ApiPublicHooksPlatformAlertsTickRouteImport } from './routes/api/public/hooks/platform-alerts-tick'
+import { Route as ApiPublicHooksProjectAlertsTickRouteImport } from './routes/api/public/hooks/project-alerts-tick'
 import { Route as ApiPublicHooksProspectingDialTickRouteImport } from './routes/api/public/hooks/prospecting-dial-tick'
 import { Route as ApiPublicHooksRecurrencesTickRouteImport } from './routes/api/public/hooks/recurrences-tick'
 import { Route as ApiPublicHooksScheduledExportsTickRouteImport } from './routes/api/public/hooks/scheduled-exports-tick'
@@ -2345,6 +2346,12 @@ const ApiPublicHooksPlatformAlertsTickRoute =
     path: '/api/public/hooks/platform-alerts-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksProjectAlertsTickRoute =
+  ApiPublicHooksProjectAlertsTickRouteImport.update({
+    id: '/api/public/hooks/project-alerts-tick',
+    path: '/api/public/hooks/project-alerts-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksProspectingDialTickRoute =
   ApiPublicHooksProspectingDialTickRouteImport.update({
     id: '/api/public/hooks/prospecting-dial-tick',
@@ -3080,6 +3087,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
   '/api/public/hooks/linkedin-applicants-sync': typeof ApiPublicHooksLinkedinApplicantsSyncRoute
   '/api/public/hooks/platform-alerts-tick': typeof ApiPublicHooksPlatformAlertsTickRoute
+  '/api/public/hooks/project-alerts-tick': typeof ApiPublicHooksProjectAlertsTickRoute
   '/api/public/hooks/prospecting-dial-tick': typeof ApiPublicHooksProspectingDialTickRoute
   '/api/public/hooks/recurrences-tick': typeof ApiPublicHooksRecurrencesTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
@@ -3482,6 +3490,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
   '/api/public/hooks/linkedin-applicants-sync': typeof ApiPublicHooksLinkedinApplicantsSyncRoute
   '/api/public/hooks/platform-alerts-tick': typeof ApiPublicHooksPlatformAlertsTickRoute
+  '/api/public/hooks/project-alerts-tick': typeof ApiPublicHooksProjectAlertsTickRoute
   '/api/public/hooks/prospecting-dial-tick': typeof ApiPublicHooksProspectingDialTickRoute
   '/api/public/hooks/recurrences-tick': typeof ApiPublicHooksRecurrencesTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
@@ -3893,6 +3902,7 @@ export interface FileRoutesById {
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
   '/api/public/hooks/linkedin-applicants-sync': typeof ApiPublicHooksLinkedinApplicantsSyncRoute
   '/api/public/hooks/platform-alerts-tick': typeof ApiPublicHooksPlatformAlertsTickRoute
+  '/api/public/hooks/project-alerts-tick': typeof ApiPublicHooksProjectAlertsTickRoute
   '/api/public/hooks/prospecting-dial-tick': typeof ApiPublicHooksProspectingDialTickRoute
   '/api/public/hooks/recurrences-tick': typeof ApiPublicHooksRecurrencesTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
@@ -4304,6 +4314,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/hubspot-tick'
     | '/api/public/hooks/linkedin-applicants-sync'
     | '/api/public/hooks/platform-alerts-tick'
+    | '/api/public/hooks/project-alerts-tick'
     | '/api/public/hooks/prospecting-dial-tick'
     | '/api/public/hooks/recurrences-tick'
     | '/api/public/hooks/scheduled-exports-tick'
@@ -4706,6 +4717,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/hubspot-tick'
     | '/api/public/hooks/linkedin-applicants-sync'
     | '/api/public/hooks/platform-alerts-tick'
+    | '/api/public/hooks/project-alerts-tick'
     | '/api/public/hooks/prospecting-dial-tick'
     | '/api/public/hooks/recurrences-tick'
     | '/api/public/hooks/scheduled-exports-tick'
@@ -5116,6 +5128,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/hubspot-tick'
     | '/api/public/hooks/linkedin-applicants-sync'
     | '/api/public/hooks/platform-alerts-tick'
+    | '/api/public/hooks/project-alerts-tick'
     | '/api/public/hooks/prospecting-dial-tick'
     | '/api/public/hooks/recurrences-tick'
     | '/api/public/hooks/scheduled-exports-tick'
@@ -5271,6 +5284,7 @@ export interface RootRouteChildren {
   ApiPublicHooksHubspotTickRoute: typeof ApiPublicHooksHubspotTickRoute
   ApiPublicHooksLinkedinApplicantsSyncRoute: typeof ApiPublicHooksLinkedinApplicantsSyncRoute
   ApiPublicHooksPlatformAlertsTickRoute: typeof ApiPublicHooksPlatformAlertsTickRoute
+  ApiPublicHooksProjectAlertsTickRoute: typeof ApiPublicHooksProjectAlertsTickRoute
   ApiPublicHooksProspectingDialTickRoute: typeof ApiPublicHooksProspectingDialTickRoute
   ApiPublicHooksRecurrencesTickRoute: typeof ApiPublicHooksRecurrencesTickRoute
   ApiPublicHooksScheduledExportsTickRoute: typeof ApiPublicHooksScheduledExportsTickRoute
@@ -7685,6 +7699,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksPlatformAlertsTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/project-alerts-tick': {
+      id: '/api/public/hooks/project-alerts-tick'
+      path: '/api/public/hooks/project-alerts-tick'
+      fullPath: '/api/public/hooks/project-alerts-tick'
+      preLoaderRoute: typeof ApiPublicHooksProjectAlertsTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/prospecting-dial-tick': {
       id: '/api/public/hooks/prospecting-dial-tick'
       path: '/api/public/hooks/prospecting-dial-tick'
@@ -9166,6 +9187,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksLinkedinApplicantsSyncRoute:
     ApiPublicHooksLinkedinApplicantsSyncRoute,
   ApiPublicHooksPlatformAlertsTickRoute: ApiPublicHooksPlatformAlertsTickRoute,
+  ApiPublicHooksProjectAlertsTickRoute: ApiPublicHooksProjectAlertsTickRoute,
   ApiPublicHooksProspectingDialTickRoute:
     ApiPublicHooksProspectingDialTickRoute,
   ApiPublicHooksRecurrencesTickRoute: ApiPublicHooksRecurrencesTickRoute,

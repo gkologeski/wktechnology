@@ -1,61 +1,74 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Clock3,
-  FolderKanban,
-  RefreshCw,
-  ShieldAlert,
-} from "lucide-react";
+import { FolderKanban, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { EmptyState, MetricCard, PageHeader, Skeletons } from "@/components/techhire/ui";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PageHeader, Skeletons } from "@/components/techhire/ui";
 import { DashboardError } from "@/components/dashboard/dashboard-error";
 import { IsoDateRangePicker } from "@/components/iso-date-range-picker";
-import {
-  DistributionBar,
-  OverviewList,
-  OverviewListItem,
-  OverviewPanel,
-} from "@/components/dashboard/overview-panel";
 import { getProjectDashboard } from "@/lib/projects/dashboard.functions";
-import { CoverageStrip } from "@/components/projects/dashboard/coverage-strip";
+import { OverviewView } from "@/components/projects/dashboard/overview-view";
+import { DashFilters } from "@/components/projects/dashboard/dash-filters";
+import { MeView, TeamView } from "@/components/projects/dashboard/work-views";
 import {
-  DASHBOARD_HOURS_STATUS_LABEL,
-  PROJECT_STATUS_LABEL,
-  formatHours,
+  CommercialView,
+  FinanceView,
+  QualityView,
+} from "@/components/projects/dashboard/business-views";
+import { AlertsOverview } from "@/components/projects/dashboard/alerts-overview";
+import { DrillSheet } from "@/components/projects/dashboard/drill-sheet";
+import { AlertActDialog } from "@/components/projects/dashboard/alert-act-dialog";
+import { RiskRulesDialog } from "@/components/projects/dashboard/risk-rules-dialog";
+import type { ViewCtx } from "@/components/projects/dashboard/dash-view-parts";
+import {
+  useDashScope,
+  useProjectDashboardViews,
+  type DrillState,
+} from "@/hooks/use-project-dashboard-views";
+import {
+  DASH_FILTER_KEYS,
+  DASH_VIEWS,
+  DASH_VIEW_FILTERS,
+  DASH_VIEW_LABEL,
+  dashPreferenceKey,
+  filtersForView,
+  metricDef,
+  parseDashSearch,
+  type DashFilters as DashFiltersT,
+  type DashSearch,
+  type DashView,
+} from "@/lib/projects/dashboard-views.shared";
+import {
   isIanaTimeZone,
   monthRangeInTimeZone,
   validateIsoRange,
 } from "@/lib/projects/reconciliation-labels";
 
-type Search = { from?: string; to?: string };
-const ISO = /^\d{4}-\d{2}-\d{2}$/;
+type Tab = "overview" | DashView;
 
-const date = (value: string | null) =>
-  value
-    ? new Date(`${value.slice(0, 10)}T12:00:00Z`).toLocaleDateString("pt-BR", { timeZone: "UTC" })
-    : "Sem prazo";
-const dateTime = (value: string | null) =>
-  value
-    ? new Date(value).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })
-    : "nunca";
+const date = (value: string) =>
+  new Date(`${value.slice(0, 10)}T12:00:00Z`).toLocaleDateString("pt-BR", { timeZone: "UTC" });
 
 export const Route = createFileRoute("/_authenticated/projects/dashboard")({
-  validateSearch: (s: Record<string, unknown>): Search => ({
-    from: typeof s.from === "string" && ISO.test(s.from) ? s.from : undefined,
-    to: typeof s.to === "string" && ISO.test(s.to) ? s.to : undefined,
-  }),
+  validateSearch: (s: Record<string, unknown>): DashSearch => {
+    const parsed = parseDashSearch(s);
+    return { ...parsed, view: s.view === "overview" ? "overview" : parsed.view };
+  },
   head: () => ({
     meta: [
       { title: "Dashboard | TechProjects" },
-      { name: "description", content: "Acompanhe projetos, tarefas, prazos e horas registradas." },
+      {
+        name: "description",
+        content:
+          "Painel por perfil: meu trabalho, equipe e entrega, comercial, financeiro e qualidade dos dados, com capacidade, alertas e previsão.",
+      },
       { property: "og:title", content: "Dashboard | TechProjects" },
       {
         property: "og:description",
-        content: "Acompanhe projetos, tarefas, prazos e horas registradas.",
+        content:
+          "Painel por perfil: meu trabalho, equipe e entrega, comercial, financeiro e qualidade dos dados, com capacidade, alertas e previsão.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -79,21 +92,95 @@ function ProjectsDashboard() {
   const valid = search.from && search.to && !validateIsoRange(search.from, search.to);
   const from = valid ? (search.from as string) : fallback.from;
   const to = valid ? (search.to as string) : fallback.to;
-  const get = useServerFn(getProjectDashboard);
-  const query = useQuery({
-    queryKey: ["projects-dashboard", from, to, tz],
-    queryFn: () => get({ data: { from, to, tz } }),
+
+  const scope = useDashScope();
+  const ws = scope.data?.workspace_id;
+  const uid = scope.data?.user_id;
+  const allowed = scope.data?.views;
+  const tab: Tab =
+    search.view && search.view !== "overview" && allowed?.[search.view as DashView]
+      ? (search.view as DashView)
+      : "overview";
+  const view: DashView | null = tab === "overview" ? null : tab;
+
+  // Preferência por workspace + usuário: restaura visão/filtros só quando a URL não traz nenhum.
+  const restored = useRef(false);
+  useEffect(() => {
+    if (!ws || !uid || restored.current) return;
+    restored.current = true;
+    const empty = !search.view && !search.from && !DASH_FILTER_KEYS.some((k) => search[k]);
+    if (!empty) return;
+    try {
+      const raw = window.localStorage.getItem(dashPreferenceKey(ws, uid));
+      if (!raw) return;
+      const parsedRaw = JSON.parse(raw) as Record<string, unknown>;
+      const saved = parseDashSearch(parsedRaw);
+      const savedView = parsedRaw?.view === "overview" ? "overview" : saved.view;
+      const hasAny = !!savedView || DASH_FILTER_KEYS.some((k) => saved[k]) || !!saved.compare;
+      if (!hasAny) return;
+      void navigate({
+        search: { ...saved, view: savedView, from: undefined, to: undefined },
+        replace: true,
+      });
+    } catch {
+      /* preferência corrompida: ignora */
+    }
+  }, [ws, uid, search, navigate]);
+  useEffect(() => {
+    if (!ws || !uid || !restored.current) return;
+    const { from: _f, to: _t, ...rest } = search;
+    try {
+      window.localStorage.setItem(dashPreferenceKey(ws, uid), JSON.stringify(rest));
+    } catch {
+      /* armazenamento indisponível */
+    }
+  }, [ws, uid, search]);
+
+  const filters: DashFiltersT = useMemo(
+    () => ({
+      from,
+      to,
+      tz,
+      ...(view ? filtersForView(view, search) : {}),
+      ...(view && (view === "me" || view === "team") && search.compare ? { compare: true } : {}),
+    }),
+    [from, to, tz, view, search],
+  );
+
+  const [drill, setDrill] = useState<DrillState | null>(null);
+  const [actOn, setActOn] = useState<Record<string, unknown> | null>(null);
+  const [rulesOpen, setRulesOpen] = useState(false);
+  const [labels, setLabels] = useState<Partial<Record<string, string>>>({});
+  // Troca de visão/filtros fecha a lista: nunca mostra linhas de outro recorte.
+  useEffect(() => setDrill(null), [view, filters]);
+
+  const d = useProjectDashboardViews({ ws, uid, view, filters, drill, rulesOpen });
+
+  const getOverview = useServerFn(getProjectDashboard);
+  const overview = useQuery({
+    queryKey: ["projects-dashboard", ws, uid, from, to, tz],
+    queryFn: () => getOverview({ data: { from, to, tz } }),
+    enabled: tab === "overview",
     staleTime: 60_000,
   });
-  const data = query.data;
-  const periodLabel = `${date(from)} a ${date(to)}`;
-  const reviewSearch = { tab: "issues" as const, from, to };
+
+  const periodLabel = `${date(from)} a ${date(to)} · ${tz}`;
+  const summary = d.summary.data;
+  const ctx: ViewCtx = {
+    periodLabel,
+    generatedAt: summary?.generated_at ?? new Date().toISOString(),
+    onDrill: (dataset, metric) => setDrill({ dataset, metric, offset: 0 }),
+  };
+  const setSearch = (patch: Partial<DashSearch>) =>
+    void navigate({ search: (prev) => ({ ...prev, ...patch }) });
+  const fetching = tab === "overview" ? overview.isFetching : d.summary.isFetching;
+
   return (
     <div className="flex flex-col gap-6 pb-10">
       <PageHeader
         eyebrow="TechProjects · Projetos"
         title="Dashboard"
-        description="Situação atual dos projetos e horas do período escolhido."
+        description="Situação dos projetos e das horas por perfil. Cada número abre a lista que o compõe."
         primaryAction={
           <Button asChild size="sm">
             <Link to="/projects">
@@ -104,217 +191,162 @@ function ProjectsDashboard() {
         }
         secondaryActions={
           <div className="flex flex-wrap items-center gap-2">
-            <IsoDateRangePicker
-              size="sm"
-              align="end"
-              ariaLabel="Período das horas"
-              from={from}
-              to={to}
-              defaultPreset="thisMonth"
-              onChange={(r) => void navigate({ search: { from: r.from, to: r.to } })}
-              onClear={() => void navigate({ search: {} })}
-            />
+            {tab === "overview" ? (
+              <IsoDateRangePicker
+                size="sm"
+                align="end"
+                ariaLabel="Período das horas"
+                from={from}
+                to={to}
+                defaultPreset="thisMonth"
+                onChange={(r) => setSearch({ from: r.from, to: r.to })}
+                onClear={() => setSearch({ from: undefined, to: undefined })}
+              />
+            ) : null}
             <Button
               size="sm"
               variant="outline"
-              onClick={() => void query.refetch()}
-              disabled={query.isFetching}
+              onClick={() => void (tab === "overview" ? overview.refetch() : d.summary.refetch())}
+              disabled={fetching}
             >
-              <RefreshCw
-                className={query.isFetching ? "mr-2 h-4 w-4 animate-spin" : "mr-2 h-4 w-4"}
-              />
+              <RefreshCw className={fetching ? "mr-2 h-4 w-4 animate-spin" : "mr-2 h-4 w-4"} />
               Atualizar
             </Button>
           </div>
         }
       />
-      {query.isLoading ? (
-        <>
-          <Skeletons.MetricsGrid count={4} />
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Skeletons.Card lines={5} />
-            <Skeletons.Card lines={5} />
-          </div>
-        </>
-      ) : query.isError || !data ? (
-        <DashboardError retry={() => void query.refetch()} />
+
+      <Tabs value={tab} onValueChange={(v) => setSearch({ view: v })}>
+        <TabsList className="h-auto flex-wrap justify-start" aria-label="Visões do painel">
+          <TabsTrigger value="overview">Visão geral</TabsTrigger>
+          {DASH_VIEWS.filter((v) => allowed?.[v]).map((v) => (
+            <TabsTrigger key={v} value={v}>
+              {DASH_VIEW_LABEL[v]}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
+      {scope.isError ? (
+        <p className="text-xs text-text-secondary" role="status">
+          Não foi possível conferir suas visões; mostrando apenas a visão geral.
+        </p>
+      ) : null}
+      {scope.data?.read_only ? (
+        <p className="text-xs text-text-secondary" role="status">
+          Modo Ver como: somente leitura. Ações de alerta ficam desativadas.
+        </p>
+      ) : null}
+
+      {tab === "overview" ? (
+        overview.isLoading ? (
+          <>
+            <Skeletons.MetricsGrid count={4} />
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Skeletons.Card lines={5} />
+              <Skeletons.Card lines={5} />
+            </div>
+          </>
+        ) : overview.isError || !overview.data ? (
+          <DashboardError retry={() => void overview.refetch()} />
+        ) : (
+          <OverviewView data={overview.data} from={from} to={to} />
+        )
       ) : (
         <>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricCard
-              label="Projetos ativos agora"
-              value={data.activeCount}
-              hint={`Situação atual, não depende do período · ${data.projectsTotal} no total`}
-              icon={FolderKanban}
-              tone="positive"
-            />
-            <MetricCard
-              label="Conclusão de tarefas"
-              value={
-                data.activeTaskCompletion === null
-                  ? "Sem base"
-                  : `${Math.round(data.activeTaskCompletion * 100)}%`
-              }
-              hint={`Tarefas concluídas dos ativos com tarefas (${data.activeWithTaskBase} de ${data.activeCount})`}
-              icon={CheckCircle2}
-            />
-            <MetricCard
-              label="Tarefas em aberto"
-              value={data.openTasks.toLocaleString("pt-BR")}
-              hint={`${data.overdueTasks.toLocaleString("pt-BR")} atrasadas em ${date(data.today)}`}
-              icon={AlertTriangle}
-              tone={data.overdueTasks > 0 ? "warning" : "neutral"}
-            />
-            <MetricCard
-              label="Horas no período"
-              value={formatHours(data.period.seconds)}
-              hint={`${periodLabel} · ${data.period.rows.toLocaleString("pt-BR")} apontamentos`}
-              icon={Clock3}
-            />
-          </div>
-
-          <CoverageStrip data={data} reviewSearch={reviewSearch} />
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            <OverviewPanel
-              title="Projetos em andamento"
-              description={`${data.inProgressTotal} projetos com situação Ativo; os 8 mais recentes.`}
-              action={
-                <Link
-                  to="/projects"
-                  className="text-xs text-text-secondary hover:text-text-primary"
-                >
-                  Ver projetos →
-                </Link>
-              }
-            >
-              {data.projects.length === 0 ? (
-                <EmptyState
-                  compact
-                  icon={FolderKanban}
-                  title="Nenhum projeto ativo"
-                  description="Projetos com situação Ativo aparecem aqui."
-                />
-              ) : (
-                <OverviewList>
-                  {data.projects.map((row) => (
-                    <OverviewListItem key={row.id}>
-                      <div className="min-w-0 flex-1">
-                        <Link
-                          to="/projects/$id"
-                          params={{ id: row.id }}
-                          className="block truncate text-sm font-medium text-text-primary hover:underline"
-                        >
-                          {row.name}
-                        </Link>
-                        {row.progressPct === null ? (
-                          <p className="mt-1 text-xs text-text-tertiary">
-                            Sem base de progresso (nenhuma tarefa)
-                          </p>
-                        ) : (
-                          <div
-                            className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-sunken"
-                            role="progressbar"
-                            aria-label={`Tarefas concluídas de ${row.name}`}
-                            aria-valuenow={Math.round(row.progressPct)}
-                            aria-valuemin={0}
-                            aria-valuemax={100}
-                          >
-                            <div
-                              className="h-full rounded-full bg-primary"
-                              style={{ width: `${Math.max(0, Math.min(100, row.progressPct))}%` }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                      <div className="shrink-0 text-right">
-                        <p className="text-xs font-medium tabular-nums text-text-primary">
-                          {row.progressPct === null
-                            ? "—"
-                            : `${Math.round(row.progressPct)}% · ${row.tasksDone}/${row.tasksTotal}`}
-                        </p>
-                        <p className="text-xs text-text-tertiary">
-                          {date(row.dueAt)} · {formatHours(row.periodSeconds)}
-                        </p>
-                      </div>
-                    </OverviewListItem>
-                  ))}
-                </OverviewList>
-              )}
-            </OverviewPanel>
-            <OverviewPanel
-              title="Precisam de atenção"
-              description={`${data.attentionTotal} projetos pausados ou com prazo ultrapassado.`}
-            >
-              {data.attention.length === 0 ? (
-                <EmptyState
-                  compact
-                  icon={CheckCircle2}
-                  title="Tudo em dia"
-                  description="Não há projetos atrasados ou pausados."
-                />
-              ) : (
-                <OverviewList>
-                  {data.attention.map((row) => (
-                    <OverviewListItem key={row.id}>
-                      <div className="min-w-0 flex-1">
-                        <Link
-                          to="/projects/$id"
-                          params={{ id: row.id }}
-                          className="block truncate text-sm font-medium text-text-primary hover:underline"
-                        >
-                          {row.name}
-                        </Link>
-                        <p className="text-xs text-text-tertiary">
-                          {PROJECT_STATUS_LABEL[row.status] ?? row.status}
-                        </p>
-                      </div>
-                      <span className="shrink-0 text-xs tabular-nums text-text-secondary">
-                        {date(row.dueAt)}
-                      </span>
-                    </OverviewListItem>
-                  ))}
-                </OverviewList>
-              )}
-            </OverviewPanel>
-          </div>
-          <OverviewPanel
-            title="Horas por situação"
-            description={`Apontamentos de ${periodLabel}. Importado bloqueado não é aprovação nem faturamento.`}
-            action={
-              data.coverage.canOpenCenter ? (
-                <Link
-                  to="/projects/settings/imports/reconciliation"
-                  search={{ tab: "breakdown", from, to }}
-                  className="text-xs text-text-secondary hover:text-text-primary"
-                >
-                  Conferir registros →
-                </Link>
-              ) : undefined
+          <DashFilters
+            allowed={DASH_VIEW_FILTERS[tab]}
+            from={from}
+            to={to}
+            tz={tz}
+            search={search}
+            labels={labels}
+            showCompare={tab === "me" || tab === "team"}
+            disabled={d.summary.isFetching && !summary}
+            onPeriod={(r) => setSearch({ from: r?.from, to: r?.to })}
+            onChange={(patch, l) => {
+              if (l) setLabels((x) => ({ ...x, [l.kind]: l.label }));
+              setSearch(patch);
+            }}
+            onReset={() =>
+              void navigate({ search: { view: tab, from: search.from, to: search.to } })
             }
-          >
-            {data.period.byStatus.length === 0 ? (
-              <EmptyState
-                compact
-                icon={Clock3}
-                title="Sem horas registradas"
-                description="Não há apontamentos visíveis no período escolhido."
+            onSearch={d.searchOptions}
+          />
+          {d.summary.isLoading || (d.summary.isFetching && !summary) ? (
+            <>
+              <Skeletons.MetricsGrid count={4} />
+              <Skeletons.MetricsGrid count={4} />
+              <Skeletons.Card lines={4} />
+            </>
+          ) : d.summary.isError || !summary ? (
+            <DashboardError retry={() => void d.summary.refetch()} />
+          ) : (
+            <>
+              {tab === "me" ? <MeView data={summary} ctx={ctx} /> : null}
+              {tab === "team" ? <TeamView data={summary} ctx={ctx} /> : null}
+              {tab === "commercial" ? <CommercialView data={summary} ctx={ctx} /> : null}
+              {tab === "finance" ? <FinanceView data={summary} ctx={ctx} /> : null}
+              {tab === "quality" ? <QualityView data={summary} ctx={ctx} /> : null}
+              <AlertsOverview
+                data={summary}
+                ctx={ctx}
+                reevaluating={d.reevaluate.isPending}
+                onReevaluate={() => d.reevaluate.mutate()}
+                onOpenRules={() => setRulesOpen(true)}
               />
-            ) : (
-              <div className="grid gap-3 md:grid-cols-2">
-                {data.period.byStatus.map((row) => (
-                  <DistributionBar
-                    key={row.status}
-                    label={`${DASHBOARD_HOURS_STATUS_LABEL[row.status] ?? row.status} · ${formatHours(row.seconds)}`}
-                    value={row.rows}
-                    total={Math.max(1, data.period.rows)}
-                  />
-                ))}
-              </div>
-            )}
-          </OverviewPanel>
+              <p className="text-xs text-text-tertiary">
+                Gerado em{" "}
+                {new Date(summary.generated_at).toLocaleString("pt-BR", {
+                  dateStyle: "short",
+                  timeStyle: "short",
+                })}{" "}
+                · período {periodLabel}. Totais calculados no banco sobre todas as linhas do seu
+                acesso, sem amostragem.
+              </p>
+            </>
+          )}
         </>
       )}
+
+      {drill && view ? (
+        <DrillSheet
+          open
+          onOpenChange={(v) => !v && setDrill(null)}
+          dataset={drill.dataset}
+          def={metricDef(drill.dataset, drill.metric)}
+          periodLabel={periodLabel}
+          page={d.drillQuery.data}
+          loading={d.drillQuery.isFetching}
+          error={d.drillQuery.isError}
+          onRetry={() => void d.drillQuery.refetch()}
+          onPage={(offset) => setDrill({ ...drill, offset })}
+          canExport={!!scope.data?.can_export}
+          exporting={d.exportList.isPending}
+          onExport={() => d.exportList.mutate()}
+          onAct={drill.dataset === "alerts" ? (row) => setActOn(row) : undefined}
+          readOnly={!!scope.data?.read_only}
+        />
+      ) : null}
+      <AlertActDialog
+        key={String(actOn?.id ?? "none")}
+        alert={actOn}
+        today={summary?.filters.today ?? from}
+        pending={d.act.isPending}
+        onClose={() => setActOn(null)}
+        onSubmit={(v) =>
+          d.act.mutate({ alertId: String(actOn?.id), ...v }, { onSuccess: () => setActOn(null) })
+        }
+      />
+      <RiskRulesDialog
+        open={rulesOpen}
+        onOpenChange={setRulesOpen}
+        rules={d.rules.data}
+        loading={d.rules.isLoading}
+        saving={d.saveRules.isPending}
+        onSave={(rules, note) =>
+          d.saveRules.mutate({ rules, note }, { onSuccess: () => setRulesOpen(false) })
+        }
+      />
     </div>
   );
 }
