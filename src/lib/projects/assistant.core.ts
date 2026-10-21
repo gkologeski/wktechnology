@@ -106,13 +106,16 @@ function parseArgs(raw: string): Record<string, unknown> | null {
   }
 }
 
+/** Argumentos já validados: só valores simples (serializáveis e sem texto livre do modelo). */
+export type ToolArgs = Record<string, string | number | boolean | null>;
+
 /** Valida argumentos contra o catálogo e a lista de visões permitidas (o banco revalida). */
 export function validateToolArgs(
   name: string,
   args: Record<string, unknown> | null,
   allowedViews: DashView[],
 ):
-  | { ok: true; name: AssistantToolName; args: Record<string, unknown> }
+  | { ok: true; name: AssistantToolName; args: ToolArgs }
   | { ok: false; error: string } {
   if (!(ASSISTANT_TOOL_NAMES as readonly string[]).includes(name))
     return { ok: false, error: "Ferramenta desconhecida." };
@@ -162,7 +165,7 @@ export function sanitizeForModel(value: unknown, canCost: boolean, depth = 0): u
 export type AssistantAnswer = {
   answer: string;
   citations: Citation[];
-  tools: Array<{ name: string; args: Record<string, unknown>; ok: boolean; error?: string }>;
+  tools: Array<{ name: string; args: ToolArgs; ok: boolean; error?: string }>;
   noData: boolean;
 };
 
