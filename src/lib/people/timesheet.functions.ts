@@ -25,6 +25,8 @@ export type TimesheetEntry = {
   task_title: string | null;
   allocation_id: string | null;
   person_id: string | null;
+  status: string | null;
+  source: string | null;
 };
 
 export type TimesheetTotals = {
@@ -213,11 +215,13 @@ export const listPersonTimesheet = createServerFn({ method: "POST" })
         task_title: task?.title ?? null,
         allocation_id,
         person_id: (r.person_id as string) ?? null,
+        status: (r.status as string) ?? null,
+        source: (r.source as string) ?? null,
       };
     };
 
     const cols =
-      "id, entry_date, started_at, stopped_at, hours, billable, hourly_rate, approved_at, description, project_id, task_id, allocation_id, person_id, projects(id,name), project_tasks(id,title)";
+      "id, entry_date, started_at, stopped_at, hours, billable, hourly_rate, approved_at, description, project_id, task_id, allocation_id, person_id, status, source, projects(id,name), project_tasks(id,title)";
 
     {
       const { data: rows, error } = await supabase
@@ -231,11 +235,22 @@ export const listPersonTimesheet = createServerFn({ method: "POST" })
       for (const r of rows ?? []) results.push(mapRow(r as Record<string, unknown>));
     }
 
-    if (profile_id) {
+    // Sem login ligado: e-mail exato e único (função do banco, só leitura). Ausente = ignora.
+    let loginId = profile_id;
+    if (!loginId) {
+      const { data: u, error: rpcErr } = await (
+        supabase as unknown as {
+          rpc: (n: string, a: unknown) => Promise<{ data: string | null; error: unknown }>;
+        }
+      ).rpc("people_timesheet_email_user", { _person_id: data.person_id });
+      if (!rpcErr && u) loginId = u;
+    }
+
+    if (loginId) {
       const { data: rows, error } = await supabase
         .from("project_time_entries")
         .select(cols)
-        .eq("user_id", profile_id)
+        .eq("user_id", loginId)
         .is("person_id", null)
         .gte("entry_date", data.start)
         .lte("entry_date", data.end)

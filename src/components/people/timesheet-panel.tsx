@@ -1,6 +1,7 @@
 // Painel de Timesheet — TechPeople.
 // KPIs, filtros, presets, subtotais por dia, aprovação em massa, lançamento
 // de horas, exportação CSV e visão de alocações no período.
+import { TIME_ENTRY_STATUS_LABEL, type TimeEntryStatus } from "@/lib/projects/time-entry.shared";
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -645,7 +646,21 @@ export function TimesheetPanel({ personId }: { personId: string }) {
                             {value > 0 ? brl(value) : "—"}
                           </TableCell>
                           <TableCell>
-                            {e.approved_at ? (
+                            {e.status && e.status in TIME_ENTRY_STATUS_LABEL ? (
+                              <Badge
+                                variant={
+                                  e.status === "approved" || e.status === "locked"
+                                    ? "default"
+                                    : e.status === "rejected"
+                                      ? "destructive"
+                                      : "secondary"
+                                }
+                                title={e.source === "import" ? "Importado" : undefined}
+                              >
+                                {TIME_ENTRY_STATUS_LABEL[e.status as TimeEntryStatus]}
+                                {e.source === "import" ? " · importado" : ""}
+                              </Badge>
+                            ) : e.approved_at ? (
                               <Badge variant="default">Aprovado</Badge>
                             ) : e.billable ? (
                               <Badge variant="secondary">Billable</Badge>

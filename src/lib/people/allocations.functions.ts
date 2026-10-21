@@ -95,6 +95,11 @@ const allocationSchema = z.object({
   hours_per_week: z.number().positive().max(168).nullable().optional(),
   can_track_time: z.boolean().default(true),
   overbook_justification: z.string().trim().max(500).nullable().optional(),
+  // Rateio por empresa cliente (opcional). undefined = não mexe; [] = remove o rateio.
+  company_splits: z
+    .array(z.object({ company_id: z.string().uuid(), pct: z.number().positive().max(100) }))
+    .max(20)
+    .optional(),
 });
 
 export type ContractRoleSuggestion = {
@@ -219,6 +224,34 @@ export const listAllocationsByPerson = createServerFn({ method: "POST" })
     });
   });
 
+/** Rateio por cliente de uma alocação (RLS do usuário). Tabela ausente = sem rateio. */
+export const listAllocationSplits = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ allocation_id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await (
+      context.supabase as unknown as { from: (n: string) => any }
+    )
+      .from("people_allocation_company_splits")
+      .select("company_id, pct, companies(name)")
+      .eq("allocation_id", data.allocation_id);
+    if (error) return { available: false, splits: [] as SplitRow[] };
+    return {
+      available: true,
+      splits: ((rows ?? []) as Array<{
+        company_id: string;
+        pct: number;
+        companies: { name: string | null } | null;
+      }>).map((r) => ({
+        company_id: r.company_id,
+        pct: Number(r.pct),
+        company_name: r.companies?.name ?? null,
+      })),
+    };
+  });
+
+type SplitRow = { company_id: string; pct: number; company_name: string | null };
+
 export const listAllocationsByContract = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ contract_id: z.string().uuid() }).parse(i))
@@ -249,6 +282,46 @@ export const upsertAllocation = createServerFn({ method: "POST" })
   .inputValidator((i) => allocationSchema.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const { contractFieldError, splitsError } = await import("@/lib/people/allocation-rules");
+    for (const [field, id] of [
+      ["provider", data.contract_id],
+      ["purchase", data.purchase_contract_id],
+    ] as const) {
+      if (!id) continue;
+      const { data: c } = await supabase
+        .from("contracts")
+        .select("role, document_kind")
+        .eq("id", id)
+        .maybeSingle();
+      const err = contractFieldError(
+        field,
+        c as { role: string | null; document_kind: string | null } | null,
+      );
+      if (err) throw new Error(err);
+    }
+    if (data.company_splits) {
+      const err = splitsError(data.company_splits);
+      if (err) throw new Error(err);
+    }
+    async function saveSplits(allocationId: string) {
+      if (!data.company_splits) return;
+      const t = (supabase as unknown as { from: (n: string) => any }).from(
+        "people_allocation_company_splits",
+      );
+      const del = await t.delete().eq("allocation_id", allocationId);
+      if (del.error) throw new Error(`Rateio não salvo: ${del.error.message}`);
+      if (data.company_splits.length === 0) return;
+      const { data: a } = await supabase
+        .from("people_allocations")
+        .select("workspace_id")
+        .eq("id", allocationId)
+        .single();
+      const ws = (a as { workspace_id: string }).workspace_id;
+      const ins = await (supabase as unknown as { from: (n: string) => any })
+        .from("people_allocation_company_splits")
+        .insert(data.company_splits.map((x) => ({ ...x, allocation_id: allocationId, workspace_id: ws })));
+      if (ins.error) throw new Error(`Rateio não salvo: ${ins.error.message}`);
+    }
     const payload: Record<string, unknown> = {
       person_id: data.person_id,
       contract_id: data.contract_id ?? null,
@@ -300,6 +373,7 @@ export const upsertAllocation = createServerFn({ method: "POST" })
         .eq("id", data.id);
       if (error) throw new Error(error.message);
       await syncPerson();
+      await saveSplits(data.id);
       return { id: data.id };
     }
     const workspaceId = await resolveWorkspaceId(supabase, userId);
@@ -310,6 +384,7 @@ export const upsertAllocation = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
     await syncPerson();
+    await saveSplits((row as { id: string }).id);
     return { id: (row as { id: string }).id };
   });
 

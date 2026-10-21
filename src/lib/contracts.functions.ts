@@ -304,6 +304,7 @@ export const listOwnContractingPurchaseContracts = createServerFn({ method: "POS
         "id, number, title, status, total_value, currency, role, contracting_legal_entity_id, metadata, companies:counterparty_company_id(name)",
       )
       .eq("role", "client")
+      .or("document_kind.eq.main,document_kind.is.null")
       .order("created_at", { ascending: false })
       .limit(data.limit ?? 100);
     if (data.q && data.q.trim()) {
