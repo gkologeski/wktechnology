@@ -345,6 +345,16 @@ export const activateService = createServerFn({ method: "POST" })
     let newStatus: "active" | "completed" = "active";
 
     if (svc.type === "one_time") {
+      // Cobrança deste serviço pertence às Medições do TechProjects? Então não gera título paralelo.
+      const { data: owned } = await supabase.rpc("project_billing_service_owned", {
+        p_service: svc.id,
+        p_date: startsAt,
+      });
+      if (owned) {
+        throw new Error(
+          "A cobrança deste serviço é feita pelas Medições do TechProjects nesta competência; gere pelo contrato.",
+        );
+      }
       // gera 1 entry imediatamente e marca serviço como concluído
       newStatus = "completed";
       const { error: fErr } = await supabase.from("financial_entries").insert({
@@ -406,7 +416,17 @@ export const runServicesBillingNow = createServerFn({ method: "POST" })
     if (dErr) throw dErr;
 
     let generated = 0;
+    let skippedOwned = 0;
     for (const svc of due ?? []) {
+      // Serviço com dono "Medições" na competência: o mecanismo legado não fatura (o banco também recusa).
+      const { data: owned } = await supabase.rpc("project_billing_service_owned", {
+        p_service: svc.id,
+        p_date: svc.next_billing_at as string,
+      });
+      if (owned) {
+        skippedOwned += 1;
+        continue;
+      }
       const amount = Number(svc.quantity) * Number(svc.unit_price);
       const next = computeNextBilling(svc.next_billing_at as string, svc.cadence as any);
       const stops = svc.ends_at && next && next > (svc.ends_at as string);
@@ -439,7 +459,7 @@ export const runServicesBillingNow = createServerFn({ method: "POST" })
         .eq("id", svc.id);
     }
 
-    return { ok: true, generated };
+    return { ok: true, generated, skippedOwned };
   });
 
 // ============= CATÁLOGO → CONTRATO =============

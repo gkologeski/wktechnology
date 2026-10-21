@@ -173,6 +173,7 @@ export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
   "/projects/settings/imports/reconciliation": ["system.import"],
   "/projects/settings/delivery": ["techprojects.projects"],
   "/projects/settings/time": ["techprojects.time_entries", "techprojects.timesheet"],
+  "/projects/settings/rates": ["techprojects.rates"],
 
   // --- TechFinance -----------------------------------------------------------
   "/finance": ["techfinance.entries"],

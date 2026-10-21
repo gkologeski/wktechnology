@@ -290,6 +290,7 @@ import { Route as AuthenticatedAgentsPrototype2RouteImport } from './routes/_aut
 import { Route as AuthenticatedAgentsPrototype3RouteImport } from './routes/_authenticated/agents.prototype.3'
 import { Route as AuthenticatedAtsJobsIdRouteImport } from './routes/_authenticated/ats.jobs.$id'
 import { Route as AuthenticatedContractsIdFlowRouteImport } from './routes/_authenticated/contracts.$id_.flow'
+import { Route as AuthenticatedContractsIdMedicoesRouteImport } from './routes/_authenticated/contracts.$id_.medicoes'
 import { Route as AuthenticatedContractsTemplatesIndexRouteImport } from './routes/_authenticated/contracts.templates.index'
 import { Route as AuthenticatedContractsTemplatesIdRouteImport } from './routes/_authenticated/contracts.templates.$id'
 import { Route as AuthenticatedFinanceBankingReconciliationRouteImport } from './routes/_authenticated/finance.banking.reconciliation'
@@ -297,8 +298,10 @@ import { Route as AuthenticatedFinanceEntriesIdRouteImport } from './routes/_aut
 import { Route as AuthenticatedProjectsListsIdRouteImport } from './routes/_authenticated/projects.lists.$id'
 import { Route as AuthenticatedProjectsSettingsIndexRouteImport } from './routes/_authenticated/projects.settings.index'
 import { Route as AuthenticatedProjectsSettingsDeliveryRouteImport } from './routes/_authenticated/projects.settings.delivery'
+import { Route as AuthenticatedProjectsSettingsRatesRouteImport } from './routes/_authenticated/projects.settings.rates'
 import { Route as AuthenticatedProjectsSettingsTimeRouteImport } from './routes/_authenticated/projects.settings.time'
 import { Route as AuthenticatedProjectsIdEntregaRouteImport } from './routes/_authenticated/projects_.$id.entrega'
+import { Route as AuthenticatedProjectsIdFinanceiroRouteImport } from './routes/_authenticated/projects_.$id.financeiro'
 import { Route as AuthenticatedProjectsIdHorasRouteImport } from './routes/_authenticated/projects_.$id.horas'
 import { Route as AuthenticatedProspectingCampaignsIndexRouteImport } from './routes/_authenticated/prospecting.campaigns.index'
 import { Route as AuthenticatedProspectingCampaignsIdRouteImport } from './routes/_authenticated/prospecting.campaigns.$id'
@@ -2016,6 +2019,12 @@ const AuthenticatedContractsIdFlowRoute =
     path: '/contracts/$id/flow',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedContractsIdMedicoesRoute =
+  AuthenticatedContractsIdMedicoesRouteImport.update({
+    id: '/contracts/$id_/medicoes',
+    path: '/contracts/$id/medicoes',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedContractsTemplatesIndexRoute =
   AuthenticatedContractsTemplatesIndexRouteImport.update({
     id: '/contracts/templates/',
@@ -2058,6 +2067,12 @@ const AuthenticatedProjectsSettingsDeliveryRoute =
     path: '/projects/settings/delivery',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedProjectsSettingsRatesRoute =
+  AuthenticatedProjectsSettingsRatesRouteImport.update({
+    id: '/projects/settings/rates',
+    path: '/projects/settings/rates',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProjectsSettingsTimeRoute =
   AuthenticatedProjectsSettingsTimeRouteImport.update({
     id: '/projects/settings/time',
@@ -2068,6 +2083,12 @@ const AuthenticatedProjectsIdEntregaRoute =
   AuthenticatedProjectsIdEntregaRouteImport.update({
     id: '/projects_/$id/entrega',
     path: '/projects/$id/entrega',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedProjectsIdFinanceiroRoute =
+  AuthenticatedProjectsIdFinanceiroRouteImport.update({
+    id: '/projects_/$id/financeiro',
+    path: '/projects/$id/financeiro',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedProjectsIdHorasRoute =
@@ -3010,13 +3031,16 @@ export interface FileRoutesByFullPath {
   '/agents/prototype/3': typeof AuthenticatedAgentsPrototype3Route
   '/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
   '/contracts/$id/flow': typeof AuthenticatedContractsIdFlowRoute
+  '/contracts/$id/medicoes': typeof AuthenticatedContractsIdMedicoesRoute
   '/contracts/templates/$id': typeof AuthenticatedContractsTemplatesIdRoute
   '/finance/banking/reconciliation': typeof AuthenticatedFinanceBankingReconciliationRoute
   '/finance/entries/$id': typeof AuthenticatedFinanceEntriesIdRoute
   '/projects/lists/$id': typeof AuthenticatedProjectsListsIdRoute
   '/projects/settings/delivery': typeof AuthenticatedProjectsSettingsDeliveryRoute
+  '/projects/settings/rates': typeof AuthenticatedProjectsSettingsRatesRoute
   '/projects/settings/time': typeof AuthenticatedProjectsSettingsTimeRoute
   '/projects/$id/entrega': typeof AuthenticatedProjectsIdEntregaRoute
+  '/projects/$id/financeiro': typeof AuthenticatedProjectsIdFinanceiroRoute
   '/projects/$id/horas': typeof AuthenticatedProjectsIdHorasRoute
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/settings/integrations/$slug': typeof AuthenticatedSettingsIntegrationsSlugRoute
@@ -3409,13 +3433,16 @@ export interface FileRoutesByTo {
   '/agents/prototype/3': typeof AuthenticatedAgentsPrototype3Route
   '/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
   '/contracts/$id/flow': typeof AuthenticatedContractsIdFlowRoute
+  '/contracts/$id/medicoes': typeof AuthenticatedContractsIdMedicoesRoute
   '/contracts/templates/$id': typeof AuthenticatedContractsTemplatesIdRoute
   '/finance/banking/reconciliation': typeof AuthenticatedFinanceBankingReconciliationRoute
   '/finance/entries/$id': typeof AuthenticatedFinanceEntriesIdRoute
   '/projects/lists/$id': typeof AuthenticatedProjectsListsIdRoute
   '/projects/settings/delivery': typeof AuthenticatedProjectsSettingsDeliveryRoute
+  '/projects/settings/rates': typeof AuthenticatedProjectsSettingsRatesRoute
   '/projects/settings/time': typeof AuthenticatedProjectsSettingsTimeRoute
   '/projects/$id/entrega': typeof AuthenticatedProjectsIdEntregaRoute
+  '/projects/$id/financeiro': typeof AuthenticatedProjectsIdFinanceiroRoute
   '/projects/$id/horas': typeof AuthenticatedProjectsIdHorasRoute
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/settings/integrations/$slug': typeof AuthenticatedSettingsIntegrationsSlugRoute
@@ -3817,13 +3844,16 @@ export interface FileRoutesById {
   '/_authenticated/agents/prototype/3': typeof AuthenticatedAgentsPrototype3Route
   '/_authenticated/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
   '/_authenticated/contracts/$id_/flow': typeof AuthenticatedContractsIdFlowRoute
+  '/_authenticated/contracts/$id_/medicoes': typeof AuthenticatedContractsIdMedicoesRoute
   '/_authenticated/contracts/templates/$id': typeof AuthenticatedContractsTemplatesIdRoute
   '/_authenticated/finance/banking/reconciliation': typeof AuthenticatedFinanceBankingReconciliationRoute
   '/_authenticated/finance/entries/$id': typeof AuthenticatedFinanceEntriesIdRoute
   '/_authenticated/projects/lists/$id': typeof AuthenticatedProjectsListsIdRoute
   '/_authenticated/projects/settings/delivery': typeof AuthenticatedProjectsSettingsDeliveryRoute
+  '/_authenticated/projects/settings/rates': typeof AuthenticatedProjectsSettingsRatesRoute
   '/_authenticated/projects/settings/time': typeof AuthenticatedProjectsSettingsTimeRoute
   '/_authenticated/projects_/$id/entrega': typeof AuthenticatedProjectsIdEntregaRoute
+  '/_authenticated/projects_/$id/financeiro': typeof AuthenticatedProjectsIdFinanceiroRoute
   '/_authenticated/projects_/$id/horas': typeof AuthenticatedProjectsIdHorasRoute
   '/_authenticated/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/_authenticated/settings/integrations/$slug': typeof AuthenticatedSettingsIntegrationsSlugRoute
@@ -4225,13 +4255,16 @@ export interface FileRouteTypes {
     | '/agents/prototype/3'
     | '/ats/jobs/$id'
     | '/contracts/$id/flow'
+    | '/contracts/$id/medicoes'
     | '/contracts/templates/$id'
     | '/finance/banking/reconciliation'
     | '/finance/entries/$id'
     | '/projects/lists/$id'
     | '/projects/settings/delivery'
+    | '/projects/settings/rates'
     | '/projects/settings/time'
     | '/projects/$id/entrega'
+    | '/projects/$id/financeiro'
     | '/projects/$id/horas'
     | '/prospecting/campaigns/$id'
     | '/settings/integrations/$slug'
@@ -4624,13 +4657,16 @@ export interface FileRouteTypes {
     | '/agents/prototype/3'
     | '/ats/jobs/$id'
     | '/contracts/$id/flow'
+    | '/contracts/$id/medicoes'
     | '/contracts/templates/$id'
     | '/finance/banking/reconciliation'
     | '/finance/entries/$id'
     | '/projects/lists/$id'
     | '/projects/settings/delivery'
+    | '/projects/settings/rates'
     | '/projects/settings/time'
     | '/projects/$id/entrega'
+    | '/projects/$id/financeiro'
     | '/projects/$id/horas'
     | '/prospecting/campaigns/$id'
     | '/settings/integrations/$slug'
@@ -5031,13 +5067,16 @@ export interface FileRouteTypes {
     | '/_authenticated/agents/prototype/3'
     | '/_authenticated/ats/jobs/$id'
     | '/_authenticated/contracts/$id_/flow'
+    | '/_authenticated/contracts/$id_/medicoes'
     | '/_authenticated/contracts/templates/$id'
     | '/_authenticated/finance/banking/reconciliation'
     | '/_authenticated/finance/entries/$id'
     | '/_authenticated/projects/lists/$id'
     | '/_authenticated/projects/settings/delivery'
+    | '/_authenticated/projects/settings/rates'
     | '/_authenticated/projects/settings/time'
     | '/_authenticated/projects_/$id/entrega'
+    | '/_authenticated/projects_/$id/financeiro'
     | '/_authenticated/projects_/$id/horas'
     | '/_authenticated/prospecting/campaigns/$id'
     | '/_authenticated/settings/integrations/$slug'
@@ -7261,6 +7300,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedContractsIdFlowRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/contracts/$id_/medicoes': {
+      id: '/_authenticated/contracts/$id_/medicoes'
+      path: '/contracts/$id/medicoes'
+      fullPath: '/contracts/$id/medicoes'
+      preLoaderRoute: typeof AuthenticatedContractsIdMedicoesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/contracts/templates/': {
       id: '/_authenticated/contracts/templates/'
       path: '/contracts/templates'
@@ -7310,6 +7356,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsSettingsDeliveryRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/projects/settings/rates': {
+      id: '/_authenticated/projects/settings/rates'
+      path: '/projects/settings/rates'
+      fullPath: '/projects/settings/rates'
+      preLoaderRoute: typeof AuthenticatedProjectsSettingsRatesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/projects/settings/time': {
       id: '/_authenticated/projects/settings/time'
       path: '/projects/settings/time'
@@ -7322,6 +7375,13 @@ declare module '@tanstack/react-router' {
       path: '/projects/$id/entrega'
       fullPath: '/projects/$id/entrega'
       preLoaderRoute: typeof AuthenticatedProjectsIdEntregaRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/projects_/$id/financeiro': {
+      id: '/_authenticated/projects_/$id/financeiro'
+      path: '/projects/$id/financeiro'
+      fullPath: '/projects/$id/financeiro'
+      preLoaderRoute: typeof AuthenticatedProjectsIdFinanceiroRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/projects_/$id/horas': {
@@ -8754,12 +8814,15 @@ interface AuthenticatedRouteChildren {
   AuthenticatedatsSourcingReferralsRoute: typeof AuthenticatedatsSourcingReferralsRoute
   AuthenticatedatsSourcingSequencesRoute: typeof AuthenticatedatsSourcingSequencesRoute
   AuthenticatedContractsIdFlowRoute: typeof AuthenticatedContractsIdFlowRoute
+  AuthenticatedContractsIdMedicoesRoute: typeof AuthenticatedContractsIdMedicoesRoute
   AuthenticatedContractsTemplatesIdRoute: typeof AuthenticatedContractsTemplatesIdRoute
   AuthenticatedFinanceEntriesIdRoute: typeof AuthenticatedFinanceEntriesIdRoute
   AuthenticatedProjectsListsIdRoute: typeof AuthenticatedProjectsListsIdRoute
   AuthenticatedProjectsSettingsDeliveryRoute: typeof AuthenticatedProjectsSettingsDeliveryRoute
+  AuthenticatedProjectsSettingsRatesRoute: typeof AuthenticatedProjectsSettingsRatesRoute
   AuthenticatedProjectsSettingsTimeRoute: typeof AuthenticatedProjectsSettingsTimeRoute
   AuthenticatedProjectsIdEntregaRoute: typeof AuthenticatedProjectsIdEntregaRoute
+  AuthenticatedProjectsIdFinanceiroRoute: typeof AuthenticatedProjectsIdFinanceiroRoute
   AuthenticatedProjectsIdHorasRoute: typeof AuthenticatedProjectsIdHorasRoute
   AuthenticatedatsCandidatesIndexRoute: typeof AuthenticatedatsCandidatesIndexRoute
   AuthenticatedatsHuntingIndexRoute: typeof AuthenticatedatsHuntingIndexRoute
@@ -8917,15 +8980,20 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedatsSourcingSequencesRoute:
     AuthenticatedatsSourcingSequencesRoute,
   AuthenticatedContractsIdFlowRoute: AuthenticatedContractsIdFlowRoute,
+  AuthenticatedContractsIdMedicoesRoute: AuthenticatedContractsIdMedicoesRoute,
   AuthenticatedContractsTemplatesIdRoute:
     AuthenticatedContractsTemplatesIdRoute,
   AuthenticatedFinanceEntriesIdRoute: AuthenticatedFinanceEntriesIdRoute,
   AuthenticatedProjectsListsIdRoute: AuthenticatedProjectsListsIdRoute,
   AuthenticatedProjectsSettingsDeliveryRoute:
     AuthenticatedProjectsSettingsDeliveryRoute,
+  AuthenticatedProjectsSettingsRatesRoute:
+    AuthenticatedProjectsSettingsRatesRoute,
   AuthenticatedProjectsSettingsTimeRoute:
     AuthenticatedProjectsSettingsTimeRoute,
   AuthenticatedProjectsIdEntregaRoute: AuthenticatedProjectsIdEntregaRoute,
+  AuthenticatedProjectsIdFinanceiroRoute:
+    AuthenticatedProjectsIdFinanceiroRoute,
   AuthenticatedProjectsIdHorasRoute: AuthenticatedProjectsIdHorasRoute,
   AuthenticatedatsCandidatesIndexRoute: AuthenticatedatsCandidatesIndexRoute,
   AuthenticatedatsHuntingIndexRoute: AuthenticatedatsHuntingIndexRoute,
