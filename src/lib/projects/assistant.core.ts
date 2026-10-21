@@ -236,17 +236,15 @@ export async function runAssistant(input: {
         });
         continue;
       }
-      const r = await input
-        .runTool(v.name, v.args)
-        .catch(
-          (e): ToolResult => ({
-            ok: false,
-            data: null,
-            citations: [],
-            generated_at: null,
-            error: (e as Error).message,
-          }),
-        );
+      const r = await input.runTool(v.name, v.args).catch(
+        (e): ToolResult => ({
+          ok: false,
+          data: null,
+          citations: [],
+          generated_at: null,
+          error: (e as Error).message,
+        }),
+      );
       used.push({ name: v.name, args: v.args, ok: r.ok, error: r.error });
       citations.push(...r.citations);
       messages.push({
