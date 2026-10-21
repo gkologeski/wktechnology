@@ -1,5 +1,3 @@
--- Identidade do Agente SDR (Lia) por workspace: usuário sem login (banido), membro
--- ativo que espelha cargos/pacotes de quem a criou. Aditivo; nada é removido.
 CREATE TABLE IF NOT EXISTS public.sdr_agent_identities (
   workspace_id uuid PRIMARY KEY REFERENCES public.workspaces(id) ON DELETE CASCADE,
   user_id uuid NOT NULL UNIQUE,
@@ -12,9 +10,8 @@ GRANT SELECT ON public.sdr_agent_identities TO authenticated;
 GRANT ALL ON public.sdr_agent_identities TO service_role;
 ALTER TABLE public.sdr_agent_identities ENABLE ROW LEVEL SECURITY;
 CREATE POLICY sdr_agent_identities_select ON public.sdr_agent_identities
-  FOR SELECT TO authenticated USING (public.is_workspace_member(workspace_id));
+  FOR SELECT TO authenticated USING (public.is_workspace_member(workspace_id, auth.uid()));
 
--- Cópia de segurança da transferência do histórico (valor anterior por coluna).
 CREATE TABLE IF NOT EXISTS public.sdr_agent_reassign_backup (
   id bigserial PRIMARY KEY,
   workspace_id uuid NOT NULL,
@@ -31,11 +28,7 @@ CREATE INDEX IF NOT EXISTS sdr_agent_reassign_backup_run_idx
 GRANT ALL ON public.sdr_agent_reassign_backup TO service_role;
 GRANT USAGE, SELECT ON SEQUENCE public.sdr_agent_reassign_backup_id_seq TO service_role;
 ALTER TABLE public.sdr_agent_reassign_backup ENABLE ROW LEVEL SECURITY;
--- Sem políticas para authenticated: acesso só pelo servidor após checar admin.
 
--- Transfere para a Lia somente registros comprovadamente dela:
--- notas com assunto fixo do agente e ações do agente sem autor humano.
--- Leads não entram (gatilhos de workflow dispariam). p_apply=false só conta.
 CREATE OR REPLACE FUNCTION public.sdr_agent_reassign_history(p_workspace uuid, p_apply boolean)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
@@ -92,7 +85,6 @@ REVOKE ALL ON FUNCTION public.sdr_agent_reassign_undo(uuid, uuid) FROM PUBLIC, a
 GRANT EXECUTE ON FUNCTION public.sdr_agent_reassign_history(uuid, boolean) TO service_role;
 GRANT EXECUTE ON FUNCTION public.sdr_agent_reassign_undo(uuid, uuid) TO service_role;
 
--- Novas ações do agente sem autor humano passam a ter a Lia como autora.
 CREATE OR REPLACE FUNCTION public.sdr_actions_default_agent_author()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
