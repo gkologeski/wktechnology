@@ -1,5 +1,3 @@
--- Atribuição de responsável na Inbox guiada pela permissão "editar" do canal.
--- Altera apenas o campo responsável; RLS existente não muda.
 CREATE OR REPLACE FUNCTION public.inbox_assign_conversation(p_channel text, p_id uuid, p_assignee uuid)
 RETURNS boolean
 LANGUAGE plpgsql
