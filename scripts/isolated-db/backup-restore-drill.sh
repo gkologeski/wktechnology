@@ -92,7 +92,7 @@ META_OK=$(dst_q -tAc "select string_agg(name||' '||(metadata->>'sha256'), E'\n' 
 FLOW=$(dst_q -tAc "begin; set local role authenticated; select set_config('request.jwt.claims','{\"sub\":\"10000000-0000-4000-8000-000000000002\",\"role\":\"authenticated\"}',true) ; 
   select (public.project_time_entry_sync('aaaaaaaa-0000-4000-8000-00000000000a','c6400000-0000-4000-8000-000000000001',repeat('1',64),'{}'::jsonb)->>'replay'); rollback;" 2>&1 | tail -1)
 DIFF=$(diff "$ART/manifest-before.txt" "$ART/manifest-after.txt"; diff "$ART/files-before.txt" "$ART/files-after.txt")
-runuser -u "$ISO_OS_USER" -- env PATH="$PATH" pg_ctl -D "$DST_ROOT/data" -m fast stop >/dev/null
+[ "${ISO_KEEP:-0}" = 1 ] || runuser -u "$ISO_OS_USER" -- env PATH="$PATH" pg_ctl -D "$DST_ROOT/data" -m fast stop >/dev/null
 [ "${ISO_KEEP:-0}" = 1 ] || bash scripts/isolated-db/stop.sh >/dev/null
 python3 - "$ART" "$BACKUP_MS" "$RTO_MS" "$DUMP_BYTES" "$RESTORE_ERRORS" "$META_OK" "$FLOW" "$([ -z "$DIFF" ] && echo identical || echo different)" <<'PY'
 import json, sys
