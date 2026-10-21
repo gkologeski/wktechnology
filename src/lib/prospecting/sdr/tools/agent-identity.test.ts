@@ -39,7 +39,7 @@ function ctx(agentUserId: string | null, store: MemoryStore): ToolCtx {
 describe("perfil da Lia como responsável", () => {
   it("tarefa criada pela Lia fica com ela", async () => {
     const store = new MemoryStore();
-    await executeTool(ctx(LIA, store), "tasks.create", { title: "Retomar contato", due_in_hours: 24 }, "t1");
+    await executeTool(ctx(LIA, store), "tasks.create", { title: "Retomar contato", due_in_hours: 24, note: null }, "t1");
     expect(store.activities[0]).toMatchObject({ owner_id: LIA, assigned_to: LIA, created_by: LIA });
   });
   it("resumo da conversa fica com a Lia", async () => {
@@ -49,7 +49,7 @@ describe("perfil da Lia como responsável", () => {
   });
   it("sem perfil da Lia continua com o responsável configurado", async () => {
     const store = new MemoryStore();
-    await executeTool(ctx(null, store), "tasks.create", { title: "Retomar contato", due_in_hours: 24 }, "t1");
+    await executeTool(ctx(null, store), "tasks.create", { title: "Retomar contato", due_in_hours: 24, note: null }, "t1");
     expect(store.activities[0]).toMatchObject({ owner_id: HUMAN, assigned_to: HUMAN });
     expect(store.activities[0]).not.toHaveProperty("created_by");
   });
