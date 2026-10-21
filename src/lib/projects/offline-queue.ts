@@ -135,22 +135,43 @@ export async function syncQueue(
     conflicts = 0,
     retries = 0;
   const eligible = scoped(await store.all(), ctx.userId, ctx.workspaceId)
-    .filter((i) => (i.state === "pending" || i.state === "error" || i.state === "sending") && i.nextAttemptAt <= now())
+    .filter(
+      (i) =>
+        (i.state === "pending" || i.state === "error" || i.state === "sending") &&
+        i.nextAttemptAt <= now(),
+    )
     .sort((a, b) => a.createdAt - b.createdAt);
   for (const item of eligible) {
     await store.put({ ...item, state: "sending" });
     const r = await send(item).catch((e) => classifyError(e));
     if (r.kind === "ok") {
       sent++;
-      await store.put({ ...item, state: "synced", entryId: r.entryId, lastError: null, attempts: item.attempts + 1 });
+      await store.put({
+        ...item,
+        state: "synced",
+        entryId: r.entryId,
+        lastError: null,
+        attempts: item.attempts + 1,
+      });
     } else if (r.kind === "conflict") {
       conflicts++;
-      await store.put({ ...item, state: "conflict", lastError: r.message.replace(/^[A-Z_]+:\s*/, ""), attempts: item.attempts + 1 });
+      await store.put({
+        ...item,
+        state: "conflict",
+        lastError: r.message.replace(/^[A-Z_]+:\s*/, ""),
+        attempts: item.attempts + 1,
+      });
     } else {
       retries++;
       const attempts = item.attempts + 1;
       const backoff = Math.min(15 * 60_000, 2 ** Math.min(attempts, 10) * 1000);
-      await store.put({ ...item, state: "error", lastError: r.message, attempts, nextAttemptAt: now() + backoff });
+      await store.put({
+        ...item,
+        state: "error",
+        lastError: r.message,
+        attempts,
+        nextAttemptAt: now() + backoff,
+      });
       // Sem rede: para o lote; os demais aguardam a próxima tentativa.
       break;
     }
@@ -175,14 +196,18 @@ function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB, 1);
     req.onupgradeneeded = () => {
-      if (!req.result.objectStoreNames.contains(STORE)) req.result.createObjectStore(STORE, { keyPath: "id" });
+      if (!req.result.objectStoreNames.contains(STORE))
+        req.result.createObjectStore(STORE, { keyPath: "id" });
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
 }
 
-async function tx<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<T>): Promise<T> {
+async function tx<T>(
+  mode: IDBTransactionMode,
+  fn: (s: IDBObjectStore) => IDBRequest<T>,
+): Promise<T> {
   const db = await openDb();
   return new Promise<T>((resolve, reject) => {
     const t = db.transaction(STORE, mode);

@@ -25,13 +25,18 @@ describe("guarda de destino de webhook (SSRF)", () => {
   });
 
   it("recusa host público que resolve para IP privado (rebinding)", async () => {
-    await expect(assertSafeWebhookUrl("https://hooks.example.com/x", async () => ["93.184.216.34", "10.0.0.5"])).rejects.toThrow(
-      /rede privada/,
-    );
+    await expect(
+      assertSafeWebhookUrl("https://hooks.example.com/x", async () => [
+        "93.184.216.34",
+        "10.0.0.5",
+      ]),
+    ).rejects.toThrow(/rede privada/);
   });
 
   it("aceita HTTPS público", async () => {
-    await expect(assertSafeWebhookUrl("https://hooks.example.com/x", publicDns)).resolves.toBeInstanceOf(URL);
+    await expect(
+      assertSafeWebhookUrl("https://hooks.example.com/x", publicDns),
+    ).resolves.toBeInstanceOf(URL);
   });
 
   it("classifica faixas privadas e mapeadas", () => {
@@ -83,15 +88,30 @@ describe("envio para receptor isolado (sem dados reais)", () => {
   it("entrega assinada com id de evento; receptor valida; nenhuma credencial do sistema é encaminhada", async () => {
     const r = await sendWebhook(
       { url: "https://receiver.example.test/ok", secret: "whsec_iso" },
-      { id: "d1", event_id: "11111111-1111-4111-8111-111111111111", event_type: "project.time_entry.created", payload: { entry_id: "e1" } },
+      {
+        id: "d1",
+        event_id: "11111111-1111-4111-8111-111111111111",
+        event_type: "project.time_entry.created",
+        payload: { entry_id: "e1" },
+      },
       { resolve: publicDns, fetchImpl: toLocal, now: () => 1_700_000_000_000 },
     );
     expect(r.ok).toBe(true);
     const got = seen.find((s) => s.path === "/ok")!;
     expect(got.headers["x-techerp-event-id"]).toBe("11111111-1111-4111-8111-111111111111");
     expect(got.headers.authorization).toBeUndefined();
-    expect(await verifyWebhook("whsec_iso", String(got.headers["x-techerp-signature"]), got.body, 1_700_000_010)).toBe(true);
-    expect(JSON.parse(got.body)).toMatchObject({ id: "11111111-1111-4111-8111-111111111111", event: "project.time_entry.created" });
+    expect(
+      await verifyWebhook(
+        "whsec_iso",
+        String(got.headers["x-techerp-signature"]),
+        got.body,
+        1_700_000_010,
+      ),
+    ).toBe(true);
+    expect(JSON.parse(got.body)).toMatchObject({
+      id: "11111111-1111-4111-8111-111111111111",
+      event: "project.time_entry.created",
+    });
   });
 
   it("não segue redirecionamento (o destino redirecionado nunca recebe a carga)", async () => {
@@ -110,7 +130,10 @@ describe("envio para receptor isolado (sem dados reais)", () => {
     const r = await sendWebhook(
       { url: `https://127.0.0.1:${port}/ok`, secret: "x" },
       { id: "d3", event_type: "e", payload: {} },
-      { resolve: publicDns, fetchImpl: (async () => (called++, new Response("ok"))) as typeof fetch },
+      {
+        resolve: publicDns,
+        fetchImpl: (async () => (called++, new Response("ok"))) as typeof fetch,
+      },
     );
     expect(called).toBe(0);
     expect(r.text).toMatch(/^blocked_destination/);

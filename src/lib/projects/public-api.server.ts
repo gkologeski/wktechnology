@@ -176,7 +176,12 @@ export async function handleListTasks(request: Request): Promise<Response> {
   const url = new URL(request.url);
   const project = optUuid(url, "project_id");
   if (project === undefined)
-    return respond(ctx, { error: "invalid_input", message: "project_id inválido." }, 400, g.auth.keyId);
+    return respond(
+      ctx,
+      { error: "invalid_input", message: "project_id inválido." },
+      400,
+      g.auth.keyId,
+    );
   const { limit, offset } = listParams(url);
   return listVia(ctx, g, "project_api_list_tasks", {
     p_project: project,
@@ -195,11 +200,21 @@ export async function handleListEntries(request: Request): Promise<Response> {
   const project = optUuid(url, "project_id");
   const subject = optUuid(url, "user_id");
   if (project === undefined || subject === undefined)
-    return respond(ctx, { error: "invalid_input", message: "Identificador inválido." }, 400, g.auth.keyId);
+    return respond(
+      ctx,
+      { error: "invalid_input", message: "Identificador inválido." },
+      400,
+      g.auth.keyId,
+    );
   const from = url.searchParams.get("from");
   const to = url.searchParams.get("to");
   if ((from && !DATE_ONLY.test(from)) || (to && !DATE_ONLY.test(to)))
-    return respond(ctx, { error: "invalid_input", message: "Datas no formato AAAA-MM-DD." }, 400, g.auth.keyId);
+    return respond(
+      ctx,
+      { error: "invalid_input", message: "Datas no formato AAAA-MM-DD." },
+      400,
+      g.auth.keyId,
+    );
   const { limit, offset } = listParams(url);
   return listVia(ctx, g, "project_api_list_time_entries", {
     p_project: project,
@@ -220,10 +235,20 @@ export async function handleCreateEntry(request: Request): Promise<Response> {
   const raw = await request.json().catch(() => null);
   const parsed = PublicTimeEntryInput.safeParse(raw);
   if (!parsed.success)
-    return respond(ctx, { error: "invalid_input", details: parsed.error.flatten() }, 400, g.auth.keyId);
+    return respond(
+      ctx,
+      { error: "invalid_input", details: parsed.error.flatten() },
+      400,
+      g.auth.keyId,
+    );
   const body = parsed.data;
   if (!!body.start_time !== !!body.end_time)
-    return respond(ctx, { error: "invalid_input", message: "Informe start_time e end_time juntos." }, 400, g.auth.keyId);
+    return respond(
+      ctx,
+      { error: "invalid_input", message: "Informe start_time e end_time juntos." },
+      400,
+      g.auth.keyId,
+    );
   const payload = toEntryPayload(body);
   const idem = resolveIdempotencyKey(request.headers.get("idempotency-key"), body.external_id);
   if (!idem || idem.length < 8 || idem.length > 200)

@@ -31,8 +31,14 @@ export const syncOfflineTimeEntry = createServerFn({ method: "POST" })
             task_id: z.string().uuid(),
             entry_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
             mode: z.enum(["interval", "duration"]),
-            start_time: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/).optional(),
-            end_time: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/).optional(),
+            start_time: z
+              .string()
+              .regex(/^\d{2}:\d{2}(:\d{2})?$/)
+              .optional(),
+            end_time: z
+              .string()
+              .regex(/^\d{2}:\d{2}(:\d{2})?$/)
+              .optional(),
             duration_seconds: z.number().int().min(60).max(86400).optional(),
             timezone: z.string().max(64).optional(),
             description: z.string().max(2000).optional(),
@@ -65,7 +71,11 @@ export const syncOfflineTimeEntry = createServerFn({ method: "POST" })
     if (!r.replay && r.entry) {
       const { enqueueProjectEvent } = await import("@/lib/webhooks/dispatcher.server");
       const { projectEventPayload } = await import("./public-api.server");
-      await enqueueProjectEvent(data.workspaceId, "project.time_entry.created", projectEventPayload(r.entry));
+      await enqueueProjectEvent(
+        data.workspaceId,
+        "project.time_entry.created",
+        projectEventPayload(r.entry),
+      );
     }
     return {
       replay: r.replay,

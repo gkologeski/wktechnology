@@ -11,7 +11,10 @@ import type { OfflineItem, OfflineState } from "@/lib/projects/offline-queue";
 import { OFFLINE_TIME_QUEUE_RETENTION_HOURS } from "@/lib/limits";
 import { formatMinutes } from "@/lib/projects/time-entry.shared";
 
-const STATE: Record<OfflineState, { status: "draft" | "onhold" | "open" | "closed"; label: string }> = {
+const STATE: Record<
+  OfflineState,
+  { status: "draft" | "onhold" | "open" | "closed"; label: string }
+> = {
   pending: { status: "draft", label: "Pendente no aparelho" },
   sending: { status: "onhold", label: "Enviando" },
   synced: { status: "open", label: "Sincronizado" },
@@ -33,7 +36,10 @@ export function OfflineTimeQueuePanel() {
   if (!q.supported || !q.ready) return null;
   const open = q.items.filter((i) => i.state !== "synced");
   return (
-    <section aria-label="Apontamentos guardados neste aparelho" className="space-y-3 rounded-lg border border-border bg-card p-4">
+    <section
+      aria-label="Apontamentos guardados neste aparelho"
+      className="space-y-3 rounded-lg border border-border bg-card p-4"
+    >
       <SectionHeader
         title="Sem conexão"
         description={`Opcional: quando ligado, um apontamento NOVO que não puder ser enviado fica guardado só neste aparelho por até ${OFFLINE_TIME_QUEUE_RETENTION_HOURS} h e é enviado quando a conexão voltar. Ao sair da conta, o que não foi enviado é apagado. O servidor confere tudo de novo no envio.`}
@@ -47,15 +53,24 @@ export function OfflineTimeQueuePanel() {
           {q.online ? "Conectado" : "Sem conexão agora"}
         </span>
         {open.length > 0 && (
-          <Button size="sm" variant="outline" disabled={!q.online || q.syncing} onClick={() => void q.syncNow()}>
-            <RefreshCw className={`mr-1 h-3.5 w-3.5 ${q.syncing ? "animate-spin" : ""}`} aria-hidden />
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!q.online || q.syncing}
+            onClick={() => void q.syncNow()}
+          >
+            <RefreshCw
+              className={`mr-1 h-3.5 w-3.5 ${q.syncing ? "animate-spin" : ""}`}
+              aria-hidden
+            />
             Enviar agora
           </Button>
         )}
       </div>
       {q.lostUnsent > 0 && (
         <p role="alert" className="text-sm text-destructive">
-          {q.lostUnsent} apontamento(s) guardado(s) passaram do prazo de {OFFLINE_TIME_QUEUE_RETENTION_HOURS} h sem envio e foram descartados deste aparelho.
+          {q.lostUnsent} apontamento(s) guardado(s) passaram do prazo de{" "}
+          {OFFLINE_TIME_QUEUE_RETENTION_HOURS} h sem envio e foram descartados deste aparelho.
         </p>
       )}
       {q.items.length > 0 && (
@@ -67,12 +82,23 @@ export function OfflineTimeQueuePanel() {
                 <p className="truncate font-medium">{i.label}</p>
                 <p className="text-muted-foreground">{describe(i)}</p>
                 {i.lastError && (
-                  <p className={i.state === "conflict" ? "text-destructive" : "text-muted-foreground"}>{i.lastError}</p>
+                  <p
+                    className={
+                      i.state === "conflict" ? "text-destructive" : "text-muted-foreground"
+                    }
+                  >
+                    {i.lastError}
+                  </p>
                 )}
               </div>
               <StatusBadge status={STATE[i.state].status} label={STATE[i.state].label} />
               {(i.state === "conflict" || i.state === "error") && (
-                <Button size="sm" variant="ghost" disabled={!q.online} onClick={() => void q.retry(i.id)}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={!q.online}
+                  onClick={() => void q.retry(i.id)}
+                >
                   Tentar de novo
                 </Button>
               )}
@@ -80,7 +106,9 @@ export function OfflineTimeQueuePanel() {
                 <Button
                   size="icon"
                   variant="ghost"
-                  aria-label={i.state === "synced" ? "Remover da lista" : "Descartar apontamento guardado"}
+                  aria-label={
+                    i.state === "synced" ? "Remover da lista" : "Descartar apontamento guardado"
+                  }
                   onClick={async () => {
                     if (
                       i.state !== "synced" &&

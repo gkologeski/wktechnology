@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { canonicalJson, mapApiDbError, PublicTimeEntryInput, resolveIdempotencyKey, toEntryPayload } from "./public-api.shared";
+import {
+  canonicalJson,
+  mapApiDbError,
+  PublicTimeEntryInput,
+  resolveIdempotencyKey,
+  toEntryPayload,
+} from "./public-api.shared";
 
 const body = {
   project_id: "00000000-0000-4000-8000-000000000001",
@@ -9,14 +15,28 @@ const body = {
 
 describe("API pública v1 — regras puras", () => {
   it("corpo não aceita situação, usuário nem custo (strict)", () => {
-    expect(PublicTimeEntryInput.safeParse({ ...body, duration_seconds: 3600, status: "approved" }).success).toBe(false);
-    expect(PublicTimeEntryInput.safeParse({ ...body, duration_seconds: 3600, user_id: body.task_id }).success).toBe(false);
-    expect(PublicTimeEntryInput.safeParse({ ...body, duration_seconds: 3600, hourly_rate: 10 }).success).toBe(false);
+    expect(
+      PublicTimeEntryInput.safeParse({ ...body, duration_seconds: 3600, status: "approved" })
+        .success,
+    ).toBe(false);
+    expect(
+      PublicTimeEntryInput.safeParse({ ...body, duration_seconds: 3600, user_id: body.task_id })
+        .success,
+    ).toBe(false);
+    expect(
+      PublicTimeEntryInput.safeParse({ ...body, duration_seconds: 3600, hourly_rate: 10 }).success,
+    ).toBe(false);
   });
 
   it("minutos legados viram segundos exatos; intervalo vira modo interval", () => {
-    expect(toEntryPayload(PublicTimeEntryInput.parse({ ...body, duration_minutes: 90 }))).toMatchObject({ mode: "duration", duration_seconds: 5400 });
-    expect(toEntryPayload(PublicTimeEntryInput.parse({ ...body, start_time: "09:00:00", end_time: "10:30:15" }))).toMatchObject({
+    expect(
+      toEntryPayload(PublicTimeEntryInput.parse({ ...body, duration_minutes: 90 })),
+    ).toMatchObject({ mode: "duration", duration_seconds: 5400 });
+    expect(
+      toEntryPayload(
+        PublicTimeEntryInput.parse({ ...body, start_time: "09:00:00", end_time: "10:30:15" }),
+      ),
+    ).toMatchObject({
       mode: "interval",
       start_time: "09:00:00",
       end_time: "10:30:15",
@@ -24,7 +44,9 @@ describe("API pública v1 — regras puras", () => {
   });
 
   it("hash do pedido não depende da ordem dos campos", () => {
-    expect(canonicalJson({ b: 1, a: { d: 2, c: [1, { y: 1, x: 2 }] } })).toBe(canonicalJson({ a: { c: [1, { x: 2, y: 1 }], d: 2 }, b: 1 }));
+    expect(canonicalJson({ b: 1, a: { d: 2, c: [1, { y: 1, x: 2 }] } })).toBe(
+      canonicalJson({ a: { c: [1, { x: 2, y: 1 }], d: 2 }, b: 1 }),
+    );
   });
 
   it("Idempotency-Key tem prioridade; external_id é aceito por compatibilidade", () => {

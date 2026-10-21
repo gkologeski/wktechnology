@@ -165,7 +165,10 @@ export function QuickTimeEntryDialog({
     entry_date: entryDate,
     mode,
     ...(mode === "interval"
-      ? { start_time: startTime.length === 5 ? `${startTime}:00` : startTime, end_time: endTime.length === 5 ? `${endTime}:00` : endTime }
+      ? {
+          start_time: startTime.length === 5 ? `${startTime}:00` : startTime,
+          end_time: endTime.length === 5 ? `${endTime}:00` : endTime,
+        }
       : { duration_seconds: durationSeconds ?? undefined }),
     timezone,
     ...(description.trim() ? { description: description.trim() } : {}),
@@ -176,7 +179,8 @@ export function QuickTimeEntryDialog({
     const task = tasks.find((t) => t.id === taskId)?.title ?? "Atividade";
     await offline.enqueueEntry(offlinePayload(), `${proj} · ${task}`);
     toast.warning("Sem conexão: guardado neste aparelho", {
-      description: "Ainda NÃO foi enviado. Será enviado e conferido pelo servidor quando a conexão voltar (veja em Minhas Horas).",
+      description:
+        "Ainda NÃO foi enviado. Será enviado e conferido pelo servidor quando a conexão voltar (veja em Minhas Horas).",
     });
     onOpenChange(false);
   };
@@ -238,7 +242,8 @@ export function QuickTimeEntryDialog({
       if (!draft?.id && offline.optIn && classifyError(err).kind === "retry") {
         if (!taskId) {
           toast.error("Sem conexão", {
-            description: "Para guardar no aparelho, escolha uma atividade já existente (nova atividade exige conexão).",
+            description:
+              "Para guardar no aparelho, escolha uma atividade já existente (nova atividade exige conexão).",
           });
           return;
         }
@@ -468,7 +473,11 @@ export function QuickTimeEntryDialog({
             </div>
             {!draft?.id && offline.supported && offline.ready && (
               <div className="flex items-start gap-2 rounded-md border border-dashed p-2">
-                <Switch id="tt-offline" checked={offline.optIn} onCheckedChange={offline.setOptIn} />
+                <Switch
+                  id="tt-offline"
+                  checked={offline.optIn}
+                  onCheckedChange={offline.setOptIn}
+                />
                 <div className="grid gap-0.5">
                   <Label htmlFor="tt-offline">Guardar neste aparelho se a conexão cair</Label>
                   <p className="text-xs text-muted-foreground">

@@ -30,7 +30,8 @@ export const askProjectsAssistant = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
-    const { askAssistant, aiModelCaller, assertAssistantQuota } = await import("./assistant.server");
+    const { askAssistant, aiModelCaller, assertAssistantQuota } =
+      await import("./assistant.server");
     const { isIanaTimeZone, validateIsoRange } = await import("./reconciliation-labels");
     const rangeErr = validateIsoRange(data.filters.from, data.filters.to);
     if (rangeErr) throw new Error(rangeErr);

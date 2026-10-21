@@ -95,8 +95,7 @@ export function mapApiDbError(raw: string): ApiErrorShape {
   const clean = msg.replace(/^[A-Z_]+:\s*/, "");
   if (/API_KEY_INVALID/.test(msg))
     return { status: 401, error: "unauthorized", message: "Chave inválida." };
-  if (/API_SUBJECT_INACTIVE/.test(msg))
-    return { status: 403, error: "forbidden", message: clean };
+  if (/API_SUBJECT_INACTIVE/.test(msg)) return { status: 403, error: "forbidden", message: clean };
   if (/IDEMPOTENCY_CONFLICT/.test(msg))
     return { status: 409, error: "idempotency_conflict", message: clean };
   if (/IDEMPOTENCY_KEY_REQUIRED/.test(msg))

@@ -11,7 +11,10 @@ export const PROJECTS_OPENAPI = {
   components: {
     securitySchemes: { bearer: { type: "http", scheme: "bearer", description: "Chave lvb_..." } },
     headers: {
-      RateLimit: { schema: { type: "integer" }, description: "X-RateLimit-Limit / Remaining / Reset" },
+      RateLimit: {
+        schema: { type: "integer" },
+        description: "X-RateLimit-Limit / Remaining / Reset",
+      },
       RequestId: { schema: { type: "string" }, description: "X-Request-Id para suporte" },
     },
     schemas: {
@@ -72,7 +75,10 @@ export const PROJECTS_OPENAPI = {
           timezone: { type: ["string", "null"] },
           description: { type: ["string", "null"] },
           billable: { type: "boolean" },
-          status: { type: "string", enum: ["draft", "submitted", "approved", "rejected", "locked"] },
+          status: {
+            type: "string",
+            enum: ["draft", "submitted", "approved", "rejected", "locked"],
+          },
           source: { type: "string" },
           revision: { type: "integer" },
           locked: { type: "boolean" },
@@ -181,7 +187,8 @@ export const PROJECTS_OPENAPI = {
           "403": { description: "Sem vínculo para apontar, sem permissão ou dono inativo" },
           "404": { description: "Atividade não pertence ao projeto" },
           "409": {
-            description: "Conflito: mesma Idempotency-Key com outro conteúdo, sobreposição ou competência fechada",
+            description:
+              "Conflito: mesma Idempotency-Key com outro conteúdo, sobreposição ou competência fechada",
           },
           "429": { description: "Limite por chave atingido" },
         },

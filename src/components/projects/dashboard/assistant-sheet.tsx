@@ -35,7 +35,9 @@ export function AssistantSheet({ filters }: { filters: DashFilters }) {
         data: {
           question: q,
           filters: Object.fromEntries(
-            Object.entries(filters).filter(([k, v]) => k !== "compare" && v !== undefined && v !== ""),
+            Object.entries(filters).filter(
+              ([k, v]) => k !== "compare" && v !== undefined && v !== "",
+            ),
           ) as DashFilters,
         },
       }),
@@ -59,8 +61,8 @@ export function AssistantSheet({ filters }: { filters: DashFilters }) {
         <SheetHeader>
           <SheetTitle>Assistente de análise</SheetTitle>
           <SheetDescription>
-            Somente leitura: usa os números deste painel com as suas permissões, no período {filters.from} a{" "}
-            {filters.to}. Não aprova, não aponta e não altera nada.
+            Somente leitura: usa os números deste painel com as suas permissões, no período{" "}
+            {filters.from} a {filters.to}. Não aprova, não aponta e não altera nada.
           </SheetDescription>
         </SheetHeader>
         <form
@@ -81,7 +83,14 @@ export function AssistantSheet({ filters }: { filters: DashFilters }) {
           />
           <div className="flex flex-wrap gap-2">
             {EXAMPLES.map((x) => (
-              <Button key={x} type="button" size="sm" variant="ghost" onClick={() => submit(x)} disabled={m.isPending}>
+              <Button
+                key={x}
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => submit(x)}
+                disabled={m.isPending}
+              >
                 {x}
               </Button>
             ))}
@@ -95,15 +104,22 @@ export function AssistantSheet({ filters }: { filters: DashFilters }) {
         <div aria-live="polite" className="grid gap-3">
           {m.isPending && <p className="text-sm text-muted-foreground">Consultando o painel…</p>}
           {m.isError && (
-            <p role="alert" className="rounded-md border border-destructive/40 p-3 text-sm text-destructive">
-              {(m.error as Error).message || "Não foi possível consultar o assistente."} Os números do painel continuam disponíveis
-              nos cartões.
+            <p
+              role="alert"
+              className="rounded-md border border-destructive/40 p-3 text-sm text-destructive"
+            >
+              {(m.error as Error).message || "Não foi possível consultar o assistente."} Os números
+              do painel continuam disponíveis nos cartões.
             </p>
           )}
           {m.data && (
             <article className="grid gap-3 rounded-md border border-border p-3">
               {m.data.noData && (
-                <EmptyState compact title="Sem base para responder" description="Nenhuma consulta trouxe dados para esta pergunta." />
+                <EmptyState
+                  compact
+                  title="Sem base para responder"
+                  description="Nenhuma consulta trouxe dados para esta pergunta."
+                />
               )}
               <p className="whitespace-pre-wrap text-sm">{m.data.answer}</p>
               {m.data.citations.length > 0 && (
@@ -117,7 +133,9 @@ export function AssistantSheet({ filters }: { filters: DashFilters }) {
                         </a>{" "}
                         <span className="text-xs text-muted-foreground">
                           · {c.source}
-                          {c.generated_at ? ` · gerado ${new Date(c.generated_at).toLocaleString("pt-BR")}` : ""}
+                          {c.generated_at
+                            ? ` · gerado ${new Date(c.generated_at).toLocaleString("pt-BR")}`
+                            : ""}
                         </span>
                       </li>
                     ))}
@@ -125,7 +143,8 @@ export function AssistantSheet({ filters }: { filters: DashFilters }) {
                 </div>
               )}
               <p className="text-xs text-muted-foreground">
-                Método: {m.data.method} Período {m.data.period} ({filters.tz}). Consultas: {m.data.tools.length}.
+                Método: {m.data.method} Período {m.data.period} ({filters.tz}). Consultas:{" "}
+                {m.data.tools.length}.
               </p>
             </article>
           )}

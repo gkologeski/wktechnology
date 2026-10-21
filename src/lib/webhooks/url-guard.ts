@@ -41,10 +41,13 @@ export function isPrivateAddress(ip: string): boolean {
   if (v6 === "::" || v6 === "::1") return true;
   const mapped = v6.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
   if (mapped) return isPrivateAddress(mapped[1]);
-  return /^(fc|fd|fe8|fe9|fea|feb|ff)/.test(v6) || v6.startsWith("64:ff9b:") || v6.startsWith("2001:db8");
+  return (
+    /^(fc|fd|fe8|fe9|fea|feb|ff)/.test(v6) || v6.startsWith("64:ff9b:") || v6.startsWith("2001:db8")
+  );
 }
 
-const BLOCKED_HOSTS = /(^|\.)(localhost|local|internal|localdomain|home\.arpa|metadata\.google\.internal)$/i;
+const BLOCKED_HOSTS =
+  /(^|\.)(localhost|local|internal|localdomain|home\.arpa|metadata\.google\.internal)$/i;
 
 /** Valida a URL e devolve-a normalizada; lança UnsafeWebhookUrl quando recusada. */
 export async function assertSafeWebhookUrl(raw: string, resolve: Resolver): Promise<URL> {

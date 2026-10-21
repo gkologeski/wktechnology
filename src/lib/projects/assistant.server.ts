@@ -10,7 +10,13 @@ import {
   PROJECTS_ASSISTANT_TIMEOUT_MS,
 } from "@/lib/limits";
 import { loadDashDrill, loadDashScope, loadDashSummary } from "./dashboard-views.server";
-import { DASH_VIEW_LABEL, DASH_VIEWS, type DashDataset, type DashFilters, type DashView } from "./dashboard-views.shared";
+import {
+  DASH_VIEW_LABEL,
+  DASH_VIEWS,
+  type DashDataset,
+  type DashFilters,
+  type DashView,
+} from "./dashboard-views.shared";
 import { METRIC_DEFS } from "./dashboard-metric-defs.shared";
 import {
   runAssistant,
@@ -66,11 +72,22 @@ export function makeToolRunner(sb: Sb, filters: DashFilters) {
       const pid = r.project_id;
       const pname = r.project ?? r.project_name;
       if (typeof pid === "string" && typeof pname === "string")
-        cites.push({ label: pname, href: `/projects/${pid}`, source: "Projeto", generated_at: page.generated_at });
+        cites.push({
+          label: pname,
+          href: `/projects/${pid}`,
+          source: "Projeto",
+          generated_at: page.generated_at,
+        });
     }
     return {
       ok: true,
-      data: { indicador: args.indicador, definicao: def?.definition ?? null, total: page.total, segundos: page.seconds, linhas: page.rows },
+      data: {
+        indicador: args.indicador,
+        definicao: def?.definition ?? null,
+        total: page.total,
+        segundos: page.seconds,
+        linhas: page.rows,
+      },
       generated_at: page.generated_at,
       citations: cites,
     };
@@ -85,11 +102,23 @@ export function aiModelCaller(ctx: { workspaceId: string; userId: string }): Cal
         method: "POST",
         signal: AbortSignal.timeout(PROJECTS_ASSISTANT_TIMEOUT_MS),
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: MODEL, messages, tools, tool_choice: "auto", temperature: 0 }),
+        body: JSON.stringify({
+          model: MODEL,
+          messages,
+          tools,
+          tool_choice: "auto",
+          temperature: 0,
+        }),
       },
-      { feature: "assistente_projetos", workspaceId: ctx.workspaceId, userId: ctx.userId, triggerSource: "user" },
+      {
+        feature: "assistente_projetos",
+        workspaceId: ctx.workspaceId,
+        userId: ctx.userId,
+        triggerSource: "user",
+      },
     );
-    if (res.status === 429) throw new Error("Limite de uso da IA atingido. Tente novamente em instantes.");
+    if (res.status === 429)
+      throw new Error("Limite de uso da IA atingido. Tente novamente em instantes.");
     if (res.status === 402) throw new Error("Créditos de IA esgotados no workspace.");
     if (!res.ok) throw new Error(`O provedor de IA recusou a chamada (${res.status}).`);
     const j = (await res.json()) as {
@@ -135,7 +164,8 @@ export async function askAssistant(
 ): Promise<AssistantAnswer & { generated_at: string; period: string; method: string }> {
   const scope = await loadDashScope(sb);
   const allowed = DASH_VIEWS.filter((v) => scope.views[v]);
-  if (allowed.length === 0) throw new Error("Você não tem acesso a nenhuma visão do painel do TechProjects.");
+  if (allowed.length === 0)
+    throw new Error("Você não tem acesso a nenhuma visão do painel do TechProjects.");
   const period = `${input.filters.from} a ${input.filters.to}`;
   const out = await runAssistant({
     question: input.question,

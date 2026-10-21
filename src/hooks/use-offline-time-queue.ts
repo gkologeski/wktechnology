@@ -36,7 +36,11 @@ export function useOfflineTimeQueue() {
   const qc = useQueryClient();
   const ctxFn = useServerFn(getOfflineContext);
   const syncFn = useServerFn(syncOfflineTimeEntry);
-  const ctxQ = useQuery({ queryKey: ["offline-time-context"], queryFn: () => ctxFn(), staleTime: Infinity });
+  const ctxQ = useQuery({
+    queryKey: ["offline-time-context"],
+    queryFn: () => ctxFn(),
+    staleTime: Infinity,
+  });
   const ctx = ctxQ.data ?? null;
   const supported = typeof window !== "undefined" && typeof indexedDB !== "undefined";
   const store = useMemo(() => (supported ? indexedDbStore() : null), [supported]);
@@ -49,12 +53,18 @@ export function useOfflineTimeQueue() {
 
   const refresh = useCallback(async () => {
     if (!store || !ctx) return;
-    setItems(scoped(await store.all(), ctx.userId, ctx.workspaceId).sort((a, b) => b.createdAt - a.createdAt));
+    setItems(
+      scoped(await store.all(), ctx.userId, ctx.workspaceId).sort(
+        (a, b) => b.createdAt - a.createdAt,
+      ),
+    );
   }, [store, ctx]);
 
   useEffect(() => {
     if (!ctx || typeof window === "undefined") return;
-    setOptInState(window.localStorage.getItem(offlinePrefKey(ctx.userId, ctx.workspaceId)) === "on");
+    setOptInState(
+      window.localStorage.getItem(offlinePrefKey(ctx.userId, ctx.workspaceId)) === "on",
+    );
   }, [ctx]);
 
   const setOptIn = useCallback(
@@ -102,7 +112,10 @@ export function useOfflineTimeQueue() {
     };
     try {
       const locks = (navigator as Navigator & { locks?: LockManager }).locks;
-      if (locks) await locks.request(SYNC_LOCK, { ifAvailable: true }, async (lock) => (lock ? run() : undefined));
+      if (locks)
+        await locks.request(SYNC_LOCK, { ifAvailable: true }, async (lock) =>
+          lock ? run() : undefined,
+        );
       else await run();
     } finally {
       busy.current = false;
@@ -120,7 +133,9 @@ export function useOfflineTimeQueue() {
       void refresh().then(() => void syncNow());
     });
     const onChange = () => {
-      setOptInState(window.localStorage.getItem(offlinePrefKey(ctx.userId, ctx.workspaceId)) === "on");
+      setOptInState(
+        window.localStorage.getItem(offlinePrefKey(ctx.userId, ctx.workspaceId)) === "on",
+      );
       void refresh();
     };
     window.addEventListener("storage", onChange);
@@ -159,8 +174,14 @@ export function useOfflineTimeQueue() {
 
   const enqueueEntry = useCallback(
     async (payload: OfflinePayload, label: string) => {
-      if (!store || !ctx) throw new Error("Este aparelho não consegue guardar apontamentos (sem contexto da conta).");
-      const item = await enqueue(store, { userId: ctx.userId, workspaceId: ctx.workspaceId, payload, label });
+      if (!store || !ctx)
+        throw new Error("Este aparelho não consegue guardar apontamentos (sem contexto da conta).");
+      const item = await enqueue(store, {
+        userId: ctx.userId,
+        workspaceId: ctx.workspaceId,
+        payload,
+        label,
+      });
       await refresh();
       announce();
       return item;
