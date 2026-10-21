@@ -16,6 +16,7 @@ desenvolvedores. Ponto de entrada: `CLAUDE.md` na raiz do repositório.
 | [workflows-automation.md](./workflows-automation.md) | vai mexer em automação, eventos ou cron                    |
 | [billing-measurements.md](./billing-measurements.md) | vai mexer em tarifas, medições, cobrança de projetos ou rentabilidade |
 | [testing-and-ops.md](./testing-and-ops.md)           | vai validar, testar ou operar o sistema                    |
+| [operations-cycle6.md](./operations-cycle6.md)       | vai mexer em API v1 de projetos, fila offline, webhooks, assistente, desempenho ou recuperação |
 
 Documentos complementares fora deste diretório estão listados no fim de
 `CLAUDE.md`. Nada aqui duplica o design system — para UI, use
