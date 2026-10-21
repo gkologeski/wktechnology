@@ -75,7 +75,11 @@ export function SdrAgentProfileCard() {
         </div>
       ) : !identity ? (
         <Button onClick={() => create.mutate()} disabled={create.isPending}>
-          {create.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
+          {create.isPending ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Bot className="mr-2 h-4 w-4" />
+          )}
           Criar perfil da Lia espelhando o meu
         </Button>
       ) : (
@@ -86,7 +90,12 @@ export function SdrAgentProfileCard() {
             <Badge variant="secondary">Ativo, sem login</Badge>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => hist.mutate(false)} disabled={hist.isPending}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => hist.mutate(false)}
+              disabled={hist.isPending}
+            >
               Ver o que será transferido
             </Button>
             {preview && (

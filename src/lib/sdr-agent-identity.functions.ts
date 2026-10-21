@@ -33,7 +33,8 @@ export const createSdrAgentProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { ws, admin } = await requireAdmin(context.supabase, context.userId);
-    const { provisionSdrAgentIdentity } = await import("@/lib/prospecting/sdr/agent-identity.server");
+    const { provisionSdrAgentIdentity } =
+      await import("@/lib/prospecting/sdr/agent-identity.server");
     return provisionSdrAgentIdentity(admin, { workspaceId: ws, sourceUserId: context.userId });
   });
 

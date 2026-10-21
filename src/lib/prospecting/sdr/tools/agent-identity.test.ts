@@ -9,7 +9,11 @@ const LIA = "00000000-0000-4000-8000-00000000011a";
 const HUMAN = "00000000-0000-4000-8000-0000000000a1";
 
 function ctx(agentUserId: string | null, store: MemoryStore): ToolCtx {
-  const cfg = { enabled_tools: [...TOOL_IDS], scheduling: null, allowed_tags: [] } as unknown as ToolConfig;
+  const cfg = {
+    enabled_tools: [...TOOL_IDS],
+    scheduling: null,
+    allowed_tags: [],
+  } as unknown as ToolConfig;
   return {
     mode: "live",
     jobId: `job-${Math.random()}`,
@@ -18,8 +22,14 @@ function ctx(agentUserId: string | null, store: MemoryStore): ToolCtx {
     playbookId: "pb1",
     agentVersionId: "v1",
     conversation: {
-      id: "c1", phone: "+5548991104003", leadId: "lead1", contactId: null,
-      companyId: null, dealId: null, campaignId: null, enrollmentId: "enr1",
+      id: "c1",
+      phone: "+5548991104003",
+      leadId: "lead1",
+      contactId: null,
+      companyId: null,
+      dealId: null,
+      campaignId: null,
+      enrollmentId: "enr1",
     },
     history: [],
     config: cfg,
@@ -27,7 +37,11 @@ function ctx(agentUserId: string | null, store: MemoryStore): ToolCtx {
     scheduling: null as never,
     calendar: new FakeCalendar(),
     store,
-    offers: [], materials: [], kbSources: [], attachMaterials: false, questions: [],
+    offers: [],
+    materials: [],
+    kbSources: [],
+    attachMaterials: false,
+    questions: [],
     assigneeId: HUMAN,
     agentUserId,
     now: () => Date.UTC(2026, 9, 21, 14),
@@ -39,17 +53,32 @@ function ctx(agentUserId: string | null, store: MemoryStore): ToolCtx {
 describe("perfil da Lia como responsável", () => {
   it("tarefa criada pela Lia fica com ela", async () => {
     const store = new MemoryStore();
-    await executeTool(ctx(LIA, store), "tasks.create", { title: "Retomar contato", due_in_hours: 24, note: null }, "t1");
+    await executeTool(
+      ctx(LIA, store),
+      "tasks.create",
+      { title: "Retomar contato", due_in_hours: 24, note: null },
+      "t1",
+    );
     expect(store.activities[0]).toMatchObject({ owner_id: LIA, assigned_to: LIA, created_by: LIA });
   });
   it("resumo da conversa fica com a Lia", async () => {
     const store = new MemoryStore();
-    await executeTool(ctx(LIA, store), "conversation.summarize", { summary: "Cliente quer outsourcing." }, "s1");
+    await executeTool(
+      ctx(LIA, store),
+      "conversation.summarize",
+      { summary: "Cliente quer outsourcing." },
+      "s1",
+    );
     expect(store.activities[0]).toMatchObject({ owner_id: LIA, assigned_to: LIA, created_by: LIA });
   });
   it("sem perfil da Lia continua com o responsável configurado", async () => {
     const store = new MemoryStore();
-    await executeTool(ctx(null, store), "tasks.create", { title: "Retomar contato", due_in_hours: 24, note: null }, "t1");
+    await executeTool(
+      ctx(null, store),
+      "tasks.create",
+      { title: "Retomar contato", due_in_hours: 24, note: null },
+      "t1",
+    );
     expect(store.activities[0]).toMatchObject({ owner_id: HUMAN, assigned_to: HUMAN });
     expect(store.activities[0]).not.toHaveProperty("created_by");
   });

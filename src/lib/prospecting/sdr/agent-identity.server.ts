@@ -8,7 +8,10 @@ const BAN_FOREVER = "876000h";
 export const SDR_AGENT_NAME = "Lia (Agente SDR)";
 
 /** ID do usuário da Lia no workspace, ou null quando o perfil não foi criado. */
-export async function loadSdrAgentUserId(admin: Admin, workspaceId: string): Promise<string | null> {
+export async function loadSdrAgentUserId(
+  admin: Admin,
+  workspaceId: string,
+): Promise<string | null> {
   try {
     const { data, error } = await admin
       .from("sdr_agent_identities")
@@ -56,7 +59,8 @@ export async function provisionSdrAgentIdentity(
     .eq("user_id", p.sourceUserId)
     .maybeSingle();
   if (sErr) throw new Error(sErr.message);
-  if (!src || src.status !== "active") throw new Error("Seu acesso a este workspace não está ativo.");
+  if (!src || src.status !== "active")
+    throw new Error("Seu acesso a este workspace não está ativo.");
   // Nunca dona do workspace: owner vira admin.
   const role = src.role === "owner" ? "admin" : src.role;
 
@@ -74,7 +78,13 @@ export async function provisionSdrAgentIdentity(
   const fail = (e: { message: string } | null) => {
     if (e) throw new Error(e.message);
   };
-  fail((await admin.from("profiles").upsert({ id: uid, full_name: SDR_AGENT_NAME }, { onConflict: "id" })).error);
+  fail(
+    (
+      await admin
+        .from("profiles")
+        .upsert({ id: uid, full_name: SDR_AGENT_NAME }, { onConflict: "id" })
+    ).error,
+  );
   fail(
     (
       await admin.from("workspace_members").insert({
