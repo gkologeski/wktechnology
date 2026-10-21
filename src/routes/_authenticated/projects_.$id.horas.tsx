@@ -59,8 +59,11 @@ function ProjectHoursPage() {
         <Button variant="outline" size="icon" aria-label="Mês anterior" onClick={() => shift(-1)}>
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        <p className="min-w-[140px] text-center text-sm font-medium capitalize">
-          {ref.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}
+        <p className="min-w-[140px] text-center text-sm font-medium">
+          {(() => {
+            const label = ref.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+            return label.charAt(0).toUpperCase() + label.slice(1);
+          })()}
         </p>
         <Button variant="outline" size="icon" aria-label="Próximo mês" onClick={() => shift(1)}>
           <ChevronRight className="h-4 w-4" />
