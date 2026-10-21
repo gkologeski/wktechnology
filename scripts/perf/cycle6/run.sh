@@ -14,7 +14,7 @@ bash scripts/isolated-db/stop.sh >/dev/null 2>&1 || true; rm -rf "$ISO_DATA"
 bash scripts/isolated-db/start.sh >/dev/null || exit 2
 iso_guard || exit 2
 iso_psql -f scripts/isolated-db/seed.sql >/dev/null || exit 2
-for MIG in drizzle/migrations/0179_techprojects_cycle6_api_offline_ops.sql drizzle/migrations/0180_techprojects_cycle6_dashboard_performance.sql; do
+for MIG in drizzle/migrations/0179_techprojects_cycle6_api_offline_ops.sql drizzle/migrations/0180_techprojects_cycle6_dashboard_performance.sql drizzle/migrations/0181_techprojects_cycle6_time_entries_rls_cost.sql; do
   iso_psql -v ON_ERROR_STOP=1 -f "$MIG" >/dev/null 2>&1 || { echo "BLOQUEADO: migração $MIG"; exit 2; }
 done
 S=$(date +%s); iso_psql -v n_entries="$N" -f scripts/perf/cycle6-bench-fixture.sql > "$ISO_ROOT/fixture.log" 2>&1 || { tail -5 "$ISO_ROOT/fixture.log"; exit 2; }
