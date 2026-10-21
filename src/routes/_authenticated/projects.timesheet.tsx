@@ -1,15 +1,15 @@
-// Sprint D — Timesheet semanal (Clockify-like) do TechProjects.
-import { createFileRoute } from "@tanstack/react-router";
+// Timesheet semanal do TechProjects: totais por situação agregados no banco, lista paginada,
+// envio com prévia, cópia da semana anterior com prévia e atalho para a fila de aprovação.
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { ChevronLeft, ChevronRight, Copy, Plus, Send } from "lucide-react";
+
+import { PageHeader } from "@/components/page-header";
 import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
-import { useMemo, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { ChevronLeft, ChevronRight, Check } from "lucide-react";
-import { toast } from "sonner";
-
-import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,14 +20,38 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Checkbox } from "@/components/ui/checkbox";
-import { listTimesheet, approveTimeEntries } from "@/lib/project-timer.functions";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { EmptyState, MetricCard, RowSkeleton } from "@/components/techhire/ui";
+import { listTimesheet } from "@/lib/project-timer.functions";
+import { useCurrentUserId } from "@/hooks/use-current-user-id";
+import { getTimesheetOverview } from "@/lib/projects/time-workflow.functions";
+import {
+  formatSeconds,
+  isImportedLocked,
+  REVIEW_FLAG_LABEL,
+  TIME_ENTRY_STATUS_LABEL,
+  type TimeEntryStatus,
+} from "@/lib/projects/time-entry.shared";
+import { QuickTimeEntryDialog } from "@/components/projects/quick-time-entry-dialog";
+import { SubmitPeriodDialog } from "@/components/projects/submit-period-dialog";
+import { CopyWeekDialog } from "@/components/projects/copy-week-dialog";
 
 export const Route = createFileRoute("/_authenticated/projects/timesheet")({
   head: () => ({
     meta: [
       { title: "Timesheet — TechProjects" },
-      { name: "description", content: "Timesheet semanal com apontamentos de horas por projeto." },
+      {
+        name: "description",
+        content:
+          "Timesheet semanal: registrado, enviado, aprovado e pendências por pessoa e projeto.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -36,27 +60,43 @@ export const Route = createFileRoute("/_authenticated/projects/timesheet")({
 
 function startOfWeek(d: Date): Date {
   const x = new Date(d);
-  const day = x.getDay(); // 0 = Sun
-  const diff = (day + 6) % 7; // segunda como início
-  x.setDate(x.getDate() - diff);
-  x.setHours(0, 0, 0, 0);
+  x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
+  x.setHours(12, 0, 0, 0);
   return x;
 }
-function toIsoDate(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
-function fmtHours(h: number): string {
-  const hh = Math.floor(h);
-  const mm = Math.round((h - hh) * 60);
-  return `${hh}h${String(mm).padStart(2, "0")}`;
-}
+const toIso = (d: Date) => d.toLocaleDateString("sv-SE");
+
+type Row = {
+  id: string;
+  user_id: string;
+  entry_date: string;
+  start_time: string | null;
+  end_time: string | null;
+  duration_seconds: number | null;
+  duration_minutes: number | null;
+  description: string | null;
+  billable: boolean;
+  status: string | null;
+  source: string | null;
+  review_flags: string[] | null;
+  period_closing_id: string | null;
+  projects?: { id: string; name: string } | null;
+  project_tasks?: { id: string; title: string } | null;
+};
+
+const secsOf = (r: Row) => r.duration_seconds ?? (r.duration_minutes ?? 0) * 60;
 
 function TimesheetPage() {
-  const qc = useQueryClient();
   const listFn = useServerFn(listTimesheet);
-  const approveFn = useServerFn(approveTimeEntries);
+  const overviewFn = useServerFn(getTimesheetOverview);
 
   const [weekStart, setWeekStart] = useState<Date>(() => startOfWeek(new Date()));
+  const [scope, setScope] = useState<"me" | "visible">("me");
+  const [projectId, setProjectId] = useState<string>("all");
+  const [quickOpen, setQuickOpen] = useState(false);
+  const [submitOpen, setSubmitOpen] = useState(false);
+  const [copyOpen, setCopyOpen] = useState(false);
+
   const days = useMemo(
     () =>
       Array.from({ length: 7 }, (_, i) => {
@@ -66,96 +106,74 @@ function TimesheetPage() {
       }),
     [weekStart],
   );
-  const from = toIsoDate(days[0]!);
-  const to = toIsoDate(days[6]!);
+  const from = toIso(days[0]!);
+  const to = toIso(days[6]!);
+  const pid = projectId === "all" ? undefined : projectId;
 
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-
+  const me = useCurrentUserId();
+  const overview = useQuery({
+    queryKey: ["timesheet-overview", from, to, scope, pid, me],
+    queryFn: () =>
+      overviewFn({
+        data: { from, to, projectId: pid ?? null, userId: scope === "me" ? me : null },
+      }),
+    enabled: scope === "visible" || !!me,
+  });
   const query = useQuery({
-    queryKey: ["timesheet", from, to],
-    queryFn: () => listFn({ data: { from, to } }),
+    queryKey: ["timesheet", from, to, scope, pid],
+    queryFn: () => listFn({ data: { from, to, scope, projectId: pid } }),
   });
 
-  const approveMut = useMutation({
-    mutationFn: (ids: string[]) => approveFn({ data: { ids } }),
-    onSuccess: () => {
-      toast.success("Horas aprovadas");
-      setSelected(new Set());
-      qc.invalidateQueries({ queryKey: ["timesheet"] });
-    },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Falha ao aprovar"),
-  });
+  const rows = (query.data ?? []) as unknown as Row[];
+  const ov = overview.data;
+  const totals = ov?.totals;
+  const scheduleMissing = (ov?.by_user ?? []).filter((u) => !u.schedule_configured).length;
 
-  const rows = (query.data ?? []) as Array<{
-    id: string;
-    project_id: string;
-    task_id: string | null;
-    entry_date: string;
-    hours: number | null;
-    description: string | null;
-    billable: boolean;
-    approved_at: string | null;
-    hourly_rate: number | null;
-    projects?: { id: string; name: string } | null;
-    project_tasks?: { id: string; title: string } | null;
-  }>;
-
-  const totalsPerDay = useMemo(() => {
+  const perDay = useMemo(() => {
     const m = new Map<string, number>();
-    for (const r of rows) {
-      m.set(r.entry_date, (m.get(r.entry_date) ?? 0) + (r.hours ?? 0));
-    }
+    for (const r of rows) m.set(r.entry_date, (m.get(r.entry_date) ?? 0) + secsOf(r));
     return m;
   }, [rows]);
-  const total = rows.reduce((acc, r) => acc + (r.hours ?? 0), 0);
 
-  function shiftWeek(delta: number) {
-    const d = new Date(weekStart);
-    d.setDate(d.getDate() + delta * 7);
-    setWeekStart(d);
-    setSelected(new Set());
-  }
-
-  function toggle(id: string) {
-    setSelected((s) => {
-      const next = new Set(s);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
-  const selectableIds = rows.filter((r) => !r.approved_at).map((r) => r.id);
-  const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selected.has(id));
-
-  const {
-    sorted: sortedRows,
-    sort,
-    toggle: toggleSort,
-    grid: sortGrid,
-  } = useClientSort(rows, {
+  const { sorted, sort, toggle, grid } = useClientSort(rows, {
     date: (r) => r.entry_date,
     project: (r) => r.projects?.name,
     task: (r) => r.project_tasks?.title,
     desc: (r) => r.description,
     billable: (r) => (r.billable ? "Sim" : "Não"),
-    status: (r) => (r.approved_at ? "Aprovado" : "Pendente"),
+    status: (r) => r.status,
   });
+
+  const shiftWeek = (delta: number) => {
+    const d = new Date(weekStart);
+    d.setDate(d.getDate() + delta * 7);
+    setWeekStart(d);
+  };
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Timesheet"
-        description="Apontamentos de horas da semana. Aprove entradas billable para gerar cobrança."
+        description="Semana de apontamentos: registrado, enviado, aprovado e histórico importado. Envio e cópia sempre com prévia."
         actions={
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => shiftWeek(-1)}>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Semana anterior"
+              onClick={() => shiftWeek(-1)}
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <div className="text-sm text-muted-foreground min-w-[180px] text-center">
+            <div className="min-w-[170px] text-center text-sm text-muted-foreground">
               {days[0]!.toLocaleDateString("pt-BR")} — {days[6]!.toLocaleDateString("pt-BR")}
             </div>
-            <Button variant="outline" size="sm" onClick={() => shiftWeek(1)}>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Próxima semana"
+              onClick={() => shiftWeek(1)}
+            >
               <ChevronRight className="h-4 w-4" />
             </Button>
             <Button
@@ -169,154 +187,229 @@ function TimesheetPage() {
         }
       />
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <ToggleGroup
+          type="single"
+          value={scope}
+          onValueChange={(v) => v && setScope(v as "me" | "visible")}
+          aria-label="Quem mostrar"
+        >
+          <ToggleGroupItem value="me" size="sm">
+            Minhas horas
+          </ToggleGroupItem>
+          <ToggleGroupItem value="visible" size="sm">
+            Equipe (o que posso ver)
+          </ToggleGroupItem>
+        </ToggleGroup>
+        <Select value={projectId} onValueChange={setProjectId}>
+          <SelectTrigger className="w-56" aria-label="Filtrar por projeto">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os projetos</SelectItem>
+            {(ov?.by_project ?? []).map((p) => (
+              <SelectItem key={p.project_id} value={p.project_id}>
+                {p.name ?? "Projeto"}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="ml-auto flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={() => setCopyOpen(true)}>
+            <Copy className="mr-1 h-3.5 w-3.5" /> Copiar semana anterior
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setSubmitOpen(true)}>
+            <Send className="mr-1 h-3.5 w-3.5" /> Enviar semana
+          </Button>
+          <Button size="sm" onClick={() => setQuickOpen(true)}>
+            <Plus className="mr-1 h-3.5 w-3.5" /> Apontar horas
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <MetricCard label="Registrado" value={formatSeconds(totals?.registered ?? 0)} />
+        <MetricCard label="Rascunho" value={formatSeconds(totals?.draft ?? 0)} />
+        <MetricCard label="Enviado" value={formatSeconds(totals?.submitted ?? 0)} />
+        <MetricCard label="Aprovado" value={formatSeconds(totals?.approved ?? 0)} tone="positive" />
+        <MetricCard label="Devolvido" value={formatSeconds(totals?.rejected ?? 0)} />
+        <MetricCard
+          label="Importado (histórico)"
+          value={formatSeconds(totals?.locked_import ?? 0)}
+          hint="Bloqueado, não aprovado"
+        />
+      </div>
+      {scheduleMissing > 0 && (
+        <p className="text-xs text-muted-foreground" role="status">
+          {scope === "me"
+            ? "Sua jornada não está cadastrada no TechPeople: capacidade prevista não configurada."
+            : `${scheduleMissing} pessoa(s) sem jornada cadastrada no TechPeople: capacidade prevista não configurada.`}{" "}
+          <Link to="/projects/hours-review" className="underline">
+            Fila de aprovação
+          </Link>
+        </p>
+      )}
+
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
         {days.map((d) => (
-          <div key={d.toISOString()} className="rounded-md border p-3 bg-card">
-            <div className="text-xs text-muted-foreground uppercase">
+          <div key={toIso(d)} className="rounded-md border bg-card p-3">
+            <div className="text-xs uppercase text-muted-foreground">
               {d.toLocaleDateString("pt-BR", { weekday: "short" })}
             </div>
             <div className="text-sm font-medium">{d.toLocaleDateString("pt-BR")}</div>
-            <div className="text-lg font-semibold mt-1 tabular-nums">
-              {fmtHours(totalsPerDay.get(toIsoDate(d)) ?? 0)}
+            <div className="mt-1 text-lg font-semibold tabular-nums">
+              {formatSeconds(perDay.get(toIso(d)) ?? 0)}
             </div>
           </div>
         ))}
       </div>
 
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          Total da semana: <span className="font-semibold text-foreground">{fmtHours(total)}</span>
-        </div>
-        <Button
-          size="sm"
-          disabled={selected.size === 0 || approveMut.isPending}
-          onClick={() => approveMut.mutate(Array.from(selected))}
-        >
-          <Check className="h-3 w-3 mr-1" />
-          Aprovar selecionados ({selected.size})
-        </Button>
-      </div>
-
       <div className="rounded-md border">
         <GridListToolbar
-          grid={sortGrid}
+          grid={grid}
           filename="timesheet"
           labels={{
             date: "Data",
             project: "Projeto",
             task: "Tarefa",
             desc: "Descrição",
-            billable: "Billable",
-            status: "Status",
+            billable: "Faturável",
+            status: "Situação",
           }}
         />
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-8">
-                <Checkbox
-                  checked={allSelected}
-                  onCheckedChange={(v) => {
-                    if (v) setSelected(new Set(selectableIds));
-                    else setSelected(new Set());
-                  }}
+        {query.isLoading ? (
+          <div className="space-y-2 p-3">
+            <RowSkeleton />
+            <RowSkeleton />
+            <RowSkeleton />
+          </div>
+        ) : query.isError ? (
+          <EmptyState
+            title="Não foi possível carregar o timesheet"
+            description="Tente novamente em instantes."
+            action={
+              <Button variant="outline" onClick={() => void query.refetch()}>
+                Tentar novamente
+              </Button>
+            }
+          />
+        ) : rows.length === 0 ? (
+          <EmptyState
+            title="Sem apontamentos na semana"
+            description="Use Apontar horas ou o cronômetro."
+          />
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <SortableTableHead
+                  label="Data"
+                  active={sort?.key === "date"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("date")}
                 />
-              </TableHead>
-              <SortableTableHead
-                label="Data"
-                active={sort?.key === "date"}
-                dir={sort?.dir}
-                onSort={() => toggleSort("date")}
-              />
-              <SortableTableHead
-                label="Projeto"
-                active={sort?.key === "project"}
-                dir={sort?.dir}
-                onSort={() => toggleSort("project")}
-              />
-              <SortableTableHead
-                label="Tarefa"
-                active={sort?.key === "task"}
-                dir={sort?.dir}
-                onSort={() => toggleSort("task")}
-              />
-              <SortableTableHead
-                label="Descrição"
-                active={sort?.key === "desc"}
-                dir={sort?.dir}
-                onSort={() => toggleSort("desc")}
-              />
-              <TableHead className="text-right">Horas</TableHead>
-              <SortableTableHead
-                label="Billable"
-                active={sort?.key === "billable"}
-                dir={sort?.dir}
-                onSort={() => toggleSort("billable")}
-              />
-              <SortableTableHead
-                label="Status"
-                active={sort?.key === "status"}
-                dir={sort?.dir}
-                onSort={() => toggleSort("status")}
-              />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {query.isLoading ? (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground py-6">
-                  Carregando...
-                </TableCell>
+                <SortableTableHead
+                  label="Projeto"
+                  active={sort?.key === "project"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("project")}
+                />
+                <SortableTableHead
+                  label="Tarefa"
+                  active={sort?.key === "task"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("task")}
+                />
+                <SortableTableHead
+                  label="Descrição"
+                  active={sort?.key === "desc"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("desc")}
+                />
+                <TableHead>Horário</TableHead>
+                <TableHead className="text-right">Duração</TableHead>
+                <SortableTableHead
+                  label="Faturável"
+                  active={sort?.key === "billable"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("billable")}
+                />
+                <SortableTableHead
+                  label="Situação"
+                  active={sort?.key === "status"}
+                  dir={sort?.dir}
+                  onSort={() => toggle("status")}
+                />
               </TableRow>
-            ) : rows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground py-6">
-                  Sem apontamentos na semana.
-                </TableCell>
-              </TableRow>
-            ) : (
-              sortedRows.map((r) => (
+            </TableHeader>
+            <TableBody>
+              {sorted.map((r) => (
                 <TableRow key={r.id}>
-                  <TableCell>
-                    <Checkbox
-                      disabled={Boolean(r.approved_at)}
-                      checked={selected.has(r.id)}
-                      onCheckedChange={() => toggle(r.id)}
-                    />
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {new Date(r.entry_date + "T12:00:00").toLocaleDateString("pt-BR")}
+                  <TableCell className="whitespace-nowrap text-sm">
+                    {new Date(`${r.entry_date}T12:00:00`).toLocaleDateString("pt-BR")}
                   </TableCell>
                   <TableCell className="text-sm">{r.projects?.name ?? "—"}</TableCell>
                   <TableCell className="text-sm">{r.project_tasks?.title ?? "—"}</TableCell>
-                  <TableCell className="text-sm max-w-[280px] truncate">
+                  <TableCell
+                    className="max-w-[260px] truncate text-sm"
+                    title={r.description ?? undefined}
+                  >
                     {r.description ?? "—"}
+                    {(r.review_flags ?? []).length > 0 && (
+                      <span className="block text-xs text-muted-foreground">
+                        {(r.review_flags ?? []).map((f) => REVIEW_FLAG_LABEL[f] ?? f).join(" · ")}
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap text-sm tabular-nums">
+                    {r.start_time && r.end_time
+                      ? `${r.start_time.slice(0, 5)}–${r.end_time.slice(0, 5)}`
+                      : "sem horário"}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
-                    {fmtHours(r.hours ?? 0)}
+                    {formatSeconds(secsOf(r))}
                   </TableCell>
                   <TableCell>
-                    {r.billable ? (
-                      <Badge variant="default">Billable</Badge>
-                    ) : (
-                      <Badge variant="secondary">Interno</Badge>
-                    )}
+                    <Badge variant={r.billable ? "default" : "secondary"}>
+                      {r.billable ? "Faturável" : "Interno"}
+                    </Badge>
                   </TableCell>
                   <TableCell>
-                    {r.approved_at ? (
-                      <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
-                        Aprovado
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline">Pendente</Badge>
-                    )}
+                    <Badge
+                      variant={
+                        r.status === "rejected"
+                          ? "destructive"
+                          : r.status === "approved"
+                            ? "default"
+                            : "outline"
+                      }
+                    >
+                      {isImportedLocked(r)
+                        ? "Importado (histórico)"
+                        : TIME_ENTRY_STATUS_LABEL[(r.status ?? "draft") as TimeEntryStatus]}
+                      {r.period_closing_id ? " · fechado" : ""}
+                    </Badge>
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+        {rows.length >= 200 && (
+          <p className="p-3 text-xs text-muted-foreground">
+            Mostrando os primeiros 200 apontamentos; os totais acima consideram todos. Filtre por
+            projeto para ver o restante.
+          </p>
+        )}
       </div>
+
+      <QuickTimeEntryDialog
+        open={quickOpen}
+        onOpenChange={setQuickOpen}
+        draft={{ entryDate: from }}
+      />
+      <SubmitPeriodDialog open={submitOpen} onOpenChange={setSubmitOpen} from={from} to={to} />
+      <CopyWeekDialog open={copyOpen} onOpenChange={setCopyOpen} from={from} to={to} />
     </div>
   );
 }

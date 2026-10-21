@@ -16,6 +16,8 @@ const STATUS_STYLE: Record<string, { className: string; label: string }> = {
   partial: { className: "border-warning/40 bg-warning/10", label: "Incompleto" },
   missing: { className: "border-destructive/40 bg-destructive/10", label: "Sem apontamento" },
   off: { className: "border-border bg-muted/40", label: "Não útil" },
+  tracked: { className: "border-border bg-card", label: "Apontado (sem meta)" },
+  unknown: { className: "border-dashed border-border bg-card", label: "Jornada não configurada" },
 };
 
 export function MyHoursCalendar({ onPickDay }: { onPickDay?: (date: string) => void }) {
@@ -80,6 +82,12 @@ export function MyHoursCalendar({ onPickDay }: { onPickDay?: (date: string) => v
         />
       ) : (
         <>
+          {query.data && !query.data.scheduleConfigured && (
+            <p className="text-xs text-muted-foreground" role="status">
+              Sua jornada não está cadastrada no TechPeople: os dias mostram só o apontado, sem
+              meta.
+            </p>
+          )}
           <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground">
             {WEEKDAYS.map((w) => (
               <span key={w}>{w}</span>
@@ -96,7 +104,7 @@ export function MyHoursCalendar({ onPickDay }: { onPickDay?: (date: string) => v
                   key={d.date}
                   type="button"
                   onClick={() => onPickDay?.(d.date)}
-                  aria-label={`${d.date}: ${formatMinutes(d.tracked)} de ${formatMinutes(d.expected)} — ${style.label}`}
+                  aria-label={`${d.date}: ${formatMinutes(d.tracked)}${d.expected === null ? "" : ` de ${formatMinutes(d.expected)}`} — ${style.label}`}
                   className={`rounded-md border p-2 text-left transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${style.className}`}
                 >
                   <span className="block text-xs font-medium tabular-nums">

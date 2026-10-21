@@ -398,28 +398,43 @@ export const listPersonAllocationsInPeriod = createServerFn({ method: "POST" })
 
 export const approveTimesheetEntries = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({ ids: z.array(z.string().uuid()).min(1) }).parse(i))
+  .inputValidator((i) => z.object({ ids: z.array(z.string().uuid()).min(1).max(500) }).parse(i))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { error, count } = await supabase
-      .from("project_time_entries")
-      .update({ approved_at: new Date().toISOString(), approved_by: userId }, { count: "exact" })
-      .in("id", data.ids);
-    if (error) throw new Error(error.message);
-    return { approved: count ?? 0 };
+    // Mesmo fluxo do TechProjects: só itens enviados, por aprovador explícito, sem autoaprovação.
+    const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
+    const { pendingItemsFor } = await import("@/lib/projects/time-approval.server");
+    const ws = await resolveActiveWorkspace(context.userId);
+    const items = await pendingItemsFor(context.supabase, data.ids);
+    const { data: row, error } = await context.supabase.rpc("project_timesheet_decide", {
+      p_ws: ws,
+      p_items: items,
+      p_action: "approve",
+      p_reason: null as never,
+    });
+    if (error) throw new Error(error.message.replace(/^[A-Z_]{4,}:\s*/, ""));
+    return { approved: (row as unknown as { decided: number }).decided };
   });
 
 export const unapproveTimesheetEntries = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({ ids: z.array(z.string().uuid()).min(1) }).parse(i))
+  .inputValidator((i) =>
+    z
+      .object({
+        ids: z.array(z.string().uuid()).min(1).max(200),
+        reason: z.string().trim().min(5).max(500).default("Aprovação reaberta pelo TechPeople"),
+      })
+      .parse(i),
+  )
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
-    const { error, count } = await supabase
-      .from("project_time_entries")
-      .update({ approved_at: null, approved_by: null }, { count: "exact" })
-      .in("id", data.ids);
-    if (error) throw new Error(error.message);
-    return { unapproved: count ?? 0 };
+    const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
+    const ws = await resolveActiveWorkspace(context.userId);
+    const { data: row, error } = await context.supabase.rpc("project_time_reopen_approval", {
+      p_ws: ws,
+      p_ids: data.ids,
+      p_reason: data.reason,
+    });
+    if (error) throw new Error(error.message.replace(/^[A-Z_]{4,}:\s*/, ""));
+    return { unapproved: (row as unknown as { reopened: number }).reopened };
   });
 
 export const deleteTimeEntry = createServerFn({ method: "POST" })

@@ -114,6 +114,11 @@ function ProjectDetailPage() {
                 Acompanhamento de entrega
               </Link>
             </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/projects/$id/horas" params={{ id }}>
+                Horas e aprovação
+              </Link>
+            </Button>
             <Select
               value={p.status}
               onValueChange={async (v) => {

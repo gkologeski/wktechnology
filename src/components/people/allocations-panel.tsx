@@ -1,5 +1,9 @@
 // TechPeople · Sprint 4 — Alocações & VMS
 import { useState } from "react";
+import {
+  AllocationCapacityFields,
+  type AllocationCapacityValue,
+} from "@/components/people/allocation-capacity-fields";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -325,6 +329,16 @@ function AllocationDialog({
   const [seniority, setSeniority] = useState<string>("");
   const [presetId, setPresetId] = useState<string | null>(editing?.contracting_preset_id ?? null);
   const [competencies, setCompetencies] = useState<string[]>(editing?.competencies ?? []);
+  const extra = (editing ?? {}) as {
+    hours_per_week?: number | null;
+    can_track_time?: boolean | null;
+    overbook_justification?: string | null;
+  };
+  const [capacity, setCapacity] = useState<AllocationCapacityValue>({
+    hoursPerWeek: extra.hours_per_week != null ? String(extra.hours_per_week) : "",
+    canTrackTime: extra.can_track_time ?? true,
+    justification: extra.overbook_justification ?? "",
+  });
 
   const suggestFn = useServerFn(listContractRoleSuggestions);
   const { data: suggestions = [] } = useQuery({
@@ -373,6 +387,9 @@ function AllocationDialog({
           seniority: seniority || null,
           contracting_preset_id: presetId,
           competencies,
+          hours_per_week: capacity.hoursPerWeek ? Number(capacity.hoursPerWeek) : null,
+          can_track_time: capacity.canTrackTime,
+          overbook_justification: capacity.justification.trim() || null,
         },
       }),
     onSuccess: () => {
@@ -529,6 +546,16 @@ function AllocationDialog({
             <Label>Fim (opcional)</Label>
             <Input type="date" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} />
           </div>
+          <AllocationCapacityFields
+            personId={personId}
+            excludeId={editing?.id ?? null}
+            startsAt={startsAt}
+            endsAt={endsAt}
+            pct={Number(pct) || 0}
+            active={status === "active"}
+            value={capacity}
+            onChange={setCapacity}
+          />
           {canViewSensitive ? (
             <>
               <div className="space-y-2">

@@ -16,13 +16,17 @@ import {
   duplicateTimeEntry,
   removeTimeEntry,
 } from "@/lib/projects/time-tracking.functions";
-import { submitTimeEntries } from "@/lib/projects/time-approval.functions";
 import {
   formatMinutes,
+  formatSeconds,
+  isEditableEntry,
+  isImportedLocked,
+  REVIEW_FLAG_LABEL,
   TIME_ENTRY_STATUS_LABEL,
   type TimeEntryStatus,
 } from "@/lib/projects/time-entry.shared";
 import { QuickTimeEntryDialog, type TimeEntryDraft } from "./quick-time-entry-dialog";
+import { SubmitPeriodDialog } from "./submit-period-dialog";
 
 export function MyHoursDay({
   date,
@@ -31,15 +35,15 @@ export function MyHoursDay({
 }: {
   date: string;
   tracked: number;
-  expected: number;
+  /** null = jornada não configurada no People (nenhuma meta presumida). */
+  expected: number | null;
 }) {
   const qc = useQueryClient();
   const listFn = useServerFn(listTimeEntries);
   const dupFn = useServerFn(duplicateTimeEntry);
   const delFn = useServerFn(removeTimeEntry);
-  const submitFn = useServerFn(submitTimeEntries);
-
   const [draft, setDraft] = useState<TimeEntryDraft | null>(null);
+  const [submitOpen, setSubmitOpen] = useState(false);
 
   const query = useQuery({
     queryKey: ["time-entries", date, date],
@@ -68,34 +72,31 @@ export function MyHoursDay({
     },
     onError: (e: Error) => toast.error(e.message),
   });
-  const submit = useMutation({
-    mutationFn: () => submitFn({ data: { from: date, to: date } }),
-    onSuccess: (r) => {
-      toast.success(`${r.submitted} apontamento(s) enviado(s) para aprovação`);
-      invalidate();
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
   const entries = query.data?.entries ?? [];
-  const remaining = Math.max(0, expected - tracked);
-  const pct = expected > 0 ? Math.min(100, Math.round((tracked / expected) * 100)) : 0;
+  const known = expected !== null;
+  const exp = expected ?? 0;
+  const remaining = Math.max(0, exp - tracked);
+  const pct = exp > 0 ? Math.min(100, Math.round((tracked / exp) * 100)) : 0;
   const last = entries[entries.length - 1];
 
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-3">
         <MetricCard label="Apontado" value={formatMinutes(tracked)} />
-        <MetricCard label="Esperado" value={formatMinutes(expected)} />
         <MetricCard
-          label={tracked > expected ? "Excedente" : "Restante"}
-          value={formatMinutes(tracked > expected ? tracked - expected : remaining)}
-          tone={remaining === 0 ? "positive" : "warning"}
+          label="Esperado"
+          value={known ? formatMinutes(exp) : "Não configurado"}
+          hint={known ? undefined : "Jornada não cadastrada no TechPeople"}
+        />
+        <MetricCard
+          label={known && tracked > exp ? "Excedente" : "Restante"}
+          value={known ? formatMinutes(tracked > exp ? tracked - exp : remaining) : "—"}
+          tone={!known ? undefined : remaining === 0 ? "positive" : "warning"}
         />
       </div>
 
       <div className="space-y-2">
-        <Progress value={pct} aria-label={`Progresso do dia: ${pct}%`} />
+        {known && <Progress value={pct} aria-label={`Progresso do dia: ${pct}%`} />}
         <div className="flex flex-wrap gap-2">
           <Button
             size="sm"
@@ -112,10 +113,10 @@ export function MyHoursDay({
           <Button
             size="sm"
             variant="outline"
-            disabled={entries.length === 0 || submit.isPending}
-            onClick={() => submit.mutate()}
+            disabled={entries.length === 0}
+            onClick={() => setSubmitOpen(true)}
           >
-            Enviar para aprovação
+            Enviar dia para aprovação
           </Button>
         </div>
       </div>
@@ -152,9 +153,25 @@ export function MyHoursDay({
                     {e.project_tasks?.title ?? "Atividade"}
                   </p>
                   <p className="truncate text-xs text-muted-foreground">
-                    {e.projects?.name ?? "Projeto"} · {(e.start_time ?? "").slice(0, 5)}–
-                    {(e.end_time ?? "").slice(0, 5)} · {formatMinutes(e.duration_minutes)}
+                    {e.projects?.name ?? "Projeto"} ·{" "}
+                    {e.start_time && e.end_time
+                      ? `${e.start_time.slice(0, 5)}–${e.end_time.slice(0, 5)}`
+                      : "sem horário"}{" "}
+                    ·{" "}
+                    <span className="tabular-nums">
+                      {e.duration_seconds != null
+                        ? formatSeconds(e.duration_seconds)
+                        : formatMinutes(e.duration_minutes)}
+                    </span>
                   </p>
+                  {e.status === "rejected" && e.reject_reason && (
+                    <p className="mt-1 text-xs text-destructive">Devolvido: {e.reject_reason}</p>
+                  )}
+                  {(e.review_flags ?? []).length > 0 && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {(e.review_flags ?? []).map((f) => REVIEW_FLAG_LABEL[f] ?? f).join(" · ")}
+                    </p>
+                  )}
                   {e.description && (
                     <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
                       {e.description}
@@ -162,22 +179,27 @@ export function MyHoursDay({
                   )}
                 </div>
                 <div className="flex items-center gap-1">
-                  <Badge variant="secondary">
-                    {TIME_ENTRY_STATUS_LABEL[(e.status ?? "draft") as TimeEntryStatus]}
+                  <Badge variant={e.status === "rejected" ? "destructive" : "secondary"}>
+                    {isImportedLocked(e)
+                      ? "Importado (histórico)"
+                      : TIME_ENTRY_STATUS_LABEL[(e.status ?? "draft") as TimeEntryStatus]}
+                    {e.period_closing_id ? " · fechado" : ""}
                   </Badge>
                   <Button
                     variant="ghost"
                     size="icon"
                     aria-label="Editar apontamento"
-                    disabled={e.status === "locked" || e.status === "approved"}
+                    disabled={!isEditableEntry(e) || e.entry_kind === "timer"}
                     onClick={() =>
                       setDraft({
                         id: e.id,
                         projectId: e.project_id,
                         taskId: e.task_id,
                         entryDate: e.entry_date ?? undefined,
-                        startTime: e.start_time ?? "09:00",
-                        endTime: e.end_time ?? "10:00",
+                        mode: e.start_time && e.end_time ? "interval" : "duration",
+                        startTime: e.start_time ?? undefined,
+                        endTime: e.end_time ?? undefined,
+                        durationSeconds: e.duration_seconds,
                         description: e.description,
                         billable: e.billable ?? true,
                       })
@@ -197,7 +219,9 @@ export function MyHoursDay({
                     variant="ghost"
                     size="icon"
                     aria-label="Excluir apontamento"
-                    disabled={e.status === "locked" || e.status === "approved"}
+                    disabled={
+                      !(e.status === "draft" || e.status === "rejected") || !!e.period_closing_id
+                    }
                     onClick={() => {
                       void confirmDialog({
                         title: "Excluir apontamento?",
@@ -217,6 +241,8 @@ export function MyHoursDay({
           ))}
         </div>
       )}
+
+      <SubmitPeriodDialog open={submitOpen} onOpenChange={setSubmitOpen} from={date} to={date} />
 
       <QuickTimeEntryDialog
         open={!!draft}

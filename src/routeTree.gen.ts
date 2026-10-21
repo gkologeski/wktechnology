@@ -297,7 +297,9 @@ import { Route as AuthenticatedFinanceEntriesIdRouteImport } from './routes/_aut
 import { Route as AuthenticatedProjectsListsIdRouteImport } from './routes/_authenticated/projects.lists.$id'
 import { Route as AuthenticatedProjectsSettingsIndexRouteImport } from './routes/_authenticated/projects.settings.index'
 import { Route as AuthenticatedProjectsSettingsDeliveryRouteImport } from './routes/_authenticated/projects.settings.delivery'
+import { Route as AuthenticatedProjectsSettingsTimeRouteImport } from './routes/_authenticated/projects.settings.time'
 import { Route as AuthenticatedProjectsIdEntregaRouteImport } from './routes/_authenticated/projects_.$id.entrega'
+import { Route as AuthenticatedProjectsIdHorasRouteImport } from './routes/_authenticated/projects_.$id.horas'
 import { Route as AuthenticatedProspectingCampaignsIndexRouteImport } from './routes/_authenticated/prospecting.campaigns.index'
 import { Route as AuthenticatedProspectingCampaignsIdRouteImport } from './routes/_authenticated/prospecting.campaigns.$id'
 import { Route as AuthenticatedSettingsIntegrationsIndexRouteImport } from './routes/_authenticated/settings.integrations.index'
@@ -2056,10 +2058,22 @@ const AuthenticatedProjectsSettingsDeliveryRoute =
     path: '/projects/settings/delivery',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedProjectsSettingsTimeRoute =
+  AuthenticatedProjectsSettingsTimeRouteImport.update({
+    id: '/projects/settings/time',
+    path: '/projects/settings/time',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProjectsIdEntregaRoute =
   AuthenticatedProjectsIdEntregaRouteImport.update({
     id: '/projects_/$id/entrega',
     path: '/projects/$id/entrega',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedProjectsIdHorasRoute =
+  AuthenticatedProjectsIdHorasRouteImport.update({
+    id: '/projects_/$id/horas',
+    path: '/projects/$id/horas',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedProspectingCampaignsIndexRoute =
@@ -3001,7 +3015,9 @@ export interface FileRoutesByFullPath {
   '/finance/entries/$id': typeof AuthenticatedFinanceEntriesIdRoute
   '/projects/lists/$id': typeof AuthenticatedProjectsListsIdRoute
   '/projects/settings/delivery': typeof AuthenticatedProjectsSettingsDeliveryRoute
+  '/projects/settings/time': typeof AuthenticatedProjectsSettingsTimeRoute
   '/projects/$id/entrega': typeof AuthenticatedProjectsIdEntregaRoute
+  '/projects/$id/horas': typeof AuthenticatedProjectsIdHorasRoute
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/settings/integrations/$slug': typeof AuthenticatedSettingsIntegrationsSlugRoute
   '/settings/integrations/ai': typeof AuthenticatedSettingsIntegrationsAiRoute
@@ -3398,7 +3414,9 @@ export interface FileRoutesByTo {
   '/finance/entries/$id': typeof AuthenticatedFinanceEntriesIdRoute
   '/projects/lists/$id': typeof AuthenticatedProjectsListsIdRoute
   '/projects/settings/delivery': typeof AuthenticatedProjectsSettingsDeliveryRoute
+  '/projects/settings/time': typeof AuthenticatedProjectsSettingsTimeRoute
   '/projects/$id/entrega': typeof AuthenticatedProjectsIdEntregaRoute
+  '/projects/$id/horas': typeof AuthenticatedProjectsIdHorasRoute
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/settings/integrations/$slug': typeof AuthenticatedSettingsIntegrationsSlugRoute
   '/settings/integrations/ai': typeof AuthenticatedSettingsIntegrationsAiRoute
@@ -3804,7 +3822,9 @@ export interface FileRoutesById {
   '/_authenticated/finance/entries/$id': typeof AuthenticatedFinanceEntriesIdRoute
   '/_authenticated/projects/lists/$id': typeof AuthenticatedProjectsListsIdRoute
   '/_authenticated/projects/settings/delivery': typeof AuthenticatedProjectsSettingsDeliveryRoute
+  '/_authenticated/projects/settings/time': typeof AuthenticatedProjectsSettingsTimeRoute
   '/_authenticated/projects_/$id/entrega': typeof AuthenticatedProjectsIdEntregaRoute
+  '/_authenticated/projects_/$id/horas': typeof AuthenticatedProjectsIdHorasRoute
   '/_authenticated/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/_authenticated/settings/integrations/$slug': typeof AuthenticatedSettingsIntegrationsSlugRoute
   '/_authenticated/settings/integrations/ai': typeof AuthenticatedSettingsIntegrationsAiRoute
@@ -4210,7 +4230,9 @@ export interface FileRouteTypes {
     | '/finance/entries/$id'
     | '/projects/lists/$id'
     | '/projects/settings/delivery'
+    | '/projects/settings/time'
     | '/projects/$id/entrega'
+    | '/projects/$id/horas'
     | '/prospecting/campaigns/$id'
     | '/settings/integrations/$slug'
     | '/settings/integrations/ai'
@@ -4607,7 +4629,9 @@ export interface FileRouteTypes {
     | '/finance/entries/$id'
     | '/projects/lists/$id'
     | '/projects/settings/delivery'
+    | '/projects/settings/time'
     | '/projects/$id/entrega'
+    | '/projects/$id/horas'
     | '/prospecting/campaigns/$id'
     | '/settings/integrations/$slug'
     | '/settings/integrations/ai'
@@ -5012,7 +5036,9 @@ export interface FileRouteTypes {
     | '/_authenticated/finance/entries/$id'
     | '/_authenticated/projects/lists/$id'
     | '/_authenticated/projects/settings/delivery'
+    | '/_authenticated/projects/settings/time'
     | '/_authenticated/projects_/$id/entrega'
+    | '/_authenticated/projects_/$id/horas'
     | '/_authenticated/prospecting/campaigns/$id'
     | '/_authenticated/settings/integrations/$slug'
     | '/_authenticated/settings/integrations/ai'
@@ -7284,11 +7310,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsSettingsDeliveryRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/projects/settings/time': {
+      id: '/_authenticated/projects/settings/time'
+      path: '/projects/settings/time'
+      fullPath: '/projects/settings/time'
+      preLoaderRoute: typeof AuthenticatedProjectsSettingsTimeRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/projects_/$id/entrega': {
       id: '/_authenticated/projects_/$id/entrega'
       path: '/projects/$id/entrega'
       fullPath: '/projects/$id/entrega'
       preLoaderRoute: typeof AuthenticatedProjectsIdEntregaRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/projects_/$id/horas': {
+      id: '/_authenticated/projects_/$id/horas'
+      path: '/projects/$id/horas'
+      fullPath: '/projects/$id/horas'
+      preLoaderRoute: typeof AuthenticatedProjectsIdHorasRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/prospecting/campaigns/': {
@@ -8718,7 +8758,9 @@ interface AuthenticatedRouteChildren {
   AuthenticatedFinanceEntriesIdRoute: typeof AuthenticatedFinanceEntriesIdRoute
   AuthenticatedProjectsListsIdRoute: typeof AuthenticatedProjectsListsIdRoute
   AuthenticatedProjectsSettingsDeliveryRoute: typeof AuthenticatedProjectsSettingsDeliveryRoute
+  AuthenticatedProjectsSettingsTimeRoute: typeof AuthenticatedProjectsSettingsTimeRoute
   AuthenticatedProjectsIdEntregaRoute: typeof AuthenticatedProjectsIdEntregaRoute
+  AuthenticatedProjectsIdHorasRoute: typeof AuthenticatedProjectsIdHorasRoute
   AuthenticatedatsCandidatesIndexRoute: typeof AuthenticatedatsCandidatesIndexRoute
   AuthenticatedatsHuntingIndexRoute: typeof AuthenticatedatsHuntingIndexRoute
   AuthenticatedatsJobsIndexRoute: typeof AuthenticatedatsJobsIndexRoute
@@ -8881,7 +8923,10 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedProjectsListsIdRoute: AuthenticatedProjectsListsIdRoute,
   AuthenticatedProjectsSettingsDeliveryRoute:
     AuthenticatedProjectsSettingsDeliveryRoute,
+  AuthenticatedProjectsSettingsTimeRoute:
+    AuthenticatedProjectsSettingsTimeRoute,
   AuthenticatedProjectsIdEntregaRoute: AuthenticatedProjectsIdEntregaRoute,
+  AuthenticatedProjectsIdHorasRoute: AuthenticatedProjectsIdHorasRoute,
   AuthenticatedatsCandidatesIndexRoute: AuthenticatedatsCandidatesIndexRoute,
   AuthenticatedatsHuntingIndexRoute: AuthenticatedatsHuntingIndexRoute,
   AuthenticatedatsJobsIndexRoute: AuthenticatedatsJobsIndexRoute,

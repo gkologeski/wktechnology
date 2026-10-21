@@ -1,142 +1,27 @@
 // Sprint D — Fase 4.3: Timer global (Clockify-like) e timesheet semanal.
 // Regras:
-// - Uma única entrada em execução por usuário (unique index parcial).
-// - Ao parar, calcula `hours` = (stopped_at - started_at) em horas com 2 casas.
 // - Timesheet lista entradas concluídas do período; total agregado por dia/projeto.
 // - Geração de financial_entries a partir de horas billable (aprovadas) — MVP.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import type { TimerState } from "@/lib/projects/time-workflow.types";
 
-// Nota: o cronômetro grava apenas duração (não horário de início/fim do dia),
-// para não colidir com a validação de sobreposição dos apontamentos manuais.
+// O cronômetro vive em `project_timer_sessions` (servidor): um ativo por profissional e
+// workspace, pausas pagas/não pagas e troca de atividade. Ao finalizar, o banco grava
+// apontamentos com UTC exato, divididos na meia-noite do fuso da sessão.
+// As ações ficam em `src/lib/projects/time-workflow.functions.ts`; aqui só a leitura.
 
 // ============= TIMER =============
 
 export const getRunningTimer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase, userId } = context;
-    const { data: rows, error } = await supabase
-      .from("project_time_entries")
-      .select("*, project_tasks(id, title), projects(id, name)")
-      .eq("user_id", userId)
-      .is("stopped_at", null)
-      .not("started_at", "is", null)
-      .order("started_at", { ascending: false })
-      .limit(1);
-    if (error) throw error;
-    return rows?.[0] ?? null;
-  });
-
-export const startTimer = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
-    z
-      .object({
-        projectId: z.string().uuid(),
-        taskId: z.string().uuid().nullable().optional(),
-        description: z.string().max(1000).nullable().optional(),
-        billable: z.boolean().default(true),
-        hourlyRate: z.number().nonnegative().nullable().optional(),
-      })
-      .parse(input),
-  )
-  .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
-
-    // Se já existe timer rodando, para-o antes de iniciar outro.
-    const { data: running } = await supabase
-      .from("project_time_entries")
-      .select("id, started_at")
-      .eq("user_id", userId)
-      .is("stopped_at", null)
-      .not("started_at", "is", null)
-      .maybeSingle();
-    if (running?.id) {
-      const now = new Date();
-      const startedAt = running.started_at ? new Date(running.started_at) : now;
-      const hours = Math.max(0, (now.getTime() - startedAt.getTime()) / 3_600_000);
-      await supabase
-        .from("project_time_entries")
-        .update({
-          stopped_at: now.toISOString(),
-          hours: Number(hours.toFixed(2)),
-          duration_minutes: Math.max(0, Math.round(hours * 60)),
-          entry_date: now.toISOString().slice(0, 10),
-        })
-        .eq("id", running.id);
-    }
-
-    const nowIso = new Date().toISOString();
-    const { data: row, error } = await supabase
-      .from("project_time_entries")
-      .insert({
-        workspace_id: workspaceId,
-        project_id: data.projectId,
-        task_id: data.taskId ?? null,
-        user_id: userId,
-        description: data.description ?? null,
-        billable: data.billable,
-        hourly_rate: data.hourlyRate ?? null,
-        started_at: nowIso,
-        stopped_at: null,
-        source: "timer",
-        status: "draft",
-        entry_date: nowIso.slice(0, 10),
-        hours: null,
-      })
-      .select("*, project_tasks(id, title), projects(id, name)")
-      .single();
-    if (error) throw error;
-    return row;
-  });
-
-export const stopTimer = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ id: z.string().uuid().optional() }).parse(input ?? {}))
-  .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-
-    let entryId = data.id ?? null;
-    if (!entryId) {
-      const { data: running } = await supabase
-        .from("project_time_entries")
-        .select("id")
-        .eq("user_id", userId)
-        .is("stopped_at", null)
-        .not("started_at", "is", null)
-        .maybeSingle();
-      entryId = running?.id ?? null;
-    }
-    if (!entryId) return null;
-
-    const { data: entry, error: getErr } = await supabase
-      .from("project_time_entries")
-      .select("id, started_at")
-      .eq("id", entryId)
-      .single();
-    if (getErr) throw getErr;
-
-    const now = new Date();
-    const startedAt = entry.started_at ? new Date(entry.started_at) : now;
-    const hours = Math.max(0, (now.getTime() - startedAt.getTime()) / 3_600_000);
-
-    const { data: row, error } = await supabase
-      .from("project_time_entries")
-      .update({
-        stopped_at: now.toISOString(),
-        hours: Number(hours.toFixed(2)),
-        duration_minutes: Math.max(0, Math.round(hours * 60)),
-        entry_date: now.toISOString().slice(0, 10),
-      })
-      .eq("id", entry.id)
-      .select("*, project_tasks(id, title), projects(id, name)")
-      .single();
-    if (error) throw error;
-    return row;
+    const ws = await resolveActiveWorkspace(context.userId);
+    const { data, error } = await context.supabase.rpc("project_timer_get", { p_ws: ws });
+    if (error) throw new Error(error.message);
+    return (data ?? null) as unknown as TimerState | null;
   });
 
 // ============= TIMESHEET =============
@@ -150,20 +35,30 @@ export const listTimesheet = createServerFn({ method: "POST" })
         to: z.string(),
         userId: z.string().uuid().optional(),
         projectId: z.string().uuid().optional(),
+        /** `visible` = todos os profissionais que a RLS permite ver (gestor/líder). */
+        scope: z.enum(["me", "visible"]).default("me"),
+        page: z.number().int().min(0).default(0),
+        pageSize: z.number().int().min(10).max(500).default(200),
       })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    // Lista paginada (totais vêm de `project_timesheet_overview`, agregado no banco).
+    // Sem custo/tarifa: o timesheet não expõe valores.
     let q = supabase
       .from("project_time_entries")
-      .select("*, project_tasks(id, title), projects(id, name)")
+      .select(
+        "id, project_id, task_id, user_id, entry_date, start_time, end_time, duration_minutes, duration_seconds, entry_kind, hours, description, billable, status, source, approved_at, reject_reason, review_flags, period_closing_id, project_tasks(id, title), projects(id, name)",
+      )
       .gte("entry_date", data.from)
       .lte("entry_date", data.to)
-      .not("stopped_at", "is", null)
-      .order("entry_date", { ascending: true });
+      .order("entry_date", { ascending: true })
+      .order("start_time", { ascending: true, nullsFirst: false })
+      .range(data.page * data.pageSize, data.page * data.pageSize + data.pageSize - 1);
 
-    q = q.eq("user_id", data.userId ?? userId);
+    if (data.userId) q = q.eq("user_id", data.userId);
+    else if (data.scope === "me") q = q.eq("user_id", userId);
     if (data.projectId) q = q.eq("project_id", data.projectId);
 
     const { data: rows, error } = await q;
@@ -230,18 +125,4 @@ export const generateFinancialFromBillable = createServerFn({ method: "POST" })
     return { created: 1, amount: Number(amount.toFixed(2)), financialEntryId: fin.id };
   });
 
-// ============= APROVAÇÃO DE HORAS =============
-
-export const approveTimeEntries = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ ids: z.array(z.string().uuid()).min(1) }).parse(input))
-  .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const nowIso = new Date().toISOString();
-    const { error } = await supabase
-      .from("project_time_entries")
-      .update({ approved_at: nowIso, approved_by: userId })
-      .in("id", data.ids);
-    if (error) throw error;
-    return { ok: true };
-  });
+// Aprovação de horas: ver src/lib/projects/time-approval.functions.ts (fluxo versionado no banco).

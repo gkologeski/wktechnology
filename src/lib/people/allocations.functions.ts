@@ -90,6 +90,11 @@ const allocationSchema = z.object({
   // Preset de contratação usado como base e competências acordadas.
   contracting_preset_id: z.string().uuid().nullable().optional(),
   competencies: z.array(z.string().max(120)).max(50).optional(),
+  // Ciclo 3: horas contratadas, liberação para apontar e justificativa quando a soma
+  // das alocações vigentes passa do limite da política (validado no banco).
+  hours_per_week: z.number().positive().max(168).nullable().optional(),
+  can_track_time: z.boolean().default(true),
+  overbook_justification: z.string().trim().max(500).nullable().optional(),
 });
 
 export type ContractRoleSuggestion = {
@@ -262,6 +267,9 @@ export const upsertAllocation = createServerFn({ method: "POST" })
       notes: data.notes ?? null,
       contracting_preset_id: data.contracting_preset_id ?? null,
       competencies: data.competencies ?? [],
+      hours_per_week: data.hours_per_week ?? null,
+      can_track_time: data.can_track_time,
+      overbook_justification: data.overbook_justification || null,
     };
     // Preenche o cadastro da pessoa só quando os campos estão vazios —
     // nunca sobrescreve informação já cadastrada pelo RH.
@@ -303,6 +311,41 @@ export const upsertAllocation = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     await syncPerson();
     return { id: (row as { id: string }).id };
+  });
+
+/** Capacidade da pessoa no período: alocações vigentes (RLS do usuário) e pico de % por dia. */
+export const getAllocationCapacity = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        person_id: z.string().uuid(),
+        from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        exclude_id: z.string().uuid().nullable().optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: row, error } = await context.supabase.rpc("people_allocation_capacity", {
+      p_person: data.person_id,
+      p_from: data.from,
+      p_to: data.to,
+      p_exclude: (data.exclude_id ?? null) as never,
+    });
+    if (error) throw new Error(error.message);
+    return row as unknown as {
+      allocations: {
+        id: string;
+        project_name: string | null;
+        allocation_pct: number | null;
+        starts_at: string | null;
+        ends_at: string | null;
+        hours_per_week: number | null;
+      }[];
+      max_pct: number;
+      schedule_configured: boolean | null;
+    };
   });
 
 export const deleteAllocation = createServerFn({ method: "POST" })
