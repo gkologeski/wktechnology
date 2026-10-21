@@ -131,7 +131,7 @@ export function DeliveryTemplatesCard() {
       <SectionHeader
         title="Modelos de entrega por serviço"
         description="Sugeridos ao abrir as horas de um projeto do serviço. Aplicação só por ação explícita; projetos e horas importados não são reclassificados."
-        actions={
+        action={
           <Button size="sm" variant="outline" onClick={() => setForm(EMPTY)}>
             <Plus className="mr-1 h-3.5 w-3.5" /> Novo modelo
           </Button>
