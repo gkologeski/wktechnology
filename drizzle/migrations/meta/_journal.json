@@ -1268,6 +1268,13 @@
       "when": 1792606740005,
       "tag": "0180_techprojects_cycle6_dashboard_performance",
       "breakpoints": true
+    },
+    {
+      "idx": 181,
+      "version": "7",
+      "when": 1792609602966,
+      "tag": "0181_techprojects_cycle6_time_entries_rls_cost",
+      "breakpoints": true
     }
   ]
 }

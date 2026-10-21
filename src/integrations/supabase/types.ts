@@ -28337,6 +28337,10 @@ export type Database = {
         }
         Returns: Json
       }
+      project_time_perm_workspaces: {
+        Args: { p_keys: string[] }
+        Returns: string[]
+      }
       project_time_policy_defaults: { Args: never; Returns: Json }
       project_time_policy_get: { Args: { p_ws: string }; Returns: Json }
       project_time_policy_save: {
