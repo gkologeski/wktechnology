@@ -496,12 +496,17 @@ export const assignWhatsAppConversation = createServerFn({ method: "POST" })
         throw new Error("Selecione um membro ativo deste workspace.");
       }
     }
-    const { error } = await supabase
-      .from("whatsapp_conversations")
-      .update({ assigned_to: data.assignedTo })
-      .eq("id", data.conversationId)
-      .eq("workspace_id", workspaceId);
+    const { data: ok, error } = await supabase.rpc(
+      "inbox_assign_conversation" as never,
+      {
+        p_channel: "whatsapp",
+        p_id: data.conversationId,
+        p_assignee: data.assignedTo,
+      } as never,
+    );
     if (error) throw error;
+    const { assertInboxAssigned } = await import("@/lib/inbox-assignment.shared");
+    assertInboxAssigned(ok);
     return { ok: true };
   });
 

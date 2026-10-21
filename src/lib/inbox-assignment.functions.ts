@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { assertInboxAssigned } from "@/lib/inbox-assignment.shared";
 
 const assignSchema = z.object({
   conversationId: z.string().uuid(),
@@ -32,12 +33,16 @@ export const assignEmailThread = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
     await assertActiveMember(workspaceId, data.assignedTo);
-    const { error } = await context.supabase
-      .from("email_threads")
-      .update({ assigned_to: data.assignedTo })
-      .eq("id", data.conversationId)
-      .eq("workspace_id", workspaceId);
+    const { data: ok, error } = await context.supabase.rpc(
+      "inbox_assign_conversation" as never,
+      {
+        p_channel: "email",
+        p_id: data.conversationId,
+        p_assignee: data.assignedTo,
+      } as never,
+    );
     if (error) throw new Error(error.message);
+    assertInboxAssigned(ok);
     return { ok: true };
   });
 
@@ -47,11 +52,15 @@ export const assignChatSession = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
     await assertActiveMember(workspaceId, data.assignedTo);
-    const { error } = await context.supabase
-      .from("live_chat_sessions")
-      .update({ assignee_id: data.assignedTo })
-      .eq("id", data.conversationId)
-      .eq("workspace_id", workspaceId);
+    const { data: ok, error } = await context.supabase.rpc(
+      "inbox_assign_conversation" as never,
+      {
+        p_channel: "chat",
+        p_id: data.conversationId,
+        p_assignee: data.assignedTo,
+      } as never,
+    );
     if (error) throw new Error(error.message);
+    assertInboxAssigned(ok);
     return { ok: true };
   });
