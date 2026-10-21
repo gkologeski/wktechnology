@@ -63,6 +63,16 @@ async function autoAssignConversation(admin: Admin, workspaceId: string, convId:
   await autoAssignInboxConversation(admin, workspaceId, "whatsapp_conversations", convId);
 }
 
+// Sugestão da IA ("saiu da empresa"), idempotente por mensagem; falha não bloqueia o recebimento.
+async function suggestCompanyLeftSafe(
+  admin: Admin,
+  p: { workspaceId: string; conversationId: string; messageId: string; body: string },
+) {
+  await import("@/lib/inbox/ai-suggestions.server")
+    .then((mod) => mod.suggestCompanyLeft(admin, p))
+    .catch((e) => console.error("[inbox-ai-suggestion]", (e as Error).message));
+}
+
 async function handleMessages(admin: Admin, value: any): Promise<string | null> {
   const ourPhone = normalizePhone(value?.metadata?.display_phone_number ?? "");
   let workspaceId: string | null = null;
@@ -74,26 +84,22 @@ async function handleMessages(admin: Admin, value: any): Promise<string | null> 
       .maybeSingle();
     if (dup) {
       // Reentrega: reenfileira de forma idempotente caso a tentativa anterior tenha parado no meio.
-      if (dup.workspace_id && dup.conversation_id)
-        // Sugestão da IA ("saiu da empresa"): falha não bloqueia o recebimento.
-        await import("@/lib/inbox/ai-suggestions.server")
-          .then((m) =>
-            m.suggestCompanyLeft(admin, {
-              workspaceId: ws.workspace_id,
-              conversationId: conv.id,
-              messageId: inserted.id,
-              body,
-            }),
-          )
-          .catch((e) => console.error("[inbox-ai-suggestion]", (e as Error).message));
-      await sdrIngest(admin, {
-        workspaceId: dup.workspace_id,
-        conversationId: dup.conversation_id,
-        messageId: dup.id,
-        waMessageId: m.id,
-        providerPhoneId: value?.metadata?.phone_number_id ?? null,
-        body: dup.body ?? "",
-      });
+      if (dup.workspace_id && dup.conversation_id) {
+        await suggestCompanyLeftSafe(admin, {
+          workspaceId: dup.workspace_id,
+          conversationId: dup.conversation_id,
+          messageId: dup.id,
+          body: dup.body ?? "",
+        });
+        await sdrIngest(admin, {
+          workspaceId: dup.workspace_id,
+          conversationId: dup.conversation_id,
+          messageId: dup.id,
+          waMessageId: m.id,
+          providerPhoneId: value?.metadata?.phone_number_id ?? null,
+          body: dup.body ?? "",
+        });
+      }
       continue;
     }
     // Celular BR pode chegar sem o 9º dígito: converge para a conversa já existente
@@ -186,6 +192,12 @@ async function handleMessages(admin: Admin, value: any): Promise<string | null> 
         workspace_id: ws.workspace_id,
         raw: m,
       }).catch((e) => console.error("[whatsapp-media]", (e as Error).message));
+    await suggestCompanyLeftSafe(admin, {
+      workspaceId: ws.workspace_id,
+      conversationId: conv.id,
+      messageId: inserted.id,
+      body,
+    });
     await sdrIngest(admin, {
       workspaceId: ws.workspace_id,
       conversationId: conv.id,
