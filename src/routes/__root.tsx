@@ -174,6 +174,10 @@ function AuthInvalidator() {
       if (action === "none") return;
       lastUserId = nextUserId;
       void router.invalidate();
+      // Sair/trocar de conta apaga a fila offline de apontamentos deste aparelho (política do ciclo 6:
+      // nada guardado por uma conta é enviado por outra em aparelho compartilhado).
+      if (event === "SIGNED_OUT" || action === "clear")
+        void import("@/lib/projects/offline-queue").then((m) => m.purgeAllOfflineQueues());
       if (action === "clear") qc.clear();
       else if (action === "reset") void qc.resetQueries();
       else void qc.invalidateQueries();

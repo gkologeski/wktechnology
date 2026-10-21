@@ -298,6 +298,7 @@ import { Route as AuthenticatedFinanceEntriesIdRouteImport } from './routes/_aut
 import { Route as AuthenticatedProjectsListsIdRouteImport } from './routes/_authenticated/projects.lists.$id'
 import { Route as AuthenticatedProjectsSettingsIndexRouteImport } from './routes/_authenticated/projects.settings.index'
 import { Route as AuthenticatedProjectsSettingsDeliveryRouteImport } from './routes/_authenticated/projects.settings.delivery'
+import { Route as AuthenticatedProjectsSettingsOperationsRouteImport } from './routes/_authenticated/projects.settings.operations'
 import { Route as AuthenticatedProjectsSettingsRatesRouteImport } from './routes/_authenticated/projects.settings.rates'
 import { Route as AuthenticatedProjectsSettingsTimeRouteImport } from './routes/_authenticated/projects.settings.time'
 import { Route as AuthenticatedProjectsIdEntregaRouteImport } from './routes/_authenticated/projects_.$id.entrega'
@@ -326,6 +327,8 @@ import { Route as ApiPublicBookingSlugRouteImport } from './routes/api/public/bo
 import { Route as ApiPublicFilesTokenRouteImport } from './routes/api/public/files/$token'
 import { Route as ApiPublicFormsSlugRouteImport } from './routes/api/public/forms/$slug'
 import { Route as ApiPublicFormsEmbedJsRouteImport } from './routes/api/public/forms/embed-js'
+import { Route as ApiPublicHealthIndexRouteImport } from './routes/api/public/health/index'
+import { Route as ApiPublicHealthReadyRouteImport } from './routes/api/public/health/ready'
 import { Route as ApiPublicHooksActivityRemindersTickRouteImport } from './routes/api/public/hooks/activity-reminders-tick'
 import { Route as ApiPublicHooksAiSummaryTickRouteImport } from './routes/api/public/hooks/ai-summary-tick'
 import { Route as ApiPublicHooksApolloPhoneRouteImport } from './routes/api/public/hooks/apollo-phone'
@@ -383,6 +386,9 @@ import { Route as ApiPublicV1ContactsRouteImport } from './routes/api/public/v1/
 import { Route as ApiPublicV1DealsRouteImport } from './routes/api/public/v1/deals'
 import { Route as ApiPublicV1LeadsRouteImport } from './routes/api/public/v1/leads'
 import { Route as ApiPublicV1MeetingsRouteImport } from './routes/api/public/v1/meetings'
+import { Route as ApiPublicV1OpenapiDotjsonRouteImport } from './routes/api/public/v1/openapi[.]json'
+import { Route as ApiPublicV1ProjectTasksRouteImport } from './routes/api/public/v1/project-tasks'
+import { Route as ApiPublicV1ProjectsRouteImport } from './routes/api/public/v1/projects'
 import { Route as ApiPublicV1TimeEntriesRouteImport } from './routes/api/public/v1/time-entries'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 import { Route as ApiPublicWidgetMessagesRouteImport } from './routes/api/public/widget/messages'
@@ -2068,6 +2074,12 @@ const AuthenticatedProjectsSettingsDeliveryRoute =
     path: '/projects/settings/delivery',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedProjectsSettingsOperationsRoute =
+  AuthenticatedProjectsSettingsOperationsRouteImport.update({
+    id: '/projects/settings/operations',
+    path: '/projects/settings/operations',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProjectsSettingsRatesRoute =
   AuthenticatedProjectsSettingsRatesRouteImport.update({
     id: '/projects/settings/rates',
@@ -2230,6 +2242,16 @@ const ApiPublicFormsSlugRoute = ApiPublicFormsSlugRouteImport.update({
 const ApiPublicFormsEmbedJsRoute = ApiPublicFormsEmbedJsRouteImport.update({
   id: '/api/public/forms/embed-js',
   path: '/api/public/forms/embed-js',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHealthIndexRoute = ApiPublicHealthIndexRouteImport.update({
+  id: '/api/public/health/',
+  path: '/api/public/health/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHealthReadyRoute = ApiPublicHealthReadyRouteImport.update({
+  id: '/api/public/health/ready',
+  path: '/api/public/health/ready',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicHooksActivityRemindersTickRoute =
@@ -2560,6 +2582,22 @@ const ApiPublicV1LeadsRoute = ApiPublicV1LeadsRouteImport.update({
 const ApiPublicV1MeetingsRoute = ApiPublicV1MeetingsRouteImport.update({
   id: '/api/public/v1/meetings',
   path: '/api/public/v1/meetings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicV1OpenapiDotjsonRoute =
+  ApiPublicV1OpenapiDotjsonRouteImport.update({
+    id: '/api/public/v1/openapi.json',
+    path: '/api/public/v1/openapi.json',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicV1ProjectTasksRoute = ApiPublicV1ProjectTasksRouteImport.update({
+  id: '/api/public/v1/project-tasks',
+  path: '/api/public/v1/project-tasks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicV1ProjectsRoute = ApiPublicV1ProjectsRouteImport.update({
+  id: '/api/public/v1/projects',
+  path: '/api/public/v1/projects',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicV1TimeEntriesRoute = ApiPublicV1TimeEntriesRouteImport.update({
@@ -3044,6 +3082,7 @@ export interface FileRoutesByFullPath {
   '/finance/entries/$id': typeof AuthenticatedFinanceEntriesIdRoute
   '/projects/lists/$id': typeof AuthenticatedProjectsListsIdRoute
   '/projects/settings/delivery': typeof AuthenticatedProjectsSettingsDeliveryRoute
+  '/projects/settings/operations': typeof AuthenticatedProjectsSettingsOperationsRoute
   '/projects/settings/rates': typeof AuthenticatedProjectsSettingsRatesRoute
   '/projects/settings/time': typeof AuthenticatedProjectsSettingsTimeRoute
   '/projects/$id/entrega': typeof AuthenticatedProjectsIdEntregaRoute
@@ -3068,6 +3107,7 @@ export interface FileRoutesByFullPath {
   '/api/public/files/$token': typeof ApiPublicFilesTokenRoute
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
+  '/api/public/health/ready': typeof ApiPublicHealthReadyRoute
   '/api/public/hooks/activity-reminders-tick': typeof ApiPublicHooksActivityRemindersTickRoute
   '/api/public/hooks/ai-summary-tick': typeof ApiPublicHooksAiSummaryTickRoute
   '/api/public/hooks/apollo-phone': typeof ApiPublicHooksApolloPhoneRoute
@@ -3125,6 +3165,9 @@ export interface FileRoutesByFullPath {
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
   '/api/public/v1/meetings': typeof ApiPublicV1MeetingsRouteWithChildren
+  '/api/public/v1/openapi.json': typeof ApiPublicV1OpenapiDotjsonRoute
+  '/api/public/v1/project-tasks': typeof ApiPublicV1ProjectTasksRoute
+  '/api/public/v1/projects': typeof ApiPublicV1ProjectsRoute
   '/api/public/v1/time-entries': typeof ApiPublicV1TimeEntriesRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/public/widget/messages': typeof ApiPublicWidgetMessagesRoute
@@ -3145,6 +3188,7 @@ export interface FileRoutesByFullPath {
   '/settings/integrations/': typeof AuthenticatedSettingsIntegrationsIndexRoute
   '/settings/marketplace/': typeof AuthenticatedSettingsMarketplaceIndexRoute
   '/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
+  '/api/public/health/': typeof ApiPublicHealthIndexRoute
   '/sourcing/sequences/$id': typeof AuthenticatedatsSourcingSequencesIdRoute
   '/projects/settings/imports/clockify': typeof AuthenticatedProjectsSettingsImportsClockifyRoute
   '/projects/settings/imports/jibble': typeof AuthenticatedProjectsSettingsImportsJibbleRoute
@@ -3447,6 +3491,7 @@ export interface FileRoutesByTo {
   '/finance/entries/$id': typeof AuthenticatedFinanceEntriesIdRoute
   '/projects/lists/$id': typeof AuthenticatedProjectsListsIdRoute
   '/projects/settings/delivery': typeof AuthenticatedProjectsSettingsDeliveryRoute
+  '/projects/settings/operations': typeof AuthenticatedProjectsSettingsOperationsRoute
   '/projects/settings/rates': typeof AuthenticatedProjectsSettingsRatesRoute
   '/projects/settings/time': typeof AuthenticatedProjectsSettingsTimeRoute
   '/projects/$id/entrega': typeof AuthenticatedProjectsIdEntregaRoute
@@ -3471,6 +3516,7 @@ export interface FileRoutesByTo {
   '/api/public/files/$token': typeof ApiPublicFilesTokenRoute
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
+  '/api/public/health/ready': typeof ApiPublicHealthReadyRoute
   '/api/public/hooks/activity-reminders-tick': typeof ApiPublicHooksActivityRemindersTickRoute
   '/api/public/hooks/ai-summary-tick': typeof ApiPublicHooksAiSummaryTickRoute
   '/api/public/hooks/apollo-phone': typeof ApiPublicHooksApolloPhoneRoute
@@ -3528,6 +3574,9 @@ export interface FileRoutesByTo {
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
   '/api/public/v1/meetings': typeof ApiPublicV1MeetingsRouteWithChildren
+  '/api/public/v1/openapi.json': typeof ApiPublicV1OpenapiDotjsonRoute
+  '/api/public/v1/project-tasks': typeof ApiPublicV1ProjectTasksRoute
+  '/api/public/v1/projects': typeof ApiPublicV1ProjectsRoute
   '/api/public/v1/time-entries': typeof ApiPublicV1TimeEntriesRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/public/widget/messages': typeof ApiPublicWidgetMessagesRoute
@@ -3548,6 +3597,7 @@ export interface FileRoutesByTo {
   '/settings/integrations': typeof AuthenticatedSettingsIntegrationsIndexRoute
   '/settings/marketplace': typeof AuthenticatedSettingsMarketplaceIndexRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesIndexRoute
+  '/api/public/health': typeof ApiPublicHealthIndexRoute
   '/sourcing/sequences/$id': typeof AuthenticatedatsSourcingSequencesIdRoute
   '/projects/settings/imports/clockify': typeof AuthenticatedProjectsSettingsImportsClockifyRoute
   '/projects/settings/imports/jibble': typeof AuthenticatedProjectsSettingsImportsJibbleRoute
@@ -3859,6 +3909,7 @@ export interface FileRoutesById {
   '/_authenticated/finance/entries/$id': typeof AuthenticatedFinanceEntriesIdRoute
   '/_authenticated/projects/lists/$id': typeof AuthenticatedProjectsListsIdRoute
   '/_authenticated/projects/settings/delivery': typeof AuthenticatedProjectsSettingsDeliveryRoute
+  '/_authenticated/projects/settings/operations': typeof AuthenticatedProjectsSettingsOperationsRoute
   '/_authenticated/projects/settings/rates': typeof AuthenticatedProjectsSettingsRatesRoute
   '/_authenticated/projects/settings/time': typeof AuthenticatedProjectsSettingsTimeRoute
   '/_authenticated/projects_/$id/entrega': typeof AuthenticatedProjectsIdEntregaRoute
@@ -3883,6 +3934,7 @@ export interface FileRoutesById {
   '/api/public/files/$token': typeof ApiPublicFilesTokenRoute
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
+  '/api/public/health/ready': typeof ApiPublicHealthReadyRoute
   '/api/public/hooks/activity-reminders-tick': typeof ApiPublicHooksActivityRemindersTickRoute
   '/api/public/hooks/ai-summary-tick': typeof ApiPublicHooksAiSummaryTickRoute
   '/api/public/hooks/apollo-phone': typeof ApiPublicHooksApolloPhoneRoute
@@ -3940,6 +3992,9 @@ export interface FileRoutesById {
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
   '/api/public/v1/meetings': typeof ApiPublicV1MeetingsRouteWithChildren
+  '/api/public/v1/openapi.json': typeof ApiPublicV1OpenapiDotjsonRoute
+  '/api/public/v1/project-tasks': typeof ApiPublicV1ProjectTasksRoute
+  '/api/public/v1/projects': typeof ApiPublicV1ProjectsRoute
   '/api/public/v1/time-entries': typeof ApiPublicV1TimeEntriesRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/api/public/widget/messages': typeof ApiPublicWidgetMessagesRoute
@@ -3960,6 +4015,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/integrations/': typeof AuthenticatedSettingsIntegrationsIndexRoute
   '/_authenticated/settings/marketplace/': typeof AuthenticatedSettingsMarketplaceIndexRoute
   '/_authenticated/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
+  '/api/public/health/': typeof ApiPublicHealthIndexRoute
   '/_authenticated/(ats)/sourcing/sequences_/$id': typeof AuthenticatedatsSourcingSequencesIdRoute
   '/_authenticated/projects/settings/imports/clockify': typeof AuthenticatedProjectsSettingsImportsClockifyRoute
   '/_authenticated/projects/settings/imports/jibble': typeof AuthenticatedProjectsSettingsImportsJibbleRoute
@@ -4271,6 +4327,7 @@ export interface FileRouteTypes {
     | '/finance/entries/$id'
     | '/projects/lists/$id'
     | '/projects/settings/delivery'
+    | '/projects/settings/operations'
     | '/projects/settings/rates'
     | '/projects/settings/time'
     | '/projects/$id/entrega'
@@ -4295,6 +4352,7 @@ export interface FileRouteTypes {
     | '/api/public/files/$token'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
+    | '/api/public/health/ready'
     | '/api/public/hooks/activity-reminders-tick'
     | '/api/public/hooks/ai-summary-tick'
     | '/api/public/hooks/apollo-phone'
@@ -4352,6 +4410,9 @@ export interface FileRouteTypes {
     | '/api/public/v1/deals'
     | '/api/public/v1/leads'
     | '/api/public/v1/meetings'
+    | '/api/public/v1/openapi.json'
+    | '/api/public/v1/project-tasks'
+    | '/api/public/v1/projects'
     | '/api/public/v1/time-entries'
     | '/api/public/whatsapp/webhook'
     | '/api/public/widget/messages'
@@ -4372,6 +4433,7 @@ export interface FileRouteTypes {
     | '/settings/integrations/'
     | '/settings/marketplace/'
     | '/settings/roles/'
+    | '/api/public/health/'
     | '/sourcing/sequences/$id'
     | '/projects/settings/imports/clockify'
     | '/projects/settings/imports/jibble'
@@ -4674,6 +4736,7 @@ export interface FileRouteTypes {
     | '/finance/entries/$id'
     | '/projects/lists/$id'
     | '/projects/settings/delivery'
+    | '/projects/settings/operations'
     | '/projects/settings/rates'
     | '/projects/settings/time'
     | '/projects/$id/entrega'
@@ -4698,6 +4761,7 @@ export interface FileRouteTypes {
     | '/api/public/files/$token'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
+    | '/api/public/health/ready'
     | '/api/public/hooks/activity-reminders-tick'
     | '/api/public/hooks/ai-summary-tick'
     | '/api/public/hooks/apollo-phone'
@@ -4755,6 +4819,9 @@ export interface FileRouteTypes {
     | '/api/public/v1/deals'
     | '/api/public/v1/leads'
     | '/api/public/v1/meetings'
+    | '/api/public/v1/openapi.json'
+    | '/api/public/v1/project-tasks'
+    | '/api/public/v1/projects'
     | '/api/public/v1/time-entries'
     | '/api/public/whatsapp/webhook'
     | '/api/public/widget/messages'
@@ -4775,6 +4842,7 @@ export interface FileRouteTypes {
     | '/settings/integrations'
     | '/settings/marketplace'
     | '/settings/roles'
+    | '/api/public/health'
     | '/sourcing/sequences/$id'
     | '/projects/settings/imports/clockify'
     | '/projects/settings/imports/jibble'
@@ -5085,6 +5153,7 @@ export interface FileRouteTypes {
     | '/_authenticated/finance/entries/$id'
     | '/_authenticated/projects/lists/$id'
     | '/_authenticated/projects/settings/delivery'
+    | '/_authenticated/projects/settings/operations'
     | '/_authenticated/projects/settings/rates'
     | '/_authenticated/projects/settings/time'
     | '/_authenticated/projects_/$id/entrega'
@@ -5109,6 +5178,7 @@ export interface FileRouteTypes {
     | '/api/public/files/$token'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
+    | '/api/public/health/ready'
     | '/api/public/hooks/activity-reminders-tick'
     | '/api/public/hooks/ai-summary-tick'
     | '/api/public/hooks/apollo-phone'
@@ -5166,6 +5236,9 @@ export interface FileRouteTypes {
     | '/api/public/v1/deals'
     | '/api/public/v1/leads'
     | '/api/public/v1/meetings'
+    | '/api/public/v1/openapi.json'
+    | '/api/public/v1/project-tasks'
+    | '/api/public/v1/projects'
     | '/api/public/v1/time-entries'
     | '/api/public/whatsapp/webhook'
     | '/api/public/widget/messages'
@@ -5186,6 +5259,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/integrations/'
     | '/_authenticated/settings/marketplace/'
     | '/_authenticated/settings/roles/'
+    | '/api/public/health/'
     | '/_authenticated/(ats)/sourcing/sequences_/$id'
     | '/_authenticated/projects/settings/imports/clockify'
     | '/_authenticated/projects/settings/imports/jibble'
@@ -5265,6 +5339,7 @@ export interface RootRouteChildren {
   ApiPublicFilesTokenRoute: typeof ApiPublicFilesTokenRoute
   ApiPublicFormsSlugRoute: typeof ApiPublicFormsSlugRouteWithChildren
   ApiPublicFormsEmbedJsRoute: typeof ApiPublicFormsEmbedJsRoute
+  ApiPublicHealthReadyRoute: typeof ApiPublicHealthReadyRoute
   ApiPublicHooksActivityRemindersTickRoute: typeof ApiPublicHooksActivityRemindersTickRoute
   ApiPublicHooksAiSummaryTickRoute: typeof ApiPublicHooksAiSummaryTickRoute
   ApiPublicHooksApolloPhoneRoute: typeof ApiPublicHooksApolloPhoneRoute
@@ -5322,6 +5397,9 @@ export interface RootRouteChildren {
   ApiPublicV1DealsRoute: typeof ApiPublicV1DealsRoute
   ApiPublicV1LeadsRoute: typeof ApiPublicV1LeadsRoute
   ApiPublicV1MeetingsRoute: typeof ApiPublicV1MeetingsRouteWithChildren
+  ApiPublicV1OpenapiDotjsonRoute: typeof ApiPublicV1OpenapiDotjsonRoute
+  ApiPublicV1ProjectTasksRoute: typeof ApiPublicV1ProjectTasksRoute
+  ApiPublicV1ProjectsRoute: typeof ApiPublicV1ProjectsRoute
   ApiPublicV1TimeEntriesRoute: typeof ApiPublicV1TimeEntriesRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
   ApiPublicWidgetMessagesRoute: typeof ApiPublicWidgetMessagesRoute
@@ -5331,6 +5409,7 @@ export interface RootRouteChildren {
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
+  ApiPublicHealthIndexRoute: typeof ApiPublicHealthIndexRoute
   ApiPublicEmailClickMessageIdRoute: typeof ApiPublicEmailClickMessageIdRoute
   ApiPublicEmailPixelMessageIdRoute: typeof ApiPublicEmailPixelMessageIdRoute
   ApiPublicEmailUnsubscribeTokenRoute: typeof ApiPublicEmailUnsubscribeTokenRoute
@@ -7370,6 +7449,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsSettingsDeliveryRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/projects/settings/operations': {
+      id: '/_authenticated/projects/settings/operations'
+      path: '/projects/settings/operations'
+      fullPath: '/projects/settings/operations'
+      preLoaderRoute: typeof AuthenticatedProjectsSettingsOperationsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/projects/settings/rates': {
       id: '/_authenticated/projects/settings/rates'
       path: '/projects/settings/rates'
@@ -7564,6 +7650,20 @@ declare module '@tanstack/react-router' {
       path: '/api/public/forms/embed-js'
       fullPath: '/api/public/forms/embed-js'
       preLoaderRoute: typeof ApiPublicFormsEmbedJsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/health/': {
+      id: '/api/public/health/'
+      path: '/api/public/health'
+      fullPath: '/api/public/health/'
+      preLoaderRoute: typeof ApiPublicHealthIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/health/ready': {
+      id: '/api/public/health/ready'
+      path: '/api/public/health/ready'
+      fullPath: '/api/public/health/ready'
+      preLoaderRoute: typeof ApiPublicHealthReadyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/activity-reminders-tick': {
@@ -7963,6 +8063,27 @@ declare module '@tanstack/react-router' {
       path: '/api/public/v1/meetings'
       fullPath: '/api/public/v1/meetings'
       preLoaderRoute: typeof ApiPublicV1MeetingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/openapi.json': {
+      id: '/api/public/v1/openapi.json'
+      path: '/api/public/v1/openapi.json'
+      fullPath: '/api/public/v1/openapi.json'
+      preLoaderRoute: typeof ApiPublicV1OpenapiDotjsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/project-tasks': {
+      id: '/api/public/v1/project-tasks'
+      path: '/api/public/v1/project-tasks'
+      fullPath: '/api/public/v1/project-tasks'
+      preLoaderRoute: typeof ApiPublicV1ProjectTasksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/projects': {
+      id: '/api/public/v1/projects'
+      path: '/api/public/v1/projects'
+      fullPath: '/api/public/v1/projects'
+      preLoaderRoute: typeof ApiPublicV1ProjectsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/v1/time-entries': {
@@ -8840,6 +8961,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedFinanceEntriesIdRoute: typeof AuthenticatedFinanceEntriesIdRoute
   AuthenticatedProjectsListsIdRoute: typeof AuthenticatedProjectsListsIdRoute
   AuthenticatedProjectsSettingsDeliveryRoute: typeof AuthenticatedProjectsSettingsDeliveryRoute
+  AuthenticatedProjectsSettingsOperationsRoute: typeof AuthenticatedProjectsSettingsOperationsRoute
   AuthenticatedProjectsSettingsRatesRoute: typeof AuthenticatedProjectsSettingsRatesRoute
   AuthenticatedProjectsSettingsTimeRoute: typeof AuthenticatedProjectsSettingsTimeRoute
   AuthenticatedProjectsIdEntregaRoute: typeof AuthenticatedProjectsIdEntregaRoute
@@ -9008,6 +9130,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedProjectsListsIdRoute: AuthenticatedProjectsListsIdRoute,
   AuthenticatedProjectsSettingsDeliveryRoute:
     AuthenticatedProjectsSettingsDeliveryRoute,
+  AuthenticatedProjectsSettingsOperationsRoute:
+    AuthenticatedProjectsSettingsOperationsRoute,
   AuthenticatedProjectsSettingsRatesRoute:
     AuthenticatedProjectsSettingsRatesRoute,
   AuthenticatedProjectsSettingsTimeRoute:
@@ -9164,6 +9288,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicFilesTokenRoute: ApiPublicFilesTokenRoute,
   ApiPublicFormsSlugRoute: ApiPublicFormsSlugRouteWithChildren,
   ApiPublicFormsEmbedJsRoute: ApiPublicFormsEmbedJsRoute,
+  ApiPublicHealthReadyRoute: ApiPublicHealthReadyRoute,
   ApiPublicHooksActivityRemindersTickRoute:
     ApiPublicHooksActivityRemindersTickRoute,
   ApiPublicHooksAiSummaryTickRoute: ApiPublicHooksAiSummaryTickRoute,
@@ -9231,6 +9356,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicV1DealsRoute: ApiPublicV1DealsRoute,
   ApiPublicV1LeadsRoute: ApiPublicV1LeadsRoute,
   ApiPublicV1MeetingsRoute: ApiPublicV1MeetingsRouteWithChildren,
+  ApiPublicV1OpenapiDotjsonRoute: ApiPublicV1OpenapiDotjsonRoute,
+  ApiPublicV1ProjectTasksRoute: ApiPublicV1ProjectTasksRoute,
+  ApiPublicV1ProjectsRoute: ApiPublicV1ProjectsRoute,
   ApiPublicV1TimeEntriesRoute: ApiPublicV1TimeEntriesRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
   ApiPublicWidgetMessagesRoute: ApiPublicWidgetMessagesRoute,
@@ -9240,6 +9368,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
+  ApiPublicHealthIndexRoute: ApiPublicHealthIndexRoute,
   ApiPublicEmailClickMessageIdRoute: ApiPublicEmailClickMessageIdRoute,
   ApiPublicEmailPixelMessageIdRoute: ApiPublicEmailPixelMessageIdRoute,
   ApiPublicEmailUnsubscribeTokenRoute: ApiPublicEmailUnsubscribeTokenRoute,

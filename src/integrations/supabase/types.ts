@@ -893,6 +893,42 @@ export type Database = {
           },
         ]
       }
+      api_idempotency_keys: {
+        Row: {
+          api_key_id: string
+          created_at: string
+          endpoint: string
+          expires_at: string
+          id: string
+          idem_key: string
+          request_hash: string
+          response: Json
+          workspace_id: string
+        }
+        Insert: {
+          api_key_id: string
+          created_at?: string
+          endpoint: string
+          expires_at?: string
+          id?: string
+          idem_key: string
+          request_hash: string
+          response: Json
+          workspace_id: string
+        }
+        Update: {
+          api_key_id?: string
+          created_at?: string
+          endpoint?: string
+          expires_at?: string
+          id?: string
+          idem_key?: string
+          request_hash?: string
+          response?: Json
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       api_keys: {
         Row: {
           created_at: string
@@ -945,6 +981,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      api_rate_buckets: {
+        Row: {
+          api_key_id: string
+          hits: number
+          window_start: string
+        }
+        Insert: {
+          api_key_id: string
+          hits?: number
+          window_start: string
+        }
+        Update: {
+          api_key_id?: string
+          hits?: number
+          window_start?: string
+        }
+        Relationships: []
       }
       apollo_phone_reveals: {
         Row: {
@@ -17232,6 +17286,39 @@ export type Database = {
           },
         ]
       }
+      project_time_client_requests: {
+        Row: {
+          client_request_id: string
+          created_at: string
+          device_recorded_at: string | null
+          id: string
+          request_hash: string
+          time_entry_id: string | null
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          client_request_id: string
+          created_at?: string
+          device_recorded_at?: string | null
+          id?: string
+          request_hash: string
+          time_entry_id?: string | null
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          client_request_id?: string
+          created_at?: string
+          device_recorded_at?: string | null
+          id?: string
+          request_hash?: string
+          time_entry_id?: string | null
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       project_time_entries: {
         Row: {
           allocation_id: string | null
@@ -24832,6 +24919,7 @@ export type Database = {
           attempt: number
           created_at: string
           delivered_at: string | null
+          event_id: string | null
           event_type: string
           id: string
           next_retry_at: string | null
@@ -24847,6 +24935,7 @@ export type Database = {
           attempt?: number
           created_at?: string
           delivered_at?: string | null
+          event_id?: string | null
           event_type: string
           id?: string
           next_retry_at?: string | null
@@ -24862,6 +24951,7 @@ export type Database = {
           attempt?: number
           created_at?: string
           delivered_at?: string | null
+          event_id?: string | null
           event_type?: string
           id?: string
           next_retry_at?: string | null
@@ -26541,6 +26631,10 @@ export type Database = {
         Args: { _candidate_id: string }
         Returns: undefined
       }
+      api_rate_hit: {
+        Args: { p_key: string; p_limit: number; p_window_seconds: number }
+        Returns: Json
+      }
       backfill_activities_assigned_to_batch: { Args: never; Returns: number }
       can_access_ats_job: { Args: { _job_id: string }; Returns: boolean }
       can_manage_access_scope: { Args: { _owner: string }; Returns: boolean }
@@ -27113,6 +27207,58 @@ export type Database = {
         Returns: Json
       }
       project_alert_visible_ids: { Args: never; Returns: string[] }
+      project_api_create_time_entry: {
+        Args: {
+          p_hash: string
+          p_idem: string
+          p_key: string
+          p_payload: Json
+          p_user: string
+          p_ws: string
+        }
+        Returns: Json
+      }
+      project_api_list_projects: {
+        Args: {
+          p_key: string
+          p_limit: number
+          p_offset: number
+          p_search: string
+          p_status: string
+          p_user: string
+          p_ws: string
+        }
+        Returns: Json
+      }
+      project_api_list_tasks: {
+        Args: {
+          p_key: string
+          p_limit: number
+          p_offset: number
+          p_project: string
+          p_search: string
+          p_status: string
+          p_user: string
+          p_ws: string
+        }
+        Returns: Json
+      }
+      project_api_list_time_entries: {
+        Args: {
+          p_ascending: boolean
+          p_from: string
+          p_key: string
+          p_limit: number
+          p_offset: number
+          p_project: string
+          p_status: string
+          p_subject: string
+          p_to: string
+          p_user: string
+          p_ws: string
+        }
+        Returns: Json
+      }
       project_bill_assert: {
         Args: { p_key: string; p_write: boolean; p_ws: string }
         Returns: undefined
@@ -27762,6 +27908,7 @@ export type Database = {
         }
         Returns: Json
       }
+      project_ops_status: { Args: { p_ws: string }; Returns: Json }
       project_package_carry_in: {
         Args: { p_cfg: string; p_from: string }
         Returns: Json
@@ -28074,9 +28221,85 @@ export type Database = {
         Args: { p_day: string; p_project: string; p_user: string }
         Returns: boolean
       }
+      project_time_closed_period_for: {
+        Args: {
+          p_date: string
+          p_project: string
+          p_user: string
+          p_ws: string
+        }
+        Returns: string
+      }
       project_time_denied: {
         Args: { p_key: string; p_user: string; p_ws: string }
         Returns: boolean
+      }
+      project_time_entry_insert_checked: {
+        Args: { p_payload: Json; p_source: string; p_ws: string }
+        Returns: {
+          allocation_id: string | null
+          approved_at: string | null
+          approved_by: string | null
+          billable: boolean
+          client_acceptance_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          duration_minutes: number | null
+          duration_seconds: number | null
+          end_time: string | null
+          entry_date: string | null
+          entry_kind: string | null
+          external_id: string | null
+          financial_entry_id: string | null
+          hourly_rate: number | null
+          hours: number | null
+          id: string
+          invoice_id: string | null
+          invoiced_at: string | null
+          locked_at: string | null
+          period_closing_id: string | null
+          person_id: string | null
+          project_id: string
+          reject_reason: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          review_flags: string[] | null
+          revision: number
+          source: string
+          start_time: string | null
+          started_at: string | null
+          status: string
+          stopped_at: string | null
+          submission_id: string | null
+          submitted_at: string | null
+          task_id: string | null
+          timer_session_id: string | null
+          timezone: string | null
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "project_time_entries"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      project_time_entry_public_json: {
+        Args: { e: Database["public"]["Tables"]["project_time_entries"]["Row"] }
+        Returns: Json
+      }
+      project_time_entry_sync: {
+        Args: {
+          p_client_request_id: string
+          p_device_recorded_at?: string
+          p_payload: Json
+          p_request_hash: string
+          p_ws: string
+        }
+        Returns: Json
       }
       project_time_full_scope_workspaces: { Args: never; Returns: string[] }
       project_time_has_approver: {
@@ -28125,6 +28348,10 @@ export type Database = {
         Returns: Json
       }
       project_time_schedule_valid: { Args: { p: Json }; Returns: boolean }
+      project_time_task_in_project: {
+        Args: { p_project: string; p_task: string; p_ws: string }
+        Returns: boolean
+      }
       project_time_trackable_projects: { Args: { p_ws: string }; Returns: Json }
       project_time_tz_valid: { Args: { p: string }; Returns: boolean }
       project_timer_get: { Args: { p_ws: string }; Returns: Json }

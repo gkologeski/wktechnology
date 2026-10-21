@@ -21,6 +21,7 @@ import { AlertsOverview } from "@/components/projects/dashboard/alerts-overview"
 import { DrillSheet } from "@/components/projects/dashboard/drill-sheet";
 import { AlertActDialog } from "@/components/projects/dashboard/alert-act-dialog";
 import { RiskRulesDialog } from "@/components/projects/dashboard/risk-rules-dialog";
+import { AssistantSheet } from "@/components/projects/dashboard/assistant-sheet";
 import type { ViewCtx } from "@/components/projects/dashboard/dash-view-parts";
 import {
   useDashScope,
@@ -203,6 +204,9 @@ function ProjectsDashboard() {
                 onClear={() => setSearch({ from: undefined, to: undefined })}
               />
             ) : null}
+            {scope.data && Object.values(scope.data.views).some(Boolean) && (
+              <AssistantSheet filters={filters} />
+            )}
             <Button
               size="sm"
               variant="outline"

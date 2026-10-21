@@ -40,6 +40,8 @@ export const WEBHOOK_EVENTS = [
   "ats.dsar.fulfilled",
   "ats.consent.granted",
   "ats.consent.revoked",
+  // TechProjects — ciclo 6 (carga mínima: ids, data, segundos e situação; sem descrição nem custo)
+  "project.time_entry.created",
 ] as const;
 
 export const listWebhooks = createServerFn({ method: "GET" })
@@ -74,6 +76,9 @@ export const upsertWebhook = createServerFn({ method: "POST" })
     const workspaceId = await resolveActiveWorkspace(userId);
     const ws = await getActiveWorkspaceId(supabase, userId);
     await assertPermission(supabase, userId, ws, WEBHOOK_MANAGE);
+    // Destino só HTTPS público (sem rede interna); o envio revalida antes de cada tentativa.
+    const { assertSafeWebhookUrl, dohResolver } = await import("@/lib/webhooks/url-guard");
+    await assertSafeWebhookUrl(data.url, dohResolver);
     if (data.id) {
       const { error } = await supabase
         .from("outbound_webhooks")

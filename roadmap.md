@@ -1,3 +1,16 @@
+# Roadmap — TechProjects Ciclo 6 (itens 14–15)
+
+- [x] Banco 0179: API sob RLS do dono da chave (papel sem login), idempotência, limite por chave, fila offline idempotente, competência fechada na criação, painel de operação, higiene de privilégios
+- [x] Provas: SQL isolada C6 + concorrência; HTTP com GoTrue/PostgREST reais; regressões C1–C5
+- [x] Servidor: rotas v1 (projetos, tarefas, apontamentos, OpenAPI), saúde/prontidão, webhooks com guarda SSRF/assinatura/sem redirecionamento, assistente somente leitura
+- [x] Telas: fila offline (Minhas Horas + janela de apontamento), assistente no painel, Operação e saúde
+- [ ] Fluxo integrado não admin (negócio→…→painel) em banco isolado
+- [ ] Desempenho: 1 milhão de apontamentos / 100 sessões em banco isolado
+- [ ] Ensaio de backup/restauração em banco descartável + runbook
+- [ ] Playwright (claro/escuro/celular/teclado/offline), verify e build completos
+- [ ] Documentação, AGENTS e relatório unificado C1–C6
+- [ ] Publicação (aguarda aceite do usuário)
+
 # Roadmap — TechProjects Ciclo 4 (itens 10–11)
 
 - [x] Banco: tarifas com vigência, modelo de cobrança (dono por serviço/período), medições, saldo de pacote, vínculo com o Financeiro, guardas entre mecanismos, rentabilidade (0175, correção 0176)
