@@ -1,0 +1,18 @@
+## Detalhes técnicos
+- `allocations-panel.tsx`:
+  - `ContractSelect` e `PurchaseContractSelect` passam a usar Popover+Command e o filtro `document_kind = main`.
+  - `ProjectSelect` chama `listProjects` uma vez e agrupa no cliente pelos projetos com `contract_id` igual ao contrato escolhido.
+  - Cargo e senioridade reaproveitam `PersonRolePicker` e as opções de `person-field-options.ts`.
+  - O painel tem 811 linhas; o diálogo vai para `allocation-dialog.tsx` e o rateio para `allocation-company-split.tsx`.
+- `allocations.functions.ts` (`upsertAllocation`):
+  - Confere no servidor: `contract_id` com `role=provider` e `purchase_contract_id` com `role=client`, nenhum dos dois aditivo.
+  - Grava o rateio: cada empresa do workspace aparece no máximo uma vez, percentuais entre 0 e 100, soma exatamente 100.
+- **Banco** (migração aditiva, criada no rascunho e aplicada só ao aceitar):
+  - Nova tabela `people_allocation_company_splits` (`workspace_id`, `allocation_id`, `company_id`, `pct`), com chave única em `allocation_id`+`company_id`.
+  - Segue a ordem GRANT → RLS → políticas, espelhando as de `people_allocations`, que respeitam a visibilidade da pessoa. Sem alterar dados existentes.
+  - Até o rascunho ser aceito, a seção de rateio não pode ser testada aqui.
+- `timesheet.functions.ts`:
+  - Fallback de leitura por e-mail exato e único (mesmo critério da conciliação), feito com o cliente do usuário (RLS).
+  - O select passa a incluir status e `locked_import`; `timesheet-panel.tsx` mostra o selo de situação.
+- Testes: unitários para a ordenação de projetos, a soma do rateio e a recusa de papel de contrato errado. Depois: typecheck, lint, test, build e Playwright na ficha da pessoa.
+- Fora do escopo: padronizar valores antigos, gravar vínculos de horas e qualquer efeito do rateio na cobrança (o Ciclo 4 não lê o rateio).
