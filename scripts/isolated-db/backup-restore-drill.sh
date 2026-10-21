@@ -45,8 +45,8 @@ manifest() { # $1 = função psql; $2 = arquivo
   done
   echo "policies $($q -tAc "select md5(string_agg(schemaname||tablename||policyname||cmd||permissive||array_to_string(roles,',')||coalesce(qual,'')||coalesce(with_check,''), '|' order by schemaname, tablename, policyname)) from pg_policies")" >> "$out"
   echo "table_grants $($q -tAc "select md5(string_agg(grantee||table_schema||table_name||privilege_type, '|' order by grantee, table_schema, table_name, privilege_type)) from information_schema.role_table_grants where table_schema in ('public','techerp_api','storage')")" >> "$out"
-  echo "function_acl $($q -tAc "select md5(string_agg(p.oid::regprocedure::text||coalesce(p.proacl::text,'')||pg_get_userbyid(p.proowner)||p.prosecdef::text||coalesce(array_to_string(p.proconfig,','),''), '|' order by p.oid::regprocedure::text)) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname in ('public','techerp_api')")" >> "$out"
-  echo "role_members $($q -tAc "select md5(string_agg(roleid::regrole::text||'>'||member::regrole::text||inherit_option::text, '|' order by 1)) from pg_auth_members where roleid::regrole::text in ('authenticated','anon','service_role','techerp_api_subject')")" >> "$out"
+  echo "function_acl $($q -tAc "select md5(string_agg(p.oid::regprocedure::text||coalesce((select string_agg(a::text, ',' order by a::text) from unnest(p.proacl) a),'')||pg_get_userbyid(p.proowner)||p.prosecdef::text||coalesce(array_to_string(p.proconfig,','),''), '|' order by p.oid::regprocedure::text)) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname in ('public','techerp_api')")" >> "$out"
+  echo "role_members $($q -tAc "select md5(string_agg(x, '|' order by x)) from (select roleid::regrole::text||'>'||member::regrole::text||':'||inherit_option::text||':'||set_option::text||':'||admin_option::text x from pg_auth_members where roleid::regrole::text in ('authenticated','anon','service_role','techerp_api_subject')) m")" >> "$out"
   # Impressão de RLS: quanto cada perfil enxerga, como ele mesmo.
   for u in 1 2 3 4 5 6 7 8; do
     local uid="10000000-0000-4000-8000-00000000000$u"
