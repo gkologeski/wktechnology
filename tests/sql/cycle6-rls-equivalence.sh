@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Equivalência da RLS de apontamentos antes/depois da otimização (0181), em banco descartável.
-# Carrega as provas C3 e C6 (perfis próprio/equipe/workspace/inativo/outro tenant/negação), registra
+# Carrega as provas C5 e C6 (perfis próprio/equipe/workspace/inativo/outro tenant/negação), registra
 # para cada usuário o conjunto EXATO de apontamentos visíveis/alteráveis/excluíveis pela regra antiga,
 # aplica a migração e confere que o conjunto é idêntico. Depois roda a prova C6 de novo.
 # Uso: bash tests/sql/cycle6-rls-equivalence.sh <0179> <0180> <0181>
@@ -14,7 +14,7 @@ iso_guard
 iso_psql -f scripts/isolated-db/seed.sql >/dev/null
 M1=$1; M2=$2; M3=$3
 for MIG in "$M1" "$M2"; do iso_psql -v ON_ERROR_STOP=1 -f "$MIG" >/dev/null 2>&1 || { echo "FALHOU ao aplicar $MIG"; exit 1; }; done
-for PRE in tests/sql/time-workflow-isolated.sql tests/sql/cycle6-isolated.sql; do
+for PRE in tests/sql/project-dashboard-isolated.sql tests/sql/cycle6-isolated.sql; do
   O=$(mktemp); iso_psql -f "$PRE" > "$O" 2>&1 || true
   grep -qE "FALHOU|ERROR" "$O" && { echo "FALHOU na pré-condição $PRE"; grep -m3 -E "FALHOU|ERROR" "$O"; exit 1; }
   echo "pré-condição $PRE: $(grep -c 'ok:' "$O") asserções ok"
