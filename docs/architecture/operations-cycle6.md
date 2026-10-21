@@ -96,3 +96,45 @@ Ver §9 (números medidos). Reprodução: `bash scripts/perf/cycle6/run.sh` (var
 `CLIENTS`, `DURATION`). Banco descartável com `fsync` e `synchronous_commit` ligados.
 
 ## 9. Medições
+
+Ambiente: banco descartável PostgreSQL 17 no sandbox (8 CPUs, 31 GB), mesmo schema extraído da
+produção + 0179/0180/0181. Dados 100% sintéticos. Não é medição de produção nem SLA.
+
+**Volume:** 1.000.000 apontamentos (1.062.144 ao fim, com as gravações do teste), 400 pessoas,
+40 projetos, 2.000 tarefas. 100 sessões simultâneas por 60 s em cada cenário, `pgbench`.
+
+| Cenário (100 sessões) | Transações | Falhas | p50 | p95 | p99 | máx | Meta |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Gravação de apontamento (RLS do usuário) | 60.646 | 0 | 59 ms | 232 ms | 868 ms | 4,4 s | p95 ≤ 1 s — atingida |
+| Painel "Meu trabalho" (mês) | 8.961 | 0 | 634 ms | 989 ms | 1,23 s | 2,3 s | p95 ≤ 2 s — atingida |
+| Lista da API (porta `project_api_list_entries`) | 10.740 | 0 | 566 ms | 651 ms | 792 ms | 1,2 s | — |
+| Misto 3 gravação : 6 meu trabalho : 1 equipe | 5.005 | 0 | | | | | |
+| — gravação | 1.498 | 0 | 147 ms | 483 ms | 772 ms | 1,3 s | atingida |
+| — meu trabalho | 3.064 | 0 | 616 ms | 792 ms | 1,19 s | 1,8 s | atingida |
+| — equipe (admin, todo o workspace) | 443 | 0 | 9,2 s | 9,8 s | 10,2 s | 10,3 s | **não atingida** |
+
+Execução isolada (1 sessão): equipe 788 ms frio / 694 ms quente; meu trabalho 71 / 70 ms.
+Nenhum pedido duplicado na fila offline durante a carga (`duplicate_client_requests = 0`).
+
+Antes das correções (mesmo fixture): "meu trabalho" com 100 sessões p95 65,7 s (a pendência de
+aprovação checava permissão 166.667 vezes); a lista da API não terminava. 0180 resolveu o painel;
+0181 tirou a checagem de permissão por linha da RLS de apontamentos (gravação foi de 738 para
+1.010 transações/s).
+
+**Limite conhecido:** a visão "Equipe" do admin soma o consumo de horas de TODO o histórico por
+projeto para a previsão (≈ 530 ms de CPU por chamada com 1 milhão de linhas). Com 10 dessas
+consultas ao mesmo tempo e mais 90 sessões, as 8 CPUs saturam. Próximo passo sugerido (não
+implementado): consumo por projeto mantido por gatilho ou recalculado pelo agendador.
+
+Os tempos são só do banco (SQL). HTTP e navegação não foram medidos sob carga; o caminho HTTP real
+(GoTrue + PostgREST + funções da API) foi provado em funcionalidade (`scripts/isolated-db/stack/run-cycle6.sh`).
+Na WK (112.490 apontamentos, ~9× menos) os tempos devem ser menores, mas não foram medidos sob carga
+para não pesar o banco compartilhado.
+
+**Ensaio de backup/restauração** (`scripts/isolated-db/backup-restore-drill.sh`): origem
+descartável com schema + seed sintético + 20 anexos sintéticos privados; `pg_dump` formato
+custom (4,3 MB, 0,4 s) → restauração em outro cluster (4,6 s, 0 erros). Conferidos idênticos:
+contagem e hash de 436 tabelas/verificações, políticas, privilégios de tabelas e funções, donos,
+papéis, visibilidade por RLS de 8 perfis, hash dos 20 anexos e um fluxo após a restauração (API
+como dono da chave + repetição idempotente). Isto prova o procedimento e o schema; NÃO prova o
+backup gerenciado da plataforma.
