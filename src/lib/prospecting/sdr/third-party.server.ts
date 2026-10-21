@@ -4,6 +4,7 @@
  */
 import type { Referral } from "./third-party";
 import { brPhoneVariants } from "@/lib/whatsapp/phone-variants";
+import { loadSdrAgentUserId } from "./agent-identity.server";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Admin = any;
@@ -25,6 +26,7 @@ export async function saveReferral(
     referrer: { entity: "lead" | "contact"; id: string } | null;
   },
 ): Promise<SaveReferralResult> {
+  const owner = (await loadSdrAgentUserId(admin, p.workspaceId)) ?? p.ownerId;
   const variants = brPhoneVariants(p.referral.phoneE164);
   const [c, l] = await Promise.all([
     admin
@@ -66,8 +68,8 @@ export async function saveReferral(
       .from("leads")
       .insert({
         workspace_id: p.workspaceId,
-        owner_id: p.ownerId,
-        assigned_to: p.ownerId,
+        owner_id: owner,
+        assigned_to: owner,
         first_name: first || "Indicação",
         last_name: rest.join(" ") || null,
         phone: p.referral.phoneE164,
@@ -92,7 +94,8 @@ export async function saveReferral(
           : "";
     await admin.from("activities").insert({
       workspace_id: p.workspaceId,
-      owner_id: p.ownerId,
+      owner_id: owner,
+      assigned_to: owner,
       type: "note",
       completed: true,
       subject: "Indicação recebida pela Lia",
@@ -119,6 +122,8 @@ export async function saveCorporatePhone(
     phoneE164: string;
   },
 ): Promise<"saved" | "noted"> {
+  const agent = await loadSdrAgentUserId(admin, p.workspaceId);
+  const owner = agent ?? p.ownerId;
   const table = p.target.entity === "lead" ? "leads" : "contacts";
   const { data: row } = await admin
     .from(table)
@@ -137,7 +142,8 @@ export async function saveCorporatePhone(
   }
   await admin.from("activities").insert({
     workspace_id: p.workspaceId,
-    owner_id: p.ownerId,
+    owner_id: owner,
+    ...(agent ? { assigned_to: agent, created_by: agent } : {}),
     type: "note",
     completed: true,
     subject: "Número corporativo informado na conversa com a Lia",

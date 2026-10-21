@@ -13,6 +13,7 @@ import {
 } from "./third-party";
 import { parsePersona, stripStockOpener } from "./persona";
 import { configFromRow, hasTool, scopeKnowledge } from "./agent-config";
+import { loadSdrAgentUserId } from "./agent-identity.server";
 import { buildSystemPrompt, callSdrAgent } from "./agent.server";
 import {
   composeOutgoing,
@@ -508,6 +509,7 @@ export async function processJob(
       materials: materials.length > 0,
       assignee: !!agentConfig.assigned_to,
     });
+    const agentUserId = await loadSdrAgentUserId(admin, job.workspace_id);
     toolCtx = {
       mode: "live",
       jobId: job.id,
@@ -537,6 +539,7 @@ export async function processJob(
       attachMaterials: agentConfig.guardrails.attach_materials,
       questions,
       assigneeId: agentConfig.assigned_to,
+      agentUserId,
       now: () => Date.now(),
       newEventId,
       effects,

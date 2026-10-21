@@ -82,6 +82,8 @@ export type ToolCtx = {
   attachMaterials: boolean;
   questions: CanonicalQuestion[];
   assigneeId: string | null;
+  /** Perfil da Lia no workspace: autora/responsável do que ela registra. */
+  agentUserId?: string | null;
   now: () => number;
   newEventId: () => string;
   effects: TurnEffects;
@@ -798,12 +800,14 @@ const optout: Handler = async (ctx) => {
 };
 
 const taskCreate: Handler = async (ctx, a) => {
-  if (!ctx.assigneeId) return { __status: "error", error: "Agente sem responsável." };
+  const owner = ctx.agentUserId ?? ctx.assigneeId;
+  if (!owner) return { __status: "error", error: "Agente sem responsável." };
   const due = a.due_in_hours ? iso(ctx.now() + Number(a.due_in_hours) * 3600000) : null;
   await ctx.store.createActivity({
     workspace_id: ctx.workspaceId,
-    owner_id: ctx.assigneeId,
-    assigned_to: ctx.assigneeId,
+    owner_id: owner,
+    assigned_to: owner,
+    ...(ctx.agentUserId ? { created_by: ctx.agentUserId } : {}),
     type: "task",
     subject: String(a.title),
     body: (a.note as string | null) ?? null,
@@ -822,7 +826,8 @@ const summarize: Handler = async (ctx, a) => {
     return { __status: "error", status: "not_linked", error: "Conversa sem cliente vinculado." };
   await ctx.store.createActivity({
     workspace_id: ctx.workspaceId,
-    owner_id: ctx.assigneeId ?? ctx.scheduling?.host_user_id ?? null,
+    owner_id: ctx.agentUserId ?? ctx.assigneeId ?? ctx.scheduling?.host_user_id ?? null,
+    ...(ctx.agentUserId ? { assigned_to: ctx.agentUserId, created_by: ctx.agentUserId } : {}),
     type: "note",
     subject: "Resumo da conversa (Agente SDR)",
     body: String(a.summary),

@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { SdrAgentPicker } from "./sdr-agent-picker";
 import { SdrAgentConfigPanel } from "./sdr-agent-config";
+import { SdrAgentProfileCard } from "./sdr-agent-profile-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SdrSkillsPanel } from "./sdr-skills-panel";
 import { SdrMaterialsPanel, type SdrMaterialRow } from "./sdr-materials-panel";
@@ -119,7 +120,8 @@ export function SdrConsoleTabs() {
 
   return (
     <>
-      <TabsContent value="sdr-settings" className="mt-4">
+      <TabsContent value="sdr-settings" className="mt-4 space-y-4">
+        <SdrAgentProfileCard />
         {body((d) => (
           <SettingsPanel d={d} />
         ))}
