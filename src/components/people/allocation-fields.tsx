@@ -97,7 +97,9 @@ function SearchCombo({
                     >
                       <span className="min-w-0 flex-1 truncate">{o.label}</span>
                       {o.hint ? (
-                        <span className="ml-2 shrink-0 text-xs text-muted-foreground">{o.hint}</span>
+                        <span className="ml-2 shrink-0 text-xs text-muted-foreground">
+                          {o.hint}
+                        </span>
                       ) : null}
                     </CommandItem>
                   ))}

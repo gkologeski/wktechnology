@@ -238,11 +238,13 @@ export const listAllocationSplits = createServerFn({ method: "POST" })
     if (error) return { available: false, splits: [] as SplitRow[] };
     return {
       available: true,
-      splits: ((rows ?? []) as Array<{
-        company_id: string;
-        pct: number;
-        companies: { name: string | null } | null;
-      }>).map((r) => ({
+      splits: (
+        (rows ?? []) as Array<{
+          company_id: string;
+          pct: number;
+          companies: { name: string | null } | null;
+        }>
+      ).map((r) => ({
         company_id: r.company_id,
         pct: Number(r.pct),
         company_name: r.companies?.name ?? null,
@@ -319,7 +321,9 @@ export const upsertAllocation = createServerFn({ method: "POST" })
       const ws = (a as { workspace_id: string }).workspace_id;
       const ins = await (supabase as unknown as { from: (n: string) => any })
         .from("people_allocation_company_splits")
-        .insert(data.company_splits.map((x) => ({ ...x, allocation_id: allocationId, workspace_id: ws })));
+        .insert(
+          data.company_splits.map((x) => ({ ...x, allocation_id: allocationId, workspace_id: ws })),
+        );
       if (ins.error) throw new Error(`Rateio não salvo: ${ins.error.message}`);
     }
     const payload: Record<string, unknown> = {

@@ -13,7 +13,9 @@ describe("contractFieldError", () => {
     );
   });
   it("recusa aditivo", () => {
-    expect(contractFieldError("provider", { role: "provider", document_kind: "amendment" })).not.toBeNull();
+    expect(
+      contractFieldError("provider", { role: "provider", document_kind: "amendment" }),
+    ).not.toBeNull();
   });
   it("aceita o papel correto", () => {
     expect(contractFieldError("provider", { role: "provider", document_kind: "main" })).toBeNull();
@@ -24,11 +26,26 @@ describe("contractFieldError", () => {
 describe("splitsError", () => {
   it("rateio vazio é permitido", () => expect(splitsError([])).toBeNull());
   it("60% + 40% é válido", () =>
-    expect(splitsError([{ company_id: "a", pct: 60 }, { company_id: "b", pct: 40 }])).toBeNull());
+    expect(
+      splitsError([
+        { company_id: "a", pct: 60 },
+        { company_id: "b", pct: 40 },
+      ]),
+    ).toBeNull());
   it("soma diferente de 100% é recusada", () =>
-    expect(splitsError([{ company_id: "a", pct: 60 }, { company_id: "b", pct: 30 }])).toMatch(/90%/));
+    expect(
+      splitsError([
+        { company_id: "a", pct: 60 },
+        { company_id: "b", pct: 30 },
+      ]),
+    ).toMatch(/90%/));
   it("empresa repetida é recusada", () =>
-    expect(splitsError([{ company_id: "a", pct: 50 }, { company_id: "a", pct: 50 }])).toMatch(/mais de uma vez/));
+    expect(
+      splitsError([
+        { company_id: "a", pct: 50 },
+        { company_id: "a", pct: 50 },
+      ]),
+    ).toMatch(/mais de uma vez/));
 });
 
 describe("groupProjectsByContract", () => {

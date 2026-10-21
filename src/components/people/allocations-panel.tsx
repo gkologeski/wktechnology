@@ -44,6 +44,7 @@ import {
 import {
   listAllocationsByPerson,
   listContractRoleSuggestions,
+  listAllocationSplits,
   upsertAllocation,
   deleteAllocation,
   computeMonthlyMargin,
@@ -634,7 +635,7 @@ function AllocationDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button disabled={mut.isPending} onClick={() => mut.mutate()}>
+          <Button disabled={mut.isPending || splitsInvalid} onClick={() => mut.mutate()}>
             Salvar
           </Button>
         </DialogFooter>
