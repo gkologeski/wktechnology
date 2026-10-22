@@ -114,6 +114,9 @@ function seed(db: FakeDb) {
     deal_id: null,
     offers: [],
     follow_up_count: 0,
+    // Padrões do banco (0184).
+    conversation_state: {},
+    conversation_state_version: 0,
   });
   db.t("leads").push({ id: "L1", workspace_id: W1, company_id: null });
   db.t("whatsapp_messages").push({
