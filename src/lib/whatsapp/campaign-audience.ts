@@ -390,7 +390,8 @@ export function isAllowedFilter(
 }
 
 /** Filtro sem valor (exceto vazio/não vazio) ainda está sendo montado: ignora. */
-export const isCompleteFilter = (f: AudienceFilter) => !opNeedsValue(f.op) || filterTerms(f).length > 0;
+export const isCompleteFilter = (f: AudienceFilter) =>
+  !opNeedsValue(f.op) || filterTerms(f).length > 0;
 
 /** Converte o formato antigo (lista simples = E) e remove grupos vazios. */
 export function normalizeAudienceGroups(input: {

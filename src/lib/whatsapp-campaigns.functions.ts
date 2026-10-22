@@ -69,7 +69,7 @@ const CreateInput = z.object({
                       "is_not_null",
                     ]),
                     value: z.string().max(200),
-              values: z.array(z.string().max(100)).max(20).optional(),
+                    values: z.array(z.string().max(100)).max(20).optional(),
                   }),
                 )
                 .max(20),

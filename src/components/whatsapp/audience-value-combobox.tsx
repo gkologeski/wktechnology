@@ -78,10 +78,7 @@ export function AudienceValueCombobox({
           role="combobox"
           aria-expanded={open}
           aria-label={`Valor do filtro ${label}`}
-          className={cn(
-            "justify-between font-normal",
-            multi ? "h-auto min-h-9 w-72 py-1" : "w-48",
-          )}
+          className={cn("justify-between font-normal", multi ? "h-auto min-h-9 w-72 py-1" : "w-48")}
         >
           {multi && list.length ? (
             <span className="flex flex-wrap gap-1">
@@ -92,7 +89,9 @@ export function AudienceValueCombobox({
               />
             </span>
           ) : (
-            <span className={cn("truncate", !(multi ? list.length : value) && "text-muted-foreground")}>
+            <span
+              className={cn("truncate", !(multi ? list.length : value) && "text-muted-foreground")}
+            >
               {multi ? "Escolha ou digite termos" : value || "Escolha ou digite"}
             </span>
           )}

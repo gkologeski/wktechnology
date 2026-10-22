@@ -251,7 +251,13 @@ export function AudienceGroupsEditor({
                       onPick={(e, c) => {
                         const d = fields[e].find((x) => x.column === c);
                         if (!d) return;
-                        upd({ entity: e, column: c, op: OPS_BY_KIND[d.kind][0].op, value: "", values: undefined });
+                        upd({
+                          entity: e,
+                          column: c,
+                          op: OPS_BY_KIND[d.kind][0].op,
+                          value: "",
+                          values: undefined,
+                        });
                       }}
                     />
                     <Select

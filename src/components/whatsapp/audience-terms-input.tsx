@@ -29,17 +29,26 @@ export function TermPills({
           className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2 py-0.5 text-xs text-foreground"
         >
           <span className="max-w-32 truncate">{t}</span>
-          <button
-            type="button"
+          <span
+            role="button"
+            tabIndex={0}
             className="rounded-full text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label={`Remover termo ${t} de ${label}`}
             onClick={(e) => {
               e.stopPropagation();
               onRemove(i);
             }}
+            onPointerDown={(e) => e.stopPropagation()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.stopPropagation();
+                onRemove(i);
+              }
+            }}
           >
             <X className="h-3 w-3" />
-          </button>
+          </span>
         </span>
       ))}
     </>
