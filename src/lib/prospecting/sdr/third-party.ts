@@ -1,14 +1,14 @@
 /**
- * Regras determinísticas para quando quem responde NÃO é o responsável:
- * robôs/URA, pessoa que saiu da empresa, número de outra pessoa e indicações.
- * Funções puras (testáveis); o worker aplica os efeitos.
+ * Sinais determinísticos sobre quem responde (puros): padrão de atendimento
+ * automático (usado como FATO para a IA, não como resposta), saída da empresa
+ * e número de outra pessoa (usados pela sugestão de cadastro da Inbox).
+ * Nenhuma função aqui escreve resposta ao cliente.
  */
 import { isWrongContact } from "./policy";
-import { toWhatsAppE164 } from "@/lib/phone/whatsapp-e164";
+import { parseSharedPhone, type Referral as SharedReferral } from "./conversation-state";
 
 export type ThirdPartyReason = "left_company" | "not_this_person";
-
-type Msg = { direction: string; body?: string | null };
+export type Referral = SharedReferral;
 
 function norm(text: string): string {
   return String(text ?? "")
@@ -19,15 +19,6 @@ function norm(text: string): string {
     .replace(/[ \t]+/g, " ")
     .trim();
 }
-
-/** Marca fixa da pergunta de indicação (usada para saber que já perguntamos). */
-export const REFERRAL_MARK = "conhece quem responde pela área de TI";
-
-export const REFERRAL_QUESTION = `Peço desculpas pelo engano! Por acaso você ${REFERRAL_MARK} aí e poderia me passar o contato?`;
-export const CLOSE_THANKS =
-  "Entendo, sem problemas! Obrigada pela atenção e desculpe o incômodo. Tenha um ótimo dia!";
-export const REFERRAL_THANKS =
-  "Muito obrigada pela indicação! Vou entrar em contato com essa pessoa. Tenha um ótimo dia!";
 
 const AUTO_PATTERNS: RegExp[] = [
   /\b(digite|escolha|selecione|informe) (uma|a|o) (opcao|fila|numero|setor|departamento)/,
@@ -134,133 +125,10 @@ export function isPrivateNumber(text: string): boolean {
   );
 }
 
-export const PRIVATE_NUMBER_CLOSE =
-  "Peço desculpas por ter entrado em contato pelo seu número particular! Não vamos mais chamar por aqui. Tenha um ótimo dia!";
 
-/** Encerramentos fixos nossos: depois deles, só respondemos uma pergunta direta. */
-export const CLOSING_MARKS = [
-  "Obrigada pelo retorno! Peço desculpas pelo contato.",
-  "Obrigada pela atenção e desculpe o incômodo.",
-  "Muito obrigada pela indicação!",
-  "Não vamos mais chamar por aqui.",
-];
-
-export const POST_CLOSE_REPLY =
-  "Não, obrigada! Não precisamos de nada no momento. Agradeço a atenção e tenha um ótimo dia!";
-
-/** Pergunta do cliente logo após nosso encerramento ("precisa de algo em infra?"). */
-export function isPostCloseQuestion(history: Msg[]): boolean {
-  const lastIdx = history.length - 1;
-  const last = history[lastIdx];
-  if (!last || last.direction !== "inbound" || !/\?/.test(String(last.body ?? ""))) return false;
-  const lastOut = [...history].reverse().find((m) => m.direction !== "inbound");
-  const body = String(lastOut?.body ?? "");
-  return CLOSING_MARKS.some((m) => body.includes(m));
-}
-
-/** Nossas mensagens que mantêm o estado "falando com terceiro". */
-const WAIT_REFERRAL_REPLY = "Obrigada! Fico no aguardo do contato.";
-
-/** Recusa/indisponibilidade de indicação. */
-export function declinesReferral(text: string): boolean {
-  const t = norm(text);
-  return /\bnao (sei|saberia|tenho|conheco|lembro)\b|\bperdi o contato\b|\bnao faco ideia\b|\bnao posso (passar|informar)\b|\bnao tenho como\b/.test(
-    t,
-  );
-}
-
-/** "Vou te encaminhar" — promessa de enviar o contato depois. */
-export function promisesReferral(text: string): boolean {
-  return /\b(vou|irei|ja) (te |lhe )?(encaminhar|passar|mandar|enviar)\b/.test(norm(text));
-}
-
-export type Referral = { name: string | null; phoneE164: string };
-
-/** Extrai indicação: cartão compartilhado ou texto com celular brasileiro. */
+/** Indicação em texto ou cartão compartilhado (dado, não decisão). */
 export function extractReferral(text: string): Referral | null {
-  const raw = String(text ?? "");
-  const card = raw.match(/Contato compartilhado\s*\n\s*([^:\n]+):\s*([+\d][\d\s().-]{7,})/);
-  if (card) {
-    const phone = toWhatsAppE164(card[2]);
-    if (phone) return { name: card[1].trim() || null, phoneE164: phone };
-  }
-  const m = raw.match(/(\+?\d[\d\s().-]{8,}\d)/);
-  if (!m) return null;
-  const phone = toWhatsAppE164(m[1]);
-  if (!phone) return null;
-  const before = raw.slice(0, m.index).replace(/[:\-–,]+\s*$/, "");
-  const nm = before.match(
-    /(?:com (?:o|a)?\s*|e (?:o|a)\s+|^)\s*([A-ZÀ-Ú][\p{L}]+(?: [A-ZÀ-Ú][\p{L}]+){0,3})\s*$/u,
-  );
-  return { name: nm?.[1]?.trim() ?? null, phoneE164: phone };
-}
-
-/** Pergunta de qualificação (necessidade/projeto/desafio) — proibida com terceiros. */
-export function isQualificationQuestion(reply: string): boolean {
-  const t = norm(reply);
-  return (
-    /\b(necessidade|demanda|desafio|projeto|planejando|dor|precisam|precisando|vaga|profissional)\b/.test(
-      t,
-    ) && /\?/.test(reply)
-  );
-}
-
-export type ThirdPartyDecision =
-  | { action: "none" }
-  | { action: "ask_referral"; reason: ThirdPartyReason; reply: string }
-  | { action: "close"; reason: ThirdPartyReason; reply: string }
-  | { action: "save_referral"; reason: ThirdPartyReason; reply: string; referral: Referral }
-  | { action: "wait_referral"; reason: ThirdPartyReason; reply: string };
-
-/**
- * Decide a resposta quando a conversa é com um terceiro. O estado vem do próprio
- * histórico: sinal "não é a pessoa" em alguma inbound e/ou nossa pergunta fixa.
- */
-export function decideThirdParty(history: Msg[]): ThirdPartyDecision {
-  const inbound = history.filter((m) => m.direction === "inbound");
-  const last = inbound[inbound.length - 1];
-  if (!last) return { action: "none" };
-  const lastText = String(last.body ?? "");
-  const lastIdx = history.lastIndexOf(last);
-  const before = history.slice(0, lastIdx);
-  // O estado "terceiro" só vale se o sinal está na mensagem atual ou se a nossa
-  // última mensagem foi a pergunta/aguardo fixos — um sinal antigo não "gruda".
-  let reason: ThirdPartyReason | null = detectNotTarget(lastText);
-  const lastOut = [...before].reverse().find((m) => m.direction !== "inbound");
-  const lastOutBody = String(lastOut?.body ?? "");
-  const inThirdPartyState =
-    lastOutBody.includes(REFERRAL_MARK) || lastOutBody.includes(WAIT_REFERRAL_REPLY);
-  if (!reason && inThirdPartyState) {
-    for (const m of before) {
-      if (m.direction !== "inbound") continue;
-      reason = detectNotTarget(String(m.body ?? "")) ?? reason;
-    }
-  }
-  // Cartão de contato compartilhado = indicação do responsável, mesmo sem "não sou eu"
-  // (caso Thiago Debs, 19/10): agradece e encerra, sem qualificar quem indicou.
-  if (!reason && /Contato compartilhado/.test(lastText)) {
-    const shared = extractReferral(lastText);
-    if (shared)
-      return {
-        action: "save_referral",
-        reason: "not_this_person",
-        reply: REFERRAL_THANKS,
-        referral: shared,
-      };
-  }
-  if (!reason) return { action: "none" };
-  // Número particular: desculpa e encerra, sem pedir indicação.
-  const recentInbound = history.slice(history.lastIndexOf(lastOut as Msg) + 1);
-  if (recentInbound.some((m) => m.direction === "inbound" && isPrivateNumber(String(m.body ?? ""))))
-    return { action: "close", reason, reply: PRIVATE_NUMBER_CLOSE };
-  const asked = lastOutBody.includes(REFERRAL_MARK);
-  const referral = extractReferral(lastText);
-  if (referral) return { action: "save_referral", reason, reply: REFERRAL_THANKS, referral };
-  if (declinesReferral(lastText)) return { action: "close", reason, reply: CLOSE_THANKS };
-  if (promisesReferral(lastText))
-    return { action: "wait_referral", reason, reply: WAIT_REFERRAL_REPLY };
-  if (asked) return { action: "close", reason, reply: CLOSE_THANKS };
-  return { action: "ask_referral", reason, reply: REFERRAL_QUESTION };
+  return parseSharedPhone(text);
 }
 
 /**
