@@ -17,16 +17,13 @@ async function mountEmbed(opts: { siteKey: string | null; token: string }) {
     runScripts: "outside-only",
     url: "https://www.wktechnology.com.br/contato.html",
   });
-  const win = dom.window as unknown as Window & {
-    eval: (s: string) => void;
-    turnstile?: unknown;
-    fetch: typeof fetch;
-  };
+  const win = dom.window;
+  const winExtra = win as unknown as { turnstile?: unknown; fetch: typeof fetch };
   const posts: Array<Record<string, unknown>> = [];
   const render = vi.fn(() => "w1");
   const reset = vi.fn();
-  win.turnstile = { render, getResponse: () => opts.token, reset };
-  win.fetch = vi.fn(async (_url: unknown, init?: RequestInit) => {
+  winExtra.turnstile = { render, getResponse: () => opts.token, reset };
+  winExtra.fetch = vi.fn(async (_url: unknown, init?: RequestInit) => {
     if (init?.method === "POST") {
       posts.push(JSON.parse(String(init.body)) as Record<string, unknown>);
       return new Response(JSON.stringify({ ok: true, message: "Obrigado" }), { status: 200 });
