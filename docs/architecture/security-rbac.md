@@ -102,6 +102,13 @@ leads/negócios; atividades dessas entidades); edita só o seu; exclui só o
 que criou. Funções em conjunto (`rep_*_ids()`) mantêm a consulta rápida.
 Cargos sem a flag não mudam. Workflows rodam com o dono do workflow.
 
+A permissão prevalece sobre a restrição: quem tem `techsales.<recurso>.<ação>.workspace`
+sai da restrição naquele recurso/ação (`rep_restricted_workspaces_for`), e
+`.team` libera registros de donos/responsáveis da mesma equipe. Deny e
+membership ativo continuam valendo via `my_perm_workspaces`. Mapeamento:
+calendar_events→activities; email_*→inbox.email; live_chat_sessions→inbox.chat;
+whatsapp_*→inbox.whatsapp; property_history/stage_entries seguem só a restrição.
+
 ## 5. Exclusão barrada por RLS
 
 `DELETE` negado por RLS retorna 0 linhas **sem erro**. Sempre usar:
