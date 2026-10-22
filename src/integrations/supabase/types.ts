@@ -28615,6 +28615,10 @@ export type Database = {
         Returns: boolean
       }
       rep_restricted_workspaces: { Args: never; Returns: string[] }
+      rep_restricted_workspaces_for: {
+        Args: { _act: string; _res: string }
+        Returns: string[]
+      }
       rep_visible_company_ids: { Args: never; Returns: string[] }
       rep_visible_contact_ids: { Args: never; Returns: string[] }
       request_audit_session_id: { Args: never; Returns: string }
