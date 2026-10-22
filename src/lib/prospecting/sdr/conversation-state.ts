@@ -117,9 +117,7 @@ export type ConversationState = {
 };
 
 export function parseState(raw: unknown): ConversationState {
-  return raw && typeof raw === "object" && !Array.isArray(raw)
-    ? (raw as ConversationState)
-    : {};
+  return raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as ConversationState) : {};
 }
 
 /** Itens que dependem de uma mensagem nossa só valem se o turno foi enviado. */
@@ -176,15 +174,17 @@ const norm = (s: string) =>
 /** Texto do estado para o prompt (fatos registrados, não instruções). */
 export function statePromptLines(s: ConversationState): string[] {
   const lines: string[] = [];
-  if (s.closed) lines.push(`- Conversa encerrada anteriormente (motivo registrado: ${s.closed.reason}).`);
-  if (s.referral_asked) lines.push("- Já foi perguntado a esta pessoa pelo contato do responsável.");
-  if (s.awaiting_referral) lines.push("- Esta pessoa disse que vai enviar o contato do responsável.");
+  if (s.closed)
+    lines.push(`- Conversa encerrada anteriormente (motivo registrado: ${s.closed.reason}).`);
+  if (s.referral_asked)
+    lines.push("- Já foi perguntado a esta pessoa pelo contato do responsável.");
+  if (s.awaiting_referral)
+    lines.push("- Esta pessoa disse que vai enviar o contato do responsável.");
   if (s.confirmed_name) lines.push(`- Nome confirmado pelo cliente: ${s.confirmed_name.name}.`);
   if (s.decision_maker_confirmed)
     lines.push("- O cliente já confirmou que é responsável pela área/decisão.");
   if (s.meeting_declined) lines.push("- O cliente recusou reunião nesta conversa.");
-  if (s.contact_source_asked)
-    lines.push("- O cliente já perguntou de onde veio o contato.");
+  if (s.contact_source_asked) lines.push("- O cliente já perguntou de onde veio o contato.");
   return lines.length ? lines : ["- Nenhum estado registrado."];
 }
 

@@ -501,7 +501,11 @@ export async function processJob(
       }));
     choicePosition = lastIn ? resolveChoice(lastIn.body, current) : null;
   }
-  const { state, version: stateVersion } = await loadConversationState(admin, job.workspace_id, enr);
+  const { state, version: stateVersion } = await loadConversationState(
+    admin,
+    job.workspace_id,
+    enr,
+  );
   const context = await loadPromptContext(admin, {
     workspaceId: job.workspace_id,
     enr,
@@ -530,7 +534,8 @@ export async function processJob(
       state,
       context,
       extraInstructions: (playbook.qualification_prompt as string | null) ?? null,
-      optOutPhrases: ((playbook as Record<string, unknown>).opt_out_phrases as string[] | null) ?? [],
+      optOutPhrases:
+        ((playbook as Record<string, unknown>).opt_out_phrases as string[] | null) ?? [],
       tools: {
         specs: toolCtx ? selected.specs : [],
         executor: toolCtx && selected.specs.length ? makeExecutor(toolCtx) : null,
@@ -972,7 +977,8 @@ export async function loadConversationState(
       status: enr.status as string | null,
       cancel_reason: enr.cancel_reason as string | null,
     }),
-    version: typeof enr.conversation_state_version === "number" ? enr.conversation_state_version : 0,
+    version:
+      typeof enr.conversation_state_version === "number" ? enr.conversation_state_version : 0,
   };
 }
 
@@ -1003,7 +1009,11 @@ export async function loadPromptContext(
     leadId || contactId
       ? admin
           .from(contactId ? "contacts" : "leads")
-          .select(contactId ? "first_name, last_name, company_name" : "first_name, last_name, company_name, source")
+          .select(
+            contactId
+              ? "first_name, last_name, company_name"
+              : "first_name, last_name, company_name, source",
+          )
           .eq("id", contactId ?? leadId)
           .eq("workspace_id", ws)
           .maybeSingle()
@@ -1151,26 +1161,41 @@ export async function tickSdr(admin: Admin, limit = 10, deps: WorkerDeps = defau
   };
 }
 
-/** Tempo sem resposta depois de "você é uma IA?" até passar a uma pessoa. */
-export const AI_QUESTION_SILENCE_MS = 30 * 60_000;
-
 /**
- * Cliente perguntou se fala com uma IA, a Lia respondeu e ele parou de
- * responder: a conversa passa para uma pessoa da equipe (retomadas canceladas).
+ * Automação OPCIONAL e versionada (tool_config.automations, desligada por
+ * padrão): cliente perguntou se fala com uma IA, a Lia respondeu e ele parou
+ * de responder pelo tempo configurado → conversa passa para uma pessoa.
+ * Sem versão publicada com a regra ligada, nada é lido nem transferido.
  */
 async function handoffSilentAfterAiQuestion(
   admin: Admin,
   workspaceIds: string[],
   deps: WorkerDeps,
 ): Promise<number> {
+  const { data: versions } = await admin
+    .from("sdr_agent_versions")
+    .select("playbook_id, workspace_id, tool_config")
+    .eq("status", "published")
+    .in("workspace_id", workspaceIds);
+  const rules = new Map<string, number>();
+  for (const v of (versions ?? []) as {
+    playbook_id: string;
+    workspace_id: string;
+    tool_config: unknown;
+  }[]) {
+    const rule = parseToolConfig(v.tool_config)?.automations.ai_question_silence_handoff;
+    if (rule?.enabled) rules.set(v.playbook_id, rule.minutes * 60_000);
+  }
+  if (!rules.size) return 0;
   const now = Date.now();
+  const minSilence = Math.min(...rules.values());
   const { data: rows } = await admin
     .from("whatsapp_messages")
     .select("conversation_id, body, created_at")
     .in("workspace_id", workspaceIds)
     .eq("direction", "inbound")
     .gte("created_at", new Date(now - 3 * 86_400_000).toISOString())
-    .lte("created_at", new Date(now - AI_QUESTION_SILENCE_MS).toISOString())
+    .lte("created_at", new Date(now - minSilence).toISOString())
     .order("created_at", { ascending: false })
     .limit(500);
   const candidates = new Map<string, string>();
@@ -1189,6 +1214,14 @@ async function handoffSilentAfterAiQuestion(
       .eq("id", convId)
       .maybeSingle();
     if (!conv || conv.ai_owner !== "ai" || !conv.sdr_enrollment_id) continue;
+    const { data: enr } = await admin
+      .from("sdr_enrollments")
+      .select("playbook_id, workspace_id")
+      .eq("id", conv.sdr_enrollment_id)
+      .eq("workspace_id", conv.workspace_id)
+      .maybeSingle();
+    const silenceMs = enr ? rules.get(enr.playbook_id as string) : undefined;
+    if (!silenceMs) continue;
     const { data: later } = await admin
       .from("whatsapp_messages")
       .select("direction, created_at")
@@ -1199,14 +1232,13 @@ async function handoffSilentAfterAiQuestion(
     const after = (later ?? []) as { direction: string; created_at: string }[];
     if (after.some((m) => m.direction === "inbound")) continue; // cliente voltou a falar
     const answered = after.find((m) => m.direction !== "inbound");
-    if (!answered || now - new Date(answered.created_at).getTime() < AI_QUESTION_SILENCE_MS)
-      continue;
+    if (!answered || now - new Date(answered.created_at).getTime() < silenceMs) continue;
     await deps.handoffToHuman(admin, {
       workspaceId: conv.workspace_id,
       enrollmentId: conv.sdr_enrollment_id,
       conversationId: convId,
       reason:
-        "Cliente perguntou se estava falando com uma IA e parou de responder: atendimento humano.",
+        "Automação configurada: cliente perguntou se estava falando com uma IA e não respondeu mais.",
       actorUserId: null,
     });
     n++;

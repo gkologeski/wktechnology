@@ -125,7 +125,6 @@ export function isPrivateNumber(text: string): boolean {
   );
 }
 
-
 /** Indicação em texto ou cartão compartilhado (dado, não decisão). */
 export function extractReferral(text: string): Referral | null {
   return parseSharedPhone(text);

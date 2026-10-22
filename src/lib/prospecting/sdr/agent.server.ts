@@ -6,11 +6,7 @@ import type { ConversationMessage, SdrMaterial, SdrOffer } from "./policy";
 import type { CanonicalQuestion } from "./qualification";
 import { DEFAULT_PERSONA, personaPromptSection, type Persona } from "./persona";
 import { agentConfigPromptSection, type AgentConfig } from "./agent-config";
-import {
-  SITUATION_SCHEMA,
-  statePromptLines,
-  type ConversationState,
-} from "./conversation-state";
+import { SITUATION_SCHEMA, statePromptLines, type ConversationState } from "./conversation-state";
 import { unverifiedTimes } from "./time-guard";
 import { claimsBooking, hasConfirmedBooking } from "./booking-guard";
 
@@ -183,7 +179,9 @@ export function buildPrompt(p: BuildPromptInput): { text: string; sections: Prom
       : "",
     "ESTADO REGISTRADO DA CONVERSA:",
     ...statePromptLines(c.state ?? {}),
-    (c.facts ?? []).length ? `FATOS VERIFICADOS NESTE TURNO:\n${c.facts!.map((f) => `- ${f}`).join("\n")}` : "",
+    (c.facts ?? []).length
+      ? `FATOS VERIFICADOS NESTE TURNO:\n${c.facts!.map((f) => `- ${f}`).join("\n")}`
+      : "",
     "",
     "CATÁLOGO ATIVO AUTORIZADO:",
     offers || "(nenhuma oferta ativa)",

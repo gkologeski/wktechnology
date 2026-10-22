@@ -217,8 +217,7 @@ const availability: Handler = async (ctx, a) => {
     return {
       __status: "error",
       status: "calendar_unavailable",
-      instruction:
-        "Agenda indisponível: nenhum horário foi verificado.",
+      instruction: "Agenda indisponível: nenhum horário foi verificado.",
     };
   const sch = schedule(s);
   const current = await ctx.store.getOffers(ctx.conversation.id);
@@ -290,7 +289,8 @@ const availability: Handler = async (ctx, a) => {
     if (a.rejected_previous || shownBefore)
       await ctx.store.saveOffers(ctx.conversation.id, [], "rejected");
     return {
-      status: status === "options" ? (rejected.size ? "no_alternatives" : "no_availability") : status,
+      status:
+        status === "options" ? (rejected.size ? "no_alternatives" : "no_availability") : status,
       options: [],
       rejected_count: rejected.size,
       note: "Nenhum horário livre real para este filtro no período configurado.",
@@ -307,9 +307,12 @@ const availability: Handler = async (ctx, a) => {
     options: present(slots, s.timezone),
     rejected_count: rejected.size,
     ...(status === "requested_part_unavailable_next"
-      ? { note: "Sem horário livre nesse turno no dia pedido; estes são os mais próximos depois, no mesmo turno." }
+      ? {
+          note: "Sem horário livre nesse turno no dia pedido; estes são os mais próximos depois, no mesmo turno.",
+        }
       : {}),
-    ...(slots.length < 3 && (status === "options" || status === "day_listing" || status.startsWith("requested_"))
+    ...(slots.length < 3 &&
+    (status === "options" || status === "day_listing" || status.startsWith("requested_"))
       ? { note: `Só há ${slots.length} horário(s) livre(s) para este filtro.` }
       : {}),
   };
@@ -415,8 +418,7 @@ async function settle(
   return {
     __status: "error",
     status: "failed",
-    instruction:
-      "A agenda recusou a marcação; nenhuma reunião foi criada.",
+    instruction: "A agenda recusou a marcação; nenhuma reunião foi criada.",
   };
 }
 
@@ -430,8 +432,7 @@ function pending(ctx: ToolCtx, s: ScheduleConfig, m: MeetingRow) {
   return {
     __status: "pending",
     status: "pending_confirmation",
-    instruction:
-      "Reserva aguardando confirmação do provedor; a reunião ainda não está confirmada.",
+    instruction: "Reserva aguardando confirmação do provedor; a reunião ainda não está confirmada.",
   };
 }
 
@@ -458,7 +459,8 @@ const book: Handler = async (ctx, a) => {
     return {
       __status: "error",
       status: "email_required",
-      instruction: "Reserva não feita: falta o e-mail do convite escrito pelo cliente nesta conversa.",
+      instruction:
+        "Reserva não feita: falta o e-mail do convite escrito pelo cliente nesta conversa.",
     };
   if (inflight) return settle(ctx, s, cal, inflight, (a.attendee_email as string | null) ?? null);
   if (active.some((m) => m.status === "confirmed"))
@@ -686,8 +688,7 @@ const customerLookup: Handler = async (ctx, a) => {
   if (!verified)
     return {
       status: "found_unverified",
-      instruction:
-        "Cadastro não pertence a este número; não revele nem confirme dados dele.",
+      instruction: "Cadastro não pertence a este número; não revele nem confirme dados dele.",
     };
   return {
     status: "found",

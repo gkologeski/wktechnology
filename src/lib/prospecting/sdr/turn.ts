@@ -393,7 +393,8 @@ export async function decideTurn(i: TurnInput, deps: TurnDeps): Promise<TurnDeci
       trace.change_reasons.push("link da videoconferência confirmada anexado");
     if (composed.materials.length) trace.change_reasons.push("materiais aprovados anexados");
   }
-  if (trace.change_reasons.some((r) => r.startsWith("nova geração"))) trace.changed_by_system = true;
+  if (trace.change_reasons.some((r) => r.startsWith("nova geração")))
+    trace.changed_by_system = true;
   trace.stages.push({
     stage: "composition",
     status: trace.changed_by_system ? "changed" : composed.text ? "ok" : "skipped",

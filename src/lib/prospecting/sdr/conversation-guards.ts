@@ -25,14 +25,12 @@ export function isAiIdentityQuestion(text: string): boolean {
   );
 }
 
-
 /** Lia afirma que enviou/vai enviar material. */
 export function claimsMaterialSent(text: string): boolean {
   return /\b(material (enviado|segue|em anexo)|(estou|ja estou|vou|vou te|irei) (enviar|reenviar|encaminhar|mandar)( o| um)? (material|apresentacao|documento|portfolio)|segue (o |a )?(material|apresentacao)|enviando o material|enviei (o )?material)\b/.test(
     norm(text),
   );
 }
-
 
 /** Mesma mensagem recebida 2+ vezes: típico de robô repetindo o menu. */
 export function repeatsIdenticalInbound(history: Msg[]): boolean {

@@ -118,7 +118,10 @@ const STANDALONE_STOP = ["pare", "parar", "stop", "sair", "cancelar", "descadast
 const COURTESY_FILLER = /\b(por favor|pfv|pf|obrigad[oa]|obg|ok)\b/g;
 
 function stopNorm(s: string): string {
-  return norm(s).replace(/[^\p{L}\p{N} ]/gu, " ").replace(/\s+/g, " ").trim();
+  return norm(s)
+    .replace(/[^\p{L}\p{N} ]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 /**
@@ -141,10 +144,7 @@ export function detectOptOut(text: string, extra: string[] = []): boolean {
 export function selectableOffers<T extends Pick<SdrOffer, "status" | "approved_at" | "name">>(
   offers: T[],
 ): T[] {
-  return offers.filter(
-    (o) =>
-      o.status === "active" && !!o.approved_at,
-  );
+  return offers.filter((o) => o.status === "active" && !!o.approved_at);
 }
 
 /** Materiais aprovados e ativos, opcionalmente ligados às ofertas escolhidas. */

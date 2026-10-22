@@ -274,7 +274,8 @@ export const TOOL_DEFS: ToolDef[] = [
     id: "human.handoff",
     skill: "atendimento",
     name: "Passar para uma pessoa",
-    description: "Solicita a transferência da conversa ao responsável, com motivo e contexto. A transferência é efetivada pelo sistema ao final do turno.",
+    description:
+      "Solicita a transferência da conversa ao responsável, com motivo e contexto. A transferência é efetivada pelo sistema ao final do turno.",
     effect: "write",
     confirmation: false,
     requires: ["assignee"],
