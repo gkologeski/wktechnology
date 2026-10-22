@@ -42,6 +42,7 @@ import {
   summarizePhoneRun,
   type PhoneReviewClass,
 } from "@/lib/phone/phone-review";
+import { PhoneReviewRecordLink } from "@/components/phone/phone-review-record-link";
 import { PHONE_COUNTRY_QUERY_KEY } from "@/components/phone/phone-country-provider";
 
 export const Route = createFileRoute("/_authenticated/settings/phones")({
@@ -294,6 +295,7 @@ function PhonesSettingsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>Registro</TableHead>
                         <TableHead>Campo</TableHead>
                         <TableHead>Valor gravado</TableHead>
                         <TableHead>Motivo</TableHead>
@@ -303,6 +305,9 @@ function PhonesSettingsPage() {
                     <TableBody>
                       {reviewQ.data.items.map((i) => (
                         <TableRow key={i.id}>
+                          <TableCell className="max-w-[16rem]">
+                            <PhoneReviewRecordLink item={i} />
+                          </TableCell>
                           <TableCell>
                             {PHONE_FIELD_LABEL[`${i.table}.${i.column}`] ?? i.table}
                           </TableCell>

@@ -2,7 +2,12 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { asCountry, maskPhone } from "@/lib/phone/e164";
-import { PHONE_REVIEW_CLASSES } from "@/lib/phone/phone-review";
+import {
+  PHONE_REVIEW_CLASSES,
+  phoneEntityName,
+  phoneEntityRoute,
+  type PhoneEntityRoute,
+} from "@/lib/phone/phone-review";
 
 export type PhoneRunSummary = {
   id: string;
@@ -18,6 +23,10 @@ export type PhoneReviewItem = {
   table: string;
   column: string;
   rowId: string;
+  /** Nome do registro visível ao usuário (RLS); nulo quando não visível. */
+  name: string | null;
+  /** Ficha a abrir; nulo quando a tabela não tem ficha ou o registro não é visível. */
+  route: PhoneEntityRoute | null;
   masked: string;
   classification: string;
   reason: string | null;
@@ -114,19 +123,56 @@ export const listPhoneReview = createServerFn({ method: "GET" })
       .range(data.page * pageSize, data.page * pageSize + pageSize - 1);
     const { data: rows, error, count } = await q;
     if (error) throw new Error(error.message);
+    const list = rows ?? [];
+
+    // Nomes dos registros da página, lidos com o cliente do usuário (RLS):
+    // quem não pode ver o registro recebe o item sem nome.
+    const idsOf = (t: string) => [
+      ...new Set(list.filter((r) => r.table_name === t).map((r) => r.row_id as string)),
+    ];
+    type NameRow = { id: string } & Parameters<typeof phoneEntityName>[0];
+    const sb = context.supabase;
+    const fetchers: Record<string, (ids: string[]) => PromiseLike<{ data: NameRow[] | null }>> = {
+      contacts: (ids) =>
+        sb.from("contacts").select("id, first_name, last_name, email").in("id", ids),
+      leads: (ids) => sb.from("leads").select("id, first_name, last_name, email").in("id", ids),
+      companies: (ids) => sb.from("companies").select("id, name").in("id", ids),
+      people: (ids) => sb.from("people").select("id, full_name, email").in("id", ids),
+      ats_candidates: (ids) =>
+        sb.from("ats_candidates").select("id, full_name, email").in("id", ids),
+      profiles: (ids) => sb.from("profiles").select("id, full_name").in("id", ids),
+    };
+    const names = new Map<string, string>();
+    await Promise.all(
+      Object.entries(fetchers).map(async ([table, fetch]) => {
+        const ids = idsOf(table);
+        if (!ids.length) return;
+        const { data: found } = await fetch(ids);
+        for (const r of found ?? []) {
+          const n = phoneEntityName(r);
+          if (n) names.set(`${table}:${r.id}`, n);
+        }
+      }),
+    );
+
     return {
       total: count ?? 0,
       pageSize,
-      items: (rows ?? []).map(
-        (r): PhoneReviewItem => ({
+      items: list.map((r): PhoneReviewItem => {
+        const table = r.table_name as string;
+        const rowId = r.row_id as string;
+        const name = names.get(`${table}:${rowId}`) ?? null;
+        return {
           id: r.id as number,
-          table: r.table_name as string,
+          table,
           column: r.column_name as string,
-          rowId: r.row_id as string,
+          rowId,
+          name,
+          route: name ? phoneEntityRoute(table) : null,
           masked: maskPhone(r.original_value as string | null),
           classification: r.classification as string,
           reason: (r.reason as string | null) ?? null,
-        }),
-      ),
+        };
+      }),
     };
   });
