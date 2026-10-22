@@ -19,6 +19,7 @@ import { claimsMaterialSent } from "./conversation-guards";
 import {
   currentInbound,
   decideState,
+  parseSharedPhone,
   type CloseReason,
   type ConversationState,
   type StateDecision,
@@ -147,6 +148,13 @@ export function preTurnFacts(i: TurnInput): { facts: string[]; explicitOptOut: b
     if (explicitOptOut)
       facts.push(
         "A mensagem atual contém pedido explícito de não receber mais contato; o descadastro é registrado pelo sistema após esta resposta.",
+      );
+    const phone = currentInbound(i.history)
+      .map((m) => parseSharedPhone(m.body))
+      .find(Boolean);
+    if (phone)
+      facts.push(
+        `A mensagem atual contém um telefone legível (${phone.phoneE164}${phone.name ? `, nome: ${phone.name}` : ""}); classifique em situation.shared_contact se é de outra pessoa (referral) ou outro número do próprio cliente (own_corporate). O registro só acontece pelo sistema após esta resposta.`,
       );
     if (currentInbound(i.history).some((m) => isAutoResponder(m.body)))
       facts.push(
