@@ -34,6 +34,10 @@ async function mountEmbed(opts: { siteKey: string | null; token: string }) {
     return new Response(JSON.stringify(FORM), { status: 200 });
   }) as unknown as typeof fetch;
   win.eval(buildFormEmbedScript("https://app.example", opts.siteKey));
+  // Aguarda o formulário montar (DOMContentLoaded + busca do formulário).
+  for (let i = 0; i < 50 && !win.document.querySelector("form"); i++) {
+    await new Promise((r) => setTimeout(r, 20));
+  }
   await new Promise((r) => setTimeout(r, 50));
   const doc = win.document;
   const submit = async () => {
@@ -57,12 +61,14 @@ describe("script de incorporação de formulários", () => {
 
   it("não envia enquanto a verificação não foi concluída", async () => {
     const m = await mountEmbed({ siteKey: "0xSITE", token: "" });
+    expect(m.render).toHaveBeenCalled();
     await m.submit();
     expect(m.posts).toHaveLength(0);
   });
 
   it("sem chave configurada não renderiza o widget", async () => {
     const m = await mountEmbed({ siteKey: null, token: "x" });
+    expect(m.doc.querySelector("form")).not.toBeNull();
     expect(m.render).not.toHaveBeenCalled();
   });
 });
