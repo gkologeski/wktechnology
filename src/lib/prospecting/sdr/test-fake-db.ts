@@ -47,6 +47,10 @@ class Query {
     this.filters.push((r) => r[c] != null && r[c] <= v);
     return this;
   }
+  gt(c: string, v: any) {
+    this.filters.push((r) => r[c] != null && r[c] > v);
+    return this;
+  }
   gte(c: string, v: any) {
     this.filters.push((r) => r[c] != null && r[c] >= v);
     return this;
