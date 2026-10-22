@@ -248,7 +248,7 @@ export async function ingestInboundForSdr(
     settings?.enabled &&
     !detectOptOut(p.body, [])
   ) {
-    await admin
+    const { data: reopened } = await admin
       .from("sdr_enrollments")
       .update({
         status: "active",
@@ -260,10 +260,13 @@ export async function ingestInboundForSdr(
       })
       .eq("id", enr.id)
       .eq("status", "paused")
-      .eq("conversation_state_version", enr.conversation_state_version ?? 0);
-    await admin.rpc("sdr_set_conversation_owner", { p_conversation: conv.id, p_owner: "ai" });
-    conv.ai_owner = "ai";
-    enr.status = "active";
+      .eq("conversation_state_version", enr.conversation_state_version ?? 0)
+      .select("id");
+    if (reopened?.length) {
+      await admin.rpc("sdr_set_conversation_owner", { p_conversation: conv.id, p_owner: "ai" });
+      conv.ai_owner = "ai";
+      enr.status = "active";
+    }
   }
   if (enr.status !== "active") return "inactive";
 
