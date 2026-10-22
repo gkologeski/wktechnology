@@ -1,3 +1,4 @@
+import { loadGridPreferenceSafe } from "@/lib/grid-preference-fallback";
 // Projeção e ordenação do grid resolvidas ANTES da consulta da lista.
 //
 // Reaproveita exatamente as mesmas queries (mesmas `queryKey`) do
@@ -46,7 +47,7 @@ export function useGridProjection({
 
   const prefQuery = useQuery({
     queryKey: ["grid-pref", gridKey],
-    queryFn: () => getPrefFn({ data: { gridKey } }),
+    queryFn: () => loadGridPreferenceSafe(() => getPrefFn({ data: { gridKey } })),
     staleTime: 60_000,
   });
 

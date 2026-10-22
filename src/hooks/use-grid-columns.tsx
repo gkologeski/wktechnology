@@ -1,3 +1,4 @@
+import { loadGridPreferenceSafe } from "@/lib/grid-preference-fallback";
 import { useMemo, useState, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -61,7 +62,7 @@ export function useGridColumns<T extends object>({
 
   const prefQuery = useQuery({
     queryKey: ["grid-pref", gridKey],
-    queryFn: () => getPrefFn({ data: { gridKey } }),
+    queryFn: () => loadGridPreferenceSafe(() => getPrefFn({ data: { gridKey } })),
     staleTime: 60_000,
   });
 
