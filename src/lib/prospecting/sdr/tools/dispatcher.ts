@@ -218,7 +218,7 @@ const availability: Handler = async (ctx, a) => {
       __status: "error",
       status: "calendar_unavailable",
       instruction:
-        "Não foi possível consultar a agenda. Não ofereça horários; diga que vai confirmar.",
+        "Agenda indisponível: nenhum horário foi verificado.",
     };
   const sch = schedule(s);
   const current = await ctx.store.getOffers(ctx.conversation.id);
@@ -376,7 +376,7 @@ async function confirmMeeting(
     timezone: s.timezone,
     video_link: meetLink,
     instruction:
-      "Confirme a reunião ao cliente. O link da videoconferência é anexado pelo sistema.",
+      "Reunião confirmada pelo provedor de agenda; o link da videoconferência é anexado pelo sistema.",
   };
 }
 
@@ -416,7 +416,7 @@ async function settle(
     __status: "error",
     status: "failed",
     instruction:
-      "A agenda recusou a marcação. Não confirme; peça desculpas e ofereça outro horário ou uma pessoa.",
+      "A agenda recusou a marcação; nenhuma reunião foi criada.",
   };
 }
 
@@ -431,7 +431,7 @@ function pending(ctx: ToolCtx, s: ScheduleConfig, m: MeetingRow) {
     __status: "pending",
     status: "pending_confirmation",
     instruction:
-      "A marcação está sendo confirmada pela agenda. NÃO diga que está confirmada; avise que retorna em instantes.",
+      "Reserva aguardando confirmação do provedor; a reunião ainda não está confirmada.",
   };
 }
 
@@ -481,7 +481,7 @@ const book: Handler = async (ctx, a) => {
     return {
       __status: "error",
       status: "calendar_unavailable",
-      instruction: "Agenda indisponível agora; não confirme.",
+      instruction: "Agenda indisponível agora; nada foi reservado.",
     };
   if (overlapsBusy(sch, slot, busy)) {
     await ctx.store.markOffer(ctx.conversation.id, offerSet, slot.position, "superseded");
@@ -677,7 +677,7 @@ const customerLookup: Handler = async (ctx, a) => {
   if (candidates.length > 1)
     return {
       status: "ambiguous",
-      instruction: "Há mais de um cadastro possível. Peça o e-mail corporativo; não cite nomes.",
+      instruction: "Há mais de um cadastro possível; não revele dados de nenhum deles.",
     };
   const c = candidates[0]!;
   const convPhones = brPhoneVariants(ctx.conversation.phone);
@@ -687,7 +687,7 @@ const customerLookup: Handler = async (ctx, a) => {
     return {
       status: "found_unverified",
       instruction:
-        "Cadastro não pertence a este número. Não revele nem confirme dados; ofereça falar com uma pessoa.",
+        "Cadastro não pertence a este número; não revele nem confirme dados dele.",
     };
   return {
     status: "found",
@@ -747,7 +747,7 @@ const kbSearch: Handler = async (ctx, a) => {
   if (!results.length)
     return {
       status: "no_results",
-      instruction: "Sem fonte aprovada. Não invente; diga que um especialista confirma.",
+      instruction: "Nenhuma fonte aprovada encontrada para esta pergunta.",
     };
   return {
     status: "ok",
@@ -785,7 +785,7 @@ const materialsSend: Handler = async (ctx, a) => {
     return {
       __status: "error",
       status: "disabled",
-      instruction: "Envio de links desligado neste agente; ofereça que um especialista envie.",
+      instruction: "Envio de materiais desligado neste agente; nada foi anexado.",
     };
   const m = ctx.materials.find((x) => x.id === a.material_id);
   if (!m)
