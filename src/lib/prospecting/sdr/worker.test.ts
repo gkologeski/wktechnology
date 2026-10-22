@@ -1099,6 +1099,7 @@ describe("estado explícito da conversa (commit atômico)", () => {
     expect(r).toBe("queued");
     expect(db.find("sdr_enrollments", "e1")!.conversation_state.closed.reason).toBe("left_company");
     db.t("sdr_turn_jobs")[0].lease_until = null;
+    console.log("DBG", JSON.stringify(db.t("sdr_turn_jobs")), JSON.stringify(db.find("whatsapp_conversations","c1")));
     const j = await claimOne(db);
     const d = deps({
       reply: "",
