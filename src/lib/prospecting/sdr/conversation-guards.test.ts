@@ -19,7 +19,10 @@ describe("validadores técnicos", () => {
     expect(isAiIdentityQuestion("Vocês trabalham com IA generativa?")).toBe(false);
   });
   it("mensagem longa idêntica repetida indica laço de robô", () => {
-    const m = { direction: "inbound", body: "Escolha uma opção do menu para continuar o atendimento" };
+    const m = {
+      direction: "inbound",
+      body: "Escolha uma opção do menu para continuar o atendimento",
+    };
     expect(repeatsIdenticalInbound([m, m])).toBe(true);
     expect(repeatsIdenticalInbound([m])).toBe(false);
     expect(

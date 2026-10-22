@@ -55,7 +55,9 @@ describe("configuração por agente (pura)", () => {
   it("ferramentas desligadas aparecem como proibição explícita no prompt", () => {
     const cfg = parseAgentConfig({ allowed_tools: ["qualify"] });
     const txt = agentConfigPromptSection(cfg);
-    expect(txt).toContain("Capacidades desligadas: materiais, agendamento, transferência para pessoa");
+    expect(txt).toContain(
+      "Capacidades desligadas: materiais, agendamento, transferência para pessoa",
+    );
     expect(hasTool(cfg, "schedule")).toBe(false);
   });
 

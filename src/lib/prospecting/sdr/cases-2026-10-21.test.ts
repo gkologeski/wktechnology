@@ -29,5 +29,4 @@ describe("casos 20–21/10", () => {
     expect(detectOptOut("por favor não entre mais em contato, não temos interesse")).toBe(true);
     expect(detectOptOut("Obrigado Lia")).toBe(false);
   });
-
 });
