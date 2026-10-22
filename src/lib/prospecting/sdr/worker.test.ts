@@ -205,11 +205,18 @@ describe("entrada (ingest)", () => {
     expect(await ingestInboundForSdr(db, { ...p, body: "não tenho interesse" })).toBe("queued");
     expect(db.find("sdr_enrollments", "e1")?.status).toBe("active");
   });
-  it("recusa sem a Lia atendendo encerra sem enfileirar", async () => {
+  it("pedido explícito de parar sem a Lia atendendo descadastra sem enfileirar", async () => {
     db.t("sdr_workspace_settings")[0].enabled = false;
-    expect(await ingestInboundForSdr(db, { ...p, body: "não tenho interesse" })).toBe("opted_out");
+    expect(await ingestInboundForSdr(db, { ...p, body: "pare de me mandar mensagem" })).toBe(
+      "opted_out",
+    );
     expect(db.find("sdr_enrollments", "e1")?.status).toBe("opted_out");
     expect(db.t("sdr_turn_jobs")).toHaveLength(0);
+  });
+  it("recusa comercial sem a Lia atendendo não descadastra permanentemente", async () => {
+    db.t("sdr_workspace_settings")[0].enabled = false;
+    expect(await ingestInboundForSdr(db, { ...p, body: "não quero reunião" })).toBe("disabled");
+    expect(db.find("sdr_enrollments", "e1")?.status).toBe("active");
   });
 });
 
@@ -378,11 +385,38 @@ describe("qualificação canônica", () => {
 });
 
 describe("recusa, falhas e desligado", () => {
-  it("opt-out da IA confirma ao cliente, encerra e pausa a conversa", async () => {
+  it("pedido explícito de parar: confirmação vem da IA e o descadastro é permanente", async () => {
+    db.find("whatsapp_messages", "m1")!.body = "Por favor, pare de me mandar mensagens.";
     job(db);
     const j = await claimOne(db);
     const d = deps({
-      reply: "Tudo bem",
+      reply: "Combinado, não vou mais te escrever. Desculpe o incômodo!",
+      intent: "continue",
+      offer_keys: [],
+      material_ids: [],
+      answers: [],
+      handoff_reason: "",
+    });
+    await processJob(db, j, d);
+    const e = db.find("sdr_enrollments", "e1")!;
+    expect(e.status).toBe("opted_out");
+    expect(e.opted_out_at).toBeTruthy();
+    expect(db.find("whatsapp_conversations", "c1")?.ai_owner).toBe("paused");
+    // Texto é o da IA (persona), não uma frase fixa do código.
+    expect(db.find("sdr_turn_jobs", j.id)?.draft_text).toBe(
+      "Combinado, não vou mais te escrever. Desculpe o incômodo!",
+    );
+    expect(d.handoffToHuman).not.toHaveBeenCalled();
+  });
+
+  it("opt_out do modelo sem pedido explícito vira encerramento, não descadastro", async () => {
+    db.t("sdr_workspace_settings")[0].auto_send_enabled = true;
+    db.find("sdr_playbooks", "pb1")!.mode = "auto";
+    db.find("whatsapp_messages", "m1")!.body = "Não quero reunião agora.";
+    job(db);
+    const j = await claimOne(db);
+    const d = deps({
+      reply: "Sem problema, obrigada pela atenção!",
       intent: "opt_out",
       offer_keys: [],
       material_ids: [],
@@ -390,10 +424,12 @@ describe("recusa, falhas e desligado", () => {
       handoff_reason: "",
     });
     await processJob(db, j, d);
-    expect(db.find("sdr_enrollments", "e1")?.status).toBe("opted_out");
-    expect(db.find("sdr_enrollments", "e1")?.opted_out_at).toBeTruthy();
-    expect(db.find("whatsapp_conversations", "c1")?.ai_owner).toBe("paused");
-    expect(d.handoffToHuman).not.toHaveBeenCalled();
+    const e = db.find("sdr_enrollments", "e1")!;
+    expect(e.status).toBe("paused");
+    expect(e.cancel_reason).toBe("declined");
+    expect(e.opted_out_at).toBeFalsy();
+    expect(e.follow_up_at).toBeNull();
+    expect(e.conversation_state.closed.reason).toBe("declined");
   });
 
   it("erro transitório da IA volta à fila; erro definitivo falha e registra", async () => {
@@ -882,7 +918,8 @@ describe("ferramentas reais no turno (agenda falsa)", () => {
         },
       },
     });
-    // Turno anterior já apresentou a opção 1 ao cliente.
+    // Turno anterior já apresentou a opção 1 ao cliente; ele escreveu o e-mail.
+    db.find("whatsapp_messages", "m1")!.body += " Pode ser a opção 1, meu e-mail é ana@acme.com.br";
     const start = Date.now() + 86400000;
     await store.saveOffers("c1", [{ start, end: start + 1800000 }], "superseded");
     job(db);
@@ -896,7 +933,7 @@ describe("ferramentas reais no turno (agenda falsa)", () => {
         seenTools.push((a.tools ?? []).map((t) => t.name));
         const bk = (await a.executeTool!(
           "calendar__book",
-          { option: 1, attendee_email: null, confirmation_message_id: "m1" },
+          { option: 1, attendee_email: "ana@acme.com.br", confirmation_message_id: "m1" },
           "t2",
         )) as { status: string };
         expect(bk.status).toBe("confirmed");
