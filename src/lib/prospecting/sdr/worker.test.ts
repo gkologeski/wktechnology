@@ -1059,12 +1059,13 @@ describe("estado explícito da conversa (commit atômico)", () => {
     job(db);
     const j = await claimOne(db);
     const d = deps(closedOut("left_company"));
-    d.sendMessage.mockImplementation(async () => {
+    const send = d.sendMessage as unknown as ReturnType<typeof vi.fn>;
+    send.mockImplementation(async () => {
       db.find("sdr_turn_jobs", j.id)!.status = "sent";
       return { ok: true, wamid: "w1" };
     });
     expect(await processJob(db, j, d)).toBe("sent");
-    expect(d.sendMessage.mock.calls[0]![1].text).toBe("Sem problemas, obrigada pela atenção!");
+    expect(send.mock.calls[0]![1].text).toBe("Sem problemas, obrigada pela atenção!");
     const e = db.find("sdr_enrollments", "e1")!;
     expect(e).toMatchObject({
       status: "paused",

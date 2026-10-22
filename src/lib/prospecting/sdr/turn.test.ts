@@ -96,7 +96,10 @@ function input(history: ConversationMessage[], over: Partial<TurnInput> = {}): T
 
 function deps(...outputs: unknown[]) {
   const queue = [...outputs];
-  const callAgent = vi.fn(async () => ({ ok: true as const, output: queue.shift() }));
+  const callAgent = vi.fn(async (_a: { system: string; feature?: string }) => ({
+    ok: true as const,
+    output: queue.shift(),
+  }));
   const compose = vi.fn(async (p: { reply: string; meeting: unknown }) => ({
     text: buildOutgoingText({ reply: p.reply, materials: [], meeting: p.meeting as never }),
     materials: [],
@@ -434,7 +437,7 @@ describe("robôs, outra pessoa, IA e áudio", () => {
   });
   it("áudio transcrito chega como mensagem do cliente", async () => {
     const { d } = await run([inb('🎤 Áudio: "precisamos de dois devs"')], [output("Para quando?")]);
-    const sys = (d.callAgent.mock.calls[0]![0] as { system: string }).system;
+    const sys = d.callAgent.mock.calls[0]![0].system;
     expect(sys).toContain("🎤 Áudio:");
   });
 });
