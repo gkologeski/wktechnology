@@ -412,7 +412,9 @@ export async function decideTurn(i: TurnInput, deps: TurnDeps): Promise<TurnDeci
     !!close ||
     state.stopFollowUps ||
     !!i.state.contact_source_asked ||
-    (!!i.state.closed && state.patch.closed !== null);
+    // Conversa já encerrada nunca volta a ter retomadas automáticas: só
+    // responde ao que o cliente escrever.
+    !!i.state.closed;
   return {
     kind: "decided",
     out,
