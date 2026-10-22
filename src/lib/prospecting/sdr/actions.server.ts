@@ -16,6 +16,10 @@ export type DraftPayload = {
   warnings: string[];
   booking_url?: string | null;
   tool_trace?: { tool: string; status: string }[];
+  /** Conversa encerrada/descadastrada/procedência perguntada: sem retomadas automáticas. */
+  no_follow_up?: boolean;
+  /** Trace do turno (seções do prompt, etapas, estado), sem segredos. */
+  turn_trace?: unknown;
 };
 
 /**
@@ -583,16 +587,18 @@ export async function sendSdrMessage(
     .eq("id", enr.playbook_id)
     .maybeSingle();
   const stage = payload.planned_stage ?? "discovery";
-  const fu = nextFollowUpAt({
-    now: new Date(),
-    hours: pb?.follow_up_hours ?? 24,
-    count: enr.follow_up_count ?? 0,
-    max: pb?.max_follow_ups ?? 2,
-    stage,
-    // Retomada livre só vale dentro da janela de 24 h e no expediente (8h–18h BRT).
-    lastInboundAt: conv.last_inbound_at,
-    businessHours: { startHour: 8, endHour: 18, utcOffsetHours: -3 },
-  });
+  const fu = payload.no_follow_up
+    ? null
+    : nextFollowUpAt({
+        now: new Date(),
+        hours: pb?.follow_up_hours ?? 24,
+        count: enr.follow_up_count ?? 0,
+        max: pb?.max_follow_ups ?? 2,
+        stage,
+        // Retomada livre só vale dentro da janela de 24 h e no expediente (8h–18h BRT).
+        lastInboundAt: conv.last_inbound_at,
+        businessHours: { startHour: 8, endHour: 18, utcOffsetHours: -3 },
+      });
   await admin
     .from("sdr_turn_jobs")
     .update({
