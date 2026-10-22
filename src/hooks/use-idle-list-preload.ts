@@ -1,3 +1,4 @@
+import { loadGridPreferenceSafe } from "@/lib/grid-preference-fallback";
 // Pré-carrega, com o navegador ocioso, o código e as preferências de grade das
 // listagens pesadas — apenas as do módulo ativo e com permissão de leitura.
 // Roda uma de cada vez, depois da primeira tela, nunca durante uma navegação,
@@ -57,7 +58,8 @@ export function useIdleListPreload(enabled: boolean, identity: string | null) {
         if (cancelled) return;
         await qc.prefetchQuery({
           queryKey: ["grid-pref", l.gridKey],
-          queryFn: () => getGridPreference({ data: { gridKey: l.gridKey } }),
+          queryFn: () =>
+            loadGridPreferenceSafe(() => getGridPreference({ data: { gridKey: l.gridKey } })),
           staleTime: 60_000,
         });
         if (cancelled) return;
