@@ -17,6 +17,7 @@ import {
   type ScoreQuestion,
 } from "@/lib/prospecting/score";
 
+import { isValidE164 } from "@/lib/phone/e164";
 const RELATED_KEYS = [
   "related_lead_id",
   "related_contact_id",
@@ -281,6 +282,12 @@ export const saveSurveyActivity = createServerFn({ method: "POST" })
           .eq("questionnaire_id", data.source_id),
       ]);
       sourceName = q?.name ?? sourceName;
+      // Telefone respondido segue o padrão E.164 do sistema.
+      for (const question of (questions ?? []) as { id: string; type: string }[]) {
+        const ans = (data.answers as Record<string, unknown>)[question.id];
+        if (question.type === "phone" && typeof ans === "string" && ans.trim() && !isValidE164(ans))
+          throw new Error("Telefone inválido: informe com o código do país (ex.: +55).");
+      }
       // Questionário sem pontuação: score nulo, nunca 0 nem aprovação automática.
       const list = (
         (questions ?? []) as unknown as (ScoreQuestion & { scored?: boolean })[]

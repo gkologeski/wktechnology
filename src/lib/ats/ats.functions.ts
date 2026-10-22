@@ -1,5 +1,6 @@
 // Server functions do módulo ATS (Sprint A: CRUD + Kanban).
 import { createServerFn } from "@tanstack/react-start";
+import { humanPhoneForRow, workspacePhoneCountry } from "@/lib/phone/phone-boundary";
 import { orSafeLike } from "@/lib/postgrest-search";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -499,7 +500,7 @@ const CandidateSaveSchema = z.object({
   id: z.string().uuid().optional(),
   full_name: z.string().trim().min(1).max(200),
   email: z.string().trim().email().max(255).optional().nullable().or(z.literal("")),
-  phone: z.string().max(40).optional().nullable(),
+  phone: z.string().max(64).optional().nullable(),
   linkedin_url: LinkedinUrlSchema,
   location: z.string().max(120).optional().nullable(),
   current_position: z.string().max(200).optional().nullable(),
@@ -581,12 +582,18 @@ export const saveAtsCandidate = createServerFn({ method: "POST" })
       "techhire.candidates.create.own",
       "techhire.candidates.update.workspace",
     ]);
+    const phone = await humanPhoneForRow(
+      supabase,
+      { table: "ats_candidates", id: data.id, column: "phone" },
+      data.phone || null,
+      { field: "Telefone", country: await workspacePhoneCountry(supabase, workspaceId) },
+    );
     const base = {
       owner_id: userId,
       workspace_id: workspaceId,
       full_name: data.full_name,
       email: data.email || null,
-      phone: data.phone ?? null,
+      phone,
       linkedin_url: data.linkedin_url || null,
       location: data.location ?? null,
       current_position: data.current_position ?? null,

@@ -11,6 +11,7 @@ import { discoverTargetsFromAssociations } from "./hubspot-steps-discovery.serve
 import type { StepRunArgs } from "./hubspot-step-run-context";
 import type { StepResult } from "./hubspot-steps-types";
 
+import { countryFromRecordField, sourcePhone } from "@/lib/phone/phone-boundary";
 export async function runContactsStep(args: StepRunArgs): Promise<StepResult | void> {
   const {
     supabase,
@@ -156,7 +157,7 @@ export async function runContactsStep(args: StepRunArgs): Promise<StepResult | v
           first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
           last_name: p.lastname ?? null,
           email: p.email ?? null,
-          phone: p.phone ?? null,
+          phone: sourcePhone(p.phone, countryFromRecordField(p.country)),
           job_title: p.jobtitle ?? null,
           company_id: localCompanyId,
           ...mapped,

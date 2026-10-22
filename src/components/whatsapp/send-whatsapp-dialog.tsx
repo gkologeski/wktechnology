@@ -13,7 +13,6 @@ import {
 import { uploadWhatsAppMedia } from "@/lib/whatsapp-media";
 import { WhatsAppMediaBubble } from "@/components/whatsapp/whatsapp-media-bubble";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { SnippetTextarea } from "@/components/snippets/snippet-textarea";
 import {
@@ -56,6 +55,7 @@ import { useHasMessageDraft } from "@/hooks/use-has-message-draft";
 import { MessageDraftStatus } from "@/components/message-draft-status";
 import { MessageDraftPin } from "@/components/message-draft-pin";
 
+import { PhoneInput, validatePhoneValue } from "@/components/ui/phone-input";
 type Props = {
   defaultTo?: string;
   contactId?: string;
@@ -209,6 +209,12 @@ export function SendWhatsAppDialog({
           : undefined;
       if (!isOfficialHsm && !policy.freeTextAllowed)
         throw new Error(policy.notice || "Escolha um modelo aprovado para enviar.");
+      // Destinatário digitado: E.164 válido; destinatário travado (conversa/ficha)
+      // segue como está e o servidor aplica a política do canal.
+      if (!lockRecipient) {
+        const checked = validatePhoneValue(to, { required: true, label: "Para" });
+        if (!checked.ok) throw new Error(checked.message);
+      }
       const res = await sendFn({
         data: {
           to,
@@ -282,12 +288,7 @@ export function SendWhatsAppDialog({
                 {to}
               </p>
             ) : (
-              <Input
-                id="wa-to"
-                value={to}
-                onChange={(e) => setTo(e.target.value)}
-                placeholder="+5511999999999"
-              />
+              <PhoneInput id="wa-to" value={to} onChange={setTo} />
             )}
             {windowChecking && (
               <p className="mt-1 text-xs text-muted-foreground" aria-live="polite">

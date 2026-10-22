@@ -6,11 +6,17 @@ import { buildMeta, jsonError, parseListParams } from "@/lib/api-keys/list-param
 import { ensureLeadRelationsSafe } from "@/lib/leads/lead-relations";
 import { checkLeadDuplicate } from "@/lib/leads/lead-duplicate-check";
 
+import {
+  humanPhone,
+  isPhoneValidationError,
+  phoneErrorBody,
+  workspacePhoneCountry,
+} from "@/lib/phone/phone-boundary";
 const CreateLead = z.object({
   first_name: z.string().min(1).max(120),
   last_name: z.string().max(120).optional(),
   email: z.string().email().optional(),
-  phone: z.string().max(40).optional(),
+  phone: z.string().max(64).optional(),
   job_title: z.string().max(2000).nullable().optional(),
   company_name: z.string().max(200).optional(),
   source: z.string().max(80).optional(),
@@ -62,6 +68,19 @@ export const Route = createFileRoute("/api/public/v1/leads")({
               headers: { "Content-Type": "application/json" },
             },
           );
+        }
+        // Telefone: aceita formatado, grava E.164 (país padrão do workspace
+        // para número sem +DDI). Inválido → 422 sem ecoar o número.
+        try {
+          const phone = humanPhone(parsed.data.phone ?? null, {
+            field: "phone",
+            country: await workspacePhoneCountry(supabaseAdmin, auth.workspaceId),
+          });
+          if (phone) parsed.data.phone = phone;
+          else delete parsed.data.phone;
+        } catch (e) {
+          if (isPhoneValidationError(e)) return Response.json(phoneErrorBody(e), { status: 422 });
+          throw e;
         }
         const dup = await checkLeadDuplicate(supabaseAdmin, {
           workspaceId: auth.workspaceId,

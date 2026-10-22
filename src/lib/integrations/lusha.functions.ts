@@ -6,6 +6,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+import { sourcePhone } from "@/lib/phone/phone-boundary";
 const LUSHA_BASE = "https://api.lusha.com";
 
 async function lushaPersonByEmail(email: string) {
@@ -93,7 +94,8 @@ export const enrichWithLusha = createServerFn({ method: "POST" })
         }
         credits++;
         const update: Record<string, unknown> = {};
-        if (!r.phone && c.phoneNumbers?.[0]?.number) update.phone = c.phoneNumbers[0].number;
+        if (!r.phone && c.phoneNumbers?.[0]?.number)
+          update.phone = sourcePhone(c.phoneNumbers[0].number);
         if (data.entity === "contact" && !r.job_title && c.jobTitle) update.job_title = c.jobTitle;
         if (data.entity === "lead" && !r.company_name && result.data?.company?.name)
           update.company_name = result.data.company.name;

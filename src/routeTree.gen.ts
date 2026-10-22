@@ -219,6 +219,7 @@ import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes
 import { Route as AuthenticatedSettingsOnboardingTemplatesRouteImport } from './routes/_authenticated/settings.onboarding-templates'
 import { Route as AuthenticatedSettingsPaymentsRouteImport } from './routes/_authenticated/settings.payments'
 import { Route as AuthenticatedSettingsPermissionsRouteImport } from './routes/_authenticated/settings.permissions'
+import { Route as AuthenticatedSettingsPhonesRouteImport } from './routes/_authenticated/settings.phones'
 import { Route as AuthenticatedSettingsPipelinesRouteImport } from './routes/_authenticated/settings.pipelines'
 import { Route as AuthenticatedSettingsPlaybooksRouteImport } from './routes/_authenticated/settings.playbooks'
 import { Route as AuthenticatedSettingsPortalRouteImport } from './routes/_authenticated/settings.portal'
@@ -1608,6 +1609,12 @@ const AuthenticatedSettingsPermissionsRoute =
     path: '/permissions',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsPhonesRoute =
+  AuthenticatedSettingsPhonesRouteImport.update({
+    id: '/phones',
+    path: '/phones',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsPipelinesRoute =
   AuthenticatedSettingsPipelinesRouteImport.update({
     id: '/pipelines',
@@ -2995,6 +3002,7 @@ export interface FileRoutesByFullPath {
   '/settings/onboarding-templates': typeof AuthenticatedSettingsOnboardingTemplatesRoute
   '/settings/payments': typeof AuthenticatedSettingsPaymentsRoute
   '/settings/permissions': typeof AuthenticatedSettingsPermissionsRoute
+  '/settings/phones': typeof AuthenticatedSettingsPhonesRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/settings/portal': typeof AuthenticatedSettingsPortalRoute
@@ -3405,6 +3413,7 @@ export interface FileRoutesByTo {
   '/settings/onboarding-templates': typeof AuthenticatedSettingsOnboardingTemplatesRoute
   '/settings/payments': typeof AuthenticatedSettingsPaymentsRoute
   '/settings/permissions': typeof AuthenticatedSettingsPermissionsRoute
+  '/settings/phones': typeof AuthenticatedSettingsPhonesRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/settings/portal': typeof AuthenticatedSettingsPortalRoute
@@ -3822,6 +3831,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/onboarding-templates': typeof AuthenticatedSettingsOnboardingTemplatesRoute
   '/_authenticated/settings/payments': typeof AuthenticatedSettingsPaymentsRoute
   '/_authenticated/settings/permissions': typeof AuthenticatedSettingsPermissionsRoute
+  '/_authenticated/settings/phones': typeof AuthenticatedSettingsPhonesRoute
   '/_authenticated/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/_authenticated/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/_authenticated/settings/portal': typeof AuthenticatedSettingsPortalRoute
@@ -4240,6 +4250,7 @@ export interface FileRouteTypes {
     | '/settings/onboarding-templates'
     | '/settings/payments'
     | '/settings/permissions'
+    | '/settings/phones'
     | '/settings/pipelines'
     | '/settings/playbooks'
     | '/settings/portal'
@@ -4650,6 +4661,7 @@ export interface FileRouteTypes {
     | '/settings/onboarding-templates'
     | '/settings/payments'
     | '/settings/permissions'
+    | '/settings/phones'
     | '/settings/pipelines'
     | '/settings/playbooks'
     | '/settings/portal'
@@ -5066,6 +5078,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/onboarding-templates'
     | '/_authenticated/settings/payments'
     | '/_authenticated/settings/permissions'
+    | '/_authenticated/settings/phones'
     | '/_authenticated/settings/pipelines'
     | '/_authenticated/settings/playbooks'
     | '/_authenticated/settings/portal'
@@ -6896,6 +6909,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsPermissionsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/phones': {
+      id: '/_authenticated/settings/phones'
+      path: '/phones'
+      fullPath: '/settings/phones'
+      preLoaderRoute: typeof AuthenticatedSettingsPhonesRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/pipelines': {
       id: '/_authenticated/settings/pipelines'
       path: '/pipelines'
@@ -8541,6 +8561,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsOnboardingTemplatesRoute: typeof AuthenticatedSettingsOnboardingTemplatesRoute
   AuthenticatedSettingsPaymentsRoute: typeof AuthenticatedSettingsPaymentsRoute
   AuthenticatedSettingsPermissionsRoute: typeof AuthenticatedSettingsPermissionsRoute
+  AuthenticatedSettingsPhonesRoute: typeof AuthenticatedSettingsPhonesRoute
   AuthenticatedSettingsPipelinesRoute: typeof AuthenticatedSettingsPipelinesRoute
   AuthenticatedSettingsPlaybooksRoute: typeof AuthenticatedSettingsPlaybooksRoute
   AuthenticatedSettingsPortalRoute: typeof AuthenticatedSettingsPortalRoute
@@ -8649,6 +8670,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
     AuthenticatedSettingsOnboardingTemplatesRoute,
   AuthenticatedSettingsPaymentsRoute: AuthenticatedSettingsPaymentsRoute,
   AuthenticatedSettingsPermissionsRoute: AuthenticatedSettingsPermissionsRoute,
+  AuthenticatedSettingsPhonesRoute: AuthenticatedSettingsPhonesRoute,
   AuthenticatedSettingsPipelinesRoute: AuthenticatedSettingsPipelinesRoute,
   AuthenticatedSettingsPlaybooksRoute: AuthenticatedSettingsPlaybooksRoute,
   AuthenticatedSettingsPortalRoute: AuthenticatedSettingsPortalRoute,

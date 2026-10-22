@@ -14,6 +14,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
+import { sourcePhone } from "@/lib/phone/phone-boundary";
 // ────────────────────────────────────────────────────────────────────────────
 // Schemas
 // ────────────────────────────────────────────────────────────────────────────
@@ -374,7 +375,7 @@ export const importLinkedinSearchResults = createServerFn({ method: "POST" })
         const existingEmail = (existing?.email as string | null) ?? null;
         const existingPhone = (existing?.phone as string | null) ?? null;
         if (enrich.email && !existingEmail) updatePayload.email = enrich.email;
-        if (enrich.phone && !existingPhone) updatePayload.phone = enrich.phone;
+        if (enrich.phone && !existingPhone) updatePayload.phone = sourcePhone(enrich.phone);
 
         let candidateId: string;
         if (existing) {
@@ -395,7 +396,7 @@ export const importLinkedinSearchResults = createServerFn({ method: "POST" })
             ...updatePayload,
           };
           if (enrich.email) insertRow.email = enrich.email;
-          if (enrich.phone) insertRow.phone = enrich.phone;
+          if (enrich.phone) insertRow.phone = sourcePhone(enrich.phone);
           const { data: ins, error } = await supabase
             .from("ats_candidates")
             .insert(insertRow as never)

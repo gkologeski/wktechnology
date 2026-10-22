@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { type AnyRow, type LogStep, renderTokens } from "../engine-shared.server";
 import type { RunCtx, RunnableAction } from "./run-context";
 
+import { workflowPhone, workspacePhoneCountry } from "@/lib/phone/phone-boundary";
 export async function handleAtsAction(
   supabase: SupabaseClient,
   action: RunnableAction,
@@ -106,7 +107,11 @@ export async function handleAtsAction(
       const fullName = (renderTokens(action.full_name, ctx.after) as string).trim();
       if (!fullName) throw new Error("full_name obrigatório");
       const email = action.email ? (renderTokens(action.email, ctx.after) as string) || null : null;
-      const phone = action.phone ? (renderTokens(action.phone, ctx.after) as string) || null : null;
+      const phone = workflowPhone(
+        action.phone,
+        action.phone ? (renderTokens(action.phone, ctx.after) as string) : null,
+        await workspacePhoneCountry(supabase, ctx.workspaceId),
+      );
       const { data: inserted, error } = await supabase
         .from("ats_candidates")
         .insert({

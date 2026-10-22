@@ -51,6 +51,7 @@ const SETTINGS_MANAGER_PLUS = [
 const SETTINGS_ADMIN_ONLY = [
   "/settings/branding",
   "/settings/language",
+  "/settings/phones",
   "/settings/billing",
   "/settings/pipelines",
   "/settings/custom-properties",

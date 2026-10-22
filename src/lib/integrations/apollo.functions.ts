@@ -7,6 +7,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 import { apolloRawRequest } from "./apollo-gateway.server";
 
+import { sourcePhone } from "@/lib/phone/phone-boundary";
 type ApolloPerson = {
   email?: string | null;
   first_name?: string | null;
@@ -40,7 +41,10 @@ async function apolloMatch(payload: Record<string, unknown>) {
 function mapApolloToLead(p: ApolloPerson) {
   return {
     email: p.email ?? null,
-    phone: p.phone_numbers?.[0]?.sanitized_number ?? p.phone_numbers?.[0]?.raw_number ?? null,
+    // Fonte externa: E.164 quando inequívoco; sem país comprovado, nada é inventado.
+    phone: sourcePhone(
+      p.phone_numbers?.[0]?.sanitized_number ?? p.phone_numbers?.[0]?.raw_number ?? null,
+    ),
     first_name: p.first_name ?? null,
     last_name: p.last_name ?? null,
     company_name: p.organization?.name ?? null,

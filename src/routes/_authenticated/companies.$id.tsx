@@ -211,6 +211,7 @@ function CompanyDetail() {
               { key: "size", label: "Tamanho", primary: true },
               { key: "size_description", label: "Porte Descritivo", primary: true },
               { key: "phone", label: "Telefone", type: "tel", primary: true },
+              { key: "phone_ext", label: "Ramal", primary: true },
               { key: "cnpj", label: "CNPJ", type: "cnpj", primary: true },
               { key: "cep", label: "CEP", type: "cep", primary: true },
               { key: "address", label: "Endereço" },

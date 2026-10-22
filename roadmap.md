@@ -245,3 +245,18 @@ Pendências preservadas: C1 (68 sugestões, divergência Clockify 12 pessoas, 40
 - [x] Prova isolada SQL/RLS + testes + verify/build + Playwright; ativar política WK sem replay
 - [ ] Prova ponta a ponta de um ganho real no WK (aguarda o primeiro negócio ganho de verdade; não criei negócio de teste no WK)
 - [ ] Publicar (aguarda revisão do usuário)
+
+# Roadmap — Telefones no padrão E.164 (todos os módulos)
+
+- [x] Núcleo único `src/lib/phone/e164.ts` (libphonenumber max) + testes
+- [x] Banco 0186: país padrão por workspace, ramal, backup/revisão, guarda opcional
+- [x] Campo de telefone compartilhado (país, colagem, ramal, erro PT-BR) e país do workspace
+- [x] Trocar entradas nas telas (CRM, ATS, People, Core, públicas, propriedades, edição em massa)
+- [x] Servidor: APIs, importações, integrações, workflows, agentes, MCP
+- [x] Canais: WhatsApp/voz continuam reconhecendo números antes/depois
+- [x] Varredura WK: simulação → aplicar só seguros com backup → revisão
+- [x] Tela de revisão/contagens e configuração do país
+- [x] Docs/AGENTS
+- [x] Testes (1.344), tipos, lint dos arquivos alterados, build e Playwright (desktop claro/escuro, celular, teclado)
+- [ ] Ligar a guarda do banco (`phone_strict_e164`) após publicação (aguarda aceite)
+- [ ] Revisão manual dos 17.250 números da fila (decisão humana por registro)

@@ -6,6 +6,12 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertImportEntity } from "@/lib/access-control/admin-gates.server";
 
+import {
+  countryFromRecordField,
+  sourcePhone,
+  sourcePhoneExtension,
+  workspacePhoneCountry,
+} from "@/lib/phone/phone-boundary";
 export type CsvEntity = "leads" | "contacts" | "companies";
 export type DedupeStrategy = "skip" | "update" | "create_new";
 
@@ -96,6 +102,7 @@ function buildRecord(
   entity: CsvEntity,
   row: Record<string, string | null>,
   mapping: Record<string, string>,
+  phoneCountry: string,
 ) {
   const out: Record<string, unknown> = {};
   const allowed = new Set(ENTITY_FIELDS[entity].map((f) => f.key));
@@ -106,6 +113,18 @@ function buildRecord(
     const value = String(raw).trim();
     if (!value) continue;
     out[fieldKey] = value;
+  }
+  // Telefones: E.164 quando a leitura é única (país da própria linha, senão o
+  // país padrão do workspace informado na tela de importação); o resto fica
+  // como veio, para revisão. Ramal vai para `phone_ext`.
+  const rowCountry = countryFromRecordField(typeof out.country === "string" ? out.country : null);
+  for (const key of ["phone", "mobile_phone"]) {
+    const v = out[key];
+    if (typeof v !== "string") continue;
+    const country = rowCountry ?? phoneCountry;
+    const ext = key === "phone" ? sourcePhoneExtension(v, country) : null;
+    out[key] = sourcePhone(v, country);
+    if (ext && !out.phone_ext) out.phone_ext = ext;
   }
   // Para leads/contacts, garantir first_name (se ausente mas tem email, deriva).
   if ((entity === "leads" || entity === "contacts") && !out.first_name) {
@@ -131,7 +150,8 @@ export const previewCsvImport = createServerFn({ method: "POST" })
     const { entity, rows, mapping, dedupeKey } = data;
 
     // Construir records e extrair valores da chave dedupe
-    const records = rows.map((r) => buildRecord(entity, r, mapping));
+    const phoneCountry = await workspacePhoneCountry(context.supabase, workspaceId);
+    const records = rows.map((r) => buildRecord(entity, r, mapping, phoneCountry));
     const keyValues = Array.from(
       new Set(
         records
@@ -197,7 +217,8 @@ export const executeCsvImport = createServerFn({ method: "POST" })
     if (!ENTITY_FIELDS[entity].some((f) => f.key === dedupeKey))
       throw new Error("Campo de deduplicação inválido para esta entidade.");
 
-    const records = rows.map((r) => buildRecord(entity, r, mapping));
+    const phoneCountry = await workspacePhoneCountry(context.supabase, workspaceId);
+    const records = rows.map((r) => buildRecord(entity, r, mapping, phoneCountry));
     const keyValues = Array.from(
       new Set(
         records

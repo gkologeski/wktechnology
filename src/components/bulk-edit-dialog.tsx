@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EmailInput } from "@/components/ui/email-input";
+import { PhoneInput, validatePhoneValue } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
@@ -51,6 +52,14 @@ export function BulkEditDialog({
       let v = values[f.name];
       if (v === "" || v === undefined) v = null;
       if (f.type === "number" && v != null) v = Number(v);
+      if (f.type === "tel" && v != null) {
+        const checked = validatePhoneValue(String(v), { label: f.label });
+        if (!checked.ok) {
+          toast.error(checked.message);
+          return;
+        }
+        v = checked.value;
+      }
       if (f.type === "email" && v != null) {
         const s = String(v).trim();
         if (!isEmail(s)) {
@@ -128,6 +137,12 @@ export function BulkEditDialog({
                       </option>
                     ))}
                   </select>
+                ) : f.type === "tel" ? (
+                  <PhoneInput
+                    aria-label={f.label}
+                    value={String(values[f.name] ?? "")}
+                    onChange={(v) => setValues((s) => ({ ...s, [f.name]: v }))}
+                  />
                 ) : f.type === "email" ? (
                   <EmailInput
                     value={String(values[f.name] ?? "")}

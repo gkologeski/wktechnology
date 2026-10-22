@@ -8,6 +8,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runAutoStart } from "@/lib/people/onboarding.functions";
 import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 
+import { humanPhoneForRow, workspacePhoneCountry } from "@/lib/phone/phone-boundary";
 export const PEOPLE_EMPLOYMENT_TYPES = ["pj", "clt", "contractor", "intern", "other"] as const;
 export const PEOPLE_STATUSES = [
   "active",
@@ -296,11 +297,28 @@ export const upsertPerson = createServerFn({ method: "POST" })
       if (!ownerId) throw new Error("Workspace ativo não encontrado");
     }
 
+    const { data: wsId } = await supabase.rpc("default_workspace_for_user", { _user: userId });
+    const phoneCountry = await workspacePhoneCountry(
+      supabase,
+      typeof wsId === "string" ? wsId : null,
+    );
+    const personPhone = await humanPhoneForRow(
+      supabase,
+      { table: "people", id: data.id, column: "phone" },
+      normalize(data.phone ?? null),
+      { field: "Telefone", country: phoneCountry },
+    );
+    const personEmergencyPhone = await humanPhoneForRow(
+      supabase,
+      { table: "people", id: data.id, column: "emergency_phone" },
+      normalize(data.emergency_phone ?? null),
+      { field: "Telefone de recado", country: phoneCountry },
+    );
     const payload: Record<string, unknown> = {
       full_name: data.full_name,
       preferred_name: normalize(data.preferred_name ?? null),
       email: normalize(data.email ?? null),
-      phone: normalize(data.phone ?? null),
+      phone: personPhone,
       photo_url: normalize(data.photo_url ?? null),
       employment_type: data.employment_type,
       status: data.status,
@@ -324,7 +342,7 @@ export const upsertPerson = createServerFn({ method: "POST" })
       notes: normalize(data.notes ?? null),
       education: normalize(data.education ?? null),
       shirt_size: normalize(data.shirt_size ?? null),
-      emergency_phone: normalize(data.emergency_phone ?? null),
+      emergency_phone: personEmergencyPhone,
       emergency_relationship: normalize(data.emergency_relationship ?? null),
       marital_status: normalize(data.marital_status ?? null),
       spouse_name: normalize(data.spouse_name ?? null),

@@ -65,6 +65,7 @@ import {
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { ViewModeToggle } from "@/components/kanban/view-mode-toggle";
 
+import { PhoneInput } from "@/components/ui/phone-input";
 export const Route = createFileRoute("/_authenticated/people/")({
   validateSearch: (search: Record<string, unknown>): { view?: "table" | "kanban" } => ({
     view: search.view === "kanban" ? "kanban" : "table",
@@ -633,7 +634,7 @@ function NewPersonDialog({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="p-phone">Telefone</Label>
-                <Input id="p-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                <PhoneInput id="p-phone" value={phone} onChange={setPhone} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="p-location">Localização</Label>

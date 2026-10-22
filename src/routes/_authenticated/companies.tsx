@@ -18,7 +18,6 @@ import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 import { useGridProjection } from "@/hooks/use-grid-projection";
 import { buildGridSelect } from "@/lib/grid/dynamic-select";
 import { cn } from "@/lib/utils";
-import { toE164 } from "@/lib/validators";
 import { Button } from "@/components/ui/button";
 import { BulkActionBar } from "@/components/bulk-action-bar";
 import { ExportMenuButton } from "@/components/export-menu-button";
@@ -511,7 +510,7 @@ function CompaniesHubspotView() {
           key: "phone",
           label: "Telefone",
           className: "text-muted-foreground",
-          render: (c) => (c.phone ? (toE164(c.phone) ?? c.phone) : "—"),
+          render: (c) => c.phone || "—",
         },
         {
           key: "abm",

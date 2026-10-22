@@ -8,6 +8,7 @@
  * - Pergunta pontuada visível e sem resposta: entra no máximo, soma 0.
  * - Sem nenhuma pergunta pontuada elegível: score = null (não é zero/reprovação).
  */
+import { isValidE164 } from "@/lib/phone/e164";
 
 export type FieldType =
   | "short_text"
@@ -236,6 +237,9 @@ export function validateAnswers(schema: FormSchema, answers: Answers): Record<st
         errors[f.id] = "Responda todas as linhas.";
     }
     if (f.type === "email" && !EMAIL.test(String(v))) errors[f.id] = "E-mail inválido.";
+    // Mesma regra E.164 do sistema (fonte única em @/lib/phone/e164).
+    if (f.type === "phone" && !isValidE164(String(v)))
+      errors[f.id] = "Telefone inválido: informe com o código do país (ex.: +55).";
     if (f.type === "url" && !/^https?:\/\/\S+\.\S+/.test(String(v))) errors[f.id] = "URL inválida.";
     if (["number", "currency"].includes(f.type)) {
       const n = Number(v);

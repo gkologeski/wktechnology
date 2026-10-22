@@ -9,6 +9,11 @@ import {
   verifyTurnstileToken,
 } from "@/lib/forms/public-submit-guard.server";
 
+import {
+  humanPhone,
+  isPhoneValidationError,
+  workspacePhoneCountry,
+} from "@/lib/phone/phone-boundary";
 type FormField = {
   key: string;
   label: string;
@@ -100,6 +105,9 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
 
         const fields = (form.fields as unknown as FormField[]) ?? [];
         const clean: Record<string, string> = {};
+        /** Telefones já normalizados em E.164 (o envio bruto fica em `clean`). */
+        const phones: Record<string, string> = {};
+        const phoneCountry = await workspacePhoneCountry(supabaseAdmin, form.workspace_id);
         for (const f of fields) {
           const raw = body[f.key];
           const v = raw == null ? "" : String(raw).slice(0, 5000).trim();
@@ -110,6 +118,20 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
             );
           }
           if (v) clean[f.key] = v;
+          if (v && (f.type === "tel" || ["phone", "telefone", "tel"].includes(f.key))) {
+            try {
+              const e164 = humanPhone(v, { field: f.key, country: phoneCountry });
+              if (e164) phones[f.key] = e164;
+            } catch (e) {
+              if (isPhoneValidationError(e)) {
+                return Response.json(
+                  { error: `${f.label}: ${e.message}`, code: e.code, field: f.key },
+                  { status: 422, headers: cors },
+                );
+              }
+              throw e;
+            }
+          }
         }
 
         const ua = request.headers.get("user-agent");
@@ -121,7 +143,7 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
         let submittedNameNote: string | null = null;
 
         const email = clean.email || clean.Email;
-        const phone = clean.phone || clean.telefone || clean.tel;
+        const phone = phones.phone || phones.telefone || phones.tel;
         const firstName =
           clean.first_name || clean.firstName || (clean.name?.split(" ")[0] ?? "Lead");
         const lastName =

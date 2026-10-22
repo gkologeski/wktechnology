@@ -10,6 +10,7 @@ import {
 } from "@/lib/db/transient-retry";
 import { checkLeadDuplicate } from "@/lib/leads/lead-duplicate-check";
 
+import { sourcePhone } from "@/lib/phone/phone-boundary";
 const APOLLO_GATEWAY_URL = "https://connector-gateway.lovable.dev/apollo";
 
 const strArr = z.array(z.string().min(1).max(200)).max(100).optional();
@@ -449,11 +450,12 @@ export const runProspectSearch = createServerFn({ method: "POST" })
             (n.type ?? "").toLowerCase().includes("mobile");
           const numOf = (n?: { sanitized_number?: string; raw_number?: string }) =>
             n?.sanitized_number ?? n?.raw_number ?? null;
-          const personPhone =
+          const personPhone = sourcePhone(
             numOf(numbers.find(isMobile)) ??
-            numOf(numbers.find((n) => !isMobile(n))) ??
-            p.phone ??
-            null;
+              numOf(numbers.find((n) => !isMobile(n))) ??
+              p.phone ??
+              null,
+          );
 
           enriched.push({
             owner_id: userId,

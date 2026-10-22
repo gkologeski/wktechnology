@@ -29,6 +29,7 @@ import {
   type FormSchema,
 } from "@/lib/surveys/form-schema";
 
+import { PhoneInput } from "@/components/ui/phone-input";
 export function FormRenderer({
   schema,
   answers,
@@ -179,27 +180,24 @@ export function FieldControl({
             onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
           />
         );
-      case "email":
       case "phone":
+        return (
+          <PhoneInput
+            id={id}
+            value={typeof value === "string" ? value : ""}
+            onChange={(v) => onChange(v || null)}
+            showError={false}
+          />
+        );
+      case "email":
       case "url":
       case "short_text":
         return (
           <Input
             id={id}
-            type={
-              f.type === "email"
-                ? "email"
-                : f.type === "url"
-                  ? "url"
-                  : f.type === "phone"
-                    ? "tel"
-                    : "text"
-            }
+            type={f.type === "email" ? "email" : f.type === "url" ? "url" : "text"}
             maxLength={f.maxLength}
-            placeholder={
-              f.placeholder ??
-              (f.type === "phone" ? "(00) 00000-0000" : f.type === "url" ? "https://" : "")
-            }
+            placeholder={f.placeholder ?? (f.type === "url" ? "https://" : "")}
             value={s}
             onChange={(e) => onChange(e.target.value)}
           />

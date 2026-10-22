@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 import { resolveLeadStageValue, findLeadStage, type LeadStage } from "@/lib/leads/stages";
 import { translateFieldValue } from "@/lib/i18n/hubspot-values";
-import { toE164 } from "@/lib/validators";
 import { colorFromString, initialsOf, timeAgo } from "@/lib/leads/format";
 import type { LeadGridRow, SortDir, SortKey } from "@/lib/leads/constants";
 import { StagePill, ScoreCell, Th } from "@/components/leads/table-primitives";
@@ -118,14 +117,13 @@ export function useLeadColumns({
         key: "phone",
         label: "Telefone",
         className: "text-muted-foreground",
-        render: (lead) => (lead.phone ? (toE164(lead.phone) ?? lead.phone) : "—"),
+        render: (lead) => lead.phone || "—",
       },
       {
         key: "mobile_phone",
         label: "Celular",
         className: "text-muted-foreground",
-        render: (lead) =>
-          lead.mobile_phone ? (toE164(lead.mobile_phone) ?? lead.mobile_phone) : "—",
+        render: (lead) => lead.mobile_phone || "—",
       },
       {
         key: "whatsapp_e164",

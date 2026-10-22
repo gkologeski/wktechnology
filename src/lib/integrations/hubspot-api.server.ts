@@ -2,6 +2,7 @@
 // de payload HubSpot -> tabelas locais. Extraído de hubspot-steps.server.ts.
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { countryFromRecordField, sourcePhone } from "@/lib/phone/phone-boundary";
 export const GATEWAY_URL = "https://connector-gateway.lovable.dev/hubspot";
 
 export function hsHeaders() {
@@ -197,7 +198,7 @@ export function mapCompany(p: HsProps) {
 
 export function mapContact(p: HsProps) {
   return {
-    mobile_phone: p.mobilephone ?? null,
+    mobile_phone: sourcePhone(p.mobilephone, countryFromRecordField(p.country)),
     country: p.country ?? null,
     address: p.address ?? null,
     cep: p.zip ?? null,

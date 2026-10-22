@@ -2,6 +2,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ensureLeadRelationsSafe } from "@/lib/leads/lead-relations";
 
+import { humanPhone, workspacePhoneCountry } from "@/lib/phone/phone-boundary";
 const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
 type WeekdayKey = (typeof WEEKDAY_KEYS)[number];
 
@@ -368,6 +369,12 @@ export async function createPublicBooking(input: {
   if (!page) throw new Error("Página de agendamento não encontrada");
   if (!page.workspace_id) throw new Error("Página de agendamento sem workspace de origem.");
   const workspaceId = page.workspace_id;
+  // Telefone do convidado: E.164 (país padrão do workspace para número sem +DDI).
+  const inviteePhone = humanPhone(input.invitee_phone || null, {
+    field: "invitee_phone",
+    country: await workspacePhoneCountry(supabaseAdmin, workspaceId),
+  });
+  input = { ...input, invitee_phone: inviteePhone };
   const startMs = new Date(input.start).getTime();
   if (!Number.isFinite(startMs)) throw new Error("Horário inválido");
   const endMs = startMs + page.duration_minutes * 60_000;

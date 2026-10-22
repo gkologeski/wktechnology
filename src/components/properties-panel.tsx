@@ -36,7 +36,10 @@ import {
   type LayoutSection,
   type RecordEntity,
 } from "@/lib/record-layouts.functions";
-import { toE164, isEmail, isCNPJ, formatCNPJ, stripCNPJ } from "@/lib/validators";
+import { isEmail, isCNPJ, formatCNPJ, stripCNPJ } from "@/lib/validators";
+import { PhoneInput, validatePhoneValue } from "@/components/ui/phone-input";
+import { formatPhoneDisplay, isValidE164 } from "@/lib/phone/e164";
+import { validateWhatsAppInput } from "@/lib/phone/whatsapp-e164";
 import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
 import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialogs";
 import { formatDateOnly, formatDateTime } from "@/lib/crm";
@@ -52,41 +55,6 @@ import { creatorId, responsibleId } from "@/lib/entity/responsible";
 import { readViewAs } from "@/lib/view-as-client";
 import { isDerivedCrmField } from "@/lib/entity/derived-fields";
 
-// E.164-compliant chars only: digits, leading +, plus visual separators.
-const PHONE_INPUT_RE = /[^\d+\s\-()]/g;
-function sanitizePhoneInput(s: string): string {
-  return s.replace(PHONE_INPUT_RE, "");
-}
-// BR phone mask: (99) 9999-9999 / (99) 99999-9999. Strips +55 prefix.
-// Returns the original string for non-BR numbers (kept in E.164).
-function formatBrPhone(raw: string | null | undefined): string {
-  if (!raw) return "";
-  const s = String(raw).trim();
-  if (!s) return "";
-  let digits = s.replace(/\D/g, "");
-  if ((digits.length === 12 || digits.length === 13) && digits.startsWith("55")) {
-    digits = digits.slice(2);
-  }
-  if (digits.length === 11) {
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
-  }
-  if (digits.length === 10) {
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
-  }
-  if (digits.length > 0 && digits.length < 10) {
-    if (digits.length <= 2) return `(${digits}`;
-    if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
-  }
-  return s;
-}
-// Apply mask while editing only when the user is typing a BR-style number
-// (no leading "+"); preserve international input as-is.
-function formatPhoneInput(s: string): string {
-  const cleaned = sanitizePhoneInput(s);
-  if (cleaned.trim().startsWith("+")) return cleaned;
-  return formatBrPhone(cleaned);
-}
 // Email: no whitespace allowed.
 function sanitizeEmailInput(s: string): string {
   return s.replace(/\s+/g, "");
@@ -105,6 +73,52 @@ function formatCnpjInput(s: string): string {
   if (d.length <= 8) return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5)}`;
   if (d.length <= 12) return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8)}`;
   return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
+}
+
+/** Valida um telefone editado na ficha; valor antigo não editado passa intacto. */
+function checkPhoneProperty(
+  key: string,
+  next: string | null,
+  current: unknown,
+): { ok: true; value: string | null } | { ok: false; message: string } {
+  const original = current == null ? null : String(current);
+  if ((next ?? "") === (original ?? "")) return { ok: true, value: original };
+  if (key === "whatsapp_e164") {
+    const wa = validateWhatsAppInput(next);
+    return wa.ok ? { ok: true, value: wa.e164 } : { ok: false, message: wa.message };
+  }
+  return validatePhoneValue(next);
+}
+
+function InlinePhoneProperty({
+  label,
+  current,
+  disabled,
+  onSave,
+}: {
+  label: string;
+  current: string;
+  disabled?: boolean;
+  onSave: (v: string) => Promise<boolean>;
+}) {
+  const [v, setV] = useState(current);
+  useEffect(() => setV(current), [current]);
+  return (
+    <PhoneInput
+      aria-label={label}
+      disabled={disabled}
+      value={v}
+      onChange={setV}
+      onBlur={() => {
+        if (v === current) return;
+        // Número parcial: o erro aparece no campo; só grava completo ou vazio.
+        if (v && !isValidE164(v)) return;
+        void onSave(v).then((ok) => {
+          if (!ok) setV(current);
+        });
+      }}
+    />
+  );
 }
 
 export type PropDef = {
@@ -301,13 +315,21 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
     if (readOnly || isDerivedCrmField(key)) return;
     const def = props.find((p) => p.key === key);
     let toSave: string | null = value || null;
-    if (def?.type === "tel" && toSave) {
-      const normalized = toE164(toSave);
-      if (!normalized) {
-        toast.error("Telefone inválido. Use o formato E.164 (ex.: +5511999998888).");
+    if (def?.type === "tel") {
+      const checked = checkPhoneProperty(key, toSave, row[key]);
+      if (!checked.ok) {
+        toast.error(checked.message);
         return;
       }
-      toSave = normalized;
+      toSave = checked.value;
+    }
+    if (key === "phone_ext" && toSave) {
+      const d = toSave.replace(/\D/g, "");
+      if (!d || d.length > 7) {
+        toast.error("Ramal: use até 7 dígitos.");
+        return;
+      }
+      toSave = d;
     }
     if (def?.type === "email" && toSave) {
       toSave = toSave.trim();
@@ -406,6 +428,19 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                 </Button>
               </div>
             </div>
+          ) : p.type === "tel" ? (
+            // Coluna estreita: campo em largura total e ações abaixo.
+            <div className="space-y-1.5">
+              <PhoneInput aria-label={p.label} value={value} onChange={setValue} />
+              <div className="flex gap-1">
+                <Button size="sm" className="h-8" onClick={() => save(p.key)}>
+                  OK
+                </Button>
+                <Button size="sm" variant="ghost" className="h-8" onClick={() => setEditing(null)}>
+                  Cancelar
+                </Button>
+              </div>
+            </div>
           ) : p.type === "currency" ? (
             <div className="flex gap-1">
               <CurrencyInput
@@ -436,35 +471,25 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                       ? "datetime-local"
                       : (p.type ?? "text")
                 }
-                inputMode={
-                  p.type === "tel"
-                    ? "tel"
-                    : p.type === "cep" || p.type === "cnpj"
-                      ? "numeric"
-                      : undefined
-                }
+                inputMode={p.type === "cep" || p.type === "cnpj" ? "numeric" : undefined}
                 maxLength={p.type === "cep" ? 9 : p.type === "cnpj" ? 18 : undefined}
                 placeholder={
                   p.type === "cep"
                     ? "99999-999"
                     : p.type === "cnpj"
                       ? "00.000.000/0000-00"
-                      : p.type === "tel"
-                        ? "(11) 99999-8888"
-                        : undefined
+                      : undefined
                 }
                 value={value}
                 onChange={(e) =>
                   setValue(
-                    p.type === "tel"
-                      ? formatPhoneInput(e.target.value)
-                      : p.type === "email"
-                        ? sanitizeEmailInput(e.target.value)
-                        : p.type === "cep"
-                          ? formatCep(e.target.value)
-                          : p.type === "cnpj"
-                            ? formatCnpjInput(e.target.value)
-                            : e.target.value,
+                    p.type === "email"
+                      ? sanitizeEmailInput(e.target.value)
+                      : p.type === "cep"
+                        ? formatCep(e.target.value)
+                        : p.type === "cnpj"
+                          ? formatCnpjInput(e.target.value)
+                          : e.target.value,
                   )
                 }
                 onKeyDown={(e) => e.key === "Enter" && save(p.key)}
@@ -495,7 +520,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                   return translateFieldValue(p.key, optLabel ?? v) || String(v);
                 }
                 if (entity === "companies" && p.key === "domain") return displayCompanyDomain(v);
-                if (p.type === "tel" && v) return formatBrPhone(String(v));
+                if (p.type === "tel" && v) return formatPhoneDisplay(String(v));
                 if (p.type === "cep" && v) return formatCep(String(v));
                 if (p.type === "cnpj" && v) return formatCNPJ(String(v));
                 const displayType = p.type ?? inferDisplayType(p.key);
@@ -521,15 +546,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                 onClick={() => {
                   setEditing(p.key);
                   const raw = String(row[p.key] ?? "");
-                  setValue(
-                    p.type === "cnpj"
-                      ? formatCNPJ(raw)
-                      : p.type === "currency"
-                        ? raw
-                        : p.type === "tel"
-                          ? formatBrPhone(raw) || raw
-                          : raw,
-                  );
+                  setValue(p.type === "cnpj" ? formatCNPJ(raw) : raw);
                 }}
               >
                 <Pencil className="h-3 w-3" />
@@ -714,40 +731,29 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                     }}
                   />
                 ) : p.type === "tel" ? (
-                  <Input
-                    type="tel"
+                  <InlinePhoneProperty
+                    label={p.label}
                     disabled={readOnly}
-                    inputMode="tel"
-                    placeholder="(11) 99999-8888"
-                    defaultValue={
-                      formatBrPhone(String(row[p.key] ?? "")) || String(row[p.key] ?? "")
-                    }
-                    onChange={(e) => {
-                      e.currentTarget.value = formatPhoneInput(e.currentTarget.value);
-                    }}
-                    onBlur={async (e) => {
-                      const raw = e.target.value;
-                      const current = String(row[p.key] ?? "");
-                      let toSave: string | null = raw || null;
-                      if (toSave) {
-                        const n = toE164(toSave);
-                        if (!n) {
-                          toast.error("Telefone inválido. Use o formato E.164.");
-                          return;
-                        }
-                        toSave = n;
+                    current={row[p.key] == null ? "" : String(row[p.key])}
+                    onSave={async (raw) => {
+                      const checked = checkPhoneProperty(p.key, raw || null, row[p.key]);
+                      if (!checked.ok) {
+                        toast.error(checked.message);
+                        return false;
                       }
-                      if ((toSave ?? "") === current) return;
+                      if ((checked.value ?? "") === String(row[p.key] ?? "")) return true;
                       // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       const { error } = await (supabase as any)
                         .from(table)
-                        .update({ [p.key]: toSave })
+                        .update({ [p.key]: checked.value })
                         .eq("id", row.id);
-                      if (error) toast.error(error.message);
-                      else {
-                        toast.success("Atualizado");
-                        onSaved?.();
+                      if (error) {
+                        toast.error(error.message);
+                        return false;
                       }
+                      toast.success("Atualizado");
+                      onSaved?.();
+                      return true;
                     }}
                   />
                 ) : (

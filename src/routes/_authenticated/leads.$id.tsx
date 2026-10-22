@@ -405,6 +405,7 @@ function LeadDetail() {
               { key: "nivel_hierarquico", label: "Nível hierárquico", primary: true },
               { key: "email", label: "Email", type: "email", primary: true },
               { key: "phone", label: "Telefone", type: "tel", primary: true },
+              { key: "phone_ext", label: "Ramal", primary: true },
               { key: "mobile_phone", label: "Celular", type: "tel", primary: true },
               { key: "whatsapp_e164", label: "WhatsApp", type: "tel", primary: true },
               { key: "linkedin_url", label: "LinkedIn", type: "url", primary: true },

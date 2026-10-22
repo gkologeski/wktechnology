@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ArrowLeft, CheckCircle2, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PhoneInput, validatePhoneValue } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { SectionHeader, MetaPill, Skeletons } from "@/components/techhire/ui";
@@ -84,20 +85,23 @@ function CareerJobPage() {
   });
 
   const mutation = useMutation({
-    mutationFn: () =>
-      submitter({
+    mutationFn: () => {
+      const phoneCheck = validatePhoneValue(form.phone, { label: "Telefone" });
+      if (!phoneCheck.ok) return Promise.reject(new Error(phoneCheck.message));
+      return submitter({
         data: {
           host,
           job_id: query.data!.id as string,
           full_name: form.full_name,
           email: form.email,
-          phone: form.phone || null,
+          phone: phoneCheck.value,
           linkedin_url: form.linkedin_url || null,
           location: form.location || null,
           cv_url: form.cv_url || null,
           message: form.message || null,
         },
-      }),
+      });
+    },
     onSuccess: () => toast.success("Candidatura enviada!"),
     onError: (e: Error) => toast.error(e.message),
   });
@@ -234,10 +238,10 @@ function CareerJobPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="phone">Telefone</Label>
-              <Input
+              <PhoneInput
                 id="phone"
                 value={form.phone}
-                onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                onChange={(v) => setForm((f) => ({ ...f, phone: v }))}
               />
             </div>
             <div className="space-y-1.5">

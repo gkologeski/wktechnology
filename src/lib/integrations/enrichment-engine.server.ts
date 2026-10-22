@@ -28,6 +28,7 @@ export type EnrichedPerson = {
 };
 
 import { apolloRawRequest } from "./apollo-gateway.server";
+import { sourcePhone } from "@/lib/phone/phone-boundary";
 const LUSHA_BASE = "https://api.lusha.com";
 
 type ApolloPerson = {
@@ -88,7 +89,9 @@ export async function apolloMatch(input: {
   if (!p) return null;
   return {
     email: p.email ?? null,
-    phone: p.phone_numbers?.[0]?.sanitized_number ?? p.phone_numbers?.[0]?.raw_number ?? null,
+    phone: sourcePhone(
+      p.phone_numbers?.[0]?.sanitized_number ?? p.phone_numbers?.[0]?.raw_number ?? null,
+    ),
     first_name: p.first_name ?? null,
     last_name: p.last_name ?? null,
     job_title: p.title ?? null,
@@ -141,7 +144,7 @@ export async function lushaMatch(input: {
   if (!c) return null;
   return {
     email: c.emailAddresses?.[0]?.email ?? null,
-    phone: c.phoneNumbers?.[0]?.number ?? null,
+    phone: sourcePhone(c.phoneNumbers?.[0]?.number ?? null),
     first_name: c.firstName ?? null,
     last_name: c.lastName ?? null,
     job_title: c.jobTitle ?? null,

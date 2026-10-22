@@ -7,6 +7,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+import { sourcePhone } from "@/lib/phone/phone-boundary";
 type BrasilApiResp = {
   cnpj?: string;
   razao_social?: string;
@@ -82,7 +83,8 @@ async function lookupBrasilApi(cnpj: string): Promise<NormalizedCnpj | null> {
     city: d.municipio || undefined,
     state: d.uf || undefined,
     cep: formatCep(d.cep) || undefined,
-    phone: d.ddd_telefone_1 || undefined,
+    // Cadastro da Receita Federal: número brasileiro (país comprovado pela fonte).
+    phone: sourcePhone(d.ddd_telefone_1, "BR") || undefined,
     email: d.email || undefined,
     industry: d.cnae_fiscal_descricao || undefined,
     size:
@@ -112,7 +114,7 @@ async function lookupReceitaWs(cnpj: string): Promise<NormalizedCnpj | null> {
     city: d.municipio || undefined,
     state: d.uf || undefined,
     cep: formatCep(d.cep) || undefined,
-    phone: d.telefone || undefined,
+    phone: sourcePhone(d.telefone, "BR") || undefined,
     email: d.email || undefined,
     industry: d.atividade_principal?.[0]?.text || undefined,
     size: d.porte || undefined,

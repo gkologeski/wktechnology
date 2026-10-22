@@ -17,7 +17,7 @@ import Papa from "papaparse";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
-import { toE164 } from "@/lib/validators";
+import { sourcePhone, workspacePhoneCountry } from "@/lib/phone/phone-boundary";
 
 const DEFAULT_SHEET_URL =
   "https://docs.google.com/spreadsheets/d/1J9Tqg7JOehajxk3tfWPodCSK1wI58Iijk2vFcksaiFE/edit";
@@ -197,7 +197,10 @@ function pick(row: Record<string, string>, aliases: readonly string[]): string |
   return null;
 }
 
-function normalizeRow(row: Record<string, string>): { row: NormalizedRow | null; reason?: string } {
+function normalizeRow(
+  row: Record<string, string>,
+  phoneCountry: string,
+): { row: NormalizedRow | null; reason?: string } {
   const cpfRaw = pick(row, COLUMN_ALIASES.cpf) ?? "";
   const cpf = digits(cpfRaw);
   if (!isValidCPF(cpf)) return { row: null, reason: `CPF inválido: ${cpfRaw || "(vazio)"}` };
@@ -233,10 +236,10 @@ function normalizeRow(row: Record<string, string>): { row: NormalizedRow | null;
       birth_date: parseBirth(pick(row, COLUMN_ALIASES.birth)),
       email: trim(pick(row, COLUMN_ALIASES.email))?.toLowerCase() ?? null,
       raw_email_alt: trim(pick(row, COLUMN_ALIASES.email_alt))?.toLowerCase() ?? null,
-      phone:
-        toE164(pick(row, COLUMN_ALIASES.mobile) ?? "") ?? trim(pick(row, COLUMN_ALIASES.mobile)),
-      mobile:
-        toE164(pick(row, COLUMN_ALIASES.mobile) ?? "") ?? trim(pick(row, COLUMN_ALIASES.mobile)),
+      // Importação iniciada pelo admin: número sem +DDI é lido no país padrão
+      // do workspace; o que não for válido fica como veio (revisão), sem apagar.
+      phone: sourcePhone(pick(row, COLUMN_ALIASES.mobile), phoneCountry),
+      mobile: sourcePhone(pick(row, COLUMN_ALIASES.mobile), phoneCountry),
       emergency_contact: trim(pick(row, COLUMN_ALIASES.emergency)),
       address_line1: trim(pick(row, COLUMN_ALIASES.address)),
       address_complement: trim(pick(row, COLUMN_ALIASES.complement)),
@@ -272,7 +275,7 @@ function sheetIdFromUrl(url: string): string | null {
   return m ? m[1] : null;
 }
 
-async function fetchCsv(sheetUrl: string): Promise<NormalizedRow[]> {
+async function fetchCsv(sheetUrl: string, phoneCountry: string): Promise<NormalizedRow[]> {
   const id = sheetIdFromUrl(sheetUrl);
   if (!id) throw new Error("URL da planilha inválida");
   const csvUrl = `https://docs.google.com/spreadsheets/d/${id}/export?format=csv`;
@@ -289,7 +292,7 @@ async function fetchCsv(sheetUrl: string): Promise<NormalizedRow[]> {
   const out: NormalizedRow[] = [];
   const errors: string[] = [];
   for (const row of parsed.data) {
-    const { row: n, reason } = normalizeRow(row);
+    const { row: n, reason } = normalizeRow(row, phoneCountry);
     if (n) out.push(n);
     else if (reason) errors.push(reason);
   }
@@ -475,7 +478,7 @@ export const importPeopleFromPublicSheet = createServerFn({ method: "POST" })
       "techpeople.people.update.workspace",
     ]);
 
-    const rows = await fetchCsv(data.sheet_url);
+    const rows = await fetchCsv(data.sheet_url, await workspacePhoneCountry(supabase, workspaceId));
 
     if (data.dry_run) {
       const attachmentsCount = rows.reduce((s, r) => s + r.attachments.length, 0);

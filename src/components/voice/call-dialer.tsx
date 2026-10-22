@@ -18,6 +18,7 @@ import { useWindowChrome } from "@/components/activity/activity-window-context";
 import { getVoiceAccessToken, logCallActivity } from "@/lib/twilio-voice.functions";
 import type { Device as DeviceType, Call as CallType } from "@twilio/voice-sdk";
 
+import { PhoneInput, validatePhoneValue } from "@/components/ui/phone-input";
 type Status = "idle" | "connecting" | "ringing" | "in-call" | "ended";
 
 interface CallDialerProps {
@@ -32,12 +33,10 @@ interface CallDialerProps {
   onOpenChange?: (v: boolean) => void;
 }
 
+/** Número discado: só E.164 válido (fonte única `@/lib/phone/e164`); nunca presume país. */
 function normalizeE164(input: string): string {
-  const digits = input.replace(/[^\d+]/g, "");
-  if (digits.startsWith("+")) return digits;
-  // Default to BR (55) when sem código de país.
-  if (digits.length >= 10 && digits.length <= 11) return `+55${digits}`;
-  return `+${digits}`;
+  const r = validatePhoneValue(input, { required: true });
+  return r.ok && r.value ? r.value : "";
 }
 
 export function CallDialer({
@@ -120,8 +119,8 @@ export function CallDialer({
 
   const startCall = useCallback(async () => {
     const target = normalizeE164(to);
-    if (!/^\+[1-9]\d{6,14}$/.test(target)) {
-      toast.error("Número inválido. Use formato E.164 (ex.: +5511999998888).");
+    if (!target) {
+      toast.error("Número inválido: informe com o código do país (ex.: +55).");
       return;
     }
     setStatus("connecting");
@@ -260,13 +259,7 @@ export function CallDialer({
           <div className="space-y-4">
             <div>
               <Label htmlFor="to-number">Número</Label>
-              <Input
-                id="to-number"
-                value={to}
-                onChange={(e) => setTo(e.target.value)}
-                placeholder="+5511999998888"
-                disabled={status !== "idle"}
-              />
+              <PhoneInput id="to-number" value={to} onChange={setTo} disabled={status !== "idle"} />
             </div>
 
             <div className="flex items-center justify-between rounded-md border p-4">

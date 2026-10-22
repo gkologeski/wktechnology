@@ -1,5 +1,11 @@
 // POST /api/public/refer/$slug/submit — recebe indicação externa.
 import { createFileRoute } from "@tanstack/react-router";
+import {
+  humanPhone,
+  isPhoneValidationError,
+  phoneErrorBody,
+  workspacePhoneCountry,
+} from "@/lib/phone/phone-boundary";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { recordAtsEvent } from "@/lib/ats/audit.server";
@@ -15,7 +21,7 @@ const Payload = z.object({
   referrer_email: z.string().email().max(200),
   candidate_name: z.string().min(1).max(160),
   candidate_email: z.string().email().max(200).optional().nullable(),
-  candidate_phone: z.string().max(40).optional().nullable(),
+  candidate_phone: z.string().max(64).optional().nullable(),
   candidate_linkedin: z.string().url().max(500).optional().nullable(),
   relationship: z.string().max(160).optional().nullable(),
   notes: z.string().max(2000).optional().nullable(),
@@ -43,12 +49,27 @@ export const Route = createFileRoute("/api/public/refer/$slug/submit")({
 
         const { data: program, error: pErr } = await supabaseAdmin
           .from("ats_referral_programs")
-          .select("id, owner_id, default_bonus_cents, enabled, enable_public_form")
+          .select("id, owner_id, workspace_id, default_bonus_cents, enabled, enable_public_form")
           .eq("public_slug", params.slug)
           .maybeSingle();
         if (pErr) return Response.json({ error: pErr.message }, { status: 500, headers: cors });
         if (!program || !program.enabled || !program.enable_public_form)
           return Response.json({ error: "Not found" }, { status: 404, headers: cors });
+
+        let candidatePhone: string | null;
+        try {
+          candidatePhone = humanPhone(parsed.data.candidate_phone || null, {
+            field: "candidate_phone",
+            country: await workspacePhoneCountry(
+              supabaseAdmin,
+              (program as { workspace_id?: string | null }).workspace_id ?? null,
+            ),
+          });
+        } catch (e) {
+          if (isPhoneValidationError(e))
+            return Response.json(phoneErrorBody(e), { status: 422, headers: cors });
+          throw e;
+        }
 
         // rate-limit best-effort por IP nos últimos 10 min
         const ip =
@@ -75,7 +96,7 @@ export const Route = createFileRoute("/api/public/refer/$slug/submit")({
             referrer_email: parsed.data.referrer_email,
             candidate_name: parsed.data.candidate_name,
             candidate_email: parsed.data.candidate_email ?? null,
-            candidate_phone: parsed.data.candidate_phone ?? null,
+            candidate_phone: candidatePhone,
             candidate_linkedin: parsed.data.candidate_linkedin ?? null,
             relationship: parsed.data.relationship ?? null,
             notes: parsed.data.notes ?? null,

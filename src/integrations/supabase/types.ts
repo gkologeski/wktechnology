@@ -5293,6 +5293,7 @@ export type Database = {
           owner_id: string
           parent_company_id: string | null
           phone: string | null
+          phone_ext: string | null
           score: number
           size: string | null
           size_description: string | null
@@ -5341,6 +5342,7 @@ export type Database = {
           owner_id: string
           parent_company_id?: string | null
           phone?: string | null
+          phone_ext?: string | null
           score?: number
           size?: string | null
           size_description?: string | null
@@ -5389,6 +5391,7 @@ export type Database = {
           owner_id?: string
           parent_company_id?: string | null
           phone?: string | null
+          phone_ext?: string | null
           score?: number
           size?: string | null
           size_description?: string | null
@@ -5546,6 +5549,7 @@ export type Database = {
           owner_id: string
           phone: string | null
           phone_digits: string | null
+          phone_ext: string | null
           photo_source: string | null
           photo_updated_at: string | null
           photo_url: string | null
@@ -5600,6 +5604,7 @@ export type Database = {
           owner_id: string
           phone?: string | null
           phone_digits?: string | null
+          phone_ext?: string | null
           photo_source?: string | null
           photo_updated_at?: string | null
           photo_url?: string | null
@@ -5654,6 +5659,7 @@ export type Database = {
           owner_id?: string
           phone?: string | null
           phone_digits?: string | null
+          phone_ext?: string | null
           photo_source?: string | null
           photo_updated_at?: string | null
           photo_url?: string | null
@@ -11460,6 +11466,7 @@ export type Database = {
           owner_id: string
           phone: string | null
           phone_digits: string | null
+          phone_ext: string | null
           photo_source: string | null
           photo_updated_at: string | null
           photo_url: string | null
@@ -11512,6 +11519,7 @@ export type Database = {
           owner_id: string
           phone?: string | null
           phone_digits?: string | null
+          phone_ext?: string | null
           photo_source?: string | null
           photo_updated_at?: string | null
           photo_url?: string | null
@@ -11564,6 +11572,7 @@ export type Database = {
           owner_id?: string
           phone?: string | null
           phone_digits?: string | null
+          phone_ext?: string | null
           photo_source?: string | null
           photo_updated_at?: string | null
           photo_url?: string | null
@@ -14383,6 +14392,116 @@ export type Database = {
           scope?: Database["public"]["Enums"]["perm_scope"]
         }
         Relationships: []
+      }
+      phone_normalization_items: {
+        Row: {
+          applied_at: string | null
+          classification: string
+          column_name: string
+          id: number
+          original_value: string | null
+          proposed_ext: string | null
+          proposed_value: string | null
+          reason: string | null
+          rolled_back_at: string | null
+          row_id: string
+          run_id: string
+          table_name: string
+          workspace_id: string
+        }
+        Insert: {
+          applied_at?: string | null
+          classification: string
+          column_name: string
+          id?: number
+          original_value?: string | null
+          proposed_ext?: string | null
+          proposed_value?: string | null
+          reason?: string | null
+          rolled_back_at?: string | null
+          row_id: string
+          run_id: string
+          table_name: string
+          workspace_id: string
+        }
+        Update: {
+          applied_at?: string | null
+          classification?: string
+          column_name?: string
+          id?: number
+          original_value?: string | null
+          proposed_ext?: string | null
+          proposed_value?: string | null
+          reason?: string | null
+          rolled_back_at?: string | null
+          row_id?: string
+          run_id?: string
+          table_name?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "phone_normalization_items_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "phone_normalization_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "phone_normalization_items_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      phone_normalization_runs: {
+        Row: {
+          counts: Json
+          created_at: string
+          criteria: string
+          finished_at: string | null
+          id: string
+          mode: string
+          normalizer_version: string
+          notes: string | null
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          counts?: Json
+          created_at?: string
+          criteria: string
+          finished_at?: string | null
+          id?: string
+          mode: string
+          normalizer_version: string
+          notes?: string | null
+          status?: string
+          workspace_id: string
+        }
+        Update: {
+          counts?: Json
+          created_at?: string
+          criteria?: string
+          finished_at?: string | null
+          id?: string
+          mode?: string
+          normalizer_version?: string
+          notes?: string | null
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "phone_normalization_runs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pipeline_stage_substatuses: {
         Row: {
@@ -26477,6 +26596,7 @@ export type Database = {
           created_by: string
           custom_domain: string | null
           data_region: string
+          default_phone_country: string
           deleted_at: string | null
           id: string
           logo_url: string | null
@@ -26484,6 +26604,7 @@ export type Database = {
           name: string
           nfse_settings: Json
           payments_settings: Json
+          phone_strict_e164: boolean
           primary_color: string | null
           security_settings: Json
           slug: string
@@ -26495,6 +26616,7 @@ export type Database = {
           created_by: string
           custom_domain?: string | null
           data_region?: string
+          default_phone_country?: string
           deleted_at?: string | null
           id?: string
           logo_url?: string | null
@@ -26502,6 +26624,7 @@ export type Database = {
           name: string
           nfse_settings?: Json
           payments_settings?: Json
+          phone_strict_e164?: boolean
           primary_color?: string | null
           security_settings?: Json
           slug: string
@@ -26513,6 +26636,7 @@ export type Database = {
           created_by?: string
           custom_domain?: string | null
           data_region?: string
+          default_phone_country?: string
           deleted_at?: string | null
           id?: string
           logo_url?: string | null
@@ -26520,6 +26644,7 @@ export type Database = {
           name?: string
           nfse_settings?: Json
           payments_settings?: Json
+          phone_strict_e164?: boolean
           primary_color?: string | null
           security_settings?: Json
           slug?: string
@@ -28907,6 +29032,7 @@ export type Database = {
         Args: { _email: string; _workspace_id: string }
         Returns: string
       }
+      workspace_phone_country: { Args: { _workspace: string }; Returns: string }
     }
     Enums: {
       access_scope: "none" | "own" | "team" | "all"

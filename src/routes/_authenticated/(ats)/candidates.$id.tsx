@@ -53,6 +53,7 @@ import {
   hasDetailedSkills,
 } from "@/components/ats/candidate/rich-profile-blocks";
 import { formatDateTime } from "@/lib/crm";
+import { PhoneInput, validatePhoneValue } from "@/components/ui/phone-input";
 import { cn } from "@/lib/utils";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
@@ -284,7 +285,8 @@ function CandidateDetailPage() {
                     id: c.id,
                     full_name: patch.full_name ?? c.full_name,
                     email: patch.email ?? c.email ?? "",
-                    phone: patch.phone ?? c.phone ?? null,
+                    // Telefone limpo pelo usuário grava null (não volta ao antigo).
+                    phone: "phone" in patch ? (patch.phone ?? null) : (c.phone ?? null),
                     linkedin_url: patch.linkedin_url ?? c.linkedin_url ?? "",
                     location: patch.location ?? c.location ?? null,
                     current_position: patch.current_position ?? c.current_position ?? null,
@@ -374,12 +376,20 @@ function PropertiesPanel({
   );
 
   const submit = async () => {
+    const phoneCheck = validatePhoneValue(form.phone, {
+      label: "Telefone",
+      unchangedFrom: candidate.phone ?? null,
+    });
+    if (!phoneCheck.ok) {
+      toast.error(phoneCheck.message);
+      return;
+    }
     setSaving(true);
     try {
       await onSave({
         full_name: form.full_name,
         email: form.email,
-        phone: form.phone,
+        phone: phoneCheck.value,
         linkedin_url: form.linkedin_url,
         location: form.location,
         current_position: form.current_position,
@@ -419,7 +429,11 @@ function PropertiesPanel({
           />
         </Field>
         <Field label="Telefone">
-          <Input value={form.phone ?? ""} onChange={(v) => setForm({ ...form, phone: v })} />
+          <PhoneInput
+            aria-label="Telefone"
+            value={form.phone ?? ""}
+            onChange={(v) => setForm({ ...form, phone: v })}
+          />
         </Field>
         <Field label="LinkedIn">
           <Input

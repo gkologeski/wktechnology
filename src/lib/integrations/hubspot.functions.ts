@@ -29,6 +29,7 @@ import {
   unionAssocIds,
 } from "./hubspot.server";
 
+import { countryFromRecordField, sourcePhone } from "@/lib/phone/phone-boundary";
 export const countHubspotObjects = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
@@ -642,7 +643,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
                 domain: p.domain ?? null,
                 industry: p.industry ?? null,
                 size: p.numberofemployees ?? null,
-                phone: p.phone ?? null,
+                phone: sourcePhone(p.phone, countryFromRecordField(p.country)),
                 city: p.city ?? null,
                 state: p.state ?? null,
                 cep: p.zip ?? null,
@@ -737,7 +738,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
               first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
               last_name: p.lastname ?? null,
               email: p.email ?? null,
-              phone: p.phone ?? null,
+              phone: sourcePhone(p.phone, countryFromRecordField(p.country)),
               job_title: p.jobtitle ?? null,
               company_id: localCompanyId,
             };
@@ -821,7 +822,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
               first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
               last_name: p.lastname ?? null,
               email: p.email ?? null,
-              phone: p.phone ?? null,
+              phone: sourcePhone(p.phone, countryFromRecordField(p.country)),
               job_title: p.jobtitle ?? null,
               company_id: localCompanyId,
             };
@@ -1186,7 +1187,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
               first_name: first || email || "Sem nome",
               last_name: last,
               email,
-              phone,
+              phone: sourcePhone(phone, countryFromRecordField(p.country)),
               company_name: p.hs_associated_company_name ?? null,
               source: p.hs_lead_source ?? "hubspot",
               status: mapLeadStatusEnum(

@@ -32,6 +32,7 @@ import { ViewAsBanner } from "@/components/view-as/view-as-banner";
 import { TimerWidget } from "@/components/timer-widget";
 import { ActivityWindows } from "@/components/activity/activity-windows";
 
+import { PhoneCountryProvider } from "@/components/phone/phone-country-provider";
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
 });
@@ -57,6 +58,7 @@ const ADMIN_ONLY = [
   "/leads/import-hubspot",
   "/settings/mobile",
   "/settings/language",
+  "/settings/phones",
   "/settings/permissions",
   "/settings/rbac-diagnostics",
 ];
@@ -145,63 +147,65 @@ function AuthenticatedLayout() {
   const blocked = roleBlocked || licenseBlocked || moduleBlocked;
 
   return (
-    <ActivityWindows>
-      <SidebarProvider>
-        <div className="flex h-screen w-full overflow-hidden bg-product-canvas">
-          <AppSidebar />
-          <div className="flex-1 flex flex-col min-w-0">
-            <header className="h-14 flex min-w-0 items-center gap-2 border-b border-product-divider bg-product-header px-3">
-              <SidebarTrigger className="shrink-0" />
-              <ModuleSwitcher className="min-w-0 shrink" />
-              <GlobalSearchTrigger />
-              <div className="flex-1" />
-              <div className="flex shrink-0 items-center gap-1">
-                <ViewAsSwitcher />
-                <WorkspaceMenu />
-                <QuickCreateMenu />
-                <SettingsMenu />
-                <NotificationsBell />
-                <AccountMenu />
-              </div>
-            </header>
-            <ViewAsBanner />
-
-            {!blocked && <RouteBreadcrumbs />}
-            <main
-              className={`authenticated-content flex-1 bg-product-canvas ${path.startsWith("/inbox") ? "min-h-0 overflow-hidden p-2 md:p-3" : "overflow-auto p-4 md:p-6"}`}
-              data-product-surface="authenticated"
-            >
-              <FocusQueueBar />
-              {!blocked && <CrossModuleBanner />}
-              {blocked ? (
-                <div className="mx-auto mt-24 max-w-md space-y-3 rounded-md border border-product-divider bg-product-panel p-8 text-center shadow-xs">
-                  <ShieldAlert className="h-10 w-10 mx-auto text-muted-foreground" />
-                  <h2 className="text-lg font-semibold">
-                    {licenseBlocked && !roleBlocked
-                      ? "Módulo não contratado"
-                      : moduleBlocked && !roleBlocked
-                        ? "Módulo sem acesso"
-                        : "Acesso restrito"}
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    {licenseBlocked && !roleBlocked
-                      ? "Este módulo não está habilitado para o seu workspace. Um administrador pode contratá-lo em Módulos do workspace."
-                      : moduleBlocked && !roleBlocked
-                        ? "Você não tem acesso a este módulo. Fale com um administrador do workspace."
-                        : "Você não tem permissão para acessar esta tela. Fale com um administrador do workspace."}
-                  </p>
+    <PhoneCountryProvider>
+      <ActivityWindows>
+        <SidebarProvider>
+          <div className="flex h-screen w-full overflow-hidden bg-product-canvas">
+            <AppSidebar />
+            <div className="flex-1 flex flex-col min-w-0">
+              <header className="h-14 flex min-w-0 items-center gap-2 border-b border-product-divider bg-product-header px-3">
+                <SidebarTrigger className="shrink-0" />
+                <ModuleSwitcher className="min-w-0 shrink" />
+                <GlobalSearchTrigger />
+                <div className="flex-1" />
+                <div className="flex shrink-0 items-center gap-1">
+                  <ViewAsSwitcher />
+                  <WorkspaceMenu />
+                  <QuickCreateMenu />
+                  <SettingsMenu />
+                  <NotificationsBell />
+                  <AccountMenu />
                 </div>
-              ) : (
-                <WorkspaceOutlet />
-              )}
-            </main>
+              </header>
+              <ViewAsBanner />
+
+              {!blocked && <RouteBreadcrumbs />}
+              <main
+                className={`authenticated-content flex-1 bg-product-canvas ${path.startsWith("/inbox") ? "min-h-0 overflow-hidden p-2 md:p-3" : "overflow-auto p-4 md:p-6"}`}
+                data-product-surface="authenticated"
+              >
+                <FocusQueueBar />
+                {!blocked && <CrossModuleBanner />}
+                {blocked ? (
+                  <div className="mx-auto mt-24 max-w-md space-y-3 rounded-md border border-product-divider bg-product-panel p-8 text-center shadow-xs">
+                    <ShieldAlert className="h-10 w-10 mx-auto text-muted-foreground" />
+                    <h2 className="text-lg font-semibold">
+                      {licenseBlocked && !roleBlocked
+                        ? "Módulo não contratado"
+                        : moduleBlocked && !roleBlocked
+                          ? "Módulo sem acesso"
+                          : "Acesso restrito"}
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      {licenseBlocked && !roleBlocked
+                        ? "Este módulo não está habilitado para o seu workspace. Um administrador pode contratá-lo em Módulos do workspace."
+                        : moduleBlocked && !roleBlocked
+                          ? "Você não tem acesso a este módulo. Fale com um administrador do workspace."
+                          : "Você não tem permissão para acessar esta tela. Fale com um administrador do workspace."}
+                    </p>
+                  </div>
+                ) : (
+                  <WorkspaceOutlet />
+                )}
+              </main>
+            </div>
           </div>
-        </div>
-        <BugReportButton />
-        <ChatTrigger />
-        {showTimer && <TimerWidget />}
-        <GlobalSearch />
-      </SidebarProvider>
-    </ActivityWindows>
+          <BugReportButton />
+          <ChatTrigger />
+          {showTimer && <TimerWidget />}
+          <GlobalSearch />
+        </SidebarProvider>
+      </ActivityWindows>
+    </PhoneCountryProvider>
   );
 }

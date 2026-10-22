@@ -11,6 +11,7 @@ import {
 } from "../engine-shared.server";
 import type { RunCtx, RunnableAction } from "./run-context";
 
+import { workflowPhone, workspacePhoneCountry } from "@/lib/phone/phone-boundary";
 export async function handleCrmAction(
   supabase: SupabaseClient,
   action: RunnableAction,
@@ -33,7 +34,11 @@ export async function handleCrmAction(
           ? (renderTokens(action.last_name, ctx.after) as string) || null
           : null,
         email: action.email ? (renderTokens(action.email, ctx.after) as string) || null : null,
-        phone: action.phone ? (renderTokens(action.phone, ctx.after) as string) || null : null,
+        phone: workflowPhone(
+          action.phone,
+          action.phone ? (renderTokens(action.phone, ctx.after) as string) : null,
+          await workspacePhoneCountry(supabase, ctx.workspaceId),
+        ),
         company_name: action.company_name
           ? (renderTokens(action.company_name, ctx.after) as string) || null
           : null,
@@ -81,7 +86,11 @@ export async function handleCrmAction(
           ? (renderTokens(action.last_name, ctx.after) as string) || null
           : null,
         email: action.email ? (renderTokens(action.email, ctx.after) as string) || null : null,
-        phone: action.phone ? (renderTokens(action.phone, ctx.after) as string) || null : null,
+        phone: workflowPhone(
+          action.phone,
+          action.phone ? (renderTokens(action.phone, ctx.after) as string) : null,
+          await workspacePhoneCountry(supabase, ctx.workspaceId),
+        ),
         job_title: action.job_title
           ? (renderTokens(action.job_title, ctx.after) as string) || null
           : null,

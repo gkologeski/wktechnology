@@ -50,6 +50,7 @@ import {
   ShoppingBag,
   RefreshCw,
   Linkedin,
+  Phone,
 } from "lucide-react";
 
 export type Need = "admin" | "manager" | "platform" | undefined;
@@ -478,6 +479,13 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         to: "/settings/language",
         label: "Idioma",
         icon: Languages,
+        need: "admin",
+        permissionAny: adminAny("system.language"),
+      },
+      {
+        to: "/settings/phones",
+        label: "Telefones",
+        icon: Phone,
         need: "admin",
         permissionAny: adminAny("system.language"),
       },
