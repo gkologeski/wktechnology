@@ -297,7 +297,7 @@ export async function decideTurn(i: TurnInput, deps: TurnDeps): Promise<TurnDeci
     out.intent = "opt_out";
   } else if (asked) {
     out.intent = "continue";
-    if (isCourtesyOnly(lastCurrentText(i.history))) {
+    if (isCourtesyOnly(lastCurrentText(i.history), [i.persona.assistant_name])) {
       out.warnings.push("Descadastro sugerido em mensagem de cortesia: ignorado.");
     } else {
       out.situation = { ...out.situation, conversation: "closed", close_reason: "declined" };

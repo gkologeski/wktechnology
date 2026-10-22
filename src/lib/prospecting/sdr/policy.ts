@@ -72,11 +72,14 @@ const COURTESY_RE =
  * Mensagem só de agradecimento/despedida. Validador protetor: nunca encerra
  * nem descadastra por isso, mesmo que o modelo classifique assim.
  */
-export function isCourtesyOnly(text: string): boolean {
-  const t = norm(text)
+export function isCourtesyOnly(text: string, names: string[] = []): boolean {
+  let t = ` ${norm(text)
     .replace(/[^\p{L}\p{N} ]/gu, " ")
     .replace(/\s+/g, " ")
-    .trim();
+    .trim()} `;
+  // Nome configurado do agente ("Obrigado, Lia") não muda o sentido.
+  for (const n of names.map((x) => norm(x)).filter(Boolean)) t = t.split(` ${n} `).join(" ");
+  t = t.replace(/\s+/g, " ").trim();
   if (!t) return false;
   return COURTESY_RE.test(t);
 }
