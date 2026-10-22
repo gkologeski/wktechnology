@@ -7,14 +7,14 @@ comprova que o número existe, tem WhatsApp ou pertence à pessoa.
 
 ## Peças
 
-| Peça | Papel |
-| --- | --- |
-| `src/lib/phone/e164.ts` | Fonte única (navegador + servidor): `normalizePhone`, `normalizePhoneField`, `isValidE164`, `formatPhoneDisplay`, `telHref`, `maskPhone`. |
-| `src/lib/phone/phone-boundary.ts` | Bordas de gravação: `humanPhone` (digitado/API, país do workspace, erro 422 `invalid_phone` sem ecoar o número), `humanPhoneForRow` (valor legado não editado passa intacto), `sourcePhone` (integrações/importações: país só com evidência da fonte; o que não for lido fica como veio), `workflowPhone`, `zHumanPhone`, `countryFromRecordField`. |
-| `src/components/ui/phone-input.tsx` | Campo único: seletor de país visível, colagem normalizada, ramal opcional, erro PT-BR no blur, `inputMode=tel`, valor antigo mostrado e só trocado se o usuário digitar (ou confirmar a sugestão). `validatePhoneValue` no envio. |
-| `PhoneCountryProvider` | País padrão do workspace (`workspaces.default_phone_country`, padrão `BR`) para números novos sem +DDI. Configurável em Configurações › Telefones. |
-| `whatsapp-e164.ts` | Política do CANAL WhatsApp (só celular BR; formato antigo de 8 dígitos ganha o 9 só aqui). Recusa do canal ≠ telefone inválido. |
-| Banco (0186) | `phone_ext` em contatos/leads/empresas; `phone_normalization_runs/items` (backup + revisão, leitura só admin ativo); guarda opcional `phone_e164_shape_guard` (forma apenas), desligada por `workspaces.phone_strict_e164`. |
+| Peça                                | Papel                                                                                                                                                                                                                                                                                                                                               |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/lib/phone/e164.ts`             | Fonte única (navegador + servidor): `normalizePhone`, `normalizePhoneField`, `isValidE164`, `formatPhoneDisplay`, `telHref`, `maskPhone`.                                                                                                                                                                                                           |
+| `src/lib/phone/phone-boundary.ts`   | Bordas de gravação: `humanPhone` (digitado/API, país do workspace, erro 422 `invalid_phone` sem ecoar o número), `humanPhoneForRow` (valor legado não editado passa intacto), `sourcePhone` (integrações/importações: país só com evidência da fonte; o que não for lido fica como veio), `workflowPhone`, `zHumanPhone`, `countryFromRecordField`. |
+| `src/components/ui/phone-input.tsx` | Campo único: seletor de país visível, colagem normalizada, ramal opcional, erro PT-BR no blur, `inputMode=tel`, valor antigo mostrado e só trocado se o usuário digitar (ou confirmar a sugestão). `validatePhoneValue` no envio.                                                                                                                   |
+| `PhoneCountryProvider`              | País padrão do workspace (`workspaces.default_phone_country`, padrão `BR`) para números novos sem +DDI. Configurável em Configurações › Telefones.                                                                                                                                                                                                  |
+| `whatsapp-e164.ts`                  | Política do CANAL WhatsApp (só celular BR; formato antigo de 8 dígitos ganha o 9 só aqui). Recusa do canal ≠ telefone inválido.                                                                                                                                                                                                                     |
+| Banco (0186)                        | `phone_ext` em contatos/leads/empresas; `phone_normalization_runs/items` (backup + revisão, leitura só admin ativo); guarda opcional `phone_e164_shape_guard` (forma apenas), desligada por `workspaces.phone_strict_e164`.                                                                                                                         |
 
 ## Regras
 
@@ -33,28 +33,28 @@ comprova que o número existe, tem WhatsApp ou pertence à pessoa.
 
 ## Inventário (rota/componente → coluna → tratamento)
 
-| Módulo | Entrada | Coluna | Tratamento |
-| --- | --- | --- | --- |
-| TechSales | Criar Lead / Contato | leads.phone, contacts.phone, whatsapp_e164 | PhoneInput + validatePhoneValue; WhatsApp pela política do canal |
-| TechSales | Fichas (PropertiesPanel, dois editores) | phone, mobile_phone, whatsapp_e164, phone_ext | PhoneInput; legado não editado intacto |
-| TechSales | Edição em massa (grid e diálogo) | colunas de telefone | PhoneInput + `humanPhone` no servidor |
-| TechSales | Importação CSV | phone, mobile_phone | `sourcePhone` com País da linha ou país do workspace (aviso na tela); ramal → phone_ext |
-| TechSales | Prospecção (Apollo), Lusha, enriquecimento, webhook Apollo | phone, mobile_phone, prospecting_results.phone | `sourcePhone` sem país inventado; `apollo_phone_reveals` fica bruto |
-| TechSales | HubSpot (passos, importação, reconciliação, legado) | phone, mobile_phone | `sourcePhone` com País do próprio registro HubSpot |
-| TechSales | Consulta CNPJ (BrasilAPI) | companies.phone | `sourcePhone(…, "BR")` |
-| TechSales | Discagem por voz (Vapi) / discador | — | só disca E.164 válido |
-| TechSales | WhatsApp: diálogo de envio | destinatário | PhoneInput; servidor aplica política do canal |
-| TechHire | Criar/editar candidato, Carreiras, indicação pública e interna | ats_candidates.phone, ats_referrals.candidate_phone | PhoneInput + `humanPhone`/`humanPhoneForRow` (422 na API pública) |
-| TechHire | CV (texto/PDF), LinkedIn/Unipile | ats_candidates.phone | `sourcePhone` |
-| TechPeople | Criar/editar pessoa, telefone de recado | people.phone, emergency_phone | PhoneInput + `humanPhoneForRow` |
-| TechPeople | Importação de formulários | people.phone | `sourcePhone` com país do workspace (importação do admin) |
-| Core | Convites, equipe, admin da plataforma | profiles.phone + metadados | PhoneInput + `zHumanPhone` |
-| Core | Agendamento público | bookings.invitee_phone (+ lead/contato) | PhoneInput + `humanPhone` (422) |
-| Core | Formulários públicos/embed, landing page | leads/contacts.phone | `humanPhone` por campo `tel` (422 com rótulo); embed com `inputmode=tel` |
-| Core | Pesquisas (renderer novo e questionário) | respostas | PhoneInput + `validateAnswers`/servidor exigem E.164 |
-| Core | Onboarding | phone (target_column) | PhoneInput + validação do passo |
-| Integrações | API v1 leads/contatos, MCP create-lead, ferramentas do agente | leads/contacts/companies.phone | `humanPhone`/`zHumanPhone`, 422 `invalid_phone` |
-| Integrações | Workflows (criar lead/contato/candidato, definir campo) | phone | `workflowPhone`: token copiado sem inventar país; texto fixo validado |
+| Módulo      | Entrada                                                        | Coluna                                              | Tratamento                                                                              |
+| ----------- | -------------------------------------------------------------- | --------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| TechSales   | Criar Lead / Contato                                           | leads.phone, contacts.phone, whatsapp_e164          | PhoneInput + validatePhoneValue; WhatsApp pela política do canal                        |
+| TechSales   | Fichas (PropertiesPanel, dois editores)                        | phone, mobile_phone, whatsapp_e164, phone_ext       | PhoneInput; legado não editado intacto                                                  |
+| TechSales   | Edição em massa (grid e diálogo)                               | colunas de telefone                                 | PhoneInput + `humanPhone` no servidor                                                   |
+| TechSales   | Importação CSV                                                 | phone, mobile_phone                                 | `sourcePhone` com País da linha ou país do workspace (aviso na tela); ramal → phone_ext |
+| TechSales   | Prospecção (Apollo), Lusha, enriquecimento, webhook Apollo     | phone, mobile_phone, prospecting_results.phone      | `sourcePhone` sem país inventado; `apollo_phone_reveals` fica bruto                     |
+| TechSales   | HubSpot (passos, importação, reconciliação, legado)            | phone, mobile_phone                                 | `sourcePhone` com País do próprio registro HubSpot                                      |
+| TechSales   | Consulta CNPJ (BrasilAPI)                                      | companies.phone                                     | `sourcePhone(…, "BR")`                                                                  |
+| TechSales   | Discagem por voz (Vapi) / discador                             | —                                                   | só disca E.164 válido                                                                   |
+| TechSales   | WhatsApp: diálogo de envio                                     | destinatário                                        | PhoneInput; servidor aplica política do canal                                           |
+| TechHire    | Criar/editar candidato, Carreiras, indicação pública e interna | ats_candidates.phone, ats_referrals.candidate_phone | PhoneInput + `humanPhone`/`humanPhoneForRow` (422 na API pública)                       |
+| TechHire    | CV (texto/PDF), LinkedIn/Unipile                               | ats_candidates.phone                                | `sourcePhone`                                                                           |
+| TechPeople  | Criar/editar pessoa, telefone de recado                        | people.phone, emergency_phone                       | PhoneInput + `humanPhoneForRow`                                                         |
+| TechPeople  | Importação de formulários                                      | people.phone                                        | `sourcePhone` com país do workspace (importação do admin)                               |
+| Core        | Convites, equipe, admin da plataforma                          | profiles.phone + metadados                          | PhoneInput + `zHumanPhone`                                                              |
+| Core        | Agendamento público                                            | bookings.invitee_phone (+ lead/contato)             | PhoneInput + `humanPhone` (422)                                                         |
+| Core        | Formulários públicos/embed, landing page                       | leads/contacts.phone                                | `humanPhone` por campo `tel` (422 com rótulo); embed com `inputmode=tel`                |
+| Core        | Pesquisas (renderer novo e questionário)                       | respostas                                           | PhoneInput + `validateAnswers`/servidor exigem E.164                                    |
+| Core        | Onboarding                                                     | phone (target_column)                               | PhoneInput + validação do passo                                                         |
+| Integrações | API v1 leads/contatos, MCP create-lead, ferramentas do agente  | leads/contacts/companies.phone                      | `humanPhone`/`zHumanPhone`, 422 `invalid_phone`                                         |
+| Integrações | Workflows (criar lead/contato/candidato, definir campo)        | phone                                               | `workflowPhone`: token copiado sem inventar país; texto fixo validado                   |
 
 ### Exceções justificadas (sem mudança)
 
