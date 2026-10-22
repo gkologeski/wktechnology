@@ -50,6 +50,32 @@ export const PHONE_FIELD_LABEL: Record<string, string> = {
   "profiles.phone": "Usuários · Telefone",
 };
 
+/** Tabelas da fila que têm ficha própria para abrir. */
+export const PHONE_ENTITY_ROUTE = {
+  contacts: "/contacts/$id",
+  leads: "/leads/$id",
+  companies: "/companies/$id",
+  people: "/people/$id",
+  ats_candidates: "/candidates/$id",
+} as const;
+export type PhoneEntityRoute = (typeof PHONE_ENTITY_ROUTE)[keyof typeof PHONE_ENTITY_ROUTE];
+
+export function phoneEntityRoute(table: string): PhoneEntityRoute | null {
+  return (PHONE_ENTITY_ROUTE as Record<string, PhoneEntityRoute>)[table] ?? null;
+}
+
+/** Nome exibido do registro: nome completo → nome/sobrenome → e-mail → nulo. */
+export function phoneEntityName(r: {
+  name?: string | null;
+  full_name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+}): string | null {
+  const person = [r.first_name, r.last_name].filter((s) => s?.trim()).join(" ");
+  return r.name?.trim() || r.full_name?.trim() || person.trim() || r.email?.trim() || null;
+}
+
 /** Resumo por campo a partir das contagens da execução. */
 export function summarizePhoneRun(
   counts: Record<string, Record<string, number>>,
