@@ -55,8 +55,9 @@ describe("configuração por agente (pura)", () => {
   it("ferramentas desligadas aparecem como proibição explícita no prompt", () => {
     const cfg = parseAgentConfig({ allowed_tools: ["qualify"] });
     const txt = agentConfigPromptSection(cfg);
-    expect(txt).toContain("Não ofereça materiais");
-    expect(txt).toContain("Não ofereça agendamento");
+    expect(txt).toContain(
+      "Capacidades desligadas: materiais, agendamento, transferência para pessoa",
+    );
     expect(hasTool(cfg, "schedule")).toBe(false);
   });
 
@@ -70,9 +71,9 @@ describe("configuração por agente (pura)", () => {
     };
     const direct = buildSystemPrompt({ ...base, directBooking: true, toolsAvailable: true });
     const legacy = buildSystemPrompt(base);
-    expect(direct).toContain("calendar.availability");
-    expect(legacy).not.toContain("calendar.availability");
-    expect(legacy).toContain("Nunca envie link de agendamento");
+    expect(direct).toContain("calendar.book exige opção vigente");
+    expect(legacy).not.toContain("calendar.book");
+    expect(legacy).toContain("não existe link de autoagendamento");
     expect(direct).not.toMatch(/anexa o link de agenda/);
   });
 
@@ -300,7 +301,7 @@ describe("runtime por agente", () => {
     expect(capB.system).toContain("Hunting de TI");
     expect(capB.system).not.toContain("Fábrica de Software");
     expect(capB.system).toContain("Só fale de recrutamento.");
-    expect(capB.system).toContain("Não ofereça materiais");
+    expect(capB.system).toMatch(/Capacidades desligadas: [^\n]*materiais/);
     // Rascunho não vai para produção: o nome da persona em rascunho não aparece.
     expect(capB.system).not.toContain("Bia");
   });

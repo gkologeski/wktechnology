@@ -4,17 +4,10 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Admin = any;
 
-import {
-  decideThirdParty,
-  isAutoResponder,
-  isPostCloseQuestion,
-  POST_CLOSE_REPLY,
-  type Referral,
-} from "./third-party";
-import { parsePersona, stripStockOpener } from "./persona";
+import { parsePersona } from "./persona";
 import { configFromRow, hasTool, scopeKnowledge } from "./agent-config";
 import { loadSdrAgentUserId } from "./agent-identity.server";
-import { buildSystemPrompt, callSdrAgent } from "./agent.server";
+import { callSdrAgent } from "./agent.server";
 import {
   composeOutgoing,
   ensureOpportunity,
@@ -25,51 +18,28 @@ import {
   type DraftPayload,
 } from "./actions.server";
 import { recordSdrAction } from "./ingest.server";
+import { isAiIdentityQuestion, repeatsIdenticalInbound } from "./conversation-guards";
 import {
-  asksDecisionMaker,
-  claimsMaterialSent,
-  correctedName,
-  asksContactSource,
-  CONTACT_SOURCE_REPLY,
-  dedupeRepeatedWords,
-  extractCorporatePhone,
-  isOffTopic,
-  OUT_OF_ICP_CLOSE,
-  outOfIcpRole,
-  fixVocative,
-  greetingName,
-  isAiIdentityQuestion,
-  MATERIAL_HANDOFF_REPLY,
-  NOT_NOW_CLOSE,
-  notTheMoment,
-  offersToKeepContact,
-  refusedMeeting,
-  repeatsIdenticalInbound,
-  selfIdentifiedResponsible,
-  showsBusinessInterest,
-} from "./conversation-guards";
+  effectiveState,
+  parseState,
+  stateJobIds,
+  type ConversationState,
+} from "./conversation-state";
 import { resolveChoice } from "./booking-guard";
 import { parseToolConfig, type ScheduleConfig } from "./tools/catalog";
 import { emptyEffects, type ToolCtx } from "./tools/dispatcher";
 import { makeExecutor, newEventId, selectTools } from "./tools/runtime";
 import type { CalendarProvider, ToolStore } from "./tools/types";
+import { decideTurn, regenerate } from "./turn";
+import type { PromptContext } from "./agent.server";
 import {
   followUpIdemKey,
   isQuietHours,
   nextStage,
   selectableMaterials,
-  guardModelOptOut,
-  detectOptOut,
-  isWrongContact,
-  OPT_OUT_CONFIRM,
-  isUnavailabilityHandoff,
   blockingWarnings,
-  countQuestions,
-  mentionsPrice,
-  PRICE_WARNING,
   selectableOffers,
   sendGuard,
-  validateAgentOutput,
   type CommercialStage,
   type ConversationMessage,
   type SdrMaterial,
@@ -86,24 +56,6 @@ import {
 
 const LEASE_SECONDS = 120;
 const MAX_WAIT_MS = 60_000;
-
-/** Nova geração sem ferramentas (sem efeitos), só para corrigir o texto. */
-async function rewriteReply(
-  deps: WorkerDeps,
-  workspaceId: string,
-  system: string,
-  history: ConversationMessage[],
-  instruction: string,
-): Promise<string | null> {
-  const ai = await deps.callAgent({
-    workspaceId,
-    system: `${system}\n\nCORREÇÃO OBRIGATÓRIA: ${instruction} Mantenha o mesmo formato de saída e não chame ferramentas.`,
-    history,
-  });
-  if (!ai.ok) return null;
-  const reply = (ai.output as { reply?: unknown } | null)?.reply;
-  return typeof reply === "string" && reply.trim() ? stripStockOpener(reply.trim()) : null;
-}
 
 export async function loadKnowledge(admin: Admin, workspaceId: string) {
   const [{ data: offers }, { data: materials }, { data: links }] = await Promise.all([
@@ -413,49 +365,27 @@ export async function processJob(
   const history: ConversationMessage[] = ((msgs ?? []) as ConversationMessage[])
     .filter((m) => (m.body ?? "").trim())
     .reverse();
-  // Atendimento automático (robô/URA): encerra este turno sem responder ao robô.
-  if (job.kind === "reply") {
-    const lastInbound = [...history].reverse().find((m) => m.direction === "inbound");
-    if (
-      lastInbound &&
-      (isAutoResponder(String(lastInbound.body ?? "")) ||
-        repeatsIdenticalInbound(history as { direction: string; body?: string | null }[]))
-    ) {
-      await admin
-        .from("sdr_enrollments")
-        .update({ follow_up_at: null, cancel_reason: "auto_responder" })
-        .eq("id", enr.id)
-        .eq("workspace_id", job.workspace_id);
-      await finish(admin, job.id, job.lease_token, { status: "skipped", error: "auto_responder" });
-      await recordSdrAction(admin, {
-        workspace_id: job.workspace_id,
-        enrollment_id: enr.id,
-        job_id: job.id,
-        kind: "auto_responder",
-        status: "success",
-      });
-      return "skipped";
-    }
-  }
-  // Mensagem destinada a outra pessoa: não responde nem agenda retomada.
-  if (job.kind === "reply") {
-    const lastInbound = [...history].reverse().find((m) => m.direction === "inbound");
-    if (lastInbound && isOffTopic(String(lastInbound.body ?? ""))) {
-      await admin
-        .from("sdr_enrollments")
-        .update({ follow_up_at: null })
-        .eq("id", enr.id)
-        .eq("workspace_id", job.workspace_id);
-      await finish(admin, job.id, job.lease_token, { status: "skipped", error: "off_topic" });
-      await recordSdrAction(admin, {
-        workspace_id: job.workspace_id,
-        enrollment_id: enr.id,
-        job_id: job.id,
-        kind: "off_topic",
-        status: "success",
-      });
-      return "skipped";
-    }
+  // Proteção técnica contra laço: a mesma mensagem longa recebida 2+ vezes
+  // (robô repetindo menu) não gera nova resposta.
+  if (
+    job.kind === "reply" &&
+    repeatsIdenticalInbound(history as { direction: string; body?: string | null }[])
+  ) {
+    await admin
+      .from("sdr_enrollments")
+      .update({ follow_up_at: null, cancel_reason: "auto_responder" })
+      .eq("id", enr.id)
+      .eq("workspace_id", job.workspace_id);
+    await finish(admin, job.id, job.lease_token, { status: "skipped", error: "repeated_inbound" });
+    await recordSdrAction(admin, {
+      workspace_id: job.workspace_id,
+      enrollment_id: enr.id,
+      job_id: job.id,
+      kind: "auto_responder",
+      status: "success",
+      payload: { reason: "repeated_inbound" },
+    });
+    return "skipped";
   }
   const agentConfig = configFromRow(playbook as Record<string, unknown>);
   const { offers, materials } = scopeKnowledge(
@@ -546,8 +476,8 @@ export async function processJob(
     };
   }
   // Escolha curta do cliente ("6a", "sexta", "2") resolvida contra as opções
-  // vigentes gravadas — nunca contra horários escritos pela IA.
-  let choiceHint: string | null = null;
+  // vigentes gravadas — nunca contra horários escritos pela IA. Vira FATO.
+  let choicePosition: number | null = null;
   if (selected.directBooking && job.kind === "reply") {
     const lastIn = [...history].reverse().find((m) => m.direction === "inbound");
     const { data: offerRows } = await admin
@@ -569,30 +499,18 @@ export async function processJob(
           (toolCfg?.scheduling as { timezone?: string } | undefined)?.timezone ??
           "America/Sao_Paulo",
       }));
-    const pos = lastIn ? resolveChoice(lastIn.body, current) : null;
-    if (pos)
-      choiceHint = `[sistema] A última mensagem do cliente escolhe a opção ${pos} vigente. Se já tiver o e-mail do cliente, chame calendar.book com option=${pos}; se não tiver, peça o e-mail ANTES de reservar e NÃO diga que está marcado.`;
+    choicePosition = lastIn ? resolveChoice(lastIn.body, current) : null;
   }
-  const system = buildSystemPrompt({
-    persona,
-    config: agentConfig,
-    origin: enr.campaign_id ? "prospecting" : "inbound",
-    offers,
-    materials,
-    questions,
-    bookingAvailable: false,
-    directBooking: selected.directBooking,
-    toolsAvailable: selected.specs.length > 0,
-    extraInstructions:
-      [
-        playbook.qualification_prompt,
-        job.kind === "follow_up"
-          ? "Este é um follow-up: retome a conversa com gentileza, sem pressão."
-          : null,
-        choiceHint,
-      ]
-        .filter(Boolean)
-        .join("\n") || null,
+  const { state, version: stateVersion } = await loadConversationState(
+    admin,
+    job.workspace_id,
+    enr,
+  );
+  const context = await loadPromptContext(admin, {
+    workspaceId: job.workspace_id,
+    enr,
+    playbookName: (playbook.name as string | null) ?? null,
+    scheduling: selected.directBooking ? (toolCfg?.scheduling ?? null) : null,
   });
 
   await admin
@@ -600,223 +518,74 @@ export async function processJob(
     .update({ ai_started_at: new Date().toISOString(), agent_version_id: agentVersion?.id ?? null })
     .eq("id", job.id)
     .eq("lease_token", job.lease_token);
-  const ai = await deps.callAgent({
-    workspaceId: job.workspace_id,
-    system,
-    history,
-    ...(toolCtx && selected.specs.length
-      ? { tools: selected.specs, executeTool: makeExecutor(toolCtx) }
-      : {}),
-  });
+  const decision = await decideTurn(
+    {
+      workspaceId: job.workspace_id,
+      jobId: job.id,
+      jobKind: job.kind,
+      mode: "live",
+      agentVersionId: agentVersion?.id ?? null,
+      persona,
+      config: agentConfig,
+      offers,
+      materials,
+      questions,
+      history,
+      state,
+      context,
+      extraInstructions: (playbook.qualification_prompt as string | null) ?? null,
+      optOutPhrases:
+        ((playbook as Record<string, unknown>).opt_out_phrases as string[] | null) ?? [],
+      tools: {
+        specs: toolCtx ? selected.specs : [],
+        executor: toolCtx && selected.specs.length ? makeExecutor(toolCtx) : null,
+        effects,
+        directBooking: selected.directBooking,
+      },
+      choicePosition,
+      now: new Date(),
+    },
+    {
+      callAgent: deps.callAgent,
+      compose: (p) => composeOutgoing(admin, { workspaceId: job.workspace_id, ...p }),
+    },
+  );
   await admin
     .from("sdr_turn_jobs")
     .update({ ai_finished_at: new Date().toISOString() })
     .eq("id", job.id)
     .eq("lease_token", job.lease_token);
-  if (!ai.ok) {
-    if (ai.retryable) {
+  if (decision.kind === "ai_error") {
+    if (decision.retryable) {
       await finish(admin, job.id, job.lease_token, {
         status: "queued",
         lease_until: new Date(Date.now() + retryDelayMs(job.attempts ?? 1)).toISOString(),
-        error: ai.error,
+        error: decision.error,
       });
       return "retry";
     }
     await finish(admin, job.id, job.lease_token, {
       status: "failed",
-      error: ai.error,
+      error: decision.error,
       block_category: "technical",
     });
     await recordSdrAction(admin, {
       workspace_id: job.workspace_id,
       enrollment_id: enr.id,
       job_id: job.id,
-      kind: ai.status === 402 || ai.status === 403 ? "ai_paused" : "ai_failed",
+      kind: decision.status === 402 || decision.status === 403 ? "ai_paused" : "ai_failed",
       status: "failed",
-      error: ai.error,
+      error: decision.error,
     });
     await tripBreakerIfNeeded(admin, job.workspace_id);
     return "failed";
   }
-  const out = validateAgentOutput(ai.output, { offers, materials });
-  if ("error" in out) {
-    await finish(admin, job.id, job.lease_token, { status: "failed", error: out.error });
+  if (decision.kind === "invalid") {
+    await finish(admin, job.id, job.lease_token, { status: "failed", error: decision.error });
     return "failed";
   }
-  // Abertura burocrática ("Entendi que...") é removida quando sobra mensagem completa.
-  out.reply = stripStockOpener(out.reply);
-  // Valores em dinheiro: reescreve sozinha uma vez antes de recorrer a um humano.
-  if (out.warnings.includes(PRICE_WARNING) && out.reply) {
-    const alt = await rewriteReply(
-      deps,
-      job.workspace_id,
-      system,
-      history,
-      "Não mencione preços, valores ou números em reais. Diga que os valores são tratados na reunião/proposta e siga a conversa.",
-    );
-    if (alt && !mentionsPrice(alt)) {
-      out.reply = alt;
-      out.warnings = out.warnings.filter((w) => w !== PRICE_WARNING);
-    }
-  }
-  // Uma pergunta por mensagem: reescreve sozinha uma vez se vier mais de uma.
-  if (countQuestions(out.reply) > 1) {
-    const alt = await rewriteReply(
-      deps,
-      job.workspace_id,
-      system,
-      history,
-      "Sua resposta fez mais de uma pergunta. Reescreva com no máximo UMA pergunta, a mais importante para avançar.",
-    );
-    if (alt && countQuestions(alt) <= 1 && !mentionsPrice(alt)) out.reply = alt;
-  }
-  // Efeitos registrados pelas ferramentas prevalecem sobre a intenção textual.
-  if (effects.answers.length) out.answers = [...(out.answers as unknown[]), ...effects.answers];
-  if (effects.materialIds.length) {
-    out.material_ids = [...new Set([...out.material_ids, ...effects.materialIds])];
-    if (out.intent === "continue") out.intent = "send_material";
-  }
-  if (effects.handoff) {
-    out.intent = "handoff";
-    out.handoff_reason = effects.handoff;
-  }
-  // Pedido explícito de parar sempre vira opt-out (com confirmação ao cliente).
-  if (job.kind === "reply" && !effects.optOut && out.intent !== "opt_out") {
-    const lastIn = [...history].reverse().find((m) => m.direction === "inbound");
-    const lastText = String((lastIn as { body?: unknown } | undefined)?.body ?? "");
-    const phrases =
-      ((playbook as Record<string, unknown>).opt_out_phrases as string[] | null) ?? [];
-    if (detectOptOut(lastText, phrases)) out.intent = "opt_out";
-  }
-  // "Sem disponibilidade no horário pedido" não é motivo de passar para humano:
-  // a Lia segue oferecendo horários (caso Gilzon, 21/10).
-  if (
-    out.intent === "handoff" &&
-    !effects.handoff &&
-    isUnavailabilityHandoff(out.handoff_reason) &&
-    /\?/.test(out.reply)
-  ) {
-    out.intent = "continue";
-    out.warnings.push("Handoff por indisponibilidade de horário ignorado: Lia segue agendando.");
-  }
-  if (effects.optOut) out.intent = "opt_out";
-  else if (out.intent === "opt_out") {
-    // Agradecimento/despedida não é descadastro: segue a conversa com resposta cordial.
-    const lastIn = [...history].reverse().find((m) => m.direction === "inbound");
-    const lastText = String((lastIn as { body?: unknown } | undefined)?.body ?? "");
-    if (
-      !guardModelOptOut(
-        lastText,
-        ((playbook as Record<string, unknown>).opt_out_phrases as string[] | null) ?? [],
-      )
-    ) {
-      out.intent = "continue";
-      if (!out.reply) out.reply = "Eu que agradeço! Qualquer coisa, é só me chamar por aqui.";
-      out.warnings.push("Opt-out ignorado: mensagem era só agradecimento/despedida.");
-    }
-  }
-  // Terceiros (não é o responsável): indicação, saída da empresa, número de outra pessoa.
-  let wrongContact = false;
-  let closeReason: string | null = null;
-  let referralToSave: Referral | null = null;
-  let stopFollowUps = false;
-  // Handoff (pedido de humano, negociação) e agendamento nunca são sobrescritos.
-  if (job.kind === "reply" && out.intent !== "schedule_meeting" && out.intent !== "handoff") {
-    const lastIn = [...history].reverse().find((m) => m.direction === "inbound");
-    const lastText = String((lastIn as { body?: unknown } | undefined)?.body ?? "");
-    const tp = decideThirdParty(history as { direction: string; body?: string | null }[]);
-    if (isPostCloseQuestion(history as { direction: string; body?: string | null }[])) {
-      // Já encerramos e o cliente perguntou algo ("precisa de algo em infra?"):
-      // responde que não e se despede, uma única vez (caso Wiltomar, 21/10).
-      wrongContact = true;
-      closeReason = "post_close";
-      out.intent = "continue";
-      out.material_ids = [];
-      out.answers = [];
-      out.reply = POST_CLOSE_REPLY;
-    } else if (tp.action !== "none") {
-      out.intent = "continue";
-      out.material_ids = [];
-      out.answers = [];
-      out.reply = tp.reply;
-      if (tp.action === "close" || tp.action === "save_referral") {
-        wrongContact = true;
-        closeReason = tp.reason;
-      }
-      if (tp.action === "save_referral") referralToSave = tp.referral;
-    } else if (outOfIcpRole(lastText)) {
-      wrongContact = true;
-      closeReason = "out_of_icp";
-      out.intent = "continue";
-      out.material_ids = [];
-      out.answers = [];
-      out.reply = OUT_OF_ICP_CLOSE;
-    } else if (asksContactSource(lastText)) {
-      // Resposta honesta e fixa; sem retomadas automáticas depois disso.
-      stopFollowUps = true;
-      out.intent = "continue";
-      out.material_ids = [];
-      out.reply = CONTACT_SOURCE_REPLY;
-    } else if (isWrongContact(lastText)) {
-      wrongContact = true;
-      closeReason = "wrong_contact";
-      out.intent = "continue";
-      out.material_ids = [];
-      out.reply =
-        "Peço desculpas pelo incômodo, devo ter anotado o contato errado. Obrigada pelo aviso e tenha um ótimo dia!";
-    }
-  }
-
-  // Opt-out em resposta: confirma ao cliente que não haverá novos contatos e
-  // só então marca o opt-out (caso Ricardo Oliveira, 21/10).
-  if (job.kind === "reply" && out.intent === "opt_out" && !wrongContact) {
-    wrongContact = true;
-    closeReason = "opt_out";
-    out.intent = "continue";
-    out.material_ids = [];
-    out.answers = [];
-    out.reply = OPT_OUT_CONFIRM;
-  }
-
-  // Garantias da conversa (casos 16–19/10): nome, repetição, reunião recusada,
-  // decisor já identificado, "não é o momento" e material prometido sem envio.
-  let corporatePhone: string | null = null;
-  if (job.kind === "reply" && !wrongContact && out.intent !== "opt_out") {
-    const h = history as { direction: string; body?: string | null }[];
-    const lastIn = [...h].reverse().find((m) => m.direction === "inbound");
-    const lastText = String(lastIn?.body ?? "");
-    out.reply = dedupeRepeatedWords(out.reply);
-    out.reply = fixVocative(out.reply, [correctedName(h) ?? "", greetingName(h) ?? ""]);
-    corporatePhone = extractCorporatePhone(lastText);
-    if (out.intent !== "handoff" && out.intent !== "schedule_meeting") {
-      if (notTheMoment(lastText) && offersToKeepContact(out.reply)) {
-        out.reply = NOT_NOW_CLOSE;
-        out.material_ids = [];
-      } else if (refusedMeeting(h) && showsBusinessInterest(h)) {
-        out.intent = "handoff";
-        out.handoff_reason =
-          "Cliente recusou reunião, mas pediu informações/orçamento por mensagem: atendimento humano.";
-      } else if (
-        claimsMaterialSent(out.reply) &&
-        !(agentConfig.guardrails.attach_materials && out.material_ids.length)
-      ) {
-        out.intent = "handoff";
-        out.reply = MATERIAL_HANDOFF_REPLY;
-        out.handoff_reason =
-          "Cliente pediu material e o envio automático de materiais não está disponível para este agente.";
-      } else if (selfIdentifiedResponsible(h) && asksDecisionMaker(out.reply)) {
-        const alt = await rewriteReply(
-          deps,
-          job.workspace_id,
-          system,
-          history,
-          "O cliente JÁ disse que é o responsável pela área de TI. Não pergunte cargo, se é decisor ou quem decide. Siga a conversa com a próxima pergunta útil.",
-        );
-        if (alt && !asksDecisionMaker(alt) && !mentionsPrice(alt))
-          out.reply = dedupeRepeatedWords(alt);
-      }
-    }
-  }
+  const out = decision.out;
+  const turnState = decision.state;
 
   // Qualificação canônica: mesmo questionário, cálculo e linha da Prospecção.
   const inbound = history.filter((m) => m.direction === "inbound");
@@ -871,28 +640,56 @@ export async function processJob(
     offerKeys: out.offer_keys,
     intent: out.intent,
   });
-  const optOut = out.intent === "opt_out";
+  const optOut = decision.optOut;
+  const isHandoff = out.intent === "handoff" && hasTool(agentConfig, "handoff");
+  // Nada a enviar (supressão estruturada, descadastro ou encerramento sem texto).
+  const silent = !decision.text && !isHandoff;
+  const closeNow = silent && decision.close ? decision.close : null;
+  const suppressedAfterClose = turnState.suppress === "closed_no_reply_needed";
+  const nowIso = new Date().toISOString();
   const enrollmentPatch: Record<string, unknown> = {
     ...(out.offer_keys.length ? { offers: out.offer_keys } : {}),
-    ...(optOut
+    ...(Object.keys(turnState.patch).length
+      ? { conversation_state: turnState.patch, expected_state_version: stateVersion }
+      : {}),
+    ...(decision.noFollowUp || turnState.suppress ? { follow_up_at: null } : {}),
+    ...(turnState.suppress === "auto_responder" ? { cancel_reason: "auto_responder" } : {}),
+    ...(silent && optOut
       ? {
           status: "opted_out",
           commercial_stage: "opted_out",
-          opted_out_at: new Date().toISOString(),
+          opted_out_at: nowIso,
           cancel_reason: "opt_out",
           follow_up_at: null,
         }
       : {}),
+    ...(closeNow ? { status: "paused", cancel_reason: closeNow, follow_up_at: null } : {}),
+    ...(suppressedAfterClose && state.closed
+      ? { status: "paused", cancel_reason: state.closed.reason, follow_up_at: null }
+      : {}),
   };
+  const silentError = optOut
+    ? "opt_out"
+    : turnState.suppress
+      ? `suppressed:${turnState.suppress}`
+      : closeNow
+        ? `closed:${closeNow}`
+        : "empty_reply";
 
-  // Compare-and-set: nada é gravado se lease, dono, versão ou workspace mudaram durante a IA.
+  // Compare-and-set: nada é gravado se lease, dono, versão, estado ou workspace mudaram durante a IA.
   const { data: commit, error: cErr } = await admin.rpc("sdr_commit_turn", {
     p_job: job.id,
     p_lease: job.lease_token,
     p_evidence: evidence,
     p_qualification: qualificationPayload,
     p_enrollment: Object.keys(enrollmentPatch).length ? enrollmentPatch : null,
-    p_job_patch: optOut ? { status: "skipped", error: "opt_out" } : null,
+    p_job_patch: silent
+      ? {
+          status: "skipped",
+          error: silentError,
+          draft_payload: { warnings: out.warnings, turn_trace: decision.trace },
+        }
+      : null,
   });
   if (cErr) throw new Error(cErr.message);
   if (commit !== "ok") {
@@ -900,16 +697,28 @@ export async function processJob(
     return "discarded";
   }
 
-  if (optOut) {
-    await admin.rpc("sdr_set_conversation_owner", { p_conversation: conv.id, p_owner: "paused" });
+  if (silent) {
+    if (optOut || closeNow || suppressedAfterClose)
+      await admin.rpc("sdr_set_conversation_owner", { p_conversation: conv.id, p_owner: "paused" });
+    if (decision.state.referral && closeNow)
+      await saveReferralNow(admin, job, enr, conv, target, decision.state.referral);
     await recordSdrAction(admin, {
       workspace_id: job.workspace_id,
       enrollment_id: enr.id,
       job_id: job.id,
-      kind: "opt_out",
+      kind: optOut
+        ? "opt_out"
+        : turnState.suppress === "auto_responder"
+          ? "auto_responder"
+          : turnState.suppress === "addressed_to_other"
+            ? "off_topic"
+            : closeNow
+              ? "closed_third_party"
+              : "skipped",
       status: "success",
+      payload: { reason: silentError },
     });
-    return "opt_out";
+    return optOut ? "opt_out" : "skipped";
   }
 
   if (qualified && !agentConfig.guardrails.require_human_for_opportunity) {
@@ -922,12 +731,13 @@ export async function processJob(
     });
   }
 
-  if (out.intent === "handoff" && hasTool(agentConfig, "handoff")) {
+  if (isHandoff) {
     if ((await guard(admin, job)) !== "ok") return "discarded";
     await finish(admin, job.id, job.lease_token, {
       status: "skipped",
       error: "handoff",
       draft_text: out.reply || null,
+      draft_payload: { warnings: out.warnings, turn_trace: decision.trace },
     });
     await deps.handoffToHuman(admin, {
       workspaceId: job.workspace_id,
@@ -939,18 +749,10 @@ export async function processJob(
     return "handoff";
   }
 
-  const composed = await composeOutgoing(admin, {
-    workspaceId: job.workspace_id,
-    reply: out.reply,
-    intent: out.intent,
-    materialIds: out.material_ids,
-    attachMaterials: agentConfig.guardrails.attach_materials,
-    meeting: effects.meeting,
-  });
   const payload: DraftPayload = {
     intent: out.intent,
     offer_keys: out.offer_keys,
-    material_ids: composed.materials.map((m) => m.id),
+    material_ids: decision.materials.map((m) => m.id),
     planned_stage:
       effects.meeting?.status === "confirmed"
         ? "meeting_booked"
@@ -958,6 +760,8 @@ export async function processJob(
     warnings: out.warnings,
     booking_url: null,
     tool_trace: effects.trace.map((t) => ({ tool: t.tool, status: t.status })),
+    no_follow_up: decision.noFollowUp,
+    turn_trace: decision.trace,
   };
   const autoAllowed =
     settings.auto_send_enabled &&
@@ -978,7 +782,7 @@ export async function processJob(
     .from("sdr_turn_jobs")
     .update({
       status: autoAllowed ? "running" : "drafted",
-      draft_text: composed.text,
+      draft_text: decision.text,
       draft_payload: payload,
       updated_at: new Date().toISOString(),
     })
@@ -988,7 +792,7 @@ export async function processJob(
     .select("id");
   if (!saved?.length) return "lease_lost";
   const applyOptOutNow = async () => {
-    if (closeReason !== "opt_out") return;
+    if (!optOut) return;
     await admin
       .from("sdr_enrollments")
       .update({
@@ -1001,6 +805,13 @@ export async function processJob(
       .eq("id", enr.id)
       .eq("workspace_id", job.workspace_id);
     await admin.rpc("sdr_set_conversation_owner", { p_conversation: conv.id, p_owner: "paused" });
+    await recordSdrAction(admin, {
+      workspace_id: job.workspace_id,
+      enrollment_id: enr.id,
+      job_id: job.id,
+      kind: "opt_out",
+      status: "success",
+    });
   };
   if (!autoAllowed) {
     await admin.from("sdr_turn_jobs").update({ lease_token: null }).eq("id", job.id);
@@ -1016,16 +827,16 @@ export async function processJob(
       text,
       actorUserId: null,
     });
-  let sent = await sendText(composed.text);
+  let sent = await sendText(decision.text);
   if (!sent.ok && sent.reason === "repetition_detected") {
-    // Autonomia: reescreve uma vez sem repetir a última mensagem, em vez de pedir aprovação.
-    const alt = await rewriteReply(
-      deps,
-      job.workspace_id,
-      system,
+    // Proteção técnica: nova geração uma vez em vez de repetir a última mensagem.
+    const alt = await regenerate(deps, {
+      workspaceId: job.workspace_id,
+      system: decision.system,
       history,
-      "A resposta ficou idêntica à sua mensagem anterior. Escreva outra, diferente, que avance a conversa considerando todas as mensagens do cliente.",
-    );
+      feature: "sdr_agente",
+      reason: "ficou idêntica à mensagem anterior enviada nesta conversa",
+    });
     if (alt) {
       const again = await composeOutgoing(admin, {
         workspaceId: job.workspace_id,
@@ -1064,14 +875,14 @@ export async function processJob(
     await applyOptOutNow();
     return obsolete ? "discarded" : "drafted";
   }
-  if (corporatePhone && target) {
+  if (turnState.corporatePhone && target) {
     const { saveCorporatePhone } = await import("./third-party.server");
     const st = await saveCorporatePhone(admin, {
       workspaceId: job.workspace_id,
       ownerId: (enr.owner_id as string | null) ?? null,
       target,
       companyId: (enr.company_id as string | null) ?? null,
-      phoneE164: corporatePhone,
+      phoneE164: turnState.corporatePhone,
     }).catch(() => "failed" as const);
     await recordSdrAction(admin, {
       workspace_id: job.workspace_id,
@@ -1079,48 +890,18 @@ export async function processJob(
       job_id: job.id,
       kind: "corporate_phone_saved",
       status: st === "failed" ? "failed" : "success",
-      payload: { phone: corporatePhone, result: st },
+      payload: { phone: turnState.corporatePhone, result: st },
     });
   }
-  if (referralToSave) {
-    const { saveReferral } = await import("./third-party.server");
-    const saved = await saveReferral(admin, {
-      workspaceId: job.workspace_id,
-      ownerId: enr.owner_id as string,
-      referral: referralToSave,
-      referrerLabel: conv.contact_phone ?? "contato da campanha",
-      companyId: (enr.company_id as string | null) ?? null,
-      referrer: target,
-    });
-    await recordSdrAction(admin, {
-      workspace_id: job.workspace_id,
-      enrollment_id: enr.id,
-      job_id: job.id,
-      kind: "referral_saved",
-      status: saved.status === "failed" ? "failed" : "success",
-      payload: { ...saved, phone: referralToSave.phoneE164, name: referralToSave.name },
-      error: saved.status === "failed" ? saved.error : null,
-    });
+  if (turnState.referral) await saveReferralNow(admin, job, enr, conv, target, turnState.referral);
+  if (optOut) {
+    await applyOptOutNow();
+    return "sent";
   }
-  if (wrongContact) {
-    const thirdParty =
-      closeReason === "left_company" ||
-      closeReason === "not_this_person" ||
-      closeReason === "out_of_icp" ||
-      closeReason === "post_close";
+  if (decision.close) {
     await admin
       .from("sdr_enrollments")
-      .update(
-        thirdParty
-          ? { status: "paused", cancel_reason: closeReason, follow_up_at: null }
-          : {
-              status: "opted_out",
-              commercial_stage: "opted_out",
-              opted_out_at: new Date().toISOString(),
-              cancel_reason: closeReason === "opt_out" ? "opt_out" : "wrong_contact",
-              follow_up_at: null,
-            },
-      )
+      .update({ status: "paused", cancel_reason: decision.close, follow_up_at: null })
       .eq("id", enr.id)
       .eq("workspace_id", job.workspace_id);
     await admin.rpc("sdr_set_conversation_owner", { p_conversation: conv.id, p_owner: "paused" });
@@ -1128,19 +909,136 @@ export async function processJob(
       workspace_id: job.workspace_id,
       enrollment_id: enr.id,
       job_id: job.id,
-      kind: thirdParty ? "closed_third_party" : "opt_out",
+      kind: "closed_third_party",
       status: "success",
-      payload: { reason: closeReason },
+      payload: { reason: decision.close },
     });
-  }
-  if (stopFollowUps && !wrongContact) {
+  } else if (decision.noFollowUp) {
     await admin
       .from("sdr_enrollments")
-      .update({ follow_up_at: null, cancel_reason: "asked_contact_source" })
+      .update({
+        follow_up_at: null,
+        ...(turnState.stopFollowUps ? { cancel_reason: "asked_contact_source" } : {}),
+      })
       .eq("id", enr.id)
       .eq("workspace_id", job.workspace_id);
   }
   return "sent";
+}
+
+async function saveReferralNow(
+  admin: Admin,
+  job: Job,
+  enr: Record<string, unknown>,
+  conv: Record<string, unknown>,
+  target: { entity: "lead" | "contact"; id: string } | null,
+  referral: { name: string | null; phoneE164: string },
+) {
+  const { saveReferral } = await import("./third-party.server");
+  const saved = await saveReferral(admin, {
+    workspaceId: job.workspace_id,
+    ownerId: enr.owner_id as string,
+    referral,
+    referrerLabel: (conv.contact_phone as string | null) ?? "contato da campanha",
+    companyId: (enr.company_id as string | null) ?? null,
+    referrer: target,
+  });
+  await recordSdrAction(admin, {
+    workspace_id: job.workspace_id,
+    enrollment_id: enr.id as string,
+    job_id: job.id,
+    kind: "referral_saved",
+    status: saved.status === "failed" ? "failed" : "success",
+    payload: { ...saved, phone: referral.phoneE164, name: referral.name },
+    error: saved.status === "failed" ? saved.error : null,
+  });
+}
+
+/** Estado explícito efetivo: itens dependentes de envio só valem se o turno saiu. */
+export async function loadConversationState(
+  admin: Admin,
+  workspaceId: string,
+  enr: Record<string, unknown>,
+): Promise<{ state: ConversationState; version: number }> {
+  const raw = parseState(enr.conversation_state);
+  const ids = stateJobIds(raw);
+  const sent = new Set<string>();
+  if (ids.length) {
+    const { data } = await admin
+      .from("sdr_turn_jobs")
+      .select("id, status")
+      .in("id", ids)
+      .eq("workspace_id", workspaceId);
+    for (const r of (data ?? []) as { id: string; status: string }[])
+      if (r.status === "sent") sent.add(r.id);
+  }
+  return {
+    state: effectiveState(raw, sent, {
+      status: enr.status as string | null,
+      cancel_reason: enr.cancel_reason as string | null,
+    }),
+    version:
+      typeof enr.conversation_state_version === "number" ? enr.conversation_state_version : 0,
+  };
+}
+
+/** Contexto verificável do turno, sempre filtrado pelo workspace do trabalho. */
+export async function loadPromptContext(
+  admin: Admin,
+  p: {
+    workspaceId: string;
+    enr: Record<string, unknown>;
+    playbookName: string | null;
+    scheduling: ScheduleConfig | null;
+  },
+): Promise<Omit<PromptContext, "state" | "facts" | "jobKind">> {
+  const ws = p.workspaceId;
+  const campaignId = (p.enr.campaign_id as string | null) ?? null;
+  const leadId = (p.enr.lead_id as string | null) ?? null;
+  const contactId = (p.enr.contact_id as string | null) ?? null;
+  const [wsRow, campaign, person] = await Promise.all([
+    admin.from("workspaces").select("name").eq("id", ws).maybeSingle(),
+    campaignId
+      ? admin
+          .from("whatsapp_campaigns")
+          .select("name, template_name, body_template")
+          .eq("id", campaignId)
+          .eq("workspace_id", ws)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    leadId || contactId
+      ? admin
+          .from(contactId ? "contacts" : "leads")
+          .select(
+            contactId
+              ? "first_name, last_name, company_name"
+              : "first_name, last_name, company_name, source",
+          )
+          .eq("id", contactId ?? leadId)
+          .eq("workspace_id", ws)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+  const c = (campaign as { data: Record<string, string | null> | null }).data;
+  const per = (person as { data: Record<string, string | null> | null }).data;
+  const personName = per ? [per.first_name, per.last_name].filter(Boolean).join(" ") || null : null;
+  return {
+    companyName: ((wsRow as { data: { name?: string } | null }).data?.name as string) ?? null,
+    agentName: p.playbookName,
+    origin: campaignId
+      ? {
+          kind: "campaign",
+          campaignName: c?.name ?? null,
+          templateName: c?.template_name ?? null,
+          templateBody: c?.body_template ?? null,
+        }
+      : { kind: "inbound" },
+    provenance: per?.source ? `origem do cadastro no CRM: ${per.source}` : null,
+    crm: per ? { personName, companyName: per.company_name ?? null } : null,
+    scheduling: p.scheduling
+      ? { timezone: p.scheduling.timezone, durationMinutes: p.scheduling.duration_minutes }
+      : null,
+  };
 }
 
 /** Agenda follow-ups vencidos como trabalhos (só dentro da janela de 24 h). */
@@ -1263,26 +1161,41 @@ export async function tickSdr(admin: Admin, limit = 10, deps: WorkerDeps = defau
   };
 }
 
-/** Tempo sem resposta depois de "você é uma IA?" até passar a uma pessoa. */
-export const AI_QUESTION_SILENCE_MS = 30 * 60_000;
-
 /**
- * Cliente perguntou se fala com uma IA, a Lia respondeu e ele parou de
- * responder: a conversa passa para uma pessoa da equipe (retomadas canceladas).
+ * Automação OPCIONAL e versionada (tool_config.automations, desligada por
+ * padrão): cliente perguntou se fala com uma IA, a Lia respondeu e ele parou
+ * de responder pelo tempo configurado → conversa passa para uma pessoa.
+ * Sem versão publicada com a regra ligada, nada é lido nem transferido.
  */
 async function handoffSilentAfterAiQuestion(
   admin: Admin,
   workspaceIds: string[],
   deps: WorkerDeps,
 ): Promise<number> {
+  const { data: versions } = await admin
+    .from("sdr_agent_versions")
+    .select("playbook_id, workspace_id, tool_config")
+    .eq("status", "published")
+    .in("workspace_id", workspaceIds);
+  const rules = new Map<string, number>();
+  for (const v of (versions ?? []) as {
+    playbook_id: string;
+    workspace_id: string;
+    tool_config: unknown;
+  }[]) {
+    const rule = parseToolConfig(v.tool_config)?.automations.ai_question_silence_handoff;
+    if (rule?.enabled) rules.set(v.playbook_id, rule.minutes * 60_000);
+  }
+  if (!rules.size) return 0;
   const now = Date.now();
+  const minSilence = Math.min(...rules.values());
   const { data: rows } = await admin
     .from("whatsapp_messages")
     .select("conversation_id, body, created_at")
     .in("workspace_id", workspaceIds)
     .eq("direction", "inbound")
     .gte("created_at", new Date(now - 3 * 86_400_000).toISOString())
-    .lte("created_at", new Date(now - AI_QUESTION_SILENCE_MS).toISOString())
+    .lte("created_at", new Date(now - minSilence).toISOString())
     .order("created_at", { ascending: false })
     .limit(500);
   const candidates = new Map<string, string>();
@@ -1301,6 +1214,14 @@ async function handoffSilentAfterAiQuestion(
       .eq("id", convId)
       .maybeSingle();
     if (!conv || conv.ai_owner !== "ai" || !conv.sdr_enrollment_id) continue;
+    const { data: enr } = await admin
+      .from("sdr_enrollments")
+      .select("playbook_id, workspace_id")
+      .eq("id", conv.sdr_enrollment_id)
+      .eq("workspace_id", conv.workspace_id)
+      .maybeSingle();
+    const silenceMs = enr ? rules.get(enr.playbook_id as string) : undefined;
+    if (!silenceMs) continue;
     const { data: later } = await admin
       .from("whatsapp_messages")
       .select("direction, created_at")
@@ -1311,14 +1232,13 @@ async function handoffSilentAfterAiQuestion(
     const after = (later ?? []) as { direction: string; created_at: string }[];
     if (after.some((m) => m.direction === "inbound")) continue; // cliente voltou a falar
     const answered = after.find((m) => m.direction !== "inbound");
-    if (!answered || now - new Date(answered.created_at).getTime() < AI_QUESTION_SILENCE_MS)
-      continue;
+    if (!answered || now - new Date(answered.created_at).getTime() < silenceMs) continue;
     await deps.handoffToHuman(admin, {
       workspaceId: conv.workspace_id,
       enrollmentId: conv.sdr_enrollment_id,
       conversationId: convId,
       reason:
-        "Cliente perguntou se estava falando com uma IA e parou de responder: atendimento humano.",
+        "Automação configurada: cliente perguntou se estava falando com uma IA e não respondeu mais.",
       actorUserId: null,
     });
     n++;

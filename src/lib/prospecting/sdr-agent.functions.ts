@@ -122,20 +122,25 @@ export const testSdrAgent = createServerFn({ method: "POST" })
   .inputValidator((i) =>
     Ids.extend({
       persona: z.unknown(),
+      /** editor = persona em edição (rascunho explícito); published = versão em produção. */
+      persona_source: z.enum(["editor", "published"]).default("editor"),
       origin: z.enum(["prospecting", "inbound"]),
       messages: z.array(TestMsg).min(1).max(40),
       sandbox_state: z.unknown().optional(),
     }).parse(i),
   )
   .handler(async ({ data, context }) => {
+    // Mesmo domínio de turno da produção (decideTurn), com adaptadores de
+    // sandbox: IA real marcada como teste, ferramentas em memória, agenda
+    // falsa, nenhuma escrita no banco, nenhum envio ao WhatsApp/Google/CRM.
     const { assertSdr } = await import("@/lib/prospecting/sdr/access.server");
-    const { PersonaSchema, stripStockOpener, toneIssues } =
-      await import("@/lib/prospecting/sdr/persona");
-    const { buildSystemPrompt, callSdrAgent } = await import("@/lib/prospecting/sdr/agent.server");
-    const { validateAgentOutput } = await import("@/lib/prospecting/sdr/policy");
+    const { PersonaSchema, parsePersona } = await import("@/lib/prospecting/sdr/persona");
+    const { callSdrAgent } = await import("@/lib/prospecting/sdr/agent.server");
+    const { decideTurn } = await import("@/lib/prospecting/sdr/turn");
+    const { emptyEffects } = await import("@/lib/prospecting/sdr/tools/dispatcher");
+    const { parseState } = await import("@/lib/prospecting/sdr/conversation-state");
     const { loadKnowledge, loadQuestions } = await import("@/lib/prospecting/sdr/worker.server");
     await assertSdr(context.supabase, context.userId, data.workspaceId, "update");
-    const persona = PersonaSchema.parse(data.persona ?? {});
     const { data: pb } = await context.supabase
       .from("sdr_playbooks")
       .select("*")
@@ -160,20 +165,25 @@ export const testSdrAgent = createServerFn({ method: "POST" })
       body: m.text,
       created_at: new Date().toISOString(),
     }));
-    // Ferramentas do RASCUNHO executadas no sandbox (memória + agenda falsa).
     const { parseToolConfig } = await import("@/lib/prospecting/sdr/tools/catalog");
     const { createSandbox } = await import("@/lib/prospecting/sdr/tools/sandbox");
     const { makeExecutor, toolSpecs } = await import("@/lib/prospecting/sdr/tools/runtime");
     const { readinessFacts } = await import("@/lib/prospecting/sdr/tools/admin.server");
     const { data: vers } = await context.supabase
       .from("sdr_agent_versions")
-      .select("status, tool_config")
+      .select("id, status, persona, tool_config")
       .eq("workspace_id", data.workspaceId)
       .eq("playbook_id", data.playbookId)
       .in("status", ["draft", "published"]);
-    const toolCfg =
-      parseToolConfig(vers?.find((v) => v.status === "draft")?.tool_config) ??
-      parseToolConfig(vers?.find((v) => v.status === "published")?.tool_config);
+    const published = vers?.find((v) => v.status === "published") ?? null;
+    const draft = vers?.find((v) => v.status === "draft") ?? null;
+    const usePublished = data.persona_source === "published";
+    const persona = usePublished
+      ? parsePersona(published?.persona)
+      : PersonaSchema.parse(data.persona ?? {});
+    const toolCfg = usePublished
+      ? parseToolConfig(published?.tool_config)
+      : (parseToolConfig(draft?.tool_config) ?? parseToolConfig(published?.tool_config));
     const sandbox = toolCfg
       ? createSandbox({
           workspaceId: data.workspaceId,
@@ -192,47 +202,103 @@ export const testSdrAgent = createServerFn({ method: "POST" })
       : null;
     const { TOOL_DEFS } = await import("@/lib/prospecting/sdr/tools/catalog");
     const specs = sandbox ? toolSpecs(TOOL_DEFS.filter((d) => sandbox.exposed.has(d.id))) : [];
-    const system = buildSystemPrompt({
-      offers,
-      materials,
-      questions,
-      config,
-      bookingAvailable: false,
-      directBooking:
-        !!sandbox?.exposed.has("calendar.availability") && !!sandbox?.exposed.has("calendar.book"),
-      toolsAvailable: specs.length > 0,
-      extraInstructions: pb.qualification_prompt,
-      persona,
-      origin: data.origin,
-    });
-    const t0 = Date.now();
-    const ai = await callSdrAgent({
-      workspaceId: data.workspaceId,
-      system,
-      history,
-      feature: "sdr_agente_teste",
-      ...(sandbox && specs.length ? { tools: specs, executeTool: makeExecutor(sandbox.ctx) } : {}),
-    });
-    const ms = Date.now() - t0;
-    if (!ai.ok) return { ok: false as const, error: ai.error, status: ai.status, ms };
-    const out = validateAgentOutput(ai.output, { offers, materials });
-    if ("error" in out) return { ok: false as const, error: out.error, status: 200, ms };
+    const directBooking =
+      !!sandbox?.exposed.has("calendar.availability") && !!sandbox?.exposed.has("calendar.book");
+    const { data: ws } = await context.supabase
+      .from("workspaces")
+      .select("name")
+      .eq("id", data.workspaceId)
+      .maybeSingle();
+    const prevState = parseState(
+      (data.sandbox_state as { conversation_state?: unknown } | null)?.conversation_state,
+    );
     const { buildOutgoingText } = await import("@/lib/prospecting/sdr/outgoing");
-    const raw = out.reply;
-    const reply = buildOutgoingText({
-      reply: stripStockOpener(raw),
-      materials: [],
-      meeting: sandbox?.ctx.effects.meeting ?? null,
+    const effects = sandbox?.ctx.effects ?? emptyEffects();
+    const t0 = Date.now();
+    const decision = await decideTurn(
+      {
+        workspaceId: data.workspaceId,
+        jobId: null,
+        jobKind: "reply",
+        mode: "sandbox",
+        agentVersionId: usePublished ? (published?.id ?? null) : (draft?.id ?? null),
+        persona,
+        config,
+        offers,
+        materials,
+        questions,
+        history,
+        state: prevState,
+        context: {
+          companyName: (ws?.name as string | undefined) ?? null,
+          agentName: (pb.name as string | null) ?? null,
+          origin:
+            data.origin === "inbound"
+              ? { kind: "inbound" }
+              : { kind: "campaign", campaignName: null, templateName: null, templateBody: null },
+          provenance: null,
+          crm: null,
+          scheduling:
+            directBooking && toolCfg?.scheduling
+              ? {
+                  timezone: toolCfg.scheduling.timezone,
+                  durationMinutes: toolCfg.scheduling.duration_minutes,
+                }
+              : null,
+        },
+        extraInstructions: (pb.qualification_prompt as string | null) ?? null,
+        optOutPhrases: ((pb as Record<string, unknown>).opt_out_phrases as string[] | null) ?? [],
+        tools: {
+          specs,
+          executor: sandbox && specs.length ? makeExecutor(sandbox.ctx) : null,
+          effects,
+          directBooking,
+        },
+        choicePosition: null,
+        now: new Date(),
+      },
+      {
+        callAgent: (a) => callSdrAgent({ ...a, feature: "sdr_agente_teste" }),
+        // Simulação: nenhum link real; materiais aparecem só como títulos no trace.
+        compose: async (p) => ({
+          text: buildOutgoingText({ reply: p.reply, materials: [], meeting: p.meeting }),
+          materials: materials
+            .filter(
+              (m) =>
+                p.attachMaterials && p.intent === "send_material" && p.materialIds.includes(m.id),
+            )
+            .map((m) => ({ id: m.id, title: m.title })),
+        }),
+      },
+    );
+    const ms = Date.now() - t0;
+    if (decision.kind !== "decided")
+      return {
+        ok: false as const,
+        error: decision.error,
+        status: decision.kind === "ai_error" ? decision.status : 200,
+        ms,
+      };
+    const out = decision.out;
+    const nextState = { ...prevState, ...decision.state.patch } as Record<string, unknown>;
+    const { configConflicts } = await import("@/lib/prospecting/sdr/config-conflicts");
+    const conflicts = configConflicts({
+      persona,
+      config,
+      tools: toolCfg,
+      extraInstructions: (pb.qualification_prompt as string | null) ?? null,
+      directBookingReady: directBooking,
     });
-    const lastInbound = [...data.messages].reverse().find((m) => m.role === "user")?.text ?? null;
     return {
       ok: true as const,
       ms,
-      reply,
+      reply: decision.text,
       trace: {
         sandbox: true,
         side_effects: "nenhum (sem WhatsApp, CRM, agenda ou notificações)",
-        tool_calls: (sandbox?.ctx.effects.trace ?? []).map((t) => ({
+        persona_source: usePublished ? "versão publicada" : "editor (rascunho)",
+        agent_version_id: decision.trace.agent_version_id,
+        tool_calls: effects.trace.map((t) => ({
           tool: t.tool,
           status: t.status,
           simulated: true,
@@ -241,12 +307,25 @@ export const testSdrAgent = createServerFn({ method: "POST" })
         intent: out.intent,
         offer_keys: out.offer_keys,
         material_ids: out.material_ids,
-        handoff_reason: (out as { handoff_reason?: string }).handoff_reason ?? null,
+        materials_would_attach: decision.materials.map((m) => m.title),
+        handoff_reason: out.handoff_reason || null,
         warnings: out.warnings ?? [],
-        opener_removed: raw !== reply,
-        tone_issues: toneIssues(reply, lastInbound, persona),
+        opener_removed: false,
+        changed_by_system: decision.trace.changed_by_system,
+        change_reasons: decision.trace.change_reasons,
+        tone_issues: decision.trace.tone_issues,
+        stages: decision.trace.stages,
+        facts: decision.trace.facts,
+        situation: decision.trace.situation,
+        state_patch: decision.state.patch,
+        opt_out: decision.optOut,
+        close: decision.close,
+        suppressed: decision.state.suppress,
+        no_follow_up: decision.noFollowUp,
+        config_conflicts: conflicts,
+        prompt_sections: decision.sections.map((x) => ({ id: x.id, title: x.title, text: x.text })),
       },
-      sandbox_state: (sandbox?.snapshot() ?? null) as never,
+      sandbox_state: (sandbox?.snapshot(nextState) ?? { conversation_state: nextState }) as never,
     };
   });
 

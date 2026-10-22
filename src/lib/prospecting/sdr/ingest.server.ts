@@ -163,7 +163,39 @@ export type IngestResult =
   | "queued"
   | "duplicate";
 
-const REOPEN_ON_QUESTION = ["out_of_icp", "left_company", "not_this_person"];
+/**
+ * Motivos de encerramento decididos pela própria conversa da Lia (não são
+ * descadastro, humano nem reunião). Nova mensagem do cliente reabre só para a
+ * IA interpretar o conteúdo; retomadas automáticas continuam suspensas.
+ */
+const REOPEN_ON_INBOUND = [
+  "out_of_icp",
+  "left_company",
+  "not_this_person",
+  "post_close",
+  "no_demand",
+  "declined",
+  "not_target",
+  "private_number",
+  "referral_received",
+  "referral_declined",
+  "other",
+];
+
+function closedStateFor(enr: {
+  cancel_reason?: string | null;
+  conversation_state?: unknown;
+}): Record<string, unknown> {
+  const cur =
+    enr.conversation_state && typeof enr.conversation_state === "object"
+      ? (enr.conversation_state as Record<string, unknown>)
+      : {};
+  if (cur.closed) return cur;
+  return {
+    ...cur,
+    closed: { at: new Date().toISOString(), job_id: null, reason: enr.cancel_reason ?? "other" },
+  };
+}
 
 /**
  * Resposta recebida numa conversa do SDR. Idempotente: a chave inclui
@@ -191,7 +223,7 @@ export async function ingestInboundForSdr(
   const { data: enr, error: eErr } = await admin
     .from("sdr_enrollments")
     .select(
-      "id, workspace_id, status, conversation_id, playbook_id, lead_id, contact_id, follow_up_at, cancel_reason",
+      "id, workspace_id, status, conversation_id, playbook_id, lead_id, contact_id, follow_up_at, cancel_reason, conversation_state, conversation_state_version",
     )
     .eq("id", conv.sdr_enrollment_id)
     .maybeSingle();
@@ -205,24 +237,44 @@ export async function ingestInboundForSdr(
     .eq("workspace_id", p.workspaceId)
     .maybeSingle();
 
-  // Encerrada pela Lia (fora do ICP / terceiro) e o cliente perguntou algo:
-  // reabre só para uma resposta curta de despedida (o worker volta a encerrar
-  // como "post_close", que não reabre de novo).
+  // Encerrada pela conversa da Lia e o cliente voltou a escrever: reabre para
+  // a IA interpretar a mensagem pelo conteúdo (pode responder ou registrar que
+  // não há o que responder; o worker volta a encerrar nesse caso). Descadastro
+  // e conversa assumida por humano nunca reabrem.
   if (
     enr.status === "paused" &&
-    REOPEN_ON_QUESTION.includes(String(enr.cancel_reason ?? "")) &&
+    REOPEN_ON_INBOUND.includes(String(enr.cancel_reason ?? "")) &&
     conv.ai_owner === "paused" &&
     settings?.enabled &&
-    /\?/.test(p.body)
+    !detectOptOut(p.body, [])
   ) {
-    await admin
+    const { data: reopened } = await admin
       .from("sdr_enrollments")
-      .update({ status: "active", cancel_reason: null })
+      .update({
+        status: "active",
+        cancel_reason: null,
+        follow_up_at: null,
+        // O encerramento continua registrado no estado explícito (com CAS).
+        conversation_state: closedStateFor(enr),
+        conversation_state_version: (enr.conversation_state_version ?? 0) + 1,
+      })
       .eq("id", enr.id)
-      .eq("status", "paused");
-    await admin.rpc("sdr_set_conversation_owner", { p_conversation: conv.id, p_owner: "ai" });
-    conv.ai_owner = "ai";
-    enr.status = "active";
+      .eq("status", "paused")
+      .eq("conversation_state_version", enr.conversation_state_version ?? 0)
+      .select("id");
+    if (reopened?.length) {
+      await admin.rpc("sdr_set_conversation_owner", { p_conversation: conv.id, p_owner: "ai" });
+      // A troca de dono incrementa a versão: o turno precisa nascer na versão nova.
+      const { data: fresh } = await admin
+        .from("whatsapp_conversations")
+        .select("ai_owner, ai_version")
+        .eq("id", conv.id)
+        .eq("workspace_id", p.workspaceId)
+        .maybeSingle();
+      conv.ai_owner = fresh?.ai_owner ?? "ai";
+      conv.ai_version = fresh?.ai_version ?? conv.ai_version;
+      enr.status = "active";
+    }
   }
   if (enr.status !== "active") return "inactive";
 

@@ -47,6 +47,10 @@ class Query {
     this.filters.push((r) => r[c] != null && r[c] <= v);
     return this;
   }
+  gt(c: string, v: any) {
+    this.filters.push((r) => r[c] != null && r[c] > v);
+    return this;
+  }
   gte(c: string, v: any) {
     this.filters.push((r) => r[c] != null && r[c] >= v);
     return this;
@@ -340,6 +344,14 @@ export class FakeDb {
   private commit(a: any): string {
     const j = this.find("sdr_turn_jobs", a.p_job)!;
     const e = this.find("sdr_enrollments", j.enrollment_id)!;
+    // Espelha 0184: estado da conversa com compare-and-set antes de qualquer escrita.
+    const st = a.p_enrollment?.conversation_state;
+    if (
+      st &&
+      "expected_state_version" in a.p_enrollment &&
+      a.p_enrollment.expected_state_version !== (e.conversation_state_version ?? 0)
+    )
+      return "state_changed";
     const q = a.p_qualification;
     if (q) {
       let row = q.id ? this.find("prospecting_qualifications", q.id) : null;
@@ -393,7 +405,14 @@ export class FakeDb {
         ...ev,
       });
     }
-    if (a.p_enrollment) Object.assign(e, a.p_enrollment);
+    if (a.p_enrollment) {
+      const { conversation_state, expected_state_version: _v, ...rest } = a.p_enrollment;
+      Object.assign(e, rest);
+      if (conversation_state) {
+        e.conversation_state = { ...(e.conversation_state ?? {}), ...conversation_state };
+        e.conversation_state_version = (e.conversation_state_version ?? 0) + 1;
+      }
+    }
     if (a.p_job_patch) {
       Object.assign(j, a.p_job_patch);
       if ((a.p_job_patch.status ?? "running") !== "running") j.lease_token = null;

@@ -9,6 +9,8 @@ import { FakeCalendar, MemoryStore } from "./memory";
 import { newEventId } from "./runtime";
 
 export type SandboxState = {
+  /** Estado explícito da conversa simulada (mesmo formato da produção). */
+  conversation_state?: Record<string, unknown>;
   offers?: MemoryStore["offers"];
   meetings?: MemoryStore["meetings"];
   events?: [string, { start: number; end: number; cancelled: boolean; meetLink: string | null }][];
@@ -72,7 +74,8 @@ export function createSandbox(p: {
     newEventId,
     effects: emptyEffects(),
   };
-  const snapshot = (): SandboxState => ({
+  const snapshot = (conversationState?: Record<string, unknown>): SandboxState => ({
+    conversation_state: conversationState ?? p.state?.conversation_state ?? {},
     offers: store.offers,
     meetings: store.meetings,
     events: [...calendar.events.entries()],

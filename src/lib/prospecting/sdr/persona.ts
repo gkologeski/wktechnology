@@ -44,56 +44,38 @@ export function parsePersona(raw: unknown): Persona {
   return out as Persona;
 }
 
-const TONE_TEXT: Record<Persona["tone"], string> = {
-  acolhedor: "acolhedor e simpático, faz a pessoa se sentir bem atendida",
-  objetivo: "direto e prático, sem rodeios",
-  consultivo: "consultivo: entende o contexto e sugere o próximo passo útil",
+const TONE_LABEL: Record<Persona["tone"], string> = {
+  acolhedor: "acolhedor",
+  objetivo: "objetivo",
+  consultivo: "consultivo",
 };
 
-/** Fórmulas de abertura que soam burocráticas quando repetidas a cada turno. */
-export const STOCK_OPENERS = [
-  "entendi que",
-  "entendi",
-  "entendo que",
-  "entendo",
-  "perfeito",
-  "ótimo",
-  "otimo",
-  "certo",
-  "compreendo",
-  "legal",
-  "excelente",
-  "maravilha",
-  "obrigado pelas informações",
-  "obrigado pela informação",
-];
+/** Escala 1–5 configurada → rótulo legível (sem política embutida). */
+function scale(n: number, low: string, high: string): string {
+  return `${n}/5 (1 = ${low}, 5 = ${high})`;
+}
 
+/**
+ * Configuração publicada da persona, renderizada de forma genérica: cada campo
+ * salvo entra como está, rotulado, sem regras de estilo escondidas no código.
+ */
 export function personaPromptSection(p: Persona): string {
-  const lvl = (n: number, a: string, b: string) => (n <= 2 ? a : n >= 4 ? b : "equilibrado");
+  const block = (title: string, body: string) => (body ? `${title}:\n${body}` : "");
   return [
-    "ESTILO DE CONVERSA (persona configurada):",
-    p.assistant_name
-      ? `- Seu nome é ${p.assistant_name}. Use só se perguntarem ou na primeira mensagem.`
-      : "",
-    p.description ? `- Quem você é: ${p.description}` : "",
-    `- Tom: ${TONE_TEXT[p.tone]}. Formalidade: ${lvl(p.formality, "informal, de conversa", "formal")}. Calor: ${lvl(p.warmth, "neutro", "caloroso")}. Tamanho: ${lvl(p.concision, "pode detalhar", "curto, 1 a 3 frases")}.`,
-    "- Português do Brasil natural, leve e simpático, como uma pessoa experiente conversando no WhatsApp. Nada de gíria forçada nem linguagem infantil.",
-    "- NÃO abra a mensagem com fórmulas como 'Entendi', 'Entendi que', 'Perfeito', 'Ótimo', 'Certo', 'Legal' ou 'Obrigado pelas informações', e não repita ou parafraseie o que a pessoa acabou de dizer.",
-    "- Também não troque esse vício por outro fixo (como começar sempre com 'Se...' ou 'Então'). Varie naturalmente.",
-    "- Parta do que já se sabe na conversa e avance com algo útil. Nunca pergunte um dado que já foi informado no histórico.",
-    "- No máximo uma pergunta por mensagem, só quando necessária.",
-    "- Emoção adequada ao momento: não comemore problema, recusa ou reclamação; com irritação, reconheça com calma e resolva.",
-    p.emojis === "discreet"
-      ? "- Emoji: no máximo um, discreto, e só quando combinar."
-      : "- Não use emojis.",
-    p.goal ? `- Objetivo do atendimento: ${p.goal}` : "",
-    p.collect ? `- Informações a coletar: ${p.collect}` : "",
-    p.handoff_when ? `- Quando chamar uma pessoa: ${p.handoff_when}` : "",
-    p.avoid_phrases.length ? `- Evite estas expressões: ${p.avoid_phrases.join("; ")}.` : "",
+    "CONFIGURAÇÃO PUBLICADA DA PERSONA:",
+    p.assistant_name ? `Nome: ${p.assistant_name}` : "",
+    `Intenção configurada: ${p.intent === "service" ? "atendimento" : "prospecção"}`,
+    `Tom: ${TONE_LABEL[p.tone]}. Formalidade ${scale(p.formality, "informal", "formal")}. Calor ${scale(p.warmth, "neutro", "caloroso")}. Concisão ${scale(p.concision, "detalhado", "curto")}.`,
+    `Emojis: ${p.emojis === "discreet" ? "discretos permitidos" : "não usar"}.`,
+    block("Descrição", p.description),
+    block("Objetivo", p.goal),
+    block("Informações a coletar", p.collect),
+    block("Quando transferir para uma pessoa", p.handoff_when),
+    block("Instruções", p.instructions),
     p.good_examples.length
-      ? `- Exemplos do jeito certo (inspiração de tom, não copie): ${p.good_examples.map((e) => `"${e}"`).join(" | ")}`
+      ? `Exemplos de referência (orientam o tom; não são respostas prontas):\n${p.good_examples.map((e) => `- ${e}`).join("\n")}`
       : "",
-    p.instructions ? `- Instruções adicionais: ${p.instructions}` : "",
+    p.avoid_phrases.length ? `Expressões a evitar: ${p.avoid_phrases.join("; ")}` : "",
   ]
     .filter(Boolean)
     .join("\n");
@@ -108,17 +90,20 @@ const norm = (s: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
-export type ToneIssue = "stock_opener" | "echo" | "too_many_questions" | "avoided_phrase";
+export type ToneIssue = "echo" | "too_many_questions" | "avoided_phrase";
 
 /**
- * Sinais objetivos de resposta seca/burocrática. Não substitui a avaliação de
- * tom: serve para corrigir aberturas e registrar no trace.
+ * Telemetria de tom (não reescreve nada): expressões a evitar CONFIGURADAS,
+ * limite de perguntas CONFIGURADO e eco da última fala do cliente.
  */
-export function toneIssues(reply: string, lastInbound: string | null, p: Persona): ToneIssue[] {
+export function toneIssues(
+  reply: string,
+  lastInbound: string | null,
+  p: Persona,
+  maxQuestions = 1,
+): ToneIssue[] {
   const issues: ToneIssue[] = [];
   const r = norm(reply);
-  if (STOCK_OPENERS.some((o) => r === norm(o) || r.startsWith(`${norm(o)} `)))
-    issues.push("stock_opener");
   if (lastInbound) {
     const inb = new Set(
       norm(lastInbound)
@@ -133,30 +118,13 @@ export function toneIssues(reply: string, lastInbound: string | null, p: Persona
       if (overlap >= 0.6) issues.push("echo");
     }
   }
-  if ((reply.match(/\?/g) ?? []).length > 1) issues.push("too_many_questions");
-  if (p.avoid_phrases.some((a) => a && r.includes(norm(a)))) issues.push("avoided_phrase");
+  if ((reply.match(/\?/g) ?? []).length > maxQuestions) issues.push("too_many_questions");
+  if (
+    p.avoid_phrases.some((a) => {
+      const n = a ? norm(a) : "";
+      return !!n && (r === n || r.startsWith(`${n} `) || r.includes(` ${n} `));
+    })
+  )
+    issues.push("avoided_phrase");
   return issues;
-}
-
-/**
- * Remove a fórmula de abertura quando o restante já é uma mensagem completa
- * ("Entendi que X. Pergunta?" → "Pergunta?"). Sem restante útil, mantém o texto.
- */
-export function stripStockOpener(reply: string): string {
-  const t = reply.trim();
-  const m = t.match(/^([^.!?\n]{0,160}[.!?])\s+(.+)$/s);
-  const first = norm(t.split(/[,.!?\n]/)[0] ?? "");
-  const isStock = STOCK_OPENERS.some((o) => first === norm(o) || first.startsWith(`${norm(o)} `));
-  if (!isStock) return t;
-  // "Perfeito! Resto" / "Entendi, resto"
-  const short = t.match(/^[^,.!?\n]{1,30}[,!.]\s+(.+)$/s);
-  if (short && STOCK_OPENERS.some((o) => norm(t.split(/[,.!?]/)[0]) === norm(o))) {
-    const rest = short[1].trim();
-    if (rest.length >= 15) return rest.charAt(0).toUpperCase() + rest.slice(1);
-  }
-  if (m && m[2].trim().length >= 15) {
-    const rest = m[2].trim();
-    return rest.charAt(0).toUpperCase() + rest.slice(1);
-  }
-  return t;
 }

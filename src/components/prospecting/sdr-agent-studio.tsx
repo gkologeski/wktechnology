@@ -423,6 +423,7 @@ function TestChat({
   // Estado simulado das ferramentas (horários oferecidos, reunião fictícia) entre turnos.
   const sandboxRef = useRef<unknown>(null);
   const [origin, setOrigin] = useState<"inbound" | "prospecting">("inbound");
+  const [personaSource, setPersonaSource] = useState<"editor" | "published">("editor");
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -441,6 +442,7 @@ function TestChat({
           workspaceId,
           playbookId,
           persona,
+          persona_source: personaSource,
           origin,
           messages: next.map(({ role, text }) => ({ role, text })),
           sandbox_state: sandboxRef.current,
@@ -450,7 +452,17 @@ function TestChat({
       if (r.ok)
         setMsgs((m) => [
           ...m,
-          { role: "assistant", text: r.reply || "(sem texto)", trace: { ...r.trace, ms: r.ms } },
+          {
+            role: "assistant",
+            text:
+              r.reply ||
+              (r.trace.suppressed
+                ? "(sem resposta: a mensagem não pede retorno)"
+                : r.trace.opt_out
+                  ? "(sem resposta: descadastro registrado na simulação)"
+                  : "(sem texto)"),
+            trace: { ...r.trace, ms: r.ms },
+          },
         ]);
       else toast.error(`Falha no teste: ${r.error}`);
     } catch (e) {
@@ -472,7 +484,7 @@ function TestChat({
             <div>
               <h3 className="text-sm font-semibold text-text-primary">Conversa de teste</h3>
               <p className="mt-0.5 text-xs text-text-secondary">
-                Usa o rascunho aberto nesta tela.
+                Mesmo fluxo da produção, sem envio, agenda real ou gravação.
               </p>
             </div>
           </div>
@@ -490,19 +502,42 @@ function TestChat({
             <Trash2 className="size-4" />
           </Button>
         </div>
-        <div className="mt-3 grid gap-1.5">
-          <Label htmlFor="pa-origin" className="text-xs">
-            Origem simulada
-          </Label>
-          <Select value={origin} onValueChange={(value) => setOrigin(value as typeof origin)}>
-            <SelectTrigger id="pa-origin">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="inbound">Receptivo</SelectItem>
-              <SelectItem value="prospecting">Prospecção</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-1.5">
+            <Label htmlFor="pa-origin" className="text-xs">
+              Origem simulada
+            </Label>
+            <Select value={origin} onValueChange={(value) => setOrigin(value as typeof origin)}>
+              <SelectTrigger id="pa-origin">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="inbound">Receptivo</SelectItem>
+                <SelectItem value="prospecting">Prospecção</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="pa-persona-source" className="text-xs">
+              Persona usada no teste
+            </Label>
+            <Select
+              value={personaSource}
+              onValueChange={(value) => {
+                setPersonaSource(value as typeof personaSource);
+                setMsgs([]);
+                sandboxRef.current = null;
+              }}
+            >
+              <SelectTrigger id="pa-persona-source">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="editor">Rascunho aberto nesta tela</SelectItem>
+                <SelectItem value="published">Versão publicada</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
       <div

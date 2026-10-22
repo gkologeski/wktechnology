@@ -168,6 +168,16 @@ export async function executeTool(
 
 type Handler = (ctx: ToolCtx, a: Record<string, unknown>) => Promise<Result>;
 
+/** E-mail do convite só vale se o próprio cliente o escreveu na conversa. */
+function clientWrittenEmail(ctx: ToolCtx, raw: unknown): string | null {
+  const email = typeof raw === "string" ? raw.trim().toLowerCase() : "";
+  if (!email || !email.includes("@")) return null;
+  const written = ctx.history.some(
+    (m) => m.direction === "inbound" && m.body.toLowerCase().includes(email),
+  );
+  return written ? email : null;
+}
+
 function needCalendar(ctx: ToolCtx): { s: ScheduleConfig; cal: CalendarProvider } | Result {
   if (!ctx.scheduling || !ctx.calendar)
     return { __status: "error", error: "Agenda do anfitrião não configurada." };
@@ -207,8 +217,7 @@ const availability: Handler = async (ctx, a) => {
     return {
       __status: "error",
       status: "calendar_unavailable",
-      instruction:
-        "Não foi possível consultar a agenda. Não ofereça horários; diga que vai confirmar.",
+      instruction: "Agenda indisponível: nenhum horário foi verificado.",
     };
   const sch = schedule(s);
   const current = await ctx.store.getOffers(ctx.conversation.id);
@@ -221,14 +230,14 @@ const availability: Handler = async (ctx, a) => {
   if ((a.rejected_previous || shownBefore) && current)
     for (const sl of current.slots) if (sl.status === "offered") rejected.add(sl.start);
   const previous = a.rejected_previous || shownBefore ? "rejected" : "superseded";
-  if (a.rejected_previous && !a.date && !a.part_of_day) {
-    // Recusa sem preferência: registra e pergunta dia e turno, sem novos horários.
+  if (a.rejected_previous && !a.date && !a.part_of_day && s.after_rejection === "ask_preference") {
+    // Estratégia configurada no agente: registra a recusa e devolve sem opções.
     await ctx.store.saveOffers(ctx.conversation.id, [], "rejected");
     return {
-      status: "ask_preference",
+      status: "rejection_recorded",
       options: [],
-      instruction:
-        "Registrei a recusa. Não ofereça novos horários agora: pergunte qual dia e qual turno (manhã ou tarde) o cliente prefere. Depois consulte com date e/ou part_of_day.",
+      rejected_count: rejected.size,
+      strategy: "ask_preference",
     };
   }
   const part = (a.part_of_day as string | null) ?? null;
@@ -277,14 +286,17 @@ const availability: Handler = async (ctx, a) => {
     slots = pickDiverse(all, s.timezone, 3, [...rejected]);
   }
   if (!slots.length) {
-    if (a.rejected_previous) await ctx.store.saveOffers(ctx.conversation.id, [], "rejected");
+    if (a.rejected_previous || shownBefore)
+      await ctx.store.saveOffers(ctx.conversation.id, [], "rejected");
     return {
-      status: status === "options" ? "no_availability" : status,
+      status:
+        status === "options" ? (rejected.size ? "no_alternatives" : "no_availability") : status,
       options: [],
-      instruction:
-        "Sem horários livres no período configurado. Não invente horários; ofereça falar com uma pessoa.",
+      rejected_count: rejected.size,
+      note: "Nenhum horário livre real para este filtro no período configurado.",
     };
   }
+  slots = [...slots].sort((x, y) => x.start - y.start);
   ctx.effects.offerSetsThisTurn.push(
     await ctx.store.saveOffers(ctx.conversation.id, slots, previous),
   );
@@ -293,16 +305,16 @@ const availability: Handler = async (ctx, a) => {
     timezone: s.timezone,
     duration_minutes: s.duration_minutes,
     options: present(slots, s.timezone),
+    rejected_count: rejected.size,
     ...(status === "requested_part_unavailable_next"
       ? {
-          note: "Não há horário livre nesse turno no dia pedido; estes são os mais próximos depois, no mesmo turno. Informe isso.",
+          note: "Sem horário livre nesse turno no dia pedido; estes são os mais próximos depois, no mesmo turno.",
         }
       : {}),
-    ...(slots.length < 3 && status === "options"
-      ? { note: `Só há ${slots.length} horário(s) livre(s) no período; informe essa restrição.` }
+    ...(slots.length < 3 &&
+    (status === "options" || status === "day_listing" || status.startsWith("requested_"))
+      ? { note: `Só há ${slots.length} horário(s) livre(s) para este filtro.` }
       : {}),
-    instruction:
-      "Ofereça exatamente estas opções numeradas, na ordem. Nada de link de agendamento.",
   };
 };
 
@@ -367,7 +379,7 @@ async function confirmMeeting(
     timezone: s.timezone,
     video_link: meetLink,
     instruction:
-      "Confirme a reunião ao cliente. O link da videoconferência é anexado pelo sistema.",
+      "Reunião confirmada pelo provedor de agenda; o link da videoconferência é anexado pelo sistema.",
   };
 }
 
@@ -392,7 +404,7 @@ async function settle(
     end: Date.parse(m.end_at),
     timezone: s.timezone,
     summary: await titleFor(ctx, s),
-    description: "Reunião marcada pela assistente virtual da WK Technology.",
+    description: "Reunião marcada pelo agente virtual na conversa do WhatsApp.",
     attendeeEmail: attendee,
     video: s.video === "google_meet",
   });
@@ -406,8 +418,7 @@ async function settle(
   return {
     __status: "error",
     status: "failed",
-    instruction:
-      "A agenda recusou a marcação. Não confirme; peça desculpas e ofereça outro horário ou uma pessoa.",
+    instruction: "A agenda recusou a marcação; nenhuma reunião foi criada.",
   };
 }
 
@@ -421,8 +432,7 @@ function pending(ctx: ToolCtx, s: ScheduleConfig, m: MeetingRow) {
   return {
     __status: "pending",
     status: "pending_confirmation",
-    instruction:
-      "A marcação está sendo confirmada pela agenda. NÃO diga que está confirmada; avise que retorna em instantes.",
+    instruction: "Reserva aguardando confirmação do provedor; a reunião ainda não está confirmada.",
   };
 }
 
@@ -444,6 +454,14 @@ const book: Handler = async (ctx, a) => {
   const chosen = await resolveOption(ctx, Number(a.option));
   // Reentrada (nova tentativa após tempo esgotado): conclui a reserva existente.
   const inflight = active.find((m) => m.status !== "confirmed");
+  const email = clientWrittenEmail(ctx, a.attendee_email);
+  if (!inflight && !email)
+    return {
+      __status: "error",
+      status: "email_required",
+      instruction:
+        "Reserva não feita: falta o e-mail do convite escrito pelo cliente nesta conversa.",
+    };
   if (inflight) return settle(ctx, s, cal, inflight, (a.attendee_email as string | null) ?? null);
   if (active.some((m) => m.status === "confirmed"))
     return {
@@ -465,7 +483,7 @@ const book: Handler = async (ctx, a) => {
     return {
       __status: "error",
       status: "calendar_unavailable",
-      instruction: "Agenda indisponível agora; não confirme.",
+      instruction: "Agenda indisponível agora; nada foi reservado.",
     };
   if (overlapsBusy(sch, slot, busy)) {
     await ctx.store.markOffer(ctx.conversation.id, offerSet, slot.position, "superseded");
@@ -491,7 +509,7 @@ const book: Handler = async (ctx, a) => {
     buffer_after_minutes: s.buffer_after_minutes,
     timezone: s.timezone,
     provider_event_id: ctx.newEventId(),
-    attendee_email: (a.attendee_email as string | null) ?? "",
+    attendee_email: email ?? "",
     lead_id: ctx.conversation.leadId ?? "",
     contact_id: ctx.conversation.contactId ?? "",
     company_id: ctx.conversation.companyId ?? "",
@@ -509,7 +527,7 @@ const book: Handler = async (ctx, a) => {
   const m = await ctx.store.getMeeting(r.id!);
   if (!m) return { __status: "error", error: "Reserva não encontrada." };
   await ctx.store.markOffer(ctx.conversation.id, offerSet, slot.position, "chosen");
-  return settle(ctx, s, cal, m, (a.attendee_email as string | null) ?? null);
+  return settle(ctx, s, cal, m, email);
 };
 
 const reschedule: Handler = async (ctx, a) => {
@@ -661,7 +679,7 @@ const customerLookup: Handler = async (ctx, a) => {
   if (candidates.length > 1)
     return {
       status: "ambiguous",
-      instruction: "Há mais de um cadastro possível. Peça o e-mail corporativo; não cite nomes.",
+      instruction: "Há mais de um cadastro possível; não revele dados de nenhum deles.",
     };
   const c = candidates[0]!;
   const convPhones = brPhoneVariants(ctx.conversation.phone);
@@ -670,8 +688,7 @@ const customerLookup: Handler = async (ctx, a) => {
   if (!verified)
     return {
       status: "found_unverified",
-      instruction:
-        "Cadastro não pertence a este número. Não revele nem confirme dados; ofereça falar com uma pessoa.",
+      instruction: "Cadastro não pertence a este número; não revele nem confirme dados dele.",
     };
   return {
     status: "found",
@@ -731,7 +748,7 @@ const kbSearch: Handler = async (ctx, a) => {
   if (!results.length)
     return {
       status: "no_results",
-      instruction: "Sem fonte aprovada. Não invente; diga que um especialista confirma.",
+      instruction: "Nenhuma fonte aprovada encontrada para esta pergunta.",
     };
   return {
     status: "ok",
@@ -769,7 +786,7 @@ const materialsSend: Handler = async (ctx, a) => {
     return {
       __status: "error",
       status: "disabled",
-      instruction: "Envio de links desligado neste agente; ofereça que um especialista envie.",
+      instruction: "Envio de materiais desligado neste agente; nada foi anexado.",
     };
   const m = ctx.materials.find((x) => x.id === a.material_id);
   if (!m)
@@ -789,14 +806,17 @@ const materialsSend: Handler = async (ctx, a) => {
 const handoff: Handler = async (ctx, a) => {
   ctx.effects.handoff = String(a.reason);
   return {
-    status: "handoff_scheduled",
-    instruction: "Avise que uma pessoa do time vai continuar a conversa.",
+    status: "handoff_requested",
+    note: "A transferência é efetivada pelo sistema ao final do turno; até lá ninguém assumiu a conversa.",
   };
 };
 
 const optout: Handler = async (ctx) => {
   ctx.effects.optOut = true;
-  return { status: "opted_out", instruction: "Despeça-se em uma frase." };
+  return {
+    status: "opt_out_requested",
+    note: "O descadastro é aplicado pelo sistema ao final do turno, conforme a validação do pedido.",
+  };
 };
 
 const taskCreate: Handler = async (ctx, a) => {

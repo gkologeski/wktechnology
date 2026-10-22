@@ -114,6 +114,9 @@ function seed(db: FakeDb) {
     deal_id: null,
     offers: [],
     follow_up_count: 0,
+    // Padrões do banco (0184).
+    conversation_state: {},
+    conversation_state_version: 0,
   });
   db.t("leads").push({ id: "L1", workspace_id: W1, company_id: null });
   db.t("whatsapp_messages").push({
@@ -205,11 +208,18 @@ describe("entrada (ingest)", () => {
     expect(await ingestInboundForSdr(db, { ...p, body: "não tenho interesse" })).toBe("queued");
     expect(db.find("sdr_enrollments", "e1")?.status).toBe("active");
   });
-  it("recusa sem a Lia atendendo encerra sem enfileirar", async () => {
+  it("pedido explícito de parar sem a Lia atendendo descadastra sem enfileirar", async () => {
     db.t("sdr_workspace_settings")[0].enabled = false;
-    expect(await ingestInboundForSdr(db, { ...p, body: "não tenho interesse" })).toBe("opted_out");
+    expect(await ingestInboundForSdr(db, { ...p, body: "pare de me mandar mensagem" })).toBe(
+      "opted_out",
+    );
     expect(db.find("sdr_enrollments", "e1")?.status).toBe("opted_out");
     expect(db.t("sdr_turn_jobs")).toHaveLength(0);
+  });
+  it("recusa comercial sem a Lia atendendo não descadastra permanentemente", async () => {
+    db.t("sdr_workspace_settings")[0].enabled = false;
+    expect(await ingestInboundForSdr(db, { ...p, body: "não quero reunião" })).toBe("disabled");
+    expect(db.find("sdr_enrollments", "e1")?.status).toBe("active");
   });
 });
 
@@ -378,11 +388,38 @@ describe("qualificação canônica", () => {
 });
 
 describe("recusa, falhas e desligado", () => {
-  it("opt-out da IA confirma ao cliente, encerra e pausa a conversa", async () => {
+  it("pedido explícito de parar: confirmação vem da IA e o descadastro é permanente", async () => {
+    db.find("whatsapp_messages", "m1")!.body = "Por favor, pare de me mandar mensagens.";
     job(db);
     const j = await claimOne(db);
     const d = deps({
-      reply: "Tudo bem",
+      reply: "Combinado, não vou mais te escrever. Desculpe o incômodo!",
+      intent: "continue",
+      offer_keys: [],
+      material_ids: [],
+      answers: [],
+      handoff_reason: "",
+    });
+    await processJob(db, j, d);
+    const e = db.find("sdr_enrollments", "e1")!;
+    expect(e.status).toBe("opted_out");
+    expect(e.opted_out_at).toBeTruthy();
+    expect(db.find("whatsapp_conversations", "c1")?.ai_owner).toBe("paused");
+    // Texto é o da IA (persona), não uma frase fixa do código.
+    expect(db.find("sdr_turn_jobs", j.id)?.draft_text).toBe(
+      "Combinado, não vou mais te escrever. Desculpe o incômodo!",
+    );
+    expect(d.handoffToHuman).not.toHaveBeenCalled();
+  });
+
+  it("opt_out do modelo sem pedido explícito vira encerramento, não descadastro", async () => {
+    db.t("sdr_workspace_settings")[0].auto_send_enabled = true;
+    db.find("sdr_playbooks", "pb1")!.mode = "auto";
+    db.find("whatsapp_messages", "m1")!.body = "Não quero reunião agora.";
+    job(db);
+    const j = await claimOne(db);
+    const d = deps({
+      reply: "Sem problema, obrigada pela atenção!",
       intent: "opt_out",
       offer_keys: [],
       material_ids: [],
@@ -390,10 +427,12 @@ describe("recusa, falhas e desligado", () => {
       handoff_reason: "",
     });
     await processJob(db, j, d);
-    expect(db.find("sdr_enrollments", "e1")?.status).toBe("opted_out");
-    expect(db.find("sdr_enrollments", "e1")?.opted_out_at).toBeTruthy();
-    expect(db.find("whatsapp_conversations", "c1")?.ai_owner).toBe("paused");
-    expect(d.handoffToHuman).not.toHaveBeenCalled();
+    const e = db.find("sdr_enrollments", "e1")!;
+    expect(e.status).toBe("paused");
+    expect(e.cancel_reason).toBe("declined");
+    expect(e.opted_out_at).toBeFalsy();
+    expect(e.follow_up_at).toBeNull();
+    expect(e.conversation_state.closed.reason).toBe("declined");
   });
 
   it("erro transitório da IA volta à fila; erro definitivo falha e registra", async () => {
@@ -882,7 +921,8 @@ describe("ferramentas reais no turno (agenda falsa)", () => {
         },
       },
     });
-    // Turno anterior já apresentou a opção 1 ao cliente.
+    // Turno anterior já apresentou a opção 1 ao cliente; ele escreveu o e-mail.
+    db.find("whatsapp_messages", "m1")!.body += " Pode ser a opção 1, meu e-mail é ana@acme.com.br";
     const start = Date.now() + 86400000;
     await store.saveOffers("c1", [{ start, end: start + 1800000 }], "superseded");
     job(db);
@@ -896,7 +936,7 @@ describe("ferramentas reais no turno (agenda falsa)", () => {
         seenTools.push((a.tools ?? []).map((t) => t.name));
         const bk = (await a.executeTool!(
           "calendar__book",
-          { option: 1, attendee_email: null, confirmation_message_id: "m1" },
+          { option: 1, attendee_email: "ana@acme.com.br", confirmation_message_id: "m1" },
           "t2",
         )) as { status: string };
         expect(bk.status).toBe("confirmed");
@@ -982,5 +1022,188 @@ describe("tempo de aguardo do cliente (ingest)", () => {
     db.find("sdr_playbooks", "pb1")!.guardrails = { customer_wait_seconds: 0 };
     expect(await ingestInboundForSdr(db, msg(3))).toBe("queued");
     expect(db.t("sdr_turn_jobs")[0].lease_until).toBeNull();
+  });
+});
+
+describe("estado explícito da conversa (commit atômico)", () => {
+  const closedOut = (reason: string) => ({
+    reply: "Sem problemas, obrigada pela atenção!",
+    intent: "continue",
+    offer_keys: [],
+    material_ids: [],
+    answers: [],
+    handoff_reason: "",
+    situation: { conversation: "closed", close_reason: reason },
+  });
+  const auto = () => {
+    db.t("sdr_workspace_settings")[0].auto_send_enabled = true;
+    db.find("sdr_playbooks", "pb1")!.mode = "auto";
+  };
+
+  it("estado alterado durante a IA: compare-and-set descarta sem enviar", async () => {
+    auto();
+    job(db);
+    const j = await claimOne(db);
+    db.hooks.beforeCommit = () => {
+      db.find("sdr_enrollments", "e1")!.conversation_state_version = 7;
+    };
+    const d = deps(closedOut("no_demand"));
+    expect(await processJob(db, j, d)).toBe("discarded");
+    expect(db.find("sdr_turn_jobs", j.id)?.error).toBe("state_changed");
+    expect(d.sendMessage).not.toHaveBeenCalled();
+    expect(db.find("sdr_enrollments", "e1")!.status).toBe("active");
+  });
+
+  it("encerramento pela situação: envia o texto da IA, pausa e grava o motivo", async () => {
+    auto();
+    job(db);
+    const j = await claimOne(db);
+    const d = deps(closedOut("left_company"));
+    const send = d.sendMessage as unknown as ReturnType<typeof vi.fn>;
+    send.mockImplementation(async () => {
+      db.find("sdr_turn_jobs", j.id)!.status = "sent";
+      return { ok: true, wamid: "w1" };
+    });
+    expect(await processJob(db, j, d)).toBe("sent");
+    expect(send.mock.calls[0]![1].text).toBe("Sem problemas, obrigada pela atenção!");
+    const e = db.find("sdr_enrollments", "e1")!;
+    expect(e).toMatchObject({
+      status: "paused",
+      cancel_reason: "left_company",
+      follow_up_at: null,
+    });
+    expect(e.conversation_state.closed).toMatchObject({ reason: "left_company", job_id: j.id });
+    expect(db.find("whatsapp_conversations", "c1")!.ai_owner).toBe("paused");
+  });
+
+  it("nova mensagem após encerramento reabre para a IA interpretar; 'nada a responder' volta a pausar sem enviar", async () => {
+    const e = db.find("sdr_enrollments", "e1")!;
+    Object.assign(e, { status: "paused", cancel_reason: "left_company" });
+    db.find("whatsapp_conversations", "c1")!.ai_owner = "paused";
+    db.t("whatsapp_messages").push({
+      id: "m2",
+      conversation_id: "c1",
+      workspace_id: W1,
+      direction: "inbound",
+      wa_message_id: "wamid.in2",
+      body: "👍",
+      created_at: "2026-10-06T10:05:00Z",
+    });
+    const r = await ingestInboundForSdr(db, {
+      workspaceId: W1,
+      conversationId: "c1",
+      messageId: "m2",
+      waMessageId: "wamid.in2",
+      providerPhoneId: "pn1",
+      body: "👍",
+    });
+    expect(r).toBe("queued");
+    expect(db.find("sdr_enrollments", "e1")!.conversation_state.closed.reason).toBe("left_company");
+    // Padrões do banco para a linha criada pelo ingest; aguardo do cliente zerado.
+    Object.assign(db.t("sdr_turn_jobs")[0], { status: "queued", lease_until: null, attempts: 0 });
+    // O turno nasce na versão já reaberta da conversa (senão seria obsoleto).
+    expect(db.t("sdr_turn_jobs")[0].conversation_version).toBe(
+      db.find("whatsapp_conversations", "c1")!.ai_version,
+    );
+    const j = await claimOne(db);
+    const d = deps({
+      reply: "",
+      intent: "continue",
+      offer_keys: [],
+      material_ids: [],
+      answers: [],
+      handoff_reason: "",
+      situation: { suppress_reply: "closed_no_reply_needed" },
+    });
+    expect(await processJob(db, j, d)).toBe("skipped");
+    expect(d.sendMessage).not.toHaveBeenCalled();
+    expect(db.find("sdr_enrollments", "e1")).toMatchObject({
+      status: "paused",
+      cancel_reason: "left_company",
+    });
+    expect(db.find("whatsapp_conversations", "c1")!.ai_owner).toBe("paused");
+  });
+
+  it("pergunta legítima após encerramento: responde e não agenda retomada automática", async () => {
+    auto();
+    db.find("sdr_enrollments", "e1")!.conversation_state = {
+      closed: { at: "", job_id: null, reason: "left_company" },
+    };
+    job(db);
+    const j = await claimOne(db);
+    const d = deps({
+      reply: "Fazemos sim! Quer que eu explique como funciona?",
+      intent: "continue",
+      offer_keys: [],
+      material_ids: [],
+      answers: [],
+      handoff_reason: "",
+      situation: { conversation: "active" },
+    });
+    expect(await processJob(db, j, d)).toBe("sent");
+    const payload = db.find("sdr_turn_jobs", j.id)!.draft_payload;
+    expect(payload.no_follow_up).toBe(true);
+    expect(db.find("sdr_enrollments", "e1")!.conversation_state.closed).toBeNull();
+  });
+
+  it("indicação por cartão: grava o contato indicado e encerra; texto não promete contatá-lo", async () => {
+    auto();
+    db.find("whatsapp_messages", "m1")!.body =
+      "👤 Contato compartilhado\nRafael Montini (Zhaz): +55 11 91717-7728";
+    job(db);
+    const j = await claimOne(db);
+    const d = deps({
+      ...closedOut("referral_received"),
+      reply: "Muito obrigada pela indicação!",
+      situation: {
+        conversation: "closed",
+        close_reason: "referral_received",
+        shared_contact: "referral",
+      },
+    });
+    expect(await processJob(db, j, d)).toBe("sent");
+    const act = db.t("sdr_actions").find((a) => a.kind === "referral_saved");
+    expect(act?.payload.phone).toBe("+5511917177728");
+    expect(db.find("sdr_enrollments", "e1")!.cancel_reason).toBe("referral_received");
+  });
+
+  it("automação 'pergunta sobre IA' desligada por padrão: ninguém é transferido", async () => {
+    const asked = new Date(Date.now() - 2 * 3600_000).toISOString();
+    const answered = new Date(Date.now() - 3600_000).toISOString();
+    db.t("whatsapp_messages").push(
+      {
+        id: "q1",
+        conversation_id: "c1",
+        workspace_id: W1,
+        direction: "inbound",
+        body: "Você é uma IA?",
+        created_at: asked,
+      },
+      {
+        id: "a1",
+        conversation_id: "c1",
+        workspace_id: W1,
+        direction: "outbound",
+        body: "Sou uma assistente virtual.",
+        created_at: answered,
+      },
+    );
+    db.t("sdr_agent_versions").push({
+      id: "v9",
+      playbook_id: "pb1",
+      workspace_id: W1,
+      status: "published",
+      persona: {},
+      tool_config: { enabled_tools: [] },
+    });
+    const d = deps(null);
+    await tickSdr(db, 10, d);
+    expect(d.handoffToHuman).not.toHaveBeenCalled();
+    db.find("sdr_agent_versions", "v9")!.tool_config = {
+      enabled_tools: [],
+      automations: { ai_question_silence_handoff: { enabled: true, minutes: 30 } },
+    };
+    await tickSdr(db, 10, d);
+    expect(d.handoffToHuman).toHaveBeenCalledTimes(1);
   });
 });

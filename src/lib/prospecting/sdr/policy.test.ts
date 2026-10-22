@@ -9,6 +9,7 @@ import {
   sendGuard,
   turnIdemKey,
   validateAgentOutput,
+  PRICE_WARNING,
 } from "./policy";
 
 const offer = (
@@ -22,14 +23,14 @@ const offer = (
 });
 
 describe("catálogo", () => {
-  it("só ativas, aprovadas e nunca WK Sob Medida", () => {
+  it("só ativas e aprovadas; o catálogo do workspace é a única fonte (sem nomes fixos)", () => {
     const r = selectableOffers([
       offer("Outsourcing de TI"),
       offer("BPO Administrativo", { status: "inactive" }),
       offer("Rascunho", { approved_at: null }),
       offer("WK Sob Medida"),
     ]);
-    expect(r.map((o) => o.name)).toEqual(["Outsourcing de TI"]);
+    expect(r.map((o) => o.name)).toEqual(["Outsourcing de TI", "WK Sob Medida"]);
   });
   it("material N:N atende qualquer oferta vinculada", () => {
     const m = {
@@ -86,10 +87,31 @@ describe("takeover durante execução", () => {
 });
 
 describe("opt-out", () => {
-  it("detecta recusa explícita sem falso positivo", () => {
-    expect(detectOptOut("Não tenho interesse, obrigado")).toBe(true);
+  it("detecta pedido explícito de não receber contato", () => {
     expect(detectOptOut("PARE")).toBe(true);
+    expect(detectOptOut("Sair")).toBe(true);
+    expect(detectOptOut("pare de me mandar mensagem")).toBe(true);
+    expect(detectOptOut("não me mande mais mensagens")).toBe(true);
+    expect(detectOptOut("remova meu número da lista")).toBe(true);
+    expect(detectOptOut("Não quero mais receber mensagens de vocês")).toBe(true);
+    expect(detectOptOut("por favor não entre mais em contato")).toBe(true);
+    expect(detectOptOut("quero me descadastrar")).toBe(true);
+  });
+  it("recusa comercial não é descadastro permanente", () => {
     expect(detectOptOut("Pode parecer estranho, mas quero saber mais")).toBe(false);
+    expect(detectOptOut("Não quero reunião, pode mandar o orçamento por aqui")).toBe(false);
+    expect(detectOptOut("não quero")).toBe(false);
+    expect(detectOptOut("Não tenho interesse, obrigado")).toBe(false);
+    expect(detectOptOut("Não queremos receber proposta agora")).toBe(false);
+    expect(detectOptOut("vou sair para almoçar e te respondo")).toBe(false);
+    expect(detectOptOut("precisamos remover o sistema legado")).toBe(false);
+    expect(detectOptOut("pode cancelar a reunião de sexta?")).toBe(false);
+  });
+  it("frases configuradas: palavra única só como mensagem inteira", () => {
+    expect(detectOptOut("remover", ["remover"])).toBe(true);
+    expect(detectOptOut("Remover, por favor", ["remover"])).toBe(true);
+    expect(detectOptOut("vamos remover o gargalo", ["remover"])).toBe(false);
+    expect(detectOptOut("não quero ser incomodado", ["ser incomodado"])).toBe(true);
   });
   it("recusa encerra e não cria oportunidade nem follow-up", () => {
     expect(nextStage("discovery", "opt_out", true)).toBe("opted_out");
@@ -123,12 +145,26 @@ describe("saída da IA", () => {
     expect(r).not.toHaveProperty("score");
     expect(r.answers).toHaveLength(1);
   });
-  it("bloqueia oferta inexistente e sinaliza preço", () => {
-    expect(
-      validateAgentOutput({ reply: "Temos o WK Sob Medida", intent: "continue" }, ctx),
-    ).toHaveProperty("error");
+  it("sinaliza preço só quando o controle no_pricing está ligado", () => {
     const r = validateAgentOutput({ reply: "Custa R$ 5.000", intent: "continue" }, ctx);
-    expect("warnings" in r && r.warnings.length).toBeTruthy();
+    expect("warnings" in r && r.warnings).toContain(PRICE_WARNING);
+    const off = validateAgentOutput(
+      { reply: "Custa R$ 5.000", intent: "continue" },
+      { ...ctx, noPricing: false },
+    );
+    expect("warnings" in off && off.warnings).not.toContain(PRICE_WARNING);
+  });
+  it("sem lista de ofertas proibidas no código: o catálogo ativo é a fonte", () => {
+    const r = validateAgentOutput({ reply: "Temos o WK Sob Medida", intent: "continue" }, ctx);
+    expect(r).not.toHaveProperty("error");
+  });
+  it("resposta vazia só com supressão estruturada, descadastro ou transferência", () => {
+    expect(validateAgentOutput({ reply: "", intent: "continue" }, ctx)).toHaveProperty("error");
+    const ok = validateAgentOutput(
+      { reply: "", intent: "continue", situation: { suppress_reply: "auto_responder" } },
+      ctx,
+    );
+    expect(ok).not.toHaveProperty("error");
   });
 });
 
@@ -146,16 +182,12 @@ describe("reunião", () => {
   });
 });
 
-import { guardModelOptOut as _g, isCourtesyOnly as _c } from "./policy";
-describe("falso opt-out por agradecimento", () => {
-  it("'Obrigado Lia' não descadastra", () => {
-    expect(_c("Obrigado Lia")).toBe(true);
-    expect(_g("Obrigado Lia")).toBe(false);
-    expect(_g("valeu, até sexta!")).toBe(false);
-  });
-  it("pedido real continua descadastrando", () => {
-    expect(_g("não tenho interesse")).toBe(true);
-    expect(_g("pare de me mandar mensagem")).toBe(true);
+import { isCourtesyOnly as _c } from "./policy";
+describe("cortesia não é recusa", () => {
+  it("agradecimento com o nome configurado do agente é só cortesia", () => {
+    expect(_c("Obrigado Lia", ["Lia"])).toBe(true);
+    expect(_c("valeu, até sexta!")).toBe(true);
+    expect(_c("não tenho interesse")).toBe(false);
   });
 });
 

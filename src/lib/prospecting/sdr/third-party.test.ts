@@ -1,16 +1,8 @@
 import { describe, expect, it } from "vitest";
-import {
-  REFERRAL_QUESTION,
-  decideThirdParty,
-  detectNotTarget,
-  extractReferral,
-  isAutoResponder,
-  isQualificationQuestion,
-} from "./third-party";
+import { detectNotTarget, extractReferral, isAutoResponder } from "./third-party";
 
-const out = (body: string) => ({ direction: "outbound", body });
-const inn = (body: string) => ({ direction: "inbound", body });
-
+// Sinais usados como DADO (sugestão da Inbox e fato para a IA). A resposta da
+// Lia nesses casos é coberta por turn.test.ts com o pipeline real.
 describe("detectNotTarget", () => {
   it("reconhece quem saiu da empresa (Andre)", () => {
     expect(
@@ -46,90 +38,12 @@ describe("detectNotTarget", () => {
   });
 });
 
-describe("decideThirdParty — sinal antigo não gruda", () => {
-  it("conversa que seguiu normalmente não é tratada como terceiro", () => {
-    const d = decideThirdParty([
-      inn("faz uns 5 anos que saí da Opentech"),
-      out("Entendi! E hoje, onde você atua?"),
-      inn("Hoje sou CTO na Acme, não sei se vocês atendem"),
-    ]);
-    expect(d.action).toBe("none");
-  });
-  it("'saiu do ar' seguido de 'não sei' não encerra", () => {
-    const d = decideThirdParty([
-      inn("nosso sistema saiu do ar"),
-      out("Poxa! Quer conversar sobre isso?"),
-      inn("não sei, talvez"),
-    ]);
-    expect(d.action).toBe("none");
-  });
-});
-
-describe("decideThirdParty", () => {
-  it("Andre: recusa já na mesma mensagem encerra sem pedir indicação", () => {
-    const d = decideThirdParty([
-      out("Seria você?"),
-      inn("não sei te dizer, pois já faz uns 5 anos que saí da Opentech"),
-    ]);
-    expect(d.action).toBe("close");
-  });
-  it("Andre: após a pergunta, 'perdi o contato' encerra", () => {
-    const d = decideThirdParty([
-      inn("faz uns 5 anos que saí da Opentech"),
-      out(REFERRAL_QUESTION),
-      inn("realmente não sei te dizer, perdi o contato do pessoal de lá"),
-    ]);
-    expect(d.action).toBe("close");
-  });
-  it("Rafael: pergunta UMA vez pela indicação", () => {
-    const d = decideThirdParty([out("Seria você?"), inn("Esse telefone não é de Rafael")]);
-    expect(d.action).toBe("ask_referral");
-  });
-  it("não pergunta duas vezes", () => {
-    const d = decideThirdParty([
-      inn("Esse telefone não é de Rafael"),
-      out(REFERRAL_QUESTION),
-      inn("hmm"),
-    ]);
-    expect(d.action).toBe("close");
-  });
-  it("Danilo: promessa aguarda, cartão salva", () => {
-    const h = [inn("Esse não é o contato do Danilo. Vou te encaminhar o correto.")];
-    expect(decideThirdParty(h).action).toBe("wait_referral");
-    const d = decideThirdParty([
-      ...h,
-      out("Obrigada! Fico no aguardo do contato."),
-      inn("👤 Contato compartilhado\nDanilo Aguiar: +55 15 98144-1500"),
-    ]);
-    expect(d.action).toBe("save_referral");
-    if (d.action === "save_referral") {
-      expect(d.referral).toEqual({ name: "Danilo Aguiar", phoneE164: "+5515981441500" });
-    }
-  });
-  it("conversa normal não é afetada", () => {
-    expect(decideThirdParty([inn("Tenho um projeto parado")]).action).toBe("none");
-  });
-});
-
 describe("extractReferral", () => {
   it("lê texto livre", () => {
     expect(extractReferral("fala com a Ana, 48 99999-0000")).toEqual({
       name: "Ana",
       phoneE164: "+5548999990000",
     });
-  });
-});
-
-describe("isQualificationQuestion", () => {
-  it("bloqueia as perguntas do caso Danilo", () => {
-    expect(isQualificationQuestion("Posso saber qual a necessidade de TI do responsável?")).toBe(
-      true,
-    );
-    expect(
-      isQualificationQuestion(
-        "Você gostaria de falar sobre algum desafio específico ou projeto que estejam planejando?",
-      ),
-    ).toBe(true);
   });
 });
 

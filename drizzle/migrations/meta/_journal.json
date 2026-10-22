@@ -1289,6 +1289,13 @@
       "when": 1792614373319,
       "tag": "0183_sdr_agent_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 184,
+      "version": "7",
+      "when": 1792631877362,
+      "tag": "0184_sdr_conversation_state",
+      "breakpoints": true
     }
   ]
 }
