@@ -25,7 +25,11 @@ describe("estado efetivo da conversa", () => {
     ).toBeTruthy();
   });
   it("situação inválida da IA cai no padrão seguro", () => {
-    const s = parseSituation({ suppress_reply: "qualquer", conversation: "closed", close_reason: 3 });
+    const s = parseSituation({
+      suppress_reply: "qualquer",
+      conversation: "closed",
+      close_reason: 3,
+    });
     expect(s.suppress_reply).toBe("none");
     expect(s.conversation).toBe("closed");
     expect(s.close_reason).toBe("none");

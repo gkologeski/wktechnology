@@ -281,6 +281,14 @@ export const testSdrAgent = createServerFn({ method: "POST" })
       };
     const out = decision.out;
     const nextState = { ...prevState, ...decision.state.patch } as Record<string, unknown>;
+    const { configConflicts } = await import("@/lib/prospecting/sdr/config-conflicts");
+    const conflicts = configConflicts({
+      persona,
+      config,
+      tools: toolCfg,
+      extraInstructions: (pb.qualification_prompt as string | null) ?? null,
+      directBookingReady: directBooking,
+    });
     return {
       ok: true as const,
       ms,
@@ -314,6 +322,7 @@ export const testSdrAgent = createServerFn({ method: "POST" })
         close: decision.close,
         suppressed: decision.state.suppress,
         no_follow_up: decision.noFollowUp,
+        config_conflicts: conflicts,
         prompt_sections: decision.sections.map((x) => ({ id: x.id, title: x.title, text: x.text })),
       },
       sandbox_state: (sandbox?.snapshot(nextState) ?? { conversation_state: nextState }) as never,
