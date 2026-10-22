@@ -174,7 +174,11 @@ function violations(reply: string, out: ValidatedOutput, i: TurnInput): Violatio
     attachMaterials: g.attach_materials,
   });
   if (claimsMaterialSent(reply) && !attached) v.push("material_claim");
-  if (claimsBooking(reply) && i.tools.effects.meeting?.status !== "confirmed")
+  if (
+    i.tools.directBooking &&
+    claimsBooking(reply) &&
+    i.tools.effects.meeting?.status !== "confirmed"
+  )
     v.push("booking_claim");
   return v;
 }
