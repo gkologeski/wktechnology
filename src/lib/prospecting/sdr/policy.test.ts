@@ -23,14 +23,14 @@ const offer = (
 });
 
 describe("catálogo", () => {
-  it("só ativas, aprovadas e nunca WK Sob Medida", () => {
+  it("só ativas e aprovadas; o catálogo do workspace é a única fonte (sem nomes fixos)", () => {
     const r = selectableOffers([
       offer("Outsourcing de TI"),
       offer("BPO Administrativo", { status: "inactive" }),
       offer("Rascunho", { approved_at: null }),
       offer("WK Sob Medida"),
     ]);
-    expect(r.map((o) => o.name)).toEqual(["Outsourcing de TI"]);
+    expect(r.map((o) => o.name)).toEqual(["Outsourcing de TI", "WK Sob Medida"]);
   });
   it("material N:N atende qualquer oferta vinculada", () => {
     const m = {

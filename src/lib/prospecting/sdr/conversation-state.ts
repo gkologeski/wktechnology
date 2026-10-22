@@ -213,7 +213,11 @@ export function parseSharedPhone(text: string): Referral | null {
 export function currentInbound(history: ConversationMessage[]): ConversationMessage[] {
   let i = history.length - 1;
   while (i >= 0 && history[i]!.direction === "inbound") i--;
-  return history.slice(i + 1).filter((m) => m.direction === "inbound");
+  const trailing = history.slice(i + 1).filter((m) => m.direction === "inbound");
+  if (trailing.length) return trailing;
+  // Relógios fora de ordem (envio registrado depois da resposta): usa a última do cliente.
+  const last = [...history].reverse().find((m) => m.direction === "inbound");
+  return last ? [last] : [];
 }
 
 export type StateDecision = {
@@ -287,7 +291,7 @@ export function decideState(p: {
   // Contato compartilhado: o número precisa estar legível no turno atual.
   let referral: Referral | null = null;
   let corporatePhone: string | null = null;
-  if (s.shared_contact !== "none") {
+  if (s.shared_contact !== "none" && p.jobKind === "reply") {
     const parsed = current.map((m) => parseSharedPhone(m.body)).find(Boolean) ?? null;
     if (!parsed) warnings.push("Contato compartilhado sem número legível: nada registrado.");
     else if (s.shared_contact === "referral") referral = parsed;
