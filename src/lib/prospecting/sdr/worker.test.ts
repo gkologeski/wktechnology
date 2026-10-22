@@ -1098,8 +1098,12 @@ describe("estado explícito da conversa (commit atômico)", () => {
     });
     expect(r).toBe("queued");
     expect(db.find("sdr_enrollments", "e1")!.conversation_state.closed.reason).toBe("left_company");
-    db.t("sdr_turn_jobs")[0].lease_until = null;
-    console.log("DBG", JSON.stringify(db.t("sdr_turn_jobs")), JSON.stringify(db.find("whatsapp_conversations","c1")));
+    // Padrões do banco para a linha criada pelo ingest; aguardo do cliente zerado.
+    Object.assign(db.t("sdr_turn_jobs")[0], { status: "queued", lease_until: null, attempts: 0 });
+    // O turno nasce na versão já reaberta da conversa (senão seria obsoleto).
+    expect(db.t("sdr_turn_jobs")[0].conversation_version).toBe(
+      db.find("whatsapp_conversations", "c1")!.ai_version,
+    );
     const j = await claimOne(db);
     const d = deps({
       reply: "",

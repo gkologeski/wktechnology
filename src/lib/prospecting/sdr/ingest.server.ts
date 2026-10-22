@@ -264,7 +264,15 @@ export async function ingestInboundForSdr(
       .select("id");
     if (reopened?.length) {
       await admin.rpc("sdr_set_conversation_owner", { p_conversation: conv.id, p_owner: "ai" });
-      conv.ai_owner = "ai";
+      // A troca de dono incrementa a versão: o turno precisa nascer na versão nova.
+      const { data: fresh } = await admin
+        .from("whatsapp_conversations")
+        .select("ai_owner, ai_version")
+        .eq("id", conv.id)
+        .eq("workspace_id", p.workspaceId)
+        .maybeSingle();
+      conv.ai_owner = fresh?.ai_owner ?? "ai";
+      conv.ai_version = fresh?.ai_version ?? conv.ai_version;
       enr.status = "active";
     }
   }
