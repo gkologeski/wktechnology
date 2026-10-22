@@ -270,8 +270,7 @@ export function validateAgentOutput(
     !reply &&
     intent !== "opt_out" &&
     intent !== "handoff" &&
-    situation.suppress_reply === "none" &&
-    situation.conversation !== "closed"
+    situation.suppress_reply === "none"
   )
     return { error: "Resposta vazia" };
   if (ctx.noPricing !== false && PRICE_RE.test(reply)) warnings.push(PRICE_WARNING);
