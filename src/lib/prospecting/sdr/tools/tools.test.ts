@@ -38,12 +38,16 @@ const SCHED: ScheduleConfig = {
   holidays: [],
   video: "google_meet",
   meeting_title: "Reunião {empresa} <> WK Technology",
+  after_rejection: "offer_new",
 };
 const ALL: ToolConfig = {
   enabled_tools: [...TOOL_IDS],
   scheduling: SCHED,
   allowed_tags: ["interessado"],
+  automations: { ai_question_silence_handoff: { enabled: false, minutes: 30 } },
 };
+/** E-mail escrito pelo cliente na conversa (exigido para reservar). */
+const EMAIL = "cliente@acme.com.br";
 const sp = (y: number, m: number, d: number, h: number, mi = 0) => zonedToUtc(y, m, d, h, mi, TZ);
 
 let evSeq = 0;
@@ -75,7 +79,7 @@ function makeCtx(over: Partial<ToolCtx> = {}, store = new MemoryStore(), cal = n
       {
         id: "in1",
         direction: "inbound",
-        body: "Quero conversar",
+        body: `Quero conversar. Meu e-mail é ${EMAIL}`,
         created_at: "2026-10-19T10:59:00Z",
       },
     ],
@@ -205,7 +209,7 @@ describe("fluxo template → inbound → Lia → agenda → reunião", () => {
     const b = (await executeTool(
       ctx,
       "calendar.book",
-      { option: 2, attendee_email: null, confirmation_message_id: "in2" },
+      { option: 2, attendee_email: EMAIL, confirmation_message_id: "in2" },
       "c2",
     )) as Record<string, unknown>;
     expect(b.status).toBe("confirmed");
@@ -226,33 +230,103 @@ describe("fluxo template → inbound → Lia → agenda → reunião", () => {
     expect(text).toMatch(/Link da videoconferência: https:\/\/meet\.google\.com\//);
   });
 
-  it("recusa: registra e pede dia e turno, sem novos horários", async () => {
+  it("recusa: consulta de novo e oferece até 3 OUTRAS opções, sem repetir as recusadas", async () => {
     const { ctx, store } = makeCtx();
     const first = (await executeTool(ctx, "calendar.availability", avail(), "c1")) as {
       options: Opt[];
     };
     say(ctx, "in2", "nenhum desses");
-    const ask = (await executeTool(
+    const again = (await executeTool(
+      ctx,
+      "calendar.availability",
+      avail({ rejected_previous: true }),
+      "c2",
+    )) as { status: string; options: (Opt & { part_of_day: string })[] };
+    expect(again.status).toBe("options");
+    expect(again.options).toHaveLength(3);
+    expect((await store.rejectedStarts("conv1")).length).toBe(first.options.length);
+    const near = (x: string) =>
+      first.options.some((f) => Math.abs(Date.parse(f.start) - Date.parse(x)) < 3600000);
+    expect(again.options.some((o) => near(o.start))).toBe(false);
+    const starts = again.options.map((o) => Date.parse(o.start));
+    expect([...starts].sort((a, b) => a - b)).toEqual(starts);
+    // Segunda recusa: as 6 já mostradas ficam todas de fora.
+    say(ctx, "in3", "também não");
+    const third = (await executeTool(
+      ctx,
+      "calendar.availability",
+      avail({ rejected_previous: true }),
+      "c3",
+    )) as { options: Opt[] };
+    const shown = [...first.options, ...again.options].map((o) => Date.parse(o.start));
+    expect(
+      third.options.some((o) => shown.some((x) => Math.abs(x - Date.parse(o.start)) < 3600000)),
+    ).toBe(false);
+  });
+
+  it("estratégia configurada ask_preference: registra a recusa sem novas opções", async () => {
+    const sched = { ...SCHED, after_rejection: "ask_preference" as const };
+    const { ctx, store } = makeCtx({ scheduling: sched, config: { ...ALL, scheduling: sched } });
+    const first = (await executeTool(ctx, "calendar.availability", avail(), "c1")) as {
+      options: Opt[];
+    };
+    say(ctx, "in2", "nenhum desses");
+    const r = (await executeTool(
       ctx,
       "calendar.availability",
       avail({ rejected_previous: true }),
       "c2",
     )) as { status: string; options: Opt[] };
-    expect(ask.status).toBe("ask_preference");
-    expect(ask.options).toHaveLength(0);
+    expect(r.status).toBe("rejection_recorded");
+    expect(r.options).toHaveLength(0);
     expect((await store.rejectedStarts("conv1")).length).toBe(first.options.length);
-    say(ctx, "in3", "à tarde");
-    const pref = (await executeTool(
+  });
+
+  it("sem alternativas após recusas: devolve no_alternatives sem inventar horários", async () => {
+    // Um único dia útil com uma única vaga no horizonte.
+    const sched = {
+      ...SCHED,
+      horizon_days: 1,
+      working_hours: { mon: [{ start: "16:00", end: "16:30" }] },
+    };
+    const { ctx } = makeCtx({ scheduling: sched, config: { ...ALL, scheduling: sched } });
+    const first = (await executeTool(ctx, "calendar.availability", avail(), "c1")) as {
+      options: Opt[];
+    };
+    expect(first.options).toHaveLength(1);
+    say(ctx, "in2", "não posso");
+    const r = (await executeTool(
       ctx,
       "calendar.availability",
-      avail({ part_of_day: "afternoon" }),
+      avail({ rejected_previous: true }),
+      "c2",
+    )) as { status: string; options: Opt[] };
+    expect(r.status).toBe("no_alternatives");
+    expect(r.options).toHaveLength(0);
+  });
+
+  it("reserva exige e-mail escrito pelo cliente (e-mail inventado é recusado)", async () => {
+    const { ctx, store } = makeCtx();
+    ctx.history = ctx.history.map((m) => (m.id === "in1" ? { ...m, body: "Quero conversar" } : m));
+    await executeTool(ctx, "calendar.availability", avail(), "c1");
+    say(ctx, "in2", "A primeira");
+    const b = (await executeTool(
+      ctx,
+      "calendar.book",
+      { option: 1, attendee_email: "inventado@ia.com", confirmation_message_id: "in2" },
+      "c2",
+    )) as Record<string, unknown>;
+    expect(b.status).toBe("email_required");
+    expect(store.meetings).toHaveLength(0);
+    say(ctx, "in3", "pode mandar para ana@cliente.com.br");
+    const ok = (await executeTool(
+      ctx,
+      "calendar.book",
+      { option: 1, attendee_email: "ana@cliente.com.br", confirmation_message_id: "in3" },
       "c3",
-    )) as { options: (Opt & { part_of_day: string })[] };
-    expect(pref.options.length).toBeGreaterThan(0);
-    expect(pref.options.every((o) => o.part_of_day === "afternoon")).toBe(true);
-    const near = (x: string) =>
-      first.options.some((f) => Math.abs(Date.parse(f.start) - Date.parse(x)) < 3600000);
-    expect(pref.options.some((o) => near(o.start))).toBe(false);
+    )) as Record<string, unknown>;
+    expect(ok.status).toBe("confirmed");
+    expect(store.meetings[0]!.attendee_email).toBe("ana@cliente.com.br");
   });
 
   it("nova consulta após opções mostradas registra a recusa mesmo sem pedido explícito", async () => {
@@ -356,7 +430,7 @@ describe("fluxo template → inbound → Lia → agenda → reunião", () => {
     const b = await executeTool(
       ctx,
       "calendar.book",
-      { option: 1, attendee_email: null, confirmation_message_id: "in1" },
+      { option: 1, attendee_email: EMAIL, confirmation_message_id: "in1" },
       "c2",
     );
     expect(b.status).toBe("option_not_current");
@@ -369,7 +443,7 @@ describe("fluxo template → inbound → Lia → agenda → reunião", () => {
     const b = (await executeTool(
       ctx,
       "calendar.book",
-      { option: 1, attendee_email: null, confirmation_message_id: "in2" },
+      { option: 1, attendee_email: EMAIL, confirmation_message_id: "in2" },
       "c1",
     )) as Record<string, unknown>;
     expect(b.status).toBe("option_not_current");
@@ -390,7 +464,7 @@ describe("fluxo template → inbound → Lia → agenda → reunião", () => {
     await executeTool(
       ctx,
       "calendar.book",
-      { option: 1, attendee_email: null, confirmation_message_id: "in2" },
+      { option: 1, attendee_email: EMAIL, confirmation_message_id: "in2" },
       "c2",
     );
     expect(store.meetings[0]!.start_at).toBe(new Date(sp(2026, 10, 22, 15, 30)).toISOString());
@@ -436,7 +510,7 @@ describe("fluxo template → inbound → Lia → agenda → reunião", () => {
     const b = (await executeTool(
       ctx,
       "calendar.book",
-      { option: 1, attendee_email: null, confirmation_message_id: "in2" },
+      { option: 1, attendee_email: EMAIL, confirmation_message_id: "in2" },
       "c2",
     )) as Record<string, unknown>;
     expect(b.status).toBe("slot_taken");
@@ -470,13 +544,13 @@ describe("concorrência e idempotência", () => {
       executeTool(
         a,
         "calendar.book",
-        { option: 1, attendee_email: null, confirmation_message_id: "ia" },
+        { option: 1, attendee_email: EMAIL, confirmation_message_id: "ia" },
         "a2",
       ),
       executeTool(
         b,
         "calendar.book",
-        { option: 1, attendee_email: null, confirmation_message_id: "ib" },
+        { option: 1, attendee_email: EMAIL, confirmation_message_id: "ib" },
         "b2",
       ),
     ]);
@@ -489,7 +563,7 @@ describe("concorrência e idempotência", () => {
     const { ctx, cal } = makeCtx();
     await executeTool(ctx, "calendar.availability", avail(), "c1");
     say(ctx, "in2");
-    const args = { option: 1, attendee_email: null, confirmation_message_id: "in2" };
+    const args = { option: 1, attendee_email: EMAIL, confirmation_message_id: "in2" };
     await executeTool(ctx, "calendar.book", args, "c2");
     await executeTool(ctx, "calendar.book", args, "c2");
     expect(cal.calls.filter((c) => c === "createEvent")).toHaveLength(1);
@@ -503,7 +577,7 @@ describe("concorrência e idempotência", () => {
     const b = (await executeTool(
       ctx,
       "calendar.book",
-      { option: 1, attendee_email: null, confirmation_message_id: "in2" },
+      { option: 1, attendee_email: EMAIL, confirmation_message_id: "in2" },
       "c2",
     )) as Record<string, unknown>;
     expect(b.status).toBe("pending_confirmation");
@@ -527,14 +601,14 @@ describe("concorrência e idempotência", () => {
     await executeTool(
       ctx,
       "calendar.book",
-      { option: 1, attendee_email: null, confirmation_message_id: "in2" },
+      { option: 1, attendee_email: EMAIL, confirmation_message_id: "in2" },
       "c2",
     );
     ctx.jobId = "job-retry";
     const again = (await executeTool(
       ctx,
       "calendar.book",
-      { option: 1, attendee_email: null, confirmation_message_id: "in2" },
+      { option: 1, attendee_email: EMAIL, confirmation_message_id: "in2" },
       "c9",
     )) as Record<string, unknown>;
     expect(again.status).toBe("confirmed");
@@ -550,7 +624,7 @@ describe("concorrência e idempotência", () => {
     const b = (await executeTool(
       ctx,
       "calendar.book",
-      { option: 1, attendee_email: null, confirmation_message_id: "in2" },
+      { option: 1, attendee_email: EMAIL, confirmation_message_id: "in2" },
       "c2",
     )) as Record<string, unknown>;
     expect(b.status).toBe("failed");
@@ -567,7 +641,7 @@ describe("cancelar e remarcar", () => {
     await executeTool(
       env.ctx,
       "calendar.book",
-      { option: 1, attendee_email: null, confirmation_message_id: "in2" },
+      { option: 1, attendee_email: EMAIL, confirmation_message_id: "in2" },
       "c2",
     );
     return env;
@@ -648,7 +722,7 @@ describe("permissões e escopo", () => {
     const r = await executeTool(
       ctx,
       "calendar.book",
-      { option: 1, attendee_email: null, confirmation_message_id: "in2" },
+      { option: 1, attendee_email: EMAIL, confirmation_message_id: "in2" },
       "c1",
     );
     expect(String(r.error)).toMatch(/desligada/);
@@ -680,7 +754,7 @@ describe("permissões e escopo", () => {
     const r = await executeTool(
       ctx,
       "calendar.book",
-      { option: 1, attendee_email: null, confirmation_message_id: "in1" },
+      { option: 1, attendee_email: EMAIL, confirmation_message_id: "in1" },
       "c2",
     );
     expect(String(r.error)).toMatch(/só respondem/);
