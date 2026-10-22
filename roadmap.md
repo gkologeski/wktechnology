@@ -1,3 +1,16 @@
+# Roadmap — Lia obedece à persona publicada (refatoração SDR)
+
+- [x] Prompt em seções: contrato técnico, precedência, persona publicada na íntegra, controles, complemento, contexto verificável
+- [x] Remover regras fixas, respostas fixas e reescritas editoriais (worker, persona, guards, terceiros)
+- [x] Estado explícito da conversa com CAS no commit (0184) + prova isolada com corrida
+- [x] Descadastro só explícito; recusa comercial encerra sem bloqueio permanente
+- [x] Agenda: até 3 novas opções após recusa (configurável), e-mail escrito pelo cliente
+- [x] Automação "pergunta sobre IA" opcional e desligada
+- [x] Pipeline único produção/teste com trace; teste com rascunho ou publicada
+- [x] Testes com saídas programadas + verify/build + Playwright no estúdio
+- [ ] Comparação A/B com IA real além de poucas mensagens no teste (custo/escopo; aguarda decisão do usuário)
+- [ ] Publicação do código (aguarda aceite do usuário)
+
 # Roadmap — TechProjects Ciclo 6 (itens 14–15)
 
 - [x] Banco 0179: API sob RLS do dono da chave (papel sem login), idempotência, limite por chave, fila offline idempotente, competência fechada na criação, painel de operação, higiene de privilégios
