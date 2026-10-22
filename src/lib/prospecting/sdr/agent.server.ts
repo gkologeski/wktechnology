@@ -380,7 +380,7 @@ export async function callSdrAgent(args: {
       messages.push({
         role: "user",
         content:
-          "[verificação do sistema, não é o cliente] Responda agora SOMENTE com o objeto JSON do formato combinado (reply, intent, offer_keys, material_ids, answers, handoff_reason), sem texto fora dele.",
+          "[verificação do sistema, não é o cliente] Responda agora SOMENTE com o objeto JSON do formato combinado (reply, intent, offer_keys, material_ids, answers, handoff_reason, situation), sem texto fora dele.",
       });
       continue;
     }
