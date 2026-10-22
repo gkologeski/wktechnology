@@ -149,9 +149,18 @@ export function effectiveState(
     const v = out[k];
     if (v?.job_id && !sentJobIds.has(v.job_id)) out[k] = null;
   }
-  const reason = String(enrollment?.cancel_reason ?? "");
+  const raw = String(enrollment?.cancel_reason ?? "");
+  // Motivos antigos gravados antes do estado explícito (fato do atendimento).
+  const legacy: Record<string, CloseReason> = {
+    not_this_person: "not_target",
+    out_of_icp: "other",
+    post_close: "other",
+  };
+  const reason = legacy[raw] ?? raw;
   if (!out.closed && (CLOSE_REASONS as readonly string[]).includes(reason) && reason !== "none")
     out.closed = { at: "", job_id: null, reason: reason as CloseReason };
+  if (!out.contact_source_asked && raw === "asked_contact_source")
+    out.contact_source_asked = { at: "", job_id: null, message_id: "" };
   return out;
 }
 
