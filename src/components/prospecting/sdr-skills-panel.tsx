@@ -352,7 +352,9 @@ function SkillsForm({ playbookId }: { playbookId: string }) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="offer_new">Consultar e oferecer até 3 novos horários</SelectItem>
+                  <SelectItem value="offer_new">
+                    Consultar e oferecer até 3 novos horários
+                  </SelectItem>
                   <SelectItem value="ask_preference">
                     Registrar a recusa sem novos horários
                   </SelectItem>
