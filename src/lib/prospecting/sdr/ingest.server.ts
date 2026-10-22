@@ -182,6 +182,21 @@ const REOPEN_ON_INBOUND = [
   "other",
 ];
 
+function closedStateFor(enr: {
+  cancel_reason?: string | null;
+  conversation_state?: unknown;
+}): Record<string, unknown> {
+  const cur =
+    enr.conversation_state && typeof enr.conversation_state === "object"
+      ? (enr.conversation_state as Record<string, unknown>)
+      : {};
+  if (cur.closed) return cur;
+  return {
+    ...cur,
+    closed: { at: new Date().toISOString(), job_id: null, reason: enr.cancel_reason ?? "other" },
+  };
+}
+
 /**
  * Resposta recebida numa conversa do SDR. Idempotente: a chave inclui
  * workspace, número do provedor e id da mensagem. Contexto ambíguo é ignorado.
@@ -208,7 +223,7 @@ export async function ingestInboundForSdr(
   const { data: enr, error: eErr } = await admin
     .from("sdr_enrollments")
     .select(
-      "id, workspace_id, status, conversation_id, playbook_id, lead_id, contact_id, follow_up_at, cancel_reason",
+      "id, workspace_id, status, conversation_id, playbook_id, lead_id, contact_id, follow_up_at, cancel_reason, conversation_state, conversation_state_version",
     )
     .eq("id", conv.sdr_enrollment_id)
     .maybeSingle();
@@ -235,9 +250,17 @@ export async function ingestInboundForSdr(
   ) {
     await admin
       .from("sdr_enrollments")
-      .update({ status: "active", cancel_reason: null, follow_up_at: null })
+      .update({
+        status: "active",
+        cancel_reason: null,
+        follow_up_at: null,
+        // O encerramento continua registrado no estado explícito (com CAS).
+        conversation_state: closedStateFor(enr),
+        conversation_state_version: (enr.conversation_state_version ?? 0) + 1,
+      })
       .eq("id", enr.id)
-      .eq("status", "paused");
+      .eq("status", "paused")
+      .eq("conversation_state_version", enr.conversation_state_version ?? 0);
     await admin.rpc("sdr_set_conversation_owner", { p_conversation: conv.id, p_owner: "ai" });
     conv.ai_owner = "ai";
     enr.status = "active";
