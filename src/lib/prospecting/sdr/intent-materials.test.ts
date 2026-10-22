@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseAgentConfig, shouldAttachMaterials, stripUrls } from "./agent-config";
-import { buildSystemPrompt, intentSection } from "./agent.server";
+import { buildSystemPrompt } from "./agent.server";
 import { parsePersona } from "./persona";
 
 describe("anexo de materiais", () => {
@@ -33,19 +33,14 @@ describe("intenção do agente", () => {
   it("padrão é prospecção", () => {
     expect(parsePersona({}).intent).toBe("prospecting");
   });
-  it("prospecção busca reunião e atendimento só informa", () => {
-    expect(intentSection("prospecting")).toMatch(/reunião/);
-    expect(intentSection("service")).toMatch(/informar/);
-  });
-  it("prompt pede desambiguação Hunting/Outsourcing", () => {
+  it("intenção configurada aparece como rótulo, sem estratégia escondida", () => {
     const s = buildSystemPrompt({
       offers: [],
       materials: [],
       questions: [],
-      bookingAvailable: false,
       persona: parsePersona({ intent: "service" }),
     });
-    expect(s).toContain("INTENÇÃO: ATENDIMENTO");
-    expect(s).toMatch(/outsourcing/);
+    expect(s).toContain("Intenção configurada: atendimento");
+    expect(s).not.toMatch(/Seja ativa e persuasiva/);
   });
 });

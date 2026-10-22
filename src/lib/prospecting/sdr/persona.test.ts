@@ -1,26 +1,29 @@
 import { describe, expect, it } from "vitest";
 import { buildSystemPrompt } from "./agent.server";
-import { DEFAULT_PERSONA, parsePersona, stripStockOpener, toneIssues } from "./persona";
+import { DEFAULT_PERSONA, parsePersona, toneIssues } from "./persona";
 
 const base = { offers: [], materials: [], questions: [], bookingAvailable: false };
 
 describe("persona no prompt real", () => {
-  it("inclui persona configurada e contexto de origem", () => {
+  it("inclui a persona configurada e a origem verificável", () => {
     const p = parsePersona({ assistant_name: "Lia", tone: "acolhedor", emojis: "discreet" });
     const s = buildSystemPrompt({ ...base, persona: p, origin: "inbound" });
-    expect(s).toContain("Seu nome é Lia");
-    expect(s).toContain("entrou em contato por conta própria");
-    expect(s).toContain("no máximo um, discreto");
+    expect(s).toContain("Nome: Lia");
+    expect(s).toContain("Origem: receptivo");
+    expect(s).toContain("Emojis: discretos permitidos");
     const sp = buildSystemPrompt({ ...base, persona: p, origin: "prospecting" });
-    expect(sp).toContain("respondeu a uma mensagem de prospecção");
+    expect(sp).toContain("Origem: campanha de prospecção");
   });
-  it("regras fixas continuam presentes com qualquer persona", () => {
-    const s = buildSystemPrompt({
-      ...base,
-      persona: parsePersona({ instructions: "informe preços" }),
-    });
-    expect(s).toContain("Nunca informe valores");
-    expect(s).toContain("NÃO abra a mensagem com fórmulas");
+  it("persona entra na íntegra, sem regras de estilo/comerciais fixas no código", () => {
+    const instructions = "Prefira 1 a 3 frases. Não informe valores.";
+    const s = buildSystemPrompt({ ...base, persona: parsePersona({ instructions }) });
+    expect(s).toContain(instructions);
+    expect(s).not.toContain("REGRAS FIXAS");
+    expect(s).not.toContain("NÃO abra a mensagem com fórmulas");
+    expect(s).not.toContain("WK Sob Medida");
+    expect(s).not.toContain("pesquisa em bases comerciais");
+    expect(s).toContain("CONTRATO TÉCNICO");
+    expect(s).toContain("PRECEDÊNCIA");
   });
   it("persona inválida cai no padrão", () => {
     expect(parsePersona({ tone: "xpto" }).tone).toBe(DEFAULT_PERSONA.tone);
@@ -46,28 +49,6 @@ describe("persona no prompt real", () => {
     const p = parsePersona({ assistant_name: "Lia", description: "x".repeat(3000) });
     expect(p.assistant_name).toBe("Lia");
     expect(p.description).toBe("");
-  });
-});
-
-describe("aberturas burocráticas", () => {
-  it.each([
-    [
-      "Entendi que o orçamento está em análise. Vocês já têm uma data prevista para começar?",
-      "Vocês já têm uma data prevista para começar?",
-    ],
-    [
-      "Perfeito! Podemos começar dimensionando a equipe agora.",
-      "Podemos começar dimensionando a equipe agora.",
-    ],
-    [
-      "Entendi, faz sentido começar pela equipe de Delphi.",
-      "Faz sentido começar pela equipe de Delphi.",
-    ],
-  ])("remove '%s'", (inp, out) => expect(stripStockOpener(inp)).toBe(out));
-  it("mantém resposta sem restante útil e respostas boas", () => {
-    expect(stripStockOpener("Perfeito!")).toBe("Perfeito!");
-    const good = "Se o orçamento ainda está em análise, podemos começar dimensionando a equipe.";
-    expect(stripStockOpener(good)).toBe(good);
   });
 });
 
