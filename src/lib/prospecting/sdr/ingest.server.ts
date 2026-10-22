@@ -163,7 +163,24 @@ export type IngestResult =
   | "queued"
   | "duplicate";
 
-const REOPEN_ON_QUESTION = ["out_of_icp", "left_company", "not_this_person"];
+/**
+ * Motivos de encerramento decididos pela própria conversa da Lia (não são
+ * descadastro, humano nem reunião). Nova mensagem do cliente reabre só para a
+ * IA interpretar o conteúdo; retomadas automáticas continuam suspensas.
+ */
+const REOPEN_ON_INBOUND = [
+  "out_of_icp",
+  "left_company",
+  "not_this_person",
+  "post_close",
+  "no_demand",
+  "declined",
+  "not_target",
+  "private_number",
+  "referral_received",
+  "referral_declined",
+  "other",
+];
 
 /**
  * Resposta recebida numa conversa do SDR. Idempotente: a chave inclui
@@ -205,19 +222,20 @@ export async function ingestInboundForSdr(
     .eq("workspace_id", p.workspaceId)
     .maybeSingle();
 
-  // Encerrada pela Lia (fora do ICP / terceiro) e o cliente perguntou algo:
-  // reabre só para uma resposta curta de despedida (o worker volta a encerrar
-  // como "post_close", que não reabre de novo).
+  // Encerrada pela conversa da Lia e o cliente voltou a escrever: reabre para
+  // a IA interpretar a mensagem pelo conteúdo (pode responder ou registrar que
+  // não há o que responder; o worker volta a encerrar nesse caso). Descadastro
+  // e conversa assumida por humano nunca reabrem.
   if (
     enr.status === "paused" &&
-    REOPEN_ON_QUESTION.includes(String(enr.cancel_reason ?? "")) &&
+    REOPEN_ON_INBOUND.includes(String(enr.cancel_reason ?? "")) &&
     conv.ai_owner === "paused" &&
     settings?.enabled &&
-    /\?/.test(p.body)
+    !detectOptOut(p.body, [])
   ) {
     await admin
       .from("sdr_enrollments")
-      .update({ status: "active", cancel_reason: null })
+      .update({ status: "active", cancel_reason: null, follow_up_at: null })
       .eq("id", enr.id)
       .eq("status", "paused");
     await admin.rpc("sdr_set_conversation_owner", { p_conversation: conv.id, p_owner: "ai" });
