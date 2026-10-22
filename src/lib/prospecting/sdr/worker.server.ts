@@ -4,17 +4,10 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Admin = any;
 
-import {
-  decideThirdParty,
-  isAutoResponder,
-  isPostCloseQuestion,
-  POST_CLOSE_REPLY,
-  type Referral,
-} from "./third-party";
-import { parsePersona, stripStockOpener } from "./persona";
+import { parsePersona } from "./persona";
 import { configFromRow, hasTool, scopeKnowledge } from "./agent-config";
 import { loadSdrAgentUserId } from "./agent-identity.server";
-import { buildSystemPrompt, callSdrAgent } from "./agent.server";
+import { callSdrAgent } from "./agent.server";
 import {
   composeOutgoing,
   ensureOpportunity,
@@ -25,51 +18,28 @@ import {
   type DraftPayload,
 } from "./actions.server";
 import { recordSdrAction } from "./ingest.server";
+import { isAiIdentityQuestion, repeatsIdenticalInbound } from "./conversation-guards";
 import {
-  asksDecisionMaker,
-  claimsMaterialSent,
-  correctedName,
-  asksContactSource,
-  CONTACT_SOURCE_REPLY,
-  dedupeRepeatedWords,
-  extractCorporatePhone,
-  isOffTopic,
-  OUT_OF_ICP_CLOSE,
-  outOfIcpRole,
-  fixVocative,
-  greetingName,
-  isAiIdentityQuestion,
-  MATERIAL_HANDOFF_REPLY,
-  NOT_NOW_CLOSE,
-  notTheMoment,
-  offersToKeepContact,
-  refusedMeeting,
-  repeatsIdenticalInbound,
-  selfIdentifiedResponsible,
-  showsBusinessInterest,
-} from "./conversation-guards";
+  effectiveState,
+  parseState,
+  stateJobIds,
+  type ConversationState,
+} from "./conversation-state";
 import { resolveChoice } from "./booking-guard";
 import { parseToolConfig, type ScheduleConfig } from "./tools/catalog";
 import { emptyEffects, type ToolCtx } from "./tools/dispatcher";
 import { makeExecutor, newEventId, selectTools } from "./tools/runtime";
 import type { CalendarProvider, ToolStore } from "./tools/types";
+import { decideTurn, regenerate } from "./turn";
+import type { PromptContext } from "./agent.server";
 import {
   followUpIdemKey,
   isQuietHours,
   nextStage,
   selectableMaterials,
-  guardModelOptOut,
-  detectOptOut,
-  isWrongContact,
-  OPT_OUT_CONFIRM,
-  isUnavailabilityHandoff,
   blockingWarnings,
-  countQuestions,
-  mentionsPrice,
-  PRICE_WARNING,
   selectableOffers,
   sendGuard,
-  validateAgentOutput,
   type CommercialStage,
   type ConversationMessage,
   type SdrMaterial,
@@ -86,24 +56,6 @@ import {
 
 const LEASE_SECONDS = 120;
 const MAX_WAIT_MS = 60_000;
-
-/** Nova geração sem ferramentas (sem efeitos), só para corrigir o texto. */
-async function rewriteReply(
-  deps: WorkerDeps,
-  workspaceId: string,
-  system: string,
-  history: ConversationMessage[],
-  instruction: string,
-): Promise<string | null> {
-  const ai = await deps.callAgent({
-    workspaceId,
-    system: `${system}\n\nCORREÇÃO OBRIGATÓRIA: ${instruction} Mantenha o mesmo formato de saída e não chame ferramentas.`,
-    history,
-  });
-  if (!ai.ok) return null;
-  const reply = (ai.output as { reply?: unknown } | null)?.reply;
-  return typeof reply === "string" && reply.trim() ? stripStockOpener(reply.trim()) : null;
-}
 
 export async function loadKnowledge(admin: Admin, workspaceId: string) {
   const [{ data: offers }, { data: materials }, { data: links }] = await Promise.all([
