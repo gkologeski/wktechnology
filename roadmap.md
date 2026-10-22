@@ -257,6 +257,6 @@ Pendências preservadas: C1 (68 sugestões, divergência Clockify 12 pessoas, 40
 - [x] Varredura WK: simulação → aplicar só seguros com backup → revisão
 - [x] Tela de revisão/contagens e configuração do país
 - [x] Docs/AGENTS
-- [ ] verify, build, Playwright
+- [x] Testes (1.344), tipos, lint dos arquivos alterados, build e Playwright (desktop claro/escuro, celular, teclado)
 - [ ] Ligar a guarda do banco (`phone_strict_e164`) após publicação (aguarda aceite)
 - [ ] Revisão manual dos 17.250 números da fila (decisão humana por registro)
