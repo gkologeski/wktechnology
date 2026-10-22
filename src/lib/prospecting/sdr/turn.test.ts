@@ -361,7 +361,10 @@ describe("estado explícito (não depende da redação)", () => {
     expect(r.state.referral).toBeNull();
   });
   it("telefone legível na mensagem atual vira fato do turno (sem decidir pela IA)", async () => {
-    const { r } = await run([inb("O responsável é o Marcos: 11 98888-7777")], [output("Obrigada!")]);
+    const { r } = await run(
+      [inb("O responsável é o Marcos: 11 98888-7777")],
+      [output("Obrigada!")],
+    );
     expect(r.system).toContain("telefone legível (+5511988887777");
     expect(r.state.referral).toBeNull();
   });

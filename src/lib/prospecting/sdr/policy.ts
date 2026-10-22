@@ -266,12 +266,7 @@ export function validateAgentOutput(
   if (!intent) return { error: "Intenção inválida" };
   const situation = parseSituation(r.situation);
   const reply = typeof r.reply === "string" ? r.reply.trim() : "";
-  if (
-    !reply &&
-    intent !== "opt_out" &&
-    intent !== "handoff" &&
-    situation.suppress_reply === "none"
-  )
+  if (!reply && intent !== "opt_out" && intent !== "handoff" && situation.suppress_reply === "none")
     return { error: "Resposta vazia" };
   if (ctx.noPricing !== false && PRICE_RE.test(reply)) warnings.push(PRICE_WARNING);
 
