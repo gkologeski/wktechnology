@@ -20870,6 +20870,8 @@ export type Database = {
           contact_id: string | null
           contact_phone: string | null
           conversation_id: string | null
+          conversation_state: Json
+          conversation_state_version: number
           created_at: string
           deal_id: string | null
           follow_up_at: string | null
@@ -20903,6 +20905,8 @@ export type Database = {
           contact_id?: string | null
           contact_phone?: string | null
           conversation_id?: string | null
+          conversation_state?: Json
+          conversation_state_version?: number
           created_at?: string
           deal_id?: string | null
           follow_up_at?: string | null
@@ -20936,6 +20940,8 @@ export type Database = {
           contact_id?: string | null
           contact_phone?: string | null
           conversation_id?: string | null
+          conversation_state?: Json
+          conversation_state_version?: number
           created_at?: string
           deal_id?: string | null
           follow_up_at?: string | null
