@@ -246,3 +246,25 @@ describe("filtros com catálogo completo", () => {
     );
   });
 });
+
+describe("filtro com vários termos", () => {
+  it("usa values em contém, ignorando vazios e repetidos", async () => {
+    const { filterTerms } = await import("./campaign-audience");
+    expect(
+      filterTerms({ op: "ilike", value: "comput", values: ["comput", " Soft ", "soft", ""] }),
+    ).toEqual(["comput", "Soft"]);
+  });
+  it("filtro antigo de um termo continua válido", async () => {
+    const { filterTerms } = await import("./campaign-audience");
+    expect(filterTerms({ op: "ilike", value: "soft" })).toEqual(["soft"]);
+  });
+  it("operadores que não são contém ignoram values", async () => {
+    const { filterTerms } = await import("./campaign-audience");
+    expect(filterTerms({ op: "eq", value: "a", values: ["b", "c"] })).toEqual(["a"]);
+  });
+  it("limita a 20 termos", async () => {
+    const { filterTerms } = await import("./campaign-audience");
+    const values = Array.from({ length: 30 }, (_, i) => `t${i}`);
+    expect(filterTerms({ op: "not_ilike", value: "t0", values })).toHaveLength(20);
+  });
+});

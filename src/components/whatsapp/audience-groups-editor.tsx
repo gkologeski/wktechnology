@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AudienceValueCombobox } from "./audience-value-combobox";
+import { AudienceTermsInput } from "./audience-terms-input";
 import {
   Select,
   SelectContent,
@@ -29,6 +30,8 @@ import {
   MAX_FILTERS_PER_GROUP,
   OPS_BY_KIND,
   opNeedsValue,
+  filterTerms,
+  isMultiTermOp,
   type AudienceBase,
   type AudienceFilter,
   type AudienceGroup,
@@ -248,7 +251,7 @@ export function AudienceGroupsEditor({
                       onPick={(e, c) => {
                         const d = fields[e].find((x) => x.column === c);
                         if (!d) return;
-                        upd({ entity: e, column: c, op: OPS_BY_KIND[d.kind][0].op, value: "" });
+                        upd({ entity: e, column: c, op: OPS_BY_KIND[d.kind][0].op, value: "", values: undefined });
                       }}
                     />
                     <Select
@@ -290,6 +293,22 @@ export function AudienceGroupsEditor({
                             ))}
                           </SelectContent>
                         </Select>
+                      ) : isMultiTermOp(f.op) && def?.suggest ? (
+                        <AudienceValueCombobox
+                          entity={entity}
+                          column={f.column}
+                          label={def.label}
+                          value={f.value}
+                          onChange={(v) => upd({ value: v })}
+                          terms={filterTerms(f)}
+                          onTermsChange={(t) => upd({ values: t, value: t[0] ?? "" })}
+                        />
+                      ) : isMultiTermOp(f.op) ? (
+                        <AudienceTermsInput
+                          label={def?.label ?? f.column}
+                          terms={filterTerms(f)}
+                          onChange={(t) => upd({ values: t, value: t[0] ?? "" })}
+                        />
                       ) : def?.suggest ? (
                         <AudienceValueCombobox
                           entity={entity}

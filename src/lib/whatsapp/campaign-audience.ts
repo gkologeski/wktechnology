@@ -210,7 +210,27 @@ export type AudienceFilter = {
   column: string;
   op: AudienceFilterOp;
   value: string;
+  /** Vários termos (só "contém"/"não contém"); ausente = só `value`. */
+  values?: string[];
 };
+
+export const MAX_FILTER_TERMS = 20;
+export const isMultiTermOp = (op: AudienceFilterOp) => op === "ilike" || op === "not_ilike";
+
+/** Termos efetivos do filtro: `values` (multi) ou `[value]`, sem vazios nem repetidos. */
+export function filterTerms(f: Pick<AudienceFilter, "op" | "value" | "values">): string[] {
+  const raw = isMultiTermOp(f.op) && f.values?.length ? f.values : [f.value];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const t of raw) {
+    const v = (t ?? "").trim();
+    const k = v.toLocaleLowerCase("pt-BR");
+    if (!v || seen.has(k)) continue;
+    seen.add(k);
+    out.push(v);
+  }
+  return out.slice(0, MAX_FILTER_TERMS);
+}
 export const ENTITY_LABEL: Record<AudienceBase, string> = {
   leads: "Lead",
   contacts: "Contato",
@@ -361,7 +381,7 @@ export function isAllowedFilter(
   const def = fields[entity].find((d) => d.column === f.column);
   if (!def) return false;
   if (!OPS_BY_KIND[def.kind].some((o) => o.op === f.op)) return false;
-  if (opNeedsValue(f.op) && !f.value.trim()) return false;
+  if (opNeedsValue(f.op) && filterTerms(f).length === 0) return false;
   if (def.kind === "boolean" && opNeedsValue(f.op) && !/^(true|false)$/.test(f.value.trim()))
     return false;
   if (def.kind === "number" && opNeedsValue(f.op) && !Number.isFinite(Number(f.value.trim())))
@@ -370,7 +390,7 @@ export function isAllowedFilter(
 }
 
 /** Filtro sem valor (exceto vazio/não vazio) ainda está sendo montado: ignora. */
-export const isCompleteFilter = (f: AudienceFilter) => !opNeedsValue(f.op) || !!f.value.trim();
+export const isCompleteFilter = (f: AudienceFilter) => !opNeedsValue(f.op) || filterTerms(f).length > 0;
 
 /** Converte o formato antigo (lista simples = E) e remove grupos vazios. */
 export function normalizeAudienceGroups(input: {

@@ -9,6 +9,7 @@ import {
   buildFilterFields,
   catalogTypeFromDataType,
   filterColumnPath,
+  filterTerms,
   type FilterFieldCatalog,
   type AudienceBase,
   type AudienceFilter,
@@ -79,11 +80,16 @@ export async function loadServerFilterFields(
 function applyOp(q: Db, f: AudienceFilter): Db {
   const col = filterColumnPath(f.column);
   const v = f.value.trim();
+  const terms = filterTerms(f);
   switch (f.op) {
     case "ilike":
-      return q.ilike(col, `%${clean(v)}%`);
+      return terms.length <= 1
+        ? q.ilike(col, `%${clean(terms[0] ?? v)}%`)
+        : q.or(terms.map((t) => `${col}.ilike.*${clean(t)}*`).join(","));
     case "not_ilike":
-      return q.or(`${col}.is.null,${col}.not.ilike.*${clean(v)}*`);
+      for (const t of terms.length ? terms : [v])
+        q = q.or(`${col}.is.null,${col}.not.ilike.*${clean(t)}*`);
+      return q;
     case "neq":
       return q.or(`${col}.is.null,${col}.neq."${clean(v)}"`);
     case "is_null":

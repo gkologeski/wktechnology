@@ -17,6 +17,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { listAudienceFieldValues } from "@/lib/whatsapp-campaigns.functions";
 import type { AudienceBase } from "@/lib/whatsapp/campaign-audience";
 import { cn } from "@/lib/utils";
+import { TermPills, addTerm } from "./audience-terms-input";
 
 export function AudienceValueCombobox({
   entity,
@@ -24,13 +25,20 @@ export function AudienceValueCombobox({
   label,
   value,
   onChange,
+  terms,
+  onTermsChange,
 }: {
   entity: AudienceBase;
   column: string;
   label: string;
   value: string;
   onChange: (v: string) => void;
+  /** Modo múltiplo (pills): cada escolha adiciona um termo e mantém a lista aberta. */
+  terms?: string[];
+  onTermsChange?: (terms: string[]) => void;
 }) {
+  const multi = !!onTermsChange;
+  const list = terms ?? [];
   const fn = useServerFn(listAudienceFieldValues);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -47,10 +55,19 @@ export function AudienceValueCombobox({
     typed && !values.some((v) => v.toLocaleLowerCase("pt-BR") === typed.toLocaleLowerCase("pt-BR"));
 
   const pick = (v: string) => {
+    if (multi) {
+      onTermsChange!(addTerm(list, v));
+      setSearch("");
+      return;
+    }
     onChange(v);
     setOpen(false);
     setSearch("");
   };
+  const isPicked = (v: string) =>
+    multi
+      ? list.some((x) => x.toLocaleLowerCase("pt-BR") === v.toLocaleLowerCase("pt-BR"))
+      : value === v;
 
   return (
     <Popover modal open={open} onOpenChange={setOpen}>
@@ -61,11 +78,24 @@ export function AudienceValueCombobox({
           role="combobox"
           aria-expanded={open}
           aria-label={`Valor do filtro ${label}`}
-          className="w-48 justify-between font-normal"
+          className={cn(
+            "justify-between font-normal",
+            multi ? "h-auto min-h-9 w-72 py-1" : "w-48",
+          )}
         >
-          <span className={cn("truncate", !value && "text-muted-foreground")}>
-            {value || "Escolha ou digite"}
-          </span>
+          {multi && list.length ? (
+            <span className="flex flex-wrap gap-1">
+              <TermPills
+                terms={list}
+                label={label}
+                onRemove={(i) => onTermsChange!(list.filter((_, j) => j !== i))}
+              />
+            </span>
+          ) : (
+            <span className={cn("truncate", !(multi ? list.length : value) && "text-muted-foreground")}>
+              {multi ? "Escolha ou digite termos" : value || "Escolha ou digite"}
+            </span>
+          )}
           <ChevronsUpDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -98,7 +128,7 @@ export function AudienceValueCombobox({
                 {values.map((v) => (
                   <CommandItem key={v} value={v} onSelect={() => pick(v)}>
                     <Check
-                      className={cn("mr-2 h-4 w-4", value === v ? "opacity-100" : "opacity-0")}
+                      className={cn("mr-2 h-4 w-4", isPicked(v) ? "opacity-100" : "opacity-0")}
                     />
                     <span className="truncate">{v}</span>
                   </CommandItem>
