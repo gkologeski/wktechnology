@@ -9,6 +9,7 @@ import {
 } from "@/lib/prospecting-audience.functions";
 import { isRetriableEndedReason } from "@/lib/prospecting-ended-reason";
 
+import { isValidE164 } from "@/lib/phone/e164";
 const VAPI_BASE = "https://api.vapi.ai";
 
 // Carrega o cliente admin sob demanda (mantém o bundle do cliente limpo).
@@ -525,6 +526,16 @@ export async function startVapiCall(opts: {
   if (!lead?.phone) {
     await persistDiag({ vapi_response: { error: "Lead sem telefone", lead_id: opts.leadId } });
     return { ok: false, error: "Lead sem telefone" };
+  }
+  // O provedor de voz exige E.164; número fora do padrão não é discado.
+  if (!isValidE164(lead.phone)) {
+    await persistDiag({
+      vapi_response: { error: "Telefone fora do padrão E.164", lead_id: opts.leadId },
+    });
+    return {
+      ok: false,
+      error: "Telefone do lead fora do padrão (+código do país). Corrija antes de ligar.",
+    };
   }
 
   const { data: script } = await sb

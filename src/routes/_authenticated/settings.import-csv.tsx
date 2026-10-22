@@ -25,6 +25,7 @@ import {
   type DedupeStrategy,
 } from "@/lib/csv-import.functions";
 
+import { useDefaultPhoneCountry } from "@/lib/phone/phone-country-context";
 export const Route = createFileRoute("/_authenticated/settings/import-csv")({
   component: ImportCsvPage,
 });
@@ -51,6 +52,7 @@ function ImportCsvPage() {
   const fields = ENTITY_FIELDS[entity];
   const dedupeOptions = DEDUPE_KEYS[entity];
 
+  const phoneCountry = useDefaultPhoneCountry();
   const mappedTargets = useMemo(() => new Set(Object.values(mapping)), [mapping]);
 
   function reset() {
@@ -198,6 +200,13 @@ function ImportCsvPage() {
             <CardTitle>2. Mapeamento de colunas</CardTitle>
             <CardDescription>
               Associe cada coluna do CSV a um campo do CRM. Deixe em branco para ignorar.
+              {(mappedTargets.has("phone") || mappedTargets.has("mobile_phone")) && (
+                <span className="mt-1 block">
+                  Telefones sem +código do país serão lidos como <strong>{phoneCountry}</strong> (ou
+                  pelo País da própria linha). Números que não puderem ser lidos ficam como vieram,
+                  para revisão.
+                </span>
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent>

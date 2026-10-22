@@ -28,6 +28,7 @@ import {
   type OnbField,
 } from "@/lib/onboarding/onboarding.functions";
 
+import { PhoneInput, validatePhoneValue } from "@/components/ui/phone-input";
 type Primitive = string | number | boolean | null;
 type FormData = Record<string, Primitive>;
 
@@ -81,16 +82,24 @@ function FieldControl({
       </Select>
     );
   }
+  if (field.type === "phone") {
+    return (
+      <PhoneInput
+        id={id}
+        aria-label={field.label}
+        value={(value as string) ?? ""}
+        onChange={(v) => onChange(v || null)}
+      />
+    );
+  }
   const inputType =
     field.type === "email"
       ? "email"
-      : field.type === "phone"
-        ? "tel"
-        : field.type === "number"
-          ? "number"
-          : field.type === "date"
-            ? "date"
-            : "text";
+      : field.type === "number"
+        ? "number"
+        : field.type === "date"
+          ? "date"
+          : "text";
   return (
     <Input
       {...common}
@@ -151,6 +160,10 @@ export function OnboardingWizard({
           if (v === undefined || v === null || v === "") {
             errs[f.name] = "Campo obrigatório";
           }
+        }
+        if (f.type === "phone" && form[f.name]) {
+          const checked = validatePhoneValue(String(form[f.name]));
+          if (!checked.ok) errs[f.name] = checked.message;
         }
         if (f.type === "email" && form[f.name]) {
           const val = String(form[f.name]);

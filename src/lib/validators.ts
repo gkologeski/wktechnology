@@ -1,4 +1,4 @@
-import { isValidPhoneNumber, parsePhoneNumberFromString } from "libphonenumber-js";
+import { normalizePhone, PLATFORM_DEFAULT_PHONE_COUNTRY } from "@/lib/phone/e164";
 
 // Canonical email validation regex (HTML5-style, case-insensitive).
 const EMAIL_RE =
@@ -12,35 +12,23 @@ export function isEmail(v: string | null | undefined): boolean {
   return EMAIL_RE.test(s) && TLD_MIN_RE.test(s);
 }
 
-/** Accepts E.164 format (e.g. +5511999998888). */
+/** Telefone com +DDI válido (metadados completos). Delegado a `@/lib/phone/e164`. */
 export function isPhone(v: string | null | undefined): boolean {
   if (!v) return false;
-  try {
-    return isValidPhoneNumber(v);
-  } catch {
-    return false;
-  }
+  return normalizePhone(v, { defaultCountry: null }).status === "valid";
 }
 
 /**
- * Normalize a phone string to E.164 (e.g. "+5511999998888").
- * Returns null if the value cannot be parsed into a valid number.
- * Assumes Brazil ("BR") as default country when no "+" prefix is present.
+ * Normaliza para E.164 ("+5511999998888") ou null. Delegado a
+ * `@/lib/phone/e164` (fonte única). O país só é usado para números sem "+";
+ * passe o país do workspace quando souber.
  */
-export function toE164(v: string | null | undefined, defaultCountry: "BR" = "BR"): string | null {
-  if (!v) return null;
-  const raw = String(v).trim();
-  if (!raw) return null;
-  try {
-    const parsed = parsePhoneNumberFromString(
-      raw,
-      raw.startsWith("+") ? undefined : defaultCountry,
-    );
-    if (parsed && parsed.isValid()) return parsed.number; // E.164
-  } catch {
-    // fall through
-  }
-  return null;
+export function toE164(
+  v: string | null | undefined,
+  defaultCountry: string = PLATFORM_DEFAULT_PHONE_COUNTRY,
+): string | null {
+  const r = normalizePhone(v, { defaultCountry });
+  return r.status === "valid" ? r.e164 : null;
 }
 
 /** Strip everything but digits (used for CNPJ persistence). */

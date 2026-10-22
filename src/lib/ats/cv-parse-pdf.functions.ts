@@ -10,6 +10,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
+import { sourcePhone } from "@/lib/phone/phone-boundary";
 const MODEL = "google/gemini-2.5-flash";
 
 const InputSchema = z.object({
@@ -139,7 +140,9 @@ Nunca invente dados. Se um campo não estiver no PDF, use null ou [].`;
         workspace_id: workspaceId,
         full_name: parsed.full_name ?? "(sem nome)",
         email: parsed.email,
-        phone: parsed.phone,
+        // Texto do currículo: E.164 só quando inequívoco (com +DDI); sem país
+        // comprovado o valor fica como veio para o recrutador revisar.
+        phone: sourcePhone(parsed.phone),
         linkedin_url: parsed.linkedin_url,
         location: parsed.location,
         current_position: parsed.current_position,

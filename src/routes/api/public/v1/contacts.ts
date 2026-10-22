@@ -4,11 +4,17 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { authenticateApiKey, requireScope, unauthorized } from "@/lib/api-keys/auth.server";
 import { buildMeta, jsonError, parseListParams } from "@/lib/api-keys/list-params.server";
 
+import {
+  humanPhone,
+  isPhoneValidationError,
+  phoneErrorBody,
+  workspacePhoneCountry,
+} from "@/lib/phone/phone-boundary";
 const CreateContact = z.object({
   first_name: z.string().min(1).max(120),
   last_name: z.string().max(120).optional(),
   email: z.string().email().optional(),
-  phone: z.string().max(40).optional(),
+  phone: z.string().max(64).optional(),
   job_title: z.string().max(160).optional(),
   company_name: z.string().max(200).optional(),
   company_id: z.string().uuid().optional(),
@@ -60,6 +66,16 @@ export const Route = createFileRoute("/api/public/v1/contacts")({
         const parsed = CreateContact.safeParse(body);
         if (!parsed.success) return jsonError("invalid_input", 400, parsed.error.flatten());
         const input = parsed.data;
+        let phone: string | null;
+        try {
+          phone = humanPhone(input.phone ?? null, {
+            field: "phone",
+            country: await workspacePhoneCountry(supabaseAdmin, auth.workspaceId),
+          });
+        } catch (e) {
+          if (isPhoneValidationError(e)) return Response.json(phoneErrorBody(e), { status: 422 });
+          throw e;
+        }
 
         let companyId: string | null = null;
         if (input.company_id) {
@@ -107,7 +123,7 @@ export const Route = createFileRoute("/api/public/v1/contacts")({
             first_name: input.first_name,
             last_name: input.last_name ?? null,
             email: input.email ?? null,
-            phone: input.phone ?? null,
+            phone,
             job_title: input.job_title ?? null,
             company_name: input.company_name ?? null,
             company_id: companyId,

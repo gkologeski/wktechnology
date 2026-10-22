@@ -72,6 +72,7 @@ export const SEGMENT_LABELS: Record<string, string> = {
   "hubspot-users": "Usuários HubSpot",
   kb: "Base de conhecimento",
   language: "Idioma",
+  phones: "Telefones",
   "lead-sources": "Origens de leads",
   macros: "Macros",
   mobile: "Mobile",

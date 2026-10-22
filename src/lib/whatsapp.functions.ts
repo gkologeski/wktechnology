@@ -3,13 +3,22 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
+import { toWhatsAppE164 } from "@/lib/phone/whatsapp-e164";
 export function applyTemplate(body: string, vars: string[]): string {
   return body.replace(/\{\{(\d+)\}\}/g, (_, n) => vars[Number(n) - 1] ?? "");
 }
 
+/**
+ * Número do canal WhatsApp. Com "+": só remove formatação. Sem "+": aplica a
+ * política do canal (celular do Brasil, `whatsapp-e164.ts`); se não for,
+ * mantém os dígitos com "+" (caso do wa_id do provedor, que já traz o DDI).
+ */
 function normalizePhone(raw: string): string {
-  const digits = raw.replace(/[^\d+]/g, "");
-  return digits.startsWith("+") ? digits : `+${digits}`;
+  const s = raw.trim();
+  if (s.startsWith("+")) return `+${s.replace(/\D/g, "")}`;
+  const br = toWhatsAppE164(s);
+  if (br) return br;
+  return `+${s.replace(/\D/g, "")}`;
 }
 
 async function findContactByPhone(supabase: any, phoneE164: string): Promise<string | null> {

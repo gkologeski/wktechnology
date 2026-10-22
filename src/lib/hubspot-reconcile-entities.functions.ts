@@ -7,6 +7,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
+import { countryFromRecordField, sourcePhone } from "@/lib/phone/phone-boundary";
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/hubspot";
 
 function hsHeaders() {
@@ -233,7 +234,7 @@ function buildPayload(
       domain: p.domain ?? null,
       industry: p.industry ?? null,
       size: p.numberofemployees ?? null,
-      phone: p.phone ?? null,
+      phone: sourcePhone(p.phone, countryFromRecordField(p.country)),
       city: p.city ?? null,
       state: p.state ?? null,
       cep: p.zip ?? null,
@@ -265,9 +266,9 @@ function buildPayload(
       first_name: (p.firstname ?? p.email ?? "Sem nome") as string,
       last_name: p.lastname ?? null,
       email: p.email ?? null,
-      phone: p.phone ?? null,
+      phone: sourcePhone(p.phone, countryFromRecordField(p.country)),
       job_title: p.jobtitle ?? null,
-      mobile_phone: p.mobilephone ?? null,
+      mobile_phone: sourcePhone(p.mobilephone, countryFromRecordField(p.country)),
       country: p.country ?? null,
       address: p.address ?? null,
       cep: p.zip ?? null,

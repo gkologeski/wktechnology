@@ -20,6 +20,13 @@ import {
   resolveStageForPipeline,
   stageOfType,
 } from "@/lib/pipelines/stage-resolve";
+import { isPhoneColumn, WHATSAPP_COLUMN } from "@/lib/phone/phone-columns";
+import {
+  humanPhone,
+  isPhoneValidationError,
+  workspacePhoneCountry,
+} from "@/lib/phone/phone-boundary";
+import { validateWhatsAppInput } from "@/lib/phone/whatsapp-e164";
 
 export const bulkUpdateEntity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -58,6 +65,41 @@ export const bulkUpdateEntity = createServerFn({ method: "POST" })
         return { ok: false as const, message: e.message, requested: data.ids.length, updated: 0 };
       }
       throw e;
+    }
+
+    // Telefones: mesma regra E.164 da ficha (país padrão do workspace para
+    // número digitado sem +DDI); WhatsApp segue a política do canal.
+    const phoneKeys = Object.keys(payload).filter((k) => isPhoneColumn(k) || k === WHATSAPP_COLUMN);
+    if (phoneKeys.length) {
+      const { data: ws } = await client.rpc("default_workspace_for_user", { _user: userId });
+      const country = await workspacePhoneCountry(client, typeof ws === "string" ? ws : null);
+      for (const k of phoneKeys) {
+        if (k === WHATSAPP_COLUMN) {
+          const wa = validateWhatsAppInput(payload[k] == null ? null : String(payload[k]));
+          if (!wa.ok)
+            return {
+              ok: false as const,
+              message: wa.message,
+              requested: data.ids.length,
+              updated: 0,
+            };
+          payload[k] = wa.e164;
+          continue;
+        }
+        try {
+          payload[k] = humanPhone(payload[k], { field: k, country });
+        } catch (e) {
+          if (isPhoneValidationError(e)) {
+            return {
+              ok: false as const,
+              message: e.message,
+              requested: data.ids.length,
+              updated: 0,
+            };
+          }
+          throw e;
+        }
+      }
     }
 
     // Defesa em profundidade: se vier a coluna legada `stage` com um slug de

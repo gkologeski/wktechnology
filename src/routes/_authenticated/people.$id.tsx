@@ -75,6 +75,7 @@ import { OffboardingCompliancePanel } from "@/components/people/offboarding-comp
 import { BenefitsPanel } from "@/components/people/benefits-panel";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
+import { PhoneInput } from "@/components/ui/phone-input";
 export const Route = createFileRoute("/_authenticated/people/$id")({
   head: () => ({
     meta: [
@@ -341,10 +342,11 @@ function PersonForm({
               </div>
               <div className="space-y-2">
                 <Label>Telefone</Label>
-                <Input
+                <PhoneInput
+                  aria-label="Telefone"
                   value={phone}
                   disabled={!canWrite}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={setPhone}
                 />
               </div>
               <div className="space-y-2">
@@ -436,10 +438,11 @@ function PersonForm({
               </div>
               <div className="space-y-2">
                 <Label>Telefone de recado</Label>
-                <Input
+                <PhoneInput
+                  aria-label="Telefone de recado"
                   value={emergencyPhone}
                   disabled={!canWrite}
-                  onChange={(e) => setEmergencyPhone(e.target.value)}
+                  onChange={setEmergencyPhone}
                 />
               </div>
               <div className="space-y-2">

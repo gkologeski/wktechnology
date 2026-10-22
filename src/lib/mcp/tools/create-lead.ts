@@ -4,6 +4,11 @@ import { supabaseForUser, unauthenticated, resolveWorkspaceId } from "../supabas
 import { ensureLeadRelationsSafe } from "@/lib/leads/lead-relations";
 import { checkLeadDuplicate } from "@/lib/leads/lead-duplicate-check";
 
+import {
+  humanPhone,
+  isPhoneValidationError,
+  workspacePhoneCountry,
+} from "@/lib/phone/phone-boundary";
 export default defineTool({
   name: "create_lead",
   title: "Criar lead",
@@ -31,10 +36,21 @@ export default defineTool({
     if (!userId) return unauthenticated();
     const supabase = supabaseForUser(ctx);
     const workspaceId = await resolveWorkspaceId(supabase, userId);
+    let phone: string | null;
+    try {
+      phone = humanPhone(input.phone ?? null, {
+        field: "phone",
+        country: await workspacePhoneCountry(supabase, workspaceId),
+      });
+    } catch (e) {
+      if (isPhoneValidationError(e))
+        return { content: [{ type: "text", text: e.message }], isError: true };
+      throw e;
+    }
     const dup = await checkLeadDuplicate(supabase, {
       workspaceId,
       email: input.email ?? null,
-      phone: input.phone ?? null,
+      phone,
     });
     if (dup.duplicate) {
       return { content: [{ type: "text", text: dup.message ?? "Lead duplicado" }], isError: true };
@@ -48,7 +64,7 @@ export default defineTool({
         first_name: input.first_name,
         last_name: input.last_name ?? null,
         email: input.email ?? null,
-        phone: input.phone ?? null,
+        phone,
         job_title: input.job_title ?? null,
         company_name: input.company_name ?? null,
         source: input.source ?? null,

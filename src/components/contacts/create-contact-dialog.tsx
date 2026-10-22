@@ -14,10 +14,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { EmailInput } from "@/components/ui/email-input";
-import { PhoneInput } from "@/components/ui/phone-input";
+import { PhoneInput, validatePhoneValue } from "@/components/ui/phone-input";
 import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
 import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialogs";
-import { isEmail, toE164 } from "@/lib/validators";
+import { isEmail } from "@/lib/validators";
 import { validateWhatsAppInput } from "@/lib/phone/whatsapp-e164";
 import { useToastCreated } from "@/lib/toast-nav";
 import { OnboardingGuidedEntry } from "@/components/onboarding/onboarding-guided-entry";
@@ -63,11 +63,12 @@ export function CreateContactDialog({
       toast.error("Email inválido");
       return;
     }
-    const phoneE164 = form.phone.trim() ? toE164(form.phone.trim()) : null;
-    if (form.phone.trim() && !phoneE164) {
-      toast.error("Telefone inválido. Use o formato E.164 (ex.: +5511999998888).");
+    const phoneCheck = validatePhoneValue(form.phone, { label: "Telefone" });
+    if (!phoneCheck.ok) {
+      toast.error(phoneCheck.message);
       return;
     }
+    const phoneE164 = phoneCheck.value;
     const wa = form.whatsapp.trim() ? validateWhatsAppInput(form.whatsapp.trim()) : null;
     if (wa && !wa.ok) {
       toast.error(wa.message);

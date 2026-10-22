@@ -10,6 +10,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { TEMPLATES } from "@/lib/email-templates/registry";
 import { getOrCreateEmailUnsubscribeToken } from "@/lib/email-unsubscribe.server";
 
+import { zHumanPhone } from "@/lib/phone/phone-boundary";
 const SENDER_DOMAIN = EMAIL_SENDER_DOMAIN;
 const FROM_DOMAIN = EMAIL_SENDER_DOMAIN;
 const FROM_NAME = "WK Technology";
@@ -641,7 +642,7 @@ export const consumeInvite = createServerFn({ method: "POST" })
         token: z.string().min(10).max(200),
         password: z.string().min(8).max(200),
         full_name: z.string().trim().min(2).max(120),
-        phone: z.string().trim().min(8).max(32),
+        phone: zHumanPhone({ required: true, label: "Telefone celular" }),
       })
       .parse(i),
   )

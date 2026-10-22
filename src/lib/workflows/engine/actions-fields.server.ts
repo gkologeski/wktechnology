@@ -5,6 +5,8 @@ import { toStr } from "../render-tokens";
 import { type AnyRow, type LogStep, getField, renderTokens } from "../engine-shared.server";
 import type { RunCtx, RunnableAction } from "./run-context";
 
+import { isPhoneColumn } from "@/lib/phone/phone-columns";
+import { workflowPhone, workspacePhoneCountry } from "@/lib/phone/phone-boundary";
 export async function handleFieldAction(
   supabase: SupabaseClient,
   action: RunnableAction,
@@ -13,7 +15,16 @@ export async function handleFieldAction(
 ): Promise<LogStep | null> {
   switch (action.type) {
     case "set_field": {
-      const value = renderTokens(action.value, ctx.after);
+      let value = renderTokens(action.value, ctx.after);
+      // Coluna de telefone: valor resolvido passa pela regra E.164 (texto fixo
+      // valida com o país do workspace; token é copiado sem inventar país).
+      if (isPhoneColumn(action.field)) {
+        value = workflowPhone(
+          typeof action.value === "string" ? action.value : null,
+          value == null ? null : String(value),
+          await workspacePhoneCountry(supabase, ctx.workspaceId),
+        );
+      }
       const { error } = await supabase
         .from(ctx.entity)
         .update({ [action.field]: value })

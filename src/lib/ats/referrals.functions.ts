@@ -6,6 +6,7 @@
  * approved → paid). RLS já garante visibilidade.
  */
 import { createServerFn } from "@tanstack/react-start";
+import { humanPhone, workspacePhoneCountry } from "@/lib/phone/phone-boundary";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { recordAtsEvent } from "./audit.server";
@@ -118,7 +119,7 @@ export const submitReferral = createServerFn({ method: "POST" })
         job_id: z.string().uuid().nullable().optional(),
         candidate_name: z.string().min(1).max(160),
         candidate_email: z.string().email().nullable().optional(),
-        candidate_phone: z.string().max(40).nullable().optional(),
+        candidate_phone: z.string().max(64).nullable().optional(),
         candidate_linkedin: z.string().url().nullable().optional(),
         relationship: z.string().max(120).nullable().optional(),
         notes: z.string().max(2000).nullable().optional(),
@@ -136,6 +137,16 @@ export const submitReferral = createServerFn({ method: "POST" })
         .maybeSingle();
       bonus = (prog as { default_bonus_cents?: number } | null)?.default_bonus_cents ?? 0;
     }
+    const { data: wsId } = await context.supabase.rpc("default_workspace_for_user", {
+      _user: context.userId,
+    });
+    const candidatePhone = humanPhone(data.candidate_phone || null, {
+      field: "Telefone",
+      country: await workspacePhoneCountry(
+        context.supabase,
+        typeof wsId === "string" ? wsId : null,
+      ),
+    });
     const { data: row, error } = await context.supabase
       .from("ats_referrals")
       .insert({
@@ -145,7 +156,7 @@ export const submitReferral = createServerFn({ method: "POST" })
         job_id: data.job_id ?? null,
         candidate_name: data.candidate_name,
         candidate_email: data.candidate_email ?? null,
-        candidate_phone: data.candidate_phone ?? null,
+        candidate_phone: candidatePhone,
         candidate_linkedin: data.candidate_linkedin ?? null,
         relationship: data.relationship ?? null,
         notes: data.notes ?? null,

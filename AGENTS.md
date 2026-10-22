@@ -22,6 +22,7 @@
 - WhatsApp livre exige mensagem inbound nas últimas 24 horas; fora da janela, somente template `APPROVED` validado no servidor; por quê: cumprir a política da Meta em todos os pontos de envio.
 - Fichas comerciais usam `RecordLayout` opt-in com timeline central como mestre da rolagem proporcional lateral; por quê: painéis de alturas diferentes terminam juntos sem afetar telas ATS.
 - Rotas só exportam `Route` (outro export anula o code-splitting); gate = `verify`+`build`, `verify:changed` é só feedback.
-- Subdirectories have their own AGENTS.md; read before edits (workflows, entity, projects, integrations/clockify, integrations/jibble under src/lib).
+- Subdirectories have their own AGENTS.md; read before edits (workflows, entity, projects, phone, integrations/clockify, integrations/jibble under src/lib).
 - RBAC: permissões efetivas exigem membership `active` (inclusive bypass admin) e deny prevalece; cargos só escritos por owner/admin; ajustes por workspace só em overrides/pacotes locais com foto `rbac_wk_backup_2026_10`; por quê: inativo/comum não herda nem altera acesso e outros tenants não são afetados.
 - O protótipo da Prospecção (`/prospecting/prototype`) usa apenas dados demonstrativos de `src/components/prospecting/prototype/`, sem leitura/escrita real; por quê: aprovar o redesign antes de mexer na rota produtiva.
+- Telefone de cadastro é E.164 via `src/lib/phone/e164.ts` (libphonenumber max) + `PhoneInput` + bordas de `phone-boundary.ts`; política de canal (WhatsApp) fica separada em `whatsapp-e164.ts`; por quê: uma regra para tela, servidor e importação sem inventar país.

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Gift, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PhoneInput, validatePhoneValue } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
@@ -71,17 +72,32 @@ function ReferPublicPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const phoneCheck = validatePhoneValue(form.candidate_phone, { label: "Telefone" });
+    if (!phoneCheck.ok) {
+      setError(phoneCheck.message);
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
       const res = await fetch(`/api/public/refer/${encodeURIComponent(slug)}/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, _ts: tsMount }),
+        body: JSON.stringify({
+          ...form,
+          candidate_phone: phoneCheck.value,
+          _ts: tsMount,
+        }),
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(typeof j.error === "string" ? j.error : "Erro ao enviar.");
+        setError(
+          typeof j.message === "string"
+            ? j.message
+            : typeof j.error === "string"
+              ? j.error
+              : "Erro ao enviar.",
+        );
       } else {
         setDone(true);
       }
@@ -202,9 +218,10 @@ function ReferPublicPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label>Telefone</Label>
-                  <Input
+                  <PhoneInput
+                    aria-label="Telefone do candidato"
                     value={form.candidate_phone}
-                    onChange={(e) => setForm({ ...form, candidate_phone: e.target.value })}
+                    onChange={(v) => setForm({ ...form, candidate_phone: v })}
                   />
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">

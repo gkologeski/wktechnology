@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PhoneInput, validatePhoneValue } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -111,17 +112,20 @@ function ReferralsInbox() {
   });
 
   const submitMut = useMutation({
-    mutationFn: () =>
-      submit({
+    mutationFn: () => {
+      const phoneCheck = validatePhoneValue(form.candidate_phone, { label: "Telefone" });
+      if (!phoneCheck.ok) return Promise.reject(new Error(phoneCheck.message));
+      return submit({
         data: {
           candidate_name: form.candidate_name.trim(),
           candidate_email: form.candidate_email.trim() || null,
-          candidate_phone: form.candidate_phone.trim() || null,
+          candidate_phone: phoneCheck.value,
           candidate_linkedin: form.candidate_linkedin.trim() || null,
           relationship: form.relationship.trim() || null,
           notes: form.notes.trim() || null,
         },
-      }),
+      });
+    },
     onSuccess: () => {
       toast.success("Indicação enviada");
       setOpen(false);
@@ -185,9 +189,10 @@ function ReferralsInbox() {
               </div>
               <div className="space-y-1.5">
                 <Label>Telefone</Label>
-                <Input
+                <PhoneInput
+                  aria-label="Telefone do candidato"
                   value={form.candidate_phone}
-                  onChange={(e) => setForm({ ...form, candidate_phone: e.target.value })}
+                  onChange={(v) => setForm({ ...form, candidate_phone: v })}
                 />
               </div>
               <div className="space-y-1.5 sm:col-span-2">

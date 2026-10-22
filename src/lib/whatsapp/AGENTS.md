@@ -8,7 +8,7 @@
 
 - Cada rodada do disparo espaçado espera no máximo `PACING_RUN_BUDGET_MS` (abaixo do tempo limite da chamada agendada) e relê o status da campanha antes de cada envio; por quê: esperas longas eram cortadas sem liberar o lease e uma pausa precisa valer na hora.
 
-- Número de WhatsApp de Contatos/Leads vive em `whatsapp_e164` (E.164, só celular do Brasil +55 DDD 9XXXXXXXX; formato antigo de 8 dígitos 6–9 ganha o 9; fixo e estrangeiro são recusados), normalizado por gatilho no banco e por `src/lib/phone/whatsapp-e164.ts` no app; todo disparo escolhe WhatsApp → Celular → Telefone e nunca usa fixo; por quê: fixo quase nunca tem WhatsApp e gerava falhas em massa.
+- Número de WhatsApp de Contatos/Leads (política do CANAL, separada do E.164 genérico de `src/lib/phone/e164.ts`) vive em `whatsapp_e164` (E.164, só celular do Brasil +55 DDD 9XXXXXXXX; formato antigo de 8 dígitos 6–9 ganha o 9; fixo e estrangeiro são recusados), normalizado por gatilho no banco e por `src/lib/phone/whatsapp-e164.ts` no app; todo disparo escolhe WhatsApp → Celular → Telefone e nunca usa fixo; por quê: fixo quase nunca tem WhatsApp e gerava falhas em massa.
 
 - Controle de reenvio recente das campanhas (WhatsApp e e-mail) usa `src/lib/campaigns/recent-contact.ts`: confere ao montar o público e de novo no disparo, só no mesmo canal, com liberação manual gravada em `override_recent`; por quê: não repetir mensagem a quem acabou de receber, sem bloquear exceções conscientes.
 - Filtros de público com `suggest` mostram valores já existentes via `listAudienceFieldValues` (só colunas da lista branca, workspace ativo); por quê: o usuário vê as opções reais sem liberar leitura de colunas arbitrárias.

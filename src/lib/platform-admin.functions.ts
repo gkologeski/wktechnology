@@ -6,6 +6,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
+import { zHumanPhone } from "@/lib/phone/phone-boundary";
 let supabaseAdmin: SupabaseClient<Database>;
 async function getSupabaseAdmin(): Promise<SupabaseClient<Database>> {
   if (!supabaseAdmin) {
@@ -103,7 +104,7 @@ export const createWorkspaceWithAdmin = createServerFn({ method: "POST" })
           .regex(/^[a-z0-9-]+$/, "Use apenas letras minúsculas, números e hífen."),
         admin_email: z.string().trim().email().max(255),
         admin_name: z.string().trim().min(2).max(120),
-        admin_phone: z.string().trim().min(8).max(32).optional(),
+        admin_phone: zHumanPhone({ label: "Telefone" }).optional(),
         redirect_origin: z.string().trim().url().max(255).optional(),
       })
       .parse(i),
@@ -243,7 +244,7 @@ export const inviteUserToWorkspace = createServerFn({ method: "POST" })
         workspace_id: z.string().uuid(),
         email: z.string().trim().email().max(255),
         full_name: z.string().trim().min(2).max(120),
-        phone: z.string().trim().max(32).optional(),
+        phone: zHumanPhone({ label: "Telefone" }).optional(),
         role: WsRole,
         redirect_origin: z.string().trim().url().max(255).optional(),
       })

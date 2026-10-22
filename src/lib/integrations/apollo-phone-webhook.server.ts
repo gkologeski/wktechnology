@@ -18,6 +18,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { linkedinUrlOrNull } from "@/lib/prospecting/linkedin-url";
 
+import { sourcePhone } from "@/lib/phone/phone-boundary";
 type ApolloWebhookPhone = { sanitized_number?: string; raw_number?: string; type?: string };
 
 type ApolloWebhookPerson = {
@@ -137,9 +138,11 @@ export async function applyApolloPhonePayload(payload: ApolloPhonePayload): Prom
       const current = row as { phone?: unknown; mobile_phone?: unknown } | null;
       if (current) {
         const patch: Record<string, unknown> = {};
-        if (mobile && isEmpty(current.mobile_phone)) patch.mobile_phone = mobile;
+        // Cadastro recebe E.164 quando inequívoco; o registro bruto da revelação
+        // (apollo_phone_reveals) continua com o valor do provedor.
+        if (mobile && isEmpty(current.mobile_phone)) patch.mobile_phone = sourcePhone(mobile);
         // Celular tem prioridade no campo principal quando ele está vazio.
-        if (isEmpty(current.phone) && (mobile ?? work)) patch.phone = mobile ?? work;
+        if (isEmpty(current.phone) && (mobile ?? work)) patch.phone = sourcePhone(mobile ?? work);
         if (Object.keys(patch).length > 0) {
           const { error } = await supabase
             .from(target.table)

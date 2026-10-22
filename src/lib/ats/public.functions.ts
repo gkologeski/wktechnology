@@ -2,6 +2,7 @@
 // Usadas pelas páginas /careers e /careers/$slug. Cada workspace é resolvido
 // pelo host (custom_domain) cadastrado em module_branding (module_id='ats').
 import { createServerFn } from "@tanstack/react-start";
+import { humanPhone, workspacePhoneCountry } from "@/lib/phone/phone-boundary";
 import { z } from "zod";
 
 /** Resolve owner_id do workspace pelo host do ATS. */
@@ -126,7 +127,7 @@ export const submitPublicApplication = createServerFn({ method: "POST" })
         job_id: z.string().uuid(),
         full_name: z.string().trim().min(2).max(160),
         email: z.string().trim().email().max(200),
-        phone: z.string().trim().max(40).optional().nullable(),
+        phone: z.string().trim().max(64).optional().nullable(),
         linkedin_url: z.string().trim().url().max(400).optional().nullable(),
         location: z.string().trim().max(160).optional().nullable(),
         cv_url: z.string().trim().url().max(800).optional().nullable(),
@@ -142,12 +143,19 @@ export const submitPublicApplication = createServerFn({ method: "POST" })
     // Garante que a vaga pertence ao owner e está publicada
     const { data: job } = await supabaseAdmin
       .from("ats_jobs")
-      .select("id, owner_id, status, title")
+      .select("id, owner_id, status, title, workspace_id")
       .eq("id", data.job_id)
       .maybeSingle();
     if (!job || job.owner_id !== ownerId || job.status !== "published") {
       throw new Error("Vaga indisponível para candidatura.");
     }
+    const applicantPhone = humanPhone(data.phone || null, {
+      field: "Telefone",
+      country: await workspacePhoneCountry(
+        supabaseAdmin,
+        (job as { workspace_id?: string | null }).workspace_id ?? null,
+      ),
+    });
 
     // Deduplica candidato por email
     let candidateId: string | null = null;
@@ -168,7 +176,7 @@ export const submitPublicApplication = createServerFn({ method: "POST" })
           owner_id: ownerId,
           full_name: data.full_name,
           email: data.email,
-          phone: data.phone ?? null,
+          phone: applicantPhone,
           linkedin_url: data.linkedin_url ?? null,
           location: data.location ?? null,
           cv_url: data.cv_url ?? null,

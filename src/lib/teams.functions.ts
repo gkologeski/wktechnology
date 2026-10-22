@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { deleteWhereGuarded } from "@/lib/db/delete-guarded";
 
+import { zHumanPhone } from "@/lib/phone/phone-boundary";
 const TeamRole = z.enum(["admin", "manager", "member"]);
 export type TeamRole = z.infer<typeof TeamRole>;
 
@@ -331,7 +332,7 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
       .object({
         email: z.string().trim().email().max(255),
         full_name: z.string().trim().min(2, "Nome completo é obrigatório").max(120),
-        phone: z.string().trim().min(8, "Telefone celular é obrigatório").max(32),
+        phone: zHumanPhone({ required: true, label: "Telefone celular" }),
         role: TeamRole,
         redirect_origin: z.string().trim().url().max(255).optional(),
       })
@@ -491,7 +492,7 @@ export const completeInviteProfile = createServerFn({ method: "POST" })
     z
       .object({
         full_name: z.string().trim().min(2).max(120),
-        phone: z.string().trim().min(8).max(32),
+        phone: zHumanPhone({ required: true, label: "Telefone celular" }),
       })
       .parse(i),
   )
@@ -621,7 +622,7 @@ export const updateTeamMember = createServerFn({ method: "POST" })
       .object({
         member_user_id: z.string().uuid(),
         full_name: z.string().trim().min(2, "Nome completo é obrigatório").max(120),
-        phone: z.string().trim().min(8, "Telefone celular é obrigatório").max(32),
+        phone: zHumanPhone({ required: true, label: "Telefone celular" }),
         role: TeamRole,
       })
       .parse(i),

@@ -4,6 +4,7 @@ import { Plus, Sparkles, Linkedin, FileText, UserPlus, ArrowLeft, Loader2 } from
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PhoneInput, validatePhoneValue } from "@/components/ui/phone-input";
 import {
   Dialog,
   DialogContent,
@@ -171,12 +172,17 @@ export function CreateCandidateDialog({
       toast.error("Informe o nome");
       return;
     }
+    const phoneCheck = validatePhoneValue(form.phone, { label: "Telefone" });
+    if (!phoneCheck.ok) {
+      toast.error(phoneCheck.message);
+      return;
+    }
     try {
       await save({
         data: {
           full_name: form.full_name.trim(),
           email: form.email || null,
-          phone: form.phone || null,
+          phone: phoneCheck.value,
           linkedin_url: form.linkedin_url || null,
           location: form.location || null,
           current_position: form.current_position || null,
@@ -460,10 +466,10 @@ export function CreateCandidateDialog({
               </div>
               <div>
                 <Label htmlFor="cand-phone">Telefone</Label>
-                <Input
+                <PhoneInput
                   id="cand-phone"
                   value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  onChange={(v) => setForm({ ...form, phone: v })}
                 />
               </div>
               <div className="col-span-2">

@@ -61,6 +61,8 @@ import {
 import { usePipelines } from "@/lib/pipelines";
 import { substatusesForStage, usePipelineSubstatuses } from "@/lib/pipelines/substatuses";
 import { BulkRefPicker } from "./bulk-ref-picker";
+import { PhoneInput } from "@/components/ui/phone-input";
+import { isPhoneColumn, WHATSAPP_COLUMN } from "@/lib/phone/phone-columns";
 
 const LONG_TEXT_FIELDS = new Set([
   "description",
@@ -113,6 +115,12 @@ function FieldEditor({
 
   if (field.ref) {
     return <BulkRefPicker kind={field.ref} value={strVal} onChange={onChange} />;
+  }
+
+  if (isPhoneColumn(field.name) || field.name === WHATSAPP_COLUMN) {
+    return (
+      <PhoneInput aria-label={field.label} value={strVal} onChange={(v) => onChange(v || null)} />
+    );
   }
 
   if (field.type === "boolean") {

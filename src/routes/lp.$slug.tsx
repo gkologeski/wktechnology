@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
+import { PhoneInput, validatePhoneValue } from "@/components/ui/phone-input";
 export const Route = createFileRoute("/lp/$slug")({
   loader: async ({ params }) => getPublishedBySlug({ data: { slug: params.slug } }),
   component: PublicLandingPage,
@@ -57,6 +58,7 @@ function PublicLandingPage() {
     } | null;
   };
   const [submitted, setSubmitted] = useState(false);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!page) return;
@@ -82,6 +84,18 @@ function PublicLandingPage() {
   async function handleFormSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!page) return;
+    const fd = new FormData(e.currentTarget);
+    if (fd.has("phone")) {
+      const phoneCheck = validatePhoneValue(String(fd.get("phone") ?? ""), {
+        label: "Telefone",
+        required: true,
+      });
+      if (!phoneCheck.ok) {
+        setPhoneError(phoneCheck.message);
+        return;
+      }
+      setPhoneError(null);
+    }
     await trackLpEvent({ data: { landing_page_id: page.id, event_type: "conversion" } });
     setSubmitted(true);
   }
@@ -125,6 +139,8 @@ function PublicLandingPage() {
                       <Label>{labels[f] ?? f}</Label>
                       {f === "message" ? (
                         <Textarea required name={f} placeholder={labels[f] ?? f} />
+                      ) : f === "phone" ? (
+                        <LpPhoneField error={phoneError} />
                       ) : (
                         <Input
                           required
@@ -149,5 +165,16 @@ function PublicLandingPage() {
         return <Render key={i} block={block} />;
       })}
     </div>
+  );
+}
+
+/** Telefone do formulário da landing page: grava E.164 num campo oculto. */
+function LpPhoneField({ error }: { error: string | null }) {
+  const [v, setV] = useState("");
+  return (
+    <>
+      <PhoneInput aria-label="Telefone" required value={v} onChange={setV} error={error} />
+      <input type="hidden" name="phone" value={v} />
+    </>
   );
 }

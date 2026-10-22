@@ -17,7 +17,6 @@ import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 import { useGridProjection } from "@/hooks/use-grid-projection";
 import { buildGridSelect } from "@/lib/grid/dynamic-select";
 import { cn } from "@/lib/utils";
-import { toE164 } from "@/lib/validators";
 import { Button } from "@/components/ui/button";
 import { BulkActionBar } from "@/components/bulk-action-bar";
 import { ExportMenuButton } from "@/components/export-menu-button";
@@ -496,7 +495,7 @@ function ContactsHubspotView() {
         className: "text-muted-foreground",
         render: (c) => {
           const raw = c.phone ?? c.mobile_phone;
-          return raw ? (toE164(raw) ?? raw) : "—";
+          return raw || "—";
         },
       },
       {

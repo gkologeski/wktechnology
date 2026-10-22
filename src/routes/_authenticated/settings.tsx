@@ -71,6 +71,7 @@ import {
   Activity,
   Gauge,
   FlaskConical,
+  Phone,
 } from "lucide-react";
 import { useMyRole } from "@/lib/use-my-role";
 import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
@@ -112,6 +113,7 @@ const sections: Section[] = [
     tabs: [
       { to: "/settings/branding", label: "White-label", icon: Sparkles, need: "admin" },
       { to: "/settings/language", label: "Idioma", icon: Languages, need: "admin" },
+      { to: "/settings/phones", label: "Telefones", icon: Phone, need: "admin" },
       { to: "/settings/mobile", label: "Mobile / PWA", icon: Smartphone, need: "admin" },
       { to: "/settings/calendars", label: "Calendários", icon: Calendar },
       { to: "/settings/booking", label: "Agendamentos", icon: CalendarCheck, need: "manager" },

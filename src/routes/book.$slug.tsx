@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EmailInput } from "@/components/ui/email-input";
-import { PhoneInput } from "@/components/ui/phone-input";
+import { PhoneInput, validatePhoneValue } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
 import { RichHtmlEditor, HtmlContent } from "@/components/rich-html-editor";
 import { CalendarDays, Clock, MapPin, CheckCircle2 } from "lucide-react";
@@ -89,15 +89,25 @@ function PublicBookingPage() {
 
   async function submit() {
     if (!selected) return;
+    const phoneCheck = validatePhoneValue(form.invitee_phone, { label: "Telefone" });
+    if (!phoneCheck.ok) {
+      setError(phoneCheck.message);
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await fetch(`/api/public/booking/${slug}/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, start: selected, timezone: tz }),
+        body: JSON.stringify({
+          ...form,
+          invitee_phone: phoneCheck.value,
+          start: selected,
+          timezone: tz,
+        }),
       });
       const j = await res.json();
-      if (!res.ok) throw new Error(j.error || "erro");
+      if (!res.ok) throw new Error(j.message || j.error || "erro");
       setMeetLink(typeof j.meet_link === "string" ? j.meet_link : null);
       setConfirmed(true);
     } catch (e) {
@@ -244,6 +254,7 @@ function PublicBookingPage() {
               <div className="space-y-2">
                 <Label>Telefone</Label>
                 <PhoneInput
+                  aria-label="Telefone"
                   value={form.invitee_phone}
                   onChange={(v) => setForm({ ...form, invitee_phone: v })}
                 />

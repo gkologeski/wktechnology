@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+import { sourcePhone } from "@/lib/phone/phone-boundary";
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/hubspot";
 
 type HSLead = {
@@ -117,7 +118,7 @@ export const importHubspotLeads = createServerFn({ method: "POST" })
           first_name: r.first_name,
           last_name: r.last_name,
           email: r.email,
-          phone: r.phone,
+          phone: sourcePhone(r.phone),
           company_name: r.company_name,
           source: r.source,
           status: "new" as const,

@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { EmailInput } from "@/components/ui/email-input";
-import { PhoneInput } from "@/components/ui/phone-input";
+import { PhoneInput, validatePhoneValue } from "@/components/ui/phone-input";
 import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
 import { PortfolioConflictNotice } from "@/components/leads/portfolio-conflict-notice";
 import { SourceCombobox } from "@/components/leads/source-combobox";
@@ -33,7 +33,7 @@ import {
   previewLinkedinEnrichment,
 } from "@/lib/prospecting/qualification-enrichment.functions";
 import { markLinkedinEnriched } from "@/lib/prospecting/use-linkedin-enrichment";
-import { isEmail, toE164 } from "@/lib/validators";
+import { isEmail } from "@/lib/validators";
 import { useToastCreated } from "@/lib/toast-nav";
 import { OnboardingGuidedEntry } from "@/components/onboarding/onboarding-guided-entry";
 
@@ -281,11 +281,12 @@ export function CreateLeadDialog({
       linkedinUrl = parsed.url;
       setLinkedinError(null);
     }
-    const phoneE164 = form.phone.trim() ? toE164(form.phone.trim()) : null;
-    if (form.phone.trim() && !phoneE164) {
-      toast.error("Telefone inválido. Use o formato E.164 (ex.: +5511999998888).");
+    const phoneCheck = validatePhoneValue(form.phone, { label: "Telefone" });
+    if (!phoneCheck.ok) {
+      toast.error(phoneCheck.message);
       return;
     }
+    const phoneE164 = phoneCheck.value;
     setSaving(true);
     try {
       const dup = await checkLeadDuplicate(supabase, {

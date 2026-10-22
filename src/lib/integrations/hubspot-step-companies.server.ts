@@ -13,6 +13,7 @@ import { upsertByHsId } from "./hubspot-steps-upsert.server";
 import type { StepRunArgs } from "./hubspot-step-run-context";
 import type { StepResult } from "./hubspot-steps-types";
 
+import { countryFromRecordField, sourcePhone } from "@/lib/phone/phone-boundary";
 export async function runCompaniesStep(args: StepRunArgs): Promise<StepResult | void> {
   const {
     supabase,
@@ -73,7 +74,7 @@ export async function runCompaniesStep(args: StepRunArgs): Promise<StepResult | 
           domain: p.domain ?? null,
           industry: p.industry ?? null,
           size: p.numberofemployees ?? null,
-          phone: p.phone ?? null,
+          phone: sourcePhone(p.phone, countryFromRecordField(p.country)),
           city: p.city ?? null,
           state: p.state ?? null,
           cep: p.zip ?? null,
@@ -152,7 +153,7 @@ export async function runCompaniesStep(args: StepRunArgs): Promise<StepResult | 
             domain: p.domain ?? null,
             industry: p.industry ?? null,
             size: p.numberofemployees ?? null,
-            phone: p.phone ?? null,
+            phone: sourcePhone(p.phone, countryFromRecordField(p.country)),
             city: p.city ?? null,
             state: p.state ?? null,
             cep: p.zip ?? null,

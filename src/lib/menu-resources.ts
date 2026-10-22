@@ -96,6 +96,7 @@ export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
   "/settings/legal-entities": ["system.legal_entities"],
   "/settings/legal-entity-groups": ["system.legal_entity_groups"],
   "/settings/language": ["system.language"],
+  "/settings/phones": ["system.language"],
   "/settings/billing": ["system.billing"],
   "/settings/pipelines": ["system.pipelines"],
   "/settings/custom-properties": ["system.custom_properties"],
