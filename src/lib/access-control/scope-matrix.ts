@@ -55,6 +55,8 @@ export type ScopeMatrixRow = {
   actionLabel: string;
   /** Descrição vinda do catálogo (label_pt da chave mais ampla). */
   description: string;
+  /** Explicação curta exibida ao passar o mouse na funcionalidade. */
+  tooltip: string;
   /** Escopos disponíveis para escolha, do mais amplo ao mais restrito. */
   options: ScopeValue[];
   /** Quando definido, o combo mostra este escopo e não permite trocá-lo. */
@@ -133,6 +135,7 @@ export function buildScopeMatrixRows(catalog: ScopePermissionRow[]): ScopeMatrix
       action: first.action,
       actionLabel: ACTION_LABELS_PT[first.action] ?? first.action,
       description,
+      tooltip: describeFunctionality(first.action, prettyResource(first.resource)),
       options,
       lockedScope,
       keysByScope,
@@ -185,4 +188,32 @@ export function keysForSelection(
 
 export function scopeSelectLabel(value: string): string {
   return value === NONE_VALUE ? NONE_LABEL : (SCOPE_SELECT_LABELS[value as ScopeValue] ?? value);
+}
+
+const SCOPE_HINT =
+  "O escopo escolhido define quais: os próprios, os da equipe ou todos do workspace.";
+
+/** Texto curto (PT-BR) explicando o que a funcionalidade libera no recurso. */
+export function describeFunctionality(action: string, resourceLabel: string): string {
+  const r = resourceLabel.toLowerCase();
+  switch (action) {
+    case "view":
+      return `Permite visualizar registros de ${r} em listas, fichas e relatórios. ${SCOPE_HINT}`;
+    case "create":
+      return `Permite cadastrar novos registros de ${r}. O escopo é fixo: o registro nasce vinculado a quem o cria.`;
+    case "update":
+      return `Permite alterar registros de ${r}. ${SCOPE_HINT}`;
+    case "delete":
+      return `Permite excluir registros de ${r}. ${SCOPE_HINT}`;
+    case "export":
+      return `Permite exportar registros de ${r}. O escopo é fixo: exporta apenas o que a pessoa já consegue ver.`;
+    case "approve":
+      return `Permite aprovar ou recusar itens de ${r} pendentes de aprovação, da equipe ou de todo o workspace.`;
+    case "assign":
+      return `Permite trocar o responsável por registros de ${r}. Existe somente no escopo do workspace.`;
+    case "manage":
+      return `Acesso total a ${r}: inclui todas as ações, inclusive editar e excluir registros de outros usuários. Para limitar ao responsável, use Exibir/Criar/Editar/Excluir com escopo próprio.`;
+    default:
+      return `Permissão "${action}" sobre ${r}.`;
+  }
 }

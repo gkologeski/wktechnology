@@ -16,6 +16,7 @@ import {
   copyRolePermissions,
 } from "@/lib/access-control/role-bundle.functions";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -527,23 +528,27 @@ export function PermissionsMatrix() {
                   </span>
                 </td>
                 <td className="sticky left-[270px] z-10 bg-background p-3 border-b border-r align-middle">
-                  <span
-                    className="inline-flex items-center gap-1 whitespace-normal break-words leading-snug"
-                    title={row.description}
-                  >
-                    {row.actionLabel}
-                    {row.action === "manage" && (
-                      <span
-                        className="inline-flex"
-                        title="Gerenciar engloba todas as ações neste recurso, inclusive editar e excluir registros de outros usuários. Para limitar ao responsável, use Ver/Criar/Editar/Excluir com escopo Próprio."
-                      >
-                        <AlertTriangle
-                          className="h-3.5 w-3.5 shrink-0 text-amber-500"
-                          aria-label="Permissão ampla: inclui registros de outros usuários"
-                        />
-                      </span>
-                    )}
-                  </span>
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span
+                          tabIndex={0}
+                          className="inline-flex cursor-help items-center gap-1 whitespace-normal break-words leading-snug rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                          {row.actionLabel}
+                          {row.action === "manage" && (
+                            <AlertTriangle
+                              className="h-3.5 w-3.5 shrink-0 text-amber-500"
+                              aria-label="Permissão ampla: inclui registros de outros usuários"
+                            />
+                          )}
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-xs text-xs leading-snug">
+                        {row.tooltip}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </td>
 
                 {roles.map((r) => {

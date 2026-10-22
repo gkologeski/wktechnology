@@ -5,6 +5,7 @@ import {
   keysForSelection,
   selectValue,
   prettyResource,
+  describeFunctionality,
   NONE_VALUE,
   type ScopePermissionRow,
 } from "./scope-matrix";
@@ -113,5 +114,22 @@ describe("prettyResource", () => {
     expect(prettyResource("task_queues")).toBe("Filas de tarefas");
     expect(prettyResource("marketing.landing_pages")).toBe("Landing pages");
     expect(prettyResource("foo.bar_baz")).toBe("Bar baz");
+  });
+});
+
+describe("describeFunctionality", () => {
+  it("explica escopo fixo de Criar e Exportar", () => {
+    expect(describeFunctionality("create", "Atividades")).toContain(
+      "cadastrar novos registros de atividades",
+    );
+    expect(describeFunctionality("export", "Atividades")).toContain(
+      "apenas o que a pessoa já consegue ver",
+    );
+  });
+  it("avisa que Acesso total inclui registros de outros usuários", () => {
+    expect(describeFunctionality("manage", "Empresas")).toContain("registros de outros usuários");
+  });
+  it("Editar menciona o escopo escolhido", () => {
+    expect(describeFunctionality("update", "Leads")).toContain("O escopo escolhido define quais");
   });
 });
