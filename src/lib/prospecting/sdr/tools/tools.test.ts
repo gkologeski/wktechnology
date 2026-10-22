@@ -326,7 +326,9 @@ describe("fluxo template → inbound → Lia → agenda → reunião", () => {
       "c3",
     )) as Record<string, unknown>;
     expect(ok.status).toBe("confirmed");
-    expect(store.meetings[0]!.attendee_email).toBe("ana@cliente.com.br");
+    expect((store.meetings[0] as unknown as Record<string, unknown>).attendee_email).toBe(
+      "ana@cliente.com.br",
+    );
   });
 
   it("nova consulta após opções mostradas registra a recusa mesmo sem pedido explícito", async () => {
