@@ -78,7 +78,7 @@ export const TOOL_DEFS: ToolDef[] = [
     skill: "agenda",
     name: "Consultar horários",
     description:
-      "Consulta a agenda REAL do anfitrião deste agente. Sem data específica: devolve até 3 opções em turnos e dias diferentes. Com data (YYYY-MM-DD com ano) e opcionalmente hora (HH:MM): verifica exatamente esse horário. Quando o cliente recusar as opções vigentes, chame com rejected_previous=true SEM data/turno: a ferramenta registra a recusa e pede que você pergunte qual dia e turno (manhã/tarde) ele prefere. Com a resposta, chame com date (YYYY-MM-DD) e/ou part_of_day. Ofereça SOMENTE as opções devolvidas, numeradas.",
+      "Consulta a agenda REAL do anfitrião deste agente a partir de agora. Sem data: devolve até 3 opções livres em ordem cronológica, variando dias e turnos quando houver. Com date (YYYY-MM-DD com ano) e opcionalmente time (HH:MM): verifica exatamente esse pedido e, se ocupado, devolve alternativas. rejected_previous=true registra que o cliente recusou as opções vigentes e devolve outras, sem repetir as recusadas. Devolve apenas horários reais; status sem opções significa que não há alternativa no filtro pedido.",
     effect: "read",
     confirmation: false,
     requires: ["calendar"],
@@ -109,7 +109,7 @@ export const TOOL_DEFS: ToolDef[] = [
     skill: "agenda",
     name: "Marcar reunião",
     description:
-      "Marca a reunião numa das opções VIGENTES (número 1–3 da última consulta). Revalida a agenda antes. Só chame depois que o cliente escolheu e confirmou explicitamente.",
+      "Marca a reunião numa das opções VIGENTES (número 1–3 da última consulta já apresentada ao cliente). Revalida a agenda antes. Exige o e-mail escrito pelo cliente e a mensagem atual de confirmação.",
     effect: "write",
     confirmation: true,
     requires: ["calendar"],
@@ -118,7 +118,8 @@ export const TOOL_DEFS: ToolDef[] = [
       option: { type: "integer", minimum: 1, maximum: 3 },
       attendee_email: {
         ...nstr,
-        description: "E-mail que o cliente informou para receber o convite; null se não informou.",
+        description:
+          "E-mail que o cliente escreveu na conversa para receber o convite; sem ele a reserva é recusada.",
       },
       ...confirmProps,
     }),
@@ -224,7 +225,7 @@ export const TOOL_DEFS: ToolDef[] = [
     skill: "conhecimento",
     name: "Pesquisar conhecimento",
     description:
-      "Pesquisa no catálogo ativo, nas fontes do agente e na base de conhecimento publicada. Sem resultado: diga que vai confirmar com um especialista.",
+      "Pesquisa no catálogo ativo, nas fontes do agente e na base de conhecimento publicada. Devolve trechos com a fonte; sem resultado, devolve no_results.",
     effect: "read",
     confirmation: false,
     requires: [],
@@ -273,7 +274,7 @@ export const TOOL_DEFS: ToolDef[] = [
     id: "human.handoff",
     skill: "atendimento",
     name: "Passar para uma pessoa",
-    description: "Transfere a conversa ao responsável com um resumo; a IA deixa de responder.",
+    description: "Solicita a transferência da conversa ao responsável, com motivo e contexto. A transferência é efetivada pelo sistema ao final do turno.",
     effect: "write",
     confirmation: false,
     requires: ["assignee"],
@@ -399,14 +400,36 @@ export const ScheduleConfigSchema = z.object({
     .max(60)
     .default([]),
   video: z.enum(["google_meet", "none"]).default("google_meet"),
-  meeting_title: z.string().max(120).default("Reunião {empresa} <> WK Technology"),
+  meeting_title: z.string().max(120).default("Reunião {empresa}"),
+  /**
+   * Estratégia após o cliente recusar as opções: offer_new = nova consulta com
+   * até 3 horários diferentes; ask_preference = registrar a recusa e devolver
+   * sem opções para a conversa perguntar a preferência.
+   */
+  after_rejection: z.enum(["offer_new", "ask_preference"]).default("offer_new"),
 });
 export type ScheduleConfig = z.infer<typeof ScheduleConfigSchema>;
+
+/**
+ * Automações versionadas com a configuração do agente. Todas DESLIGADAS por
+ * padrão: nenhuma ação automática não solicitada sem configuração explícita.
+ */
+export const AutomationsSchema = z.object({
+  /** Passa para uma pessoa quando o cliente pergunta se fala com IA e silencia. */
+  ai_question_silence_handoff: z
+    .object({
+      enabled: z.boolean().default(false),
+      minutes: z.number().int().min(5).max(1440).default(30),
+    })
+    .default({}),
+});
+export type Automations = z.infer<typeof AutomationsSchema>;
 
 export const ToolConfigSchema = z.object({
   enabled_tools: z.array(z.string()).default([]),
   scheduling: ScheduleConfigSchema.nullable().default(null),
   allowed_tags: z.array(z.string().trim().min(1).max(60)).max(40).default([]),
+  automations: AutomationsSchema.default({}),
 });
 export type ToolConfig = z.infer<typeof ToolConfigSchema>;
 
