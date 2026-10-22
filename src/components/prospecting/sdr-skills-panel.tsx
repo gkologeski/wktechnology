@@ -113,6 +113,7 @@ function defaultSchedule(c: Catalog): NonNullable<ToolConfig["scheduling"]> | nu
     holidays: [],
     video: "google_meet",
     meeting_title: DEFAULT_MEETING_TITLE,
+    after_rejection: "offer_new",
   };
 }
 
@@ -142,6 +143,7 @@ function SkillsForm({ playbookId }: { playbookId: string }) {
           enabled_tools: [],
           scheduling: defaultSchedule(q.data),
           allowed_tags: [],
+          automations: { ai_question_silence_handoff: { enabled: false, minutes: 30 } },
         },
       );
   }, [q.data, cfg]);
@@ -257,6 +259,7 @@ function SkillsForm({ playbookId }: { playbookId: string }) {
                     holidays: [],
                     video: "google_meet",
                     meeting_title: DEFAULT_MEETING_TITLE,
+                    after_rejection: "offer_new",
                   },
                 })
               }
@@ -337,6 +340,25 @@ function SkillsForm({ playbookId }: { playbookId: string }) {
               v={s.horizon_days}
               on={(n) => setS({ horizon_days: n })}
             />
+            <div className="min-w-0 space-y-1.5 md:col-span-2">
+              <Label htmlFor="sk-rej">Quando o cliente recusar as opções</Label>
+              <Select
+                value={s.after_rejection ?? "offer_new"}
+                onValueChange={(v) =>
+                  setS({ after_rejection: v as "offer_new" | "ask_preference" })
+                }
+              >
+                <SelectTrigger id="sk-rej" className="min-w-0 [&>span]:truncate">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="offer_new">Consultar e oferecer até 3 novos horários</SelectItem>
+                  <SelectItem value="ask_preference">
+                    Registrar a recusa sem novos horários
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <fieldset className="space-y-2 md:col-span-2">
               <legend className="text-sm font-medium">Expediente</legend>
               <p className="text-xs text-muted-foreground">
@@ -481,6 +503,55 @@ function SkillsForm({ playbookId }: { playbookId: string }) {
           </ul>
         </section>
       ))}
+
+      <section className="space-y-2">
+        <SectionHeader
+          title="Automações"
+          description="Regras automáticas desta versão. Ficam desligadas até você ligar e publicar."
+        />
+        <div className="flex flex-wrap items-center gap-3">
+          <Switch
+            id="sk-auto-ai"
+            checked={!!cfg.automations?.ai_question_silence_handoff.enabled}
+            onCheckedChange={(v) =>
+              setCfg({
+                ...cfg,
+                automations: {
+                  ai_question_silence_handoff: {
+                    minutes: cfg.automations?.ai_question_silence_handoff.minutes ?? 30,
+                    enabled: v,
+                  },
+                },
+              })
+            }
+          />
+          <Label htmlFor="sk-auto-ai" className="font-normal">
+            Passar para uma pessoa quando o cliente perguntar se fala com uma IA e parar de
+            responder
+          </Label>
+          <Input
+            aria-label="Minutos de silêncio antes de passar para uma pessoa"
+            type="number"
+            min={5}
+            max={1440}
+            className="w-24"
+            disabled={!cfg.automations?.ai_question_silence_handoff.enabled}
+            value={cfg.automations?.ai_question_silence_handoff.minutes ?? 30}
+            onChange={(e) =>
+              setCfg({
+                ...cfg,
+                automations: {
+                  ai_question_silence_handoff: {
+                    enabled: !!cfg.automations?.ai_question_silence_handoff.enabled,
+                    minutes: Math.max(5, Math.min(1440, Number(e.target.value) || 30)),
+                  },
+                },
+              })
+            }
+          />
+          <span className="text-xs text-muted-foreground">min</span>
+        </div>
+      </section>
 
       <section className="space-y-2">
         <SectionHeader
