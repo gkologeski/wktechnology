@@ -400,7 +400,7 @@ export const ScheduleConfigSchema = z.object({
     .max(60)
     .default([]),
   video: z.enum(["google_meet", "none"]).default("google_meet"),
-  meeting_title: z.string().max(120).default("Reunião {empresa}"),
+  meeting_title: z.string().max(120).default("Reunião {empresa} <> WK Technology"),
   /**
    * Estratégia após o cliente recusar as opções: offer_new = nova consulta com
    * até 3 horários diferentes; ask_preference = registrar a recusa e devolver
