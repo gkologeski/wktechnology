@@ -344,3 +344,26 @@ defaults, memberships, outros overrides e denies preservados; somente catálogo
 e Head RH da WK receberam as 18 chaves planejadas (1703→1721 e 546→564).
 Consumidores ainda precisam publicar; ativação 0199 continua bloqueada até a
 verificação da publicação, conforme a ordem técnica deste rollout.
+
+
+### Ativação 0199 de dados privados
+
+Consumidores do commit ab1c5fe128423f730818e8ec7e56f2423e3a61e2 publicados em
+ambos os domínios, entry index-BXZ35Hoh.js e ficha people._id-DhImt435.js
+conferidos byte a byte com o build testado. Só depois dessa prova foi aplicada
+0199 (hash d1cf1af3670566f35a65ac54ca1e66226f70b0126fc2167f44e325d10f4d6109,
+when 1792797293002, id 203).
+
+Três gatilhos privados ativos. Leitura direta de bank, private_notes e cost_rate
+pela role authenticated retorna sem privilégio, inclusive para Head RH; leitura
+permitida passa pela RPC com as chaves individuais. A simulação SQL de Priscila
+criou e editou uma pessoa sintética com dados fictícios, confirmou leitura privada
+pela RPC, negou SELECT direto e confirmou campos públicos acessíveis. Identidade
+sem membership não leu nem editou. Transação integralmente revertida, zero pessoas
+sintéticas remanescentes. Não equivale a sessão real de navegador.
+
+RPC privada: 186 linhas em 49,16 ms (medição só da RPC). O primeiro ensaio de
+1730,81 ms incluía a consulta dos IDs sob RLS; não deve ser interpretado como
+latência da RPC. Os 18 novos grants estão apenas no Head RH da WK. A matriz geral
+de hidden/masked/readonly, outras ações/módulos e o aceite no navegador seguem
+frentes pendentes do plano de seis etapas.

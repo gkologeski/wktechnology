@@ -1394,6 +1394,13 @@
       "when": 1792795456235,
       "tag": "0198_hr_private_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 199,
+      "version": "7",
+      "when": 1792797293002,
+      "tag": "0199_hr_private_fields_activation",
+      "breakpoints": true
     }
   ]
 }

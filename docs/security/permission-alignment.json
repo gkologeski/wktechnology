@@ -767,7 +767,7 @@
       "server": "readHrPrivate; bounded hr_private_fields RPC; omit unauthorized blank values, reject nonblank writes, preserve omitted fields; imports use authenticated RLS, file storage requires record-specific authorization; payroll additionally requires financial recurrence view/create/update workspace",
       "database": "0198 introduces whitelist RPC and catalog, with canonical and broad-workspace paths; 0199 activates dirty-column triggers, removes direct private SELECT and deprecated salary-view access after consumers deploy",
       "migration": "0198 + 0199",
-      "state": "0198_applied_tested_0199_and_ui_publication_pending",
+      "state": "applied_consumers_published_sql_tested_browser_pending",
       "exceptions": [
         "trusted jobs without auth.uid retain service path; no new grants outside explicitly authorized WK Head RH; existing denies preserved"
       ]
@@ -992,8 +992,8 @@
       "area": "TechPeople",
       "problema": "Dados sensíveis dependem de outros recursos",
       "decisao_alvo": "Definir recursos de campos sensíveis e aplicar projeção independente de permissões de benefícios/bem-estar.",
-      "status": "preparacao_0198_aplicada_testada_consumidores_ativacao_pendentes",
-      "evidencia_migracao": "0198 preparation + frontend/server rollout; 0199 activation only after published assets match",
+      "status": "aplicado_publicado_testado_sql_aceite_browser_pendente",
+      "evidencia_migracao": "0198 + 0199; consumers ab1c5fe12 verified on both domains; 3 private guards and direct-column ACL active; actual identity-simulated positive/negative/rollback checks passed",
       "aceite_visual": false
     },
     {
