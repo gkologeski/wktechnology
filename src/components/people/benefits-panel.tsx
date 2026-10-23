@@ -1,3 +1,6 @@
+import { HrScreenAccess, HrAccessError } from "@/components/hr-access";
+import { usePersonResourceAccess } from "@/lib/access-control/use-person-resource-access";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 // TechPeople · Sprint 10 — Benefícios, Folha e Custos
 import { useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
@@ -47,7 +50,16 @@ const brl = (n: number | null | undefined) =>
     maximumFractionDigits: 2,
   });
 
-export function BenefitsPanel({ personId, canWrite }: { personId: string; canWrite: boolean }) {
+export function BenefitsPanel(props: { personId: string; canWrite?: boolean }) {
+  return (
+    <HrScreenAccess resources={["techpeople.benefits"]}>
+      <BenefitsPanelContent personId={props.personId} />
+    </HrScreenAccess>
+  );
+}
+
+function BenefitsPanelContent({ personId }: { personId: string }) {
+  const { workspaceId } = usePermissions();
   const qc = useQueryClient();
   const listFn = useServerFn(listPeopleBenefits);
   const costFn = useServerFn(getPersonTotalCost);
@@ -56,12 +68,22 @@ export function BenefitsPanel({ personId, canWrite }: { personId: string; canWri
   const [editing, setEditing] = useState<PeopleBenefitRow | null>(null);
   const [open, setOpen] = useState(false);
 
-  const { data: rows = [], isLoading } = useQuery({
-    queryKey: ["people_benefits", personId],
+  const {
+    data: rows = [],
+    isError,
+    refetch,
+    isLoading,
+  } = useQuery({
+    queryKey: ["people_benefits", personId, workspaceId],
     queryFn: () => listFn({ data: { personId } }),
   });
+  const access = usePersonResourceAccess(
+    "benefits",
+    personId,
+    rows.map((row) => row.id),
+  );
   const { data: cost } = useQuery({
-    queryKey: ["people_total_cost", personId],
+    queryKey: ["people_total_cost", personId, workspaceId],
     queryFn: () => costFn({ data: { personId } }),
   });
 
@@ -69,8 +91,8 @@ export function BenefitsPanel({ personId, canWrite }: { personId: string; canWri
     mutationFn: (id: string) => delFn({ data: { id } }),
     onSuccess: () => {
       toast.success("Benefício removido");
-      qc.invalidateQueries({ queryKey: ["people_benefits", personId] });
-      qc.invalidateQueries({ queryKey: ["people_total_cost", personId] });
+      qc.invalidateQueries({ queryKey: ["people_benefits", personId, workspaceId] });
+      qc.invalidateQueries({ queryKey: ["people_total_cost", personId, workspaceId] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -79,6 +101,8 @@ export function BenefitsPanel({ personId, canWrite }: { personId: string; canWri
   const benefitsTotal = activeRows.reduce((sum, r) => sum + Number(r.monthly_value), 0);
   const employeeShareTotal = activeRows.reduce((sum, r) => sum + Number(r.employee_share), 0);
 
+  if (isError) return <HrAccessError retry={() => void refetch()} />;
+  if (access.isError) return <HrAccessError retry={access.refetch} />;
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -125,10 +149,10 @@ export function BenefitsPanel({ personId, canWrite }: { personId: string; canWri
           <div>
             <CardTitle className="text-base">Benefícios</CardTitle>
             <CardDescription>
-              Registre planos, valores e vigência. Somente administradores podem editar.
+              Registre planos, valores e vigência. Ações disponíveis conforme suas permissões.
             </CardDescription>
           </div>
-          {canWrite ? (
+          {access.canCreate ? (
             <Button
               size="sm"
               onClick={() => {
@@ -180,11 +204,12 @@ export function BenefitsPanel({ personId, canWrite }: { personId: string; canWri
                       <p className="mt-1 text-xs text-muted-foreground">{r.notes}</p>
                     ) : null}
                   </div>
-                  {canWrite ? (
+                  {access.canUpdate(r.id) || access.canDelete(r.id) ? (
                     <div className="flex gap-1 shrink-0">
                       <Button
                         variant="ghost"
                         size="icon"
+                        disabled={!access.canUpdate(r.id)}
                         onClick={() => {
                           setEditing(r);
                           setOpen(true);
@@ -195,6 +220,7 @@ export function BenefitsPanel({ personId, canWrite }: { personId: string; canWri
                       <Button
                         variant="ghost"
                         size="icon"
+                        disabled={!access.canDelete(r.id)}
                         onClick={async () => {
                           if (await confirmDialog("Remover este benefício?")) del.mutate(r.id);
                         }}
@@ -210,7 +236,12 @@ export function BenefitsPanel({ personId, canWrite }: { personId: string; canWri
         </CardContent>
       </Card>
 
-      <BenefitDialog personId={personId} open={open} onClose={() => setOpen(false)} row={editing} />
+      <BenefitDialog
+        personId={personId}
+        open={open && (editing ? access.canUpdate(editing.id) : access.canCreate)}
+        onClose={() => setOpen(false)}
+        row={editing}
+      />
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { usePersonResourceAccess } from "@/lib/access-control/use-person-resource-access";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { HrScreenAccess, HrRecordAccess, HrAccessError } from "@/components/hr-access";
 import { useHrCapabilities } from "@/lib/access-control/use-hr-capabilities";
@@ -113,7 +114,9 @@ function PersonDetailPage() {
 }
 
 function PersonDetailPageContent() {
-  const { workspaceId } = usePermissions();
+  const { workspaceId, canAny } = usePermissions();
+  const canView = (resource: string) =>
+    canAny(["workspace", "team", "own"].map((scope) => `${resource}.view.${scope}`));
   const { id } = Route.useParams();
   const qc = useQueryClient();
   const getFn = useServerFn(getPerson);
@@ -130,14 +133,14 @@ function PersonDetailPageContent() {
   const { data: documents = [] } = useQuery({
     queryKey: ["person-docs", id, workspaceId],
     queryFn: () => listDocs({ data: { person_id: id } }),
-    enabled: !!data,
+    enabled: !!data && canView("techpeople.documents"),
     staleTime: 30_000,
   });
 
   const { data: timeline = [] } = useQuery({
     queryKey: ["person-timeline", id, workspaceId],
     queryFn: () => listTimeline({ data: { person_id: id, limit: 50 } }),
-    enabled: !!data,
+    enabled: !!data && canView("techpeople.events"),
     staleTime: 30_000,
   });
 
@@ -189,6 +192,9 @@ function PersonForm({
   upsert: ReturnType<typeof useServerFn<typeof upsertPerson>>;
 }) {
   const p = person;
+  const { canAny } = usePermissions();
+  const canViewResource = (resource: string) =>
+    canAny(["workspace", "team", "own"].map((scope) => `${resource}.view.${scope}`));
   const access = useHrCapabilities("people", [p.id]);
   const canWrite = access.for(p.id).can_update;
   const canViewSensitive = !!person.can_view_sensitive;
@@ -315,17 +321,38 @@ function PersonForm({
       <Tabs defaultValue="profile">
         <TabsList>
           <TabsTrigger value="profile">Perfil</TabsTrigger>
-          <TabsTrigger value="allocations">Alocações</TabsTrigger>
-          <TabsTrigger value="timesheet">Timesheet</TabsTrigger>
-          <TabsTrigger value="goals">Metas</TabsTrigger>
-          <TabsTrigger value="one_on_ones">1:1s</TabsTrigger>
-          <TabsTrigger value="reviews">Avaliações</TabsTrigger>
-          <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
-          {canViewSensitive ? <TabsTrigger value="psychosocial">Psicossocial</TabsTrigger> : null}
-          {canViewSensitive ? <TabsTrigger value="incidents">Incidentes</TabsTrigger> : null}
-          {canViewSensitive ? <TabsTrigger value="benefits">Benefícios</TabsTrigger> : null}
-          <TabsTrigger value="documents">Documentos</TabsTrigger>
-          <TabsTrigger value="timeline">Histórico</TabsTrigger>
+          {canViewResource("techpeople.allocations") && (
+            <TabsTrigger value="allocations">Alocações</TabsTrigger>
+          )}
+          {canViewResource("techpeople.timesheet") && (
+            <TabsTrigger value="timesheet">Timesheet</TabsTrigger>
+          )}
+          {canViewResource("techpeople.goals") && <TabsTrigger value="goals">Metas</TabsTrigger>}
+          {canViewResource("techpeople.one_on_ones") && (
+            <TabsTrigger value="one_on_ones">1:1s</TabsTrigger>
+          )}
+          {canViewResource("techpeople.reviews") && (
+            <TabsTrigger value="reviews">Avaliações</TabsTrigger>
+          )}
+          {(canViewResource("techpeople.onboarding") ||
+            canViewResource("techpeople.offboarding")) && (
+            <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
+          )}
+          {canViewResource("techpeople.wellbeing.assessments") ? (
+            <TabsTrigger value="psychosocial">Psicossocial</TabsTrigger>
+          ) : null}
+          {canViewResource("techpeople.incidents") ? (
+            <TabsTrigger value="incidents">Incidentes</TabsTrigger>
+          ) : null}
+          {canViewResource("techpeople.benefits") ? (
+            <TabsTrigger value="benefits">Benefícios</TabsTrigger>
+          ) : null}
+          {canViewResource("techpeople.documents") && (
+            <TabsTrigger value="documents">Documentos</TabsTrigger>
+          )}
+          {canViewResource("techpeople.events") && (
+            <TabsTrigger value="timeline">Histórico</TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="profile" className="space-y-4 pt-4">
@@ -623,36 +650,46 @@ function PersonForm({
         </TabsContent>
 
         <TabsContent value="allocations" className="pt-4">
-          <AllocationsPanel
-            personId={p.id}
-            personName={p.full_name}
-            personDocs={[
-              p.cnpj,
-              (p.personal_doc as Record<string, unknown> | null)?.["cpf"] as
-                | string
-                | null
-                | undefined,
-            ]}
-            personCompanyNames={[p.legal_entity_name, p.trade_name]}
-            canWrite={canWrite}
-            canViewSensitive={canViewSensitive}
-          />
+          <HrScreenAccess resources={["techpeople.allocations"]}>
+            <AllocationsPanel
+              personId={p.id}
+              personName={p.full_name}
+              personDocs={[
+                p.cnpj,
+                (p.personal_doc as Record<string, unknown> | null)?.["cpf"] as
+                  | string
+                  | null
+                  | undefined,
+              ]}
+              personCompanyNames={[p.legal_entity_name, p.trade_name]}
+              canWrite={canWrite}
+              canViewSensitive={canViewSensitive}
+            />
+          </HrScreenAccess>
         </TabsContent>
 
         <TabsContent value="timesheet" className="pt-4">
-          <TimesheetPanel personId={p.id} />
+          <HrScreenAccess resources={["techpeople.timesheet"]}>
+            <TimesheetPanel personId={p.id} />
+          </HrScreenAccess>
         </TabsContent>
 
         <TabsContent value="goals" className="pt-4">
-          <GoalsPanel personId={p.id} canWrite={canWrite} />
+          <HrScreenAccess resources={["techpeople.goals"]}>
+            <GoalsPanel personId={p.id} canWrite={canWrite} />
+          </HrScreenAccess>
         </TabsContent>
 
         <TabsContent value="one_on_ones" className="pt-4">
-          <OneOnOnesPanel personId={p.id} canWrite={canWrite} />
+          <HrScreenAccess resources={["techpeople.one_on_ones"]}>
+            <OneOnOnesPanel personId={p.id} canWrite={canWrite} />
+          </HrScreenAccess>
         </TabsContent>
 
         <TabsContent value="reviews" className="pt-4">
-          <ReviewsPanel personId={p.id} canWrite={canWrite} />
+          <HrScreenAccess resources={["techpeople.reviews"]}>
+            <ReviewsPanel personId={p.id} canWrite={canWrite} />
+          </HrScreenAccess>
         </TabsContent>
 
         <TabsContent value="onboarding" className="pt-4 space-y-4">
@@ -664,19 +701,19 @@ function PersonForm({
           </HrScreenAccess>
         </TabsContent>
 
-        {canViewSensitive ? (
+        {canViewResource("techpeople.wellbeing.assessments") ? (
           <TabsContent value="psychosocial" className="pt-4">
             <PsychosocialPanel personId={p.id} canWrite={canWrite} />
           </TabsContent>
         ) : null}
 
-        {canViewSensitive ? (
+        {canViewResource("techpeople.incidents") ? (
           <TabsContent value="incidents" className="pt-4">
             <IncidentsPanel personId={p.id} canWrite={canWrite} />
           </TabsContent>
         ) : null}
 
-        {canViewSensitive ? (
+        {canViewResource("techpeople.benefits") ? (
           <TabsContent value="benefits" className="pt-4">
             <BenefitsPanel personId={p.id} canWrite={canWrite} />
           </TabsContent>

@@ -10,7 +10,7 @@ const NO_SESSION: MyModuleAccess = {
   workspaceId: null,
   licensed: [],
   allowed: [],
-  unrestricted: true,
+  unrestricted: false,
 };
 
 export function useModuleAccess() {
@@ -28,15 +28,19 @@ export function useModuleAccess() {
   });
 
   const data = query.data;
-  const unrestricted = !data || data.unrestricted;
+  const ready = !query.isLoading && !query.isError && !!data?.workspaceId;
+  const unrestricted = ready && data?.unrestricted === true;
 
-  /** Enquanto carrega (ou sem restrição aplicável) não bloqueia nada. */
+  /** Only a successful selected-workspace response may authorize a module. */
   const canAccessModule = (moduleId: string): boolean => {
+    if (!ready || !data) return false;
     if (unrestricted) return true;
     return data.allowed.includes(moduleId);
   };
 
-  const allowedModules = (unrestricted ? [] : (data.allowed as ModuleId[])) as ModuleId[];
+  const allowedModules = (
+    ready && !unrestricted ? ((data?.allowed ?? []) as ModuleId[]) : []
+  ) as ModuleId[];
 
   /** Único módulo disponível, quando houver exatamente um. */
   const soleModule: ModuleId | null =
@@ -44,6 +48,8 @@ export function useModuleAccess() {
 
   return {
     loading: query.isLoading,
+    isError: query.isError,
+    refetch: query.refetch,
     unrestricted,
     allowedModules,
     soleModule,

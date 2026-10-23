@@ -2,6 +2,24 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 
 type HrRecord =
+  | "documents"
+  | "benefits"
+  | "allocations"
+  | "goals"
+  | "one_on_ones"
+  | "reviews"
+  | "assessments"
+  | "incidents"
+  | "events"
+  | "person_documents"
+  | "person_benefits"
+  | "person_allocations"
+  | "person_goals"
+  | "person_one_on_ones"
+  | "person_reviews"
+  | "person_assessments"
+  | "person_incidents"
+  | "person_events"
   | "people"
   | "candidates"
   | "onboarding_plans"
@@ -31,7 +49,11 @@ export async function assertHrRecordAccess(
 export async function assertHrCreate(
   client: SupabaseClient,
   userId: string,
-  resource: "techpeople.people" | "techhire.candidates" | "techpeople.onboarding_templates",
+  resource:
+    | "techpeople.people"
+    | "techhire.candidates"
+    | "techpeople.onboarding_templates"
+    | "techpeople.incidents",
 ): Promise<string> {
   const workspaceId = await getActiveWorkspaceId(client, userId);
   await assertAnyPermission(client, userId, workspaceId, [
@@ -39,4 +61,16 @@ export async function assertHrCreate(
     `${resource}.create.own`,
   ]);
   return workspaceId;
+}
+
+/** Creation checks the target person; edits/deletes check the actual child row. */
+export async function assertHrChildMutation(
+  client: SupabaseClient,
+  resource: HrRecord,
+  id: string | null | undefined,
+  personId: string | null | undefined,
+): Promise<void> {
+  if (id) return assertHrRecordAccess(client, resource, "update", id);
+  if (!personId) throw new Error("Selecione uma pessoa para este registro.");
+  return assertHrRecordAccess(client, `person_${resource}` as HrRecord, "create", personId);
 }

@@ -1,3 +1,6 @@
+import { HrScreenAccess, HrAccessError } from "@/components/hr-access";
+import { usePersonResourceAccess } from "@/lib/access-control/use-person-resource-access";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 // Painel de Metas (OKR/KPI) da pessoa. Sprint 2 do TechPeople.
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -42,30 +45,50 @@ import {
 } from "@/lib/people/performance.functions";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
-export function GoalsPanel({ personId, canWrite }: { personId: string; canWrite: boolean }) {
+export function GoalsPanel(props: { personId: string; canWrite?: boolean }) {
+  return (
+    <HrScreenAccess resources={["techpeople.goals"]}>
+      <GoalsPanelContent personId={props.personId} />
+    </HrScreenAccess>
+  );
+}
+
+function GoalsPanelContent({ personId }: { personId: string }) {
+  const { workspaceId } = usePermissions();
   const qc = useQueryClient();
   const listFn = useServerFn(listGoals);
   const delFn = useServerFn(deleteGoal);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<GoalRow | null>(null);
 
-  const { data: goals = [] } = useQuery({
-    queryKey: ["person-goals", personId],
+  const {
+    data: goals = [],
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ["person-goals", personId, workspaceId],
     queryFn: () => listFn({ data: { person_id: personId } }),
   });
+  const access = usePersonResourceAccess(
+    "goals",
+    personId,
+    goals.map((row) => row.id),
+  );
 
   const del = useMutation({
     mutationFn: (id: string) => delFn({ data: { id } }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["person-goals", personId] });
+      qc.invalidateQueries({ queryKey: ["person-goals", personId, workspaceId] });
       toast.success("Meta removida");
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
+  if (isError) return <HrAccessError retry={() => void refetch()} />;
+  if (access.isError) return <HrAccessError retry={access.refetch} />;
   return (
     <div className="space-y-3">
-      {canWrite ? (
+      {access.canCreate ? (
         <div className="flex justify-end">
           <Button
             size="sm"
@@ -104,11 +127,12 @@ export function GoalsPanel({ personId, canWrite }: { personId: string; canWrite:
                     ) : null}
                   </div>
                 </div>
-                {canWrite ? (
+                {access.canUpdate(g.id) || access.canDelete(g.id) ? (
                   <div className="flex items-center gap-1 shrink-0">
                     <Button
                       variant="ghost"
                       size="icon"
+                      disabled={!access.canUpdate(g.id)}
                       onClick={() => {
                         setEditing(g);
                         setOpen(true);
@@ -119,6 +143,7 @@ export function GoalsPanel({ personId, canWrite }: { personId: string; canWrite:
                     <Button
                       variant="ghost"
                       size="icon"
+                      disabled={!access.canDelete(g.id)}
                       onClick={async () => {
                         if (await confirmDialog("Remover meta?")) del.mutate(g.id);
                       }}
@@ -139,7 +164,12 @@ export function GoalsPanel({ personId, canWrite }: { personId: string; canWrite:
         ))
       )}
 
-      <GoalDialog open={open} onOpenChange={setOpen} personId={personId} goal={editing} />
+      <GoalDialog
+        open={open && (editing ? access.canUpdate(editing.id) : access.canCreate)}
+        onOpenChange={setOpen}
+        personId={personId}
+        goal={editing}
+      />
     </div>
   );
 }

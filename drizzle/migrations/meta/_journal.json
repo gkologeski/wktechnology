@@ -1366,6 +1366,27 @@
       "when": 1792788396400,
       "tag": "0194_hr_ui_capabilities",
       "breakpoints": true
+    },
+    {
+      "idx": 195,
+      "version": "7",
+      "when": 1792792108149,
+      "tag": "0195_people_resource_actions",
+      "breakpoints": true
+    },
+    {
+      "idx": 196,
+      "version": "7",
+      "when": 1792793628829,
+      "tag": "0196_hr_child_responsible_actor",
+      "breakpoints": true
+    },
+    {
+      "idx": 197,
+      "version": "7",
+      "when": 1792793911247,
+      "tag": "0197_hr_capabilities_batch_context",
+      "breakpoints": true
     }
   ]
 }

@@ -1,3 +1,8 @@
+import {
+  assertHrChildMutation,
+  assertHrRecordAccess,
+} from "@/lib/access-control/hr-records.server";
+import { getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 // Sprint 10 — Benefícios, Folha e Custos
 // Server functions para gerenciar benefícios (people_benefits) e consulta de custo total.
 import { createServerFn } from "@tanstack/react-start";
@@ -108,6 +113,8 @@ export const upsertPeopleBenefit = createServerFn({ method: "POST" })
   .inputValidator((data: z.infer<typeof upsertSchema>) => upsertSchema.parse(data))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const activeWorkspace = await getActiveWorkspaceId(supabase, userId);
+    await assertHrChildMutation(supabase, "benefits", data.id, data.person_id);
 
     // Descobre owner_id via people.owner_id (garante RLS admin_v2 mesmo se o cliente enviar person_id alheio)
     const { data: person, error: personErr } = await supabase
@@ -140,7 +147,8 @@ export const upsertPeopleBenefit = createServerFn({ method: "POST" })
         .select(BENEFIT_COLS)
         .maybeSingle();
       if (error) throw error;
-      return updated as PeopleBenefitRow | null;
+      if (!updated) throw new Error("Registro indisponível ou sem permissão para editar.");
+      return updated as PeopleBenefitRow;
     }
 
     const { data: inserted, error } = await supabase
@@ -148,12 +156,14 @@ export const upsertPeopleBenefit = createServerFn({ method: "POST" })
       .insert({
         ...payload,
         owner_id: (person as { owner_id: string }).owner_id,
+        workspace_id: activeWorkspace,
         created_by: userId,
       })
       .select(BENEFIT_COLS)
       .maybeSingle();
     if (error) throw error;
-    return inserted as PeopleBenefitRow | null;
+    if (!inserted) throw new Error("Não foi possível confirmar a gravação do benefício.");
+    return inserted as PeopleBenefitRow;
   });
 
 // ============================================================
@@ -163,6 +173,7 @@ export const deletePeopleBenefit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { id: string }) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
+    await assertHrRecordAccess(context.supabase, "benefits", "delete", data.id);
     await deleteByIdGuarded(
       context.supabase,
       "people_benefits",

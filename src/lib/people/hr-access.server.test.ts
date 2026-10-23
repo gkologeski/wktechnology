@@ -76,3 +76,25 @@ it.each([null, {}, { id: "plan", existed: true }])(
     ).rejects.toThrow("confirmar");
   },
 );
+
+// Child actions must not accidentally authorize against people.update.
+it("child creation is checked against its parent and resource, never update", async () => {
+  const { assertHrChildMutation } = await import("@/lib/access-control/hr-records.server");
+  mocks.rpc.mockResolvedValue({ data: true, error: null });
+  await assertHrChildMutation(client, "documents", null, "person");
+  expect(mocks.rpc).toHaveBeenCalledWith("hr_record_access", {
+    _resource: "person_documents",
+    _action: "create",
+    _id: "person",
+  });
+});
+it("child edition is checked against the actual row", async () => {
+  const { assertHrChildMutation } = await import("@/lib/access-control/hr-records.server");
+  mocks.rpc.mockResolvedValue({ data: true, error: null });
+  await assertHrChildMutation(client, "goals", "goal", "another-person");
+  expect(mocks.rpc).toHaveBeenCalledWith("hr_record_access", {
+    _resource: "goals",
+    _action: "update",
+    _id: "goal",
+  });
+});

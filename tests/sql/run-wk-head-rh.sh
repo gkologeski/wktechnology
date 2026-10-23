@@ -49,8 +49,16 @@ run_sql drizzle/migrations/0193_hr_action_scope_alignment.sql hr-migration
 run_sql drizzle/migrations/0194_hr_ui_capabilities.sql hr-ui-migration
 run_sql tests/sql/permission-hr-ui.sql hr-ui-tests
 run_sql tests/sql/permission-hr-actions.sql hr-tests
-python3 - "$test_root/hr-ui-tests.log" "$test_root/tests.log" "$test_root/save-after.log" "$test_root/rpc-after.log" "$test_root/settings-tests.log" "$test_root/hr-tests.log" <<'PY'
+run_sql tests/sql/fixtures/permission-people-children.sql children-fixture
+run_sql drizzle/migrations/0195_people_resource_actions.sql children-migration
+run_sql tests/sql/permission-child-responsible-before.sql children-responsible-before
+run_sql drizzle/migrations/0196_hr_child_responsible_actor.sql children-responsible-migration
+run_sql drizzle/migrations/0197_hr_capabilities_batch_context.sql children-caps-migration
+run_sql tests/sql/permission-people-children.sql children-tests
+run_sql tests/sql/permission-capabilities-equivalence.sql children-caps-tests
+python3 - "$test_root/children-tests.log" "$test_root/hr-ui-tests.log" "$test_root/tests.log" "$test_root/save-after.log" "$test_root/rpc-after.log" "$test_root/settings-tests.log" "$test_root/hr-tests.log" <<'PY'
 import re,sys
+children=re.findall(r'NOTICE:  CHILD PASS (\d+):',open(sys.argv.pop(1)).read()); assert children==[str(x) for x in range(1,113)],children
 ui=re.findall(r'NOTICE:  UI PASS (\d+):',open(sys.argv.pop(1)).read()); assert ui==[str(x) for x in range(1,16)],ui
 text=open(sys.argv[1]).read()
 passed=re.findall(r'NOTICE:  PASS (\d+):',text)
@@ -59,5 +67,5 @@ saves=re.findall(r'NOTICE:  SAVE PASS (\d+):',open(sys.argv[2]).read()); assert 
 rpcs=re.findall(r'NOTICE:  RPC PASS (\d+):',open(sys.argv[3]).read()); assert rpcs==[str(x) for x in range(1,43)],rpcs
 settings=re.findall(r'NOTICE:  SETTINGS PASS (\d+):',open(sys.argv[4]).read()); assert settings==[str(x) for x in range(1,62)],settings
 hr=re.findall(r'NOTICE:  HR PASS (\d+):',open(sys.argv[5]).read()); assert hr==[str(x) for x in range(1,113)],hr
-print('15/15 UI capabilities + 112/112 HR + 61/61 settings + 44/44 RLS + 15/15 save/FK + 42/42 critical RPC checks passed. Browser/auth SDK acceptance was not run.')
+print('112/112 HR children + 15/15 UI capabilities + 112/112 HR + 61/61 settings + 44/44 RLS + 15/15 save/FK + 42/42 critical RPC checks passed. Browser/auth SDK acceptance was not run.')
 PY

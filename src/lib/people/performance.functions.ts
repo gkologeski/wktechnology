@@ -1,3 +1,8 @@
+import {
+  assertHrChildMutation,
+  assertHrRecordAccess,
+} from "@/lib/access-control/hr-records.server";
+import { getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 // Server functions para o módulo TechPeople — Sprint 2.
 // Metas (people_goals), One-on-Ones (people_one_on_ones) e Avaliações do
 // tomador (people_reviews). Todas as operações passam por RLS que exige
@@ -173,6 +178,8 @@ export const upsertGoal = createServerFn({ method: "POST" })
   .inputValidator((i) => goalUpsertSchema.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const activeWorkspace = await getActiveWorkspaceId(supabase, userId);
+    await assertHrChildMutation(supabase, "goals", data.id, data.person_id);
     const payload: Record<string, unknown> = {
       person_id: data.person_id,
       title: data.title,
@@ -188,17 +195,26 @@ export const upsertGoal = createServerFn({ method: "POST" })
       weight: data.weight,
     };
     if (data.id) {
-      const { error } = await supabase
+      const { data: saved, error } = await supabase
         .from("people_goals")
         .update(payload as never)
-        .eq("id", data.id);
+        .eq("id", data.id)
+        .select("id")
+        .maybeSingle();
       if (error) throw new Error(error.message);
+      if (!saved) throw new Error("Registro indisponível ou sem permissão para editar.");
       return { id: data.id };
     }
     const ownerId = await resolveOwnerId(supabase, userId);
     const { data: row, error } = await supabase
       .from("people_goals")
-      .insert({ ...payload, owner_id: ownerId, created_by: userId } as never)
+      .insert({
+        ...payload,
+        owner_id: ownerId,
+        workspace_id: activeWorkspace,
+        assigned_to: userId,
+        created_by: userId,
+      } as never)
       .select("id")
       .single();
     if (error) throw new Error(error.message);
@@ -209,6 +225,7 @@ export const deleteGoal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    await assertHrRecordAccess(context.supabase, "goals", "delete", data.id);
     await deleteByIdGuarded(
       context.supabase,
       "people_goals",
@@ -260,6 +277,8 @@ export const upsertOneOnOne = createServerFn({ method: "POST" })
   .inputValidator((i) => oneOnOneUpsertSchema.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const activeWorkspace = await getActiveWorkspaceId(supabase, userId);
+    await assertHrChildMutation(supabase, "one_on_ones", data.id, data.person_id);
     const payload: Record<string, unknown> = {
       person_id: data.person_id,
       manager_id: data.manager_id ?? null,
@@ -274,17 +293,26 @@ export const upsertOneOnOne = createServerFn({ method: "POST" })
       private_notes: data.private_notes ?? null,
     };
     if (data.id) {
-      const { error } = await supabase
+      const { data: saved, error } = await supabase
         .from("people_one_on_ones")
         .update(payload as never)
-        .eq("id", data.id);
+        .eq("id", data.id)
+        .select("id")
+        .maybeSingle();
       if (error) throw new Error(error.message);
+      if (!saved) throw new Error("Registro indisponível ou sem permissão para editar.");
       return { id: data.id };
     }
     const ownerId = await resolveOwnerId(supabase, userId);
     const { data: row, error } = await supabase
       .from("people_one_on_ones")
-      .insert({ ...payload, owner_id: ownerId, created_by: userId } as never)
+      .insert({
+        ...payload,
+        owner_id: ownerId,
+        workspace_id: activeWorkspace,
+        assigned_to: userId,
+        created_by: userId,
+      } as never)
       .select("id")
       .single();
     if (error) throw new Error(error.message);
@@ -295,6 +323,7 @@ export const deleteOneOnOne = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    await assertHrRecordAccess(context.supabase, "one_on_ones", "delete", data.id);
     await deleteByIdGuarded(
       context.supabase,
       "people_one_on_ones",
@@ -342,6 +371,8 @@ export const upsertReview = createServerFn({ method: "POST" })
   .inputValidator((i) => reviewUpsertSchema.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const activeWorkspace = await getActiveWorkspaceId(supabase, userId);
+    await assertHrChildMutation(supabase, "reviews", data.id, data.person_id);
 
     // Calcula overall_score se ratings foi enviado e overall não veio.
     let overall = data.overall_score;
@@ -369,17 +400,26 @@ export const upsertReview = createServerFn({ method: "POST" })
       submitted_at: data.status === "submitted" ? new Date().toISOString() : null,
     };
     if (data.id) {
-      const { error } = await supabase
+      const { data: saved, error } = await supabase
         .from("people_reviews")
         .update(payload as never)
-        .eq("id", data.id);
+        .eq("id", data.id)
+        .select("id")
+        .maybeSingle();
       if (error) throw new Error(error.message);
+      if (!saved) throw new Error("Registro indisponível ou sem permissão para editar.");
       return { id: data.id };
     }
     const ownerId = await resolveOwnerId(supabase, userId);
     const { data: row, error } = await supabase
       .from("people_reviews")
-      .insert({ ...payload, owner_id: ownerId, created_by: userId } as never)
+      .insert({
+        ...payload,
+        owner_id: ownerId,
+        workspace_id: activeWorkspace,
+        assigned_to: userId,
+        created_by: userId,
+      } as never)
       .select("id")
       .single();
     if (error) throw new Error(error.message);
@@ -390,6 +430,7 @@ export const deleteReview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    await assertHrRecordAccess(context.supabase, "reviews", "delete", data.id);
     await deleteByIdGuarded(
       context.supabase,
       "people_reviews",

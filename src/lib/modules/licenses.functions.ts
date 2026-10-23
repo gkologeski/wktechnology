@@ -18,14 +18,14 @@ export const getModuleLicenses = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ModuleLicenses> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
-
-    let workspaceId: string | null = null;
-    try {
-      workspaceId = await resolveActiveWorkspace(context.userId);
-    } catch {
-      return { workspaceId: null, enabled: [], unrestricted: true };
-    }
+    const { getActiveWorkspaceId } = await import("@/lib/access-control/enforce.server");
+    const workspaceId = await getActiveWorkspaceId(context.supabase, context.userId);
+    const member = await context.supabase.rpc("is_workspace_member", {
+      _workspace: workspaceId,
+      _user: context.userId,
+    });
+    if (member.error) throw new Error("Não foi possível verificar o vínculo com o workspace.");
+    if (member.data !== true) throw new Error("Workspace indisponível ou sem vínculo ativo.");
 
     const { data, error } = await supabaseAdmin
       .from("workspace_modules")

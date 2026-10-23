@@ -1,3 +1,8 @@
+import {
+  assertHrChildMutation,
+  assertHrRecordAccess,
+} from "@/lib/access-control/hr-records.server";
+import { getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 // Server functions para documentos de pessoas.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -56,6 +61,8 @@ export const upsertPersonDocument = createServerFn({ method: "POST" })
   .inputValidator((i) => upsertSchema.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const activeWorkspace = await getActiveWorkspaceId(supabase, userId);
+    await assertHrChildMutation(supabase, "documents", data.id, data.person_id);
 
     // Deriva status conforme validade.
     let status: PeopleDocStatus = "valid";
@@ -81,11 +88,14 @@ export const upsertPersonDocument = createServerFn({ method: "POST" })
     };
 
     if (data.id) {
-      const { error } = await supabase
+      const { data: saved, error } = await supabase
         .from("people_documents")
         .update(payload as never)
-        .eq("id", data.id);
+        .eq("id", data.id)
+        .select("id")
+        .maybeSingle();
       if (error) throw new Error(error.message);
+      if (!saved) throw new Error("Registro indisponível ou sem permissão para editar.");
       return { id: data.id };
     }
 
@@ -100,7 +110,13 @@ export const upsertPersonDocument = createServerFn({ method: "POST" })
 
     const { data: row, error } = await supabase
       .from("people_documents")
-      .insert({ ...payload, owner_id: ownerId, created_by: userId } as never)
+      .insert({
+        ...payload,
+        owner_id: ownerId,
+        workspace_id: activeWorkspace,
+        assigned_to: userId,
+        created_by: userId,
+      } as never)
       .select("id")
       .single();
     if (error) throw new Error(error.message);
@@ -111,6 +127,7 @@ export const deletePersonDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    await assertHrRecordAccess(context.supabase, "documents", "delete", data.id);
     await deleteByIdGuarded(
       context.supabase,
       "people_documents",
@@ -155,11 +172,25 @@ export const createDocumentUpload = createServerFn({ method: "POST" })
     z
       .object({
         person_id: z.string().uuid(),
+        document_id: z.string().uuid().nullable().optional(),
         file_name: z.string().min(1).max(200),
       })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    if (data.document_id) {
+      await assertHrRecordAccess(context.supabase, "documents", "update", data.document_id);
+      const doc = await context.supabase
+        .from("people_documents")
+        .select("person_id")
+        .eq("id", data.document_id)
+        .maybeSingle();
+      if (doc.error) throw new Error(doc.error.message);
+      if (!doc.data || doc.data.person_id !== data.person_id)
+        throw new Error("O documento não pertence à pessoa informada.");
+    } else {
+      await assertHrRecordAccess(context.supabase, "person_documents", "create", data.person_id);
+    }
     const { supabase } = context;
     const { data: person, error: perr } = await supabase
       .from("people")
@@ -186,6 +217,7 @@ export const getDocumentDownloadUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    await assertHrRecordAccess(context.supabase, "documents", "view", data.id);
     const { data: doc, error } = await context.supabase
       .from("people_documents")
       .select("file_url, owner_id, person_id")

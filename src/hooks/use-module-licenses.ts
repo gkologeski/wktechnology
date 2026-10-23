@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getModuleLicenses, type ModuleLicenses } from "@/lib/modules/licenses.functions";
 
-const NO_SESSION: ModuleLicenses = { workspaceId: null, enabled: [], unrestricted: true };
+const NO_SESSION: ModuleLicenses = { workspaceId: null, enabled: [], unrestricted: false };
 
 export function useModuleLicenses() {
   const fn = useServerFn(getModuleLicenses);
@@ -23,12 +23,18 @@ export function useModuleLicenses() {
 
   const data = query.data;
 
-  /** Enquanto carrega (ou sem controle configurado) não bloqueia nada. */
+  /** An unset license configuration is explicit; load failure is not permission. */
   const isLicensed = (moduleId: string): boolean => {
-    if (!data) return true;
+    if (query.isLoading || query.isError || !data?.workspaceId) return false;
     if (data.unrestricted) return true;
     return data.enabled.includes(moduleId);
   };
 
-  return { isLicensed, loading: query.isLoading, licenses: data };
+  return {
+    isLicensed,
+    loading: query.isLoading,
+    isError: query.isError,
+    refetch: query.refetch,
+    licenses: data,
+  };
 }

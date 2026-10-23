@@ -230,3 +230,69 @@ incidentes), ações de comunicação/pools/vagas/LGPD do candidato e demais mó
 Não interpretar a proteção de perfil/onboarding como aceite desses painéis.
 Aceite funcional real com sessão autenticada continua pendente (etapa 5).
 Estado final de build/sincronização/publicação fica nas evidências deste lote.
+
+
+## Continuação integral solicitada — lote 0195 em preparação
+
+O usuário autorizou concluir todas as pendências em 23/10/2026. Não reduzir o
+objetivo a este lote: as 32 regras e seis etapas continuam sendo o controle de
+conclusão. Estimativa comunicada: conjunto em 3–5 dias; próximo lote 90–150 min.
+
+0195 trata documentos, benefícios, alocações/rateios, metas, 1:1, avaliações,
+psicossocial, incidentes e eventos. Servidor e banco verificam recurso/ação/linha;
+a criação é vinculada à pessoa e não decorre de update. Novas escritas informam
+workspace explicitamente. Sem alteração de defaults. Autoria/tenant/pessoa são
+imutáveis; rateios precisam de empresa no mesmo workspace. Eventos de auditoria
+não recebem mutações de usuários comuns. Modelos de campo sensível ainda serão
+tratados separadamente: não declarar a regra 24 concluída por este lote.
+
+Os painéis de pessoa deixam de usar people.update ou can_view_person_sensitive
+como autorização genérica para as outras abas. Cada botão de criar/editar/excluir
+usa a capacidade do respectivo recurso/linha. Arquivos: upload novo exige criar
+no alvo; substituição exige editar o documento e o mesmo person_id; download
+verifica leitura do documento antes do uso do assinador privilegiado.
+
+A falha geral de consultas de módulo/licença foi identificada e corrigida no
+código: ausência de dados, erro e carga não significam unrestricted. Falhas de
+permissão em cache também deixam de habilitar botões Can. Consulta privilegiada
+de licença só ocorre após membership ativa no workspace selecionado.
+
+Validação técnica e aplicação/publicação serão registradas por lote nas
+evidências. O Docker local estava sem resposta e a aplicação/auth local estavam
+paradas; abrir Docker Desktop foi tentado. Isso não impede as correções e testes
+SQL/servidor, mas não deve ser contado como aceite de navegador.
+
+
+### Revisão e correções do lote 0195
+
+Migração 0195 aplicada. A checagem ativa revelou que o gatilho compartilhado
+sync_responsible copia o owner legado (workspace) para assigned_to. O teste
+isolado mínimo ainda não incluía esse gatilho. A fixture foi corrigida para
+reproduzi-lo e a migração progressiva 0196 normaliza apenas esse caso determinístico
+no INSERT para o usuário real. O arquivo 0195 aplicado não foi alterado. Novas
+escritas do servidor também informam o responsável onde a coluna existe.
+
+Depois da correção, 21 operações SQL de criar/editar/excluir em sete recursos
+foram aprovadas com auth.uid de Priscila e ROLE authenticated na base ativa.
+Tudo terminou com rollback. Não equivale a sessão real de navegador.
+
+112 novos cenários de filhos + 289 anteriores = 401 verificações SQL; o gatilho
+legado é reproduzido antes da correção. 219 casos de capacidades comparam os
+resultados do caminho otimizado e dos predicados canônicos para filhos, pais,
+pessoas, candidatos, modelos, planos/tarefas, outra empresa, IDs ausentes,
+usuário comum com deny e Ver como somente leitura.
+
+O ensaio de 200 documentos revelou 11.846,70 ms para o cálculo por linha. A
+migração 0197 carrega uma vez as chaves efetivas do chamador e aplica o caminho
+constante apenas quando as permissões workspace bastam para decidir as ações;
+misturas de own/team conservam o predicado canônico. Valida membro ativo,
+workspace selecionado, existência e vínculos antes de retornar somente booleanos.
+Depois da correção, o mesmo ensaio retornou 200 linhas permitidas em 52,69 ms.
+É uma medição dessa RPC, não de toda a aplicação. Sem novos grants por essa
+migração. A autorização de dados continua independente no servidor/RLS.
+
+Próximas frentes ainda obrigatórias: dados sensíveis (0198+; implantação em duas
+fases para não quebrar os SELECTs existentes), restante de TechHire e módulos,
+contratos de todas as URLs/ações, prevenção em CI e aceite de navegador. A ordem
+das frentes pode mudar para resolver bloqueios ou regressões encontradas nos
+testes, sem reduzir o objetivo de concluir as seis etapas.

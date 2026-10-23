@@ -20,37 +20,29 @@ export const getMyModuleAccess = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const { deriveAllowedModules } = await import("@/lib/modules/module-permissions");
 
-    const profile = await supabase
-      .from("profiles")
-      .select("active_workspace_id")
-      .eq("id", userId)
-      .maybeSingle();
-    let workspaceId = (profile.data?.active_workspace_id as string | null) ?? null;
-    if (!workspaceId) {
-      const member = await supabase
-        .from("workspace_members")
-        .select("workspace_id")
-        .eq("user_id", userId)
-        .limit(1)
-        .maybeSingle();
-      workspaceId = (member.data?.workspace_id as string | null) ?? null;
-    }
-    if (!workspaceId) {
-      return { workspaceId: null, licensed: [], allowed: [], unrestricted: true };
-    }
+    const { getActiveWorkspaceId } = await import("@/lib/access-control/enforce.server");
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
+    const member = await supabase.rpc("is_workspace_member", {
+      _workspace: workspaceId,
+      _user: userId,
+    });
+    if (member.error) throw new Error("Não foi possível verificar o vínculo com o workspace.");
+    if (member.data !== true) throw new Error("Workspace indisponível ou sem vínculo ativo.");
 
     const admin = await supabase.rpc("is_workspace_admin_v2", {
       _workspace: workspaceId,
       _user: userId,
     });
-    if (!admin.error && admin.data === true) {
+    if (admin.error) throw new Error("Não foi possível verificar o acesso administrativo.");
+    if (admin.data === true) {
       return { workspaceId, licensed: [], allowed: [], unrestricted: true };
     }
 
-    const { data: licenseRows } = await supabase
+    const { data: licenseRows, error: licenseError } = await supabase
       .from("workspace_modules")
       .select("module_id, enabled")
       .eq("workspace_id", workspaceId);
+    if (licenseError) throw new Error("Não foi possível consultar as licenças do workspace.");
     const licensed = ((licenseRows ?? []) as Array<{ module_id: string; enabled: boolean }>)
       .filter((r) => r.enabled)
       .map((r) => r.module_id);
@@ -64,6 +56,7 @@ export const getMyModuleAccess = createServerFn({ method: "GET" })
       const fallback = await supabase.rpc("current_user_permissions", {
         _workspace_id: workspaceId,
       });
+      if (fallback.error) throw new Error("Não foi possível consultar as permissões efetivas.");
       keys = ((fallback.data ?? []) as Array<string | { current_user_permissions: string }>).map(
         (r) => (typeof r === "string" ? r : r.current_user_permissions),
       );

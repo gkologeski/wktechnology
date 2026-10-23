@@ -13,6 +13,7 @@ import { MODULES } from "@/lib/modules/registry";
 import { useIdleListPreload } from "@/hooks/use-idle-list-preload";
 
 import { ShieldAlert } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 import { BugReportButton } from "@/components/bug-report/bug-report-button";
 import { ChatTrigger } from "@/components/chat/chat-trigger";
@@ -102,8 +103,19 @@ function AuthenticatedLayout() {
   const router = useRouter();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { isAdmin, isManager, loading: roleLoading } = useMyRole();
-  const { isLicensed } = useModuleLicenses();
-  const { canAccessModule, soleModule, loading: accessLoading } = useModuleAccess();
+  const {
+    isLicensed,
+    loading: licenseLoading,
+    isError: licenseError,
+    refetch: retryLicense,
+  } = useModuleLicenses();
+  const {
+    canAccessModule,
+    soleModule,
+    loading: accessLoading,
+    isError: accessError,
+    refetch: retryAccess,
+  } = useModuleAccess();
 
   useIdleListPreload(!loading && !!user, user?.id ?? null);
 
@@ -144,7 +156,9 @@ function AuthenticatedLayout() {
   const pathModule = detectModuleFromPath(path);
   const licenseBlocked = !!pathModule && !isLicensed(pathModule);
   const moduleBlocked = !accessLoading && !!pathModule && !canAccessModule(pathModule);
-  const blocked = roleBlocked || licenseBlocked || moduleBlocked;
+  const accessPending = roleLoading || (!!pathModule && (accessLoading || licenseLoading));
+  const accessFailed = !!pathModule && (licenseError || accessError);
+  const blocked = accessPending || accessFailed || roleBlocked || licenseBlocked || moduleBlocked;
 
   return (
     <PhoneCountryProvider>
@@ -176,7 +190,24 @@ function AuthenticatedLayout() {
               >
                 <FocusQueueBar />
                 {!blocked && <CrossModuleBanner />}
-                {blocked ? (
+                {accessPending ? (
+                  <p className="p-6" role="status">
+                    Verificando acesso…
+                  </p>
+                ) : accessFailed ? (
+                  <div className="p-6 space-y-3" role="alert">
+                    <p>Não foi possível verificar o acesso ao módulo.</p>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        void retryLicense();
+                        void retryAccess();
+                      }}
+                    >
+                      Tentar novamente
+                    </Button>
+                  </div>
+                ) : blocked ? (
                   <div className="mx-auto mt-24 max-w-md space-y-3 rounded-md border border-product-divider bg-product-panel p-8 text-center shadow-xs">
                     <ShieldAlert className="h-10 w-10 mx-auto text-muted-foreground" />
                     <h2 className="text-lg font-semibold">

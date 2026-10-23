@@ -31,8 +31,8 @@ export function usePermissions(): UsePermissionsResult {
   });
 
   const set = useMemo(
-    () => new Set<string>(query.data?.permissions ?? []),
-    [query.data?.permissions],
+    () => new Set<string>(query.isLoading || query.isError ? [] : (query.data?.permissions ?? [])),
+    [query.data?.permissions, query.isLoading, query.isError],
   );
 
   const can = useCallback((key: string) => set.has(key), [set]);
@@ -73,8 +73,8 @@ export function Can({
   fallback?: React.ReactNode;
   children: React.ReactNode;
 }) {
-  const { can, canAny, canAll, isLoading } = usePermissions();
-  if (isLoading) return null;
+  const { can, canAny, canAll, isLoading, isError, workspaceId } = usePermissions();
+  if (isLoading || isError || !workspaceId) return <>{fallback}</>;
   let ok = true;
   if (permission) ok = ok && can(permission);
   if (any && any.length) ok = ok && canAny(any);

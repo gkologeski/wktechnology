@@ -1,3 +1,6 @@
+import { HrScreenAccess, HrAccessError } from "@/components/hr-access";
+import { usePersonResourceAccess } from "@/lib/access-control/use-person-resource-access";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 // Painel de Riscos Psicossociais (NR-1). Sprint 3 do TechPeople.
 // Avaliações periódicas com dimensões (carga, autonomia, clareza, relações,
 // reconhecimento, equilíbrio, segurança psicológica), score derivado e plano
@@ -97,17 +100,36 @@ function RiskSlider({
   );
 }
 
-export function PsychosocialPanel({ personId, canWrite }: { personId: string; canWrite: boolean }) {
+export function PsychosocialPanel(props: { personId: string; canWrite?: boolean }) {
+  return (
+    <HrScreenAccess resources={["techpeople.wellbeing.assessments"]}>
+      <PsychosocialPanelContent personId={props.personId} />
+    </HrScreenAccess>
+  );
+}
+
+function PsychosocialPanelContent({ personId }: { personId: string }) {
+  const { workspaceId } = usePermissions();
   const qc = useQueryClient();
   const listFn = useServerFn(listPsychAssessments);
   const upsertFn = useServerFn(upsertPsychAssessment);
   const deleteFn = useServerFn(deletePsychAssessment);
 
-  const { data: rows = [], isLoading } = useQuery({
-    queryKey: ["person-psych", personId],
+  const {
+    data: rows = [],
+    isError,
+    refetch,
+    isLoading,
+  } = useQuery({
+    queryKey: ["person-psych", personId, workspaceId],
     queryFn: () => listFn({ data: { person_id: personId } }),
     staleTime: 30_000,
   });
+  const access = usePersonResourceAccess(
+    "assessments",
+    personId,
+    rows.map((row) => row.id),
+  );
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<PsychAssessmentRow | null>(null);
@@ -115,12 +137,14 @@ export function PsychosocialPanel({ personId, canWrite }: { personId: string; ca
   const del = useMutation({
     mutationFn: (id: string) => deleteFn({ data: { id } }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["person-psych", personId] });
+      qc.invalidateQueries({ queryKey: ["person-psych", personId, workspaceId] });
       toast.success("Avaliação removida");
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
+  if (isError) return <HrAccessError retry={() => void refetch()} />;
+  if (access.isError) return <HrAccessError retry={access.refetch} />;
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -132,7 +156,7 @@ export function PsychosocialPanel({ personId, canWrite }: { personId: string; ca
             Avaliações NR-1: carga, autonomia, relações, segurança psicológica e sinais de burnout.
           </p>
         </div>
-        {canWrite ? (
+        {access.canCreate ? (
           <Button
             size="sm"
             onClick={() => {
@@ -191,11 +215,12 @@ export function PsychosocialPanel({ personId, canWrite }: { personId: string; ca
                       </div>
                     )}
                   </div>
-                  {canWrite ? (
+                  {access.canUpdate(r.id) || access.canDelete(r.id) ? (
                     <div className="flex items-center gap-1">
                       <Button
                         size="icon"
                         variant="ghost"
+                        disabled={!access.canUpdate(r.id)}
                         onClick={() => {
                           setEditing(r);
                           setOpen(true);
@@ -206,6 +231,7 @@ export function PsychosocialPanel({ personId, canWrite }: { personId: string; ca
                       <Button
                         size="icon"
                         variant="ghost"
+                        disabled={!access.canDelete(r.id)}
                         onClick={async () => {
                           if (await confirmDialog("Remover avaliação?")) del.mutate(r.id);
                         }}
@@ -233,12 +259,12 @@ export function PsychosocialPanel({ personId, canWrite }: { personId: string; ca
       )}
 
       <PsychDialog
-        open={open}
+        open={open && (editing ? access.canUpdate(editing.id) : access.canCreate)}
         onOpenChange={setOpen}
         personId={personId}
         editing={editing}
         upsertFn={upsertFn}
-        onSaved={() => qc.invalidateQueries({ queryKey: ["person-psych", personId] })}
+        onSaved={() => qc.invalidateQueries({ queryKey: ["person-psych", personId, workspaceId] })}
       />
     </div>
   );

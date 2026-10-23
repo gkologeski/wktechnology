@@ -1,3 +1,9 @@
+import {
+  assertHrChildMutation,
+  assertHrRecordAccess,
+  assertHrCreate,
+} from "@/lib/access-control/hr-records.server";
+import { getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 // Server functions do TechPeople — Sprint 3.
 // Riscos psicossociais (NR-1) e incidentes de segurança/assédio.
 // Todas as leituras/escritas passam por RLS sensível (can_view_person_sensitive
@@ -197,6 +203,8 @@ export const upsertPsychAssessment = createServerFn({ method: "POST" })
   .inputValidator((i) => psychUpsertSchema.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const activeWorkspace = await getActiveWorkspaceId(supabase, userId);
+    await assertHrChildMutation(supabase, "assessments", data.id, data.person_id);
     const derived = deriveRisk(data.dimensions ?? {});
     const overall = data.overall_score ?? derived.overall;
     const level = data.risk_level ?? derived.level;
@@ -216,17 +224,25 @@ export const upsertPsychAssessment = createServerFn({ method: "POST" })
       notes: data.notes ?? null,
     };
     if (data.id) {
-      const { error } = await supabase
+      const { data: saved, error } = await supabase
         .from("people_psychosocial_assessments")
         .update(payload as never)
-        .eq("id", data.id);
+        .eq("id", data.id)
+        .select("id")
+        .maybeSingle();
       if (error) throw new Error(error.message);
+      if (!saved) throw new Error("Registro indisponível ou sem permissão para editar.");
       return { id: data.id };
     }
     const ownerId = await resolveOwnerId(supabase, userId);
     const { data: row, error } = await supabase
       .from("people_psychosocial_assessments")
-      .insert({ ...payload, workspace_id: ownerId, owner_id: ownerId, created_by: userId } as never)
+      .insert({
+        ...payload,
+        workspace_id: activeWorkspace,
+        owner_id: ownerId,
+        created_by: userId,
+      } as never)
       .select("id")
       .single();
     if (error) throw new Error(error.message);
@@ -237,6 +253,7 @@ export const deletePsychAssessment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    await assertHrRecordAccess(context.supabase, "assessments", "delete", data.id);
     await deleteByIdGuarded(
       context.supabase,
       "people_psychosocial_assessments",
@@ -283,6 +300,10 @@ export const upsertIncident = createServerFn({ method: "POST" })
   .inputValidator((i) => incidentUpsertSchema.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const activeWorkspace = await getActiveWorkspaceId(supabase, userId);
+    if (data.id || data.person_id)
+      await assertHrChildMutation(supabase, "incidents", data.id, data.person_id);
+    else await assertHrCreate(supabase, userId, "techpeople.incidents");
     const resolved_at =
       data.status === "resolved" || data.status === "archived" ? new Date().toISOString() : null;
     const payload: Record<string, unknown> = {
@@ -300,17 +321,26 @@ export const upsertIncident = createServerFn({ method: "POST" })
       resolved_at,
     };
     if (data.id) {
-      const { error } = await supabase
+      const { data: saved, error } = await supabase
         .from("people_incidents")
         .update(payload as never)
-        .eq("id", data.id);
+        .eq("id", data.id)
+        .select("id")
+        .maybeSingle();
       if (error) throw new Error(error.message);
+      if (!saved) throw new Error("Registro indisponível ou sem permissão para editar.");
       return { id: data.id };
     }
     const ownerId = await resolveOwnerId(supabase, userId);
     const { data: row, error } = await supabase
       .from("people_incidents")
-      .insert({ ...payload, owner_id: ownerId, created_by: userId } as never)
+      .insert({
+        ...payload,
+        owner_id: ownerId,
+        workspace_id: activeWorkspace,
+        assigned_to: userId,
+        created_by: userId,
+      } as never)
       .select("id")
       .single();
     if (error) throw new Error(error.message);
@@ -321,6 +351,7 @@ export const deleteIncident = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    await assertHrRecordAccess(context.supabase, "incidents", "delete", data.id);
     await deleteByIdGuarded(
       context.supabase,
       "people_incidents",

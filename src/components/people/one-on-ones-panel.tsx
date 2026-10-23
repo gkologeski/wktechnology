@@ -1,3 +1,6 @@
+import { HrScreenAccess, HrAccessError } from "@/components/hr-access";
+import { usePersonResourceAccess } from "@/lib/access-control/use-person-resource-access";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 // Painel de One-on-Ones da pessoa. Sprint 2 do TechPeople.
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -42,30 +45,50 @@ import {
 import { ActivityDateTimePicker } from "@/components/activity/activity-date-time-picker";
 const MOODS = ["😞", "😕", "😐", "🙂", "😄"];
 
-export function OneOnOnesPanel({ personId, canWrite }: { personId: string; canWrite: boolean }) {
+export function OneOnOnesPanel(props: { personId: string; canWrite?: boolean }) {
+  return (
+    <HrScreenAccess resources={["techpeople.one_on_ones"]}>
+      <OneOnOnesPanelContent personId={props.personId} />
+    </HrScreenAccess>
+  );
+}
+
+function OneOnOnesPanelContent({ personId }: { personId: string }) {
+  const { workspaceId } = usePermissions();
   const qc = useQueryClient();
   const listFn = useServerFn(listOneOnOnes);
   const delFn = useServerFn(deleteOneOnOne);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<OneOnOneRow | null>(null);
 
-  const { data: items = [] } = useQuery({
-    queryKey: ["person-1on1", personId],
+  const {
+    data: items = [],
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ["person-1on1", personId, workspaceId],
     queryFn: () => listFn({ data: { person_id: personId } }),
   });
+  const access = usePersonResourceAccess(
+    "one_on_ones",
+    personId,
+    items.map((row) => row.id),
+  );
 
   const del = useMutation({
     mutationFn: (id: string) => delFn({ data: { id } }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["person-1on1", personId] });
+      qc.invalidateQueries({ queryKey: ["person-1on1", personId, workspaceId] });
       toast.success("1:1 removida");
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
+  if (isError) return <HrAccessError retry={() => void refetch()} />;
+  if (access.isError) return <HrAccessError retry={access.refetch} />;
   return (
     <div className="space-y-3">
-      {canWrite ? (
+      {access.canCreate ? (
         <div className="flex justify-end">
           <Button
             size="sm"
@@ -107,11 +130,12 @@ export function OneOnOnesPanel({ personId, canWrite }: { personId: string; canWr
                     ) : null}
                   </div>
                 </div>
-                {canWrite ? (
+                {access.canUpdate(it.id) || access.canDelete(it.id) ? (
                   <div className="flex items-center gap-1 shrink-0">
                     <Button
                       variant="ghost"
                       size="icon"
+                      disabled={!access.canUpdate(it.id)}
                       onClick={() => {
                         setEditing(it);
                         setOpen(true);
@@ -122,6 +146,7 @@ export function OneOnOnesPanel({ personId, canWrite }: { personId: string; canWr
                     <Button
                       variant="ghost"
                       size="icon"
+                      disabled={!access.canDelete(it.id)}
                       onClick={async () => {
                         if (await confirmDialog("Remover 1:1?")) del.mutate(it.id);
                       }}
@@ -160,7 +185,12 @@ export function OneOnOnesPanel({ personId, canWrite }: { personId: string; canWr
         ))
       )}
 
-      <OneOnOneDialog open={open} onOpenChange={setOpen} personId={personId} item={editing} />
+      <OneOnOneDialog
+        open={open && (editing ? access.canUpdate(editing.id) : access.canCreate)}
+        onOpenChange={setOpen}
+        personId={personId}
+        item={editing}
+      />
     </div>
   );
 }

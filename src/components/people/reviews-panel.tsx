@@ -1,3 +1,6 @@
+import { HrScreenAccess, HrAccessError } from "@/components/hr-access";
+import { usePersonResourceAccess } from "@/lib/access-control/use-person-resource-access";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 // Painel de Avaliações do Tomador. Sprint 2 do TechPeople.
 // Avaliações periódicas (mensal/trimestral) preenchidas pelo cliente/tomador
 // do serviço com notas por dimensão e feedback qualitativo.
@@ -83,30 +86,50 @@ function StarRating({
   );
 }
 
-export function ReviewsPanel({ personId, canWrite }: { personId: string; canWrite: boolean }) {
+export function ReviewsPanel(props: { personId: string; canWrite?: boolean }) {
+  return (
+    <HrScreenAccess resources={["techpeople.reviews"]}>
+      <ReviewsPanelContent personId={props.personId} />
+    </HrScreenAccess>
+  );
+}
+
+function ReviewsPanelContent({ personId }: { personId: string }) {
+  const { workspaceId } = usePermissions();
   const qc = useQueryClient();
   const listFn = useServerFn(listReviews);
   const delFn = useServerFn(deleteReview);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<ReviewRow | null>(null);
 
-  const { data: reviews = [] } = useQuery({
-    queryKey: ["person-reviews", personId],
+  const {
+    data: reviews = [],
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ["person-reviews", personId, workspaceId],
     queryFn: () => listFn({ data: { person_id: personId } }),
   });
+  const access = usePersonResourceAccess(
+    "reviews",
+    personId,
+    reviews.map((row) => row.id),
+  );
 
   const del = useMutation({
     mutationFn: (id: string) => delFn({ data: { id } }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["person-reviews", personId] });
+      qc.invalidateQueries({ queryKey: ["person-reviews", personId, workspaceId] });
       toast.success("Avaliação removida");
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
+  if (isError) return <HrAccessError retry={() => void refetch()} />;
+  if (access.isError) return <HrAccessError retry={access.refetch} />;
   return (
     <div className="space-y-3">
-      {canWrite ? (
+      {access.canCreate ? (
         <div className="flex justify-end">
           <Button
             size="sm"
@@ -152,11 +175,12 @@ export function ReviewsPanel({ personId, canWrite }: { personId: string; canWrit
                     ) : null}
                   </div>
                 </div>
-                {canWrite ? (
+                {access.canUpdate(r.id) || access.canDelete(r.id) ? (
                   <div className="flex items-center gap-1 shrink-0">
                     <Button
                       variant="ghost"
                       size="icon"
+                      disabled={!access.canUpdate(r.id)}
                       onClick={() => {
                         setEditing(r);
                         setOpen(true);
@@ -167,6 +191,7 @@ export function ReviewsPanel({ personId, canWrite }: { personId: string; canWrit
                     <Button
                       variant="ghost"
                       size="icon"
+                      disabled={!access.canDelete(r.id)}
                       onClick={async () => {
                         if (await confirmDialog("Remover avaliação?")) del.mutate(r.id);
                       }}
@@ -209,7 +234,12 @@ export function ReviewsPanel({ personId, canWrite }: { personId: string; canWrit
         ))
       )}
 
-      <ReviewDialog open={open} onOpenChange={setOpen} personId={personId} review={editing} />
+      <ReviewDialog
+        open={open && (editing ? access.canUpdate(editing.id) : access.canCreate)}
+        onOpenChange={setOpen}
+        personId={personId}
+        review={editing}
+      />
     </div>
   );
 }

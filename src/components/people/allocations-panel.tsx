@@ -1,3 +1,6 @@
+import { HrScreenAccess, HrAccessError } from "@/components/hr-access";
+import { usePersonResourceAccess } from "@/lib/access-control/use-person-resource-access";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 // TechPeople · Sprint 4 — Alocações & VMS
 import { useState } from "react";
 import {
@@ -79,30 +82,47 @@ const statusTone: Record<AllocationStatus, string> = {
   ended: "bg-muted text-muted-foreground",
 };
 
-export function AllocationsPanel({
-  personId,
-  personName,
-  personDocs,
-  personCompanyNames,
-  canWrite,
-  canViewSensitive,
-}: {
+type AllocationsPanelProps = {
   personId: string;
   personName?: string | null;
   personDocs?: Array<string | null | undefined>;
   personCompanyNames?: Array<string | null | undefined>;
-  canWrite: boolean;
+  canWrite?: boolean;
   canViewSensitive: boolean;
-}) {
+};
+export function AllocationsPanel(props: AllocationsPanelProps) {
+  return (
+    <HrScreenAccess resources={["techpeople.allocations"]}>
+      <AllocationsPanelContent {...props} />
+    </HrScreenAccess>
+  );
+}
+function AllocationsPanelContent({
+  personId,
+  personName,
+  personDocs,
+  personCompanyNames,
+  canViewSensitive,
+}: AllocationsPanelProps) {
+  const { workspaceId } = usePermissions();
   const qc = useQueryClient();
   const listFn = useServerFn(listAllocationsByPerson);
   const delFn = useServerFn(deleteAllocation);
 
-  const { data: rows = [] } = useQuery({
-    queryKey: ["person-allocations", personId],
+  const {
+    data: rows = [],
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ["person-allocations", personId, workspaceId],
     queryFn: () => listFn({ data: { person_id: personId } }),
     staleTime: 15_000,
   });
+  const access = usePersonResourceAccess(
+    "allocations",
+    personId,
+    rows.map((r) => r.id),
+  );
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<AllocationRow | null>(null);
@@ -128,6 +148,8 @@ export function AllocationsPanel({
     { revenue: 0, cost: 0, margin: 0 },
   );
 
+  if (isError) return <HrAccessError retry={() => void refetch()} />;
+  if (access.isError) return <HrAccessError retry={access.refetch} />;
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -137,7 +159,7 @@ export function AllocationsPanel({
             Contratos e projetos em que a pessoa está alocada.
           </p>
         </div>
-        {canWrite ? (
+        {access.canCreate ? (
           <Button
             size="sm"
             onClick={() => {
@@ -221,11 +243,12 @@ export function AllocationsPanel({
                         <div className="text-xs text-muted-foreground mt-2">{r.notes}</div>
                       ) : null}
                     </div>
-                    {canWrite ? (
+                    {access.canUpdate(r.id) || access.canDelete(r.id) ? (
                       <div className="flex gap-1">
                         <Button
                           size="icon"
                           variant="ghost"
+                          disabled={!access.canUpdate(r.id)}
                           onClick={() => {
                             setEditing(r);
                             setOpen(true);
@@ -236,6 +259,7 @@ export function AllocationsPanel({
                         <Button
                           size="icon"
                           variant="ghost"
+                          disabled={!access.canDelete(r.id)}
                           onClick={async () => {
                             if (await confirmDialog("Remover esta alocação?")) delMut.mutate(r.id);
                           }}
@@ -253,7 +277,7 @@ export function AllocationsPanel({
       )}
 
       <AllocationDialog
-        open={open}
+        open={open && (editing ? access.canUpdate(editing.id) : access.canCreate)}
         onOpenChange={setOpen}
         personId={personId}
         personName={personName}

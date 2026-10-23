@@ -1,3 +1,6 @@
+import { HrScreenAccess, HrAccessError } from "@/components/hr-access";
+import { usePersonResourceAccess } from "@/lib/access-control/use-person-resource-access";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 // Painel de Incidentes (segurança, assédio, discriminação). Sprint 3 do TechPeople.
 // Registros confidenciais com categoria, severidade, local, testemunhas e resolução.
 import { useState } from "react";
@@ -59,17 +62,36 @@ function severityClass(s: IncidentSeverity) {
   }
 }
 
-export function IncidentsPanel({ personId, canWrite }: { personId: string; canWrite: boolean }) {
+export function IncidentsPanel(props: { personId: string; canWrite?: boolean }) {
+  return (
+    <HrScreenAccess resources={["techpeople.incidents"]}>
+      <IncidentsPanelContent personId={props.personId} />
+    </HrScreenAccess>
+  );
+}
+
+function IncidentsPanelContent({ personId }: { personId: string }) {
+  const { workspaceId } = usePermissions();
   const qc = useQueryClient();
   const listFn = useServerFn(listIncidents);
   const upsertFn = useServerFn(upsertIncident);
   const deleteFn = useServerFn(deleteIncident);
 
-  const { data: rows = [], isLoading } = useQuery({
-    queryKey: ["person-incidents", personId],
+  const {
+    data: rows = [],
+    isError,
+    refetch,
+    isLoading,
+  } = useQuery({
+    queryKey: ["person-incidents", personId, workspaceId],
     queryFn: () => listFn({ data: { person_id: personId } }),
     staleTime: 30_000,
   });
+  const access = usePersonResourceAccess(
+    "incidents",
+    personId,
+    rows.map((row) => row.id),
+  );
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<IncidentRow | null>(null);
@@ -77,12 +99,14 @@ export function IncidentsPanel({ personId, canWrite }: { personId: string; canWr
   const del = useMutation({
     mutationFn: (id: string) => deleteFn({ data: { id } }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["person-incidents", personId] });
+      qc.invalidateQueries({ queryKey: ["person-incidents", personId, workspaceId] });
       toast.success("Incidente removido");
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
+  if (isError) return <HrAccessError retry={() => void refetch()} />;
+  if (access.isError) return <HrAccessError retry={access.refetch} />;
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -94,7 +118,7 @@ export function IncidentsPanel({ personId, canWrite }: { personId: string; canWr
             Registros de segurança, assédio, discriminação e quase-acidentes. Dados confidenciais.
           </p>
         </div>
-        {canWrite ? (
+        {access.canCreate ? (
           <Button
             size="sm"
             onClick={() => {
@@ -140,11 +164,12 @@ export function IncidentsPanel({ personId, canWrite }: { personId: string; canWr
                       </span>
                     </div>
                   </div>
-                  {canWrite ? (
+                  {access.canUpdate(r.id) || access.canDelete(r.id) ? (
                     <div className="flex items-center gap-1">
                       <Button
                         size="icon"
                         variant="ghost"
+                        disabled={!access.canUpdate(r.id)}
                         onClick={() => {
                           setEditing(r);
                           setOpen(true);
@@ -155,6 +180,7 @@ export function IncidentsPanel({ personId, canWrite }: { personId: string; canWr
                       <Button
                         size="icon"
                         variant="ghost"
+                        disabled={!access.canDelete(r.id)}
                         onClick={async () => {
                           if (await confirmDialog("Remover incidente?")) del.mutate(r.id);
                         }}
@@ -188,12 +214,14 @@ export function IncidentsPanel({ personId, canWrite }: { personId: string; canWr
       )}
 
       <IncidentDialog
-        open={open}
+        open={open && (editing ? access.canUpdate(editing.id) : access.canCreate)}
         onOpenChange={setOpen}
         personId={personId}
         editing={editing}
         upsertFn={upsertFn}
-        onSaved={() => qc.invalidateQueries({ queryKey: ["person-incidents", personId] })}
+        onSaved={() =>
+          qc.invalidateQueries({ queryKey: ["person-incidents", personId, workspaceId] })
+        }
       />
     </div>
   );

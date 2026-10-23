@@ -1,3 +1,8 @@
+import {
+  assertHrChildMutation,
+  assertHrRecordAccess,
+} from "@/lib/access-control/hr-records.server";
+import { getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 // Server functions para o módulo TechPeople — Sprint 4.
 // Alocações de pessoas em contratos e projetos (VMS / Outsourcing).
 import { createServerFn } from "@tanstack/react-start";
@@ -284,6 +289,8 @@ export const upsertAllocation = createServerFn({ method: "POST" })
   .inputValidator((i) => allocationSchema.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const activeWorkspace = await getActiveWorkspaceId(supabase, userId);
+    await assertHrChildMutation(supabase, "allocations", data.id, data.person_id);
     const { contractFieldError, splitsError } = await import("@/lib/people/allocation-rules");
     for (const [field, id] of [
       ["provider", data.contract_id],
@@ -365,25 +372,41 @@ export const upsertAllocation = createServerFn({ method: "POST" })
       if (roleTitle && !(p.role_title ?? "").trim()) patch.role_title = roleTitle;
       if (seniority && !(p.seniority ?? "").trim()) patch.seniority = seniority;
       if (Object.keys(patch).length === 0) return;
-      await supabase
+      // A role change on an allocation is not a grant to edit the person's profile.
+      const access = await (
+        supabase.rpc as unknown as (
+          name: string,
+          args: Record<string, unknown>,
+        ) => Promise<{ data: unknown; error: { message: string } | null }>
+      ).call(supabase, "hr_record_access", {
+        _resource: "people",
+        _action: "update",
+        _id: data.person_id,
+      });
+      if (access.error) throw new Error("Não foi possível verificar a atualização do perfil.");
+      if (access.data !== true) return;
+      const result = await supabase
         .from("people")
         .update(patch as never)
         .eq("id", data.person_id);
+      if (result.error) throw new Error(result.error.message);
     }
     if (data.id) {
-      const { error } = await supabase
+      const { data: saved, error } = await supabase
         .from("people_allocations")
         .update(payload as never)
-        .eq("id", data.id);
+        .eq("id", data.id)
+        .select("id")
+        .maybeSingle();
       if (error) throw new Error(error.message);
+      if (!saved) throw new Error("Registro indisponível ou sem permissão para editar.");
       await syncPerson();
       await saveSplits(data.id);
       return { id: data.id };
     }
-    const workspaceId = await resolveWorkspaceId(supabase, userId);
     const { data: row, error } = await supabase
       .from("people_allocations")
-      .insert({ ...payload, workspace_id: workspaceId, owner_id: userId } as never)
+      .insert({ ...payload, workspace_id: activeWorkspace, owner_id: userId } as never)
       .select("id")
       .single();
     if (error) throw new Error(error.message);
@@ -431,6 +454,7 @@ export const deleteAllocation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    await assertHrRecordAccess(context.supabase, "allocations", "delete", data.id);
     await deleteByIdGuarded(
       context.supabase,
       "people_allocations",

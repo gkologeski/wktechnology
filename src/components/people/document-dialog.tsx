@@ -81,7 +81,7 @@ export function PersonDocumentDialog({ open, onOpenChange, personId, document }:
     setUploading(true);
     try {
       const { path, token } = await uploadFn({
-        data: { person_id: personId, file_name: file.name },
+        data: { person_id: personId, document_id: document?.id ?? null, file_name: file.name },
       });
       const { error } = await supabase.storage
         .from("people-documents")
@@ -127,7 +127,8 @@ export function PersonDocumentDialog({ open, onOpenChange, personId, document }:
         <DialogHeader>
           <DialogTitle>{document ? "Editar documento" : "Novo documento"}</DialogTitle>
           <DialogDescription>
-            Documentos são privados e visíveis apenas para administradores do workspace.
+            Documentos são privados. A consulta e as alterações dependem das permissões de cada
+            usuário.
           </DialogDescription>
         </DialogHeader>
 

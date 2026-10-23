@@ -724,6 +724,29 @@
       "exception_reason": "Only caller-bound booleans, no business row contents or grants; every underlying action remains checked independently by server and RLS.",
       "migration": "0194",
       "state": "applied_tested_ui_pending_publication"
+    },
+    {
+      "operation": "HR child resources action/scope + document file signing",
+      "kind": "business_action",
+      "route_consumers": [
+        "/people/$id",
+        "/people/documents",
+        "/people/benefits",
+        "/people/psychosocial",
+        "/people/incidents"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "documents, benefits, allocations/splits, goals, one_on_ones, reviews, wellbeing.assessments, incidents, events",
+      "action": "view/create/update/delete; events read-only for user APIs",
+      "permission_keys": [
+        "techpeople.<resource>.<action>.<scope>"
+      ],
+      "scope": "actual person ownership/responsibility, persisted child creator/assignee, workspace team or person manager; linked person must be readable",
+      "server": "assertHrChildMutation/assertHrRecordAccess; affected-row checks; explicit workspace on INSERT; upload create vs existing document update; download verifies document row",
+      "database": "0195 replaces permissive legacy bypasses and audited restrictive role gates; View As and unrelated restrictive fences retained; immutable parent/tenant/authorship; allocation splits bind company+allocation+workspace; 0196 normalizes workspace-as-assignee on INSERT after the legacy shared trigger; 0197 caches effective keys for broad workspace capabilities, with canonical fallback for mixed/own/team grants",
+      "exception_reason": "Internal event writers remain trusted trigger/service paths; no authenticated event mutation. Head RH current full TechPeople authorization extended only via WK overrides, preserving existing denies/defaults/other roles.",
+      "migration": "0195 + 0196 + 0197",
+      "state": "aplicado_testado_sql_publicacao_pendente"
     }
   ],
   "rules": [
@@ -750,9 +773,10 @@
       "area": "Sistema",
       "problema": "Erro de módulo vira acesso irrestrito",
       "decisao_alvo": "Separar carregamento, erro, ausência de licença e acesso permitido.",
-      "status": "pendente",
+      "status": "implementado_testado_publicacao_pendente",
       "evidencia_migracao": null,
-      "aceite_visual": false
+      "aceite_visual": false,
+      "observacao": "Module/license load failures and missing session/workspace deny; UI shows retry and does not mount outlet; active membership checked before privileged metadata."
     },
     {
       "id": 4,
@@ -923,8 +947,8 @@
       "area": "TechPeople",
       "problema": "Documentos/benefícios/alocações/eventos/incidentes admin/owner-only",
       "decisao_alvo": "Generalizar o contrato das correções locais por recurso/ação/escopo, sem ampliar carteiras inadvertidamente.",
-      "status": "corrigido_wk_validacao_ampliacao_pendente",
-      "evidencia_migracao": "0189",
+      "status": "aplicado_testado_sql_publicacao_pendente",
+      "evidencia_migracao": "0195 + 0196",
       "aceite_visual": false
     },
     {
@@ -951,8 +975,8 @@
       "area": "TechPeople",
       "problema": "Gestão de pessoa depende de bem-estar",
       "decisao_alvo": "Autorizar metas/avaliações/1:1 e demais operações por recurso correto.",
-      "status": "pendente",
-      "evidencia_migracao": null,
+      "status": "aplicado_testado_sql_publicacao_pendente",
+      "evidencia_migracao": "0195 + 0196",
       "aceite_visual": false
     },
     {
