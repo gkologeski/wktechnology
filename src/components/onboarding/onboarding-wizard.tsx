@@ -104,13 +104,7 @@ function FieldControl({
     );
   }
   const inputType =
-    field.type === "email"
-      ? "email"
-      : field.type === "number"
-        ? "number"
-        : field.type === "date"
-          ? "date"
-          : "text";
+    field.type === "email" ? "email" : field.type === "number" ? "number" : "text";
   return (
     <Input
       {...common}

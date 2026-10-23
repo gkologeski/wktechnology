@@ -479,7 +479,7 @@ function EntityFieldInput({
     );
   }
 
-  const inputType = field.type === "number" ? "number" : field.type === "date" ? "date" : "text";
+  const inputType = field.type === "number" ? "number" : "text";
   const raw =
     field.type === "date" && typeof value === "string" ? value.slice(0, 10) : (value ?? "");
 
