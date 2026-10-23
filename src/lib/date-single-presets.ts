@@ -42,3 +42,21 @@ export function presetForDate(date: Date, now: Date = new Date()): SinglePresetK
   }
   return "custom";
 }
+
+/**
+ * O atalho pode ser usado com os limites do campo? `custom` sempre (só abre o
+ * calendário); os demais só quando o dia cai dentro de `min`/`max`.
+ */
+export function isSinglePresetAllowed(
+  key: SinglePresetKey,
+  bounds: { min?: Date | null; max?: Date | null },
+  now: Date = new Date(),
+): boolean {
+  if (key === "custom") return true;
+  const d = getSinglePresetDate(key, now);
+  if (!d) return false;
+  const t = d.getTime();
+  if (bounds.min && t < startOfDay(bounds.min).getTime()) return false;
+  if (bounds.max && t > startOfDay(bounds.max).getTime()) return false;
+  return true;
+}
