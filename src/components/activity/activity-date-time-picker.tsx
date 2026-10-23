@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { CalendarDays, Check, Clock3, X } from "lucide-react";
+import { CalendarDays, Check, Clock3 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import { DatePickerPanel, focusCalendarDay } from "@/components/date-picker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { formatIsoDate, parseIsoDate } from "@/lib/iso-date";
 import {
   ACTIVITY_TIME_OPTIONS,
   activityDatePart,
@@ -34,6 +35,11 @@ type ActivityDateTimePickerProps = {
   ariaLabel?: string;
   className?: string;
   defaultTime?: string;
+  /** Limites do dia em "YYYY-MM-DD" (opcional). */
+  minDate?: string | null;
+  maxDate?: string | null;
+  invalid?: boolean;
+  id?: string;
 };
 
 export function ActivityDateTimePicker({
@@ -46,6 +52,10 @@ export function ActivityDateTimePicker({
   ariaLabel = "Data e hora",
   className,
   defaultTime = "08:00",
+  minDate,
+  maxDate,
+  invalid,
+  id,
 }: ActivityDateTimePickerProps) {
   const [dateOpen, setDateOpen] = useState(false);
   const [timeOpen, setTimeOpen] = useState(false);
@@ -54,7 +64,7 @@ export function ActivityDateTimePicker({
     valueFormat === "date" ? (value ? `${value}T${defaultTime}` : "") : toLocalDateTimeValue(value);
   const datePart = activityDatePart(local);
   const timePart = activityTimePart(local, defaultTime);
-  const selectedDate = datePart ? new Date(`${datePart}T12:00:00`) : undefined;
+  const selectedDate = parseIsoDate(datePart) ?? undefined;
 
   useEffect(() => {
     if (!timeOpen) return;
@@ -80,11 +90,14 @@ export function ActivityDateTimePicker({
           <Button
             type="button"
             variant="outline"
+            id={id}
             disabled={disabled}
             aria-label={`${ariaLabel}: data`}
+            aria-invalid={invalid || undefined}
             className={cn(
               "h-9 min-w-0 flex-1 justify-start gap-2 px-3 font-normal",
               !datePart && "text-muted-foreground",
+              invalid && "border-destructive",
             )}
           >
             <CalendarDays className="h-4 w-4 shrink-0" aria-hidden />
@@ -94,49 +107,30 @@ export function ActivityDateTimePicker({
         <PopoverContent
           align="start"
           sideOffset={6}
+          collisionPadding={8}
+          // Foco vai para o dia do calendário (setas navegam), não para o 1º atalho.
+          onOpenAutoFocus={focusCalendarDay}
           className="pointer-events-auto z-[180] w-auto max-w-[calc(100vw-1rem)] p-0"
         >
-          <Calendar
-            mode="single"
-            locale={ptBR}
-            numberOfMonths={1}
-            selected={selectedDate}
-            defaultMonth={selectedDate ?? new Date()}
+          {/* Mesma seleção de dia do DatePicker (skill date-picker-br); a hora
+              escolhida é preservada ao trocar o dia. */}
+          <DatePickerPanel
+            value={selectedDate ?? null}
+            min={parseIsoDate(minDate ?? null)}
+            max={parseIsoDate(maxDate ?? null)}
             onSelect={(day) => {
-              if (!day) return;
-              commit(format(day, "yyyy-MM-dd"));
+              commit(formatIsoDate(day));
               setDateOpen(false);
             }}
-            className="pointer-events-auto p-3"
+            onClear={
+              optional && datePart
+                ? () => {
+                    onChange(null);
+                    setDateOpen(false);
+                  }
+                : undefined
+            }
           />
-          <div className="flex items-center justify-between border-t border-border p-2">
-            {optional ? (
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  onChange(null);
-                  setDateOpen(false);
-                }}
-              >
-                <X className="mr-1 h-3.5 w-3.5" aria-hidden /> Limpar
-              </Button>
-            ) : (
-              <span />
-            )}
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                commit(format(new Date(), "yyyy-MM-dd"));
-                setDateOpen(false);
-              }}
-            >
-              Hoje
-            </Button>
-          </div>
         </PopoverContent>
       </Popover>
 

@@ -45,6 +45,7 @@ import {
   type IncidentStatus,
 } from "@/lib/people/wellbeing.functions";
 
+import { ActivityDateTimePicker } from "@/components/activity/activity-date-time-picker";
 function severityClass(s: IncidentSeverity) {
   switch (s) {
     case "critical":
@@ -268,10 +269,10 @@ function IncidentDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Ocorrido em</Label>
-              <Input
-                type="datetime-local"
+              <ActivityDateTimePicker
+                ariaLabel="Ocorrido em"
                 value={occurredAt}
-                onChange={(e) => setOccurredAt(e.target.value)}
+                onChange={(v) => setOccurredAt(v ?? "")}
               />
             </div>
             <div className="space-y-2">

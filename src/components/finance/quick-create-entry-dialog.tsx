@@ -25,9 +25,11 @@ import {
 import { createFinancialEntry, createInstallments, listCategories } from "@/lib/finance.functions";
 import { useLegalEntities } from "@/components/finance/legal-entity-select";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
+import { formatIsoDate } from "@/lib/iso-date";
 type Direction = "receivable" | "payable";
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => formatIsoDate(new Date());
 
 function addMonths(iso: string, n: number): string {
   const [y, m, d] = iso.split("-").map(Number);
@@ -36,6 +38,7 @@ function addMonths(iso: string, n: number): string {
     Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0),
   ).getUTCDate();
   target.setUTCDate(Math.min(d, lastDay));
+  // Data montada em UTC de propósito: formata em UTC.
   return target.toISOString().slice(0, 10);
 }
 function addDays(iso: string, n: number): string {
@@ -226,15 +229,19 @@ export function QuickCreateEntryDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Competência</Label>
-              <Input
-                type="date"
+              <IsoDatePicker
+                ariaLabel="Competência"
                 value={competenceDate}
-                onChange={(e) => setCompetenceDate(e.target.value)}
+                onChange={(v) => setCompetenceDate(v ?? "")}
               />
             </div>
             <div className="space-y-2">
               <Label>Vencimento{installments ? " (1ª parcela)" : ""}</Label>
-              <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+              <IsoDatePicker
+                ariaLabel="Competência"
+                value={dueDate}
+                onChange={(v) => setDueDate(v ?? "")}
+              />
             </div>
           </div>
 

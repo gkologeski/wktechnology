@@ -41,6 +41,7 @@ import { listJobProfileOptions } from "@/lib/job-profiles.functions";
 import { listContractingPresetOptions } from "@/lib/contracting-presets.functions";
 import { SENIORITY_LABEL, SENIORITY_OPTIONS } from "@/lib/job-profiles-shared";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 type CatalogItem = {
   id: string;
   name: string;
@@ -698,21 +699,15 @@ export function LinkCatalogServiceDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="svc-start">Início</Label>
-              <Input
+              <IsoDatePicker
                 id="svc-start"
-                type="date"
                 value={startsAt}
-                onChange={(e) => setStartsAt(e.target.value)}
+                onChange={(v) => setStartsAt(v ?? "")}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="svc-end">Fim</Label>
-              <Input
-                id="svc-end"
-                type="date"
-                value={endsAt}
-                onChange={(e) => setEndsAt(e.target.value)}
-              />
+              <IsoDatePicker id="svc-end" value={endsAt} onChange={(v) => setEndsAt(v ?? "")} />
             </div>
           </div>
         </div>

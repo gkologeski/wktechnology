@@ -84,6 +84,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import { ActivityDateTimePicker } from "@/components/activity/activity-date-time-picker";
 type EntityName = WorkflowWritableTable;
 
 interface Props {
@@ -256,15 +257,11 @@ function ValueOrTokenField({
   if (field.type === "date") {
     return (
       <div className="space-y-1">
-        <Input
-          type="datetime-local"
-          aria-label={field.label ?? field.name}
-          value={
-            typeof value === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value)
-              ? value.slice(0, 16)
-              : ""
-          }
-          onChange={(e) => onChange(e.target.value ? new Date(e.target.value).toISOString() : null)}
+        <ActivityDateTimePicker
+          ariaLabel={field.label ?? field.name}
+          valueFormat="iso"
+          value={typeof value === "string" ? value : null}
+          onChange={(v) => onChange(v || null)}
         />
         <div className="flex justify-end">{toggle}</div>
       </div>

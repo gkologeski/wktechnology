@@ -33,6 +33,7 @@ import {
 import { listAllProjectTasks } from "@/lib/projects.functions";
 import { listCustomFields, updateTaskCustomFieldValues } from "@/lib/project-list-extras.functions";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 type TaskLite = {
   id: string;
   title: string;
@@ -146,10 +147,9 @@ function CustomFieldsSection({
                 />
               )}
               {f.type === "date" && (
-                <Input
-                  type="date"
+                <IsoDatePicker
                   value={values[f.key] ?? ""}
-                  onChange={(e) => setAndSave(f.key, e.target.value || null)}
+                  onChange={(v) => setAndSave(f.key, (v ?? "") || null)}
                 />
               )}
               {f.type === "url" && (

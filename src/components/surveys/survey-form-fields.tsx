@@ -24,6 +24,7 @@ import {
   type SurveyQuestion,
 } from "@/lib/surveys/survey-fields";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 export type SurveyAnswers = Record<string, unknown>;
 
 /** Renderiza um campo de pesquisa conforme o tipo configurado. */
@@ -207,11 +208,10 @@ export function SurveyField({
         );
       case "date":
         return (
-          <Input
+          <IsoDatePicker
             id={fieldId}
-            type="date"
             value={typeof value === "string" ? value : ""}
-            onChange={(e) => onChange(e.target.value || null)}
+            onChange={(v) => onChange((v ?? "") || null)}
           />
         );
       case "email":

@@ -30,6 +30,8 @@ import {
 } from "@/lib/surveys/form-schema";
 
 import { PhoneInput } from "@/components/ui/phone-input";
+import { IsoDatePicker } from "@/components/iso-date-picker";
+import { ActivityDateTimePicker } from "@/components/activity/activity-date-time-picker";
 export function FormRenderer({
   schema,
   answers,
@@ -203,16 +205,9 @@ export function FieldControl({
           />
         );
       case "date":
-        return <Input id={id} type="date" value={s} onChange={(e) => onChange(e.target.value)} />;
+        return <IsoDatePicker id={id} value={s} onChange={(v) => onChange(v ?? "")} />;
       case "datetime":
-        return (
-          <Input
-            id={id}
-            type="datetime-local"
-            value={s}
-            onChange={(e) => onChange(e.target.value)}
-          />
-        );
+        return <ActivityDateTimePicker id={id} value={s} onChange={(v) => onChange(v ?? "")} />;
       case "single_choice":
         return (
           <RadioGroup value={s} onValueChange={onChange} aria-labelledby={`${id}-l`}>

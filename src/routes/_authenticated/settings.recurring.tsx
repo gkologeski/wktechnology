@@ -54,6 +54,7 @@ import { toast } from "sonner";
 import { formatCurrency, formatDate } from "@/lib/crm";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 export const Route = createFileRoute("/_authenticated/settings/recurring")({
   component: RecurringPage,
 });
@@ -678,10 +679,10 @@ function SubscriptionsTab() {
             </div>
             <div className="space-y-1.5">
               <Label>Início</Label>
-              <Input
-                type="date"
+              <IsoDatePicker
+                ariaLabel="Início"
                 value={draft.start_date ?? ""}
-                onChange={(e) => setDraft({ ...draft, start_date: e.target.value || undefined })}
+                onChange={(v) => setDraft({ ...draft, start_date: (v ?? "") || undefined })}
               />
             </div>
             <div className="space-y-1.5">

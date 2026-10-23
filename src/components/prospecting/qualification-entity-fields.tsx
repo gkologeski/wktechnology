@@ -12,6 +12,7 @@ import { ensureLeadRelations, type LeadRelationsInput } from "@/lib/leads/lead-r
 import { assertAffected } from "@/lib/access-control/rls-denied";
 
 import { Input } from "@/components/ui/input";
+import { IsoDatePicker } from "@/components/iso-date-picker";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { formatMoney, isMoneyField } from "@/lib/format/money-fields";
 import { translateFieldValue } from "@/lib/i18n/hubspot-values";
@@ -478,9 +479,26 @@ function EntityFieldInput({
     );
   }
 
-  const inputType = field.type === "number" ? "number" : field.type === "date" ? "date" : "text";
+  const inputType = field.type === "number" ? "number" : "text";
   const raw =
     field.type === "date" && typeof value === "string" ? value.slice(0, 10) : (value ?? "");
+
+  if (field.type === "date") {
+    return (
+      <div className="space-y-1">
+        {label}
+        <IsoDatePicker
+          id={id}
+          size="sm"
+          disabled={disabled}
+          className="h-8 text-sm"
+          value={typeof raw === "string" ? raw : ""}
+          onChange={(v) => onChange(v ?? "")}
+        />
+        {suggestionHint}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-1">

@@ -46,6 +46,7 @@ import {
   parseDurationInput,
 } from "@/lib/projects/time-entry.shared";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 export type TimeEntryDraft = {
   id?: string;
   projectId?: string | null;
@@ -408,11 +409,10 @@ export function QuickTimeEntryDialog({
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="grid gap-2">
                 <Label htmlFor="tt-date">Data</Label>
-                <Input
+                <IsoDatePicker
                   id="tt-date"
-                  type="date"
                   value={entryDate}
-                  onChange={(e) => setEntryDate(e.target.value)}
+                  onChange={(v) => setEntryDate(v ?? "")}
                 />
               </div>
               {mode === "interval" ? (

@@ -31,6 +31,7 @@ import type { Lead } from "@/lib/db-types";
 import { useToastCreated } from "@/lib/toast-nav";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 export function CreateDealFromLeadDialog({
   open,
   onOpenChange,
@@ -409,10 +410,10 @@ export function CreateDealFromLeadDialog({
 
             <div className="space-y-1.5 col-span-2">
               <Label>Previsão de fechamento</Label>
-              <Input
-                type="date"
+              <IsoDatePicker
+                ariaLabel="Previsão de fechamento"
                 value={expectedClose}
-                onChange={(e) => setExpectedClose(e.target.value)}
+                onChange={(v) => setExpectedClose(v ?? "")}
               />
             </div>
 

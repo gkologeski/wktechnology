@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import { createService } from "@/lib/services.functions";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 type Props = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -187,11 +188,15 @@ export function QuickCreateServiceDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Início</Label>
-              <Input type="date" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
+              <IsoDatePicker
+                ariaLabel="Início"
+                value={startsAt}
+                onChange={(v) => setStartsAt(v ?? "")}
+              />
             </div>
             <div className="space-y-2">
               <Label>Fim</Label>
-              <Input type="date" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} />
+              <IsoDatePicker ariaLabel="Fim" value={endsAt} onChange={(v) => setEndsAt(v ?? "")} />
             </div>
           </div>
         </div>

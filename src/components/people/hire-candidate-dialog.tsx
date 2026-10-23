@@ -31,6 +31,8 @@ import {
   type PeopleEmploymentType,
 } from "@/lib/people/people.functions";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
+import { formatIsoDate } from "@/lib/iso-date";
 type Props = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -51,7 +53,7 @@ export function HireCandidateDialog({
 
   const [employment, setEmployment] = useState<PeopleEmploymentType>("pj");
   const [roleTitle, setRoleTitle] = useState(suggestedRole ?? "");
-  const [hireDate, setHireDate] = useState(new Date().toISOString().slice(0, 10));
+  const [hireDate, setHireDate] = useState(formatIsoDate(new Date()));
   const [costHour, setCostHour] = useState("");
 
   const mut = useMutation({
@@ -112,7 +114,11 @@ export function HireCandidateDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Data de início</Label>
-              <Input type="date" value={hireDate} onChange={(e) => setHireDate(e.target.value)} />
+              <IsoDatePicker
+                ariaLabel="Data de início"
+                value={hireDate}
+                onChange={(v) => setHireDate(v ?? "")}
+              />
             </div>
             <div className="space-y-2">
               <Label>Custo/hora (R$)</Label>

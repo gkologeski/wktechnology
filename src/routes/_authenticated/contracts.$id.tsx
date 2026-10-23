@@ -42,6 +42,7 @@ import { usePermissions } from "@/lib/access-control/use-permissions";
 import { DEFAULT_CONTRACTS_SEARCH } from "@/lib/contracts/list-search";
 import { LinkedProjectsCard } from "@/components/projects/linked-projects-card";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 export const Route = createFileRoute("/_authenticated/contracts/$id")({
   head: () => ({ meta: [{ title: "Contrato" }] }),
   component: ContractDetail,
@@ -382,11 +383,19 @@ function ContractDetail() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Início</Label>
-                <Input type="date" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
+                <IsoDatePicker
+                  ariaLabel="Início"
+                  value={startsAt}
+                  onChange={(v) => setStartsAt(v ?? "")}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Fim</Label>
-                <Input type="date" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} />
+                <IsoDatePicker
+                  ariaLabel="Fim"
+                  value={endsAt}
+                  onChange={(v) => setEndsAt(v ?? "")}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">

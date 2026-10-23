@@ -30,6 +30,7 @@ import {
   type MainContractOption,
 } from "@/components/contracts/main-contract-picker";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 export type AmendmentRow = {
   id: string;
   number: string | null;
@@ -312,11 +313,10 @@ function LinkAmendmentDialog({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="amendment-date">Vigência do aditivo</Label>
-              <Input
+              <IsoDatePicker
                 id="amendment-date"
-                type="date"
                 value={effectiveAt}
-                onChange={(e) => setEffectiveAt(e.target.value)}
+                onChange={(v) => setEffectiveAt(v ?? "")}
               />
             </div>
           </div>

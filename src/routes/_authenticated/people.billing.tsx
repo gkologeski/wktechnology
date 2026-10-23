@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Table,
@@ -38,6 +37,8 @@ import {
   type PendingBillingGroup,
 } from "@/lib/people/billing.functions";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
+import { formatIsoDate } from "@/lib/iso-date";
 export const Route = createFileRoute("/_authenticated/people/billing")({
   head: () => ({
     meta: [
@@ -58,12 +59,12 @@ function fmtCurrency(v: number, currency = "BRL") {
 }
 
 function todayIso() {
-  return new Date().toISOString().slice(0, 10);
+  return formatIsoDate(new Date());
 }
 function plusDaysIso(days: number) {
   const d = new Date();
   d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
+  return formatIsoDate(d);
 }
 
 function PeopleBillingPage() {
@@ -310,11 +311,10 @@ function PeopleBillingPage() {
               </div>
               <div>
                 <Label htmlFor="due-date">Vencimento</Label>
-                <Input
+                <IsoDatePicker
                   id="due-date"
-                  type="date"
                   value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
+                  onChange={(v) => setDueDate(v ?? "")}
                 />
               </div>
             </div>

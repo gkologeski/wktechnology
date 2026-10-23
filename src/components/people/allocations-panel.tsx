@@ -68,6 +68,8 @@ import { splitsError } from "@/lib/people/allocation-rules";
 import { listPeople } from "@/lib/people/people.functions";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
+import { formatIsoDate } from "@/lib/iso-date";
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
@@ -328,9 +330,7 @@ function AllocationDialog({
   const [cost, setCost] = useState<string>(
     editing?.cost_rate != null ? String(editing.cost_rate) : "",
   );
-  const [startsAt, setStartsAt] = useState<string>(
-    editing?.starts_at ?? new Date().toISOString().slice(0, 10),
-  );
+  const [startsAt, setStartsAt] = useState<string>(editing?.starts_at ?? formatIsoDate(new Date()));
   const [endsAt, setEndsAt] = useState<string>(editing?.ends_at ?? "");
   const [status, setStatus] = useState<AllocationStatus>(editing?.status ?? "active");
   const [notes, setNotes] = useState<string>(editing?.notes ?? "");
@@ -585,11 +585,19 @@ function AllocationDialog({
           </div>
           <div className="space-y-2">
             <Label>Início</Label>
-            <Input type="date" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
+            <IsoDatePicker
+              ariaLabel="Início"
+              value={startsAt}
+              onChange={(v) => setStartsAt(v ?? "")}
+            />
           </div>
           <div className="space-y-2">
             <Label>Fim (opcional)</Label>
-            <Input type="date" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} />
+            <IsoDatePicker
+              ariaLabel="Fim (opcional)"
+              value={endsAt}
+              onChange={(v) => setEndsAt(v ?? "")}
+            />
           </div>
           <AllocationCapacityFields
             personId={personId}

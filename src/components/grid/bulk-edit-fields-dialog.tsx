@@ -64,6 +64,7 @@ import { BulkRefPicker } from "./bulk-ref-picker";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { isPhoneColumn, WHATSAPP_COLUMN } from "@/lib/phone/phone-columns";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 const LONG_TEXT_FIELDS = new Set([
   "description",
   "notes",
@@ -190,12 +191,15 @@ function FieldEditor({
   }
 
   if (field.type === "date") {
+    // Colunas de calendário (vencimento, competência, prazo...): grava
+    // "YYYY-MM-DD" local — antes ia data-hora em UTC e podia virar o dia
+    // seguinte quando escolhida à noite.
     return (
-      <Input
+      <IsoDatePicker
         id={`bulk-${field.name}`}
-        type="datetime-local"
-        value={/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(strVal) ? strVal.slice(0, 16) : ""}
-        onChange={(e) => onChange(e.target.value ? new Date(e.target.value).toISOString() : "")}
+        ariaLabel={field.label}
+        value={/^\d{4}-\d{2}-\d{2}/.test(strVal) ? strVal.slice(0, 10) : ""}
+        onChange={(v) => onChange(v ?? "")}
       />
     );
   }

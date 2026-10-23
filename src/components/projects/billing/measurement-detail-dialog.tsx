@@ -62,6 +62,7 @@ import {
 import { formatSeconds } from "@/lib/projects/time-entry.shared";
 import type { IssueItem } from "@/lib/projects/billing.types";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 const br = (iso: string | null) => (iso ? iso.slice(0, 10).split("-").reverse().join("/") : "—");
 const P = "techprojects.";
 
@@ -476,12 +477,7 @@ export function MeasurementDetailDialog({
                     <>
                       <div className="grid gap-1">
                         <Label htmlFor="due">Vencimento</Label>
-                        <Input
-                          id="due"
-                          type="date"
-                          value={due}
-                          onChange={(e) => setDue(e.target.value)}
-                        />
+                        <IsoDatePicker id="due" value={due} onChange={(v) => setDue(v ?? "")} />
                       </div>
                       <Button
                         disabled={busy || !due || m.status === "approved"}

@@ -35,6 +35,7 @@ import { OnboardingGuidedEntry } from "@/components/onboarding/onboarding-guided
 import { useWindowChrome } from "@/components/activity/activity-window-context";
 import { ActivityDueDatePicker } from "@/components/activity/activity-date-time-picker";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 const LEGACY_ENUM = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
 
 type BaseProps = {
@@ -374,11 +375,10 @@ export function QuickCreateDealDialog({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="qc-d-close">Data prevista de fechamento</Label>
-              <Input
+              <IsoDatePicker
                 id="qc-d-close"
-                type="date"
                 value={closeDate}
-                onChange={(e) => setCloseDate(e.target.value)}
+                onChange={(v) => setCloseDate(v ?? "")}
               />
             </div>
           </div>

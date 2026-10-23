@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { IsoDatePicker } from "@/components/iso-date-picker";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -468,9 +469,17 @@ function ConditionSection({ draft, setDraft }: { draft: Draft; setDraft: (d: Dra
                 ))}
               </SelectContent>
             </Select>
+          ) : type === "date" ? (
+            <IsoDatePicker
+              ariaLabel="Valor da condição"
+              value={String(draft.condition.value ?? "")}
+              onChange={(v) =>
+                setDraft({ ...draft, condition: { ...draft.condition, value: v ?? "" } })
+              }
+            />
           ) : (
             <Input
-              type={type === "number" ? "number" : type === "date" ? "date" : "text"}
+              type={type === "number" ? "number" : "text"}
               value={String(draft.condition.value ?? "")}
               onChange={(e) => {
                 const raw = e.target.value;

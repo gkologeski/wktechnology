@@ -66,6 +66,7 @@ import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { ViewModeToggle } from "@/components/kanban/view-mode-toggle";
 
 import { PhoneInput } from "@/components/ui/phone-input";
+import { IsoDatePicker } from "@/components/iso-date-picker";
 export const Route = createFileRoute("/_authenticated/people/")({
   validateSearch: (search: Record<string, unknown>): { view?: "table" | "kanban" } => ({
     view: search.view === "kanban" ? "kanban" : "table",
@@ -709,11 +710,10 @@ function NewPersonDialog({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="p-hire">Data de contratação</Label>
-                <Input
+                <IsoDatePicker
                   id="p-hire"
-                  type="date"
                   value={hireDate}
-                  onChange={(e) => setHireDate(e.target.value)}
+                  onChange={(v) => setHireDate(v ?? "")}
                 />
               </div>
               <div className="space-y-2">

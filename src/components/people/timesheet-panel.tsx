@@ -22,7 +22,6 @@ import {
 import { toast } from "sonner";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -70,32 +69,34 @@ import {
 } from "@/lib/people/timesheet.functions";
 import { TimeEntryDialog, type TimeEntryDraft } from "./time-entry-dialog";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
+import { formatIsoDate } from "@/lib/iso-date";
 // ============ presets ============
 
 type PresetKey = "week" | "month" | "last30" | "quarter" | "custom";
 
 function firstDay(offset = 0) {
   const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth() + offset, 1).toISOString().slice(0, 10);
+  return formatIsoDate(new Date(d.getFullYear(), d.getMonth() + offset, 1));
 }
 function today() {
-  return new Date().toISOString().slice(0, 10);
+  return formatIsoDate(new Date());
 }
 function daysAgo(n: number) {
   const d = new Date();
   d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0, 10);
+  return formatIsoDate(d);
 }
 function startOfWeek() {
   const d = new Date();
   const dow = (d.getDay() + 6) % 7; // segunda = 0
   d.setDate(d.getDate() - dow);
-  return d.toISOString().slice(0, 10);
+  return formatIsoDate(d);
 }
 function startOfQuarter() {
   const d = new Date();
   const q = Math.floor(d.getMonth() / 3);
-  return new Date(d.getFullYear(), q * 3, 1).toISOString().slice(0, 10);
+  return formatIsoDate(new Date(d.getFullYear(), q * 3, 1));
 }
 
 function computePreset(key: PresetKey): { start: string; end: string } | null {
@@ -335,12 +336,11 @@ export function TimesheetPanel({ personId }: { personId: string }) {
             <Label htmlFor="ts-start" className="text-xs">
               Início
             </Label>
-            <Input
+            <IsoDatePicker
               id="ts-start"
-              type="date"
               value={start}
-              onChange={(e) => {
-                setStart(e.target.value);
+              onChange={(v) => {
+                setStart(v ?? "");
                 setPreset("custom");
               }}
               className="w-[160px]"
@@ -350,12 +350,11 @@ export function TimesheetPanel({ personId }: { personId: string }) {
             <Label htmlFor="ts-end" className="text-xs">
               Fim
             </Label>
-            <Input
+            <IsoDatePicker
               id="ts-end"
-              type="date"
               value={end}
-              onChange={(e) => {
-                setEnd(e.target.value);
+              onChange={(v) => {
+                setEnd(v ?? "");
                 setPreset("custom");
               }}
               className="w-[160px]"

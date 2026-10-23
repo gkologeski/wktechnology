@@ -62,6 +62,8 @@ import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { ProjectOriginCard } from "@/components/projects/project-origin-card";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
+import { formatIsoDate } from "@/lib/iso-date";
 export const Route = createFileRoute("/_authenticated/projects/$id")({
   component: ProjectDetailPage,
 });
@@ -377,7 +379,7 @@ function NewTaskDialog({
           </div>
           <div className="space-y-1.5">
             <Label>Prazo</Label>
-            <Input type="date" value={dueAt} onChange={(e) => setDueAt(e.target.value)} />
+            <IsoDatePicker ariaLabel="Prazo" value={dueAt} onChange={(v) => setDueAt(v ?? "")} />
           </div>
         </div>
         <DialogFooter>
@@ -523,7 +525,7 @@ function MilestonesPanel({ projectId }: { projectId: string }) {
             </div>
             <div className="space-y-1.5">
               <Label>Prazo</Label>
-              <Input type="date" value={dueAt} onChange={(e) => setDueAt(e.target.value)} />
+              <IsoDatePicker ariaLabel="Prazo" value={dueAt} onChange={(v) => setDueAt(v ?? "")} />
             </div>
             <div className="flex items-center gap-2">
               <Checkbox
@@ -573,7 +575,7 @@ function TimesheetPanel({ projectId }: { projectId: string }) {
     queryFn: () => list({ data: { projectId } }),
   });
 
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(formatIsoDate(new Date()));
   const [hours, setHours] = useState("");
   const [description, setDescription] = useState("");
   const [billable, setBillable] = useState(true);
@@ -610,7 +612,7 @@ function TimesheetPanel({ projectId }: { projectId: string }) {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
           <div className="space-y-1.5">
             <Label>Data</Label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <IsoDatePicker ariaLabel="Data" value={date} onChange={(v) => setDate(v ?? "")} />
           </div>
           <div className="space-y-1.5">
             <Label>Horas</Label>

@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { IsoDatePicker } from "@/components/iso-date-picker";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -365,18 +366,22 @@ function CustomObjectsPage() {
                           ))}
                         </SelectContent>
                       </Select>
+                    ) : f.type === "date" ? (
+                      <IsoDatePicker
+                        ariaLabel={f.label}
+                        value={String(recForm[f.key] ?? "")}
+                        onChange={(v) => setRecForm({ ...recForm, [f.key]: v ?? "" })}
+                      />
                     ) : (
                       <Input
                         type={
                           f.type === "number"
                             ? "number"
-                            : f.type === "date"
-                              ? "date"
-                              : f.type === "email"
-                                ? "email"
-                                : f.type === "url"
-                                  ? "url"
-                                  : "text"
+                            : f.type === "email"
+                              ? "email"
+                              : f.type === "url"
+                                ? "url"
+                                : "text"
                         }
                         value={String(recForm[f.key] ?? "")}
                         onChange={(e) =>

@@ -265,3 +265,13 @@ Pendências preservadas: C1 (68 sugestões, divergência Clockify 12 pessoas, 40
 - [ ] Administradores decidirem os 1.252 itens na tela (decisão humana, um a um)
 - [ ] Demais 5.164 pendentes: corrigir na ficha do registro (decisão humana)
 - [x] Publicação (23/10/2026)
+
+# Roadmap — Campos de data (skill date-picker-br)
+
+- [x] Inventário salvo (docs/architecture/date-fields.md): 89 controles em 61 arquivos + exceções justificadas
+- [x] Controle único: DatePicker/DatePickerPanel + IsoDatePicker; data-hora usa o mesmo painel
+- [x] Migração dos 6 módulos, Core, públicos e dinâmicos; "hoje" local nas telas convertidas
+- [x] Guarda de regressão + testes (fusos, verão, bissexto, limites, atalhos, data-hora)
+- [x] verify, build e navegador (amostra por módulo, teclado, celular, escuro)
+- [ ] Formulário público com data no navegador (não há formulário com data cadastrado na WK; coberto por teste)
+- [ ] Publicação (aguarda aceite do usuário)

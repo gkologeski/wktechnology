@@ -31,6 +31,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/crm";
 import { cn } from "@/lib/utils";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 const NO_TEMPLATE = "__none__";
 
 type Deal = {
@@ -501,10 +502,10 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
               </div>
               <div className="space-y-1.5">
                 <Label>Válida até</Label>
-                <Input
-                  type="date"
+                <IsoDatePicker
+                  ariaLabel="Válida até"
                   value={draft.validUntil}
-                  onChange={(e) => setDraft({ ...draft, validUntil: e.target.value })}
+                  onChange={(v) => setDraft({ ...draft, validUntil: v ?? "" })}
                 />
               </div>
               {!hasLineItems && (

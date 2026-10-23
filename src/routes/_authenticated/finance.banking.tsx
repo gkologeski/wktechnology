@@ -77,6 +77,8 @@ import {
 } from "@/components/ui/select";
 import { formatCurrency } from "@/lib/crm";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
+import { formatIsoDate } from "@/lib/iso-date";
 export const Route = createFileRoute("/_authenticated/finance/banking")({
   component: BankingPage,
   head: () => ({
@@ -226,7 +228,7 @@ function BankingPage() {
   const [chargeForm, setChargeForm] = useState({
     type: "pix" as "pix" | "boleto",
     amount: "",
-    due_date: new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10),
+    due_date: formatIsoDate(new Date(Date.now() + 3 * 86400000)),
     description: "",
     payer_name: "",
     payer_document: "",
@@ -297,7 +299,7 @@ function BankingPage() {
   const [paymentForm, setPaymentForm] = useState({
     type: "pix" as "pix" | "ted" | "boleto",
     amount: "",
-    scheduled_for: new Date().toISOString().slice(0, 10),
+    scheduled_for: formatIsoDate(new Date()),
     favored_name: "",
     favored_document: "",
     pix_key: "",
@@ -950,10 +952,10 @@ function BankingPage() {
               </div>
               <div>
                 <Label>Vencimento</Label>
-                <Input
-                  type="date"
+                <IsoDatePicker
+                  ariaLabel="Vencimento"
                   value={chargeForm.due_date}
-                  onChange={(e) => setChargeForm((f) => ({ ...f, due_date: e.target.value }))}
+                  onChange={(v) => setChargeForm((f) => ({ ...f, due_date: v ?? "" }))}
                 />
               </div>
             </div>
@@ -1131,10 +1133,10 @@ function BankingPage() {
             </div>
             <div>
               <Label className="text-xs">Agendado para</Label>
-              <Input
-                type="date"
+              <IsoDatePicker
+                ariaLabel="Agendado para"
                 value={paymentForm.scheduled_for}
-                onChange={(e) => setPaymentForm((f) => ({ ...f, scheduled_for: e.target.value }))}
+                onChange={(v) => setPaymentForm((f) => ({ ...f, scheduled_for: v ?? "" }))}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">

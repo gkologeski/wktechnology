@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { createOffer, sendOffer } from "@/lib/ats/offers.functions";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 type Props = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -105,7 +106,11 @@ export function CreateOfferDialog({
             </div>
             <div>
               <Label>Data de início</Label>
-              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              <IsoDatePicker
+                ariaLabel="Data de início"
+                value={startDate}
+                onChange={(v) => setStartDate(v ?? "")}
+              />
             </div>
           </div>
           <div>

@@ -5,6 +5,8 @@ import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ActivityDateTimePicker } from "@/components/activity/activity-date-time-picker";
+import { IsoDatePicker } from "@/components/iso-date-picker";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -461,40 +463,53 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
             </div>
           ) : (
             <div className="flex gap-1">
-              <Input
-                autoFocus
-                disabled={readOnly}
-                type={
-                  p.type === "cep" || p.type === "cnpj"
-                    ? "text"
-                    : p.type === "datetime"
-                      ? "datetime-local"
-                      : (p.type ?? "text")
-                }
-                inputMode={p.type === "cep" || p.type === "cnpj" ? "numeric" : undefined}
-                maxLength={p.type === "cep" ? 9 : p.type === "cnpj" ? 18 : undefined}
-                placeholder={
-                  p.type === "cep"
-                    ? "99999-999"
-                    : p.type === "cnpj"
-                      ? "00.000.000/0000-00"
-                      : undefined
-                }
-                value={value}
-                onChange={(e) =>
-                  setValue(
-                    p.type === "email"
-                      ? sanitizeEmailInput(e.target.value)
-                      : p.type === "cep"
-                        ? formatCep(e.target.value)
-                        : p.type === "cnpj"
-                          ? formatCnpjInput(e.target.value)
-                          : e.target.value,
-                  )
-                }
-                onKeyDown={(e) => e.key === "Enter" && save(p.key)}
-                className="h-8"
-              />
+              {p.type === "date" ? (
+                <IsoDatePicker
+                  size="sm"
+                  className="h-8"
+                  disabled={readOnly}
+                  ariaLabel={p.label}
+                  value={value}
+                  onChange={(v) => setValue(v ?? "")}
+                />
+              ) : p.type === "datetime" ? (
+                <ActivityDateTimePicker
+                  className="min-w-0 flex-1"
+                  disabled={readOnly}
+                  ariaLabel={p.label}
+                  value={value}
+                  onChange={(v) => setValue(v ?? "")}
+                />
+              ) : (
+                <Input
+                  autoFocus
+                  disabled={readOnly}
+                  type={p.type === "cep" || p.type === "cnpj" ? "text" : (p.type ?? "text")}
+                  inputMode={p.type === "cep" || p.type === "cnpj" ? "numeric" : undefined}
+                  maxLength={p.type === "cep" ? 9 : p.type === "cnpj" ? 18 : undefined}
+                  placeholder={
+                    p.type === "cep"
+                      ? "99999-999"
+                      : p.type === "cnpj"
+                        ? "00.000.000/0000-00"
+                        : undefined
+                  }
+                  value={value}
+                  onChange={(e) =>
+                    setValue(
+                      p.type === "email"
+                        ? sanitizeEmailInput(e.target.value)
+                        : p.type === "cep"
+                          ? formatCep(e.target.value)
+                          : p.type === "cnpj"
+                            ? formatCnpjInput(e.target.value)
+                            : e.target.value,
+                    )
+                  }
+                  onKeyDown={(e) => e.key === "Enter" && save(p.key)}
+                  className="h-8"
+                />
+              )}
               <Button size="sm" className="h-8" onClick={() => save(p.key)}>
                 OK
               </Button>
@@ -1002,20 +1017,29 @@ function CustomFieldRow({
             );
           })}
         </div>
+      ) : def.type === "date" ? (
+        <IsoDatePicker
+          size="sm"
+          className="mt-0.5 h-8"
+          ariaLabel={def.label}
+          value={draft}
+          onChange={(v) => {
+            setDraft(v ?? "");
+            commit(v ?? "");
+          }}
+        />
       ) : (
         <Input
           type={
             def.type === "number"
               ? "number"
-              : def.type === "date"
-                ? "date"
-                : def.type === "email"
-                  ? "email"
-                  : def.type === "url"
-                    ? "url"
-                    : def.type === "tel"
-                      ? "tel"
-                      : "text"
+              : def.type === "email"
+                ? "email"
+                : def.type === "url"
+                  ? "url"
+                  : def.type === "tel"
+                    ? "tel"
+                    : "text"
           }
           value={draft}
           onChange={(e) => setDraft(e.target.value)}

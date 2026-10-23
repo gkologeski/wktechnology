@@ -50,6 +50,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { buildContractTitle } from "@/lib/contracts/title";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -629,13 +630,12 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
                                 >
                                   Vigência (opcional)
                                 </label>
-                                <Input
+                                <IsoDatePicker
                                   id={`amd-date-${i.key}`}
-                                  type="date"
                                   value={i.amendmentEffectiveAt ?? ""}
                                   disabled={processing}
-                                  onChange={(e) =>
-                                    patchItem(i.key, { amendmentEffectiveAt: e.target.value })
+                                  onChange={(v) =>
+                                    patchItem(i.key, { amendmentEffectiveAt: v ?? "" })
                                   }
                                 />
                               </div>

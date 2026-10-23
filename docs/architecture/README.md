@@ -17,6 +17,7 @@ desenvolvedores. Ponto de entrada: `CLAUDE.md` na raiz do repositório.
 | [billing-measurements.md](./billing-measurements.md) | vai mexer em tarifas, medições, cobrança de projetos ou rentabilidade |
 | [testing-and-ops.md](./testing-and-ops.md)           | vai validar, testar ou operar o sistema                    |
 | [operations-cycle6.md](./operations-cycle6.md)       | vai mexer em API v1 de projetos, fila offline, webhooks, assistente, desempenho ou recuperação |
+| [date-fields.md](./date-fields.md) | vai criar ou mudar campo de data, data-hora ou filtro de um dia |
 
 Documentos complementares fora deste diretório estão listados no fim de
 `CLAUDE.md`. Nada aqui duplica o design system — para UI, use

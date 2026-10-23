@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2, ShieldAlert, HeartPulse } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +46,8 @@ import {
   type PsychRiskLevel,
 } from "@/lib/people/wellbeing.functions";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
+import { formatIsoDate } from "@/lib/iso-date";
 function riskClass(level: PsychRiskLevel) {
   switch (level) {
     case "critical":
@@ -258,9 +259,7 @@ function PsychDialog({
   upsertFn: ReturnType<typeof useServerFn<typeof upsertPsychAssessment>>;
   onSaved: () => void;
 }) {
-  const [assessedAt, setAssessedAt] = useState(
-    editing?.assessed_at ?? new Date().toISOString().slice(0, 10),
-  );
+  const [assessedAt, setAssessedAt] = useState(editing?.assessed_at ?? formatIsoDate(new Date()));
   const [method, setMethod] = useState<PsychMethod>(editing?.method ?? "self_report");
   const [status, setStatus] = useState<PsychStatus>(editing?.status ?? "open");
   const [dimensions, setDimensions] = useState<Record<string, number>>(editing?.dimensions ?? {});
@@ -306,10 +305,10 @@ function PsychDialog({
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-2">
               <Label>Data</Label>
-              <Input
-                type="date"
+              <IsoDatePicker
+                ariaLabel="Data"
                 value={assessedAt}
-                onChange={(e) => setAssessedAt(e.target.value)}
+                onChange={(v) => setAssessedAt(v ?? "")}
               />
             </div>
             <div className="space-y-2">
@@ -387,7 +386,11 @@ function PsychDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Follow-up</Label>
-              <Input type="date" value={followUp} onChange={(e) => setFollowUp(e.target.value)} />
+              <IsoDatePicker
+                ariaLabel="Follow-up"
+                value={followUp}
+                onChange={(v) => setFollowUp(v ?? "")}
+              />
             </div>
           </div>
 

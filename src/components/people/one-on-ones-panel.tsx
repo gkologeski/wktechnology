@@ -39,6 +39,7 @@ import {
   type ActionItem,
 } from "@/lib/people/performance.functions";
 
+import { ActivityDateTimePicker } from "@/components/activity/activity-date-time-picker";
 const MOODS = ["😞", "😕", "😐", "🙂", "😄"];
 
 export function OneOnOnesPanel({ personId, canWrite }: { personId: string; canWrite: boolean }) {
@@ -237,10 +238,10 @@ function OneOnOneDialog({
         <div className="grid gap-3 md:grid-cols-2">
           <div className="space-y-1">
             <Label>Data e hora</Label>
-            <Input
-              type="datetime-local"
+            <ActivityDateTimePicker
+              ariaLabel="Data e hora"
               value={scheduledAt}
-              onChange={(e) => setScheduledAt(e.target.value)}
+              onChange={(v) => setScheduledAt(v ?? "")}
             />
           </div>
           <div className="space-y-1">

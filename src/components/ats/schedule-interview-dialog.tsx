@@ -26,6 +26,7 @@ import { listInterviewKits } from "@/lib/ats/interview-kits.functions";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { getAppUrl } from "@/lib/app-url";
 
+import { ActivityDateTimePicker } from "@/components/activity/activity-date-time-picker";
 type Props = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -237,10 +238,10 @@ export function ScheduleInterviewDialog({
             <TabsContent value="manual" className="space-y-3 m-0">
               <div className="space-y-1">
                 <Label>Data e horário</Label>
-                <Input
-                  type="datetime-local"
+                <ActivityDateTimePicker
+                  ariaLabel="Data e horário"
                   value={when}
-                  onChange={(e) => setWhen(e.target.value)}
+                  onChange={(v) => setWhen(v ?? "")}
                 />
               </div>
               {kind === "video" && (

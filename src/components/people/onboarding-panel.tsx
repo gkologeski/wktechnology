@@ -64,6 +64,8 @@ import {
   type OnbPlanRow,
 } from "@/lib/people/onboarding.functions";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
+import { formatIsoDate } from "@/lib/iso-date";
 const planStatusTone: Record<OnbPlanStatus, string> = {
   not_started: "bg-muted text-muted-foreground",
   in_progress: "bg-primary/10 text-primary",
@@ -421,7 +423,7 @@ function NewPlanDialog({
 
   const [kind, setKind] = useState<OnbKind>("onboarding");
   const [templateId, setTemplateId] = useState<string>("__none__");
-  const [startedAt, setStartedAt] = useState<string>(new Date().toISOString().slice(0, 10));
+  const [startedAt, setStartedAt] = useState<string>(formatIsoDate(new Date()));
   const [target, setTarget] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
 
@@ -496,11 +498,19 @@ function NewPlanDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Início</Label>
-              <Input type="date" value={startedAt} onChange={(e) => setStartedAt(e.target.value)} />
+              <IsoDatePicker
+                ariaLabel="Início"
+                value={startedAt}
+                onChange={(v) => setStartedAt(v ?? "")}
+              />
             </div>
             <div className="space-y-2">
               <Label>Prazo</Label>
-              <Input type="date" value={target} onChange={(e) => setTarget(e.target.value)} />
+              <IsoDatePicker
+                ariaLabel="Prazo"
+                value={target}
+                onChange={(v) => setTarget(v ?? "")}
+              />
             </div>
           </div>
           <div className="space-y-2">
@@ -597,10 +607,10 @@ function TaskDialog({
             </div>
             <div className="space-y-2">
               <Label>Prazo</Label>
-              <Input
-                type="date"
+              <IsoDatePicker
+                ariaLabel="Prazo"
                 value={dueDate ?? ""}
-                onChange={(e) => setDueDate(e.target.value)}
+                onChange={(v) => setDueDate(v ?? "")}
               />
             </div>
           </div>

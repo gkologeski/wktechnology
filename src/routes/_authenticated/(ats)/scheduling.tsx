@@ -54,6 +54,8 @@ import {
 } from "@/lib/ats/scheduling.functions";
 import { Link } from "@tanstack/react-router";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
+import { formatIsoDate } from "@/lib/iso-date";
 export const Route = createFileRoute("/_authenticated/(ats)/scheduling")({
   component: SchedulingPage,
 });
@@ -532,8 +534,8 @@ function CommonSlotsFinder({
   const [stepMin, setStepMin] = useState(30);
   const today = new Date();
   const inAWeek = new Date(Date.now() + 7 * 86400_000);
-  const [from, setFrom] = useState(today.toISOString().slice(0, 10));
-  const [to, setTo] = useState(inAWeek.toISOString().slice(0, 10));
+  const [from, setFrom] = useState(formatIsoDate(today));
+  const [to, setTo] = useState(formatIsoDate(inAWeek));
   const [slots, setSlots] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -597,11 +599,11 @@ function CommonSlotsFinder({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>De</Label>
-              <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+              <IsoDatePicker ariaLabel="De" value={from} onChange={(v) => setFrom(v ?? "")} />
             </div>
             <div className="space-y-1.5">
               <Label>Até</Label>
-              <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+              <IsoDatePicker ariaLabel="Até" value={to} onChange={(v) => setTo(v ?? "")} />
             </div>
             <div className="space-y-1.5">
               <Label>Duração (min)</Label>
