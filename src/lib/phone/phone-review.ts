@@ -183,3 +183,68 @@ export function phoneReviewDetail(
       return null;
   }
 }
+
+export type PhoneRunRow = {
+  id: string;
+  parent_run_id: string | null;
+  status: string;
+  created_at: string;
+  finished_at: string | null;
+  counts: unknown;
+};
+
+/**
+ * Reconcilia várias execuções: a base é a VARREDURA mais recente (sem mãe),
+ * nunca simplesmente a última execução — uma correção posterior parcial não
+ * pode virar a referência (teria 0 pendentes). Correções concluídas filhas da
+ * base somam o que resolveram por campo/tipo.
+ */
+export function reconcilePhoneRuns(runs: PhoneRunRow[]) {
+  const base =
+    [...runs]
+      .filter((r) => !r.parent_run_id)
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))[0] ?? null;
+  if (!base) return null;
+  const children = runs
+    .filter((r) => r.parent_run_id === base.id && r.status === "done")
+    .sort((a, b) => a.created_at.localeCompare(b.created_at));
+  const resolved: Record<string, Record<string, number>> = {};
+  let correctedAt: string | null = null;
+  for (const c of children) {
+    const r = ((c.counts as Record<string, unknown> | null)?.resolved ?? {}) as Record<
+      string,
+      Record<string, number>
+    >;
+    for (const [field, byRes] of Object.entries(r)) {
+      resolved[field] ??= {};
+      for (const [k, n] of Object.entries(byRes))
+        resolved[field][k] = (resolved[field][k] ?? 0) + Number(n);
+    }
+    correctedAt = c.finished_at ?? correctedAt;
+  }
+  const { applied, resolved: _ignored, ...byField } = (base.counts ?? {}) as {
+    applied?: Record<string, number>;
+    resolved?: unknown;
+  } & Record<string, Record<string, number>>;
+  return {
+    base,
+    childIds: children.map((c) => c.id),
+    counts: byField as Record<string, Record<string, number>>,
+    applied: applied ?? {},
+    resolved,
+    correctedAt,
+  };
+}
+
+/**
+ * Ajusta o resumo com a contagem REAL de pendentes lida do banco (itens da
+ * base sem `applied_at` e sem `resolved_at`): é ela que vale na tela; o
+ * cálculo por diferença só preenche campos sem contagem real.
+ */
+export function withLivePending<
+  T extends { rows: { field: string; pending: number }[]; pending: number },
+>(summary: T, live: Record<string, number> | null): T {
+  if (!live) return summary;
+  const rows = summary.rows.map((r) => ({ ...r, pending: live[r.field] ?? r.pending }));
+  return { ...summary, rows, pending: rows.reduce((a, r) => a + r.pending, 0) };
+}

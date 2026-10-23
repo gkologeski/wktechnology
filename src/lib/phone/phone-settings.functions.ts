@@ -6,6 +6,8 @@ import {
   PHONE_REVIEW_CLASSES,
   phoneEntityName,
   phoneReviewDetail,
+  reconcilePhoneRuns,
+  type PhoneRunRow,
   phoneEntityRoute,
   type PhoneEntityRoute,
 } from "@/lib/phone/phone-review";
@@ -21,6 +23,8 @@ export type PhoneRunSummary = {
   resolved: Record<string, Record<string, number>>;
   /** Data da correção posterior mais recente. */
   correctedAt: string | null;
+  /** Pendentes reais por campo lidos do banco; nulo se a contagem falhou. */
+  livePending: Record<string, number> | null;
 };
 
 export type PhoneReviewItem = {
@@ -44,7 +48,7 @@ export const getPhoneSettings = createServerFn({ method: "GET" })
     const { data: ws } = await supabase.rpc("default_workspace_for_user", { _user: userId });
     const workspaceId = typeof ws === "string" ? ws : null;
     if (!workspaceId) throw new Error("Workspace ativo não encontrado.");
-    const [{ data: w }, { data: isAdmin }, { data: run }] = await Promise.all([
+    const [{ data: w }, { data: isAdmin }, { data: runs }] = await Promise.all([
       supabase
         .from("workspaces")
         .select("default_phone_country, phone_strict_e164")
@@ -54,56 +58,57 @@ export const getPhoneSettings = createServerFn({ method: "GET" })
       // RLS: só administradores ativos do workspace leem as execuções.
       supabase
         .from("phone_normalization_runs")
-        .select("id, finished_at, normalizer_version, criteria, counts, status")
+        .select(
+          "id, parent_run_id, status, created_at, finished_at, normalizer_version, criteria, counts",
+        )
         .eq("workspace_id", workspaceId)
-        .is("parent_run_id", null)
         .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
+        .limit(200),
     ]);
-    // Correções posteriores concluídas que resolvem parte da fila da varredura.
-    const { data: children } = run
-      ? await supabase
-          .from("phone_normalization_runs")
-          .select("finished_at, counts")
-          .eq("workspace_id", workspaceId)
-          .eq("parent_run_id", run.id as string)
-          .eq("status", "done")
-          .order("created_at", { ascending: true })
-      : { data: [] };
-    const resolved: Record<string, Record<string, number>> = {};
-    let correctedAt: string | null = null;
-    for (const c of children ?? []) {
-      const r = ((c.counts as Record<string, unknown> | null)?.resolved ?? {}) as Record<
-        string,
-        Record<string, number>
-      >;
-      for (const [field, byRes] of Object.entries(r)) {
-        resolved[field] ??= {};
-        for (const [k, n] of Object.entries(byRes))
-          resolved[field][k] = (resolved[field][k] ?? 0) + n;
-      }
-      correctedAt = (c.finished_at as string | null) ?? correctedAt;
+    const rec = reconcilePhoneRuns((runs ?? []) as PhoneRunRow[]);
+    const run = rec ? (runs ?? []).find((r) => r.id === rec.base.id)! : null;
+    // Pendentes REAIS por campo: itens da varredura sem gravação e não
+    // resolvidos por correção posterior (mesmo filtro da fila).
+    let livePending: Record<string, number> | null = null;
+    if (rec) {
+      livePending = {};
+      const fields = Object.keys(rec.counts);
+      const results = await Promise.all(
+        fields.map((f) => {
+          const [table, column] = f.split(".");
+          return supabase
+            .from("phone_normalization_items")
+            .select("id", { count: "exact", head: true })
+            .eq("run_id", rec.base.id)
+            .eq("table_name", table)
+            .eq("column_name", column)
+            .is("applied_at", null)
+            .is("resolved_at", null)
+            .in("classification", [...PHONE_REVIEW_CLASSES]);
+        }),
+      );
+      results.forEach((r, i) => {
+        if (r.error || r.count == null) livePending = null;
+        else if (livePending) livePending[fields[i]] = r.count;
+      });
     }
-    const counts = (run?.counts ?? {}) as Record<string, unknown>;
-    const { applied, ...byField } = counts as {
-      applied?: Record<string, number>;
-    } & Record<string, Record<string, number>>;
     return {
       workspaceId,
       country: (w?.default_phone_country as string | undefined) ?? "BR",
       strict: !!w?.phone_strict_e164,
       isAdmin: !!isAdmin,
-      run: run
-        ? ({
-            id: run.id as string,
-            finishedAt: (run.finished_at as string | null) ?? null,
-            version: run.normalizer_version as string,
-            criteria: run.criteria as string,
-            counts: byField as Record<string, Record<string, number>>,
-            applied: applied ?? {},
-            resolved,
-            correctedAt,
+      run:
+        run && rec
+          ? ({
+              id: run.id as string,
+              finishedAt: (run.finished_at as string | null) ?? null,
+              version: run.normalizer_version as string,
+              criteria: run.criteria as string,
+              counts: rec.counts,
+              applied: rec.applied,
+              resolved: rec.resolved,
+              correctedAt: rec.correctedAt,
+              livePending,
           } satisfies PhoneRunSummary)
         : null,
     };
