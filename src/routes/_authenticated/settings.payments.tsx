@@ -1,3 +1,4 @@
+import { WorkspaceSettingsAccess } from "@/components/workspace-settings-access";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -17,14 +18,19 @@ import { toast } from "sonner";
 import { getPaymentsSettings, savePaymentsSettings } from "@/lib/payments-settings.functions";
 
 export const Route = createFileRoute("/_authenticated/settings/payments")({
-  component: PaymentsSettingsPage,
+  component: () => (
+    <WorkspaceSettingsAccess resource="techfinance.payments_settings">
+      {(canManage) => <PaymentsSettingsPage canManage={canManage} />}
+    </WorkspaceSettingsAccess>
+  ),
 });
 
-function PaymentsSettingsPage() {
+function PaymentsSettingsPage({ canManage }: { canManage: boolean }) {
   const get = useServerFn(getPaymentsSettings);
   const save = useServerFn(savePaymentsSettings);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [gateway, setGateway] = useState<"asaas" | "pagarme" | "mercadopago" | "manual">("manual");
   const [mode, setMode] = useState<"sandbox" | "live">("sandbox");
   const [defaultMethod, setDefaultMethod] = useState<"pix" | "boleto" | "credit_card">("pix");
@@ -41,6 +47,8 @@ function PaymentsSettingsPage() {
         if (p.gateway) setGateway(p.gateway);
         if (p.mode) setMode(p.mode);
         if (p.default_method) setDefaultMethod(p.default_method);
+      } catch (error) {
+        setLoadError(error instanceof Error ? error.message : "Falha ao carregar configurações.");
       } finally {
         setLoading(false);
       }
@@ -48,6 +56,7 @@ function PaymentsSettingsPage() {
   }, [get]);
 
   async function submit() {
+    if (!canManage || loading || loadError) return;
     setSaving(true);
     try {
       await save({ data: { gateway, mode, default_method: defaultMethod } });
@@ -59,6 +68,16 @@ function PaymentsSettingsPage() {
     }
   }
 
+  if (loadError)
+    return (
+      <div className="space-y-3 p-6" role="alert">
+        <p>{loadError}</p>
+        <Button variant="outline" onClick={() => window.location.reload()}>
+          Tentar novamente
+        </Button>
+      </div>
+    );
+
   if (loading) {
     return (
       <div className="flex justify-center p-10">
@@ -68,7 +87,7 @@ function PaymentsSettingsPage() {
   }
 
   return (
-    <div className="space-y-4 p-6 max-w-2xl">
+    <fieldset disabled={!canManage || saving} className="space-y-4 p-6 max-w-2xl min-w-0">
       <PageHeader
         title="Cobrança & Pagamentos"
         description="Configure o gateway para gerar boletos, Pix e cobranças no cartão."
@@ -81,7 +100,11 @@ function PaymentsSettingsPage() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>Provedor</Label>
-            <Select value={gateway} onValueChange={(v) => setGateway(v as typeof gateway)}>
+            <Select
+              disabled={!canManage || saving}
+              value={gateway}
+              onValueChange={(v) => setGateway(v as typeof gateway)}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -102,7 +125,11 @@ function PaymentsSettingsPage() {
           </div>
           <div className="space-y-2">
             <Label>Ambiente</Label>
-            <Select value={mode} onValueChange={(v) => setMode(v as typeof mode)}>
+            <Select
+              disabled={!canManage || saving}
+              value={mode}
+              onValueChange={(v) => setMode(v as typeof mode)}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -115,6 +142,7 @@ function PaymentsSettingsPage() {
           <div className="space-y-2">
             <Label>Método padrão</Label>
             <Select
+              disabled={!canManage || saving}
               value={defaultMethod}
               onValueChange={(v) => setDefaultMethod(v as typeof defaultMethod)}
             >
@@ -146,7 +174,7 @@ function PaymentsSettingsPage() {
         </CardContent>
       </Card>
 
-      <Button onClick={submit} disabled={saving}>
+      <Button onClick={submit} disabled={!canManage || saving}>
         {saving ? (
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
         ) : (
@@ -154,6 +182,6 @@ function PaymentsSettingsPage() {
         )}
         Salvar
       </Button>
-    </div>
+    </fieldset>
   );
 }

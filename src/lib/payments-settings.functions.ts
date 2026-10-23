@@ -2,7 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { readWorkspaceSettings, writeWorkspaceSettings } from "@/lib/workspace-settings.server";
 
 const PaymentsSettingsZ = z.object({
   gateway: z.enum(["asaas", "pagarme", "mercadopago", "manual"]).default("manual"),
@@ -20,32 +20,25 @@ const NfseSettingsZ = z.object({
 
 export const getPaymentsSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const workspaceId = await resolveActiveWorkspace(context.userId);
-    const { data, error } = await supabaseAdmin
-      .from("workspaces")
-      .select("payments_settings,nfse_settings")
-      .eq("id", workspaceId)
-      .single();
-    if (error) throw new Error(error.message);
-    return {
-      payments: data?.payments_settings ?? {},
-      nfse: data?.nfse_settings ?? {},
-    };
-  });
+  .handler(async ({ context }) => ({
+    payments: PaymentsSettingsZ.parse(
+      await readWorkspaceSettings(context.supabase, context.userId, "payments"),
+    ),
+  }));
+
+export const getNfseSettings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => ({
+    nfse: NfseSettingsZ.parse(
+      await readWorkspaceSettings(context.supabase, context.userId, "nfse"),
+    ),
+  }));
 
 export const savePaymentsSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => PaymentsSettingsZ.parse(d))
   .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const workspaceId = await resolveActiveWorkspace(context.userId);
-    const { error } = await supabaseAdmin
-      .from("workspaces")
-      .update({ payments_settings: data })
-      .eq("id", workspaceId);
-    if (error) throw new Error(error.message);
+    await writeWorkspaceSettings(context.supabase, context.userId, "payments", data);
     return { ok: true };
   });
 
@@ -53,12 +46,6 @@ export const saveNfseSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => NfseSettingsZ.parse(d))
   .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const workspaceId = await resolveActiveWorkspace(context.userId);
-    const { error } = await supabaseAdmin
-      .from("workspaces")
-      .update({ nfse_settings: data })
-      .eq("id", workspaceId);
-    if (error) throw new Error(error.message);
+    await writeWorkspaceSettings(context.supabase, context.userId, "nfse", data);
     return { ok: true };
   });

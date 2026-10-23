@@ -1,3 +1,4 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -93,6 +94,7 @@ type Tab = {
   icon: React.ComponentType<{ className?: string }>;
   need?: Need;
   scope?: Scope;
+  permission?: string;
 };
 type Section = { label: string; tabs: Tab[] };
 
@@ -184,11 +186,21 @@ const sections: Section[] = [
         icon: FileSignature,
         need: "admin",
       },
-      { to: "/settings/payments", label: "Pagamentos", icon: CreditCard, need: "admin" },
+      {
+        to: "/settings/payments",
+        label: "Pagamentos",
+        icon: CreditCard,
+        permission: "techfinance.payments_settings.view.workspace",
+      },
       { to: "/settings/subscriptions", label: "Assinaturas", icon: Repeat2, need: "admin" },
       { to: "/settings/recurring", label: "Recorrência", icon: Repeat, need: "admin" },
       { to: "/settings/dunning", label: "Cobrança (dunning)", icon: Receipt, need: "admin" },
-      { to: "/settings/nfse", label: "NFS-e", icon: FileBarChart2, need: "admin" },
+      {
+        to: "/settings/nfse",
+        label: "NFS-e",
+        icon: FileBarChart2,
+        permission: "techfinance.nfse_settings.view.workspace",
+      },
       { to: "/settings/goals", label: "Metas", icon: Star, need: "manager", scope: "crm" },
     ],
   },
@@ -235,7 +247,12 @@ const sections: Section[] = [
         need: "manager",
       },
       { to: "/settings/voice-agent", label: "Agente de voz", icon: PhoneCall, need: "admin" },
-      { to: "/settings/video", label: "Vídeo / reuniões", icon: VideoIcon, need: "manager" },
+      {
+        to: "/settings/video",
+        label: "Vídeo / reuniões",
+        icon: VideoIcon,
+        permission: "techsales.meeting_settings.view.workspace",
+      },
     ],
   },
   {
@@ -303,8 +320,16 @@ function SettingsLayout() {
   const [groupOverride, setGroupOverride] = useState<string | null>(null);
   const { isAdmin, isManager } = useMyRole();
   const { isPlatformAdmin } = useIsPlatformAdmin();
+  const permissions = usePermissions();
 
   const canSee = (t: Tab) => {
+    if (t.permission)
+      return (
+        !permissions.isLoading &&
+        !permissions.isError &&
+        !!permissions.workspaceId &&
+        permissions.can(t.permission)
+      );
     if (t.need === "platform") return isPlatformAdmin;
     if (t.need === "admin") return isAdmin;
     if (t.need === "manager") return isManager;
@@ -314,7 +339,7 @@ function SettingsLayout() {
   const allowedSections = useMemo(
     () =>
       sections.map((s) => ({ ...s, tabs: s.tabs.filter(canSee) })).filter((s) => s.tabs.length > 0),
-    [isAdmin, isManager, isPlatformAdmin],
+    [isAdmin, isManager, isPlatformAdmin, permissions],
   );
 
   const isActive = (to: string) =>

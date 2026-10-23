@@ -1,3 +1,4 @@
+import { WorkspaceSettingsAccess } from "@/components/workspace-settings-access";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -11,14 +12,19 @@ import { toast } from "sonner";
 import { getMeetingSettings, saveMeetingSettings } from "@/lib/meetings.functions";
 
 export const Route = createFileRoute("/_authenticated/settings/video")({
-  component: VideoSettingsPage,
+  component: () => (
+    <WorkspaceSettingsAccess resource="techsales.meeting_settings">
+      {(canManage) => <VideoSettingsPage canManage={canManage} />}
+    </WorkspaceSettingsAccess>
+  ),
 });
 
-function VideoSettingsPage() {
+function VideoSettingsPage({ canManage }: { canManage: boolean }) {
   const get = useServerFn(getMeetingSettings);
   const save = useServerFn(saveMeetingSettings);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [requireConsent, setRequireConsent] = useState(true);
   const [retentionDays, setRetentionDays] = useState(90);
   const [model, setModel] = useState("google/gemini-2.5-flash");
@@ -30,6 +36,8 @@ function VideoSettingsPage() {
         if (settings?.require_consent !== undefined) setRequireConsent(!!settings.require_consent);
         if (settings?.retention_days) setRetentionDays(settings.retention_days);
         if (settings?.transcription_model) setModel(settings.transcription_model);
+      } catch (error) {
+        setLoadError(error instanceof Error ? error.message : "Falha ao carregar configurações.");
       } finally {
         setLoading(false);
       }
@@ -37,6 +45,7 @@ function VideoSettingsPage() {
   }, [get]);
 
   async function submit() {
+    if (!canManage || loading || loadError) return;
     setSaving(true);
     try {
       await save({
@@ -55,6 +64,16 @@ function VideoSettingsPage() {
     }
   }
 
+  if (loadError)
+    return (
+      <div className="space-y-3 p-6" role="alert">
+        <p>{loadError}</p>
+        <Button variant="outline" onClick={() => window.location.reload()}>
+          Tentar novamente
+        </Button>
+      </div>
+    );
+
   if (loading) {
     return (
       <div className="flex justify-center p-10">
@@ -64,7 +83,7 @@ function VideoSettingsPage() {
   }
 
   return (
-    <div className="space-y-4 p-6 max-w-2xl">
+    <fieldset disabled={!canManage || saving} className="space-y-4 p-6 max-w-2xl min-w-0">
       <div>
         <h1 className="text-2xl font-semibold flex items-center gap-2">
           <Video className="h-5 w-5" /> Vídeo & Reuniões
@@ -99,7 +118,11 @@ function VideoSettingsPage() {
                 convidado na entrada.
               </p>
             </div>
-            <Switch checked={requireConsent} onCheckedChange={setRequireConsent} />
+            <Switch
+              disabled={!canManage || saving}
+              checked={requireConsent}
+              onCheckedChange={setRequireConsent}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="retention">Retenção das gravações (dias)</Label>
@@ -136,7 +159,7 @@ function VideoSettingsPage() {
         </CardContent>
       </Card>
 
-      <Button onClick={submit} disabled={saving}>
+      <Button onClick={submit} disabled={!canManage || saving}>
         {saving ? (
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
         ) : (
@@ -144,6 +167,6 @@ function VideoSettingsPage() {
         )}
         Salvar
       </Button>
-    </div>
+    </fieldset>
   );
 }

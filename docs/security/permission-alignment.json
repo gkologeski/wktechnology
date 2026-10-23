@@ -112,6 +112,117 @@
       "scope": "caller business DML remains subject to its RLS/authorization; no browser/API EXECUTE",
       "database": "REVOKE PUBLIC/anon/authenticated/API subject; retain owner + service role",
       "migration": "0191"
+    },
+    {
+      "operation": "payments_settings.view",
+      "kind": "configuration_action",
+      "route_consumers": [
+        "/settings/payments"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techfinance.payments_settings",
+      "action": "view",
+      "permission_keys": [
+        "techfinance.payments_settings.view.workspace"
+      ],
+      "scope": "selected workspace; deny takes precedence; write denied in read-only View As",
+      "server": "authenticated client RPC via workspace-settings.server.ts; no service-role fallback",
+      "database": "0192: column ACLs + authorized SECURITY DEFINER RPC; field allowlist and atomic audit on changes",
+      "migration": "0192",
+      "status": "applied_sql_tested_application_publish_pending"
+    },
+    {
+      "operation": "payments_settings.manage",
+      "kind": "configuration_action",
+      "route_consumers": [
+        "/settings/payments"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techfinance.payments_settings",
+      "action": "manage",
+      "permission_keys": [
+        "techfinance.payments_settings.view.workspace",
+        "techfinance.payments_settings.manage.workspace"
+      ],
+      "scope": "selected workspace; deny takes precedence; write denied in read-only View As",
+      "server": "authenticated client RPC via workspace-settings.server.ts; no service-role fallback",
+      "database": "0192: column ACLs + authorized SECURITY DEFINER RPC; field allowlist and atomic audit on changes",
+      "migration": "0192",
+      "status": "applied_sql_tested_application_publish_pending"
+    },
+    {
+      "operation": "nfse_settings.view",
+      "kind": "configuration_action",
+      "route_consumers": [
+        "/settings/nfse"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techfinance.nfse_settings",
+      "action": "view",
+      "permission_keys": [
+        "techfinance.nfse_settings.view.workspace"
+      ],
+      "scope": "selected workspace; deny takes precedence; write denied in read-only View As",
+      "server": "authenticated client RPC via workspace-settings.server.ts; no service-role fallback",
+      "database": "0192: column ACLs + authorized SECURITY DEFINER RPC; field allowlist and atomic audit on changes",
+      "migration": "0192",
+      "status": "applied_sql_tested_application_publish_pending"
+    },
+    {
+      "operation": "nfse_settings.manage",
+      "kind": "configuration_action",
+      "route_consumers": [
+        "/settings/nfse"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techfinance.nfse_settings",
+      "action": "manage",
+      "permission_keys": [
+        "techfinance.nfse_settings.view.workspace",
+        "techfinance.nfse_settings.manage.workspace"
+      ],
+      "scope": "selected workspace; deny takes precedence; write denied in read-only View As",
+      "server": "authenticated client RPC via workspace-settings.server.ts; no service-role fallback",
+      "database": "0192: column ACLs + authorized SECURITY DEFINER RPC; field allowlist and atomic audit on changes",
+      "migration": "0192",
+      "status": "applied_sql_tested_application_publish_pending"
+    },
+    {
+      "operation": "meeting_settings.view",
+      "kind": "configuration_action",
+      "route_consumers": [
+        "/settings/video"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techsales.meeting_settings",
+      "action": "view",
+      "permission_keys": [
+        "techsales.meeting_settings.view.workspace"
+      ],
+      "scope": "selected workspace; deny takes precedence; write denied in read-only View As",
+      "server": "authenticated client RPC via workspace-settings.server.ts; no service-role fallback",
+      "database": "0192: column ACLs + authorized SECURITY DEFINER RPC; field allowlist and atomic audit on changes",
+      "migration": "0192",
+      "status": "applied_sql_tested_application_publish_pending"
+    },
+    {
+      "operation": "meeting_settings.manage",
+      "kind": "configuration_action",
+      "route_consumers": [
+        "/settings/video"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techsales.meeting_settings",
+      "action": "manage",
+      "permission_keys": [
+        "techsales.meeting_settings.view.workspace",
+        "techsales.meeting_settings.manage.workspace"
+      ],
+      "scope": "selected workspace; deny takes precedence; write denied in read-only View As",
+      "server": "authenticated client RPC via workspace-settings.server.ts; no service-role fallback",
+      "database": "0192: column ACLs + authorized SECURITY DEFINER RPC; field allowlist and atomic audit on changes",
+      "migration": "0192",
+      "status": "applied_sql_tested_application_publish_pending"
     }
   ],
   "rules": [
@@ -228,8 +339,8 @@
       "area": "TechSales",
       "problema": "Configurações de retenção/consentimento",
       "decisao_alvo": "Criar recurso gerenciável distinto de participação em reuniões e validar leitura/alteração.",
-      "status": "pendente",
-      "evidencia_migracao": null,
+      "status": "aplicado_testado_sql_publicacao_pendente",
+      "evidencia_migracao": "0192",
       "aceite_visual": false
     },
     {
@@ -399,15 +510,15 @@
       "area": "TechFinance",
       "problema": "Configurações sem chave própria",
       "decisao_alvo": "Criar permissão específica para configurar pagamentos/NFS-e e verificar antes da escrita administrativa.",
-      "status": "pendente",
-      "evidencia_migracao": null,
+      "status": "aplicado_testado_sql_publicacao_pendente",
+      "evidencia_migracao": "0192",
       "aceite_visual": false
     }
   ],
   "limitations": [
-    "Seven operation contracts implemented; remaining actions require explicit validation.",
+    "Thirteen operation contracts implemented; remaining actions require explicit validation.",
     "Route inventory is static evidence, not certification of enforcement.",
     "SQL tests are not browser/GoTrue/PostgREST acceptance.",
-    "No new business role grants in 0191."
+    "No new business role grants in 0191 or 0192; six new catalog keys in 0192."
   ]
 }

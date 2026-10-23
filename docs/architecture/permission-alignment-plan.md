@@ -35,9 +35,8 @@ chaves novas a todos os cargos/workspaces como forma de fazer o teste passar.
 
 1. Matriz oficial incremental: inventário e sete contratos do primeiro lote
    registrados; ainda em andamento para as demais ações.
-2. Riscos críticos: primeiro lote SQL (0191) aplicado e testado. Ainda pendentes
-   configurações de pagamentos, NFS-e e reuniões. Próxima frente estimada em
-   45–60 minutos, a atualizar antes de iniciar.
+2. Riscos críticos: primeiro lote SQL (0191) aplicado e testado. Lote 0192 de configurações de pagamentos, NFS-e e reuniões aplicado e testado;
+   aplicação e publicação registradas no relatório do lote.
 3. Servidor/RLS por módulo: priorizar TechPeople/TechHire, depois os demais;
    consolidar políticas, eliminar atalhos por owner/admin e escopos incorretos.
 4. Interface e ações: menus/URL/abas/botões, projeção de campos, exportações,
@@ -88,3 +87,30 @@ Backups das definições/ACLs estão nos artefatos locais da auditoria. Em regre
 priorizar correção progressiva ou contenção da porta afetada; nunca restaurar
 EXECUTE anônimo para recuperar disponibilidade. Script de contenção:
 `docs/security/0191-emergency-containment.sql` (não foi executado em produção).
+
+
+## Lote 0192 — configurações de pagamentos, NFS-e e reuniões
+
+Seis chaves próprias (view/manage por recurso) no catálogo. Consultar exige view;
+alterar exige view E manage; deny sempre prevalece. Nenhum grant de cargo/preset
+é criado. A UI verifica a mesma chave para menu e URL, oferece leitura sem edição
+e não monta o formulário em erro de autorização. Erro de carga impede gravação.
+O servidor usa o cliente autenticado, seleciona o workspace do perfil e delega a
+autorização às RPCs; não usa service_role para as seis operações de configuração.
+
+As três colunas JSON de workspaces perderam SELECT/INSERT/UPDATE diretos para
+PUBLIC/anon/authenticated/API subject. As demais colunas mantêm os privilégios
+anteriores limitados pelas RLS existentes. Novas colunas de workspaces precisam
+de concessão explícita por migração; consumidores devem selecionar apenas as
+colunas necessárias, nunca SELECT *. A cobrança autorizada lê o gateway por
+service_role como exceção interna; não concede reconfiguração ao operador.
+
+As RPCs validam membro ativo, workspace selecionado, chave efetiva, View As de
+leitura, campos permitidos, tipos e limites. Alterações registram ator, seção e
+nomes dos campos alterados, sem copiar valores para o log. Save idempotente não
+cria outro evento. RPC auxiliar não pode ser invocada diretamente pelo usuário.
+Nenhum valor de configuração é alterado pela migração.
+
+61 verificações novas de PostgreSQL (162 somadas às anteriores), 17 testes de
+helper/UI e suíte completa passaram. Aceite SQL na base ativa passou (leitura/idempotência do owner, bloqueio de membro sem chave e acesso direto/fora do workspace). Aceite visual com sessão real ainda não
+realizado. Estados de aplicação/publicação e hashes constam no relatório do lote.

@@ -2,6 +2,7 @@ import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { readWorkspaceSettings, writeWorkspaceSettings } from "@/lib/workspace-settings.server";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 async function getSupabaseAdmin() {
@@ -829,16 +830,14 @@ export const signMeetingRecording = createServerFn({ method: "POST" })
  * ============================================================ */
 export const getMeetingSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const supabaseAdmin = await getSupabaseAdmin();
-    const workspaceId = await resolveActiveWorkspace(context.userId);
-    const { data } = await supabaseAdmin
-      .from("workspaces")
-      .select("meeting_settings")
-      .eq("id", workspaceId)
-      .maybeSingle();
-    return { settings: (data?.meeting_settings as any) ?? {} };
-  });
+  .handler(async ({ context }) => ({
+    settings: (await readWorkspaceSettings(context.supabase, context.userId, "meeting")) as {
+      provider?: string;
+      require_consent?: boolean;
+      retention_days?: number;
+      transcription_model?: string;
+    },
+  }));
 
 export const saveMeetingSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -853,12 +852,6 @@ export const saveMeetingSettings = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const supabaseAdmin = await getSupabaseAdmin();
-    const workspaceId = await resolveActiveWorkspace(context.userId);
-    const { error } = await supabaseAdmin
-      .from("workspaces")
-      .update({ meeting_settings: data })
-      .eq("id", workspaceId);
-    if (error) throw new Error(error.message);
+    await writeWorkspaceSettings(context.supabase, context.userId, "meeting", data);
     return { ok: true };
   });

@@ -1345,6 +1345,13 @@
       "when": 1792768483842,
       "tag": "0191_permission_critical_rpc_boundaries",
       "breakpoints": true
+    },
+    {
+      "idx": 192,
+      "version": "7",
+      "when": 1792777664113,
+      "tag": "0192_workspace_settings_authorization",
+      "breakpoints": true
     }
   ]
 }

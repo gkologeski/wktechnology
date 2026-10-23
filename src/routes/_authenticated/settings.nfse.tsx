@@ -1,3 +1,4 @@
+import { WorkspaceSettingsAccess } from "@/components/workspace-settings-access";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -9,17 +10,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { getPaymentsSettings, saveNfseSettings } from "@/lib/payments-settings.functions";
+import { getNfseSettings, saveNfseSettings } from "@/lib/payments-settings.functions";
 
 export const Route = createFileRoute("/_authenticated/settings/nfse")({
-  component: NfseSettingsPage,
+  component: () => (
+    <WorkspaceSettingsAccess resource="techfinance.nfse_settings">
+      {(canManage) => <NfseSettingsPage canManage={canManage} />}
+    </WorkspaceSettingsAccess>
+  ),
 });
 
-function NfseSettingsPage() {
-  const get = useServerFn(getPaymentsSettings);
+function NfseSettingsPage({ canManage }: { canManage: boolean }) {
+  const get = useServerFn(getNfseSettings);
   const save = useServerFn(saveNfseSettings);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [enabled, setEnabled] = useState(false);
   const [serviceCode, setServiceCode] = useState("");
   const [municipalInscription, setMunicipalInscription] = useState("");
@@ -39,6 +45,8 @@ function NfseSettingsPage() {
         setServiceCode(n.service_code ?? "");
         setMunicipalInscription(n.municipal_inscription ?? "");
         setCompanyIdNfeio(n.company_id_nfeio ?? "");
+      } catch (error) {
+        setLoadError(error instanceof Error ? error.message : "Falha ao carregar configurações.");
       } finally {
         setLoading(false);
       }
@@ -46,6 +54,7 @@ function NfseSettingsPage() {
   }, [get]);
 
   async function submit() {
+    if (!canManage || loading || loadError) return;
     setSaving(true);
     try {
       await save({
@@ -65,6 +74,16 @@ function NfseSettingsPage() {
     }
   }
 
+  if (loadError)
+    return (
+      <div className="space-y-3 p-6" role="alert">
+        <p>{loadError}</p>
+        <Button variant="outline" onClick={() => window.location.reload()}>
+          Tentar novamente
+        </Button>
+      </div>
+    );
+
   if (loading) {
     return (
       <div className="flex justify-center p-10">
@@ -74,7 +93,7 @@ function NfseSettingsPage() {
   }
 
   return (
-    <div className="space-y-4 p-6 max-w-2xl">
+    <fieldset disabled={!canManage || saving} className="space-y-4 p-6 max-w-2xl min-w-0">
       <PageHeader
         title="NFS-e"
         description="Emissão de notas fiscais de serviço via NFE.io após pagamento."
@@ -87,7 +106,11 @@ function NfseSettingsPage() {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <Label>Emissão automática após pagamento</Label>
-            <Switch checked={enabled} onCheckedChange={setEnabled} />
+            <Switch
+              disabled={!canManage || saving}
+              checked={enabled}
+              onCheckedChange={setEnabled}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="cid">Company ID (NFE.io)</Label>
@@ -121,7 +144,7 @@ function NfseSettingsPage() {
         </CardContent>
       </Card>
 
-      <Button onClick={submit} disabled={saving}>
+      <Button onClick={submit} disabled={!canManage || saving}>
         {saving ? (
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
         ) : (
@@ -129,6 +152,6 @@ function NfseSettingsPage() {
         )}
         Salvar
       </Button>
-    </div>
+    </fieldset>
   );
 }
