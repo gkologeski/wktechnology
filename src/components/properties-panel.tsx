@@ -5,6 +5,8 @@ import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ActivityDateTimePicker } from "@/components/activity/activity-date-time-picker";
+import { IsoDatePicker } from "@/components/iso-date-picker";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -461,6 +463,24 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
             </div>
           ) : (
             <div className="flex gap-1">
+              {p.type === "date" ? (
+                <IsoDatePicker
+                  size="sm"
+                  className="h-8"
+                  disabled={readOnly}
+                  ariaLabel={p.label}
+                  value={value}
+                  onChange={(v) => setValue(v ?? "")}
+                />
+              ) : p.type === "datetime" ? (
+                <ActivityDateTimePicker
+                  className="min-w-0 flex-1"
+                  disabled={readOnly}
+                  ariaLabel={p.label}
+                  value={value}
+                  onChange={(v) => setValue(v ?? "")}
+                />
+              ) : (
               <Input
                 autoFocus
                 disabled={readOnly}
@@ -495,6 +515,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                 onKeyDown={(e) => e.key === "Enter" && save(p.key)}
                 className="h-8"
               />
+              )}
               <Button size="sm" className="h-8" onClick={() => save(p.key)}>
                 OK
               </Button>
@@ -1002,14 +1023,23 @@ function CustomFieldRow({
             );
           })}
         </div>
+      ) : def.type === "date" ? (
+        <IsoDatePicker
+          size="sm"
+          className="mt-0.5 h-8"
+          ariaLabel={def.label}
+          value={draft}
+          onChange={(v) => {
+            setDraft(v ?? "");
+            commit(v ?? "");
+          }}
+        />
       ) : (
         <Input
           type={
             def.type === "number"
               ? "number"
-              : def.type === "date"
-                ? "date"
-                : def.type === "email"
+              : def.type === "email"
                   ? "email"
                   : def.type === "url"
                     ? "url"
