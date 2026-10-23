@@ -55,6 +55,7 @@ import {
 } from "@/components/finance/legal-entity-select";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
+import { formatIsoDate } from "@/lib/iso-date";
 export const Route = createFileRoute("/_authenticated/finance/recurrences")({
   head: () => ({ meta: [{ title: "Recorrências financeiras" }] }),
   component: RecurrencesPage,
@@ -330,7 +331,7 @@ function NewRecurrenceDialog({
   );
   const [intervalDays, setIntervalDays] = useState<number>(30);
   const [dayOfMonth, setDayOfMonth] = useState<number | null>(null);
-  const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
+  const [startDate, setStartDate] = useState(formatIsoDate(new Date()));
   const [endDate, setEndDate] = useState<string>("");
   const [maxOccurrences, setMaxOccurrences] = useState<string>("");
   const [notes, setNotes] = useState("");

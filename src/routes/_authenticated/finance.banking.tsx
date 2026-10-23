@@ -78,6 +78,7 @@ import {
 import { formatCurrency } from "@/lib/crm";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
+import { formatIsoDate } from "@/lib/iso-date";
 export const Route = createFileRoute("/_authenticated/finance/banking")({
   component: BankingPage,
   head: () => ({
@@ -227,7 +228,7 @@ function BankingPage() {
   const [chargeForm, setChargeForm] = useState({
     type: "pix" as "pix" | "boleto",
     amount: "",
-    due_date: new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10),
+    due_date: formatIsoDate(new Date(Date.now() + 3 * 86400000)),
     description: "",
     payer_name: "",
     payer_document: "",
@@ -298,7 +299,7 @@ function BankingPage() {
   const [paymentForm, setPaymentForm] = useState({
     type: "pix" as "pix" | "ted" | "boleto",
     amount: "",
-    scheduled_for: new Date().toISOString().slice(0, 10),
+    scheduled_for: formatIsoDate(new Date()),
     favored_name: "",
     favored_document: "",
     pix_key: "",

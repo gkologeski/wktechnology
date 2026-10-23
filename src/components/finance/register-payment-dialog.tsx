@@ -24,6 +24,7 @@ import { formatCurrency } from "@/lib/crm";
 import { listBankAccounts, registerPayment } from "@/lib/finance.functions";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
+import { formatIsoDate } from "@/lib/iso-date";
 type EntryLike = {
   id: string;
   amount: number;
@@ -33,7 +34,7 @@ type EntryLike = {
   direction: "receivable" | "payable";
 };
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => formatIsoDate(new Date());
 
 export function RegisterPaymentDialog({
   entry,

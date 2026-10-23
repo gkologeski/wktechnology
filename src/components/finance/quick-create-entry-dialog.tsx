@@ -26,9 +26,10 @@ import { createFinancialEntry, createInstallments, listCategories } from "@/lib/
 import { useLegalEntities } from "@/components/finance/legal-entity-select";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
+import { formatIsoDate } from "@/lib/iso-date";
 type Direction = "receivable" | "payable";
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => formatIsoDate(new Date());
 
 function addMonths(iso: string, n: number): string {
   const [y, m, d] = iso.split("-").map(Number);
@@ -37,12 +38,12 @@ function addMonths(iso: string, n: number): string {
     Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0),
   ).getUTCDate();
   target.setUTCDate(Math.min(d, lastDay));
-  return target.toISOString().slice(0, 10);
+  return formatIsoDate(target);
 }
 function addDays(iso: string, n: number): string {
   const d = new Date(iso + "T00:00:00Z");
   d.setUTCDate(d.getUTCDate() + n);
-  return d.toISOString().slice(0, 10);
+  return formatIsoDate(d);
 }
 const money = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 

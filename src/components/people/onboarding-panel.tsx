@@ -65,6 +65,7 @@ import {
 } from "@/lib/people/onboarding.functions";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
+import { formatIsoDate } from "@/lib/iso-date";
 const planStatusTone: Record<OnbPlanStatus, string> = {
   not_started: "bg-muted text-muted-foreground",
   in_progress: "bg-primary/10 text-primary",
@@ -422,7 +423,7 @@ function NewPlanDialog({
 
   const [kind, setKind] = useState<OnbKind>("onboarding");
   const [templateId, setTemplateId] = useState<string>("__none__");
-  const [startedAt, setStartedAt] = useState<string>(new Date().toISOString().slice(0, 10));
+  const [startedAt, setStartedAt] = useState<string>(formatIsoDate(new Date()));
   const [target, setTarget] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
 

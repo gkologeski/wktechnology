@@ -69,6 +69,7 @@ import { listPeople } from "@/lib/people/people.functions";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
+import { formatIsoDate } from "@/lib/iso-date";
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
@@ -330,7 +331,7 @@ function AllocationDialog({
     editing?.cost_rate != null ? String(editing.cost_rate) : "",
   );
   const [startsAt, setStartsAt] = useState<string>(
-    editing?.starts_at ?? new Date().toISOString().slice(0, 10),
+    editing?.starts_at ?? formatIsoDate(new Date()),
   );
   const [endsAt, setEndsAt] = useState<string>(editing?.ends_at ?? "");
   const [status, setStatus] = useState<AllocationStatus>(editing?.status ?? "active");

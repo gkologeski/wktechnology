@@ -47,6 +47,7 @@ import {
 } from "@/lib/people/wellbeing.functions";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
+import { formatIsoDate } from "@/lib/iso-date";
 function riskClass(level: PsychRiskLevel) {
   switch (level) {
     case "critical":
@@ -259,7 +260,7 @@ function PsychDialog({
   onSaved: () => void;
 }) {
   const [assessedAt, setAssessedAt] = useState(
-    editing?.assessed_at ?? new Date().toISOString().slice(0, 10),
+    editing?.assessed_at ?? formatIsoDate(new Date()),
   );
   const [method, setMethod] = useState<PsychMethod>(editing?.method ?? "self_report");
   const [status, setStatus] = useState<PsychStatus>(editing?.status ?? "open");

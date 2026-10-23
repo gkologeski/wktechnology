@@ -63,6 +63,7 @@ import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { ProjectOriginCard } from "@/components/projects/project-origin-card";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
+import { formatIsoDate } from "@/lib/iso-date";
 export const Route = createFileRoute("/_authenticated/projects/$id")({
   component: ProjectDetailPage,
 });
@@ -574,7 +575,7 @@ function TimesheetPanel({ projectId }: { projectId: string }) {
     queryFn: () => list({ data: { projectId } }),
   });
 
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(formatIsoDate(new Date()));
   const [hours, setHours] = useState("");
   const [description, setDescription] = useState("");
   const [billable, setBillable] = useState(true);

@@ -42,6 +42,7 @@ import { Pencil, Trash2, Target, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
+import { formatIsoDate } from "@/lib/iso-date";
 export const Route = createFileRoute("/_authenticated/settings/goals")({
   component: GoalsPage,
 });
@@ -60,7 +61,7 @@ type GoalRow = {
 };
 
 function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  return formatIsoDate(new Date());
 }
 
 function periodBounds(period: GoalPeriod) {
@@ -70,13 +71,13 @@ function periodBounds(period: GoalPeriod) {
   if (period === "month") {
     const start = new Date(Date.UTC(y, m, 1));
     const end = new Date(Date.UTC(y, m + 1, 0));
-    return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
+    return { start: formatIsoDate(start), end: formatIsoDate(end) };
   }
   if (period === "quarter") {
     const q = Math.floor(m / 3);
     const start = new Date(Date.UTC(y, q * 3, 1));
     const end = new Date(Date.UTC(y, q * 3 + 3, 0));
-    return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
+    return { start: formatIsoDate(start), end: formatIsoDate(end) };
   }
   if (period === "year") {
     return { start: `${y}-01-01`, end: `${y}-12-31` };

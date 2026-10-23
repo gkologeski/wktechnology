@@ -20,6 +20,7 @@ import { EntityCombobox } from "@/components/ui/entity-combobox";
 import { upsertTimeEntry } from "@/lib/people/timesheet.functions";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
+import { formatIsoDate } from "@/lib/iso-date";
 export type TimeEntryDraft = {
   id?: string;
   project_id?: string | null;
@@ -52,7 +53,7 @@ export function TimeEntryDialog({
   const [projectLabel, setProjectLabel] = useState<string | null>(initial?.project_name ?? null);
   const [taskId, setTaskId] = useState<string | null>(initial?.task_id ?? null);
   const [entryDate, setEntryDate] = useState<string>(
-    initial?.entry_date ?? new Date().toISOString().slice(0, 10),
+    initial?.entry_date ?? formatIsoDate(new Date()),
   );
   const [hours, setHours] = useState<string>(String(initial?.hours ?? 1));
   const [billable, setBillable] = useState<boolean>(initial?.billable ?? true);
@@ -66,7 +67,7 @@ export function TimeEntryDialog({
       setProjectId(initial?.project_id ?? null);
       setProjectLabel(initial?.project_name ?? null);
       setTaskId(initial?.task_id ?? null);
-      setEntryDate(initial?.entry_date ?? new Date().toISOString().slice(0, 10));
+      setEntryDate(initial?.entry_date ?? formatIsoDate(new Date()));
       setHours(String(initial?.hours ?? 1));
       setBillable(initial?.billable ?? true);
       setHourlyRate(initial?.hourly_rate != null ? String(initial.hourly_rate) : "");

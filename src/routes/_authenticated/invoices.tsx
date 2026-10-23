@@ -68,6 +68,7 @@ import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
+import { formatIsoDate } from "@/lib/iso-date";
 const INVOICE_STATUSES = ["draft", "open", "paid", "overdue", "cancelled", "refunded"] as const;
 
 const STATUS_LABEL: Record<string, string> = {
@@ -560,7 +561,7 @@ function CreateInvoiceDialog({
   const [due, setDue] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 7);
-    return d.toISOString().slice(0, 10);
+    return formatIsoDate(d);
   });
   const [loading, setLoading] = useState(false);
 

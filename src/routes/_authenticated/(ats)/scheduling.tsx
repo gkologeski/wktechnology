@@ -55,6 +55,7 @@ import {
 import { Link } from "@tanstack/react-router";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
+import { formatIsoDate } from "@/lib/iso-date";
 export const Route = createFileRoute("/_authenticated/(ats)/scheduling")({
   component: SchedulingPage,
 });
@@ -533,8 +534,8 @@ function CommonSlotsFinder({
   const [stepMin, setStepMin] = useState(30);
   const today = new Date();
   const inAWeek = new Date(Date.now() + 7 * 86400_000);
-  const [from, setFrom] = useState(today.toISOString().slice(0, 10));
-  const [to, setTo] = useState(inAWeek.toISOString().slice(0, 10));
+  const [from, setFrom] = useState(formatIsoDate(today));
+  const [to, setTo] = useState(formatIsoDate(inAWeek));
   const [slots, setSlots] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(false);
 

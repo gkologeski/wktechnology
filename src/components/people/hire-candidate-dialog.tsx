@@ -32,6 +32,7 @@ import {
 } from "@/lib/people/people.functions";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
+import { formatIsoDate } from "@/lib/iso-date";
 type Props = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -52,7 +53,7 @@ export function HireCandidateDialog({
 
   const [employment, setEmployment] = useState<PeopleEmploymentType>("pj");
   const [roleTitle, setRoleTitle] = useState(suggestedRole ?? "");
-  const [hireDate, setHireDate] = useState(new Date().toISOString().slice(0, 10));
+  const [hireDate, setHireDate] = useState(formatIsoDate(new Date()));
   const [costHour, setCostHour] = useState("");
 
   const mut = useMutation({
