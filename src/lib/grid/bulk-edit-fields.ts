@@ -7,6 +7,7 @@
  * lista de tabelas aceitas por `public.get_entity_field_catalog`.
  */
 import { isDerivedCrmField } from "@/lib/entity/derived-fields";
+import { parseIsoDate, formatIsoDate } from "@/lib/iso-date";
 
 export const BULK_EDIT_ENTITIES = [
   "leads",
@@ -101,11 +102,34 @@ export function coerceBulkValue(column: string, dataType: string, raw: unknown):
     return n;
   }
 
-  if (dataType.startsWith("timestamp") || dataType === "date") {
+  if (dataType === "date") {
+    const day = parseIsoDate(String(raw));
+    if (!day) return fail(`${column}: informe uma data válida (YYYY-MM-DD).`);
+    return formatIsoDate(day);
+  }
+
+  if (dataType.startsWith("timestamp")) {
     const s = String(raw);
+    const parts =
+      /^(\d{4}-\d{2}-\d{2})[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.\d{1,9})?)?(Z|[+-]\d{2}:?\d{2})?$/.exec(
+        s,
+      );
+    if (
+      !parts ||
+      !parseIsoDate(parts[1]) ||
+      Number(parts[2]) > 23 ||
+      Number(parts[3]) > 59 ||
+      Number(parts[4] ?? 0) > 59
+    )
+      return fail(`${column}: informe data e horário completos.`);
+    if (dataType === "timestamp without time zone") {
+      if (parts[5]) return fail(`${column}: informe o horário local, sem fuso.`);
+      return s.replace(" ", "T");
+    }
+    if (!parts[5]) return fail(`${column}: informe o fuso horário da data.`);
     const d = new Date(s);
     if (Number.isNaN(d.getTime())) return fail(`${column}: data inválida.`);
-    return dataType === "date" ? d.toISOString().slice(0, 10) : d.toISOString();
+    return d.toISOString();
   }
 
   if (dataType === "jsonb" || dataType === "json") {

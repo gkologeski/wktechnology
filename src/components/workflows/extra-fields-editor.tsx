@@ -84,7 +84,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { ActivityDateTimePicker } from "@/components/activity/activity-date-time-picker";
+import { EntityDatePicker } from "@/components/entity-date-picker";
 type EntityName = WorkflowWritableTable;
 
 interface Props {
@@ -257,9 +257,8 @@ function ValueOrTokenField({
   if (field.type === "date") {
     return (
       <div className="space-y-1">
-        <ActivityDateTimePicker
-          ariaLabel={field.label ?? field.name}
-          valueFormat="iso"
+        <EntityDatePicker
+          field={field}
           value={typeof value === "string" ? value : null}
           onChange={(v) => onChange(v || null)}
         />

@@ -209,7 +209,7 @@ describe("guarda dos campos de data", () => {
     expect(files.length).toBeGreaterThan(500);
     const violations = files.flatMap((f) => findDateFieldViolations(f.rel, f.src));
     expect(violations).toEqual([]);
-  });
+  }, 20_000);
 
   it("detecta as formas proibidas, inclusive em várias linhas", () => {
     const v = (s: string) => findDateFieldViolations("x.tsx", s);

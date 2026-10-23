@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { CalendarDays, Check, Clock3 } from "lucide-react";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { DatePickerPanel, focusCalendarDay } from "@/components/date-picker";
+import { DatePicker } from "@/components/date-picker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -13,7 +12,6 @@ import {
   activityDatePart,
   activityTimePart,
   combineActivityDateTime,
-  formatActivityDateLabel,
   fromLocalDateTimeValue,
   toLocalDateTimeValue,
   type ActivityDateValueFormat,
@@ -40,6 +38,8 @@ type ActivityDateTimePickerProps = {
   maxDate?: string | null;
   invalid?: boolean;
   id?: string;
+  /** Nome do valor completo (data e hora) em FormData. */
+  name?: string;
 };
 
 export function ActivityDateTimePicker({
@@ -56,8 +56,8 @@ export function ActivityDateTimePicker({
   maxDate,
   invalid,
   id,
+  name,
 }: ActivityDateTimePickerProps) {
-  const [dateOpen, setDateOpen] = useState(false);
   const [timeOpen, setTimeOpen] = useState(false);
   const selectedTimeRef = useRef<HTMLButtonElement>(null);
   const local =
@@ -85,54 +85,21 @@ export function ActivityDateTimePicker({
         className,
       )}
     >
-      <Popover open={dateOpen} onOpenChange={setDateOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            type="button"
-            variant="outline"
-            id={id}
-            disabled={disabled}
-            aria-label={`${ariaLabel}: data`}
-            aria-invalid={invalid || undefined}
-            className={cn(
-              "h-9 min-w-0 flex-1 justify-start gap-2 px-3 font-normal",
-              !datePart && "text-muted-foreground",
-              invalid && "border-destructive",
-            )}
-          >
-            <CalendarDays className="h-4 w-4 shrink-0" aria-hidden />
-            <span className="truncate">{formatActivityDateLabel(local)}</span>
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent
-          align="start"
-          sideOffset={6}
-          collisionPadding={8}
-          // Foco vai para o dia do calendário (setas navegam), não para o 1º atalho.
-          onOpenAutoFocus={focusCalendarDay}
-          className="pointer-events-auto z-[180] w-auto max-w-[calc(100vw-1rem)] p-0"
-        >
-          {/* Mesma seleção de dia do DatePicker (skill date-picker-br); a hora
-              escolhida é preservada ao trocar o dia. */}
-          <DatePickerPanel
-            value={selectedDate ?? null}
-            min={parseIsoDate(minDate ?? null)}
-            max={parseIsoDate(maxDate ?? null)}
-            onSelect={(day) => {
-              commit(formatIsoDate(day));
-              setDateOpen(false);
-            }}
-            onClear={
-              optional && datePart
-                ? () => {
-                    onChange(null);
-                    setDateOpen(false);
-                  }
-                : undefined
-            }
-          />
-        </PopoverContent>
-      </Popover>
+      <DatePicker
+        id={id}
+        disabled={disabled}
+        required={!optional}
+        invalid={invalid}
+        ariaLabel={`${ariaLabel}: data`}
+        className="h-9 min-w-0 flex-1 px-3"
+        value={selectedDate}
+        min={parseIsoDate(minDate ?? null)}
+        max={parseIsoDate(maxDate ?? null)}
+        placeholder="Selecionar data"
+        onChange={(day) => commit(formatIsoDate(day))}
+        onClear={optional && datePart ? () => onChange(null) : undefined}
+      />
+      {name ? <input type="hidden" name={name} value={value ?? ""} disabled={disabled} /> : null}
 
       {!dateOnly && (
         <Popover open={timeOpen} onOpenChange={setTimeOpen}>

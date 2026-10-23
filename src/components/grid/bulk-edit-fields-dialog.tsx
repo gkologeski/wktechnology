@@ -64,7 +64,7 @@ import { BulkRefPicker } from "./bulk-ref-picker";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { isPhoneColumn, WHATSAPP_COLUMN } from "@/lib/phone/phone-columns";
 
-import { IsoDatePicker } from "@/components/iso-date-picker";
+import { EntityDatePicker } from "@/components/entity-date-picker";
 const LONG_TEXT_FIELDS = new Set([
   "description",
   "notes",
@@ -191,15 +191,14 @@ function FieldEditor({
   }
 
   if (field.type === "date") {
-    // Colunas de calendário (vencimento, competência, prazo...): grava
-    // "YYYY-MM-DD" local — antes ia data-hora em UTC e podia virar o dia
-    // seguinte quando escolhida à noite.
+    // O catálogo também chama timestamps de "date". Só o tipo SQL prova
+    // se o valor é um dia ou um instante com hora; nunca recortar o valor.
     return (
-      <IsoDatePicker
+      <EntityDatePicker
+        field={field}
         id={`bulk-${field.name}`}
-        ariaLabel={field.label}
-        value={/^\d{4}-\d{2}-\d{2}/.test(strVal) ? strVal.slice(0, 10) : ""}
-        onChange={(v) => onChange(v ?? "")}
+        value={strVal}
+        onChange={onChange}
       />
     );
   }

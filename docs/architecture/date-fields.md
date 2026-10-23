@@ -1,5 +1,25 @@
 # Campos de data (skill date-picker-br)
 
+## Tipos SQL e edição de valores
+
+O catálogo expõe `EntityFieldDef.dataType` com o `data_type` original da coluna.
+O rótulo genérico `type: "date"` também cobre timestamps e **não** comprova
+que o valor é um dia de calendário. Editores do catálogo usam `EntityDatePicker`:
+`date` → `IsoDatePicker`; `timestamp with time zone` → `ActivityDateTimePicker`
+com valor ISO; `timestamp without time zone` → horário local sem conversão UTC.
+Sem metadado, o editor fica indisponível até atualizar o catálogo, evitando
+truncar um horário por inferência. Filtros por dia mantêm sua semântica de dia;
+campos de layout explicitamente declarados como data também mantêm esse contrato.
+
+Na edição em massa, `expires_at` mantém a exceção de negócio preexistente
+(validade escolhida por dia e serializada no início do dia local). Os demais
+timestamps preservam hora e instante. O servidor recusa um dia sem horário/fuso
+para uma coluna com fuso, recusa datas impossíveis e não converte timestamps
+sem fuso em UTC. O componente de data-hora reaproveita `DatePicker`, inclusive
+validação nativa de obrigatoriedade; `name` envia o valor completo em `FormData`.
+Provas adicionais: `entity-date-picker.test.ts` (coluna date, instante ISO,
+troca de dia mantendo hora, horário sem fuso, required, limpeza e valor incompleto).
+
 Toda entrada de **data única** do TechERP usa o mesmo controle. Intervalos
 continuam com `DateRangePicker`/`IsoDateRangePicker`/`DateRangeFilter`.
 

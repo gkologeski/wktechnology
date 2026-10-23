@@ -26,6 +26,8 @@ export type EntityFieldDef = {
   name: string;
   label: string;
   type: EntityFieldType;
+  /** Original SQL type: `date` and `timestamp*` have different editor contracts. */
+  dataType?: string;
   // Quando preenchido (≤20), o construtor renderiza Select.
   options?: { value: string; label: string }[];
   /** Campo é obrigatório no schema (NOT NULL sem default). */
@@ -264,6 +266,7 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
         name: r.column_name,
         label: toLabel(r.column_name, data.entity),
         type,
+        dataType: r.data_type,
         required: r.is_nullable === "NO" && !r.has_default,
         readonly: isDerivedCrmField(r.column_name),
       };
