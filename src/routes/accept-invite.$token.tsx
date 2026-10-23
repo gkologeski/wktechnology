@@ -177,7 +177,7 @@ function AcceptInviteTokenPage() {
             <form onSubmit={submit} className="space-y-4">
               <div className="space-y-2">
                 <Label>Email</Label>
-                <Input value={info.email} disabled />
+                <Input type="email" value={info.email} disabled />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="ait-name">Nome completo</Label>

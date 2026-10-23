@@ -1,3 +1,4 @@
+import { EmailNativeInput } from "@/components/ui/email-native-input";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Send } from "lucide-react";
@@ -107,7 +108,7 @@ function WidgetPage() {
             placeholder="Seu nome"
             className="border rounded-md px-3 py-2 w-full"
           />
-          <input
+          <EmailNativeInput
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             type="email"

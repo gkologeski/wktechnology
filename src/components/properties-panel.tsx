@@ -1,3 +1,4 @@
+import { validateEmailAddress, isEmailColumn } from "@/lib/email-address";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
@@ -101,10 +102,6 @@ function AllPropertiesDateField({
   );
 }
 
-// Email: no whitespace allowed.
-function sanitizeEmailInput(s: string): string {
-  return s.replace(/\s+/g, "");
-}
 // CEP: digits only, max 8, formatted as 99999-999.
 function formatCep(s: string): string {
   const d = (s ?? "").replace(/\D/g, "").slice(0, 8);
@@ -189,6 +186,7 @@ export type PropDef = {
 // Heurísticas para auto-detectar tipo de exibição quando o caller não definir.
 function inferDisplayType(key: string): PropDef["type"] | undefined {
   const k = key.toLowerCase();
+  if (isEmailColumn(k)) return "email";
   if (k === "currency" || k === "moeda") return undefined;
   if (isMoneyField(k)) return "currency";
   if (k.endsWith("_at") || k === "created_at" || k === "updated_at" || k.endsWith("_datetime"))
@@ -232,7 +230,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
   entity,
   table,
   row,
-  props,
+  props: rawProps,
   onSaved,
 }: {
   entity: string;
@@ -241,6 +239,9 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
   props: PropDef[];
   onSaved?: () => void;
 }) {
+  const props = rawProps.map((p) =>
+    p.type == null && isEmailColumn(p.key) ? { ...p, type: "email" as const } : p,
+  );
   const [editing, setEditing] = useState<string | null>(null);
   const [value, setValue] = useState<string>("");
   const [showAll, setShowAll] = useState(false);
@@ -378,11 +379,12 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
       toSave = d;
     }
     if (def?.type === "email" && toSave) {
-      toSave = toSave.trim();
-      if (!isEmail(toSave)) {
+      const emailResult = validateEmailAddress(toSave);
+      if (!emailResult.ok) {
         toast.error("Email inválido.");
         return;
       }
+      toSave = emailResult.value;
     }
     if (def?.type === "cep" && toSave) {
       const digits = toSave.replace(/\D/g, "");
@@ -541,13 +543,11 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                   value={value}
                   onChange={(e) =>
                     setValue(
-                      p.type === "email"
-                        ? sanitizeEmailInput(e.target.value)
-                        : p.type === "cep"
-                          ? formatCep(e.target.value)
-                          : p.type === "cnpj"
-                            ? formatCnpjInput(e.target.value)
-                            : e.target.value,
+                      p.type === "cep"
+                        ? formatCep(e.target.value)
+                        : p.type === "cnpj"
+                          ? formatCnpjInput(e.target.value)
+                          : e.target.value,
                     )
                   }
                   onKeyDown={(e) => e.key === "Enter" && save(p.key)}
@@ -846,11 +846,12 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                       if (raw === String(row[p.key] ?? "")) return;
                       let toSave: string | null = raw || null;
                       if (p.type === "email" && toSave) {
-                        toSave = toSave.trim();
-                        if (!isEmail(toSave)) {
+                        const emailResult = validateEmailAddress(toSave);
+                        if (!emailResult.ok) {
                           toast.error("Email inválido.");
                           return;
                         }
+                        toSave = emailResult.value;
                       }
                       // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       const { error } = await (supabase as any)
@@ -987,6 +988,15 @@ function CustomFieldRow({
   const commit = (raw: string) => {
     if (raw === "" || raw == null) {
       onChange(null);
+      return;
+    }
+    if (def.type === "email") {
+      const result = validateEmailAddress(raw);
+      if (!result.ok) {
+        toast.error(result.message);
+        return;
+      }
+      onChange(result.value);
       return;
     }
     if (def.type === "number") {

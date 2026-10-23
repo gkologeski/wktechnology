@@ -1,3 +1,4 @@
+import { normalizeEmailAddress } from "@/lib/email-address";
 // Release 21 — Observabilidade & Admin (super-admin only)
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -206,6 +207,13 @@ export const upsertAlertRule = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => AlertRuleSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertPlatformAdmin(context.userId);
+    for (const channel of data.channels) {
+      if (channel.type === "email") {
+        const email = normalizeEmailAddress(channel.value);
+        if (!email) throw new Error("E-mail de notificação obrigatório.");
+        channel.value = email;
+      }
+    }
     const supabaseAdmin = await getSupabaseAdmin();
     const payload = {
       name: data.name,

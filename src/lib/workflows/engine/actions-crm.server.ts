@@ -1,3 +1,4 @@
+import { normalizeEmailAddress } from "@/lib/email-address";
 import { withWorkflowWorkspace } from "./workspace-payload";
 // Ações de criação de registros do CRM: lead, contato, empresa, negócio e chamado.
 // Extraído de engine-actions.server.ts sem mudança de comportamento.
@@ -33,7 +34,7 @@ export async function handleCrmAction(
         last_name: action.last_name
           ? (renderTokens(action.last_name, ctx.after) as string) || null
           : null,
-        email: action.email ? (renderTokens(action.email, ctx.after) as string) || null : null,
+        email: normalizeEmailAddress(action.email ? renderTokens(action.email, ctx.after) : null),
         phone: workflowPhone(
           action.phone,
           action.phone ? (renderTokens(action.phone, ctx.after) as string) : null,
@@ -85,7 +86,7 @@ export async function handleCrmAction(
         last_name: action.last_name
           ? (renderTokens(action.last_name, ctx.after) as string) || null
           : null,
-        email: action.email ? (renderTokens(action.email, ctx.after) as string) || null : null,
+        email: normalizeEmailAddress(action.email ? renderTokens(action.email, ctx.after) : null),
         phone: workflowPhone(
           action.phone,
           action.phone ? (renderTokens(action.phone, ctx.after) as string) : null,

@@ -1,3 +1,4 @@
+import { parseEmailList } from "@/lib/email-address";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -377,6 +378,10 @@ export function SendEmailDialog({
             <div>
               <Label>Para</Label>
               <Input
+                type="email"
+                multiple
+                required
+                aria-label="Para"
                 value={to}
                 onChange={(e) => setTo(e.target.value)}
                 placeholder="alguem@email.com, outro@email.com"
@@ -384,7 +389,13 @@ export function SendEmailDialog({
             </div>
             <div>
               <Label>Cc (opcional)</Label>
-              <Input value={cc} onChange={(e) => setCc(e.target.value)} />
+              <Input
+                type="email"
+                multiple
+                aria-label="Cc"
+                value={cc}
+                onChange={(e) => setCc(e.target.value)}
+              />
             </div>
             <div>
               <Label>Assunto</Label>
@@ -530,13 +541,15 @@ export function SendEmailDialog({
 
           <Button
             onClick={() => {
-              const split = (s: string) =>
-                s
-                  .split(/[,;]/)
-                  .map((x) => x.trim())
-                  .filter(Boolean);
-              const toList = split(to);
-              const ccList = split(cc);
+              let toList: string[];
+              let ccList: string[];
+              try {
+                toList = parseEmailList(to);
+                ccList = parseEmailList(cc);
+              } catch (e) {
+                toast.error((e as Error).message);
+                return;
+              }
               if (toList.length === 0) {
                 toast.error("Informe ao menos um destinatário.");
                 return;

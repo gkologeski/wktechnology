@@ -1,3 +1,4 @@
+import { isEmailColumn, normalizeEmailAddress, normalizeEmailFields } from "@/lib/email-address";
 import { useState, useMemo, type ReactNode, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -372,11 +373,18 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
       skipEmptyLines: true,
       complete: async (res) => {
         const fieldNames = new Set(fields.map((f) => f.name));
-        const rowsToInsert = res.data.map((r) => {
-          const obj: Record<string, unknown> = { owner_id: user.id };
-          for (const k of Object.keys(r)) if (fieldNames.has(k)) obj[k] = r[k] === "" ? null : r[k];
-          return obj;
-        });
+        let rowsToInsert: Record<string, unknown>[];
+        try {
+          rowsToInsert = res.data.map((r) => {
+            const obj: Record<string, unknown> = { owner_id: user.id };
+            for (const k of Object.keys(r))
+              if (fieldNames.has(k)) obj[k] = r[k] === "" ? null : r[k];
+            return normalizeEmailFields(obj);
+          });
+        } catch (e) {
+          toast.error((e as Error).message);
+          return;
+        }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { error } = await (supabase as any).from(table).insert(rowsToInsert);
         if (error) toast.error(error.message);
@@ -391,6 +399,12 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   // Inline edit
   const inlineUpdate = async (id: string, field: string, value: unknown) => {
     if (isDerivedCrmField(field)) return;
+    try {
+      value = normalizeEmailFields({ [field]: value })[field];
+    } catch (e) {
+      toast.error((e as Error).message);
+      return;
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any)
       .from(table)
@@ -1109,11 +1123,12 @@ function InlineCell<T extends { id: string }>({
   return (
     <Input
       autoFocus
-      type={nativeInputType(fieldDef?.type)}
+      type={isEmailColumn(field) ? "email" : nativeInputType(fieldDef?.type)}
       className="h-8"
       value={val}
       onChange={(e) => setVal(e.target.value)}
-      onBlur={() => {
+      onBlur={(e) => {
+        if (!e.currentTarget.checkValidity()) return;
         onSave(val === "" ? null : val);
         setEditing(false);
       }}
@@ -1157,14 +1172,14 @@ function EntityDialog<T extends { id: string }>({
         if (payload[f.name] === "" || payload[f.name] === undefined) payload[f.name] = null;
         if (f.type === "number" && payload[f.name] != null)
           payload[f.name] = Number(payload[f.name]);
-        if (f.type === "email" && payload[f.name] != null) {
-          const v = String(payload[f.name]).trim();
+        if ((f.type === "email" || isEmailColumn(f.name)) && payload[f.name] != null) {
+          const v = String(payload[f.name]);
           if (!isEmail(v)) {
             toast.error(`${f.label}: email inválido.`);
             setSubmitting(false);
             return;
           }
-          payload[f.name] = v;
+          payload[f.name] = normalizeEmailAddress(v);
         }
       }
       payload.owner_id = user.id;
@@ -1257,7 +1272,7 @@ function EntityDialog<T extends { id: string }>({
               ) : (
                 <Input
                   id={f.name}
-                  type={nativeInputType(f.type)}
+                  type={isEmailColumn(f.name) ? "email" : nativeInputType(f.type)}
                   required={f.required}
                   value={String(values[f.name] ?? "")}
                   onChange={(e) => set(f.name, e.target.value)}

@@ -1,3 +1,4 @@
+import { emailSchema } from "@/lib/email-schema";
 import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 // Server functions para o Super-Admin da plataforma (gerencia workspaces e seus admins).
 import { createServerFn } from "@tanstack/react-start";
@@ -102,7 +103,7 @@ export const createWorkspaceWithAdmin = createServerFn({ method: "POST" })
           .min(2)
           .max(64)
           .regex(/^[a-z0-9-]+$/, "Use apenas letras minúsculas, números e hífen."),
-        admin_email: z.string().trim().email().max(255),
+        admin_email: emailSchema(255),
         admin_name: z.string().trim().min(2).max(120),
         admin_phone: zHumanPhone({ label: "Telefone" }).optional(),
         redirect_origin: z.string().trim().url().max(255).optional(),
@@ -242,7 +243,7 @@ export const inviteUserToWorkspace = createServerFn({ method: "POST" })
     z
       .object({
         workspace_id: z.string().uuid(),
-        email: z.string().trim().email().max(255),
+        email: emailSchema(255),
         full_name: z.string().trim().min(2).max(120),
         phone: zHumanPhone({ label: "Telefone" }).optional(),
         role: WsRole,

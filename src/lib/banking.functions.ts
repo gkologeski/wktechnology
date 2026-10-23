@@ -1,3 +1,4 @@
+import { normalizeEmailAddress } from "@/lib/email-address";
 // Sprint G — Fase 1: fluxo OAuth Open Finance (provider abstrato).
 // Estado persiste por workspace em `bank_connections`. Tokens ficam em
 // `bank_connection_tokens` (RLS admin-only). Trilha em `bank_connection_events`.
@@ -1215,6 +1216,9 @@ export const createBankPayment = createServerFn({ method: "POST" })
     const workspaceId = await getCurrentWorkspace(supabase, userId);
     await assertAdmin(supabase, workspaceId, userId);
 
+    if (data.type === "pix" && data.pix_key_type === "email") {
+      data.pix_key = normalizeEmailAddress(data.pix_key);
+    }
     if (data.type === "pix" && (!data.pix_key || !data.pix_key_type)) {
       throw new Error("Chave Pix e tipo de chave são obrigatórios para pagamentos Pix");
     }

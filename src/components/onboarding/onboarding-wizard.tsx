@@ -1,3 +1,4 @@
+import { isEmailAddress } from "@/lib/email-address";
 // Wizard genérico de onboarding — dirigido pela configuração do template.
 // Autosave em cada avanço; passo final delega a criação da entidade ao caller.
 import { useEffect, useMemo, useState } from "react";
@@ -171,7 +172,7 @@ export function OnboardingWizard({
         }
         if (f.type === "email" && form[f.name]) {
           const val = String(form[f.name]);
-          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+          if (!isEmailAddress(val)) {
             errs[f.name] = "E-mail inválido";
           }
         }

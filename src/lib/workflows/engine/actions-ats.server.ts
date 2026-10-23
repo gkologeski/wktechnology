@@ -1,3 +1,4 @@
+import { normalizeEmailAddress } from "@/lib/email-address";
 // Ações de recrutamento (ATS): criar vaga, criar candidato e avançar etapa.
 // Extraído de engine-actions.server.ts sem mudança de comportamento.
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -106,7 +107,9 @@ export async function handleAtsAction(
     case "create_ats_candidate": {
       const fullName = (renderTokens(action.full_name, ctx.after) as string).trim();
       if (!fullName) throw new Error("full_name obrigatório");
-      const email = action.email ? (renderTokens(action.email, ctx.after) as string) || null : null;
+      const email = normalizeEmailAddress(
+        action.email ? renderTokens(action.email, ctx.after) : null,
+      );
       const phone = workflowPhone(
         action.phone,
         action.phone ? (renderTokens(action.phone, ctx.after) as string) : null,

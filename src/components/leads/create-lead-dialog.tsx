@@ -1,3 +1,4 @@
+import { normalizeEmailAddress } from "@/lib/email-address";
 import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -290,7 +291,7 @@ export function CreateLeadDialog({
     setSaving(true);
     try {
       const dup = await checkLeadDuplicate(supabase, {
-        email: form.email.trim() || null,
+        email: normalizeEmailAddress(form.email.trim()),
         phone: phoneE164,
       });
       if (dup.duplicate) {
@@ -307,7 +308,7 @@ export function CreateLeadDialog({
           first_name: form.first_name.trim(),
           last_name: form.last_name.trim() || null,
           linkedin_url: linkedinUrl,
-          email: form.email.trim() || null,
+          email: normalizeEmailAddress(form.email.trim()),
           phone: phoneE164,
           company_id: company.id ?? null,
           job_title: form.job_title || null,

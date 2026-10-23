@@ -229,6 +229,7 @@ function AuditExportPage() {
             {editing.destination === "email" && (
               <Field label="Email destinatário">
                 <Input
+                  type="email"
                   value={editing.config?.email ?? ""}
                   onChange={(e) =>
                     setEditing({ ...editing, config: { ...editing.config, email: e.target.value } })

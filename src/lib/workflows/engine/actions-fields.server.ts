@@ -1,3 +1,4 @@
+import { isEmailColumn, normalizeEmailAddress } from "@/lib/email-address";
 // Ações de campo: definir, sub-status, limpar, incrementar, copiar de associação
 // e formatar dados. Extraído de engine-actions.server.ts sem mudança de comportamento.
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -25,6 +26,7 @@ export async function handleFieldAction(
           await workspacePhoneCountry(supabase, ctx.workspaceId),
         );
       }
+      if (isEmailColumn(action.field)) value = normalizeEmailAddress(value);
       const { error } = await supabase
         .from(ctx.entity)
         .update({ [action.field]: value })
@@ -106,7 +108,8 @@ export async function handleFieldAction(
         .eq("id", targetId)
         .maybeSingle();
       if (readErr) throw new Error(readErr.message);
-      const value = (assocRow as AnyRow | null)?.[action.source_field] ?? null;
+      let value = (assocRow as AnyRow | null)?.[action.source_field] ?? null;
+      if (isEmailColumn(action.target_field)) value = normalizeEmailAddress(value);
       const { error } = await supabase
         .from(ctx.entity)
         .update({ [action.target_field]: value })

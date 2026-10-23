@@ -1,3 +1,4 @@
+import { normalizeEmailAddress } from "@/lib/email-address";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,7 +44,7 @@ function ResetPasswordPage() {
   const sendEmail = async (e: FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await supabase.auth.resetPasswordForEmail(normalizeEmailAddress(email)!, {
       redirectTo: window.location.origin + "/reset-password",
     });
     setSubmitting(false);

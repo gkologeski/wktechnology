@@ -1,15 +1,9 @@
 import { normalizePhone, PLATFORM_DEFAULT_PHONE_COUNTRY } from "@/lib/phone/e164";
 
-// Canonical email validation regex (HTML5-style, case-insensitive).
-const EMAIL_RE =
-  /^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i;
-// TLD must have at least 2 letters (rejects ".b", ".1", etc.).
-const TLD_MIN_RE = /\.[a-z]{2,}$/i;
+import { isEmailAddress } from "@/lib/email-address";
 
 export function isEmail(v: string | null | undefined): boolean {
-  if (!v) return false;
-  const s = v.trim();
-  return EMAIL_RE.test(s) && TLD_MIN_RE.test(s);
+  return isEmailAddress(v);
 }
 
 /** Telefone com +DDI válido (metadados completos). Delegado a `@/lib/phone/e164`. */

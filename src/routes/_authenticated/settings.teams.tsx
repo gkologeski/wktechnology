@@ -1101,7 +1101,7 @@ function UsersPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="edit-email">E-mail</Label>
-              <Input id="edit-email" value={editing?.email || ""} disabled />
+              <Input type="email" id="edit-email" value={editing?.email || ""} disabled />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="edit-phone">

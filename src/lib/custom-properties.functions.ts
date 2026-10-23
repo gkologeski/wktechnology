@@ -1,3 +1,4 @@
+import { normalizeEmailAddress } from "@/lib/email-address";
 // Server functions para Custom Properties (definições).
 import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { createServerFn } from "@tanstack/react-start";
@@ -163,6 +164,15 @@ export const setCustomFieldValue = createServerFn({ method: "POST" })
     if (selErr) throw new Error(selErr.message);
     const current = ((row as { custom_fields?: Record<string, unknown> } | null)?.custom_fields ??
       {}) as Record<string, unknown>;
+    const { data: definition, error: definitionError } = await supabase
+      .from("custom_properties")
+      .select("type")
+      .eq("workspace_id", workspaceId)
+      .eq("entity", data.entity)
+      .eq("key", data.key)
+      .maybeSingle();
+    if (definitionError) throw new Error(definitionError.message);
+    if (definition?.type === "email") data.value = normalizeEmailAddress(data.value);
     const next = { ...current };
     if (data.value === null || data.value === "" || data.value === undefined) {
       delete next[data.key];

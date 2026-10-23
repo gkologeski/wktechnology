@@ -1,3 +1,4 @@
+import { parseEmailList } from "@/lib/email-address";
 import { formatDateTime } from "@/lib/crm";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -138,10 +139,13 @@ function ExportsPage() {
   function handleSubmit() {
     if (!form.report_id) return toast.error("Selecione um relatório.");
     if (!form.name.trim()) return toast.error("Dê um nome ao agendamento.");
-    const recipients = form.recipients
-      .split(/[,;\n]/)
-      .map((s) => s.trim())
-      .filter(Boolean);
+    let recipients: string[];
+    try {
+      recipients = parseEmailList(form.recipients);
+    } catch (e) {
+      toast.error((e as Error).message);
+      return;
+    }
     if (recipients.length === 0) return toast.error("Adicione ao menos um destinatário.");
     saveMut.mutate({
       ...(form.id ? { id: form.id } : {}),
@@ -309,6 +313,9 @@ function ExportsPage() {
             <div>
               <Label>Destinatários (separados por vírgula)</Label>
               <Input
+                type="email"
+                multiple
+                aria-label="Destinatários"
                 placeholder="time@empresa.com, gestor@empresa.com"
                 value={form.recipients}
                 onChange={(e) => setForm({ ...form, recipients: e.target.value })}

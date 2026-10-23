@@ -1,3 +1,4 @@
+import { normalizeEmailAddress } from "@/lib/email-address";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -82,7 +83,7 @@ export function CreateContactDialog({
           owner_id: user.id,
           first_name: form.first_name.trim(),
           last_name: form.last_name.trim() || null,
-          email: form.email.trim() || null,
+          email: normalizeEmailAddress(form.email.trim()),
           phone: phoneE164,
           ...(wa?.ok ? { whatsapp_e164: wa.e164 } : {}),
           job_title: form.job_title.trim() || null,

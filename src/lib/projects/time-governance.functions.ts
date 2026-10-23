@@ -1,3 +1,4 @@
+import { emailSchema } from "@/lib/email-schema";
 // TechProjects Ciclo 3 — governança: política de horas, aprovadores/delegação, aceite manual do
 // cliente, fechamento/reabertura de competência, modelos por serviço e horas sem horário do Jibble.
 // Autorização revalidada no banco (funções `project_time_*`, `project_period_*`, `project_delivery_template_*`).
@@ -178,7 +179,7 @@ export const recordClientAcceptance = createServerFn({ method: "POST" })
         to: isoDate,
         status: z.enum(["accepted", "contested"]),
         clientName: z.string().trim().min(2).max(200),
-        clientEmail: z.string().trim().email().max(200).optional().or(z.literal("")),
+        clientEmail: emailSchema(200).optional().or(z.literal("")),
         evidence: z.string().trim().min(10).max(2000),
         reference: z.string().trim().max(500).optional(),
       })

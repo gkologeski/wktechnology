@@ -1,3 +1,4 @@
+import { emailSchema } from "@/lib/email-schema";
 /**
  * Referrals — Onda 5 / Slice 2 / Fase 4.
  *
@@ -118,7 +119,7 @@ export const submitReferral = createServerFn({ method: "POST" })
         program_id: z.string().uuid().nullable().optional(),
         job_id: z.string().uuid().nullable().optional(),
         candidate_name: z.string().min(1).max(160),
-        candidate_email: z.string().email().nullable().optional(),
+        candidate_email: emailSchema().nullable().optional(),
         candidate_phone: z.string().max(64).nullable().optional(),
         candidate_linkedin: z.string().url().nullable().optional(),
         relationship: z.string().max(120).nullable().optional(),

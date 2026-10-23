@@ -1,3 +1,4 @@
+import { normalizeEmailAddress } from "@/lib/email-address";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,7 +58,10 @@ function LoginPage() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email: normalizeEmailAddress(email)!,
+      password,
+    });
     setSubmitting(false);
     if (error) toast.error(error.message);
     else goAfterAuth();

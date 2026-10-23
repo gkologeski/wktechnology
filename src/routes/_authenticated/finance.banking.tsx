@@ -1178,6 +1178,7 @@ function BankingPage() {
                 <div>
                   <Label className="text-xs">Chave Pix</Label>
                   <Input
+                    type={paymentForm.pix_key_type === "email" ? "email" : "text"}
                     value={paymentForm.pix_key}
                     onChange={(e) => setPaymentForm((f) => ({ ...f, pix_key: e.target.value }))}
                   />

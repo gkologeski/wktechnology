@@ -199,6 +199,7 @@ export function ControlsPanel({ form, set, activeTargetId }: Props) {
         <div className="space-y-2">
           <Label className="text-[11px] font-bold uppercase tracking-wide">Email de suporte</Label>
           <Input
+            type="email"
             value={form.support_email}
             onChange={(e) => set("support_email", e.target.value)}
           />

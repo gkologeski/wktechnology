@@ -1,3 +1,4 @@
+import { isEmailAddress } from "@/lib/email-address";
 // Ações do ciclo de contratação (Fase 1 do plano de contratação via Workflows).
 // Cada ação é um passo isolado, idempotente e restrito ao workspace do run:
 // reexecutar o fluxo não duplica pessoa, contrato, alocação ou lançamentos.
@@ -541,8 +542,7 @@ export async function handleHiringAction(
           email = String((data as { email?: string | null } | null)?.email ?? "").toLowerCase();
         }
       }
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-        throw new Error("Email do novo usuário ausente ou inválido.");
+      if (!isEmailAddress(email)) throw new Error("Email do novo usuário ausente ou inválido.");
 
       // Só administradores do workspace podem conceder acesso por workflow.
       const { data: ownerMember } = await supabase

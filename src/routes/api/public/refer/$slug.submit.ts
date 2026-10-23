@@ -1,3 +1,4 @@
+import { emailSchema } from "@/lib/email-schema";
 // POST /api/public/refer/$slug/submit — recebe indicação externa.
 import { createFileRoute } from "@tanstack/react-router";
 import {
@@ -18,9 +19,9 @@ const cors = {
 
 const Payload = z.object({
   referrer_name: z.string().min(1).max(160),
-  referrer_email: z.string().email().max(200),
+  referrer_email: emailSchema(200),
   candidate_name: z.string().min(1).max(160),
-  candidate_email: z.string().email().max(200).optional().nullable(),
+  candidate_email: emailSchema(200).optional().nullable(),
   candidate_phone: z.string().max(64).optional().nullable(),
   candidate_linkedin: z.string().url().max(500).optional().nullable(),
   relationship: z.string().max(160).optional().nullable(),

@@ -1,3 +1,4 @@
+import { emailSchema } from "@/lib/email-schema";
 // Fase 4 / Slice 2 — Webhook de captura de respostas inbound por e-mail.
 //
 // Casa de respostas de candidatos com enrollments ativos da sequência.
@@ -17,7 +18,7 @@ import { recordAtsEvent } from "@/lib/ats/audit.server";
 
 const Payload = z.object({
   owner_id: z.string().uuid(),
-  from_email: z.string().email(),
+  from_email: emailSchema(),
   subject: z.string().max(500).optional(),
   snippet: z.string().max(4000).optional(),
 });

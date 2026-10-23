@@ -1,3 +1,4 @@
+import { normalizeEmailAddress } from "@/lib/email-address";
 // Exportação programada de audit logs (S3 / webhook / email).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -43,6 +44,11 @@ export const upsertAuditExport = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const ws = await activeWorkspace(supabase, userId);
+    if (data.destination === "email") {
+      const email = normalizeEmailAddress(data.config.email);
+      if (!email) throw new Error("E-mail de destino obrigatório.");
+      data.config.email = email;
+    }
     const payload = {
       owner_id: ws,
       workspace_id: ws,

@@ -1,3 +1,4 @@
+import { nativeInputType, type NativeTextInputType } from "@/lib/native-input-type";
 // Wrappers de <Input> e <Textarea> que renderizam TokenPills sempre visíveis
 // abaixo do campo. Clicar em um pill insere o token na posição do cursor.
 //
@@ -64,7 +65,8 @@ interface TokenFieldExtras {
 
 export const TokenInput = forwardRef<
   HTMLInputElement,
-  Omit<BaseInputProps, "value" | "onChange"> & TokenFieldExtras
+  Omit<BaseInputProps, "value" | "onChange" | "type"> &
+    TokenFieldExtras & { type?: NativeTextInputType }
 >(function TokenInput(
   {
     value,
@@ -91,6 +93,9 @@ export const TokenInput = forwardRef<
         onChange={(e) => onValueChange(e.target.value)}
         className={cn(className)}
         {...rest}
+        type={
+          rest.type === "email" && /\{\{/.test(value ?? "") ? "text" : nativeInputType(rest.type)
+        }
       />
       {!hidePills && (
         <VariablePicker

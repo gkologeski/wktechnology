@@ -57,7 +57,7 @@ function SettingsIndex() {
           <div className="grid md:grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label>Email</Label>
-              <Input value={user?.email ?? ""} disabled />
+              <Input type="email" value={user?.email ?? ""} disabled />
             </div>
             <div className="space-y-1">
               <Label>Nome completo</Label>

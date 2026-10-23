@@ -308,14 +308,28 @@ function ImportCsvPage() {
                 Analisar
               </Button>
               {preview && (
-                <div className="flex gap-2 flex-wrap">
-                  <Badge variant="secondary">Total: {preview.totalRows}</Badge>
-                  <Badge variant="default">Novos: {preview.newRecords}</Badge>
-                  <Badge variant="outline">Duplicados: {preview.duplicates}</Badge>
-                  {preview.invalidRows > 0 && (
-                    <Badge variant="destructive">Inválidos: {preview.invalidRows}</Badge>
+                <>
+                  <div className="flex gap-2 flex-wrap">
+                    <Badge variant="secondary">Total: {preview.totalRows}</Badge>
+                    <Badge variant="default">Novos: {preview.newRecords}</Badge>
+                    <Badge variant="outline">Duplicados: {preview.duplicates}</Badge>
+                    {preview.invalidRows > 0 && (
+                      <Badge variant="destructive">Inválidos: {preview.invalidRows}</Badge>
+                    )}
+                  </div>
+                  {!!preview.emailErrors?.length && (
+                    <div className="text-sm text-destructive" role="status">
+                      {preview.emailErrors.slice(0, 10).map((e) => (
+                        <p key={e.row}>
+                          Linha {e.row}: {e.message}
+                        </p>
+                      ))}
+                      {preview.emailErrors.length > 10 && (
+                        <p>Mais {preview.emailErrors.length - 10} linhas com e-mail inválido.</p>
+                      )}
+                    </div>
                   )}
-                </div>
+                </>
               )}
             </div>
           </CardContent>

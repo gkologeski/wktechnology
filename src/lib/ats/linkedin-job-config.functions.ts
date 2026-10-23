@@ -1,3 +1,4 @@
+import { emailSchema } from "@/lib/email-schema";
 /**
  * Server functions para configurar publicação da vaga no LinkedIn (via Unipile)
  * e helpers de busca de Company Page / Location IDs.
@@ -25,10 +26,7 @@ const CONFIG = z.object({
     .nullable()
     .optional()
     .or(z.literal("").transform(() => null)),
-  linkedin_notification_email: z
-    .string()
-    .trim()
-    .email()
+  linkedin_notification_email: emailSchema()
     .nullable()
     .optional()
     .or(z.literal("").transform(() => null)),

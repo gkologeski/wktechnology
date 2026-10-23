@@ -1,3 +1,4 @@
+import { emailSchema } from "@/lib/email-schema";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { orSafeLike } from "@/lib/postgrest-search";
 // Server functions expostas como tools do agente de IA.
@@ -145,7 +146,7 @@ const contactUpdateSchema = z
     id: z.string().uuid(),
     first_name: z.string().min(1).max(120).optional(),
     last_name: z.string().max(120).optional(),
-    email: z.string().email().optional(),
+    email: emailSchema().optional(),
     phone: zHumanPhone().optional(),
     company_id: z.string().uuid().optional(),
     company_name: z.string().max(200).optional(),
@@ -160,7 +161,7 @@ const leadUpdateSchema = z
     id: z.string().uuid(),
     first_name: z.string().min(1).max(120).optional(),
     last_name: z.string().max(120).optional(),
-    email: z.string().email().optional(),
+    email: emailSchema().optional(),
     phone: zHumanPhone().optional(),
     source: z.string().max(80).optional(),
     company_name: z.string().max(200).optional(),
@@ -231,7 +232,7 @@ export const agentCreateContact = createServerFn({ method: "POST" })
       .object({
         first_name: z.string().min(1).max(120),
         last_name: z.string().max(120).optional(),
-        email: z.string().email().optional(),
+        email: emailSchema().optional(),
         phone: zHumanPhone().optional(),
         company_id: z.string().uuid().optional(),
         company_name: z.string().max(200).optional(),
@@ -289,7 +290,7 @@ export const agentCreateLead = createServerFn({ method: "POST" })
       .object({
         first_name: z.string().min(1).max(120),
         last_name: z.string().max(120).optional(),
-        email: z.string().email().optional(),
+        email: emailSchema().optional(),
         phone: zHumanPhone().optional(),
         source: z.string().max(80).optional(),
         job_title: z.string().max(2000).nullable().optional(),

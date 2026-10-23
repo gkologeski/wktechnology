@@ -1,3 +1,4 @@
+import { emailSchema } from "@/lib/email-schema";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -13,7 +14,7 @@ import {
 const CreateContact = z.object({
   first_name: z.string().min(1).max(120),
   last_name: z.string().max(120).optional(),
-  email: z.string().email().optional(),
+  email: emailSchema().optional(),
   phone: z.string().max(64).optional(),
   job_title: z.string().max(160).optional(),
   company_name: z.string().max(200).optional(),

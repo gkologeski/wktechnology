@@ -59,15 +59,24 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 }
 
 function Tok({
+  type,
   value,
   onChange,
   placeholder,
 }: {
+  type?: "text" | "email";
   value?: string;
   onChange: (v: string) => void;
   placeholder?: string;
 }) {
-  return <TokenInput value={value ?? ""} onValueChange={onChange} placeholder={placeholder} />;
+  return (
+    <TokenInput
+      type={type}
+      value={value ?? ""}
+      onValueChange={onChange}
+      placeholder={placeholder}
+    />
+  );
 }
 
 function NumberInput({
@@ -384,7 +393,7 @@ export function HiringActionForm({
             workflow é administrador; respeita o limite de usuários do plano.
           </p>
           <Field label="Email" hint="Vazio = email da pessoa contratada.">
-            <Tok value={action.email} onChange={(v) => set({ email: v })} />
+            <Tok type="email" value={action.email} onChange={(v) => set({ email: v })} />
           </Field>
           <div className="grid grid-cols-2 gap-2">
             <Field label="Papel">

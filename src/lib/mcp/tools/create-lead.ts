@@ -1,3 +1,4 @@
+import { emailSchema } from "@/lib/email-schema";
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { supabaseForUser, unauthenticated, resolveWorkspaceId } from "../supabase";
@@ -17,7 +18,7 @@ export default defineTool({
   inputSchema: {
     first_name: z.string().trim().min(1).describe("Nome do lead."),
     last_name: z.string().trim().optional().describe("Sobrenome do lead."),
-    email: z.string().trim().email().optional().describe("E-mail do lead."),
+    email: emailSchema().optional().describe("E-mail do lead."),
     phone: z.string().trim().optional().describe("Telefone do lead."),
     job_title: z.string().optional().describe("Cargo original informado pelo lead."),
     company_name: z.string().trim().optional().describe("Nome da empresa informada pelo lead."),

@@ -1,3 +1,4 @@
+import { isEmailColumn, validateEmailAddress } from "@/lib/email-address";
 // Validação e normalização de valores para a edição em massa dos grids.
 // Sem dependência de UI nem de Supabase: é compartilhado entre o diálogo
 // (cliente) e a server function que aplica o update.
@@ -77,6 +78,12 @@ function fail(msg: string): never {
  */
 export function coerceBulkValue(column: string, dataType: string, raw: unknown): unknown {
   if (raw === "" || raw === null || raw === undefined) return null;
+
+  if (isEmailColumn(column)) {
+    const result = validateEmailAddress(raw);
+    if (!result.ok) return fail(`${column}: ${result.message}`);
+    return result.value;
+  }
 
   if (dataType === "boolean") {
     if (typeof raw === "boolean") return raw;

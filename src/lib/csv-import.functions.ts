@@ -1,3 +1,4 @@
+import { normalizeEmailFields } from "@/lib/email-address";
 // Server fns para importação de CSV com dedupe em leads, contacts e companies.
 // Fluxo: cliente parseia CSV (papaparse) → envia rows + mapping → server valida,
 // faz dedupe pela chave selecionada e aplica skip/update/create.
@@ -130,7 +131,13 @@ function buildRecord(
   if ((entity === "leads" || entity === "contacts") && !out.first_name) {
     if (typeof out.email === "string") out.first_name = out.email.split("@")[0];
   }
-  return out;
+  try {
+    return normalizeEmailFields(out);
+  } catch {
+    // Metadado não enumerável: linha rejeitada e contada, nunca enviado ao banco.
+    Object.defineProperty(out, "__invalid_email", { value: true, enumerable: false });
+    return out;
+  }
 }
 
 export const previewCsvImport = createServerFn({ method: "POST" })
@@ -180,7 +187,7 @@ export const previewCsvImport = createServerFn({ method: "POST" })
     const required = ENTITY_FIELDS[entity].filter((f) => f.required).map((f) => f.key);
     for (const r of records) {
       const missing = required.some((k) => !r[k]);
-      if (missing) {
+      if (missing || r.__invalid_email) {
         invalid++;
         continue;
       }
@@ -192,6 +199,11 @@ export const previewCsvImport = createServerFn({ method: "POST" })
       totalRows: rows.length,
       validRows: creates + duplicates,
       invalidRows: invalid,
+      emailErrors: records.flatMap((r, i) =>
+        r.__invalid_email
+          ? [{ row: i + 2, message: "E-mail inválido; corrija a linha antes de importar." }]
+          : [],
+      ),
       newRecords: creates,
       duplicates,
     };
@@ -246,7 +258,7 @@ export const executeCsvImport = createServerFn({ method: "POST" })
     let skipped = 0;
     let invalid = 0;
     for (const r of records) {
-      if (required.some((k) => !r[k])) {
+      if (r.__invalid_email || required.some((k) => !r[k])) {
         invalid++;
         continue;
       }
@@ -291,5 +303,13 @@ export const executeCsvImport = createServerFn({ method: "POST" })
         updated++;
       }
     }
-    return { inserted, updated, skipped, invalid };
+    return {
+      inserted,
+      updated,
+      skipped,
+      invalid,
+      emailErrors: records.flatMap((r, i) =>
+        r.__invalid_email ? [{ row: i + 2, message: "E-mail inválido; linha não importada." }] : [],
+      ),
+    };
   });

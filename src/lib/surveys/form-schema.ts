@@ -1,3 +1,4 @@
+import { isEmailAddress } from "@/lib/email-address";
 /**
  * Esquema único de formulário de pesquisa (construtor, renderer público,
  * timeline e servidor). Puro TypeScript, sem dependências de UI.
@@ -220,7 +221,6 @@ export function pages(schema: FormSchema): FormField[][] {
   return out.filter((p, i) => p.length || i === 0);
 }
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export function validateAnswers(schema: FormSchema, answers: Answers): Record<string, string> {
   const errors: Record<string, string> = {};
   const vis = visibleFieldIds(schema, answers);
@@ -236,7 +236,7 @@ export function validateAnswers(schema: FormSchema, answers: Answers): Record<st
       if ((f.rows ?? []).some((r) => !isFilled(m[r.id])))
         errors[f.id] = "Responda todas as linhas.";
     }
-    if (f.type === "email" && !EMAIL.test(String(v))) errors[f.id] = "E-mail inválido.";
+    if (f.type === "email" && !isEmailAddress(String(v))) errors[f.id] = "E-mail inválido.";
     // Mesma regra E.164 do sistema (fonte única em @/lib/phone/e164).
     if (f.type === "phone" && !isValidE164(String(v)))
       errors[f.id] = "Telefone inválido: informe com o código do país (ex.: +55).";

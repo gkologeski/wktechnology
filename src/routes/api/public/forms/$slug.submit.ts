@@ -1,3 +1,4 @@
+import { validateEmailAddress } from "@/lib/email-address";
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ensureLeadRelationsSafe } from "@/lib/leads/lead-relations";
@@ -118,6 +119,15 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
             );
           }
           if (v) clean[f.key] = v;
+          if (f.type === "email" && raw != null && String(raw).trim()) {
+            const result = validateEmailAddress(raw);
+            if (!result.ok)
+              return Response.json(
+                { error: `${f.label}: ${result.message}`, code: "invalid_email", field: f.key },
+                { status: 422, headers: cors },
+              );
+            clean[f.key] = result.value;
+          }
           if (v && (f.type === "tel" || ["phone", "telefone", "tel"].includes(f.key))) {
             try {
               const e164 = humanPhone(v, { field: f.key, country: phoneCountry });

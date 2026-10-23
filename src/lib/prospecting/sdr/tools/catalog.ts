@@ -1,3 +1,4 @@
+import { emailSchema } from "@/lib/email-schema";
 import { windowsError } from "./scheduling";
 // Catálogo de ferramentas e habilidades do Agente SDR (puro). Cada ferramenta
 // tem schema tipado (JSON para a IA, zod para o servidor), efeito, requisitos
@@ -123,7 +124,7 @@ export const TOOL_DEFS: ToolDef[] = [
       },
       ...confirmProps,
     }),
-    input: z.object({ option, attendee_email: z.string().email().nullable(), ...confirm }),
+    input: z.object({ option, attendee_email: emailSchema().nullable(), ...confirm }),
   },
   {
     id: "calendar.reschedule",

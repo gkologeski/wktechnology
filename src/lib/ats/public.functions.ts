@@ -1,3 +1,4 @@
+import { emailSchema } from "@/lib/email-schema";
 // Server functions PÚBLICAS do ATS — sem autenticação.
 // Usadas pelas páginas /careers e /careers/$slug. Cada workspace é resolvido
 // pelo host (custom_domain) cadastrado em module_branding (module_id='ats').
@@ -126,7 +127,7 @@ export const submitPublicApplication = createServerFn({ method: "POST" })
         host: z.string().nullable().optional(),
         job_id: z.string().uuid(),
         full_name: z.string().trim().min(2).max(160),
-        email: z.string().trim().email().max(200),
+        email: emailSchema(200),
         phone: z.string().trim().max(64).optional().nullable(),
         linkedin_url: z.string().trim().url().max(400).optional().nullable(),
         location: z.string().trim().max(160).optional().nullable(),

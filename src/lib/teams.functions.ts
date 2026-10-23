@@ -1,3 +1,4 @@
+import { emailSchema } from "@/lib/email-schema";
 import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 // Server functions para Teams (gerenciar membros do workspace).
 import { createServerFn } from "@tanstack/react-start";
@@ -330,7 +331,7 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
   .inputValidator((i) =>
     z
       .object({
-        email: z.string().trim().email().max(255),
+        email: emailSchema(255),
         full_name: z.string().trim().min(2, "Nome completo é obrigatório").max(120),
         phone: zHumanPhone({ required: true, label: "Telefone celular" }),
         role: TeamRole,

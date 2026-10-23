@@ -1,3 +1,4 @@
+import { emailSchema } from "@/lib/email-schema";
 // Server fns para branding (white-label) — por workspace ativo.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -88,7 +89,7 @@ export const saveBranding = createServerFn({ method: "POST" })
           primary_color: z.string().max(40).nullable().optional(),
           accent_color: z.string().max(40).nullable().optional(),
           custom_domain: z.string().max(200).nullable().optional(),
-          support_email: z.string().email().nullable().optional(),
+          support_email: emailSchema().nullable().optional(),
           footer_text: z.string().max(500).nullable().optional(),
           radius: z.string().max(20).nullable().optional(),
           density: z.enum(["compact", "cozy", "comfortable"]).nullable().optional(),

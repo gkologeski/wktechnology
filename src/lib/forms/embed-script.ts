@@ -76,7 +76,8 @@ export function buildFormEmbedScript(origin: string, turnstileSiteKey: string | 
         input.appendChild(h('option',{value:''},['Selecione...']));
         (f.options||[]).forEach(function(o){ input.appendChild(h('option',{value:o},[o])); });
       } else {
-        input=h('input',{type:f.type||'text',name:f.key,placeholder:f.placeholder||'',style:'padding:8px;border:1px solid #d4d4d8;border-radius:6px;font:inherit;'});
+        input=h('input',{type:f.type==='email'?'text':(f.type||'text'),name:f.key,placeholder:f.placeholder||'',style:'padding:8px;border:1px solid #d4d4d8;border-radius:6px;font:inherit;'});
+        if(f.type==='email'){ input.setAttribute('inputmode','email'); input.setAttribute('autocomplete','email'); input.setAttribute('autocapitalize','none'); input.setAttribute('spellcheck','false'); }
         if(f.type==='tel'){ input.setAttribute('inputmode','tel'); input.setAttribute('autocomplete','tel'); if(!f.placeholder) input.placeholder='+55 11 99999-8888'; }
       }
       if(f.required) input.required=true;

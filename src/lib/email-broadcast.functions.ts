@@ -1,3 +1,4 @@
+import { emailSchema } from "@/lib/email-schema";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // Server fns para campanhas de email (broadcast).
 import { createServerFn } from "@tanstack/react-start";
@@ -17,7 +18,7 @@ const CreateInput = z.object({
   email_account_id: z.string().uuid().nullable().optional(),
   rate_per_minute: z.number().int().min(1).max(600).default(30),
   scheduled_at: z.string().datetime().optional(),
-  reply_to: z.string().email().nullable().optional(),
+  reply_to: emailSchema().nullable().optional(),
   /** Dias sem reenviar a quem recebeu e-mail de outra campanha (0 desliga). */
   recent_contact_days: z.number().int().min(0).max(365).optional(),
 });
@@ -163,7 +164,7 @@ export const sendTestEmailBroadcast = createServerFn({ method: "POST" })
         subject: z.string().min(1),
         body_html: z.string().optional().default(""),
         body_text: z.string().optional().default(""),
-        to: z.string().email(),
+        to: emailSchema(),
         email_account_id: z.string().uuid().nullable().optional(),
       })
       .parse(i),

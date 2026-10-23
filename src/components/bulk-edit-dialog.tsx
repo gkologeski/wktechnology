@@ -1,3 +1,4 @@
+import { normalizeEmailAddress } from "@/lib/email-address";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -63,12 +64,12 @@ export function BulkEditDialog({
         v = checked.value;
       }
       if (f.type === "email" && v != null) {
-        const s = String(v).trim();
+        const s = String(v);
         if (!isEmail(s)) {
           toast.error(`${f.label}: email inválido.`);
           return;
         }
-        v = s;
+        v = normalizeEmailAddress(s);
       }
       payload[f.name] = v;
     }

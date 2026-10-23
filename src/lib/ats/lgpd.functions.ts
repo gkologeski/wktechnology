@@ -1,3 +1,4 @@
+import { emailSchema } from "@/lib/email-schema";
 // ATS LGPD/DSAR: candidate-scoped data subject requests, consent tracking and retention.
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -43,7 +44,7 @@ export interface CandidateExportSnapshot {
 const createSchema = z.object({
   candidate_id: z.string().uuid(),
   request_type: z.enum(["export", "erasure", "rectification", "access"]),
-  subject_email: z.string().email().nullable().optional(),
+  subject_email: emailSchema().nullable().optional(),
   notes: z.string().max(2000).nullable().optional(),
 });
 

@@ -1,3 +1,5 @@
+import { parseEmailList } from "@/lib/email-address";
+import { emailSchema } from "@/lib/email-schema";
 import { randomUUID } from "crypto";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -13,8 +15,15 @@ import { injectTracking } from "@/lib/email-tracking.server";
 
 const emailListSchema = z
   .union([z.string(), z.array(z.string())])
-  .transform((v) => (Array.isArray(v) ? v : v.split(/[,;]\s*/).filter(Boolean)))
-  .pipe(z.array(z.string().email()).max(50));
+  .transform((v, ctx) => {
+    try {
+      return parseEmailList(v);
+    } catch {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Lista de e-mails inválida." });
+      return z.NEVER;
+    }
+  })
+  .pipe(z.array(emailSchema()).max(50));
 
 const attachmentSchema = z.object({
   path: z.string().min(1).max(500),

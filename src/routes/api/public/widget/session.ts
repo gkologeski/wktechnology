@@ -1,3 +1,4 @@
+import { emailSchema } from "@/lib/email-schema";
 // Public route: create chat session
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -12,7 +13,7 @@ const schema = z.object({
     .max(64)
     .regex(/^[a-zA-Z0-9_-]+$/),
   visitor_name: z.string().max(120).optional(),
-  visitor_email: z.string().email().max(180).optional(),
+  visitor_email: emailSchema(180).optional(),
   visitor_url: z.string().url().max(500).optional(),
 });
 

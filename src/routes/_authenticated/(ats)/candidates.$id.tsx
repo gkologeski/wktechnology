@@ -1,3 +1,4 @@
+import { Input as StandardInput } from "@/components/ui/input";
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -502,7 +503,7 @@ function Input({
   type?: string;
 }) {
   return (
-    <input
+    <StandardInput
       type={type}
       value={value}
       onChange={(e) => onChange(e.target.value)}

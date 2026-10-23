@@ -1,3 +1,4 @@
+import { emailSchema } from "@/lib/email-schema";
 // Server functions do módulo ATS (Sprint A: CRUD + Kanban).
 import { createServerFn } from "@tanstack/react-start";
 import { humanPhoneForRow, workspacePhoneCountry } from "@/lib/phone/phone-boundary";
@@ -499,7 +500,7 @@ const LinkedinUrlSchema = z
 const CandidateSaveSchema = z.object({
   id: z.string().uuid().optional(),
   full_name: z.string().trim().min(1).max(200),
-  email: z.string().trim().email().max(255).optional().nullable().or(z.literal("")),
+  email: emailSchema(255).optional().nullable().or(z.literal("")),
   phone: z.string().max(64).optional().nullable(),
   linkedin_url: LinkedinUrlSchema,
   location: z.string().max(120).optional().nullable(),

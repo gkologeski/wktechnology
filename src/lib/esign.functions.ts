@@ -1,3 +1,4 @@
+import { emailSchema } from "@/lib/email-schema";
 import { workspaceOfSource } from "@/lib/workspace-source.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -64,7 +65,7 @@ export const createEsignDocument = createServerFn({ method: "POST" })
           .array(
             z.object({
               name: z.string().min(1).max(255),
-              email: z.string().email().max(255),
+              email: emailSchema(255),
               sign_order: z.number().int().min(1).default(1),
             }),
           )
@@ -189,7 +190,7 @@ export const addEsignSigner = createServerFn({ method: "POST" })
       .object({
         documentId: z.string().uuid(),
         name: z.string().min(1).max(255),
-        email: z.string().email().max(255),
+        email: emailSchema(255),
         sign_order: z.number().int().min(1).default(1),
       })
       .parse(d),

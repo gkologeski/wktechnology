@@ -1,3 +1,4 @@
+import { validateEmailAddress } from "@/lib/email-address";
 import { useEffect, useRef, useState } from "react";
 import { Mail, User, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -68,9 +69,10 @@ export function AttendeePicker({
 
   const add = (a: Attendee) => {
     if (!a.email) return;
-    const email = a.email.trim().toLowerCase();
-    if (!isEmail(email)) return;
-    if (value.some((v) => v.email.toLowerCase() === email)) {
+    const r = validateEmailAddress(a.email);
+    if (!r.ok) return;
+    const email = r.value;
+    if (value.some((v) => v.email.toLowerCase() === email.toLowerCase())) {
       setText("");
       return;
     }

@@ -1,3 +1,4 @@
+import { emailSchema } from "@/lib/email-schema";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // Server functions para Agendamentos de Export por Email.
 import { createServerFn } from "@tanstack/react-start";
@@ -13,7 +14,7 @@ const UpsertSchema = z
     id: z.string().uuid().optional(),
     report_id: z.string().uuid(),
     name: z.string().min(1).max(200),
-    recipients: z.array(z.string().email()).min(1).max(20),
+    recipients: z.array(emailSchema()).min(1).max(20),
     frequency: FrequencySchema,
     hour_of_day: z.number().int().min(0).max(23),
     day_of_week: z.number().int().min(0).max(6).nullable().optional(),

@@ -1,3 +1,4 @@
+import { isEmailColumn } from "@/lib/email-address";
 // Edição em massa no padrão HubSpot: um combo de escolha da propriedade
 // (com busca e agrupamento) e, abaixo, apenas o editor daquela propriedade.
 // Campos dependentes (pipeline → etapa → substatus) aparecem em cascata.
@@ -217,6 +218,7 @@ function FieldEditor({
   return (
     <Input
       id={`bulk-${field.name}`}
+      type={isEmailColumn(field.name) ? "email" : "text"}
       value={strVal}
       onChange={(e) => onChange(e.target.value)}
       placeholder="Novo valor"

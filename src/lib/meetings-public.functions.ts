@@ -1,3 +1,4 @@
+import { emailSchema } from "@/lib/email-schema";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 // Carrega o cliente admin sob demanda (mantém o bundle do cliente limpo).
@@ -44,7 +45,7 @@ export const registerPublicParticipant = createServerFn({ method: "POST" })
       .object({
         token: z.string().min(8).max(64),
         display_name: z.string().min(1).max(120),
-        email: z.string().email().max(255).optional().nullable(),
+        email: emailSchema(255).optional().nullable(),
       })
       .parse(input),
   )

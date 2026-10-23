@@ -1,3 +1,4 @@
+import { emailSchema } from "@/lib/email-schema";
 // Server functions para o módulo TechPeople (Sprint 1 — HRIS core).
 // Fornece list/get/upsert/archive de `people`, com projeção de campos
 // sensíveis conforme o papel do usuário (admin, gestor, própria pessoa).
@@ -91,7 +92,7 @@ const upsertSchema = z.object({
   id: z.string().uuid().nullable().optional(),
   full_name: z.string().min(2).max(160),
   preferred_name: z.string().max(80).nullable().optional(),
-  email: z.string().email().nullable().optional().or(z.literal("")),
+  email: emailSchema().nullable().optional().or(z.literal("")),
   phone: z.string().max(40).nullable().optional(),
   photo_url: z.string().url().nullable().optional().or(z.literal("")),
   employment_type: z.enum(PEOPLE_EMPLOYMENT_TYPES).default("pj"),

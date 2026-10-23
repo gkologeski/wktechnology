@@ -1,3 +1,4 @@
+import { emailSchema } from "@/lib/email-schema";
 import { EMAIL_SENDER_DOMAIN } from "@/lib/platform-domains";
 // Server fns para convites do workspace (token-based, gerenciados pelo admin do workspace).
 import * as React from "react";
@@ -274,7 +275,7 @@ export const createWorkspaceInvite = createServerFn({ method: "POST" })
   .inputValidator((i) =>
     z
       .object({
-        email: z.string().trim().email().max(255),
+        email: emailSchema(255),
         role: Role,
         permission_set_id: z
           .string({ required_error: "Selecione um conjunto de permissões" })

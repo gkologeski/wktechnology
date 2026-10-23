@@ -1,3 +1,4 @@
+import { emailSchema } from "@/lib/email-schema";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { createPublicBooking } from "@/lib/booking/engine.server";
@@ -6,7 +7,7 @@ import { isPhoneValidationError, phoneErrorBody } from "@/lib/phone/phone-bounda
 const Body = z.object({
   start: z.string().min(10).max(64),
   invitee_name: z.string().min(1).max(200),
-  invitee_email: z.string().email().max(255),
+  invitee_email: emailSchema(255),
   invitee_phone: z.string().max(64).optional().nullable(),
   notes: z.string().max(2000).optional().nullable(),
   timezone: z.string().max(80).optional().nullable(),

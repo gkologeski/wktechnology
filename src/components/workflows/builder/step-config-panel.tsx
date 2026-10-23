@@ -406,6 +406,7 @@ function StepConfigForm({
             <div>
               <Label className="text-xs">Email</Label>
               <TokenInput
+                type="email"
                 value={action.email ?? ""}
                 onValueChange={(v) => onChange({ ...action, email: v })}
               />
@@ -487,6 +488,7 @@ function StepConfigForm({
             <div>
               <Label className="text-xs">Email</Label>
               <TokenInput
+                type="email"
                 value={action.email ?? ""}
                 onValueChange={(v) => onChange({ ...action, email: v })}
               />
@@ -565,6 +567,7 @@ function StepConfigForm({
             <div>
               <Label className="text-xs">Email</Label>
               <TokenInput
+                type="email"
                 value={action.email ?? ""}
                 onValueChange={(v) => onChange({ ...action, email: v })}
               />

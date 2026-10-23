@@ -1,3 +1,4 @@
+import { isEmailColumn, normalizeEmailFields } from "@/lib/email-address";
 import { useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -101,6 +102,11 @@ export function CrudSettings<T extends { id: string }>({
       if (f.required && (v === "" || v == null)) return toast.error(`${f.label} obrigatório`);
       payload[f.name] = v;
     }
+    try {
+      Object.assign(payload, normalizeEmailFields(payload));
+    } catch (e) {
+      return toast.error((e as Error).message);
+    }
     let error;
     if (editing === "new") {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -199,7 +205,7 @@ export function CrudSettings<T extends { id: string }>({
                 />
               ) : (
                 <Input
-                  type={f.type === "number" ? "number" : "text"}
+                  type={isEmailColumn(f.name) ? "email" : f.type === "number" ? "number" : "text"}
                   value={String(form[f.name] ?? "")}
                   placeholder={f.placeholder}
                   onChange={(e) => setForm({ ...form, [f.name]: e.target.value })}

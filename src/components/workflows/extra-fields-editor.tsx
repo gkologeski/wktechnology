@@ -1,3 +1,4 @@
+import { isEmailColumn } from "@/lib/email-address";
 // Editor de "Mais campos" para ações create_* do workflow.
 // Permite adicionar qualquer campo da entidade alvo além dos já
 // cobertos no formulário principal da ação. Persiste em action.extra_fields.
@@ -421,7 +422,12 @@ function FieldInput({
   }
 
   return (
-    <TokenInput value={strVal} onValueChange={(v) => onChange(v)} placeholder="Aceita variáveis" />
+    <TokenInput
+      type={isEmailColumn(field.name) ? "email" : "text"}
+      value={strVal}
+      onValueChange={(v) => onChange(v)}
+      placeholder="Aceita variáveis"
+    />
   );
 }
 
