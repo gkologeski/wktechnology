@@ -40,6 +40,7 @@ import {
   PHONE_FIELD_LABEL,
   PHONE_REVIEW_CLASSES,
   summarizePhoneRun,
+  withLivePending,
   type PhoneReviewClass,
 } from "@/lib/phone/phone-review";
 import { PhoneReviewRecordLink } from "@/components/phone/phone-review-record-link";
@@ -126,7 +127,13 @@ function PhonesSettingsPage() {
 
   const s = settingsQ.data;
   const country = draftCountry ?? s.country;
-  const summary = s.run ? summarizePhoneRun(s.run.counts, s.run.applied, s.run.resolved) : null;
+  // Pendentes = contagem real do banco (base sem gravação e sem resolução posterior).
+  const summary = s.run
+    ? withLivePending(
+        summarizePhoneRun(s.run.counts, s.run.applied, s.run.resolved),
+        s.run.livePending,
+      )
+    : null;
 
   return (
     <div className="space-y-6 p-6">
