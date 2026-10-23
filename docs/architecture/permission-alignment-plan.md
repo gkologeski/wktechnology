@@ -35,8 +35,8 @@ chaves novas a todos os cargos/workspaces como forma de fazer o teste passar.
 
 1. Matriz oficial incremental: inventário e sete contratos do primeiro lote
    registrados; ainda em andamento para as demais ações.
-2. Riscos críticos: primeiro lote SQL (0191) aplicado e testado. Lote 0192 de configurações de pagamentos, NFS-e e reuniões aplicado e testado;
-   aplicação e publicação registradas no relatório do lote.
+2. Riscos críticos: primeiro lote SQL (0191) aplicado e testado. Lote 0192 de configurações de pagamentos, NFS-e e reuniões aplicado, publicado e testado;
+   evidências registradas no relatório do lote.
 3. Servidor/RLS por módulo: priorizar TechPeople/TechHire, depois os demais;
    consolidar políticas, eliminar atalhos por owner/admin e escopos incorretos.
 4. Interface e ações: menus/URL/abas/botões, projeção de campos, exportações,
@@ -89,7 +89,7 @@ EXECUTE anônimo para recuperar disponibilidade. Script de contenção:
 `docs/security/0191-emergency-containment.sql` (não foi executado em produção).
 
 
-## Lote 0192 — configurações de pagamentos, NFS-e e reuniões
+## Lote 0192 — aplicado e publicado: configurações de pagamentos, NFS-e e reuniões
 
 Seis chaves próprias (view/manage por recurso) no catálogo. Consultar exige view;
 alterar exige view E manage; deny sempre prevalece. Nenhum grant de cargo/preset
@@ -114,3 +114,11 @@ Nenhum valor de configuração é alterado pela migração.
 61 verificações novas de PostgreSQL (162 somadas às anteriores), 17 testes de
 helper/UI e suíte completa passaram. Aceite SQL na base ativa passou (leitura/idempotência do owner, bloqueio de membro sem chave e acesso direto/fora do workspace). Aceite visual com sessão real ainda não
 realizado. Estados de aplicação/publicação e hashes constam no relatório do lote.
+
+Publicação confirmada em 23/10/2026 nos domínios app.wktechnology.com.br e
+wktechnology.lovable.app, ambos com entrada /assets/index-CCqjsmv4.js. Os três
+chunks de configurações publicados contêm o guard, os recursos específicos e o
+bloqueio após falha de carga. Commit da aplicação: 628e207678de8fbc7607dcbe9996d88a54459aa9.
+Hashes das três configurações e das tabelas de overrides, presets e memberships
+permaneceram iguais aos da captura anterior. A aplicação de 0192 não alterou
+valores existentes nem concedeu novas permissões a cargos de negócio.

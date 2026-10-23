@@ -129,7 +129,7 @@
       "server": "authenticated client RPC via workspace-settings.server.ts; no service-role fallback",
       "database": "0192: column ACLs + authorized SECURITY DEFINER RPC; field allowlist and atomic audit on changes",
       "migration": "0192",
-      "status": "applied_sql_tested_application_publish_pending"
+      "status": "applied_published_sql_tested"
     },
     {
       "operation": "payments_settings.manage",
@@ -148,7 +148,7 @@
       "server": "authenticated client RPC via workspace-settings.server.ts; no service-role fallback",
       "database": "0192: column ACLs + authorized SECURITY DEFINER RPC; field allowlist and atomic audit on changes",
       "migration": "0192",
-      "status": "applied_sql_tested_application_publish_pending"
+      "status": "applied_published_sql_tested"
     },
     {
       "operation": "nfse_settings.view",
@@ -166,7 +166,7 @@
       "server": "authenticated client RPC via workspace-settings.server.ts; no service-role fallback",
       "database": "0192: column ACLs + authorized SECURITY DEFINER RPC; field allowlist and atomic audit on changes",
       "migration": "0192",
-      "status": "applied_sql_tested_application_publish_pending"
+      "status": "applied_published_sql_tested"
     },
     {
       "operation": "nfse_settings.manage",
@@ -185,7 +185,7 @@
       "server": "authenticated client RPC via workspace-settings.server.ts; no service-role fallback",
       "database": "0192: column ACLs + authorized SECURITY DEFINER RPC; field allowlist and atomic audit on changes",
       "migration": "0192",
-      "status": "applied_sql_tested_application_publish_pending"
+      "status": "applied_published_sql_tested"
     },
     {
       "operation": "meeting_settings.view",
@@ -203,7 +203,7 @@
       "server": "authenticated client RPC via workspace-settings.server.ts; no service-role fallback",
       "database": "0192: column ACLs + authorized SECURITY DEFINER RPC; field allowlist and atomic audit on changes",
       "migration": "0192",
-      "status": "applied_sql_tested_application_publish_pending"
+      "status": "applied_published_sql_tested"
     },
     {
       "operation": "meeting_settings.manage",
@@ -222,7 +222,7 @@
       "server": "authenticated client RPC via workspace-settings.server.ts; no service-role fallback",
       "database": "0192: column ACLs + authorized SECURITY DEFINER RPC; field allowlist and atomic audit on changes",
       "migration": "0192",
-      "status": "applied_sql_tested_application_publish_pending"
+      "status": "applied_published_sql_tested"
     }
   ],
   "rules": [
@@ -339,7 +339,7 @@
       "area": "TechSales",
       "problema": "Configurações de retenção/consentimento",
       "decisao_alvo": "Criar recurso gerenciável distinto de participação em reuniões e validar leitura/alteração.",
-      "status": "aplicado_testado_sql_publicacao_pendente",
+      "status": "aplicado_publicado_testado_sql",
       "evidencia_migracao": "0192",
       "aceite_visual": false
     },
@@ -510,7 +510,7 @@
       "area": "TechFinance",
       "problema": "Configurações sem chave própria",
       "decisao_alvo": "Criar permissão específica para configurar pagamentos/NFS-e e verificar antes da escrita administrativa.",
-      "status": "aplicado_testado_sql_publicacao_pendente",
+      "status": "aplicado_publicado_testado_sql",
       "evidencia_migracao": "0192",
       "aceite_visual": false
     }

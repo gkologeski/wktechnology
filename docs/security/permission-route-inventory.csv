@@ -335,11 +335,11 @@
 /settings/mobile;Tela autenticada;src/routes/_authenticated/settings.mobile.tsx;27;não exclusivo/compartilhado;;;;admin;inventario_estatico_a_validar
 /settings/my-permissions;Tela autenticada;src/routes/_authenticated/settings.my-permissions.tsx;15;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
 /settings/my-tickets;Tela autenticada;src/routes/_authenticated/settings.my-tickets.tsx;4;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
-/settings/nfse;Tela autenticada;src/routes/_authenticated/settings.nfse.tsx;15;não exclusivo/compartilhado;;techfinance.nfse_settings;techfinance.nfse_settings.view.workspace | techfinance.nfse_settings.manage.workspace;;0192_aplicado_testado_publicacao_pendente
+/settings/nfse;Tela autenticada;src/routes/_authenticated/settings.nfse.tsx;15;não exclusivo/compartilhado;;techfinance.nfse_settings;techfinance.nfse_settings.view.workspace | techfinance.nfse_settings.manage.workspace;;0192_aplicado_publicado_sem_aceite_visual
 /settings/notifications;Tela autenticada;src/routes/_authenticated/settings.notifications.tsx;18;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
 /settings/notifications/slack;Tela autenticada;src/routes/_authenticated/settings.notifications.slack.tsx;31;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
 /settings/onboarding-templates;Tela autenticada;src/routes/_authenticated/settings.onboarding-templates.tsx;53;não exclusivo/compartilhado;Sistema;system.onboarding_templates;;;inventario_estatico_a_validar
-/settings/payments;Tela autenticada;src/routes/_authenticated/settings.payments.tsx;20;não exclusivo/compartilhado;;techfinance.payments_settings;techfinance.payments_settings.view.workspace | techfinance.payments_settings.manage.workspace;;0192_aplicado_testado_publicacao_pendente
+/settings/payments;Tela autenticada;src/routes/_authenticated/settings.payments.tsx;20;não exclusivo/compartilhado;;techfinance.payments_settings;techfinance.payments_settings.view.workspace | techfinance.payments_settings.manage.workspace;;0192_aplicado_publicado_sem_aceite_visual
 /settings/permissions;Tela autenticada;src/routes/_authenticated/settings.permissions.tsx;8;não exclusivo/compartilhado;Sistema;system.roles;;admin;inventario_estatico_a_validar
 /settings/phones;Tela autenticada;src/routes/_authenticated/settings.phones.tsx;58;não exclusivo/compartilhado;Sistema;system.language;;admin;inventario_estatico_a_validar
 /settings/pipelines;Tela autenticada;src/routes/_authenticated/settings.pipelines.tsx;29;não exclusivo/compartilhado;Sistema;system.pipelines;;admin;inventario_estatico_a_validar
@@ -377,7 +377,7 @@
 /settings/surveys;Tela autenticada;src/routes/_authenticated/settings.surveys.tsx;4;não exclusivo/compartilhado;;;;manager;inventario_estatico_a_validar
 /settings/teams;Tela autenticada;src/routes/_authenticated/settings.teams.tsx;99;não exclusivo/compartilhado;Sistema;system.members;;admin;inventario_estatico_a_validar
 /settings/user-groups;Tela autenticada;src/routes/_authenticated/settings.user-groups.tsx;35;não exclusivo/compartilhado;Sistema;system.user_groups;;;inventario_estatico_a_validar
-/settings/video;Tela autenticada;src/routes/_authenticated/settings.video.tsx;14;não exclusivo/compartilhado;;techsales.meeting_settings;techsales.meeting_settings.view.workspace | techsales.meeting_settings.manage.workspace;;0192_aplicado_testado_publicacao_pendente
+/settings/video;Tela autenticada;src/routes/_authenticated/settings.video.tsx;14;não exclusivo/compartilhado;;techsales.meeting_settings;techsales.meeting_settings.view.workspace | techsales.meeting_settings.manage.workspace;;0192_aplicado_publicado_sem_aceite_visual
 /settings/voice-agent;Tela autenticada;src/routes/_authenticated/settings.voice-agent.tsx;5;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
 /settings/webhooks;Tela autenticada;src/routes/_authenticated/settings.webhooks.tsx;45;não exclusivo/compartilhado;;;;admin;inventario_estatico_a_validar
 /settings/whatsapp;Tela autenticada;src/routes/_authenticated/settings.whatsapp.tsx;32;não exclusivo/compartilhado;Sistema;system.whatsapp;;;inventario_estatico_a_validar
