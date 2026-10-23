@@ -126,7 +126,7 @@ function PhonesSettingsPage() {
 
   const s = settingsQ.data;
   const country = draftCountry ?? s.country;
-  const summary = s.run ? summarizePhoneRun(s.run.counts, s.run.applied) : null;
+  const summary = s.run ? summarizePhoneRun(s.run.counts, s.run.applied, s.run.resolved) : null;
 
   return (
     <div className="space-y-6 p-6">
@@ -192,12 +192,12 @@ function PhonesSettingsPage() {
             <SectionHeader
               title="Situação dos números já gravados"
               description={
-                s.run?.finishedAt
-                  ? `Última correção: ${new Date(s.run.finishedAt).toLocaleString("pt-BR")}.`
+                s.run?.correctedAt || s.run?.finishedAt
+                  ? `Última correção: ${new Date((s.run.correctedAt ?? s.run.finishedAt)!).toLocaleString("pt-BR")}.`
                   : undefined
               }
             />
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
               <MetricCard label="Telefones analisados" value={nf.format(summary.total)} />
               <MetricCard
                 label="Padronizados agora"
@@ -205,6 +205,11 @@ function PhonesSettingsPage() {
                 icon={CheckCircle2}
                 tone="positive"
                 hint="Valor original guardado para desfazer"
+              />
+              <MetricCard
+                label="Em branco (até 4 dígitos)"
+                value={nf.format(summary.blanked)}
+                hint="Não eram telefones; original guardado para desfazer"
               />
               <MetricCard label="Já estavam no padrão" value={nf.format(summary.canonical)} />
               <MetricCard
@@ -222,6 +227,7 @@ function PhonesSettingsPage() {
                     <TableHead>Campo</TableHead>
                     <TableHead className="text-right">Analisados</TableHead>
                     <TableHead className="text-right">Padronizados</TableHead>
+                    <TableHead className="text-right">Em branco</TableHead>
                     <TableHead className="text-right">Já no padrão</TableHead>
                     <TableHead className="text-right">Em revisão</TableHead>
                   </TableRow>
@@ -235,6 +241,9 @@ function PhonesSettingsPage() {
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {nf.format(r.applied)}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {nf.format(r.blanked)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {nf.format(r.canonical)}

@@ -5,6 +5,7 @@ import { asCountry, maskPhone } from "@/lib/phone/e164";
 import {
   PHONE_REVIEW_CLASSES,
   phoneEntityName,
+  phoneReviewDetail,
   phoneEntityRoute,
   type PhoneEntityRoute,
 } from "@/lib/phone/phone-review";
@@ -16,6 +17,10 @@ export type PhoneRunSummary = {
   criteria: string;
   counts: Record<string, Record<string, number>>;
   applied: Record<string, number>;
+  /** Correções posteriores (execuções filhas): itens da fila resolvidos por campo e tipo. */
+  resolved: Record<string, Record<string, number>>;
+  /** Data da correção posterior mais recente. */
+  correctedAt: string | null;
 };
 
 export type PhoneReviewItem = {
@@ -51,10 +56,35 @@ export const getPhoneSettings = createServerFn({ method: "GET" })
         .from("phone_normalization_runs")
         .select("id, finished_at, normalizer_version, criteria, counts, status")
         .eq("workspace_id", workspaceId)
+        .is("parent_run_id", null)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
     ]);
+    // Correções posteriores concluídas que resolvem parte da fila da varredura.
+    const { data: children } = run
+      ? await supabase
+          .from("phone_normalization_runs")
+          .select("finished_at, counts")
+          .eq("workspace_id", workspaceId)
+          .eq("parent_run_id", run.id as string)
+          .eq("status", "done")
+          .order("created_at", { ascending: true })
+      : { data: [] };
+    const resolved: Record<string, Record<string, number>> = {};
+    let correctedAt: string | null = null;
+    for (const c of children ?? []) {
+      const r = ((c.counts as Record<string, unknown> | null)?.resolved ?? {}) as Record<
+        string,
+        Record<string, number>
+      >;
+      for (const [field, byRes] of Object.entries(r)) {
+        resolved[field] ??= {};
+        for (const [k, n] of Object.entries(byRes))
+          resolved[field][k] = (resolved[field][k] ?? 0) + n;
+      }
+      correctedAt = (c.finished_at as string | null) ?? correctedAt;
+    }
     const counts = (run?.counts ?? {}) as Record<string, unknown>;
     const { applied, ...byField } = counts as {
       applied?: Record<string, number>;
@@ -72,6 +102,8 @@ export const getPhoneSettings = createServerFn({ method: "GET" })
             criteria: run.criteria as string,
             counts: byField as Record<string, Record<string, number>>,
             applied: applied ?? {},
+            resolved,
+            correctedAt,
           } satisfies PhoneRunSummary)
         : null,
     };
@@ -118,6 +150,7 @@ export const listPhoneReview = createServerFn({ method: "GET" })
       })
       .eq("run_id", data.runId)
       .is("applied_at", null)
+      .is("resolved_at", null)
       .in("classification", data.classification ? [data.classification] : [...PHONE_REVIEW_CLASSES])
       .order("id")
       .range(data.page * pageSize, data.page * pageSize + pageSize - 1);
@@ -171,7 +204,10 @@ export const listPhoneReview = createServerFn({ method: "GET" })
           route: name ? phoneEntityRoute(table) : null,
           masked: maskPhone(r.original_value as string | null),
           classification: r.classification as string,
-          reason: (r.reason as string | null) ?? null,
+          // Motivo específico calculado na hora pela mesma regra (candidato mascarado).
+          reason:
+            phoneReviewDetail(r.original_value as string | null) ??
+            ((r.reason as string | null) || null),
         };
       }),
     };

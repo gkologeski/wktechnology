@@ -4,6 +4,9 @@ import {
   isValidE164,
   normalizePhone,
   normalizePhoneField,
+  isBlankableShortPhone,
+  phoneMainDigitCount,
+  sanitizePhoneText,
   splitPhoneCandidates,
   telHref,
 } from "./e164";
@@ -57,9 +60,20 @@ describe("normalizePhone — internacionais", () => {
   it("Itália preserva o zero significativo", () => {
     expect(e164("+39 06 1234 5678")).toBe("+390612345678");
   });
-  it("00 + DDI é tratado como internacional", () => {
-    expect(e164("00 1 202 555 0143", { defaultCountry: null })).toBe("+12025550143");
-    expect(e164("00351211234567", { defaultCountry: null })).toBe("+351211234567");
+  it("00/011 dependem do país: lidos pelo prefixo internacional DESSE país", () => {
+    expect(e164("00351211234567", { defaultCountry: "PT" })).toBe("+351211234567");
+    expect(e164("011 1 202 555 0143", { defaultCountry: "US" })).toBe("+12025550143");
+    // Brasil exige operadora (00 + CSP): "0021 …" é internacional; "00 …" não.
+    expect(e164("0021 1 202 555 0143")).toBe("+12025550143");
+    expect(e164("00 1 202 555 0143")).toBe("!ambiguous");
+  });
+  it("sem país, 00 não é presumido internacional (fica candidato para revisão)", () => {
+    const r = normalizePhone("00351211234567", { defaultCountry: null });
+    expect(r).toMatchObject({
+      status: "invalid",
+      reason: "region_unknown",
+      candidates: ["+351211234567"],
+    });
   });
   it("sem + e sem país de contexto: região desconhecida, nunca presume BR", () => {
     expect(e164("(11) 3333-4444", { defaultCountry: null })).toBe("!region_unknown");
@@ -132,5 +146,100 @@ describe("utilitários", () => {
   });
   it("tel: com ramal no formato RFC 3966", () => {
     expect(telHref("+551133334444", "22")).toBe("tel:+551133334444;ext=22");
+  });
+});
+
+describe("régua de até 4 dígitos (limpeza e dado novo)", () => {
+  it("0 a 3 dígitos e o limite de 4 ficam em branco; 5 não", () => {
+    for (const v of ["--", "0", "1", "12", "(11)", "+55", "1234", "12-34", "+5 5 1 1"]) {
+      expect(isBlankableShortPhone(v)).toBe(true);
+    }
+    expect(phoneMainDigitCount("1234")).toBe(4);
+    expect(isBlankableShortPhone("12345")).toBe(false);
+    expect(isBlankableShortPhone("")).toBe(false);
+    expect(isBlankableShortPhone(null)).toBe(false);
+  });
+  it("ramal não infla o comprimento e ramal sozinho não vira telefone", () => {
+    expect(phoneMainDigitCount("1234 ramal 5678")).toBe(4);
+    expect(isBlankableShortPhone("1234 ramal 5678")).toBe(true);
+    expect(isBlankableShortPhone("ramal 22")).toBe(true);
+    expect(normalizePhone("ramal 22", BR)).toMatchObject({ reason: "extension_only" });
+  });
+  it("dado novo com até 4 dígitos é recusado com mensagem clara", () => {
+    expect(e164("1234")).toBe("!too_short");
+    const r = normalizePhoneField("1234", BR);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/incompleto/i);
+  });
+  it("fixo e celular válidos não são afetados", () => {
+    expect(isBlankableShortPhone("+551133334444")).toBe(false);
+    expect(isBlankableShortPhone("+5511999998888")).toBe(false);
+    expect(e164("+551133334444")).toBe("+551133334444");
+    expect(e164("+5511999998888")).toBe("+5511999998888");
+  });
+});
+
+describe("normalizador v2 — artefatos, ramal, + e DDI repetido", () => {
+  it("ramal sai antes da divisão em vários números", () => {
+    expect(normalizePhone("(11) 3333-4444, ramal 22", BR)).toMatchObject({
+      status: "valid",
+      e164: "+551133334444",
+      extension: "22",
+    });
+    expect(normalizePhone("(11) 3333-4444; ramal 22", BR)).toMatchObject({ extension: "22" });
+  });
+  it("vários números continuam 'multiple' (sem escolher um)", () => {
+    expect(normalizePhone("11 3333-4444 / 11 99999-8888 ramal 2", BR)).toMatchObject({
+      reason: "multiple",
+    });
+  });
+  it("remove só artefatos sem perder dígitos", () => {
+    expect(e164("\u200b(11)\u00a03333\u20134444\ufeff")).toBe("+551133334444");
+    expect(e164("'+55 11 99999-8888")).toBe("+5511999998888");
+    expect(e164("Tel: +55 11 3333-4444")).toBe("+551133334444");
+    expect(e164("tel:+12025550143")).toBe("+12025550143");
+    expect(e164("Telefone (11) 3333-4444")).toBe("+551133334444");
+    expect(sanitizePhoneText("Telefone (11) 3333-4444").replace(/\D/g, "")).toBe("1133334444");
+    expect(e164("Celular 11 99999-8888")).toBe("!letters");
+  });
+  it("+ aceito só no início, admitindo '(' antes", () => {
+    expect(e164("(+55) 11 99999-8888")).toBe("+5511999998888");
+    expect(e164("55 (+11) 99999-8888")).toBe("!bad_plus");
+  });
+  it("DDI repetido só com evidência do registro e leitura única", () => {
+    const raw = "+55 55 11 99999-8888";
+    expect(normalizePhone(raw, BR)).toMatchObject({
+      status: "invalid",
+      reason: "repeated_country_code",
+      candidates: ["+5511999998888"],
+    });
+    expect(
+      normalizePhone(raw, { defaultCountry: "BR", allowRepeatedCountryCode: true }),
+    ).toMatchObject({ status: "valid", e164: "+5511999998888", via: "repeated_country_code" });
+    // Evidência de outro país não autoriza.
+    expect(
+      normalizePhone(raw, { defaultCountry: "PT", allowRepeatedCountryCode: true }),
+    ).toMatchObject({ reason: "repeated_country_code" });
+    // DDD 55 legítimo não é tratado como repetição.
+    expect(e164("+55 55 3222-1234")).toBe("+555532221234");
+  });
+  it("exterior: zero significativo e +1 compartilhado preservados", () => {
+    expect(e164("+39 06 1234 5678")).toBe("+390612345678");
+    expect(e164("+1 416 555 0143")).toBe("+14165550143");
+    expect(normalizePhone("+1 416 555 0143", BR)).toMatchObject({ country: "CA" });
+    expect(normalizePhone("+1 202 555 0143", BR)).toMatchObject({ country: "US" });
+  });
+  it("celular antigo sem 9 nunca ganha o 9", () => {
+    expect(e164("(51) 9301-6927")).toBe("!invalid");
+  });
+});
+
+describe("DDI repetido seguido de 0 não é corrigido", () => {
+  it("+55 55 0800… fica para revisão mesmo com evidência", () => {
+    const r = normalizePhone("+55 55 0800 591 1234", {
+      defaultCountry: "BR",
+      allowRepeatedCountryCode: true,
+    });
+    expect(r.status).toBe("invalid");
   });
 });

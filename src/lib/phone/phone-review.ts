@@ -1,3 +1,5 @@
+import { maskPhone, normalizePhone, sanitizePhoneText, splitPhoneExtension } from "./e164";
+
 /** Classes da fila de revisão de telefones (nunca aplicadas automaticamente). */
 export const PHONE_REVIEW_CLASSES = [
   "region_unknown",
@@ -10,11 +12,18 @@ export const PHONE_REVIEW_CLASSES = [
   "too_short",
   "conflict_duplicate",
   "extension_without_field",
+  "extension_only",
+  "repeated_country_code",
   "changed_since_dry_run",
 ] as const;
 export type PhoneReviewClass = (typeof PHONE_REVIEW_CLASSES)[number];
 
-export const PHONE_SAFE_CLASSES = ["safe_explicit", "safe_record_country", "placeholder"] as const;
+export const PHONE_SAFE_CLASSES = [
+  "safe_explicit",
+  "safe_record_country",
+  "placeholder",
+  "blank_short",
+] as const;
 
 export const PHONE_CLASS_LABEL: Record<string, string> = {
   safe_explicit: "Tinha código do país",
@@ -32,6 +41,9 @@ export const PHONE_CLASS_LABEL: Record<string, string> = {
   conflict_duplicate: "Duplicado com outro lead",
   extension_without_field: "Ramal sem campo",
   changed_since_dry_run: "Alterado depois da simulação",
+  blank_short: "Até 4 dígitos (em branco)",
+  extension_only: "Só ramal",
+  repeated_country_code: "Código do país repetido",
 };
 
 export const PHONE_FIELD_LABEL: Record<string, string> = {
@@ -76,28 +88,98 @@ export function phoneEntityName(r: {
   return r.name?.trim() || r.full_name?.trim() || person.trim() || r.email?.trim() || null;
 }
 
-/** Resumo por campo a partir das contagens da execução. */
+/**
+ * Resumo por campo a partir das contagens da varredura. `resolved` vem das
+ * correções posteriores (execuções filhas): por campo, quantos itens da fila
+ * foram resolvidos e como (`blank_short` = apagado por ter até 4 dígitos).
+ */
 export function summarizePhoneRun(
   counts: Record<string, Record<string, number>>,
   applied: Record<string, number>,
+  resolved: Record<string, Record<string, number>> = {},
 ) {
   const review = new Set<string>(PHONE_REVIEW_CLASSES);
   const rows = Object.entries(counts).map(([field, byClass]) => {
     const total = Object.values(byClass).reduce((a, b) => a + b, 0);
     const canonical = byClass.already_canonical ?? 0;
+    const res = resolved[field] ?? {};
+    const blanked = res.blank_short ?? 0;
+    const fixedLater = Object.entries(res)
+      .filter(([k]) => k !== "blank_short")
+      .reduce((a, [, n]) => a + n, 0);
     const pending = Object.entries(byClass)
       .filter(([k]) => review.has(k))
       .reduce((a, [, n]) => a + n, 0);
-    return { field, total, canonical, applied: applied[field] ?? 0, pending };
+    return {
+      field,
+      total,
+      canonical,
+      applied: (applied[field] ?? 0) + fixedLater,
+      blanked,
+      pending: Math.max(0, pending - blanked - fixedLater),
+    };
   });
   rows.sort((a, b) => b.total - a.total);
-  const sum = (k: "total" | "canonical" | "applied" | "pending") =>
+  const sum = (k: "total" | "canonical" | "applied" | "blanked" | "pending") =>
     rows.reduce((a, r) => a + r[k], 0);
   return {
     rows,
     total: sum("total"),
     canonical: sum("canonical"),
     applied: sum("applied"),
+    blanked: sum("blanked"),
     pending: sum("pending"),
   };
+}
+
+/** Celular BR antigo (DDD + 8 dígitos 6–9): candidato com o 9º dígito. NUNCA aplicado. */
+export function legacyMobileCandidate(v: string): string | null {
+  const { main } = splitPhoneExtension(sanitizePhoneText(v));
+  let d = main.replace(/\D/g, "");
+  if (d.startsWith("55") && d.length === 12) d = d.slice(2);
+  if (d.length !== 10 || !/^[1-9][1-9][6-9]/.test(d)) return null;
+  const cand = `+55${d.slice(0, 2)}9${d.slice(2)}`;
+  const r = normalizePhone(cand, { defaultCountry: null });
+  return r.status === "valid" && r.type === "mobile" ? cand : null;
+}
+
+/**
+ * Motivo específico de um item pendente, com candidato MASCARADO quando
+ * houver (hipótese para quem revisa; nada é aplicado). `country` só quando é
+ * evidência do próprio registro. Nulo quando não há detalhe melhor.
+ */
+export function phoneReviewDetail(
+  v: string | null | undefined,
+  country?: string | null,
+): string | null {
+  if (!v || !v.trim()) return null;
+  const legacy = legacyMobileCandidate(v);
+  if (legacy)
+    return `Celular antigo sem o 9º dígito; candidato ${maskPhone(legacy)} não aplicado (confirmar com o contato).`;
+  const r = normalizePhone(v, { defaultCountry: country ?? null });
+  if (r.status !== "invalid") return null;
+  const cand = r.candidates?.[0];
+  switch (r.reason) {
+    case "repeated_country_code":
+      return `Código do país repetido; candidato ${maskPhone(cand)} não aplicado (país do cadastro não confirma).`;
+    case "region_unknown": {
+      if (cand) return `Sem país no cadastro; leitura internacional ${maskPhone(cand)} é hipótese.`;
+      const br = normalizePhone(v, { defaultCountry: "BR" });
+      return br.status === "valid"
+        ? `Sem código do país e sem país no cadastro; leitura como Brasil (${maskPhone(br.e164)}) é só hipótese.`
+        : "Sem código do país e sem país no cadastro.";
+    }
+    case "ambiguous":
+      return `Mais de uma leitura possível (${(r.candidates ?? []).map(maskPhone).join(" ou ")}).`;
+    case "multiple":
+      return `${r.candidates?.length ?? 2} números no mesmo campo; nenhum escolhido automaticamente.`;
+    case "extension_only":
+      return "Só ramal, sem número.";
+    case "too_long":
+      return "Mais dígitos que o permitido para o país.";
+    case "invalid":
+      return "Não corresponde ao plano de numeração do país (código de área, prefixo ou tamanho).";
+    default:
+      return null;
+  }
 }
