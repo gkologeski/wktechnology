@@ -24,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { IsoDatePicker } from "@/components/iso-date-picker";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Select,
@@ -482,29 +483,29 @@ function ContractTableRow({
       <TableCell className="text-xs text-muted-foreground">
         {editable ? (
           <div className="flex items-center gap-1">
-            <Input
-              type="date"
-              defaultValue={dateOnly(c.starts_at)}
+            <IsoDatePicker
+              value={dateOnly(c.starts_at)}
               disabled={saving}
-              aria-label={`Início da vigência do contrato ${c.title}`}
-              className="h-8 w-32"
-              onBlur={(e) => {
-                const next = e.target.value || null;
-                if (next === (dateOnly(c.starts_at) || null)) return;
-                void patch({ starts_at: next }, "Início da vigência");
+              size="sm"
+              ariaLabel={`Início da vigência do contrato ${c.title}`}
+              className="h-8 w-36"
+              max={dateOnly(c.ends_at) || undefined}
+              onChange={(v) => {
+                if (v === (dateOnly(c.starts_at) || null)) return;
+                void patch({ starts_at: v }, "Início da vigência");
               }}
             />
             <span aria-hidden="true">→</span>
-            <Input
-              type="date"
-              defaultValue={dateOnly(c.ends_at)}
+            <IsoDatePicker
+              value={dateOnly(c.ends_at)}
               disabled={saving}
-              aria-label={`Fim da vigência do contrato ${c.title}`}
-              className="h-8 w-32"
-              onBlur={(e) => {
-                const next = e.target.value || null;
-                if (next === (dateOnly(c.ends_at) || null)) return;
-                void patch({ ends_at: next }, "Fim da vigência");
+              size="sm"
+              ariaLabel={`Fim da vigência do contrato ${c.title}`}
+              className="h-8 w-36"
+              min={dateOnly(c.starts_at) || undefined}
+              onChange={(v) => {
+                if (v === (dateOnly(c.ends_at) || null)) return;
+                void patch({ ends_at: v }, "Fim da vigência");
               }}
             />
           </div>
