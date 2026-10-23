@@ -1,3 +1,19 @@
+/**
+ * Seletor de DATA ÚNICA do TechERP (skill date-picker-br).
+ *
+ * - Atalhos: Personalizado → Ontem → Hoje → Amanhã. "Personalizado" não
+ *   altera o valor e mantém aberto; os demais aplicam e fecham.
+ * - Calendário de 1 mês, um clique escolhe e fecha; dia sempre no início
+ *   (`startOfDay`). Mês/ano em listas para saltar rápido (nascimento,
+ *   admissão, vencimentos distantes).
+ * - `min`/`max` valem para calendário E atalhos; `onClear` só quando o
+ *   campo é opcional; campo vazio nunca recebe "Hoje" sozinho.
+ * - Funciona dentro de janelas e gavetas (camada acima delas).
+ *
+ * Para valores "YYYY-MM-DD" use `IsoDatePicker`; data com hora usa
+ * `ActivityDateTimePicker`, que reaproveita `DatePickerPanel`.
+ * Uso e exceções: docs/architecture/date-fields.md.
+ */
 import * as React from "react";
 import { format, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -12,14 +28,149 @@ import { Separator } from "@/components/ui/separator";
 import {
   SINGLE_PRESETS,
   getSinglePresetDate,
+  isSinglePresetAllowed,
   presetForDate,
   type SinglePresetKey,
 } from "@/lib/date-single-presets";
+import { isDayWithin } from "@/lib/iso-date";
+
+/** Faixa de anos das listas de mês/ano quando o campo não tem limites. */
+const FIRST_YEAR = 1900;
+const YEARS_AHEAD = 50;
+
+export type DatePickerPanelProps = {
+  value?: Date | null;
+  /** Dia escolhido (início do dia) e o atalho correspondente. */
+  onSelect: (date: Date, presetKey: SinglePresetKey) => void;
+  onClear?: () => void;
+  min?: Date | null;
+  max?: Date | null;
+  defaultPreset?: SinglePresetKey;
+  /** Mês exibido quando não há valor (padrão: mês atual, ajustado aos limites). */
+  defaultMonth?: Date;
+};
+
+/** Atalhos + calendário (conteúdo do popover), compartilhado com data-hora. */
+export function DatePickerPanel({
+  value,
+  onSelect,
+  onClear,
+  min,
+  max,
+  defaultPreset = "custom",
+  defaultMonth,
+}: DatePickerPanelProps) {
+  const [preset, setPreset] = React.useState<SinglePresetKey>(
+    value ? presetForDate(value) : defaultPreset,
+  );
+  React.useEffect(() => {
+    if (value) setPreset(presetForDate(value));
+  }, [value]);
+
+  const bounds = { min, max };
+  const now = new Date();
+  const startMonth = min ?? new Date(FIRST_YEAR, 0, 1);
+  const endMonth = max ?? new Date(now.getFullYear() + YEARS_AHEAD, 11, 31);
+  const initialMonth =
+    value ??
+    defaultMonth ??
+    (min && !isDayWithin(now, { min }) ? min : max && !isDayWithin(now, { max }) ? max : now);
+
+  const disabledDays = [
+    ...(min ? [{ before: startOfDay(min) }] : []),
+    ...(max ? [{ after: startOfDay(max) }] : []),
+  ];
+
+  function applyPreset(key: SinglePresetKey) {
+    if (key === "custom") {
+      // Não aplica data: só libera o calendário para escolha livre.
+      setPreset("custom");
+      return;
+    }
+    if (!isSinglePresetAllowed(key, bounds)) return;
+    const d = getSinglePresetDate(key);
+    if (!d) return;
+    setPreset(key);
+    onSelect(d, key);
+  }
+
+  return (
+    <div className="flex flex-col sm:flex-row">
+      <div
+        className="flex flex-row flex-wrap gap-1 p-2 sm:w-40 sm:flex-col sm:flex-nowrap"
+        role="group"
+        aria-label="Atalhos de data"
+      >
+        {SINGLE_PRESETS.map((p) => {
+          const allowed = isSinglePresetAllowed(p.key, bounds);
+          return (
+            <Button
+              key={p.key}
+              type="button"
+              variant={preset === p.key ? "secondary" : "ghost"}
+              size="sm"
+              className="justify-start"
+              disabled={!allowed}
+              aria-pressed={preset === p.key}
+              onClick={() => applyPreset(p.key)}
+            >
+              {p.label}
+            </Button>
+          );
+        })}
+        {onClear ? (
+          <>
+            <Separator className="my-1 hidden sm:block" />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="justify-start text-muted-foreground"
+              onClick={onClear}
+            >
+              <X className="mr-1 h-3 w-3" aria-hidden="true" />
+              Limpar
+            </Button>
+          </>
+        ) : null}
+      </div>
+
+      <Separator orientation="vertical" className="hidden h-auto sm:block" />
+
+      <div className="pointer-events-auto p-2">
+        <Calendar
+          mode="single"
+          required
+          autoFocus
+          locale={ptBR}
+          numberOfMonths={1}
+          captionLayout="dropdown"
+          startMonth={startMonth}
+          endMonth={endMonth}
+          defaultMonth={initialMonth}
+          selected={value ?? undefined}
+          disabled={disabledDays.length ? disabledDays : undefined}
+          formatters={{
+            formatMonthDropdown: (d) => format(d, "MMM", { locale: ptBR }),
+          }}
+          onSelect={(d) => {
+            if (!d) return;
+            const picked = startOfDay(d);
+            if (!isDayWithin(picked, bounds)) return;
+            const key = presetForDate(picked);
+            setPreset(key);
+            onSelect(picked, key);
+          }}
+        />
+      </div>
+    </div>
+  );
+}
 
 export type DatePickerProps = {
-  value?: Date;
+  value?: Date | null;
   onChange: (date: Date, presetKey?: SinglePresetKey) => void;
-  /** Quando informado, exibe a ação "Limpar". */
+  /** Quando informado, exibe a ação "Limpar" (campo opcional). */
   onClear?: () => void;
   defaultPreset?: SinglePresetKey;
   placeholder?: string;
@@ -29,55 +180,66 @@ export type DatePickerProps = {
   size?: "sm" | "default";
   ariaLabel?: string;
   className?: string;
+  /** `id` do gatilho — use com `<Label htmlFor>`. */
+  id?: string;
+  disabled?: boolean;
+  /** Mostra o valor e não abre o calendário. */
+  readOnly?: boolean;
+  required?: boolean;
+  invalid?: boolean;
+  "aria-describedby"?: string;
+  min?: Date | null;
+  max?: Date | null;
 };
 
 export function DatePicker({
   value,
   onChange,
   onClear,
-  defaultPreset = "today",
+  defaultPreset = "custom",
   placeholder = "Selecionar data",
   align = "start",
   side = "bottom",
   size = "default",
   ariaLabel,
   className,
+  id,
+  disabled,
+  readOnly,
+  required,
+  invalid,
+  "aria-describedby": describedBy,
+  min,
+  max,
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false);
-  const [preset, setPreset] = React.useState<SinglePresetKey>(
-    value ? presetForDate(value) : defaultPreset,
-  );
-
-  React.useEffect(() => {
-    if (value) setPreset(presetForDate(value));
-  }, [value]);
-
-  function applyPreset(key: SinglePresetKey) {
-    if (key === "custom") {
-      // Não aplica data: só libera o calendário para escolha livre.
-      setPreset("custom");
-      return;
-    }
-    const d = getSinglePresetDate(key);
-    if (!d) return;
-    setPreset(key);
-    onChange(d, key);
-    setOpen(false);
-  }
-
   const label = value ? format(value, "dd/MM/yyyy", { locale: ptBR }) : placeholder;
+  const hasExternalLabel = !!id && !ariaLabel;
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={(v) => setOpen(readOnly || disabled ? false : v)}>
       <PopoverTrigger asChild>
         <Button
+          id={id}
           type="button"
           variant="outline"
           size={size}
-          aria-label={ariaLabel ?? "Selecionar data"}
+          disabled={disabled}
+          aria-label={
+            hasExternalLabel
+              ? undefined
+              : `${ariaLabel ?? "Selecionar data"}${value ? `: ${format(value, "dd/MM/yyyy")}` : ""}`
+          }
+          aria-haspopup="dialog"
+          aria-required={required || undefined}
+          aria-invalid={invalid || undefined}
+          aria-readonly={readOnly || undefined}
+          aria-describedby={describedBy}
           className={cn(
             "justify-start gap-2 font-normal",
             !value && "text-muted-foreground",
+            invalid && "border-destructive focus-visible:ring-destructive",
+            readOnly && "cursor-default",
             className,
           )}
         >
@@ -90,61 +252,26 @@ export function DatePicker({
         side={side}
         sideOffset={4}
         collisionPadding={8}
-        className="w-auto max-w-[95vw] p-0"
+        className="pointer-events-auto z-[180] w-auto max-w-[calc(100vw-1rem)] p-0"
       >
-        <div className="flex flex-col sm:flex-row">
-          <div className="flex flex-row gap-1 p-2 sm:w-40 sm:flex-col">
-            {SINGLE_PRESETS.map((p) => (
-              <Button
-                key={p.key}
-                type="button"
-                variant={preset === p.key ? "secondary" : "ghost"}
-                size="sm"
-                className="justify-start"
-                onClick={() => applyPreset(p.key)}
-              >
-                {p.label}
-              </Button>
-            ))}
-            {onClear ? (
-              <>
-                <Separator className="my-1 hidden sm:block" />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="justify-start text-muted-foreground"
-                  onClick={() => {
-                    onClear();
-                    setOpen(false);
-                  }}
-                >
-                  <X className="mr-1 h-3 w-3" aria-hidden="true" />
-                  Limpar
-                </Button>
-              </>
-            ) : null}
-          </div>
-
-          <Separator orientation="vertical" className="hidden sm:block h-auto" />
-
-          <div className="pointer-events-auto p-2">
-            <Calendar
-              mode="single"
-              locale={ptBR}
-              numberOfMonths={1}
-              defaultMonth={value ?? new Date()}
-              selected={value}
-              onSelect={(d) => {
-                if (!d) return;
-                const picked = startOfDay(d);
-                setPreset(presetForDate(picked));
-                onChange(picked, presetForDate(picked));
-                setOpen(false);
-              }}
-            />
-          </div>
-        </div>
+        <DatePickerPanel
+          value={value}
+          min={min}
+          max={max}
+          defaultPreset={defaultPreset}
+          onSelect={(d, key) => {
+            onChange(d, key);
+            setOpen(false);
+          }}
+          onClear={
+            onClear
+              ? () => {
+                  onClear();
+                  setOpen(false);
+                }
+              : undefined
+          }
+        />
       </PopoverContent>
     </Popover>
   );
