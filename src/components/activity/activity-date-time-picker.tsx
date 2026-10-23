@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CalendarDays, Check, Clock3, X } from "lucide-react";
+import { CalendarDays, Check, Clock3 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
