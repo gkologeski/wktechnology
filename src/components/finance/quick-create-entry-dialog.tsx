@@ -38,12 +38,13 @@ function addMonths(iso: string, n: number): string {
     Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0),
   ).getUTCDate();
   target.setUTCDate(Math.min(d, lastDay));
-  return formatIsoDate(target);
+  // Data montada em UTC de propósito: formata em UTC.
+  return target.toISOString().slice(0, 10);
 }
 function addDays(iso: string, n: number): string {
   const d = new Date(iso + "T00:00:00Z");
   d.setUTCDate(d.getUTCDate() + n);
-  return formatIsoDate(d);
+  return d.toISOString().slice(0, 10);
 }
 const money = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
