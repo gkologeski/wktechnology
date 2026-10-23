@@ -49,6 +49,8 @@ export type KanbanBoardProps<T extends { id: string }> = {
   readOnly?: boolean;
   /** Guarda de RBAC na UI; a RLS ainda valida no banco. */
   canUpdate?: boolean;
+  canUpdateRecord?: (id: string) => boolean;
+  canDeleteRecord?: (id: string) => boolean;
   /**
    * Update customizado da etapa (ex.: server function com regras próprias).
    * Quando informado, substitui o update direto na tabela.
@@ -86,6 +88,8 @@ export function KanbanBoard<T extends { id: string }>({
   invalidateKeys,
   readOnly = false,
   canUpdate = true,
+  canUpdateRecord,
+  canDeleteRecord,
   onMove,
   isLoading = false,
   error,
@@ -112,7 +116,7 @@ export function KanbanBoard<T extends { id: string }>({
   };
 
   const moveTo = async (id: string, stage: string) => {
-    if (!draggable) return;
+    if (!draggable || (canUpdateRecord && !canUpdateRecord(id))) return;
     const current = rows.find((r) => r.id === id) as Record<string, unknown> | undefined;
     if (current && current[stageField] === stage) return;
     setMovingId(id);
@@ -224,11 +228,15 @@ export function KanbanBoard<T extends { id: string }>({
                   {stageRows.map((row) => (
                     <Card
                       key={row.id}
-                      draggable={draggable}
+                      draggable={draggable && (!canUpdateRecord || canUpdateRecord(row.id))}
                       tabIndex={0}
                       data-kanban-card
                       data-kanban-column={col.value}
-                      onDragStart={() => draggable && setDraggingId(row.id)}
+                      onDragStart={() =>
+                        draggable &&
+                        (!canUpdateRecord || canUpdateRecord(row.id)) &&
+                        setDraggingId(row.id)
+                      }
                       onDragEnd={() => setDraggingId(null)}
                       className={`group relative p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                         draggable ? "cursor-grab active:cursor-grabbing" : ""
@@ -236,33 +244,35 @@ export function KanbanBoard<T extends { id: string }>({
                         selection.isSelected(row.id) ? "ring-2 ring-primary" : ""
                       }`}
                     >
-                      {draggable && columns.length > 1 && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="absolute right-1 top-1 h-6 w-6 opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
-                              aria-label="Mover para outra etapa"
-                            >
-                              <MoreVertical className="h-3.5 w-3.5" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Mover para</DropdownMenuLabel>
-                            {columns
-                              .filter((c) => c.value !== col.value)
-                              .map((c) => (
-                                <DropdownMenuItem
-                                  key={c.value}
-                                  onSelect={() => void moveTo(row.id, c.value)}
-                                >
-                                  {c.label}
-                                </DropdownMenuItem>
-                              ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
+                      {draggable &&
+                        (!canUpdateRecord || canUpdateRecord(row.id)) &&
+                        columns.length > 1 && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-1 top-1 h-6 w-6 opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
+                                aria-label="Mover para outra etapa"
+                              >
+                                <MoreVertical className="h-3.5 w-3.5" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Mover para</DropdownMenuLabel>
+                              {columns
+                                .filter((c) => c.value !== col.value)
+                                .map((c) => (
+                                  <DropdownMenuItem
+                                    key={c.value}
+                                    onSelect={() => void moveTo(row.id, c.value)}
+                                  >
+                                    {c.label}
+                                  </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
                       {selectable ? (
                         <div className="flex items-start gap-2">
                           <BoardCardCheckbox
@@ -295,8 +305,8 @@ export function KanbanBoard<T extends { id: string }>({
           entityLabel={entityLabel}
           assignColumn={assignColumn}
           activityEntity={activityEntity}
-          canUpdate={canUpdate}
-          canDelete={canDelete}
+          canUpdate={canUpdate && (!canUpdateRecord || selection.ids.every(canUpdateRecord))}
+          canDelete={canDelete && (!canDeleteRecord || selection.ids.every(canDeleteRecord))}
           bulkEditFields={bulkEditFields}
           onClear={selection.clear}
           onDone={invalidate}

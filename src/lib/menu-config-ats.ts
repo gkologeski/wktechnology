@@ -43,7 +43,16 @@ export const ATS_SIDEBAR_GROUPS: SidebarGroup[] = [
     label: "Recrutamento",
     items: [
       { title: "Vagas", url: "/jobs", icon: Briefcase },
-      { title: "Candidatos", url: "/candidates", icon: Users },
+      {
+        title: "Candidatos",
+        url: "/candidates",
+        icon: Users,
+        permissionAny: [
+          "techhire.candidates.view.workspace",
+          "techhire.candidates.view.team",
+          "techhire.candidates.view.own",
+        ],
+      },
       { title: "Pipelines", url: "/pipelines", icon: GitBranch },
       { title: "Scorecards", url: "/scorecards", icon: ClipboardCheck },
       { title: "Kits de Entrevista", url: "/interview-kits", icon: BookOpen },

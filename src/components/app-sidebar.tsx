@@ -1,3 +1,4 @@
+import { canSeeHrMenu } from "@/lib/access-control/hr-menu-access";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { ChevronDown, Search, Shield } from "lucide-react";
@@ -36,7 +37,13 @@ import { useActiveModuleDefinition } from "@/lib/modules/active-module-definitio
 export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { isAdmin, isManager } = useMyRole();
-  const { permissions: grantedPermissions } = usePermissions();
+  const {
+    permissions: grantedPermissions,
+    isLoading: permissionsLoading,
+    isError: permissionsError,
+    workspaceId,
+  } = usePermissions();
+  const hrMenuReady = !permissionsLoading && !permissionsError && !!workspaceId;
   const { isPlatformAdmin } = useIsPlatformAdmin();
 
   const { state } = useSidebar();
@@ -100,17 +107,24 @@ export function AppSidebar() {
       .map((g) => ({
         ...g,
         items: g.items
-          .filter((i) => canSee(i.need, perms, i.permissionAny))
+          .filter(
+            (i) =>
+              canSeeHrMenu(i.url, grantedPermissions, hrMenuReady) &&
+              canSee(i.need, perms, i.permissionAny),
+          )
           .map((i) => ({
             ...i,
             children: (i.children ?? []).filter(
-              (c) => canSee(c.need, perms, c.permissionAny) && matches(c.title),
+              (c) =>
+                canSeeHrMenu(c.url, grantedPermissions, hrMenuReady) &&
+                canSee(c.need, perms, c.permissionAny) &&
+                matches(c.title),
             ),
           }))
           .filter((i) => matches(i.title) || (i.children && i.children.length > 0)),
       }))
       .filter((g) => g.items.length > 0);
-  }, [query, isAdmin, isManager, isPlatformAdmin, grantedPermissions, groupsSource]);
+  }, [query, isAdmin, isManager, isPlatformAdmin, grantedPermissions, groupsSource, hrMenuReady]);
 
   const platformItems = SIDEBAR_PLATFORM_ITEMS.filter((i) => canSee(i.need, perms));
 

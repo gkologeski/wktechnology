@@ -25,21 +25,38 @@ export const PEOPLE_SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     label: "Pessoas",
     items: [
-      { title: "Pessoas", url: "/people", icon: Users },
+      {
+        title: "Pessoas",
+        url: "/people",
+        icon: Users,
+        permissionAny: [
+          "techpeople.people.view.workspace",
+          "techpeople.people.view.team",
+          "techpeople.people.view.own",
+        ],
+      },
       { title: "Meu time", url: "/people/my-team", icon: UserCog },
       {
         title: "Onboarding",
         url: "/people/onboarding",
         icon: ClipboardList,
         need: "manager",
-        permissionAny: MENU_PERMISSIONS.peopleOnboarding,
+        permissionAny: [
+          "techpeople.onboarding.view.workspace",
+          "techpeople.onboarding.view.team",
+          "techpeople.onboarding.view.own",
+        ],
       },
       {
         title: "Offboarding",
         url: "/people/offboarding",
         icon: UserMinus,
         need: "manager",
-        permissionAny: MENU_PERMISSIONS.peopleOnboarding,
+        permissionAny: [
+          "techpeople.offboarding.view.workspace",
+          "techpeople.offboarding.view.team",
+          "techpeople.offboarding.view.own",
+        ],
       },
       {
         title: "Documentos a vencer",
@@ -53,7 +70,11 @@ export const PEOPLE_SIDEBAR_GROUPS: SidebarGroup[] = [
         url: "/people/onboarding-templates",
         icon: LayoutTemplate,
         need: "manager",
-        permissionAny: MENU_PERMISSIONS.onboardingTemplates,
+        permissionAny: [
+          "techpeople.onboarding_templates.view.workspace",
+          "techpeople.onboarding_templates.view.team",
+          "techpeople.onboarding_templates.view.own",
+        ],
       },
       {
         title: "Importar do Google Forms",

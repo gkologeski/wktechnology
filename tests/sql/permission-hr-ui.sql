@@ -1,0 +1,36 @@
+\set ON_ERROR_STOP on
+DO $$ BEGIN IF current_database()<>'wk_head_rh_permission_test' THEN RAISE EXCEPTION 'isolated fixture required'; END IF; END $$;
+BEGIN;
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','90000000-0000-4000-8000-000000000004',true);
+SELECT set_config('request.jwt.claims','{}',true);
+DO $$ BEGIN IF EXISTS(SELECT 1 FROM hr_record_capabilities('people',ARRAY['95000000-0000-4000-8000-000000000002']::uuid[]) WHERE can_view OR can_update OR can_delete) THEN RAISE EXCEPTION 'ungranted capabilities'; END IF; RAISE NOTICE 'UI PASS 1: no keys denies all'; END $$;
+RESET ROLE;
+INSERT INTO permission_set_items SELECT '90000000-0000-4000-8000-000000000050',k FROM unnest(ARRAY['techpeople.people.view.workspace','techpeople.people.update.own','techhire.candidates.view.own','techhire.candidates.delete.own','techpeople.onboarding.view.own','techpeople.onboarding.update.own','techpeople.onboarding.create.own']) k;
+SET ROLE authenticated;
+DO $$ BEGIN IF NOT (SELECT can_update FROM hr_record_capabilities('people',ARRAY['95000000-0000-4000-8000-000000000002']::uuid[])) THEN RAISE EXCEPTION 'own denied'; END IF; RAISE NOTICE 'UI PASS 2: own update enabled'; END $$;
+DO $$ BEGIN IF (SELECT can_update FROM hr_record_capabilities('people',ARRAY['95000000-0000-4000-8000-000000000001']::uuid[])) THEN RAISE EXCEPTION 'other enabled'; END IF; RAISE NOTICE 'UI PASS 3: own key does not enable other row'; END $$;
+DO $$ BEGIN IF EXISTS(SELECT 1 FROM hr_record_capabilities('people',ARRAY['95000000-0000-4000-8000-000000000003']::uuid[]) WHERE can_view OR can_update OR can_delete) THEN RAISE EXCEPTION 'foreign enabled'; END IF; RAISE NOTICE 'UI PASS 4: other workspace denied'; END $$;
+DO $$ BEGIN IF NOT (SELECT can_delete AND NOT can_update FROM hr_record_capabilities('candidates',ARRAY['95100000-0000-4000-8000-000000000002']::uuid[])) THEN RAISE EXCEPTION 'wrong candidate actions'; END IF; RAISE NOTICE 'UI PASS 5: delete independent of update'; END $$;
+DO $$ BEGIN IF NOT (SELECT can_create_child AND can_update FROM hr_record_capabilities('onboarding_plans',ARRAY['95400000-0000-4000-8000-000000000001']::uuid[])) THEN RAISE EXCEPTION 'child denied'; END IF; RAISE NOTICE 'UI PASS 6: plan owner can create child'; END $$;
+RESET ROLE;
+-- Assign another owner's task without granting access to edit the parent plan.
+ALTER TABLE people_onboarding_tasks DISABLE TRIGGER zzz_hr_record_links_guard;
+UPDATE people_onboarding_tasks SET assignee_id='90000000-0000-4000-8000-000000000004' WHERE id='95500000-0000-4000-8000-000000000002';
+ALTER TABLE people_onboarding_tasks ENABLE TRIGGER zzz_hr_record_links_guard;
+SET ROLE authenticated;
+DO $$ BEGIN IF NOT (SELECT can_update AND NOT can_edit_settings FROM hr_record_capabilities('onboarding_tasks',ARRAY['95500000-0000-4000-8000-000000000002']::uuid[])) THEN RAISE EXCEPTION 'assignee settings escalation'; END IF; RAISE NOTICE 'UI PASS 7: task assignee status only'; END $$;
+DO $$ BEGIN IF (SELECT can_create_child FROM hr_record_capabilities('onboarding_plans',ARRAY['95400000-0000-4000-8000-000000000002']::uuid[])) THEN RAISE EXCEPTION 'assignee parent create'; END IF; RAISE NOTICE 'UI PASS 8: task assignee cannot create sibling'; END $$;
+DO $$ BEGIN IF EXISTS(SELECT 1 FROM hr_record_capabilities('people',ARRAY['ffffffff-ffff-4fff-8fff-ffffffffffff']::uuid[]) WHERE can_view OR can_update OR can_delete) THEN RAISE EXCEPTION 'missing enabled'; END IF; RAISE NOTICE 'UI PASS 9: nonexistent row denied'; END $$;
+DO $$ BEGIN IF (SELECT count(*) FROM hr_record_capabilities('people',ARRAY[]::uuid[]))<>0 THEN RAISE EXCEPTION 'empty response'; END IF; RAISE NOTICE 'UI PASS 10: empty batch'; END $$;
+DO $$ BEGIN BEGIN PERFORM hr_record_capabilities('unknown',ARRAY[]::uuid[]); RAISE EXCEPTION 'accepted unknown'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END; RAISE NOTICE 'UI PASS 11: unknown resource rejected'; END $$;
+DO $$ BEGIN BEGIN PERFORM hr_record_capabilities('people',array_fill('ffffffff-ffff-4fff-8fff-ffffffffffff'::uuid,ARRAY[201])); RAISE EXCEPTION 'accepted unbounded'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END; RAISE NOTICE 'UI PASS 12: bounded request'; END $$;
+SELECT set_config('request.jwt.claims','{"session_id":"94000000-0000-4000-8000-000000000001"}',true);
+DO $$ BEGIN IF EXISTS(SELECT 1 FROM hr_record_capabilities('people',ARRAY['95000000-0000-4000-8000-000000000002']::uuid[]) WHERE can_update OR can_delete OR can_create_child) THEN RAISE EXCEPTION 'ViewAs writable'; END IF; RAISE NOTICE 'UI PASS 13: read only View As'; END $$;
+RESET ROLE; SELECT set_config('request.jwt.claims','{}',true);
+UPDATE workspace_members SET status='inactive' WHERE user_id='90000000-0000-4000-8000-000000000004';
+SET ROLE authenticated;
+DO $$ BEGIN IF EXISTS(SELECT 1 FROM hr_record_capabilities('people',ARRAY['95000000-0000-4000-8000-000000000002']::uuid[]) WHERE can_view OR can_update OR can_delete) THEN RAISE EXCEPTION 'inactive enabled'; END IF; RAISE NOTICE 'UI PASS 14: inactive denied'; END $$;
+RESET ROLE; SET ROLE anon;
+DO $$ BEGIN BEGIN PERFORM hr_record_capabilities('people',ARRAY[]::uuid[]); RAISE EXCEPTION 'anon accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END; RAISE NOTICE 'UI PASS 15: anon execution denied'; END $$;
+ROLLBACK;

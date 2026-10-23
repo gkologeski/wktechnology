@@ -1,3 +1,4 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { Trash2, ExternalLink } from "lucide-react";
@@ -27,16 +28,19 @@ export function CandidatesTableView({
   statuses,
   selection,
   refresh,
-  canAny,
+  canUpdate,
+  canDelete,
   onDelete,
 }: {
   visibleRows: Cand[];
   statuses: Record<string, DerivedCandidateStatus>;
   selection: ReturnType<typeof useGridSelection<Cand & { id: string }>>;
   refresh: () => void;
-  canAny: (perms: string[]) => boolean;
+  canUpdate: (id: string) => boolean;
+  canDelete: (id: string) => boolean;
   onDelete: (id: string) => void;
 }) {
+  const { can } = usePermissions();
   const columns = useMemo<GridColumnDef<Cand>[]>(
     () => [
       {
@@ -119,6 +123,7 @@ export function CandidatesTableView({
       {selection.hasSelection && (
         <GridBulkBar
           table="ats_candidates"
+          assignColumn={can("techhire.candidates.assign.workspace") ? "assigned_to" : null}
           ids={selection.ids}
           rows={selection.selectedRows}
           entityLabel="candidato(s)"
@@ -126,8 +131,8 @@ export function CandidatesTableView({
           onDone={refresh}
           totalMatching={visibleRows.length}
           onSelectAll={selectAllFiltered}
-          canUpdate={canAny(["techhire.candidates.update.workspace"])}
-          canDelete={canAny(["techhire.candidates.delete.workspace"])}
+          canUpdate={selection.ids.length > 0 && selection.ids.every(canUpdate)}
+          canDelete={selection.ids.length > 0 && selection.ids.every(canDelete)}
           bulkEditFields={[
             { name: "location", label: "Localização", type: "text" },
             { name: "current_position", label: "Cargo atual", type: "text" },
@@ -194,6 +199,7 @@ export function CandidatesTableView({
                       size="icon"
                       className="h-7 w-7 opacity-0 group-hover:opacity-100"
                       aria-label={`Excluir candidato ${c.full_name}`}
+                      disabled={!canDelete(c.id as string)}
                       onClick={() => onDelete(c.id as string)}
                     >
                       <Trash2 className="h-3.5 w-3.5" aria-hidden />

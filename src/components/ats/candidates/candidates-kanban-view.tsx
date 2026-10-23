@@ -28,6 +28,7 @@ export function CandidatesKanbanView({
   setDraggingId,
   dragOverCol,
   setDragOverCol,
+  canUpdate,
   archiveCandidate,
   queryClient,
   onNeedsAssociation,
@@ -41,6 +42,7 @@ export function CandidatesKanbanView({
   setDraggingId: (id: string | null) => void;
   dragOverCol: DerivedCandidateStatus | null;
   setDragOverCol: (s: DerivedCandidateStatus | null) => void;
+  canUpdate: (id: string) => boolean;
   archiveCandidate: ReturnType<
     typeof import("@tanstack/react-start").useServerFn<typeof setCandidateArchived>
   >;
@@ -80,6 +82,7 @@ export function CandidatesKanbanView({
             const isOver = dragOverCol === s;
 
             const handleDrop = async (candidateId: string) => {
+              if (!canUpdate(candidateId)) return;
               const candidate = rows.find((r) => r.id === candidateId);
               if (!candidate) return;
               const from = (statuses[candidateId] ?? "new") as DerivedCandidateStatus;
@@ -177,7 +180,7 @@ export function CandidatesKanbanView({
                         params={{ id: cid }}
                         data-kanban-card
                         data-kanban-column={s}
-                        draggable
+                        draggable={canUpdate(c.id as string)}
                         onDragStart={(e) => {
                           e.dataTransfer.effectAllowed = "move";
                           e.dataTransfer.setData("text/plain", cid);

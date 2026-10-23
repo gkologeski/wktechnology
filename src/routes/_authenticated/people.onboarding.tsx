@@ -1,3 +1,5 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { HrScreenAccess, HrAccessError } from "@/components/hr-access";
 // /people/onboarding — visão agregada de planos de onboarding em andamento.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -44,15 +46,30 @@ const STATUS_TONE: Record<OnbPlanStatus, string> = {
 };
 
 function OnboardingListPage() {
+  return (
+    <HrScreenAccess resources={["techpeople.onboarding"]}>
+      <OnboardingListPageContent />
+    </HrScreenAccess>
+  );
+}
+
+function OnboardingListPageContent() {
+  const { workspaceId } = usePermissions();
   const fn = useServerFn(listOnbPlans);
-  const { data = [], isLoading } = useQuery({
-    queryKey: ["ws-onb-plans", "onboarding"],
+  const {
+    data = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ["ws-onb-plans", "onboarding", workspaceId],
     queryFn: () => fn({ data: {} }),
     staleTime: 30_000,
   });
 
   const rows = data.filter((p) => p.kind === "onboarding");
 
+  if (isError) return <HrAccessError retry={() => void refetch()} />;
   return (
     <div className="container max-w-6xl mx-auto p-6 space-y-4">
       <PageHeader title="Onboarding" description="Planos de integração ativos no workspace." />

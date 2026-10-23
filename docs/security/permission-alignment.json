@@ -701,6 +701,29 @@
       "exceptions": [
         "trusted service-role/internal SQL access retained; no role grants"
       ]
+    },
+    {
+      "operation": "public.hr_record_capabilities(text,uuid[])",
+      "kind": "metadata_exception",
+      "route_consumers": [
+        "/people",
+        "/people/$id",
+        "/people/onboarding",
+        "/people/offboarding",
+        "/people/onboarding-templates",
+        "/candidates",
+        "/candidates/$id"
+      ],
+      "actor": "authenticated caller; active membership and selected workspace resolved per row",
+      "resource": "people/candidates/onboarding plans/tasks/templates action booleans only",
+      "action": "inspect_own_effective_capabilities",
+      "permission_keys": [],
+      "scope": "at most 200 UUIDs per request; no caller/workspace override; unreadable or missing rows return false",
+      "server": "getHrCapabilities + requireSupabaseAuth + strict resource/UUID limits",
+      "database": "SECURITY INVOKER; delegates to 0193 hr_record_access; task settings require parent update",
+      "exception_reason": "Only caller-bound booleans, no business row contents or grants; every underlying action remains checked independently by server and RLS.",
+      "migration": "0194",
+      "state": "applied_tested_ui_pending_publication"
     }
   ],
   "rules": [

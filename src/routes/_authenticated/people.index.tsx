@@ -1,3 +1,5 @@
+import { useHrCapabilities } from "@/lib/access-control/use-hr-capabilities";
+import { HrScreenAccess, HrAccessError } from "@/components/hr-access";
 // /people — lista de pessoas (TechPeople).
 import { PersonOptionCombobox } from "@/components/people/person-option-combobox";
 import { PersonRolePicker } from "@/components/people/person-role-picker";
@@ -140,6 +142,15 @@ function initials(name: string) {
 }
 
 function PeoplePage() {
+  return (
+    <HrScreenAccess resources={["techpeople.people"]}>
+      <PeoplePageContent />
+    </HrScreenAccess>
+  );
+}
+
+function PeoplePageContent() {
+  const { canAny, workspaceId } = usePermissions();
   const qc = useQueryClient();
   const list = useServerFn(listPeople);
   const upsertFn = useServerFn(upsertPerson);
@@ -149,8 +160,13 @@ function PeoplePage() {
   const [openNew, setOpenNew] = useState(false);
   const { assignee, setAssignee, filterRows } = useAssigneeFilter();
 
-  const { data: allRows = [], isLoading } = useQuery({
-    queryKey: ["people", { search, status }],
+  const {
+    data: allRows = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ["people", { search, status }, workspaceId],
     queryFn: () =>
       list({
         data: {
@@ -196,7 +212,11 @@ function PeoplePage() {
   });
 
   // Seleção múltipla / ações em massa (padrão de grids).
-  const { canAny } = usePermissions();
+  const access = useHrCapabilities(
+    "people",
+    allRows.map((p) => p.id),
+  );
+  const canCreate = canAny(["techpeople.people.create.workspace", "techpeople.people.create.own"]);
   const selection = useGridSelection(rows as Array<(typeof rows)[number] & { id: string }>);
   const selectAllFiltered = () => selection.setSelectedIds(new Set(rows.map((r) => r.id)));
 
@@ -204,11 +224,9 @@ function PeoplePage() {
   const navigate = Route.useNavigate();
   const setView = (v: "table" | "kanban") =>
     void navigate({ to: ".", search: (prev) => ({ ...prev, view: v }) });
-  const canUpdatePerson = canAny([
-    "techpeople.people.update.workspace",
-    "techpeople.people.update.team",
-    "techpeople.people.update.own",
-  ]);
+  const canUpdatePerson = rows.some((p) => access.for(p.id).can_update);
+
+  if (isError) return <HrAccessError retry={() => void refetch()} />;
 
   return (
     <div className="container max-w-7xl mx-auto p-6 space-y-6">
@@ -227,7 +245,7 @@ function PeoplePage() {
                 <ClipboardList className="h-4 w-4 mr-2" /> Modelos
               </Link>
             </Button>
-            <Button onClick={() => setOpenNew(true)}>
+            <Button disabled={!canCreate} onClick={() => setOpenNew(true)}>
               <Plus className="h-4 w-4 mr-2" /> Nova pessoa
             </Button>
           </div>
@@ -264,6 +282,7 @@ function PeoplePage() {
       {view === "table" && selection.hasSelection && (
         <GridBulkBar
           table="people"
+          assignColumn={canAny(["techpeople.people.update.workspace"]) ? "assigned_to" : null}
           ids={selection.ids}
           rows={selection.selectedRows}
           entityLabel="pessoa(s)"
@@ -271,12 +290,12 @@ function PeoplePage() {
           onDone={() => void qc.invalidateQueries({ queryKey: ["people"] })}
           totalMatching={rows.length}
           onSelectAll={selectAllFiltered}
-          canUpdate={canAny([
-            "techpeople.people.update.workspace",
-            "techpeople.people.update.team",
-            "techpeople.people.update.own",
-          ])}
-          canDelete={canAny(["techpeople.people.delete.workspace", "techpeople.people.delete.own"])}
+          canUpdate={
+            selection.ids.length > 0 && selection.ids.every((id) => access.for(id).can_update)
+          }
+          canDelete={
+            selection.ids.length > 0 && selection.ids.every((id) => access.for(id).can_delete)
+          }
           bulkEditFields={PEOPLE_BULK_EDIT_FIELDS}
         />
       )}
@@ -285,11 +304,14 @@ function PeoplePage() {
         <KanbanBoard
           rows={rows as Array<(typeof rows)[number] & { id: string }>}
           table="people"
+          assignColumn={canAny(["techpeople.people.update.workspace"]) ? "assigned_to" : null}
           stageField="status"
           selectable
           bulkEditFields={PEOPLE_BULK_EDIT_FIELDS}
           entityLabel="pessoa"
-          canDelete={canAny(["techpeople.people.delete.workspace", "techpeople.people.delete.own"])}
+          canDelete={rows.some((p) => access.for(p.id).can_delete)}
+          canUpdateRecord={(id) => access.for(id).can_update}
+          canDeleteRecord={(id) => access.for(id).can_delete}
           canUpdate={canUpdatePerson}
           isLoading={isLoading}
           invalidateKeys={[["people"]]}
@@ -492,7 +514,7 @@ function PeoplePage() {
       )}
 
       <NewPersonDialog
-        open={openNew}
+        open={openNew && canCreate}
         onOpenChange={setOpenNew}
         onSaved={() => {
           qc.invalidateQueries({ queryKey: ["people"] });

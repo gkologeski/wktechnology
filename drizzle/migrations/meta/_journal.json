@@ -1359,6 +1359,13 @@
       "when": 1792782684901,
       "tag": "0193_hr_action_scope_alignment",
       "breakpoints": true
+    },
+    {
+      "idx": 194,
+      "version": "7",
+      "when": 1792788396400,
+      "tag": "0194_hr_ui_capabilities",
+      "breakpoints": true
     }
   ]
 }

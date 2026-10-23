@@ -1,3 +1,6 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { HrScreenAccess, HrRecordAccess, HrAccessError } from "@/components/hr-access";
+import { useHrCapabilities } from "@/lib/access-control/use-hr-capabilities";
 // /people/$id — ficha da pessoa (TechPeople).
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
@@ -100,27 +103,39 @@ function initials(name: string) {
 
 function PersonDetailPage() {
   const { id } = Route.useParams();
+  return (
+    <HrScreenAccess resources={["techpeople.people"]}>
+      <HrRecordAccess resource="people" id={id}>
+        <PersonDetailPageContent />
+      </HrRecordAccess>
+    </HrScreenAccess>
+  );
+}
+
+function PersonDetailPageContent() {
+  const { workspaceId } = usePermissions();
+  const { id } = Route.useParams();
   const qc = useQueryClient();
   const getFn = useServerFn(getPerson);
   const upsertFn = useServerFn(upsertPerson);
   const listDocs = useServerFn(listPersonDocuments);
   const listTimeline = useServerFn(listPersonTimeline);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["person", id],
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["person", id, workspaceId],
     queryFn: () => getFn({ data: { id } }),
     staleTime: 15_000,
   });
 
   const { data: documents = [] } = useQuery({
-    queryKey: ["person-docs", id],
+    queryKey: ["person-docs", id, workspaceId],
     queryFn: () => listDocs({ data: { person_id: id } }),
     enabled: !!data,
     staleTime: 30_000,
   });
 
   const { data: timeline = [] } = useQuery({
-    queryKey: ["person-timeline", id],
+    queryKey: ["person-timeline", id, workspaceId],
     queryFn: () => listTimeline({ data: { person_id: id, limit: 50 } }),
     enabled: !!data,
     staleTime: 30_000,
@@ -134,9 +149,11 @@ function PersonDetailPage() {
         </Link>
       </Button>
 
-      {isLoading || !data ? (
+      {isError ? (
+        <HrAccessError retry={() => void refetch()} />
+      ) : isLoading ? (
         <div className="text-sm text-muted-foreground">Carregando…</div>
-      ) : (
+      ) : data ? (
         <PersonForm
           person={data}
           documents={documents}
@@ -149,6 +166,8 @@ function PersonDetailPage() {
           }}
           upsert={upsertFn}
         />
+      ) : (
+        <p role="alert">Pessoa indisponível ou sem acesso.</p>
       )}
     </div>
   );
@@ -170,7 +189,8 @@ function PersonForm({
   upsert: ReturnType<typeof useServerFn<typeof upsertPerson>>;
 }) {
   const p = person;
-  const canWrite = true; // RLS bloqueia writes de não-admins — botão aparece, servidor decide.
+  const access = useHrCapabilities("people", [p.id]);
+  const canWrite = access.for(p.id).can_update;
   const canViewSensitive = !!person.can_view_sensitive;
 
   const [fullName, setFullName] = useState(p.full_name);
@@ -639,7 +659,9 @@ function PersonForm({
           {p.status === "offboarding" || p.status === "terminated" ? (
             <OffboardingCompliancePanel personId={p.id} />
           ) : null}
-          <OnboardingPanel personId={p.id} canWrite={canWrite} />
+          <HrScreenAccess resources={["techpeople.onboarding", "techpeople.offboarding"]}>
+            <OnboardingPanel personId={p.id} />
+          </HrScreenAccess>
         </TabsContent>
 
         {canViewSensitive ? (

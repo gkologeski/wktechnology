@@ -188,3 +188,45 @@ da tentativa anterior. Não é mantido como bloqueio atual com base em informaç
 antiga. As regras 15/21/26 e os 20 contratos deste lote passam a aplicado,
 publicado conforme confirmação do usuário e testado SQL. O aceite funcional no
 navegador permanece pendente; o restante da etapa 3 continua aberto.
+
+
+## Etapa 4 — primeiro lote (0194)
+
+Escopo deste lote: menus/URLs de pessoas, candidatos, onboarding, offboarding e
+modelos; ações dos cadastros principais de pessoa/candidato e checklists.
+Não conclui toda a etapa 4 nem as frentes restantes de servidor/RLS da etapa 3.
+
+- `HrScreenAccess` barra o carregamento por URL sem view efetivo, durante carga,
+  falha da resolução ou ausência de workspace. `HrRecordAccess` exige também o
+  predicado de leitura da linha. Menu de desligamento deixa de reutilizar a chave
+  de admissão; os cinco menus deste lote não usam fallback por cargo/admin.
+- `hr_record_capabilities` consulta os predicados já aplicados em 0193. Retorna
+  somente booleanos do próprio chamador, até 200 UUIDs por chamada. Não aceita
+  outro usuário/workspace nem abre acesso a linhas. SECURITY INVOKER e EXECUTE
+  apenas authenticated; helper não concede permissões aos cargos.
+- Criação exige create (não update); edição/exclusão consultam a linha. Seleção
+  múltipla só oferece ação quando todos os selecionados permitem a ação. Kanban
+  de pessoas verifica cada card; candidato só pode ser arrastado se puder editar.
+- Plano: criar, alterar andamento, excluir e criar tarefas são independentes.
+  Tipo admissão/desligamento só aparece com as respectivas chaves. Troca do tipo
+  limpa o modelo anterior. Executor pode alterar andamento da tarefa, mas editar
+  configurações exige update do plano e exclusão usa sua própria permissão.
+- Cache de dados tocados e capacidades inclui workspace; formulários são
+  desmontados na troca de workspace/registro. Falhas não são apresentadas como
+  lista vazia ou carregamento infinito. Não cria nova entrada de data/telefone/
+  e-mail; preserva os componentes de validação já existentes.
+
+Validação: 15 cenários SQL novos + 274 anteriores (289); 25 testes novos de
+interface/menu/borda + suíte integral (1.559). O gate verify passou. Teste SQL
+no banco ativo confirmou Priscila/Head RH lendo e editando por capacidades,
+registro ausente e não membro negados e anon sem EXECUTE. Não emite sessão de
+usuário: isso é simulação de identidade SQL, não aceite no navegador. Hashes de
+186 pessoas, 14 candidatos, quatro planos, tarefas/modelos vazios, 927 overrides,
+6.653 presets e 244 memberships preservados. Migração 0194 aplicada.
+
+Permanecem fora deste lote: granularidade por linha/ação das demais abas da
+ficha (documentos, metas, 1:1, avaliações, alocações, benefícios, psicossocial,
+incidentes), ações de comunicação/pools/vagas/LGPD do candidato e demais módulos.
+Não interpretar a proteção de perfil/onboarding como aceite desses painéis.
+Aceite funcional real com sessão autenticada continua pendente (etapa 5).
+Estado final de build/sincronização/publicação fica nas evidências deste lote.

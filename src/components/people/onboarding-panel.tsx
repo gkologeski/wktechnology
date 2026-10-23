@@ -1,3 +1,6 @@
+import { HrAccessError } from "@/components/hr-access";
+import { useHrCapabilities } from "@/lib/access-control/use-hr-capabilities";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 // TechPeople · Sprint 6 — Onboarding & Offboarding panel (ficha da pessoa)
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
@@ -96,17 +99,32 @@ function TaskStatusIcon({ status }: { status: OnbTaskStatus }) {
   }
 }
 
-export function OnboardingPanel({ personId, canWrite }: { personId: string; canWrite: boolean }) {
+export function OnboardingPanel({ personId }: { personId: string }) {
+  const { canAny, workspaceId } = usePermissions();
+  const allowedKinds = ONB_KINDS.filter(
+    (kind) =>
+      canAny([`techpeople.${kind}.create.workspace`, `techpeople.${kind}.create.own`]) &&
+      canAny(["workspace", "team", "own"].map((s) => `techpeople.${kind}.view.${s}`)),
+  );
   const qc = useQueryClient();
   const listFn = useServerFn(listOnbPlans);
   const delPlanFn = useServerFn(deleteOnbPlan);
 
-  const { data: plans = [] } = useQuery({
-    queryKey: ["person-onb-plans", personId],
+  const {
+    data: plans = [],
+    isError,
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ["person-onb-plans", personId, workspaceId],
     queryFn: () => listFn({ data: { person_id: personId } }),
     staleTime: 15_000,
   });
 
+  const access = useHrCapabilities(
+    "onboarding_plans",
+    plans.map((p) => p.id),
+  );
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -119,8 +137,11 @@ export function OnboardingPanel({ personId, canWrite }: { personId: string; canW
     onError: (e: Error) => toast.error(e.message),
   });
 
+  if (isError) return <HrAccessError retry={() => void refetch()} />;
+  if (isLoading) return <p role="status">Carregando planos…</p>;
   return (
     <div className="space-y-4">
+      {access.isError && <HrAccessError retry={() => void access.refetch()} />}
       <Card>
         <CardHeader className="flex flex-row items-start justify-between gap-3">
           <div>
@@ -131,7 +152,7 @@ export function OnboardingPanel({ personId, canWrite }: { personId: string; canW
               Checklists de admissão e desligamento aplicados a esta pessoa.
             </CardDescription>
           </div>
-          {canWrite ? (
+          {allowedKinds.length > 0 ? (
             <Button size="sm" onClick={() => setOpen(true)}>
               <Plus className="h-4 w-4 mr-2" /> Novo plano
             </Button>
@@ -175,7 +196,7 @@ export function OnboardingPanel({ personId, canWrite }: { personId: string; canW
                         <Badge className={planStatusTone[plan.status]} variant="outline">
                           {ONB_PLAN_STATUS_LABELS[plan.status]}
                         </Badge>
-                        {canWrite ? (
+                        {access.for(plan.id).can_delete ? (
                           <Button
                             variant="ghost"
                             size="icon"
@@ -195,7 +216,7 @@ export function OnboardingPanel({ personId, canWrite }: { personId: string; canW
                   </CardHeader>
                   {isExpanded ? (
                     <CardContent className="p-4 pt-2">
-                      <PlanTasks planId={plan.id} plan={plan} canWrite={canWrite} />
+                      <PlanTasks planId={plan.id} plan={plan} />
                     </CardContent>
                   ) : null}
                 </Card>
@@ -205,9 +226,11 @@ export function OnboardingPanel({ personId, canWrite }: { personId: string; canW
         </CardContent>
       </Card>
 
-      {open ? (
+      {open && allowedKinds.length > 0 ? (
         <NewPlanDialog
           personId={personId}
+          allowedKinds={allowedKinds}
+          key={allowedKinds.join(",")}
           onClose={() => setOpen(false)}
           onCreated={() => {
             qc.invalidateQueries({ queryKey: ["person-onb-plans", personId] });
@@ -219,15 +242,8 @@ export function OnboardingPanel({ personId, canWrite }: { personId: string; canW
   );
 }
 
-function PlanTasks({
-  planId,
-  plan,
-  canWrite,
-}: {
-  planId: string;
-  plan: OnbPlanRow;
-  canWrite: boolean;
-}) {
+function PlanTasks({ planId, plan }: { planId: string; plan: OnbPlanRow }) {
+  const { workspaceId } = usePermissions();
   const qc = useQueryClient();
   const getFn = useServerFn(getOnbPlanWithTasks);
   const setStatusFn = useServerFn(setOnbTaskStatus);
@@ -235,12 +251,16 @@ function PlanTasks({
   const delFn = useServerFn(deleteOnbTask);
   const updatePlanFn = useServerFn(updateOnbPlan);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["onb-plan", planId],
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["onb-plan", planId, workspaceId],
     queryFn: () => getFn({ data: { id: planId } }),
     staleTime: 5_000,
   });
 
+  const planAccess = useHrCapabilities("onboarding_plans", [planId]);
+  const taskAccess = useHrCapabilities("onboarding_tasks", data?.tasks.map((t) => t.id) ?? []);
+  const canWrite = planAccess.for(planId).can_update;
+  const canCreateTask = planAccess.for(planId).can_create_child;
   const [editingTask, setEditingTask] = useState<OnbTaskRow | "new" | null>(null);
 
   const invalidate = () => {
@@ -272,14 +292,24 @@ function PlanTasks({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (isLoading || !data) {
+  if (isError) return <HrAccessError retry={() => void refetch()} />;
+  if (isLoading) {
     return <div className="text-xs text-muted-foreground">Carregando…</div>;
   }
 
+  if (!data) return <p role="alert">Plano indisponível ou sem acesso.</p>;
   const tasks = data.tasks;
 
   return (
     <div className="space-y-3">
+      {(planAccess.isError || taskAccess.isError) && (
+        <HrAccessError
+          retry={() => {
+            void planAccess.refetch();
+            void taskAccess.refetch();
+          }}
+        />
+      )}
       <div className="flex items-center gap-2 flex-wrap">
         <Label className="text-xs text-muted-foreground">Status do plano:</Label>
         <Select
@@ -304,7 +334,7 @@ function PlanTasks({
           </span>
         ) : null}
         <div className="ml-auto">
-          {canWrite ? (
+          {canCreateTask ? (
             <Button size="sm" variant="outline" onClick={() => setEditingTask("new")}>
               <Plus className="h-4 w-4 mr-2" /> Nova tarefa
             </Button>
@@ -327,12 +357,13 @@ function PlanTasks({
                 type="button"
                 className={`mt-0.5 ${taskStatusTone[t.status]}`}
                 onClick={() =>
-                  canWrite &&
+                  taskAccess.for(t.id).can_update &&
                   setStatusMut.mutate({
                     id: t.id,
                     status: t.status === "done" ? "pending" : "done",
                   })
                 }
+                disabled={!taskAccess.for(t.id).can_update || setStatusMut.isPending}
                 title={ONB_TASK_STATUS_LABELS[t.status]}
               >
                 <TaskStatusIcon status={t.status} />
@@ -351,7 +382,7 @@ function PlanTasks({
               </div>
               <Select
                 value={t.status}
-                disabled={!canWrite}
+                disabled={!taskAccess.for(t.id).can_update || setStatusMut.isPending}
                 onValueChange={(v) => setStatusMut.mutate({ id: t.id, status: v as OnbTaskStatus })}
               >
                 <SelectTrigger className="h-7 w-[130px] text-xs">
@@ -365,8 +396,8 @@ function PlanTasks({
                   ))}
                 </SelectContent>
               </Select>
-              {canWrite ? (
-                <>
+              <>
+                {taskAccess.for(t.id).can_edit_settings ? (
                   <Button
                     variant="ghost"
                     size="icon"
@@ -375,6 +406,8 @@ function PlanTasks({
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
+                ) : null}
+                {taskAccess.for(t.id).can_delete ? (
                   <Button
                     variant="ghost"
                     size="icon"
@@ -385,14 +418,15 @@ function PlanTasks({
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
-                </>
-              ) : null}
+                ) : null}
+              </>
             </div>
           ))}
         </div>
       )}
 
-      {editingTask ? (
+      {editingTask &&
+      (editingTask === "new" ? canCreateTask : taskAccess.for(editingTask.id).can_edit_settings) ? (
         <TaskDialog
           planId={planId}
           task={editingTask === "new" ? null : editingTask}
@@ -411,26 +445,32 @@ function PlanTasks({
 
 function NewPlanDialog({
   personId,
+  allowedKinds,
   onClose,
   onCreated,
 }: {
   personId: string;
+  allowedKinds: OnbKind[];
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const { workspaceId, canAny } = usePermissions();
   const listTplFn = useServerFn(listOnbTemplates);
   const createFn = useServerFn(createOnbPlan);
 
-  const [kind, setKind] = useState<OnbKind>("onboarding");
+  const [kind, setKind] = useState<OnbKind>(allowedKinds[0]);
   const [templateId, setTemplateId] = useState<string>("__none__");
   const [startedAt, setStartedAt] = useState<string>(formatIsoDate(new Date()));
   const [target, setTarget] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
 
   const { data: templates = [] } = useQuery({
-    queryKey: ["onb-templates", kind],
+    queryKey: ["onb-templates", kind, workspaceId],
     queryFn: () => listTplFn({ data: { kind } }),
     staleTime: 30_000,
+    enabled: canAny(
+      ["workspace", "team", "own"].map((s) => `techpeople.onboarding_templates.view.${s}`),
+    ),
   });
 
   const filteredTemplates = useMemo(() => templates.filter((t) => t.is_active), [templates]);
@@ -465,12 +505,18 @@ function NewPlanDialog({
         <div className="grid gap-4">
           <div className="space-y-2">
             <Label>Tipo</Label>
-            <Select value={kind} onValueChange={(v) => setKind(v as OnbKind)}>
+            <Select
+              value={kind}
+              onValueChange={(v) => {
+                setKind(v as OnbKind);
+                setTemplateId("__none__");
+              }}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {ONB_KINDS.map((k) => (
+                {allowedKinds.map((k) => (
                   <SelectItem key={k} value={k}>
                     {ONB_KIND_LABELS[k]}
                   </SelectItem>

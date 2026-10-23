@@ -1,3 +1,6 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { useHrCapabilities } from "@/lib/access-control/use-hr-capabilities";
+import { HrScreenAccess, HrAccessError } from "@/components/hr-access";
 // TechPeople · Sprint 6 — Templates de Onboarding/Offboarding
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
@@ -55,6 +58,19 @@ export const Route = createFileRoute("/_authenticated/people/onboarding-template
 });
 
 function OnbTemplatesPage() {
+  return (
+    <HrScreenAccess resources={["techpeople.onboarding_templates"]}>
+      <OnbTemplatesPageContent />
+    </HrScreenAccess>
+  );
+}
+
+function OnbTemplatesPageContent() {
+  const { canAny, workspaceId } = usePermissions();
+  const canCreate = canAny([
+    "techpeople.onboarding_templates.create.workspace",
+    "techpeople.onboarding_templates.create.own",
+  ]);
   const qc = useQueryClient();
   const listFn = useServerFn(listOnbTemplates);
   const delFn = useServerFn(deleteOnbTemplate);
@@ -62,12 +78,21 @@ function OnbTemplatesPage() {
   const [filter, setFilter] = useState<OnbKind | "all">("all");
   const [editing, setEditing] = useState<OnbTemplateRow | "new" | null>(null);
 
-  const { data: templates = [] } = useQuery({
-    queryKey: ["onb-templates-all"],
+  const {
+    data: templates = [],
+    isError,
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ["onb-templates-all", workspaceId],
     queryFn: () => listFn({ data: {} }),
     staleTime: 15_000,
   });
 
+  const access = useHrCapabilities(
+    "onboarding_templates",
+    templates.map((t) => t.id),
+  );
   const filtered = useMemo(
     () => (filter === "all" ? templates : templates.filter((t) => t.kind === filter)),
     [templates, filter],
@@ -83,6 +108,13 @@ function OnbTemplatesPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  if (isError) return <HrAccessError retry={() => void refetch()} />;
+  if (isLoading)
+    return (
+      <p role="status" className="p-6">
+        Carregando modelos…
+      </p>
+    );
   return (
     <div className="container max-w-5xl mx-auto p-6 space-y-6">
       <Button asChild variant="ghost" size="sm" className="-ml-3">
@@ -95,7 +127,7 @@ function OnbTemplatesPage() {
         title="Modelos de Onboarding & Offboarding"
         description="Checklists reutilizáveis aplicáveis a qualquer pessoa."
         actions={
-          <Button onClick={() => setEditing("new")}>
+          <Button disabled={!canCreate} onClick={() => setEditing("new")}>
             <Plus className="h-4 w-4 mr-2" /> Novo modelo
           </Button>
         }
@@ -144,13 +176,21 @@ function OnbTemplatesPage() {
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => setEditing(tpl)}>
+                  <Button
+                    disabled={!access.for(tpl.id).can_update}
+                    aria-label="Editar modelo"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setEditing(tpl)}
+                  >
                     <Pencil className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
                     className="text-muted-foreground"
+                    aria-label="Excluir modelo"
+                    disabled={!access.for(tpl.id).can_delete}
                     onClick={async () => {
                       if (await confirmDialog(`Excluir modelo "${tpl.name}"?`)) {
                         delMut.mutate(tpl.id);
@@ -166,7 +206,7 @@ function OnbTemplatesPage() {
         </div>
       )}
 
-      {editing ? (
+      {editing && (editing === "new" ? canCreate : access.for(editing.id).can_update) ? (
         <TemplateDialog
           template={editing === "new" ? null : editing}
           onClose={() => setEditing(null)}

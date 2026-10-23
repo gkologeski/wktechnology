@@ -1,3 +1,6 @@
+import { HrScreenAccess, HrRecordAccess } from "@/components/hr-access";
+import { useHrCapabilities } from "@/lib/access-control/use-hr-capabilities";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { Input as StandardInput } from "@/components/ui/input";
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -119,7 +122,21 @@ const STATUS_LABELS: Record<CandidateDetail["derived_status"], { label: string; 
 
 function CandidateDetailPage() {
   const { id } = Route.useParams();
+  return (
+    <HrScreenAccess resources={["techhire.candidates"]}>
+      <HrRecordAccess resource="candidates" id={id}>
+        <CandidateDetailPageContent />
+      </HrRecordAccess>
+    </HrScreenAccess>
+  );
+}
+
+function CandidateDetailPageContent() {
+  const { id } = Route.useParams();
   const navigate = useNavigate();
+  const access = useHrCapabilities("candidates", [id]);
+  const { canAny } = usePermissions();
+  const canHire = canAny(["techpeople.people.create.workspace", "techpeople.people.create.own"]);
   const getDetail = useServerFn(getCandidateDetail);
   const saveFn = useServerFn(saveAtsCandidate);
   const deleteFn = useServerFn(deleteAtsCandidate);
@@ -253,10 +270,15 @@ function CandidateDetailPage() {
             candidateName={c.full_name}
           />
         )}
-        <Button variant="default" size="sm" onClick={() => setHireOpen(true)}>
+        <Button disabled={!canHire} variant="default" size="sm" onClick={() => setHireOpen(true)}>
           <UserPlus className="h-3.5 w-3.5 mr-1.5" /> Contratar
         </Button>
-        <Button variant="outline" size="sm" onClick={handleDelete}>
+        <Button
+          disabled={!access.for(id).can_delete}
+          variant="outline"
+          size="sm"
+          onClick={handleDelete}
+        >
           <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Excluir
         </Button>
       </div>
@@ -266,7 +288,7 @@ function CandidateDetailPage() {
   return (
     <>
       <HireCandidateDialog
-        open={hireOpen}
+        open={hireOpen && canHire}
         onOpenChange={setHireOpen}
         candidateId={c.id}
         candidateName={c.full_name}
@@ -278,6 +300,7 @@ function CandidateDetailPage() {
           <div className="space-y-4">
             <IdentityBlock candidate={c} />
             <PropertiesPanel
+              canWrite={access.for(id).can_update}
               onChanged={load}
               candidate={c}
               onSave={async (patch) => {
@@ -352,13 +375,16 @@ type EditablePatch = Partial<CandidateDetail["candidate"]>;
 
 function PropertiesPanel({
   candidate,
+  canWrite,
   onSave,
   onChanged,
 }: {
   candidate: CandidateDetail["candidate"];
+  canWrite: boolean;
   onSave: (patch: EditablePatch) => Promise<void>;
   onChanged?: () => void | Promise<void>;
 }) {
+  const { can } = usePermissions();
   const [form, setForm] = useState(candidate);
   const [saving, setSaving] = useState(false);
   useEffect(() => setForm(candidate), [candidate]);
@@ -377,6 +403,7 @@ function PropertiesPanel({
   );
 
   const submit = async () => {
+    if (!canWrite) return;
     const phoneCheck = validatePhoneValue(form.phone, {
       label: "Telefone",
       unchangedFrom: candidate.phone ?? null,
@@ -410,10 +437,11 @@ function PropertiesPanel({
       <header className="px-4 py-3 border-b border-border-subtle">
         <h2 className="text-sm font-semibold text-text-primary">Propriedades</h2>
       </header>
-      <div className="p-4 space-y-3 text-sm">
+      <fieldset disabled={!canWrite} className="p-4 space-y-3 text-sm">
         <div className="pb-3 border-b border-border-subtle">
           <AssigneeField
             table="ats_candidates"
+            disabled={!canWrite || !can("techhire.candidates.assign.workspace")}
             rowId={candidate.id}
             assignedTo={candidate.assigned_to}
             onChanged={() => onChanged?.()}
@@ -465,7 +493,7 @@ function PropertiesPanel({
             className="w-full rounded-md border border-border-subtle bg-surface-base px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </Field>
-        {dirty && (
+        {dirty && canWrite && (
           <Button size="sm" onClick={submit} disabled={saving} className="w-full">
             {saving ? "Salvando..." : "Salvar alterações"}
           </Button>
@@ -477,7 +505,7 @@ function PropertiesPanel({
             <div>Último contato: {formatDateTime(candidate.last_touch_at)}</div>
           )}
         </div>
-      </div>
+      </fieldset>
     </section>
   );
 }

@@ -1,3 +1,5 @@
+import { useHrCapabilities } from "@/lib/access-control/use-hr-capabilities";
+import { HrScreenAccess } from "@/components/hr-access";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
@@ -42,6 +44,15 @@ export const Route = createFileRoute("/_authenticated/(ats)/candidates/")({
 });
 
 function CandidatesPage() {
+  return (
+    <HrScreenAccess resources={["techhire.candidates"]}>
+      <CandidatesPageContent />
+    </HrScreenAccess>
+  );
+}
+
+function CandidatesPageContent() {
+  const { canAny, workspaceId } = usePermissions();
   const list = useServerFn(listAtsCandidates);
   const save = useServerFn(saveAtsCandidate);
   const del = useServerFn(deleteAtsCandidate);
@@ -79,7 +90,7 @@ function CandidatesPage() {
   }, [search]);
 
   const q = useQuery({
-    queryKey: ["ats-candidates", debouncedSearch],
+    queryKey: ["ats-candidates", debouncedSearch, workspaceId],
     queryFn: () => list({ data: { search: debouncedSearch } }),
     staleTime: 10_000,
     refetchOnWindowFocus: true,
@@ -113,7 +124,11 @@ function CandidatesPage() {
   }, [rows, statuses, statusFilter]);
   const visibleRows = filterRows(byStatusRows);
 
-  const { canAny } = usePermissions();
+  const access = useHrCapabilities("candidates", ids);
+  const canCreate = canAny([
+    "techhire.candidates.create.workspace",
+    "techhire.candidates.create.own",
+  ]);
   const selection = useGridSelection(visibleRows as Array<Cand & { id: string }>);
 
   const statusCounts = useMemo(() => {
@@ -161,6 +176,7 @@ function CandidatesPage() {
   );
 
   const handleDelete = async (id: string) => {
+    if (!access.for(id).can_delete) return;
     if (!(await confirmDialog("Excluir este candidato?"))) return;
     try {
       await del({ data: { id } });
@@ -198,21 +214,27 @@ function CandidatesPage() {
         description={descriptionText}
         descriptionLive
         secondaryActions={
-          <Button variant="outline" onClick={handleExport}>
+          <Button
+            disabled={!canAny(["techhire.candidates.export.workspace"])}
+            variant="outline"
+            onClick={handleExport}
+          >
             <Download className="h-4 w-4 mr-2" aria-hidden="true" />
             CSV
           </Button>
         }
         primaryAction={
-          <CreateCandidateDialog
-            open={open}
-            onOpenChange={setOpen}
-            save={save}
-            parse={parse}
-            parsePdf={parsePdf}
-            previewLinkedin={previewLinkedin}
-            onSaved={refresh}
-          />
+          canCreate ? (
+            <CreateCandidateDialog
+              open={open}
+              onOpenChange={setOpen}
+              save={save}
+              parse={parse}
+              parsePdf={parsePdf}
+              previewLinkedin={previewLinkedin}
+              onSaved={refresh}
+            />
+          ) : undefined
         }
       />
 
@@ -263,7 +285,7 @@ function CandidatesPage() {
                 Limpar filtros
               </Button>
             ) : (
-              <Button onClick={() => setOpen(true)}>
+              <Button disabled={!canCreate} onClick={() => setOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
                 Novo candidato
               </Button>
@@ -274,6 +296,7 @@ function CandidatesPage() {
         <CandidatesCardsView
           visibleRows={visibleRows}
           statuses={statuses}
+          canDelete={(id) => access.for(id).can_delete}
           onDelete={handleDelete}
         />
       ) : view === "table" ? (
@@ -282,7 +305,8 @@ function CandidatesPage() {
           statuses={statuses}
           selection={selection}
           refresh={refresh}
-          canAny={canAny}
+          canUpdate={(id) => access.for(id).can_update}
+          canDelete={(id) => access.for(id).can_delete}
           onDelete={handleDelete}
         />
       ) : (
@@ -296,6 +320,7 @@ function CandidatesPage() {
           setDraggingId={setDraggingId}
           dragOverCol={dragOverCol}
           setDragOverCol={setDragOverCol}
+          canUpdate={(id) => access.for(id).can_update}
           archiveCandidate={archiveCandidate}
           queryClient={queryClient}
           onNeedsAssociation={(candidateId, candidateName) =>

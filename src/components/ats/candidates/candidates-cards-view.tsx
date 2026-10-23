@@ -12,10 +12,12 @@ import type { Cand } from "./types";
 export function CandidatesCardsView({
   visibleRows,
   statuses,
+  canDelete,
   onDelete,
 }: {
   visibleRows: Cand[];
   statuses: Record<string, DerivedCandidateStatus>;
+  canDelete: (id: string) => boolean;
   onDelete: (id: string) => void;
 }) {
   return (
@@ -57,6 +59,7 @@ export function CandidatesCardsView({
                 size="icon"
                 className="h-7 w-7 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
                 aria-label={`Excluir candidato ${c.full_name}`}
+                disabled={!canDelete(c.id as string)}
                 onClick={() => onDelete(c.id as string)}
               >
                 <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
