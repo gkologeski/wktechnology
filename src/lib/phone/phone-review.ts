@@ -222,7 +222,11 @@ export function reconcilePhoneRuns(runs: PhoneRunRow[]) {
     }
     correctedAt = c.finished_at ?? correctedAt;
   }
-  const { applied, resolved: _ignored, ...byField } = (base.counts ?? {}) as {
+  const {
+    applied,
+    resolved: _ignored,
+    ...byField
+  } = (base.counts ?? {}) as {
     applied?: Record<string, number>;
     resolved?: unknown;
   } & Record<string, Record<string, number>>;

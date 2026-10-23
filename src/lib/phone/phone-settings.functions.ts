@@ -109,8 +109,8 @@ export const getPhoneSettings = createServerFn({ method: "GET" })
               resolved: rec.resolved,
               correctedAt: rec.correctedAt,
               livePending,
-          } satisfies PhoneRunSummary)
-        : null,
+            } satisfies PhoneRunSummary)
+          : null,
     };
   });
 
