@@ -481,40 +481,34 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                   onChange={(v) => setValue(v ?? "")}
                 />
               ) : (
-              <Input
-                autoFocus
-                disabled={readOnly}
-                type={
-                  p.type === "cep" || p.type === "cnpj"
-                    ? "text"
-                    : p.type === "datetime"
-                      ? "datetime-local"
-                      : (p.type ?? "text")
-                }
-                inputMode={p.type === "cep" || p.type === "cnpj" ? "numeric" : undefined}
-                maxLength={p.type === "cep" ? 9 : p.type === "cnpj" ? 18 : undefined}
-                placeholder={
-                  p.type === "cep"
-                    ? "99999-999"
-                    : p.type === "cnpj"
-                      ? "00.000.000/0000-00"
-                      : undefined
-                }
-                value={value}
-                onChange={(e) =>
-                  setValue(
-                    p.type === "email"
-                      ? sanitizeEmailInput(e.target.value)
-                      : p.type === "cep"
-                        ? formatCep(e.target.value)
-                        : p.type === "cnpj"
-                          ? formatCnpjInput(e.target.value)
-                          : e.target.value,
-                  )
-                }
-                onKeyDown={(e) => e.key === "Enter" && save(p.key)}
-                className="h-8"
-              />
+                <Input
+                  autoFocus
+                  disabled={readOnly}
+                  type={p.type === "cep" || p.type === "cnpj" ? "text" : (p.type ?? "text")}
+                  inputMode={p.type === "cep" || p.type === "cnpj" ? "numeric" : undefined}
+                  maxLength={p.type === "cep" ? 9 : p.type === "cnpj" ? 18 : undefined}
+                  placeholder={
+                    p.type === "cep"
+                      ? "99999-999"
+                      : p.type === "cnpj"
+                        ? "00.000.000/0000-00"
+                        : undefined
+                  }
+                  value={value}
+                  onChange={(e) =>
+                    setValue(
+                      p.type === "email"
+                        ? sanitizeEmailInput(e.target.value)
+                        : p.type === "cep"
+                          ? formatCep(e.target.value)
+                          : p.type === "cnpj"
+                            ? formatCnpjInput(e.target.value)
+                            : e.target.value,
+                    )
+                  }
+                  onKeyDown={(e) => e.key === "Enter" && save(p.key)}
+                  className="h-8"
+                />
               )}
               <Button size="sm" className="h-8" onClick={() => save(p.key)}>
                 OK
@@ -1040,12 +1034,12 @@ function CustomFieldRow({
             def.type === "number"
               ? "number"
               : def.type === "email"
-                  ? "email"
-                  : def.type === "url"
-                    ? "url"
-                    : def.type === "tel"
-                      ? "tel"
-                      : "text"
+                ? "email"
+                : def.type === "url"
+                  ? "url"
+                  : def.type === "tel"
+                    ? "tel"
+                    : "text"
           }
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
