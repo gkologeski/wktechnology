@@ -26,6 +26,7 @@ import {
   setProjectApprover,
 } from "@/lib/projects/time-governance.functions";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 const ROLE_LABEL = {
   approver: "Aprovador de horas",
   operational_manager: "Gestor operacional",
@@ -231,20 +232,18 @@ export function ProjectApproversCard({ projectId }: { projectId: string }) {
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor="ap-from">Vigência: início</Label>
-          <Input
+          <IsoDatePicker
             id="ap-from"
-            type="date"
             value={validFrom}
-            onChange={(e) => setValidFrom(e.target.value)}
+            onChange={(v) => setValidFrom((v ?? ""))}
           />
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor="ap-to">Vigência: fim (opcional)</Label>
-          <Input
+          <IsoDatePicker
             id="ap-to"
-            type="date"
             value={validTo}
-            onChange={(e) => setValidTo(e.target.value)}
+            onChange={(v) => setValidTo((v ?? ""))}
           />
         </div>
         <div className="grid gap-1.5 sm:col-span-2">

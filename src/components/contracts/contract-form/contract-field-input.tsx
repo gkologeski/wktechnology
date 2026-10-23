@@ -16,6 +16,7 @@ import { EntityCombobox } from "@/components/ui/entity-combobox";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import type { ContractFieldDef } from "@/lib/contracts/contract-field-catalog";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 const NONE = "__none__";
 
 function asString(v: unknown): string {
@@ -99,11 +100,10 @@ export function ContractFieldInput({
         );
       case "date":
         return (
-          <Input
+          <IsoDatePicker
             id={id}
-            type="date"
             value={asString(value)}
-            onChange={(e) => onChange(e.target.value || null)}
+            onChange={(v) => onChange((v ?? "") || null)}
           />
         );
       case "boolean":

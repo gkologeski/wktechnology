@@ -41,6 +41,7 @@ import { Badge } from "@/components/ui/badge";
 import { Pencil, Trash2, Target, Plus } from "lucide-react";
 import { toast } from "sonner";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 export const Route = createFileRoute("/_authenticated/settings/goals")({
   component: GoalsPage,
 });
@@ -322,18 +323,18 @@ function GoalsPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Início</Label>
-                <Input
-                  type="date"
+                <IsoDatePicker
+                  ariaLabel="Início"
                   value={form.period_start}
-                  onChange={(e) => setForm({ ...form, period_start: e.target.value })}
+                  onChange={(v) => setForm({ ...form, period_start: (v ?? "") })}
                 />
               </div>
               <div>
                 <Label>Fim</Label>
-                <Input
-                  type="date"
+                <IsoDatePicker
+                  ariaLabel="Fim"
                   value={form.period_end}
-                  onChange={(e) => setForm({ ...form, period_end: e.target.value })}
+                  onChange={(v) => setForm({ ...form, period_end: (v ?? "") })}
                 />
               </div>
             </div>

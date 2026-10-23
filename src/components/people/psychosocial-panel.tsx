@@ -47,6 +47,7 @@ import {
   type PsychRiskLevel,
 } from "@/lib/people/wellbeing.functions";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 function riskClass(level: PsychRiskLevel) {
   switch (level) {
     case "critical":
@@ -306,10 +307,10 @@ function PsychDialog({
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-2">
               <Label>Data</Label>
-              <Input
-                type="date"
+              <IsoDatePicker
+                ariaLabel="Data"
                 value={assessedAt}
-                onChange={(e) => setAssessedAt(e.target.value)}
+                onChange={(v) => setAssessedAt((v ?? ""))}
               />
             </div>
             <div className="space-y-2">
@@ -387,7 +388,11 @@ function PsychDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Follow-up</Label>
-              <Input type="date" value={followUp} onChange={(e) => setFollowUp(e.target.value)} />
+              <IsoDatePicker
+                ariaLabel="Follow-up"
+                value={followUp}
+                onChange={(v) => setFollowUp((v ?? ""))}
+              />
             </div>
           </div>
 

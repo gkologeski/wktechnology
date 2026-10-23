@@ -38,6 +38,7 @@ import {
   type PendingBillingGroup,
 } from "@/lib/people/billing.functions";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 export const Route = createFileRoute("/_authenticated/people/billing")({
   head: () => ({
     meta: [
@@ -310,11 +311,10 @@ function PeopleBillingPage() {
               </div>
               <div>
                 <Label htmlFor="due-date">Vencimento</Label>
-                <Input
+                <IsoDatePicker
                   id="due-date"
-                  type="date"
                   value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
+                  onChange={(v) => setDueDate((v ?? ""))}
                 />
               </div>
             </div>

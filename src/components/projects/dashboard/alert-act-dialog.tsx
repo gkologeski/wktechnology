@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ALERT_RULE_LABEL, ALERT_STATUS_LABEL } from "@/lib/projects/dashboard-views.shared";
 import { alertEvidenceText } from "./drill-columns";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 export type AlertAction = "ack" | "snooze" | "resolve" | "reopen";
 
 const ACTION_LABEL: Record<AlertAction, string> = {
@@ -90,12 +91,11 @@ export function AlertActDialog({
           {action === "snooze" ? (
             <div className="space-y-1.5">
               <Label htmlFor="alert-until">Adiar até</Label>
-              <Input
+              <IsoDatePicker
                 id="alert-until"
-                type="date"
                 min={today}
                 value={until}
-                onChange={(e) => setUntil(e.target.value)}
+                onChange={(v) => setUntil((v ?? ""))}
                 required
               />
             </div>

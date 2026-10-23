@@ -25,6 +25,7 @@ import {
   type PeopleDocumentRow,
 } from "@/lib/people/documents.functions";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 type Props = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -153,13 +154,21 @@ export function PersonDocumentDialog({ open, onOpenChange, personId, document }:
             </div>
             <div className="space-y-2">
               <Label>Emissão</Label>
-              <Input type="date" value={issuedAt} onChange={(e) => setIssuedAt(e.target.value)} />
+              <IsoDatePicker
+                ariaLabel="Emissão"
+                value={issuedAt}
+                onChange={(v) => setIssuedAt((v ?? ""))}
+              />
             </div>
           </div>
 
           <div className="space-y-2">
             <Label>Validade</Label>
-            <Input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
+            <IsoDatePicker
+              ariaLabel="Validade"
+              value={expiresAt}
+              onChange={(v) => setExpiresAt((v ?? ""))}
+            />
             <p className="text-xs text-muted-foreground">
               Deixe em branco se o documento não tem validade. Alerta automático 30 dias antes.
             </p>

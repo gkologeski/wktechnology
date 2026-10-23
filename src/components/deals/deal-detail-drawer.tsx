@@ -36,6 +36,7 @@ import { useAuth } from "@/lib/auth";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 const LEGACY_ENUM = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
 
 export function DealDetailDrawer({
@@ -356,10 +357,9 @@ export function DealDetailDrawer({
 
                 <div className="grid grid-cols-2 gap-2">
                   <Field label="Data prevista">
-                    <Input
-                      type="date"
+                    <IsoDatePicker
                       value={String(v.expected_close_date ?? "").slice(0, 10)}
-                      onChange={(e) => set("expected_close_date", e.target.value)}
+                      onChange={(v) => set("expected_close_date", (v ?? ""))}
                     />
                   </Field>
                   <Field label="Prioridade">

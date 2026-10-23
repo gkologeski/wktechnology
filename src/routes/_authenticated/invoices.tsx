@@ -67,6 +67,7 @@ import { useGridSelection } from "@/components/grid/use-grid-selection";
 import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 const INVOICE_STATUSES = ["draft", "open", "paid", "overdue", "cancelled", "refunded"] as const;
 
 const STATUS_LABEL: Record<string, string> = {
@@ -612,7 +613,11 @@ function CreateInvoiceDialog({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="due">Vencimento</Label>
-            <Input id="due" type="date" value={due} onChange={(e) => setDue(e.target.value)} />
+            <IsoDatePicker
+              id="due"
+              value={due}
+              onChange={(v) => setDue((v ?? ""))}
+            />
           </div>
         </div>
       </div>

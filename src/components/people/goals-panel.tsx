@@ -41,6 +41,7 @@ import {
   type GoalStatus,
 } from "@/lib/people/performance.functions";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 export function GoalsPanel({ personId, canWrite }: { personId: string; canWrite: boolean }) {
   const qc = useQueryClient();
   const listFn = useServerFn(listGoals);
@@ -299,18 +300,18 @@ function GoalDialog({
           </div>
           <div className="space-y-1">
             <Label>Início</Label>
-            <Input
-              type="date"
+            <IsoDatePicker
+              ariaLabel="Início"
               value={periodStart ?? ""}
-              onChange={(e) => setPeriodStart(e.target.value)}
+              onChange={(v) => setPeriodStart((v ?? ""))}
             />
           </div>
           <div className="space-y-1">
             <Label>Fim</Label>
-            <Input
-              type="date"
+            <IsoDatePicker
+              ariaLabel="Fim"
               value={periodEnd ?? ""}
-              onChange={(e) => setPeriodEnd(e.target.value)}
+              onChange={(v) => setPeriodEnd((v ?? ""))}
             />
           </div>
         </div>

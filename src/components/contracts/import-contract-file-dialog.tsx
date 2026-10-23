@@ -49,6 +49,7 @@ import {
   SIGNATURE_PROVIDERS,
 } from "@/lib/contracts/import-schemas";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -557,17 +558,15 @@ function ReviewStep({
 
       <FieldSection title="Vigência">
         <Field label="Início">
-          <Input
-            type="date"
+          <IsoDatePicker
             value={fields.starts_at ?? ""}
-            onChange={(e) => onPatch({ starts_at: e.target.value || null })}
+            onChange={(v) => onPatch({ starts_at: (v ?? "") || null })}
           />
         </Field>
         <Field label="Fim">
-          <Input
-            type="date"
+          <IsoDatePicker
             value={fields.ends_at ?? ""}
-            onChange={(e) => onPatch({ ends_at: e.target.value || null })}
+            onChange={(v) => onPatch({ ends_at: (v ?? "") || null })}
           />
         </Field>
         <Field label="Renovação automática">

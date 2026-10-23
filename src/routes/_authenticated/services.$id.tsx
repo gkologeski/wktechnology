@@ -30,6 +30,7 @@ import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { supabase } from "@/integrations/supabase/client";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 export const Route = createFileRoute("/_authenticated/services/$id")({
   head: () => ({ meta: [{ title: "Serviço" }] }),
   component: ServiceDetail,
@@ -302,11 +303,19 @@ function ServiceDetail() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Início</Label>
-                <Input type="date" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
+                <IsoDatePicker
+                  ariaLabel="Início"
+                  value={startsAt}
+                  onChange={(v) => setStartsAt((v ?? ""))}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Fim</Label>
-                <Input type="date" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} />
+                <IsoDatePicker
+                  ariaLabel="Fim"
+                  value={endsAt}
+                  onChange={(v) => setEndsAt((v ?? ""))}
+                />
               </div>
             </div>
           </CardContent>

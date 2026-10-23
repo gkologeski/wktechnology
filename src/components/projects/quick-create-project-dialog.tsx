@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { createProject } from "@/lib/projects.functions";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -97,7 +98,11 @@ export function QuickCreateProjectDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Prazo</Label>
-              <Input type="date" value={dueAt} onChange={(e) => setDueAt(e.target.value)} />
+              <IsoDatePicker
+                ariaLabel="Prazo"
+                value={dueAt}
+                onChange={(v) => setDueAt((v ?? ""))}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Horas planejadas</Label>

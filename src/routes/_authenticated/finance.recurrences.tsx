@@ -54,6 +54,7 @@ import {
   useLegalEntityFilterInput,
 } from "@/components/finance/legal-entity-select";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 export const Route = createFileRoute("/_authenticated/finance/recurrences")({
   head: () => ({ meta: [{ title: "Recorrências financeiras" }] }),
   component: RecurrencesPage,
@@ -479,11 +480,19 @@ function NewRecurrenceDialog({
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1">
               <Label>Início</Label>
-              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              <IsoDatePicker
+                ariaLabel="Início"
+                value={startDate}
+                onChange={(v) => setStartDate((v ?? ""))}
+              />
             </div>
             <div className="space-y-1">
               <Label>Fim (opcional)</Label>
-              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+              <IsoDatePicker
+                ariaLabel="Fim (opcional)"
+                value={endDate}
+                onChange={(v) => setEndDate((v ?? ""))}
+              />
             </div>
             <div className="space-y-1">
               <Label>Máx. ocorrências</Label>

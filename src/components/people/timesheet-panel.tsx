@@ -70,6 +70,7 @@ import {
 } from "@/lib/people/timesheet.functions";
 import { TimeEntryDialog, type TimeEntryDraft } from "./time-entry-dialog";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 // ============ presets ============
 
 type PresetKey = "week" | "month" | "last30" | "quarter" | "custom";
@@ -335,12 +336,11 @@ export function TimesheetPanel({ personId }: { personId: string }) {
             <Label htmlFor="ts-start" className="text-xs">
               Início
             </Label>
-            <Input
+            <IsoDatePicker
               id="ts-start"
-              type="date"
               value={start}
-              onChange={(e) => {
-                setStart(e.target.value);
+              onChange={(v) => {
+                setStart((v ?? ""));
                 setPreset("custom");
               }}
               className="w-[160px]"
@@ -350,12 +350,11 @@ export function TimesheetPanel({ personId }: { personId: string }) {
             <Label htmlFor="ts-end" className="text-xs">
               Fim
             </Label>
-            <Input
+            <IsoDatePicker
               id="ts-end"
-              type="date"
               value={end}
-              onChange={(e) => {
-                setEnd(e.target.value);
+              onChange={(v) => {
+                setEnd((v ?? ""));
                 setPreset("custom");
               }}
               className="w-[160px]"

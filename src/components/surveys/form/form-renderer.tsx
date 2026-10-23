@@ -30,6 +30,7 @@ import {
 } from "@/lib/surveys/form-schema";
 
 import { PhoneInput } from "@/components/ui/phone-input";
+import { IsoDatePicker } from "@/components/iso-date-picker";
 export function FormRenderer({
   schema,
   answers,
@@ -203,7 +204,11 @@ export function FieldControl({
           />
         );
       case "date":
-        return <Input id={id} type="date" value={s} onChange={(e) => onChange(e.target.value)} />;
+        return <IsoDatePicker
+   id={id}
+   value={s}
+   onChange={(v) => onChange((v ?? ""))}
+ />;
       case "datetime":
         return (
           <Input

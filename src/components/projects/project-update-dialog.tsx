@@ -30,6 +30,7 @@ import {
 } from "@/lib/projects/delivery.functions";
 import { HEALTH_LABELS, VISIBILITY_LABELS } from "@/lib/projects/delivery-labels";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 export function ProjectUpdateDialog({
   projectId,
   update,
@@ -151,11 +152,10 @@ export function ProjectUpdateDialog({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="pu-expected">Previsão de entrega</Label>
-              <Input
+              <IsoDatePicker
                 id="pu-expected"
-                type="date"
                 value={expected}
-                onChange={(e) => setExpected(e.target.value)}
+                onChange={(v) => setExpected((v ?? ""))}
               />
             </div>
             <div className="space-y-1.5">

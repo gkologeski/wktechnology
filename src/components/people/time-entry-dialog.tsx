@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
 import { upsertTimeEntry } from "@/lib/people/timesheet.functions";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 export type TimeEntryDraft = {
   id?: string;
   project_id?: string | null;
@@ -149,11 +150,10 @@ export function TimeEntryDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
               <Label htmlFor="te-date">Data</Label>
-              <Input
+              <IsoDatePicker
                 id="te-date"
-                type="date"
                 value={entryDate}
-                onChange={(e) => setEntryDate(e.target.value)}
+                onChange={(v) => setEntryDate((v ?? ""))}
               />
             </div>
             <div className="grid gap-1.5">

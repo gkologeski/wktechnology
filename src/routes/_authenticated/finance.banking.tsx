@@ -77,6 +77,7 @@ import {
 } from "@/components/ui/select";
 import { formatCurrency } from "@/lib/crm";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 export const Route = createFileRoute("/_authenticated/finance/banking")({
   component: BankingPage,
   head: () => ({
@@ -950,10 +951,10 @@ function BankingPage() {
               </div>
               <div>
                 <Label>Vencimento</Label>
-                <Input
-                  type="date"
+                <IsoDatePicker
+                  ariaLabel="Vencimento"
                   value={chargeForm.due_date}
-                  onChange={(e) => setChargeForm((f) => ({ ...f, due_date: e.target.value }))}
+                  onChange={(v) => setChargeForm((f) => ({ ...f, due_date: (v ?? "") }))}
                 />
               </div>
             </div>
@@ -1131,10 +1132,10 @@ function BankingPage() {
             </div>
             <div>
               <Label className="text-xs">Agendado para</Label>
-              <Input
-                type="date"
+              <IsoDatePicker
+                ariaLabel="Agendado para"
                 value={paymentForm.scheduled_for}
-                onChange={(e) => setPaymentForm((f) => ({ ...f, scheduled_for: e.target.value }))}
+                onChange={(v) => setPaymentForm((f) => ({ ...f, scheduled_for: (v ?? "") }))}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">

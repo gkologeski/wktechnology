@@ -25,6 +25,7 @@ import {
 import { createFinancialEntry, createInstallments, listCategories } from "@/lib/finance.functions";
 import { useLegalEntities } from "@/components/finance/legal-entity-select";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 type Direction = "receivable" | "payable";
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -226,15 +227,19 @@ export function QuickCreateEntryDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Competência</Label>
-              <Input
-                type="date"
+              <IsoDatePicker
+                ariaLabel="Competência"
                 value={competenceDate}
-                onChange={(e) => setCompetenceDate(e.target.value)}
+                onChange={(v) => setCompetenceDate((v ?? ""))}
               />
             </div>
             <div className="space-y-2">
               <Label>Vencimento{installments ? " (1ª parcela)" : ""}</Label>
-              <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+              <IsoDatePicker
+                ariaLabel="Competência"
+                value={dueDate}
+                onChange={(v) => setDueDate((v ?? ""))}
+              />
             </div>
           </div>
 

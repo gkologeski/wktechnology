@@ -46,6 +46,7 @@ import {
 import { formatSeconds } from "@/lib/projects/time-entry.shared";
 import type { RateImpact } from "@/lib/projects/billing.types";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 type Scope = "exception" | "allocation" | "service" | "person" | "catalog";
 const br = (iso: string | null) => (iso ? iso.split("-").reverse().join("/") : "sem fim");
 const today = () => new Date().toLocaleDateString("sv-SE");
@@ -380,24 +381,22 @@ export function RatesPanel() {
             </div>
             <div className="grid gap-1">
               <Label htmlFor="r-from">Início (inclusive)</Label>
-              <Input
+              <IsoDatePicker
                 id="r-from"
-                type="date"
                 value={from}
-                onChange={(e) => {
-                  setFrom(e.target.value);
+                onChange={(v) => {
+                  setFrom((v ?? ""));
                   setImpact(null);
                 }}
               />
             </div>
             <div className="grid gap-1">
               <Label htmlFor="r-to">Fim (exclusivo, opcional)</Label>
-              <Input
+              <IsoDatePicker
                 id="r-to"
-                type="date"
                 value={to}
-                onChange={(e) => {
-                  setTo(e.target.value);
+                onChange={(v) => {
+                  setTo((v ?? ""));
                   setImpact(null);
                 }}
               />
@@ -517,12 +516,11 @@ export function RatesPanel() {
                         !r.valid_to &&
                         (splitFor === r.id ? (
                           <div className="flex flex-wrap items-end justify-end gap-1">
-                            <Input
-                              aria-label="Data da mudança"
-                              type="date"
+                            <IsoDatePicker
+                              ariaLabel="Data da mudança"
                               className="w-36"
                               value={splitDate}
-                              onChange={(e) => setSplitDate(e.target.value)}
+                              onChange={(v) => setSplitDate((v ?? ""))}
                             />
                             <Input
                               aria-label="Novo valor"

@@ -41,6 +41,7 @@ import {
 import { toast } from "sonner";
 import { createProposal } from "@/lib/proposals.functions";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 type VarType = "text" | "number" | "date" | "currency";
 
 type FieldDef = {
@@ -569,10 +570,10 @@ export function ImportContractWizard() {
               </div>
               <div className="space-y-1">
                 <Label>Validade</Label>
-                <Input
-                  type="date"
+                <IsoDatePicker
+                  ariaLabel="Validade"
                   value={expiresAt}
-                  onChange={(e) => setExpiresAt(e.target.value)}
+                  onChange={(v) => setExpiresAt((v ?? ""))}
                 />
               </div>
             </div>

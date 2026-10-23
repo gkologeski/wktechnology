@@ -39,6 +39,7 @@ import {
   type PeopleBenefitRow,
 } from "@/lib/people/benefits.functions";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 const brl = (n: number | null | undefined) =>
   (n ?? 0).toLocaleString("pt-BR", {
     style: "currency",
@@ -336,11 +337,19 @@ function BenefitDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Início</Label>
-              <Input type="date" value={startsOn} onChange={(e) => setStartsOn(e.target.value)} />
+              <IsoDatePicker
+                ariaLabel="Início"
+                value={startsOn}
+                onChange={(v) => setStartsOn((v ?? ""))}
+              />
             </div>
             <div className="space-y-2">
               <Label>Fim</Label>
-              <Input type="date" value={endsOn} onChange={(e) => setEndsOn(e.target.value)} />
+              <IsoDatePicker
+                ariaLabel="Fim"
+                value={endsOn}
+                onChange={(v) => setEndsOn((v ?? ""))}
+              />
             </div>
           </div>
           <div className="flex items-center justify-between rounded-md border p-3">

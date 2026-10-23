@@ -14,6 +14,7 @@ import {
   type ClientField,
 } from "@/lib/role-profiles/schema";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 export const Route = createFileRoute("/role-profile/$token")({
   head: () => ({
     meta: [
@@ -256,11 +257,10 @@ function ClientRoleProfilePage() {
                         onChange={(e) => setValues({ ...values, [f.key]: e.target.value })}
                       />
                     ) : f.key === "conditions.start_date" ? (
-                      <Input
+                      <IsoDatePicker
                         id={id}
-                        type="date"
                         value={values[f.key] ?? ""}
-                        onChange={(e) => setValues({ ...values, [f.key]: e.target.value })}
+                        onChange={(v) => setValues({ ...values, [f.key]: (v ?? "") })}
                       />
                     ) : (
                       <Textarea

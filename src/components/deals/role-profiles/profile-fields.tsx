@@ -33,6 +33,7 @@ import {
   type SectionKey,
 } from "@/lib/role-profiles/schema";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 const NONE = "__none";
 export type FieldStatus = Record<string, "found" | "doubtful" | "missing">;
 
@@ -765,11 +766,10 @@ export function ProfileSection({
               htmlFor={`${p}-start`}
               status={fs["conditions.start_date"]}
             >
-              <Input
+              <IsoDatePicker
                 id={`${p}-start`}
-                type="date"
                 value={d.conditions.start_date ?? ""}
-                onChange={(e) => patch("conditions", { start_date: e.target.value || undefined })}
+                onChange={(v) => patch("conditions", { start_date: (v ?? "") || undefined })}
               />
             </Field>
           </div>

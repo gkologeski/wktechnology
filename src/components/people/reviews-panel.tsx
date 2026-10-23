@@ -43,6 +43,7 @@ import {
   type ReviewRatings,
 } from "@/lib/people/performance.functions";
 
+import { IsoDatePicker } from "@/components/iso-date-picker";
 // Dimensões padrão de avaliação do tomador.
 const DIMENSIONS: Array<{ key: string; label: string }> = [
   { key: "delivery", label: "Entrega" },
@@ -336,15 +337,19 @@ function ReviewDialog({
           </div>
           <div className="space-y-1">
             <Label>Início do período</Label>
-            <Input
-              type="date"
+            <IsoDatePicker
+              ariaLabel="Início do período"
               value={periodStart}
-              onChange={(e) => setPeriodStart(e.target.value)}
+              onChange={(v) => setPeriodStart((v ?? ""))}
             />
           </div>
           <div className="space-y-1">
             <Label>Fim do período</Label>
-            <Input type="date" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} />
+            <IsoDatePicker
+              ariaLabel="Fim do período"
+              value={periodEnd}
+              onChange={(v) => setPeriodEnd((v ?? ""))}
+            />
           </div>
 
           <div className="md:col-span-2 space-y-2 pt-2 border-t">
