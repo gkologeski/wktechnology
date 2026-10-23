@@ -75,6 +75,9 @@ q() { iso_psql -tAc "$1"; }
 [ "$(q "select count(*) from public.phone_normalization_items where run_id='$RUN' and row_id='$CB' and applied_at is not null")" = "0" ] && ok "item do outro workspace não aplicado" || bad "CB item"
 [ "$BEFORE" = "$AFTER" ] && ok "sem automação/auditoria/histórico/notificação ($AFTER)" || bad "efeitos colaterais $BEFORE -> $AFTER"
 [ "$(q "select string_agg(row_id::text||':'||coalesce(resolution,'-'),',' order by row_id) from public.phone_normalization_items where run_id='$PARENT'")" = "$C1:blank_short,$C2:blank_short,$C4:-" ] && ok "fila-mãe resolvida só no que foi gravado" || bad "resolução $(q "select string_agg(row_id::text||':'||coalesce(resolution,'-'),',') from public.phone_normalization_items where run_id='$PARENT'")"
+# Fila (mesmo filtro da tela): base sem gravação e sem resolução → só C4 resta.
+[ "$(q "select string_agg(row_id::text,',') from public.phone_normalization_items where run_id='$PARENT' and applied_at is null and resolved_at is null")" = "$C4" ] && ok "fila mostra só a pendência antiga real" || bad "fila"
+[ "$(q "select count(*) from public.phone_normalization_items where run_id='$PARENT' and applied_at is not null")" = "0" ] && ok "trilha antiga preservada (applied_at da varredura intacto)" || bad "trilha"
 LAST=$(run_apply | tr '\n' ' ')
 [ "$LAST" = "0|0|0|0 0|0|0|0 " ] && ok "idempotente (repetir grava 0)" || bad "idempotência: $LAST"
 
