@@ -8,7 +8,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runAutoStart } from "@/lib/people/onboarding.functions";
 import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 
-import { humanPhoneForRow, workspacePhoneCountry } from "@/lib/phone/phone-boundary";
+import { humanPhoneForRow, sourcePhone, workspacePhoneCountry } from "@/lib/phone/phone-boundary";
 export const PEOPLE_EMPLOYMENT_TYPES = ["pj", "clt", "contractor", "intern", "other"] as const;
 export const PEOPLE_STATUSES = [
   "active",
@@ -472,7 +472,7 @@ export const promoteCandidateToPerson = createServerFn({ method: "POST" })
       candidate_id: data.candidate_id,
       full_name: c.full_name,
       email: c.email,
-      phone: c.phone,
+      phone: sourcePhone(c.phone),
       location: c.location,
       photo_url: c.photo_url,
       role_title: data.role_title ?? c.current_position ?? null,

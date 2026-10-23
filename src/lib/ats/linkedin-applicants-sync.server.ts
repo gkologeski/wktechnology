@@ -14,6 +14,7 @@
  */
 
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { sourcePhone } from "@/lib/phone/phone-boundary";
 import { LinkedInJobBoardAdapter } from "./adapters/linkedin/job-board";
 import type { JobApplicantRecord } from "./adapters/types";
 
@@ -92,7 +93,7 @@ async function resolveCandidateId(
       owner_id: ownerId,
       full_name: applicant.fullName ?? "Candidato LinkedIn",
       email: applicant.email,
-      phone: applicant.phone,
+      phone: sourcePhone(applicant.phone),
       linkedin_url: applicant.linkedinUrl,
       location: applicant.location,
       headline: applicant.headline,

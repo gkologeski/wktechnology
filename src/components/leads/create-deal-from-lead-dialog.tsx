@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { sourcePhone } from "@/lib/phone/phone-boundary";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -222,7 +223,7 @@ export function CreateDealFromLeadDialog({
             first_name: lead.first_name,
             last_name: lead.last_name,
             email: lead.email,
-            phone: lead.phone,
+            phone: sourcePhone(lead.phone),
             company_id: resolvedCompanyId,
           })
           .select("id")

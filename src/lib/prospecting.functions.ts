@@ -587,7 +587,7 @@ export const importProspectAsLead = createServerFn({ method: "POST" })
         last_name: last,
         company_name: r.company_name,
         email: r.email || r.email_hint,
-        phone: r.phone,
+        phone: sourcePhone(r.phone),
         source: "prospecting",
         status: "new",
         external_ids: r.external_id ? { apollo_person: r.external_id } : {},
