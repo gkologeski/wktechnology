@@ -1352,6 +1352,13 @@
       "when": 1792777664113,
       "tag": "0192_workspace_settings_authorization",
       "breakpoints": true
+    },
+    {
+      "idx": 193,
+      "version": "7",
+      "when": 1792782684901,
+      "tag": "0193_hr_action_scope_alignment",
+      "breakpoints": true
     }
   ]
 }

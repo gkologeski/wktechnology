@@ -1,3 +1,4 @@
+import { assertHrRecordAccess, assertHrCreate } from "@/lib/access-control/hr-records.server";
 import { emailSchema } from "@/lib/email-schema";
 // Server functions para o módulo TechPeople (Sprint 1 — HRIS core).
 // Fornece list/get/upsert/archive de `people`, com projeção de campos
@@ -7,7 +8,7 @@ import { orSafeTerm } from "@/lib/postgrest-search";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runAutoStart } from "@/lib/people/onboarding.functions";
-import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
+import { getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 
 import { humanPhoneForRow, sourcePhone, workspacePhoneCountry } from "@/lib/phone/phone-boundary";
 export const PEOPLE_EMPLOYMENT_TYPES = ["pj", "clt", "contractor", "intern", "other"] as const;
@@ -136,7 +137,7 @@ function normalize(value: string | null | undefined): string | null {
 
 /**
  * Lista pessoas visíveis ao usuário. RLS aplica o filtro:
- * admin vê tudo, gestor vê o próprio time, pessoa vê o próprio registro.
+ * chave efetiva de leitura e vínculo próprio/equipe/workspace.
  */
 export const listPeople = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -272,37 +273,17 @@ export const getPerson = createServerFn({ method: "POST" })
   });
 
 /**
- * Cria ou atualiza uma pessoa. Apenas admin do workspace tem write (RLS).
+ * Cria ou atualiza uma pessoa com ação e escopo validados no servidor e na RLS.
  */
 export const upsertPerson = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => upsertSchema.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const workspaceIdForCheck = await getActiveWorkspaceId(supabase, userId);
-    await assertAnyPermission(supabase, userId, workspaceIdForCheck, [
-      data.id ? "techpeople.people.update.own" : "techpeople.people.create.own",
-      "techpeople.people.update.workspace",
-    ]);
-
-    // owner_id vem do workspace ativo do usuário (via profiles.active_workspace_id).
-    let ownerId: string | null = null;
-    if (!data.id) {
-      const { data: prof } = await supabase
-        .from("profiles")
-        .select("active_workspace_id")
-        .eq("id", userId)
-        .maybeSingle();
-      ownerId =
-        (prof as { active_workspace_id: string | null } | null)?.active_workspace_id ?? null;
-      if (!ownerId) throw new Error("Workspace ativo não encontrado");
-    }
-
-    const { data: wsId } = await supabase.rpc("default_workspace_for_user", { _user: userId });
-    const phoneCountry = await workspacePhoneCountry(
-      supabase,
-      typeof wsId === "string" ? wsId : null,
-    );
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
+    if (data.id) await assertHrRecordAccess(supabase, "people", "update", data.id);
+    else await assertHrCreate(supabase, userId, "techpeople.people");
+    const phoneCountry = await workspacePhoneCountry(supabase, workspaceId);
     const personPhone = await humanPhoneForRow(
       supabase,
       { table: "people", id: data.id, column: "phone" },
@@ -362,11 +343,15 @@ export const upsertPerson = createServerFn({ method: "POST" })
         .eq("id", data.id)
         .maybeSingle();
       const prevStatus = (prev as { status: PeopleStatus | null } | null)?.status ?? null;
-      const { error } = await supabase
+      const { data: saved, error } = await supabase
         .from("people")
         .update(payload as never)
-        .eq("id", data.id);
+        .eq("workspace_id", workspaceId)
+        .eq("id", data.id)
+        .select("id")
+        .maybeSingle();
       if (error) throw new Error(error.message);
+      if (!saved) throw new Error("Pessoa indisponível ou sem permissão para editar.");
       if (data.status === "offboarding" && prevStatus !== "offboarding") {
         // Idempotente: só cria plano se ainda não existir offboarding.
         await runAutoStart(supabase as never, {
@@ -381,8 +366,9 @@ export const upsertPerson = createServerFn({ method: "POST" })
     // workspace_id é a fonte de verdade do isolamento; owner_id segue espelhado (legado).
     const insertPayload = {
       ...payload,
-      workspace_id: ownerId,
-      owner_id: ownerId,
+      workspace_id: workspaceId,
+      owner_id: workspaceId,
+      assigned_to: userId,
       created_by: userId,
     };
     const { data: row, error } = await supabase
@@ -407,16 +393,15 @@ export const archivePerson = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ id: z.string().uuid(), archived: z.boolean() }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const workspaceIdForCheck = await getActiveWorkspaceId(supabase, userId);
-    await assertAnyPermission(supabase, userId, workspaceIdForCheck, [
-      "techpeople.people.update.workspace",
-      "techpeople.people.delete.workspace",
-    ]);
-    const { error } = await context.supabase
+    await assertHrRecordAccess(supabase, "people", "update", data.id);
+    const { data: saved, error } = await supabase
       .from("people")
       .update({ archived: data.archived } as never)
-      .eq("id", data.id);
+      .eq("id", data.id)
+      .select("id")
+      .maybeSingle();
     if (error) throw new Error(error.message);
+    if (!saved) throw new Error("Pessoa indisponível ou sem permissão para arquivar.");
     return { ok: true };
   });
 
@@ -442,11 +427,14 @@ export const promoteCandidateToPerson = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
+    const workspaceId = await assertHrCreate(supabase, userId, "techpeople.people");
+    await assertHrRecordAccess(supabase, "candidates", "view", data.candidate_id);
     // Se já foi promovido, devolve o mesmo id.
     const { data: existing } = await supabase
       .from("people")
       .select("id")
       .eq("candidate_id", data.candidate_id)
+      .eq("workspace_id", workspaceId)
       .maybeSingle();
     if (existing) return { id: (existing as { id: string }).id, existed: true };
 
@@ -469,7 +457,9 @@ export const promoteCandidateToPerson = createServerFn({ method: "POST" })
     };
 
     const insertPayload = {
-      owner_id: c.owner_id,
+      owner_id: workspaceId,
+      workspace_id: workspaceId,
+      assigned_to: userId,
       candidate_id: data.candidate_id,
       full_name: c.full_name,
       email: c.email,

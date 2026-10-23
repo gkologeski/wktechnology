@@ -122,3 +122,50 @@ bloqueio após falha de carga. Commit da aplicação: 628e207678de8fbc7607dcbe99
 Hashes das três configurações e das tabelas de overrides, presets e memberships
 permaneceram iguais aos da captura anterior. A aplicação de 0192 não alterou
 valores existentes nem concedeu novas permissões a cargos de negócio.
+
+
+## Etapa 3 — primeiro lote (0193)
+
+Escopo: CRUD de pessoas e candidatos e modelos/planos/tarefas de onboarding e
+offboarding. Aplicado e testado; publicação registrada nas evidências
+do lote. Não conclui toda a etapa 3 nem o aceite de cargos da etapa 5.
+
+- Quatro políticas permissivas por tabela substituem os caminhos antigos por
+  owner/admin, simples membership e a ponte específica de cargo do onboarding.
+  As políticas restritivas existentes continuam. Usa chaves efetivas de ação,
+  membro ativo e workspace selecionado; não cria permissões nem grants de cargo.
+- Own: perfil/responsável da pessoa ou responsável do candidato; planos usam
+  responsável/perfil da pessoa, tarefas também reconhecem o executor. Team exige
+  grupo do workspace ou gestor da pessoa (inclui manager_id armazenado como ID
+  de pessoa com profile_id correspondente). Permissão team sozinha não basta.
+- Plano exige pessoa consultável e relações de pessoa/template/plano no mesmo
+  workspace; o modelo deve ter o mesmo tipo (admissão/desligamento). Não é
+  possível mover registros para outro tenant, trocar a pessoa/tipo do plano ou
+  mover tarefa para outro plano. Executor com chave own pode atualizar andamento
+  da tarefa, sem reconfigurá-la ou atribuir a conclusão a outra pessoa.
+- Servidor separa create de update, usa a verificação SQL por registro, não usa
+  privilégio administrativo como fallback e verifica se a edição afetou linha.
+  Promoção de candidato exige leitura dele e criação de pessoa; o tenant vem do
+  workspace selecionado, não da autoria do candidato. Arquivar exige update.
+- Plano e tarefas são criados em uma RPC SECURITY INVOKER transacional. Falha
+  numa tarefa desfaz o conjunto. Automação usa workspace_id real da pessoa e
+  lock transacional com reaproveitamento de plano existente. Modelos continuam
+  selecionados pela regra atual de cargo/tipo de contratação.
+- Escrita de pessoa informa explicitamente workspace, autoria e responsável;
+  o trigger normaliza workspace copiado para responsável apenas em nova pessoa.
+  Não altera defaults nem reescreve registros históricos. Serviços internos
+  conservam o acesso já existente como exceção técnica explícita.
+
+112 verificações novas de PostgreSQL e 162 anteriores passaram (274). A suíte
+completa passou com 1.534 testes (19 novos), incluindo handlers executados e
+contratos de isolamento entre módulos. A fixture reproduz o bypass anterior de
+candidatos, mas não é clone integral nem aceite real de navegador/GoTrue.
+
+Continuam pendentes: dados sensíveis e seus campos, helpers de avaliações/metas,
+políticas de vagas, LGPD por escopo, documentos/benefícios/alocações/incidentes e
+restante dos módulos. A implementação não declara essas lacunas resolvidas.
+
+Aceite SQL na base ativa usando auth.uid de Priscila passou: gravar e editar
+pessoa, criar onboarding/offboarding e tarefa, concluir tarefa e excluir registros
+de teste; registro inexistente e ator sem membership foram negados. A transação
+inteira terminou em rollback. Não foi utilizada uma sessão real do navegador.

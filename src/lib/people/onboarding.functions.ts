@@ -1,3 +1,5 @@
+import { assertHrRecordAccess, assertHrCreate } from "@/lib/access-control/hr-records.server";
+import { createHrOnboardingPlan } from "@/lib/people/onboarding-plan.server";
 // Server functions do módulo TechPeople — Sprint 6 & 7.
 // Onboarding & Offboarding: templates, planos, tarefas e automação.
 import { createServerFn } from "@tanstack/react-start";
@@ -154,6 +156,9 @@ export const upsertOnbTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => templateSchema.parse(i))
   .handler(async ({ data, context }) => {
+    if (data.id)
+      await assertHrRecordAccess(context.supabase, "onboarding_templates", "update", data.id);
+    else await assertHrCreate(context.supabase, context.userId, "techpeople.onboarding_templates");
     const { supabase, userId } = context;
     const payload: Record<string, unknown> = {
       name: data.name,
@@ -165,11 +170,14 @@ export const upsertOnbTemplate = createServerFn({ method: "POST" })
       items: data.items,
     };
     if (data.id) {
-      const { error } = await supabase
+      const { data: saved, error } = await supabase
         .from("people_onboarding_templates")
         .update(payload as never)
-        .eq("id", data.id);
+        .eq("id", data.id)
+        .select("id")
+        .maybeSingle();
       if (error) throw new Error(error.message);
+      if (!saved) throw new Error("Registro indisponível ou sem permissão para editar.");
       return { id: data.id };
     }
     const workspace_id = await resolveWorkspaceId(supabase, userId);
@@ -186,6 +194,7 @@ export const deleteOnbTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    await assertHrRecordAccess(context.supabase, "onboarding_templates", "delete", data.id);
     await deleteByIdGuarded(
       context.supabase,
       "people_onboarding_templates",
@@ -281,74 +290,26 @@ export const createOnbPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => planSchema.parse(i))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspace_id = await resolveWorkspaceId(supabase, userId);
-    const startedAt = data.started_at ?? new Date().toISOString().slice(0, 10);
-    const { data: planRow, error } = await supabase
-      .from("people_onboarding_plans")
-      .insert({
-        workspace_id,
-        owner_id: userId,
-        person_id: data.person_id,
-        template_id: data.template_id ?? null,
-        kind: data.kind,
-        status: data.status,
-        started_at: startedAt,
-        target_completion_date: data.target_completion_date ?? null,
-        notes: data.notes ?? null,
-      } as never)
-      .select("id")
-      .single();
-    if (error) throw new Error(error.message);
-    const planId = (planRow as { id: string }).id;
-
-    if (data.template_id) {
-      const { data: tpl } = await supabase
-        .from("people_onboarding_templates")
-        .select("items")
-        .eq("id", data.template_id)
-        .maybeSingle();
-      const items = ((tpl as { items?: OnbTemplateItem[] } | null)?.items ??
-        []) as OnbTemplateItem[];
-      if (items.length > 0) {
-        const base = new Date(startedAt);
-        const rows = items.map((it, idx) => {
-          let due: string | null = null;
-          if (typeof it.due_offset_days === "number") {
-            const d = new Date(base);
-            d.setDate(d.getDate() + it.due_offset_days);
-            due = d.toISOString().slice(0, 10);
-          }
-          return {
-            workspace_id,
-            plan_id: planId,
-            title: it.title,
-            description: it.description ?? null,
-            category: it.category ?? null,
-            due_date: due,
-            order_index: idx,
-            status: "pending" as const,
-          };
-        });
-        const { error: e2 } = await supabase.from("people_onboarding_tasks").insert(rows as never);
-        if (e2) throw new Error(e2.message);
-      }
-    }
-    return { id: planId };
+    const result = await createHrOnboardingPlan(context.supabase, data);
+    return { id: result.id };
   });
 
 export const updateOnbPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => planSchema.partial().extend({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    await assertHrRecordAccess(context.supabase, "onboarding_plans", "update", data.id);
     const { id, ...rest } = data;
     const payload: Record<string, unknown> = { ...rest };
     if (rest.status === "completed") payload.completed_at = new Date().toISOString();
-    const { error } = await context.supabase
+    const { data: saved, error } = await context.supabase
       .from("people_onboarding_plans")
       .update(payload as never)
-      .eq("id", id);
+      .eq("id", id)
+      .select("id")
+      .maybeSingle();
     if (error) throw new Error(error.message);
+    if (!saved) throw new Error("Registro indisponível ou sem permissão para editar.");
     return { id };
   });
 
@@ -356,6 +317,7 @@ export const deleteOnbPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    await assertHrRecordAccess(context.supabase, "onboarding_plans", "delete", data.id);
     await deleteByIdGuarded(
       context.supabase,
       "people_onboarding_plans",
@@ -385,6 +347,8 @@ export const upsertOnbTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => taskSchema.parse(i))
   .handler(async ({ data, context }) => {
+    if (data.id)
+      await assertHrRecordAccess(context.supabase, "onboarding_tasks", "update", data.id);
     const { supabase, userId } = context;
     const payload: Record<string, unknown> = {
       plan_id: data.plan_id,
@@ -406,11 +370,14 @@ export const upsertOnbTask = createServerFn({ method: "POST" })
       payload.completed_by = null;
     }
     if (data.id) {
-      const { error } = await supabase
+      const { data: saved, error } = await supabase
         .from("people_onboarding_tasks")
         .update(payload as never)
-        .eq("id", data.id);
+        .eq("id", data.id)
+        .select("id")
+        .maybeSingle();
       if (error) throw new Error(error.message);
+      if (!saved) throw new Error("Registro indisponível ou sem permissão para editar.");
       return { id: data.id };
     }
     const { data: plan } = await supabase
@@ -435,6 +402,7 @@ export const setOnbTaskStatus = createServerFn({ method: "POST" })
     z.object({ id: z.string().uuid(), status: z.enum(ONB_TASK_STATUSES) }).parse(i),
   )
   .handler(async ({ data, context }) => {
+    await assertHrRecordAccess(context.supabase, "onboarding_tasks", "update", data.id);
     const { supabase, userId } = context;
     const payload: Record<string, unknown> = { status: data.status };
     if (data.status === "done") {
@@ -444,11 +412,14 @@ export const setOnbTaskStatus = createServerFn({ method: "POST" })
       payload.completed_at = null;
       payload.completed_by = null;
     }
-    const { error } = await supabase
+    const { data: saved, error } = await supabase
       .from("people_onboarding_tasks")
       .update(payload as never)
-      .eq("id", data.id);
+      .eq("id", data.id)
+      .select("id")
+      .maybeSingle();
     if (error) throw new Error(error.message);
+    if (!saved) throw new Error("Registro indisponível ou sem permissão para editar.");
     return { ok: true };
   });
 
@@ -456,6 +427,7 @@ export const deleteOnbTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    await assertHrRecordAccess(context.supabase, "onboarding_tasks", "delete", data.id);
     await deleteByIdGuarded(
       context.supabase,
       "people_onboarding_tasks",
@@ -519,52 +491,16 @@ async function materializePlan(
     startedAt?: string | null;
     notes?: string | null;
   },
-): Promise<{ planId: string; taskCount: number }> {
-  const startedAt = args.startedAt ?? new Date().toISOString().slice(0, 10);
-  const { data: planRow, error } = await supabase
-    .from("people_onboarding_plans")
-    .insert({
-      workspace_id: args.workspaceId,
-      owner_id: args.userId,
-      person_id: args.personId,
-      template_id: args.templateId,
-      kind: args.kind,
-      status: "in_progress",
-      started_at: startedAt,
-      notes: args.notes ?? null,
-    } as never)
-    .select("id")
-    .single();
-  if (error) throw new Error(error.message);
-  const planId = (planRow as { id: string }).id;
-  let taskCount = 0;
-  if (args.items.length > 0) {
-    const base = new Date(startedAt);
-    const rows = args.items.map((it, idx) => {
-      let due: string | null = null;
-      if (typeof it.due_offset_days === "number") {
-        const d = new Date(base);
-        d.setDate(d.getDate() + it.due_offset_days);
-        due = d.toISOString().slice(0, 10);
-      }
-      return {
-        workspace_id: args.workspaceId,
-        plan_id: planId,
-        title: it.title,
-        description: it.description ?? null,
-        category: it.category ?? null,
-        due_date: due,
-        order_index: idx,
-        status: "pending" as const,
-        is_critical: it.is_critical ?? false,
-        revocation_system: it.revocation_system ?? null,
-      };
-    });
-    const { error: e2 } = await supabase.from("people_onboarding_tasks").insert(rows as never);
-    if (e2) throw new Error(e2.message);
-    taskCount = rows.length;
-  }
-  return { planId, taskCount };
+): Promise<{ planId: string; taskCount: number; existed: boolean }> {
+  const result = await createHrOnboardingPlan(supabase as unknown as SupabaseClient, {
+    person_id: args.personId,
+    kind: args.kind,
+    template_id: args.templateId,
+    started_at: args.startedAt,
+    notes: args.notes,
+    automatic: true,
+  });
+  return { planId: result.id, taskCount: result.task_count, existed: result.existed };
 }
 
 /**
@@ -625,13 +561,13 @@ export async function runAutoStart(
   const { userId, personId, kind } = args;
   const { data: person } = await supabase
     .from("people")
-    .select("id, owner_id, role_title, employment_type, hire_date, termination_date")
+    .select("id, workspace_id, role_title, employment_type, hire_date, termination_date")
     .eq("id", personId)
     .maybeSingle();
   if (!person) return { status: "skipped_missing_person" };
   const p = person as {
     id: string;
-    owner_id: string;
+    workspace_id: string;
     role_title: string | null;
     employment_type: string | null;
     hire_date: string | null;
@@ -640,7 +576,7 @@ export async function runAutoStart(
   if (await hasExistingPlan(supabase, personId, kind)) {
     return { status: "skipped_existing" };
   }
-  const tpl = await pickDefaultTemplate(supabase, p.owner_id, kind, {
+  const tpl = await pickDefaultTemplate(supabase, p.workspace_id, kind, {
     role_title: p.role_title,
     employment_type: p.employment_type,
   });
@@ -649,17 +585,18 @@ export async function runAutoStart(
     kind === "onboarding"
       ? (p.hire_date ?? new Date().toISOString().slice(0, 10))
       : (p.termination_date ?? new Date().toISOString().slice(0, 10));
-  const { planId, taskCount } = await materializePlan(supabase, {
+  const { planId, taskCount, existed } = await materializePlan(supabase, {
     userId,
-    workspaceId: p.owner_id,
+    workspaceId: p.workspace_id,
     personId,
     kind,
     templateId: tpl.id,
     items: tpl.items,
     startedAt,
   });
+  if (existed) return { status: "skipped_existing", plan_id: planId };
   await emitEvent(supabase, {
-    ownerId: p.owner_id,
+    ownerId: p.workspace_id,
     eventName: kind === "onboarding" ? "people.onboarding_started" : "people.offboarding_started",
     entityType: "person",
     entityId: personId,

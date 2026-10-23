@@ -1,3 +1,4 @@
+import { assertHrRecordAccess, assertHrCreate } from "@/lib/access-control/hr-records.server";
 import { emailSchema } from "@/lib/email-schema";
 // Server functions do módulo ATS (Sprint A: CRUD + Kanban).
 import { createServerFn } from "@tanstack/react-start";
@@ -577,12 +578,9 @@ export const saveAtsCandidate = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => CandidateSaveSchema.parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
-    const workspaceIdForCheck = await getActiveWorkspaceId(supabase, userId);
-    await assertAnyPermission(supabase, userId, workspaceIdForCheck, [
-      "techhire.candidates.create.own",
-      "techhire.candidates.update.workspace",
-    ]);
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
+    if (data.id) await assertHrRecordAccess(supabase, "candidates", "update", data.id);
+    else await assertHrCreate(supabase, userId, "techhire.candidates");
     const phone = await humanPhoneForRow(
       supabase,
       { table: "ats_candidates", id: data.id, column: "phone" },
@@ -652,10 +650,7 @@ export const deleteAtsCandidate = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const workspaceIdForCheck = await getActiveWorkspaceId(supabase, userId);
-    await assertAnyPermission(supabase, userId, workspaceIdForCheck, [
-      "techhire.candidates.delete.workspace",
-    ]);
+    await assertHrRecordAccess(supabase, "candidates", "delete", data.id);
     const { data: del, error } = await supabase
       .from("ats_candidates")
       .delete()

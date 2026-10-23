@@ -1,0 +1,42 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
+
+type HrRecord =
+  | "people"
+  | "candidates"
+  | "onboarding_plans"
+  | "onboarding_tasks"
+  | "onboarding_templates";
+type HrAction = "view" | "create" | "update" | "delete";
+type HrRpc = (
+  name: string,
+  args: Record<string, unknown>,
+) => Promise<{ data: unknown; error: { message: string } | null }>;
+
+export async function assertHrRecordAccess(
+  client: SupabaseClient,
+  resource: HrRecord,
+  action: HrAction,
+  id: string,
+): Promise<void> {
+  const { data, error } = await (client.rpc as unknown as HrRpc).call(client, "hr_record_access", {
+    _resource: resource,
+    _action: action,
+    _id: id,
+  });
+  if (error) throw new Error(error.message);
+  if (data !== true) throw new Error("Registro indisponível ou sem permissão para esta ação.");
+}
+
+export async function assertHrCreate(
+  client: SupabaseClient,
+  userId: string,
+  resource: "techpeople.people" | "techhire.candidates" | "techpeople.onboarding_templates",
+): Promise<string> {
+  const workspaceId = await getActiveWorkspaceId(client, userId);
+  await assertAnyPermission(client, userId, workspaceId, [
+    `${resource}.create.workspace`,
+    `${resource}.create.own`,
+  ]);
+  return workspaceId;
+}

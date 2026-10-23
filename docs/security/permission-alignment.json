@@ -223,6 +223,484 @@
       "database": "0192: column ACLs + authorized SECURITY DEFINER RPC; field allowlist and atomic audit on changes",
       "migration": "0192",
       "status": "applied_published_sql_tested"
+    },
+    {
+      "operation": "people.view",
+      "kind": "business_action",
+      "route_consumers": [
+        "/people",
+        "/people/$personId"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techpeople.people",
+      "action": "view",
+      "permission_keys": [
+        "techpeople.people.view.workspace",
+        "techpeople.people.view.team",
+        "techpeople.people.view.own"
+      ],
+      "scope": "effective action key plus real own/team/workspace binding; onboarding additionally requires person read and same-workspace person/template/plan links",
+      "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
+      "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
+      "migration": "0193",
+      "status": "applied_sql_tested_application_publish_pending",
+      "exceptions": [
+        "trusted service-role/internal SQL access retained; no role grants"
+      ]
+    },
+    {
+      "operation": "people.create",
+      "kind": "business_action",
+      "route_consumers": [
+        "/people",
+        "/people/$personId"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techpeople.people",
+      "action": "create",
+      "permission_keys": [
+        "techpeople.people.create.workspace",
+        "techpeople.people.create.own"
+      ],
+      "scope": "effective action key plus real own/team/workspace binding; onboarding additionally requires person read and same-workspace person/template/plan links",
+      "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
+      "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
+      "migration": "0193",
+      "status": "applied_sql_tested_application_publish_pending",
+      "exceptions": [
+        "trusted service-role/internal SQL access retained; no role grants"
+      ]
+    },
+    {
+      "operation": "people.update",
+      "kind": "business_action",
+      "route_consumers": [
+        "/people",
+        "/people/$personId"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techpeople.people",
+      "action": "update",
+      "permission_keys": [
+        "techpeople.people.update.workspace",
+        "techpeople.people.update.team",
+        "techpeople.people.update.own"
+      ],
+      "scope": "effective action key plus real own/team/workspace binding; onboarding additionally requires person read and same-workspace person/template/plan links",
+      "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
+      "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
+      "migration": "0193",
+      "status": "applied_sql_tested_application_publish_pending",
+      "exceptions": [
+        "trusted service-role/internal SQL access retained; no role grants"
+      ]
+    },
+    {
+      "operation": "people.delete",
+      "kind": "business_action",
+      "route_consumers": [
+        "/people",
+        "/people/$personId"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techpeople.people",
+      "action": "delete",
+      "permission_keys": [
+        "techpeople.people.delete.workspace",
+        "techpeople.people.delete.own"
+      ],
+      "scope": "effective action key plus real own/team/workspace binding; onboarding additionally requires person read and same-workspace person/template/plan links",
+      "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
+      "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
+      "migration": "0193",
+      "status": "applied_sql_tested_application_publish_pending",
+      "exceptions": [
+        "trusted service-role/internal SQL access retained; no role grants"
+      ]
+    },
+    {
+      "operation": "candidates.view",
+      "kind": "business_action",
+      "route_consumers": [
+        "/ats/candidates",
+        "/ats/candidates/$candidateId"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techhire.candidates",
+      "action": "view",
+      "permission_keys": [
+        "techhire.candidates.view.workspace",
+        "techhire.candidates.view.team",
+        "techhire.candidates.view.own"
+      ],
+      "scope": "effective action key plus real own/team/workspace binding; onboarding additionally requires person read and same-workspace person/template/plan links",
+      "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
+      "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
+      "migration": "0193",
+      "status": "applied_sql_tested_application_publish_pending",
+      "exceptions": [
+        "trusted service-role/internal SQL access retained; no role grants"
+      ]
+    },
+    {
+      "operation": "candidates.create",
+      "kind": "business_action",
+      "route_consumers": [
+        "/ats/candidates",
+        "/ats/candidates/$candidateId"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techhire.candidates",
+      "action": "create",
+      "permission_keys": [
+        "techhire.candidates.create.workspace",
+        "techhire.candidates.create.own"
+      ],
+      "scope": "effective action key plus real own/team/workspace binding; onboarding additionally requires person read and same-workspace person/template/plan links",
+      "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
+      "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
+      "migration": "0193",
+      "status": "applied_sql_tested_application_publish_pending",
+      "exceptions": [
+        "trusted service-role/internal SQL access retained; no role grants"
+      ]
+    },
+    {
+      "operation": "candidates.update",
+      "kind": "business_action",
+      "route_consumers": [
+        "/ats/candidates",
+        "/ats/candidates/$candidateId"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techhire.candidates",
+      "action": "update",
+      "permission_keys": [
+        "techhire.candidates.update.workspace",
+        "techhire.candidates.update.team",
+        "techhire.candidates.update.own"
+      ],
+      "scope": "effective action key plus real own/team/workspace binding; onboarding additionally requires person read and same-workspace person/template/plan links",
+      "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
+      "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
+      "migration": "0193",
+      "status": "applied_sql_tested_application_publish_pending",
+      "exceptions": [
+        "trusted service-role/internal SQL access retained; no role grants"
+      ]
+    },
+    {
+      "operation": "candidates.delete",
+      "kind": "business_action",
+      "route_consumers": [
+        "/ats/candidates",
+        "/ats/candidates/$candidateId"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techhire.candidates",
+      "action": "delete",
+      "permission_keys": [
+        "techhire.candidates.delete.workspace",
+        "techhire.candidates.delete.own"
+      ],
+      "scope": "effective action key plus real own/team/workspace binding; onboarding additionally requires person read and same-workspace person/template/plan links",
+      "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
+      "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
+      "migration": "0193",
+      "status": "applied_sql_tested_application_publish_pending",
+      "exceptions": [
+        "trusted service-role/internal SQL access retained; no role grants"
+      ]
+    },
+    {
+      "operation": "onboarding_templates.view",
+      "kind": "business_action",
+      "route_consumers": [
+        "/people/onboarding-templates"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techpeople.onboarding_templates",
+      "action": "view",
+      "permission_keys": [
+        "techpeople.onboarding_templates.view.workspace",
+        "techpeople.onboarding_templates.view.team",
+        "techpeople.onboarding_templates.view.own"
+      ],
+      "scope": "effective action key plus real own/team/workspace binding; onboarding additionally requires person read and same-workspace person/template/plan links",
+      "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
+      "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
+      "migration": "0193",
+      "status": "applied_sql_tested_application_publish_pending",
+      "exceptions": [
+        "trusted service-role/internal SQL access retained; no role grants"
+      ]
+    },
+    {
+      "operation": "onboarding_templates.create",
+      "kind": "business_action",
+      "route_consumers": [
+        "/people/onboarding-templates"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techpeople.onboarding_templates",
+      "action": "create",
+      "permission_keys": [
+        "techpeople.onboarding_templates.create.workspace",
+        "techpeople.onboarding_templates.create.own"
+      ],
+      "scope": "effective action key plus real own/team/workspace binding; onboarding additionally requires person read and same-workspace person/template/plan links",
+      "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
+      "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
+      "migration": "0193",
+      "status": "applied_sql_tested_application_publish_pending",
+      "exceptions": [
+        "trusted service-role/internal SQL access retained; no role grants"
+      ]
+    },
+    {
+      "operation": "onboarding_templates.update",
+      "kind": "business_action",
+      "route_consumers": [
+        "/people/onboarding-templates"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techpeople.onboarding_templates",
+      "action": "update",
+      "permission_keys": [
+        "techpeople.onboarding_templates.update.workspace",
+        "techpeople.onboarding_templates.update.team",
+        "techpeople.onboarding_templates.update.own"
+      ],
+      "scope": "effective action key plus real own/team/workspace binding; onboarding additionally requires person read and same-workspace person/template/plan links",
+      "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
+      "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
+      "migration": "0193",
+      "status": "applied_sql_tested_application_publish_pending",
+      "exceptions": [
+        "trusted service-role/internal SQL access retained; no role grants"
+      ]
+    },
+    {
+      "operation": "onboarding_templates.delete",
+      "kind": "business_action",
+      "route_consumers": [
+        "/people/onboarding-templates"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techpeople.onboarding_templates",
+      "action": "delete",
+      "permission_keys": [
+        "techpeople.onboarding_templates.delete.workspace",
+        "techpeople.onboarding_templates.delete.own"
+      ],
+      "scope": "effective action key plus real own/team/workspace binding; onboarding additionally requires person read and same-workspace person/template/plan links",
+      "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
+      "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
+      "migration": "0193",
+      "status": "applied_sql_tested_application_publish_pending",
+      "exceptions": [
+        "trusted service-role/internal SQL access retained; no role grants"
+      ]
+    },
+    {
+      "operation": "onboarding_plans.view",
+      "kind": "business_action",
+      "route_consumers": [
+        "ficha da pessoa: onboarding/offboarding"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techpeople.onboarding|techpeople.offboarding",
+      "action": "view",
+      "permission_keys": [
+        "techpeople.onboarding.view.workspace",
+        "techpeople.onboarding.view.team",
+        "techpeople.onboarding.view.own",
+        "techpeople.offboarding.view.workspace",
+        "techpeople.offboarding.view.team",
+        "techpeople.offboarding.view.own"
+      ],
+      "scope": "effective action key plus real own/team/workspace binding; onboarding additionally requires person read and same-workspace person/template/plan links",
+      "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
+      "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
+      "migration": "0193",
+      "status": "applied_sql_tested_application_publish_pending",
+      "exceptions": [
+        "trusted service-role/internal SQL access retained; no role grants"
+      ]
+    },
+    {
+      "operation": "onboarding_plans.create",
+      "kind": "business_action",
+      "route_consumers": [
+        "ficha da pessoa: onboarding/offboarding"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techpeople.onboarding|techpeople.offboarding",
+      "action": "create",
+      "permission_keys": [
+        "techpeople.onboarding.create.workspace",
+        "techpeople.onboarding.create.own",
+        "techpeople.offboarding.create.workspace",
+        "techpeople.offboarding.create.own"
+      ],
+      "scope": "effective action key plus real own/team/workspace binding; onboarding additionally requires person read and same-workspace person/template/plan links",
+      "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
+      "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
+      "migration": "0193",
+      "status": "applied_sql_tested_application_publish_pending",
+      "exceptions": [
+        "trusted service-role/internal SQL access retained; no role grants"
+      ]
+    },
+    {
+      "operation": "onboarding_plans.update",
+      "kind": "business_action",
+      "route_consumers": [
+        "ficha da pessoa: onboarding/offboarding"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techpeople.onboarding|techpeople.offboarding",
+      "action": "update",
+      "permission_keys": [
+        "techpeople.onboarding.update.workspace",
+        "techpeople.onboarding.update.team",
+        "techpeople.onboarding.update.own",
+        "techpeople.offboarding.update.workspace",
+        "techpeople.offboarding.update.team",
+        "techpeople.offboarding.update.own"
+      ],
+      "scope": "effective action key plus real own/team/workspace binding; onboarding additionally requires person read and same-workspace person/template/plan links",
+      "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
+      "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
+      "migration": "0193",
+      "status": "applied_sql_tested_application_publish_pending",
+      "exceptions": [
+        "trusted service-role/internal SQL access retained; no role grants"
+      ]
+    },
+    {
+      "operation": "onboarding_plans.delete",
+      "kind": "business_action",
+      "route_consumers": [
+        "ficha da pessoa: onboarding/offboarding"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techpeople.onboarding|techpeople.offboarding",
+      "action": "delete",
+      "permission_keys": [
+        "techpeople.onboarding.delete.workspace",
+        "techpeople.onboarding.delete.own",
+        "techpeople.offboarding.delete.workspace",
+        "techpeople.offboarding.delete.own"
+      ],
+      "scope": "effective action key plus real own/team/workspace binding; onboarding additionally requires person read and same-workspace person/template/plan links",
+      "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
+      "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
+      "migration": "0193",
+      "status": "applied_sql_tested_application_publish_pending",
+      "exceptions": [
+        "trusted service-role/internal SQL access retained; no role grants"
+      ]
+    },
+    {
+      "operation": "onboarding_tasks.view",
+      "kind": "business_action",
+      "route_consumers": [
+        "tarefas do plano"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techpeople.onboarding|techpeople.offboarding",
+      "action": "view",
+      "permission_keys": [
+        "techpeople.onboarding.view.workspace",
+        "techpeople.onboarding.view.team",
+        "techpeople.onboarding.view.own",
+        "techpeople.offboarding.view.workspace",
+        "techpeople.offboarding.view.team",
+        "techpeople.offboarding.view.own"
+      ],
+      "scope": "effective action key plus real own/team/workspace binding; onboarding additionally requires person read and same-workspace person/template/plan links",
+      "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
+      "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
+      "migration": "0193",
+      "status": "applied_sql_tested_application_publish_pending",
+      "exceptions": [
+        "trusted service-role/internal SQL access retained; no role grants"
+      ]
+    },
+    {
+      "operation": "onboarding_tasks.create",
+      "kind": "business_action",
+      "route_consumers": [
+        "tarefas do plano"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techpeople.onboarding|techpeople.offboarding",
+      "action": "create",
+      "permission_keys": [
+        "techpeople.onboarding.create.workspace",
+        "techpeople.onboarding.create.own",
+        "techpeople.offboarding.create.workspace",
+        "techpeople.offboarding.create.own"
+      ],
+      "scope": "effective action key plus real own/team/workspace binding; onboarding additionally requires person read and same-workspace person/template/plan links",
+      "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
+      "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
+      "migration": "0193",
+      "status": "applied_sql_tested_application_publish_pending",
+      "exceptions": [
+        "trusted service-role/internal SQL access retained; no role grants"
+      ]
+    },
+    {
+      "operation": "onboarding_tasks.update",
+      "kind": "business_action",
+      "route_consumers": [
+        "tarefas do plano"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techpeople.onboarding|techpeople.offboarding",
+      "action": "update",
+      "permission_keys": [
+        "techpeople.onboarding.update.workspace",
+        "techpeople.onboarding.update.team",
+        "techpeople.onboarding.update.own",
+        "techpeople.offboarding.update.workspace",
+        "techpeople.offboarding.update.team",
+        "techpeople.offboarding.update.own"
+      ],
+      "scope": "effective action key plus real own/team/workspace binding; onboarding additionally requires person read and same-workspace person/template/plan links",
+      "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
+      "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
+      "migration": "0193",
+      "status": "applied_sql_tested_application_publish_pending",
+      "exceptions": [
+        "trusted service-role/internal SQL access retained; no role grants"
+      ]
+    },
+    {
+      "operation": "onboarding_tasks.delete",
+      "kind": "business_action",
+      "route_consumers": [
+        "tarefas do plano"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techpeople.onboarding|techpeople.offboarding",
+      "action": "delete",
+      "permission_keys": [
+        "techpeople.onboarding.delete.workspace",
+        "techpeople.onboarding.delete.own",
+        "techpeople.offboarding.delete.workspace",
+        "techpeople.offboarding.delete.own"
+      ],
+      "scope": "effective action key plus real own/team/workspace binding; onboarding additionally requires person read and same-workspace person/template/plan links",
+      "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
+      "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
+      "migration": "0193",
+      "status": "applied_sql_tested_application_publish_pending",
+      "exceptions": [
+        "trusted service-role/internal SQL access retained; no role grants"
+      ]
     }
   ],
   "rules": [
@@ -357,8 +835,8 @@
       "area": "TechHire",
       "problema": "Política ampla contorna RBAC de candidatos",
       "decisao_alvo": "Consolidar permissivas e restritivas por ação e escopo, com teste direto sem UI.",
-      "status": "pendente",
-      "evidencia_migracao": null,
+      "status": "aplicado_testado_sql_publicacao_pendente",
+      "evidencia_migracao": "0193",
       "aceite_visual": false
     },
     {
@@ -411,8 +889,8 @@
       "area": "TechPeople",
       "problema": "Onboarding admin-only",
       "decisao_alvo": "Substituir ponte Head de RH local por autorização por ação/escopo após aceite; preservar checks de pessoa/plano.",
-      "status": "corrigido_wk_validacao_ampliacao_pendente",
-      "evidencia_migracao": "0189",
+      "status": "aplicado_testado_sql_publicacao_pendente",
+      "evidencia_migracao": "0193",
       "aceite_visual": false
     },
     {
@@ -431,7 +909,8 @@
       "decisao_alvo": "Separar usuário responsável de owner legado; correção 0190 aplicada na WK e testes de FK mantidos.",
       "status": "corrigido_wk",
       "evidencia_migracao": "0190",
-      "aceite_visual": false
+      "aceite_visual": false,
+      "observacao_0193": "New person writes explicitly set workspace and actual user responsible; guard normalizes legacy workspace-as-responsible on INSERT; no historical row backfill."
     },
     {
       "id": 24,
@@ -456,8 +935,8 @@
       "area": "TechPeople",
       "problema": "Criar pessoa usa chave de editar",
       "decisao_alvo": "Criar exige create no escopo correto; editar não concede criar.",
-      "status": "pendente",
-      "evidencia_migracao": null,
+      "status": "aplicado_testado_sql_publicacao_pendente",
+      "evidencia_migracao": "0193",
       "aceite_visual": false
     },
     {
@@ -516,9 +995,10 @@
     }
   ],
   "limitations": [
-    "Thirteen operation contracts implemented; remaining actions require explicit validation.",
+    "Thirty-three operation contracts recorded; remaining actions require explicit validation.",
     "Route inventory is static evidence, not certification of enforcement.",
     "SQL tests are not browser/GoTrue/PostgREST acceptance.",
-    "No new business role grants in 0191 or 0192; six new catalog keys in 0192."
+    "No new business role grants in 0191 or 0192; six new catalog keys in 0192.",
+    "0193 covers CRUD of people/candidates/onboarding plans/tasks/templates only; sensitive fields, jobs, other HR resources and browser acceptance remain separate."
   ]
 }
