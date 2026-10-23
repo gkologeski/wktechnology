@@ -332,7 +332,7 @@ export function FieldValueEditor({
     return (
       <Input
         className={compact ? "h-8 text-xs" : undefined}
-        type={field.type === "number" ? "number" : "date"}
+        type="number"
         value={str}
         onChange={(e) => {
           const raw = e.target.value;

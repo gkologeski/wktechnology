@@ -32,7 +32,8 @@ import {
   presetForDate,
   type SinglePresetKey,
 } from "@/lib/date-single-presets";
-import { isDayWithin } from "@/lib/iso-date";
+import { formatIsoDate, isDayWithin } from "@/lib/iso-date";
+import { calendarNavigationBounds, datePickerValidationMessage } from "@/lib/date-picker-rules";
 
 /**
  * Ao abrir, coloca o foco no dia escolhido (ou hoje, ou o primeiro dia
@@ -49,10 +50,6 @@ export function focusCalendarDay(e: Event) {
     day?.focus();
   });
 }
-
-/** Faixa de anos das listas de mês/ano quando o campo não tem limites. */
-const FIRST_YEAR = 1900;
-const YEARS_AHEAD = 50;
 
 export type DatePickerPanelProps = {
   value?: Date | null;
@@ -84,13 +81,15 @@ export function DatePickerPanel({
   }, [value]);
 
   const bounds = { min, max };
-  const now = new Date();
-  const startMonth = min ?? new Date(FIRST_YEAR, 0, 1);
-  const endMonth = max ?? new Date(now.getFullYear() + YEARS_AHEAD, 11, 31);
-  const initialMonth =
-    value ??
-    defaultMonth ??
-    (min && !isDayWithin(now, { min }) ? min : max && !isDayWithin(now, { max }) ? max : now);
+  const [month, setMonth] = React.useState<Date>(() => {
+    const now = new Date();
+    return (
+      value ??
+      defaultMonth ??
+      (min && !isDayWithin(now, { min }) ? min : max && !isDayWithin(now, { max }) ? max : now)
+    );
+  });
+  const { startMonth, endMonth } = calendarNavigationBounds(month, { value, min, max });
 
   const disabledDays = [
     ...(min ? [{ before: startOfDay(min) }] : []),
@@ -163,7 +162,8 @@ export function DatePickerPanel({
           captionLayout="dropdown"
           startMonth={startMonth}
           endMonth={endMonth}
-          defaultMonth={initialMonth}
+          month={month}
+          onMonthChange={setMonth}
           selected={value ?? undefined}
           disabled={disabledDays.length ? disabledDays : undefined}
           formatters={{
@@ -186,7 +186,7 @@ export function DatePickerPanel({
 export type DatePickerProps = {
   value?: Date | null;
   onChange: (date: Date, presetKey?: SinglePresetKey) => void;
-  /** Quando informado, exibe a ação "Limpar" (campo opcional). */
+  /** Quando informado, exibe a ação "Limpar" (só em campo opcional). */
   onClear?: () => void;
   defaultPreset?: SinglePresetKey;
   placeholder?: string;
@@ -198,15 +198,35 @@ export type DatePickerProps = {
   className?: string;
   /** `id` do gatilho — use com `<Label htmlFor>`. */
   id?: string;
+  /**
+   * Nome no `<form>`: envia "YYYY-MM-DD" (ou vazio) no FormData, como o
+   * `<input type="date">` que este componente substitui.
+   */
+  name?: string;
   disabled?: boolean;
   /** Mostra o valor e não abre o calendário. */
   readOnly?: boolean;
+  /** Obrigatório: bloqueia o envio do `<form>` vazio e nunca oferece "Limpar". */
   required?: boolean;
   invalid?: boolean;
   "aria-describedby"?: string;
   min?: Date | null;
   max?: Date | null;
+  /** Abre o calendário ao montar (edição inline). */
+  defaultOpen?: boolean;
+  /** Avisado quando o calendário abre/fecha (ex.: cancelar edição inline). */
+  onOpenChange?: (open: boolean) => void;
 };
+
+/** Primeiro controle inválido do formulário (ordem do documento). */
+function firstInvalidControl(form: HTMLFormElement | null): Element | null {
+  if (!form) return null;
+  for (const el of Array.from(form.elements)) {
+    const c = el as HTMLInputElement;
+    if (typeof c.checkValidity === "function" && c.willValidate && !c.validity.valid) return c;
+  }
+  return null;
+}
 
 export function DatePicker({
   value,
@@ -220,6 +240,7 @@ export function DatePicker({
   ariaLabel,
   className,
   id,
+  name,
   disabled,
   readOnly,
   required,
@@ -227,70 +248,137 @@ export function DatePicker({
   "aria-describedby": describedBy,
   min,
   max,
+  defaultOpen = false,
+  onOpenChange,
 }: DatePickerProps) {
-  const [open, setOpen] = React.useState(false);
-  const label = value ? format(value, "dd/MM/yyyy", { locale: ptBR }) : placeholder;
+  const [open, setOpenState] = React.useState(defaultOpen && !readOnly && !disabled);
+  const setOpen = (v: boolean) => {
+    const next = readOnly || disabled ? false : v;
+    setOpenState(next);
+    onOpenChange?.(next);
+  };
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
+  const proxyRef = React.useRef<HTMLInputElement>(null);
+  const errorId = React.useId();
+
+  // Validação nativa do <form>: o gatilho é um botão, então um <input>
+  // espelho (fora da tabulação) carrega valor, `required` e limites.
+  const validation = datePickerValidationMessage({ value, required, min, max });
+  const needsProxy = !!name || !!required || !!min || !!max;
+  const [shownError, setShownError] = React.useState<string>("");
+  React.useEffect(() => {
+    proxyRef.current?.setCustomValidity(validation);
+    if (!validation) setShownError("");
+  }, [validation]);
+
+  const isInvalid = !!invalid || !!shownError;
+  const label = value
+    ? format(value, "dd/MM/yyyy", { locale: ptBR })
+    : shownError
+      ? shownError
+      : placeholder;
   const hasExternalLabel = !!id && !ariaLabel;
+  const describedByIds = [describedBy, shownError ? errorId : null].filter(Boolean).join(" ");
+  // Obrigatório nunca oferece "Limpar".
+  const clear = required ? undefined : onClear;
 
   return (
-    <Popover open={open} onOpenChange={(v) => setOpen(readOnly || disabled ? false : v)}>
-      <PopoverTrigger asChild>
-        <Button
-          id={id}
-          type="button"
-          variant="outline"
-          size={size}
-          disabled={disabled}
-          aria-label={
-            hasExternalLabel
-              ? undefined
-              : `${ariaLabel ?? "Selecionar data"}${value ? `: ${format(value, "dd/MM/yyyy")}` : ""}`
-          }
-          aria-haspopup="dialog"
-          aria-required={required || undefined}
-          aria-invalid={invalid || undefined}
-          aria-readonly={readOnly || undefined}
-          aria-describedby={describedBy}
-          className={cn(
-            "justify-start gap-2 font-normal",
-            !value && "text-muted-foreground",
-            invalid && "border-destructive focus-visible:ring-destructive",
-            readOnly && "cursor-default",
-            className,
-          )}
+    <>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            ref={triggerRef}
+            id={id}
+            type="button"
+            variant="outline"
+            size={size}
+            disabled={disabled}
+            aria-label={
+              hasExternalLabel
+                ? undefined
+                : `${ariaLabel ?? "Selecionar data"}${value ? `: ${format(value, "dd/MM/yyyy")}` : ""}`
+            }
+            aria-haspopup="dialog"
+            aria-required={required || undefined}
+            aria-invalid={isInvalid || undefined}
+            aria-readonly={readOnly || undefined}
+            aria-describedby={describedByIds || undefined}
+            className={cn(
+              "justify-start gap-2 font-normal",
+              !value && "text-muted-foreground",
+              isInvalid && "border-destructive focus-visible:ring-destructive",
+              shownError && !value && "text-destructive",
+              readOnly && "cursor-default",
+              className,
+            )}
+          >
+            <CalendarIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span className="truncate">{label}</span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          align={align}
+          side={side}
+          sideOffset={4}
+          collisionPadding={8}
+          // Foco vai para o dia do calendário (setas navegam), não para o 1º atalho.
+          onOpenAutoFocus={focusCalendarDay}
+          className="pointer-events-auto z-[180] w-auto max-w-[calc(100vw-1rem)] p-0"
         >
-          <CalendarIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
-          <span className="truncate">{label}</span>
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent
-        align={align}
-        side={side}
-        sideOffset={4}
-        collisionPadding={8}
-        // Foco vai para o dia do calendário (setas navegam), não para o 1º atalho.
-        onOpenAutoFocus={focusCalendarDay}
-        className="pointer-events-auto z-[180] w-auto max-w-[calc(100vw-1rem)] p-0"
-      >
-        <DatePickerPanel
-          value={value}
-          min={min}
-          max={max}
-          defaultPreset={defaultPreset}
-          onSelect={(d, key) => {
-            onChange(d, key);
-            setOpen(false);
+          <DatePickerPanel
+            value={value}
+            min={min}
+            max={max}
+            defaultPreset={defaultPreset}
+            onSelect={(d, key) => {
+              onChange(d, key);
+              setOpen(false);
+            }}
+            onClear={
+              clear
+                ? () => {
+                    clear();
+                    setOpen(false);
+                  }
+                : undefined
+            }
+          />
+        </PopoverContent>
+      </Popover>
+      {needsProxy ? (
+        <input
+          ref={proxyRef}
+          type="text"
+          tabIndex={-1}
+          aria-hidden="true"
+          className="sr-only"
+          name={name}
+          value={value ? formatIsoDate(value) : ""}
+          onChange={() => {}}
+          required={required}
+          disabled={disabled}
+          readOnly={readOnly}
+          data-date-picker-proxy=""
+          onFocus={() => triggerRef.current?.focus()}
+          onInvalid={(e) => {
+            // Mensagem própria (PT-BR) no campo; o foco vai para o gatilho se
+            // este for o primeiro campo inválido do formulário.
+            e.preventDefault();
+            const input = e.currentTarget;
+            setShownError(input.validationMessage || validation || "Informe a data.");
+            const form = input.form;
+            window.setTimeout(() => {
+              const first = firstInvalidControl(form);
+              if (!form || first === input) triggerRef.current?.focus();
+            }, 0);
           }}
-          onClear={
-            onClear
-              ? () => {
-                  onClear();
-                  setOpen(false);
-                }
-              : undefined
-          }
         />
-      </PopoverContent>
-    </Popover>
+      ) : null}
+      {shownError ? (
+        <span id={errorId} role="alert" className="sr-only">
+          {shownError}
+        </span>
+      ) : null}
+    </>
   );
 }

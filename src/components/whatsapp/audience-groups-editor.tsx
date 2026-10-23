@@ -14,6 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { IsoDatePicker } from "@/components/iso-date-picker";
 import { AudienceValueCombobox } from "./audience-value-combobox";
 import { AudienceTermsInput } from "./audience-terms-input";
 import {
@@ -323,17 +324,19 @@ export function AudienceGroupsEditor({
                           value={f.value}
                           onChange={(v) => upd({ value: v })}
                         />
+                      ) : def?.kind === "date" ? (
+                        <IsoDatePicker
+                          size="sm"
+                          className="w-48"
+                          ariaLabel="Valor do filtro"
+                          value={f.value}
+                          onChange={(v) => upd({ value: v ?? "" })}
+                        />
                       ) : (
                         <Input
                           className="w-48"
                           aria-label="Valor do filtro"
-                          type={
-                            def?.kind === "date"
-                              ? "date"
-                              : def?.kind === "number"
-                                ? "number"
-                                : "text"
-                          }
+                          type={def?.kind === "number" ? "number" : "text"}
                           maxLength={200}
                           value={f.value}
                           onChange={(e) => upd({ value: e.target.value })}

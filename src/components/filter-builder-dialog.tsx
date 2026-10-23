@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Trash2 } from "lucide-react";
 import type { FilterCondition, FilterGroup, FilterNode, FilterOp } from "@/lib/filters";
+import { IsoDatePicker } from "@/components/iso-date-picker";
 
 type FieldDef = {
   name: string;
@@ -162,16 +163,17 @@ export function FilterBuilderDialog({
                         </option>
                       ))}
                     </select>
+                  ) : field?.type === "date" ? (
+                    <IsoDatePicker
+                      className="flex-1"
+                      ariaLabel={`${field.label}: data`}
+                      value={String(node.value ?? "")}
+                      onChange={(v) => updateCond(i, { ...node, value: v ?? "" })}
+                    />
                   ) : (
                     <Input
                       className="flex-1"
-                      type={
-                        field?.type === "date"
-                          ? "date"
-                          : field?.type === "number"
-                            ? "number"
-                            : "text"
-                      }
+                      type={field?.type === "number" ? "number" : "text"}
                       value={String(node.value ?? "")}
                       onChange={(e) => updateCond(i, { ...node, value: e.target.value })}
                     />

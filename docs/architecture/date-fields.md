@@ -22,8 +22,17 @@ atalhos); trocar o dia preserva a hora, e a hora não muda de fuso.
 - Calendário de 1 mês, um clique escolhe e fecha; dia em `startOfDay`; listas
   de mês e ano para saltar rápido (nascimento, admissão, prazos distantes).
 - `min`/`max` limitam calendário **e** atalhos (atalho fora do limite fica desativado).
-- Opcional: "Limpar" devolve `null` (só aparece com valor). `required`: sem "Limpar",
-  `aria-required`. Campo vazio nunca recebe "Hoje" sozinho.
+- Opcional: "Limpar" devolve `null` (só aparece com valor). `required`: sem "Limpar"
+  (mesmo se `onClear` for passado), `aria-required`. Campo vazio nunca recebe "Hoje" sozinho.
+- Dentro de `<form>`: com `required`, `name`, `min` ou `max`, um `<input>` espelho
+  (fora da tabulação) participa da validação nativa — obrigatório vazio ou valor
+  salvo fora dos limites impede o envio, o foco vai ao gatilho (se for o 1º
+  campo inválido) e a mensagem PT-BR aparece no campo e em `role="alert"`
+  ligado por `aria-describedby`. `name` envia `"YYYY-MM-DD"` no `FormData`.
+  Data impossível salva aparece vazia, mas nada a apaga por efeito.
+- Sem `min`/`max` não há limite de ano: as listas de mês/ano mostram uma janela
+  que acompanha o mês exibido e o valor (130 anos antes, 100 depois), então
+  1880, 2200 e além abrem no próprio valor e as setas seguem navegando.
 - `id` vai no gatilho (use `<Label htmlFor>`); sem rótulo visível, passe `ariaLabel`.
   `invalid` → `aria-invalid` + borda de erro; `disabled`/`readOnly` não abrem.
 - Abre acima de janelas e gavetas (`z-[180]`), sem passar da largura da tela.
@@ -35,10 +44,25 @@ atalhos); trocar o dia preserva a hora, e a hora não muda de fuso.
 
 ## Verificação automática
 
-`src/lib/date-field-guard.test.ts` falha quando aparece `type="date"`,
-`datetime-local` (literal ou dinâmico) ou calendário base fora dos componentes
-compartilhados. Exceção nova precisa de motivo no teste e aqui.
-Testes do controle: `src/components/date-picker.test.ts` (jsdom) e
+`src/lib/date-field-guard.test.ts` analisa a árvore do TypeScript (não linhas),
+então pega atributos em várias linhas e tipos indiretos. Falha quando:
+
+- `type="date"` / `type={"date"}` aparece em qualquer elemento;
+- em `<input>`/`<Input>`, o `type` dinâmico pode resultar em `"date"`
+  (ternários, `??`, `||`, constantes do arquivo) **ou** vem de metadado sem
+  prova (ex.: `type={f.type ?? "text"}`);
+- o texto `"datetime-local"` aparece no código;
+- o calendário base é importado fora dos componentes compartilhados.
+
+Prova aceita de não-data: literais, `nativeInputType(x)` (`@/lib/native-input-type`,
+que no tipo exige o ramo de data antes e em execução nunca devolve data) ou
+repasse de prop de um invólucro (os usos do invólucro são checados).
+Esquemas (`{ type: "date" }`) e comparações não são entradas e não são barrados.
+Limite conhecido: `createElement("input", …)` e props espalhadas (`{...p}`) não
+são analisados. Exceção nova precisa de motivo no teste e aqui.
+Testes: `src/components/date-picker.test.ts` (jsdom: atalhos, limites, formulário
+com obrigatório/FormData/foco/erro, 1880/2200, navegação), `src/components/date-field-editors.test.ts`
+(filtro avançado, edição em massa, formulário público, `nativeInputType`) e
 `src/lib/iso-date.test.ts` (7 fusos, horário de verão, bissexto, limites, data-hora).
 
 ## Exceções justificadas (sem mudança)
@@ -54,15 +78,22 @@ Testes do controle: `src/components/date-picker.test.ts` (jsdom) e
 | `prospecting/list-builder.tsx`, `lib/whatsapp/campaign-audience.ts`                                              | filtros relativos/período ("últimos 30 dias")                     |
 | `workflows/builder/conditions-editor.tsx` em modo token                                                          | valor é expressão `{{…}}`                                         |
 | `lib/import/document-source.ts`                                                                                  | lê HTML de documento importado                                    |
+| `lib/native-input-type.ts`                                                                                       | lista os tipos de data que o auxiliar exclui                      |
+| `grid/grid-filter-panel.tsx`, `workflows/builder/conditions-editor.tsx` (`type="number"`)                        | ramo de data (intervalo / `IsoDatePicker`) retorna antes          |
 | `grid/bulk-edit-fields-dialog.tsx` campo `expires_at`                                                            | timestamp; já usava `DatePicker` (início do dia)                  |
 | `proposals/proposal-wizard.tsx`                                                                                  | já usava `DatePicker`                                             |
 | `ActivityDueDatePicker` ("Quando você fará?")                                                                    | atalhos de acompanhamento da atividade; o dia usa o painel padrão |
 
 ## Inventário da padronização (23/10/2026)
 
-89 controles em 61 arquivos de tela: 81 → `IsoDatePicker`
+Rodada 1 (a0056dbb8): 89 controles em 61 arquivos de tela: 81 → `IsoDatePicker`
 (73 `type="date"`, 7 dinâmicos, 1 edição em massa) e 8 `datetime-local` →
-`ActivityDateTimePicker`. 28 cálculos de "hoje" em UTC trocados por dia local
+`ActivityDateTimePicker`.
+Rodada 2 (revisão independente): +7 controles dinâmicos que ainda caíam no
+`<input type="date">` por metadado (tabela abaixo), em 5 arquivos (4 novos no
+inventário). **Total: 96 controles em 65 arquivos de tela.** Após a rodada 2
+há 87 `<IsoDatePicker>`, 3 `<DatePicker>` e 17 `<ActivityDateTimePicker>` em 74
+arquivos (inclui componentes que já usavam o padrão antes). 28 cálculos de "hoje" em UTC trocados por dia local
 nas telas convertidas (dois cálculos feitos em UTC de propósito mantidos).
 
 | Módulo                      | Rota/componente                           | Arquivo                                                            | Antes                                     | Padrão aplicado                                                  | Campos                                                                            |
@@ -129,4 +160,28 @@ nas telas convertidas (dois cálculos feitos em UTC de propósito mantidos).
 | TechSales                   | componente: quote-wizard                  | src/components/deals/quote-wizard.tsx                              | 1× input date                             | 1× IsoDatePicker                                                 | Válida até                                                                        |
 | TechSales                   | componente: scoring-page                  | src/components/prospecting/pages/scoring-page.tsx                  | 1× input date dinâmico                    | 1× IsoDatePicker                                                 | Valor da condição                                                                 |
 
-Total: 61 arquivos.
+Total da rodada 1: 61 arquivos.
+
+### Rodada 2 — campos dinâmicos (revisão de a0056dbb8)
+
+| Módulo                  | Rota/componente                                                      | Arquivo                                            | Antes                                                    | Padrão aplicado                                                                                   |
+| ----------------------- | -------------------------------------------------------------------- | -------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Core (listas/filtros)   | `FilterBuilderDialog` (/settings/segments, `EntityList`)             | src/components/filter-builder-dialog.tsx           | `type={… "date" …}` em várias linhas                     | 1× IsoDatePicker por condição de data                                                             |
+| TechSales (WhatsApp)    | `AudienceGroupsEditor` (/campaigns/whatsapp › Criar público)         | src/components/whatsapp/audience-groups-editor.tsx | `type={def?.kind === "date" ? "date" …}`                 | 1× IsoDatePicker ("Valor do filtro")                                                              |
+| Core (edição em massa)  | `BulkEditDialog` (`GridBulkBar` sem entidade dinâmica, `EntityList`) | src/components/bulk-edit-dialog.tsx                | `type={f.type ?? "text"}` alcançava date                 | 1× IsoDatePicker; texto por `nativeInputType`                                                     |
+| Core (listas genéricas) | `EntityList` › célula inline e janela de criação                     | src/components/entity-list.tsx                     | `type={fieldDef?.type ?? "text"}` / `{f.type ?? "text"}` | 2× IsoDatePicker (inline abre direto, escolher grava, Esc cancela; criação com `required`/`name`) |
+| Core (propriedades)     | `PropertiesPanel` › "Todas as propriedades"                          | src/components/properties-panel.tsx                | `type={p.type ?? "text"}` (date e datetime)              | IsoDatePicker (date) e ActivityDateTimePicker `iso` (datetime); somente leitura preservado        |
+
+Simplificados (não eram falta, o ramo de data retorna antes): `grid/grid-filter-panel.tsx`
+(mín./máx. numéricos) e `workflows/builder/conditions-editor.tsx` (número) agora
+usam `type="number"` literal.
+No momento nenhuma tela passa campo `date` para `EntityList`; o ramo está
+coberto por tipos e pela guarda, não por navegação.
+
+## Limitações conhecidas
+
+- Aviso de hidratação no `<html>` (`data-density` e variáveis `--radius`,
+  `--font-*`) vem do White Label aplicando o tema antes da hidratação
+  (`src/lib/branding.tsx`, desde 30/05/2026); não é dos campos de data.
+- O diálogo "Todas as propriedades" grava data-hora em ISO (com fuso); o editor
+  principal mantém o formato local que já usava.
