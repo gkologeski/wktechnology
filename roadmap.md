@@ -258,10 +258,10 @@ Pendências preservadas: C1 (68 sugestões, divergência Clockify 12 pessoas, 40
 - [x] Tela de revisão/contagens e configuração do país
 - [x] Docs/AGENTS
 - [x] Testes (1.344), tipos, lint dos arquivos alterados, build e Playwright (desktop claro/escuro, celular, teclado)
-- [ ] Ligar a guarda do banco (`phone_strict_e164`) após publicação (aguarda aceite)
+- [x] Ligar a guarda do banco (`phone_strict_e164`) após publicação; importações gravam vazio quando o telefone não está no padrão
 - [x] Limpeza autorizada: até 4 dígitos em branco (10.671) + 163 padronizações seguras, com backup
 - [x] Fila reconcilia varredura e correções (6.416 pendentes reais)
 - [x] Revisão por administrador dos 1.252 celulares antigos sem o 9 (tela + proteção no banco + provas)
 - [ ] Administradores decidirem os 1.252 itens na tela (decisão humana, um a um)
 - [ ] Demais 5.164 pendentes: corrigir na ficha do registro (decisão humana)
-- [ ] Publicação (aguarda aceite do usuário)
+- [x] Publicação (23/10/2026)

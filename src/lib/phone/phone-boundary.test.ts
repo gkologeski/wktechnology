@@ -47,13 +47,19 @@ describe("humanPhone (digitado agora / API)", () => {
 describe("sourcePhone (integrações/importação)", () => {
   it("normaliza quando há +DDI e não inventa país sem evidência", () => {
     expect(sourcePhone("+55-11-3333-4444")).toBe("+551133334444");
-    expect(sourcePhone("(11) 3333-4444")).toBe("(11) 3333-4444");
+    expect(sourcePhone("(11) 3333-4444")).toBeNull();
     expect(sourcePhone("(11) 3333-4444", "BR")).toBe("+551133334444");
   });
-  it("placeholder vira null; valor não lido é mantido (sem apagar)", () => {
+  it("fora do padrão vira null: nunca grava texto que a guarda do banco recusaria", () => {
     expect(sourcePhone("--")).toBeNull();
     expect(sourcePhone("0")).toBeNull();
-    expect(sourcePhone("11 3333-4444 / 11 99999-8888", "BR")).toBe("11 3333-4444 / 11 99999-8888");
+    expect(sourcePhone("1234")).toBeNull();
+    expect(sourcePhone("11 3333-4444 / 11 99999-8888", "BR")).toBeNull();
+    expect(sourcePhone("(51) 9301-6927", "BR")).toBeNull(); // celular antigo sem 9: não inventa
+    for (const v of ["+551133334444", "(11) 3333-4444", "abc", "+55 11 99999-8888 ramal 2"]) {
+      const out = sourcePhone(v, "BR");
+      expect(out === null || /^\+[1-9]\d{1,14}$/.test(out)).toBe(true);
+    }
   });
   it("ramal é separado", () => {
     expect(sourcePhoneExtension("(11) 3333-4444 ramal 21", "BR")).toBe("21");
@@ -69,7 +75,7 @@ describe("sourcePhone (integrações/importação)", () => {
 
 describe("workflowPhone", () => {
   it("token copiado sem inventar país; texto fixo valida", () => {
-    expect(workflowPhone("{{contact.phone}}", "(11) 3333-4444", "BR")).toBe("(11) 3333-4444");
+    expect(workflowPhone("{{contact.phone}}", "(11) 3333-4444", "BR")).toBeNull();
     expect(workflowPhone("{{contact.phone}}", "+551133334444", "BR")).toBe("+551133334444");
     expect(workflowPhone("(11) 3333-4444", "(11) 3333-4444", "BR")).toBe("+551133334444");
     expect(() => workflowPhone("123", "123", "BR")).toThrow();

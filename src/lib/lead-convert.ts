@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { sourcePhone } from "@/lib/phone/phone-boundary";
 import type { Lead } from "@/lib/db-types";
 
 export type ConvertResult = {
@@ -64,7 +65,8 @@ export async function convertLead(lead: Lead, ownerId: string): Promise<ConvertR
         first_name: lead.first_name,
         last_name: lead.last_name,
         email: lead.email,
-        phone: lead.phone,
+        // Só telefone no padrão é copiado (guarda do banco); legado fica no lead.
+        phone: sourcePhone(lead.phone),
         job_title: lead.job_title,
         company_id: companyId,
         // A foto acompanha a conversão (mesmo arquivo privado; nunca é apagado pelo contato).

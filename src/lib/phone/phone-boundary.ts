@@ -5,9 +5,11 @@
  * - `humanPhone`: dado digitado agora por uma pessoa/cliente de API. País de
  *   contexto = país padrão do workspace. Inválido → `PhoneValidationError`
  *   (API responde 422 sem ecoar o número).
- * - `sourcePhone`: dado vindo de outro sistema (HubSpot, Apollo, CV, CSV...).
- *   País só com evidência da própria fonte; válido → E.164; vazio/placeholder
- *   → null; o resto é mantido como veio (sem apagar) e fica para revisão.
+ * - `sourcePhone`: dado vindo de outro sistema (HubSpot, Apollo, CV, CSV...)
+ *   ou copiado de outro registro. País só com evidência da própria fonte;
+ *   válido → E.164; qualquer outro caso → null: o registro entra sem o
+ *   telefone e o original continua na fonte (decisão do usuário, 23/10/2026,
+ *   junto com a guarda de formato do banco).
  */
 import { z } from "zod";
 import {
@@ -75,18 +77,18 @@ export function humanPhonePatch(
 }
 
 /**
- * Número vindo de outra fonte. `country` só quando a FONTE comprova o país
- * (ex.: Receita Federal → BR; país gravado no próprio registro de origem).
+ * Número vindo de outra fonte (ou copiado de outro registro). `country` só
+ * quando a FONTE comprova o país (ex.: Receita Federal → BR; país gravado no
+ * próprio registro de origem). Devolve E.164 ou `null` — nunca texto fora do
+ * padrão, para o registro não ser recusado pela guarda do banco.
  */
 export function sourcePhone(raw: unknown, country?: string | null): string | null {
   if (raw === undefined || raw === null) return null;
   const text = String(raw).trim();
   if (!text) return null;
+  if (isValidE164(text)) return text;
   const r = normalizePhone(text, { defaultCountry: asCountry(country) });
-  if (r.status === "valid") return r.e164;
-  if (r.status === "empty") return null;
-  if (r.reason === "placeholder") return null;
-  return text.slice(0, 64);
+  return r.status === "valid" ? r.e164 : null;
 }
 
 /** Ramal extraído de um texto de origem, quando houver. */
@@ -226,7 +228,7 @@ export function zHumanPhone(opts: { required?: boolean; label?: string } = {}) {
  * Telefone de ação de workflow, depois de resolver os tokens. Texto fixo
  * digitado no fluxo segue a regra de dado novo (país do workspace; inválido
  * falha a ação). Valor vindo de token ({{contact.phone}}) é copiado sem
- * inventar país: canônico continua canônico; legado fica como está.
+ * inventar país: canônico continua canônico; legado fora do padrão vira vazio.
  */
 export function workflowPhone(
   template: string | null | undefined,

@@ -4,6 +4,7 @@
 // Os identificadores criados ficam em `{{vars.contratacao.*}}` para os passos
 // seguintes (ex.: o contrato usa a pessoa criada no passo anterior).
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { sourcePhone } from "@/lib/phone/phone-boundary";
 import { type AnyRow, type LogStep, renderTokens } from "../engine-shared.server";
 import { createContractShared } from "@/lib/contracts/contract-create.server";
 import { isContractKind, kindToColumns, type ContractKind } from "@/lib/contracts/contract-kinds";
@@ -206,7 +207,7 @@ export async function handleHiringAction(
         candidate_id: candidateId,
         full_name: c.full_name,
         email: c.email ?? null,
-        phone: c.phone ?? null,
+        phone: sourcePhone(c.phone),
         location: c.location ?? null,
         employment_type: employment,
         status: "active",
