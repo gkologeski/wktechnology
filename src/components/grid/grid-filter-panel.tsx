@@ -172,13 +172,13 @@ export function FieldEditor<T>({
     );
   }
   const r: { from?: string; to?: string } = v?.kind === "range" ? v : {};
-  const type = field.type === "date" ? "date" : "number";
+  const isDate = field.type === "date";
   const set = (from?: string, to?: string) =>
     ctl.setField(
       field.key,
       from || to ? { kind: "range", from: from || undefined, to: to || undefined } : undefined,
     );
-  if (type === "date") {
+  if (isDate) {
     return (
       <IsoDateRangePicker
         from={r.from}
@@ -195,7 +195,7 @@ export function FieldEditor<T>({
   return (
     <div className="grid grid-cols-2 gap-2">
       <Input
-        type={type}
+        type="number"
         aria-label={`${field.label}: mínimo`}
         placeholder="Mínimo"
         value={r.from ?? ""}
@@ -203,7 +203,7 @@ export function FieldEditor<T>({
         className="h-9"
       />
       <Input
-        type={type}
+        type="number"
         aria-label={`${field.label}: máximo`}
         placeholder="Máximo"
         value={r.to ?? ""}

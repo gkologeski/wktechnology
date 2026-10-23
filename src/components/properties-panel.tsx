@@ -56,6 +56,50 @@ import { CreatorField } from "@/components/entity/creator-field";
 import { creatorId, responsibleId } from "@/lib/entity/responsible";
 import { readViewAs } from "@/lib/view-as-client";
 import { isDerivedCrmField } from "@/lib/entity/derived-fields";
+import { nativeInputType } from "@/lib/native-input-type";
+
+/**
+ * Data / data-hora do diálogo "Todas as propriedades": mesmo seletor do
+ * editor principal. Mantém o valor local (o diálogo usa `defaultValue`) e
+ * grava ao escolher; "Limpar" grava vazio. Somente leitura não abre.
+ */
+function AllPropertiesDateField({
+  kind,
+  label,
+  current,
+  disabled,
+  onSave,
+}: {
+  kind: "date" | "datetime";
+  label: string;
+  current: string;
+  disabled?: boolean;
+  onSave: (next: string | null) => void | Promise<void>;
+}) {
+  const [draft, setDraft] = useState(current);
+  useEffect(() => setDraft(current), [current]);
+  const commit = (v: string | null) => {
+    setDraft(v ?? "");
+    void onSave(v);
+  };
+  return kind === "date" ? (
+    <IsoDatePicker
+      ariaLabel={label}
+      disabled={disabled}
+      value={draft.slice(0, 10)}
+      onChange={commit}
+    />
+  ) : (
+    <ActivityDateTimePicker
+      ariaLabel={label}
+      disabled={disabled}
+      optional
+      valueFormat="iso"
+      value={draft}
+      onChange={commit}
+    />
+  );
+}
 
 // Email: no whitespace allowed.
 function sanitizeEmailInput(s: string): string {
@@ -484,7 +528,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                 <Input
                   autoFocus
                   disabled={readOnly}
-                  type={p.type === "cep" || p.type === "cnpj" ? "text" : (p.type ?? "text")}
+                  type={p.type === "cep" || p.type === "cnpj" ? "text" : nativeInputType(p.type)}
                   inputMode={p.type === "cep" || p.type === "cnpj" ? "numeric" : undefined}
                   maxLength={p.type === "cep" ? 9 : p.type === "cnpj" ? 18 : undefined}
                   placeholder={
@@ -771,9 +815,30 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                       return true;
                     }}
                   />
+                ) : p.type === "date" || p.type === "datetime" ? (
+                  <AllPropertiesDateField
+                    kind={p.type}
+                    label={p.label}
+                    disabled={readOnly}
+                    current={row[p.key] == null ? "" : String(row[p.key])}
+                    onSave={async (next) => {
+                      if ((next ?? "") === String(row[p.key] ?? "")) return;
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      const { error } = await (supabase as any)
+                        .from(table)
+                        .update({ [p.key]: next })
+                        .eq("id", row.id);
+                      if (error) toast.error(error.message);
+                      else {
+                        toast.success("Atualizado");
+                        onSaved?.();
+                      }
+                    }}
+                  />
                 ) : (
                   <Input
-                    type={p.type ?? "text"}
+                    aria-label={p.label}
+                    type={nativeInputType(p.type)}
                     disabled={readOnly}
                     defaultValue={String(row[p.key] ?? "")}
                     onBlur={async (e) => {

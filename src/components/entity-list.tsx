@@ -38,6 +38,8 @@ import { ExportMenuButton } from "@/components/export-menu-button";
 import { exportRows, type ExportFormat } from "@/lib/export/export-rows";
 import { BulkEditDialog, type BulkField } from "@/components/bulk-edit-dialog";
 import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
+import { IsoDatePicker } from "@/components/iso-date-picker";
+import { nativeInputType } from "@/lib/native-input-type";
 import { isBulkEditEntity } from "@/lib/grid/bulk-edit-fields";
 import { isDerivedCrmField } from "@/lib/entity/derived-fields";
 
@@ -1082,10 +1084,32 @@ function InlineCell<T extends { id: string }>({
       </select>
     );
   }
+  if (fieldDef?.type === "date") {
+    // Abre já no calendário; escolher grava e fecha; Esc/clique fora cancela
+    // sem gravar (o valor não mudou). "Limpar" grava vazio.
+    return (
+      <IsoDatePicker
+        size="sm"
+        className="h-8"
+        defaultOpen
+        ariaLabel={fieldDef.label}
+        required={fieldDef.required}
+        value={val}
+        onChange={(v) => {
+          setVal(v ?? "");
+          onSave(v);
+          setEditing(false);
+        }}
+        onOpenChange={(o) => {
+          if (!o) setEditing(false);
+        }}
+      />
+    );
+  }
   return (
     <Input
       autoFocus
-      type={fieldDef?.type ?? "text"}
+      type={nativeInputType(fieldDef?.type)}
       className="h-8"
       value={val}
       onChange={(e) => setVal(e.target.value)}
@@ -1222,10 +1246,18 @@ function EntityDialog<T extends { id: string }>({
                   value={String(values[f.name] ?? "")}
                   onChange={(v) => set(f.name, v)}
                 />
+              ) : f.type === "date" ? (
+                <IsoDatePicker
+                  id={f.name}
+                  name={f.name}
+                  required={f.required}
+                  value={String(values[f.name] ?? "")}
+                  onChange={(v) => set(f.name, v ?? "")}
+                />
               ) : (
                 <Input
                   id={f.name}
-                  type={f.type ?? "text"}
+                  type={nativeInputType(f.type)}
                   required={f.required}
                   value={String(values[f.name] ?? "")}
                   onChange={(e) => set(f.name, e.target.value)}

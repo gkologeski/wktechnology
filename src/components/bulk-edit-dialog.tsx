@@ -18,6 +18,8 @@ import { toast } from "sonner";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
 
 import { isEmail } from "@/lib/validators";
+import { IsoDatePicker } from "@/components/iso-date-picker";
+import { nativeInputType } from "@/lib/native-input-type";
 
 export type BulkField = {
   name: string;
@@ -148,9 +150,16 @@ export function BulkEditDialog({
                     value={String(values[f.name] ?? "")}
                     onChange={(v) => setValues((s) => ({ ...s, [f.name]: v }))}
                   />
+                ) : f.type === "date" ? (
+                  <IsoDatePicker
+                    ariaLabel={f.label}
+                    value={String(values[f.name] ?? "")}
+                    onChange={(v) => setValues((s) => ({ ...s, [f.name]: v ?? "" }))}
+                  />
                 ) : (
                   <Input
-                    type={f.type ?? "text"}
+                    aria-label={f.label}
+                    type={nativeInputType(f.type)}
                     value={String(values[f.name] ?? "")}
                     onChange={(e) => setValues((s) => ({ ...s, [f.name]: e.target.value }))}
                   />
