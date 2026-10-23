@@ -57,7 +57,7 @@ export function DatePickerPanel({
   onClear,
   min,
   max,
-  defaultPreset = "custom",
+  defaultPreset = "today",
   defaultMonth,
 }: DatePickerPanelProps) {
   const [preset, setPreset] = React.useState<SinglePresetKey>(
@@ -196,7 +196,7 @@ export function DatePicker({
   value,
   onChange,
   onClear,
-  defaultPreset = "custom",
+  defaultPreset = "today",
   placeholder = "Selecionar data",
   align = "start",
   side = "bottom",
