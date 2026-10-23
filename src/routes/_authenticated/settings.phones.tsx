@@ -380,7 +380,7 @@ function PhonesSettingsPage() {
                           <TableCell>
                             {PHONE_FIELD_LABEL[`${i.table}.${i.column}`] ?? i.table}
                           </TableCell>
-                          <TableCell className="font-mono text-xs">{i.masked}</TableCell>
+                          <TableCell className="font-mono text-xs">{i.value}</TableCell>
                           <TableCell>
                             {PHONE_CLASS_LABEL[i.classification] ?? i.classification}
                           </TableCell>

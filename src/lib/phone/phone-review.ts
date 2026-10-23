@@ -1,4 +1,4 @@
-import { maskPhone, normalizePhone, sanitizePhoneText, splitPhoneExtension } from "./e164";
+import { formatPhoneDisplay, normalizePhone, sanitizePhoneText, splitPhoneExtension } from "./e164";
 
 /** Classes da fila de revisão de telefones (nunca aplicadas automaticamente). */
 export const PHONE_REVIEW_CLASSES = [
@@ -174,22 +174,22 @@ export function phoneReviewDetail(
   if (!v || !v.trim()) return null;
   const legacy = legacyMobileCandidate(v);
   if (legacy)
-    return `Celular antigo sem o 9º dígito; candidato ${maskPhone(legacy)} não aplicado (confirmar com o contato).`;
+    return `Celular antigo sem o 9º dígito; candidato ${showPhone(legacy)} não aplicado (confirmar com o contato).`;
   const r = normalizePhone(v, { defaultCountry: country ?? null });
   if (r.status !== "invalid") return null;
   const cand = r.candidates?.[0];
   switch (r.reason) {
     case "repeated_country_code":
-      return `Código do país repetido; candidato ${maskPhone(cand)} não aplicado (país do cadastro não confirma).`;
+      return `Código do país repetido; candidato ${showPhone(cand)} não aplicado (país do cadastro não confirma).`;
     case "region_unknown": {
-      if (cand) return `Sem país no cadastro; leitura internacional ${maskPhone(cand)} é hipótese.`;
+      if (cand) return `Sem país no cadastro; leitura internacional ${showPhone(cand)} é hipótese.`;
       const br = normalizePhone(v, { defaultCountry: "BR" });
       return br.status === "valid"
-        ? `Sem código do país e sem país no cadastro; leitura como Brasil (${maskPhone(br.e164)}) é só hipótese.`
+        ? `Sem código do país e sem país no cadastro; leitura como Brasil (${showPhone(br.e164)}) é só hipótese.`
         : "Sem código do país e sem país no cadastro.";
     }
     case "ambiguous":
-      return `Mais de uma leitura possível (${(r.candidates ?? []).map(maskPhone).join(" ou ")}).`;
+      return `Mais de uma leitura possível (${(r.candidates ?? []).map(showPhone).join(" ou ")}).`;
     case "multiple":
       return `${r.candidates?.length ?? 2} números no mesmo campo; nenhum escolhido automaticamente.`;
     case "extension_only":
@@ -270,4 +270,9 @@ export function withLivePending<
   if (!live) return summary;
   const rows = summary.rows.map((r) => ({ ...r, pending: live[r.field] ?? r.pending }));
   return { ...summary, rows, pending: rows.reduce((a, r) => a + r.pending, 0) };
+}
+
+/** Exibição completa (formatada) de um candidato E.164; somente para telas de admin. */
+function showPhone(v: string | null | undefined): string {
+  return v ? formatPhoneDisplay(v) || v : "—";
 }

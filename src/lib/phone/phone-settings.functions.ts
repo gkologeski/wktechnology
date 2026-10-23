@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { asCountry, formatPhoneDisplay, maskPhone } from "@/lib/phone/e164";
+import { asCountry, formatPhoneDisplay } from "@/lib/phone/e164";
 import {
   PHONE_REVIEW_CLASSES,
   phoneEntityName,
@@ -38,7 +38,7 @@ export type PhoneReviewItem = {
   name: string | null;
   /** Ficha a abrir; nulo quando a tabela não tem ficha ou o registro não é visível. */
   route: PhoneEntityRoute | null;
-  masked: string;
+  value: string;
   classification: string;
   /** Subtipo de revisão humana (ex.: celular antigo sem o 9). */
   reviewKind: string | null;
@@ -213,10 +213,10 @@ export const listPhoneReview = createServerFn({ method: "GET" })
           rowId,
           name,
           route: name ? phoneEntityRoute(table) : null,
-          masked: maskPhone(r.original_value as string | null),
+          value: (r.original_value as string | null) ?? "—",
           classification: r.classification as string,
           reviewKind: (r.review_kind as string | null) ?? null,
-          // Motivo específico calculado na hora pela mesma regra (candidato mascarado).
+          // Motivo específico calculado na hora pela mesma regra (candidato completo).
           reason:
             phoneReviewDetail(r.original_value as string | null) ??
             ((r.reason as string | null) || null),
