@@ -6,7 +6,12 @@ export const Route = createFileRoute("/api/public/health/")({
     handlers: {
       GET: async () =>
         new Response(JSON.stringify({ status: "ok", time: new Date().toISOString() }), {
-          headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-store",
+            // Public release marker only; confirms the server deployment without user credentials.
+            "X-TechERP-Access-Revision": "hr-actions-0193",
+          },
         }),
     },
   },

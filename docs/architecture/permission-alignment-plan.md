@@ -169,3 +169,9 @@ Aceite SQL na base ativa usando auth.uid de Priscila passou: gravar e editar
 pessoa, criar onboarding/offboarding e tarefa, concluir tarefa e excluir registros
 de teste; registro inexistente e ator sem membership foram negados. A transação
 inteira terminou em rollback. Não foi utilizada uma sessão real do navegador.
+
+A resposta de liveness já pública (/api/public/health/) inclui o header estático
+X-TechERP-Access-Revision: hr-actions-0193 para confirmar a revisão do servidor.
+É uma exceção operacional pública: continua sem autenticação, consulta de dados
+de negócio, credenciais ou PII. Não concede acesso a ações de RH. A confirmação
+pelo header não substitui o aceite real no navegador.
