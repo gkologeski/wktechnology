@@ -176,12 +176,15 @@ X-TechERP-Access-Revision: hr-actions-0193 para confirmar a revisão do servidor
 de negócio, credenciais ou PII. Não concede acesso a ações de RH. A confirmação
 pelo header não substitui o aceite real no navegador.
 
-Publicação do lote 0193 ainda não confirmada: o código funcional d71f34f95 foi
-sincronizado no projeto e a solicitação de deploy 9ffb55d1-7567-42d0-b4f4-17be1eddd9dc
-foi aceita como pending. O commit auxiliar 1d2f6f048 (header de revisão) está no
-GitHub main, mas ainda não foi importado no projeto. A mensagem de sincronização
-umsg_01m5n4h9gfe3c905xz2tm93rmg ficou queued, queue_paused=true,
-queue_pause_reason=server_error. Não há cartão de aprovação nessa resposta.
-Não declarar publicação concluída enquanto não houver evidência da versão servida.
-As regras 15/21/26 e os 20 contratos deste lote permanecem com status de
-aplicado/testado SQL e publicação pendente. O restante da etapa 3 continua aberto.
+Publicação do lote 0193 informada pelo usuário em 23/10/2026. O projeto já
+está sincronizado com 45f813981a0558a54901909c24bfe4cdb2b319ef, informa
+is_published=true e contém o marcador de revisão no código. A liveness pública
+responde HTTP 200/status ok em ambos os domínios. O header de revisão não foi
+observado na resposta pública: a confirmação de publicação se baseia no relato
+humano e no estado do projeto, não em comprovação independente da revisão servida.
+
+O bloqueio anterior (queue_paused/server_error) fica registrado como histórico
+da tentativa anterior. Não é mantido como bloqueio atual com base em informação
+antiga. As regras 15/21/26 e os 20 contratos deste lote passam a aplicado,
+publicado conforme confirmação do usuário e testado SQL. O aceite funcional no
+navegador permanece pendente; o restante da etapa 3 continua aberto.

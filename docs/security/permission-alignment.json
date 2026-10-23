@@ -243,7 +243,7 @@
       "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
-      "status": "applied_sql_tested_application_publish_pending",
+      "status": "published_user_confirmed_sql_tested",
       "exceptions": [
         "trusted service-role/internal SQL access retained; no role grants"
       ]
@@ -266,7 +266,7 @@
       "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
-      "status": "applied_sql_tested_application_publish_pending",
+      "status": "published_user_confirmed_sql_tested",
       "exceptions": [
         "trusted service-role/internal SQL access retained; no role grants"
       ]
@@ -290,7 +290,7 @@
       "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
-      "status": "applied_sql_tested_application_publish_pending",
+      "status": "published_user_confirmed_sql_tested",
       "exceptions": [
         "trusted service-role/internal SQL access retained; no role grants"
       ]
@@ -313,7 +313,7 @@
       "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
-      "status": "applied_sql_tested_application_publish_pending",
+      "status": "published_user_confirmed_sql_tested",
       "exceptions": [
         "trusted service-role/internal SQL access retained; no role grants"
       ]
@@ -337,7 +337,7 @@
       "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
-      "status": "applied_sql_tested_application_publish_pending",
+      "status": "published_user_confirmed_sql_tested",
       "exceptions": [
         "trusted service-role/internal SQL access retained; no role grants"
       ]
@@ -360,7 +360,7 @@
       "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
-      "status": "applied_sql_tested_application_publish_pending",
+      "status": "published_user_confirmed_sql_tested",
       "exceptions": [
         "trusted service-role/internal SQL access retained; no role grants"
       ]
@@ -384,7 +384,7 @@
       "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
-      "status": "applied_sql_tested_application_publish_pending",
+      "status": "published_user_confirmed_sql_tested",
       "exceptions": [
         "trusted service-role/internal SQL access retained; no role grants"
       ]
@@ -407,7 +407,7 @@
       "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
-      "status": "applied_sql_tested_application_publish_pending",
+      "status": "published_user_confirmed_sql_tested",
       "exceptions": [
         "trusted service-role/internal SQL access retained; no role grants"
       ]
@@ -430,7 +430,7 @@
       "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
-      "status": "applied_sql_tested_application_publish_pending",
+      "status": "published_user_confirmed_sql_tested",
       "exceptions": [
         "trusted service-role/internal SQL access retained; no role grants"
       ]
@@ -452,7 +452,7 @@
       "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
-      "status": "applied_sql_tested_application_publish_pending",
+      "status": "published_user_confirmed_sql_tested",
       "exceptions": [
         "trusted service-role/internal SQL access retained; no role grants"
       ]
@@ -475,7 +475,7 @@
       "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
-      "status": "applied_sql_tested_application_publish_pending",
+      "status": "published_user_confirmed_sql_tested",
       "exceptions": [
         "trusted service-role/internal SQL access retained; no role grants"
       ]
@@ -497,7 +497,7 @@
       "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
-      "status": "applied_sql_tested_application_publish_pending",
+      "status": "published_user_confirmed_sql_tested",
       "exceptions": [
         "trusted service-role/internal SQL access retained; no role grants"
       ]
@@ -523,7 +523,7 @@
       "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
-      "status": "applied_sql_tested_application_publish_pending",
+      "status": "published_user_confirmed_sql_tested",
       "exceptions": [
         "trusted service-role/internal SQL access retained; no role grants"
       ]
@@ -547,7 +547,7 @@
       "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
-      "status": "applied_sql_tested_application_publish_pending",
+      "status": "published_user_confirmed_sql_tested",
       "exceptions": [
         "trusted service-role/internal SQL access retained; no role grants"
       ]
@@ -573,7 +573,7 @@
       "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
-      "status": "applied_sql_tested_application_publish_pending",
+      "status": "published_user_confirmed_sql_tested",
       "exceptions": [
         "trusted service-role/internal SQL access retained; no role grants"
       ]
@@ -597,7 +597,7 @@
       "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
-      "status": "applied_sql_tested_application_publish_pending",
+      "status": "published_user_confirmed_sql_tested",
       "exceptions": [
         "trusted service-role/internal SQL access retained; no role grants"
       ]
@@ -623,7 +623,7 @@
       "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
-      "status": "applied_sql_tested_application_publish_pending",
+      "status": "published_user_confirmed_sql_tested",
       "exceptions": [
         "trusted service-role/internal SQL access retained; no role grants"
       ]
@@ -647,7 +647,7 @@
       "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
-      "status": "applied_sql_tested_application_publish_pending",
+      "status": "published_user_confirmed_sql_tested",
       "exceptions": [
         "trusted service-role/internal SQL access retained; no role grants"
       ]
@@ -673,7 +673,7 @@
       "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
-      "status": "applied_sql_tested_application_publish_pending",
+      "status": "published_user_confirmed_sql_tested",
       "exceptions": [
         "trusted service-role/internal SQL access retained; no role grants"
       ]
@@ -697,7 +697,7 @@
       "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
-      "status": "applied_sql_tested_application_publish_pending",
+      "status": "published_user_confirmed_sql_tested",
       "exceptions": [
         "trusted service-role/internal SQL access retained; no role grants"
       ]
@@ -835,9 +835,10 @@
       "area": "TechHire",
       "problema": "Política ampla contorna RBAC de candidatos",
       "decisao_alvo": "Consolidar permissivas e restritivas por ação e escopo, com teste direto sem UI.",
-      "status": "aplicado_testado_sql_publicacao_pendente",
+      "status": "aplicado_publicado_testado_sql",
       "evidencia_migracao": "0193",
-      "aceite_visual": false
+      "aceite_visual": false,
+      "publicacao_evidencia": "Confirmação do usuário em 23/10/2026; projeto sincronizado, is_published=true; marcador HTTP não observado, aceite visual pendente."
     },
     {
       "id": 16,
@@ -889,9 +890,10 @@
       "area": "TechPeople",
       "problema": "Onboarding admin-only",
       "decisao_alvo": "Substituir ponte Head de RH local por autorização por ação/escopo após aceite; preservar checks de pessoa/plano.",
-      "status": "aplicado_testado_sql_publicacao_pendente",
+      "status": "aplicado_publicado_testado_sql",
       "evidencia_migracao": "0193",
-      "aceite_visual": false
+      "aceite_visual": false,
+      "publicacao_evidencia": "Confirmação do usuário em 23/10/2026; projeto sincronizado, is_published=true; marcador HTTP não observado, aceite visual pendente."
     },
     {
       "id": 22,
@@ -935,9 +937,10 @@
       "area": "TechPeople",
       "problema": "Criar pessoa usa chave de editar",
       "decisao_alvo": "Criar exige create no escopo correto; editar não concede criar.",
-      "status": "aplicado_testado_sql_publicacao_pendente",
+      "status": "aplicado_publicado_testado_sql",
       "evidencia_migracao": "0193",
-      "aceite_visual": false
+      "aceite_visual": false,
+      "publicacao_evidencia": "Confirmação do usuário em 23/10/2026; projeto sincronizado, is_published=true; marcador HTTP não observado, aceite visual pendente."
     },
     {
       "id": 27,
