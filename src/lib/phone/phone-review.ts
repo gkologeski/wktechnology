@@ -18,6 +18,21 @@ export const PHONE_REVIEW_CLASSES = [
 ] as const;
 export type PhoneReviewClass = (typeof PHONE_REVIEW_CLASSES)[number];
 
+/** Subtipos para revisão humana dentro da fila. */
+export const PHONE_REVIEW_KINDS = ["legacy_mobile_no9"] as const;
+export type PhoneReviewKind = (typeof PHONE_REVIEW_KINDS)[number];
+export const PHONE_KIND_LABEL: Record<PhoneReviewKind, string> = {
+  legacy_mobile_no9: "Celular antigo sem o 9 (confirmar)",
+};
+
+/** Resoluções que gravaram um telefone padronizado. */
+const PHONE_FIXED_RESOLUTIONS = new Set([
+  "safe_explicit",
+  "safe_record_country",
+  "placeholder",
+  "manual_confirmed",
+]);
+
 export const PHONE_SAFE_CLASSES = [
   "safe_explicit",
   "safe_record_country",
@@ -44,6 +59,9 @@ export const PHONE_CLASS_LABEL: Record<string, string> = {
   blank_short: "Até 4 dígitos (em branco)",
   extension_only: "Só ramal",
   repeated_country_code: "Código do país repetido",
+  manual_confirmed: "Confirmado na revisão",
+  manual_kept: "Mantido na revisão",
+  manual_cleared: "Apagado na revisão",
 };
 
 export const PHONE_FIELD_LABEL: Record<string, string> = {
@@ -105,8 +123,9 @@ export function summarizePhoneRun(
     const res = resolved[field] ?? {};
     const blanked = res.blank_short ?? 0;
     const fixedLater = Object.entries(res)
-      .filter(([k]) => k !== "blank_short")
+      .filter(([k]) => PHONE_FIXED_RESOLUTIONS.has(k))
       .reduce((a, [, n]) => a + n, 0);
+    const resolvedTotal = Object.values(res).reduce((a, n) => a + n, 0);
     const pending = Object.entries(byClass)
       .filter(([k]) => review.has(k))
       .reduce((a, [, n]) => a + n, 0);
@@ -116,7 +135,7 @@ export function summarizePhoneRun(
       canonical,
       applied: (applied[field] ?? 0) + fixedLater,
       blanked,
-      pending: Math.max(0, pending - blanked - fixedLater),
+      pending: Math.max(0, pending - resolvedTotal),
     };
   });
   rows.sort((a, b) => b.total - a.total);
