@@ -64,6 +64,7 @@ import { BulkRefPicker } from "./bulk-ref-picker";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { isPhoneColumn, WHATSAPP_COLUMN } from "@/lib/phone/phone-columns";
 
+import { ActivityDateTimePicker } from "@/components/activity/activity-date-time-picker";
 const LONG_TEXT_FIELDS = new Set([
   "description",
   "notes",
@@ -191,11 +192,12 @@ function FieldEditor({
 
   if (field.type === "date") {
     return (
-      <Input
+      <ActivityDateTimePicker
         id={`bulk-${field.name}`}
-        type="datetime-local"
-        value={/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(strVal) ? strVal.slice(0, 16) : ""}
-        onChange={(e) => onChange(e.target.value ? new Date(e.target.value).toISOString() : "")}
+        ariaLabel={field.label}
+        valueFormat="iso"
+        value={strVal || null}
+        onChange={(v) => onChange(v ?? "")}
       />
     );
   }

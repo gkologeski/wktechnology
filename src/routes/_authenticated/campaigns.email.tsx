@@ -56,6 +56,7 @@ import { CAMPAIGN_TOKENS } from "@/lib/message-tokens-catalog";
 import { useTokenInserter } from "@/lib/token-insert";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
+import { ActivityDateTimePicker } from "@/components/activity/activity-date-time-picker";
 const CAMPAIGN_STATUS_LABEL: Record<string, string> = {
   draft: "Rascunho",
   scheduled: "Agendada",
@@ -410,10 +411,10 @@ function EmailBroadcastsPage() {
               {scheduleType === "later" && (
                 <div>
                   <Label>Data e hora</Label>
-                  <Input
-                    type="datetime-local"
+                  <ActivityDateTimePicker
+                    ariaLabel="Data e hora do envio"
                     value={scheduledAt}
-                    onChange={(e) => setScheduledAt(e.target.value)}
+                    onChange={(v) => setScheduledAt(v ?? "")}
                   />
                 </div>
               )}

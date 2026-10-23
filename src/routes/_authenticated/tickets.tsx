@@ -105,6 +105,7 @@ import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { deleteRowGuarded, deleteRowsGuarded, partialDeleteMessage } from "@/lib/delete-guard";
 import { ticketResponsibleId } from "@/lib/entity/responsible";
 
+import { ActivityDateTimePicker } from "@/components/activity/activity-date-time-picker";
 export const Route = createFileRoute("/_authenticated/tickets")({
   component: TicketsPage,
 });
@@ -953,15 +954,11 @@ function TicketsIndex() {
             </div>
             <div className="space-y-1.5">
               <Label>Vencimento</Label>
-              <Input
-                type="datetime-local"
-                value={draft.due_at ? draft.due_at.slice(0, 16) : ""}
-                onChange={(e) =>
-                  setDraft({
-                    ...draft,
-                    due_at: e.target.value ? new Date(e.target.value).toISOString() : null,
-                  })
-                }
+              <ActivityDateTimePicker
+                ariaLabel="Vencimento"
+                valueFormat="iso"
+                value={draft.due_at}
+                onChange={(v) => setDraft({ ...draft, due_at: v || null })}
               />
             </div>
             <div className="space-y-1.5">

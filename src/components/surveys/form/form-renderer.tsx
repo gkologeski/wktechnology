@@ -31,6 +31,7 @@ import {
 
 import { PhoneInput } from "@/components/ui/phone-input";
 import { IsoDatePicker } from "@/components/iso-date-picker";
+import { ActivityDateTimePicker } from "@/components/activity/activity-date-time-picker";
 export function FormRenderer({
   schema,
   answers,
@@ -211,11 +212,10 @@ export function FieldControl({
  />;
       case "datetime":
         return (
-          <Input
+          <ActivityDateTimePicker
             id={id}
-            type="datetime-local"
             value={s}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(v) => onChange(v ?? "")}
           />
         );
       case "single_choice":
