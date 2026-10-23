@@ -59,7 +59,14 @@ describe("parseIsoDate — datas impossíveis e formatos", () => {
     expect(isValidIsoDate("1900-02-29")).toBe(false);
   });
   it("não normaliza 31/02, 31/04, mês 13 ou dia 00 para outro dia", () => {
-    for (const v of ["2026-02-31", "2026-04-31", "2026-13-01", "2026-00-10", "2026-10-00", "2026-10-32"])
+    for (const v of [
+      "2026-02-31",
+      "2026-04-31",
+      "2026-13-01",
+      "2026-00-10",
+      "2026-10-00",
+      "2026-10-32",
+    ])
       expect(parseIsoDate(v)).toBeNull();
   });
   it("vazio, texto e data-hora não viram dia", () => {
@@ -71,7 +78,12 @@ describe("parseIsoDate — datas impossíveis e formatos", () => {
 describe("atalhos da skill date-picker-br", () => {
   const now = new Date(2026, 9, 23, 15, 0);
   it("ordem: Personalizado → Ontem → Hoje → Amanhã", () => {
-    expect(SINGLE_PRESETS.map((p) => p.label)).toEqual(["Personalizado", "Ontem", "Hoje", "Amanhã"]);
+    expect(SINGLE_PRESETS.map((p) => p.label)).toEqual([
+      "Personalizado",
+      "Ontem",
+      "Hoje",
+      "Amanhã",
+    ]);
   });
   it("Personalizado não tem data (não altera o valor)", () => {
     expect(getSinglePresetDate("custom", now)).toBeNull();
@@ -91,7 +103,9 @@ describe("atalhos da skill date-picker-br", () => {
   });
   it("limites inclusivos comparam só o dia", () => {
     const d = new Date(2026, 9, 23, 23, 59);
-    expect(isDayWithin(d, { min: new Date(2026, 9, 23, 12), max: new Date(2026, 9, 23) })).toBe(true);
+    expect(isDayWithin(d, { min: new Date(2026, 9, 23, 12), max: new Date(2026, 9, 23) })).toBe(
+      true,
+    );
     expect(isDayWithin(d, { max: new Date(2026, 9, 22) })).toBe(false);
   });
 });

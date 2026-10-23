@@ -259,9 +259,7 @@ function PsychDialog({
   upsertFn: ReturnType<typeof useServerFn<typeof upsertPsychAssessment>>;
   onSaved: () => void;
 }) {
-  const [assessedAt, setAssessedAt] = useState(
-    editing?.assessed_at ?? formatIsoDate(new Date()),
-  );
+  const [assessedAt, setAssessedAt] = useState(editing?.assessed_at ?? formatIsoDate(new Date()));
   const [method, setMethod] = useState<PsychMethod>(editing?.method ?? "self_report");
   const [status, setStatus] = useState<PsychStatus>(editing?.status ?? "open");
   const [dimensions, setDimensions] = useState<Record<string, number>>(editing?.dimensions ?? {});

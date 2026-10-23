@@ -38,7 +38,11 @@ function walk(dir: string, out: string[] = []): string[] {
     if (statSync(p).isDirectory()) {
       if (name === "node_modules" || name.startsWith(".")) continue;
       walk(p, out);
-    } else if (/\.(tsx|ts)$/.test(name) && !/\.test\.tsx?$/.test(name) && !name.endsWith(".gen.ts")) {
+    } else if (
+      /\.(tsx|ts)$/.test(name) &&
+      !/\.test\.tsx?$/.test(name) &&
+      !name.endsWith(".gen.ts")
+    ) {
       out.push(p);
     }
   }
@@ -60,7 +64,10 @@ export function findDateFieldViolations(rel: string, src: string): string[] {
   src.split("\n").forEach((line, i) => {
     if (/^\s*(\/\/|\*)/.test(line)) return;
     for (const re of NATIVE_DATE) {
-      if (re.test(line)) out.push(`${rel}:${i + 1}: entrada de data nativa — use IsoDatePicker/ActivityDateTimePicker`);
+      if (re.test(line))
+        out.push(
+          `${rel}:${i + 1}: entrada de data nativa — use IsoDatePicker/ActivityDateTimePicker`,
+        );
     }
   });
   if (!CALENDAR_OWNERS.has(rel) && /from\s+["']@\/components\/ui\/calendar["']/.test(src)) {
@@ -88,13 +95,16 @@ describe("guarda dos campos de data", () => {
   });
 
   it("não barra intervalos, mês/horário isolados nem textos que falam de data", () => {
-    expect(findDateFieldViolations("x.tsx", '<DateRangePicker value={r} />')).toEqual([]);
+    expect(findDateFieldViolations("x.tsx", "<DateRangePicker value={r} />")).toEqual([]);
     expect(findDateFieldViolations("x.tsx", '<Input type="month" />')).toEqual([]);
     expect(findDateFieldViolations("x.tsx", '<Input type="time" />')).toEqual([]);
     expect(findDateFieldViolations("x.tsx", '{ name: "due", type: "date" }')).toEqual([]);
-    expect(findDateFieldViolations("x.tsx", "// antes: <input type=\"date\">")).toEqual([]);
+    expect(findDateFieldViolations("x.tsx", '// antes: <input type="date">')).toEqual([]);
     expect(
-      findDateFieldViolations("src/components/date-picker.tsx", 'import { Calendar } from "@/components/ui/calendar";'),
+      findDateFieldViolations(
+        "src/components/date-picker.tsx",
+        'import { Calendar } from "@/components/ui/calendar";',
+      ),
     ).toEqual([]);
   });
 

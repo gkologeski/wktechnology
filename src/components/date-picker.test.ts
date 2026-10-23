@@ -79,7 +79,8 @@ describe("DatePicker", () => {
     render(createElement(DatePicker, { value: new Date(2026, 1, 5), onChange }));
     open();
     const day = [...document.querySelectorAll("button[data-day]")].find(
-      (b) => (b as HTMLButtonElement).dataset.day?.includes("2026-02-10") ||
+      (b) =>
+        (b as HTMLButtonElement).dataset.day?.includes("2026-02-10") ||
         b.getAttribute("data-day") === new Date(2026, 1, 10).toLocaleDateString(),
     ) as HTMLButtonElement | undefined;
     const fallback = [...document.querySelectorAll("button")].find(
@@ -117,7 +118,14 @@ describe("DatePicker", () => {
   });
 
   it("disabled não abre; aria-required/aria-invalid no gatilho", () => {
-    render(createElement(DatePicker, { onChange: () => {}, disabled: true, required: true, invalid: true }));
+    render(
+      createElement(DatePicker, {
+        onChange: () => {},
+        disabled: true,
+        required: true,
+        invalid: true,
+      }),
+    );
     expect(trigger().disabled).toBe(true);
     expect(trigger().getAttribute("aria-required")).toBe("true");
     expect(trigger().getAttribute("aria-invalid")).toBe("true");

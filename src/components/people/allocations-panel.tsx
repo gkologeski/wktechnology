@@ -330,9 +330,7 @@ function AllocationDialog({
   const [cost, setCost] = useState<string>(
     editing?.cost_rate != null ? String(editing.cost_rate) : "",
   );
-  const [startsAt, setStartsAt] = useState<string>(
-    editing?.starts_at ?? formatIsoDate(new Date()),
-  );
+  const [startsAt, setStartsAt] = useState<string>(editing?.starts_at ?? formatIsoDate(new Date()));
   const [endsAt, setEndsAt] = useState<string>(editing?.ends_at ?? "");
   const [status, setStatus] = useState<AllocationStatus>(editing?.status ?? "active");
   const [notes, setNotes] = useState<string>(editing?.notes ?? "");
