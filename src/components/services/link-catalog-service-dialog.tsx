@@ -702,16 +702,12 @@ export function LinkCatalogServiceDialog({
               <IsoDatePicker
                 id="svc-start"
                 value={startsAt}
-                onChange={(v) => setStartsAt((v ?? ""))}
+                onChange={(v) => setStartsAt(v ?? "")}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="svc-end">Fim</Label>
-              <IsoDatePicker
-                id="svc-end"
-                value={endsAt}
-                onChange={(v) => setEndsAt((v ?? ""))}
-              />
+              <IsoDatePicker id="svc-end" value={endsAt} onChange={(v) => setEndsAt(v ?? "")} />
             </div>
           </div>
         </div>

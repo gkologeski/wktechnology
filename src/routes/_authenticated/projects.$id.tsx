@@ -378,11 +378,7 @@ function NewTaskDialog({
           </div>
           <div className="space-y-1.5">
             <Label>Prazo</Label>
-            <IsoDatePicker
-              ariaLabel="Prazo"
-              value={dueAt}
-              onChange={(v) => setDueAt((v ?? ""))}
-            />
+            <IsoDatePicker ariaLabel="Prazo" value={dueAt} onChange={(v) => setDueAt(v ?? "")} />
           </div>
         </div>
         <DialogFooter>
@@ -528,11 +524,7 @@ function MilestonesPanel({ projectId }: { projectId: string }) {
             </div>
             <div className="space-y-1.5">
               <Label>Prazo</Label>
-              <IsoDatePicker
-                ariaLabel="Prazo"
-                value={dueAt}
-                onChange={(v) => setDueAt((v ?? ""))}
-              />
+              <IsoDatePicker ariaLabel="Prazo" value={dueAt} onChange={(v) => setDueAt(v ?? "")} />
             </div>
             <div className="flex items-center gap-2">
               <Checkbox
@@ -619,11 +611,7 @@ function TimesheetPanel({ projectId }: { projectId: string }) {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
           <div className="space-y-1.5">
             <Label>Data</Label>
-            <IsoDatePicker
-              ariaLabel="Data"
-              value={date}
-              onChange={(v) => setDate((v ?? ""))}
-            />
+            <IsoDatePicker ariaLabel="Data" value={date} onChange={(v) => setDate(v ?? "")} />
           </div>
           <div className="space-y-1.5">
             <Label>Horas</Label>

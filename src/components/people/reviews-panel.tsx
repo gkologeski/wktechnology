@@ -340,7 +340,7 @@ function ReviewDialog({
             <IsoDatePicker
               ariaLabel="Início do período"
               value={periodStart}
-              onChange={(v) => setPeriodStart((v ?? ""))}
+              onChange={(v) => setPeriodStart(v ?? "")}
             />
           </div>
           <div className="space-y-1">
@@ -348,7 +348,7 @@ function ReviewDialog({
             <IsoDatePicker
               ariaLabel="Fim do período"
               value={periodEnd}
-              onChange={(v) => setPeriodEnd((v ?? ""))}
+              onChange={(v) => setPeriodEnd(v ?? "")}
             />
           </div>
 

@@ -573,7 +573,7 @@ export function ImportContractWizard() {
                 <IsoDatePicker
                   ariaLabel="Validade"
                   value={expiresAt}
-                  onChange={(v) => setExpiresAt((v ?? ""))}
+                  onChange={(v) => setExpiresAt(v ?? "")}
                 />
               </div>
             </div>

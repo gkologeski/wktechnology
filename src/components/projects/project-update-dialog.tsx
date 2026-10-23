@@ -155,7 +155,7 @@ export function ProjectUpdateDialog({
               <IsoDatePicker
                 id="pu-expected"
                 value={expected}
-                onChange={(v) => setExpected((v ?? ""))}
+                onChange={(v) => setExpected(v ?? "")}
               />
             </div>
             <div className="space-y-1.5">

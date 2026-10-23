@@ -98,11 +98,7 @@ export function QuickCreateProjectDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Prazo</Label>
-              <IsoDatePicker
-                ariaLabel="Prazo"
-                value={dueAt}
-                onChange={(v) => setDueAt((v ?? ""))}
-              />
+              <IsoDatePicker ariaLabel="Prazo" value={dueAt} onChange={(v) => setDueAt(v ?? "")} />
             </div>
             <div className="space-y-1.5">
               <Label>Horas planejadas</Label>

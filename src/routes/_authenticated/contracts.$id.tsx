@@ -386,7 +386,7 @@ function ContractDetail() {
                 <IsoDatePicker
                   ariaLabel="Início"
                   value={startsAt}
-                  onChange={(v) => setStartsAt((v ?? ""))}
+                  onChange={(v) => setStartsAt(v ?? "")}
                 />
               </div>
               <div className="space-y-2">
@@ -394,7 +394,7 @@ function ContractDetail() {
                 <IsoDatePicker
                   ariaLabel="Fim"
                   value={endsAt}
-                  onChange={(v) => setEndsAt((v ?? ""))}
+                  onChange={(v) => setEndsAt(v ?? "")}
                 />
               </div>
             </div>

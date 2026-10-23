@@ -483,7 +483,7 @@ function NewRecurrenceDialog({
               <IsoDatePicker
                 ariaLabel="Início"
                 value={startDate}
-                onChange={(v) => setStartDate((v ?? ""))}
+                onChange={(v) => setStartDate(v ?? "")}
               />
             </div>
             <div className="space-y-1">
@@ -491,7 +491,7 @@ function NewRecurrenceDialog({
               <IsoDatePicker
                 ariaLabel="Fim (opcional)"
                 value={endDate}
-                onChange={(v) => setEndDate((v ?? ""))}
+                onChange={(v) => setEndDate(v ?? "")}
               />
             </div>
             <div className="space-y-1">

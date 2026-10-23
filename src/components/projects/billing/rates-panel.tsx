@@ -385,7 +385,7 @@ export function RatesPanel() {
                 id="r-from"
                 value={from}
                 onChange={(v) => {
-                  setFrom((v ?? ""));
+                  setFrom(v ?? "");
                   setImpact(null);
                 }}
               />
@@ -396,7 +396,7 @@ export function RatesPanel() {
                 id="r-to"
                 value={to}
                 onChange={(v) => {
-                  setTo((v ?? ""));
+                  setTo(v ?? "");
                   setImpact(null);
                 }}
               />
@@ -520,7 +520,7 @@ export function RatesPanel() {
                               ariaLabel="Data da mudança"
                               className="w-36"
                               value={splitDate}
-                              onChange={(v) => setSplitDate((v ?? ""))}
+                              onChange={(v) => setSplitDate(v ?? "")}
                             />
                             <Input
                               aria-label="Novo valor"

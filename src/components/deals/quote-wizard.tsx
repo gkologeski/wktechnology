@@ -505,7 +505,7 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
                 <IsoDatePicker
                   ariaLabel="Válida até"
                   value={draft.validUntil}
-                  onChange={(v) => setDraft({ ...draft, validUntil: (v ?? "") })}
+                  onChange={(v) => setDraft({ ...draft, validUntil: v ?? "" })}
                 />
               </div>
               {!hasLineItems && (

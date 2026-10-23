@@ -634,7 +634,9 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
                                   id={`amd-date-${i.key}`}
                                   value={i.amendmentEffectiveAt ?? ""}
                                   disabled={processing}
-                                  onChange={(v) => patchItem(i.key, { amendmentEffectiveAt: (v ?? "") })}
+                                  onChange={(v) =>
+                                    patchItem(i.key, { amendmentEffectiveAt: v ?? "" })
+                                  }
                                 />
                               </div>
                             </div>

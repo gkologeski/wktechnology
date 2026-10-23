@@ -340,7 +340,7 @@ export function TimesheetPanel({ personId }: { personId: string }) {
               id="ts-start"
               value={start}
               onChange={(v) => {
-                setStart((v ?? ""));
+                setStart(v ?? "");
                 setPreset("custom");
               }}
               className="w-[160px]"
@@ -354,7 +354,7 @@ export function TimesheetPanel({ personId }: { personId: string }) {
               id="ts-end"
               value={end}
               onChange={(v) => {
-                setEnd((v ?? ""));
+                setEnd(v ?? "");
                 setPreset("custom");
               }}
               className="w-[160px]"

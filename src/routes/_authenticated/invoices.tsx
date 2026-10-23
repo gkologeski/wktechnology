@@ -613,11 +613,7 @@ function CreateInvoiceDialog({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="due">Vencimento</Label>
-            <IsoDatePicker
-              id="due"
-              value={due}
-              onChange={(v) => setDue((v ?? ""))}
-            />
+            <IsoDatePicker id="due" value={due} onChange={(v) => setDue(v ?? "")} />
           </div>
         </div>
       </div>

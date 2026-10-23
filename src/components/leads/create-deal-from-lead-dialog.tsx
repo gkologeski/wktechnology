@@ -413,7 +413,7 @@ export function CreateDealFromLeadDialog({
               <IsoDatePicker
                 ariaLabel="Previsão de fechamento"
                 value={expectedClose}
-                onChange={(v) => setExpectedClose((v ?? ""))}
+                onChange={(v) => setExpectedClose(v ?? "")}
               />
             </div>
 

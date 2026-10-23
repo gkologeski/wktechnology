@@ -500,7 +500,7 @@ function NewPlanDialog({
               <IsoDatePicker
                 ariaLabel="Início"
                 value={startedAt}
-                onChange={(v) => setStartedAt((v ?? ""))}
+                onChange={(v) => setStartedAt(v ?? "")}
               />
             </div>
             <div className="space-y-2">
@@ -508,7 +508,7 @@ function NewPlanDialog({
               <IsoDatePicker
                 ariaLabel="Prazo"
                 value={target}
-                onChange={(v) => setTarget((v ?? ""))}
+                onChange={(v) => setTarget(v ?? "")}
               />
             </div>
           </div>
@@ -609,7 +609,7 @@ function TaskDialog({
               <IsoDatePicker
                 ariaLabel="Prazo"
                 value={dueDate ?? ""}
-                onChange={(v) => setDueDate((v ?? ""))}
+                onChange={(v) => setDueDate(v ?? "")}
               />
             </div>
           </div>

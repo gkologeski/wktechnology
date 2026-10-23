@@ -378,10 +378,10 @@ function CustomObjectsPage() {
                           f.type === "number"
                             ? "number"
                             : f.type === "email"
-                                ? "email"
-                                : f.type === "url"
-                                  ? "url"
-                                  : "text"
+                              ? "email"
+                              : f.type === "url"
+                                ? "url"
+                                : "text"
                         }
                         value={String(recForm[f.key] ?? "")}
                         onChange={(e) =>

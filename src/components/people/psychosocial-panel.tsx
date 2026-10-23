@@ -310,7 +310,7 @@ function PsychDialog({
               <IsoDatePicker
                 ariaLabel="Data"
                 value={assessedAt}
-                onChange={(v) => setAssessedAt((v ?? ""))}
+                onChange={(v) => setAssessedAt(v ?? "")}
               />
             </div>
             <div className="space-y-2">
@@ -391,7 +391,7 @@ function PsychDialog({
               <IsoDatePicker
                 ariaLabel="Follow-up"
                 value={followUp}
-                onChange={(v) => setFollowUp((v ?? ""))}
+                onChange={(v) => setFollowUp(v ?? "")}
               />
             </div>
           </div>

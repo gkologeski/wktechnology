@@ -340,16 +340,12 @@ function BenefitDialog({
               <IsoDatePicker
                 ariaLabel="Início"
                 value={startsOn}
-                onChange={(v) => setStartsOn((v ?? ""))}
+                onChange={(v) => setStartsOn(v ?? "")}
               />
             </div>
             <div className="space-y-2">
               <Label>Fim</Label>
-              <IsoDatePicker
-                ariaLabel="Fim"
-                value={endsOn}
-                onChange={(v) => setEndsOn((v ?? ""))}
-              />
+              <IsoDatePicker ariaLabel="Fim" value={endsOn} onChange={(v) => setEndsOn(v ?? "")} />
             </div>
           </div>
           <div className="flex items-center justify-between rounded-md border p-3">

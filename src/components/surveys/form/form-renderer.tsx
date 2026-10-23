@@ -205,19 +205,9 @@ export function FieldControl({
           />
         );
       case "date":
-        return <IsoDatePicker
-   id={id}
-   value={s}
-   onChange={(v) => onChange((v ?? ""))}
- />;
+        return <IsoDatePicker id={id} value={s} onChange={(v) => onChange(v ?? "")} />;
       case "datetime":
-        return (
-          <ActivityDateTimePicker
-            id={id}
-            value={s}
-            onChange={(v) => onChange(v ?? "")}
-          />
-        );
+        return <ActivityDateTimePicker id={id} value={s} onChange={(v) => onChange(v ?? "")} />;
       case "single_choice":
         return (
           <RadioGroup value={s} onValueChange={onChange} aria-labelledby={`${id}-l`}>

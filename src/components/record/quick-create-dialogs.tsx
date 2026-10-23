@@ -378,7 +378,7 @@ export function QuickCreateDealDialog({
               <IsoDatePicker
                 id="qc-d-close"
                 value={closeDate}
-                onChange={(v) => setCloseDate((v ?? ""))}
+                onChange={(v) => setCloseDate(v ?? "")}
               />
             </div>
           </div>

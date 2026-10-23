@@ -589,7 +589,7 @@ function AllocationDialog({
             <IsoDatePicker
               ariaLabel="Início"
               value={startsAt}
-              onChange={(v) => setStartsAt((v ?? ""))}
+              onChange={(v) => setStartsAt(v ?? "")}
             />
           </div>
           <div className="space-y-2">
@@ -597,7 +597,7 @@ function AllocationDialog({
             <IsoDatePicker
               ariaLabel="Fim (opcional)"
               value={endsAt}
-              onChange={(v) => setEndsAt((v ?? ""))}
+              onChange={(v) => setEndsAt(v ?? "")}
             />
           </div>
           <AllocationCapacityFields

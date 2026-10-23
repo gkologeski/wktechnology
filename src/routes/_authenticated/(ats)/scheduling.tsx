@@ -598,19 +598,11 @@ function CommonSlotsFinder({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>De</Label>
-              <IsoDatePicker
-                ariaLabel="De"
-                value={from}
-                onChange={(v) => setFrom((v ?? ""))}
-              />
+              <IsoDatePicker ariaLabel="De" value={from} onChange={(v) => setFrom(v ?? "")} />
             </div>
             <div className="space-y-1.5">
               <Label>Até</Label>
-              <IsoDatePicker
-                ariaLabel="Até"
-                value={to}
-                onChange={(v) => setTo((v ?? ""))}
-              />
+              <IsoDatePicker ariaLabel="Até" value={to} onChange={(v) => setTo(v ?? "")} />
             </div>
             <div className="space-y-1.5">
               <Label>Duração (min)</Label>

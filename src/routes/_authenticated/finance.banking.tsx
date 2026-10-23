@@ -954,7 +954,7 @@ function BankingPage() {
                 <IsoDatePicker
                   ariaLabel="Vencimento"
                   value={chargeForm.due_date}
-                  onChange={(v) => setChargeForm((f) => ({ ...f, due_date: (v ?? "") }))}
+                  onChange={(v) => setChargeForm((f) => ({ ...f, due_date: v ?? "" }))}
                 />
               </div>
             </div>
@@ -1135,7 +1135,7 @@ function BankingPage() {
               <IsoDatePicker
                 ariaLabel="Agendado para"
                 value={paymentForm.scheduled_for}
-                onChange={(v) => setPaymentForm((f) => ({ ...f, scheduled_for: (v ?? "") }))}
+                onChange={(v) => setPaymentForm((f) => ({ ...f, scheduled_for: v ?? "" }))}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">

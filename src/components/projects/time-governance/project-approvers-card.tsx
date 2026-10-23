@@ -232,19 +232,11 @@ export function ProjectApproversCard({ projectId }: { projectId: string }) {
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor="ap-from">Vigência: início</Label>
-          <IsoDatePicker
-            id="ap-from"
-            value={validFrom}
-            onChange={(v) => setValidFrom((v ?? ""))}
-          />
+          <IsoDatePicker id="ap-from" value={validFrom} onChange={(v) => setValidFrom(v ?? "")} />
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor="ap-to">Vigência: fim (opcional)</Label>
-          <IsoDatePicker
-            id="ap-to"
-            value={validTo}
-            onChange={(v) => setValidTo((v ?? ""))}
-          />
+          <IsoDatePicker id="ap-to" value={validTo} onChange={(v) => setValidTo(v ?? "")} />
         </div>
         <div className="grid gap-1.5 sm:col-span-2">
           <Label htmlFor="ap-reason">Motivo / observação</Label>

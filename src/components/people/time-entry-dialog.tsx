@@ -153,7 +153,7 @@ export function TimeEntryDialog({
               <IsoDatePicker
                 id="te-date"
                 value={entryDate}
-                onChange={(v) => setEntryDate((v ?? ""))}
+                onChange={(v) => setEntryDate(v ?? "")}
               />
             </div>
             <div className="grid gap-1.5">

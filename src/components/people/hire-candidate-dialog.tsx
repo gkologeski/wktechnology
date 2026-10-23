@@ -116,7 +116,7 @@ export function HireCandidateDialog({
               <IsoDatePicker
                 ariaLabel="Data de início"
                 value={hireDate}
-                onChange={(v) => setHireDate((v ?? ""))}
+                onChange={(v) => setHireDate(v ?? "")}
               />
             </div>
             <div className="space-y-2">

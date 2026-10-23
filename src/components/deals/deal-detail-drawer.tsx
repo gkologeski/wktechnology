@@ -359,7 +359,7 @@ export function DealDetailDrawer({
                   <Field label="Data prevista">
                     <IsoDatePicker
                       value={String(v.expected_close_date ?? "").slice(0, 10)}
-                      onChange={(v) => set("expected_close_date", (v ?? ""))}
+                      onChange={(v) => set("expected_close_date", v ?? "")}
                     />
                   </Field>
                   <Field label="Prioridade">

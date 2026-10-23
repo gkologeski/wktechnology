@@ -260,7 +260,7 @@ function ClientRoleProfilePage() {
                       <IsoDatePicker
                         id={id}
                         value={values[f.key] ?? ""}
-                        onChange={(v) => setValues({ ...values, [f.key]: (v ?? "") })}
+                        onChange={(v) => setValues({ ...values, [f.key]: v ?? "" })}
                       />
                     ) : (
                       <Textarea

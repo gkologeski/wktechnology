@@ -326,7 +326,7 @@ function GoalsPage() {
                 <IsoDatePicker
                   ariaLabel="Início"
                   value={form.period_start}
-                  onChange={(v) => setForm({ ...form, period_start: (v ?? "") })}
+                  onChange={(v) => setForm({ ...form, period_start: v ?? "" })}
                 />
               </div>
               <div>
@@ -334,7 +334,7 @@ function GoalsPage() {
                 <IsoDatePicker
                   ariaLabel="Fim"
                   value={form.period_end}
-                  onChange={(v) => setForm({ ...form, period_end: (v ?? "") })}
+                  onChange={(v) => setForm({ ...form, period_end: v ?? "" })}
                 />
               </div>
             </div>

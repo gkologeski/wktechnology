@@ -109,7 +109,7 @@ export function CreateOfferDialog({
               <IsoDatePicker
                 ariaLabel="Data de início"
                 value={startDate}
-                onChange={(v) => setStartDate((v ?? ""))}
+                onChange={(v) => setStartDate(v ?? "")}
               />
             </div>
           </div>

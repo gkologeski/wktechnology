@@ -477,11 +477,7 @@ export function MeasurementDetailDialog({
                     <>
                       <div className="grid gap-1">
                         <Label htmlFor="due">Vencimento</Label>
-                        <IsoDatePicker
-                          id="due"
-                          value={due}
-                          onChange={(v) => setDue((v ?? ""))}
-                        />
+                        <IsoDatePicker id="due" value={due} onChange={(v) => setDue(v ?? "")} />
                       </div>
                       <Button
                         disabled={busy || !due || m.status === "approved"}

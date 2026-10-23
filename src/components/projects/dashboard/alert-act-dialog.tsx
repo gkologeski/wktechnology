@@ -95,7 +95,7 @@ export function AlertActDialog({
                 id="alert-until"
                 min={today}
                 value={until}
-                onChange={(v) => setUntil((v ?? ""))}
+                onChange={(v) => setUntil(v ?? "")}
                 required
               />
             </div>

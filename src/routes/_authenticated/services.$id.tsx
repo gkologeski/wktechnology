@@ -306,7 +306,7 @@ function ServiceDetail() {
                 <IsoDatePicker
                   ariaLabel="Início"
                   value={startsAt}
-                  onChange={(v) => setStartsAt((v ?? ""))}
+                  onChange={(v) => setStartsAt(v ?? "")}
                 />
               </div>
               <div className="space-y-2">
@@ -314,7 +314,7 @@ function ServiceDetail() {
                 <IsoDatePicker
                   ariaLabel="Fim"
                   value={endsAt}
-                  onChange={(v) => setEndsAt((v ?? ""))}
+                  onChange={(v) => setEndsAt(v ?? "")}
                 />
               </div>
             </div>

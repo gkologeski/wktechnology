@@ -230,7 +230,7 @@ export function QuickCreateEntryDialog({
               <IsoDatePicker
                 ariaLabel="Competência"
                 value={competenceDate}
-                onChange={(v) => setCompetenceDate((v ?? ""))}
+                onChange={(v) => setCompetenceDate(v ?? "")}
               />
             </div>
             <div className="space-y-2">
@@ -238,7 +238,7 @@ export function QuickCreateEntryDialog({
               <IsoDatePicker
                 ariaLabel="Competência"
                 value={dueDate}
-                onChange={(v) => setDueDate((v ?? ""))}
+                onChange={(v) => setDueDate(v ?? "")}
               />
             </div>
           </div>

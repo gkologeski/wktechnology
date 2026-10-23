@@ -303,7 +303,7 @@ function GoalDialog({
             <IsoDatePicker
               ariaLabel="Início"
               value={periodStart ?? ""}
-              onChange={(v) => setPeriodStart((v ?? ""))}
+              onChange={(v) => setPeriodStart(v ?? "")}
             />
           </div>
           <div className="space-y-1">
@@ -311,7 +311,7 @@ function GoalDialog({
             <IsoDatePicker
               ariaLabel="Fim"
               value={periodEnd ?? ""}
-              onChange={(v) => setPeriodEnd((v ?? ""))}
+              onChange={(v) => setPeriodEnd(v ?? "")}
             />
           </div>
         </div>

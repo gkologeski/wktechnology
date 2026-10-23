@@ -157,7 +157,7 @@ export function PersonDocumentDialog({ open, onOpenChange, personId, document }:
               <IsoDatePicker
                 ariaLabel="Emissão"
                 value={issuedAt}
-                onChange={(v) => setIssuedAt((v ?? ""))}
+                onChange={(v) => setIssuedAt(v ?? "")}
               />
             </div>
           </div>
@@ -167,7 +167,7 @@ export function PersonDocumentDialog({ open, onOpenChange, personId, document }:
             <IsoDatePicker
               ariaLabel="Validade"
               value={expiresAt}
-              onChange={(v) => setExpiresAt((v ?? ""))}
+              onChange={(v) => setExpiresAt(v ?? "")}
             />
             <p className="text-xs text-muted-foreground">
               Deixe em branco se o documento não tem validade. Alerta automático 30 dias antes.

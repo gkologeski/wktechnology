@@ -316,7 +316,7 @@ function LinkAmendmentDialog({
               <IsoDatePicker
                 id="amendment-date"
                 value={effectiveAt}
-                onChange={(v) => setEffectiveAt((v ?? ""))}
+                onChange={(v) => setEffectiveAt(v ?? "")}
               />
             </div>
           </div>

@@ -191,16 +191,12 @@ export function QuickCreateServiceDialog({
               <IsoDatePicker
                 ariaLabel="Início"
                 value={startsAt}
-                onChange={(v) => setStartsAt((v ?? ""))}
+                onChange={(v) => setStartsAt(v ?? "")}
               />
             </div>
             <div className="space-y-2">
               <Label>Fim</Label>
-              <IsoDatePicker
-                ariaLabel="Fim"
-                value={endsAt}
-                onChange={(v) => setEndsAt((v ?? ""))}
-              />
+              <IsoDatePicker ariaLabel="Fim" value={endsAt} onChange={(v) => setEndsAt(v ?? "")} />
             </div>
           </div>
         </div>

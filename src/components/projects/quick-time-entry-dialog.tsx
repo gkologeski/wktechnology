@@ -412,7 +412,7 @@ export function QuickTimeEntryDialog({
                 <IsoDatePicker
                   id="tt-date"
                   value={entryDate}
-                  onChange={(v) => setEntryDate((v ?? ""))}
+                  onChange={(v) => setEntryDate(v ?? "")}
                 />
               </div>
               {mode === "interval" ? (

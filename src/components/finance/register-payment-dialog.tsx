@@ -134,7 +134,7 @@ export function RegisterPaymentDialog({
                 <IsoDatePicker
                   ariaLabel="Data"
                   value={paidAt}
-                  onChange={(v) => setPaidAt((v ?? ""))}
+                  onChange={(v) => setPaidAt(v ?? "")}
                 />
               </div>
             </div>

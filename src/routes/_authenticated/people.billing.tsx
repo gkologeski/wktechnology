@@ -314,7 +314,7 @@ function PeopleBillingPage() {
                 <IsoDatePicker
                   id="due-date"
                   value={dueDate}
-                  onChange={(v) => setDueDate((v ?? ""))}
+                  onChange={(v) => setDueDate(v ?? "")}
                 />
               </div>
             </div>
