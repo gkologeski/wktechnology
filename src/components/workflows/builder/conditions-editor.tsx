@@ -2,6 +2,7 @@ import type { FieldOpt } from "./step-tree";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { IsoDatePicker } from "@/components/iso-date-picker";
 import {
   Select,
   SelectContent,
@@ -315,7 +316,19 @@ export function FieldValueEditor({
     );
   }
 
-  if (field?.type === "number" || field?.type === "date") {
+  if (field?.type === "date") {
+    return (
+      <IsoDatePicker
+        size={compact ? "sm" : "default"}
+        className={compact ? "h-8 text-xs" : undefined}
+        ariaLabel={placeholder || "Data"}
+        value={str}
+        onChange={(v) => onChange(v ?? "")}
+      />
+    );
+  }
+
+  if (field?.type === "number") {
     return (
       <Input
         className={compact ? "h-8 text-xs" : undefined}

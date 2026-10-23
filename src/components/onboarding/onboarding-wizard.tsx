@@ -9,6 +9,7 @@ import { ArrowLeft, ArrowRight, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { IsoDatePicker } from "@/components/iso-date-picker";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
@@ -89,6 +90,16 @@ function FieldControl({
         aria-label={field.label}
         value={(value as string) ?? ""}
         onChange={(v) => onChange(v || null)}
+      />
+    );
+  }
+  if (field.type === "date") {
+    return (
+      <IsoDatePicker
+        id={id}
+        ariaLabel={field.label}
+        value={typeof value === "string" ? value : ""}
+        onChange={(v) => onChange(v)}
       />
     );
   }
