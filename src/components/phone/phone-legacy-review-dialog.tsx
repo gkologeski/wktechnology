@@ -141,11 +141,7 @@ export function PhoneLegacyReviewDialog({
                 <Trash2 className="mr-1 h-4 w-4" aria-hidden />
                 Apagar
               </Button>
-              <Button
-                variant="outline"
-                disabled={!canAct || busy}
-                onClick={() => onAction("keep")}
-              >
+              <Button variant="outline" disabled={!canAct || busy} onClick={() => onAction("keep")}>
                 {pending === "keep" ? (
                   <Loader2 className="mr-1 h-4 w-4 animate-spin" aria-hidden />
                 ) : (

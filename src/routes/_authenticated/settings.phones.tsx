@@ -110,8 +110,7 @@ function PhonesSettingsPage() {
   const reviewItem = pageItems.find((i) => i.id === reviewId) ?? null;
   const reviewPos = reviewItem ? legacyOnPage.findIndex((i) => i.id === reviewItem.id) : -1;
   const resolveMut = useMutation({
-    mutationFn: (action: PhoneReviewAction) =>
-      resolveFn({ data: { itemId: reviewId!, action } }),
+    mutationFn: (action: PhoneReviewAction) => resolveFn({ data: { itemId: reviewId!, action } }),
     onSuccess: (_r, action) => {
       toast.success(
         action === "confirm"
@@ -449,9 +448,7 @@ function PhonesSettingsPage() {
         loading={detailQ.isLoading}
         error={detailQ.isError ? (detailQ.error as Error).message : null}
         pending={resolveMut.isPending ? (resolveMut.variables ?? null) : null}
-        position={
-          reviewPos >= 0 ? `${reviewPos + 1} de ${legacyOnPage.length} nesta página` : null
-        }
+        position={reviewPos >= 0 ? `${reviewPos + 1} de ${legacyOnPage.length} nesta página` : null}
         onAction={(a) => resolveMut.mutate(a)}
       />
     </div>
