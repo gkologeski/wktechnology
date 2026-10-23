@@ -1,11 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { asCountry, maskPhone } from "@/lib/phone/e164";
+import { asCountry, formatPhoneDisplay, maskPhone } from "@/lib/phone/e164";
 import {
   PHONE_REVIEW_CLASSES,
   phoneEntityName,
   phoneReviewDetail,
+  PHONE_REVIEW_KINDS,
+  legacyMobileCandidate,
   reconcilePhoneRuns,
   type PhoneRunRow,
   phoneEntityRoute,
@@ -38,6 +40,8 @@ export type PhoneReviewItem = {
   route: PhoneEntityRoute | null;
   masked: string;
   classification: string;
+  /** Subtipo de revisão humana (ex.: celular antigo sem o 9). */
+  reviewKind: string | null;
   reason: string | null;
 };
 
@@ -142,6 +146,7 @@ export const listPhoneReview = createServerFn({ method: "GET" })
       .object({
         runId: z.string().uuid(),
         classification: z.enum(PHONE_REVIEW_CLASSES).optional(),
+        kind: z.enum(PHONE_REVIEW_KINDS).optional(),
         page: z.number().int().min(0).max(10_000).default(0),
       })
       .parse(i),
@@ -150,16 +155,17 @@ export const listPhoneReview = createServerFn({ method: "GET" })
     const pageSize = 50;
     const q = context.supabase
       .from("phone_normalization_items")
-      .select("id, table_name, column_name, row_id, original_value, classification, reason", {
-        count: "exact",
-      })
+      .select(
+        "id, table_name, column_name, row_id, original_value, classification, reason, review_kind",
+        { count: "exact" },
+      )
       .eq("run_id", data.runId)
       .is("applied_at", null)
       .is("resolved_at", null)
       .in("classification", data.classification ? [data.classification] : [...PHONE_REVIEW_CLASSES])
       .order("id")
       .range(data.page * pageSize, data.page * pageSize + pageSize - 1);
-    const { data: rows, error, count } = await q;
+    const { data: rows, error, count } = await (data.kind ? q.eq("review_kind", data.kind) : q);
     if (error) throw new Error(error.message);
     const list = rows ?? [];
 
@@ -209,6 +215,7 @@ export const listPhoneReview = createServerFn({ method: "GET" })
           route: name ? phoneEntityRoute(table) : null,
           masked: maskPhone(r.original_value as string | null),
           classification: r.classification as string,
+          reviewKind: (r.review_kind as string | null) ?? null,
           // Motivo específico calculado na hora pela mesma regra (candidato mascarado).
           reason:
             phoneReviewDetail(r.original_value as string | null) ??
@@ -216,4 +223,79 @@ export const listPhoneReview = createServerFn({ method: "GET" })
         };
       }),
     };
+  });
+
+/**
+ * Um item da fila com os valores completos para quem revisa (RLS: só
+ * administrador ativo do workspace lê itens). A sugestão é calculada aqui,
+ * nunca recebida do navegador.
+ */
+export const getPhoneReviewItem = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ itemId: z.number().int().positive() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: it, error } = await context.supabase
+      .from("phone_normalization_items")
+      .select("id, original_value, review_kind, applied_at, resolved_at")
+      .eq("id", data.itemId)
+      .maybeSingle();
+    if (error) throw new Error("Não foi possível carregar o item.");
+    if (!it) throw new Error("Item não encontrado ou sem permissão.");
+    const original = (it.original_value as string | null) ?? "";
+    const candidate =
+      it.review_kind === "legacy_mobile_no9" ? legacyMobileCandidate(original) : null;
+    return {
+      id: it.id as number,
+      original,
+      candidate,
+      candidateDisplay: candidate ? formatPhoneDisplay(candidate) : null,
+      resolved: !!(it.applied_at || it.resolved_at),
+    };
+  });
+
+/**
+ * Resolve um item da fila por decisão humana: confirmar a sugestão, manter o
+ * valor ou apagar. O banco (`phone_review_resolve`) confere administrador
+ * ativo, "Ver como", valor ainda igual ao original e a sugestão contra o
+ * número gravado; guarda backup e quem decidiu.
+ */
+export const resolvePhoneReview = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        itemId: z.number().int().positive(),
+        action: z.enum(["confirm", "keep", "clear"]),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const sb = context.supabase;
+    await (await import("@/lib/view-as-guard.server")).assertNotReadOnlyView(sb);
+    let value: string | null = null;
+    if (data.action === "confirm") {
+      const { data: it } = await sb
+        .from("phone_normalization_items")
+        .select("original_value, review_kind")
+        .eq("id", data.itemId)
+        .maybeSingle();
+      if (!it) throw new Error("Item não encontrado ou sem permissão.");
+      value =
+        it.review_kind === "legacy_mobile_no9"
+          ? legacyMobileCandidate((it.original_value as string | null) ?? "")
+          : null;
+      if (!value) throw new Error("Este item não tem sugestão para confirmar.");
+    }
+    const { data: res, error } = await sb.rpc("phone_review_resolve", {
+      _item: data.itemId,
+      _action: data.action,
+      _new_value: value ?? undefined,
+    });
+    if (error) {
+      // Duplicidade de lead: não ecoa o número na mensagem.
+      if (error.code === "23505")
+        throw new Error("Outro lead já usa este telefone. Revise na ficha do registro.");
+      throw new Error(error.message || "Não foi possível salvar a revisão.");
+    }
+    return res as { action: string; resolution: string; run_id: string };
   });

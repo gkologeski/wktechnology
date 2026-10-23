@@ -119,6 +119,23 @@ filtra o workspace, idempotente, token `wk-phone-e164-v1`), migration 0187
 - Desfazer: `RUN=8b277703-… WS=… scripts/phone-e164/rollback.sh` (papel de
   escrita); itens da fila voltam a pendentes.
 
+### Revisão manual dos celulares antigos sem o 9
+
+- 1.252 itens pendentes marcados `review_kind = legacy_mobile_no9` (contatos
+  431, empresas 774, leads 44, pessoas 3). Sugestão = +55 DDD 9 + 8 dígitos,
+  calculada no servidor (`legacyMobileCandidate`), nunca vinda do navegador.
+- Configurações › Telefones › filtro "Celular antigo sem o 9 (confirmar)" →
+  Revisar: valor gravado e sugestão completos; Confirmar com o 9, Manter
+  como está ou Apagar (apagar pede confirmação). Segue para o próximo da página.
+- `phone_review_resolve` (migration 0188, security definer): só administrador
+  ativo do workspace, fora de "Ver como"; confere a sugestão contra o número
+  gravado; grava só se o valor ainda é o original; item resolvido uma vez;
+  backup na execução filha "revisão manual" com quem decidiu
+  (`reviewed_by`). Desfazer: `rollback.sh` com o id dessa execução.
+- É edição humana: auditoria e automações do cadastro rodam como em qualquer
+  edição; com celular válido o WhatsApp derivado pode ser preenchido.
+- Prova: `tests/sql/phone-manual-review-isolated.sh` (20 asserções).
+
 ## Pendências
 
 - Ligar `phone_strict_e164` (guarda do banco) depois que o código for publicado.

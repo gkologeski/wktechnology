@@ -14406,6 +14406,8 @@ export type Database = {
           resolution: string | null
           resolved_at: string | null
           resolved_run_id: string | null
+          review_kind: string | null
+          reviewed_by: string | null
           rolled_back_at: string | null
           row_id: string
           run_id: string
@@ -14424,6 +14426,8 @@ export type Database = {
           resolution?: string | null
           resolved_at?: string | null
           resolved_run_id?: string | null
+          review_kind?: string | null
+          reviewed_by?: string | null
           rolled_back_at?: string | null
           row_id: string
           run_id: string
@@ -14442,6 +14446,8 @@ export type Database = {
           resolution?: string | null
           resolved_at?: string | null
           resolved_run_id?: string | null
+          review_kind?: string | null
+          reviewed_by?: string | null
           rolled_back_at?: string | null
           row_id?: string
           run_id?: string
@@ -27394,6 +27400,10 @@ export type Database = {
       permission_set_usable_in_workspace: {
         Args: { _set: string; _workspace: string }
         Returns: boolean
+      }
+      phone_review_resolve: {
+        Args: { _action: string; _item: number; _new_value?: string }
+        Returns: Json
       }
       platform_cron_jobs: {
         Args: never
