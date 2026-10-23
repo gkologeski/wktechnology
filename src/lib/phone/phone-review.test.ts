@@ -127,3 +127,14 @@ describe("reconciliação entre duas execuções", () => {
     expect(reconcilePhoneRuns([child])).toBeNull();
   });
 });
+
+describe("resumo com revisão manual", () => {
+  it("confirmado conta como padronizado; mantido/apagado só saem da revisão", () => {
+    const s = summarizePhoneRun(
+      { "contacts.phone": { invalid: 10 } },
+      {},
+      { "contacts.phone": { manual_confirmed: 3, manual_kept: 2, manual_cleared: 1 } },
+    );
+    expect(s.rows[0]).toMatchObject({ applied: 3, blanked: 0, pending: 4 });
+  });
+});
