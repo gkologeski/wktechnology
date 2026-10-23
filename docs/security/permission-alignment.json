@@ -1,0 +1,413 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-23",
+  "modules": [
+    "TechSales",
+    "TechHire",
+    "TechPeople",
+    "TechContracts",
+    "TechProjects",
+    "TechFinance"
+  ],
+  "legacy_namespace_note": "techservice/services is a legacy namespace, not a seventh vertical module",
+  "state": "incremental_normative_matrix",
+  "workflow": [
+    "authenticated_actor",
+    "active_membership",
+    "correct_workspace",
+    "effective_action_permission_with_deny_precedence",
+    "own_team_workspace_record_scope",
+    "field_projection_and_write_rules",
+    "business_process_invariants"
+  ],
+  "operations": [
+    {
+      "operation": "public.get_entity_field_catalog(text,uuid)",
+      "kind": "metadata_exception",
+      "route_consumers": [
+        "construtores de campos",
+        "grids",
+        "filtros de campanhas"
+      ],
+      "actor": "authenticated active workspace member or trusted service_role",
+      "resource": "technical SQL schema only",
+      "action": "inspect_metadata",
+      "permission_keys": [],
+      "scope": "allowlisted table schema; caller-bound p_owner_id for users",
+      "server": "existing authenticated server functions",
+      "database": "SECURITY INVOKER; no business row sample; canonical enum/boolean options only",
+      "exception_reason": "Technical schema needed by builders, never a grant to read business records; entity CRUD and field access remain separate.",
+      "migration": "0191"
+    },
+    {
+      "operation": "public.anonymize_ats_candidate(uuid)",
+      "kind": "business_action",
+      "route_consumers": [
+        "/compliance",
+        "ficha do candidato"
+      ],
+      "actor": "authenticated active member, not read-only View As",
+      "resource": "techhire.compliance + techhire.candidates",
+      "action": "anonymize",
+      "permission_keys": [
+        "techhire.compliance.delete.workspace",
+        "techhire.candidates.update.workspace OR (techhire.candidates.update.own AND owner_id=actor)"
+      ],
+      "scope": "active workspace of candidate; membership mandatory",
+      "server": "eraseCandidate keeps explicit ANONIMIZAR confirmation",
+      "database": "explicit NULL denial, workspace/action/scope checks, atomic consent revocation and audit",
+      "migration": "0191"
+    },
+    {
+      "operation": "public.recalc_deal_value(uuid)",
+      "kind": "internal_service_exception",
+      "actor": "function owner through existing SECURITY DEFINER trigger, or trusted service_role",
+      "resource": "internal derived data",
+      "action": "recalculate_deal_legacy",
+      "permission_keys": [],
+      "scope": "caller business DML remains subject to its RLS/authorization; no browser/API EXECUTE",
+      "database": "REVOKE PUBLIC/anon/authenticated/API subject; retain owner + service role",
+      "migration": "0191"
+    },
+    {
+      "operation": "public.recompute_deal_value(uuid)",
+      "kind": "internal_service_exception",
+      "actor": "function owner through existing SECURITY DEFINER trigger, or trusted service_role",
+      "resource": "internal derived data",
+      "action": "recalculate_deal",
+      "permission_keys": [],
+      "scope": "caller business DML remains subject to its RLS/authorization; no browser/API EXECUTE",
+      "database": "REVOKE PUBLIC/anon/authenticated/API subject; retain owner + service role",
+      "migration": "0191"
+    },
+    {
+      "operation": "public.recalc_financial_entry(uuid)",
+      "kind": "internal_service_exception",
+      "actor": "function owner through existing SECURITY DEFINER trigger, or trusted service_role",
+      "resource": "internal derived data",
+      "action": "recalculate_entry",
+      "permission_keys": [],
+      "scope": "caller business DML remains subject to its RLS/authorization; no browser/API EXECUTE",
+      "database": "REVOKE PUBLIC/anon/authenticated/API subject; retain owner + service role",
+      "migration": "0191"
+    },
+    {
+      "operation": "public.seed_quote_templates(uuid,uuid)",
+      "kind": "internal_service_exception",
+      "actor": "function owner through existing SECURITY DEFINER trigger, or trusted service_role",
+      "resource": "internal derived data",
+      "action": "seed_templates",
+      "permission_keys": [],
+      "scope": "caller business DML remains subject to its RLS/authorization; no browser/API EXECUTE",
+      "database": "REVOKE PUBLIC/anon/authenticated/API subject; retain owner + service role",
+      "migration": "0191"
+    },
+    {
+      "operation": "public.ensure_silver_medalist_pool(uuid)",
+      "kind": "internal_service_exception",
+      "actor": "function owner through existing SECURITY DEFINER trigger, or trusted service_role",
+      "resource": "internal derived data",
+      "action": "ensure_system_pool",
+      "permission_keys": [],
+      "scope": "caller business DML remains subject to its RLS/authorization; no browser/API EXECUTE",
+      "database": "REVOKE PUBLIC/anon/authenticated/API subject; retain owner + service role",
+      "migration": "0191"
+    }
+  ],
+  "rules": [
+    {
+      "id": 1,
+      "area": "Sistema",
+      "problema": "Papel fixo nas URLs",
+      "decisao_alvo": "Trocar listas de papel por vínculo explícito da rota à permissão, preservando administração de plataforma.",
+      "status": "pendente",
+      "evidencia_migracao": null,
+      "aceite_visual": false
+    },
+    {
+      "id": 2,
+      "area": "Sistema",
+      "problema": "Menu aceita ausência de chave",
+      "decisao_alvo": "Quando a chave for requisito, negar se ausente; estados de erro/loading não autorizam.",
+      "status": "pendente",
+      "evidencia_migracao": null,
+      "aceite_visual": false
+    },
+    {
+      "id": 3,
+      "area": "Sistema",
+      "problema": "Erro de módulo vira acesso irrestrito",
+      "decisao_alvo": "Separar carregamento, erro, ausência de licença e acesso permitido.",
+      "status": "pendente",
+      "evidencia_migracao": null,
+      "aceite_visual": false
+    },
+    {
+      "id": 4,
+      "area": "Sistema",
+      "problema": "Mapa diagnóstico sem aplicação",
+      "decisao_alvo": "Ligar decisões do inventário aos guards reais e à proteção dos dados.",
+      "status": "pendente",
+      "evidencia_migracao": null,
+      "aceite_visual": false
+    },
+    {
+      "id": 5,
+      "area": "Sistema",
+      "problema": "Campos hidden/masked/readonly sem integração geral",
+      "decisao_alvo": "Projetar e validar campos no servidor, UI, escrita e exportação.",
+      "status": "pendente",
+      "evidencia_migracao": null,
+      "aceite_visual": false
+    },
+    {
+      "id": 6,
+      "area": "Sistema",
+      "problema": "Chaves ausentes do catálogo",
+      "decisao_alvo": "Eleger chaves canônicas e corrigir referências sem conceder indiscriminadamente.",
+      "status": "pendente",
+      "evidencia_migracao": null,
+      "aceite_visual": false
+    },
+    {
+      "id": 7,
+      "area": "Sistema",
+      "problema": "Amostras privilegiadas de campos",
+      "decisao_alvo": "Catálogo técnico autenticado e de membro ativo, sem valores distintos dos registros; exceção técnica explícita.",
+      "status": "aplicado_testado_sql",
+      "evidencia_migracao": "0191",
+      "aceite_visual": false
+    },
+    {
+      "id": 8,
+      "area": "Sistema / TechSales",
+      "problema": "Exportações com regras diferentes",
+      "decisao_alvo": "Exigir export da entidade e aplicar a mesma projeção de linhas/campos da leitura.",
+      "status": "pendente",
+      "evidencia_migracao": null,
+      "aceite_visual": false
+    },
+    {
+      "id": 9,
+      "area": "Sistema / Comunicação / IA",
+      "problema": "Ações de canal/IA baseadas apenas em conta e login",
+      "decisao_alvo": "Revisar cada contrato de envio/execução/crédito e exigir chave correspondente.",
+      "status": "revisar_impacto",
+      "evidencia_migracao": null,
+      "aceite_visual": false
+    },
+    {
+      "id": 10,
+      "area": "TechSales",
+      "problema": "Leitura apenas por membership",
+      "decisao_alvo": "Exigir view com escopo e negar quando a chave efetiva estiver ausente.",
+      "status": "pendente",
+      "evidencia_migracao": null,
+      "aceite_visual": false
+    },
+    {
+      "id": 11,
+      "area": "TechSales",
+      "problema": "Carteira restrita apenas para alguns cargos",
+      "decisao_alvo": "Representar o alcance efetivo por ação/escopo; preservar vínculos legítimos e denies.",
+      "status": "revisar_impacto",
+      "evidencia_migracao": null,
+      "aceite_visual": false
+    },
+    {
+      "id": 12,
+      "area": "TechSales",
+      "problema": "Recálculos/modelos privilegiados",
+      "decisao_alvo": "Helpers internos sem EXECUTE de clientes; gatilhos autenticados preservam operações.",
+      "status": "aplicado_testado_sql",
+      "evidencia_migracao": "0191",
+      "aceite_visual": false
+    },
+    {
+      "id": 13,
+      "area": "TechSales",
+      "problema": "Configurações de retenção/consentimento",
+      "decisao_alvo": "Criar recurso gerenciável distinto de participação em reuniões e validar leitura/alteração.",
+      "status": "pendente",
+      "evidencia_migracao": null,
+      "aceite_visual": false
+    },
+    {
+      "id": 14,
+      "area": "TechSales",
+      "problema": "URL assinada verifica workspace, não reunião",
+      "decisao_alvo": "Validar acesso à reunião e download antes de assinar; revisão antes de ativar o bucket.",
+      "status": "revisar_impacto",
+      "evidencia_migracao": null,
+      "aceite_visual": false
+    },
+    {
+      "id": 15,
+      "area": "TechHire",
+      "problema": "Política ampla contorna RBAC de candidatos",
+      "decisao_alvo": "Consolidar permissivas e restritivas por ação e escopo, com teste direto sem UI.",
+      "status": "pendente",
+      "evidencia_migracao": null,
+      "aceite_visual": false
+    },
+    {
+      "id": 16,
+      "area": "TechHire",
+      "problema": "Acesso à vaga exige vínculo direto",
+      "decisao_alvo": "Reconhecer gestão no workspace/equipe conforme chave, preservando próprio e vínculos específicos.",
+      "status": "revisar_impacto",
+      "evidencia_migracao": null,
+      "aceite_visual": false
+    },
+    {
+      "id": 17,
+      "area": "TechHire",
+      "problema": "Edição depende de equipe/criador",
+      "decisao_alvo": "Substituir decisões genéricas de owner por ação e escopo do recurso.",
+      "status": "revisar_impacto",
+      "evidencia_migracao": null,
+      "aceite_visual": false
+    },
+    {
+      "id": 18,
+      "area": "TechHire",
+      "problema": "LGPD usa filtros owner fixos",
+      "decisao_alvo": "Aplicar leitura/alteração/exportação por escopo autorizado; manter segregação de tenant.",
+      "status": "pendente",
+      "evidencia_migracao": null,
+      "aceite_visual": false
+    },
+    {
+      "id": 19,
+      "area": "TechHire",
+      "problema": "Anonimização aceita ator NULL",
+      "decisao_alvo": "Exigir compliance.delete.workspace e update do candidato no escopo correto; negar anon/inativo/Ver como e auditar.",
+      "status": "aplicado_testado_sql",
+      "evidencia_migracao": "0191",
+      "aceite_visual": false
+    },
+    {
+      "id": 20,
+      "area": "TechHire",
+      "problema": "Helper de pool aceita alvo livre",
+      "decisao_alvo": "Função exclusivamente interna/service_role, executada pelo trigger elevado já existente.",
+      "status": "aplicado_testado_sql",
+      "evidencia_migracao": "0191",
+      "aceite_visual": false
+    },
+    {
+      "id": 21,
+      "area": "TechPeople",
+      "problema": "Onboarding admin-only",
+      "decisao_alvo": "Substituir ponte Head de RH local por autorização por ação/escopo após aceite; preservar checks de pessoa/plano.",
+      "status": "corrigido_wk_validacao_ampliacao_pendente",
+      "evidencia_migracao": "0189",
+      "aceite_visual": false
+    },
+    {
+      "id": 22,
+      "area": "TechPeople",
+      "problema": "Documentos/benefícios/alocações/eventos/incidentes admin/owner-only",
+      "decisao_alvo": "Generalizar o contrato das correções locais por recurso/ação/escopo, sem ampliar carteiras inadvertidamente.",
+      "status": "corrigido_wk_validacao_ampliacao_pendente",
+      "evidencia_migracao": "0189",
+      "aceite_visual": false
+    },
+    {
+      "id": 23,
+      "area": "TechPeople",
+      "problema": "Workspace copiado para responsável",
+      "decisao_alvo": "Separar usuário responsável de owner legado; correção 0190 aplicada na WK e testes de FK mantidos.",
+      "status": "corrigido_wk",
+      "evidencia_migracao": "0190",
+      "aceite_visual": false
+    },
+    {
+      "id": 24,
+      "area": "TechPeople",
+      "problema": "Dados sensíveis dependem de outros recursos",
+      "decisao_alvo": "Definir recursos de campos sensíveis e aplicar projeção independente de permissões de benefícios/bem-estar.",
+      "status": "pendente",
+      "evidencia_migracao": null,
+      "aceite_visual": false
+    },
+    {
+      "id": 25,
+      "area": "TechPeople",
+      "problema": "Gestão de pessoa depende de bem-estar",
+      "decisao_alvo": "Autorizar metas/avaliações/1:1 e demais operações por recurso correto.",
+      "status": "pendente",
+      "evidencia_migracao": null,
+      "aceite_visual": false
+    },
+    {
+      "id": 26,
+      "area": "TechPeople",
+      "problema": "Criar pessoa usa chave de editar",
+      "decisao_alvo": "Criar exige create no escopo correto; editar não concede criar.",
+      "status": "pendente",
+      "evidencia_migracao": null,
+      "aceite_visual": false
+    },
+    {
+      "id": 27,
+      "area": "TechContracts / TechProjects",
+      "problema": "Criação por caminho paralelo",
+      "decisao_alvo": "Exigir create na regra efetiva do banco, sem alternativa permissiva ampla por owner.",
+      "status": "pendente",
+      "evidencia_migracao": null,
+      "aceite_visual": false
+    },
+    {
+      "id": 28,
+      "area": "TechContracts / TechProjects",
+      "problema": "view.own sem titularidade",
+      "decisao_alvo": "Combinar own com vínculo de dono/responsável e team com equipe efetiva.",
+      "status": "pendente",
+      "evidencia_migracao": null,
+      "aceite_visual": false
+    },
+    {
+      "id": 29,
+      "area": "TechProjects",
+      "problema": "Quatro menus ignoram ausência de chave",
+      "decisao_alvo": "Usar o mesmo contrato de acesso para menu, URL e ações, além dos controles de dados.",
+      "status": "pendente",
+      "evidencia_migracao": null,
+      "aceite_visual": false
+    },
+    {
+      "id": 30,
+      "area": "TechFinance",
+      "problema": "Edição permite owner/admin sem update",
+      "decisao_alvo": "Exigir update efetiva, com escopo e regras de origem/fechamento preservadas.",
+      "status": "pendente",
+      "evidencia_migracao": null,
+      "aceite_visual": false
+    },
+    {
+      "id": 31,
+      "area": "TechFinance",
+      "problema": "Recálculo financeiro exposto",
+      "decisao_alvo": "Helper exclusivamente interno/service_role; pagamento normal continua recalculando pelo trigger.",
+      "status": "aplicado_testado_sql",
+      "evidencia_migracao": "0191",
+      "aceite_visual": false
+    },
+    {
+      "id": 32,
+      "area": "TechFinance",
+      "problema": "Configurações sem chave própria",
+      "decisao_alvo": "Criar permissão específica para configurar pagamentos/NFS-e e verificar antes da escrita administrativa.",
+      "status": "pendente",
+      "evidencia_migracao": null,
+      "aceite_visual": false
+    }
+  ],
+  "limitations": [
+    "Seven operation contracts implemented; remaining actions require explicit validation.",
+    "Route inventory is static evidence, not certification of enforcement.",
+    "SQL tests are not browser/GoTrue/PostgREST acceptance.",
+    "No new business role grants in 0191."
+  ]
+}

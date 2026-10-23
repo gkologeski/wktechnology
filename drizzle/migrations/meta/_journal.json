@@ -1338,6 +1338,13 @@
       "when": 1792767052026,
       "tag": "0190_wk_people_responsible_actor",
       "breakpoints": true
+    },
+    {
+      "idx": 191,
+      "version": "7",
+      "when": 1792768483842,
+      "tag": "0191_permission_critical_rpc_boundaries",
+      "breakpoints": true
     }
   ]
 }

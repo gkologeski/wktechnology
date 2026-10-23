@@ -35,11 +35,16 @@ run_sql tests/sql/wk-head-rh-access.sql tests
 run_sql tests/sql/wk-people-responsible-before.sql save-before
 run_sql drizzle/migrations/0190_wk_people_responsible_actor.sql responsible-migration
 run_sql tests/sql/wk-people-responsible.sql save-after
-python3 - "$test_root/tests.log" "$test_root/save-after.log" <<'PY'
+run_sql tests/sql/fixtures/permission-critical-rpcs.sql rpc-fixture
+run_sql tests/sql/permission-critical-before.sql rpc-before
+run_sql drizzle/migrations/0191_permission_critical_rpc_boundaries.sql rpc-migration
+run_sql tests/sql/permission-critical-rpcs.sql rpc-after
+python3 - "$test_root/tests.log" "$test_root/save-after.log" "$test_root/rpc-after.log" <<'PY'
 import re,sys
 text=open(sys.argv[1]).read()
 passed=re.findall(r'NOTICE:  PASS (\d+):',text)
 assert passed==[str(x) for x in range(1,45)],passed
 saves=re.findall(r'NOTICE:  SAVE PASS (\d+):',open(sys.argv[2]).read()); assert saves==[str(x) for x in range(1,16)],saves
-print('44/44 RLS checks + 15/15 save/FK regression checks passed. Browser/auth SDK acceptance was not run.')
+rpcs=re.findall(r'NOTICE:  RPC PASS (\d+):',open(sys.argv[3]).read()); assert rpcs==[str(x) for x in range(1,43)],rpcs
+print('44/44 RLS + 15/15 save/FK + 42/42 critical RPC checks passed. Browser/auth SDK acceptance was not run.')
 PY

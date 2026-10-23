@@ -1,0 +1,417 @@
+﻿url;tipo;arquivo;linha;modulo_por_prefixo_rota;modulos_por_recurso_diagnostico;recursos_mapeados;chaves_diretas;papel_layout;estado
+/;Tela autenticada;src/routes/_authenticated.tsx;36;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/;Tela pública/retorno;src/routes/index.tsx;5;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/.lovable/oauth/consent;Tela pública/retorno;src/routes/[.]lovable.oauth.consent.tsx;26;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/.mcp/invoke-tool/$tool;API;src/routes/[.mcp]/invoke-tool/$tool.ts;12;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/.mcp/list-tools;API;src/routes/[.mcp]/list-tools.ts;12;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/.well-known/oauth-protected-resource;API;src/routes/[.well-known]/oauth-protected-resource.ts;12;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/accept-invite;Tela pública/retorno;src/routes/accept-invite.index.tsx;15;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/accept-invite/$token;Tela pública/retorno;src/routes/accept-invite.$token.tsx;15;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/admin/alerts;Tela autenticada;src/routes/_authenticated/admin.alerts.tsx;4;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/admin/bug-reports;Tela autenticada;src/routes/_authenticated/admin.bug-reports.tsx;59;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/admin/quotas;Tela autenticada;src/routes/_authenticated/admin.quotas.tsx;4;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/admin/sandbox;Tela autenticada;src/routes/_authenticated/admin.sandbox.tsx;4;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/admin/security-scans;Tela autenticada;src/routes/_authenticated/admin.security-scans.tsx;4;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/admin/status;Tela autenticada;src/routes/_authenticated/admin.status.tsx;4;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/admin/workspaces;Tela autenticada;src/routes/_authenticated/admin.workspaces.tsx;62;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/admin/workspaces/$id;Tela autenticada;src/routes/_authenticated/admin.workspaces.$id.tsx;48;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/agents/prototype;Tela autenticada;src/routes/_authenticated/agents.prototype.index.tsx;3;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/agents/prototype;Tela autenticada;src/routes/_authenticated/agents.prototype.tsx;3;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/agents/prototype/1;Tela autenticada;src/routes/_authenticated/agents.prototype.1.tsx;3;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/agents/prototype/2;Tela autenticada;src/routes/_authenticated/agents.prototype.2.tsx;3;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/agents/prototype/3;Tela autenticada;src/routes/_authenticated/agents.prototype.3.tsx;3;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/agents/sdr;Tela autenticada;src/routes/_authenticated/agents.sdr.tsx;23;não exclusivo/compartilhado;TechSales;techsales.marketing.sdr_agent;;;inventario_estatico_a_validar
+/analytics;Tela autenticada;src/routes/_authenticated/analytics.tsx;46;não exclusivo/compartilhado;Sistema;system.analytics.insights;;manager;inventario_estatico_a_validar
+/api/agent/chat;API;src/routes/api/agent/chat.ts;29;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/contracts/template-import;API;src/routes/api/contracts.template-import.ts;16;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/banking/inter-webhook;API;src/routes/api/public/banking/inter-webhook.ts;27;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/booking/$slug;API;src/routes/api/public/booking/$slug.ts;4;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/booking/$slug/submit;API;src/routes/api/public/booking/$slug/submit.ts;23;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/email/click/$messageId;API;src/routes/api/public/email/click.$messageId.ts;18;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/email/pixel/$messageId;API;src/routes/api/public/email/pixel.$messageId.ts;4;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/email/unsubscribe/$token;API;src/routes/api/public/email/unsubscribe.$token.ts;13;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/files/$token;API;src/routes/api/public/files/$token.ts;3;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/forms/$slug;API;src/routes/api/public/forms/$slug.ts;13;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/forms/$slug/submit;API;src/routes/api/public/forms/$slug.submit.ts;25;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/forms/embed-js;API;src/routes/api/public/forms/embed-js.ts;5;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/health;API;src/routes/api/public/health/index.ts;4;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/health/ready;API;src/routes/api/public/health/ready.ts;5;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/activity-reminders-tick;API;src/routes/api/public/hooks/activity-reminders-tick.ts;5;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/ai-summary-tick;API;src/routes/api/public/hooks/ai-summary-tick.ts;7;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/apollo-phone;API;src/routes/api/public/hooks/apollo-phone.ts;7;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/ats-emails-tick;API;src/routes/api/public/hooks/ats-emails-tick.ts;6;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/ats-interview-reminders-tick;API;src/routes/api/public/hooks/ats-interview-reminders-tick.ts;6;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/audit-export-tick;API;src/routes/api/public/hooks/audit-export-tick.ts;7;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/banking-tick;API;src/routes/api/public/hooks/banking-tick.ts;6;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/bug-report-analyze;API;src/routes/api/public/hooks/bug-report-analyze.ts;11;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/calendar-recordings-tick;API;src/routes/api/public/hooks/calendar-recordings-tick.ts;6;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/calendar-tick;API;src/routes/api/public/hooks/calendar-tick.ts;6;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/channel-health;API;src/routes/api/public/hooks/channel-health.ts;7;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/clockify-import-tick;API;src/routes/api/public/hooks/clockify-import-tick.ts;8;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/contaazul-tick;API;src/routes/api/public/hooks/contaazul-tick.ts;21;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/dunning-tick;API;src/routes/api/public/hooks/dunning-tick.ts;4;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/email-broadcast-tick;API;src/routes/api/public/hooks/email-broadcast-tick.ts;6;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/email-sync-tick;API;src/routes/api/public/hooks/email-sync-tick.ts;6;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/hubspot-tick;API;src/routes/api/public/hooks/hubspot-tick.ts;8;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/linkedin-applicants-sync;API;src/routes/api/public/hooks/linkedin-applicants-sync.ts;5;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/platform-alerts-tick;API;src/routes/api/public/hooks/platform-alerts-tick.ts;8;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/project-alerts-tick;API;src/routes/api/public/hooks/project-alerts-tick.ts;10;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/prospecting-dial-tick;API;src/routes/api/public/hooks/prospecting-dial-tick.ts;66;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/recurrences-tick;API;src/routes/api/public/hooks/recurrences-tick.ts;5;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/scheduled-exports-tick;API;src/routes/api/public/hooks/scheduled-exports-tick.ts;6;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/scoring-tick;API;src/routes/api/public/hooks/scoring-tick.ts;7;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/sdr-tick;API;src/routes/api/public/hooks/sdr-tick.ts;6;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/security-scan-tick;API;src/routes/api/public/hooks/security-scan-tick.ts;54;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/segments-tick;API;src/routes/api/public/hooks/segments-tick.ts;6;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/sentiment-tick;API;src/routes/api/public/hooks/sentiment-tick.ts;7;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/sequences-tick;API;src/routes/api/public/hooks/sequences-tick.ts;7;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/services-billing-tick;API;src/routes/api/public/hooks/services-billing-tick.ts;7;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/sla-tick;API;src/routes/api/public/hooks/sla-tick.ts;6;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/sourcing-inbound-email;API;src/routes/api/public/hooks/sourcing-inbound-email.ts;26;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/sourcing-tick;API;src/routes/api/public/hooks/sourcing-tick.ts;6;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/unipile-invites-sync;API;src/routes/api/public/hooks/unipile-invites-sync.ts;8;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/vapi;API;src/routes/api/public/hooks/vapi.ts;93;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/webhook-tick;API;src/routes/api/public/hooks/webhook-tick.ts;6;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/whatsapp-campaign-tick;API;src/routes/api/public/hooks/whatsapp-campaign-tick.ts;381;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/workflows-tick;API;src/routes/api/public/hooks/workflows-tick.ts;7;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hooks/workflows-time-triggers-tick;API;src/routes/api/public/hooks/workflows-time-triggers-tick.ts;7;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hunting/bulk-capture;API;src/routes/api/public/hunting/bulk-capture.ts;19;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hunting/capture;API;src/routes/api/public/hunting/capture.ts;171;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hunting/log-outreach;API;src/routes/api/public/hunting/log-outreach.ts;22;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hunting/render-template;API;src/routes/api/public/hunting/render-template.ts;19;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/hunting/templates;API;src/routes/api/public/hunting/templates.ts;7;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/interview/$token;API;src/routes/api/public/interview/$token.ts;19;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/oauth/contaazul-callback;API;src/routes/api/public/oauth/contaazul-callback.ts;21;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/oauth/google-callback;API;src/routes/api/public/oauth/google-callback.ts;67;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/payments/br-webhook/$provider;API;src/routes/api/public/payments/br-webhook.$provider.ts;124;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/payments/webhook;API;src/routes/api/public/payments/webhook.ts;25;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/proposals/$token/pdf;API;src/routes/api/public/proposals/$token.pdf.ts;15;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/quotes/$token/pdf;API;src/routes/api/public/quotes/$token.pdf.ts;161;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/refer/$slug;API;src/routes/api/public/refer/$slug.ts;11;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/refer/$slug/submit;API;src/routes/api/public/refer/$slug.submit.ts;34;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/role-profile/$token;API;src/routes/api/public/role-profile/$token.ts;26;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/scim/v2/Groups;API;src/routes/api/public/scim/v2/Groups.ts;6;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/scim/v2/Users;API;src/routes/api/public/scim/v2/Users.ts;22;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/scim/v2/Users/$id;API;src/routes/api/public/scim/v2/Users.$id.ts;6;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/twilio/recording-status;API;src/routes/api/public/twilio/recording-status.ts;21;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/twilio/voice;API;src/routes/api/public/twilio/voice.ts;13;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/unipile/webhook;API;src/routes/api/public/unipile/webhook.ts;41;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/v1/ats/applications;API;src/routes/api/public/v1/ats/applications.ts;9;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/v1/ats/applications/$id/hire;API;src/routes/api/public/v1/ats/applications.$id.hire.ts;8;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/v1/ats/jobs;API;src/routes/api/public/v1/ats/jobs.ts;30;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/v1/contacts;API;src/routes/api/public/v1/contacts.ts;27;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/v1/deals;API;src/routes/api/public/v1/deals.ts;33;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/v1/leads;API;src/routes/api/public/v1/leads.ts;26;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/v1/meetings;API;src/routes/api/public/v1/meetings.ts;35;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/v1/meetings/$id/cancel;API;src/routes/api/public/v1/meetings.$id.cancel.ts;13;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/v1/meetings/$id/reschedule;API;src/routes/api/public/v1/meetings.$id.reschedule.ts;19;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/v1/openapi.json;API;src/routes/api/public/v1/openapi[.]json.ts;4;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/v1/project-tasks;API;src/routes/api/public/v1/project-tasks.ts;4;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/v1/projects;API;src/routes/api/public/v1/projects.ts;4;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/v1/time-entries;API;src/routes/api/public/v1/time-entries.ts;8;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/whatsapp/webhook;API;src/routes/api/public/whatsapp/webhook.ts;5;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/widget/messages;API;src/routes/api/public/widget/messages.ts;32;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/widget/script;API;src/routes/api/public/widget/script.ts;30;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/widget/session;API;src/routes/api/public/widget/session.ts;26;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/zapier/subscribe;API;src/routes/api/public/zapier/subscribe.ts;14;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/zapier/triggers/$event;API;src/routes/api/public/zapier/triggers.$event.ts;25;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/public/zapier/unsubscribe/$id;API;src/routes/api/public/zapier/unsubscribe.$id.ts;6;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/role-profiles/import;API;src/routes/api/role-profiles.import.ts;28;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/api/surveys/import;API;src/routes/api/surveys.import.ts;16;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/ats;Tela autenticada;src/routes/_authenticated/ats.index.tsx;5;ats;;;;;inventario_estatico_a_validar
+/ats-dashboard;Tela autenticada;src/routes/_authenticated/(ats)/ats-dashboard.tsx;30;ats;TechHire;techhire.dashboard;;;inventario_estatico_a_validar
+/ats/candidates;Tela autenticada;src/routes/_authenticated/ats.candidates.tsx;4;ats;;;;;inventario_estatico_a_validar
+/ats/jobs;Tela autenticada;src/routes/_authenticated/ats.jobs.tsx;4;ats;;;;;inventario_estatico_a_validar
+/ats/jobs/$id;Tela autenticada;src/routes/_authenticated/ats.jobs.$id.tsx;4;ats;;;;;inventario_estatico_a_validar
+/auth/extension-link;Tela autenticada;src/routes/_authenticated/auth/extension-link.tsx;14;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/book/$slug;Tela pública/retorno;src/routes/book.$slug.tsx;11;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/briefing;Tela autenticada;src/routes/_authenticated/(ats)/briefing.tsx;18;ats;TechHire;techhire.briefing;;;inventario_estatico_a_validar
+/campaigns/email;Tela autenticada;src/routes/_authenticated/campaigns.email.tsx;70;não exclusivo/compartilhado;TechSales;techsales.marketing.campaigns;;manager;inventario_estatico_a_validar
+/campaigns/whatsapp;Tela autenticada;src/routes/_authenticated/campaigns.whatsapp.tsx;53;não exclusivo/compartilhado;TechSales;techsales.marketing.campaigns;;manager;inventario_estatico_a_validar
+/candidates;Tela autenticada;src/routes/_authenticated/(ats)/candidates.index.tsx;40;ats;TechHire;techhire.candidates;;;inventario_estatico_a_validar
+/candidates/$id;Tela autenticada;src/routes/_authenticated/(ats)/candidates.$id.tsx;96;ats;TechHire;techhire.candidates;;;inventario_estatico_a_validar
+/careers;Tela pública/retorno;src/routes/careers.index.tsx;9;não exclusivo/compartilhado;TechHire;techhire.careers;;;inventario_estatico_a_validar
+/careers/$slug;Tela pública/retorno;src/routes/careers.$slug.tsx;16;não exclusivo/compartilhado;TechHire;techhire.careers;;;inventario_estatico_a_validar
+/catalog/contracting-presets;Tela autenticada;src/routes/_authenticated/catalog.contracting-presets.tsx;22;não exclusivo/compartilhado;TechSales;techsales.catalog.services;;;inventario_estatico_a_validar
+/catalog/job-profiles;Tela autenticada;src/routes/_authenticated/catalog.job-profiles.tsx;6;não exclusivo/compartilhado;TechSales;techsales.catalog.services;;;inventario_estatico_a_validar
+/catalog/services;Tela autenticada;src/routes/_authenticated/catalog.services.tsx;37;não exclusivo/compartilhado;TechSales;techsales.catalog.services;;;inventario_estatico_a_validar
+/communications;Tela autenticada;src/routes/_authenticated/communications.tsx;9;não exclusivo/compartilhado;TechSales;techsales.communications;;;inventario_estatico_a_validar
+/companies;Tela autenticada;src/routes/_authenticated/companies.tsx;82;não exclusivo/compartilhado;TechSales;techsales.companies;techsales.companies.create.own,techsales.companies.create.workspace,techsales.companies.delete.own,techsales.companies.delete.workspace,techsales.companies.export.workspace,techsales.companies.manage.workspace;;inventario_estatico_a_validar
+/companies/$id;Tela autenticada;src/routes/_authenticated/companies.$id.tsx;32;não exclusivo/compartilhado;TechSales;techsales.companies;techsales.companies.manage.workspace,techsales.companies.update.own;;inventario_estatico_a_validar
+/compliance;Tela autenticada;src/routes/_authenticated/compliance.tsx;53;ats;TechHire;techhire.compliance;;;inventario_estatico_a_validar
+/contacts;Tela autenticada;src/routes/_authenticated/contacts.tsx;86;não exclusivo/compartilhado;TechSales;techsales.contacts;techsales.contacts.create.own,techsales.contacts.delete.own,techsales.contacts.delete.workspace,techsales.contacts.export.workspace,techsales.contacts.update.workspace;;inventario_estatico_a_validar
+/contacts/$id;Tela autenticada;src/routes/_authenticated/contacts.$id.tsx;24;não exclusivo/compartilhado;TechSales;techsales.contacts;;;inventario_estatico_a_validar
+/contracts;Tela autenticada;src/routes/_authenticated/contracts.index.tsx;134;contracts;TechContracts;techcontracts.contracts;;;inventario_estatico_a_validar
+/contracts/$id;Tela autenticada;src/routes/_authenticated/contracts.$id.tsx;46;contracts;TechContracts;techcontracts.contracts;techcontracts.contracts.update.own,techcontracts.contracts.update.workspace;;inventario_estatico_a_validar
+/contracts/$id/flow;Tela autenticada;src/routes/_authenticated/contracts.$id_.flow.tsx;15;contracts;TechContracts;techcontracts.contracts;;;inventario_estatico_a_validar
+/contracts/$id/medicoes;Tela autenticada;src/routes/_authenticated/contracts.$id_.medicoes.tsx;12;contracts;TechContracts;techcontracts.contracts;;;inventario_estatico_a_validar
+/contracts/dashboard;Tela autenticada;src/routes/_authenticated/contracts.dashboard.tsx;50;contracts;TechContracts;techcontracts.contracts;;;inventario_estatico_a_validar
+/contracts/links;Tela autenticada;src/routes/_authenticated/contracts.links.tsx;46;contracts;TechContracts;techcontracts.contracts;;;inventario_estatico_a_validar
+/contracts/templates;Tela autenticada;src/routes/_authenticated/contracts.templates.index.tsx;40;contracts;TechContracts;techcontracts.contract_templates;;;inventario_estatico_a_validar
+/contracts/templates/$id;Tela autenticada;src/routes/_authenticated/contracts.templates.$id.tsx;43;contracts;TechContracts;techcontracts.contract_templates;;;inventario_estatico_a_validar
+/copilot;Tela autenticada;src/routes/_authenticated/(ats)/copilot.tsx;14;ats;TechHire;techhire.copilot;;;inventario_estatico_a_validar
+/dashboard;Tela autenticada;src/routes/_authenticated/dashboard.tsx;90;não exclusivo/compartilhado;TechSales;techsales.dashboard;;;inventario_estatico_a_validar
+/dashboards;Tela autenticada;src/routes/_authenticated/dashboards.tsx;46;não exclusivo/compartilhado;Sistema;system.analytics.dashboards;;manager;inventario_estatico_a_validar
+/deals;Tela autenticada;src/routes/_authenticated/deals.tsx;73;não exclusivo/compartilhado;TechSales;techsales.deals;techsales.deals.create.own,techsales.deals.delete.own,techsales.deals.delete.team,techsales.deals.delete.workspace,techsales.deals.update.own,techsales.deals.update.team,techsales.deals.update.workspace;;inventario_estatico_a_validar
+/deals/$id;Tela autenticada;src/routes/_authenticated/deals.$id.tsx;49;não exclusivo/compartilhado;TechSales;techsales.deals;;;inventario_estatico_a_validar
+/dei-analytics;Tela autenticada;src/routes/_authenticated/dei-analytics.tsx;6;ats;TechHire;techhire.dei_analytics;;;inventario_estatico_a_validar
+/dpa;Tela pública/retorno;src/routes/dpa.tsx;3;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/files;Tela autenticada;src/routes/_authenticated/files.tsx;64;não exclusivo/compartilhado;Sistema;system.files;;;inventario_estatico_a_validar
+/finance;Tela autenticada;src/routes/_authenticated/finance.index.tsx;21;finance;TechFinance;techfinance.entries;;;inventario_estatico_a_validar
+/finance/audit;Tela autenticada;src/routes/_authenticated/finance.audit.tsx;23;finance;TechFinance;techfinance.audit;;;inventario_estatico_a_validar
+/finance/bank-accounts;Tela autenticada;src/routes/_authenticated/finance.bank-accounts.tsx;56;finance;TechFinance;techfinance.bank_accounts;;;inventario_estatico_a_validar
+/finance/banking;Tela autenticada;src/routes/_authenticated/finance.banking.tsx;82;finance;TechFinance;techfinance.banking;;;inventario_estatico_a_validar
+/finance/banking/reconciliation;Tela autenticada;src/routes/_authenticated/finance.banking.reconciliation.tsx;52;finance;TechFinance;techfinance.banking;;;inventario_estatico_a_validar
+/finance/cash-flow;Tela autenticada;src/routes/_authenticated/finance.cash-flow.tsx;23;finance;TechFinance;techfinance.reports;;;inventario_estatico_a_validar
+/finance/categories;Tela autenticada;src/routes/_authenticated/finance.categories.tsx;38;finance;TechFinance;techfinance.categories;;;inventario_estatico_a_validar
+/finance/cost-centers;Tela autenticada;src/routes/_authenticated/finance.cost-centers.tsx;86;finance;TechFinance;techfinance.cost_centers;;;inventario_estatico_a_validar
+/finance/dre;Tela autenticada;src/routes/_authenticated/finance.dre.tsx;28;finance;TechFinance;techfinance.reports;;;inventario_estatico_a_validar
+/finance/entries/$id;Tela autenticada;src/routes/_authenticated/finance.entries.$id.tsx;32;finance;TechFinance;techfinance.entries;;;inventario_estatico_a_validar
+/finance/legal-entities;Tela autenticada;src/routes/_authenticated/finance.legal-entities.tsx;4;finance;TechFinance;techfinance.legal_entities;;;inventario_estatico_a_validar
+/finance/legal-entity-groups;Tela autenticada;src/routes/_authenticated/finance.legal-entity-groups.tsx;4;finance;TechFinance;techfinance.legal_entity_groups;;;inventario_estatico_a_validar
+/finance/nfse;Tela autenticada;src/routes/_authenticated/finance.nfse.tsx;41;finance;TechFinance;techfinance.nfse;;;inventario_estatico_a_validar
+/finance/payable;Tela autenticada;src/routes/_authenticated/finance.payable.tsx;4;finance;TechFinance;techfinance.payments;;;inventario_estatico_a_validar
+/finance/receivable;Tela autenticada;src/routes/_authenticated/finance.receivable.tsx;4;finance;TechFinance;techfinance.invoices;;;inventario_estatico_a_validar
+/finance/recurrences;Tela autenticada;src/routes/_authenticated/finance.recurrences.tsx;59;finance;TechFinance;techfinance.recurrences;;;inventario_estatico_a_validar
+/forms;Tela autenticada;src/routes/_authenticated/forms.tsx;8;não exclusivo/compartilhado;TechSales;techsales.marketing.forms;;;inventario_estatico_a_validar
+/fraud-flags;Tela autenticada;src/routes/_authenticated/fraud-flags.tsx;12;ats;TechHire;techhire.fraud_flags;;;inventario_estatico_a_validar
+/home;Tela autenticada;src/routes/_authenticated/home.index.tsx;29;não exclusivo/compartilhado;Sistema;system.home;;;inventario_estatico_a_validar
+/home/access;Tela autenticada;src/routes/_authenticated/home.access.tsx;4;não exclusivo/compartilhado;Sistema;system.home;;;inventario_estatico_a_validar
+/home/print;Tela autenticada;src/routes/_authenticated/home.print.tsx;19;não exclusivo/compartilhado;Sistema;system.home;;;inventario_estatico_a_validar
+/hunting;Tela autenticada;src/routes/_authenticated/(ats)/hunting/index.tsx;10;ats;TechHire;techhire.hunting;;;inventario_estatico_a_validar
+/hunting/captures;Tela autenticada;src/routes/_authenticated/(ats)/hunting/captures.tsx;37;ats;TechHire;techhire.hunting.captures;;;inventario_estatico_a_validar
+/hunting/install;Tela autenticada;src/routes/_authenticated/(ats)/hunting/install.tsx;10;ats;TechHire;techhire.hunting;;;inventario_estatico_a_validar
+/hunting/observability;Tela autenticada;src/routes/_authenticated/(ats)/hunting/observability.tsx;16;ats;TechHire;techhire.hunting.observability;;;inventario_estatico_a_validar
+/hunting/search;Tela autenticada;src/routes/_authenticated/(ats)/hunting/search.tsx;45;ats;TechHire;techhire.hunting.search;;;inventario_estatico_a_validar
+/hunting/templates;Tela autenticada;src/routes/_authenticated/(ats)/hunting/templates.tsx;39;ats;TechHire;techhire.hunting.templates;;;inventario_estatico_a_validar
+/inbox;Tela autenticada;src/routes/_authenticated/inbox.index.tsx;43;não exclusivo/compartilhado;TechSales;techsales.inbox;;;inventario_estatico_a_validar
+/inbox/chat;Tela autenticada;src/routes/_authenticated/inbox.chat.tsx;56;não exclusivo/compartilhado;TechSales;techsales.inbox.chat;;;inventario_estatico_a_validar
+/inbox/email;Tela autenticada;src/routes/_authenticated/inbox.email.tsx;54;não exclusivo/compartilhado;TechSales;techsales.inbox.email;;;inventario_estatico_a_validar
+/inbox/whatsapp;Tela autenticada;src/routes/_authenticated/inbox.whatsapp.tsx;89;não exclusivo/compartilhado;TechSales;techsales.inbox.whatsapp;;;inventario_estatico_a_validar
+/insights;Tela autenticada;src/routes/_authenticated/(ats)/insights.tsx;28;ats;TechHire;techhire.insights;;;inventario_estatico_a_validar
+/integrations;Tela autenticada;src/routes/_authenticated/integrations.index.tsx;4;não exclusivo/compartilhado;Sistema;system.integrations;;admin;inventario_estatico_a_validar
+/integrations;Tela autenticada;src/routes/_authenticated/integrations.tsx;3;não exclusivo/compartilhado;Sistema;system.integrations;;admin;inventario_estatico_a_validar
+/integrations/$slug;Tela autenticada;src/routes/_authenticated/integrations.$slug.tsx;4;não exclusivo/compartilhado;Sistema;system.integrations;;admin;inventario_estatico_a_validar
+/integrations/contaazul;Tela autenticada;src/routes/_authenticated/integrations.contaazul.tsx;4;não exclusivo/compartilhado;Sistema;system.integrations;;admin;inventario_estatico_a_validar
+/interview-kits;Tela autenticada;src/routes/_authenticated/(ats)/interview-kits.tsx;35;ats;TechHire;techhire.interview_kits;;;inventario_estatico_a_validar
+/interview/$token;Tela pública/retorno;src/routes/interview.$token.tsx;30;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/invoices;Tela autenticada;src/routes/_authenticated/invoices.tsx;93;não exclusivo/compartilhado;TechSales;techsales.invoices;techfinance.invoices.delete.own,techfinance.invoices.delete.workspace,techfinance.invoices.update.own,techfinance.invoices.update.team,techfinance.invoices.update.workspace,techsales.invoices.delete.own,techsales.invoices.delete.workspace,techsales.invoices.update.own,techsales.invoices.update.team,techsales.invoices.update.workspace;;inventario_estatico_a_validar
+/jobs;Tela autenticada;src/routes/_authenticated/(ats)/jobs.index.tsx;84;ats;TechHire;techhire.jobs;techhire.jobs.create.own,techhire.jobs.delete.workspace,techhire.jobs.update.team,techhire.jobs.update.workspace;;inventario_estatico_a_validar
+/jobs/$id;Tela autenticada;src/routes/_authenticated/(ats)/jobs.$id.tsx;48;ats;TechHire;techhire.jobs;;;inventario_estatico_a_validar
+/kb;Tela pública/retorno;src/routes/kb.index.tsx;10;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/kb/$slug;Tela pública/retorno;src/routes/kb.$slug.tsx;7;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/landing-pages;Tela autenticada;src/routes/_authenticated/landing-pages.index.tsx;24;não exclusivo/compartilhado;TechSales;techsales.marketing.landing_pages;;;inventario_estatico_a_validar
+/landing-pages/$id;Tela autenticada;src/routes/_authenticated/landing-pages.$id.tsx;4;não exclusivo/compartilhado;TechSales;techsales.marketing.landing_pages;;;inventario_estatico_a_validar
+/leads;Tela autenticada;src/routes/_authenticated/leads.tsx;72;não exclusivo/compartilhado;TechSales;techsales.leads;techsales.leads.delete.own,techsales.leads.delete.workspace,techsales.leads.update.own,techsales.leads.update.workspace;;inventario_estatico_a_validar
+/leads/$id;Tela autenticada;src/routes/_authenticated/leads.$id.tsx;68;não exclusivo/compartilhado;TechSales;techsales.leads;;;inventario_estatico_a_validar
+/leads/import-hubspot;Tela autenticada;src/routes/_authenticated/leads.import-hubspot.tsx;4;não exclusivo/compartilhado;Sistema;system.import;;admin;inventario_estatico_a_validar
+/login;Tela pública/retorno;src/routes/login.tsx;20;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/lovable/email/auth/preview;API;src/routes/lovable/email/auth/preview.ts;63;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/lovable/email/auth/webhook;API;src/routes/lovable/email/auth/webhook.ts;21;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/lovable/email/events;API;src/routes/lovable/email/events.ts;4;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/lovable/email/transactional/preview;API;src/routes/lovable/email/transactional/preview.ts;9;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/lp/$slug;Tela pública/retorno;src/routes/lp.$slug.tsx;11;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/marketplace;Tela autenticada;src/routes/_authenticated/marketplace.index.tsx;4;não exclusivo/compartilhado;Sistema;system.marketplace;;;inventario_estatico_a_validar
+/marketplace;Tela autenticada;src/routes/_authenticated/marketplace.tsx;3;não exclusivo/compartilhado;Sistema;system.marketplace;;;inventario_estatico_a_validar
+/marketplace/$slug;Tela autenticada;src/routes/_authenticated/marketplace.$slug.tsx;4;não exclusivo/compartilhado;Sistema;system.marketplace;;;inventario_estatico_a_validar
+/match-scores;Tela autenticada;src/routes/_authenticated/match-scores.tsx;8;ats;TechHire;techhire.match_scores;;;inventario_estatico_a_validar
+/mcp;API;src/routes/mcp.ts;12;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/meet/$token;Tela pública/retorno;src/routes/meet.$token.tsx;11;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/meetings;Tela autenticada;src/routes/_authenticated/meetings.tsx;26;não exclusivo/compartilhado;TechSales;techsales.meetings;;;inventario_estatico_a_validar
+/modules;Tela autenticada;src/routes/_authenticated/modules.index.tsx;36;não exclusivo/compartilhado;Sistema;system.modules;;;inventario_estatico_a_validar
+/my-bug-reports;Tela autenticada;src/routes/_authenticated/my-bug-reports.tsx;4;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/notes;Tela autenticada;src/routes/_authenticated/notes.tsx;7;não exclusivo/compartilhado;TechSales;techsales.notes;;;inventario_estatico_a_validar
+/notetaker;Tela autenticada;src/routes/_authenticated/(ats)/notetaker.tsx;32;ats;TechHire;techhire.notetaker;;;inventario_estatico_a_validar
+/offer/$token;Tela pública/retorno;src/routes/offer.$token.tsx;6;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/offers;Tela autenticada;src/routes/_authenticated/(ats)/offers.tsx;31;ats;TechHire;techhire.offers;techhire.offers.delete.own,techhire.offers.delete.workspace,techhire.offers.update.own,techhire.offers.update.workspace;;inventario_estatico_a_validar
+/onboarding/$entity;Tela autenticada;src/routes/_authenticated/onboarding.$entity.tsx;50;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/people;Tela autenticada;src/routes/_authenticated/people.index.tsx;70;people;TechPeople;techpeople.people;techpeople.people.delete.own,techpeople.people.delete.workspace,techpeople.people.update.own,techpeople.people.update.team,techpeople.people.update.workspace;;inventario_estatico_a_validar
+/people/$id;Tela autenticada;src/routes/_authenticated/people.$id.tsx;79;people;TechPeople;techpeople.people;;;inventario_estatico_a_validar
+/people/analytics;Tela autenticada;src/routes/_authenticated/people.analytics.tsx;47;people;TechPeople;techpeople.analytics;;;inventario_estatico_a_validar
+/people/benefits;Tela autenticada;src/routes/_authenticated/people.benefits.tsx;51;people;TechPeople;techpeople.benefits;techpeople.benefits.delete.own,techpeople.benefits.delete.workspace,techpeople.benefits.update.own,techpeople.benefits.update.team,techpeople.benefits.update.workspace;;inventario_estatico_a_validar
+/people/billing;Tela autenticada;src/routes/_authenticated/people.billing.tsx;42;people;TechPeople;techpeople.timesheet;;;inventario_estatico_a_validar
+/people/contract-margin;Tela autenticada;src/routes/_authenticated/people.contract-margin.tsx;27;people;TechPeople;techpeople.allocations;;;inventario_estatico_a_validar
+/people/dashboard;Tela autenticada;src/routes/_authenticated/people.dashboard.tsx;33;people;TechPeople;techpeople.people;;;inventario_estatico_a_validar
+/people/documents;Tela autenticada;src/routes/_authenticated/people.documents.tsx;37;people;TechPeople;techpeople.documents;techpeople.documents.delete.own,techpeople.documents.delete.workspace,techpeople.documents.update.own,techpeople.documents.update.team,techpeople.documents.update.workspace;;inventario_estatico_a_validar
+/people/import-forms;Tela autenticada;src/routes/_authenticated/people.import-forms.tsx;37;people;TechPeople;techpeople.import;;;inventario_estatico_a_validar
+/people/incidents;Tela autenticada;src/routes/_authenticated/people.incidents.tsx;46;people;TechPeople;techpeople.wellbeing.incidents;techpeople.incidents.delete.own,techpeople.incidents.delete.workspace,techpeople.incidents.update.own,techpeople.incidents.update.team,techpeople.incidents.update.workspace,techpeople.wellbeing.incidents.delete.own,techpeople.wellbeing.incidents.delete.workspace,techpeople.wellbeing.incidents.update.own,techpeople.wellbeing.incidents.update.team,techpeople.wellbeing.incidents.update.workspace;;inventario_estatico_a_validar
+/people/my-team;Tela autenticada;src/routes/_authenticated/people.my-team.tsx;24;people;TechPeople;techpeople.my_team;;;inventario_estatico_a_validar
+/people/offboarding;Tela autenticada;src/routes/_authenticated/people.offboarding.tsx;24;people;TechPeople;techpeople.offboarding;;;inventario_estatico_a_validar
+/people/onboarding;Tela autenticada;src/routes/_authenticated/people.onboarding.tsx;24;people;TechPeople;techpeople.onboarding;;;inventario_estatico_a_validar
+/people/onboarding-templates;Tela autenticada;src/routes/_authenticated/people.onboarding-templates.tsx;44;people;TechPeople;techpeople.onboarding_templates;;;inventario_estatico_a_validar
+/people/psychosocial;Tela autenticada;src/routes/_authenticated/people.psychosocial.tsx;64;people;TechPeople;techpeople.wellbeing.assessments;;;inventario_estatico_a_validar
+/pipelines;Tela autenticada;src/routes/_authenticated/(ats)/pipelines.tsx;47;ats;TechHire;techhire.pipelines;;;inventario_estatico_a_validar
+/portal/$token;Tela pública/retorno;src/routes/portal.$token.tsx;30;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/privacy;Tela pública/retorno;src/routes/privacy.tsx;3;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/projects;Tela autenticada;src/routes/_authenticated/projects.index.tsx;52;projects;TechProjects;techprojects.projects;techprojects.projects.delete.own,techprojects.projects.delete.workspace,techprojects.projects.update.own,techprojects.projects.update.team,techprojects.projects.update.workspace;;inventario_estatico_a_validar
+/projects/$id;Tela autenticada;src/routes/_authenticated/projects.$id.tsx;67;projects;TechProjects;techprojects.projects;;;inventario_estatico_a_validar
+/projects/$id/entrega;Tela autenticada;src/routes/_authenticated/projects_.$id.entrega.tsx;31;projects;TechProjects,TechSales;techprojects.project_updates,techsales.deal_delivery;techprojects.project_updates.create.own,techprojects.project_updates.delete.workspace,techprojects.project_updates.update.own,techprojects.project_updates.update.workspace;;inventario_estatico_a_validar
+/projects/$id/financeiro;Tela autenticada;src/routes/_authenticated/projects_.$id.financeiro.tsx;11;projects;TechProjects;techprojects.projects;;;inventario_estatico_a_validar
+/projects/$id/horas;Tela autenticada;src/routes/_authenticated/projects_.$id.horas.tsx;14;projects;TechProjects;techprojects.projects;;;inventario_estatico_a_validar
+/projects/dashboard;Tela autenticada;src/routes/_authenticated/projects.dashboard.tsx;55;projects;TechProjects;techprojects.projects,techprojects.tasks;;;inventario_estatico_a_validar
+/projects/hours-review;Tela autenticada;src/routes/_authenticated/projects.hours-review.tsx;9;projects;TechProjects;techprojects.time_entries,techprojects.timesheet;;;inventario_estatico_a_validar
+/projects/lists/$id;Tela autenticada;src/routes/_authenticated/projects.lists.$id.tsx;54;projects;TechProjects;techprojects.projects;;;inventario_estatico_a_validar
+/projects/my-hours;Tela autenticada;src/routes/_authenticated/projects.my-hours.tsx;19;projects;TechProjects;techprojects.time_entries;;;inventario_estatico_a_validar
+/projects/my-work;Tela autenticada;src/routes/_authenticated/projects.my-work.tsx;18;projects;TechProjects;techprojects.my_work;;;inventario_estatico_a_validar
+/projects/settings;Tela autenticada;src/routes/_authenticated/projects.settings.index.tsx;4;projects;TechProjects;techprojects.projects;;;inventario_estatico_a_validar
+/projects/settings/delivery;Tela autenticada;src/routes/_authenticated/projects.settings.delivery.tsx;4;projects;TechProjects;techprojects.projects;;;inventario_estatico_a_validar
+/projects/settings/imports;Tela autenticada;src/routes/_authenticated/projects.settings.imports.index.tsx;4;projects;TechProjects;techprojects.projects;;;inventario_estatico_a_validar
+/projects/settings/imports/clockify;Tela autenticada;src/routes/_authenticated/projects.settings.imports.clockify.tsx;4;projects;Sistema;system.import;;;inventario_estatico_a_validar
+/projects/settings/imports/jibble;Tela autenticada;src/routes/_authenticated/projects.settings.imports.jibble.tsx;4;projects;Sistema;system.import;;;inventario_estatico_a_validar
+/projects/settings/imports/reconciliation;Tela autenticada;src/routes/_authenticated/projects.settings.imports.reconciliation.tsx;10;projects;Sistema;system.import;;;inventario_estatico_a_validar
+/projects/settings/operations;Tela autenticada;src/routes/_authenticated/projects.settings.operations.tsx;4;projects;Sistema;system.automation;;;inventario_estatico_a_validar
+/projects/settings/rates;Tela autenticada;src/routes/_authenticated/projects.settings.rates.tsx;8;projects;TechProjects;techprojects.rates;;;inventario_estatico_a_validar
+/projects/settings/time;Tela autenticada;src/routes/_authenticated/projects.settings.time.tsx;6;projects;TechProjects;techprojects.time_entries,techprojects.timesheet;;;inventario_estatico_a_validar
+/projects/spaces;Tela autenticada;src/routes/_authenticated/projects.spaces.tsx;48;projects;TechProjects;techprojects.spaces;;;inventario_estatico_a_validar
+/projects/tasks;Tela autenticada;src/routes/_authenticated/projects.tasks.tsx;44;projects;TechProjects;techprojects.tasks;techprojects.tasks.delete.own,techprojects.tasks.delete.workspace,techprojects.tasks.update.own,techprojects.tasks.update.team,techprojects.tasks.update.workspace;;inventario_estatico_a_validar
+/projects/timesheet;Tela autenticada;src/routes/_authenticated/projects.timesheet.tsx;46;projects;TechProjects;techprojects.timesheet;;;inventario_estatico_a_validar
+/proposal/$token;Tela pública/retorno;src/routes/proposal.$token.tsx;12;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/proposals;Tela autenticada;src/routes/_authenticated/proposals.index.tsx;47;não exclusivo/compartilhado;TechContracts;techcontracts.contracts;techcontracts.contracts.delete.own,techcontracts.contracts.delete.workspace,techcontracts.contracts.update.own,techcontracts.contracts.update.team,techcontracts.contracts.update.workspace;;inventario_estatico_a_validar
+/proposals;Tela autenticada;src/routes/_authenticated/proposals.tsx;3;não exclusivo/compartilhado;TechContracts;techcontracts.contracts;;;inventario_estatico_a_validar
+/proposals/$id;Tela autenticada;src/routes/_authenticated/proposals.$id.tsx;30;não exclusivo/compartilhado;TechContracts;techcontracts.contracts;;;inventario_estatico_a_validar
+/prospecting;Tela autenticada;src/routes/_authenticated/prospecting.index.tsx;129;não exclusivo/compartilhado;TechSales;techsales.prospecting_queue,techsales.prospecting_cadences,techsales.prospecting_questionnaires,techsales.prospecting_scoring,techsales.prospecting_playbooks,techsales.prospecting_enrichment,techsales.prospecting_search,techsales.prospecting_scripts,techsales.prospecting_voice;techsales.marketing.campaigns.view.workspace,techsales.marketing.sdr_agent.view.workspace;;inventario_estatico_a_validar
+/prospecting;Tela autenticada;src/routes/_authenticated/prospecting.tsx;2;não exclusivo/compartilhado;TechSales;techsales.prospecting_queue,techsales.prospecting_cadences,techsales.prospecting_questionnaires,techsales.prospecting_scoring,techsales.prospecting_playbooks,techsales.prospecting_enrichment,techsales.prospecting_search,techsales.prospecting_scripts,techsales.prospecting_voice;;;inventario_estatico_a_validar
+/prospecting/campaigns;Tela autenticada;src/routes/_authenticated/prospecting.campaigns.index.tsx;28;não exclusivo/compartilhado;TechSales;techsales.prospecting_queue,techsales.prospecting_cadences,techsales.prospecting_questionnaires,techsales.prospecting_scoring,techsales.prospecting_playbooks,techsales.prospecting_enrichment,techsales.prospecting_search,techsales.prospecting_scripts,techsales.prospecting_voice;;;inventario_estatico_a_validar
+/prospecting/campaigns/$id;Tela autenticada;src/routes/_authenticated/prospecting.campaigns.$id.tsx;34;não exclusivo/compartilhado;TechSales;techsales.prospecting_queue,techsales.prospecting_cadences,techsales.prospecting_questionnaires,techsales.prospecting_scoring,techsales.prospecting_playbooks,techsales.prospecting_enrichment,techsales.prospecting_search,techsales.prospecting_scripts,techsales.prospecting_voice;;;inventario_estatico_a_validar
+/prospecting/prototype;Tela autenticada;src/routes/_authenticated/prospecting.prototype.tsx;4;não exclusivo/compartilhado;TechSales;techsales.prospecting_queue,techsales.prospecting_cadences,techsales.prospecting_questionnaires,techsales.prospecting_scoring,techsales.prospecting_playbooks,techsales.prospecting_enrichment,techsales.prospecting_search,techsales.prospecting_scripts,techsales.prospecting_voice;;;inventario_estatico_a_validar
+/prospecting/queues/$queueId/play;Tela autenticada;src/routes/_authenticated/prospecting.queues.$queueId.play.tsx;31;não exclusivo/compartilhado;TechSales;techsales.prospecting_queue,techsales.prospecting_cadences,techsales.prospecting_questionnaires,techsales.prospecting_scoring,techsales.prospecting_playbooks,techsales.prospecting_enrichment,techsales.prospecting_search,techsales.prospecting_scripts,techsales.prospecting_voice;;;inventario_estatico_a_validar
+/qa/test-cases;Tela autenticada;src/routes/_authenticated/qa.test-cases.tsx;48;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/quote/$token;Tela pública/retorno;src/routes/quote.$token.tsx;35;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/refer/$slug;Tela pública/retorno;src/routes/refer.$slug.tsx;12;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/refund;Tela pública/retorno;src/routes/refund.tsx;3;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/reports;Tela autenticada;src/routes/_authenticated/reports.tsx;49;não exclusivo/compartilhado;Sistema;system.analytics.reports;;manager;inventario_estatico_a_validar
+/reset-password;Tela pública/retorno;src/routes/reset-password.tsx;12;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/role-profile/$token;Tela pública/retorno;src/routes/role-profile.$token.tsx;18;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/sales;Tela pública/retorno;src/routes/sales.tsx;15;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/schedule/$token;Tela pública/retorno;src/routes/schedule.$token.tsx;11;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/scheduling;Tela autenticada;src/routes/_authenticated/(ats)/scheduling.tsx;59;ats;TechHire;techhire.scheduling;;;inventario_estatico_a_validar
+/scorecards;Tela autenticada;src/routes/_authenticated/(ats)/scorecards.tsx;28;ats;TechHire;techhire.scorecards;;;inventario_estatico_a_validar
+/services;Tela autenticada;src/routes/_authenticated/services.index.tsx;48;contracts;TechContracts (namespace legado);techservice.services;techsales.catalog.services.delete.workspace,techsales.catalog.services.update.workspace,techservice.services.delete.own,techservice.services.delete.workspace,techservice.services.update.own,techservice.services.update.workspace;;inventario_estatico_a_validar
+/services/$id;Tela autenticada;src/routes/_authenticated/services.$id.tsx;34;contracts;TechContracts (namespace legado);techservice.services;;;inventario_estatico_a_validar
+/settings;Tela autenticada;src/routes/_authenticated/settings.index.tsx;12;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings;Tela autenticada;src/routes/_authenticated/settings.tsx;79;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/access-policy;Tela autenticada;src/routes/_authenticated/settings.access-policy.tsx;19;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/ads-sync;Tela autenticada;src/routes/_authenticated/settings.ads-sync.tsx;26;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/ai-panel;Tela autenticada;src/routes/_authenticated/settings.ai-panel.tsx;4;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/api-keys;Tela autenticada;src/routes/_authenticated/settings.api-keys.tsx;22;não exclusivo/compartilhado;;;;admin;inventario_estatico_a_validar
+/settings/audit-export;Tela autenticada;src/routes/_authenticated/settings.audit-export.tsx;29;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/audit-log;Tela autenticada;src/routes/_authenticated/settings.audit-log.tsx;25;não exclusivo/compartilhado;;;;admin;inventario_estatico_a_validar
+/settings/billing;Tela autenticada;src/routes/_authenticated/settings.billing.tsx;23;não exclusivo/compartilhado;Sistema;system.billing;;;inventario_estatico_a_validar
+/settings/booking;Tela autenticada;src/routes/_authenticated/settings.booking.tsx;40;não exclusivo/compartilhado;Sistema;system.booking;;manager;inventario_estatico_a_validar
+/settings/branding;Tela autenticada;src/routes/_authenticated/settings.branding.tsx;8;não exclusivo/compartilhado;Sistema;system.branding;;admin;inventario_estatico_a_validar
+/settings/calendars;Tela autenticada;src/routes/_authenticated/settings.calendars.tsx;43;não exclusivo/compartilhado;Sistema;system.calendars;;;inventario_estatico_a_validar
+/settings/charging-templates;Tela autenticada;src/routes/_authenticated/settings.charging-templates.tsx;29;não exclusivo/compartilhado;TechFinance;techfinance.charging_templates;;;inventario_estatico_a_validar
+/settings/clauses;Tela autenticada;src/routes/_authenticated/settings.clauses.tsx;24;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/contract-defaults;Tela autenticada;src/routes/_authenticated/settings.contract-defaults.tsx;4;não exclusivo/compartilhado;TechContracts;techcontracts.contracts;;;inventario_estatico_a_validar
+/settings/custom-objects;Tela autenticada;src/routes/_authenticated/settings.custom-objects.tsx;37;não exclusivo/compartilhado;Sistema;system.custom_objects;;admin;inventario_estatico_a_validar
+/settings/custom-properties;Tela autenticada;src/routes/_authenticated/settings.custom-properties.tsx;44;não exclusivo/compartilhado;Sistema;system.custom_properties;;admin;inventario_estatico_a_validar
+/settings/data-residency;Tela autenticada;src/routes/_authenticated/settings.data-residency.tsx;11;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/dunning;Tela autenticada;src/routes/_authenticated/settings.dunning.tsx;31;não exclusivo/compartilhado;TechFinance;techfinance.dunning;;;inventario_estatico_a_validar
+/settings/email;Tela autenticada;src/routes/_authenticated/settings.email.tsx;30;não exclusivo/compartilhado;TechSales;techsales.email_accounts;;;inventario_estatico_a_validar
+/settings/email-templates;Tela autenticada;src/routes/_authenticated/settings.email-templates.tsx;25;não exclusivo/compartilhado;Sistema;system.automation.email_templates;;manager;inventario_estatico_a_validar
+/settings/enrichment;Tela autenticada;src/routes/_authenticated/settings.enrichment.tsx;5;não exclusivo/compartilhado;;;;manager;inventario_estatico_a_validar
+/settings/esign;Tela autenticada;src/routes/_authenticated/settings.esign.tsx;38;não exclusivo/compartilhado;;;;manager;inventario_estatico_a_validar
+/settings/exports;Tela autenticada;src/routes/_authenticated/settings.exports.tsx;46;não exclusivo/compartilhado;;;;manager;inventario_estatico_a_validar
+/settings/forms;Tela autenticada;src/routes/_authenticated/settings.forms.tsx;4;não exclusivo/compartilhado;;;;manager;inventario_estatico_a_validar
+/settings/goals;Tela autenticada;src/routes/_authenticated/settings.goals.tsx;46;não exclusivo/compartilhado;;;;manager;inventario_estatico_a_validar
+/settings/hubspot-sync;Tela autenticada;src/routes/_authenticated/settings.hubspot-sync.tsx;4;não exclusivo/compartilhado;Sistema;system.hubspot_sync;;admin;inventario_estatico_a_validar
+/settings/hubspot-users;Tela autenticada;src/routes/_authenticated/settings.hubspot-users.tsx;28;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/import;Tela autenticada;src/routes/_authenticated/settings.import.tsx;4;não exclusivo/compartilhado;Sistema;system.import;;admin;inventario_estatico_a_validar
+/settings/import-csv;Tela autenticada;src/routes/_authenticated/settings.import-csv.tsx;29;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/integrations;Tela autenticada;src/routes/_authenticated/settings.integrations.index.tsx;4;não exclusivo/compartilhado;Sistema;system.integrations;;admin;inventario_estatico_a_validar
+/settings/integrations/$slug;Tela autenticada;src/routes/_authenticated/settings.integrations.$slug.tsx;4;não exclusivo/compartilhado;Sistema;system.integrations;;admin;inventario_estatico_a_validar
+/settings/integrations/ai;Tela autenticada;src/routes/_authenticated/settings.integrations.ai.tsx;4;não exclusivo/compartilhado;Sistema;system.integrations;;admin;inventario_estatico_a_validar
+/settings/integrations/contaazul;Tela autenticada;src/routes/_authenticated/settings.integrations.contaazul.tsx;4;não exclusivo/compartilhado;Sistema;system.integrations;;admin;inventario_estatico_a_validar
+/settings/integrations/linkedin;Tela autenticada;src/routes/_authenticated/settings.integrations.linkedin.tsx;43;não exclusivo/compartilhado;Sistema;system.linkedin;;admin;inventario_estatico_a_validar
+/settings/kb;Tela autenticada;src/routes/_authenticated/settings.kb.tsx;51;não exclusivo/compartilhado;Sistema;system.kb.articles;;;inventario_estatico_a_validar
+/settings/language;Tela autenticada;src/routes/_authenticated/settings.language.tsx;6;não exclusivo/compartilhado;Sistema;system.language;;admin;inventario_estatico_a_validar
+/settings/lead-sources;Tela autenticada;src/routes/_authenticated/settings.lead-sources.tsx;35;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/legal-entities;Tela autenticada;src/routes/_authenticated/settings.legal-entities.tsx;4;não exclusivo/compartilhado;Sistema;system.legal_entities;;;inventario_estatico_a_validar
+/settings/legal-entity-groups;Tela autenticada;src/routes/_authenticated/settings.legal-entity-groups.tsx;4;não exclusivo/compartilhado;Sistema;system.legal_entity_groups;;;inventario_estatico_a_validar
+/settings/macros;Tela autenticada;src/routes/_authenticated/settings.macros.tsx;26;não exclusivo/compartilhado;Sistema;system.automation.macros;;manager;inventario_estatico_a_validar
+/settings/marketplace;Tela autenticada;src/routes/_authenticated/settings.marketplace.index.tsx;4;não exclusivo/compartilhado;Sistema;system.marketplace;;admin;inventario_estatico_a_validar
+/settings/marketplace/$slug;Tela autenticada;src/routes/_authenticated/settings.marketplace.$slug.tsx;4;não exclusivo/compartilhado;Sistema;system.marketplace;;admin;inventario_estatico_a_validar
+/settings/media;Tela autenticada;src/routes/_authenticated/settings.media.tsx;17;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/mobile;Tela autenticada;src/routes/_authenticated/settings.mobile.tsx;27;não exclusivo/compartilhado;;;;admin;inventario_estatico_a_validar
+/settings/my-permissions;Tela autenticada;src/routes/_authenticated/settings.my-permissions.tsx;15;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/my-tickets;Tela autenticada;src/routes/_authenticated/settings.my-tickets.tsx;4;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/nfse;Tela autenticada;src/routes/_authenticated/settings.nfse.tsx;14;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/notifications;Tela autenticada;src/routes/_authenticated/settings.notifications.tsx;18;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/notifications/slack;Tela autenticada;src/routes/_authenticated/settings.notifications.slack.tsx;31;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/onboarding-templates;Tela autenticada;src/routes/_authenticated/settings.onboarding-templates.tsx;53;não exclusivo/compartilhado;Sistema;system.onboarding_templates;;;inventario_estatico_a_validar
+/settings/payments;Tela autenticada;src/routes/_authenticated/settings.payments.tsx;19;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/permissions;Tela autenticada;src/routes/_authenticated/settings.permissions.tsx;8;não exclusivo/compartilhado;Sistema;system.roles;;admin;inventario_estatico_a_validar
+/settings/phones;Tela autenticada;src/routes/_authenticated/settings.phones.tsx;58;não exclusivo/compartilhado;Sistema;system.language;;admin;inventario_estatico_a_validar
+/settings/pipelines;Tela autenticada;src/routes/_authenticated/settings.pipelines.tsx;29;não exclusivo/compartilhado;Sistema;system.pipelines;;admin;inventario_estatico_a_validar
+/settings/platform/alerts;Tela autenticada;src/routes/_authenticated/settings.platform.alerts.tsx;4;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/platform/quotas;Tela autenticada;src/routes/_authenticated/settings.platform.quotas.tsx;4;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/platform/sandbox;Tela autenticada;src/routes/_authenticated/settings.platform.sandbox.tsx;4;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/platform/security;Tela autenticada;src/routes/_authenticated/settings.platform.security.tsx;4;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/platform/status;Tela autenticada;src/routes/_authenticated/settings.platform.status.tsx;4;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/playbooks;Tela autenticada;src/routes/_authenticated/settings.playbooks.tsx;5;não exclusivo/compartilhado;;;;manager;inventario_estatico_a_validar
+/settings/portal;Tela autenticada;src/routes/_authenticated/settings.portal.tsx;26;não exclusivo/compartilhado;Sistema;system.portal;;manager;inventario_estatico_a_validar
+/settings/privacy;Tela autenticada;src/routes/_authenticated/settings.privacy.tsx;15;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/property-groups;Tela autenticada;src/routes/_authenticated/settings.property-groups.tsx;42;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/proposal-templates;Tela autenticada;src/routes/_authenticated/settings.proposal-templates.tsx;24;não exclusivo/compartilhado;;;;manager;inventario_estatico_a_validar
+/settings/prospecting;Tela autenticada;src/routes/_authenticated/settings.prospecting.tsx;4;não exclusivo/compartilhado;TechSales;techsales.prospecting_search,techsales.prospecting_enrichment;;manager;inventario_estatico_a_validar
+/settings/prospecting-scripts;Tela autenticada;src/routes/_authenticated/settings.prospecting-scripts.tsx;4;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/quote-templates;Tela autenticada;src/routes/_authenticated/settings.quote-templates.tsx;28;não exclusivo/compartilhado;;;;manager;inventario_estatico_a_validar
+/settings/quotes;Tela autenticada;src/routes/_authenticated/settings.quotes.tsx;17;não exclusivo/compartilhado;TechSales;techsales.quotes;;manager;inventario_estatico_a_validar
+/settings/rbac-diagnostics;Tela autenticada;src/routes/_authenticated/settings.rbac-diagnostics.tsx;58;não exclusivo/compartilhado;Sistema;system.rbac_diagnostics;;admin;inventario_estatico_a_validar
+/settings/record-layouts;Tela autenticada;src/routes/_authenticated/settings.record-layouts.tsx;28;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/recurring;Tela autenticada;src/routes/_authenticated/settings.recurring.tsx;58;não exclusivo/compartilhado;;;;manager;inventario_estatico_a_validar
+/settings/roles;Tela autenticada;src/routes/_authenticated/settings.roles.index.tsx;4;não exclusivo/compartilhado;;;;admin;inventario_estatico_a_validar
+/settings/roles;Tela autenticada;src/routes/_authenticated/settings.roles.tsx;3;não exclusivo/compartilhado;;;;admin;inventario_estatico_a_validar
+/settings/roles/$roleId;Tela autenticada;src/routes/_authenticated/settings.roles.$roleId.tsx;4;não exclusivo/compartilhado;;;;admin;inventario_estatico_a_validar
+/settings/roles/matrix;Tela autenticada;src/routes/_authenticated/settings.roles.matrix.tsx;4;não exclusivo/compartilhado;;;;admin;inventario_estatico_a_validar
+/settings/rotation;Tela autenticada;src/routes/_authenticated/settings.rotation.tsx;36;não exclusivo/compartilhado;Sistema;system.automation.rotation;;manager;inventario_estatico_a_validar
+/settings/scim;Tela autenticada;src/routes/_authenticated/settings.scim.tsx;15;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/scoring;Tela autenticada;src/routes/_authenticated/settings.scoring.tsx;5;não exclusivo/compartilhado;;;;manager;inventario_estatico_a_validar
+/settings/security;Tela autenticada;src/routes/_authenticated/settings.security.tsx;15;não exclusivo/compartilhado;;;;admin;inventario_estatico_a_validar
+/settings/segments;Tela autenticada;src/routes/_authenticated/settings.segments.tsx;160;não exclusivo/compartilhado;;;;manager;inventario_estatico_a_validar
+/settings/sequences;Tela autenticada;src/routes/_authenticated/settings.sequences.tsx;30;não exclusivo/compartilhado;Sistema;system.automation.sequences;;manager;inventario_estatico_a_validar
+/settings/sla;Tela autenticada;src/routes/_authenticated/settings.sla.tsx;14;não exclusivo/compartilhado;Sistema;system.automation.sla;;manager;inventario_estatico_a_validar
+/settings/snippets;Tela autenticada;src/routes/_authenticated/settings.snippets.tsx;27;não exclusivo/compartilhado;Sistema;system.snippets;;;inventario_estatico_a_validar
+/settings/sso;Tela autenticada;src/routes/_authenticated/settings.sso.tsx;7;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/subscriptions;Tela autenticada;src/routes/_authenticated/settings.subscriptions.tsx;4;não exclusivo/compartilhado;;;;manager;inventario_estatico_a_validar
+/settings/surveys;Tela autenticada;src/routes/_authenticated/settings.surveys.tsx;4;não exclusivo/compartilhado;;;;manager;inventario_estatico_a_validar
+/settings/teams;Tela autenticada;src/routes/_authenticated/settings.teams.tsx;99;não exclusivo/compartilhado;Sistema;system.members;;admin;inventario_estatico_a_validar
+/settings/user-groups;Tela autenticada;src/routes/_authenticated/settings.user-groups.tsx;35;não exclusivo/compartilhado;Sistema;system.user_groups;;;inventario_estatico_a_validar
+/settings/video;Tela autenticada;src/routes/_authenticated/settings.video.tsx;13;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/voice-agent;Tela autenticada;src/routes/_authenticated/settings.voice-agent.tsx;5;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/webhooks;Tela autenticada;src/routes/_authenticated/settings.webhooks.tsx;45;não exclusivo/compartilhado;;;;admin;inventario_estatico_a_validar
+/settings/whatsapp;Tela autenticada;src/routes/_authenticated/settings.whatsapp.tsx;32;não exclusivo/compartilhado;Sistema;system.whatsapp;;;inventario_estatico_a_validar
+/settings/widget;Tela autenticada;src/routes/_authenticated/settings.widget.tsx;12;não exclusivo/compartilhado;Sistema;system.widget;;;inventario_estatico_a_validar
+/settings/workflow-subscriptions;Tela autenticada;src/routes/_authenticated/settings.workflow-subscriptions.tsx;41;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/workflows;Tela autenticada;src/routes/_authenticated/settings.workflows.tsx;71;não exclusivo/compartilhado;Sistema;system.workflows;;manager;inventario_estatico_a_validar
+/settings/workspace-team;Tela autenticada;src/routes/_authenticated/settings.workspace-team.tsx;5;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/settings/zapier;Tela autenticada;src/routes/_authenticated/settings.zapier.tsx;19;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/sign/$token;Tela pública/retorno;src/routes/sign.$token.tsx;17;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/signup;Tela pública/retorno;src/routes/signup.tsx;5;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/sitemap.xml;API;src/routes/sitemap[.]xml.ts;13;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/sourcing;Tela autenticada;src/routes/_authenticated/(ats)/sourcing/index.tsx;7;ats;;;;;inventario_estatico_a_validar
+/sourcing/analytics;Tela autenticada;src/routes/_authenticated/(ats)/sourcing/analytics.tsx;33;ats;TechHire;techhire.sourcing.analytics;;;inventario_estatico_a_validar
+/sourcing/inbox;Tela autenticada;src/routes/_authenticated/(ats)/sourcing/inbox.tsx;33;ats;TechHire;techhire.sourcing.inbox;;;inventario_estatico_a_validar
+/sourcing/multi-posting;Tela autenticada;src/routes/_authenticated/(ats)/sourcing/multi-posting.tsx;28;ats;TechHire;techhire.sourcing.multi_posting;;;inventario_estatico_a_validar
+/sourcing/pools;Tela autenticada;src/routes/_authenticated/(ats)/sourcing/pools.tsx;31;ats;TechHire;techhire.sourcing.pools;;;inventario_estatico_a_validar
+/sourcing/referrals;Tela autenticada;src/routes/_authenticated/(ats)/sourcing/referrals.tsx;45;ats;TechHire;techhire.sourcing.referrals;;;inventario_estatico_a_validar
+/sourcing/sequences;Tela autenticada;src/routes/_authenticated/(ats)/sourcing/sequences.tsx;29;ats;TechHire;techhire.sourcing.sequences;;;inventario_estatico_a_validar
+/sourcing/sequences/$id;Tela autenticada;src/routes/_authenticated/(ats)/sourcing/sequences_.$id.tsx;32;ats;TechHire;techhire.sourcing.sequences;;;inventario_estatico_a_validar
+/stage-emails;Tela autenticada;src/routes/_authenticated/(ats)/stage-emails.tsx;33;ats;TechHire;techhire.stage_emails;;;inventario_estatico_a_validar
+/survey-builder/$id;Tela autenticada;src/routes/_authenticated/survey-builder.$id.tsx;4;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/survey/$token;Tela pública/retorno;src/routes/survey.$token.tsx;11;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/surveys;Tela autenticada;src/routes/_authenticated/surveys.tsx;6;não exclusivo/compartilhado;TechSales;techsales.surveys;;;inventario_estatico_a_validar
+/tasks;Tela autenticada;src/routes/_authenticated/tasks.tsx;77;não exclusivo/compartilhado;TechSales;techsales.tasks;;;inventario_estatico_a_validar
+/tasks/$id;Tela autenticada;src/routes/_authenticated/tasks.$id.tsx;35;não exclusivo/compartilhado;TechSales;techsales.tasks;;;inventario_estatico_a_validar
+/tasks/queues;Tela autenticada;src/routes/_authenticated/tasks.queues.tsx;15;não exclusivo/compartilhado;TechSales;techsales.task_queues;;;inventario_estatico_a_validar
+/tasks/queues/$queueId/play;Tela autenticada;src/routes/_authenticated/tasks.queues.$queueId.play.tsx;15;não exclusivo/compartilhado;TechSales;techsales.task_queues;;;inventario_estatico_a_validar
+/terms;Tela pública/retorno;src/routes/terms.tsx;3;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/tickets;Tela autenticada;src/routes/_authenticated/tickets.tsx;109;não exclusivo/compartilhado;TechSales;techsales.tickets;techsales.tickets.delete.own,techsales.tickets.delete.workspace,techsales.tickets.manage.workspace,techservice.tickets.delete.workspace;;inventario_estatico_a_validar
+/tickets/$id;Tela autenticada;src/routes/_authenticated/tickets.$id.tsx;36;não exclusivo/compartilhado;TechSales;techsales.tickets;;;inventario_estatico_a_validar
+/unipile-connected;Tela pública/retorno;src/routes/unipile-connected.tsx;7;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/unsubscribe;Tela pública/retorno;src/routes/unsubscribe.tsx;7;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/verify/$hash;Tela pública/retorno;src/routes/verify.$hash.tsx;10;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/wa/$slug;Tela pública/retorno;src/routes/wa.$slug.tsx;16;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/widget/$workspaceId;Tela pública/retorno;src/routes/widget.$workspaceId.tsx;6;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/workspace;Tela autenticada;src/routes/_authenticated/workspace.index.tsx;4;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
+/workspace/modules;Tela autenticada;src/routes/_authenticated/workspace.modules.tsx;20;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
