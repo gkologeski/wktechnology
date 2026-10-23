@@ -24,7 +24,14 @@ import {
   type PhoneNumber,
 } from "libphonenumber-js/max";
 
-export const PHONE_NORMALIZER_VERSION = "e164-v1";
+export const PHONE_NORMALIZER_VERSION = "e164-v2";
+
+/**
+ * Até este número de dígitos (fora o ramal) o valor não é telefone: não há
+ * número de nenhum país tão curto que identifique uma linha. Dado novo é
+ * recusado ("Telefone incompleto"); dado legado fica em branco na correção.
+ */
+export const PHONE_BLANK_MAX_DIGITS = 4;
 
 /** País padrão da plataforma para digitação nova quando o workspace não define outro. */
 export const PLATFORM_DEFAULT_PHONE_COUNTRY: CountryCode = "BR";
@@ -49,7 +56,9 @@ export type PhoneFailureReason =
   | "region_unknown"
   | "ambiguous"
   | "multiple"
-  | "placeholder";
+  | "placeholder"
+  | "extension_only"
+  | "repeated_country_code";
 
 export type PhoneNormalization =
   | { status: "empty" }
@@ -60,24 +69,76 @@ export type PhoneNormalization =
       extension: string | null;
       type: PhoneLineType | null;
       /** Como o país foi determinado. */
-      via: "explicit_plus" | "idd_00" | "context_country";
+      via: "explicit_plus" | "idd_00" | "context_country" | "repeated_country_code";
     }
   | { status: "invalid"; reason: PhoneFailureReason; candidates?: string[] };
 
 export type NormalizeOptions = {
   /** País de contexto para números sem "+". `null` = sem contexto. */
   defaultCountry?: string | null;
+  /**
+   * Aceita "+DDI DDI …" (código do país repetido) SÓ quando o país de
+   * contexto é evidência do próprio registro e coincide com o DDI repetido,
+   * a leitura literal é inválida e a sem repetição é a única válida. Nunca
+   * usar com o país padrão do workspace (dado digitado volta com erro).
+   */
+  allowRepeatedCountryCode?: boolean;
 };
 
-const EXT_RE = /\s*[,;]?\s*(?:ramal|ram\.?|r\.|ext\.?|extens[aã]o|x|#)\s*:?\s*(\d{1,7})\s*$/i;
+const EXT_RE = /(?:^|\s*[,;]?\s*)(?:ramal|ram\.?|r\.|ext\.?|extens[aã]o|x|#)\s*:?\s*(\d{1,7})\s*$/i;
 /** Separadores de vários números num mesmo texto. */
 const MULTI_SPLIT = /\s*(?:[/;|,\n]|\s(?:e|ou)\s)\s*/i;
 /** Caracteres aceitos num número (fora o ramal). */
 const ALLOWED = /^[\d\s+().\-\u00a0]+$/;
+/** Invisíveis (zero-width, marcas de direção, BOM, hífen suave). */
+const INVISIBLE = /[\u00ad\u061c\u180e\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u206f\ufeff]/g;
+/** Traços tipográficos → hífen ASCII. */
+const DASHES = /[\u2010-\u2015\u2212\ufe58\ufe63\uff0d]/g;
+/** Rótulo reconhecido no início ("Tel:", "Telefone -", "tel:" de RFC 3966, "Fone"). */
+const LABEL = /^(?:tel(?:efone)?|fone)\s*[.:-]?\s*(?=[\d+(])/i;
 
 export function asCountry(c: string | null | undefined): CountryCode | null {
   const v = (c ?? "").trim().toUpperCase();
   return v && /^[A-Z]{2}$/.test(v) && isSupportedCountry(v) ? (v as CountryCode) : null;
+}
+
+/**
+ * Remove só artefatos conhecidos que não carregam dígitos: invisíveis,
+ * traços tipográficos, apóstrofo inicial de planilha e rótulo tel/telefone.
+ * Nunca remove nem acrescenta dígito.
+ */
+export function sanitizePhoneText(raw: string | null | undefined): string {
+  return String(raw ?? "")
+    .normalize("NFKC")
+    .replace(INVISIBLE, "")
+    .replace(DASHES, "-")
+    .trim()
+    .replace(/^['\u2018\u2019`]+/, "")
+    .trim()
+    .replace(LABEL, "")
+    .trim();
+}
+
+/** Separa o ramal do fim do texto (antes de qualquer divisão em vários números). */
+export function splitPhoneExtension(text: string): { main: string; extension: string | null } {
+  const m = EXT_RE.exec(text);
+  if (!m) return { main: text, extension: null };
+  return { main: text.slice(0, m.index).trim(), extension: m[1] };
+}
+
+/**
+ * Quantidade de dígitos do NÚMERO (ramal fora, máscara/espaços/+ ignorados).
+ * É a régua da limpeza "até 4 dígitos": o ramal nunca infla o comprimento.
+ */
+export function phoneMainDigitCount(raw: string | null | undefined): number {
+  const { main } = splitPhoneExtension(sanitizePhoneText(raw));
+  return main.replace(/\D/g, "").length;
+}
+
+/** Campo não vazio cujo número tem até `PHONE_BLANK_MAX_DIGITS` dígitos. */
+export function isBlankableShortPhone(raw: string | null | undefined): boolean {
+  if (raw == null || !String(raw).trim()) return false;
+  return phoneMainDigitCount(raw) <= PHONE_BLANK_MAX_DIGITS;
 }
 
 function mapType(p: PhoneNumber): PhoneLineType | null {
@@ -125,9 +186,7 @@ export function normalizePhone(
   raw: string | null | undefined,
   opts: NormalizeOptions = {},
 ): PhoneNormalization {
-  const original = String(raw ?? "")
-    .normalize("NFKC")
-    .trim();
+  const original = sanitizePhoneText(raw);
   if (!original) return { status: "empty" };
   const digitsAll = original.replace(/\D/g, "");
   if (!digitsAll || /^0+$/.test(digitsAll)) {
@@ -136,57 +195,84 @@ export function normalizePhone(
       : { status: "invalid", reason: "placeholder" };
   }
 
-  const parts = splitPhoneCandidates(original);
+  // Ramal sai ANTES da divisão em vários números ("…, ramal 22" é um número só).
+  const { main, extension } = splitPhoneExtension(original);
+  if (!/\d/.test(main)) return { status: "invalid", reason: "extension_only" };
+
+  const parts = splitPhoneCandidates(main);
   if (parts.length > 1) return { status: "invalid", reason: "multiple", candidates: parts };
 
-  let main = original;
-  let extension: string | null = null;
-  const ext = EXT_RE.exec(main);
-  if (ext && ext.index > 0) {
-    extension = ext[1];
-    main = main.slice(0, ext.index).trim();
-  }
   if (!ALLOWED.test(main)) return { status: "invalid", reason: "letters" };
   const plusCount = (main.match(/\+/g) ?? []).length;
-  if (plusCount > 1 || (plusCount === 1 && !main.startsWith("+"))) {
+  // "+" só no início, admitindo um "(" antes: "(+55) 11 …".
+  const leadingPlus = /^\(?\s*\+/.test(main);
+  if (plusCount > 1 || (plusCount === 1 && !leadingPlus)) {
     return { status: "invalid", reason: "bad_plus" };
   }
   const digits = main.replace(/\D/g, "");
   if (digits.length > 17) return { status: "invalid", reason: "too_long" };
-  if (digits.length < 4) return { status: "invalid", reason: "too_short" };
+  if (digits.length <= PHONE_BLANK_MAX_DIGITS) return { status: "invalid", reason: "too_short" };
 
   const ctx = asCountry(opts.defaultCountry);
-  const found = new Map<
-    string,
-    { p: PhoneNumber; via: "explicit_plus" | "idd_00" | "context_country" }
-  >();
-  const add = (p: PhoneNumber | null, via: "explicit_plus" | "idd_00" | "context_country") => {
+  type Via = "explicit_plus" | "idd_00" | "context_country" | "repeated_country_code";
+  const found = new Map<string, { p: PhoneNumber; via: Via }>();
+  const add = (p: PhoneNumber | null, via: Via) => {
     if (p && !found.has(p.number)) found.set(p.number, { p, via });
   };
 
-  if (main.startsWith("+")) {
+  if (leadingPlus) {
     if (digits.startsWith("0")) return { status: "invalid", reason: "invalid" };
-    add(tryParse(`+${digits}`), "explicit_plus");
-  } else {
-    if (digits.startsWith("00")) add(tryParse(`+${digits.slice(2)}`), "idd_00");
-    if (ctx) {
-      // Leitura nacional pela biblioteca (trata prefixo 0 / operadora).
-      add(tryParse(digits, ctx), "context_country");
-      const cc = getCountryCallingCode(ctx);
-      if (!digits.startsWith("0")) {
-        // Leitura nacional pura (sem tirar o código do país embutido) —
-        // revela ambiguidade como DDD 55 x DDI 55.
-        add(tryParse(`+${cc}${digits}`), "context_country");
-        if (digits.startsWith(cc)) add(tryParse(`+${digits}`), "context_country");
+    const literal = tryParse(`+${digits}`);
+    add(literal, "explicit_plus");
+    if (!literal) {
+      // "+55 55 11 …": DDI repetido. Só automatiza com evidência do registro.
+      const p0 = parsePhoneNumberFromString(`+${digits}`);
+      const cc = p0?.countryCallingCode;
+      const rest = cc ? digits.slice(cc.length) : "";
+      // Depois do DDI repetido não pode vir "0" (seriam duas correções juntas).
+      const stripped =
+        cc && rest.startsWith(cc) && rest[cc.length] !== "0" ? tryParse(`+${rest}`) : null;
+      if (stripped) {
+        const proven =
+          !!opts.allowRepeatedCountryCode && !!ctx && getCountryCallingCode(ctx) === cc;
+        if (!proven) {
+          return {
+            status: "invalid",
+            reason: "repeated_country_code",
+            candidates: [stripped.number],
+          };
+        }
+        add(stripped, "repeated_country_code");
       }
-    } else if (!digits.startsWith("00")) {
-      return { status: "invalid", reason: "region_unknown" };
     }
+  } else if (ctx) {
+    // Leitura pela biblioteca no país de contexto: trata prefixo nacional 0,
+    // operadora (CSP) e prefixo internacional DESSE país (00, 0021, 011…).
+    const cc = getCountryCallingCode(ctx);
+    const byCtx = tryParse(digits, ctx);
+    add(byCtx, byCtx && byCtx.countryCallingCode !== cc ? "idd_00" : "context_country");
+    if (!digits.startsWith("0")) {
+      // Leitura nacional pura (sem tirar o código do país embutido) —
+      // revela ambiguidade como DDD 55 x DDI 55.
+      add(tryParse(`+${cc}${digits}`), "context_country");
+      if (digits.startsWith(cc)) add(tryParse(`+${digits}`), "context_country");
+    }
+    if (found.size === 0 && digits.startsWith("00")) {
+      // "00" não é prefixo internacional válido sozinho neste país (ex.: BR
+      // exige operadora). Leitura internacional fica só como candidata.
+      const intl = tryParse(`+${digits.slice(2)}`);
+      if (intl) return { status: "invalid", reason: "ambiguous", candidates: [intl.number] };
+    }
+  } else {
+    // Sem país: nem "0"/CSP nem "00" têm significado comprovado.
+    const intl = digits.startsWith("00") ? tryParse(`+${digits.slice(2)}`) : null;
+    return intl
+      ? { status: "invalid", reason: "region_unknown", candidates: [intl.number] }
+      : { status: "invalid", reason: "region_unknown" };
   }
 
   if (found.size === 0) {
-    if (main.startsWith("+") && digits.length > 15)
-      return { status: "invalid", reason: "too_long" };
+    if (leadingPlus && digits.length > 15) return { status: "invalid", reason: "too_long" };
     return { status: "invalid", reason: "invalid" };
   }
   if (found.size > 1) {
@@ -214,7 +300,7 @@ export function phoneErrorMessage(reason: PhoneFailureReason): string {
     case "too_long":
       return "Telefone longo demais (máximo de 15 dígitos com o código do país).";
     case "too_short":
-      return "Telefone incompleto.";
+      return "Telefone incompleto: informe o código de área e o número completo.";
     case "region_unknown":
       return "Informe o código do país (ex.: +55) ou escolha o país.";
     case "ambiguous":
@@ -223,6 +309,10 @@ export function phoneErrorMessage(reason: PhoneFailureReason): string {
       return "Informe um único telefone por campo.";
     case "placeholder":
       return "Telefone incompleto.";
+    case "extension_only":
+      return "Ramal sozinho não é telefone: informe o número e, se houver, o ramal.";
+    case "repeated_country_code":
+      return "O código do país aparece repetido. Confira o número.";
     default:
       return "Telefone inválido para o país informado.";
   }

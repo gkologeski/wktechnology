@@ -14403,6 +14403,9 @@ export type Database = {
           proposed_ext: string | null
           proposed_value: string | null
           reason: string | null
+          resolution: string | null
+          resolved_at: string | null
+          resolved_run_id: string | null
           rolled_back_at: string | null
           row_id: string
           run_id: string
@@ -14418,6 +14421,9 @@ export type Database = {
           proposed_ext?: string | null
           proposed_value?: string | null
           reason?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_run_id?: string | null
           rolled_back_at?: string | null
           row_id: string
           run_id: string
@@ -14433,6 +14439,9 @@ export type Database = {
           proposed_ext?: string | null
           proposed_value?: string | null
           reason?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_run_id?: string | null
           rolled_back_at?: string | null
           row_id?: string
           run_id?: string
@@ -14440,6 +14449,13 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "phone_normalization_items_resolved_run_id_fkey"
+            columns: ["resolved_run_id"]
+            isOneToOne: false
+            referencedRelation: "phone_normalization_runs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "phone_normalization_items_run_id_fkey"
             columns: ["run_id"]
@@ -14466,6 +14482,7 @@ export type Database = {
           mode: string
           normalizer_version: string
           notes: string | null
+          parent_run_id: string | null
           status: string
           workspace_id: string
         }
@@ -14478,6 +14495,7 @@ export type Database = {
           mode: string
           normalizer_version: string
           notes?: string | null
+          parent_run_id?: string | null
           status?: string
           workspace_id: string
         }
@@ -14490,10 +14508,18 @@ export type Database = {
           mode?: string
           normalizer_version?: string
           notes?: string | null
+          parent_run_id?: string | null
           status?: string
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "phone_normalization_runs_parent_run_id_fkey"
+            columns: ["parent_run_id"]
+            isOneToOne: false
+            referencedRelation: "phone_normalization_runs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "phone_normalization_runs_workspace_id_fkey"
             columns: ["workspace_id"]

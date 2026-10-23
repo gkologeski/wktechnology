@@ -24,7 +24,19 @@ comprova que o número existe, tem WhatsApp ou pertence à pessoa.
 - Nunca se acrescenta/remove o 9º dígito, completa número incompleto, corta
   zero significativo (ex.: Itália) ou trunca acima de 15 dígitos.
 - Ramal vai para `phone_ext` (contatos, leads, empresas) e `tel:+…;ext=`.
-- Vários números num campo: `multiple` → revisão; nunca vira um E.164 só.
+- Vários números num campo: `multiple` → revisão; nunca vira um E.164 só. O
+  ramal do fim do texto sai ANTES da divisão ("…, ramal 22" é um número só).
+- Até 4 dígitos no número (ramal fora; máscara, espaço e + ignorados) não é
+  telefone: dado novo é recusado ("Telefone incompleto"); legado fica vazio.
+  Ramal sozinho não vira telefone (`extension_only`).
+- Artefatos limpos sem perder dígito: invisíveis, traços tipográficos,
+  apóstrofo inicial de planilha, rótulo "Tel"/"Telefone"/"Fone"/"tel:".
+- `+` só no início (admite "(+55)"). "00"/"0"/operadora só pelo país de
+  contexto (BR exige "00"+operadora); sem país, "00…" fica como candidato.
+- DDI repetido ("+55 55 11 …") só é corrigido com o País do próprio registro
+  igual ao DDI, leitura literal inválida, leitura sem repetição única e sem
+  "0" logo depois; senão `repeated_country_code` para revisão.
+- E.164 válido não comprova linha ativa, titular nem WhatsApp.
 - Campo opcional vazio → `null`; obrigatório vazio bloqueia.
 - Provedores que exigem dígitos sem `+` convertem só no limite
   (`e164ToProviderDigits`). `wa_id`, `phone_number_id`, `vapi_phone_number_id`
@@ -81,6 +93,26 @@ comprova que o número existe, tem WhatsApp ou pertence à pessoa.
   simulação; `scripts/phone-e164/rollback.sh` desfaz sem sobrescrever edição
   posterior. Automações, histórico e auditoria foram suprimidos pelo token de
   sessão `wk-phone-e164-v1` em `crm_is_derivation_backfill` (0 eventos).
+
+### Correção posterior: até 4 dígitos + v2 (23/10/2026)
+
+Execução `8b277703-f51b-42b4-90d3-aea7c5e1d268` (`e164-v2`, filha da
+varredura): prévia `blank-short.ts`, lotes `batch-sql.ts` (compara o original,
+filtra o workspace, idempotente, token `wk-phone-e164-v1`), migration 0187
+(resolução da fila e WhatsApp não derivado em correção em lote).
+
+- Em branco por terem até 4 dígitos: 10.671 (contatos · celular 10.636,
+  empresas 19, contatos · telefone 15, leads 1); por dígitos: 0 → 4,
+  1 → 10.642, 2 → 5, 3 → 4, 4 → 16.
+- Padronizados com leitura única comprovada: 163 (DDI repetido + País do
+  registro 153, +DDI explícito com artefato 8, País do registro BR 2).
+- 10.834 itens da fila resolvidos; 6.416 seguem em revisão com motivo
+  específico calculado na hora (ex.: celular antigo sem o 9 com candidato
+  mascarado, nunca aplicado).
+- 0 eventos de automação, auditoria, histórico ou notificação; WhatsApp
+  derivado inalterado; `hs_raw`, mensagens e logs intactos.
+- Desfazer: `RUN=8b277703-… WS=… scripts/phone-e164/rollback.sh` (papel de
+  escrita); itens da fila voltam a pendentes.
 
 ## Pendências
 
