@@ -42,7 +42,7 @@ insert into public.phone_normalization_items (id, run_id, workspace_id, table_na
 SQL
 
 as_user() { # $1 uid, $2 sql → imprime OK ou o erro
-  iso_psql -tA -c "begin; set local role authenticated; select set_config('request.jwt.claims','{\"sub\":\"$1\",\"role\":\"authenticated\"}',true) \\g /dev/null
+  iso_psql -tA -c "begin; set local role authenticated; select set_config('request.jwt.claims','{\"sub\":\"$1\",\"role\":\"authenticated\"}',true);
 $2; commit;" >/dev/null 2>/tmp/pmr.err && echo OK || sed -n 's/.*ERROR: *//p' /tmp/pmr.err | head -1
 }
 q() { iso_psql -tAc "$1"; }
