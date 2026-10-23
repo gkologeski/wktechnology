@@ -1324,6 +1324,13 @@
       "when": 1792722036271,
       "tag": "0188_phone_manual_review",
       "breakpoints": true
+    },
+    {
+      "idx": 189,
+      "version": "7",
+      "when": 1792761900000,
+      "tag": "0189_wk_head_rh_full_access",
+      "breakpoints": true
     }
   ]
 }
