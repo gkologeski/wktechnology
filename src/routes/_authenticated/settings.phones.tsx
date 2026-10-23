@@ -31,18 +31,27 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  getPhoneReviewItem,
   getPhoneSettings,
   listPhoneReview,
+  resolvePhoneReview,
   updatePhoneCountry,
 } from "@/lib/phone/phone-settings.functions";
 import {
   PHONE_CLASS_LABEL,
   PHONE_FIELD_LABEL,
+  PHONE_KIND_LABEL,
   PHONE_REVIEW_CLASSES,
+  PHONE_REVIEW_KINDS,
   summarizePhoneRun,
   withLivePending,
   type PhoneReviewClass,
+  type PhoneReviewKind,
 } from "@/lib/phone/phone-review";
+import {
+  PhoneLegacyReviewDialog,
+  type PhoneReviewAction,
+} from "@/components/phone/phone-legacy-review-dialog";
 import { PhoneReviewRecordLink } from "@/components/phone/phone-review-record-link";
 import { PHONE_COUNTRY_QUERY_KEY } from "@/components/phone/phone-country-provider";
 
@@ -66,7 +75,12 @@ function PhonesSettingsPage() {
   const getFn = useServerFn(getPhoneSettings);
   const saveFn = useServerFn(updatePhoneCountry);
   const listFn = useServerFn(listPhoneReview);
-  const [filter, setFilter] = useState<PhoneReviewClass | "all">("all");
+  const getItemFn = useServerFn(getPhoneReviewItem);
+  const resolveFn = useServerFn(resolvePhoneReview);
+  const [filter, setFilter] = useState<PhoneReviewClass | PhoneReviewKind | "all">("all");
+  const [reviewId, setReviewId] = useState<number | null>(null);
+  const isKind = (f: string): f is PhoneReviewKind =>
+    (PHONE_REVIEW_KINDS as readonly string[]).includes(f);
   const [page, setPage] = useState(0);
   const [draftCountry, setDraftCountry] = useState<string | null>(null);
 
@@ -77,8 +91,42 @@ function PhonesSettingsPage() {
     enabled: !!runId && !!settingsQ.data?.isAdmin,
     queryFn: () =>
       listFn({
-        data: { runId: runId!, page, classification: filter === "all" ? undefined : filter },
+        data: {
+          runId: runId!,
+          page,
+          classification: filter === "all" || isKind(filter) ? undefined : filter,
+          kind: isKind(filter) ? filter : undefined,
+        },
       }),
+  });
+
+  const detailQ = useQuery({
+    queryKey: ["phone-review-item", reviewId],
+    enabled: reviewId !== null,
+    queryFn: () => getItemFn({ data: { itemId: reviewId! } }),
+  });
+  const pageItems = reviewQ.data?.items ?? [];
+  const legacyOnPage = pageItems.filter((i) => i.reviewKind === "legacy_mobile_no9");
+  const reviewItem = pageItems.find((i) => i.id === reviewId) ?? null;
+  const reviewPos = reviewItem ? legacyOnPage.findIndex((i) => i.id === reviewItem.id) : -1;
+  const resolveMut = useMutation({
+    mutationFn: (action: PhoneReviewAction) =>
+      resolveFn({ data: { itemId: reviewId!, action } }),
+    onSuccess: (_r, action) => {
+      toast.success(
+        action === "confirm"
+          ? "Número confirmado com o 9"
+          : action === "keep"
+            ? "Número mantido como está"
+            : "Número apagado",
+      );
+      // Segue para o próximo celular antigo desta página.
+      const next = legacyOnPage[reviewPos + 1] ?? null;
+      setReviewId(next?.id ?? null);
+      void qc.invalidateQueries({ queryKey: ["phone-review"] });
+      void qc.invalidateQueries({ queryKey: ["phone-settings"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const countries = useMemo(() => {
@@ -273,15 +321,20 @@ function PhonesSettingsPage() {
                 <Select
                   value={filter}
                   onValueChange={(v) => {
-                    setFilter(v as PhoneReviewClass | "all");
+                    setFilter(v as PhoneReviewClass | PhoneReviewKind | "all");
                     setPage(0);
                   }}
                 >
-                  <SelectTrigger className="w-64" aria-label="Filtrar motivo">
+                  <SelectTrigger className="w-72" aria-label="Filtrar motivo">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos os motivos</SelectItem>
+                    {PHONE_REVIEW_KINDS.map((k) => (
+                      <SelectItem key={k} value={k}>
+                        {PHONE_KIND_LABEL[k]}
+                      </SelectItem>
+                    ))}
                     {PHONE_REVIEW_CLASSES.map((c) => (
                       <SelectItem key={c} value={c}>
                         {PHONE_CLASS_LABEL[c] ?? c}
@@ -316,6 +369,7 @@ function PhonesSettingsPage() {
                         <TableHead>Valor gravado</TableHead>
                         <TableHead>Motivo</TableHead>
                         <TableHead>Detalhe</TableHead>
+                        <TableHead className="text-right">Ação</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -333,6 +387,20 @@ function PhonesSettingsPage() {
                           </TableCell>
                           <TableCell className="text-xs text-muted-foreground">
                             {i.reason ?? "—"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {i.reviewKind === "legacy_mobile_no9" ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setReviewId(i.id)}
+                                aria-label={`Revisar celular de ${i.name ?? "registro sem nome"}`}
+                              >
+                                Revisar
+                              </Button>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">Na ficha</span>
+                            )}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -368,6 +436,24 @@ function PhonesSettingsPage() {
           </section>
         </>
       )}
+      <PhoneLegacyReviewDialog
+        open={reviewId !== null && !!reviewItem}
+        onOpenChange={(v) => !v && setReviewId(null)}
+        item={reviewItem}
+        fieldLabel={
+          reviewItem
+            ? (PHONE_FIELD_LABEL[`${reviewItem.table}.${reviewItem.column}`] ?? reviewItem.table)
+            : ""
+        }
+        detail={detailQ.data ?? null}
+        loading={detailQ.isLoading}
+        error={detailQ.isError ? (detailQ.error as Error).message : null}
+        pending={resolveMut.isPending ? (resolveMut.variables ?? null) : null}
+        position={
+          reviewPos >= 0 ? `${reviewPos + 1} de ${legacyOnPage.length} nesta página` : null
+        }
+        onAction={(a) => resolveMut.mutate(a)}
+      />
     </div>
   );
 }
