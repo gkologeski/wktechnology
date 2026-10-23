@@ -64,7 +64,7 @@ expect_err "item resolvido não é resolvido de novo" "$(as_user $U1 "select pub
 
 q "update public.contacts set phone = '+5551993016928' where id='$K2'" >/dev/null
 expect_err "valor alterado depois da revisão não é sobrescrito" "$(as_user $U1 "select public.phone_review_resolve(9002,'confirm','+5551993016928')")" "alterado depois"
-[ "$(q "select phone||'|'||(resolved_at is null) from public.contacts c, public.phone_normalization_items i where c.id='$K2' and i.id=9002")" = "+5551993016928|t" ] && ok "edição posterior preservada e item segue pendente" || bad "K2"
+[ "$(q "select phone||'|'||(resolved_at is null) from public.contacts c, public.phone_normalization_items i where c.id='$K2' and i.id=9002")" = "+5551993016928|true" ] && ok "edição posterior preservada e item segue pendente" || bad "K2"
 
 [ "$(as_user $U1 "select public.phone_review_resolve(9003,'keep')")" = "OK" ] && [ "$(q "select phone from public.contacts where id='$K3'")" = "(51) 9301-6929" ] && ok "manter não altera o cadastro" || bad "manter"
 [ "$(as_user $U1 "select public.phone_review_resolve(9004,'clear')")" = "OK" ] && [ "$(q "select coalesce(phone,'NULL') from public.contacts where id='$K4'")" = "NULL" ] && ok "apagar deixa em branco" || bad "apagar"
