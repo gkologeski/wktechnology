@@ -3,7 +3,7 @@ import { CalendarDays, Check, Clock3 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { DatePickerPanel } from "@/components/date-picker";
+import { DatePickerPanel, focusCalendarDay } from "@/components/date-picker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -108,6 +108,8 @@ export function ActivityDateTimePicker({
           align="start"
           sideOffset={6}
           collisionPadding={8}
+          // Foco vai para o dia do calendário (setas navegam), não para o 1º atalho.
+          onOpenAutoFocus={focusCalendarDay}
           className="pointer-events-auto z-[180] w-auto max-w-[calc(100vw-1rem)] p-0"
         >
           {/* Mesma seleção de dia do DatePicker (skill date-picker-br); a hora

@@ -34,6 +34,22 @@ import {
 } from "@/lib/date-single-presets";
 import { isDayWithin } from "@/lib/iso-date";
 
+/**
+ * Ao abrir, coloca o foco no dia escolhido (ou hoje, ou o primeiro dia
+ * disponível) para as setas navegarem no calendário.
+ */
+export function focusCalendarDay(e: Event) {
+  e.preventDefault();
+  const root = e.currentTarget as HTMLElement | null;
+  window.requestAnimationFrame(() => {
+    const day =
+      root?.querySelector<HTMLButtonElement>("[data-selected=true] button:not([disabled])") ??
+      root?.querySelector<HTMLButtonElement>("[data-today=true] button:not([disabled])") ??
+      root?.querySelector<HTMLButtonElement>("td button:not([disabled])");
+    day?.focus();
+  });
+}
+
 /** Faixa de anos das listas de mês/ano quando o campo não tem limites. */
 const FIRST_YEAR = 1900;
 const YEARS_AHEAD = 50;
@@ -252,6 +268,8 @@ export function DatePicker({
         side={side}
         sideOffset={4}
         collisionPadding={8}
+        // Foco vai para o dia do calendário (setas navegam), não para o 1º atalho.
+        onOpenAutoFocus={focusCalendarDay}
         className="pointer-events-auto z-[180] w-auto max-w-[calc(100vw-1rem)] p-0"
       >
         <DatePickerPanel
