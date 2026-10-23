@@ -111,6 +111,11 @@ filtra o workspace, idempotente, token `wk-phone-e164-v1`), migration 0187
   mascarado, nunca aplicado).
 - 0 eventos de automação, auditoria, histórico ou notificação; WhatsApp
   derivado inalterado; `hs_raw`, mensagens e logs intactos.
+- A tela usa a VARREDURA mais recente (sem `parent_run_id`) como base,
+  nunca a última execução; "Em revisão" e a fila contam no banco os itens da
+  base com `applied_at` e `resolved_at` vazios (`reconcilePhoneRuns`,
+  `withLivePending`). O `applied_at` da varredura não é alterado: a trilha
+  original fica como foi; a resolução aponta para a execução que gravou.
 - Desfazer: `RUN=8b277703-… WS=… scripts/phone-e164/rollback.sh` (papel de
   escrita); itens da fila voltam a pendentes.
 
