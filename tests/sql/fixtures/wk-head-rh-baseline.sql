@@ -7,6 +7,8 @@ CREATE SCHEMA auth;
 GRANT USAGE ON SCHEMA public,auth TO authenticated,anon,service_role;
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT NULLIF(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
 CREATE FUNCTION auth.jwt() RETURNS jsonb LANGUAGE sql STABLE AS $$ SELECT COALESCE(NULLIF(current_setting('request.jwt.claims',true),''),'{}')::jsonb $$;
+CREATE TABLE auth.users(id uuid PRIMARY KEY);
+INSERT INTO auth.users VALUES ('90000000-0000-4000-8000-000000000003'),('90000000-0000-4000-8000-000000000004'),('1c237fbe-079e-4eb9-a3e6-c08d85e79688');
 CREATE TABLE public.workspaces(id uuid PRIMARY KEY,created_by uuid,status text DEFAULT 'active');
 CREATE TABLE public.workspace_members(workspace_id uuid,user_id uuid,role text,status text);
 CREATE TABLE public.profiles(id uuid PRIMARY KEY,active_workspace_id uuid);
@@ -20,8 +22,8 @@ CREATE TABLE public.job_role_sets(role_id uuid,set_id uuid);
 CREATE TABLE public.job_role_set_replacements(workspace_id uuid,role_id uuid,set_id uuid,replacement_set_id uuid);
 CREATE TABLE public.permission_set_items(set_id uuid,permission_key text);
 CREATE TABLE public.view_as_sessions(session_id uuid,mode text,ended_at timestamptz);
-CREATE TABLE public.people(id uuid PRIMARY KEY,workspace_id uuid,profile_id uuid,manager_id uuid);
-CREATE TABLE public.people_onboarding_plans(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),workspace_id uuid,owner_id uuid,person_id uuid,kind text DEFAULT 'onboarding',note text);
+CREATE TABLE public.people(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),workspace_id uuid,profile_id uuid,manager_id uuid,owner_id uuid,created_by uuid,full_name text,assigned_to uuid CONSTRAINT people_assigned_to_fkey REFERENCES auth.users(id));
+CREATE TABLE public.people_onboarding_plans(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),workspace_id uuid,owner_id uuid,person_id uuid,kind text DEFAULT 'onboarding',note text,assigned_to uuid CONSTRAINT people_onboarding_plans_assigned_to_fkey REFERENCES auth.users(id));
 ALTER TABLE public.people_onboarding_plans ENABLE ROW LEVEL SECURITY;
 GRANT SELECT,INSERT,UPDATE,DELETE ON public.people_onboarding_plans TO authenticated;
 CREATE TABLE public.people_onboarding_tasks(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),workspace_id uuid,owner_id uuid,person_id uuid,kind text DEFAULT 'onboarding',note text, assignee_id uuid, plan_id uuid);
@@ -330,3 +332,24 @@ INSERT INTO people_documents(id,person_id,owner_id,workspace_id,note) VALUES ('9
 INSERT INTO people_benefits(id,person_id,owner_id,workspace_id,note) VALUES ('90000000-0000-4000-8000-000000000021','90000000-0000-4000-8000-000000000005','1c237fbe-079e-4eb9-a3e6-c08d85e79688',NULL,'legacy');
 SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub','90000000-0000-4000-8000-000000000003',false);
 DO $$ BEGIN BEGIN INSERT INTO people_onboarding_plans(workspace_id,owner_id,person_id) VALUES ('184b9435-0a9b-4334-9e89-8854dc883f5d','90000000-0000-4000-8000-000000000003','90000000-0000-4000-8000-000000000005'); RAISE EXCEPTION 'Expected baseline RLS denial'; EXCEPTION WHEN insufficient_privilege THEN RAISE NOTICE 'PASS baseline onboarding INSERT denied'; END; END $$; RESET ROLE;
+
+-- Regression fixture: production synchronizer and real FK semantics.
+CREATE FUNCTION public.crm_is_derivation_backfill(jsonb,jsonb) RETURNS boolean LANGUAGE sql IMMUTABLE AS $$ SELECT false $$;
+CREATE OR REPLACE FUNCTION public.sync_responsible_columns()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$ DECLARE rec jsonb:=to_jsonb(NEW); BEGIN IF TG_OP='UPDATE' AND public.crm_is_derivation_backfill(to_jsonb(OLD),to_jsonb(NEW)) THEN RETURN NEW; END IF; IF TG_OP='INSERT' AND (rec ? 'assigned_to') AND NEW.assigned_to IS NULL THEN IF rec ? 'owner_id' THEN NEW.assigned_to:=NEW.owner_id; END IF; END IF; IF (rec ? 'assigned_user_id') AND (rec ? 'assigned_to') THEN NEW.assigned_user_id:=NEW.assigned_to; END IF; RETURN NEW; END $function$
+;
+CREATE TRIGGER trg_sync_responsible BEFORE INSERT OR UPDATE ON public.people FOR EACH ROW EXECUTE FUNCTION public.sync_responsible_columns();
+CREATE TRIGGER trg_sync_responsible BEFORE INSERT OR UPDATE ON public.people_onboarding_plans FOR EACH ROW EXECUTE FUNCTION public.sync_responsible_columns();
+ALTER TABLE public.people_onboarding_plans ADD CONSTRAINT people_onboarding_plans_owner_id_fkey FOREIGN KEY(owner_id) REFERENCES auth.users(id);
+ALTER TABLE public.people ENABLE ROW LEVEL SECURITY; GRANT SELECT,INSERT,UPDATE,DELETE ON public.people TO authenticated;
+CREATE POLICY "people_ws_delete" ON public.people AS PERMISSIVE FOR DELETE TO authenticated USING ((is_platform_admin(auth.uid()) OR ((workspace_id IN ( SELECT current_user_workspaces() AS current_user_workspaces)) AND (is_workspace_admin_v2(workspace_id, auth.uid()) OR user_has_permission(auth.uid(), workspace_id, 'techpeople.people.delete.workspace'::text)))));
+CREATE POLICY "people_ws_insert" ON public.people AS PERMISSIVE FOR INSERT TO authenticated WITH CHECK ((is_platform_admin(auth.uid()) OR ((workspace_id IN ( SELECT current_user_workspaces() AS current_user_workspaces)) AND (is_workspace_admin_v2(workspace_id, auth.uid()) OR user_has_permission(auth.uid(), workspace_id, 'techpeople.people.create.workspace'::text) OR user_has_permission(auth.uid(), workspace_id, 'techpeople.people.create.own'::text)))));
+CREATE POLICY "people_ws_select" ON public.people AS PERMISSIVE FOR SELECT TO authenticated USING ((is_platform_admin(auth.uid()) OR ((workspace_id IN ( SELECT current_user_workspaces() AS current_user_workspaces)) AND (is_workspace_admin_v2(workspace_id, auth.uid()) OR (manager_id = auth.uid()) OR (profile_id = auth.uid()) OR user_has_permission(auth.uid(), workspace_id, 'techpeople.people.view.workspace'::text) OR user_has_permission(auth.uid(), workspace_id, 'techpeople.people.view.team'::text)))));
+CREATE POLICY "people_ws_update" ON public.people AS PERMISSIVE FOR UPDATE TO authenticated USING ((is_platform_admin(auth.uid()) OR ((workspace_id IN ( SELECT current_user_workspaces() AS current_user_workspaces)) AND (is_workspace_admin_v2(workspace_id, auth.uid()) OR user_has_permission(auth.uid(), workspace_id, 'techpeople.people.update.workspace'::text) OR ((manager_id = auth.uid()) AND user_has_permission(auth.uid(), workspace_id, 'techpeople.people.update.team'::text)))))) WITH CHECK ((is_platform_admin(auth.uid()) OR ((workspace_id IN ( SELECT current_user_workspaces() AS current_user_workspaces)) AND (is_workspace_admin_v2(workspace_id, auth.uid()) OR user_has_permission(auth.uid(), workspace_id, 'techpeople.people.update.workspace'::text) OR ((manager_id = auth.uid()) AND user_has_permission(auth.uid(), workspace_id, 'techpeople.people.update.team'::text))))));
+CREATE POLICY "view_as_ro_del" ON public.people AS RESTRICTIVE FOR DELETE TO authenticated USING ((NOT is_read_only_view()));
+CREATE POLICY "view_as_ro_ins" ON public.people AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK ((NOT is_read_only_view()));
+CREATE POLICY "view_as_ro_upd" ON public.people AS RESTRICTIVE FOR UPDATE TO authenticated USING ((NOT is_read_only_view()));
