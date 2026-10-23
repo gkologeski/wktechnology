@@ -489,7 +489,6 @@ function ContractTableRow({
               size="sm"
               ariaLabel={`Início da vigência do contrato ${c.title}`}
               className="h-8 w-36"
-              max={dateOnly(c.ends_at) || undefined}
               onChange={(v) => {
                 if (v === (dateOnly(c.starts_at) || null)) return;
                 void patch({ starts_at: v }, "Início da vigência");
@@ -502,7 +501,6 @@ function ContractTableRow({
               size="sm"
               ariaLabel={`Fim da vigência do contrato ${c.title}`}
               className="h-8 w-36"
-              min={dateOnly(c.starts_at) || undefined}
               onChange={(v) => {
                 if (v === (dateOnly(c.ends_at) || null)) return;
                 void patch({ ends_at: v }, "Fim da vigência");
