@@ -57,9 +57,11 @@ export const Route = createFileRoute("/_authenticated/people/analytics")({
   }),
 });
 
-const brl = (n: number) =>
-  n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
-const pct = (n: number) => `${n.toFixed(1)}%`;
+const brl = (n: number | null) =>
+  n == null
+    ? "—"
+    : n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+const pct = (n: number | null) => (n == null ? "—" : `${n.toFixed(1)}%`);
 const monthLabel = (m: string) => {
   const [y, mm] = m.split("-");
   const d = new Date(Number(y), Number(mm) - 1, 1);
@@ -242,7 +244,11 @@ function PeopleAnalyticsPage() {
               icon={<TrendingUp className="h-3.5 w-3.5" />}
               label="Margem"
               value={`${brl(data.allocations_margin)} · ${pct(data.allocations_margin_pct)}`}
-              tone={data.allocations_margin >= 0 ? "success" : "danger"}
+              tone={
+                data.allocations_margin != null && data.allocations_margin >= 0
+                  ? "success"
+                  : "danger"
+              }
             />
           </div>
 

@@ -296,3 +296,51 @@ fases para não quebrar os SELECTs existentes), restante de TechHire e módulos,
 contratos de todas as URLs/ações, prevenção em CI e aceite de navegador. A ordem
 das frentes pode mudar para resolver bloqueios ou regressões encontradas nos
 testes, sem reduzir o objetivo de concluir as seis etapas.
+
+
+### Publicação 0195–0197 e próxima frente de dados privados
+
+O commit 01b9f30d3 foi integrado ao main e publicado. Ambos os domínios servem
+index-C7zHbZrV.js; entry, ficha de pessoa, módulo e guard HR conferidos byte a byte
+com o build testado. Verify (typecheck/lint/1588 testes) e build completos, com
+mesmo source_hash e source_changed=false. Aceite de navegador continua pendente:
+usuário informou Docker Desktop fechado ou sem iniciar.
+
+0198/0199 estão em validação técnica, ainda não aplicados neste registro.
+0198 prepara a RPC hr_private_fields e 18 chaves independentes de view/update
+own/team/workspace para people_sensitive, one_on_ones_private e
+allocations_financial. Somente o Head RH da WK recebe overrides conforme
+solicitação prévia; defaults, outros cargos/workspaces e denies preservados.
+
+Novos leitores projetam somente colunas públicas e compõem dados privados via
+RPC limitada a 200 IDs. Novos gravadores preservam campos omitidos e valores
+ocultos em branco, rejeitando mudanças privadas sem autorização. UI diferencia
+leitura e edição privada. Relatórios não tratam custo oculto como zero.
+Importação em lote exige todas as operações envolvidas e utiliza o cliente do
+usuário para dados; storage elevado recebe checagem do documento/pessoa antes.
+Folha exige acesso a custos/benefícios e view/create/update de recorrências
+financeiras, sem estender permissões financeiras ao Head RH por consequência.
+
+A ativação 0199 é posterior à publicação dos consumidores de 0198. Ela habilita
+os gatilhos para INSERT/UPDATE com alteração privada, muda o wrapper legado
+can_view_person_sensitive para a nova chave e retira SELECT direto das colunas
+privadas e da view legada people_total_cost. Serviços internos sem JWT são uma
+exceção explícita. O catálogo e suas políticas globais de hidden/masked/readonly
+continuam sendo outra frente; este lote não representa a conclusão da regra 5.
+
+
+0198 aplicada (hash d5c9acd07e9b5168d4f1033749b2e8228f7bbdf635071ffd88066aaa87c3519b;
+journal when 1792795456235, id 202). As duas primeiras tentativas foram
+rejeitadas e revertidas: terminador da definição legada copiada e INSERT SELECT
+text para enums perm_action/perm_scope. O teste foi ajustado para composição de
+múltiplas instruções e tipos exatos do catálogo ativo. Nenhuma alteração parcial
+persistiu. Depois da correção, verify 1597 testes e build completos no mesmo
+fingerprint, sem alteração de fontes durante os gates.
+
+A simulação SQL de identidade da Priscila retornou view/update privados para
+as 186 pessoas visíveis. Isso confirma o cálculo de capacidades, não é uma
+operação de edição nem aceite de navegador. Contagens e fingerprints de dados,
+defaults, memberships, outros overrides e denies preservados; somente catálogo
+e Head RH da WK receberam as 18 chaves planejadas (1703→1721 e 546→564).
+Consumidores ainda precisam publicar; ativação 0199 continua bloqueada até a
+verificação da publicação, conforme a ordem técnica deste rollout.

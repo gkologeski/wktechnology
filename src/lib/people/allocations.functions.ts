@@ -1,3 +1,5 @@
+import { PEOPLE_ALLOCATIONS_PUBLIC_COLUMNS } from "@/lib/access-control/hr-private-columns";
+import { mergeHrPrivate, protectHrPrivatePayload } from "@/lib/access-control/hr-private.server";
 import {
   assertHrChildMutation,
   assertHrRecordAccess,
@@ -31,6 +33,8 @@ export type AllocationRow = {
   manager_id: string | null;
   role_title: string | null;
   allocation_pct: number;
+  can_view_financials?: boolean;
+  can_update_financials?: boolean;
   billable_rate: number | null;
   cost_rate: number | null;
   currency: string;
@@ -205,12 +209,17 @@ export const listAllocationsByPerson = createServerFn({ method: "POST" })
     const { data: rows, error } = await context.supabase
       .from("people_allocations")
       .select(
-        "*, contract:contracts!people_allocations_contract_id_fkey(id,title,number), purchase_contract:contracts!people_allocations_purchase_contract_id_fkey(id,title,number), projects(id,name), manager:people!people_allocations_manager_id_fkey(id,full_name)",
+        `${PEOPLE_ALLOCATIONS_PUBLIC_COLUMNS}, contract:contracts!people_allocations_contract_id_fkey(id,title,number), purchase_contract:contracts!people_allocations_purchase_contract_id_fkey(id,title,number), projects(id,name), manager:people!people_allocations_manager_id_fkey(id,full_name)`,
       )
       .eq("person_id", data.person_id)
       .order("starts_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return (rows ?? []).map((r) => {
+    const safeRows = await mergeHrPrivate(
+      context.supabase,
+      "allocations_financial",
+      (rows ?? []) as unknown as Array<{ id: string }>,
+    );
+    return safeRows.map((r) => {
       const row = r as unknown as AllocationRow & {
         contract?: { title: string | null; number: string | null } | null;
         purchase_contract?: { title: string | null; number: string | null } | null;
@@ -219,6 +228,8 @@ export const listAllocationsByPerson = createServerFn({ method: "POST" })
       };
       return {
         ...row,
+        can_view_financials: r.can_view_private,
+        can_update_financials: r.can_update_private,
         contract_title: row.contract?.title ?? null,
         contract_number: row.contract?.number ?? null,
         purchase_contract_title: row.purchase_contract?.title ?? null,
@@ -266,18 +277,25 @@ export const listAllocationsByContract = createServerFn({ method: "POST" })
     const { data: rows, error } = await context.supabase
       .from("people_allocations")
       .select(
-        "*, person:people!people_allocations_person_id_fkey(id,full_name), manager:people!people_allocations_manager_id_fkey(id,full_name)",
+        `${PEOPLE_ALLOCATIONS_PUBLIC_COLUMNS}, person:people!people_allocations_person_id_fkey(id,full_name), manager:people!people_allocations_manager_id_fkey(id,full_name)`,
       )
       .eq("contract_id", data.contract_id)
       .order("starts_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return (rows ?? []).map((r) => {
+    const safeRows = await mergeHrPrivate(
+      context.supabase,
+      "allocations_financial",
+      (rows ?? []) as unknown as Array<{ id: string }>,
+    );
+    return safeRows.map((r) => {
       const row = r as unknown as AllocationRow & {
         person?: { full_name: string | null } | null;
         manager?: { full_name: string | null } | null;
       };
       return {
         ...row,
+        can_view_financials: r.can_view_private,
+        can_update_financials: r.can_update_private,
         person_name: row.person?.full_name ?? null,
         manager_name: row.manager?.full_name ?? null,
       } as AllocationRow;
@@ -342,8 +360,8 @@ export const upsertAllocation = createServerFn({ method: "POST" })
       manager_id: data.manager_id ?? null,
       role_title: data.role_title ?? null,
       allocation_pct: data.allocation_pct,
-      billable_rate: data.billable_rate ?? null,
-      cost_rate: data.cost_rate ?? null,
+      ...(data.billable_rate !== undefined ? { billable_rate: data.billable_rate } : {}),
+      ...(data.cost_rate !== undefined ? { cost_rate: data.cost_rate } : {}),
       currency: data.currency,
       starts_at: data.starts_at,
       ends_at: data.ends_at || null,
@@ -355,6 +373,14 @@ export const upsertAllocation = createServerFn({ method: "POST" })
       can_track_time: data.can_track_time,
       overbook_justification: data.overbook_justification || null,
     };
+    await protectHrPrivatePayload(
+      supabase,
+      "allocations_financial",
+      data.id,
+      data.person_id,
+      payload,
+      ["billable_rate", "cost_rate"],
+    );
     // Preenche o cadastro da pessoa só quando os campos estão vazios —
     // nunca sobrescreve informação já cadastrada pelo RH.
     async function syncPerson() {

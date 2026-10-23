@@ -116,7 +116,8 @@ function computePreset(key: PresetKey): { start: string; end: string } | null {
 
 // ============ helpers ============
 
-const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const brl = (v: number | null) =>
+  v == null ? "—" : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const pct = (v: number) => `${(v * 100).toFixed(0)}%`;
 
 function toCsv(rows: TimesheetEntry[]): string {
@@ -452,7 +453,7 @@ export function TimesheetPanel({ personId }: { personId: string }) {
           icon={<TrendingUp className="h-4 w-4" />}
           label="Margem"
           value={brl(totals.margin)}
-          tone={totals.margin >= 0 ? "positive" : "negative"}
+          tone={totals.margin != null && totals.margin >= 0 ? "positive" : "negative"}
         />
       </div>
 
@@ -497,7 +498,7 @@ export function TimesheetPanel({ personId }: { personId: string }) {
                     <TableCell className="text-right">{brl(a.revenue)}</TableCell>
                     <TableCell
                       className={`text-right font-medium ${
-                        a.margin >= 0
+                        a.margin != null && a.margin >= 0
                           ? "text-emerald-600 dark:text-emerald-500"
                           : "text-destructive"
                       }`}

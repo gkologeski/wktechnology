@@ -1387,6 +1387,13 @@
       "when": 1792793911247,
       "tag": "0197_hr_capabilities_batch_context",
       "breakpoints": true
+    },
+    {
+      "idx": 198,
+      "version": "7",
+      "when": 1792795456235,
+      "tag": "0198_hr_private_fields",
+      "breakpoints": true
     }
   ]
 }

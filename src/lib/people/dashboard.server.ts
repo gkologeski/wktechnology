@@ -1,3 +1,4 @@
+import { mergeHrPrivate } from "@/lib/access-control/hr-private.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { hasPermission } from "@/lib/access-control/enforce.server";
 import type { PeopleDashboardData } from "./dashboard.types";
@@ -7,11 +8,11 @@ export async function loadPeopleDashboard(
   userId: string,
   workspaceId: string,
 ): Promise<PeopleDashboardData> {
-  const canViewFinancials = await hasPermission(
+  const hasFinancialGrant = await hasPermission(
     supabase,
     userId,
     workspaceId,
-    "techpeople.allocations.view.workspace",
+    "techpeople.allocations_financial.view.workspace",
   );
   const [peopleResult, documentsResult, plansResult, allocationsResult] = await Promise.all([
     supabase.from("people").select("status, employment_type, archived").eq("archived", false),
@@ -20,11 +21,8 @@ export async function loadPeopleDashboard(
       .from("people_onboarding_plans")
       .select("kind, status, target_completion_date")
       .limit(2000),
-    canViewFinancials
-      ? supabase
-          .from("people_allocations")
-          .select("status, allocation_pct, billable_rate, cost_rate")
-          .limit(2000)
+    hasFinancialGrant
+      ? supabase.from("people_allocations").select("id, status, allocation_pct").limit(2000)
       : Promise.resolve({ data: [], error: null }),
   ]);
   const firstError =
@@ -35,7 +33,12 @@ export async function loadPeopleDashboard(
   const people = (peopleResult.data ?? []).filter((row) => row.status !== "terminated");
   const documents = documentsResult.data ?? [];
   const plans = plansResult.data ?? [];
-  const allocations = (allocationsResult.data ?? []).filter((row) => row.status === "active");
+  const allocations = await mergeHrPrivate(
+    supabase,
+    "allocations_financial",
+    (allocationsResult.data ?? []).filter((row) => row.status === "active"),
+  );
+  const canViewFinancials = hasFinancialGrant && allocations.every((a) => a.can_view_private);
   const employmentMap = new Map<string, number>();
   for (const row of people) {
     employmentMap.set(row.employment_type, (employmentMap.get(row.employment_type) ?? 0) + 1);

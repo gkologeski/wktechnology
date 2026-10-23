@@ -1,8 +1,10 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { mergeHrPrivate } from "@/lib/access-control/hr-private.server";
 import {
   assertHrChildMutation,
   assertHrRecordAccess,
 } from "@/lib/access-control/hr-records.server";
-import { getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
+import { getActiveWorkspaceId, hasPermission } from "@/lib/access-control/enforce.server";
 // Sprint 10 — Benefícios, Folha e Custos
 // Server functions para gerenciar benefícios (people_benefits) e consulta de custo total.
 import { createServerFn } from "@tanstack/react-start";
@@ -63,8 +65,8 @@ export type PeopleTotalCostRow = {
   employment_type: string;
   status: string;
   monthly_cost: number | null;
-  benefits_total: number;
-  total_cost_monthly: number;
+  benefits_total: number | null;
+  total_cost_monthly: number | null;
 };
 
 const BENEFIT_COLS =
@@ -192,13 +194,8 @@ export const getPersonTotalCost = createServerFn({ method: "GET" })
     z.object({ personId: z.string().uuid() }).parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { data: row, error } = await context.supabase
-      .from("people_total_cost")
-      .select("*")
-      .eq("person_id", data.personId)
-      .maybeSingle();
-    if (error) throw error;
-    return (row ?? null) as PeopleTotalCostRow | null;
+    const rows = await loadVisibleTotalCosts(context.supabase, context.userId, data.personId);
+    return rows[0] ?? null;
   });
 
 // ============================================================
@@ -207,10 +204,63 @@ export const getPersonTotalCost = createServerFn({ method: "GET" })
 export const listWorkspaceTotalCost = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
-      .from("people_total_cost")
-      .select("*")
-      .order("total_cost_monthly", { ascending: false });
-    if (error) throw error;
-    return (data ?? []) as PeopleTotalCostRow[];
+    return (await loadVisibleTotalCosts(context.supabase, context.userId)).sort(
+      (a, b) => (b.total_cost_monthly ?? 0) - (a.total_cost_monthly ?? 0),
+    );
   });
+
+/** Salary is independent of benefit access. Never return a hidden salary as zero. */
+async function loadVisibleTotalCosts(
+  client: SupabaseClient,
+  userId: string,
+  personId?: string,
+): Promise<PeopleTotalCostRow[]> {
+  const workspaceId = await getActiveWorkspaceId(client, userId);
+  const completeBenefits = await hasPermission(
+    client,
+    userId,
+    workspaceId,
+    "techpeople.benefits.view.workspace",
+  );
+  let query = client.from("people").select("id,owner_id,full_name,employment_type,status");
+  if (personId) query = query.eq("id", personId);
+  const { data, error } = await query;
+  if (error) throw error;
+  const people = await mergeHrPrivate(client, "people_sensitive", data ?? []);
+  const visible = people.filter((p) => p.can_view_private);
+  const result: PeopleTotalCostRow[] = [];
+  for (let offset = 0; offset < visible.length; offset += 200) {
+    const chunk = visible.slice(offset, offset + 200);
+    const { data: benefits, error: benefitError } = await client
+      .from("people_benefits")
+      .select("person_id,monthly_value,active,starts_on,ends_on")
+      .in(
+        "person_id",
+        chunk.map((p) => p.id),
+      );
+    if (benefitError) throw benefitError;
+    const today = new Date().toISOString().slice(0, 10);
+    for (const p of chunk) {
+      const total = (benefits ?? [])
+        .filter(
+          (b) =>
+            b.person_id === p.id &&
+            b.active &&
+            (!b.starts_on || b.starts_on <= today) &&
+            (!b.ends_on || b.ends_on >= today),
+        )
+        .reduce((sum, b) => sum + Number(b.monthly_value ?? 0), 0);
+      result.push({
+        person_id: p.id,
+        owner_id: p.owner_id,
+        full_name: p.full_name,
+        employment_type: p.employment_type,
+        status: p.status,
+        monthly_cost: p.monthly_cost == null ? null : Number(p.monthly_cost),
+        benefits_total: completeBenefits ? total : null,
+        total_cost_monthly: completeBenefits ? Number(p.monthly_cost ?? 0) + total : null,
+      });
+    }
+  }
+  return result;
+}

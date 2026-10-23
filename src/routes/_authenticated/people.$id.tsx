@@ -198,6 +198,7 @@ function PersonForm({
   const access = useHrCapabilities("people", [p.id]);
   const canWrite = access.for(p.id).can_update;
   const canViewSensitive = !!person.can_view_sensitive;
+  const canWriteSensitive = canWrite && person.can_update_sensitive === true;
 
   const [fullName, setFullName] = useState(p.full_name);
   const [preferredName, setPreferredName] = useState(p.preferred_name ?? "");
@@ -247,7 +248,7 @@ function PersonForm({
           status,
           employment_type: employment,
           notes: notes || null,
-          cost_hour: costHour ? Number(costHour) : null,
+          ...(canWriteSensitive ? { cost_hour: costHour ? Number(costHour) : null } : {}),
           currency: "BRL",
           tags: p.tags ?? [],
           education: education || null,
@@ -256,11 +257,11 @@ function PersonForm({
           emergency_relationship: emergencyRelationship || null,
           marital_status: maritalStatus || null,
           spouse_name: spouseName || null,
-          bank: bank || null,
-          bank_agency: bankAgency || null,
-          bank_account: bankAccount || null,
-          pix_key: pixKey || null,
-          address: address || null,
+          ...(canWriteSensitive ? { bank: bank || null } : {}),
+          ...(canWriteSensitive ? { bank_agency: bankAgency || null } : {}),
+          ...(canWriteSensitive ? { bank_account: bankAccount || null } : {}),
+          ...(canWriteSensitive ? { pix_key: pixKey || null } : {}),
+          ...(canWriteSensitive ? { address: address || null } : {}),
           cnpj: cnpj || null,
           legal_entity_name: legalEntityName || null,
           trade_name: tradeName || null,
@@ -586,7 +587,7 @@ function PersonForm({
                     step="0.01"
                     min="0"
                     value={costHour}
-                    disabled={!canWrite}
+                    disabled={!canWriteSensitive}
                     onChange={(e) => setCostHour(e.target.value)}
                   />
                 </div>
@@ -594,7 +595,7 @@ function PersonForm({
                   <Label>Banco</Label>
                   <Input
                     value={bank}
-                    disabled={!canWrite}
+                    disabled={!canWriteSensitive}
                     onChange={(e) => setBank(e.target.value)}
                   />
                 </div>
@@ -602,7 +603,7 @@ function PersonForm({
                   <Label>Agência</Label>
                   <Input
                     value={bankAgency}
-                    disabled={!canWrite}
+                    disabled={!canWriteSensitive}
                     onChange={(e) => setBankAgency(e.target.value)}
                   />
                 </div>
@@ -610,7 +611,7 @@ function PersonForm({
                   <Label>Conta</Label>
                   <Input
                     value={bankAccount}
-                    disabled={!canWrite}
+                    disabled={!canWriteSensitive}
                     onChange={(e) => setBankAccount(e.target.value)}
                   />
                 </div>
@@ -618,7 +619,7 @@ function PersonForm({
                   <Label>PIX</Label>
                   <Input
                     value={pixKey}
-                    disabled={!canWrite}
+                    disabled={!canWriteSensitive}
                     onChange={(e) => setPixKey(e.target.value)}
                   />
                 </div>
@@ -626,7 +627,7 @@ function PersonForm({
                   <Label>Endereço</Label>
                   <Input
                     value={address}
-                    disabled={!canWrite}
+                    disabled={!canWriteSensitive}
                     onChange={(e) => setAddress(e.target.value)}
                   />
                 </div>

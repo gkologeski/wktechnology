@@ -1,3 +1,5 @@
+import { mergeHrPrivate } from "@/lib/access-control/hr-private.server";
+import { assertHrRecordAccess } from "@/lib/access-control/hr-records.server";
 // Importação em lote de prestadores a partir da planilha pública de respostas
 // de um Google Form (formulário de cadastro de prestadores de serviços).
 //
@@ -473,10 +475,19 @@ export const importPeopleFromPublicSheet = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<ImportBatchResult> => {
     const { supabase, userId } = context;
     const workspaceId = await getActiveWorkspaceId(supabase, userId);
-    await assertAnyPermission(supabase, userId, workspaceId, [
-      "techpeople.people.create.own",
+    // This workspace-wide batch performs both create and update and handles
+    // private documents. All participating actions are required before fetching.
+    for (const key of [
+      "techpeople.people.view.workspace",
+      "techpeople.people.create.workspace",
       "techpeople.people.update.workspace",
-    ]);
+      "techpeople.people_sensitive.view.workspace",
+      "techpeople.people_sensitive.update.workspace",
+      "techpeople.documents.view.workspace",
+      "techpeople.documents.create.workspace",
+    ]) {
+      await assertAnyPermission(supabase, userId, workspaceId, [key]);
+    }
 
     const rows = await fetchCsv(data.sheet_url, await workspacePhoneCountry(supabase, workspaceId));
 
@@ -520,13 +531,23 @@ export const importPeopleFromPublicSheet = createServerFn({ method: "POST" })
 
     // Busca existentes (procura tanto por dígitos quanto por formato "###.###.###-##")
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: existingRows } = await supabaseAdmin
+    const { data: existingPublicRows, error: existingError } = await supabase
       .from("people")
       .select(
-        "id, owner_id, full_name, email, phone, cnpj, legal_entity_name, personal_doc, notes, preferred_name, location",
+        "id, owner_id, full_name, email, phone, cnpj, legal_entity_name, notes, preferred_name, location",
       )
-      .eq("owner_id", ownerId)
+      .eq("workspace_id", workspaceId)
       .in("cnpj", [...cpfList, ...cpfFormattedList, ...cpfList.map(formatCPF)]);
+    if (existingError) throw existingError;
+    const existingRows = await mergeHrPrivate(
+      supabase,
+      "people_sensitive",
+      existingPublicRows ?? [],
+    );
+    if (existingRows.some((r) => !r.can_view_private || !r.can_update_private))
+      throw new Error(
+        "Sem permissão para importar dados privados de todas as pessoas selecionadas.",
+      );
     const byCpf = new Map<
       string,
       {
@@ -643,11 +664,15 @@ export const importPeopleFromPublicSheet = createServerFn({ method: "POST" })
           if (docChanged) patch.personal_doc = mergedDoc;
 
           if (Object.keys(patch).length > 0) {
-            const { error } = await supabaseAdmin
+            const { data: saved, error } = await supabase
               .from("people")
               .update(patch as never)
-              .eq("id", existing.id);
+              .eq("workspace_id", workspaceId)
+              .eq("id", existing.id)
+              .select("id")
+              .maybeSingle();
             if (error) throw new Error(error.message);
+            if (!saved) throw new Error("Pessoa indisponível ou sem permissão para editar.");
             updatedFields++;
           } else {
             unchanged++;
@@ -658,6 +683,7 @@ export const importPeopleFromPublicSheet = createServerFn({ method: "POST" })
             workspace_id: ownerId,
             owner_id: ownerId,
             created_by: userId,
+            assigned_to: userId,
             full_name: row.full_name,
             preferred_name: row.preferred_name,
             email: emailPick,
@@ -672,7 +698,7 @@ export const importPeopleFromPublicSheet = createServerFn({ method: "POST" })
             notes: importedNotes,
             personal_doc: personalDoc as never,
           };
-          const { data: inserted, error } = await supabaseAdmin
+          const { data: inserted, error } = await supabase
             .from("people")
             .insert(insertPayload as never)
             .select("id")
@@ -685,7 +711,7 @@ export const importPeopleFromPublicSheet = createServerFn({ method: "POST" })
         // ---- Anexos ----
         if (row.attachments.length > 0) {
           // Evita reupload: busca file_url já cadastrados para essa pessoa.
-          const { data: existingDocs } = await supabaseAdmin
+          const { data: existingDocs } = await supabase
             .from("people_documents")
             .select("file_url")
             .eq("person_id", personId);
@@ -710,6 +736,7 @@ export const importPeopleFromPublicSheet = createServerFn({ method: "POST" })
                 continue;
               }
               const path = `${key}.${dl.ext}`;
+              await assertHrRecordAccess(supabase, "person_documents", "create", personId);
               const { error: upErr } = await supabaseAdmin.storage
                 .from("people-documents")
                 .upload(path, dl.bytes, {
@@ -724,7 +751,9 @@ export const importPeopleFromPublicSheet = createServerFn({ method: "POST" })
                 dl.original_name && dl.original_name.trim().length > 0
                   ? dl.original_name
                   : `${att.label}.${dl.ext}`;
-              const { error: docErr } = await supabaseAdmin.from("people_documents").insert({
+              const { error: docErr } = await supabase.from("people_documents").insert({
+                workspace_id: workspaceId,
+                assigned_to: userId,
                 owner_id: ownerId,
                 created_by: userId,
                 person_id: personId,
@@ -796,14 +825,17 @@ export const reimportBrokenAttachments = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<ReimportResult> => {
     const { supabase, userId } = context;
     const workspaceId = await getActiveWorkspaceId(supabase, userId);
-    await assertAnyPermission(supabase, userId, workspaceId, [
-      "techpeople.people.update.workspace",
-    ]);
+    for (const key of [
+      "techpeople.documents.view.workspace",
+      "techpeople.documents.update.workspace",
+    ]) {
+      await assertAnyPermission(supabase, userId, workspaceId, [key]);
+    }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // Encontra documentos com extensão .bin ou nome terminando em .bin.
-    const { data: all, error } = await supabaseAdmin
+    const { data: all, error } = await supabase
       .from("people_documents")
       .select("id, owner_id, person_id, doc_type, file_url, file_name, notes")
       .eq("workspace_id", workspaceId)
@@ -855,6 +887,7 @@ export const reimportBrokenAttachments = createServerFn({ method: "POST" })
           continue;
         }
         const newPath = `${row.owner_id}/${row.person_id}/forms-import/${driveId}.${dl.ext}`;
+        await assertHrRecordAccess(supabase, "documents", "update", row.id);
         const { error: upErr } = await supabaseAdmin.storage
           .from("people-documents")
           .upload(newPath, dl.bytes, { contentType: dl.mime, upsert: true });
@@ -863,22 +896,35 @@ export const reimportBrokenAttachments = createServerFn({ method: "POST" })
           failures.push({ id: row.id, person_id: row.person_id, reason: upErr.message });
           continue;
         }
-        // Remove o arquivo antigo .bin se path era diferente.
-        if (row.file_url && row.file_url !== newPath) {
-          await supabaseAdmin.storage.from("people-documents").remove([row.file_url]);
-        }
         const displayName =
           dl.original_name && dl.original_name.trim().length > 0
             ? dl.original_name
             : `${row.doc_type}.${dl.ext}`;
-        const { error: updErr } = await supabaseAdmin
+        const { data: savedDocument, error: updErr } = await supabase
           .from("people_documents")
           .update({ file_url: newPath, file_name: displayName } as never)
-          .eq("id", row.id);
-        if (updErr) {
+          .eq("workspace_id", workspaceId)
+          .eq("id", row.id)
+          .select("id")
+          .maybeSingle();
+        if (updErr || !savedDocument) {
           stillFailed++;
-          failures.push({ id: row.id, person_id: row.person_id, reason: updErr.message });
+          failures.push({
+            id: row.id,
+            person_id: row.person_id,
+            reason: updErr?.message ?? "Documento indisponível ou sem permissão para editar.",
+          });
           continue;
+        }
+        // Only remove a replaced file after the database saved its successor,
+        // and only within this document's verified person directory.
+        if (
+          row.file_url &&
+          row.file_url !== newPath &&
+          !row.file_url.includes("..") &&
+          row.file_url.startsWith(`${row.owner_id}/${row.person_id}/`)
+        ) {
+          await supabaseAdmin.storage.from("people-documents").remove([row.file_url]);
         }
         fixed++;
       } catch (e) {

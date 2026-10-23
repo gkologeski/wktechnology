@@ -44,11 +44,13 @@ import {
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
 const brl = (n: number | null | undefined) =>
-  (n ?? 0).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    maximumFractionDigits: 2,
-  });
+  n == null
+    ? "—"
+    : n.toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL",
+        maximumFractionDigits: 2,
+      });
 
 export function BenefitsPanel(props: { personId: string; canWrite?: boolean }) {
   return (

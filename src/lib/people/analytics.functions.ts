@@ -1,3 +1,4 @@
+import { mergeHrPrivate } from "@/lib/access-control/hr-private.server";
 // TechPeople · Sprint 11 — Analytics
 // Server functions para dashboard de headcount, turnover, custo e margem.
 import { createServerFn } from "@tanstack/react-start";
@@ -10,14 +11,14 @@ export type PeopleAnalyticsRow = {
   hires_last_12m: { month: string; count: number }[];
   terminations_last_12m: { month: string; count: number }[];
   turnover_rate_12m: number; // % anualizado sobre headcount médio
-  monthly_cost_total: number;
+  monthly_cost_total: number | null;
   benefits_total: number;
-  total_cost_monthly: number;
+  total_cost_monthly: number | null;
   allocations_active: number;
-  allocations_billable_revenue: number;
-  allocations_cost: number;
-  allocations_margin: number;
-  allocations_margin_pct: number;
+  allocations_billable_revenue: number | null;
+  allocations_cost: number | null;
+  allocations_margin: number | null;
+  allocations_margin_pct: number | null;
 };
 
 type PersonMini = {
@@ -38,6 +39,7 @@ type BenefitMini = {
 };
 
 type AllocMini = {
+  id: string;
   status: string;
   allocation_pct: number;
   billable_rate: number | null;
@@ -71,23 +73,30 @@ export const getPeopleAnalytics = createServerFn({ method: "POST" })
         };
       }
     )
-      .select("id, status, employment_type, hire_date, termination_date, monthly_cost, archived")
+      .select("id, status, employment_type, hire_date, termination_date, archived")
       .eq("archived", false);
-    const people: PersonMini[] = peopleRes.data ?? [];
+    if (peopleRes.error) throw peopleRes.error;
+    const people = await mergeHrPrivate(supabase, "people_sensitive", peopleRes.data ?? []);
 
     const benRes = await (
       supabase.from("people_benefits") as unknown as {
         select: (c: string) => Promise<{ data: BenefitMini[] | null; error: unknown }>;
       }
     ).select("monthly_value, active, starts_on, ends_on");
+    if (benRes.error) throw benRes.error;
     const benefits: BenefitMini[] = benRes.data ?? [];
 
     const allocRes = await (
       supabase.from("people_allocations") as unknown as {
         select: (c: string) => Promise<{ data: AllocMini[] | null; error: unknown }>;
       }
-    ).select("status, allocation_pct, billable_rate, cost_rate");
-    const allocations: AllocMini[] = allocRes.data ?? [];
+    ).select("id, status, allocation_pct");
+    if (allocRes.error) throw allocRes.error;
+    const allocations = await mergeHrPrivate(
+      supabase,
+      "allocations_financial",
+      allocRes.data ?? [],
+    );
 
     // Headcount ativo = status != terminated
     const activePeople = people.filter((p) => p.status !== "terminated");
@@ -156,13 +165,13 @@ export const getPeopleAnalytics = createServerFn({ method: "POST" })
       hires_last_12m,
       terminations_last_12m,
       turnover_rate_12m,
-      monthly_cost_total,
+      monthly_cost_total: activePeople.every((p) => p.can_view_private) ? monthly_cost_total : null,
       benefits_total,
-      total_cost_monthly,
+      total_cost_monthly: activePeople.every((p) => p.can_view_private) ? total_cost_monthly : null,
       allocations_active: activeAllocs.length,
-      allocations_billable_revenue: revenue,
-      allocations_cost: cost,
-      allocations_margin: margin,
-      allocations_margin_pct: marginPct,
+      allocations_billable_revenue: activeAllocs.every((a) => a.can_view_private) ? revenue : null,
+      allocations_cost: activeAllocs.every((a) => a.can_view_private) ? cost : null,
+      allocations_margin: activeAllocs.every((a) => a.can_view_private) ? margin : null,
+      allocations_margin_pct: activeAllocs.every((a) => a.can_view_private) ? marginPct : null,
     };
   });

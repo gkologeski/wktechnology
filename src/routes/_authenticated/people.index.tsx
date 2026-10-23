@@ -1,3 +1,4 @@
+import { useHrPrivateAccess } from "@/lib/access-control/use-hr-private-access";
 import { useHrCapabilities } from "@/lib/access-control/use-hr-capabilities";
 import { HrScreenAccess, HrAccessError } from "@/components/hr-access";
 // /people — lista de pessoas (TechPeople).
@@ -537,6 +538,8 @@ function NewPersonDialog({
   onSaved: () => void;
   upsert: ReturnType<typeof useServerFn<typeof upsertPerson>>;
 }) {
+  const { workspaceId: draftWorkspaceId } = usePermissions();
+  const privateAccess = useHrPrivateAccess("people_sensitive", draftWorkspaceId, true);
   const [fullName, setFullName] = useState("");
   const [preferredName, setPreferredName] = useState("");
   const [email, setEmail] = useState("");
@@ -594,8 +597,12 @@ function NewPersonDialog({
           status,
           legal_entity_name: legalEntity.trim() || null,
           cnpj: cnpj.trim() || null,
-          cost_hour: costHour ? Number(costHour) : null,
-          monthly_cost: monthlyCost ? Number(monthlyCost) : null,
+          ...(privateAccess.canUpdate
+            ? {
+                cost_hour: costHour ? Number(costHour) : null,
+                monthly_cost: monthlyCost ? Number(monthlyCost) : null,
+              }
+            : {}),
           currency: currency.trim() || "BRL",
           tags: tags
             .split(",")
@@ -770,28 +777,32 @@ function NewPersonDialog({
               Financeiro
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="p-cost-hour">Custo/hora</Label>
-                <Input
-                  id="p-cost-hour"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={costHour}
-                  onChange={(e) => setCostHour(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="p-monthly">Custo mensal</Label>
-                <Input
-                  id="p-monthly"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={monthlyCost}
-                  onChange={(e) => setMonthlyCost(e.target.value)}
-                />
-              </div>
+              {privateAccess.canUpdate && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="p-cost-hour">Custo/hora</Label>
+                    <Input
+                      id="p-cost-hour"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={costHour}
+                      onChange={(e) => setCostHour(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="p-monthly">Custo mensal</Label>
+                    <Input
+                      id="p-monthly"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={monthlyCost}
+                      onChange={(e) => setMonthlyCost(e.target.value)}
+                    />
+                  </div>
+                </>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="p-cur">Moeda</Label>
                 <Input

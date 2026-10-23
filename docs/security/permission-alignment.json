@@ -720,10 +720,10 @@
       "permission_keys": [],
       "scope": "at most 200 UUIDs per request; no caller/workspace override; unreadable or missing rows return false",
       "server": "getHrCapabilities + requireSupabaseAuth + strict resource/UUID limits",
-      "database": "SECURITY INVOKER; delegates to 0193 hr_record_access; task settings require parent update",
+      "database": "0197 SECURITY DEFINER metadata-only, selected-workspace/active-member/actual-row checks; effective keys once for workspace-wide scope, canonical fallback for mixed/own/team; 219 differential cases",
       "exception_reason": "Only caller-bound booleans, no business row contents or grants; every underlying action remains checked independently by server and RLS.",
-      "migration": "0194",
-      "state": "applied_tested_ui_pending_publication"
+      "migration": "0194 + 0195 + 0197",
+      "state": "aplicado_testado_publicado_aceite_browser_pendente"
     },
     {
       "operation": "HR child resources action/scope + document file signing",
@@ -746,7 +746,31 @@
       "database": "0195 replaces permissive legacy bypasses and audited restrictive role gates; View As and unrelated restrictive fences retained; immutable parent/tenant/authorship; allocation splits bind company+allocation+workspace; 0196 normalizes workspace-as-assignee on INSERT after the legacy shared trigger; 0197 caches effective keys for broad workspace capabilities, with canonical fallback for mixed/own/team grants",
       "exception_reason": "Internal event writers remain trusted trigger/service paths; no authenticated event mutation. Head RH current full TechPeople authorization extended only via WK overrides, preserving existing denies/defaults/other roles.",
       "migration": "0195 + 0196 + 0197",
-      "state": "aplicado_testado_sql_publicacao_pendente"
+      "state": "aplicado_testado_sql_publicado_aceite_browser_pendente"
+    },
+    {
+      "operation": "HR private field read/write and dependent import/payroll/report consumers",
+      "kind": "business_action",
+      "route_consumers": [
+        "/people",
+        "/people/$id",
+        "/people/analytics",
+        "HR import/payroll/reports"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techpeople.people_sensitive | techpeople.one_on_ones_private | techpeople.allocations_financial",
+      "action": "view/update plus underlying primary entity action",
+      "permission_keys": [
+        "techpeople.<private_resource>.<view|update>.<own|team|workspace>"
+      ],
+      "scope": "persisted primary person/child relationship; new child checks parent; new person binds active workspace and creator/assignee",
+      "server": "readHrPrivate; bounded hr_private_fields RPC; omit unauthorized blank values, reject nonblank writes, preserve omitted fields; imports use authenticated RLS, file storage requires record-specific authorization; payroll additionally requires financial recurrence view/create/update workspace",
+      "database": "0198 introduces whitelist RPC and catalog, with canonical and broad-workspace paths; 0199 activates dirty-column triggers, removes direct private SELECT and deprecated salary-view access after consumers deploy",
+      "migration": "0198 + 0199",
+      "state": "0198_applied_tested_0199_and_ui_publication_pending",
+      "exceptions": [
+        "trusted jobs without auth.uid retain service path; no new grants outside explicitly authorized WK Head RH; existing denies preserved"
+      ]
     }
   ],
   "rules": [
@@ -773,10 +797,11 @@
       "area": "Sistema",
       "problema": "Erro de módulo vira acesso irrestrito",
       "decisao_alvo": "Separar carregamento, erro, ausência de licença e acesso permitido.",
-      "status": "implementado_testado_publicacao_pendente",
+      "status": "aplicado_publicado_testado_sql_aceite_browser_pendente",
       "evidencia_migracao": null,
       "aceite_visual": false,
-      "observacao": "Module/license load failures and missing session/workspace deny; UI shows retry and does not mount outlet; active membership checked before privileged metadata."
+      "observacao": "Module/license load failures and missing session/workspace deny; UI shows retry and does not mount outlet; active membership checked before privileged metadata.",
+      "publicacao": "01b9f30d3; both domains serve index-C7zHbZrV.js and matching tested chunks (2026-10-23)"
     },
     {
       "id": 4,
@@ -947,9 +972,10 @@
       "area": "TechPeople",
       "problema": "Documentos/benefícios/alocações/eventos/incidentes admin/owner-only",
       "decisao_alvo": "Generalizar o contrato das correções locais por recurso/ação/escopo, sem ampliar carteiras inadvertidamente.",
-      "status": "aplicado_testado_sql_publicacao_pendente",
+      "status": "aplicado_publicado_testado_sql_aceite_browser_pendente",
       "evidencia_migracao": "0195 + 0196",
-      "aceite_visual": false
+      "aceite_visual": false,
+      "publicacao": "01b9f30d3; both domains serve index-C7zHbZrV.js and matching tested chunks (2026-10-23)"
     },
     {
       "id": 23,
@@ -966,8 +992,8 @@
       "area": "TechPeople",
       "problema": "Dados sensíveis dependem de outros recursos",
       "decisao_alvo": "Definir recursos de campos sensíveis e aplicar projeção independente de permissões de benefícios/bem-estar.",
-      "status": "pendente",
-      "evidencia_migracao": null,
+      "status": "preparacao_0198_aplicada_testada_consumidores_ativacao_pendentes",
+      "evidencia_migracao": "0198 preparation + frontend/server rollout; 0199 activation only after published assets match",
       "aceite_visual": false
     },
     {
@@ -975,9 +1001,10 @@
       "area": "TechPeople",
       "problema": "Gestão de pessoa depende de bem-estar",
       "decisao_alvo": "Autorizar metas/avaliações/1:1 e demais operações por recurso correto.",
-      "status": "aplicado_testado_sql_publicacao_pendente",
+      "status": "aplicado_publicado_testado_sql_aceite_browser_pendente",
       "evidencia_migracao": "0195 + 0196",
-      "aceite_visual": false
+      "aceite_visual": false,
+      "publicacao": "01b9f30d3; both domains serve index-C7zHbZrV.js and matching tested chunks (2026-10-23)"
     },
     {
       "id": 26,
@@ -1045,7 +1072,7 @@
     }
   ],
   "limitations": [
-    "Thirty-three operation contracts recorded; remaining actions require explicit validation.",
+    "36 operation contracts recorded; remaining actions require explicit validation.",
     "Route inventory is static evidence, not certification of enforcement.",
     "SQL tests are not browser/GoTrue/PostgREST acceptance.",
     "No new business role grants in 0191 or 0192; six new catalog keys in 0192.",

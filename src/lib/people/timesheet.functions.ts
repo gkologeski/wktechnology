@@ -1,3 +1,5 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { mergeHrPrivate, readHrPrivate } from "@/lib/access-control/hr-private.server";
 // Sprint Timesheet — TechPeople.
 // Integra apontamentos (`project_time_entries`) com a ficha da pessoa e com
 // alocações (`people_allocations`), consolidando horas, receita, custo, margem
@@ -34,9 +36,9 @@ export type TimesheetTotals = {
   billableHours: number;
   approvedHours: number;
   pendingHours: number;
-  revenue: number;
-  cost: number;
-  margin: number;
+  revenue: number | null;
+  cost: number | null;
+  margin: number | null;
   capacityHours: number;
   utilization: number; // 0..1
 };
@@ -68,13 +70,13 @@ async function resolvePerson(
       };
     };
   };
-  const { data } = await q
-    .select("profile_id, cost_hour, owner_id")
-    .eq("id", personId)
-    .maybeSingle();
+  const { data } = await q.select("profile_id, owner_id").eq("id", personId).maybeSingle();
+  const privateRow = (
+    await readHrPrivate(supabase as SupabaseClient, "people_sensitive", [personId])
+  ).get(personId);
   return {
     profile_id: data?.profile_id ?? null,
-    cost_hour: data?.cost_hour ?? null,
+    cost_hour: privateRow?.fields.cost_hour == null ? null : Number(privateRow.fields.cost_hour),
     workspace_id: data?.owner_id ?? null,
   };
 }
@@ -120,13 +122,18 @@ async function loadAllocationsFor(
   };
   const { data, error } = await q
     .select(
-      "id, project_id, contract_id, billable_rate, cost_rate, allocation_pct, starts_at, ends_at, status, role_title, contracts(title,number), projects(name)",
+      "id, project_id, contract_id, allocation_pct, starts_at, ends_at, status, role_title, contracts(title,number), projects(name)",
     )
     .eq("person_id", personId)
     .lte("starts_at", end)
     .or(`ends_at.is.null,ends_at.gte.${start}`);
   if (error) throw new Error(error.message);
-  return (data ?? []).map((r) => {
+  const safeRows = await mergeHrPrivate(
+    supabase as SupabaseClient,
+    "allocations_financial",
+    data ?? [],
+  );
+  return safeRows.map((r) => {
     const row = r as AllocationSlim & {
       contracts?: { title: string | null; number: string | null } | null;
       projects?: { name: string | null } | null;
@@ -294,9 +301,15 @@ export const listPersonTimesheet = createServerFn({ method: "POST" })
         billableHours: Number(billableHours.toFixed(2)),
         approvedHours: Number(approvedHours.toFixed(2)),
         pendingHours: Number(pendingHours.toFixed(2)),
-        revenue: Number(revenue.toFixed(2)),
-        cost: Number(cost.toFixed(2)),
-        margin: Number(margin.toFixed(2)),
+        revenue: results.every((e) => !e.billable || e.effective_rate != null)
+          ? Number(revenue.toFixed(2))
+          : null,
+        cost: results.every((e) => e.effective_cost_rate != null) ? Number(cost.toFixed(2)) : null,
+        margin: results.every(
+          (e) => e.effective_cost_rate != null && (!e.billable || e.effective_rate != null),
+        )
+          ? Number(margin.toFixed(2))
+          : null,
         capacityHours: Number(capacityHours.toFixed(2)),
         utilization: Number(utilization.toFixed(4)),
       },
@@ -321,9 +334,9 @@ export type AllocationInPeriod = {
   status: string;
   capacityHours: number;
   billableHours: number;
-  revenue: number;
-  cost: number;
-  margin: number;
+  revenue: number | null;
+  cost: number | null;
+  margin: number | null;
   utilization: number;
 };
 
@@ -402,8 +415,11 @@ export const listPersonAllocationsInPeriod = createServerFn({ method: "POST" })
         capacityHours: Number(capacityHours.toFixed(2)),
         billableHours: Number(stats.billable.toFixed(2)),
         revenue: Number(stats.revenue.toFixed(2)),
-        cost: Number(stats.cost.toFixed(2)),
-        margin: Number((stats.revenue - stats.cost).toFixed(2)),
+        cost: a.cost_rate != null || cost_hour != null ? Number(stats.cost.toFixed(2)) : null,
+        margin:
+          (a.cost_rate != null || cost_hour != null) && a.billable_rate != null
+            ? Number((stats.revenue - stats.cost).toFixed(2))
+            : null,
         utilization: capacityHours > 0 ? Number((stats.billable / capacityHours).toFixed(4)) : 0,
       };
     });

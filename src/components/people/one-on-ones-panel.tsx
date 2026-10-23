@@ -1,3 +1,4 @@
+import { useHrPrivateAccess } from "@/lib/access-control/use-hr-private-access";
 import { HrScreenAccess, HrAccessError } from "@/components/hr-access";
 import { usePersonResourceAccess } from "@/lib/access-control/use-person-resource-access";
 import { usePermissions } from "@/lib/access-control/use-permissions";
@@ -208,6 +209,7 @@ function OneOnOneDialog({
 }) {
   const qc = useQueryClient();
   const upsertFn = useServerFn(upsertOneOnOne);
+  const privateAccess = useHrPrivateAccess("one_on_ones_private", item?.id ?? personId, !item?.id);
   const [status, setStatus] = useState<OneOnOneStatus>(item?.status ?? "scheduled");
   const [scheduledAt, setScheduledAt] = useState(
     item?.scheduled_at ? item.scheduled_at.slice(0, 16) : "",
@@ -247,7 +249,7 @@ function OneOnOneDialog({
           mood: mood ? Number(mood) : null,
           agenda: agenda || null,
           notes: notes || null,
-          private_notes: privateNotes || null,
+          ...(privateAccess.canUpdate ? { private_notes: privateNotes || null } : {}),
           action_items: actionItems,
         },
       }),
@@ -316,14 +318,17 @@ function OneOnOneDialog({
             <Label>Notas (visível para a pessoa)</Label>
             <Textarea rows={4} value={notes ?? ""} onChange={(e) => setNotes(e.target.value)} />
           </div>
-          <div className="space-y-1 md:col-span-2">
-            <Label>Notas privadas (gestor/admin)</Label>
-            <Textarea
-              rows={3}
-              value={privateNotes ?? ""}
-              onChange={(e) => setPrivateNotes(e.target.value)}
-            />
-          </div>
+          {privateAccess.canView && (
+            <div className="space-y-1 md:col-span-2">
+              <Label>Notas privadas</Label>
+              <Textarea
+                rows={3}
+                disabled={!privateAccess.canUpdate}
+                value={privateNotes ?? ""}
+                onChange={(e) => setPrivateNotes(e.target.value)}
+              />
+            </div>
+          )}
           <div className="space-y-2 md:col-span-2">
             <Label>Itens de ação</Label>
             <div className="space-y-1">

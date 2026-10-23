@@ -1,3 +1,4 @@
+import { useHrPrivateAccess } from "@/lib/access-control/use-hr-private-access";
 import { HrScreenAccess, HrAccessError } from "@/components/hr-access";
 import { usePersonResourceAccess } from "@/lib/access-control/use-person-resource-access";
 import { usePermissions } from "@/lib/access-control/use-permissions";
@@ -88,7 +89,7 @@ type AllocationsPanelProps = {
   personDocs?: Array<string | null | undefined>;
   personCompanyNames?: Array<string | null | undefined>;
   canWrite?: boolean;
-  canViewSensitive: boolean;
+  canViewSensitive?: boolean;
 };
 export function AllocationsPanel(props: AllocationsPanelProps) {
   return (
@@ -102,7 +103,6 @@ function AllocationsPanelContent({
   personName,
   personDocs,
   personCompanyNames,
-  canViewSensitive,
 }: AllocationsPanelProps) {
   const { workspaceId } = usePermissions();
   const qc = useQueryClient();
@@ -172,7 +172,7 @@ function AllocationsPanelContent({
         ) : null}
       </div>
 
-      {canViewSensitive && rows.length > 0 ? (
+      {rows.length > 0 && rows.every((r) => r.can_view_financials) ? (
         <div className="grid grid-cols-3 gap-3">
           <MetricCard label="Receita mensal" value={brl(totals.revenue)} />
           <MetricCard label="Custo mensal" value={brl(totals.cost)} />
@@ -194,7 +194,7 @@ function AllocationsPanelContent({
       ) : (
         <div className="space-y-2">
           {rows.map((r) => {
-            const m = canViewSensitive ? computeMonthlyMargin(r) : null;
+            const m = r.can_view_financials ? computeMonthlyMargin(r) : null;
             return (
               <Card key={r.id}>
                 <CardContent className="p-4">
@@ -230,7 +230,7 @@ function AllocationsPanelContent({
                       <div className="text-xs text-muted-foreground mt-1">
                         {r.starts_at} → {r.ends_at ?? "aberta"}
                       </div>
-                      {canViewSensitive && m ? (
+                      {m ? (
                         <div className="text-xs mt-2 flex gap-3 flex-wrap">
                           <span>Rec: {brl(m.revenue)}</span>
                           <span>Custo: {brl(m.cost)}</span>
@@ -284,7 +284,6 @@ function AllocationsPanelContent({
         personDocs={personDocs}
         personCompanyNames={personCompanyNames}
         editing={editing}
-        canViewSensitive={canViewSensitive}
         onSaved={() => {
           qc.invalidateQueries({ queryKey: ["person-allocations", personId] });
           // O cadastro da pessoa pode ter recebido cargo/senioridade.
@@ -325,7 +324,6 @@ function AllocationDialog({
   personDocs,
   personCompanyNames,
   editing,
-  canViewSensitive,
   onSaved,
 }: {
   open: boolean;
@@ -335,10 +333,15 @@ function AllocationDialog({
   personDocs?: Array<string | null | undefined>;
   personCompanyNames?: Array<string | null | undefined>;
   editing: AllocationRow | null;
-  canViewSensitive: boolean;
+  canViewSensitive?: boolean;
   onSaved: () => void;
 }) {
   const upsertFn = useServerFn(upsertAllocation);
+  const privateAccess = useHrPrivateAccess(
+    "allocations_financial",
+    editing?.id ?? personId,
+    !editing?.id,
+  );
   const [contractId, setContractId] = useState<string | null>(editing?.contract_id ?? null);
   const [purchaseContractId, setPurchaseContractId] = useState<string | null>(
     editing?.purchase_contract_id ?? null,
@@ -435,8 +438,12 @@ function AllocationDialog({
           manager_id: managerId,
           role_title: roleTitle || null,
           allocation_pct: Number(pct) || 0,
-          billable_rate: billable ? Number(billable) : null,
-          cost_rate: cost ? Number(cost) : null,
+          ...(privateAccess.canUpdate
+            ? {
+                billable_rate: billable ? Number(billable) : null,
+                cost_rate: cost ? Number(cost) : null,
+              }
+            : {}),
           currency: "BRL",
           starts_at: startsAt,
           ends_at: endsAt || null,
@@ -633,7 +640,7 @@ function AllocationDialog({
             value={capacity}
             onChange={setCapacity}
           />
-          {canViewSensitive ? (
+          {privateAccess.canView ? (
             <>
               <div className="space-y-2">
                 <Label>Taxa faturada (R$/h)</Label>
@@ -642,6 +649,7 @@ function AllocationDialog({
                   step="0.01"
                   min="0"
                   value={billable}
+                  disabled={!privateAccess.canUpdate}
                   onChange={(e) => setBillable(e.target.value)}
                 />
               </div>
@@ -652,6 +660,7 @@ function AllocationDialog({
                   step="0.01"
                   min="0"
                   value={cost}
+                  disabled={!privateAccess.canUpdate}
                   onChange={(e) => setCost(e.target.value)}
                 />
               </div>

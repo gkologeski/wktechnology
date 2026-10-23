@@ -1,3 +1,4 @@
+import { readHrPrivate, protectHrPrivatePayload } from "@/lib/access-control/hr-private.server";
 import {
   assertHrChildMutation,
   assertHrRecordAccess,
@@ -92,6 +93,8 @@ export type OneOnOneRow = {
   notes: string | null;
   action_items: ActionItem[];
   private_notes: string | null;
+  can_view_private?: boolean;
+  can_update_private?: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -265,11 +268,24 @@ export const listOneOnOnes = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
       .from("people_one_on_ones")
-      .select("*")
+      .select(
+        "id,owner_id,person_id,manager_id,scheduled_at,held_at,duration_min,status,mood,agenda,notes,action_items,created_at,updated_at",
+      )
       .eq("person_id", data.person_id)
       .order("scheduled_at", { ascending: false, nullsFirst: false });
     if (error) throw new Error(error.message);
-    return (rows ?? []) as unknown as OneOnOneRow[];
+    const values = await readHrPrivate(
+      context.supabase,
+      "one_on_ones_private",
+      (rows ?? []).map((r) => r.id),
+    );
+    return (rows ?? []).map((r) => ({
+      ...r,
+      private_notes: null,
+      ...(values.get(r.id)?.fields ?? {}),
+      can_view_private: values.get(r.id)?.can_view === true,
+      can_update_private: values.get(r.id)?.can_update === true,
+    })) as unknown as OneOnOneRow[];
   });
 
 export const upsertOneOnOne = createServerFn({ method: "POST" })
@@ -290,8 +306,16 @@ export const upsertOneOnOne = createServerFn({ method: "POST" })
       agenda: data.agenda ?? null,
       notes: data.notes ?? null,
       action_items: data.action_items,
-      private_notes: data.private_notes ?? null,
+      ...(data.private_notes !== undefined ? { private_notes: data.private_notes } : {}),
     };
+    await protectHrPrivatePayload(
+      supabase,
+      "one_on_ones_private",
+      data.id,
+      data.person_id,
+      payload,
+      ["private_notes"],
+    );
     if (data.id) {
       const { data: saved, error } = await supabase
         .from("people_one_on_ones")

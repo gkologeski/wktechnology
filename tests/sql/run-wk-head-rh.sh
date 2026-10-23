@@ -56,8 +56,17 @@ run_sql drizzle/migrations/0196_hr_child_responsible_actor.sql children-responsi
 run_sql drizzle/migrations/0197_hr_capabilities_batch_context.sql children-caps-migration
 run_sql tests/sql/permission-people-children.sql children-tests
 run_sql tests/sql/permission-capabilities-equivalence.sql children-caps-tests
-python3 - "$test_root/children-tests.log" "$test_root/hr-ui-tests.log" "$test_root/tests.log" "$test_root/save-after.log" "$test_root/rpc-after.log" "$test_root/settings-tests.log" "$test_root/hr-tests.log" <<'PY'
+run_sql tests/sql/fixtures/permission-private-fields.sql private-fixture
+# Match API multi-statement execution: the migration must terminate before the
+# journal/verification SELECT which follows it (psql EOF alone can hide this bug).
+cat drizzle/migrations/0198_hr_private_fields.sql > "$test_root/private-migration-batch.sql"
+printf '\nSELECT 1 AS private_migration_statement_complete;\n' >> "$test_root/private-migration-batch.sql"
+run_sql "$test_root/private-migration-batch.sql" private-migration
+run_sql drizzle/migrations/0199_hr_private_fields_activation.sql private-activation
+run_sql tests/sql/permission-private-fields.sql private-tests
+python3 - "$test_root/private-tests.log" "$test_root/children-tests.log" "$test_root/hr-ui-tests.log" "$test_root/tests.log" "$test_root/save-after.log" "$test_root/rpc-after.log" "$test_root/settings-tests.log" "$test_root/hr-tests.log" <<'PY'
 import re,sys
+private=re.findall(r'NOTICE:  PRIVATE PASS:',open(sys.argv.pop(1)).read()); assert len(private)==10,len(private)
 children=re.findall(r'NOTICE:  CHILD PASS (\d+):',open(sys.argv.pop(1)).read()); assert children==[str(x) for x in range(1,113)],children
 ui=re.findall(r'NOTICE:  UI PASS (\d+):',open(sys.argv.pop(1)).read()); assert ui==[str(x) for x in range(1,16)],ui
 text=open(sys.argv[1]).read()
@@ -67,5 +76,5 @@ saves=re.findall(r'NOTICE:  SAVE PASS (\d+):',open(sys.argv[2]).read()); assert 
 rpcs=re.findall(r'NOTICE:  RPC PASS (\d+):',open(sys.argv[3]).read()); assert rpcs==[str(x) for x in range(1,43)],rpcs
 settings=re.findall(r'NOTICE:  SETTINGS PASS (\d+):',open(sys.argv[4]).read()); assert settings==[str(x) for x in range(1,62)],settings
 hr=re.findall(r'NOTICE:  HR PASS (\d+):',open(sys.argv[5]).read()); assert hr==[str(x) for x in range(1,113)],hr
-print('112/112 HR children + 15/15 UI capabilities + 112/112 HR + 61/61 settings + 44/44 RLS + 15/15 save/FK + 42/42 critical RPC checks passed. Browser/auth SDK acceptance was not run.')
+print('10 private-field groups (including 12 differential cases) + 112/112 HR children + 15/15 UI capabilities + 112/112 HR + 61/61 settings + 44/44 RLS + 15/15 save/FK + 42/42 critical RPC checks passed. Browser/auth SDK acceptance was not run.')
 PY

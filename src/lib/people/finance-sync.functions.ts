@@ -1,3 +1,5 @@
+import { mergeHrPrivate } from "@/lib/access-control/hr-private.server";
+import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 // TechPeople · Sprint 12 — Integração com TechFinance.
 // Materializa custos de folha (base + benefícios ativos) como recorrências
 // financeiras mensais (direction=payable), uma por pessoa ativa.
@@ -5,7 +7,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 const TAG_PREFIX = "[people_payroll:";
 const tagFor = (personId: string) => `${TAG_PREFIX}${personId}]`;
@@ -58,7 +59,17 @@ export const materializePeoplePayroll = createServerFn({ method: "POST" })
   .inputValidator((i) => inputSchema.parse(i ?? {}))
   .handler(async ({ data, context }): Promise<PayrollSyncResult> => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
+    for (const key of [
+      "techpeople.people.view.workspace",
+      "techpeople.people_sensitive.view.workspace",
+      "techpeople.benefits.view.workspace",
+      "techfinance.recurrences.view.workspace",
+      "techfinance.recurrences.create.workspace",
+      "techfinance.recurrences.update.workspace",
+    ]) {
+      await assertAnyPermission(supabase, userId, workspaceId, [key]);
+    }
     const dayOfMonth = data.dayOfMonth ?? 5;
     const dryRun = data.dryRun ?? false;
 
@@ -75,11 +86,15 @@ export const materializePeoplePayroll = createServerFn({ method: "POST" })
         };
       }
     )
-      .select("id, full_name, status, monthly_cost, archived, currency")
+      .select("id, full_name, status, archived, currency")
       .eq("archived", false)
       .neq("status", "terminated");
     if ((peopleQ as { error?: unknown }).error) throw (peopleQ as { error: Error }).error;
-    const people: PersonMini[] = peopleQ.data ?? [];
+    const people = await mergeHrPrivate(supabase, "people_sensitive", peopleQ.data ?? []);
+    if (people.some((p) => !p.can_view_private))
+      throw new Error(
+        "Sem permissão para consultar toda a base de custos. Nenhuma recorrência foi alterada.",
+      );
 
     // Benefícios ativos vigentes
     const today = new Date().toISOString().slice(0, 10);
@@ -92,6 +107,7 @@ export const materializePeoplePayroll = createServerFn({ method: "POST" })
     )
       .select("person_id, monthly_value, active, starts_on, ends_on")
       .eq("active", true);
+    if (benQ.error) throw benQ.error;
     const benefits: BenefitMini[] = (benQ.data ?? []).filter(
       (b) => (!b.starts_on || b.starts_on <= today) && (!b.ends_on || b.ends_on >= today),
     );

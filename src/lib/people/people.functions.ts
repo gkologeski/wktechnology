@@ -1,8 +1,9 @@
+import { readHrPrivate, protectHrPrivatePayload } from "@/lib/access-control/hr-private.server";
 import { assertHrRecordAccess, assertHrCreate } from "@/lib/access-control/hr-records.server";
 import { emailSchema } from "@/lib/email-schema";
 // Server functions para o módulo TechPeople (Sprint 1 — HRIS core).
 // Fornece list/get/upsert/archive de `people`, com projeção de campos
-// sensíveis conforme o papel do usuário (admin, gestor, própria pessoa).
+// sensíveis conforme as permissões efetivas e o vínculo com a pessoa.
 import { createServerFn } from "@tanstack/react-start";
 import { orSafeTerm } from "@/lib/postgrest-search";
 import { z } from "zod";
@@ -87,6 +88,7 @@ export type PersonRow = {
   updated_at: string;
   /** Preenchido no server quando o usuário pode ver dados sensíveis. */
   can_view_sensitive?: boolean;
+  can_update_sensitive?: boolean;
 };
 
 const upsertSchema = z.object({
@@ -175,7 +177,7 @@ export const listPeople = createServerFn({ method: "POST" })
 
 /**
  * Retorna a ficha de uma pessoa. Campos sensíveis só são preenchidos
- * quando o chamador é admin do workspace (verificado via can_view_person_sensitive).
+ * quando a permissão independente de dados privados permite a leitura.
  */
 export const getPerson = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -193,22 +195,9 @@ export const getPerson = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!base) throw new Error("Pessoa não encontrada");
 
-    // Verifica se o chamador pode ver campos sensíveis.
-    const { data: canSens } = await supabase.rpc("can_view_person_sensitive", {
-      _person_id: data.id,
-    });
-    const canViewSensitive = canSens === true;
-
-    let sensitive: {
-      cost_hour: number | null;
-      monthly_cost: number | null;
-      personal_doc: PersonDocMap;
-      bank: string | null;
-      bank_agency: string | null;
-      bank_account: string | null;
-      pix_key: string | null;
-      address: string | null;
-    } = {
+    const privateRow = (await readHrPrivate(supabase, "people_sensitive", [data.id])).get(data.id);
+    const canViewSensitive = privateRow?.can_view === true;
+    const sensitive = {
       cost_hour: null,
       monthly_cost: null,
       personal_doc: {},
@@ -217,31 +206,8 @@ export const getPerson = createServerFn({ method: "POST" })
       bank_account: null,
       pix_key: null,
       address: null,
+      ...(privateRow?.fields ?? {}),
     };
-
-    if (canViewSensitive) {
-      const { data: sensRow, error: sensErr } = await supabase
-        .from("people")
-        .select(
-          "cost_hour, monthly_cost, personal_doc, bank, bank_agency, bank_account, pix_key, address",
-        )
-        .eq("id", data.id)
-        .maybeSingle();
-      if (sensErr) throw new Error(sensErr.message);
-      if (sensRow) {
-        const r = sensRow as Record<string, unknown>;
-        sensitive = {
-          cost_hour: (r.cost_hour as number | null) ?? null,
-          monthly_cost: (r.monthly_cost as number | null) ?? null,
-          personal_doc: ((r.personal_doc as PersonDocMap | null) ?? {}) as PersonDocMap,
-          bank: (r.bank as string | null) ?? null,
-          bank_agency: (r.bank_agency as string | null) ?? null,
-          bank_account: (r.bank_account as string | null) ?? null,
-          pix_key: (r.pix_key as string | null) ?? null,
-          address: (r.address as string | null) ?? null,
-        };
-      }
-    }
 
     let manager_name: string | null = null;
     const managerId = (base as { manager_id: string | null }).manager_id;
@@ -268,6 +234,7 @@ export const getPerson = createServerFn({ method: "POST" })
       >),
       ...sensitive,
       can_view_sensitive: canViewSensitive,
+      can_update_sensitive: privateRow?.can_update === true,
       manager_name,
     } as PersonRow & { manager_name: string | null };
   });
@@ -317,8 +284,7 @@ export const upsertPerson = createServerFn({ method: "POST" })
       manager_id: data.manager_id ?? null,
       profile_id: data.profile_id ?? null,
       candidate_id: data.candidate_id ?? null,
-      cost_hour: data.cost_hour ?? null,
-      monthly_cost: data.monthly_cost ?? null,
+
       currency: data.currency,
       tags: data.tags,
       notes: normalize(data.notes ?? null),
@@ -328,12 +294,29 @@ export const upsertPerson = createServerFn({ method: "POST" })
       emergency_relationship: normalize(data.emergency_relationship ?? null),
       marital_status: normalize(data.marital_status ?? null),
       spouse_name: normalize(data.spouse_name ?? null),
-      bank: normalize(data.bank ?? null),
-      bank_agency: normalize(data.bank_agency ?? null),
-      bank_account: normalize(data.bank_account ?? null),
-      pix_key: normalize(data.pix_key ?? null),
-      address: normalize(data.address ?? null),
     };
+
+    const privateColumns = [
+      "cost_hour",
+      "monthly_cost",
+      "bank",
+      "bank_agency",
+      "bank_account",
+      "pix_key",
+      "address",
+    ];
+    for (const key of privateColumns) {
+      const value = data[key as keyof typeof data];
+      if (value !== undefined) payload[key] = typeof value === "string" ? normalize(value) : value;
+    }
+    await protectHrPrivatePayload(
+      supabase,
+      "people_sensitive",
+      data.id,
+      null,
+      payload,
+      privateColumns,
+    );
 
     if (data.id) {
       // Detecta transição de status para `offboarding` para disparar automação.
@@ -471,7 +454,7 @@ export const promoteCandidateToPerson = createServerFn({ method: "POST" })
       status: "active" as PeopleStatus,
       hire_date: data.hire_date || new Date().toISOString().slice(0, 10),
       manager_id: data.manager_id ?? null,
-      cost_hour: data.cost_hour ?? null,
+      ...(data.cost_hour !== undefined ? { cost_hour: data.cost_hour } : {}),
       created_by: userId,
     };
 

@@ -1,3 +1,4 @@
+import { mergeHrPrivate } from "@/lib/access-control/hr-private.server";
 // TechPeople · Sprint 14 — Margem por Contrato
 // Consolida por contrato: horas apontadas, receita (billable), custo (cost_rate)
 // e margem, a partir de project_time_entries + people_allocations.
@@ -81,12 +82,21 @@ export const getContractMarginReport = createServerFn({ method: "POST" })
     const { data: allocs, error: aErr } = await supabase
       .from("people_allocations")
       .select(
-        "id, currency, cost_rate, billable_rate, person_id, contract_id, contracts:contract_id(id, contract_number, title, company_id, companies:company_id(id, name))",
+        "id, currency, person_id, contract_id, contracts:contract_id(id, contract_number, title, company_id, companies:company_id(id, name))",
       )
       .in("id", allocIds);
     if (aErr) throw new Error(aErr.message);
+    const safeAllocs = await mergeHrPrivate(
+      supabase,
+      "allocations_financial",
+      (allocs ?? []) as unknown as Array<{ id: string }>,
+    );
+    if (safeAllocs.some((a) => !a.can_view_private))
+      throw new Error(
+        "Sem permissão para consultar os valores de todas as alocações do relatório.",
+      );
     const allocMap = new Map<string, AllocRow>();
-    for (const a of (allocs as unknown as AllocRow[] | null) ?? []) allocMap.set(a.id, a);
+    for (const a of safeAllocs as unknown as AllocRow[]) allocMap.set(a.id, a);
 
     const invoiceIds = Array.from(
       new Set(entries.map((e) => e.invoice_id).filter((v): v is string => !!v)),
