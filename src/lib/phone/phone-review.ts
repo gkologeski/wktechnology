@@ -177,6 +177,8 @@ export function phoneReviewDetail(
       return "Só ramal, sem número.";
     case "too_long":
       return "Mais dígitos que o permitido para o país.";
+    case "invalid":
+      return "Não corresponde ao plano de numeração do país (código de área, prefixo ou tamanho).";
     default:
       return null;
   }
