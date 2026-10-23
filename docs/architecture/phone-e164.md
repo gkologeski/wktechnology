@@ -136,7 +136,16 @@ filtra o workspace, idempotente, token `wk-phone-e164-v1`), migration 0187
   edição; com celular válido o WhatsApp derivado pode ser preenchido.
 - Prova: `tests/sql/phone-manual-review-isolated.sh` (20 asserções).
 
+### Guarda de formato do banco (23/10/2026)
+
+- `phone_strict_e164` ligado na WK depois da publicação: telefone novo ou
+  alterado fora da forma E.164 é recusado; vazio e E.164 passam; telefone
+  antigo não editado não bloqueia salvar outros campos.
+- Importações/integrações e cópias entre registros (`sourcePhone`: HubSpot,
+  Apollo, Lusha, planilha, currículo, LinkedIn, conversão de lead, prospecção,
+  contratação, candidato → pessoa) gravam E.164 ou vazio; o original fica na
+  fonte (ex.: `hs_raw`). Prova: `tests/sql/phone-strict-guard-isolated.sh`.
+
 ## Pendências
 
-- Ligar `phone_strict_e164` (guarda do banco) depois que o código for publicado.
 - Revisar a fila em Configurações › Telefones.
