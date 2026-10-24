@@ -693,7 +693,7 @@ condições ficam bloqueadas. Documento de assinatura contém a versão e as
 condições aprovadas; envio, aprovação e cancelamento serializam no registro e
 produzem histórico. Sem exclusão física de ofertas com histórico.
 
-Há 29 chaves novas: consulta/edição de condições de oferta e contratação nos
+Há 17 chaves novas: consulta/edição de condições de oferta e contratação nos
 escopos own/team/workspace, disponibilização, cancelamento, confirmação de
 contratação, reversão e reatribuição de oferta. Somente Head RH da WK recebe os
 novos overrides; denies, presets e outros cargos/workspaces são preservados.
@@ -723,9 +723,42 @@ comprova entrega de e-mail. O operador pode copiar o link autorizado para seu
 canal de envio. A página da oferta agora leva ao documento correspondente, em
 vez de afirmar que um e-mail foi enviado.
 
-Validação em andamento: 16 grupos SQL (mais todas as regressões e 219
+Validação concluída: 16 grupos SQL (mais todas as regressões e 219
 comparações de capacidades); 11 grupos com GoTrue/JWT/PostgREST reais locais;
 quatro fluxos no Chrome com Head RH não administrador e conta sem a chave.
-As verificações finais, hashes, aplicação e publicação serão registrados após
-as respectivas evidências. Isso não equivale ao aceite da sessão real de
-Priscila no ambiente publicado.
+As verificações finais, hashes, aplicação e publicação constam a seguir.
+Isso não equivale ao aceite da sessão real de Priscila no ambiente publicado.
+
+
+Lote 0206–0207 aplicado e publicado em 24/10/2026. Código de interface:
+`de20901c8a9b4d13ee71e80996d3b12322f232d9`; complemento da ativação protege o
+identificador da candidatura contra desvinculação do histórico (`0395d33a6`).
+Migrações 210/211 no journal: hashes
+`c13ad2bd75f194b748d8ab06304e6b90df9d2b2424051f4dc88182d4b4dc0730` e
+`72a32842a0a5ede448de1b1543e1869bd00538265c629a76dbe97b35c2976e40`;
+when `1792845739194` e `1792845739195`. A ativação só foi aplicada após confirmar
+os arquivos compatíveis nos dois domínios públicos.
+
+Gates finais: 1699 testes em 216 arquivos, tipos e lint; build completo. Mesmo
+source_hash `210c67006ca12ef833b90eaf2f0417ce5341b1961e32dc2837fabbf254b15da0`,
+source_changed=false. 16 grupos SQL novos, regressões anteriores e 219
+comparações de capacidades; 11 grupos reais de GoTrue/PostgREST e quatro fluxos
+no Chrome. A prova dos arquivos publicados coincide byte a byte com o build:
+`index-DjKmlSi8.js`, `offers-BIBlZ-9d.js`, `offer._token-xHZB7mE8.js`,
+`jobs._id-BY7nRIr8.js` e `hr-access-B69a408U.js`, nos dois domínios.
+
+Base ativa: catálogo 1741→1758, exatamente 17 overrides novos para Head RH da
+WK; nenhum outro cargo/workspace recebe nova concessão. Presets, memberships,
+overrides anteriores e dados de candidaturas/ofertas/eSign mantêm seus hashes.
+RPCs públicas apenas para service_role; anonymous não executa projeção/transição;
+authenticated não lê as quatro colunas privadas conferidas nem executa assinatura
+pública/contratação de API. Zero atestações pendentes.
+
+Checagem SQL na base ativa, com a identidade de Priscila, passou por elaborar,
+solicitar/aprovar, disponibilizar, assinar sem contratar e confirmar contratação,
+com auditoria e negação de exclusão/troca de ID. Tudo revertido; zero candidatos,
+vagas e ofertas de QA remanescentes. Esta é simulação SQL, não uma sessão real da
+Priscila no navegador publicado. Relatório/prints em
+`outputs/permission-ats-offers-2026-10-24/relatorio.html` no projeto ChatGPT.
+As demais frentes do plano de seis etapas continuam pendentes, inclusive a
+revisão integral de módulos, integrações, logs/campos globais e aceite dos cargos.
