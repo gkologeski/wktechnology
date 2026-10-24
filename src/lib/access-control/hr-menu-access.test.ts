@@ -11,6 +11,7 @@ it.each([
   "/people/offboarding",
   "/people/onboarding-templates",
   "/candidates",
+  "/compliance",
 ])("no role fallback without effective key for %s", (path) => {
   expect(canSeeHrMenu(path, new Set(), true)).toBe(false);
 });

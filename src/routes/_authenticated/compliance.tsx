@@ -1,3 +1,5 @@
+import { HrScreenAccess, HrAccessError } from "@/components/hr-access";
+import { Can } from "@/lib/access-control/use-permissions";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -54,7 +56,11 @@ export const Route = createFileRoute("/_authenticated/compliance")({
   head: () => ({
     meta: [{ title: "Compliance LGPD · TechHire" }],
   }),
-  component: ComplianceHub,
+  component: () => (
+    <HrScreenAccess resources={["techhire.compliance"]}>
+      <ComplianceHub />
+    </HrScreenAccess>
+  ),
 });
 
 function ComplianceHub() {
@@ -63,7 +69,7 @@ function ComplianceHub() {
       <AtsPageHeader
         eyebrow="ATS · Compliance"
         title="LGPD & DSAR"
-        description="Solicitações de titulares (DSAR), retenção de dados e auditoria de anonimização para candidatos."
+        description="Solicitações de titulares (DSAR), consentimentos e retenção. As exportações incluem somente os registros e campos autorizados para o operador."
       />
 
       <Tabs defaultValue="dsar" className="space-y-4">
@@ -98,6 +104,7 @@ function DsarTab() {
   const pending = rows.filter((r) => r.status === "pending").length;
   const inProgress = rows.filter((r) => r.status === "in_progress").length;
   const completed = rows.filter((r) => r.status === "completed").length;
+  if (q.isError) return <HrAccessError retry={() => void q.refetch()} />;
 
   return (
     <>
@@ -125,7 +132,9 @@ function DsarTab() {
           title="Histórico de solicitações"
           description="Registre cada pedido recebido por e-mail, formulário ou contato direto do titular."
         />
-        <NewDsarButton onCreated={() => q.refetch()} />
+        <Can any={["techhire.compliance.create.own", "techhire.compliance.create.workspace"]}>
+          <NewDsarButton onCreated={() => q.refetch()} />
+        </Can>
       </div>
 
       <Card>
@@ -207,6 +216,7 @@ function DsarRow({ row, onChanged }: { row: DsarRequest; onChanged: () => void }
       toast.success("Solicitação marcada como rejeitada");
       onChanged();
     },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   return (
@@ -234,7 +244,9 @@ function DsarRow({ row, onChanged }: { row: DsarRequest; onChanged: () => void }
       <div className="flex flex-wrap items-center gap-2">
         {row.status !== "completed" && row.status !== "rejected" ? (
           <>
-            {row.request_type === "export" || row.request_type === "access" ? (
+            {(row.request_type === "export" || row.request_type === "access") &&
+            row.can_export &&
+            row.can_update ? (
               <Button
                 size="sm"
                 variant="outline"
@@ -246,7 +258,7 @@ function DsarRow({ row, onChanged }: { row: DsarRequest; onChanged: () => void }
               </Button>
             ) : null}
 
-            {row.request_type === "erasure" ? (
+            {row.request_type === "erasure" && row.can_erase && row.can_update ? (
               <Dialog open={eraseOpen} onOpenChange={setEraseOpen}>
                 <DialogTrigger asChild>
                   <Button size="sm" variant="destructive">
@@ -290,14 +302,16 @@ function DsarRow({ row, onChanged }: { row: DsarRequest; onChanged: () => void }
               </Dialog>
             ) : null}
 
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => reject.mutate()}
-              disabled={reject.isPending}
-            >
-              Rejeitar
-            </Button>
+            {row.can_update && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => reject.mutate()}
+                disabled={reject.isPending}
+              >
+                Rejeitar
+              </Button>
+            )}
           </>
         ) : (
           <Link
@@ -456,6 +470,7 @@ function RetentionTab() {
   });
   const rows = q.data ?? [];
   const critical = rows.filter((r) => r.days_overdue >= 30).length;
+  if (q.isError) return <HrAccessError retry={() => void q.refetch()} />;
 
   return (
     <>

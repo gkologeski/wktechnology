@@ -1,5 +1,6 @@
 // Stage 4 scope only: legacy role fallbacks must not bypass these menu keys.
 const resources: Record<string, string> = {
+  "/compliance": "techhire.compliance",
   "/people": "techpeople.people",
   "/people/onboarding": "techpeople.onboarding",
   "/people/offboarding": "techpeople.offboarding",

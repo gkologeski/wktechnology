@@ -1,4 +1,12 @@
-import { emailSchema } from "@/lib/email-schema";
+import { getActiveWorkspaceId, assertAnyPermission } from "@/lib/access-control/enforce.server";
+import { assertHrRecordAccess } from "@/lib/access-control/hr-records.server";
+import {
+  complianceRpc,
+  complianceKeys,
+  dsarStatusSchema,
+  consentSchema,
+  createRequestSchema,
+} from "./compliance.server";
 // ATS LGPD/DSAR: candidate-scoped data subject requests, consent tracking and retention.
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -18,6 +26,9 @@ export interface DsarRequest {
   notes: string | null;
   created_at: string;
   processed_at: string | null;
+  can_update: boolean;
+  can_export: boolean;
+  can_erase: boolean;
 }
 
 export interface CandidateConsent {
@@ -39,252 +50,153 @@ export interface CandidateExportSnapshot {
   consents: Json;
   scorecards: Json;
   interviews: Json;
+  scope: Json;
 }
 
-const createSchema = z.object({
-  candidate_id: z.string().uuid(),
-  request_type: z.enum(["export", "erasure", "rectification", "access"]),
-  subject_email: emailSchema().nullable().optional(),
-  notes: z.string().max(2000).nullable().optional(),
-});
+async function complianceWorkspace(context: {
+  supabase: import("@supabase/supabase-js").SupabaseClient;
+  userId: string;
+}) {
+  const workspace = await getActiveWorkspaceId(context.supabase, context.userId);
+  await assertAnyPermission(context.supabase, context.userId, workspace, complianceKeys("view"));
+  return workspace;
+}
 
 export const listDsarRequests = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { status?: DsarStatus } = {}) => input)
+  .inputValidator((input: { status?: DsarStatus } = {}) =>
+    z.object({ status: dsarStatusSchema.optional() }).parse(input),
+  )
   .handler(async ({ data, context }): Promise<DsarRequest[]> => {
-    const { supabase, userId } = context;
-    let q = supabase
+    const workspace = await complianceWorkspace(context);
+    let q = context.supabase
       .from("ats_dsar_requests")
       .select(
-        "id, candidate_id, subject_email, request_type, status, notes, created_at, processed_at, ats_candidates!inner(full_name)",
+        "id,candidate_id,subject_email,request_type,status,notes,created_at,processed_at,ats_candidates!inner(full_name)",
       )
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspace)
       .order("created_at", { ascending: false })
       .limit(200);
     if (data.status) q = q.eq("status", data.status);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    return (rows ?? []).map((r: Record<string, unknown>) => ({
-      id: r.id as string,
-      candidate_id: r.candidate_id as string,
-      candidate_name: (r.ats_candidates as { full_name?: string } | null)?.full_name ?? null,
-      subject_email: (r.subject_email as string | null) ?? null,
+    const caps = await complianceRpc<
+      Array<{ candidate_id: string; can_update: boolean; can_export: boolean; can_erase: boolean }>
+    >(context.supabase, "ats_compliance_capabilities", {
+      _candidates: (rows ?? []).map((r) => r.candidate_id),
+    });
+    const byId = new Map(caps.map((c) => [c.candidate_id, c]));
+    return (rows ?? []).map((r) => ({
+      ...r,
+      candidate_name: r.ats_candidates?.full_name ?? null,
       request_type: r.request_type as DsarType,
       status: r.status as DsarStatus,
-      notes: (r.notes as string | null) ?? null,
-      created_at: r.created_at as string,
-      processed_at: (r.processed_at as string | null) ?? null,
+      can_update: byId.get(r.candidate_id)?.can_update === true,
+      can_export: byId.get(r.candidate_id)?.can_export === true,
+      can_erase: byId.get(r.candidate_id)?.can_erase === true,
     }));
   });
 
 export const createDsarRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: z.input<typeof createSchema>) => createSchema.parse(input))
+  .inputValidator((input: z.input<typeof createRequestSchema>) => createRequestSchema.parse(input))
   .handler(async ({ data, context }): Promise<{ id: string }> => {
-    const { supabase, userId } = context;
-    const { data: row, error } = await supabase
-      .from("ats_dsar_requests")
-      .insert({
-        owner_id: userId,
-        candidate_id: data.candidate_id,
-        request_type: data.request_type,
-        subject_email: data.subject_email ?? null,
-        notes: data.notes ?? null,
-        requested_by: userId,
-      })
-      .select("id")
-      .single();
-    if (error) throw new Error(error.message);
-    return { id: row.id as string };
+    const result = await complianceRpc<{ ok: boolean; id: string }>(
+      context.supabase,
+      "ats_compliance_write",
+      { _action: "create_request", _candidate: data.candidate_id, _payload: data },
+    );
+    if (result.ok !== true || !result.id)
+      throw new Error("Não foi possível confirmar a solicitação.");
+    return { id: result.id };
   });
-
 export const exportCandidateData = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { candidate_id: string; dsar_id?: string }) => input)
-  .handler(async ({ data, context }): Promise<CandidateExportSnapshot> => {
-    const { supabase, userId } = context;
-    const cid = data.candidate_id;
-
-    // Fetch applications first so we can fan out to scorecard responses by application_id.
-    const { data: appsData } = await supabase
-      .from("ats_applications")
-      .select(
-        "id, workspace_id, owner_id, candidate_id, job_id, status, stage_value, applied_at, moved_at, source, rejection_reason",
-      )
-      .eq("owner_id", userId)
-      .eq("candidate_id", cid);
-    const appIds = (appsData ?? []).map((a: { id: string }) => a.id);
-
-    const [cand, cons, scor, intv] = await Promise.all([
-      supabase
-        .from("ats_candidates")
-        .select("*")
-        .eq("owner_id", userId)
-        .eq("id", cid)
-        .maybeSingle(),
-      supabase
-        .from("ats_candidate_consents")
-        .select("*")
-        .eq("owner_id", userId)
-        .eq("candidate_id", cid),
-      appIds.length
-        ? supabase.from("ats_scorecard_responses").select("*").in("application_id", appIds)
-        : Promise.resolve({ data: [] as unknown[] }),
-      supabase.from("ats_interviews").select("*").eq("candidate_id", cid),
-    ]);
-
-    const applicationsList = (appsData ?? []) as unknown as Json;
-    const consentsList = (cons.data ?? []) as unknown as Json;
-    const scorecardsList = ((scor as { data?: unknown[] }).data ?? []) as unknown as Json;
-    const interviewsList = (intv.data ?? []) as unknown as Json;
-
-    const snapshot: CandidateExportSnapshot = {
-      exported_at: new Date().toISOString(),
-      candidate: (cand.data ?? null) as unknown as Json,
-      applications: applicationsList,
-      consents: consentsList,
-      scorecards: scorecardsList,
-      interviews: interviewsList,
-    };
-
-    if (data.dsar_id) {
-      await supabase
-        .from("ats_dsar_requests")
-        .update({
-          status: "completed",
-          processed_at: new Date().toISOString(),
-          processed_by: userId,
-          result: {
-            kind: "export",
-            counts: {
-              applications: (appsData ?? []).length,
-              consents: (cons.data ?? []).length,
-              scorecards: ((scor as { data?: unknown[] }).data ?? []).length,
-              interviews: (intv.data ?? []).length,
-            },
-          },
-        })
-        .eq("id", data.dsar_id)
-        .eq("owner_id", userId);
-    }
-
-    return snapshot;
-  });
-
+  .inputValidator((d: { candidate_id: string; dsar_id?: string }) =>
+    z.object({ candidate_id: z.string().uuid(), dsar_id: z.string().uuid().optional() }).parse(d),
+  )
+  .handler(
+    async ({ data, context }): Promise<CandidateExportSnapshot> =>
+      complianceRpc(context.supabase, "ats_compliance_export", {
+        _candidate: data.candidate_id,
+        _request: data.dsar_id ?? null,
+      }),
+  );
 export const eraseCandidate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { candidate_id: string; dsar_id?: string; confirm: string }) => {
-    if (input?.confirm !== "ANONIMIZAR") {
-      throw new Error('Confirme digitando exatamente "ANONIMIZAR".');
-    }
-    return input;
-  })
-  .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    const { supabase, userId } = context;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).rpc("anonymize_ats_candidate", {
-      _candidate_id: data.candidate_id,
-    });
-    if (error) throw new Error(error.message);
-
-    if (data.dsar_id) {
-      await supabase
-        .from("ats_dsar_requests")
-        .update({
-          status: "completed",
-          processed_at: new Date().toISOString(),
-          processed_by: userId,
-          result: { kind: "erasure" },
-        })
-        .eq("id", data.dsar_id)
-        .eq("owner_id", userId);
-    }
-    return { ok: true };
-  });
-
+  .inputValidator((d: { candidate_id: string; dsar_id?: string; confirm: string }) =>
+    z
+      .object({
+        candidate_id: z.string().uuid(),
+        dsar_id: z.string().uuid().optional(),
+        confirm: z.literal("ANONIMIZAR"),
+      })
+      .parse(d),
+  )
+  .handler(
+    async ({ data, context }): Promise<{ ok: true }> =>
+      complianceRpc(context.supabase, "ats_compliance_write", {
+        _action: "erase",
+        _candidate: data.candidate_id,
+        _request: data.dsar_id ?? null,
+        _payload: { confirm: data.confirm },
+      }),
+  );
 export const updateDsarStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { id: string; status: DsarStatus; notes?: string | null }) => input)
-  .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const patch: {
-      status: DsarStatus;
-      notes?: string | null;
-      processed_at?: string;
-      processed_by?: string;
-    } = { status: data.status };
-    if (data.notes !== undefined) patch.notes = data.notes;
-    if (data.status === "completed" || data.status === "rejected") {
-      patch.processed_at = new Date().toISOString();
-      patch.processed_by = userId;
-    }
-
-    const { error } = await supabase
-      .from("ats_dsar_requests")
-      .update(patch)
-      .eq("id", data.id)
-      .eq("owner_id", userId);
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
+  .inputValidator((d: { id: string; status: DsarStatus; notes?: string | null }) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        status: dsarStatusSchema,
+        notes: z.string().max(2000).nullable().optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) =>
+    complianceRpc<{ ok: true }>(context.supabase, "ats_compliance_write", {
+      _action: "status",
+      _request: data.id,
+      _payload: data,
+    }),
+  );
 
 export const listCandidateConsents = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { candidate_id: string }) => input)
+  .inputValidator((d: { candidate_id: string }) =>
+    z.object({ candidate_id: z.string().uuid() }).parse(d),
+  )
   .handler(async ({ data, context }): Promise<CandidateConsent[]> => {
-    const { supabase, userId } = context;
-    const { data: rows, error } = await supabase
+    const workspace = await complianceWorkspace(context);
+    await assertHrRecordAccess(context.supabase, "candidates", "view", data.candidate_id);
+    const { data: rows, error } = await context.supabase
       .from("ats_candidate_consents")
-      .select(
-        "id, candidate_id, purpose, granted, source, legal_basis, expires_at, granted_at, revoked_at",
-      )
-      .eq("owner_id", userId)
+      .select("id,candidate_id,purpose,granted,source,legal_basis,expires_at,granted_at,revoked_at")
+      .eq("workspace_id", workspace)
       .eq("candidate_id", data.candidate_id)
       .order("granted_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return (rows as CandidateConsent[]) ?? [];
+    return rows ?? [];
   });
-
 export const recordConsent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: {
-      candidate_id: string;
-      purpose: string;
-      granted: boolean;
-      legal_basis?: string | null;
-      source?: string;
-      expires_at?: string | null;
-    }) => input,
-  )
-  .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { error } = await supabase.from("ats_candidate_consents").insert({
-      owner_id: userId,
-      candidate_id: data.candidate_id,
-      purpose: data.purpose,
-      granted: data.granted,
-      legal_basis: data.legal_basis ?? null,
-      source: data.source ?? "manual",
-      expires_at: data.expires_at ?? null,
-    });
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
-
+  .inputValidator((d: z.input<typeof consentSchema>) => consentSchema.parse(d))
+  .handler(async ({ data, context }) =>
+    complianceRpc<{ ok: true }>(context.supabase, "ats_compliance_write", {
+      _action: "record_consent",
+      _candidate: data.candidate_id,
+      _payload: data,
+    }),
+  );
 export const revokeConsent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { id: string }) => input)
-  .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { error } = await supabase
-      .from("ats_candidate_consents")
-      .update({ granted: false, revoked_at: new Date().toISOString() })
-      .eq("id", data.id)
-      .eq("owner_id", userId);
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) =>
+    complianceRpc<{ ok: true }>(context.supabase, "ats_compliance_write", {
+      _action: "revoke_consent",
+      _payload: data,
+    }),
+  );
 
 export interface RetentionCandidate {
   id: string;
@@ -293,51 +205,51 @@ export interface RetentionCandidate {
   retention_until: string;
   days_overdue: number;
 }
-
 export const listRetentionDue = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<RetentionCandidate[]> => {
-    const { supabase, userId } = context;
-    const { data: rows, error } = await supabase
+    const workspace = await complianceWorkspace(context);
+    const { data: rows, error } = await context.supabase
       .from("ats_candidates")
-      .select("id, full_name, email, retention_until")
-      .eq("owner_id", userId)
+      .select("id,full_name,email,retention_until")
+      .eq("workspace_id", workspace)
       .not("retention_until", "is", null)
       .is("lgpd_redacted_at", null)
       .lte("retention_until", new Date().toISOString())
       .order("retention_until", { ascending: true })
       .limit(500);
     if (error) throw new Error(error.message);
-    const now = Date.now();
-    return (
-      (rows ?? []) as Array<{
-        id: string;
-        full_name: string;
-        email: string | null;
-        retention_until: string;
-      }>
-    ).map((r) => ({
-      id: r.id,
-      full_name: r.full_name,
-      email: r.email,
-      retention_until: r.retention_until,
-      days_overdue: Math.max(
-        0,
-        Math.floor((now - new Date(r.retention_until).getTime()) / 86_400_000),
-      ),
-    }));
+    const caps = await complianceRpc<Array<{ candidate_id: string }>>(
+      context.supabase,
+      "ats_compliance_capabilities",
+      { _candidates: (rows ?? []).map((r) => r.id) },
+    );
+    const visible = new Set(caps.map((r) => r.candidate_id));
+    return (rows ?? [])
+      .filter((r) => visible.has(r.id))
+      .map((r) => ({
+        ...r,
+        retention_until: r.retention_until!,
+        days_overdue: Math.max(
+          0,
+          Math.floor((Date.now() - new Date(r.retention_until!).getTime()) / 86400000),
+        ),
+      }));
   });
-
 export const setCandidateRetention = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { candidate_id: string; retention_until: string | null }) => input)
-  .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { error } = await supabase
-      .from("ats_candidates")
-      .update({ retention_until: data.retention_until })
-      .eq("id", data.candidate_id)
-      .eq("owner_id", userId);
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
+  .inputValidator((d: { candidate_id: string; retention_until: string | null }) =>
+    z
+      .object({
+        candidate_id: z.string().uuid(),
+        retention_until: z.string().datetime({ offset: true }).nullable(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) =>
+    complianceRpc<{ ok: true }>(context.supabase, "ats_compliance_write", {
+      _action: "retention",
+      _candidate: data.candidate_id,
+      _payload: data,
+    }),
+  );

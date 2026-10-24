@@ -1060,6 +1060,114 @@
       "database": "service-only EXECUTE, caller context restored, same canonical record predicates/guards; key write scope alone is insufficient",
       "exception_reason": "API key authenticates a server-side delegation without issuing a user session; human RBAC and data-scope predicates still apply.",
       "migration": "0206-0207"
+    },
+    {
+      "operation": "LGPD requests",
+      "kind": "business_action",
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techhire.compliance + techhire.candidates",
+      "action": "create/update request and status",
+      "permission_keys": [
+        "techhire.compliance.view + create/update with candidate view"
+      ],
+      "scope": "candidate assigned owner/team/workspace, never request creator alone; deny prevails",
+      "route_consumers": [
+        "/compliance"
+      ],
+      "server": "src/lib/ats/lgpd.functions.ts; caller client only",
+      "database": "ats_compliance_access/write/export/capabilities; RLS and immutable parent/evidence guards",
+      "migration": "0208 + 0209",
+      "status": "testado_preparacao_aplicada_ativacao_publicacao_pendentes"
+    },
+    {
+      "operation": "LGPD consent evidence",
+      "kind": "business_action",
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techhire.compliance + techhire.candidates",
+      "action": "record/revoke, immutable evidence and parent",
+      "permission_keys": [
+        "techhire.compliance.view + create/update with candidate view"
+      ],
+      "scope": "candidate assigned owner/team/workspace, never request creator alone; deny prevails",
+      "route_consumers": [
+        "candidate consent API"
+      ],
+      "server": "src/lib/ats/lgpd.functions.ts; caller client only",
+      "database": "ats_compliance_access/write/export/capabilities; RLS and immutable parent/evidence guards",
+      "migration": "0208 + 0209",
+      "status": "testado_preparacao_aplicada_ativacao_publicacao_pendentes"
+    },
+    {
+      "operation": "LGPD retention",
+      "kind": "business_action",
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techhire.compliance + techhire.candidates",
+      "action": "view/configure retention",
+      "permission_keys": [
+        "techhire.compliance.view + update and candidates.update for retention mutation"
+      ],
+      "scope": "candidate assigned owner/team/workspace, never request creator alone; deny prevails",
+      "route_consumers": [
+        "/compliance"
+      ],
+      "server": "src/lib/ats/lgpd.functions.ts; caller client only",
+      "database": "ats_compliance_access/write/export/capabilities; RLS and immutable parent/evidence guards",
+      "migration": "0208 + 0209",
+      "status": "testado_preparacao_aplicada_ativacao_publicacao_pendentes"
+    },
+    {
+      "operation": "LGPD export",
+      "kind": "business_action",
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techhire.compliance + techhire.candidates",
+      "action": "caller-RLS snapshot and atomic DSAR completion",
+      "permission_keys": [
+        "techhire.compliance.export.workspace + view; update if fulfilling DSAR"
+      ],
+      "scope": "candidate assigned owner/team/workspace, never request creator alone; deny prevails",
+      "route_consumers": [
+        "/compliance"
+      ],
+      "server": "src/lib/ats/lgpd.functions.ts; caller client only",
+      "database": "ats_compliance_access/write/export/capabilities; RLS and immutable parent/evidence guards",
+      "migration": "0208 + 0209",
+      "status": "testado_preparacao_aplicada_ativacao_publicacao_pendentes"
+    },
+    {
+      "operation": "LGPD erasure",
+      "kind": "business_action",
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techhire.compliance + techhire.candidates",
+      "action": "atomic candidate anonymization and matching DSAR",
+      "permission_keys": [
+        "techhire.compliance.delete.workspace + view + candidates.update; update if fulfilling DSAR"
+      ],
+      "scope": "candidate assigned owner/team/workspace, never request creator alone; deny prevails",
+      "route_consumers": [
+        "/compliance"
+      ],
+      "server": "src/lib/ats/lgpd.functions.ts; caller client only",
+      "database": "ats_compliance_access/write/export/capabilities; RLS and immutable parent/evidence guards",
+      "migration": "0208 + 0209",
+      "status": "testado_preparacao_aplicada_ativacao_publicacao_pendentes"
+    },
+    {
+      "operation": "LGPD capabilities",
+      "kind": "metadata_exception",
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techhire.compliance + techhire.candidates",
+      "action": "caller-bound action metadata",
+      "permission_keys": [
+        "same predicates as action and candidate view; no role fallback"
+      ],
+      "scope": "candidate assigned owner/team/workspace, never request creator alone; deny prevails",
+      "route_consumers": [
+        "/compliance"
+      ],
+      "server": "src/lib/ats/lgpd.functions.ts; caller client only",
+      "database": "ats_compliance_access/write/export/capabilities; RLS and immutable parent/evidence guards",
+      "migration": "0208 + 0209",
+      "status": "testado_preparacao_aplicada_ativacao_publicacao_pendentes"
     }
   ],
   "rules": [
@@ -1199,7 +1307,12 @@
       "status": "aplicado_publicado_testado_sql",
       "evidencia_migracao": "0193",
       "aceite_visual": false,
-      "publicacao_evidencia": "Confirmação do usuário em 23/10/2026; projeto sincronizado, is_published=true; marcador HTTP não observado, aceite visual pendente."
+      "publicacao_evidencia": "Confirmação do usuário em 23/10/2026; projeto sincronizado, is_published=true; marcador HTTP não observado, aceite visual pendente.",
+      "aceite_local": {
+        "environment": "isolated GoTrue/PostgREST and Chrome, synthetic Head RH nonadmin",
+        "production_user_session": false,
+        "evidence": "permission-alignment-completion-2026-10-23/aceite-rh-ambiente-recuperado.html"
+      }
     },
     {
       "id": 16,
@@ -1224,9 +1337,15 @@
       "area": "TechHire",
       "problema": "LGPD usa filtros owner fixos",
       "decisao_alvo": "Aplicar leitura/alteração/exportação por escopo autorizado; manter segregação de tenant.",
-      "status": "pendente",
-      "evidencia_migracao": null,
-      "aceite_visual": false
+      "status": "preparado_testado_ativacao_pendente",
+      "evidencia_migracao": "0208 RPC preparation applied; 0209 RLS/guards pending compatible publication",
+      "aceite_visual": false,
+      "aceite_local": {
+        "authenticated_groups": 11,
+        "browser_flows": 4,
+        "synthetic_nonadmin": true,
+        "evidence": "permission-hr-compliance-2026-10-24"
+      }
     },
     {
       "id": 19,
@@ -1254,7 +1373,12 @@
       "status": "aplicado_publicado_testado_sql",
       "evidencia_migracao": "0193",
       "aceite_visual": false,
-      "publicacao_evidencia": "Confirmação do usuário em 23/10/2026; projeto sincronizado, is_published=true; marcador HTTP não observado, aceite visual pendente."
+      "publicacao_evidencia": "Confirmação do usuário em 23/10/2026; projeto sincronizado, is_published=true; marcador HTTP não observado, aceite visual pendente.",
+      "aceite_local": {
+        "environment": "isolated GoTrue/PostgREST and Chrome, synthetic Head RH nonadmin",
+        "production_user_session": false,
+        "evidence": "permission-alignment-completion-2026-10-23/aceite-rh-ambiente-recuperado.html"
+      }
     },
     {
       "id": 22,
@@ -1303,7 +1427,12 @@
       "status": "aplicado_publicado_testado_sql",
       "evidencia_migracao": "0193",
       "aceite_visual": false,
-      "publicacao_evidencia": "Confirmação do usuário em 23/10/2026; projeto sincronizado, is_published=true; marcador HTTP não observado, aceite visual pendente."
+      "publicacao_evidencia": "Confirmação do usuário em 23/10/2026; projeto sincronizado, is_published=true; marcador HTTP não observado, aceite visual pendente.",
+      "aceite_local": {
+        "environment": "isolated GoTrue/PostgREST and Chrome, synthetic Head RH nonadmin",
+        "production_user_session": false,
+        "evidence": "permission-alignment-completion-2026-10-23/aceite-rh-ambiente-recuperado.html"
+      }
     },
     {
       "id": 27,

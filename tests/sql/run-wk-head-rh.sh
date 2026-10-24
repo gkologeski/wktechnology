@@ -94,6 +94,15 @@ run_sql drizzle/migrations/0206_ats_offer_approval_boundaries.sql offers-prepara
 run_sql drizzle/migrations/0207_ats_offer_hiring_activation.sql offers-activation
 run_sql tests/sql/permission-offers.sql offers-tests
 run_sql tests/sql/permission-capabilities-equivalence.sql offers-existing-caps-tests
+run_sql tests/sql/fixtures/permission-compliance.sql compliance-fixture
+run_sql drizzle/migrations/0208_ats_compliance_actions.sql compliance-preparation
+run_sql drizzle/migrations/0209_ats_compliance_activation.sql compliance-activation
+run_sql tests/sql/permission-compliance.sql compliance-tests
+python3 - "$test_root/compliance-tests.log" <<'PYC'
+import re,sys
+p=re.findall(r'NOTICE:  COMPLIANCE PASS (\d+):',open(sys.argv[1]).read());assert p==[str(x) for x in range(1,10)],p
+print('9 compliance behavior groups passed; all synthetic changes rolled back.')
+PYC
 python3 - "$test_root/offers-tests.log" "$test_root/configuration-tests.log" "$test_root/interviews-tests.log" "$test_root/applications-tests.log" "$test_root/pipelines-tests.log" "$test_root/jobs-tests.log" "$test_root/private-tests.log" "$test_root/children-tests.log" "$test_root/hr-ui-tests.log" "$test_root/tests.log" "$test_root/save-after.log" "$test_root/rpc-after.log" "$test_root/settings-tests.log" "$test_root/hr-tests.log" <<'PY'
 import re,sys
 offers=re.findall(r'NOTICE:  OFFER PASS (\d+):',open(sys.argv.pop(1)).read());assert offers==[str(x) for x in range(1,17)],offers

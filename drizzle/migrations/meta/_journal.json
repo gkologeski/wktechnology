@@ -1457,6 +1457,20 @@
       "when": 1792845739195,
       "tag": "0207_ats_offer_hiring_activation",
       "breakpoints": true
+    },
+    {
+      "idx": 208,
+      "version": "7",
+      "when": 1792850524964,
+      "tag": "0208_ats_compliance_actions",
+      "breakpoints": true
+    },
+    {
+      "idx": 209,
+      "version": "7",
+      "when": 1792850524965,
+      "tag": "0209_ats_compliance_activation",
+      "breakpoints": true
     }
   ]
 }

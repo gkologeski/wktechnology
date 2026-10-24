@@ -4,6 +4,56 @@ Iniciado por autorização do usuário em 23/10/2026. Abrange TechSales, TechHir
 TechPeople, TechContracts, TechProjects, TechFinance e áreas compartilhadas.
 `techservice` é namespace legado, não um sétimo módulo.
 
+## Status consolidado e recalibração — 24/10/2026
+
+Percentuais gerenciais estimados, arredondados; não medem cobertura de telas,
+rotas ou testes. Nenhuma das seis etapas está integralmente concluída.
+
+| Etapa | Avanço estimado | Execução restante estimada |
+|---|---:|---:|
+| 1. Matriz oficial de permissões | 60% | 1–2h |
+| 2. Correções dos riscos críticos | 70% | 1–2h |
+| 3. Servidor e banco | 40% | 6–10h |
+| 4. Telas, ações e campos | 40% | 3–5h |
+| 5. Validação dos cargos e aceite | 40% | 2–4h |
+| 6. Prevenção de novas lacunas | 20% | 1–2h |
+
+Base desta revisão: 416 declarações de rota, 32 regras e 53 contratos de
+operação. O catálogo normativo ainda contém estados históricos de aceite que
+precisam ser reconciliados; não derivar percentuais da contagem desses estados.
+As frentes até 0207 têm evidências de aplicação/publicação nos relatórios
+anteriores. Isso não comprova revisão integral dos seis módulos.
+
+Sete blocos principais somam 8h06 de execução registrada nos turnos. Seis têm
+estimativas comparáveis; a mediana de tempo registrado/ponto médio previsto é
+aproximadamente 1/3. Não existe medição individual confiável dos sublotes do
+turno que reuniu 0195–0203 e recuperação de ambiente. Em configurações de
+entrevista, 49min registrados coexistem com quase 8h de intervalo corrido; a
+causa integral dessa diferença não foi comprovada. Não confundir execução
+registrada, espera e prazo de entrega. Lotes iniciais 0193/0194 terminaram com
+publicação pendente, confirmada posteriormente.
+
+Previsão restante recalibrada: **14–25 horas de execução**, equivalentes a
+aproximadamente **2,5–4,5 dias de 6h efetivas**, sem prazo externo garantido para
+sessões, aprovação ou publicação. Horas por etapa distribuem o trabalho, sem
+somar novamente o mesmo lote de backend/UI/aceite. Recalibrar após cada lote e
+se aparecerem novos defeitos no aceite.
+
+Novas frentes: 30–60min pequenas, 1–2h semelhantes às últimas entregas, 2–4h com
+maior incerteza. O fator observado não é redutor universal para módulos ainda
+não revisados. A previsão antiga de 3–5 dias não definiu horas/dia nem cobertura
+suficiente; não é base para calcular desvio percentual de prazo final.
+
+Próxima sequência: pendências de RH/LGPD, Finance, Contracts/Projects,
+Sales/integrações, revisão transversal, aceite geral e gate de prevenção.
+Aceite da sessão real da Priscila em produção permanece pendente; ambiente
+local recuperado não é bloqueio atual. CI técnica existente não equivale a gate
+completo de cobertura de autorização.
+
+Evidência detalhada: no projeto ChatGPT, arquivo
+`outputs/permission-status-recalibration-2026-10-24/status.json`, com os IDs dos
+turnos, previsões originais, durações registradas e intervalos corridos.
+
 ## Fontes e estados
 
 - `docs/security/permission-alignment.json`: decisões normativas das 32 regras
@@ -762,3 +812,32 @@ Priscila no navegador publicado. Relatório/prints em
 `outputs/permission-ats-offers-2026-10-24/relatorio.html` no projeto ChatGPT.
 As demais frentes do plano de seis etapas continuam pendentes, inclusive a
 revisão integral de módulos, integrações, logs/campos globais e aceite dos cargos.
+
+
+## Ordem 1 — fechamento da frente RH/LGPD (0208–0209), 24/10/2026
+
+Escopo desta entrega: regra 18, solicitações LGPD, consentimentos, retenção,
+exportação e anonimização; reconciliar o aceite local com o aceite da sessão
+real. Não significa certificar todos os caminhos de RH ou os seis módulos.
+Estimativa anunciada: 1–2h. Tempo final e estado de publicação no relatório.
+
+- Escopo por candidato e workspace ativo, sem filtro fixo pelo criador do pedido.
+- View/create/update/export/delete separados, deny preservado e candidato visível.
+- Solicitação, consentimento e tenant imutáveis; revogação preserva evidência.
+- Exportação pela sessão do operador, sem hiring_details nem bearer de agenda;
+  informa explicitamente que inclui somente dados autorizados, não dump privilegiado.
+- Vínculo de DSAR e tipo verificados antes da ação; exportar/anonimizar e concluir
+  a solicitação fazem parte da mesma transação. Falha impede confirmação parcial.
+- Guards/RLS também protegem gravações diretas; retenção exige update do candidato
+  e compliance.update. Trilhas DSAR/consentimento não têm exclusão física de usuário.
+- /compliance exige view antes de montar; ações usam capacidades do banco;
+  erros de consulta aparecem como falha, nunca como histórico vazio.
+- Nenhuma chave ou concessão nova em produção. Dados existentes preservados.
+
+9 grupos SQL novos mais regressões aprovados; 11 cenários reais de autenticação
+local e 4 fluxos no Chrome local aprovados. Head RH sintético é membro comum.
+A preparação 0208 foi aplicada; a ativação 0209 depende da publicação compatível.
+Priscila: chaves efetivas conferidas; sessão real de produção ainda não aceita.
+A sessão disponibilizada inicialmente era floripinova@gmail.com em outro workspace;
+o usuário informou dificuldade para trocar a conta Google. Não tratar login de
+outro usuário ou simulação SQL como aceite da Priscila.
