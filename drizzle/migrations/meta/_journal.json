@@ -1485,6 +1485,20 @@
       "when": 1792873273591,
       "tag": "0211_finance_core_activation",
       "breakpoints": true
+    },
+    {
+      "idx": 212,
+      "version": "7",
+      "when": 1792873273592,
+      "tag": "0212_banking_action_preparation",
+      "breakpoints": true
+    },
+    {
+      "idx": 213,
+      "version": "7",
+      "when": 1792873273593,
+      "tag": "0213_banking_action_activation",
+      "breakpoints": true
     }
   ]
 }

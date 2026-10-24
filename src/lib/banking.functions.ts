@@ -1,35 +1,16 @@
-import { getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
+import { bankingContext, validateBankEntry } from "@/lib/banking/access.server";
+import { openBankToken, sealBankToken } from "@/lib/banking/tokens.server";
 import { financeRpc } from "@/lib/access-control/finance-records.server";
 import { normalizeEmailAddress } from "@/lib/email-address";
 // Sprint G — Fase 1: fluxo OAuth Open Finance (provider abstrato).
 // Estado persiste por workspace em `bank_connections`. Tokens ficam em
 // `bank_connection_tokens` (RLS admin-only). Trilha em `bank_connection_events`.
 //
-// Todas as fns exigem admin do workspace (RLS gate, reforçado no handler).
+// Toda ação exige a permissão específica no workspace selecionado; tokens são server-only.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-
-async function getCurrentWorkspace(supabase: any, userId: string): Promise<string> {
-  const workspace = await getActiveWorkspaceId(supabase, userId);
-  const { data, error } = await supabase.rpc("is_workspace_member", {
-    _workspace: workspace,
-    _user: userId,
-  });
-  if (error || data !== true)
-    throw new Error("Usuário sem participação ativa no workspace selecionado.");
-  return workspace;
-}
-
-async function assertAdmin(supabase: any, workspaceId: string, userId: string): Promise<void> {
-  const { data, error } = await supabase.rpc("is_workspace_admin_v2", {
-    _workspace_id: workspaceId,
-    _user_id: userId,
-  });
-  if (error) throw new Error(error.message);
-  if (!data) throw new Error("Somente administradores podem gerenciar conexões bancárias");
-}
 
 // -------------------------------------------------------------------
 // GET status
@@ -40,8 +21,8 @@ export const getBankConnection = createServerFn({ method: "GET" })
     z.object({ provider: z.string().default("inter") }).parse(data ?? {}),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await getCurrentWorkspace(supabase, userId);
+    const { supabase: caller, userId } = context;
+    const { supabase, workspaceId } = await bankingContext(caller, "view", false);
 
     const { data: conn, error } = await supabase
       .from("bank_connections")
@@ -85,9 +66,8 @@ export const startBankAuthorization = createServerFn({ method: "POST" })
       .parse(data ?? {}),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await getCurrentWorkspace(supabase, userId);
-    await assertAdmin(supabase, workspaceId, userId);
+    const { supabase: caller, userId } = context;
+    const { supabase, workspaceId } = await bankingContext(caller, "connect", true);
 
     const { resolveBankProvider } = await import("./banking/providers");
     const provider = resolveBankProvider(data.provider, data.mode);
@@ -122,7 +102,11 @@ export const startBankAuthorization = createServerFn({ method: "POST" })
     const { error: metaErr } = await supabase
       .from("bank_connections")
       .update({
-        metadata: { pending_state: init.state, pending_at: new Date().toISOString() },
+        metadata: {
+          pending_state: init.state,
+          pending_at: new Date().toISOString(),
+          pending_actor: userId,
+        },
       })
       .eq("id", upserted.id);
     if (metaErr) throw new Error(metaErr.message);
@@ -160,9 +144,8 @@ export const completeBankAuthorization = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await getCurrentWorkspace(supabase, userId);
-    await assertAdmin(supabase, workspaceId, userId);
+    const { supabase: caller, userId } = context;
+    const { supabase, workspaceId } = await bankingContext(caller, "connect", true);
 
     const { data: conn, error: cErr } = await supabase
       .from("bank_connections")
@@ -185,36 +168,23 @@ export const completeBankAuthorization = createServerFn({ method: "POST" })
       const tokens = await provider.exchangeCode({ code: data.code, state: data.state });
       const expiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
 
-      // aposenta tokens antigos
-      await supabase
-        .from("bank_connection_tokens")
-        .update({ rotated_at: new Date().toISOString() })
-        .eq("connection_id", conn.id)
-        .is("rotated_at", null);
-
-      const { error: tErr } = await supabase.from("bank_connection_tokens").insert({
-        connection_id: conn.id,
-        workspace_id: workspaceId,
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-        token_type: tokens.token_type,
-        scope: tokens.scope,
-        expires_at: expiresAt,
-      });
-      if (tErr) throw new Error(tErr.message);
-
-      const { error: uErr } = await supabase
-        .from("bank_connections")
-        .update({
-          status: "connected",
+      const { data: stored, error: tErr } = await supabase.rpc("banking_store_tokens", {
+        _connection: conn.id,
+        _workspace: workspaceId,
+        _state: data.state,
+        _actor: userId,
+        _tokens: {
+          access_token: await sealBankToken(tokens.access_token),
+          refresh_token: await sealBankToken(tokens.refresh_token),
+          token_type: tokens.token_type,
+          scope: tokens.scope,
+          expires_at: expiresAt,
           display_name: tokens.display_name ?? "Banco Inter",
           external_account_id: tokens.external_account_id ?? null,
-          last_error: null,
-          last_sync_at: new Date().toISOString(),
-          metadata: { connected_at: new Date().toISOString() },
-        })
-        .eq("id", conn.id);
-      if (uErr) throw new Error(uErr.message);
+        },
+      });
+      if (tErr || stored !== true)
+        throw new Error("Não foi possível concluir a autorização bancária.");
 
       await supabase.from("bank_connection_events").insert({
         connection_id: conn.id,
@@ -225,20 +195,8 @@ export const completeBankAuthorization = createServerFn({ method: "POST" })
       });
 
       return { ok: true, connection_id: conn.id };
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      await supabase
-        .from("bank_connections")
-        .update({ status: "error", last_error: msg })
-        .eq("id", conn.id);
-      await supabase.from("bank_connection_events").insert({
-        connection_id: conn.id,
-        workspace_id: workspaceId,
-        event_type: "error",
-        actor_id: userId,
-        payload: { stage: "exchange_code", message: msg },
-      });
-      throw e;
+    } catch {
+      throw new Error("Autorização bancária não concluída. Reinicie a conexão.");
     }
   });
 
@@ -251,9 +209,8 @@ export const disconnectBank = createServerFn({ method: "POST" })
     z.object({ connection_id: z.string().uuid() }).parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await getCurrentWorkspace(supabase, userId);
-    await assertAdmin(supabase, workspaceId, userId);
+    const { supabase: caller, userId } = context;
+    const { supabase, workspaceId } = await bankingContext(caller, "connect", true);
 
     const { data: conn } = await supabase
       .from("bank_connections")
@@ -275,38 +232,20 @@ export const disconnectBank = createServerFn({ method: "POST" })
         const { resolveBankProvider } = await import("./banking/providers");
         const provider = resolveBankProvider(conn.provider, conn.mode);
         await provider.revoke({
-          access_token: activeToken.access_token,
-          refresh_token: activeToken.refresh_token,
+          access_token: await openBankToken(activeToken.access_token),
+          refresh_token: activeToken.refresh_token
+            ? await openBankToken(activeToken.refresh_token)
+            : null,
         });
       }
     } catch {
       // ignora falha de revoke — seguimos com desconexão local
     }
 
-    await supabase
-      .from("bank_connection_tokens")
-      .update({ rotated_at: new Date().toISOString() })
-      .eq("connection_id", conn.id)
-      .is("rotated_at", null);
-
-    await supabase
-      .from("bank_connections")
-      .update({
-        status: "disconnected",
-        display_name: null,
-        external_account_id: null,
-        last_sync_at: null,
-        last_error: null,
-        metadata: {},
-      })
-      .eq("id", conn.id);
-
-    await supabase.from("bank_connection_events").insert({
-      connection_id: conn.id,
-      workspace_id: workspaceId,
-      event_type: "disconnect",
-      actor_id: userId,
-      payload: {},
+    await financeRpc(supabase, "banking_disconnect", {
+      _id: conn.id,
+      _workspace: workspaceId,
+      _actor: userId,
     });
 
     return { ok: true };
@@ -318,13 +257,15 @@ export const disconnectBank = createServerFn({ method: "POST" })
 async function getActiveToken(supabase: any, connectionId: string): Promise<string> {
   const { data, error } = await supabase
     .from("bank_connection_tokens")
-    .select("access_token")
+    .select("access_token,expires_at")
     .eq("connection_id", connectionId)
     .is("rotated_at", null)
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Sem token ativo — reautorize a conexão");
-  return data.access_token as string;
+  if (data.expires_at && new Date(data.expires_at).getTime() <= Date.now())
+    throw new Error("Credencial expirada: reautorize a conexão.");
+  return openBankToken(data.access_token);
 }
 
 // -------------------------------------------------------------------
@@ -342,9 +283,8 @@ export const syncBankStatement = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await getCurrentWorkspace(supabase, userId);
-    await assertAdmin(supabase, workspaceId, userId);
+    const { supabase: caller, userId } = context;
+    const { supabase, workspaceId } = await bankingContext(caller, "sync", true);
 
     const { data: conn, error: cErr } = await supabase
       .from("bank_connections")
@@ -426,7 +366,7 @@ export const syncBankStatement = createServerFn({ method: "POST" })
 
       return { ok: true, count: rows.length, inserted, balance };
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = "Falha na operação bancária. Consulte a conexão.";
       await supabase.from("bank_connections").update({ last_error: msg }).eq("id", conn.id);
       await supabase.from("bank_connection_events").insert({
         connection_id: conn.id,
@@ -463,9 +403,8 @@ export const listBankStatement = createServerFn({ method: "POST" })
         .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await getCurrentWorkspace(supabase, userId);
-    await assertAdmin(supabase, workspaceId, userId);
+    const { supabase: caller, userId } = context;
+    const { supabase, workspaceId } = await bankingContext(caller, "view", false);
 
     let q = supabase
       .from("bank_statement_transactions")
@@ -506,19 +445,21 @@ export const setStatementReconciliation = createServerFn({ method: "POST" })
         .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await getCurrentWorkspace(supabase, userId);
-    await assertAdmin(supabase, workspaceId, userId);
+    const { supabase: caller, userId } = context;
+    const { supabase, workspaceId } = await bankingContext(caller, "reconcile", false);
 
-    const { error } = await supabase
+    const { data: updated, error } = await supabase
       .from("bank_statement_transactions")
       .update({
         reconciliation_status: data.status,
         matched_payment_id: data.matched_payment_id ?? null,
       })
       .eq("id", data.transaction_id)
-      .eq("workspace_id", workspaceId);
-    if (error) throw new Error(error.message);
+      .eq("workspace_id", workspaceId)
+      .select("id")
+      .maybeSingle();
+    if (error || !updated)
+      throw new Error("Transação indisponível ou sem permissão para conciliar.");
     return { ok: true };
   });
 
@@ -539,9 +480,8 @@ export const suggestReconciliationMatches = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await getCurrentWorkspace(supabase, userId);
-    await assertAdmin(supabase, workspaceId, userId);
+    const { supabase: caller, userId } = context;
+    const { supabase, workspaceId } = await bankingContext(caller, "view", false);
 
     const { data: txs, error: tErr } = await supabase
       .from("bank_statement_transactions")
@@ -626,9 +566,8 @@ export const listReconciliationHistory = createServerFn({ method: "POST" })
         .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await getCurrentWorkspace(supabase, userId);
-    await assertAdmin(supabase, workspaceId, userId);
+    const { supabase: caller, userId } = context;
+    const { supabase, workspaceId } = await bankingContext(caller, "view", false);
 
     const q = supabase
       .from("bank_statement_transactions")
@@ -674,9 +613,8 @@ export const bulkIgnoreTransactions = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await getCurrentWorkspace(supabase, userId);
-    await assertAdmin(supabase, workspaceId, userId);
+    const { supabase: caller, userId } = context;
+    const { supabase, workspaceId } = await bankingContext(caller, "reconcile", false);
 
     const { error, count } = await supabase
       .from("bank_statement_transactions")
@@ -700,9 +638,8 @@ export const bulkLinkBestMatch = createServerFn({ method: "POST" })
         .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await getCurrentWorkspace(supabase, userId);
-    await assertAdmin(supabase, workspaceId, userId);
+    const { supabase: caller, userId } = context;
+    const { supabase, workspaceId } = await bankingContext(caller, "reconcile", false);
 
     let txQ = supabase
       .from("bank_statement_transactions")
@@ -796,9 +733,8 @@ export const bulkCreateEntries = createServerFn({ method: "POST" })
         .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await getCurrentWorkspace(supabase, userId);
-    await assertAdmin(supabase, workspaceId, userId);
+    const { supabase: caller, userId } = context;
+    const { supabase, workspaceId } = await bankingContext(caller, "reconcile", false);
 
     let created = 0;
     const errors: string[] = [];
@@ -838,9 +774,8 @@ export const listBankCharges = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await getCurrentWorkspace(supabase, userId);
-    await assertAdmin(supabase, workspaceId, userId);
+    const { supabase: caller, userId } = context;
+    const { supabase, workspaceId } = await bankingContext(caller, "view", false);
 
     let q = supabase
       .from("bank_charges")
@@ -875,8 +810,8 @@ export const createBankCharge = createServerFn({ method: "POST" })
         .object({
           connection_id: z.string().uuid(),
           type: z.enum(["pix", "boleto"]),
-          amount: z.number().positive(),
-          due_date: z.string().min(10),
+          amount: z.number().finite().positive(),
+          due_date: z.string().date(),
           description: z.string().max(500).nullable().optional(),
           payer_name: z.string().max(200).nullable().optional(),
           payer_document: z.string().max(32).nullable().optional(),
@@ -885,10 +820,16 @@ export const createBankCharge = createServerFn({ method: "POST" })
         .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await getCurrentWorkspace(supabase, userId);
-    await assertAdmin(supabase, workspaceId, userId);
+    const { supabase: caller, userId } = context;
+    const { supabase, workspaceId } = await bankingContext(caller, "create_charge", true);
 
+    await validateBankEntry(
+      caller,
+      workspaceId,
+      data.financial_entry_id,
+      "receivable",
+      data.amount,
+    );
     const { data: conn, error: cErr } = await supabase
       .from("bank_connections")
       .select("id, provider, mode, status")
@@ -898,6 +839,12 @@ export const createBankCharge = createServerFn({ method: "POST" })
     if (cErr) throw new Error(cErr.message);
     if (!conn) throw new Error("Conexão não encontrada");
     if (conn.status !== "connected") throw new Error("Conexão inativa — reautorize");
+
+    const accessToken = await getActiveToken(supabase, conn.id);
+    const { resolveBankProvider } = await import("./banking/providers");
+    const provider = resolveBankProvider(conn.provider, conn.mode);
+    const fn = data.type === "pix" ? provider.createPixCharge : provider.createBoletoCharge;
+    if (!fn) throw new Error(`Provider não suporta ${data.type}`);
 
     const { data: inserted, error: iErr } = await supabase
       .from("bank_charges")
@@ -916,12 +863,6 @@ export const createBankCharge = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (iErr) throw new Error(iErr.message);
-
-    const accessToken = await getActiveToken(supabase, conn.id);
-    const { resolveBankProvider } = await import("./banking/providers");
-    const provider = resolveBankProvider(conn.provider, conn.mode);
-    const fn = data.type === "pix" ? provider.createPixCharge : provider.createBoletoCharge;
-    if (!fn) throw new Error(`Provider não suporta ${data.type}`);
 
     try {
       const res = await fn.call(provider, {
@@ -949,9 +890,14 @@ export const createBankCharge = createServerFn({ method: "POST" })
       if (uErr) throw new Error(uErr.message);
 
       return { ok: true, charge_id: inserted.id };
-    } catch (e) {
-      await supabase.from("bank_charges").delete().eq("id", inserted.id);
-      throw e;
+    } catch {
+      // Preserve the source id after an uncertain external result. No blind retry.
+      await supabase
+        .from("bank_charges")
+        .update({ metadata: { issuance_unconfirmed: true } })
+        .eq("id", inserted.id)
+        .eq("workspace_id", workspaceId);
+      throw new Error("Emissão não confirmada. Consulte a cobrança antes de emitir novamente.");
     }
   });
 
@@ -961,96 +907,42 @@ export const cancelBankCharge = createServerFn({ method: "POST" })
     z.object({ charge_id: z.string().uuid() }).parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await getCurrentWorkspace(supabase, userId);
-    await assertAdmin(supabase, workspaceId, userId);
+    const { supabase: caller, userId } = context;
+    const { supabase, workspaceId } = await bankingContext(caller, "cancel_charge", true);
 
     const { data: charge } = await supabase
       .from("bank_charges")
-      .select("id, status")
+      .select("id,status,connection_id,external_id")
       .eq("id", data.charge_id)
       .eq("workspace_id", workspaceId)
-      .maybeSingle();
-    if (!charge) throw new Error("Cobrança não encontrada");
-    if (charge.status !== "pending")
-      throw new Error("Somente cobranças pendentes podem ser canceladas");
-
-    const { error } = await supabase
-      .from("bank_charges")
-      .update({ status: "canceled", canceled_at: new Date().toISOString() })
-      .eq("id", data.charge_id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
-
-// Marca cobrança como paga e cria financial_payment + concilia extrato (idempotente por external_id).
-async function settleChargePayment(
-  supabase: any,
-  workspaceId: string,
-  chargeId: string,
-  paidAtIso: string,
-  actorId: string | null,
-) {
-  const { data: charge, error } = await supabase
-    .from("bank_charges")
-    .select("id, connection_id, financial_entry_id, amount, type, status, external_id, description")
-    .eq("id", chargeId)
-    .eq("workspace_id", workspaceId)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!charge) throw new Error("Cobrança não encontrada");
-  if (charge.status === "paid") return { ok: true, already: true };
-  if (charge.status !== "pending") throw new Error(`Cobrança em status ${charge.status}`);
-
-  const paidDate = paidAtIso.slice(0, 10);
-
-  let paymentId: string | null = null;
-  if (charge.financial_entry_id) {
-    const { data: linkedAccount } = await supabase
-      .from("financial_bank_accounts")
-      .select("id")
-      .eq("workspace_id", workspaceId)
-      .eq("bank_connection_id", charge.connection_id)
-      .maybeSingle();
-
-    const { data: pay, error: pErr } = await supabase
-      .from("financial_payments")
-      .insert({
-        workspace_id: workspaceId,
-        entry_id: charge.financial_entry_id,
-        bank_account_id: linkedAccount?.id ?? null,
-        paid_at: paidDate,
-        amount: charge.amount,
-        method: charge.type,
-        reference: charge.external_id ?? charge.id,
-        notes: `Liquidação automática — ${charge.type.toUpperCase()}`,
-        created_by: actorId,
-      })
-      .select("id")
       .single();
-    if (pErr) throw new Error(pErr.message);
-    paymentId = pay.id;
-
-    // financial_payments_after_change recalculates the entry exactly once.
-  }
-
-  await supabase
-    .from("bank_charges")
-    .update({ status: "paid", paid_at: paidAtIso })
-    .eq("id", chargeId);
-
-  // tenta conciliar transação de extrato com mesmo external_id
-  if (paymentId && charge.external_id) {
-    await supabase
-      .from("bank_statement_transactions")
-      .update({ reconciliation_status: "matched", matched_payment_id: paymentId })
+    if (!charge || charge.status !== "pending" || !charge.external_id)
+      throw new Error("Cobrança pendente indisponível.");
+    const { data: conn } = await supabase
+      .from("bank_connections")
+      .select("id,provider,mode,status")
+      .eq("id", charge.connection_id)
       .eq("workspace_id", workspaceId)
-      .eq("connection_id", charge.connection_id)
-      .eq("external_id", charge.external_id);
-  }
-
-  return { ok: true, payment_id: paymentId };
-}
+      .single();
+    if (!conn || conn.status !== "connected") throw new Error("Conexão inativa.");
+    const { resolveBankProvider } = await import("./banking/providers");
+    const provider = resolveBankProvider(conn.provider, conn.mode);
+    if (!provider.cancelCharge)
+      throw new Error("O provedor não suporta cancelamento. Nenhuma alteração foi feita.");
+    const token = await getActiveToken(supabase, conn.id);
+    await provider.cancelCharge({ access_token: token, external_id: charge.external_id });
+    return financeRpc<{ ok: boolean; payment_id?: string; already?: boolean }>(
+      supabase,
+      "banking_apply_event",
+      {
+        _kind: "charge",
+        _id: charge.id,
+        _status: "canceled",
+        _external: charge.external_id,
+        _actor: userId,
+      },
+    );
+  });
 
 export const simulateChargePayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -1062,15 +954,27 @@ export const simulateChargePayment = createServerFn({ method: "POST" })
     if (!internalMocksEnabled()) {
       throw new Error("A simulação bancária está desativada neste ambiente.");
     }
-    const { supabase, userId } = context;
-    const workspaceId = await getCurrentWorkspace(supabase, userId);
-    await assertAdmin(supabase, workspaceId, userId);
-    return settleChargePayment(
-      supabase,
-      workspaceId,
-      data.charge_id,
-      new Date().toISOString(),
-      userId,
+    const { supabase: caller, userId } = context;
+    const { supabase, workspaceId } = await bankingContext(caller, "simulate", false);
+    const { data: charge } = await caller
+      .from("bank_charges")
+      .select("id,connection_id")
+      .eq("workspace_id", workspaceId)
+      .eq("id", data.charge_id)
+      .single();
+    const { data: conn } = await caller
+      .from("bank_connections")
+      .select("mode")
+      .eq("id", charge?.connection_id ?? "")
+      .eq("workspace_id", workspaceId)
+      .single();
+    if (!charge || conn?.mode !== "mock")
+      throw new Error("Somente cobranças de simulação podem ser liquidadas manualmente.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return financeRpc<{ ok: boolean; payment_id?: string; already?: boolean }>(
+      supabaseAdmin,
+      "banking_apply_event",
+      { _kind: "charge", _id: charge.id, _status: "paid", _actor: userId },
     );
   });
 
@@ -1092,9 +996,8 @@ export const listBankPayments = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await getCurrentWorkspace(supabase, userId);
-    await assertAdmin(supabase, workspaceId, userId);
+    const { supabase: caller, userId } = context;
+    const { supabase, workspaceId } = await bankingContext(caller, "view", false);
 
     let q = supabase
       .from("bank_payments")
@@ -1133,7 +1036,7 @@ export const createBankPayment = createServerFn({ method: "POST" })
         .object({
           connection_id: z.string().uuid(),
           type: z.enum(["pix", "ted", "boleto"]),
-          amount: z.number().positive(),
+          amount: z.number().finite().positive(),
           scheduled_for: z.string().nullable().optional(),
           favored_name: z.string().max(200).nullable().optional(),
           favored_document: z.string().max(32).nullable().optional(),
@@ -1147,9 +1050,8 @@ export const createBankPayment = createServerFn({ method: "POST" })
         .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await getCurrentWorkspace(supabase, userId);
-    await assertAdmin(supabase, workspaceId, userId);
+    const { supabase: caller, userId } = context;
+    const { supabase, workspaceId } = await bankingContext(caller, "create_payment", false);
 
     if (data.type === "pix" && data.pix_key_type === "email") {
       data.pix_key = normalizeEmailAddress(data.pix_key);
@@ -1161,38 +1063,8 @@ export const createBankPayment = createServerFn({ method: "POST" })
       throw new Error("Código de barras ou linha digitável obrigatórios para boleto");
     }
 
-    const { data: inserted, error: iErr } = await supabase
-      .from("bank_payments")
-      .insert({
-        workspace_id: workspaceId,
-        connection_id: data.connection_id,
-        financial_entry_id: data.financial_entry_id ?? null,
-        type: data.type,
-        amount: data.amount,
-        scheduled_for: data.scheduled_for ?? null,
-        status: "draft",
-        favored_name: data.favored_name ?? null,
-        favored_document: data.favored_document ?? null,
-        pix_key: data.pix_key ?? null,
-        pix_key_type: data.pix_key_type ?? null,
-        boleto_barcode: data.boleto_barcode ?? null,
-        boleto_digitable_line: data.boleto_digitable_line ?? null,
-        description: data.description ?? null,
-        created_by: userId,
-      })
-      .select("id")
-      .single();
-    if (iErr) throw new Error(iErr.message);
-
-    await supabase.from("bank_connection_events").insert({
-      connection_id: data.connection_id,
-      workspace_id: workspaceId,
-      event_type: "payment_created",
-      actor_id: userId,
-      payload: { payment_id: inserted.id, type: data.type, amount: data.amount },
-    });
-
-    return { ok: true, payment_id: inserted.id };
+    const paymentId = await financeRpc<string>(caller, "banking_create_payment", { _data: data });
+    return { ok: true, payment_id: paymentId };
   });
 
 export const approveBankPayment = createServerFn({ method: "POST" })
@@ -1201,104 +1073,90 @@ export const approveBankPayment = createServerFn({ method: "POST" })
     z.object({ payment_id: z.string().uuid() }).parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await getCurrentWorkspace(supabase, userId);
-    await assertAdmin(supabase, workspaceId, userId);
+    const result = await financeRpc<any>(context.supabase, "banking_payment_transition", {
+      _id: data.payment_id,
+      _action: "approve",
+    });
+    return { ok: true, status: result.status };
+  });
 
-    const { data: p, error: pErr } = await supabase
+export const executeBankPayment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { payment_id: string }) =>
+    z.object({ payment_id: z.string().uuid() }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase: caller } = context;
+    const { supabase, workspaceId } = await bankingContext(caller, "execute", true);
+    // Resolve provider/token before claiming; then exactly one caller can claim approved -> processing.
+    const { data: preview, error } = await caller
       .from("bank_payments")
-      .select(
-        "id, connection_id, type, amount, favored_name, favored_document, pix_key, pix_key_type, boleto_barcode, boleto_digitable_line, description, status, created_by",
-      )
+      .select("connection_id")
+      .eq("workspace_id", workspaceId)
       .eq("id", data.payment_id)
-      .eq("workspace_id", workspaceId)
-      .maybeSingle();
-    if (pErr) throw new Error(pErr.message);
-    if (!p) throw new Error("Pagamento não encontrado");
-    if (p.status !== "draft")
-      throw new Error(`Somente rascunhos podem ser aprovados (status: ${p.status})`);
-    if (p.created_by && p.created_by === userId) {
-      // Nota: dupla custódia opcional — permitir por enquanto, apenas registrar
-    }
-
-    const { data: conn, error: cErr } = await supabase
+      .single();
+    if (error || !preview) throw new Error("Pagamento indisponível.");
+    const { data: conn } = await supabase
       .from("bank_connections")
-      .select("id, provider, mode, status")
-      .eq("id", p.connection_id)
+      .select("id,provider,mode,status")
+      .eq("id", preview.connection_id)
       .eq("workspace_id", workspaceId)
-      .maybeSingle();
-    if (cErr) throw new Error(cErr.message);
-    if (!conn || conn.status !== "connected") throw new Error("Conexão inativa");
-
-    const accessToken = await getActiveToken(supabase, conn.id);
+      .single();
+    if (!conn || conn.status !== "connected") throw new Error("Conexão inativa.");
     const { resolveBankProvider } = await import("./banking/providers");
     const provider = resolveBankProvider(conn.provider, conn.mode);
-
-    let providerRes;
-    try {
-      if (p.type === "pix") {
-        if (!provider.createPixPayment) throw new Error("Provider não suporta pagamento Pix");
-        providerRes = await provider.createPixPayment({
-          access_token: accessToken,
-          payment_id: p.id,
-          amount: Number(p.amount),
-          favored_name: p.favored_name ?? "",
-          favored_document: p.favored_document ?? "",
-          pix_key: p.pix_key ?? "",
-          pix_key_type: p.pix_key_type ?? "random",
-          description: p.description,
-        });
-      } else if (p.type === "boleto") {
-        if (!provider.createBoletoPayment) throw new Error("Provider não suporta pagamento boleto");
-        providerRes = await provider.createBoletoPayment({
-          access_token: accessToken,
-          payment_id: p.id,
-          amount: Number(p.amount),
-          barcode: p.boleto_barcode ?? p.boleto_digitable_line ?? "",
-          favored_name: p.favored_name,
-          description: p.description,
-        });
-      } else {
-        throw new Error("TED ainda não suportado no provider atual");
-      }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      await supabase
-        .from("bank_payments")
-        .update({ status: "failed", failure_reason: msg })
-        .eq("id", p.id);
-      throw e;
-    }
-
-    const nextStatus =
-      providerRes.status === "paid"
-        ? "paid"
-        : providerRes.status === "failed"
-          ? "failed"
-          : "processing";
-
-    await supabase
-      .from("bank_payments")
-      .update({
-        status: nextStatus,
-        external_id: providerRes.external_id,
-        approved_by: userId,
-        approved_at: new Date().toISOString(),
-        failure_reason: providerRes.failure_reason ?? null,
-        metadata: (providerRes.raw ?? {}) as any,
-        paid_at: nextStatus === "paid" ? new Date().toISOString() : null,
-      })
-      .eq("id", p.id);
-
-    await supabase.from("bank_connection_events").insert({
-      connection_id: conn.id,
-      workspace_id: workspaceId,
-      event_type: "payment_approved",
-      actor_id: userId,
-      payload: { payment_id: p.id, external_id: providerRes.external_id, status: nextStatus },
+    const accessToken = await getActiveToken(supabase, conn.id);
+    const p = await financeRpc<any>(caller, "banking_payment_transition", {
+      _id: data.payment_id,
+      _action: "execute",
     });
-
-    return { ok: true, status: nextStatus, external_id: providerRes.external_id };
+    // Keep processing after uncertain provider errors. Never retry a possible debit blindly.
+    try {
+      const result =
+        p.type === "pix"
+          ? await provider.createPixPayment!({
+              access_token: accessToken,
+              payment_id: p.id,
+              amount: Number(p.amount),
+              favored_name: p.favored_name ?? "",
+              favored_document: p.favored_document ?? "",
+              pix_key: p.pix_key ?? "",
+              pix_key_type: p.pix_key_type ?? "random",
+              description: p.description,
+            })
+          : await provider.createBoletoPayment!({
+              access_token: accessToken,
+              payment_id: p.id,
+              amount: Number(p.amount),
+              barcode: p.boleto_barcode ?? p.boleto_digitable_line ?? "",
+              favored_name: p.favored_name,
+              description: p.description,
+            });
+      const { error: savedError } = await supabase
+        .from("bank_payments")
+        .update({
+          external_id: result.external_id,
+          metadata: { ...p.metadata, provider_result: result.raw ?? {} },
+        })
+        .eq("id", p.id)
+        .eq("workspace_id", workspaceId)
+        .eq("status", "processing");
+      if (savedError) throw new Error("Falha ao registrar resposta bancária.");
+      if (result.status !== "processing")
+        await financeRpc(supabase, "banking_apply_event", {
+          _kind: "payment",
+          _id: p.id,
+          _status: result.status,
+          _external: result.external_id,
+          _reason: result.failure_reason ?? null,
+          _actor: context.userId,
+        });
+      return { ok: true, status: result.status, external_id: result.external_id };
+    } catch {
+      throw new Error(
+        "Execução com resultado não confirmado. Consulte o status antes de qualquer nova tentativa.",
+      );
+    }
   });
 
 export const cancelBankPayment = createServerFn({ method: "POST" })
@@ -1307,25 +1165,13 @@ export const cancelBankPayment = createServerFn({ method: "POST" })
     z.object({ payment_id: z.string().uuid() }).parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await getCurrentWorkspace(supabase, userId);
-    await assertAdmin(supabase, workspaceId, userId);
+    const { supabase: caller, userId } = context;
+    const { supabase, workspaceId } = await bankingContext(caller, "cancel_payment", false);
 
-    const { data: p } = await supabase
-      .from("bank_payments")
-      .select("id, status")
-      .eq("id", data.payment_id)
-      .eq("workspace_id", workspaceId)
-      .maybeSingle();
-    if (!p) throw new Error("Pagamento não encontrado");
-    if (!["draft", "approved"].includes(p.status)) {
-      throw new Error("Somente pagamentos em rascunho ou aprovados podem ser cancelados");
-    }
-    const { error } = await supabase
-      .from("bank_payments")
-      .update({ status: "canceled" })
-      .eq("id", data.payment_id);
-    if (error) throw new Error(error.message);
+    await financeRpc(caller, "banking_payment_transition", {
+      _id: data.payment_id,
+      _action: "cancel_payment",
+    });
     return { ok: true };
   });
 
@@ -1339,13 +1185,29 @@ export const simulatePaymentSettlement = createServerFn({ method: "POST" })
     if (!internalMocksEnabled()) {
       throw new Error("A simulação bancária está desativada neste ambiente.");
     }
-    const { supabase, userId } = context;
-    const workspaceId = await getCurrentWorkspace(supabase, userId);
-    await assertAdmin(supabase, workspaceId, userId);
+    const { supabase: caller, userId } = context;
+    const { supabase, workspaceId } = await bankingContext(caller, "simulate", false);
 
-    const { settleBankPaymentAdmin } = await import("./banking/payments.server");
-    // supabase (usuário admin) tem RLS admin_update — usar diretamente.
-    return settleBankPaymentAdmin(supabase, data.payment_id, new Date().toISOString(), userId);
+    const { data: p } = await caller
+      .from("bank_payments")
+      .select("id,connection_id")
+      .eq("workspace_id", workspaceId)
+      .eq("id", data.payment_id)
+      .single();
+    const { data: conn } = await caller
+      .from("bank_connections")
+      .select("mode")
+      .eq("id", p?.connection_id ?? "")
+      .eq("workspace_id", workspaceId)
+      .single();
+    if (!p || conn?.mode !== "mock")
+      throw new Error("Somente pagamentos de simulação podem ser liquidados manualmente.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return financeRpc<{ ok: boolean; payment_id?: string; already?: boolean }>(
+      supabaseAdmin,
+      "banking_apply_event",
+      { _kind: "payment", _id: p.id, _status: "paid", _actor: userId },
+    );
   });
 
 // -------------------------------------------------------------------
@@ -1357,9 +1219,8 @@ export const getPaymentsSummary = createServerFn({ method: "POST" })
     z.object({ connection_id: z.string().uuid() }).parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await getCurrentWorkspace(supabase, userId);
-    await assertAdmin(supabase, workspaceId, userId);
+    const { supabase: caller, userId } = context;
+    const { supabase, workspaceId } = await bankingContext(caller, "view", false);
 
     const today = new Date().toISOString().slice(0, 10);
     const in7 = new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10);
@@ -1395,9 +1256,8 @@ export const getBankingHealth = createServerFn({ method: "GET" })
     z.object({ provider: z.string().default("inter") }).parse(data ?? {}),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await getCurrentWorkspace(supabase, userId);
-    await assertAdmin(supabase, workspaceId, userId);
+    const { supabase: caller, userId } = context;
+    const { supabase, workspaceId } = await bankingContext(caller, "view", false);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = supabaseAdmin as any;
@@ -1409,23 +1269,10 @@ export const getBankingHealth = createServerFn({ method: "GET" })
       .eq("provider", data.provider)
       .maybeSingle();
 
-    const { data: lastRun } = await admin
-      .from("cron_run_logs")
-      .select("job_name, started_at, finished_at, duration_ms, status, metrics, error")
-      .eq("job_name", "banking-tick")
-      .order("started_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    const { data: recentRuns } = await admin
-      .from("cron_run_logs")
-      .select("status")
-      .eq("job_name", "banking-tick")
-      .order("started_at", { ascending: false })
-      .limit(24);
-    const runsOk = (recentRuns ?? []).filter((r: any) => r.status === "ok").length;
-    const runsFailed = (recentRuns ?? []).filter((r: any) => r.status !== "ok").length;
-
+    // Global cron logs are platform diagnostics, not tenant banking data.
+    const lastRun = null;
+    const runsOk = null;
+    const runsFailed = null;
     const { data: alerts } = await admin
       .from("platform_alert_events")
       .select("id, severity, message, context, fired_at")

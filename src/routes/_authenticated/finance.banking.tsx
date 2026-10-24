@@ -1,3 +1,5 @@
+import { HrScreenAccess } from "@/components/hr-access";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 // Sprint G — Fases 1 e 2: conexão OAuth + saldo e extrato.
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -39,6 +41,7 @@ import {
   listBankPayments,
   createBankPayment,
   approveBankPayment,
+  executeBankPayment,
   cancelBankPayment,
   simulatePaymentSettlement,
   getPaymentsSummary,
@@ -78,9 +81,13 @@ import {
 import { formatCurrency } from "@/lib/crm";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
-import { formatIsoDate } from "@/lib/iso-date";
+import { formatIsoDate, parseIsoDate } from "@/lib/iso-date";
 export const Route = createFileRoute("/_authenticated/finance/banking")({
-  component: BankingPage,
+  component: () => (
+    <HrScreenAccess resources={["techfinance.banking"]}>
+      <BankingPage />
+    </HrScreenAccess>
+  ),
   head: () => ({
     meta: [
       { title: "Banco Inter — Conexão | TechFinance" },
@@ -118,6 +125,9 @@ const RECON_LABEL: Record<string, string> = {
 };
 
 function BankingPage() {
+  const access = usePermissions();
+  const can = (resource: string, action = "manage") =>
+    access.can(`techfinance.${resource}.${action}.workspace`);
   const qc = useQueryClient();
   const getConn = useServerFn(getBankConnection);
   const startFn = useServerFn(startBankAuthorization);
@@ -128,7 +138,7 @@ function BankingPage() {
   const setRecon = useServerFn(setStatementReconciliation);
 
   const q = useQuery({
-    queryKey: ["banking", "inter"],
+    queryKey: ["banking", access.workspaceId, "inter"],
     queryFn: () => getConn({ data: { provider: "inter" } }),
   });
 
@@ -138,7 +148,7 @@ function BankingPage() {
   const events = q.data?.events ?? [];
 
   const stmt = useQuery({
-    queryKey: ["banking", "statement", conn?.id],
+    queryKey: ["banking", access.workspaceId, "statement", conn?.id],
     enabled: !!conn?.id && status === "connected",
     queryFn: () => listStmt({ data: { connection_id: conn!.id, status: "all", limit: 200 } }),
   });
@@ -206,7 +216,7 @@ function BankingPage() {
     mutationFn: (args: { id: string; status: "pending" | "ignored" }) =>
       setRecon({ data: { transaction_id: args.id, status: args.status } }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["banking", "statement"] });
+      qc.invalidateQueries({ queryKey: ["banking"] });
     },
     onError: (e: unknown) =>
       toast.error(e instanceof Error ? e.message : "Falha ao atualizar status"),
@@ -219,7 +229,7 @@ function BankingPage() {
   const simulatePay = useServerFn(simulateChargePayment);
 
   const charges = useQuery({
-    queryKey: ["banking", "charges", conn?.id],
+    queryKey: ["banking", access.workspaceId, "charges", conn?.id],
     enabled: !!conn?.id && status === "connected",
     queryFn: () => listCharges({ data: { connection_id: conn!.id, status: "all", limit: 200 } }),
   });
@@ -252,7 +262,7 @@ function BankingPage() {
       toast.success("Cobrança criada");
       setChargeDialogOpen(false);
       setChargeForm((f) => ({ ...f, amount: "", description: "" }));
-      qc.invalidateQueries({ queryKey: ["banking", "charges"] });
+      qc.invalidateQueries({ queryKey: ["banking"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao criar cobrança"),
   });
@@ -261,7 +271,7 @@ function BankingPage() {
     mutationFn: (id: string) => cancelCharge({ data: { charge_id: id } }),
     onSuccess: () => {
       toast.success("Cobrança cancelada");
-      qc.invalidateQueries({ queryKey: ["banking", "charges"] });
+      qc.invalidateQueries({ queryKey: ["banking"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao cancelar"),
   });
@@ -279,23 +289,25 @@ function BankingPage() {
   const listPayments = useServerFn(listBankPayments);
   const createPayment = useServerFn(createBankPayment);
   const approvePayment = useServerFn(approveBankPayment);
+  const executePayment = useServerFn(executeBankPayment);
   const cancelPayment = useServerFn(cancelBankPayment);
   const simulateSettle = useServerFn(simulatePaymentSettlement);
   const paymentsSummary = useServerFn(getPaymentsSummary);
 
   const payments = useQuery({
-    queryKey: ["banking", "payments", conn?.id],
+    queryKey: ["banking", access.workspaceId, "payments", conn?.id],
     enabled: !!conn?.id && status === "connected",
     queryFn: () => listPayments({ data: { connection_id: conn!.id, status: "all", limit: 200 } }),
   });
 
   const summary = useQuery({
-    queryKey: ["banking", "payments-summary", conn?.id],
+    queryKey: ["banking", access.workspaceId, "payments-summary", conn?.id],
     enabled: !!conn?.id && status === "connected",
     queryFn: () => paymentsSummary({ data: { connection_id: conn!.id } }),
   });
 
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [executionTarget, setExecutionTarget] = useState<any>(null);
   const [paymentForm, setPaymentForm] = useState({
     type: "pix" as "pix" | "ted" | "boleto",
     amount: "",
@@ -335,8 +347,8 @@ function BankingPage() {
         pix_key: "",
         boleto_digitable_line: "",
       }));
-      qc.invalidateQueries({ queryKey: ["banking", "payments"] });
-      qc.invalidateQueries({ queryKey: ["banking", "payments-summary"] });
+      qc.invalidateQueries({ queryKey: ["banking"] });
+      qc.invalidateQueries({ queryKey: ["banking"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao criar pagamento"),
   });
@@ -344,17 +356,29 @@ function BankingPage() {
   const approvePayMut = useMutation({
     mutationFn: (id: string) => approvePayment({ data: { payment_id: id } }),
     onSuccess: (res: any) => {
-      toast.success(`Pagamento ${res.status === "paid" ? "liquidado" : "enviado"}`);
+      toast.success("Pagamento aprovado. A execução é uma ação separada.");
       qc.invalidateQueries({ queryKey: ["banking"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao aprovar"),
   });
 
+  const executePayMut = useMutation({
+    mutationFn: (id: string) => executePayment({ data: { payment_id: id } }),
+    onSuccess: () => {
+      setExecutionTarget(null);
+      toast.success("Execução registrada. Consulte o status do pagamento.");
+      qc.invalidateQueries({ queryKey: ["banking"] });
+    },
+    onError: (e) => {
+      toast.error(e instanceof Error ? e.message : "Falha na execução");
+      qc.invalidateQueries({ queryKey: ["banking"] });
+    },
+  });
   const cancelPayMut = useMutation({
     mutationFn: (id: string) => cancelPayment({ data: { payment_id: id } }),
     onSuccess: () => {
       toast.success("Pagamento cancelado");
-      qc.invalidateQueries({ queryKey: ["banking", "payments"] });
+      qc.invalidateQueries({ queryKey: ["banking"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao cancelar"),
   });
@@ -372,7 +396,7 @@ function BankingPage() {
     <div className="flex flex-col gap-6 p-6">
       <PageHeader
         title="Banco Inter"
-        description="Conexão Open Finance por workspace. Fase 2: saldo e extrato via provider mock."
+        description="Conexões e operações bancárias por workspace. Provedor disponível: Banco Inter em simulação."
       />
 
       <Card>
@@ -407,7 +431,7 @@ function BankingPage() {
                 <Button
                   variant="outline"
                   onClick={() => conn && syncMut.mutate(conn.id)}
-                  disabled={syncMut.isPending}
+                  disabled={!can("banking_sync") || syncMut.isPending}
                 >
                   {syncMut.isPending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -419,7 +443,7 @@ function BankingPage() {
                 <Button
                   variant="outline"
                   onClick={() => conn && disconnectMut.mutate(conn.id)}
-                  disabled={disconnectMut.isPending}
+                  disabled={!can("banking") || disconnectMut.isPending}
                 >
                   {disconnectMut.isPending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -432,7 +456,7 @@ function BankingPage() {
             ) : (
               <Button
                 onClick={() => startMut.mutate()}
-                disabled={!mockEnabled || startMut.isPending}
+                disabled={!can("banking") || !mockEnabled || startMut.isPending}
                 title={mockEnabled ? undefined : "Simulação indisponível neste ambiente"}
               >
                 {startMut.isPending ? (
@@ -466,7 +490,7 @@ function BankingPage() {
             </div>
             <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
               <ShieldCheck className="h-3.5 w-3.5" />
-              Acesso restrito a administradores.
+              Acesso conforme a matriz de permissões bancárias.
             </div>
           </div>
           <div className="rounded-md border p-3">
@@ -524,7 +548,10 @@ function BankingPage() {
                   processamento → pago (conciliação automática com AP).
                 </CardDescription>
               </div>
-              <Button onClick={() => setPaymentDialogOpen(true)} disabled={status !== "connected"}>
+              <Button
+                onClick={() => setPaymentDialogOpen(true)}
+                disabled={!can("bank_payment_drafts", "create") || status !== "connected"}
+              >
                 <Plus className="h-4 w-4" /> Novo pagamento
               </Button>
             </CardHeader>
@@ -573,7 +600,7 @@ function BankingPage() {
                         <TableCell className="text-sm">{p.description ?? "—"}</TableCell>
                         <TableCell className="text-xs">
                           {p.scheduled_for
-                            ? new Date(p.scheduled_for).toLocaleDateString("pt-BR")
+                            ? (parseIsoDate(p.scheduled_for)?.toLocaleDateString("pt-BR") ?? "—")
                             : "—"}
                         </TableCell>
                         <TableCell className="text-right tabular-nums font-medium">
@@ -612,7 +639,7 @@ function BankingPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => approvePayMut.mutate(p.id)}
-                                disabled={approvePayMut.isPending}
+                                disabled={!can("bank_payment_approval") || approvePayMut.isPending}
                               >
                                 <Send className="h-3.5 w-3.5" /> Aprovar
                               </Button>
@@ -620,7 +647,9 @@ function BankingPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => cancelPayMut.mutate(p.id)}
-                                disabled={cancelPayMut.isPending}
+                                disabled={
+                                  !can("bank_payment_cancellation") || cancelPayMut.isPending
+                                }
                               >
                                 <X className="h-3.5 w-3.5" />
                               </Button>
@@ -631,21 +660,37 @@ function BankingPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => simulateSettleMut.mutate(p.id)}
-                              disabled={!mockEnabled || simulateSettleMut.isPending}
+                              disabled={
+                                !can("banking_simulation") ||
+                                !mockEnabled ||
+                                simulateSettleMut.isPending
+                              }
                               title="Simular confirmação (mock)"
                             >
                               <CheckCircle2 className="h-3.5 w-3.5" /> Liquidar
                             </Button>
                           )}
                           {p.status === "approved" && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => simulateSettleMut.mutate(p.id)}
-                              disabled={!mockEnabled || simulateSettleMut.isPending}
-                            >
-                              <CheckCircle2 className="h-3.5 w-3.5" /> Liquidar
-                            </Button>
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setExecutionTarget(p)}
+                                disabled={!can("bank_payment_execution") || executePayMut.isPending}
+                              >
+                                <Send className="h-3.5 w-3.5" /> Executar
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => cancelPayMut.mutate(p.id)}
+                                disabled={
+                                  !can("bank_payment_cancellation") || cancelPayMut.isPending
+                                }
+                              >
+                                <X className="h-3.5 w-3.5" /> Cancelar
+                              </Button>
+                            </>
                           )}
                         </TableCell>
                       </TableRow>
@@ -667,7 +712,10 @@ function BankingPage() {
                   automaticamente no lançamento financeiro associado.
                 </CardDescription>
               </div>
-              <Button onClick={() => setChargeDialogOpen(true)} disabled={status !== "connected"}>
+              <Button
+                onClick={() => setChargeDialogOpen(true)}
+                disabled={!can("bank_charge_issuance") || status !== "connected"}
+              >
                 <Plus className="h-4 w-4" /> Nova cobrança
               </Button>
             </CardHeader>
@@ -708,7 +756,7 @@ function BankingPage() {
                         <TableCell className="text-sm">{c.description ?? "—"}</TableCell>
                         <TableCell className="text-sm">{c.payer_name ?? "—"}</TableCell>
                         <TableCell className="text-xs">
-                          {new Date(c.due_date).toLocaleDateString("pt-BR")}
+                          {parseIsoDate(c.due_date)?.toLocaleDateString("pt-BR") ?? "—"}
                         </TableCell>
                         <TableCell className="text-right tabular-nums font-medium">
                           {formatCurrency(Number(c.amount), "BRL")}
@@ -742,7 +790,11 @@ function BankingPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => simulatePayMut.mutate(c.id)}
-                                disabled={!mockEnabled || simulatePayMut.isPending}
+                                disabled={
+                                  !can("banking_simulation") ||
+                                  !mockEnabled ||
+                                  simulatePayMut.isPending
+                                }
                                 title="Simular liquidação (mock)"
                               >
                                 <CheckCircle2 className="h-3.5 w-3.5" /> Liquidar
@@ -751,7 +803,9 @@ function BankingPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => cancelChargeMut.mutate(c.id)}
-                                disabled={cancelChargeMut.isPending}
+                                disabled={
+                                  !can("bank_charge_cancellation") || cancelChargeMut.isPending
+                                }
                               >
                                 <X className="h-3.5 w-3.5" />
                               </Button>
@@ -843,7 +897,7 @@ function BankingPage() {
                                     t.reconciliation_status === "ignored" ? "pending" : "ignored",
                                 })
                               }
-                              disabled={reconMut.isPending}
+                              disabled={!can("banking", "update") || reconMut.isPending}
                             >
                               {t.reconciliation_status === "ignored" ? "Reativar" : "Ignorar"}
                             </Button>
@@ -916,7 +970,7 @@ function BankingPage() {
                   state: mockDialog.state,
                 })
               }
-              disabled={completeMut.isPending}
+              disabled={!can("banking") || completeMut.isPending}
             >
               {completeMut.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               Aprovar consentimento
@@ -1003,7 +1057,10 @@ function BankingPage() {
             <Button
               onClick={() => createChargeMut.mutate()}
               disabled={
-                createChargeMut.isPending || !chargeForm.amount || Number(chargeForm.amount) <= 0
+                !can("bank_charge_issuance") ||
+                createChargeMut.isPending ||
+                !chargeForm.amount ||
+                Number(chargeForm.amount) <= 0
               }
             >
               {createChargeMut.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -1022,7 +1079,7 @@ function BankingPage() {
             </DialogTitle>
             <DialogDescription>
               {showCharge?.description || "Sem descrição"} · Vencimento{" "}
-              {showCharge && new Date(showCharge.due_date).toLocaleDateString("pt-BR")}
+              {showCharge && parseIsoDate(showCharge.due_date)?.toLocaleDateString("pt-BR")}
             </DialogDescription>
           </DialogHeader>
           {showCharge?.type === "pix" ? (
@@ -1096,14 +1153,53 @@ function BankingPage() {
         </DialogContent>
       </Dialog>
 
+      <Dialog
+        open={!!executionTarget}
+        onOpenChange={(open) => {
+          if (!open && !executePayMut.isPending) setExecutionTarget(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Executar pagamento aprovado</DialogTitle>
+            <DialogDescription>
+              Confira os dados antes de enviar ao provedor. Aprovar não realiza o envio.
+            </DialogDescription>
+          </DialogHeader>
+          <p>
+            {executionTarget?.favored_name || "Beneficiário não informado"} —{" "}
+            {formatCurrency(Number(executionTarget?.amount ?? 0))}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {conn?.mode === "mock"
+              ? "Simulação: nenhum dinheiro real será movimentado."
+              : "A confirmação solicita o pagamento ao banco conectado."}
+          </p>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              disabled={executePayMut.isPending}
+              onClick={() => setExecutionTarget(null)}
+            >
+              Voltar
+            </Button>
+            <Button
+              disabled={!can("bank_payment_execution") || executePayMut.isPending}
+              onClick={() => executionTarget && executePayMut.mutate(executionTarget.id)}
+            >
+              Confirmar execução
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Novo pagamento AP */}
       <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
         <DialogContent className="sm:max-w-[520px]">
           <DialogHeader>
             <DialogTitle>Novo pagamento</DialogTitle>
             <DialogDescription>
-              Emita um Pix ou boleto de saída via Banco Inter. Após criar, aprove para enviar ao
-              provider.
+              Crie um rascunho. A aprovação e a execução no provedor são ações separadas.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 py-2">
@@ -1116,13 +1212,15 @@ function BankingPage() {
                   onChange={(e) => setPaymentForm((f) => ({ ...f, type: e.target.value as any }))}
                 >
                   <option value="pix">Pix</option>
-                  <option value="ted">TED</option>
                   <option value="boleto">Boleto</option>
                 </select>
               </div>
               <div>
-                <Label className="text-xs">Valor (R$)</Label>
+                <Label htmlFor="payment-amount" className="text-xs">
+                  Valor (R$)
+                </Label>
                 <Input
+                  id="payment-amount"
                   type="number"
                   step="0.01"
                   min="0"
@@ -1141,15 +1239,21 @@ function BankingPage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs">Beneficiário</Label>
+                <Label htmlFor="payment-favored" className="text-xs">
+                  Beneficiário
+                </Label>
                 <Input
+                  id="payment-favored"
                   value={paymentForm.favored_name}
                   onChange={(e) => setPaymentForm((f) => ({ ...f, favored_name: e.target.value }))}
                 />
               </div>
               <div>
-                <Label className="text-xs">CPF/CNPJ</Label>
+                <Label htmlFor="payment-document" className="text-xs">
+                  CPF/CNPJ
+                </Label>
                 <Input
+                  id="payment-document"
                   value={paymentForm.favored_document}
                   onChange={(e) =>
                     setPaymentForm((f) => ({ ...f, favored_document: e.target.value }))
@@ -1176,8 +1280,11 @@ function BankingPage() {
                   </select>
                 </div>
                 <div>
-                  <Label className="text-xs">Chave Pix</Label>
+                  <Label htmlFor="payment-pix" className="text-xs">
+                    Chave Pix
+                  </Label>
                   <Input
+                    id="payment-pix"
                     type={paymentForm.pix_key_type === "email" ? "email" : "text"}
                     value={paymentForm.pix_key}
                     onChange={(e) => setPaymentForm((f) => ({ ...f, pix_key: e.target.value }))}
@@ -1187,8 +1294,11 @@ function BankingPage() {
             )}
             {paymentForm.type === "boleto" && (
               <div>
-                <Label className="text-xs">Linha digitável</Label>
+                <Label htmlFor="payment-boleto" className="text-xs">
+                  Linha digitável
+                </Label>
                 <Input
+                  id="payment-boleto"
                   value={paymentForm.boleto_digitable_line}
                   onChange={(e) =>
                     setPaymentForm((f) => ({ ...f, boleto_digitable_line: e.target.value }))
@@ -1211,7 +1321,10 @@ function BankingPage() {
             <Button
               onClick={() => createPaymentMut.mutate()}
               disabled={
-                createPaymentMut.isPending || !paymentForm.amount || Number(paymentForm.amount) <= 0
+                !can("bank_payment_drafts", "create") ||
+                createPaymentMut.isPending ||
+                !paymentForm.amount ||
+                Number(paymentForm.amount) <= 0
               }
             >
               {createPaymentMut.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -1225,15 +1338,15 @@ function BankingPage() {
 }
 
 function BankingHealthCard({ providerConnected }: { providerConnected: boolean }) {
+  const access = usePermissions();
   const healthFn = useServerFn(getBankingHealth);
   const health = useQuery({
-    queryKey: ["banking", "health"],
+    queryKey: ["banking", access.workspaceId, "health"],
     queryFn: () => healthFn({ data: { provider: "inter" } }),
     refetchInterval: 60_000,
   });
 
   const h = health.data;
-  const lastRun = h?.last_run as any;
   const alerts = (h?.alerts ?? []) as Array<{
     id: string;
     severity: "info" | "warning" | "error";
@@ -1242,13 +1355,14 @@ function BankingHealthCard({ providerConnected }: { providerConnected: boolean }
   }>;
 
   const hasIssue =
-    !!h &&
-    ((h.stuck_payments ?? 0) > 0 ||
-      h.token_expires_soon ||
-      !h.token_has_refresh ||
-      (h.runs_failed ?? 0) > 0 ||
-      alerts.some((a) => a.severity !== "info") ||
-      !!h.last_error);
+    health.isError ||
+    (!!h &&
+      ((h.stuck_payments ?? 0) > 0 ||
+        h.token_expires_soon ||
+        !h.token_has_refresh ||
+        (h.runs_failed ?? 0) > 0 ||
+        alerts.some((a) => a.severity !== "info") ||
+        !!h.last_error));
 
   const tone = hasIssue ? "warning" : "ok";
 
@@ -1270,7 +1384,13 @@ function BankingHealthCard({ providerConnected }: { providerConnected: boolean }
             <CardTitle className="flex items-center gap-2 text-base">
               Saúde das conexões
               <Badge variant={tone === "ok" ? "secondary" : "destructive"}>
-                {health.isLoading ? "Carregando…" : tone === "ok" ? "Saudável" : "Atenção"}
+                {health.isLoading
+                  ? "Carregando…"
+                  : health.isError
+                    ? "Indisponível"
+                    : tone === "ok"
+                      ? "Saudável"
+                      : "Atenção"}
               </Badge>
             </CardTitle>
             <CardDescription className="mt-1">
@@ -1297,27 +1417,19 @@ function BankingHealthCard({ providerConnected }: { providerConnected: boolean }
       <CardContent className="space-y-4 text-sm">
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-md border p-3">
-            <div className="text-xs uppercase text-muted-foreground">Última execução</div>
+            <div className="text-xs uppercase text-muted-foreground">Sincronização da conexão</div>
             <div className="mt-1 flex items-center gap-1.5 text-sm">
               <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-              {lastRun?.started_at ? new Date(lastRun.started_at).toLocaleString("pt-BR") : "—"}
+              {h?.last_sync_at
+                ? new Date(h.last_sync_at).toLocaleString("pt-BR")
+                : "Sem sincronização"}
             </div>
-            <div className="mt-1 text-xs text-muted-foreground">
-              {lastRun
-                ? `${lastRun.status === "ok" ? "OK" : "Falha"} · ${lastRun.duration_ms ?? 0}ms`
-                : "Cron ainda não executou"}
-            </div>
+            <div className="mt-1 text-xs text-muted-foreground">Dados do workspace selecionado</div>
           </div>
           <div className="rounded-md border p-3">
-            <div className="text-xs uppercase text-muted-foreground">Últimas 24 execuções</div>
-            <div className="mt-1 text-sm tabular-nums">
-              <span className="text-emerald-600 dark:text-emerald-400">{h?.runs_ok ?? 0} ok</span> ·{" "}
-              <span
-                className={(h?.runs_failed ?? 0) > 0 ? "text-destructive" : "text-muted-foreground"}
-              >
-                {h?.runs_failed ?? 0} falhas
-              </span>
-            </div>
+            <div className="text-xs uppercase text-muted-foreground">Auditoria da conexão</div>
+            <div className="mt-1 text-sm">Histórico de eventos</div>
+            <div className="mt-1 text-xs text-muted-foreground">Consulte a aba Histórico.</div>
           </div>
           <div className="rounded-md border p-3">
             <div className="text-xs uppercase text-muted-foreground">Pagamentos parados</div>

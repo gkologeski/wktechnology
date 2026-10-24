@@ -1,3 +1,5 @@
+import { HrScreenAccess } from "@/components/hr-access";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 // Sprint G — Fase 3: Conciliação bancária.
 // Tela para revisar pendências, aceitar/ignorar sugestões e reativar
 // conciliações do histórico.
@@ -50,7 +52,11 @@ import {
 import { formatCurrency } from "@/lib/crm";
 
 export const Route = createFileRoute("/_authenticated/finance/banking/reconciliation")({
-  component: ReconciliationPage,
+  component: () => (
+    <HrScreenAccess resources={["techfinance.banking"]}>
+      <ReconciliationPage />
+    </HrScreenAccess>
+  ),
   head: () => ({
     meta: [
       { title: "Conciliação bancária | TechFinance" },
@@ -74,6 +80,17 @@ function formatDateTime(iso: string | null | undefined): string {
 }
 
 function ReconciliationPage() {
+  const access = usePermissions();
+  const canReconcile = access.can("techfinance.banking.update.workspace");
+  const canCreateEntries =
+    canReconcile &&
+    ["entries", "payments"].every((resource) =>
+      ["view", "create"].every((action) =>
+        access.canAny(
+          ["own", "workspace"].map((scope) => `techfinance.${resource}.${action}.${scope}`),
+        ),
+      ),
+    );
   const qc = useQueryClient();
   const getConn = useServerFn(getBankConnection);
   const suggestFn = useServerFn(suggestReconciliationMatches);
@@ -97,14 +114,14 @@ function ReconciliationPage() {
   const bulkCreateFn = useServerFn(bulkCreateEntries);
 
   const connQ = useQuery({
-    queryKey: ["banking", "connection", "inter"],
+    queryKey: ["banking", access.workspaceId, "connection", "inter"],
     queryFn: () => getConn({ data: { provider: "inter" } }),
   });
   const connection = connQ.data?.connection;
   const connectionId = connection?.id as string | undefined;
 
   const suggestQ = useQuery({
-    queryKey: ["banking", "suggestions", connectionId, windowDays],
+    queryKey: ["banking", access.workspaceId, "suggestions", connectionId, windowDays],
     queryFn: () =>
       suggestFn({
         data: { connection_id: connectionId!, window_days: windowDays, limit: 50 },
@@ -113,7 +130,7 @@ function ReconciliationPage() {
   });
 
   const historyQ = useQuery({
-    queryKey: ["banking", "history", connectionId, historyStatus],
+    queryKey: ["banking", access.workspaceId, "history", connectionId, historyStatus],
     queryFn: () =>
       historyFn({
         data: { connection_id: connectionId!, status: historyStatus, limit: 100 },
@@ -316,7 +333,7 @@ function ReconciliationPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            disabled={selected.size === 0 || bulkBusy}
+                            disabled={!canReconcile || selected.size === 0 || bulkBusy}
                             onClick={() => bulkLinkMut.mutate(Array.from(selected))}
                           >
                             <Wand2 className="mr-1 h-4 w-4" />
@@ -325,7 +342,7 @@ function ReconciliationPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            disabled={selected.size === 0 || bulkBusy}
+                            disabled={!canCreateEntries || selected.size === 0 || bulkBusy}
                             onClick={() => bulkCreateMut.mutate(Array.from(selected))}
                           >
                             <FilePlus2 className="mr-1 h-4 w-4" />
@@ -334,7 +351,7 @@ function ReconciliationPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            disabled={selected.size === 0 || bulkBusy}
+                            disabled={!canReconcile || selected.size === 0 || bulkBusy}
                             onClick={() => bulkIgnoreMut.mutate(Array.from(selected))}
                           >
                             <XCircle className="mr-1 h-4 w-4" />
@@ -345,7 +362,7 @@ function ReconciliationPage() {
                               size="sm"
                               variant="ghost"
                               onClick={clearSelection}
-                              disabled={bulkBusy}
+                              disabled={!canReconcile || bulkBusy}
                             >
                               Limpar
                             </Button>
@@ -394,7 +411,7 @@ function ReconciliationPage() {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => ignoreMut.mutate(t.id)}
-                                    disabled={ignoreMut.isPending}
+                                    disabled={!canReconcile || ignoreMut.isPending}
                                   >
                                     <XCircle className="mr-1 h-4 w-4" />
                                     Ignorar
@@ -441,7 +458,7 @@ function ReconciliationPage() {
                                             payment_id: c.payment_id,
                                           })
                                         }
-                                        disabled={acceptMut.isPending}
+                                        disabled={!canReconcile || acceptMut.isPending}
                                       >
                                         <CheckCircle2 className="mr-1 h-4 w-4" />
                                         Aceitar
@@ -556,7 +573,7 @@ function ReconciliationPage() {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => reactivateMut.mutate(r.id)}
-                                  disabled={reactivateMut.isPending}
+                                  disabled={!canReconcile || reactivateMut.isPending}
                                 >
                                   <RotateCcw className="mr-1 h-4 w-4" />
                                   Reativar

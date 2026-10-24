@@ -1,3 +1,5 @@
+import { openBankToken, sealBankToken } from "./tokens.server";
+import { financeRpc } from "@/lib/access-control/finance-records.server";
 // Fase 6 — Cron de observabilidade bancária.
 // Para cada bank_connection ativa:
 //   1. Sincroniza saldo + extrato (últimas 24h)
@@ -50,6 +52,10 @@ async function getActiveToken(connectionId: string) {
     .eq("connection_id", connectionId)
     .is("rotated_at", null)
     .maybeSingle();
+  if (data) {
+    data.access_token = await openBankToken(data.access_token);
+    data.refresh_token = data.refresh_token ? await openBankToken(data.refresh_token) : null;
+  }
   return data as {
     id: string;
     access_token: string;
@@ -81,36 +87,51 @@ async function maybeRefreshToken(
         expires_at: tokenRow.expires_at,
       },
     );
+    if (expMs <= now) throw new Error("Credencial bancária expirada. Reautorize a conexão.");
     return tokenRow.access_token;
   }
 
+  const claimed = await financeRpc<boolean>(supabaseAdmin, "banking_claim_refresh", {
+    _connection: conn.id,
+    _expected: tokenRow.id,
+  });
+  if (!claimed) {
+    const current = await getActiveToken(conn.id);
+    if (!current || !current.expires_at || new Date(current.expires_at).getTime() <= Date.now())
+      throw new Error("Renovação bancária em andamento. Tente novamente após concluir.");
+    return current.access_token;
+  }
   try {
     const provider = resolveBankProvider(conn.provider, conn.mode);
     const fresh = await provider.refreshTokens({ refresh_token: tokenRow.refresh_token });
     const newExpiresAt = new Date(Date.now() + fresh.expires_in * 1000).toISOString();
-    await (supabaseAdmin as any)
-      .from("bank_connection_tokens")
-      .update({ rotated_at: new Date().toISOString() })
-      .eq("id", tokenRow.id);
-    await (supabaseAdmin as any).from("bank_connection_tokens").insert({
-      connection_id: conn.id,
-      workspace_id: conn.workspace_id,
-      access_token: fresh.access_token,
-      refresh_token: fresh.refresh_token,
-      token_type: fresh.token_type,
-      scope: fresh.scope,
-      expires_at: newExpiresAt,
+    const stored = await financeRpc<boolean>(supabaseAdmin, "banking_store_tokens", {
+      _connection: conn.id,
+      _workspace: conn.workspace_id,
+      _expected: tokenRow.id,
+      _tokens: {
+        access_token: await sealBankToken(fresh.access_token),
+        refresh_token: await sealBankToken(fresh.refresh_token),
+        token_type: fresh.token_type,
+        scope: fresh.scope,
+        expires_at: newExpiresAt,
+      },
     });
+    if (!stored) {
+      const current = await getActiveToken(conn.id);
+      if (!current) throw new Error("Reautorize a conexão.");
+      return current.access_token;
+    }
     await logEvent(conn.id, conn.workspace_id, "token_refreshed", { expires_at: newExpiresAt });
     return fresh.access_token;
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
+    const msg = "Falha ao renovar credencial bancária.";
     await emitAlert("error", `Falha ao renovar token bancário: ${msg}`, {
       connection_id: conn.id,
       workspace_id: conn.workspace_id,
     });
     await logEvent(conn.id, conn.workspace_id, "error", { stage: "refresh_token", message: msg });
-    return tokenRow.access_token;
+    throw new Error("Reautorize a conexão bancária antes de sincronizar.");
   }
 }
 
@@ -216,13 +237,18 @@ async function reconcileStuckPayments(conn: any): Promise<number> {
           supabaseAdmin as any,
           p.id,
           status.paid_at ?? new Date().toISOString(),
+          undefined,
+          p.external_id,
         );
         updated++;
       } else if (status.status === "failed" || status.status === "canceled") {
-        await (supabaseAdmin as any)
-          .from("bank_payments")
-          .update({ status: status.status, failure_reason: status.failure_reason ?? null })
-          .eq("id", p.id);
+        await financeRpc(supabaseAdmin, "banking_apply_event", {
+          _kind: "payment",
+          _id: p.id,
+          _status: status.status,
+          _external: p.external_id,
+          _reason: status.failure_reason ?? null,
+        });
         await logEvent(conn.id, conn.workspace_id, "payment_failed", {
           payment_id: p.id,
           reason: status.failure_reason,
@@ -266,7 +292,7 @@ export async function tickAllBankConnections(): Promise<Record<string, unknown>>
       synced++;
     } catch (e) {
       failed++;
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = "Falha na sincronização bancária. Consulte a conexão.";
       await (supabaseAdmin as any)
         .from("bank_connections")
         .update({ last_error: msg })

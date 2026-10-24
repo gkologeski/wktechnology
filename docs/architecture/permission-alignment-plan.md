@@ -999,3 +999,18 @@ Aceite SQL de produção com identidade autenticada simulada: criar/editar, baix
 Evidências: `outputs/permission-finance-core-2026-10-24/` no workspace da auditoria. Verify: 1.711 testes, tipos e lint aprovados; build aprovado; mesma fonte cc90f03341c38554543556bd7cdad8bf046429ab3f1c39fa203550ff33b02d11.
 
 **Situação:** lote central concluído no escopo descrito. Ordem 2 e seis etapas globais continuam em andamento. Próximos lotes: permissionamento bancário (aprovação, execução, credenciais, cancelamento, webhooks), catálogos/relatórios e fiscal/cobrança. Não houve chamada a banco externo ou pagamento real.
+
+
+### Ordem 2 — lote bancário 0212–0213 (em validação, 24/10/2026)
+
+Estimativa inicial desta frente: 2–4 horas, incluindo testes, implantação e aceite. Escopo: substituir os bloqueios administrativos genéricos por ações de conexão, sincronização, conciliação, rascunho, aprovação, execução, cancelamento, emissão e simulação. A leitura banking.view.workspace é pré-requisito; não se concede acesso automaticamente a cargos. Os recursos novos têm rótulos em português na matriz de permissões.
+
+Aprovar passa apenas a aprovar; Executar exige chave própria, confirmação e claim atômico de aprovado para processando. Não se reenvia um débito de resultado incerto automaticamente. Cancelamento local somente antes do envio. TED e provedores reais permanecem indisponíveis. Cobrança só é marcada cancelada depois da confirmação do adapter; emissão incerta preserva o identificador para apuração.
+
+Tokens AES-GCM e estado OAuth não são selecionáveis pelo navegador, nem por administradores. Conclusão OAuth vinculada ao ator/state, com TTL e consumo único. Renovação possui lease antes da chamada externa e CAS na rotação; desconexão invalida tokens atomicamente. Webhook exige HMAC sobre corpo bruto e external_id compatível com origem; transição e baixa são uma única transação, com lock e proteção de saldo. Callback/cron não dependem do workspace do navegador. Não são permissões públicas: são exceções explícitas de serviço.
+
+Conciliação mantém cliente do usuário e só altera estado/vínculo; impede vínculo a baixa invisível, de outro tenant, direção/valor incompatível ou já utilizada. Criação de lançamento por extrato exige também as permissões financeiras de criação/leitura. Indicadores não retornam logs globais do cron a um workspace, nem representam dados indisponíveis como zero.
+
+Validação local: teste SDK persistente em scripts/isolated-db/banking-acceptance.mjs; ACL e papel técnico em tests/sql/banking-actions.sql; testes de cifra e autorização em src/lib/banking/*.test.ts. Aceite visual usa usuário não administrador e adapter mock; webhook HTTP local assinado também verificado. Gates finais e aplicação/publicação serão registrados após a conclusão.
+
+Ordem 2 permanece aberta para catálogos/relatórios e fiscal/cobrança comercial. Este lote não implementa ou certifica um conector bancário real, estorno de dinheiro, TED ou regras de alçada que não existiam.

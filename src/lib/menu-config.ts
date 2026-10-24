@@ -185,7 +185,7 @@ export const MENU_PERMISSIONS = {
     "techfinance.cost_centers.view.workspace",
     "techfinance.cost_centers.update.workspace",
   ],
-  financeBanking: ["techfinance.banking.view.workspace", "techfinance.banking.manage.workspace"],
+  financeBanking: ["techfinance.banking.view.workspace"],
   financeNfse: ["techfinance.nfse.view.workspace", "techfinance.nfse.manage.workspace"],
   financeDunning: ["techfinance.dunning.view.workspace", "techfinance.dunning.manage.workspace"],
   // Pessoas

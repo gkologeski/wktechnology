@@ -1456,6 +1456,562 @@
       "database": "same row lock and transaction as UI, explicit source tenant",
       "migration": "0210",
       "status": "aplicado_publicado_testado_isolado_e_sql_producao"
+    },
+    {
+      "operation": "getBankConnection",
+      "kind": "business_action",
+      "route_consumers": [
+        "/finance/banking",
+        "/finance/banking/reconciliation"
+      ],
+      "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
+      "resource": "techfinance.banking",
+      "action": "view",
+      "permission_keys": [
+        "techfinance.banking.view.workspace"
+      ],
+      "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
+      "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
+      "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao",
+      "limitations": "Only Inter mock adapter exists; no real bank execution certified. Simulation also requires runtime flag and actual mock connection."
+    },
+    {
+      "operation": "listBankStatement",
+      "kind": "business_action",
+      "route_consumers": [
+        "/finance/banking",
+        "/finance/banking/reconciliation"
+      ],
+      "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
+      "resource": "techfinance.banking",
+      "action": "view",
+      "permission_keys": [
+        "techfinance.banking.view.workspace"
+      ],
+      "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
+      "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
+      "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao",
+      "limitations": "Only Inter mock adapter exists; no real bank execution certified. Simulation also requires runtime flag and actual mock connection."
+    },
+    {
+      "operation": "suggestReconciliationMatches",
+      "kind": "business_action",
+      "route_consumers": [
+        "/finance/banking",
+        "/finance/banking/reconciliation"
+      ],
+      "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
+      "resource": "techfinance.banking",
+      "action": "view",
+      "permission_keys": [
+        "techfinance.banking.view.workspace"
+      ],
+      "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
+      "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
+      "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao",
+      "limitations": "Only Inter mock adapter exists; no real bank execution certified. Simulation also requires runtime flag and actual mock connection."
+    },
+    {
+      "operation": "listReconciliationHistory",
+      "kind": "business_action",
+      "route_consumers": [
+        "/finance/banking",
+        "/finance/banking/reconciliation"
+      ],
+      "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
+      "resource": "techfinance.banking",
+      "action": "view",
+      "permission_keys": [
+        "techfinance.banking.view.workspace"
+      ],
+      "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
+      "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
+      "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao",
+      "limitations": "Only Inter mock adapter exists; no real bank execution certified. Simulation also requires runtime flag and actual mock connection."
+    },
+    {
+      "operation": "listBankCharges",
+      "kind": "business_action",
+      "route_consumers": [
+        "/finance/banking",
+        "/finance/banking/reconciliation"
+      ],
+      "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
+      "resource": "techfinance.banking",
+      "action": "view",
+      "permission_keys": [
+        "techfinance.banking.view.workspace"
+      ],
+      "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
+      "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
+      "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao",
+      "limitations": "Only Inter mock adapter exists; no real bank execution certified. Simulation also requires runtime flag and actual mock connection."
+    },
+    {
+      "operation": "listBankPayments",
+      "kind": "business_action",
+      "route_consumers": [
+        "/finance/banking",
+        "/finance/banking/reconciliation"
+      ],
+      "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
+      "resource": "techfinance.banking",
+      "action": "view",
+      "permission_keys": [
+        "techfinance.banking.view.workspace"
+      ],
+      "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
+      "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
+      "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao",
+      "limitations": "Only Inter mock adapter exists; no real bank execution certified. Simulation also requires runtime flag and actual mock connection."
+    },
+    {
+      "operation": "getPaymentsSummary",
+      "kind": "business_action",
+      "route_consumers": [
+        "/finance/banking",
+        "/finance/banking/reconciliation"
+      ],
+      "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
+      "resource": "techfinance.banking",
+      "action": "view",
+      "permission_keys": [
+        "techfinance.banking.view.workspace"
+      ],
+      "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
+      "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
+      "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao",
+      "limitations": "Only Inter mock adapter exists; no real bank execution certified. Simulation also requires runtime flag and actual mock connection."
+    },
+    {
+      "operation": "getBankingHealth",
+      "kind": "business_action",
+      "route_consumers": [
+        "/finance/banking",
+        "/finance/banking/reconciliation"
+      ],
+      "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
+      "resource": "techfinance.banking",
+      "action": "view",
+      "permission_keys": [
+        "techfinance.banking.view.workspace"
+      ],
+      "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
+      "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
+      "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao",
+      "limitations": "Only Inter mock adapter exists; no real bank execution certified. Simulation also requires runtime flag and actual mock connection."
+    },
+    {
+      "operation": "startBankAuthorization",
+      "kind": "business_action",
+      "route_consumers": [
+        "/finance/banking",
+        "/finance/banking/reconciliation"
+      ],
+      "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
+      "resource": "techfinance.banking",
+      "action": "connect",
+      "permission_keys": [
+        "techfinance.banking.manage.workspace",
+        "techfinance.banking.view.workspace"
+      ],
+      "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
+      "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
+      "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao",
+      "limitations": "Only Inter mock adapter exists; no real bank execution certified. Simulation also requires runtime flag and actual mock connection."
+    },
+    {
+      "operation": "completeBankAuthorization",
+      "kind": "business_action",
+      "route_consumers": [
+        "/finance/banking",
+        "/finance/banking/reconciliation"
+      ],
+      "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
+      "resource": "techfinance.banking",
+      "action": "connect",
+      "permission_keys": [
+        "techfinance.banking.manage.workspace",
+        "techfinance.banking.view.workspace"
+      ],
+      "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
+      "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
+      "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao",
+      "limitations": "Only Inter mock adapter exists; no real bank execution certified. Simulation also requires runtime flag and actual mock connection."
+    },
+    {
+      "operation": "disconnectBank",
+      "kind": "business_action",
+      "route_consumers": [
+        "/finance/banking",
+        "/finance/banking/reconciliation"
+      ],
+      "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
+      "resource": "techfinance.banking",
+      "action": "connect",
+      "permission_keys": [
+        "techfinance.banking.manage.workspace",
+        "techfinance.banking.view.workspace"
+      ],
+      "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
+      "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
+      "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao",
+      "limitations": "Only Inter mock adapter exists; no real bank execution certified. Simulation also requires runtime flag and actual mock connection."
+    },
+    {
+      "operation": "syncBankStatement",
+      "kind": "business_action",
+      "route_consumers": [
+        "/finance/banking",
+        "/finance/banking/reconciliation"
+      ],
+      "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
+      "resource": "techfinance.banking",
+      "action": "sync",
+      "permission_keys": [
+        "techfinance.banking.view.workspace",
+        "techfinance.banking_sync.manage.workspace"
+      ],
+      "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
+      "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
+      "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao",
+      "limitations": "Only Inter mock adapter exists; no real bank execution certified. Simulation also requires runtime flag and actual mock connection."
+    },
+    {
+      "operation": "setStatementReconciliation",
+      "kind": "business_action",
+      "route_consumers": [
+        "/finance/banking",
+        "/finance/banking/reconciliation"
+      ],
+      "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
+      "resource": "techfinance.banking",
+      "action": "reconcile",
+      "permission_keys": [
+        "techfinance.banking.update.workspace",
+        "techfinance.banking.view.workspace"
+      ],
+      "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
+      "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
+      "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao",
+      "limitations": "Only Inter mock adapter exists; no real bank execution certified. Simulation also requires runtime flag and actual mock connection."
+    },
+    {
+      "operation": "bulkIgnoreTransactions",
+      "kind": "business_action",
+      "route_consumers": [
+        "/finance/banking",
+        "/finance/banking/reconciliation"
+      ],
+      "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
+      "resource": "techfinance.banking",
+      "action": "reconcile",
+      "permission_keys": [
+        "techfinance.banking.update.workspace",
+        "techfinance.banking.view.workspace"
+      ],
+      "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
+      "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
+      "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao",
+      "limitations": "Only Inter mock adapter exists; no real bank execution certified. Simulation also requires runtime flag and actual mock connection."
+    },
+    {
+      "operation": "bulkLinkBestMatch",
+      "kind": "business_action",
+      "route_consumers": [
+        "/finance/banking",
+        "/finance/banking/reconciliation"
+      ],
+      "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
+      "resource": "techfinance.banking",
+      "action": "reconcile",
+      "permission_keys": [
+        "techfinance.banking.update.workspace",
+        "techfinance.banking.view.workspace"
+      ],
+      "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
+      "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
+      "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao",
+      "limitations": "Only Inter mock adapter exists; no real bank execution certified. Simulation also requires runtime flag and actual mock connection."
+    },
+    {
+      "operation": "bulkCreateEntries",
+      "kind": "business_action",
+      "route_consumers": [
+        "/finance/banking",
+        "/finance/banking/reconciliation"
+      ],
+      "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
+      "resource": "techfinance.banking",
+      "action": "reconcile",
+      "permission_keys": [
+        "techfinance.banking.update.workspace",
+        "techfinance.banking.view.workspace"
+      ],
+      "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
+      "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
+      "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao",
+      "limitations": "Only Inter mock adapter exists; no real bank execution certified. Simulation also requires runtime flag and actual mock connection."
+    },
+    {
+      "operation": "createBankPayment",
+      "kind": "business_action",
+      "route_consumers": [
+        "/finance/banking",
+        "/finance/banking/reconciliation"
+      ],
+      "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
+      "resource": "techfinance.banking",
+      "action": "create_payment",
+      "permission_keys": [
+        "techfinance.bank_payment_drafts.create.workspace",
+        "techfinance.banking.view.workspace"
+      ],
+      "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
+      "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
+      "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao",
+      "limitations": "Only Inter mock adapter exists; no real bank execution certified. Simulation also requires runtime flag and actual mock connection."
+    },
+    {
+      "operation": "approveBankPayment",
+      "kind": "business_action",
+      "route_consumers": [
+        "/finance/banking",
+        "/finance/banking/reconciliation"
+      ],
+      "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
+      "resource": "techfinance.banking",
+      "action": "approve",
+      "permission_keys": [
+        "techfinance.bank_payment_approval.manage.workspace",
+        "techfinance.banking.view.workspace"
+      ],
+      "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
+      "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
+      "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao",
+      "limitations": "Only Inter mock adapter exists; no real bank execution certified. Simulation also requires runtime flag and actual mock connection."
+    },
+    {
+      "operation": "executeBankPayment",
+      "kind": "business_action",
+      "route_consumers": [
+        "/finance/banking",
+        "/finance/banking/reconciliation"
+      ],
+      "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
+      "resource": "techfinance.banking",
+      "action": "execute",
+      "permission_keys": [
+        "techfinance.bank_payment_execution.manage.workspace",
+        "techfinance.banking.view.workspace"
+      ],
+      "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
+      "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
+      "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao",
+      "limitations": "Only Inter mock adapter exists; no real bank execution certified. Simulation also requires runtime flag and actual mock connection."
+    },
+    {
+      "operation": "cancelBankPayment",
+      "kind": "business_action",
+      "route_consumers": [
+        "/finance/banking",
+        "/finance/banking/reconciliation"
+      ],
+      "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
+      "resource": "techfinance.banking",
+      "action": "cancel_payment",
+      "permission_keys": [
+        "techfinance.bank_payment_cancellation.manage.workspace",
+        "techfinance.banking.view.workspace"
+      ],
+      "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
+      "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
+      "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao",
+      "limitations": "Only Inter mock adapter exists; no real bank execution certified. Simulation also requires runtime flag and actual mock connection."
+    },
+    {
+      "operation": "createBankCharge",
+      "kind": "business_action",
+      "route_consumers": [
+        "/finance/banking",
+        "/finance/banking/reconciliation"
+      ],
+      "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
+      "resource": "techfinance.banking",
+      "action": "create_charge",
+      "permission_keys": [
+        "techfinance.bank_charge_issuance.manage.workspace",
+        "techfinance.banking.view.workspace"
+      ],
+      "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
+      "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
+      "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao",
+      "limitations": "Only Inter mock adapter exists; no real bank execution certified. Simulation also requires runtime flag and actual mock connection."
+    },
+    {
+      "operation": "cancelBankCharge",
+      "kind": "business_action",
+      "route_consumers": [
+        "/finance/banking",
+        "/finance/banking/reconciliation"
+      ],
+      "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
+      "resource": "techfinance.banking",
+      "action": "cancel_charge",
+      "permission_keys": [
+        "techfinance.bank_charge_cancellation.manage.workspace",
+        "techfinance.banking.view.workspace"
+      ],
+      "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
+      "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
+      "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao",
+      "limitations": "Only Inter mock adapter exists; no real bank execution certified. Simulation also requires runtime flag and actual mock connection."
+    },
+    {
+      "operation": "simulateChargePayment",
+      "kind": "business_action",
+      "route_consumers": [
+        "/finance/banking",
+        "/finance/banking/reconciliation"
+      ],
+      "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
+      "resource": "techfinance.banking",
+      "action": "simulate",
+      "permission_keys": [
+        "techfinance.banking.view.workspace",
+        "techfinance.banking_simulation.manage.workspace"
+      ],
+      "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
+      "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
+      "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao",
+      "limitations": "Only Inter mock adapter exists; no real bank execution certified. Simulation also requires runtime flag and actual mock connection."
+    },
+    {
+      "operation": "simulatePaymentSettlement",
+      "kind": "business_action",
+      "route_consumers": [
+        "/finance/banking",
+        "/finance/banking/reconciliation"
+      ],
+      "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
+      "resource": "techfinance.banking",
+      "action": "simulate",
+      "permission_keys": [
+        "techfinance.banking.view.workspace",
+        "techfinance.banking_simulation.manage.workspace"
+      ],
+      "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
+      "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
+      "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao",
+      "limitations": "Only Inter mock adapter exists; no real bank execution certified. Simulation also requires runtime flag and actual mock connection."
+    },
+    {
+      "operation": "banking_apply_event",
+      "kind": "service_exception",
+      "actor": "trusted service_role after documented server boundary",
+      "resource": "techfinance.banking",
+      "action": "service_operation",
+      "permission_keys": [],
+      "scope": "connection-derived tenant, explicit service delegation; never unauthenticated UUID alone",
+      "exception_reason": "Server-only after constant-time HMAC validation, mandatory matching external id, provider/mode and source tenant; row lock and atomic ledger/state updates; terminal replay idempotent.",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao"
+    },
+    {
+      "operation": "banking_store_tokens",
+      "kind": "service_exception",
+      "actor": "trusted service_role after documented server boundary",
+      "resource": "techfinance.banking",
+      "action": "service_operation",
+      "permission_keys": [],
+      "scope": "connection-derived tenant, explicit service delegation; never unauthenticated UUID alone",
+      "exception_reason": "Server-only; OAuth actor/state/TTL/single use or refresh token CAS; AES-GCM credentials only.",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao"
+    },
+    {
+      "operation": "banking_disconnect",
+      "kind": "service_exception",
+      "actor": "trusted service_role after documented server boundary",
+      "resource": "techfinance.banking",
+      "action": "service_operation",
+      "permission_keys": [],
+      "scope": "connection-derived tenant, explicit service delegation; never unauthenticated UUID alone",
+      "exception_reason": "Server-only after explicit connect permission; active actor revalidated; token invalidation + connection state in one transaction.",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao"
+    },
+    {
+      "operation": "banking_claim_refresh",
+      "kind": "service_exception",
+      "actor": "trusted service_role after documented server boundary",
+      "resource": "techfinance.banking",
+      "action": "service_operation",
+      "permission_keys": [],
+      "scope": "connection-derived tenant, explicit service delegation; never unauthenticated UUID alone",
+      "exception_reason": "Service-only lease acquired before refresh endpoint; stale token pointer and concurrent worker rejected.",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao"
+    },
+    {
+      "operation": "tickAllBankConnections",
+      "kind": "service_exception",
+      "actor": "trusted service_role after documented server boundary",
+      "resource": "techfinance.banking",
+      "action": "service_operation",
+      "permission_keys": [],
+      "scope": "connection-derived tenant, explicit service delegation; never unauthenticated UUID alone",
+      "exception_reason": "Existing service-secret authenticated cron; only connected source-tenant connections; encrypted credentials, no browser tenant fallback. No authority to initiate new AP payments.",
+      "migration": "0212–0213",
+      "status": "testado_local_aguardando_aplicacao_publicacao"
     }
   ],
   "rules": [
@@ -1805,11 +2361,12 @@
     }
   ],
   "limitations": [
-    "78 operation contracts recorded; remaining actions require explicit validation.",
+    "107 operation contracts recorded; remaining actions require explicit validation.",
     "Route inventory is static evidence, not certification of enforcement.",
     "SQL tests are not browser/GoTrue/PostgREST acceptance.",
     "No new business role grants in 0191 or 0192; six new catalog keys in 0192.",
     "0193 covers CRUD of people/candidates/onboarding plans/tasks/templates only; sensitive fields, jobs, other HR resources and browser acceptance remain separate.",
-    "Finance core 0210–0211: does not complete bank approval/token/provider/cancellation permissions, catalogs, fiscal/invoice/dunning boundaries, accounting period closing or the entire Order 2. No business-role grants were added."
+    "Finance core 0210–0211: does not complete bank approval/token/provider/cancellation permissions, catalogs, fiscal/invoice/dunning boundaries, accounting period closing or the entire Order 2. No business-role grants were added.",
+    "Banking 0212–0213: all bank actions require banking.view.workspace plus a specific action. Legacy banking own/team/create/delete/export catalog keys do not grant these operations; no automatic role grants. Inter sandbox/production, TED and bank-side payment reversal remain unavailable. This lot does not finish fiscal, bank-account catalogs or reporting permissions."
   ]
 }

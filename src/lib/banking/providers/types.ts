@@ -128,6 +128,11 @@ export interface BankProvider {
     description?: string | null;
   }): Promise<BankPaymentCreated>;
 
+  cancelCharge?(input: {
+    access_token: string;
+    external_id: string;
+  }): Promise<{ status: "canceled" }>;
+
   getPaymentStatus?(input: {
     access_token: string;
     external_id: string;

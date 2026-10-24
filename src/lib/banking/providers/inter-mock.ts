@@ -57,6 +57,10 @@ export const interMockProvider: BankProvider = {
     };
   },
 
+  async cancelCharge() {
+    return { status: "canceled" as const };
+  },
+
   async revoke(): Promise<void> {
     // no-op no mock
   },
