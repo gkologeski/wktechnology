@@ -506,7 +506,7 @@ Publicação 0202 confirmada no commit 9a62553f85ba911c068b82da8da9f3c471f79b5c.
 Entry index-i-5wxdCI.js e chunks de vaga, carreiras e capacidades conferidos byte
 a byte nos dois domínios. Aceite autenticado no navegador segue pendente.
 
-### Entrevistas, respostas e anotações de IA (0203, preparada)
+### Entrevistas, respostas e anotações de IA (0203, aplicada e publicada)
 
 Estimativa comunicada: 90–150 minutos. Entrevistas exigem leitura da candidatura
 real e chave própria de visualização; agendamento e pontuação são independentes.
@@ -556,4 +556,7 @@ ou respostas reais anteriores (ambos zero); modelo existente (1), seus dados,
 catálogo (1721), defaults, memberships e overrides permaneceram intactos.
 Metadados de 200 registros no teste isolado: referência canônica 1942,606 ms,
 lote 12,229 ms com resultados iguais; não é medição do ERP em produção.
-Interface ainda aguarda publicação e navegador real permanece pendente.
+Publicação confirmada no commit 2812408acc33297f96bcf560e3a07514d9fef5e1.
+Entry index-Dmydshuk.js e os chunks de vaga, notetaker, autoagendamento e
+capacidades foram conferidos byte a byte nos dois domínios públicos.
+Aceite no navegador com sessão real permanece pendente.
