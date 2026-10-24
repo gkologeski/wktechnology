@@ -655,3 +655,26 @@ e 3b2ad5a0257e02e9f4b706f79761cd1e1fa2537a3c74cc074e07ba426b5fc611.
 Verify: 1689 testes, tipos e lint; build completo; mesmo source_hash
 944dcb1db55c7c0e843c23493059d2d43f983ed1ec78afb60566ccad6e24ae3c,
 source_changed=false. Publicação da interface ainda será conferida.
+
+
+Publicação 0204–0205 confirmada em 24/10/2026 no commit
+693db716b5b80dc1a219ecc1d52fd7b0fd318040. Ambos os domínios servem
+index-Ch_qjEQv.js e os chunks scorecards-C3h39lmF.js, interview-kits-DI66DQ4i.js,
+scheduling-DF18ExGE.js e hr-access-c0chLe-S.js, conferidos byte a byte com o build.
+O aceite de navegador incluiu também criar disponibilidade semanal do próprio
+entrevistador: cinco fluxos aprovados, zero pageerrors e limpeza das fixtures.
+
+Conferência da base ativa: scorecard, kit (normalizado pela nova coluna is_active),
+pool e disponibilidade preservam seus fingerprints. Presets, memberships e
+overrides anteriores também permanecem iguais. Catálogo 1721→1741; somente 20
+novos overrides do Head RH da WK. RPCs novas sem EXECUTE anônimo; atestação de
+rotação sem leitura/escrita para authenticated e sem resíduos. Substituídas todas
+as políticas permissivas antigas das cinco tabelas por suas ações específicas.
+
+Simulação SQL com auth.uid de Priscila criou/editou/excluiu modelos, kit, pool,
+membro e janela, consultou agenda/capacidades, rotacionou pool e negou troca de
+autoria; não membro sem leitura. Transação revertida, zero resíduos, sem chamadas
+externas. Isso não é aceite de uma sessão real da Priscila no navegador publicado.
+Evidências/prints: outputs/permission-ats-configuration-2026-10-24/relatorio.html
+no projeto ChatGPT. Lote concluído e publicado dentro do escopo descrito; não
+conclui as seis etapas nem alçadas/ofertas, outros módulos, APIs ou campos globais.
