@@ -52,6 +52,7 @@ DO $$ BEGIN
  IF (SELECT count(*) FROM ats_hiring_decisions)<>1 THEN RAISE EXCEPTION 'Missing hiring audit';END IF;
  IF NOT EXISTS(SELECT 1 FROM ats_hiring_terms(ARRAY['98000000-0000-4000-8000-000000000001'::uuid]) WHERE can_view AND fields->>'recorded_by'=auth.uid()::text) THEN RAISE EXCEPTION 'Hiring read/actor failed';END IF;
  BEGIN UPDATE ats_applications SET status='active',stage_value='applied' WHERE id='98000000-0000-4000-8000-000000000001';RAISE EXCEPTION 'Reversal without permission';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
+ BEGIN UPDATE ats_applications SET id=gen_random_uuid() WHERE id='98000000-0000-4000-8000-000000000001';RAISE EXCEPTION 'Hiring identity rebound';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
  BEGIN DELETE FROM ats_applications WHERE id='98000000-0000-4000-8000-000000000001';RAISE EXCEPTION 'Hired deletion bypass';EXCEPTION WHEN check_violation THEN NULL;END;
  RAISE NOTICE 'OFFER PASS 7: hiring approval, terms permission and reversal are independent';END $$;
 RESET ROLE;SELECT set_config('request.jwt.claim.sub','',true);

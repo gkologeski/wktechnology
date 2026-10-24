@@ -22,6 +22,15 @@ DO $$ DECLARE cols text;all_cols text;BEGIN
  EXECUTE format('REVOKE SELECT(%s) ON public.ats_offers FROM PUBLIC,anon,authenticated',all_cols);
  EXECUTE format('GRANT SELECT(%s) ON public.ats_offers TO authenticated',cols);
 END $$;
+-- A primary-key rewrite must not detach the hiring audit or its approval.
+CREATE OR REPLACE FUNCTION public.ats_hiring_identity_guard()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+BEGIN
+ IF NEW.id IS DISTINCT FROM OLD.id THEN RAISE EXCEPTION 'Identificador da candidatura é imutável.' USING ERRCODE='42501';END IF;
+ RETURN NEW;
+END $$;
+REVOKE ALL ON FUNCTION public.ats_hiring_identity_guard() FROM PUBLIC,anon,authenticated;
+CREATE TRIGGER zzzz_ats_hiring_identity_guard BEFORE UPDATE ON public.ats_applications FOR EACH ROW EXECUTE FUNCTION public.ats_hiring_identity_guard();
 CREATE TRIGGER zzzz_ats_hiring_guard BEFORE INSERT OR UPDATE OR DELETE ON public.ats_applications FOR EACH ROW EXECUTE FUNCTION public.ats_hiring_guard();
 DO $$ DECLARE cols text;all_cols text;BEGIN
  SELECT string_agg(format('%I',attname),','),string_agg(format('%I',attname),',') FILTER(WHERE attname<>'hiring_details') INTO all_cols,cols FROM pg_attribute WHERE attrelid='public.ats_applications'::regclass AND attnum>0 AND NOT attisdropped;
