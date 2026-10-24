@@ -39,7 +39,7 @@ import {
 } from "@/components/ui/select";
 import { listContractsPaged, listContractGroupings } from "@/lib/contracts.functions";
 import { countContractsPendingLink } from "@/lib/contracts/import.functions";
-import { listLegalEntities } from "@/lib/legal-entities.functions";
+import { listEntityReferences as listLegalEntities } from "@/lib/finance-references.functions";
 import { QuickCreateContractDialog } from "@/components/contracts/quick-create-contract-dialog";
 import { ImportContractFileDialog } from "@/components/contracts/import-contract-file-dialog";
 import { BatchImportContractsDialog } from "@/components/contracts/batch-import-contracts-dialog";

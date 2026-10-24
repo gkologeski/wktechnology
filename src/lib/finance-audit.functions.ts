@@ -1,3 +1,4 @@
+import { authorizeFinanceBusiness } from "@/lib/access-control/finance-business.server";
 // Auditoria da importação ContaAzul / lançamentos financeiros.
 // Retorna contagens de lançamentos com dados faltantes (categoria, centro
 // de custo, empresa) agrupados por CNPJ, e possíveis duplicidades.
@@ -16,6 +17,7 @@ export const financeAuditReport = createServerFn({ method: "POST" })
       .parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
+    await authorizeFinanceBusiness(context.supabase, "audit", "view", undefined);
     const { supabase } = context;
 
     const scopeIds =

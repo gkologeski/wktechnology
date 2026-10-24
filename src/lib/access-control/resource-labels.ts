@@ -163,4 +163,8 @@ export const RESOURCE_LABELS_PT: Record<string, string> = {
   whatsapp: "WhatsApp",
   widget: "Widget",
   workflows: "Workflows",
+  invoice_issuance: "Emissão de cobrança de fatura",
+  invoice_settlement: "Quitação manual de fatura",
+  invoice_cancellation: "Cancelamento de fatura",
+  nfse_issuance: "Emissão fiscal NFS-e",
 };

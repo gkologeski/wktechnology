@@ -1,3 +1,4 @@
+import { listCategoryReferences as listCategories } from "@/lib/finance-references.functions";
 import { HrScreenAccess } from "@/components/hr-access";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { createFileRoute } from "@tanstack/react-router";
@@ -48,7 +49,7 @@ import {
   toggleRecurrence,
   upsertRecurrence,
 } from "@/lib/finance-recurrences.functions";
-import { listCategories } from "@/lib/finance.functions";
+
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   LegalEntitySelect,

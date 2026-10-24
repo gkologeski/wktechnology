@@ -1,3 +1,6 @@
+import { useFinanceBusinessCapabilities } from "@/lib/access-control/use-finance-business-capabilities";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { HrScreenAccess } from "@/components/hr-access";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -27,7 +30,11 @@ import {
 } from "@/lib/charging-templates.functions";
 
 export const Route = createFileRoute("/_authenticated/settings/charging-templates")({
-  component: ChargingTemplatesPage,
+  component: () => (
+    <HrScreenAccess resources={["techfinance.charging_templates"]}>
+      <ChargingTemplatesPage />
+    </HrScreenAccess>
+  ),
 });
 
 type Channel = "email" | "whatsapp";
@@ -50,16 +57,25 @@ const TOKENS = [
 ];
 
 function ChargingTemplatesPage() {
+  const financePermissions = usePermissions();
   const list = useServerFn(listChargingTemplates);
   const upsert = useServerFn(upsertChargingTemplate);
   const del = useServerFn(deleteChargingTemplate);
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["charging-templates"],
+    queryKey: ["charging-templates", financePermissions.workspaceId],
     queryFn: () => list(),
   });
 
+  const recordAccess = useFinanceBusinessCapabilities(
+    "charging_templates",
+    (data?.templates ?? []).map((r) => r.id),
+  );
+  const canCreate = financePermissions.canAny([
+    "techfinance.charging_templates.create.workspace",
+    "techfinance.charging_templates.create.own",
+  ]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [channel, setChannel] = useState<Channel>("email");
@@ -104,8 +120,10 @@ function ChargingTemplatesPage() {
         },
       });
       toast.success("Template salvo");
-      qc.invalidateQueries({ queryKey: ["charging-templates"] });
-      qc.invalidateQueries({ queryKey: ["charging-templates-by-channel"] });
+      qc.invalidateQueries({ queryKey: ["charging-templates", financePermissions.workspaceId] });
+      qc.invalidateQueries({
+        queryKey: ["charging-templates-by-channel", financePermissions.workspaceId],
+      });
       reset();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha");
@@ -118,7 +136,7 @@ function ChargingTemplatesPage() {
     if (!(await confirmDialog("Excluir template?"))) return;
     try {
       await del({ data: { id } });
-      qc.invalidateQueries({ queryKey: ["charging-templates"] });
+      qc.invalidateQueries({ queryKey: ["charging-templates", financePermissions.workspaceId] });
       if (editingId === id) reset();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha");
@@ -140,7 +158,7 @@ function ChargingTemplatesPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base">Templates</CardTitle>
-            <Button size="sm" variant="outline" onClick={reset}>
+            <Button size="sm" variant="outline" disabled={!canCreate} onClick={reset}>
               <Plus className="mr-1 h-4 w-4" /> Novo
             </Button>
           </CardHeader>
@@ -176,7 +194,12 @@ function ChargingTemplatesPage() {
                         </p>
                       )}
                     </button>
-                    <Button variant="ghost" size="icon" onClick={() => remove(t.id)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      disabled={!recordAccess.for(t.id).can_delete}
+                      onClick={() => remove(t.id)}
+                    >
                       <Trash2 className="h-4 w-4 text-muted-foreground" />
                     </Button>
                   </li>
@@ -253,7 +276,13 @@ function ChargingTemplatesPage() {
                 ))}
               </div>
             </div>
-            <Button onClick={save} disabled={saving} className="w-full">
+            <Button
+              onClick={save}
+              disabled={
+                saving || (editingId ? !recordAccess.for(editingId).can_update : !canCreate)
+              }
+              className="w-full"
+            >
               {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Salvar template
             </Button>

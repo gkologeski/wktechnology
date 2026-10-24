@@ -1,3 +1,4 @@
+import { financeRpc } from "@/lib/access-control/finance-records.server";
 // Fase 7 — Servidor: processa a régua de cobrança.
 // Enrola faturas vencidas em dunning_runs e avança passos conforme offset_days.
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -47,11 +48,15 @@ function daysBetween(a: Date, b: Date) {
 async function loadTemplate(
   supabase: SupabaseClient,
   templateId: string | null | undefined,
+  workspaceId: string,
+  channel: string,
 ): Promise<{ subject?: string | null; body: string } | null> {
   if (!templateId) return null;
   const { data } = await supabase
     .from("charging_templates")
     .select("subject, body, active")
+    .eq("workspace_id", workspaceId)
+    .eq("channel", channel)
     .eq("id", templateId)
     .maybeSingle();
   if (!data || data.active === false) return null;
@@ -70,6 +75,7 @@ async function resolveRecipient(
       .from("contacts")
       .select("first_name, last_name, phone, mobile_phone, email")
       .eq("id", invoice.contact_id)
+      .eq("workspace_id", invoice.workspace_id)
       .maybeSingle();
     customerName = [data?.first_name, data?.last_name].filter(Boolean).join(" ").trim();
     phone = data?.mobile_phone || data?.phone || null;
@@ -80,6 +86,7 @@ async function resolveRecipient(
       .from("companies")
       .select("name, phone, email")
       .eq("id", invoice.company_id)
+      .eq("workspace_id", invoice.workspace_id)
       .maybeSingle();
     if (!customerName) customerName = data?.name ?? "";
     if (!phone) phone = data?.phone ?? null;
@@ -125,7 +132,9 @@ async function executeStep(
   step: Step,
 ): Promise<Record<string, unknown>> {
   const { tokens: ctx, phone, email, customerName } = await resolveContext(supabase, invoice, step);
-  const tmpl = await loadTemplate(supabase, step.template_id);
+  const tmpl = await loadTemplate(supabase, step.template_id, invoice.workspace_id, step.channel);
+  if (step.template_id && !tmpl)
+    return { status: "error", error: "Modelo indisponível no workspace/canal" };
   const subject = renderTokens(tmpl?.subject ?? step.subject ?? "", ctx);
   const body = renderTokens(tmpl?.body ?? step.body ?? "", ctx);
 
@@ -139,7 +148,7 @@ async function executeStep(
   };
 
   if (step.channel === "task") {
-    await supabase.from("activities").insert({
+    const { error } = await supabase.from("activities").insert({
       workspace_id: invoice.workspace_id,
       owner_id: policy.owner_id,
       type: "task",
@@ -149,11 +158,12 @@ async function executeStep(
       company_id: invoice.company_id,
       metadata: { source: "dunning", invoice_id: invoice.id, policy_id: policy.id },
     });
+    if (error) throw new Error(error.message);
     return { ...eventBase, status: "task_created" };
   }
 
   if (step.channel === "escalation") {
-    await supabase.from("activities").insert({
+    const { error } = await supabase.from("activities").insert({
       workspace_id: invoice.workspace_id,
       owner_id: policy.owner_id,
       type: "note",
@@ -168,6 +178,7 @@ async function executeStep(
         escalation: true,
       },
     });
+    if (error) throw new Error(error.message);
     return { ...eventBase, status: "escalated" };
   }
 
@@ -183,7 +194,7 @@ async function executeStep(
         to: phone,
         body,
         contactId: invoice.contact_id,
-        templateName: step.template_id ? `dunning:${step.template_id}` : "dunning",
+
         source: { origin: "dunning", invoice_id: invoice.id, policy_id: policy.id },
       });
       return {
@@ -249,131 +260,59 @@ async function executeStep(
 }
 
 export async function processDunningRuns(supabase: SupabaseClient) {
-  const now = new Date();
-  const today = now.toISOString().slice(0, 10);
-
-  // 1) Enrolar faturas em atraso ainda sem run em políticas ativas padrão
-  const { data: policies } = await supabase
-    .from("dunning_policies")
-    .select("id, workspace_id, owner_id, active, is_default, steps")
-    .eq("active", true)
-    .eq("is_default", true);
-
-  const enrolled: string[] = [];
-  for (const p of (policies ?? []) as Policy[]) {
-    const { data: invoices } = await supabase
-      .from("customer_invoices")
-      .select("id, workspace_id, invoice_number")
-      .eq("workspace_id", p.workspace_id)
-      .in("status", ["sent", "overdue"])
-      .lte("due_date", today);
-    for (const inv of invoices ?? []) {
-      const { data: existing } = await supabase
-        .from("dunning_runs")
-        .select("id")
-        .eq("invoice_id", inv.id)
-        .eq("policy_id", p.id)
-        .maybeSingle();
-      if (existing) continue;
-      const firstOffset = p.steps?.[0]?.offset_days ?? 0;
-      const nextRun = new Date();
-      nextRun.setUTCDate(nextRun.getUTCDate() + Math.max(0, firstOffset));
-      const { error: insertError } = await supabase.from("dunning_runs").insert({
-        workspace_id: p.workspace_id,
-        invoice_id: inv.id,
-        policy_id: p.id,
-        status: "active",
-        current_step: 0,
-        history: [],
-        next_run_at: nextRun.toISOString(),
-      });
-      if (!insertError) enrolled.push(inv.id);
-    }
-  }
-
-  // 2) Processar runs prontos
-  const { data: runs } = await supabase
+  const enrolled = await financeRpc<number>(supabase, "finance_dunning_enroll", {});
+  const { data: runs, error } = await supabase
     .from("dunning_runs")
-    .select("*")
+    .select("id")
     .eq("status", "active")
-    .lte("next_run_at", now.toISOString())
+    .lte("next_run_at", new Date().toISOString())
     .limit(200);
-
+  if (error) throw new Error(error.message);
   let executed = 0;
-  let completed = 0;
-  let stopped = 0;
-
   for (const run of runs ?? []) {
-    const { data: policy } = await supabase
-      .from("dunning_policies")
-      .select("*")
-      .eq("id", run.policy_id)
-      .maybeSingle();
-    if (!policy || !policy.active) continue;
-    const { data: invoice } = await supabase
-      .from("customer_invoices")
-      .select(
-        "id, workspace_id, owner_id, invoice_number, amount, currency, due_date, status, contact_id, company_id",
-      )
-      .eq("id", run.invoice_id)
-      .maybeSingle();
-    if (!invoice) continue;
-
-    // Parar se fatura foi paga/cancelada
-    if (["paid", "canceled", "cancelled", "void"].includes(invoice.status)) {
-      await supabase
-        .from("dunning_runs")
-        .update({ status: "stopped", next_run_at: null })
-        .eq("id", run.id);
-      stopped++;
+    const claim = await financeRpc<{
+      attempt_id: string;
+      token: string;
+      invoice: Invoice;
+      policy: Policy;
+      step: Step;
+    } | null>(supabase, "finance_dunning_claim", { _run: run.id });
+    if (!claim) continue;
+    // Recheck immediately before the effect; a revoked delegation cannot use the service client.
+    if (
+      !(await financeRpc<boolean>(supabase, "finance_dunning_allowed", {
+        _policy: claim.policy.id,
+        _invoice: claim.invoice.id,
+        _channel: claim.step.channel,
+      }))
+    ) {
+      await financeRpc(supabase, "finance_dunning_finish", {
+        _attempt: claim.attempt_id,
+        _token: claim.token,
+        _result: { status: "error", error: "Autorização revogada" },
+      });
       continue;
     }
-
-    const steps = (policy.steps ?? []) as Step[];
-    const stepIndex: number = run.current_step ?? 0;
-    const step = steps[stepIndex];
-    if (!step) {
-      await supabase
-        .from("dunning_runs")
-        .update({ status: "completed", next_run_at: null })
-        .eq("id", run.id);
-      completed++;
-      continue;
+    let result: Record<string, unknown>;
+    try {
+      result = await executeStep(
+        supabase,
+        { ...claim.invoice, amount: Number(claim.invoice.amount) },
+        claim.policy,
+        claim.step,
+      );
+    } catch (error) {
+      result = {
+        status: "error",
+        error: error instanceof Error ? error.message : "Falha sem confirmação",
+      };
     }
-
-    const event = await executeStep(supabase, invoice as Invoice, policy as Policy, step);
+    await financeRpc(supabase, "finance_dunning_finish", {
+      _attempt: claim.attempt_id,
+      _token: claim.token,
+      _result: result,
+    });
     executed++;
-
-    const history = Array.isArray(run.history) ? [...run.history, event] : [event];
-    const nextStep = steps[stepIndex + 1];
-    let nextRunAt: string | null = null;
-    let nextStatus: "active" | "completed" = "completed";
-    if (nextStep) {
-      const due = new Date(invoice.due_date);
-      const target = new Date(due);
-      target.setUTCDate(target.getUTCDate() + nextStep.offset_days);
-      // Nunca agenda no passado
-      const scheduled =
-        target.getTime() > now.getTime() ? target : new Date(now.getTime() + 60_000);
-      nextRunAt = scheduled.toISOString();
-      nextStatus = "active";
-    }
-
-    await supabase
-      .from("dunning_runs")
-      .update({
-        status: nextStatus,
-        current_step: stepIndex + 1,
-        history,
-        next_run_at: nextRunAt,
-      })
-      .eq("id", run.id);
   }
-
-  return {
-    enrolled: enrolled.length,
-    executed,
-    completed,
-    stopped,
-  };
+  return { enrolled, executed };
 }

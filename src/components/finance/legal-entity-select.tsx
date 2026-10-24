@@ -1,3 +1,4 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
 // Seletor compartilhado de empresa/grupo para filtros do módulo Financeiro.
 //
 // A seleção é codificada em uma string única (`selection`) para caber no
@@ -24,8 +25,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { listLegalEntities } from "@/lib/legal-entities.functions";
-import { listLegalEntityGroups } from "@/lib/legal-entity-groups.functions";
+import { listEntityReferences as listLegalEntities } from "@/lib/finance-references.functions";
+import { listGroupReferences as listLegalEntityGroups } from "@/lib/finance-references.functions";
 
 export const ALL_LEGAL_ENTITIES = "all";
 export const GROUP_PREFIX = "g:";
@@ -88,18 +89,20 @@ export function useLegalEntityFilter(): [string, (v: string) => void] {
 }
 
 export function useLegalEntities() {
+  const p = usePermissions();
   const list = useServerFn(listLegalEntities);
   return useQuery({
-    queryKey: ["legal-entities", "list"],
+    queryKey: ["legal-entities", p.workspaceId, "list"],
     queryFn: () => list(),
     staleTime: 5 * 60 * 1000,
   });
 }
 
 export function useLegalEntityGroups() {
+  const p = usePermissions();
   const list = useServerFn(listLegalEntityGroups);
   return useQuery({
-    queryKey: ["legal-entity-groups", "list"],
+    queryKey: ["legal-entity-groups", p.workspaceId, "list"],
     queryFn: () => list(),
     staleTime: 5 * 60 * 1000,
   });

@@ -1,8 +1,9 @@
+import { financeRpc } from "@/lib/access-control/finance-records.server";
+import { authorizeFinanceBusiness } from "@/lib/access-control/finance-business.server";
 // Server functions para régua de cobrança (Release 15).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 const StepZ = z.object({
   offset_days: z.number().int().min(-30).max(120),
@@ -16,6 +17,7 @@ const StepZ = z.object({
 export const listDunningRuns = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    await authorizeFinanceBusiness(context.supabase, "dunning", "view", undefined);
     const { data, error } = await context.supabase
       .from("dunning_runs")
       .select(
@@ -30,6 +32,7 @@ export const listDunningRuns = createServerFn({ method: "GET" })
 export const listDunningPolicies = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    await authorizeFinanceBusiness(context.supabase, "dunning", "view", undefined);
     const { data, error } = await context.supabase
       .from("dunning_policies")
       .select("*")
@@ -53,40 +56,29 @@ export const upsertDunningPolicy = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const workspaceId = await resolveActiveWorkspace(context.userId);
-    if (data.is_default) {
-      await context.supabase
-        .from("dunning_policies")
-        .update({ is_default: false })
-        .eq("workspace_id", workspaceId);
-    }
-    const payload = {
-      workspace_id: workspaceId,
-      owner_id: context.userId,
-      name: data.name,
-      active: data.active,
-      is_default: data.is_default,
-      segment_id: data.segment_id ?? null,
-      steps: data.steps,
-    };
-    const q = data.id
-      ? context.supabase
-          .from("dunning_policies")
-          .update(payload)
-          .eq("id", data.id)
-          .select("*")
-          .single()
-      : context.supabase.from("dunning_policies").insert(payload).select("*").single();
-    const { data: row, error } = await q;
-    if (error) throw new Error(error.message);
-    return { policy: row };
+    await authorizeFinanceBusiness(
+      context.supabase,
+      "dunning",
+      data.id ? "update" : "create",
+      data.id,
+    );
+    const policy = await financeRpc<{ id: string }>(context.supabase, "finance_upsert_dunning", {
+      _data: data,
+    });
+    return { policy };
   });
 
 export const deleteDunningPolicy = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("dunning_policies").delete().eq("id", data.id);
+    await authorizeFinanceBusiness(context.supabase, "dunning", "delete", data.id);
+    const { error } = await context.supabase
+      .from("dunning_policies")
+      .delete()
+      .eq("id", data.id)
+      .select("id")
+      .single();
     if (error) throw new Error(error.message);
     return { ok: true };
   });

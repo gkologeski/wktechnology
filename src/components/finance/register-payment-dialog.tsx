@@ -1,3 +1,4 @@
+import { listBankReferences as listBankAccounts } from "@/lib/finance-references.functions";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -21,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatCurrency } from "@/lib/crm";
-import { listBankAccounts, registerPayment } from "@/lib/finance.functions";
+import { registerPayment } from "@/lib/finance.functions";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
 import { formatIsoDate } from "@/lib/iso-date";

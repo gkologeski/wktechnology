@@ -1,3 +1,5 @@
+import { financeRpc } from "@/lib/access-control/finance-records.server";
+import { authorizeFinanceBusiness } from "@/lib/access-control/finance-business.server";
 // Server functions for Legal Entity Groups (agrupamentos de CNPJs por workspace).
 // Um CNPJ pode pertencer a múltiplos grupos (N:N). Existe sempre um grupo
 // `is_system = true` chamado "Todas as empresas" mantido automaticamente
@@ -19,6 +21,7 @@ const upsertSchema = z.object({
 export const listLegalEntityGroups = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    await authorizeFinanceBusiness(context.supabase, "legal_entity_groups", "view", undefined);
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
 
@@ -54,6 +57,12 @@ export const upsertLegalEntityGroup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => upsertSchema.parse(input))
   .handler(async ({ data, context }) => {
+    await authorizeFinanceBusiness(
+      context.supabase,
+      "legal_entity_groups",
+      data.id ? "update" : "create",
+      data.id,
+    );
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
 
@@ -94,6 +103,7 @@ export const deleteLegalEntityGroup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    await authorizeFinanceBusiness(context.supabase, "legal_entity_groups", "delete", data.id);
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     // Bloqueia exclusão do grupo do sistema.
@@ -127,37 +137,15 @@ export const setLegalEntityGroupMembers = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
-
-    // Refuse to change composition of the system group (auto-managed).
-    const { data: g } = await supabase
-      .from("legal_entity_groups")
-      .select("is_system")
-      .eq("id", data.group_id)
-      .eq("workspace_id", workspaceId)
-      .maybeSingle();
-    if (!g) throw new Error("Grupo não encontrado.");
-    if ((g as { is_system: boolean }).is_system) {
-      throw new Error(
-        "O grupo padrão 'Todas as empresas' é gerenciado automaticamente e não pode ser alterado.",
-      );
-    }
-
-    const { error: dErr } = await supabase
-      .from("legal_entity_group_members")
-      .delete()
-      .eq("group_id", data.group_id);
-    if (dErr) throw dErr;
-
-    if (data.legal_entity_ids.length) {
-      const rows = data.legal_entity_ids.map((id) => ({
-        group_id: data.group_id,
-        legal_entity_id: id,
-        workspace_id: workspaceId,
-      }));
-      const { error: iErr } = await supabase.from("legal_entity_group_members").insert(rows);
-      if (iErr) throw iErr;
-    }
+    await authorizeFinanceBusiness(
+      context.supabase,
+      "legal_entity_groups",
+      "update",
+      data.group_id,
+    );
+    await financeRpc(context.supabase, "finance_set_group_members", {
+      _id: data.group_id,
+      _members: data.legal_entity_ids,
+    });
     return { ok: true };
   });

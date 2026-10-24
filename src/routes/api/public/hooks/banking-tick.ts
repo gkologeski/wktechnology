@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { requireCronAuth } from "@/lib/cron-auth.server";
+import { requireFinanceCronAuth } from "@/lib/access-control/finance-cron-auth.server";
 import { runCronWithLogging } from "@/lib/cron-observability.server";
 import { tickAllBankConnections } from "@/lib/banking/tick.server";
 
@@ -7,7 +7,7 @@ export const Route = createFileRoute("/api/public/hooks/banking-tick")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const unauth = requireCronAuth(request);
+        const unauth = await requireFinanceCronAuth(request, "banking");
         if (unauth) return unauth;
         const run = await runCronWithLogging("banking-tick", async () => {
           const r = await tickAllBankConnections();

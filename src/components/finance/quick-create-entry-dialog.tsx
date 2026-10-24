@@ -1,3 +1,4 @@
+import { listCategoryReferences as listCategories } from "@/lib/finance-references.functions";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -22,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createFinancialEntry, createInstallments, listCategories } from "@/lib/finance.functions";
+import { createFinancialEntry, createInstallments } from "@/lib/finance.functions";
 import { useLegalEntities } from "@/components/finance/legal-entity-select";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";

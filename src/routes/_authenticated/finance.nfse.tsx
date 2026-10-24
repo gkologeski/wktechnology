@@ -1,3 +1,6 @@
+import { authorizeFinanceBusinessExport } from "@/lib/access-control/finance-business.functions";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { HrScreenAccess } from "@/components/hr-access";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
@@ -48,7 +51,11 @@ export const Route = createFileRoute("/_authenticated/finance/nfse")({
       : "all",
   }),
   head: () => ({ meta: [{ title: "NFS-e" }] }),
-  component: NfseListPage,
+  component: () => (
+    <HrScreenAccess resources={["techfinance.nfse"]}>
+      <NfseListPage />
+    </HrScreenAccess>
+  ),
 });
 
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -97,13 +104,20 @@ type NfseRow = {
 };
 
 function NfseListPage() {
+  const exportFinance = useServerFn(authorizeFinanceBusinessExport);
+  const financePermissions = usePermissions();
   const list = useServerFn(listNfse);
   const [legalEntityId, setLegalEntityId] = useLegalEntityFilter();
   const filterInput = useLegalEntityFilterInput(legalEntityId);
   const { view, status } = Route.useSearch();
   const navigate = Route.useNavigate();
   const { data, isLoading, error } = useQuery({
-    queryKey: ["nfse-invoices", legalEntityId, JSON.stringify(filterInput)],
+    queryKey: [
+      "nfse-invoices",
+      financePermissions.workspaceId,
+      legalEntityId,
+      JSON.stringify(filterInput),
+    ],
     queryFn: () => list({ data: filterInput }) as Promise<{ items: NfseRow[] }>,
   });
 
@@ -166,7 +180,9 @@ function NfseListPage() {
           table="nfse_invoices"
           stageField="status"
           selectable
-          bulkEditFields={[{ name: "service_code", label: "Código de serviço", type: "text" }]}
+          csvEnabled={false}
+          canUpdate={false}
+          assignColumn={null}
           entityLabel="NFS-e"
           canDelete={false}
           readOnly
@@ -180,7 +196,7 @@ function NfseListPage() {
           }))}
           emptyState={
             <p className="p-12 text-center text-sm text-muted-foreground">
-              Nenhuma NFS-e emitida. Emita a partir de uma fatura em "Faturas".
+              Nenhum registro fiscal visível. A emissão depende de um adaptador NFS-e homologado.
             </p>
           }
           renderCard={(n) => (
@@ -228,11 +244,13 @@ function NfseListPage() {
               </div>
             ) : items.length === 0 ? (
               <p className="py-8 text-center text-sm text-muted-foreground">
-                Nenhuma NFS-e emitida. Emita a partir de uma fatura em "Faturas".
+                Nenhum registro fiscal visível. A emissão depende de um adaptador NFS-e homologado.
               </p>
             ) : (
               <>
                 <GridListToolbar
+                  canExport={financePermissions.canAny(["techfinance.nfse.export.workspace"])}
+                  beforeExport={() => exportFinance({ data: { resource: "nfse" } })}
                   grid={sortGrid}
                   filename="nfse"
                   labels={{

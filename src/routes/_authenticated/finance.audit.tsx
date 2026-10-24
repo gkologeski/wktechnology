@@ -1,3 +1,5 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { HrScreenAccess } from "@/components/hr-access";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -30,16 +32,27 @@ export const Route = createFileRoute("/_authenticated/finance/audit")({
       },
     ],
   }),
-  component: FinanceAuditPage,
+  component: () => (
+    <HrScreenAccess resources={["techfinance.audit"]}>
+      <FinanceAuditPage />
+    </HrScreenAccess>
+  ),
 });
 
 function FinanceAuditPage() {
+  const financePermissions = usePermissions();
   const run = useServerFn(financeAuditReport);
   const [legalEntityId, setLegalEntityId] = useLegalEntityFilter();
   const filterInput = useLegalEntityFilterInput(legalEntityId);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["finance", "audit", legalEntityId, JSON.stringify(filterInput)],
+    queryKey: [
+      "finance",
+      financePermissions.workspaceId,
+      "audit",
+      legalEntityId,
+      JSON.stringify(filterInput),
+    ],
     queryFn: () => run({ data: filterInput }),
   });
 
@@ -53,6 +66,9 @@ function FinanceAuditPage() {
 
   return (
     <div className="space-y-5 p-6">
+      <p className="text-xs text-muted-foreground">
+        Indicadores calculados somente sobre os registros que suas permissões permitem consultar.
+      </p>
       <PageHeader
         title="Auditoria financeira"
         description="Lançamentos com dados faltantes e possíveis duplicidades por empresa."

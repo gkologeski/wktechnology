@@ -1,3 +1,4 @@
+import { authorizeFinanceBusiness } from "@/lib/access-control/finance-business.server";
 // Server functions para templates de cobrança (Fase 7 - Régua).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -16,6 +17,7 @@ const TemplateZ = z.object({
 export const listChargingTemplates = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    await authorizeFinanceBusiness(context.supabase, "charging_templates", "view", undefined);
     const { data, error } = await context.supabase
       .from("charging_templates")
       .select("*")
@@ -28,10 +30,14 @@ export const upsertChargingTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => TemplateZ.parse(d))
   .handler(async ({ data, context }) => {
+    await authorizeFinanceBusiness(
+      context.supabase,
+      "charging_templates",
+      data.id ? "update" : "create",
+      data.id,
+    );
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const payload = {
-      workspace_id: workspaceId,
-      owner_id: context.userId,
       name: data.name,
       channel: data.channel,
       subject: data.subject ?? null,
@@ -45,7 +51,11 @@ export const upsertChargingTemplate = createServerFn({ method: "POST" })
           .eq("id", data.id)
           .select("*")
           .single()
-      : context.supabase.from("charging_templates").insert(payload).select("*").single();
+      : context.supabase
+          .from("charging_templates")
+          .insert({ ...payload, workspace_id: workspaceId, owner_id: context.userId })
+          .select("*")
+          .single();
     const { data: row, error } = await q;
     if (error) throw new Error(error.message);
     return { template: row };
@@ -55,7 +65,13 @@ export const deleteChargingTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("charging_templates").delete().eq("id", data.id);
+    await authorizeFinanceBusiness(context.supabase, "charging_templates", "delete", data.id);
+    const { error } = await context.supabase
+      .from("charging_templates")
+      .delete()
+      .eq("id", data.id)
+      .select("id")
+      .single();
     if (error) throw new Error(error.message);
     return { ok: true };
   });

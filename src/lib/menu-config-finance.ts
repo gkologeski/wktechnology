@@ -15,7 +15,9 @@ import {
   Mail,
   Package,
 } from "lucide-react";
-import { MENU_PERMISSIONS, adminAny, type SidebarGroup } from "@/lib/menu-config";
+import { MENU_PERMISSIONS, type SidebarGroup } from "@/lib/menu-config";
+
+const view = (r: string) => ["workspace", "team", "own"].map((s) => `techfinance.${r}.view.${s}`);
 
 export const FINANCE_SIDEBAR_GROUPS: SidebarGroup[] = [
   {
@@ -59,49 +61,49 @@ export const FINANCE_SIDEBAR_GROUPS: SidebarGroup[] = [
         url: "/finance/dre",
         icon: BarChart3,
         need: "manager",
-        permissionAny: MENU_PERMISSIONS.financeOverview,
+        permissionAny: view("reports"),
       },
       {
         title: "Fluxo de caixa",
         url: "/finance/cash-flow",
         icon: TrendingUp,
         need: "manager",
-        permissionAny: MENU_PERMISSIONS.financeOverview,
+        permissionAny: view("reports"),
       },
       {
         title: "Plano de contas",
         url: "/finance/categories",
         icon: DollarSign,
         need: "manager",
-        permissionAny: MENU_PERMISSIONS.financeOverview,
+        permissionAny: view("categories"),
       },
       {
         title: "Centros de custo",
         url: "/finance/cost-centers",
         icon: FolderTree,
         need: "manager",
-        permissionAny: MENU_PERMISSIONS.financeCostCenters,
+        permissionAny: view("cost_centers"),
       },
       {
         title: "Empresas (CNPJs)",
         url: "/finance/legal-entities",
         icon: Building2,
         need: "admin",
-        permissionAny: adminAny("techfinance.legal_entities"),
+        permissionAny: view("legal_entities"),
       },
       {
         title: "Grupos empresariais",
         url: "/finance/legal-entity-groups",
         icon: Building2,
         need: "admin",
-        permissionAny: adminAny("techfinance.legal_entity_groups"),
+        permissionAny: view("legal_entity_groups"),
       },
       {
         title: "Contas bancárias",
         url: "/finance/bank-accounts",
         icon: DollarSign,
         need: "manager",
-        permissionAny: MENU_PERMISSIONS.financeBanking,
+        permissionAny: view("bank_accounts"),
       },
       {
         title: "Banco Inter",
@@ -118,7 +120,15 @@ export const FINANCE_SIDEBAR_GROUPS: SidebarGroup[] = [
         permissionAny: MENU_PERMISSIONS.financeBanking,
       },
 
-      { title: "Faturas", url: "/invoices", icon: FileText },
+      {
+        title: "Faturas",
+        url: "/invoices",
+        icon: FileText,
+        permissionAny: [
+          ...view("invoices"),
+          ...["workspace", "team", "own"].map((s) => `techsales.invoices.view.${s}`),
+        ],
+      },
       {
         title: "Faturamento de Serviços",
         url: "/services",
@@ -131,28 +141,28 @@ export const FINANCE_SIDEBAR_GROUPS: SidebarGroup[] = [
         url: "/finance/nfse",
         icon: Receipt,
         need: "manager",
-        permissionAny: MENU_PERMISSIONS.financeNfse,
+        permissionAny: view("nfse"),
       },
       {
         title: "Auditoria",
         url: "/finance/audit",
         icon: ShieldCheck,
         need: "admin",
-        permissionAny: adminAny("techfinance.audit"),
+        permissionAny: view("audit"),
       },
       {
         title: "Régua de cobrança",
         url: "/settings/dunning",
         icon: Bell,
         need: "manager",
-        permissionAny: MENU_PERMISSIONS.financeDunning,
+        permissionAny: view("dunning"),
       },
       {
         title: "Templates de cobrança",
         url: "/settings/charging-templates",
         icon: Mail,
         need: "manager",
-        permissionAny: MENU_PERMISSIONS.financeDunning,
+        permissionAny: view("charging_templates"),
       },
     ],
   },

@@ -1,3 +1,5 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { HrScreenAccess } from "@/components/hr-access";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -27,7 +29,11 @@ export const Route = createFileRoute("/_authenticated/finance/cash-flow")({
       { name: "description", content: "Projeção 30/60/90 dias com cenários." },
     ],
   }),
-  component: CashFlowPage,
+  component: () => (
+    <HrScreenAccess resources={["techfinance.reports"]}>
+      <CashFlowPage />
+    </HrScreenAccess>
+  ),
 });
 
 type ScenarioKey = "pessimistic" | "realistic" | "optimistic";
@@ -39,6 +45,7 @@ const BUCKET_LABELS: Record<"overdue" | "d30" | "d60" | "d90", string> = {
 };
 
 function CashFlowPage() {
+  const financePermissions = usePermissions();
   const get = useServerFn(getCashFlowProjection);
   const [factors, setFactors] = useState({
     pessimistic: 0.7,
@@ -52,7 +59,14 @@ function CashFlowPage() {
 
   const filterInput = useLegalEntityFilterInput(legalEntityId);
   const { data, isLoading } = useQuery({
-    queryKey: ["finance", "cash-flow", factors, legalEntityId, JSON.stringify(filterInput)],
+    queryKey: [
+      "finance",
+      financePermissions.workspaceId,
+      "cash-flow",
+      factors,
+      legalEntityId,
+      JSON.stringify(filterInput),
+    ],
     queryFn: () =>
       get({
         data: {
@@ -64,6 +78,9 @@ function CashFlowPage() {
 
   return (
     <div className="p-6 space-y-6">
+      <p className="text-xs text-muted-foreground">
+        Indicadores calculados somente sobre os registros que suas permissões permitem consultar.
+      </p>
       <PageHeader
         title="Fluxo de caixa"
         description="Projeção 30/60/90 dias com cenários pessimista, realista e otimista."

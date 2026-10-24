@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ExportMenuButton } from "@/components/export-menu-button";
@@ -18,6 +19,7 @@ type Props<T, K extends string> = {
   search?: boolean;
   /** Caller supplies the effective export action; legacy consumers are audited separately. */
   canExport?: boolean;
+  beforeExport?: () => Promise<unknown>;
   searchPlaceholder?: string;
   /** Valor exportado diferente do usado para ordenar (ex.: rótulo de prioridade). */
   exportValue?: Partial<Record<K, SortAccessor<T>>>;
@@ -34,6 +36,7 @@ export function GridListToolbar<T, K extends string>({
   filename,
   search = true,
   canExport = true,
+  beforeExport,
   searchPlaceholder = "Buscar nesta lista…",
   exportValue,
   filters,
@@ -42,8 +45,14 @@ export function GridListToolbar<T, K extends string>({
 }: Props<T, K>) {
   const inShell = useInGridShell();
   const keys = Object.keys(labels) as K[];
-  const onExport = (format: "csv" | "json" | "xlsx") => {
+  const onExport = async (format: "csv" | "json" | "xlsx") => {
     if (!canExport) return;
+    try {
+      await beforeExport?.();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Exportação não autorizada");
+      return;
+    }
     return exportRows(grid.sorted, {
       filename,
       format,

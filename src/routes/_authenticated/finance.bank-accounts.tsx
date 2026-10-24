@@ -1,3 +1,6 @@
+import { authorizeFinanceBusinessExport } from "@/lib/access-control/finance-business.functions";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { HrScreenAccess } from "@/components/hr-access";
 import { createFileRoute } from "@tanstack/react-router";
 import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
@@ -55,10 +58,16 @@ const BANK_KIND_LABEL: Record<string, string> = {
 
 export const Route = createFileRoute("/_authenticated/finance/bank-accounts")({
   head: () => ({ meta: [{ title: "Contas bancárias" }] }),
-  component: BankAccountsPage,
+  component: () => (
+    <HrScreenAccess resources={["techfinance.bank_accounts"]}>
+      <BankAccountsPage />
+    </HrScreenAccess>
+  ),
 });
 
 function BankAccountsPage() {
+  const exportFinance = useServerFn(authorizeFinanceBusinessExport);
+  const financePermissions = usePermissions();
   const qc = useQueryClient();
   const list = useServerFn(listBankAccounts);
   const create = useServerFn(createBankAccount);
@@ -83,7 +92,12 @@ function BankAccountsPage() {
       : legalEntityId;
   const filterInput = useLegalEntityFilterInput(legalEntityId);
   const { data: rows = [] } = useQuery({
-    queryKey: ["finance-banks", legalEntityId, JSON.stringify(filterInput)],
+    queryKey: [
+      "finance-banks",
+      financePermissions.workspaceId,
+      legalEntityId,
+      JSON.stringify(filterInput),
+    ],
     queryFn: () => list({ data: filterInput }),
   });
 
@@ -109,7 +123,7 @@ function BankAccountsPage() {
         },
       });
       toast.success("Conta criada");
-      qc.invalidateQueries({ queryKey: ["finance-banks"] });
+      qc.invalidateQueries({ queryKey: ["finance-banks", financePermissions.workspaceId] });
       setOpen(false);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha");
@@ -150,6 +164,8 @@ function BankAccountsPage() {
         ) : (
           <>
             <GridListToolbar
+              canExport={financePermissions.canAny(["techfinance.bank_accounts.export.workspace"])}
+              beforeExport={() => exportFinance({ data: { resource: "bank_accounts" } })}
               exportValue={{ kind: (b) => BANK_KIND_LABEL[b.kind] ?? b.kind }}
               grid={sortGrid}
               filename="contas-bancarias"
@@ -264,7 +280,12 @@ function BankAccountsPage() {
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={submit}>Criar</Button>
+            <Button
+              disabled={!financePermissions.can("techfinance.bank_accounts.create.workspace")}
+              onClick={submit}
+            >
+              Criar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

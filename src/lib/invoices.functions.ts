@@ -1,4 +1,4 @@
-import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
+import { authorizeFinanceBusiness } from "@/lib/access-control/finance-business.server";
 import { orSafeLike } from "@/lib/postgrest-search";
 // Server functions para faturas de clientes (Release 15 — Cobrança BR).
 import { createServerFn } from "@tanstack/react-start";
@@ -34,6 +34,7 @@ export const listInvoices = createServerFn({ method: "GET" })
       .parse(d ?? {}),
   )
   .handler(async ({ data, context }) => {
+    await authorizeFinanceBusiness(context.supabase, "invoices", "view", undefined);
     let q = context.supabase
       .from("customer_invoices")
       .select("*, companies(id, name)")
@@ -52,24 +53,22 @@ export const listInvoices = createServerFn({ method: "GET" })
 
 export const getInvoice = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const [{ data: inv, error }, { data: payments }, { data: events }] = await Promise.all([
-      context.supabase.from("customer_invoices").select("*").eq("id", data.id).single(),
-      context.supabase
-        .from("customer_payments")
-        .select("*")
-        .eq("invoice_id", data.id)
-        .order("created_at", { ascending: false }),
-      context.supabase
-        .from("payment_webhook_events")
-        .select("id,gateway,event_type,signature_valid,processed,error,created_at")
-        .eq("external_id", data.id)
-        .order("created_at", { ascending: false })
-        .limit(20),
-    ]);
+    await authorizeFinanceBusiness(context.supabase, "invoices", "view", data.id);
+    const { data: invoice, error } = await context.supabase
+      .from("customer_invoices")
+      .select("*")
+      .eq("id", data.id)
+      .single();
     if (error) throw new Error(error.message);
-    return { invoice: inv, payments: payments ?? [], events: events ?? [] };
+    const { data: payments, error: paymentError } = await context.supabase
+      .from("customer_payments")
+      .select("id,invoice_id,gateway,amount,currency,status,method,received_at,created_at")
+      .eq("invoice_id", data.id)
+      .order("created_at", { ascending: false });
+    if (paymentError) throw new Error(paymentError.message);
+    return { invoice, payments: payments ?? [], events: [] };
   });
 
 export const createInvoice = createServerFn({ method: "POST" })
@@ -91,6 +90,7 @@ export const createInvoice = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
+    await authorizeFinanceBusiness(context.supabase, "invoices", "create", undefined);
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const number = await nextInvoiceNumber(workspaceId);
     const { data: row, error } = await context.supabase
@@ -121,6 +121,7 @@ export const updateInvoiceStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid(), status: StatusZ }).parse(d))
   .handler(async ({ data, context }) => {
+    await authorizeFinanceBusiness(context.supabase, "invoices", "update", data.id);
     const patch: { status: typeof data.status; paid_at?: string; cancelled_at?: string } = {
       status: data.status,
     };
@@ -129,7 +130,9 @@ export const updateInvoiceStatus = createServerFn({ method: "POST" })
     const { error } = await context.supabase
       .from("customer_invoices")
       .update(patch)
-      .eq("id", data.id);
+      .eq("id", data.id)
+      .select("id")
+      .single();
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -138,75 +141,26 @@ export const deleteInvoice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("customer_invoices").delete().eq("id", data.id);
+    await authorizeFinanceBusiness(context.supabase, "invoices", "delete", data.id);
+    const { error } = await context.supabase
+      .from("customer_invoices")
+      .delete()
+      .eq("id", data.id)
+      .select("id")
+      .single();
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
-/**
- * Generate a payment charge with the configured gateway.
- * The actual gateway HTTP call lives in adapters under src/lib/payments/*.
- * Without real credentials this returns deterministic sandbox stubs so the UI flow works.
- */
+/** Provider issuance requires a real, verified adapter; fabricated payment data is forbidden. */
 export const generateCharge = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
-    z
-      .object({
-        invoice_id: z.string().uuid(),
-        method: MethodZ.default("pix"),
-      })
-      .parse(d),
+    z.object({ invoice_id: z.string().uuid(), method: MethodZ.default("pix") }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: inv, error: e1 } = await context.supabase
-      .from("customer_invoices")
-      .select("*")
-      .eq("id", data.invoice_id)
-      .single();
-    if (e1 || !inv) throw new Error(e1?.message ?? "Fatura não encontrada");
-
-    const { data: ws } = await supabaseAdmin
-      .from("workspaces")
-      .select("payments_settings")
-      .eq("id", inv.workspace_id)
-      .single();
-    const settings = (ws?.payments_settings ?? {}) as {
-      gateway?: "asaas" | "pagarme" | "mercadopago" | "manual";
-      mode?: "sandbox" | "live";
-    };
-    const gateway = settings.gateway ?? "manual";
-    const mode = settings.mode ?? "sandbox";
-
-    // Deterministic sandbox stub. Real adapters would POST to the gateway API
-    // and store the returned ids/links.
-    const externalId = `${gateway}_${inv.id.slice(0, 8)}`;
-    const baseUrl = process.env.PUBLIC_APP_URL || CANONICAL_APP_ORIGIN;
-    const patch = {
-      gateway,
-      gateway_mode: mode,
-      payment_method: data.method,
-      external_id: externalId,
-      payment_url: `${baseUrl}/pay/${inv.id}`,
-      barcode:
-        data.method === "boleto"
-          ? `00190.00009 0${inv.id.slice(0, 5)} 0 ${Math.round(Number(inv.amount) * 100)}`
-          : null,
-      pix_qr_code:
-        data.method === "pix"
-          ? `00020126360014BR.GOV.BCB.PIX0114+5511999999999520400005303986540${Number(inv.amount).toFixed(2)}5802BR5913WK Technology6009Sao Paulo62070503***6304`
-          : null,
-      pix_copy_paste:
-        data.method === "pix" ? `PIX_COPY_${inv.id.slice(0, 12).toUpperCase()}` : null,
-      status: "open" as const,
-    };
-    const { data: updated, error: e2 } = await context.supabase
-      .from("customer_invoices")
-      .update(patch)
-      .eq("id", inv.id)
-      .select("*")
-      .single();
-    if (e2) throw new Error(e2.message);
-    return { invoice: updated, sandbox: mode === "sandbox" };
+    await authorizeFinanceBusiness(context.supabase, "invoices", "update", data.invoice_id);
+    throw new Error(
+      "Emissão por gateway indisponível: nenhum adaptador de cobrança real está habilitado. Nenhuma cobrança foi emitida.",
+    );
   });

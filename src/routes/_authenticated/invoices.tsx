@@ -1,3 +1,6 @@
+import { useFinanceBusinessCapabilities } from "@/lib/access-control/use-finance-business-capabilities";
+import { authorizeFinanceBusinessExport } from "@/lib/access-control/finance-business.functions";
+import { HrScreenAccess } from "@/components/hr-access";
 import { formatDateTime } from "@/lib/crm";
 import { useGridFilters } from "@/hooks/use-grid-filters";
 import type { GridFilterField } from "@/lib/grid-filters";
@@ -94,7 +97,11 @@ export const Route = createFileRoute("/_authenticated/invoices")({
   validateSearch: (search: Record<string, unknown>): { view: "table" | "kanban" } => ({
     view: search.view === "kanban" ? "kanban" : "table",
   }),
-  component: InvoicesPage,
+  component: () => (
+    <HrScreenAccess resources={["techfinance.invoices", "techsales.invoices"]}>
+      <InvoicesPage />
+    </HrScreenAccess>
+  ),
 });
 
 const statusColor: Record<string, string> = {
@@ -107,6 +114,8 @@ const statusColor: Record<string, string> = {
 };
 
 function InvoicesPage() {
+  const exportFinance = useServerFn(authorizeFinanceBusinessExport);
+  const financePermissions = usePermissions();
   const list = useServerFn(listInvoices);
   const create = useServerFn(createInvoice);
   const charge = useServerFn(generateCharge);
@@ -126,7 +135,7 @@ function InvoicesPage() {
   const navigate = Route.useNavigate();
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["invoices", status, search],
+    queryKey: ["invoices", financePermissions.workspaceId, status, search],
     queryFn: () =>
       list({ data: { status, search: search || undefined, limit: 200, gateway: "all" } }),
   });
@@ -171,6 +180,10 @@ function InvoicesPage() {
 
   // Seleção por linha e global (todos os filtrados) — padrão de grids.
   const { canAny } = usePermissions();
+  const recordAccess = useFinanceBusinessCapabilities(
+    "invoices",
+    sortedInvoices.map((r) => r.id),
+  );
   const selection = useGridSelection(
     sortedInvoices as Array<{ id: string } & (typeof sortedInvoices)[number]>,
   );
@@ -192,13 +205,12 @@ function InvoicesPage() {
   ]);
 
   function invalidate() {
-    qc.invalidateQueries({ queryKey: ["invoices"] });
+    qc.invalidateQueries({ queryKey: ["invoices", financePermissions.workspaceId] });
   }
 
   async function onGenerate(id: string, method: "pix" | "boleto") {
     try {
-      const { sandbox } = await charge({ data: { invoice_id: id, method } });
-      toast.success(sandbox ? "Cobrança gerada (sandbox)" : "Cobrança gerada");
+      await charge({ data: { invoice_id: id, method } });
       invalidate();
     } catch (e) {
       const message = e instanceof Error ? e.message : "Falha ao gerar cobrança";
@@ -239,10 +251,20 @@ function InvoicesPage() {
     <div className="space-y-4 p-6">
       <PageHeader
         title="Faturas"
-        description="Cobrança de clientes via Pix, boleto e cartão (Asaas/Pagar.me/Mercado Pago)."
+        description="Faturas e quitação manual. Emissão por gateway e NFS-e aguardam integração homologada."
         actions={
           <Dialog open={openCreate} onOpenChange={setOpenCreate}>
-            <DialogTrigger asChild>
+            <DialogTrigger
+              asChild
+              disabled={
+                !canAny([
+                  "techfinance.invoices.create.workspace",
+                  "techfinance.invoices.create.own",
+                  "techsales.invoices.create.workspace",
+                  "techsales.invoices.create.own",
+                ])
+              }
+            >
               <Button>
                 <Plus className="mr-2 h-4 w-4" /> Nova fatura
               </Button>
@@ -297,6 +319,9 @@ function InvoicesPage() {
               table="customer_invoices"
               stageField="status"
               selectable
+              csvEnabled={false}
+              canUpdate={false}
+              assignColumn={null}
               entityLabel="fatura"
               canDelete={false}
               readOnly
@@ -345,6 +370,11 @@ function InvoicesPage() {
                 <>
                   <GridListShell filters={gridFilters}>
                     <GridListToolbar
+                      canExport={financePermissions.canAny([
+                        "techfinance.invoices.export.workspace",
+                        "techsales.invoices.export.workspace",
+                      ])}
+                      beforeExport={() => exportFinance({ data: { resource: "invoices" } })}
                       filters={gridFilters}
                       sort={sort}
                       setSort={setGridSort}
@@ -370,8 +400,25 @@ function InvoicesPage() {
                         onDone={invalidate}
                         totalMatching={sortedInvoices.length}
                         onSelectAll={selectAllFiltered}
-                        canUpdate={canUpdateInvoice}
-                        canDelete={canDeleteInvoice}
+                        canUpdate={
+                          canUpdateInvoice &&
+                          selection.ids.every(
+                            (id) =>
+                              recordAccess.for(id).can_update &&
+                              sortedInvoices.find((r) => r.id === id)?.status === "draft",
+                          )
+                        }
+                        canDelete={
+                          canDeleteInvoice &&
+                          selection.ids.every(
+                            (id) =>
+                              recordAccess.for(id).can_delete &&
+                              sortedInvoices.find((r) => r.id === id)?.status === "draft",
+                          )
+                        }
+                        csvEnabled={false}
+                        assignColumn={null}
+                        staticFieldsOnly
                         bulkEditFields={[{ name: "due_date", label: "Vencimento", type: "date" }]}
                       />
                     )}
@@ -445,7 +492,7 @@ function InvoicesPage() {
                                     | "outline"
                                 }
                               >
-                                {inv.status}
+                                {STATUS_LABEL[inv.status] ?? inv.status}
                               </Badge>
                             </TableCell>
                             <TableCell>
@@ -491,6 +538,8 @@ function InvoicesPage() {
                                     <Button
                                       variant="outline"
                                       size="sm"
+                                      disabled
+                                      title="Adaptador Pix não habilitado"
                                       onClick={() => onGenerate(inv.id, "pix")}
                                     >
                                       Pix
@@ -498,28 +547,33 @@ function InvoicesPage() {
                                     <Button
                                       variant="outline"
                                       size="sm"
+                                      disabled
+                                      title="Adaptador boleto não habilitado"
                                       onClick={() => onGenerate(inv.id, "boleto")}
                                     >
                                       Boleto
                                     </Button>
                                   </>
                                 )}
-                                {inv.status !== "paid" && (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => onPaid(inv.id)}
-                                    title="Marcar como paga"
-                                  >
-                                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                                  </Button>
-                                )}
+                                {["draft", "open", "overdue"].includes(inv.status) &&
+                                  inv.gateway === "manual" &&
+                                  recordAccess.for(inv.id).can_settle && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => onPaid(inv.id)}
+                                      title="Marcar como paga"
+                                    >
+                                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                    </Button>
+                                  )}
                                 {inv.status === "paid" && (
                                   <Button
                                     variant="outline"
                                     size="sm"
+                                    disabled
                                     onClick={() => onIssueNfse(inv.id)}
-                                    title="Emitir NFS-e"
+                                    title="Adaptador NFS-e não habilitado"
                                   >
                                     NFS-e
                                   </Button>
@@ -528,6 +582,9 @@ function InvoicesPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
+                                  disabled={
+                                    inv.status !== "draft" || !recordAccess.for(inv.id).can_delete
+                                  }
                                   onClick={() => onDelete(inv.id)}
                                 >
                                   <Trash2 className="h-4 w-4 text-muted-foreground" />

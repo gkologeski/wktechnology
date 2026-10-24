@@ -1,3 +1,6 @@
+import { authorizeFinanceBusinessExport } from "@/lib/access-control/finance-business.functions";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { HrScreenAccess } from "@/components/hr-access";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -32,7 +35,11 @@ export const Route = createFileRoute("/_authenticated/finance/dre")({
       { name: "description", content: "Demonstrativo de resultado por competência." },
     ],
   }),
-  component: DrePage,
+  component: () => (
+    <HrScreenAccess resources={["techfinance.reports"]}>
+      <DrePage />
+    </HrScreenAccess>
+  ),
 });
 
 function formatMonth(ym: string) {
@@ -42,6 +49,8 @@ function formatMonth(ym: string) {
 }
 
 function DrePage() {
+  const exportFinance = useServerFn(authorizeFinanceBusinessExport);
+  const financePermissions = usePermissions();
   const get = useServerFn(getDreReport);
   const [months, setMonths] = useState(6);
   const [basis, setBasis] = useState<"accrual" | "cash">("accrual");
@@ -49,7 +58,15 @@ function DrePage() {
 
   const filterInput = useLegalEntityFilterInput(legalEntityId);
   const { data, isLoading } = useQuery({
-    queryKey: ["finance", "dre", months, basis, legalEntityId, JSON.stringify(filterInput)],
+    queryKey: [
+      "finance",
+      financePermissions.workspaceId,
+      "dre",
+      months,
+      basis,
+      legalEntityId,
+      JSON.stringify(filterInput),
+    ],
     queryFn: () =>
       get({
         data: {
@@ -71,7 +88,12 @@ function DrePage() {
 
   const monthList = data?.months ?? [];
 
-  function exportCsv() {
+  async function exportCsv() {
+    try {
+      await exportFinance({ data: { resource: "reports" } });
+    } catch {
+      return;
+    }
     if (!data) return;
     const header = ["Categoria", "Tipo", ...monthList.map(formatMonth), "Total"];
     const rows = data.categories.map((c) => [
@@ -107,6 +129,9 @@ function DrePage() {
 
   return (
     <div className="p-6 space-y-6">
+      <p className="text-xs text-muted-foreground">
+        Indicadores calculados somente sobre os registros que suas permissões permitem consultar.
+      </p>
       <PageHeader
         title="DRE gerencial"
         description={
@@ -133,7 +158,11 @@ function DrePage() {
                 <SelectItem value="12">Últimos 12 meses</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" onClick={exportCsv} disabled={!data}>
+            <Button
+              variant="outline"
+              onClick={exportCsv}
+              disabled={!data || !financePermissions.can("techfinance.reports.export.workspace")}
+            >
               <Download className="h-4 w-4 mr-1" /> CSV
             </Button>
           </div>

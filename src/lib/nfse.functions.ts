@@ -1,8 +1,8 @@
+import { authorizeFinanceBusiness } from "@/lib/access-control/finance-business.server";
 // Server functions para NFS-e (Release 15).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 export const listNfse = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -15,9 +15,12 @@ export const listNfse = createServerFn({ method: "POST" })
       .parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
+    await authorizeFinanceBusiness(context.supabase, "nfse", "view", undefined);
     let q = context.supabase
       .from("nfse_invoices")
-      .select("*, customer_invoices(invoice_number, amount, currency, description)")
+      .select(
+        "id,invoice_id,status,rps_number,nf_number,pdf_url,xml_url,service_code,amount,error_message,issued_at,created_at,legal_entity_id,customer_invoices(invoice_number, amount, currency, description)",
+      )
       .order("created_at", { ascending: false })
       .limit(200);
     if (data.legalEntityId) q = q.eq("legal_entity_id", data.legalEntityId);
@@ -43,27 +46,8 @@ export const issueNfse = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const workspaceId = await resolveActiveWorkspace(context.userId);
-    const { data: inv, error } = await context.supabase
-      .from("customer_invoices")
-      .select("id,amount")
-      .eq("id", data.invoice_id)
-      .single();
-    if (error || !inv) throw new Error(error?.message ?? "Fatura não encontrada");
-
-    const externalId = `nfeio_${inv.id.slice(0, 8)}`;
-    const { data: row, error: e2 } = await context.supabase
-      .from("nfse_invoices")
-      .insert({
-        workspace_id: workspaceId,
-        invoice_id: inv.id,
-        external_id: externalId,
-        status: "processing",
-        service_code: data.service_code ?? null,
-        amount: inv.amount,
-      })
-      .select("*")
-      .single();
-    if (e2) throw new Error(e2.message);
-    return { nfse: row };
+    await authorizeFinanceBusiness(context.supabase, "invoices", "view", data.invoice_id);
+    throw new Error(
+      "Emissão fiscal indisponível: o adaptador NFS-e não está habilitado. Nenhuma nota foi emitida.",
+    );
   });

@@ -1,3 +1,4 @@
+import { requireFinanceCronAuth } from "@/lib/access-control/finance-cron-auth.server";
 // Fase 7 — Cron público para processar a régua de cobrança.
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -5,16 +6,8 @@ export const Route = createFileRoute("/api/public/hooks/dunning-tick")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const authHeader = request.headers.get("apikey") ?? request.headers.get("authorization");
-        const expected =
-          process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-        const cleaned = authHeader?.replace(/^Bearer\s+/i, "");
-        if (!expected || !cleaned || cleaned !== expected) {
-          return new Response(JSON.stringify({ error: "unauthorized" }), {
-            status: 401,
-            headers: { "Content-Type": "application/json" },
-          });
-        }
+        const unauth = await requireFinanceCronAuth(request, "dunning");
+        if (unauth) return unauth;
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { processDunningRuns } = await import("@/lib/dunning-runner.server");
         try {

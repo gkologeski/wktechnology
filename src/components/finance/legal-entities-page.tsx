@@ -1,3 +1,5 @@
+import { useFinanceBusinessCapabilities } from "@/lib/access-control/use-finance-business-capabilities";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -41,6 +43,7 @@ type LE = {
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export function LegalEntitiesPage() {
+  const financePermissions = usePermissions();
   const qc = useQueryClient();
   const list = useServerFn(listLegalEntitiesSummary);
   const upsert = useServerFn(upsertLegalEntity);
@@ -49,10 +52,18 @@ export function LegalEntitiesPage() {
   const getEntity = useServerFn(getLegalEntity);
 
   const { data: rows = [], isLoading } = useQuery({
-    queryKey: ["legal-entities"],
+    queryKey: ["legal-entities", financePermissions.workspaceId],
     queryFn: () => list() as Promise<LE[]>,
   });
 
+  const recordAccess = useFinanceBusinessCapabilities(
+    "legal_entities",
+    rows.map((r) => r.id),
+  );
+  const canCreate = financePermissions.canAny([
+    "techfinance.legal_entities.create.workspace",
+    "techfinance.legal_entities.create.own",
+  ]);
   const [open, setOpen] = useState(false);
   const [cnpjFillOpen, setCnpjFillOpen] = useState(false);
   const [loadingEdit, setLoadingEdit] = useState<string | null>(null);
@@ -115,7 +126,7 @@ export function LegalEntitiesPage() {
         },
       });
       toast.success(form.id ? "Empresa atualizada" : "Empresa criada");
-      qc.invalidateQueries({ queryKey: ["legal-entities"] });
+      qc.invalidateQueries({ queryKey: ["legal-entities", financePermissions.workspaceId] });
       setOpen(false);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha");
@@ -126,7 +137,7 @@ export function LegalEntitiesPage() {
     try {
       await setDefault({ data: { id } });
       toast.success("Empresa padrão definida");
-      qc.invalidateQueries({ queryKey: ["legal-entities"] });
+      qc.invalidateQueries({ queryKey: ["legal-entities", financePermissions.workspaceId] });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha");
     }
@@ -143,7 +154,7 @@ export function LegalEntitiesPage() {
     try {
       await del({ data: { id: row.id } });
       toast.success("Excluída");
-      qc.invalidateQueries({ queryKey: ["legal-entities"] });
+      qc.invalidateQueries({ queryKey: ["legal-entities", financePermissions.workspaceId] });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha");
     }
@@ -156,10 +167,14 @@ export function LegalEntitiesPage() {
         description="Gerencie os CNPJs (entidades legais) associados a este workspace. Contas, categorias e lançamentos podem ser atribuídos a uma empresa específica."
         actions={
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => setCnpjFillOpen(true)}>
+            <Button
+              variant="outline"
+              disabled={!financePermissions.can("techfinance.legal_entities.update.workspace")}
+              onClick={() => setCnpjFillOpen(true)}
+            >
               <Wand2 className="h-4 w-4 mr-1" /> Preencher CNPJs
             </Button>
-            <Button onClick={openCreate}>
+            <Button disabled={!canCreate} onClick={openCreate}>
               <Plus className="h-4 w-4 mr-1" /> Nova empresa
             </Button>
           </div>
@@ -228,6 +243,7 @@ export function LegalEntitiesPage() {
                       <Button
                         size="sm"
                         variant="ghost"
+                        disabled={!recordAccess.for(r.id).can_update}
                         onClick={() => makeDefault(r.id)}
                         title="Definir como padrão"
                       >
@@ -238,13 +254,18 @@ export function LegalEntitiesPage() {
                       size="sm"
                       variant="ghost"
                       onClick={() => void openEdit(r)}
-                      disabled={loadingEdit === r.id}
+                      disabled={loadingEdit === r.id || !recordAccess.for(r.id).can_update}
                       aria-label={`Editar ${r.name}`}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
 
-                    <Button size="sm" variant="ghost" onClick={() => remove(r)}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={!recordAccess.for(r.id).can_delete}
+                      onClick={() => remove(r)}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -316,7 +337,12 @@ export function LegalEntitiesPage() {
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={submit}>{form.id ? "Salvar" : "Criar"}</Button>
+            <Button
+              disabled={form.id ? !recordAccess.for(form.id).can_update : !canCreate}
+              onClick={submit}
+            >
+              {form.id ? "Salvar" : "Criar"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -1,3 +1,6 @@
+import { z } from "zod";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { HrScreenAccess } from "@/components/hr-access";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -19,15 +22,19 @@ import {
 // -----------------------------------------------------------------
 const listCostCentersWithTotals = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
-    input === undefined
-      ? {
-          legalEntityId: undefined as string | undefined,
-          legalEntityIds: undefined as string[] | undefined,
-        }
-      : (input as { legalEntityId?: string; legalEntityIds?: string[] }),
+  .inputValidator((i) =>
+    z
+      .object({
+        legalEntityId: z.string().uuid().optional(),
+        legalEntityIds: z.array(z.string().uuid()).max(500).optional(),
+      })
+      .parse(i ?? {}),
   )
   .handler(async ({ data, context }) => {
+    const { authorizeFinanceBusiness } =
+      await import("@/lib/access-control/finance-business.server");
+    const { financeRpc } = await import("@/lib/access-control/finance-records.server");
+    await authorizeFinanceBusiness(context.supabase, "cost_centers");
     const { supabase, userId } = context;
     const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
     const workspaceId = await resolveActiveWorkspace(userId);
@@ -53,7 +60,11 @@ const listCostCentersWithTotals = createServerFn({ method: "POST" })
 
     const [ccRes, leRes, allocRes] = await Promise.all([
       ccQ,
-      supabase.from("legal_entities").select("id, code, name").eq("workspace_id", workspaceId),
+      financeRpc<Array<{ id: string; code: string | null; name: string }>>(
+        supabase,
+        "finance_reference_list",
+        { _resource: "legal_entities" },
+      ).then((data) => ({ data, error: null })),
       allocQ,
     ]);
     if (ccRes.error) throw ccRes.error;
@@ -85,7 +96,11 @@ const listCostCentersWithTotals = createServerFn({ method: "POST" })
 
 export const Route = createFileRoute("/_authenticated/finance/cost-centers")({
   head: () => ({ meta: [{ title: "Centros de custo" }] }),
-  component: CostCentersPage,
+  component: () => (
+    <HrScreenAccess resources={["techfinance.cost_centers"]}>
+      <CostCentersPage />
+    </HrScreenAccess>
+  ),
 });
 
 type CC = {
@@ -117,11 +132,17 @@ function buildTree(rows: CC[]): Node[] {
 }
 
 function CostCentersPage() {
+  const financePermissions = usePermissions();
   const fetchFn = useServerFn(listCostCentersWithTotals);
   const [legalEntityId, setLegalEntityId] = useLegalEntityFilter();
   const filterInput = useLegalEntityFilterInput(legalEntityId);
   const { data, isLoading } = useQuery({
-    queryKey: ["cost-centers", legalEntityId, JSON.stringify(filterInput)],
+    queryKey: [
+      "cost-centers",
+      financePermissions.workspaceId,
+      legalEntityId,
+      JSON.stringify(filterInput),
+    ],
     queryFn: () =>
       fetchFn({ data: filterInput }) as Promise<{
         centers: CC[];
@@ -190,6 +211,9 @@ function CostCentersPage() {
 
   return (
     <div className="p-6 space-y-5">
+      <p className="text-xs text-muted-foreground">
+        Indicadores calculados somente sobre os registros que suas permissões permitem consultar.
+      </p>
       <PageHeader
         title="Centros de custo"
         description="Hierarquia de centros de custo por empresa. Valores agregados dos rateios de lançamentos."

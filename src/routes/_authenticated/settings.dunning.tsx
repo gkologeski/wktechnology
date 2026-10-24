@@ -1,3 +1,6 @@
+import { useFinanceBusinessCapabilities } from "@/lib/access-control/use-finance-business-capabilities";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { HrScreenAccess } from "@/components/hr-access";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -29,7 +32,11 @@ import { Badge } from "@/components/ui/badge";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/settings/dunning")({
-  component: DunningPage,
+  component: () => (
+    <HrScreenAccess resources={["techfinance.dunning"]}>
+      <DunningPage />
+    </HrScreenAccess>
+  ),
 });
 
 type Step = {
@@ -57,24 +64,30 @@ const defaultSteps: Step[] = [
 ];
 
 function DunningPage() {
+  const financePermissions = usePermissions();
   const list = useServerFn(listDunningPolicies);
   const upsert = useServerFn(upsertDunningPolicy);
   const del = useServerFn(deleteDunningPolicy);
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["dunning-policies"],
+    queryKey: ["dunning-policies", financePermissions.workspaceId],
     queryFn: () => list(),
   });
   const runsFn = useServerFn(listDunningRuns);
   const { data: runsData } = useQuery({
-    queryKey: ["dunning-runs"],
+    queryKey: ["dunning-runs", financePermissions.workspaceId],
     queryFn: () => runsFn(),
   });
   const templatesFn = useServerFn(listChargingTemplates);
   const { data: templatesData } = useQuery({
-    queryKey: ["charging-templates-by-channel"],
+    queryKey: ["charging-templates-by-channel", financePermissions.workspaceId],
     queryFn: () => templatesFn(),
+    enabled: financePermissions.canAny([
+      "techfinance.charging_templates.view.workspace",
+      "techfinance.charging_templates.view.own",
+      "techfinance.charging_templates.view.team",
+    ]),
   });
   const templates = (templatesData?.templates ?? []) as Array<{
     id: string;
@@ -83,18 +96,28 @@ function DunningPage() {
     active: boolean;
   }>;
 
+  const recordAccess = useFinanceBusinessCapabilities(
+    "dunning",
+    (data?.policies ?? []).map((r) => r.id),
+  );
+  const canCreate = financePermissions.canAny([
+    "techfinance.dunning.create.workspace",
+    "techfinance.dunning.create.own",
+  ]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("Régua padrão");
-  const [active, setActive] = useState(true);
-  const [isDefault, setIsDefault] = useState(true);
+  const [active, setActive] = useState(
+    financePermissions.can("techfinance.dunning.manage.workspace"),
+  );
+  const [isDefault, setIsDefault] = useState(false);
   const [steps, setSteps] = useState<Step[]>(defaultSteps);
   const [saving, setSaving] = useState(false);
 
   function reset() {
     setEditingId(null);
     setName("Régua padrão");
-    setActive(true);
-    setIsDefault(true);
+    setActive(financePermissions.can("techfinance.dunning.manage.workspace"));
+    setIsDefault(false);
     setSteps(defaultSteps);
   }
 
@@ -125,7 +148,7 @@ function DunningPage() {
         },
       });
       toast.success("Régua salva");
-      qc.invalidateQueries({ queryKey: ["dunning-policies"] });
+      qc.invalidateQueries({ queryKey: ["dunning-policies", financePermissions.workspaceId] });
       reset();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha");
@@ -138,7 +161,7 @@ function DunningPage() {
     if (!(await confirmDialog("Excluir régua?"))) return;
     try {
       await del({ data: { id } });
-      qc.invalidateQueries({ queryKey: ["dunning-policies"] });
+      qc.invalidateQueries({ queryKey: ["dunning-policies", financePermissions.workspaceId] });
       if (editingId === id) reset();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha");
@@ -160,7 +183,7 @@ function DunningPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base">Réguas existentes</CardTitle>
-            <Button size="sm" variant="outline" onClick={reset}>
+            <Button size="sm" variant="outline" disabled={!canCreate} onClick={reset}>
               <Plus className="mr-1 h-4 w-4" /> Nova
             </Button>
           </CardHeader>
@@ -198,7 +221,12 @@ function DunningPage() {
                         <span className="ml-2 text-xs text-muted-foreground">(inativa)</span>
                       )}
                     </button>
-                    <Button variant="ghost" size="icon" onClick={() => remove(p.id)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      disabled={!recordAccess.for(p.id).can_delete}
+                      onClick={() => remove(p.id)}
+                    >
                       <Trash2 className="h-4 w-4 text-muted-foreground" />
                     </Button>
                   </li>
@@ -219,11 +247,19 @@ function DunningPage() {
             </div>
             <div className="flex items-center justify-between">
               <Label>Ativa</Label>
-              <Switch checked={active} onCheckedChange={setActive} />
+              <Switch
+                disabled={!financePermissions.can("techfinance.dunning.manage.workspace")}
+                checked={active}
+                onCheckedChange={setActive}
+              />
             </div>
             <div className="flex items-center justify-between">
               <Label>Padrão do workspace</Label>
-              <Switch checked={isDefault} onCheckedChange={setIsDefault} />
+              <Switch
+                disabled={!financePermissions.can("techfinance.dunning.manage.workspace")}
+                checked={isDefault}
+                onCheckedChange={setIsDefault}
+              />
             </div>
 
             <div className="space-y-2">
@@ -320,7 +356,16 @@ function DunningPage() {
               </Button>
             </div>
 
-            <Button onClick={save} disabled={saving || !name || !steps.length} className="w-full">
+            <Button
+              onClick={save}
+              disabled={
+                saving ||
+                !name ||
+                !steps.length ||
+                (editingId ? !recordAccess.for(editingId).can_update : !canCreate)
+              }
+              className="w-full"
+            >
               {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Salvar régua
             </Button>

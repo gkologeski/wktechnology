@@ -24,11 +24,7 @@
     {
       "operation": "public.get_entity_field_catalog(text,uuid)",
       "kind": "metadata_exception",
-      "route_consumers": [
-        "construtores de campos",
-        "grids",
-        "filtros de campanhas"
-      ],
+      "route_consumers": ["construtores de campos", "grids", "filtros de campanhas"],
       "actor": "authenticated active workspace member or trusted service_role",
       "resource": "technical SQL schema only",
       "action": "inspect_metadata",
@@ -42,10 +38,7 @@
     {
       "operation": "public.anonymize_ats_candidate(uuid)",
       "kind": "business_action",
-      "route_consumers": [
-        "/compliance",
-        "ficha do candidato"
-      ],
+      "route_consumers": ["/compliance", "ficha do candidato"],
       "actor": "authenticated active member, not read-only View As",
       "resource": "techhire.compliance + techhire.candidates",
       "action": "anonymize",
@@ -116,15 +109,11 @@
     {
       "operation": "payments_settings.view",
       "kind": "configuration_action",
-      "route_consumers": [
-        "/settings/payments"
-      ],
+      "route_consumers": ["/settings/payments"],
       "actor": "authenticated active member in selected workspace",
       "resource": "techfinance.payments_settings",
       "action": "view",
-      "permission_keys": [
-        "techfinance.payments_settings.view.workspace"
-      ],
+      "permission_keys": ["techfinance.payments_settings.view.workspace"],
       "scope": "selected workspace; deny takes precedence; write denied in read-only View As",
       "server": "authenticated client RPC via workspace-settings.server.ts; no service-role fallback",
       "database": "0192: column ACLs + authorized SECURITY DEFINER RPC; field allowlist and atomic audit on changes",
@@ -134,9 +123,7 @@
     {
       "operation": "payments_settings.manage",
       "kind": "configuration_action",
-      "route_consumers": [
-        "/settings/payments"
-      ],
+      "route_consumers": ["/settings/payments"],
       "actor": "authenticated active member in selected workspace",
       "resource": "techfinance.payments_settings",
       "action": "manage",
@@ -153,15 +140,11 @@
     {
       "operation": "nfse_settings.view",
       "kind": "configuration_action",
-      "route_consumers": [
-        "/settings/nfse"
-      ],
+      "route_consumers": ["/settings/nfse"],
       "actor": "authenticated active member in selected workspace",
       "resource": "techfinance.nfse_settings",
       "action": "view",
-      "permission_keys": [
-        "techfinance.nfse_settings.view.workspace"
-      ],
+      "permission_keys": ["techfinance.nfse_settings.view.workspace"],
       "scope": "selected workspace; deny takes precedence; write denied in read-only View As",
       "server": "authenticated client RPC via workspace-settings.server.ts; no service-role fallback",
       "database": "0192: column ACLs + authorized SECURITY DEFINER RPC; field allowlist and atomic audit on changes",
@@ -171,9 +154,7 @@
     {
       "operation": "nfse_settings.manage",
       "kind": "configuration_action",
-      "route_consumers": [
-        "/settings/nfse"
-      ],
+      "route_consumers": ["/settings/nfse"],
       "actor": "authenticated active member in selected workspace",
       "resource": "techfinance.nfse_settings",
       "action": "manage",
@@ -190,15 +171,11 @@
     {
       "operation": "meeting_settings.view",
       "kind": "configuration_action",
-      "route_consumers": [
-        "/settings/video"
-      ],
+      "route_consumers": ["/settings/video"],
       "actor": "authenticated active member in selected workspace",
       "resource": "techsales.meeting_settings",
       "action": "view",
-      "permission_keys": [
-        "techsales.meeting_settings.view.workspace"
-      ],
+      "permission_keys": ["techsales.meeting_settings.view.workspace"],
       "scope": "selected workspace; deny takes precedence; write denied in read-only View As",
       "server": "authenticated client RPC via workspace-settings.server.ts; no service-role fallback",
       "database": "0192: column ACLs + authorized SECURITY DEFINER RPC; field allowlist and atomic audit on changes",
@@ -208,9 +185,7 @@
     {
       "operation": "meeting_settings.manage",
       "kind": "configuration_action",
-      "route_consumers": [
-        "/settings/video"
-      ],
+      "route_consumers": ["/settings/video"],
       "actor": "authenticated active member in selected workspace",
       "resource": "techsales.meeting_settings",
       "action": "manage",
@@ -227,10 +202,7 @@
     {
       "operation": "people.view",
       "kind": "business_action",
-      "route_consumers": [
-        "/people",
-        "/people/$personId"
-      ],
+      "route_consumers": ["/people", "/people/$personId"],
       "actor": "authenticated active member in selected workspace",
       "resource": "techpeople.people",
       "action": "view",
@@ -244,40 +216,27 @@
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
       "status": "published_user_confirmed_sql_tested",
-      "exceptions": [
-        "trusted service-role/internal SQL access retained; no role grants"
-      ]
+      "exceptions": ["trusted service-role/internal SQL access retained; no role grants"]
     },
     {
       "operation": "people.create",
       "kind": "business_action",
-      "route_consumers": [
-        "/people",
-        "/people/$personId"
-      ],
+      "route_consumers": ["/people", "/people/$personId"],
       "actor": "authenticated active member in selected workspace",
       "resource": "techpeople.people",
       "action": "create",
-      "permission_keys": [
-        "techpeople.people.create.workspace",
-        "techpeople.people.create.own"
-      ],
+      "permission_keys": ["techpeople.people.create.workspace", "techpeople.people.create.own"],
       "scope": "effective action key plus real own/team/workspace binding; onboarding additionally requires person read and same-workspace person/template/plan links",
       "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
       "status": "published_user_confirmed_sql_tested",
-      "exceptions": [
-        "trusted service-role/internal SQL access retained; no role grants"
-      ]
+      "exceptions": ["trusted service-role/internal SQL access retained; no role grants"]
     },
     {
       "operation": "people.update",
       "kind": "business_action",
-      "route_consumers": [
-        "/people",
-        "/people/$personId"
-      ],
+      "route_consumers": ["/people", "/people/$personId"],
       "actor": "authenticated active member in selected workspace",
       "resource": "techpeople.people",
       "action": "update",
@@ -291,40 +250,27 @@
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
       "status": "published_user_confirmed_sql_tested",
-      "exceptions": [
-        "trusted service-role/internal SQL access retained; no role grants"
-      ]
+      "exceptions": ["trusted service-role/internal SQL access retained; no role grants"]
     },
     {
       "operation": "people.delete",
       "kind": "business_action",
-      "route_consumers": [
-        "/people",
-        "/people/$personId"
-      ],
+      "route_consumers": ["/people", "/people/$personId"],
       "actor": "authenticated active member in selected workspace",
       "resource": "techpeople.people",
       "action": "delete",
-      "permission_keys": [
-        "techpeople.people.delete.workspace",
-        "techpeople.people.delete.own"
-      ],
+      "permission_keys": ["techpeople.people.delete.workspace", "techpeople.people.delete.own"],
       "scope": "effective action key plus real own/team/workspace binding; onboarding additionally requires person read and same-workspace person/template/plan links",
       "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
       "status": "published_user_confirmed_sql_tested",
-      "exceptions": [
-        "trusted service-role/internal SQL access retained; no role grants"
-      ]
+      "exceptions": ["trusted service-role/internal SQL access retained; no role grants"]
     },
     {
       "operation": "candidates.view",
       "kind": "business_action",
-      "route_consumers": [
-        "/ats/candidates",
-        "/ats/candidates/$candidateId"
-      ],
+      "route_consumers": ["/ats/candidates", "/ats/candidates/$candidateId"],
       "actor": "authenticated active member in selected workspace",
       "resource": "techhire.candidates",
       "action": "view",
@@ -338,40 +284,27 @@
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
       "status": "published_user_confirmed_sql_tested",
-      "exceptions": [
-        "trusted service-role/internal SQL access retained; no role grants"
-      ]
+      "exceptions": ["trusted service-role/internal SQL access retained; no role grants"]
     },
     {
       "operation": "candidates.create",
       "kind": "business_action",
-      "route_consumers": [
-        "/ats/candidates",
-        "/ats/candidates/$candidateId"
-      ],
+      "route_consumers": ["/ats/candidates", "/ats/candidates/$candidateId"],
       "actor": "authenticated active member in selected workspace",
       "resource": "techhire.candidates",
       "action": "create",
-      "permission_keys": [
-        "techhire.candidates.create.workspace",
-        "techhire.candidates.create.own"
-      ],
+      "permission_keys": ["techhire.candidates.create.workspace", "techhire.candidates.create.own"],
       "scope": "effective action key plus real own/team/workspace binding; onboarding additionally requires person read and same-workspace person/template/plan links",
       "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
       "status": "published_user_confirmed_sql_tested",
-      "exceptions": [
-        "trusted service-role/internal SQL access retained; no role grants"
-      ]
+      "exceptions": ["trusted service-role/internal SQL access retained; no role grants"]
     },
     {
       "operation": "candidates.update",
       "kind": "business_action",
-      "route_consumers": [
-        "/ats/candidates",
-        "/ats/candidates/$candidateId"
-      ],
+      "route_consumers": ["/ats/candidates", "/ats/candidates/$candidateId"],
       "actor": "authenticated active member in selected workspace",
       "resource": "techhire.candidates",
       "action": "update",
@@ -385,39 +318,27 @@
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
       "status": "published_user_confirmed_sql_tested",
-      "exceptions": [
-        "trusted service-role/internal SQL access retained; no role grants"
-      ]
+      "exceptions": ["trusted service-role/internal SQL access retained; no role grants"]
     },
     {
       "operation": "candidates.delete",
       "kind": "business_action",
-      "route_consumers": [
-        "/ats/candidates",
-        "/ats/candidates/$candidateId"
-      ],
+      "route_consumers": ["/ats/candidates", "/ats/candidates/$candidateId"],
       "actor": "authenticated active member in selected workspace",
       "resource": "techhire.candidates",
       "action": "delete",
-      "permission_keys": [
-        "techhire.candidates.delete.workspace",
-        "techhire.candidates.delete.own"
-      ],
+      "permission_keys": ["techhire.candidates.delete.workspace", "techhire.candidates.delete.own"],
       "scope": "effective action key plus real own/team/workspace binding; onboarding additionally requires person read and same-workspace person/template/plan links",
       "server": "authenticated RLS; record-specific hr_record_access for mutations, separate create keys; atomic hr_create_onboarding_plan for manual and automatic creation",
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
       "status": "published_user_confirmed_sql_tested",
-      "exceptions": [
-        "trusted service-role/internal SQL access retained; no role grants"
-      ]
+      "exceptions": ["trusted service-role/internal SQL access retained; no role grants"]
     },
     {
       "operation": "onboarding_templates.view",
       "kind": "business_action",
-      "route_consumers": [
-        "/people/onboarding-templates"
-      ],
+      "route_consumers": ["/people/onboarding-templates"],
       "actor": "authenticated active member in selected workspace",
       "resource": "techpeople.onboarding_templates",
       "action": "view",
@@ -431,16 +352,12 @@
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
       "status": "published_user_confirmed_sql_tested",
-      "exceptions": [
-        "trusted service-role/internal SQL access retained; no role grants"
-      ]
+      "exceptions": ["trusted service-role/internal SQL access retained; no role grants"]
     },
     {
       "operation": "onboarding_templates.create",
       "kind": "business_action",
-      "route_consumers": [
-        "/people/onboarding-templates"
-      ],
+      "route_consumers": ["/people/onboarding-templates"],
       "actor": "authenticated active member in selected workspace",
       "resource": "techpeople.onboarding_templates",
       "action": "create",
@@ -453,16 +370,12 @@
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
       "status": "published_user_confirmed_sql_tested",
-      "exceptions": [
-        "trusted service-role/internal SQL access retained; no role grants"
-      ]
+      "exceptions": ["trusted service-role/internal SQL access retained; no role grants"]
     },
     {
       "operation": "onboarding_templates.update",
       "kind": "business_action",
-      "route_consumers": [
-        "/people/onboarding-templates"
-      ],
+      "route_consumers": ["/people/onboarding-templates"],
       "actor": "authenticated active member in selected workspace",
       "resource": "techpeople.onboarding_templates",
       "action": "update",
@@ -476,16 +389,12 @@
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
       "status": "published_user_confirmed_sql_tested",
-      "exceptions": [
-        "trusted service-role/internal SQL access retained; no role grants"
-      ]
+      "exceptions": ["trusted service-role/internal SQL access retained; no role grants"]
     },
     {
       "operation": "onboarding_templates.delete",
       "kind": "business_action",
-      "route_consumers": [
-        "/people/onboarding-templates"
-      ],
+      "route_consumers": ["/people/onboarding-templates"],
       "actor": "authenticated active member in selected workspace",
       "resource": "techpeople.onboarding_templates",
       "action": "delete",
@@ -498,16 +407,12 @@
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
       "status": "published_user_confirmed_sql_tested",
-      "exceptions": [
-        "trusted service-role/internal SQL access retained; no role grants"
-      ]
+      "exceptions": ["trusted service-role/internal SQL access retained; no role grants"]
     },
     {
       "operation": "onboarding_plans.view",
       "kind": "business_action",
-      "route_consumers": [
-        "ficha da pessoa: onboarding/offboarding"
-      ],
+      "route_consumers": ["ficha da pessoa: onboarding/offboarding"],
       "actor": "authenticated active member in selected workspace",
       "resource": "techpeople.onboarding|techpeople.offboarding",
       "action": "view",
@@ -524,16 +429,12 @@
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
       "status": "published_user_confirmed_sql_tested",
-      "exceptions": [
-        "trusted service-role/internal SQL access retained; no role grants"
-      ]
+      "exceptions": ["trusted service-role/internal SQL access retained; no role grants"]
     },
     {
       "operation": "onboarding_plans.create",
       "kind": "business_action",
-      "route_consumers": [
-        "ficha da pessoa: onboarding/offboarding"
-      ],
+      "route_consumers": ["ficha da pessoa: onboarding/offboarding"],
       "actor": "authenticated active member in selected workspace",
       "resource": "techpeople.onboarding|techpeople.offboarding",
       "action": "create",
@@ -548,16 +449,12 @@
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
       "status": "published_user_confirmed_sql_tested",
-      "exceptions": [
-        "trusted service-role/internal SQL access retained; no role grants"
-      ]
+      "exceptions": ["trusted service-role/internal SQL access retained; no role grants"]
     },
     {
       "operation": "onboarding_plans.update",
       "kind": "business_action",
-      "route_consumers": [
-        "ficha da pessoa: onboarding/offboarding"
-      ],
+      "route_consumers": ["ficha da pessoa: onboarding/offboarding"],
       "actor": "authenticated active member in selected workspace",
       "resource": "techpeople.onboarding|techpeople.offboarding",
       "action": "update",
@@ -574,16 +471,12 @@
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
       "status": "published_user_confirmed_sql_tested",
-      "exceptions": [
-        "trusted service-role/internal SQL access retained; no role grants"
-      ]
+      "exceptions": ["trusted service-role/internal SQL access retained; no role grants"]
     },
     {
       "operation": "onboarding_plans.delete",
       "kind": "business_action",
-      "route_consumers": [
-        "ficha da pessoa: onboarding/offboarding"
-      ],
+      "route_consumers": ["ficha da pessoa: onboarding/offboarding"],
       "actor": "authenticated active member in selected workspace",
       "resource": "techpeople.onboarding|techpeople.offboarding",
       "action": "delete",
@@ -598,16 +491,12 @@
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
       "status": "published_user_confirmed_sql_tested",
-      "exceptions": [
-        "trusted service-role/internal SQL access retained; no role grants"
-      ]
+      "exceptions": ["trusted service-role/internal SQL access retained; no role grants"]
     },
     {
       "operation": "onboarding_tasks.view",
       "kind": "business_action",
-      "route_consumers": [
-        "tarefas do plano"
-      ],
+      "route_consumers": ["tarefas do plano"],
       "actor": "authenticated active member in selected workspace",
       "resource": "techpeople.onboarding|techpeople.offboarding",
       "action": "view",
@@ -624,16 +513,12 @@
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
       "status": "published_user_confirmed_sql_tested",
-      "exceptions": [
-        "trusted service-role/internal SQL access retained; no role grants"
-      ]
+      "exceptions": ["trusted service-role/internal SQL access retained; no role grants"]
     },
     {
       "operation": "onboarding_tasks.create",
       "kind": "business_action",
-      "route_consumers": [
-        "tarefas do plano"
-      ],
+      "route_consumers": ["tarefas do plano"],
       "actor": "authenticated active member in selected workspace",
       "resource": "techpeople.onboarding|techpeople.offboarding",
       "action": "create",
@@ -648,16 +533,12 @@
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
       "status": "published_user_confirmed_sql_tested",
-      "exceptions": [
-        "trusted service-role/internal SQL access retained; no role grants"
-      ]
+      "exceptions": ["trusted service-role/internal SQL access retained; no role grants"]
     },
     {
       "operation": "onboarding_tasks.update",
       "kind": "business_action",
-      "route_consumers": [
-        "tarefas do plano"
-      ],
+      "route_consumers": ["tarefas do plano"],
       "actor": "authenticated active member in selected workspace",
       "resource": "techpeople.onboarding|techpeople.offboarding",
       "action": "update",
@@ -674,16 +555,12 @@
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
       "status": "published_user_confirmed_sql_tested",
-      "exceptions": [
-        "trusted service-role/internal SQL access retained; no role grants"
-      ]
+      "exceptions": ["trusted service-role/internal SQL access retained; no role grants"]
     },
     {
       "operation": "onboarding_tasks.delete",
       "kind": "business_action",
-      "route_consumers": [
-        "tarefas do plano"
-      ],
+      "route_consumers": ["tarefas do plano"],
       "actor": "authenticated active member in selected workspace",
       "resource": "techpeople.onboarding|techpeople.offboarding",
       "action": "delete",
@@ -698,9 +575,7 @@
       "database": "0193: four consolidated permissive policies per table, scoped helpers and immutable-link/membership guards; existing restrictive policies retained",
       "migration": "0193",
       "status": "published_user_confirmed_sql_tested",
-      "exceptions": [
-        "trusted service-role/internal SQL access retained; no role grants"
-      ]
+      "exceptions": ["trusted service-role/internal SQL access retained; no role grants"]
     },
     {
       "operation": "public.hr_record_capabilities(text,uuid[])",
@@ -738,9 +613,7 @@
       "actor": "authenticated active member in selected workspace",
       "resource": "documents, benefits, allocations/splits, goals, one_on_ones, reviews, wellbeing.assessments, incidents, events",
       "action": "view/create/update/delete; events read-only for user APIs",
-      "permission_keys": [
-        "techpeople.<resource>.<action>.<scope>"
-      ],
+      "permission_keys": ["techpeople.<resource>.<action>.<scope>"],
       "scope": "actual person ownership/responsibility, persisted child creator/assignee, workspace team or person manager; linked person must be readable",
       "server": "assertHrChildMutation/assertHrRecordAccess; affected-row checks; explicit workspace on INSERT; upload create vs existing document update; download verifies document row",
       "database": "0195 replaces permissive legacy bypasses and audited restrictive role gates; View As and unrelated restrictive fences retained; immutable parent/tenant/authorship; allocation splits bind company+allocation+workspace; 0196 normalizes workspace-as-assignee on INSERT after the legacy shared trigger; 0197 caches effective keys for broad workspace capabilities, with canonical fallback for mixed/own/team grants",
@@ -760,9 +633,7 @@
       "actor": "authenticated active member in selected workspace",
       "resource": "techpeople.people_sensitive | techpeople.one_on_ones_private | techpeople.allocations_financial",
       "action": "view/update plus underlying primary entity action",
-      "permission_keys": [
-        "techpeople.<private_resource>.<view|update>.<own|team|workspace>"
-      ],
+      "permission_keys": ["techpeople.<private_resource>.<view|update>.<own|team|workspace>"],
       "scope": "persisted primary person/child relationship; new child checks parent; new person binds active workspace and creator/assignee",
       "server": "readHrPrivate; bounded hr_private_fields RPC; omit unauthorized blank values, reject nonblank writes, preserve omitted fields; imports use authenticated RLS, file storage requires record-specific authorization; payroll additionally requires financial recurrence view/create/update workspace",
       "database": "0198 introduces whitelist RPC and catalog, with canonical and broad-workspace paths; 0199 activates dirty-column triggers, removes direct private SELECT and deprecated salary-view access after consumers deploy",
@@ -775,11 +646,7 @@
     {
       "operation": "TechHire jobs CRUD, publication/configuration, copilot and job CSV",
       "kind": "business_action",
-      "route_consumers": [
-        "/jobs",
-        "/jobs/$id",
-        "legacy /ats/jobs redirects"
-      ],
+      "route_consumers": ["/jobs", "/jobs/$id", "legacy /ats/jobs redirects"],
       "actor": "authenticated active member in selected workspace",
       "resource": "techhire.jobs + techhire.copilot + techhire.candidates exports",
       "action": "view/create/update/delete; independent publish, export and copilot generation",
@@ -806,10 +673,7 @@
     {
       "operation": "TechHire pipeline editor CRUD and workspace default",
       "kind": "business_action",
-      "route_consumers": [
-        "/pipelines",
-        "job pipeline picker"
-      ],
+      "route_consumers": ["/pipelines", "job pipeline picker"],
       "actor": "authenticated active selected workspace member; not read-only for mutations",
       "resource": "techhire.pipelines",
       "action": "view/create/update/delete; workspace default update",
@@ -886,9 +750,7 @@
       "operation": "techhire.scorecards.CRUD",
       "kind": "configuration_administration",
       "actor": "active authenticated workspace member; deny wins; read-only blocks mutations",
-      "permission_keys": [
-        "techhire.scorecards.{action}.{scope}"
-      ],
+      "permission_keys": ["techhire.scorecards.{action}.{scope}"],
       "scope": "actual creator / same-workspace group / workspace; used criteria immutable",
       "server": "explicit workspace and actual-record action; zero affected rows never success",
       "database": "0204 replaces all permissive bypasses; immutable identity and workspace; catalog use does not grant administration",
@@ -899,9 +761,7 @@
       "operation": "techhire.interview_kits.CRUD",
       "kind": "configuration_administration",
       "actor": "active authenticated workspace member; deny wins; read-only blocks mutations",
-      "permission_keys": [
-        "techhire.interview_kits.{action}.{scope}"
-      ],
+      "permission_keys": ["techhire.interview_kits.{action}.{scope}"],
       "scope": "actual creator / same-workspace group / workspace; defaults require workspace update",
       "server": "explicit workspace and actual-record action; zero affected rows never success",
       "database": "0204 replaces all permissive bypasses; immutable identity and workspace; catalog use does not grant administration",
@@ -912,9 +772,7 @@
       "operation": "techhire.interviewer_pools.CRUD",
       "kind": "configuration_administration",
       "actor": "active authenticated workspace member; deny wins; read-only blocks mutations",
-      "permission_keys": [
-        "techhire.interviewer_pools.{action}.{scope}"
-      ],
+      "permission_keys": ["techhire.interviewer_pools.{action}.{scope}"],
       "scope": "actual creator / same-workspace group / workspace; members inherit parent update",
       "server": "explicit workspace and actual-record action; zero affected rows never success",
       "database": "0204 replaces all permissive bypasses; immutable identity and workspace; catalog use does not grant administration",
@@ -925,9 +783,7 @@
       "operation": "techhire.interviewer_availability.CRUD",
       "kind": "configuration_administration",
       "actor": "active authenticated workspace member; deny wins; read-only blocks mutations",
-      "permission_keys": [
-        "techhire.interviewer_availability.{action}.{scope}"
-      ],
+      "permission_keys": ["techhire.interviewer_availability.{action}.{scope}"],
       "scope": "actual interviewer / same-workspace group / workspace; active tenant member",
       "server": "explicit workspace and actual-record action; zero affected rows never success",
       "database": "0204 replaces all permissive bypasses; immutable identity and workspace; catalog use does not grant administration",
@@ -965,11 +821,7 @@
     {
       "operation": "public.ats_offer_projection + ats_offer_action_access",
       "kind": "business_action",
-      "route_consumers": [
-        "/offers",
-        "ficha do candidato",
-        "elaboração de oferta"
-      ],
+      "route_consumers": ["/offers", "ficha do candidato", "elaboração de oferta"],
       "actor": "authenticated active member, active workspace, not read-only for writes",
       "resource": "offers + offer_terms",
       "action": "view/create/update/delete and private terms",
@@ -985,9 +837,7 @@
     {
       "operation": "public.ats_offer_transition",
       "kind": "business_action",
-      "route_consumers": [
-        "/offers"
-      ],
+      "route_consumers": ["/offers"],
       "actor": "authenticated active member, not read-only",
       "resource": "offers + approval + delivery + cancellation",
       "action": "request/approve/reject/send/cancel",
@@ -1006,10 +856,7 @@
     {
       "operation": "public.ats_offer_public + ats_offer_sign",
       "kind": "public_capability_exception",
-      "route_consumers": [
-        "/offer/$token",
-        "/sign/$token"
-      ],
+      "route_consumers": ["/offer/$token", "/sign/$token"],
       "actor": "validated offer/signer bearer token through server-only service RPC",
       "resource": "one offer and its matching signing document",
       "action": "view/sign/decline",
@@ -1045,9 +892,7 @@
     {
       "operation": "public.ats_api_confirm_hire",
       "kind": "internal_service_exception",
-      "route_consumers": [
-        "/api/public/v1/ats/applications/$id/hire"
-      ],
+      "route_consumers": ["/api/public/v1/ats/applications/$id/hire"],
       "actor": "service server after API-key authentication; actual active key owner delegated only inside the transaction",
       "resource": "actual owned candidature in key workspace",
       "action": "confirm hire",
@@ -1067,13 +912,9 @@
       "actor": "authenticated active member in selected workspace",
       "resource": "techhire.compliance + techhire.candidates",
       "action": "create/update request and status",
-      "permission_keys": [
-        "techhire.compliance.view + create/update with candidate view"
-      ],
+      "permission_keys": ["techhire.compliance.view + create/update with candidate view"],
       "scope": "candidate assigned owner/team/workspace, never request creator alone; deny prevails",
-      "route_consumers": [
-        "/compliance"
-      ],
+      "route_consumers": ["/compliance"],
       "server": "src/lib/ats/lgpd.functions.ts; caller client only",
       "database": "ats_compliance_access/write/export/capabilities; RLS and immutable parent/evidence guards",
       "migration": "0208 + 0209",
@@ -1086,13 +927,9 @@
       "actor": "authenticated active member in selected workspace",
       "resource": "techhire.compliance + techhire.candidates",
       "action": "record/revoke, immutable evidence and parent",
-      "permission_keys": [
-        "techhire.compliance.view + create/update with candidate view"
-      ],
+      "permission_keys": ["techhire.compliance.view + create/update with candidate view"],
       "scope": "candidate assigned owner/team/workspace, never request creator alone; deny prevails",
-      "route_consumers": [
-        "candidate consent API"
-      ],
+      "route_consumers": ["candidate consent API"],
       "server": "src/lib/ats/lgpd.functions.ts; caller client only",
       "database": "ats_compliance_access/write/export/capabilities; RLS and immutable parent/evidence guards",
       "migration": "0208 + 0209",
@@ -1109,9 +946,7 @@
         "techhire.compliance.view + update and candidates.update for retention mutation"
       ],
       "scope": "candidate assigned owner/team/workspace, never request creator alone; deny prevails",
-      "route_consumers": [
-        "/compliance"
-      ],
+      "route_consumers": ["/compliance"],
       "server": "src/lib/ats/lgpd.functions.ts; caller client only",
       "database": "ats_compliance_access/write/export/capabilities; RLS and immutable parent/evidence guards",
       "migration": "0208 + 0209",
@@ -1124,13 +959,9 @@
       "actor": "authenticated active member in selected workspace",
       "resource": "techhire.compliance + techhire.candidates",
       "action": "caller-RLS snapshot and atomic DSAR completion",
-      "permission_keys": [
-        "techhire.compliance.export.workspace + view; update if fulfilling DSAR"
-      ],
+      "permission_keys": ["techhire.compliance.export.workspace + view; update if fulfilling DSAR"],
       "scope": "candidate assigned owner/team/workspace, never request creator alone; deny prevails",
-      "route_consumers": [
-        "/compliance"
-      ],
+      "route_consumers": ["/compliance"],
       "server": "src/lib/ats/lgpd.functions.ts; caller client only",
       "database": "ats_compliance_access/write/export/capabilities; RLS and immutable parent/evidence guards",
       "migration": "0208 + 0209",
@@ -1147,9 +978,7 @@
         "techhire.compliance.delete.workspace + view + candidates.update; update if fulfilling DSAR"
       ],
       "scope": "candidate assigned owner/team/workspace, never request creator alone; deny prevails",
-      "route_consumers": [
-        "/compliance"
-      ],
+      "route_consumers": ["/compliance"],
       "server": "src/lib/ats/lgpd.functions.ts; caller client only",
       "database": "ats_compliance_access/write/export/capabilities; RLS and immutable parent/evidence guards",
       "migration": "0208 + 0209",
@@ -1162,13 +991,9 @@
       "actor": "authenticated active member in selected workspace",
       "resource": "techhire.compliance + techhire.candidates",
       "action": "caller-bound action metadata",
-      "permission_keys": [
-        "same predicates as action and candidate view; no role fallback"
-      ],
+      "permission_keys": ["same predicates as action and candidate view; no role fallback"],
       "scope": "candidate assigned owner/team/workspace, never request creator alone; deny prevails",
-      "route_consumers": [
-        "/compliance"
-      ],
+      "route_consumers": ["/compliance"],
       "server": "src/lib/ats/lgpd.functions.ts; caller client only",
       "database": "ats_compliance_access/write/export/capabilities; RLS and immutable parent/evidence guards",
       "migration": "0208 + 0209",
@@ -1182,9 +1007,7 @@
       "operation": "financial_entries.select",
       "resource": "techfinance.entries",
       "action": "view",
-      "permission_keys": [
-        "techfinance.entries.view.{own,team,workspace}"
-      ],
+      "permission_keys": ["techfinance.entries.view.{own,team,workspace}"],
       "scope": "own/team/workspace; responsible is assigned_to else owner_id",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
@@ -1197,9 +1020,7 @@
       "operation": "financial_entries.insert",
       "resource": "techfinance.entries",
       "action": "create",
-      "permission_keys": [
-        "techfinance.entries.create.{own,team,workspace}"
-      ],
+      "permission_keys": ["techfinance.entries.create.{own,team,workspace}"],
       "scope": "creator/responsible self; active tenant and valid parent links",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
@@ -1212,9 +1033,7 @@
       "operation": "financial_entries.update",
       "resource": "techfinance.entries",
       "action": "update",
-      "permission_keys": [
-        "techfinance.entries.update.{own,team,workspace}"
-      ],
+      "permission_keys": ["techfinance.entries.update.{own,team,workspace}"],
       "scope": "actual responsible scope; immutable origin/tenant/creator; posted terms protected",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
@@ -1227,9 +1046,7 @@
       "operation": "financial_entries.delete",
       "resource": "techfinance.entries",
       "action": "delete",
-      "permission_keys": [
-        "techfinance.entries.delete.{own,team,workspace}"
-      ],
+      "permission_keys": ["techfinance.entries.delete.{own,team,workspace}"],
       "scope": "scope + no posted payments; no silent zero-row success",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
@@ -1242,9 +1059,7 @@
       "operation": "cancelFinancialEntry",
       "resource": "techfinance.entry_cancellation",
       "action": "manage",
-      "permission_keys": [
-        "techfinance.entry_cancellation.manage.workspace"
-      ],
+      "permission_keys": ["techfinance.entry_cancellation.manage.workspace"],
       "scope": "workspace action + visible row; no outstanding posted payment",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
@@ -1257,9 +1072,7 @@
       "operation": "financial_payments.select",
       "resource": "techfinance.payments",
       "action": "view",
-      "permission_keys": [
-        "techfinance.payments.view.{own,team,workspace}"
-      ],
+      "permission_keys": ["techfinance.payments.view.{own,team,workspace}"],
       "scope": "same tenant and visible parent entry; own/team follow entry responsible",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
@@ -1272,9 +1085,7 @@
       "operation": "financial_payments.insert",
       "resource": "techfinance.payments",
       "action": "create",
-      "permission_keys": [
-        "techfinance.payments.create.{own,team,workspace}"
-      ],
+      "permission_keys": ["techfinance.payments.create.{own,team,workspace}"],
       "scope": "visible entry/payment history + caller as creator; serialized balance check",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
@@ -1287,9 +1098,7 @@
       "operation": "financial_payments.delete",
       "resource": "techfinance.payments",
       "action": "delete",
-      "permission_keys": [
-        "techfinance.payments.delete.{own,team,workspace}"
-      ],
+      "permission_keys": ["techfinance.payments.delete.{own,team,workspace}"],
       "scope": "accounting reversal only; no bank refund; serialized authoritative recalculation",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
@@ -1302,9 +1111,7 @@
       "operation": "finance_create_installments",
       "resource": "techfinance.entries",
       "action": "create",
-      "permission_keys": [
-        "techfinance.entries.create.{own,team,workspace}"
-      ],
+      "permission_keys": ["techfinance.entries.create.{own,team,workspace}"],
       "scope": "caller-RLS transaction for entire group; failure leaves no partial rows",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
@@ -1317,9 +1124,7 @@
       "operation": "finance_delete_installments",
       "resource": "techfinance.entries",
       "action": "delete",
-      "permission_keys": [
-        "techfinance.entries.delete.{own,team,workspace}"
-      ],
+      "permission_keys": ["techfinance.entries.delete.{own,team,workspace}"],
       "scope": "every actual sibling authorized; atomic; keep anchor when siblings remain",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
@@ -1332,9 +1137,7 @@
       "operation": "financial_recurrences.select",
       "resource": "techfinance.recurrences",
       "action": "view",
-      "permission_keys": [
-        "techfinance.recurrences.view.{own,team,workspace}"
-      ],
+      "permission_keys": ["techfinance.recurrences.view.{own,team,workspace}"],
       "scope": "own/team/workspace, not creator-only owner bypass",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
@@ -1347,9 +1150,7 @@
       "operation": "financial_recurrences.insert",
       "resource": "techfinance.recurrences",
       "action": "create",
-      "permission_keys": [
-        "techfinance.recurrences.create.{own,team,workspace}"
-      ],
+      "permission_keys": ["techfinance.recurrences.create.{own,team,workspace}"],
       "scope": "caller/responsible self in selected tenant",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
@@ -1362,9 +1163,7 @@
       "operation": "financial_recurrences.update",
       "resource": "techfinance.recurrences",
       "action": "update",
-      "permission_keys": [
-        "techfinance.recurrences.update.{own,team,workspace}"
-      ],
+      "permission_keys": ["techfinance.recurrences.update.{own,team,workspace}"],
       "scope": "scope, immutable creator/tenant/responsible and generator cursor",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
@@ -1377,9 +1176,7 @@
       "operation": "financial_recurrences.delete",
       "resource": "techfinance.recurrences",
       "action": "delete",
-      "permission_keys": [
-        "techfinance.recurrences.delete.{own,team,workspace}"
-      ],
+      "permission_keys": ["techfinance.recurrences.delete.{own,team,workspace}"],
       "scope": "only unused schedules; pause preserves generated history",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
@@ -1392,9 +1189,7 @@
       "operation": "finance_advance_recurrence",
       "resource": "techfinance.recurrences",
       "action": "update",
-      "permission_keys": [
-        "techfinance.recurrences.update.{own,team,workspace}"
-      ],
+      "permission_keys": ["techfinance.recurrences.update.{own,team,workspace}"],
       "scope": "also entries.create; lock actual schedule; entry and cursor are atomic",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
@@ -1407,9 +1202,7 @@
       "operation": "financial_entry_allocations.write",
       "resource": "techfinance.entries",
       "action": "update",
-      "permission_keys": [
-        "techfinance.entries.update.{own,team,workspace}"
-      ],
+      "permission_keys": ["techfinance.entries.update.{own,team,workspace}"],
       "scope": "entry child; no edit through view; same-tenant active cost center and bounded sum",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
@@ -1422,9 +1215,7 @@
       "operation": "finance_reconcile_transaction",
       "resource": "techfinance.banking",
       "action": "update",
-      "permission_keys": [
-        "techfinance.banking.update.{own,team,workspace}"
-      ],
+      "permission_keys": ["techfinance.banking.update.{own,team,workspace}"],
       "scope": "also entries.create/payments.create/view; current tenant; statement lock; all-or-nothing per transaction",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
@@ -1437,9 +1228,7 @@
       "operation": "authorizeFinancialExport",
       "resource": "techfinance.entries",
       "action": "export",
-      "permission_keys": [
-        "techfinance.entries.export.workspace"
-      ],
+      "permission_keys": ["techfinance.entries.export.workspace"],
       "scope": "dedicated workspace export action; loaded rows remain RLS scoped",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
@@ -1460,16 +1249,11 @@
     {
       "operation": "getBankConnection",
       "kind": "business_action",
-      "route_consumers": [
-        "/finance/banking",
-        "/finance/banking/reconciliation"
-      ],
+      "route_consumers": ["/finance/banking", "/finance/banking/reconciliation"],
       "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
       "resource": "techfinance.banking",
       "action": "view",
-      "permission_keys": [
-        "techfinance.banking.view.workspace"
-      ],
+      "permission_keys": ["techfinance.banking.view.workspace"],
       "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
       "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
       "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
@@ -1480,16 +1264,11 @@
     {
       "operation": "listBankStatement",
       "kind": "business_action",
-      "route_consumers": [
-        "/finance/banking",
-        "/finance/banking/reconciliation"
-      ],
+      "route_consumers": ["/finance/banking", "/finance/banking/reconciliation"],
       "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
       "resource": "techfinance.banking",
       "action": "view",
-      "permission_keys": [
-        "techfinance.banking.view.workspace"
-      ],
+      "permission_keys": ["techfinance.banking.view.workspace"],
       "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
       "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
       "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
@@ -1500,16 +1279,11 @@
     {
       "operation": "suggestReconciliationMatches",
       "kind": "business_action",
-      "route_consumers": [
-        "/finance/banking",
-        "/finance/banking/reconciliation"
-      ],
+      "route_consumers": ["/finance/banking", "/finance/banking/reconciliation"],
       "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
       "resource": "techfinance.banking",
       "action": "view",
-      "permission_keys": [
-        "techfinance.banking.view.workspace"
-      ],
+      "permission_keys": ["techfinance.banking.view.workspace"],
       "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
       "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
       "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
@@ -1520,16 +1294,11 @@
     {
       "operation": "listReconciliationHistory",
       "kind": "business_action",
-      "route_consumers": [
-        "/finance/banking",
-        "/finance/banking/reconciliation"
-      ],
+      "route_consumers": ["/finance/banking", "/finance/banking/reconciliation"],
       "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
       "resource": "techfinance.banking",
       "action": "view",
-      "permission_keys": [
-        "techfinance.banking.view.workspace"
-      ],
+      "permission_keys": ["techfinance.banking.view.workspace"],
       "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
       "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
       "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
@@ -1540,16 +1309,11 @@
     {
       "operation": "listBankCharges",
       "kind": "business_action",
-      "route_consumers": [
-        "/finance/banking",
-        "/finance/banking/reconciliation"
-      ],
+      "route_consumers": ["/finance/banking", "/finance/banking/reconciliation"],
       "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
       "resource": "techfinance.banking",
       "action": "view",
-      "permission_keys": [
-        "techfinance.banking.view.workspace"
-      ],
+      "permission_keys": ["techfinance.banking.view.workspace"],
       "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
       "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
       "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
@@ -1560,16 +1324,11 @@
     {
       "operation": "listBankPayments",
       "kind": "business_action",
-      "route_consumers": [
-        "/finance/banking",
-        "/finance/banking/reconciliation"
-      ],
+      "route_consumers": ["/finance/banking", "/finance/banking/reconciliation"],
       "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
       "resource": "techfinance.banking",
       "action": "view",
-      "permission_keys": [
-        "techfinance.banking.view.workspace"
-      ],
+      "permission_keys": ["techfinance.banking.view.workspace"],
       "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
       "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
       "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
@@ -1580,16 +1339,11 @@
     {
       "operation": "getPaymentsSummary",
       "kind": "business_action",
-      "route_consumers": [
-        "/finance/banking",
-        "/finance/banking/reconciliation"
-      ],
+      "route_consumers": ["/finance/banking", "/finance/banking/reconciliation"],
       "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
       "resource": "techfinance.banking",
       "action": "view",
-      "permission_keys": [
-        "techfinance.banking.view.workspace"
-      ],
+      "permission_keys": ["techfinance.banking.view.workspace"],
       "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
       "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
       "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
@@ -1600,16 +1354,11 @@
     {
       "operation": "getBankingHealth",
       "kind": "business_action",
-      "route_consumers": [
-        "/finance/banking",
-        "/finance/banking/reconciliation"
-      ],
+      "route_consumers": ["/finance/banking", "/finance/banking/reconciliation"],
       "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
       "resource": "techfinance.banking",
       "action": "view",
-      "permission_keys": [
-        "techfinance.banking.view.workspace"
-      ],
+      "permission_keys": ["techfinance.banking.view.workspace"],
       "scope": "selected workspace only; linked ledger entry remains caller-visible; tenant never supplied as authority by the browser",
       "server": "bankingContext uses caller-bound banking_authorize before service client; statement/ledger queries retain caller RLS",
       "database": "0213 closes direct bank DML and token/OAuth metadata SELECT; 0212 uses narrow action RPCs, locked state transitions, service-only token/event RPCs",
@@ -1620,10 +1369,7 @@
     {
       "operation": "startBankAuthorization",
       "kind": "business_action",
-      "route_consumers": [
-        "/finance/banking",
-        "/finance/banking/reconciliation"
-      ],
+      "route_consumers": ["/finance/banking", "/finance/banking/reconciliation"],
       "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
       "resource": "techfinance.banking",
       "action": "connect",
@@ -1641,10 +1387,7 @@
     {
       "operation": "completeBankAuthorization",
       "kind": "business_action",
-      "route_consumers": [
-        "/finance/banking",
-        "/finance/banking/reconciliation"
-      ],
+      "route_consumers": ["/finance/banking", "/finance/banking/reconciliation"],
       "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
       "resource": "techfinance.banking",
       "action": "connect",
@@ -1662,10 +1405,7 @@
     {
       "operation": "disconnectBank",
       "kind": "business_action",
-      "route_consumers": [
-        "/finance/banking",
-        "/finance/banking/reconciliation"
-      ],
+      "route_consumers": ["/finance/banking", "/finance/banking/reconciliation"],
       "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
       "resource": "techfinance.banking",
       "action": "connect",
@@ -1683,10 +1423,7 @@
     {
       "operation": "syncBankStatement",
       "kind": "business_action",
-      "route_consumers": [
-        "/finance/banking",
-        "/finance/banking/reconciliation"
-      ],
+      "route_consumers": ["/finance/banking", "/finance/banking/reconciliation"],
       "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
       "resource": "techfinance.banking",
       "action": "sync",
@@ -1704,10 +1441,7 @@
     {
       "operation": "setStatementReconciliation",
       "kind": "business_action",
-      "route_consumers": [
-        "/finance/banking",
-        "/finance/banking/reconciliation"
-      ],
+      "route_consumers": ["/finance/banking", "/finance/banking/reconciliation"],
       "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
       "resource": "techfinance.banking",
       "action": "reconcile",
@@ -1725,10 +1459,7 @@
     {
       "operation": "bulkIgnoreTransactions",
       "kind": "business_action",
-      "route_consumers": [
-        "/finance/banking",
-        "/finance/banking/reconciliation"
-      ],
+      "route_consumers": ["/finance/banking", "/finance/banking/reconciliation"],
       "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
       "resource": "techfinance.banking",
       "action": "reconcile",
@@ -1746,10 +1477,7 @@
     {
       "operation": "bulkLinkBestMatch",
       "kind": "business_action",
-      "route_consumers": [
-        "/finance/banking",
-        "/finance/banking/reconciliation"
-      ],
+      "route_consumers": ["/finance/banking", "/finance/banking/reconciliation"],
       "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
       "resource": "techfinance.banking",
       "action": "reconcile",
@@ -1767,10 +1495,7 @@
     {
       "operation": "bulkCreateEntries",
       "kind": "business_action",
-      "route_consumers": [
-        "/finance/banking",
-        "/finance/banking/reconciliation"
-      ],
+      "route_consumers": ["/finance/banking", "/finance/banking/reconciliation"],
       "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
       "resource": "techfinance.banking",
       "action": "reconcile",
@@ -1788,10 +1513,7 @@
     {
       "operation": "createBankPayment",
       "kind": "business_action",
-      "route_consumers": [
-        "/finance/banking",
-        "/finance/banking/reconciliation"
-      ],
+      "route_consumers": ["/finance/banking", "/finance/banking/reconciliation"],
       "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
       "resource": "techfinance.banking",
       "action": "create_payment",
@@ -1809,10 +1531,7 @@
     {
       "operation": "approveBankPayment",
       "kind": "business_action",
-      "route_consumers": [
-        "/finance/banking",
-        "/finance/banking/reconciliation"
-      ],
+      "route_consumers": ["/finance/banking", "/finance/banking/reconciliation"],
       "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
       "resource": "techfinance.banking",
       "action": "approve",
@@ -1830,10 +1549,7 @@
     {
       "operation": "executeBankPayment",
       "kind": "business_action",
-      "route_consumers": [
-        "/finance/banking",
-        "/finance/banking/reconciliation"
-      ],
+      "route_consumers": ["/finance/banking", "/finance/banking/reconciliation"],
       "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
       "resource": "techfinance.banking",
       "action": "execute",
@@ -1851,10 +1567,7 @@
     {
       "operation": "cancelBankPayment",
       "kind": "business_action",
-      "route_consumers": [
-        "/finance/banking",
-        "/finance/banking/reconciliation"
-      ],
+      "route_consumers": ["/finance/banking", "/finance/banking/reconciliation"],
       "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
       "resource": "techfinance.banking",
       "action": "cancel_payment",
@@ -1872,10 +1585,7 @@
     {
       "operation": "createBankCharge",
       "kind": "business_action",
-      "route_consumers": [
-        "/finance/banking",
-        "/finance/banking/reconciliation"
-      ],
+      "route_consumers": ["/finance/banking", "/finance/banking/reconciliation"],
       "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
       "resource": "techfinance.banking",
       "action": "create_charge",
@@ -1893,10 +1603,7 @@
     {
       "operation": "cancelBankCharge",
       "kind": "business_action",
-      "route_consumers": [
-        "/finance/banking",
-        "/finance/banking/reconciliation"
-      ],
+      "route_consumers": ["/finance/banking", "/finance/banking/reconciliation"],
       "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
       "resource": "techfinance.banking",
       "action": "cancel_charge",
@@ -1914,10 +1621,7 @@
     {
       "operation": "simulateChargePayment",
       "kind": "business_action",
-      "route_consumers": [
-        "/finance/banking",
-        "/finance/banking/reconciliation"
-      ],
+      "route_consumers": ["/finance/banking", "/finance/banking/reconciliation"],
       "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
       "resource": "techfinance.banking",
       "action": "simulate",
@@ -1935,10 +1639,7 @@
     {
       "operation": "simulatePaymentSettlement",
       "kind": "business_action",
-      "route_consumers": [
-        "/finance/banking",
-        "/finance/banking/reconciliation"
-      ],
+      "route_consumers": ["/finance/banking", "/finance/banking/reconciliation"],
       "actor": "authenticated active selected-workspace member; writes reject read-only role sessions",
       "resource": "techfinance.banking",
       "action": "simulate",
@@ -2012,6 +1713,553 @@
       "exception_reason": "Existing service-secret authenticated cron; only connected source-tenant connections; encrypted credentials, no browser tenant fallback. No authority to initiate new AP payments.",
       "migration": "0212–0213",
       "status": "aplicado_publicado_testado_isolado_e_sql_producao"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:categories:view",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.categories",
+      "action": "view",
+      "permission_keys": ["techfinance.categories.view.{own,team,workspace}"],
+      "route_consumers": ["/finance/categories"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:categories:create",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.categories",
+      "action": "create",
+      "permission_keys": ["techfinance.categories.create.{own,team,workspace}"],
+      "route_consumers": ["/finance/categories"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:categories:update",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.categories",
+      "action": "update",
+      "permission_keys": ["techfinance.categories.update.{own,team,workspace}"],
+      "route_consumers": ["/finance/categories"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:categories:delete",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.categories",
+      "action": "delete",
+      "permission_keys": ["techfinance.categories.delete.{own,team,workspace}"],
+      "route_consumers": ["/finance/categories"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:bank_accounts:view",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.bank_accounts",
+      "action": "view",
+      "permission_keys": ["techfinance.bank_accounts.view.{own,team,workspace}"],
+      "route_consumers": ["/finance/bank-accounts"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:bank_accounts:create",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.bank_accounts",
+      "action": "create",
+      "permission_keys": ["techfinance.bank_accounts.create.{own,team,workspace}"],
+      "route_consumers": ["/finance/bank-accounts"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:bank_accounts:update",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.bank_accounts",
+      "action": "update",
+      "permission_keys": ["techfinance.bank_accounts.update.{own,team,workspace}"],
+      "route_consumers": ["/finance/bank-accounts"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:bank_accounts:delete",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.bank_accounts",
+      "action": "delete",
+      "permission_keys": ["techfinance.bank_accounts.delete.{own,team,workspace}"],
+      "route_consumers": ["/finance/bank-accounts"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:cost_centers:view",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.cost_centers",
+      "action": "view",
+      "permission_keys": ["techfinance.cost_centers.view.{own,team,workspace}"],
+      "route_consumers": ["/finance/cost-centers"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:legal_entities:view",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.legal_entities",
+      "action": "view",
+      "permission_keys": ["techfinance.legal_entities.view.{own,team,workspace}"],
+      "route_consumers": ["/finance/legal-entities"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:legal_entities:create",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.legal_entities",
+      "action": "create",
+      "permission_keys": ["techfinance.legal_entities.create.{own,team,workspace}"],
+      "route_consumers": ["/finance/legal-entities"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:legal_entities:update",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.legal_entities",
+      "action": "update",
+      "permission_keys": ["techfinance.legal_entities.update.{own,team,workspace}"],
+      "route_consumers": ["/finance/legal-entities"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:legal_entities:delete",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.legal_entities",
+      "action": "delete",
+      "permission_keys": ["techfinance.legal_entities.delete.{own,team,workspace}"],
+      "route_consumers": ["/finance/legal-entities"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:legal_entity_groups:view",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.legal_entity_groups",
+      "action": "view",
+      "permission_keys": ["techfinance.legal_entity_groups.view.{own,team,workspace}"],
+      "route_consumers": ["/finance/legal-entity-groups"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:legal_entity_groups:create",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.legal_entity_groups",
+      "action": "create",
+      "permission_keys": ["techfinance.legal_entity_groups.create.{own,team,workspace}"],
+      "route_consumers": ["/finance/legal-entity-groups"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:legal_entity_groups:update",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.legal_entity_groups",
+      "action": "update",
+      "permission_keys": ["techfinance.legal_entity_groups.update.{own,team,workspace}"],
+      "route_consumers": ["/finance/legal-entity-groups"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:legal_entity_groups:delete",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.legal_entity_groups",
+      "action": "delete",
+      "permission_keys": ["techfinance.legal_entity_groups.delete.{own,team,workspace}"],
+      "route_consumers": ["/finance/legal-entity-groups"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:invoices:view",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.invoices",
+      "action": "view",
+      "permission_keys": [
+        "techfinance.invoices.view.{own,team,workspace}",
+        "techsales.invoices.view.{own,team,workspace}"
+      ],
+      "route_consumers": ["/invoices"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:invoices:create",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.invoices",
+      "action": "create",
+      "permission_keys": [
+        "techfinance.invoices.create.{own,team,workspace}",
+        "techsales.invoices.create.{own,team,workspace}"
+      ],
+      "route_consumers": ["/invoices"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:invoices:update",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.invoices",
+      "action": "update",
+      "permission_keys": [
+        "techfinance.invoices.update.{own,team,workspace}",
+        "techsales.invoices.update.{own,team,workspace}"
+      ],
+      "route_consumers": ["/invoices"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:invoices:delete",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.invoices",
+      "action": "delete",
+      "permission_keys": [
+        "techfinance.invoices.delete.{own,team,workspace}",
+        "techsales.invoices.delete.{own,team,workspace}"
+      ],
+      "route_consumers": ["/invoices"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:dunning:view",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.dunning",
+      "action": "view",
+      "permission_keys": ["techfinance.dunning.view.{own,team,workspace}"],
+      "route_consumers": ["/settings/dunning"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:dunning:create",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.dunning",
+      "action": "create",
+      "permission_keys": ["techfinance.dunning.create.{own,team,workspace}"],
+      "route_consumers": ["/settings/dunning"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:dunning:update",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.dunning",
+      "action": "update",
+      "permission_keys": ["techfinance.dunning.update.{own,team,workspace}"],
+      "route_consumers": ["/settings/dunning"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:dunning:delete",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.dunning",
+      "action": "delete",
+      "permission_keys": ["techfinance.dunning.delete.{own,team,workspace}"],
+      "route_consumers": ["/settings/dunning"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:charging_templates:view",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.charging_templates",
+      "action": "view",
+      "permission_keys": ["techfinance.charging_templates.view.{own,team,workspace}"],
+      "route_consumers": ["/settings/charging-templates"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:charging_templates:create",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.charging_templates",
+      "action": "create",
+      "permission_keys": ["techfinance.charging_templates.create.{own,team,workspace}"],
+      "route_consumers": ["/settings/charging-templates"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:charging_templates:update",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.charging_templates",
+      "action": "update",
+      "permission_keys": ["techfinance.charging_templates.update.{own,team,workspace}"],
+      "route_consumers": ["/settings/charging-templates"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:charging_templates:delete",
+      "actor": "active member; selected workspace; effective keys including deny",
+      "migration": "0214–0215",
+      "resource": "techfinance.charging_templates",
+      "action": "delete",
+      "permission_keys": ["techfinance.charging_templates.delete.{own,team,workspace}"],
+      "route_consumers": ["/settings/charging-templates"],
+      "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
+      "server": "caller client + finance_business_authorize",
+      "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:reports:view",
+      "migration": "0214–0215",
+      "resource": "techfinance.reports",
+      "action": "view",
+      "permission_keys": ["techfinance.reports.view.workspace"],
+      "route_consumers": ["/finance/dre", "/finance/cash-flow"],
+      "scope": "reports/audit use caller-visible underlying entries; NFSe also requires parent invoice visibility; raw payload is service-only",
+      "server": "explicit helper before query",
+      "database": "caller RLS on each source; fiscal DML revoked",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:audit:view",
+      "migration": "0214–0215",
+      "resource": "techfinance.audit",
+      "action": "view",
+      "permission_keys": ["techfinance.audit.view.workspace"],
+      "route_consumers": ["/finance/audit"],
+      "scope": "reports/audit use caller-visible underlying entries; NFSe also requires parent invoice visibility; raw payload is service-only",
+      "server": "explicit helper before query",
+      "database": "caller RLS on each source; fiscal DML revoked",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:nfse:view",
+      "migration": "0214–0215",
+      "resource": "techfinance.nfse",
+      "action": "view",
+      "permission_keys": ["techfinance.nfse.view.workspace"],
+      "route_consumers": ["/finance/nfse"],
+      "scope": "reports/audit use caller-visible underlying entries; NFSe also requires parent invoice visibility; raw payload is service-only",
+      "server": "explicit helper before query",
+      "database": "caller RLS on each source; fiscal DML revoked",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:invoices:export",
+      "migration": "0214–0215",
+      "resource": "techfinance.invoices",
+      "action": "export",
+      "permission_keys": ["techfinance.invoices.export.workspace"],
+      "scope": "Explicit export gate plus visible rows only; raw CSV/bulk/kanban bypass disabled",
+      "server": "authorizeFinanceBusinessExport",
+      "database": "underlying row scope retained",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:reports:export",
+      "migration": "0214–0215",
+      "resource": "techfinance.reports",
+      "action": "export",
+      "permission_keys": ["techfinance.reports.export.workspace"],
+      "scope": "Explicit export gate plus visible rows only; raw CSV/bulk/kanban bypass disabled",
+      "server": "authorizeFinanceBusinessExport",
+      "database": "underlying row scope retained",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:nfse:export",
+      "migration": "0214–0215",
+      "resource": "techfinance.nfse",
+      "action": "export",
+      "permission_keys": ["techfinance.nfse.export.workspace"],
+      "scope": "Explicit export gate plus visible rows only; raw CSV/bulk/kanban bypass disabled",
+      "server": "authorizeFinanceBusinessExport",
+      "database": "underlying row scope retained",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "kind": "business_action",
+      "operation": "finance_business:bank_accounts:export",
+      "migration": "0214–0215",
+      "resource": "techfinance.bank_accounts",
+      "action": "export",
+      "permission_keys": ["techfinance.bank_accounts.export.workspace"],
+      "scope": "Explicit export gate plus visible rows only; raw CSV/bulk/kanban bypass disabled",
+      "server": "authorizeFinanceBusinessExport",
+      "database": "underlying row scope retained",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "operation": "finance_reference_list",
+      "kind": "metadata_exception",
+      "migration": "0214–0215",
+      "scope": "Minimal IDs/names/currency and grouping only; active selected tenant plus legitimate Sales/Contracts/People/Projects/Finance consumer. No balances, documents, settings or raw metadata.",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "operation": "finance_dunning_claim/finish/enroll",
+      "kind": "service_exception",
+      "migration": "0214–0215",
+      "scope": "Only service_role; revalidate active policy owner, invoice view, dunning.manage, channel action and source tenant; reserve each run/step once before outbound effect; uncertain effect pauses without auto retry.",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "operation": "/api/public/hooks/dunning-tick",
+      "kind": "service_exception",
+      "migration": "0214–0215",
+      "scope": "CRON_SECRET; use same vault reference as recurrences scheduler. Publishable key rejected.",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "operation": "/api/public/payments/br-webhook/$provider",
+      "kind": "public_exception",
+      "migration": "0214–0215",
+      "scope": "503 and no mutations until verified provider adapters exist. Existing implementation had only fake issuance and zero live provider invoices in production inventory.",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "operation": "finance_invoice_from_timesheet",
+      "kind": "business_action",
+      "migration": "0214–0215",
+      "scope": "Invoice create+view, visible allocation/contract/time rows, caller RLS update and existing project measurement guards; all effects in one transaction.",
+      "status": "preparado_testado_isolado_nao_publicado"
+    },
+    {
+      "operation": "invoice manual settlement/cancellation",
+      "kind": "business_action",
+      "migration": "0214–0215",
+      "scope": "Requires invoices.update and visible invoice plus separate invoice_settlement/invoice_cancellation.manage.workspace; terminal state and provider fields protected.",
+      "status": "preparado_testado_isolado_nao_publicado"
     }
   ],
   "rules": [
@@ -2361,12 +2609,13 @@
     }
   ],
   "limitations": [
-    "107 operation contracts recorded; remaining actions require explicit validation.",
+    "149 operation contracts recorded; static records alone are not runtime acceptance.",
     "Route inventory is static evidence, not certification of enforcement.",
     "SQL tests are not browser/GoTrue/PostgREST acceptance.",
     "No new business role grants in 0191 or 0192; six new catalog keys in 0192.",
     "0193 covers CRUD of people/candidates/onboarding plans/tasks/templates only; sensitive fields, jobs, other HR resources and browser acceptance remain separate.",
     "Finance core 0210–0211: does not complete bank approval/token/provider/cancellation permissions, catalogs, fiscal/invoice/dunning boundaries, accounting period closing or the entire Order 2. No business-role grants were added.",
-    "Banking 0212–0213: all bank actions require banking.view.workspace plus a specific action. Legacy banking own/team/create/delete/export catalog keys do not grant these operations; no automatic role grants. Inter sandbox/production, TED and bank-side payment reversal remain unavailable. This lot does not finish fiscal, bank-account catalogs or reporting permissions."
+    "Banking 0212–0213: all bank actions require banking.view.workspace plus a specific action. Legacy banking own/team/create/delete/export catalog keys do not grant these operations; no automatic role grants. Inter sandbox/production, TED and bank-side payment reversal remain unavailable. This lot does not finish fiscal, bank-account catalogs or reporting permissions.",
+    "0214–0215 preparation: permission alignment does not implement real charge/NFS-e providers, TED, bank reversals or new accounting period-closing features. Unsupported fake issuance is replaced with an explicit unavailable result; no fabricated links/QR codes or fake fiscal success."
   ]
 }

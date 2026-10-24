@@ -1,3 +1,5 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { HrScreenAccess } from "@/components/hr-access";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -37,7 +39,11 @@ import {
 
 export const Route = createFileRoute("/_authenticated/finance/categories")({
   head: () => ({ meta: [{ title: "Plano de contas" }] }),
-  component: CategoriesPage,
+  component: () => (
+    <HrScreenAccess resources={["techfinance.categories"]}>
+      <CategoriesPage />
+    </HrScreenAccess>
+  ),
 });
 
 type Cat = {
@@ -79,6 +85,7 @@ function buildTree(rows: Cat[]): { revenue: Node[]; expense: Node[] } {
 }
 
 function CategoriesPage() {
+  const financePermissions = usePermissions();
   const qc = useQueryClient();
   const list = useServerFn(listCategories);
   const create = useServerFn(createCategory);
@@ -100,7 +107,12 @@ function CategoriesPage() {
       : legalEntityId;
   const filterInput = useLegalEntityFilterInput(legalEntityId);
   const { data: rows = [] } = useQuery({
-    queryKey: ["finance-categories", legalEntityId, JSON.stringify(filterInput)],
+    queryKey: [
+      "finance-categories",
+      financePermissions.workspaceId,
+      legalEntityId,
+      JSON.stringify(filterInput),
+    ],
     queryFn: () => list({ data: filterInput }) as Promise<Cat[]>,
   });
 
@@ -131,7 +143,7 @@ function CategoriesPage() {
         },
       });
       toast.success("Categoria criada");
-      qc.invalidateQueries({ queryKey: ["finance-categories"] });
+      qc.invalidateQueries({ queryKey: ["finance-categories", financePermissions.workspaceId] });
       setOpen(false);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha");
@@ -142,7 +154,7 @@ function CategoriesPage() {
     if (!(await confirmDialog("Excluir categoria? Subcategorias ficarão sem pai."))) return;
     try {
       await del({ data: { id } });
-      qc.invalidateQueries({ queryKey: ["finance-categories"] });
+      qc.invalidateQueries({ queryKey: ["finance-categories", financePermissions.workspaceId] });
       toast.success("Removida");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha");
@@ -186,11 +198,17 @@ function CategoriesPage() {
             <Button
               size="sm"
               variant="ghost"
+              disabled={!financePermissions.can("techfinance.categories.create.workspace")}
               onClick={() => openCreate({ kind: node.kind, parent: node.id })}
             >
               <Plus className="h-3.5 w-3.5 mr-1" /> Subcategoria
             </Button>
-            <Button size="icon" variant="ghost" onClick={() => remove(node.id)}>
+            <Button
+              size="icon"
+              variant="ghost"
+              disabled={!financePermissions.can("techfinance.categories.delete.workspace")}
+              onClick={() => remove(node.id)}
+            >
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
@@ -211,6 +229,7 @@ function CategoriesPage() {
           <Button
             size="sm"
             variant="outline"
+            disabled={!financePermissions.can("techfinance.categories.create.workspace")}
             onClick={() => openCreate({ kind: variant, parent: null })}
           >
             <Plus className="h-3.5 w-3.5 mr-1" /> Conta raiz
@@ -235,7 +254,10 @@ function CategoriesPage() {
         actions={
           <div className="flex items-center gap-2">
             <LegalEntitySelect value={legalEntityId} onChange={setLegalEntityId} />
-            <Button onClick={() => openCreate()}>
+            <Button
+              disabled={!financePermissions.can("techfinance.categories.create.workspace")}
+              onClick={() => openCreate()}
+            >
               <Plus className="h-4 w-4 mr-1" /> Nova conta
             </Button>
           </div>
@@ -325,7 +347,12 @@ function CategoriesPage() {
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={submit}>Criar</Button>
+            <Button
+              disabled={!financePermissions.can("techfinance.categories.create.workspace")}
+              onClick={submit}
+            >
+              Criar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

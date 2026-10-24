@@ -1,3 +1,5 @@
+import { financeRpc } from "@/lib/access-control/finance-records.server";
+import { authorizeFinanceBusiness } from "@/lib/access-control/finance-business.server";
 // Server functions for Legal Entities (multi-CNPJ per workspace).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -23,6 +25,7 @@ export const getLegalEntity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    await authorizeFinanceBusiness(context.supabase, "legal_entities", "view", data.id);
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     const { data: row, error } = await supabase
@@ -54,6 +57,7 @@ export type LegalEntityCnpjSuggestion = {
 export const suggestLegalEntityCnpjs = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<LegalEntityCnpjSuggestion[]> => {
+    await authorizeFinanceBusiness(context.supabase, "legal_entities", "view", undefined);
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
 
@@ -161,9 +165,18 @@ export const fillLegalEntityCnpjsAndRecalc = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }): Promise<FillCnpjsResult> => {
+    await authorizeFinanceBusiness(context.supabase, "legal_entities", "update", undefined);
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
 
+    if (data.recalc !== false) {
+      const { assertAnyPermission } = await import("@/lib/access-control/enforce.server");
+      await assertAnyPermission(supabase, userId, workspaceId, [
+        "techcontracts.contracts.update.workspace",
+        "techcontracts.contracts.update.team",
+        "techcontracts.contracts.update.own",
+      ]);
+    }
     // Recusa o mesmo CNPJ em duas empresas do mesmo workspace.
     const filled = data.entities.filter((e) => e.cnpj.length === 14);
     const unique = new Set(filled.map((e) => e.cnpj));
@@ -201,6 +214,7 @@ export const fillLegalEntityCnpjsAndRecalc = createServerFn({ method: "POST" })
 export const listLegalEntities = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    await authorizeFinanceBusiness(context.supabase, "legal_entities", "view", undefined);
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     const { data, error } = await supabase
@@ -217,6 +231,12 @@ export const upsertLegalEntity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => upsertSchema.parse(input))
   .handler(async ({ data, context }) => {
+    await authorizeFinanceBusiness(
+      context.supabase,
+      "legal_entities",
+      data.id ? "update" : "create",
+      data.id,
+    );
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     // CNPJ é gravado sempre em dígitos e validado quando informado.
@@ -267,20 +287,8 @@ export const setDefaultLegalEntity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
-    // Unset any current default first (partial unique index enforces uniqueness).
-    await supabase
-      .from("legal_entities")
-      .update({ is_default: false })
-      .eq("workspace_id", workspaceId)
-      .eq("is_default", true);
-    const { error } = await supabase
-      .from("legal_entities")
-      .update({ is_default: true })
-      .eq("id", data.id)
-      .eq("workspace_id", workspaceId);
-    if (error) throw error;
+    await authorizeFinanceBusiness(context.supabase, "legal_entities", "update", data.id);
+    await financeRpc(context.supabase, "finance_set_default_entity", { _id: data.id });
     return { ok: true };
   });
 
@@ -288,6 +296,7 @@ export const deleteLegalEntity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    await authorizeFinanceBusiness(context.supabase, "legal_entities", "delete", data.id);
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     // Refuse if there are financial entries referencing it.
@@ -313,6 +322,7 @@ export const deleteLegalEntity = createServerFn({ method: "POST" })
 export const listLegalEntitiesSummary = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    await authorizeFinanceBusiness(context.supabase, "legal_entities", "view", undefined);
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     const { data: entities, error } = await supabase

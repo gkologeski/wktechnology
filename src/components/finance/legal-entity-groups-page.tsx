@@ -1,3 +1,5 @@
+import { useFinanceBusinessCapabilities } from "@/lib/access-control/use-finance-business-capabilities";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -26,7 +28,7 @@ import {
   deleteLegalEntityGroup,
   setLegalEntityGroupMembers,
 } from "@/lib/legal-entity-groups.functions";
-import { listLegalEntities } from "@/lib/legal-entities.functions";
+import { listEntityReferences as listLegalEntities } from "@/lib/finance-references.functions";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 type Group = {
@@ -40,9 +42,10 @@ type Group = {
   member_ids: string[];
 };
 
-type LE = { id: string; code: string | null; name: string; cnpj: string | null; active: boolean };
+type LE = { id: string; code: string | null; name: string; active: boolean };
 
 export function LegalEntityGroupsPage() {
+  const financePermissions = usePermissions();
   const qc = useQueryClient();
   const listGroups = useServerFn(listLegalEntityGroups);
   const listEntities = useServerFn(listLegalEntities);
@@ -51,14 +54,22 @@ export function LegalEntityGroupsPage() {
   const setMembers = useServerFn(setLegalEntityGroupMembers);
 
   const { data: groups = [], isLoading } = useQuery({
-    queryKey: ["legal-entity-groups"],
+    queryKey: ["legal-entity-groups", financePermissions.workspaceId],
     queryFn: () => listGroups() as Promise<Group[]>,
   });
   const { data: entities = [] } = useQuery({
-    queryKey: ["legal-entities", "list"],
+    queryKey: ["legal-entities", financePermissions.workspaceId, "list"],
     queryFn: () => listEntities() as Promise<LE[]>,
   });
 
+  const recordAccess = useFinanceBusinessCapabilities(
+    "legal_entity_groups",
+    groups.map((r) => r.id),
+  );
+  const canCreate = financePermissions.canAny([
+    "techfinance.legal_entity_groups.create.workspace",
+    "techfinance.legal_entity_groups.create.own",
+  ]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<{
     id?: string;
@@ -106,7 +117,7 @@ export function LegalEntityGroupsPage() {
       const id = form.id ?? (res as { id: string }).id;
       await setMembers({ data: { group_id: id, legal_entity_ids: form.member_ids } });
       toast.success(form.id ? "Grupo atualizado" : "Grupo criado");
-      qc.invalidateQueries({ queryKey: ["legal-entity-groups"] });
+      qc.invalidateQueries({ queryKey: ["legal-entity-groups", financePermissions.workspaceId] });
       setOpen(false);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao salvar");
@@ -118,7 +129,7 @@ export function LegalEntityGroupsPage() {
     try {
       await del({ data: { id: g.id } });
       toast.success("Grupo excluído");
-      qc.invalidateQueries({ queryKey: ["legal-entity-groups"] });
+      qc.invalidateQueries({ queryKey: ["legal-entity-groups", financePermissions.workspaceId] });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha");
     }
@@ -139,7 +150,7 @@ export function LegalEntityGroupsPage() {
         title="Grupos empresariais"
         description="Agrupe múltiplos CNPJs em grupos para consolidar relatórios e filtros. Um CNPJ pode pertencer a vários grupos."
         actions={
-          <Button onClick={openCreate}>
+          <Button disabled={!canCreate} onClick={openCreate}>
             <Plus className="h-4 w-4 mr-1" /> Novo grupo
           </Button>
         }
@@ -223,10 +234,20 @@ export function LegalEntityGroupsPage() {
                   <div className="flex justify-end gap-1">
                     {!g.is_system && (
                       <>
-                        <Button size="sm" variant="ghost" onClick={() => openEdit(g)}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={!recordAccess.for(g.id).can_update}
+                          onClick={() => openEdit(g)}
+                        >
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => remove(g)}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={!recordAccess.for(g.id).can_delete}
+                          onClick={() => remove(g)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </>
@@ -304,11 +325,6 @@ export function LegalEntityGroupsPage() {
                           )}
                           {e.name}
                         </span>
-                        {e.cnpj && (
-                          <span className="text-xs text-muted-foreground ml-auto font-mono">
-                            {e.cnpj}
-                          </span>
-                        )}
                       </label>
                     );
                   })}
@@ -320,7 +336,12 @@ export function LegalEntityGroupsPage() {
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={submit}>{form.id ? "Salvar" : "Criar grupo"}</Button>
+            <Button
+              disabled={form.id ? !recordAccess.for(form.id).can_update : !canCreate}
+              onClick={submit}
+            >
+              {form.id ? "Salvar" : "Criar grupo"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

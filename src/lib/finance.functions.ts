@@ -1,3 +1,4 @@
+import { authorizeFinanceBusiness } from "@/lib/access-control/finance-business.server";
 // Server functions for the Finance module (Sprint 4 MVP).
 // Unified financial_entries (AR/AP), payments, categories, bank accounts and dashboard.
 import { createServerFn } from "@tanstack/react-start";
@@ -290,6 +291,7 @@ export const listCategories = createServerFn({ method: "POST" })
       .parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
+    await authorizeFinanceBusiness(context.supabase, "categories", "view", undefined);
     const { supabase } = context;
     let q = supabase
       .from("financial_categories")
@@ -318,6 +320,7 @@ export const createCategory = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    await authorizeFinanceBusiness(context.supabase, "categories", "create", undefined);
     const { supabase, userId } = context;
     const workspaceId = await getActiveWorkspaceId(supabase, userId);
     const { data: row, error } = await supabase
@@ -340,6 +343,7 @@ export const deleteCategory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    await authorizeFinanceBusiness(context.supabase, "categories", "delete", undefined);
     const { supabase } = context;
     await deleteByIdGuarded(supabase, "financial_categories", data.id);
     return { ok: true };
@@ -360,6 +364,7 @@ export const listBankAccounts = createServerFn({ method: "POST" })
       .parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
+    await authorizeFinanceBusiness(context.supabase, "bank_accounts", "view", undefined);
     const { supabase } = context;
     let q = supabase.from("financial_bank_accounts").select("*").order("name", { ascending: true });
     if (data.legalEntityId) q = q.eq("legal_entity_id", data.legalEntityId);
@@ -384,6 +389,7 @@ export const createBankAccount = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    await authorizeFinanceBusiness(context.supabase, "bank_accounts", "create", undefined);
     const { supabase, userId } = context;
     const workspaceId = await getActiveWorkspaceId(supabase, userId);
     const { data: row, error } = await supabase
@@ -421,6 +427,7 @@ export const updateBankAccount = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    await authorizeFinanceBusiness(context.supabase, "bank_accounts", "update", undefined);
     const { supabase } = context;
     const { data: row, error } = await supabase
       .from("financial_bank_accounts")
@@ -551,6 +558,7 @@ export const getDreReport = createServerFn({ method: "POST" })
       .parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
+    await authorizeFinanceBusiness(context.supabase, "reports", "view", undefined);
     const { supabase } = context;
 
     const now = new Date();
@@ -733,6 +741,8 @@ export const getCashFlowProjection = createServerFn({ method: "POST" })
       .parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
+    await authorizeFinanceBusiness(context.supabase, "reports", "view", undefined);
+    await authorizeFinanceBusiness(context.supabase, "bank_accounts");
     const { supabase } = context;
     const today = new Date();
     const iso = (d: Date) => d.toISOString().slice(0, 10);

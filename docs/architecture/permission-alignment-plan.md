@@ -1029,3 +1029,45 @@ Aceite de produção: simulação SQL de identidade com rollback; criar/aprovar/
 Fotografias antes/depois: mesmos hashes e contagens de defaults (6.653), overrides (1.008), lançamentos (28.531) e baixas (26.035). Oito novas chaves, zero concessões em defaults/overrides. Tokens, metadata OAuth, UPDATE direto de bank_payments e callback de serviço indisponíveis para anon, authenticated e techerp_api_subject. Todas as cinco tabelas de dados bancários verificadas continuam vazias após rollback. Evidências externas: `outputs/permission-banking-2026-10-24/`.
 
 **Pendências da Ordem 2:** catálogos (incluindo contas bancárias), relatórios/exportações e fiscal/cobrança comercial. Adapter real, TED, estorno bancário, execução automática de pagamentos futuros e alçadas novas continuam fora deste lote; somente Inter mock existe. As seis etapas globais não estão concluídas por este fechamento.
+
+
+### Ordem 2 — fechamento de catálogos, relatórios e cobrança (0214–0215)
+
+Estimativa inicial desta frente: 3–6h, incluindo implementação, regressões,
+publicação e aceite. Estado atual: preparado, em testes isolados; ainda não
+aplicado nem publicado. Os resultados intermediários com harness sem paginação
+foram descartados: concessões sintéticas ficaram fora da limpeza, o perfil foi
+restaurado e os testes serão repetidos com catálogo completo.
+
+Escopo: categorias, contas, centros de custo, empresas/grupos, DRE/caixa/auditoria,
+exportação, faturas compartilhadas Sales/Finance, histórico fiscal, modelos e
+régua de cobrança, cron e fronteira pública dos gateways. A UI recebe guard antes
+de consultas, ações por capacidade e cache separado por workspace. O servidor
+usa o cliente do usuário, e o banco substitui permissivas legadas sem remover
+restritivas, exige ação/escopo e protege autoria, tenant e vínculos. Catálogos sem
+responsável não ganham escopo workspace por uma chave own/team. Referências de
+outros módulos retornam apenas IDs, nomes e campos mínimos, sem saldos/segredos.
+
+Quitação manual e cancelamento exigem ação específica e edição da fatura
+visível. Campos do provedor e histórico de pagamentos/fiscal não são CRUD de
+usuário. Contadores de fatura são concorrentes; grupos, empresa padrão e régua
+usam transações; faturamento legado de horas preserva RLS e guards de medição,
+criando fatura e vínculos juntos ou revertendo tudo. Exclusão não apaga histórico
+nem desassocia silenciosamente registros em uso.
+
+A régua revalida o responsável ativo e a delegação por canal no tenant de origem;
+reserva cada passo antes do efeito, mantém resultado durável e pausa resultado
+incerto. Não há retentativa automática de envio possivelmente realizado.
+Segmentos ainda não executáveis são recusados explicitamente. Modelos de texto
+de cobrança não equivalem a templates aprovados pela Meta: a janela/opt-out do
+WhatsApp permanece no serviço do canal. O cron usa CRON_SECRET e referência de
+Vault compatível com o agendador de recorrências, nunca uma chave pública.
+
+Limite funcional encontrado: a emissão de Pix/boleto e NFS-e não tinha adaptador
+real; gerava dados fictícios mesmo quando configurada como live. Produção tinha
+uma fatura manual sandbox e nenhuma política de cobrança. A correção impede
+emissão fictícia, desabilita esses botões com explicação e retorna indisponível.
+O webhook de gateway não altera dados sem um adaptador verificado (503). Não
+prometer emissão real, homologação de gateway, TED, estorno bancário, nova alçada
+ou fechamento contábil, que não são entregas de alinhamento de permissões.
+Nenhum cargo padrão ou override de produção será alterado automaticamente.
