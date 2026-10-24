@@ -1,3 +1,4 @@
+import { HrActionDialogAccess } from "@/components/hr-action-dialog-access";
 // Dialog para avaliar candidatura com um scorecard (critérios + notas 0-5).
 import { useState, useEffect, useMemo } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -54,7 +55,21 @@ type Props = {
   onSaved?: () => void;
 };
 
-export function ScorecardEvalDialog({
+export function ScorecardEvalDialog(props: Props) {
+  return (
+    <HrActionDialogAccess
+      open={props.open}
+      onOpenChange={props.onOpenChange}
+      resource="application_scores"
+      id={props.applicationId}
+      title="Avaliar candidatura"
+    >
+      <ScorecardEvalDialogContent {...props} />
+    </HrActionDialogAccess>
+  );
+}
+
+function ScorecardEvalDialogContent({
   open,
   onOpenChange,
   applicationId,

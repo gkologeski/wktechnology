@@ -1,3 +1,5 @@
+import { assertHrRecordAccess } from "@/lib/access-control/hr-records.server";
+import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -7,6 +9,7 @@ import { recordAtsEvent } from "./audit.server";
 const DEFAULT_MODEL = "google/gemini-2.5-flash";
 
 type AiNotes = {
+  model: string | null;
   summary: string;
   strengths: string[];
   concerns: string[];
@@ -36,13 +39,16 @@ function buildPrompt(transcript: string, kit: unknown, jobTitle: string | null):
   ].join("\n");
 }
 
-async function callAi(prompt: string, model: string): Promise<AiNotes> {
-  const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
+async function callAi(
+  prompt: string,
+  model: string,
+  workspaceId: string,
+  userId: string,
+): Promise<AiNotes> {
   const res = await aiChatFetch(
     {
       method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         model,
         messages: [
@@ -52,7 +58,7 @@ async function callAi(prompt: string, model: string): Promise<AiNotes> {
         temperature: 0.2,
       }),
     },
-    { feature: "anotacoes_entrevista" },
+    { feature: "anotacoes_entrevista", workspaceId, userId, triggerSource: "user" },
   );
   if (res.status === 429)
     throw new Error("Limite de uso da IA atingido. Tente novamente em alguns minutos.");
@@ -62,7 +68,10 @@ async function callAi(prompt: string, model: string): Promise<AiNotes> {
     const t = await res.text();
     throw new Error(`AI Gateway ${res.status}: ${t.slice(0, 200)}`);
   }
-  const j = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+  const j = (await res.json()) as {
+    model?: unknown;
+    choices?: { message?: { content?: string } }[];
+  };
   const raw = j.choices?.[0]?.message?.content ?? "";
   const jsonStr = raw
     .replace(/^```json\s*/i, "")
@@ -82,6 +91,7 @@ async function callAi(prompt: string, model: string): Promise<AiNotes> {
   const arr = (v: unknown) =>
     Array.isArray(v) ? v.slice(0, 15).map((x) => String(x).slice(0, 400)) : [];
   return {
+    model: typeof j.model === "string" ? j.model : null,
     summary: String(parsed.summary ?? "").slice(0, 6000),
     strengths: arr(parsed.strengths),
     concerns: arr(parsed.concerns),
@@ -103,6 +113,7 @@ export const generateInterviewNotes = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    await assertHrRecordAccess(supabase, "interview_scoring", "update", data.interview_id);
     const { data: itv, error: ie } = await supabase
       .from("ats_interviews")
       .select("id, interview_kit_id, job_id, candidate_id")
@@ -129,9 +140,16 @@ export const generateInterviewNotes = createServerFn({ method: "POST" })
       jobTitle = (j?.title as string) ?? null;
     }
 
-    const ai = await callAi(buildPrompt(data.transcript, kit, jobTitle), DEFAULT_MODEL);
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
+    const ai = await callAi(
+      buildPrompt(data.transcript, kit, jobTitle),
+      DEFAULT_MODEL,
+      workspaceId,
+      userId,
+    );
 
-    const { error: ue } = await supabase
+    const generatedAt = new Date().toISOString();
+    const { data: updated, error: ue } = await supabase
       .from("ats_interviews")
       .update({
         transcript: data.transcript,
@@ -141,18 +159,21 @@ export const generateInterviewNotes = createServerFn({ method: "POST" })
         ai_followups: ai.followups,
         ai_recommendation: ai.recommendation,
         ai_score: ai.score,
-        ai_model: DEFAULT_MODEL,
-        ai_generated_at: new Date().toISOString(),
+        ai_model: ai.model,
+        ai_generated_at: generatedAt,
       })
-      .eq("id", data.interview_id);
+      .eq("id", data.interview_id)
+      .select("id")
+      .maybeSingle();
     if (ue) throw new Error(ue.message);
+    if (!updated) throw new Error("A análise não foi gravada.");
 
     await recordAtsEvent(supabase, {
       ownerId: userId,
-      name: "ats.interview.completed",
+      name: "ats.interview.notes_generated",
       entityType: "interview",
       entityId: data.interview_id,
-      dedupeKey: `ats.interview.completed:${data.interview_id}`,
+      dedupeKey: `ats.interview.notes_generated:${data.interview_id}:${generatedAt}`,
       payload: {
         interviewId: data.interview_id,
         jobId: itv.job_id,
@@ -169,6 +190,7 @@ export const getInterviewWithNotes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ interview_id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
+    await assertHrRecordAccess(context.supabase, "interviews", "view", data.interview_id);
     const { data: row, error } = await context.supabase
       .from("ats_interviews")
       .select(
@@ -183,6 +205,10 @@ export const getInterviewWithNotes = createServerFn({ method: "GET" })
 export const listRecentInterviews = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const ws = await getActiveWorkspaceId(context.supabase, context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, [
+      "techhire.interviews.view.workspace",
+    ]);
     const { data, error } = await context.supabase
       .from("ats_interviews")
       .select(

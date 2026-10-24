@@ -1,10 +1,11 @@
+import { assertHrRecordAccess } from "@/lib/access-control/hr-records.server";
+import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 // Server functions de Entrevistas do ATS (Fase 2 — Onda A).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { recordAtsEvent } from "./audit.server";
-import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 const KindEnum = z.enum(["phone", "video", "onsite", "async"]);
 const StatusEnum = z.enum([
@@ -57,7 +58,10 @@ export const listInterviews = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ application_id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    await assertHrRecordAccess(supabase, "applications", "view", data.application_id);
+    const ws = await getActiveWorkspaceId(supabase, userId);
+    await assertAnyPermission(supabase, userId, ws, ["techhire.interviews.view.workspace"]);
     const { data: rows, error } = await supabase
       .from("ats_interviews")
       .select(
@@ -93,7 +97,8 @@ export const scheduleInterview = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertHrRecordAccess(supabase, "application_interviews", "create", data.application_id);
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
     const { data: app, error: aErr } = await supabase
       .from("ats_applications")
       .select("id, job_id, candidate_id, stage_value")
@@ -176,6 +181,7 @@ export const scheduleInterview = createServerFn({ method: "POST" })
           .from("meetings")
           .insert({
             owner_id: workspaceId,
+            workspace_id: workspaceId,
             host_user_id: userId,
             title: `Entrevista — ${candidateName}`,
             room_name: roomName,
@@ -309,6 +315,7 @@ export const rescheduleInterview = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    await assertHrRecordAccess(supabase, "interviews", "update", data.id);
     const { data: cur, error: cErr } = await supabase
       .from("ats_interviews")
       .select("application_id, job_id, candidate_id, scheduled_at")
@@ -324,11 +331,14 @@ export const rescheduleInterview = createServerFn({ method: "POST" })
     };
     if (data.duration_min !== undefined) patch.duration_min = data.duration_min;
 
-    const { error } = await supabase
+    const { data: updated, error } = await supabase
       .from("ats_interviews")
       .update(patch as never)
-      .eq("id", data.id);
+      .eq("id", data.id)
+      .select("id")
+      .maybeSingle();
     if (error) throw new Error(error.message);
+    if (!updated) throw new Error("A entrevista não foi atualizada.");
 
     await recordEvent(supabase, {
       ownerId: userId,
@@ -350,17 +360,21 @@ export const cancelInterview = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    await assertHrRecordAccess(supabase, "interviews", "update", data.id);
     const { data: cur } = await supabase
       .from("ats_interviews")
       .select("application_id, job_id, candidate_id")
       .eq("id", data.id)
       .single();
     if (!cur) throw new Error("Entrevista não encontrada");
-    const { error } = await supabase
+    const { data: updated, error } = await supabase
       .from("ats_interviews")
       .update({ status: "canceled" } as never)
-      .eq("id", data.id);
+      .eq("id", data.id)
+      .select("id")
+      .maybeSingle();
     if (error) throw new Error(error.message);
+    if (!updated) throw new Error("A entrevista não foi atualizada.");
     await recordEvent(supabase, {
       ownerId: userId,
       applicationId: cur.application_id as string,
@@ -387,27 +401,45 @@ export const markInterviewStatus = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    await assertHrRecordAccess(supabase, "interviews", "update", data.id);
     const { data: cur } = await supabase
       .from("ats_interviews")
-      .select("application_id, job_id, candidate_id")
+      .select("application_id, job_id, candidate_id,status")
       .eq("id", data.id)
       .single();
     if (!cur) throw new Error("Entrevista não encontrada");
     const patch: Record<string, unknown> = { status: data.status };
     if (data.notes !== undefined) patch.notes = data.notes;
-    const { error } = await supabase
+    const { data: updated, error } = await supabase
       .from("ats_interviews")
       .update(patch as never)
-      .eq("id", data.id);
+      .eq("id", data.id)
+      .select("id")
+      .maybeSingle();
     if (error) throw new Error(error.message);
-    await recordEvent(supabase, {
-      ownerId: userId,
-      applicationId: cur.application_id as string,
-      jobId: cur.job_id as string,
-      candidateId: cur.candidate_id as string,
-      eventType: data.status === "done" ? "interview_completed" : "interview_no_show",
-      metadata: { interview_id: data.id },
-    });
+    if (!updated) throw new Error("A entrevista não foi atualizada.");
+    if (cur.status !== data.status)
+      await recordEvent(supabase, {
+        ownerId: userId,
+        applicationId: cur.application_id as string,
+        jobId: cur.job_id as string,
+        candidateId: cur.candidate_id as string,
+        eventType: data.status === "done" ? "interview_completed" : "interview_no_show",
+        metadata: { interview_id: data.id },
+      });
+    if (data.status === "done" && cur.status !== "done")
+      await recordAtsEvent(supabase, {
+        ownerId: userId,
+        name: "ats.interview.completed",
+        entityType: "interview",
+        entityId: data.id,
+        dedupeKey: `ats.interview.completed:${data.id}`,
+        payload: {
+          applicationId: cur.application_id,
+          jobId: cur.job_id,
+          candidateId: cur.candidate_id,
+        },
+      }).catch(() => undefined);
     return { ok: true };
   });
 
@@ -431,7 +463,8 @@ export const createSelfScheduleLink = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertHrRecordAccess(supabase, "application_interviews", "create", data.application_id);
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
     const { data: app, error: aErr } = await supabase
       .from("ats_applications")
       .select("id, job_id, candidate_id, stage_value")

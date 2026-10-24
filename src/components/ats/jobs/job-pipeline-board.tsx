@@ -55,6 +55,10 @@ export function JobPipelineBoard({
     "applications",
     allApps.map((a) => a.id),
   );
+  const scoreAccess = useHrCapabilities(
+    "application_scores",
+    allApps.map((a) => a.id),
+  );
   const p = usePermissions();
   const canAdd = p.canAny([
     "techhire.candidates.create.own",
@@ -166,7 +170,7 @@ export function JobPipelineBoard({
                             {a.ai_match_score != null && (
                               <ScoreBadge score={Number(a.ai_match_score)} />
                             )}
-                            {scoreSummary[a.id] && (
+                            {p.can("techhire.interviews.view.workspace") && scoreSummary[a.id] && (
                               <MetaPill>
                                 Avaliação {scoreSummary[a.id].avg} · {scoreSummary[a.id].count}×
                               </MetaPill>
@@ -181,7 +185,11 @@ export function JobPipelineBoard({
                               size="sm"
                               variant="ghost"
                               className="h-7 px-2 text-[11px]"
-                              disabled={!p.can("techhire.interviews.score.workspace")}
+                              disabled={
+                                !scoreAccess.for(a.id).can_create_child ||
+                                !p.can("techhire.interviews.view.workspace") ||
+                                !p.can("techhire.interviews.score.workspace")
+                              }
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onEvaluate(a);

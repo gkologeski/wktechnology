@@ -1143,7 +1143,10 @@ export const listJobInterviews = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ context, data }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    await assertHrRecordAccess(supabase, "jobs", "view", data.jobId);
+    const ws = await getActiveWorkspaceId(supabase, userId);
+    await assertAnyPermission(supabase, userId, ws, ["techhire.interviews.view.workspace"]);
     const { data: rows, error } = await supabase
       .from("ats_interviews")
       .select(

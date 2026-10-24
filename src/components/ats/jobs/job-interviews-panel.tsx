@@ -1,3 +1,5 @@
+import { useHrCapabilities } from "@/lib/access-control/use-hr-capabilities";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { useState } from "react";
 import { Calendar } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -14,6 +16,14 @@ export function JobInterviewsPanel({
   interviews: JobInterview[];
   onSchedule: (app: App) => void;
 }) {
+  const p = usePermissions();
+  const canView =
+    !p.isLoading && !p.isError && !!p.workspaceId && p.can("techhire.interviews.view.workspace");
+  const canSchedule = canView && p.can("techhire.interviews.schedule.workspace");
+  const access = useHrCapabilities(
+    "application_interviews",
+    apps.map((a) => a.id),
+  );
   const [schedSearch, setSchedSearch] = useState("");
   const [schedActiveOnly, setSchedActiveOnly] = useState(true);
 
@@ -27,6 +37,12 @@ export function JobInterviewsPanel({
     return name.includes(q) || stage.includes(q);
   });
 
+  if (!canView)
+    return (
+      <p className="p-4" role="alert">
+        Você não tem permissão para visualizar entrevistas.
+      </p>
+    );
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-border-subtle bg-surface-1 p-4">
@@ -70,6 +86,7 @@ export function JobInterviewsPanel({
                 <button
                   key={a.id as string}
                   type="button"
+                  disabled={!canSchedule || !access.for(a.id).can_create_child}
                   onClick={() => onSchedule(a)}
                   className="flex items-center justify-between gap-2 rounded-md border border-border-subtle bg-surface-2 px-3 py-2 text-left text-sm hover:border-border-strong hover:bg-surface-3 transition"
                 >

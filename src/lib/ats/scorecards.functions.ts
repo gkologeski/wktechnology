@@ -1,3 +1,5 @@
+import { assertHrRecordAccess } from "@/lib/access-control/hr-records.server";
+import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 // Scorecards de entrevista: templates (critérios + pesos) e respostas por candidatura.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -106,7 +108,23 @@ export const submitScorecardResponse = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => ResponseSchema.parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
+    if (data.id) {
+      await assertHrRecordAccess(supabase, "scorecard_responses", "update", data.id);
+      const { data: existing, error } = await supabase
+        .from("ats_scorecard_responses")
+        .select("application_id,scorecard_id")
+        .eq("id", data.id)
+        .single();
+      if (
+        error ||
+        !existing ||
+        existing.application_id !== data.application_id ||
+        existing.scorecard_id !== data.scorecard_id
+      )
+        throw new Error("A avaliação pertence a outra candidatura ou modelo.");
+    } else
+      await assertHrRecordAccess(supabase, "application_scores", "create", data.application_id);
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
 
     // Buscar critérios pra computar score ponderado.
     const { data: sc, error: scErr } = await supabase
@@ -129,32 +147,37 @@ export const submitScorecardResponse = createServerFn({ method: "POST" })
     const total_score = weightSum > 0 ? +(total / weightSum).toFixed(2) : null;
 
     const base = {
-      owner_id: userId,
-      workspace_id: workspaceId,
-      scorecard_id: data.scorecard_id,
-      application_id: data.application_id,
-      evaluator_id: userId,
       scores: data.scores,
       total_score,
       recommendation: data.recommendation ?? null,
       notes: data.notes ?? null,
     };
     if (data.id) {
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from("ats_scorecard_responses")
         .update(base as never)
         .eq("id", data.id)
-        .eq("workspace_id", workspaceId);
+        .eq("workspace_id", workspaceId)
+        .select("id,total_score")
+        .maybeSingle();
       if (error) throw new Error(error.message);
-      return { id: data.id, total_score };
+      if (!updated) throw new Error("A avaliação não foi atualizada.");
+      return { id: updated.id, total_score: updated.total_score };
     }
     const { data: ins, error } = await supabase
       .from("ats_scorecard_responses")
-      .insert(base as never)
-      .select("id, application_id")
+      .insert({
+        ...base,
+        owner_id: userId,
+        workspace_id: workspaceId,
+        scorecard_id: data.scorecard_id,
+        application_id: data.application_id,
+        evaluator_id: userId,
+      } as never)
+      .select("id, application_id,total_score")
       .single();
     if (error) throw new Error(error.message);
-    const created = ins as { id: string; application_id: string };
+    const created = ins as { id: string; application_id: string; total_score: number | null };
     // Auditoria: registrar submissão do scorecard
     const { data: app } = await supabase
       .from("ats_applications")
@@ -175,7 +198,7 @@ export const submitScorecardResponse = createServerFn({ method: "POST" })
           actor_id: userId,
           metadata: {
             scorecard_id: data.scorecard_id,
-            total_score,
+            total_score: created.total_score,
             recommendation: data.recommendation ?? null,
           },
         } as never)
@@ -184,7 +207,7 @@ export const submitScorecardResponse = createServerFn({ method: "POST" })
           () => undefined,
         );
     }
-    return { id: created.id, total_score };
+    return { id: created.id, total_score: created.total_score };
   });
 
 export const listScorecardResponses = createServerFn({ method: "POST" })
@@ -192,7 +215,11 @@ export const listScorecardResponses = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ application_id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertHrRecordAccess(supabase, "applications", "view", data.application_id);
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techhire.interviews.view.workspace",
+    ]);
     const { data: rows, error } = await supabase
       .from("ats_scorecard_responses")
       .select(
@@ -213,7 +240,10 @@ export const listJobScorecardSummary = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techhire.interviews.view.workspace",
+    ]);
     if (data.application_ids.length === 0)
       return {} as Record<string, { avg: number; count: number }>;
     const { data: rows, error } = await supabase

@@ -1,3 +1,4 @@
+import { HrActionDialogAccess } from "@/components/hr-action-dialog-access";
 // Dialog para agendar entrevista — manual ou enviar link de auto-agendamento.
 import { useState, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -35,7 +36,21 @@ type Props = {
   onSaved?: () => void;
 };
 
-export function ScheduleInterviewDialog({
+export function ScheduleInterviewDialog(props: Props) {
+  return (
+    <HrActionDialogAccess
+      open={props.open}
+      onOpenChange={props.onOpenChange}
+      resource="application_interviews"
+      id={props.applicationId}
+      title="Agendar entrevista"
+    >
+      <ScheduleInterviewDialogContent {...props} />
+    </HrActionDialogAccess>
+  );
+}
+
+function ScheduleInterviewDialogContent({
   open,
   onOpenChange,
   applicationId,

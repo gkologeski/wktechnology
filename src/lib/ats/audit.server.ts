@@ -37,6 +37,7 @@ export type AtsEventName =
   | "ats.background_check.completed"
   | "ats.interview.scheduled"
   | "ats.interview.completed"
+  | "ats.interview.notes_generated"
   // Onda 7
   | "ats.offer.approved"
   | "ats.offer.signed"

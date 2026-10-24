@@ -78,8 +78,14 @@ run_sql tests/sql/fixtures/permission-applications.sql applications-fixture
 run_sql drizzle/migrations/0202_application_action_scope.sql applications-migration
 run_sql tests/sql/permission-applications.sql applications-tests
 run_sql tests/sql/permission-capabilities-equivalence.sql applications-existing-caps-tests
-python3 - "$test_root/applications-tests.log" "$test_root/pipelines-tests.log" "$test_root/jobs-tests.log" "$test_root/private-tests.log" "$test_root/children-tests.log" "$test_root/hr-ui-tests.log" "$test_root/tests.log" "$test_root/save-after.log" "$test_root/rpc-after.log" "$test_root/settings-tests.log" "$test_root/hr-tests.log" <<'PY'
+run_sql tests/sql/fixtures/permission-interviews.sql interviews-fixture
+run_sql tests/sql/permission-interviews-before.sql interviews-before
+run_sql drizzle/migrations/0203_interview_response_action_scope.sql interviews-migration
+run_sql tests/sql/permission-interviews.sql interviews-tests
+run_sql tests/sql/permission-capabilities-equivalence.sql interviews-existing-caps-tests
+python3 - "$test_root/interviews-tests.log" "$test_root/applications-tests.log" "$test_root/pipelines-tests.log" "$test_root/jobs-tests.log" "$test_root/private-tests.log" "$test_root/children-tests.log" "$test_root/hr-ui-tests.log" "$test_root/tests.log" "$test_root/save-after.log" "$test_root/rpc-after.log" "$test_root/settings-tests.log" "$test_root/hr-tests.log" <<'PY'
 import re,sys
+interviews=re.findall(r'NOTICE:  INTERVIEW PASS (\d+):',open(sys.argv.pop(1)).read()); assert interviews==[str(x) for x in range(1,14)],interviews
 applications=re.findall(r'NOTICE:  APPLICATION PASS (\d+):',open(sys.argv.pop(1)).read()); assert applications==[str(x) for x in range(1,14)],applications
 pipelines=re.findall(r'NOTICE:  PIPELINE PASS (\d+):',open(sys.argv.pop(1)).read()); assert pipelines==[str(x) for x in range(1,11)],pipelines
 jobs=re.findall(r'NOTICE:  JOB PASS (\d+):',open(sys.argv.pop(1)).read()); assert jobs==[str(x) for x in range(1,12)],jobs
@@ -93,5 +99,5 @@ saves=re.findall(r'NOTICE:  SAVE PASS (\d+):',open(sys.argv[2]).read()); assert 
 rpcs=re.findall(r'NOTICE:  RPC PASS (\d+):',open(sys.argv[3]).read()); assert rpcs==[str(x) for x in range(1,43)],rpcs
 settings=re.findall(r'NOTICE:  SETTINGS PASS (\d+):',open(sys.argv[4]).read()); assert settings==[str(x) for x in range(1,62)],settings
 hr=re.findall(r'NOTICE:  HR PASS (\d+):',open(sys.argv[5]).read()); assert hr==[str(x) for x in range(1,113)],hr
-print('13 candidature/timeline groups + 10 pipeline groups + 11 job permission groups + 10 private-field groups (including 12 differential cases) + 112/112 HR children + 15/15 UI capabilities + 112/112 HR + 61/61 settings + 44/44 RLS + 15/15 save/FK + 42/42 critical RPC checks passed. Browser/auth SDK acceptance was not run.')
+print('13 interview/evaluation groups + 13 candidature/timeline groups + 10 pipeline groups + 11 job permission groups + 10 private-field groups (including 12 differential cases) + 112/112 HR children + 15/15 UI capabilities + 112/112 HR + 61/61 settings + 44/44 RLS + 15/15 save/FK + 42/42 critical RPC checks passed. Browser/auth SDK acceptance was not run.')
 PY

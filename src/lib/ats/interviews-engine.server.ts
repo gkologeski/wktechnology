@@ -190,6 +190,8 @@ export async function confirmSelfScheduledSlot(args: {
   token: string;
   slot: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (args.token.length < 32 || args.token.length > 256)
+    return { ok: false, error: "Token inválido" };
   const { data: row } = await admin
     .from("ats_interviews")
     .select(
@@ -200,19 +202,34 @@ export async function confirmSelfScheduledSlot(args: {
   if (!row) return { ok: false, error: "Token inválido" };
   if (row.status !== "pending_candidate")
     return { ok: false, error: "Esta entrevista já foi confirmada" };
-  if (row.self_schedule_expires_at && new Date(row.self_schedule_expires_at) < new Date())
+  if (
+    !row.self_schedule_expires_at ||
+    !Number.isFinite(Date.parse(row.self_schedule_expires_at)) ||
+    Date.parse(row.self_schedule_expires_at) <= Date.now()
+  )
     return { ok: false, error: "Link expirado" };
   const slots = Array.isArray(row.slots) ? (row.slots as string[]) : [];
-  if (!slots.includes(args.slot)) return { ok: false, error: "Horário indisponível" };
+  if (
+    !Number.isFinite(Date.parse(args.slot)) ||
+    Date.parse(args.slot) <= Date.now() ||
+    !slots.includes(args.slot)
+  )
+    return { ok: false, error: "Horário indisponível" };
 
-  await admin
+  const { data: confirmed, error: confirmError } = await admin
     .from("ats_interviews")
     .update({
       status: "scheduled",
       scheduled_at: args.slot,
       self_schedule_token: null,
     })
-    .eq("id", row.id);
+    .eq("id", row.id)
+    .eq("self_schedule_token", args.token)
+    .eq("status", "pending_candidate")
+    .select("id")
+    .maybeSingle();
+  if (confirmError || !confirmed)
+    return { ok: false, error: "Horário já confirmado ou indisponível" };
   await admin.from("ats_application_events").insert({
     owner_id: row.owner_id,
     application_id: row.application_id,

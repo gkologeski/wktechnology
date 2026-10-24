@@ -1,3 +1,5 @@
+import { HrScreenAccess } from "@/components/hr-access";
+import { useHrCapabilities } from "@/lib/access-control/use-hr-capabilities";
 // AI Recruitment Notetaker — gera resumo, pontos fortes, preocupações,
 // follow-ups e recomendação a partir da transcrição/anotações de entrevista.
 import { createFileRoute } from "@tanstack/react-router";
@@ -78,13 +80,28 @@ const REC_MAP: Record<string, { label: string; className: string }> = {
 };
 
 function NotetakerPage() {
+  return (
+    <HrScreenAccess resources={["techhire.interviews"]}>
+      <NotetakerContent />
+    </HrScreenAccess>
+  );
+}
+
+function NotetakerContent() {
   const listFn = useServerFn(listRecentInterviews);
   const getFn = useServerFn(getInterviewWithNotes);
   const genFn = useServerFn(generateInterviewNotes);
 
   const [rows, setRows] = useState<ItvRow[]>([]);
+  const rowAccess = useHrCapabilities(
+    "interviews",
+    rows.map((r) => r.id),
+  );
+  const visibleRows = rows.filter((r) => rowAccess.for(r.id).can_view);
   const [listLoading, setListLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string>("");
+  const access = useHrCapabilities("interview_scoring", selectedId ? [selectedId] : []);
+  const canGenerate = !!selectedId && access.for(selectedId).can_update;
   const [transcript, setTranscript] = useState("");
   const [notes, setNotes] = useState<Notes | null>(null);
   const [loading, setLoading] = useState(false);
@@ -98,24 +115,38 @@ function NotetakerPage() {
   }, [listFn]);
 
   useEffect(() => {
+    let cancelled = false;
+    setNotes(null);
+    setTranscript("");
     if (!selectedId) {
-      setNotes(null);
-      setTranscript("");
+      setLoading(false);
       return;
     }
     setLoading(true);
     getFn({ data: { interview_id: selectedId } })
       .then((n) => {
-        const nn = n as Notes | null;
-        setNotes(nn);
-        setTranscript(nn?.transcript ?? "");
+        if (cancelled) return;
+        const current = n as Notes | null;
+        setNotes(current);
+        setTranscript(current?.transcript ?? "");
       })
-      .catch((e: Error) => toast.error(e.message))
-      .finally(() => setLoading(false));
+      .catch((e: Error) => {
+        if (!cancelled) {
+          setNotes(null);
+          setTranscript("");
+          toast.error(e.message);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [selectedId, getFn]);
 
   async function handleGenerate() {
-    if (!selectedId) return;
+    if (!selectedId || !canGenerate) return;
     if (transcript.trim().length < 40) {
       toast.error("Transcrição muito curta — cole ao menos algumas frases.");
       return;
@@ -133,7 +164,7 @@ function NotetakerPage() {
     }
   }
 
-  const aiCount = rows.filter((r) => r.ai_generated_at).length;
+  const aiCount = visibleRows.filter((r) => r.ai_generated_at).length;
 
   return (
     <div className="container mx-auto max-w-5xl space-y-6 p-6">
@@ -144,7 +175,7 @@ function NotetakerPage() {
         secondaryActions={
           listLoading ? null : (
             <div className="flex flex-wrap items-center gap-2">
-              <MetaPill>{rows.length} entrevistas recentes</MetaPill>
+              <MetaPill>{visibleRows.length} entrevistas recentes</MetaPill>
               <MetaPill>{aiCount} já analisadas</MetaPill>
             </div>
           )
@@ -156,7 +187,7 @@ function NotetakerPage() {
 
         {listLoading ? (
           <Skeletons.Row />
-        ) : rows.length === 0 ? (
+        ) : visibleRows.length === 0 ? (
           <EmptyState
             icon={FileText}
             title="Nenhuma entrevista encontrada"
@@ -165,12 +196,12 @@ function NotetakerPage() {
         ) : (
           <div className="space-y-2">
             <Label htmlFor="itv-select">Entrevista</Label>
-            <Select value={selectedId} onValueChange={setSelectedId}>
+            <Select disabled={generating} value={selectedId} onValueChange={setSelectedId}>
               <SelectTrigger id="itv-select">
                 <SelectValue placeholder="Selecione uma entrevista recente" />
               </SelectTrigger>
               <SelectContent>
-                {rows.map((r) => (
+                {visibleRows.map((r) => (
                   <SelectItem key={r.id} value={r.id}>
                     {r.scheduled_at ? new Date(r.scheduled_at).toLocaleString("pt-BR") : "Sem data"}{" "}
                     · {r.kind} · {r.status}
@@ -182,7 +213,7 @@ function NotetakerPage() {
           </div>
         )}
 
-        {selectedId && (
+        {selectedId && access.for(selectedId).can_view && (
           <div className="space-y-3 pt-2">
             <div className="space-y-2">
               <Label htmlFor="transcript">Transcrição / anotações</Label>
@@ -202,7 +233,7 @@ function NotetakerPage() {
               </span>
               <Button
                 onClick={handleGenerate}
-                disabled={generating || loading || transcript.trim().length < 40}
+                disabled={!canGenerate || generating || loading || transcript.trim().length < 40}
               >
                 {generating ? (
                   <>
@@ -223,7 +254,7 @@ function NotetakerPage() {
 
       {loading && selectedId && <Skeletons.Card />}
 
-      {notes?.ai_generated_at && !loading && (
+      {access.for(selectedId).can_view && notes?.ai_generated_at && !loading && (
         <section className="surface-1 space-y-5 rounded-lg border p-6">
           <SectionHeader
             title="Análise da IA"

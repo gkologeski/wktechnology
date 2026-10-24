@@ -500,3 +500,60 @@ próprio e de outro criador, capacidade por registro, autoria imutável, timelin
 anexada e sem edição, cascata e não membro sem leitura passaram. Zero resíduos.
 Candidatos (14), candidaturas (5), eventos (13), seus fingerprints, catálogo (1721),
 memberships, defaults e overrides preservados. Interface aguarda publicação.
+
+
+Publicação 0202 confirmada no commit 9a62553f85ba911c068b82da8da9f3c471f79b5c.
+Entry index-i-5wxdCI.js e chunks de vaga, carreiras e capacidades conferidos byte
+a byte nos dois domínios. Aceite autenticado no navegador segue pendente.
+
+### Entrevistas, respostas e anotações de IA (0203, preparada)
+
+Estimativa comunicada: 90–150 minutos. Entrevistas exigem leitura da candidatura
+real e chave própria de visualização; agendamento e pontuação são independentes.
+Remove gates antigos que usavam owner_id como workspace e atalhos de membership.
+Pais, autoria, workspace e avaliador imutáveis. Participantes, kit, pool, reunião
+e referência de reagendamento pertencem ao tenant e contexto corretos. Cancelar
+substitui DELETE direto de histórico; cascata do pai já autorizado é preservada.
+Modelos com respostas não podem apagar histórico por cascata de exclusão do modelo;
+devem ser desativados. CRUD de modelos e kits segue a próxima frente.
+
+Resposta usa score, sem herdar edição do candidato. Total ponderado é calculado
+no banco, com critérios conhecidos, notas 0–5 e modelo ligado à vaga correta.
+Edição de resposta de outro criador preserva seu avaliador. Campos de análise de
+IA exigem score e view/create de copiloto; transcrição humana usa score. UI nega
+por registro/erro/carregamento/ViewAs antes de montar formulário e seus loaders.
+Notetaker protege URL e usa provedor do workspace; não exige chave global da
+Lovable quando outro provedor está configurado e não inventa ai_model. Gerar
+anotações emite notes_generated; completed só na transição real para done.
+
+As duas portas públicas de autoagendamento verificam token, validade e horário
+ofertado futuro. Atualização condicional por token e pending_candidate admite
+apenas um vencedor concorrente e só então registra sucesso/evento. Isso protege
+a mesma convocação; não é certificação de disponibilidade cruzada de todas as
+agendas. Calendário/slots/pools e integrações ainda precisam dos contratos próprios.
+A porta legada usa kind video válido, tenant do pai e expiração de sete dias.
+
+Treze grupos SQL e regressões anteriores passaram, incluindo 200 metadados iguais
+às regras canônicas, mistura de escopos e ações, autoria, denies, inativo, ViewAs,
+modelos/pais de outro tenant e cascatas. Caminho amplo valida todos os pais e
+reaproveita chaves efetivas; own/team misto permanece na referência canônica.
+Não é medição de desempenho geral nem aceite de navegador/provedor real.
+
+0203 aplicada: hash 47412b87ca8bb00c7bd366048a3ef127701fddf3a9f581bc02677f13d44bd413,
+when 1792804741329, id 207. Verify: 1672 testes/tipos/lint e build completos no
+mesmo fingerprint 07a1eb6f248431b1e172a51eed42e2592ae6c221beb32429aa7ecab0eea11477,
+sem mudança de fonte. A revisão final também oculta dados antigos após negativa
+de acesso, limpa leituras com erro e impede uma resposta lenta de outra entrevista
+de preencher a seleção atual. A limpeza global existente por troca de identidade
+foi conferida e preservada.
+
+Simulação SQL de Priscila confirmou criar entrevista/avaliação, editar as de outro
+criador, preservar avaliador/autoria, calcular 3,67 a partir dos critérios, negar
+DELETE de histórico, consultar capacidades e manter cascata de exclusão do pai.
+Não membro sem leitura. Transação revertida, zero resíduos. Nenhum convite, email,
+chamada de IA ou provider externo foi executado por esse ensaio. Sem entrevistas
+ou respostas reais anteriores (ambos zero); modelo existente (1), seus dados,
+catálogo (1721), defaults, memberships e overrides permaneceram intactos.
+Metadados de 200 registros no teste isolado: referência canônica 1942,606 ms,
+lote 12,229 ms com resultados iguais; não é medição do ERP em produção.
+Interface ainda aguarda publicação e navegador real permanece pendente.

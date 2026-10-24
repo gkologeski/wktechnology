@@ -47,6 +47,7 @@ import {
   addApplication,
   moveApplication,
   listApplicationEvents,
+  listJobInterviews,
   getAtsDefaultPipeline,
   getAtsJob,
   saveAtsJob,
@@ -78,6 +79,17 @@ import {
   deletePipeline,
   setDefaultPipeline,
 } from "./pipelines.functions";
+import {
+  listInterviews,
+  scheduleInterview,
+  rescheduleInterview,
+  cancelInterview,
+  markInterviewStatus,
+  createSelfScheduleLink as createInterviewLink,
+} from "./interviews.functions";
+import { createSelfScheduleLink as createLegacyInterviewLink } from "./self-schedule.functions";
+import { submitScorecardResponse } from "./scorecards.functions";
+import { generateInterviewNotes, getInterviewWithNotes } from "./notetaker.functions";
 const client = { from: mocks.from };
 const call = (fn: unknown, data: unknown) =>
   (fn as (args: unknown) => Promise<unknown>)({
@@ -394,4 +406,184 @@ it("a visible job does not authorize associating a candidate without aggregate c
     "candidate",
   );
   expect(mocks.from).not.toHaveBeenCalled();
+});
+
+it.each([
+  ["applications", "view", "app", listInterviews, { application_id: "app" }],
+  ["application_interviews", "create", "app", scheduleInterview, { application_id: "app" }],
+  ["application_interviews", "create", "app", createInterviewLink, { application_id: "app" }],
+  ["application_interviews", "create", "app", createLegacyInterviewLink, { application_id: "app" }],
+  ["interviews", "update", "interview", rescheduleInterview, { id: "interview" }],
+  ["interviews", "update", "interview", cancelInterview, { id: "interview" }],
+  ["interviews", "update", "interview", markInterviewStatus, { id: "interview" }],
+  ["application_scores", "create", "app", submitScorecardResponse, { application_id: "app" }],
+  [
+    "scorecard_responses",
+    "update",
+    "response",
+    submitScorecardResponse,
+    { id: "response", application_id: "app" },
+  ],
+  [
+    "interview_scoring",
+    "update",
+    "interview",
+    generateInterviewNotes,
+    { interview_id: "interview", transcript: "Private transcript" },
+  ],
+  ["interviews", "view", "interview", getInterviewWithNotes, { interview_id: "interview" }],
+  ["jobs", "view", "job", listJobInterviews, { jobId: "job" }],
+])(
+  "interview/evaluation %s %s checks the actual record before queries or AI",
+  async (resource, action, id, fn, data) => {
+    await expect(call(fn, data)).rejects.toThrow("Record denied");
+    expect(mocks.record).toHaveBeenCalledWith(client, resource, action, id);
+    expect(mocks.from).not.toHaveBeenCalled();
+    expect(mocks.ai).not.toHaveBeenCalled();
+    expect(mocks.admin).not.toHaveBeenCalled();
+  },
+);
+it("a score response cannot be rebound using an editable response id", async () => {
+  mocks.record.mockResolvedValue(undefined);
+  const q = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    single: vi.fn().mockResolvedValue({
+      data: { application_id: "actual-app", scorecard_id: "actual-template" },
+      error: null,
+    }),
+    update: vi.fn(),
+  };
+  mocks.from.mockReturnValue(q);
+  await expect(
+    call(submitScorecardResponse, {
+      id: "response",
+      application_id: "forged-app",
+      scorecard_id: "actual-template",
+    }),
+  ).rejects.toThrow("outra candidatura");
+  expect(q.update).not.toHaveBeenCalled();
+});
+it("editing an evaluation preserves its original author/evaluator and returns the stored score", async () => {
+  mocks.record.mockResolvedValue(undefined);
+  const response = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    single: vi.fn().mockResolvedValue({
+      data: { application_id: "app", scorecard_id: "template" },
+      error: null,
+    }),
+    update: vi.fn().mockReturnThis(),
+    maybeSingle: vi
+      .fn()
+      .mockResolvedValue({ data: { id: "response", total_score: 4.25 }, error: null }),
+  };
+  const template = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    single: vi
+      .fn()
+      .mockResolvedValue({ data: { criteria: [{ key: "tech", weight: 1 }] }, error: null }),
+  };
+  mocks.from.mockImplementation((table) =>
+    table === "ats_scorecard_responses" ? response : template,
+  );
+  expect(
+    await call(submitScorecardResponse, {
+      id: "response",
+      application_id: "app",
+      scorecard_id: "template",
+      scores: { tech: 3 },
+    }),
+  ).toEqual({ id: "response", total_score: 4.25 });
+  const payload = response.update.mock.calls[0][0];
+  expect(payload).not.toHaveProperty("owner_id");
+  expect(payload).not.toHaveProperty("evaluator_id");
+  expect(payload).not.toHaveProperty("application_id");
+  expect(payload).not.toHaveProperty("scorecard_id");
+});
+it("a reschedule with no affected row never reports success or appends history", async () => {
+  mocks.record.mockResolvedValue(undefined);
+  const q = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    single: vi.fn().mockResolvedValue({
+      data: { application_id: "app", job_id: "job", candidate_id: "candidate" },
+      error: null,
+    }),
+    update: vi.fn().mockReturnThis(),
+    maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+  };
+  mocks.from.mockReturnValue(q);
+  await expect(
+    call(rescheduleInterview, { id: "interview", scheduled_at: "2030-01-01T12:00:00Z" }),
+  ).rejects.toThrow("não foi atualizada");
+  expect(mocks.from).not.toHaveBeenCalledWith("ats_application_events");
+});
+
+it("AI notes use the authorized workspace provider and never report a completed interview", async () => {
+  mocks.record.mockResolvedValue(undefined);
+  mocks.emit.mockResolvedValue(undefined);
+  mocks.ai.mockResolvedValue(
+    new Response(
+      JSON.stringify({
+        model: "workspace-custom-model",
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                summary: "Notes",
+                strengths: [],
+                concerns: [],
+                followups: [],
+                recommendation: "neutral",
+                score: 80,
+              }),
+            },
+          },
+        ],
+      }),
+    ),
+  );
+  let editing = false;
+  const q = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    update: vi.fn().mockImplementation(() => {
+      editing = true;
+      return q;
+    }),
+    maybeSingle: vi.fn().mockImplementation(async () => ({
+      data: editing
+        ? { id: "interview" }
+        : { id: "interview", interview_kit_id: null, job_id: null, candidate_id: "candidate" },
+      error: null,
+    })),
+  };
+  mocks.from.mockReturnValue(q);
+  const result = await call(generateInterviewNotes, {
+    interview_id: "interview",
+    transcript: "A technical interview transcript with more than forty characters for testing.",
+  });
+  expect(result).toMatchObject({ ok: true, model: "workspace-custom-model" });
+  expect(mocks.ai).toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({
+      workspaceId: "workspace",
+      userId: "actor",
+      feature: "anotacoes_entrevista",
+      triggerSource: "user",
+    }),
+  );
+  expect(q.update).toHaveBeenCalledWith(
+    expect.objectContaining({ ai_model: "workspace-custom-model" }),
+  );
+  expect(mocks.emit).toHaveBeenCalledWith(
+    client,
+    expect.objectContaining({ name: "ats.interview.notes_generated" }),
+  );
+  expect(mocks.emit).not.toHaveBeenCalledWith(
+    client,
+    expect.objectContaining({ name: "ats.interview.completed" }),
+  );
 });

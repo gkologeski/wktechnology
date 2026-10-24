@@ -1,3 +1,4 @@
+import { useHrCapabilities } from "@/lib/access-control/use-hr-capabilities";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { Link } from "@tanstack/react-router";
 import { ArrowUpDown, ClipboardCheck, Plus, Users } from "lucide-react";
@@ -39,7 +40,12 @@ export function JobApplicationsTable({
   onClearAssigneeFilter: () => void;
   onAddCandidate: () => void;
 }) {
+  const scoreAccess = useHrCapabilities(
+    "application_scores",
+    apps.map((a) => a.id),
+  );
   const p = usePermissions();
+  const canViewScores = p.can("techhire.interviews.view.workspace");
   const canAdd = p.canAny([
     "techhire.candidates.create.own",
     "techhire.candidates.create.workspace",
@@ -78,7 +84,7 @@ export function JobApplicationsTable({
         render: (app) =>
           app.ai_match_score != null ? (
             <ScoreBadge score={Number(app.ai_match_score)} />
-          ) : scoreSummary[app.id] ? (
+          ) : canViewScores && scoreSummary[app.id] ? (
             <MetaPill>
               {scoreSummary[app.id].avg} · {scoreSummary[app.id].count}×
             </MetaPill>
@@ -109,7 +115,7 @@ export function JobApplicationsTable({
         ),
       },
     ],
-    [onToggleSortDir, scoreSummary, sortDir, stageLabel],
+    [onToggleSortDir, scoreSummary, sortDir, stageLabel, canViewScores],
   );
   const grid = useGridColumns<App>({
     gridKey: "ats-job-applications",
@@ -179,7 +185,11 @@ export function JobApplicationsTable({
                     size="sm"
                     variant="ghost"
                     className="h-7 px-2 text-[11px]"
-                    disabled={!p.can("techhire.interviews.score.workspace")}
+                    disabled={
+                      !scoreAccess.for(a.id).can_create_child ||
+                      !p.can("techhire.interviews.view.workspace") ||
+                      !p.can("techhire.interviews.score.workspace")
+                    }
                     onClick={() => onEvaluate(a)}
                   >
                     <ClipboardCheck className="h-3 w-3 mr-1" aria-hidden />

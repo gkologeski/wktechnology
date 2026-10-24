@@ -1,4 +1,4 @@
-import { HrScreenAccess, HrRecordAccess } from "@/components/hr-access";
+import { HrScreenAccess, HrRecordAccess, HrAccessError } from "@/components/hr-access";
 import { useHrCapabilities } from "@/lib/access-control/use-hr-capabilities";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -63,7 +63,8 @@ function JobDetailPage() {
   );
 }
 function JobDetailContent() {
-  const { can, canAny } = usePermissions();
+  const { can, canAny, permissions } = usePermissions();
+  const permissionVersion = [...permissions].sort().join("|");
   const canAdd = canAny(["techhire.candidates.create.own", "techhire.candidates.create.workspace"]);
   const { id } = Route.useParams();
   const getJob = useServerFn(getAtsJob);
@@ -114,6 +115,11 @@ function JobDetailContent() {
     "applications",
     apps.map((a) => a.id),
   );
+  const authorizedApps = apps.filter((a) => appAccess.for(a.id).can_view);
+  const candidateAccess = useHrCapabilities(
+    "candidates",
+    candidates.map((c) => c.id),
+  );
   const stages = useMemo(() => {
     const current = pipelineStages[String(job?.pipeline_id ?? "")];
     return current?.length ? current : DEFAULT_ATS_STAGES;
@@ -135,7 +141,7 @@ function JobDetailContent() {
           const s = await listSummary({ data: { application_ids: ids } });
           setScoreSummary(s as Record<string, { avg: number; count: number }>);
         } catch {
-          /* noop */
+          setScoreSummary({});
         }
       } else {
         setScoreSummary({});
@@ -143,13 +149,18 @@ function JobDetailContent() {
       // background secondary fetches
       listEventsFn({ data: { jobId: id, limit: 50 } })
         .then((rs) => setEvents(rs))
-        .catch(() => undefined);
+        .catch(() => setEvents([]));
       listInterviewsFn({ data: { jobId: id, limit: 100 } })
         .then((rs) => setInterviews(rs))
-        .catch(() => undefined);
+        .catch(() => setInterviews([]));
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Falha ao carregar";
       setError(msg);
+      setJob(null);
+      setApps([]);
+      setEvents([]);
+      setInterviews([]);
+      setScoreSummary({});
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -171,9 +182,9 @@ function JobDetailContent() {
       })
       .catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, permissionVersion]);
 
-  const visibleApps = useMemo(() => filterAppsByAssignee(apps), [apps, filterAppsByAssignee]);
+  const visibleApps = filterAppsByAssignee(authorizedApps);
 
   const byStage = useMemo(() => {
     const m: Record<string, App[]> = {};
@@ -185,7 +196,7 @@ function JobDetailContent() {
     return m;
   }, [visibleApps, stages]);
 
-  const totalApps = apps.length;
+  const totalApps = authorizedApps.length;
 
   const stageLabel = (value: string | null | undefined) => {
     const raw = value ?? "applied";
@@ -301,7 +312,8 @@ function JobDetailContent() {
     }
   };
 
-  if (loading) return <JobDetailSkeleton />;
+  if (loading || (apps.length > 0 && appAccess.isLoading)) return <JobDetailSkeleton />;
+  if (appAccess.isError) return <HrAccessError retry={() => void appAccess.refetch()} />;
 
   if (error && !job) {
     return (
@@ -375,7 +387,7 @@ function JobDetailContent() {
       addOpen={addOpen}
       onAddOpenChange={setAddOpen}
       onOpenAdd={openAdd}
-      candidates={candidates}
+      candidates={candidates.filter((c) => candidateAccess.for(c.id).can_view)}
       selectedCand={selectedCand}
       onSelectedCandChange={setSelectedCand}
       onAdd={handleAdd}
@@ -484,7 +496,11 @@ function JobDetailContent() {
               </div>
             </TabsContent>
             <TabsContent value="interviews" className="mt-0">
-              <JobInterviewsPanel apps={apps} interviews={interviews} onSchedule={setScheduleApp} />
+              <JobInterviewsPanel
+                apps={authorizedApps}
+                interviews={interviews}
+                onSchedule={setScheduleApp}
+              />
             </TabsContent>
             <TabsContent value="postings" className="mt-0 space-y-4">
               <LinkedinJobConfigPanel jobId={String(id)} />
@@ -499,7 +515,7 @@ function JobDetailContent() {
           <div className="space-y-4">
             <JobCopilotPanel
               jobId={String(id)}
-              candidates={apps
+              candidates={authorizedApps
                 .filter((a) => a.candidate)
                 .map((a) => ({
                   id: a.candidate_id as string,
@@ -526,7 +542,7 @@ function JobDetailContent() {
         refresh={refresh}
       />
       <HiringOutcomeDialog
-        open={!!hiringMove}
+        open={!!hiringMove && appAccess.for(hiringMove.app.id).can_update}
         candidateName={
           (hiringMove?.app as unknown as { candidate?: { full_name?: string | null } | null })
             ?.candidate?.full_name ?? "Candidato"

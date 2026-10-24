@@ -1,0 +1,3 @@
+\set ON_ERROR_STOP on
+BEGIN;SET ROLE authenticated;SELECT set_config('request.jwt.claim.sub','90000000-0000-4000-8000-000000000004',true);
+DO $$ BEGIN IF (SELECT count(*) FROM ats_interviews)<>2 OR (SELECT count(*) FROM ats_scorecard_responses)<>1 THEN RAISE EXCEPTION 'Expected old membership read bypass';END IF;UPDATE ats_interviews SET notes='Forbidden old owner/workspace gate' WHERE id='99110000-0000-4000-8000-000000000001';IF FOUND THEN RAISE EXCEPTION 'Expected erroneous owner workspace gate';END IF;RAISE NOTICE 'INTERVIEW BEFORE: membership read bypass and invalid owner-as-workspace update gate reproduced';END $$;ROLLBACK;

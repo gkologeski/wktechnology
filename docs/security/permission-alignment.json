@@ -849,8 +849,38 @@
       "worker_exception": "existing signed cron/manual-sync service uses actual job workspace and configured intake stage; ambiguous identities and provider failures remain retryable failures; publisher credential binding remains rule 9 pending",
       "ui": "record capabilities for drag/bulk update/delete/assignment, explicit export/create/score keys; use configured pipeline stages",
       "migration": "0202",
-      "state": "applied_tested_sql_pending_ui_publication",
+      "state": "applied_tested_sql_published_browser_pending",
       "remaining": "interview/scorecard table RLS and hiring/offer state approvals require their own subsequent contracts; global field rules and API-key authorization remain pending"
+    },
+    {
+      "operation": "Interview scheduling, evaluation responses and AI notes",
+      "kind": "business_action",
+      "route_consumers": [
+        "/jobs/$id",
+        "candidate interview/evaluation dialogs",
+        "/notetaker",
+        "public interview scheduling by token"
+      ],
+      "actor": "authenticated active selected workspace member; explicit public invitation and trusted service exceptions",
+      "resource": "techhire.interviews + actual candidature/candidate/job + techhire.copilot for AI",
+      "action": "view, schedule, score, AI analysis",
+      "permission_keys": [
+        "techhire.interviews.view.workspace",
+        "techhire.interviews.schedule.workspace",
+        "techhire.interviews.score.workspace",
+        "techhire.copilot.view.{own|team|workspace} AND techhire.copilot.create.{own|workspace} for AI only"
+      ],
+      "scope": "actual candidature visible; own/team/workspace candidate and job scope; immutable author/parents/evaluator; linked staff and kit/pool/meeting confined to workspace",
+      "database": "0203 removes all permissive bypasses and owner-as-workspace restrictive gates; independent schedule/score/AI field groups; derived weighted score from validated criteria; no direct user history DELETE; parent deletion cascades preserved",
+      "ui": "actual parent action metadata gates forms before their loaders; disabled per-record actions, loading/error/read-only deny; direct notetaker URL gate",
+      "server": "actual row checks before reads/writes/AI/video room/calendar; zero-row update is failure; response update preserves evaluator; AI provider bound to authorized workspace and model reported only when returned by provider",
+      "public_exception": "bounded secret invitation, expiry, future offered slot, conditional pending/token UPDATE permits exactly one confirmation; legacy create route now uses valid video kind, parent-bound workspace and expiry",
+      "delegated_integration": "schedule capability permits only its linked room/activity and best-effort unique enabled calendar in same workspace; no caller-supplied calendar credential id; credential administration remains separate",
+      "events": "AI notes_generated never interview.completed; completion event follows actual successful status transition to done",
+      "metadata_batch": "200 records equal canonical per-record checks; effective permission snapshot reused for validated all-workspace parent scope, mixed own/team fallback remains canonical",
+      "migration": "0203",
+      "state": "applied_tested_sql_pending_ui_publication",
+      "remaining": "template/kit/pool/availability CRUD, offers/hiring state approvals, global field rules and generic integration/API audit remain later contracts"
     }
   ],
   "rules": [
