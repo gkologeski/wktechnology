@@ -1077,7 +1077,8 @@
       "server": "src/lib/ats/lgpd.functions.ts; caller client only",
       "database": "ats_compliance_access/write/export/capabilities; RLS and immutable parent/evidence guards",
       "migration": "0208 + 0209",
-      "status": "aplicado_testado_publicado_aceite_usuario_producao_pendente"
+      "status": "aplicado_testado_publicado",
+      "acceptance_evidence": "SQL production rollback probe + real local auth/browser; related person/onboarding production delegated-user browser accepted separately"
     },
     {
       "operation": "LGPD consent evidence",
@@ -1095,7 +1096,8 @@
       "server": "src/lib/ats/lgpd.functions.ts; caller client only",
       "database": "ats_compliance_access/write/export/capabilities; RLS and immutable parent/evidence guards",
       "migration": "0208 + 0209",
-      "status": "aplicado_testado_publicado_aceite_usuario_producao_pendente"
+      "status": "aplicado_testado_publicado",
+      "acceptance_evidence": "SQL production rollback probe + real local auth/browser; related person/onboarding production delegated-user browser accepted separately"
     },
     {
       "operation": "LGPD retention",
@@ -1113,7 +1115,8 @@
       "server": "src/lib/ats/lgpd.functions.ts; caller client only",
       "database": "ats_compliance_access/write/export/capabilities; RLS and immutable parent/evidence guards",
       "migration": "0208 + 0209",
-      "status": "aplicado_testado_publicado_aceite_usuario_producao_pendente"
+      "status": "aplicado_testado_publicado",
+      "acceptance_evidence": "SQL production rollback probe + real local auth/browser; related person/onboarding production delegated-user browser accepted separately"
     },
     {
       "operation": "LGPD export",
@@ -1131,7 +1134,8 @@
       "server": "src/lib/ats/lgpd.functions.ts; caller client only",
       "database": "ats_compliance_access/write/export/capabilities; RLS and immutable parent/evidence guards",
       "migration": "0208 + 0209",
-      "status": "aplicado_testado_publicado_aceite_usuario_producao_pendente"
+      "status": "aplicado_testado_publicado",
+      "acceptance_evidence": "SQL production rollback probe + real local auth/browser; related person/onboarding production delegated-user browser accepted separately"
     },
     {
       "operation": "LGPD erasure",
@@ -1149,7 +1153,8 @@
       "server": "src/lib/ats/lgpd.functions.ts; caller client only",
       "database": "ats_compliance_access/write/export/capabilities; RLS and immutable parent/evidence guards",
       "migration": "0208 + 0209",
-      "status": "aplicado_testado_publicado_aceite_usuario_producao_pendente"
+      "status": "aplicado_testado_publicado",
+      "acceptance_evidence": "SQL production rollback probe + real local auth/browser; related person/onboarding production delegated-user browser accepted separately"
     },
     {
       "operation": "LGPD capabilities",
@@ -1167,7 +1172,8 @@
       "server": "src/lib/ats/lgpd.functions.ts; caller client only",
       "database": "ats_compliance_access/write/export/capabilities; RLS and immutable parent/evidence guards",
       "migration": "0208 + 0209",
-      "status": "aplicado_testado_publicado_aceite_usuario_producao_pendente"
+      "status": "aplicado_testado_publicado",
+      "acceptance_evidence": "SQL production rollback probe + real local auth/browser; related person/onboarding production delegated-user browser accepted separately"
     }
   ],
   "rules": [
@@ -1337,7 +1343,7 @@
       "area": "TechHire",
       "problema": "LGPD usa filtros owner fixos",
       "decisao_alvo": "Aplicar leitura/alteração/exportação por escopo autorizado; manter segregação de tenant.",
-      "status": "aplicado_publicado_testado_sql_aceite_browser_pendente",
+      "status": "aplicado_publicado_testado_sql_browser_local",
       "evidencia_migracao": "0208 + 0209 applied, journal 212/213; both public domains match verified build; production Priscila SQL rollback probe passed",
       "aceite_visual": false,
       "aceite_local": {
@@ -1349,7 +1355,10 @@
       "aceite_producao": {
         "sql_identity_probe": true,
         "real_user_browser": false,
-        "blocker": "Google session initially belongs to another account; user unable to switch account"
+        "blocker": null,
+        "pending_priscila_person_onboarding_browser": false,
+        "person_onboarding_browser_evidence": "permission-hr-compliance-2026-10-24/priscila-production-browser-acceptance.json",
+        "scope_note": "LGPD proved by production SQL + real local authentication/browser; person/onboarding additionally accepted in production delegated-user browser, not a complete production visual LGPD audit."
       }
     },
     {
@@ -1375,14 +1384,20 @@
       "area": "TechPeople",
       "problema": "Onboarding admin-only",
       "decisao_alvo": "Substituir ponte Head de RH local por autorização por ação/escopo após aceite; preservar checks de pessoa/plano.",
-      "status": "aplicado_publicado_testado_sql",
+      "status": "aplicado_publicado_testado_sql_aceito_browser_fluxos_pessoa_onboarding",
       "evidencia_migracao": "0193",
-      "aceite_visual": false,
+      "aceite_visual": true,
       "publicacao_evidencia": "Published compatible release dbb91491f on both domains; SQL identity probe (person/onboarding and LGPD) passed with complete rollback. Actual Priscila browser session still pending.",
       "aceite_local": {
         "environment": "isolated GoTrue/PostgREST and Chrome, synthetic Head RH nonadmin",
         "production_user_session": false,
         "evidence": "permission-alignment-completion-2026-10-23/aceite-rh-ambiente-recuperado.html"
+      },
+      "aceite_producao": {
+        "real_user_browser": true,
+        "access_method": "authorized admin Ver como mode=user; target Priscila Head RH; not direct credentials",
+        "scope": "create/edit person and create/edit onboarding, reload persistence; synthetic records deleted with user approval; original admin access restored",
+        "evidence": "permission-hr-compliance-2026-10-24/priscila-production-browser-acceptance.json"
       }
     },
     {
@@ -1402,8 +1417,14 @@
       "decisao_alvo": "Separar usuário responsável de owner legado; correção 0190 aplicada na WK e testes de FK mantidos.",
       "status": "corrigido_wk",
       "evidencia_migracao": "0190",
-      "aceite_visual": false,
-      "observacao_0193": "New person writes explicitly set workspace and actual user responsible; guard normalizes legacy workspace-as-responsible on INSERT; no historical row backfill."
+      "aceite_visual": true,
+      "observacao_0193": "New person writes explicitly set workspace and actual user responsible; guard normalizes legacy workspace-as-responsible on INSERT; no historical row backfill.",
+      "aceite_producao": {
+        "real_user_browser": true,
+        "access_method": "authorized admin Ver como mode=user; target Priscila Head RH; not direct credentials",
+        "scope": "create/edit person and create/edit onboarding, reload persistence; synthetic records deleted with user approval; original admin access restored",
+        "evidence": "permission-hr-compliance-2026-10-24/priscila-production-browser-acceptance.json"
+      }
     },
     {
       "id": 24,
@@ -1429,14 +1450,20 @@
       "area": "TechPeople",
       "problema": "Criar pessoa usa chave de editar",
       "decisao_alvo": "Criar exige create no escopo correto; editar não concede criar.",
-      "status": "aplicado_publicado_testado_sql",
+      "status": "aplicado_publicado_testado_sql_aceito_browser_fluxos_pessoa_onboarding",
       "evidencia_migracao": "0193",
-      "aceite_visual": false,
+      "aceite_visual": true,
       "publicacao_evidencia": "Published compatible release dbb91491f on both domains; SQL identity probe (person/onboarding and LGPD) passed with complete rollback. Actual Priscila browser session still pending.",
       "aceite_local": {
         "environment": "isolated GoTrue/PostgREST and Chrome, synthetic Head RH nonadmin",
         "production_user_session": false,
         "evidence": "permission-alignment-completion-2026-10-23/aceite-rh-ambiente-recuperado.html"
+      },
+      "aceite_producao": {
+        "real_user_browser": true,
+        "access_method": "authorized admin Ver como mode=user; target Priscila Head RH; not direct credentials",
+        "scope": "create/edit person and create/edit onboarding, reload persistence; synthetic records deleted with user approval; original admin access restored",
+        "evidence": "permission-hr-compliance-2026-10-24/priscila-production-browser-acceptance.json"
       }
     },
     {

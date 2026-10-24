@@ -879,3 +879,36 @@ Estimativa inicial 1–2h. Até a confirmação final do banco, foram cerca de
 não estava disponível nesse momento. A espera pelo aceite da usuária continua
 separada. Relatório e evidências em outputs/permission-hr-compliance-2026-10-24
 no projeto ChatGPT. As demais ordens e as seis etapas globais permanecem abertas.
+
+
+### Aceite final da Ordem 1 — concluído em 24/10/2026
+
+Após o usuário disponibilizar sua sessão guilherme@wktechnology.com.br, o
+recurso normal do produto Ver como iniciou uma sessão DELEGADA real da
+Priscila Alves do Nascimento (mode=user, não somente leitura), com as permissões
+dela. Não foi login Google/senha da Priscila e não foram extraídos tokens nem
+alteradas credenciais ou concessões.
+
+Pela interface de produção foram aprovados: criar pessoa, editar o nome,
+criar onboarding vazio, editar o status do plano e confirmar ambas as alterações
+após recarregar a ficha. A pessoa e o plano ficaram com a autoria/responsabilidade
+da Priscila, conferidas também por consulta restrita aos IDs de QA.
+
+O usuário autorizou explicitamente excluir os dois registros fictícios. A
+exclusão foi feita pela interface; zero pessoa/planos restantes nos IDs conferidos.
+A sessão delegada foi encerrada e o acesso do Guilherme foi restaurado.
+
+**Ordem 1 concluída nos critérios desta frente.** A pendência específica de
+aceite pessoa/onboarding em produção está resolvida por sessão delegada. Isso
+não certifica todas as telas do TechHire/TechPeople nem encerra as seis etapas.
+LGPD conserva a combinação de testes SQL em produção e navegador/autenticação
+locais; não alegar que todas as operações LGPD foram executadas visualmente em
+produção. A dificuldade anterior de troca de conta Google não bloqueia mais o
+aceite funcional desta frente.
+
+Evidência detalhada e prints: no projeto ChatGPT,
+outputs/permission-hr-compliance-2026-10-24/priscila-production-browser-acceptance.json.
+Nenhuma alteração de código, esquema do banco ou concessão de permissões foi
+necessária neste aceite; somente registros fictícios foram criados/editados e
+removidos após a autorização específica do usuário.
+A revisão técnica anterior e a publicação permanecem válidas.
