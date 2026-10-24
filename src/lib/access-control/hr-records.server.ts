@@ -2,6 +2,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 
 type HrRecord =
+  | "scorecards"
+  | "interview_kits"
+  | "interviewer_pools"
+  | "interviewer_availability"
   | "interviews"
   | "interview_scoring"
   | "scorecard_responses"

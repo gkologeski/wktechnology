@@ -1,3 +1,5 @@
+import { assertHrRecordAccess } from "@/lib/access-control/hr-records.server";
+import { assertAnyPermission } from "@/lib/access-control/enforce.server";
 // CRUD de Interview Kits (perguntas reaproveitáveis por etapa do pipeline).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -20,22 +22,30 @@ const KitSaveSchema = z.object({
   pipeline_id: z.string().uuid().nullable().optional(),
   stage_value: z.string().max(80).nullable().optional(),
   is_default: z.boolean().default(false),
+  is_active: z.boolean().default(true),
   questions: z.array(QuestionSchema).min(1).max(30),
 });
 
 export const listInterviewKits = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((d: unknown) => z.object({ editor: z.boolean().optional() }).optional().parse(d))
+  .handler(async ({ context, data: input }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    if (input?.editor)
+      await assertAnyPermission(supabase, userId, workspaceId, [
+        "techhire.interview_kits.view.own",
+        "techhire.interview_kits.view.team",
+        "techhire.interview_kits.view.workspace",
+      ]);
     const { data, error } = await supabase
       .from("ats_interview_kits")
-      .select("id, name, pipeline_id, stage_value, questions, is_default, updated_at")
+      .select("id, name, pipeline_id, stage_value, questions, is_default, is_active, updated_at")
       .eq("workspace_id", workspaceId)
       .order("is_default", { ascending: false })
       .order("name", { ascending: true });
     if (error) throw new Error(error.message);
-    return data ?? [];
+    return (data ?? []).filter((k) => input?.editor || k.is_active);
   });
 
 export const getInterviewKit = createServerFn({ method: "POST" })
@@ -46,7 +56,7 @@ export const getInterviewKit = createServerFn({ method: "POST" })
     const workspaceId = await resolveActiveWorkspace(userId);
     const { data: row, error } = await supabase
       .from("ats_interview_kits")
-      .select("id, name, pipeline_id, stage_value, questions, is_default, updated_at")
+      .select("id, name, pipeline_id, stage_value, questions, is_default, is_active, updated_at")
       .eq("workspace_id", workspaceId)
       .eq("id", data.id)
       .maybeSingle();
@@ -61,41 +71,26 @@ export const saveInterviewKit = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    if (data.is_default) {
-      // garante 1 default por (pipeline_id, stage_value)
-      let q = supabase
-        .from("ats_interview_kits")
-        .update({ is_default: false } as never)
-        .eq("workspace_id", workspaceId);
-      q = data.pipeline_id ? q.eq("pipeline_id", data.pipeline_id) : q.is("pipeline_id", null);
-      q = data.stage_value ? q.eq("stage_value", data.stage_value) : q.is("stage_value", null);
-      await q;
-    }
-    const row = {
-      owner_id: userId,
-      workspace_id: workspaceId,
-      name: data.name,
-      pipeline_id: data.pipeline_id ?? null,
-      stage_value: data.stage_value ?? null,
-      is_default: data.is_default,
-      questions: data.questions as never,
-    };
-    if (data.id) {
-      const { error } = await supabase
-        .from("ats_interview_kits")
-        .update(row as never)
-        .eq("workspace_id", workspaceId)
-        .eq("id", data.id);
-      if (error) throw new Error(error.message);
-      return { id: data.id };
-    }
-    const { data: ins, error } = await supabase
-      .from("ats_interview_kits")
-      .insert(row as never)
-      .select("id")
-      .single();
+    if (data.id) await assertHrRecordAccess(supabase, "interview_kits", "update", data.id);
+    else
+      await assertAnyPermission(supabase, userId, workspaceId, [
+        "techhire.interview_kits.create.own",
+        "techhire.interview_kits.create.workspace",
+      ]);
+    const { data: id, error } = await supabase.rpc(
+      "ats_save_interview_kit" as never,
+      {
+        _id: data.id ?? null,
+        _payload: {
+          ...data,
+          pipeline_id: data.pipeline_id ?? null,
+          stage_value: data.stage_value ?? null,
+        },
+      } as never,
+    );
     if (error) throw new Error(error.message);
-    return { id: ins.id as string };
+    if (!id) throw new Error("Kit indisponível ou sem permissão.");
+    return { id: id as string };
   });
 
 export const deleteInterviewKit = createServerFn({ method: "POST" })
@@ -104,6 +99,7 @@ export const deleteInterviewKit = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    await assertHrRecordAccess(supabase, "interview_kits", "delete", data.id);
     await deleteWhereGuarded(
       supabase,
       "ats_interview_kits",
@@ -131,6 +127,7 @@ export const resolveKitForStage = createServerFn({ method: "POST" })
     const { data: rows, error } = await supabase
       .from("ats_interview_kits")
       .select("id, name, pipeline_id, stage_value, questions, is_default")
+      .eq("is_active", true)
       .eq("workspace_id", workspaceId);
     if (error) throw new Error(error.message);
     const list = rows ?? [];

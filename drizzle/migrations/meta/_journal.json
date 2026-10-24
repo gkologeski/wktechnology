@@ -1429,6 +1429,20 @@
       "when": 1792804741329,
       "tag": "0203_interview_response_action_scope",
       "breakpoints": true
+    },
+    {
+      "idx": 204,
+      "version": "7",
+      "when": 1792842993108,
+      "tag": "0204_ats_configuration_actions",
+      "breakpoints": true
+    },
+    {
+      "idx": 205,
+      "version": "7",
+      "when": 1792842993109,
+      "tag": "0205_ats_scheduling_privacy",
+      "breakpoints": true
     }
   ]
 }

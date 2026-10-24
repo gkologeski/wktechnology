@@ -1,3 +1,7 @@
+import { readViewAs } from "@/lib/view-as-client";
+import { HrScreenAccess, HrAccessError } from "@/components/hr-access";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { useHrCapabilities } from "@/lib/access-control/use-hr-capabilities";
 // Página de gerenciamento de scorecards de entrevista (ATS).
 // Lote 4 do rollout UX/UI — segue Design Foundation TechHire.
 import { createFileRoute } from "@tanstack/react-router";
@@ -39,6 +43,18 @@ const DEFAULT_CRITERIA: Criterion[] = [
 ];
 
 function ScorecardsPage() {
+  const identity = usePermissions();
+  return (
+    <HrScreenAccess resources={["techhire.scorecards"]}>
+      <ScorecardsPageContent key={[...identity.permissions].sort().join("|")} />
+    </HrScreenAccess>
+  );
+}
+function ScorecardsPageContent() {
+  const permissions = usePermissions();
+  const canCreate =
+    !readViewAs()?.readOnly &&
+    permissions.canAny(["techhire.scorecards.create.own", "techhire.scorecards.create.workspace"]);
   const list = useServerFn(listScorecards);
   const save = useServerFn(saveScorecard);
   const del = useServerFn(deleteScorecard);
@@ -53,11 +69,19 @@ function ScorecardsPage() {
     criteria: DEFAULT_CRITERIA,
   });
 
+  const access = useHrCapabilities(
+    "scorecards",
+    rows.map((r) => r.id as string),
+  );
+  const [loadError, setLoadError] = useState(false);
   const refresh = async () => {
+    setLoadError(false);
     try {
-      const r = await list({ data: {} });
+      const r = await list({ data: { editor: true } });
       setRows(r);
     } catch (e) {
+      setRows([]);
+      setLoadError(true);
       toast.error(e instanceof Error ? e.message : "Falha");
     } finally {
       setLoading(false);
@@ -96,7 +120,8 @@ function ScorecardsPage() {
           id: editing?.id as string | undefined,
           name: form.name.trim(),
           description: form.description || null,
-          is_active: true,
+          is_active: editing?.is_active ?? true,
+          job_id: editing?.job_id ?? null,
           criteria: form.criteria,
         },
       });
@@ -110,8 +135,12 @@ function ScorecardsPage() {
 
   const handleDelete = async (id: string) => {
     if (!(await confirmDialog("Excluir scorecard?"))) return;
-    await del({ data: { id } });
-    refresh();
+    try {
+      await del({ data: { id } });
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao excluir");
+    }
   };
 
   const setCriterion = (i: number, patch: Partial<Criterion>) =>
@@ -130,6 +159,7 @@ function ScorecardsPage() {
   const removeCriterion = (i: number) =>
     setForm((f) => ({ ...f, criteria: f.criteria.filter((_, idx) => idx !== i) }));
 
+  if (loadError) return <HrAccessError retry={() => void refresh()} />;
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -138,7 +168,7 @@ function ScorecardsPage() {
         description="Templates de avaliação aplicados durante entrevistas de candidatos."
         descriptionLive
         primaryAction={
-          <Button onClick={openNew}>
+          <Button disabled={!canCreate} onClick={openNew}>
             <Plus className="h-4 w-4 mr-2" />
             Novo scorecard
           </Button>
@@ -157,7 +187,7 @@ function ScorecardsPage() {
           title="Nenhum scorecard criado"
           description="Crie templates de avaliação reutilizáveis para padronizar entrevistas e reduzir vieses."
           action={
-            <Button onClick={openNew} size="sm">
+            <Button disabled={!canCreate} onClick={openNew} size="sm">
               <Plus className="h-4 w-4 mr-2" />
               Novo scorecard
             </Button>
@@ -188,6 +218,7 @@ function ScorecardsPage() {
                       size="icon"
                       variant="ghost"
                       className="h-7 w-7"
+                      disabled={!access.for(sc.id as string).can_update}
                       onClick={() => openEdit(sc)}
                       aria-label={`Editar scorecard ${sc.name as string}`}
                     >
@@ -197,6 +228,7 @@ function ScorecardsPage() {
                       size="icon"
                       variant="ghost"
                       className="h-7 w-7 text-destructive"
+                      disabled={!access.for(sc.id as string).can_delete}
                       onClick={() => handleDelete(sc.id as string)}
                       aria-label={`Excluir scorecard ${sc.name as string}`}
                     >
@@ -204,6 +236,49 @@ function ScorecardsPage() {
                     </Button>
                   </div>
                 </header>
+                <div className="flex gap-2 mt-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!canCreate}
+                    onClick={() => {
+                      setEditing(null);
+                      setForm({
+                        name: `${sc.name} (cópia)`,
+                        description: sc.description ?? "",
+                        criteria: (sc.criteria as Criterion[]) ?? [],
+                      });
+                      setOpen(true);
+                    }}
+                  >
+                    Duplicar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!access.for(sc.id as string).can_update}
+                    onClick={async () => {
+                      try {
+                        await save({
+                          data: {
+                            id: sc.id,
+                            name: sc.name,
+                            job_id: sc.job_id,
+                            description: sc.description,
+                            is_active: !sc.is_active,
+                            criteria: (sc.criteria as Criterion[]) ?? [],
+                          },
+                        });
+                        await refresh();
+                      } catch (e) {
+                        toast.error(e instanceof Error ? e.message : "Falha");
+                      }
+                    }}
+                  >
+                    {sc.is_active ? "Desativar" : "Ativar"}
+                  </Button>
+                  {!sc.is_active && <span>Inativo</span>}
+                </div>
                 <div className="mt-3 flex items-center gap-2 text-[11px] text-text-tertiary">
                   <span>
                     {criteria.length} critério{criteria.length === 1 ? "" : "s"}
@@ -227,7 +302,10 @@ function ScorecardsPage() {
         </div>
       )}
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={open && (editing ? access.for(editing.id as string).can_update : canCreate)}
+        onOpenChange={setOpen}
+      >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{editing ? "Editar" : "Novo"} scorecard</DialogTitle>

@@ -599,3 +599,59 @@ outputs/permission-alignment-completion-2026-10-23/aceite-rh-ambiente-recuperado
 Este lote remove o bloqueio de infraestrutura e aprova esses caminhos locais.
 Não conclui o aceite de todos os cargos/ações, a sessão real de Priscila em
 produção nem as demais frentes de servidor, interface e CI do plano.
+
+
+### Modelos, kits, pools e disponibilidade (0204–0205)
+
+Estimativa comunicada: 2–4 horas. Fronteira inclui banco, servidor, ações de UI,
+uso de metadados de agenda e preservação do histórico. Em validação final;
+aplicação/publicação serão registradas após os respectivos comprovantes.
+
+Administração de scorecards e kits reutiliza suas chaves CRUD existentes. Pools
+de entrevistadores e janelas semanais recebem vinte chaves específicas (não se
+confundem com pools de sourcing nem com a permissão ampla de scheduling). Grants
+novos só para Head RH da WK, ON CONFLICT DO NOTHING preservando denies. Nenhum
+preset ou override de outro cargo/workspace é modificado. Administração por own
+usa criador; janela própria usa entrevistador real, nunca o criador intermediário.
+Team exige grupo real no tenant. Tenant, autoria e vínculos de membros são imutáveis.
+
+O catálogo de uso é exceção só de leitura: view+schedule de entrevistas permite
+usar kits, pools e disponibilidade; view+score permite ler critérios de avaliação.
+Isso não concede administração nem leitura de candidatos/entrevistas. Páginas de
+administração exigem view próprio do recurso e botões consultam a ação por linha.
+Scheduling mantém o acesso de tela legado, mas não transforma scheduling.view em
+CRUD dos novos recursos. Falha/alteração de permissão limpa ou remonta a tela;
+URL direta é protegida antes de montar carregadores e formulários.
+
+Critérios de modelo com respostas e perguntas de kit com entrevistas não podem
+ser reescritos/excluídos: há duplicação para nova versão e desativação para novos
+usos, preservando o histórico. Novas respostas/entrevistas bloqueiam o modelo em
+leitura para serializar contra alteração concorrente. Kit padrão é salvo em RPC
+invoker transacional; mudar o padrão exige view/update.workspace, usa lock do
+contexto e valida unicidade mesmo por SQL direto. Falha não desmarca o anterior.
+
+Consultas de agenda retornam apenas entrevistador e intervalos ocupados limitados
+ao período, incluindo painéis e entrevistas de candidatos invisíveis ao agendador.
+Sem nomes, notas, IDs de entrevistas ou candidatos. Alvos precisam ser membros
+ativos do tenant; período máximo31dias, máximo8pessoas. Janelas recorrentes usam
+fuso IANA real e intervalo UTC; erro de leitura nunca vira disponibilidade livre.
+Rotação usa lock no pool e atestação protegida por transação, sem GUC forjável.
+Reservas por qualquer porta, inclusive confirmação por token público, serializam
+no painel real e rejeitam sobreposição com mensagem sem dados de outro candidato.
+Não consulta calendários externos: a disponibilidade deste contrato é das
+entrevistas e janelas mantidas no TechHire.
+
+Testes locais: 17 novos testes de servidor/fuso; 8 grupos SQL de configuração,
+regressões anteriores e 219 comparações de capacidades preservadas; 17 grupos
+com GoTrue/JWT/PostgREST reais, incluindo concorrência de rotação e de reserva,
+modelo usado, default atômico e agenda sem PII. Chrome: Head RH não admin cria
+modelo/kit/pool e desativa modelo; agendador abre agenda sem criar pool nem
+administrar scorecards/kits por URL. Fixtures removidas. A revisão final completa
+os gates com o mesmo fingerprint antes de aplicar/publicar.
+
+0204 e 0205 aplicadas em transação única, ids 208 e 209, when 1792842993108 e
+1792842993109. Hashes 325d025ab28973f6c0929f2f32dab72f8567902a4bc30ec12214d20c1e08bbb5
+e 3b2ad5a0257e02e9f4b706f79761cd1e1fa2537a3c74cc074e07ba426b5fc611.
+Verify: 1689 testes, tipos e lint; build completo; mesmo source_hash
+944dcb1db55c7c0e843c23493059d2d43f983ed1ec78afb60566ccad6e24ae3c,
+source_changed=false. Publicação da interface ainda será conferida.

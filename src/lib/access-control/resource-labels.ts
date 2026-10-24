@@ -125,6 +125,8 @@ export const RESOURCE_LABELS_PT: Record<string, string> = {
   reports: "Relatórios",
   reviews: "Avaliações",
   roles: "Cargos e permissões",
+  interviewer_pools: "Pools de entrevistadores",
+  interviewer_availability: "Disponibilidade de entrevistadores",
   scheduling: "Agenda",
   scorecards: "Scorecards",
   services: "Serviços",

@@ -128,7 +128,12 @@ export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
   "/pipelines": ["techhire.pipelines"],
   "/scorecards": ["techhire.scorecards"],
   "/interview-kits": ["techhire.interview_kits"],
-  "/scheduling": ["techhire.scheduling"],
+  "/scheduling": [
+    "techhire.scheduling",
+    "techhire.interviews",
+    "techhire.interviewer_pools",
+    "techhire.interviewer_availability",
+  ],
   "/sourcing/inbox": ["techhire.sourcing.inbox"],
   "/sourcing/pools": ["techhire.sourcing.pools"],
   "/sourcing/sequences": ["techhire.sourcing.sequences"],

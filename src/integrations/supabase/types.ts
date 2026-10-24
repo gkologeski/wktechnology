@@ -1864,6 +1864,7 @@ export type Database = {
       }
       ats_interview_kits: {
         Row: {
+          is_active: boolean
           created_at: string
           id: string
           is_default: boolean
@@ -1876,6 +1877,7 @@ export type Database = {
           workspace_id: string | null
         }
         Insert: {
+          is_active?: boolean
           created_at?: string
           id?: string
           is_default?: boolean
@@ -1888,6 +1890,7 @@ export type Database = {
           workspace_id?: string | null
         }
         Update: {
+          is_active?: boolean
           created_at?: string
           id?: string
           is_default?: boolean

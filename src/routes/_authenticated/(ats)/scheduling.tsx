@@ -1,3 +1,7 @@
+import { readViewAs } from "@/lib/view-as-client";
+import { HrScreenAccess, HrAccessError } from "@/components/hr-access";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { useHrCapabilities } from "@/lib/access-control/use-hr-capabilities";
 // Onda 6 — Scheduling avançado.
 // Configuração de pools de entrevistadores (round-robin / load-balanced),
 // disponibilidade semanal e ferramenta para encontrar slots em comum.
@@ -38,6 +42,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import {
+  listAvailabilityCreateTargets,
   addPoolMember,
   assignFromPool,
   deletePool,
@@ -78,17 +83,66 @@ function parseTime(v: string): number | null {
 }
 
 function SchedulingPage() {
+  const identity = usePermissions();
+  return (
+    <HrScreenAccess
+      resources={[
+        "techhire.scheduling",
+        "techhire.interviewer_pools",
+        "techhire.interviewer_availability",
+        "techhire.interviews",
+      ]}
+    >
+      <SchedulingPageContent key={[...identity.permissions].sort().join("|")} />
+    </HrScreenAccess>
+  );
+}
+function SchedulingPageContent() {
+  const permissions = usePermissions();
+  const scheduler =
+    permissions.can("techhire.interviews.view.workspace") &&
+    permissions.can("techhire.interviews.schedule.workspace");
+  const canCreatePool =
+    !readViewAs()?.readOnly &&
+    permissions.canAny([
+      "techhire.interviewer_pools.create.own",
+      "techhire.interviewer_pools.create.workspace",
+    ]);
   const qc = useQueryClient();
   const members = useWorkspaceMembers();
   const fetchPools = useServerFn(listPools);
   const fetchAvail = useServerFn(listAvailability);
 
-  const poolsQ = useQuery({ queryKey: ["ats-pools"], queryFn: () => fetchPools() });
+  const poolsQ = useQuery({
+    queryKey: ["ats-pools", permissions.workspaceId, [...permissions.permissions].sort().join("|")],
+    queryFn: () => fetchPools(),
+  });
   const availQ = useQuery({
-    queryKey: ["ats-availability"],
+    queryKey: [
+      "ats-availability",
+      permissions.workspaceId,
+      [...permissions.permissions].sort().join("|"),
+    ],
     queryFn: () => fetchAvail({ data: {} }),
   });
 
+  const poolAccess = useHrCapabilities(
+    "interviewer_pools",
+    (poolsQ.data ?? []).map((p) => p.id),
+  );
+  const availabilityAccess = useHrCapabilities(
+    "interviewer_availability",
+    (availQ.data ?? []).map((w) => w.id),
+  );
+  const targetsFn = useServerFn(listAvailabilityCreateTargets);
+  const targets = useQuery({
+    queryKey: [
+      "ats-availability-targets",
+      permissions.workspaceId,
+      [...permissions.permissions].sort().join("|"),
+    ],
+    queryFn: () => targetsFn(),
+  });
   const invalidatePools = () => qc.invalidateQueries({ queryKey: ["ats-pools"] });
   const invalidateAvail = () => qc.invalidateQueries({ queryKey: ["ats-availability"] });
 
@@ -135,6 +189,16 @@ function SchedulingPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  if (poolsQ.isError || availQ.isError || targets.isError)
+    return (
+      <HrAccessError
+        retry={() => {
+          void poolsQ.refetch();
+          void availQ.refetch();
+          void targets.refetch();
+        }}
+      />
+    );
   return (
     <div className="flex flex-col gap-6 pb-10">
       <AtsPageHeader
@@ -143,7 +207,7 @@ function SchedulingPage() {
         description="Pools de entrevistadores com rotação automática, disponibilidade semanal e cálculo de horários em comum para painéis."
       />
 
-      <SlaMonitorSection />
+      {permissions.can("techhire.interviews.view.workspace") && <SlaMonitorSection />}
 
       {/* ----- Pools ----- */}
       <section className="space-y-3">
@@ -178,7 +242,10 @@ function SchedulingPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button onClick={() => createPool.mutate()} disabled={createPool.isPending}>
+              <Button
+                onClick={() => createPool.mutate()}
+                disabled={!canCreatePool || createPool.isPending}
+              >
                 <Plus className="mr-1.5 h-4 w-4" />
                 Criar pool
               </Button>
@@ -199,6 +266,9 @@ function SchedulingPage() {
                   <PoolCard
                     key={p.id}
                     pool={p}
+                    canUpdate={poolAccess.for(p.id).can_update}
+                    canDelete={poolAccess.for(p.id).can_delete}
+                    canAssign={scheduler && !readViewAs()?.readOnly}
                     members={members}
                     onAddMember={(interviewer_id) =>
                       addMemberFn({
@@ -210,12 +280,14 @@ function SchedulingPage() {
                     }
                     onDelete={() => removePool.mutate(p.id)}
                     onAssign={() =>
-                      assignFn({ data: { pool_id: p.id } }).then((r) => {
-                        toast.success(
-                          `Próximo entrevistador: ${members.nameFor(r.interviewer_id)}`,
-                        );
-                        invalidatePools();
-                      })
+                      assignFn({ data: { pool_id: p.id } })
+                        .then((r) => {
+                          toast.success(
+                            `Próximo entrevistador: ${members.nameFor(r.interviewer_id)}`,
+                          );
+                          invalidatePools();
+                        })
+                        .catch((e) => toast.error(e instanceof Error ? e.message : "Falha"))
                     }
                   />
                 ))}
@@ -233,6 +305,8 @@ function SchedulingPage() {
         />
         <AvailabilityEditor
           rows={availQ.data ?? []}
+          createTargets={targets.data ?? []}
+          canDelete={(id) => availabilityAccess.for(id).can_delete}
           members={members}
           onCreate={(payload) =>
             upsertAvailFn({ data: payload }).then(() => {
@@ -255,7 +329,12 @@ function SchedulingPage() {
           title="Encontrar slots em comum"
           description="Calcule horários onde todos os entrevistadores selecionados estão disponíveis."
         />
-        <CommonSlotsFinder members={members} onFind={(payload) => findSlotsFn({ data: payload })} />
+        {scheduler && (
+          <CommonSlotsFinder
+            members={members}
+            onFind={(payload) => findSlotsFn({ data: payload })}
+          />
+        )}
       </section>
     </div>
   );
@@ -265,6 +344,9 @@ function SchedulingPage() {
 
 function PoolCard({
   pool,
+  canUpdate,
+  canDelete,
+  canAssign,
   members,
   onAddMember,
   onRemoveMember,
@@ -272,6 +354,9 @@ function PoolCard({
   onAssign,
 }: {
   pool: Pool;
+  canUpdate: boolean;
+  canDelete: boolean;
+  canAssign: boolean;
   members: ReturnType<typeof useWorkspaceMembers>;
   onAddMember: (interviewerId: string) => Promise<unknown>;
   onRemoveMember: (id: string) => Promise<unknown>;
@@ -300,11 +385,11 @@ function PoolCard({
           ) : null}
         </div>
         <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" onClick={onAssign}>
+          <Button size="sm" variant="outline" disabled={!canAssign} onClick={onAssign}>
             <CalendarClock className="mr-1.5 h-3.5 w-3.5" />
             Atribuir próximo
           </Button>
-          <Button size="sm" variant="ghost" onClick={onDelete}>
+          <Button size="sm" variant="ghost" disabled={!canDelete} onClick={onDelete}>
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
@@ -322,7 +407,12 @@ function PoolCard({
               {members.nameFor(m.interviewer_id)}
               <button
                 type="button"
-                onClick={() => onRemoveMember(m.id)}
+                disabled={!canUpdate}
+                onClick={() =>
+                  void onRemoveMember(m.id).catch((e) =>
+                    toast.error(e instanceof Error ? e.message : "Falha"),
+                  )
+                }
                 className="text-text-tertiary hover:text-destructive"
                 aria-label="Remover"
               >
@@ -353,10 +443,12 @@ function PoolCard({
         <Button
           size="sm"
           variant="outline"
-          disabled={!picked}
+          disabled={!canUpdate || !picked}
           onClick={() => {
             if (!picked) return;
-            void onAddMember(picked).then(() => setPicked(""));
+            void onAddMember(picked)
+              .then(() => setPicked(""))
+              .catch((e) => toast.error(e instanceof Error ? e.message : "Falha"));
           }}
         >
           <Plus className="h-4 w-4" />
@@ -370,10 +462,14 @@ function PoolCard({
 
 function AvailabilityEditor({
   rows,
+  createTargets,
+  canDelete,
   members,
   onCreate,
   onDelete,
 }: {
+  createTargets: string[];
+  canDelete: (id: string) => boolean;
   rows: {
     id: string;
     interviewer_id: string;
@@ -420,11 +516,13 @@ function AvailabilityEditor({
                   <SelectValue placeholder="Escolher…" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(members.data ?? []).map((m) => (
-                    <SelectItem key={m.user_id} value={m.user_id}>
-                      {m.full_name ?? m.user_id.slice(0, 8)}
-                    </SelectItem>
-                  ))}
+                  {(members.data ?? [])
+                    .filter((m) => createTargets.includes(m.user_id))
+                    .map((m) => (
+                      <SelectItem key={m.user_id} value={m.user_id}>
+                        {m.full_name ?? m.user_id.slice(0, 8)}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -452,6 +550,7 @@ function AvailabilityEditor({
               <Input value={end} onChange={(e) => setEnd(e.target.value)} placeholder="18:00" />
             </div>
             <Button
+              disabled={!createTargets.includes(interviewer)}
               onClick={() => {
                 const s = parseTime(start);
                 const e = parseTime(end);
@@ -464,7 +563,7 @@ function AvailabilityEditor({
                   start_minute: s,
                   end_minute: e,
                   timezone: tz,
-                });
+                }).catch((e) => toast.error(e instanceof Error ? e.message : "Falha"));
               }}
             >
               <Plus className="mr-1.5 h-4 w-4" /> Adicionar
@@ -496,7 +595,12 @@ function AvailabilityEditor({
                       <button
                         type="button"
                         aria-label="Remover"
-                        onClick={() => void onDelete(w.id)}
+                        disabled={!canDelete(w.id)}
+                        onClick={() =>
+                          void onDelete(w.id).catch((e) =>
+                            toast.error(e instanceof Error ? e.message : "Falha"),
+                          )
+                        }
                         className="text-text-tertiary hover:text-destructive"
                       >
                         <X className="h-3 w-3" />

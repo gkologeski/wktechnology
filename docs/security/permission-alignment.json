@@ -881,6 +881,86 @@
       "migration": "0203",
       "state": "applied_tested_sql_pending_ui_publication",
       "remaining": "template/kit/pool/availability CRUD, offers/hiring state approvals, global field rules and generic integration/API audit remain later contracts"
+    },
+    {
+      "operation": "techhire.scorecards.CRUD",
+      "kind": "configuration_administration",
+      "actor": "active authenticated workspace member; deny wins; read-only blocks mutations",
+      "permission_keys": [
+        "techhire.scorecards.{action}.{scope}"
+      ],
+      "scope": "actual creator / same-workspace group / workspace; used criteria immutable",
+      "server": "explicit workspace and actual-record action; zero affected rows never success",
+      "database": "0204 replaces all permissive bypasses; immutable identity and workspace; catalog use does not grant administration",
+      "migration": "0204",
+      "status": "aplicado_testado_sql_auth_browser_local_publicacao_pendente"
+    },
+    {
+      "operation": "techhire.interview_kits.CRUD",
+      "kind": "configuration_administration",
+      "actor": "active authenticated workspace member; deny wins; read-only blocks mutations",
+      "permission_keys": [
+        "techhire.interview_kits.{action}.{scope}"
+      ],
+      "scope": "actual creator / same-workspace group / workspace; defaults require workspace update",
+      "server": "explicit workspace and actual-record action; zero affected rows never success",
+      "database": "0204 replaces all permissive bypasses; immutable identity and workspace; catalog use does not grant administration",
+      "migration": "0204",
+      "status": "aplicado_testado_sql_auth_browser_local_publicacao_pendente"
+    },
+    {
+      "operation": "techhire.interviewer_pools.CRUD",
+      "kind": "configuration_administration",
+      "actor": "active authenticated workspace member; deny wins; read-only blocks mutations",
+      "permission_keys": [
+        "techhire.interviewer_pools.{action}.{scope}"
+      ],
+      "scope": "actual creator / same-workspace group / workspace; members inherit parent update",
+      "server": "explicit workspace and actual-record action; zero affected rows never success",
+      "database": "0204 replaces all permissive bypasses; immutable identity and workspace; catalog use does not grant administration",
+      "migration": "0204",
+      "status": "aplicado_testado_sql_auth_browser_local_publicacao_pendente"
+    },
+    {
+      "operation": "techhire.interviewer_availability.CRUD",
+      "kind": "configuration_administration",
+      "actor": "active authenticated workspace member; deny wins; read-only blocks mutations",
+      "permission_keys": [
+        "techhire.interviewer_availability.{action}.{scope}"
+      ],
+      "scope": "actual interviewer / same-workspace group / workspace; active tenant member",
+      "server": "explicit workspace and actual-record action; zero affected rows never success",
+      "database": "0204 replaces all permissive bypasses; immutable identity and workspace; catalog use does not grant administration",
+      "migration": "0204",
+      "status": "aplicado_testado_sql_auth_browser_local_publicacao_pendente"
+    },
+    {
+      "operation": "ats_busy_intervals",
+      "kind": "explicit_business_operation",
+      "contract": "view+schedule keys; 1–8 active interviewers; max31days; only clipped busy intervals without candidature PII",
+      "migration": "0204/0205",
+      "status": "aplicado_testado_sql_auth_browser_local_publicacao_pendente"
+    },
+    {
+      "operation": "ats_assign_interviewer_pool",
+      "kind": "explicit_business_operation",
+      "contract": "view+schedule keys; active selected tenant; locked rotation; protected transaction attestation; readonly denied",
+      "migration": "0204/0205",
+      "status": "aplicado_testado_sql_auth_browser_local_publicacao_pendente"
+    },
+    {
+      "operation": "ats_interview_conflict_guard",
+      "kind": "explicit_business_operation",
+      "contract": "all booking entrances incl public token confirmation; actual panel locks; overlap rejected without PII",
+      "migration": "0204/0205",
+      "status": "aplicado_testado_sql_auth_browser_local_publicacao_pendente"
+    },
+    {
+      "operation": "ats_save_interview_kit",
+      "kind": "explicit_business_operation",
+      "contract": "invoker atomic default change and save; workspace view+update to change default; failed save rolls back demotion",
+      "migration": "0204/0205",
+      "status": "aplicado_testado_sql_auth_browser_local_publicacao_pendente"
     }
   ],
   "rules": [

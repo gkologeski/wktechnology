@@ -1,3 +1,10 @@
+import { getActiveWorkspaceId, assertAnyPermission } from "@/lib/access-control/enforce.server";
+import { assertHrRecordAccess } from "@/lib/access-control/hr-records.server";
+import {
+  commonAvailabilitySlots,
+  type WeeklyWindow,
+  type BusyInterval,
+} from "./availability-slots";
 // Onda 6 — Scheduling avançado.
 // Server functions para pools de entrevistadores, disponibilidade semanal e
 // cálculo de slots em comum (interseção multi-entrevistador).
@@ -32,18 +39,22 @@ export type AvailabilityWindow = {
 export const listPools = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<Pool[]> => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
     const { data: pools, error } = await supabase
       .from("ats_interviewer_pools")
       .select("id, name, description, rotation_strategy, rotation_cursor, load_window_days")
+      .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     const ids = (pools ?? []).map((p) => p.id as string);
     if (ids.length === 0) return [];
-    const { data: members } = await supabase
+    const { data: members, error: membersError } = await supabase
       .from("ats_interviewer_pool_members")
       .select("id, pool_id, interviewer_id, weight")
-      .in("pool_id", ids);
+      .in("pool_id", ids)
+      .eq("workspace_id", workspaceId);
+    if (membersError) throw new Error(membersError.message);
     return (pools ?? []).map((p) => ({
       id: p.id as string,
       name: p.name as string,
@@ -76,8 +87,15 @@ export const upsertPool = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
+    if (data.id) await assertHrRecordAccess(supabase, "interviewer_pools", "update", data.id);
+    else
+      await assertAnyPermission(supabase, userId, workspaceId, [
+        "techhire.interviewer_pools.create.own",
+        "techhire.interviewer_pools.create.workspace",
+      ]);
     if (data.id) {
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from("ats_interviewer_pools")
         .update({
           name: data.name,
@@ -85,7 +103,11 @@ export const upsertPool = createServerFn({ method: "POST" })
           rotation_strategy: data.rotation_strategy,
           load_window_days: data.load_window_days,
         } as never)
-        .eq("id", data.id);
+        .eq("id", data.id)
+        .eq("workspace_id", workspaceId)
+        .select("id")
+        .single();
+      if (!updated && !error) throw new Error("Pool indisponível ou sem permissão.");
       if (error) throw new Error(error.message);
       return { id: data.id };
     }
@@ -93,6 +115,7 @@ export const upsertPool = createServerFn({ method: "POST" })
       .from("ats_interviewer_pools")
       .insert({
         owner_id: userId,
+        workspace_id: workspaceId,
         name: data.name,
         description: data.description ?? null,
         rotation_strategy: data.rotation_strategy,
@@ -108,6 +131,7 @@ export const deletePool = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
+    await assertHrRecordAccess(context.supabase, "interviewer_pools", "delete", data.id);
     await deleteByIdGuarded(
       context.supabase,
       "ats_interviewer_pools",
@@ -130,16 +154,36 @@ export const addPoolMember = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const { error } = await supabase.from("ats_interviewer_pool_members").upsert(
-      {
-        owner_id: userId,
-        pool_id: data.pool_id,
-        interviewer_id: data.interviewer_id,
-        weight: data.weight,
-      } as never,
-      { onConflict: "pool_id,interviewer_id" },
-    );
-    if (error) throw new Error(error.message);
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
+    await assertHrRecordAccess(supabase, "interviewer_pools", "update", data.pool_id);
+    const { data: existing, error: readError } = await supabase
+      .from("ats_interviewer_pool_members")
+      .select("id")
+      .eq("pool_id", data.pool_id)
+      .eq("interviewer_id", data.interviewer_id)
+      .eq("workspace_id", workspaceId)
+      .maybeSingle();
+    if (readError) throw new Error(readError.message);
+    const result = existing
+      ? await supabase
+          .from("ats_interviewer_pool_members")
+          .update({ weight: data.weight } as never)
+          .eq("id", existing.id)
+          .eq("workspace_id", workspaceId)
+          .select("id")
+          .single()
+      : await supabase
+          .from("ats_interviewer_pool_members")
+          .insert({
+            owner_id: userId,
+            workspace_id: workspaceId,
+            pool_id: data.pool_id,
+            interviewer_id: data.interviewer_id,
+            weight: data.weight,
+          } as never)
+          .select("id")
+          .single();
+    if (result.error) throw new Error(result.error.message);
     return { ok: true };
   });
 
@@ -147,6 +191,13 @@ export const removePoolMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
+    const { data: member, error } = await context.supabase
+      .from("ats_interviewer_pool_members")
+      .select("pool_id")
+      .eq("id", data.id)
+      .single();
+    if (error || !member) throw new Error("Membro indisponível.");
+    await assertHrRecordAccess(context.supabase, "interviewer_pools", "update", member.pool_id);
     await deleteByIdGuarded(
       context.supabase,
       "ats_interviewer_pool_members",
@@ -164,10 +215,12 @@ export const listAvailability = createServerFn({ method: "POST" })
     z.object({ interviewer_id: z.string().uuid().optional() }).parse(d ?? {}),
   )
   .handler(async ({ context, data }): Promise<AvailabilityWindow[]> => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
     let q = supabase
       .from("ats_interviewer_availability")
       .select("id, interviewer_id, weekday, start_minute, end_minute, timezone")
+      .eq("workspace_id", workspaceId)
       .order("weekday", { ascending: true })
       .order("start_minute", { ascending: true });
     if (data.interviewer_id) q = q.eq("interviewer_id", data.interviewer_id);
@@ -193,6 +246,22 @@ export const upsertAvailability = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
+    if (data.id)
+      await assertHrRecordAccess(supabase, "interviewer_availability", "update", data.id);
+    else {
+      const access = await supabase.rpc(
+        "ats_config_action_access" as never,
+        {
+          _workspace: workspaceId,
+          _resource: "interviewer_availability",
+          _action: "create",
+          _subject: data.interviewer_id,
+        } as never,
+      );
+      if (access.error || !access.data)
+        throw new Error("Sem permissão para configurar esta agenda.");
+    }
     const payload = {
       interviewer_id: data.interviewer_id,
       weekday: data.weekday,
@@ -201,16 +270,20 @@ export const upsertAvailability = createServerFn({ method: "POST" })
       timezone: data.timezone,
     };
     if (data.id) {
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from("ats_interviewer_availability")
         .update(payload as never)
-        .eq("id", data.id);
+        .eq("id", data.id)
+        .eq("workspace_id", workspaceId)
+        .select("id")
+        .single();
+      if (!updated && !error) throw new Error("Janela indisponível ou sem permissão.");
       if (error) throw new Error(error.message);
       return { id: data.id };
     }
     const { data: ins, error } = await supabase
       .from("ats_interviewer_availability")
-      .insert({ owner_id: userId, ...payload } as never)
+      .insert({ owner_id: userId, workspace_id: workspaceId, ...payload } as never)
       .select("id")
       .single();
     if (error) throw new Error(error.message);
@@ -221,6 +294,7 @@ export const deleteAvailability = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
+    await assertHrRecordAccess(context.supabase, "interviewer_availability", "delete", data.id);
     await deleteByIdGuarded(
       context.supabase,
       "ats_interviewer_availability",
@@ -236,67 +310,20 @@ export const assignFromPool = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ pool_id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }): Promise<{ interviewer_id: string }> => {
-    const { supabase } = context;
-    const { data: pool, error: pErr } = await supabase
-      .from("ats_interviewer_pools")
-      .select("id, rotation_strategy, rotation_cursor, load_window_days")
-      .eq("id", data.pool_id)
-      .single();
-    if (pErr || !pool) throw new Error(pErr?.message || "Pool não encontrada");
-
-    const { data: members } = await supabase
-      .from("ats_interviewer_pool_members")
-      .select("interviewer_id, weight")
-      .eq("pool_id", data.pool_id);
-    const eligible = (members ?? []).filter((m) => (m.weight as number) > 0);
-    if (eligible.length === 0) throw new Error("Pool sem membros ativos");
-
-    if (pool.rotation_strategy === "round_robin") {
-      const cursor = (pool.rotation_cursor as number) % eligible.length;
-      const chosen = eligible[cursor].interviewer_id as string;
-      await supabase
-        .from("ats_interviewer_pools")
-        .update({ rotation_cursor: (cursor + 1) % eligible.length } as never)
-        .eq("id", data.pool_id);
-      return { interviewer_id: chosen };
-    }
-
-    // load_balanced: contar interviews agendadas na janela
-    const since = new Date(
-      Date.now() - (pool.load_window_days as number) * 86_400_000,
-    ).toISOString();
-    const ids = eligible.map((m) => m.interviewer_id as string);
-    const { data: counts } = await supabase
-      .from("ats_interviews")
-      .select("interviewer_id")
-      .in("interviewer_id", ids)
-      .gte("scheduled_at", since);
-    const loadMap = new Map<string, number>(ids.map((id) => [id, 0]));
-    for (const row of counts ?? []) {
-      const k = row.interviewer_id as string;
-      loadMap.set(k, (loadMap.get(k) ?? 0) + 1);
-    }
-    // score = load / weight (menor é melhor)
-    let best = eligible[0].interviewer_id as string;
-    let bestScore = Infinity;
-    for (const m of eligible) {
-      const id = m.interviewer_id as string;
-      const w = Math.max(1, m.weight as number);
-      const score = (loadMap.get(id) ?? 0) / w;
-      if (score < bestScore) {
-        bestScore = score;
-        best = id;
-      }
-    }
-    return { interviewer_id: best };
+    const { data: chosen, error } = await context.supabase.rpc(
+      "ats_assign_interviewer_pool" as never,
+      { _pool: data.pool_id } as never,
+    );
+    if (error) throw new Error(error.message);
+    if (!chosen) throw new Error("Pool sem entrevistador disponível.");
+    return { interviewer_id: chosen as string };
   });
 
 // ----- slot intersection (panel availability) -------------------------------
 
 /**
  * Calcula slots de N minutos em comum entre vários entrevistadores, dentro de
- * uma janela de datas. Ignora timezones (assume armazenamento UTC-naive nas
- * janelas de availability) — uma evolução futura usa luxon/temporal por tz.
+ * uma janela de datas. Respeita fusos IANA e usa apenas intervalos ocupados sem PII.
  */
 export const findCommonSlots = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -312,73 +339,30 @@ export const findCommonSlots = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ context, data }) => {
-    const { supabase } = context;
-    const { data: rows } = await supabase
+    const { supabase, userId } = context;
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
+    const { data: busy, error: busyError } = await supabase.rpc(
+      "ats_busy_intervals" as never,
+      { _interviewers: data.interviewer_ids, _from: data.from, _to: data.to } as never,
+    );
+    if (busyError) throw new Error(busyError.message);
+    const { data: rows, error } = await supabase
       .from("ats_interviewer_availability")
-      .select("interviewer_id, weekday, start_minute, end_minute")
+      .select("interviewer_id,weekday,start_minute,end_minute,timezone")
+      .eq("workspace_id", workspaceId)
       .in("interviewer_id", data.interviewer_ids);
-    const { data: busyRows } = await supabase
-      .from("ats_interviews")
-      .select("interviewer_id, scheduled_at, duration_min, panel_interviewer_ids")
-      .in("status", ["scheduled", "pending_candidate"])
-      .gte("scheduled_at", data.from)
-      .lte("scheduled_at", data.to);
-
-    type Win = { weekday: number; start: number; end: number };
-    const byInterviewer = new Map<string, Win[]>();
-    for (const r of rows ?? []) {
-      const id = r.interviewer_id as string;
-      const arr = byInterviewer.get(id) ?? [];
-      arr.push({
-        weekday: r.weekday as number,
-        start: r.start_minute as number,
-        end: r.end_minute as number,
-      });
-      byInterviewer.set(id, arr);
-    }
-
-    type Busy = { interviewer_id: string; start: number; end: number };
-    const busy: Busy[] = [];
-    for (const b of busyRows ?? []) {
-      const start = new Date(b.scheduled_at as string).getTime();
-      const end = start + (b.duration_min as number) * 60_000;
-      const panel = (b.panel_interviewer_ids as string[] | null) ?? [];
-      const ids = new Set<string>([b.interviewer_id as string, ...panel]);
-      for (const id of ids) {
-        if (data.interviewer_ids.includes(id)) busy.push({ interviewer_id: id, start, end });
-      }
-    }
-
-    const fromMs = new Date(data.from).getTime();
-    const toMs = new Date(data.to).getTime();
-    const stepMs = data.step_min * 60_000;
-    const durMs = data.duration_min * 60_000;
-
-    const isAvailable = (id: string, slotStart: number) => {
-      const wins = byInterviewer.get(id);
-      if (!wins || wins.length === 0) return false;
-      const d = new Date(slotStart);
-      const wd = d.getUTCDay();
-      const startMin = d.getUTCHours() * 60 + d.getUTCMinutes();
-      const endMin = startMin + data.duration_min;
-      const inWindow = wins.some((w) => w.weekday === wd && startMin >= w.start && endMin <= w.end);
-      if (!inWindow) return false;
-      const slotEnd = slotStart + durMs;
-      const collide = busy.some(
-        (b) => b.interviewer_id === id && slotStart < b.end && slotEnd > b.start,
-      );
-      return !collide;
+    if (error) throw new Error(error.message);
+    return {
+      slots: commonAvailabilitySlots(
+        data.interviewer_ids,
+        rows as WeeklyWindow[],
+        (busy ?? []) as BusyInterval[],
+        data.from,
+        data.to,
+        data.duration_min,
+        data.step_min,
+      ),
     };
-
-    const slots: string[] = [];
-    // alinhar ao próximo múltiplo de step_min
-    const alignedStart = Math.ceil(fromMs / stepMs) * stepMs;
-    for (let t = alignedStart; t + durMs <= toMs; t += stepMs) {
-      const allOk = data.interviewer_ids.every((id) => isAvailable(id, t));
-      if (allOk) slots.push(new Date(t).toISOString());
-      if (slots.length >= 50) break;
-    }
-    return { slots };
   });
 
 // ----- SLA monitor ---------------------------------------------------------
@@ -406,7 +390,11 @@ export const listOpenSchedulingSlaBreaches = createServerFn({ method: "POST" })
       .parse(d ?? {}),
   )
   .handler(async ({ context, data }): Promise<SlaBreach[]> => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techhire.interviews.view.workspace",
+    ]);
     const { data: apps, error } = await supabase
       .from("ats_applications")
       .select("id, candidate_id, job_id, stage_value, moved_at, status")
@@ -425,11 +413,12 @@ export const listOpenSchedulingSlaBreaches = createServerFn({ method: "POST" })
     if (list.length === 0) return [];
 
     const appIds = list.map((a) => a.id);
-    const { data: scheduled } = await supabase
+    const { data: scheduled, error: scheduledError } = await supabase
       .from("ats_interviews")
       .select("application_id")
       .in("application_id", appIds)
-      .in("status", ["scheduled", "completed"]);
+      .in("status", ["scheduled", "done", "pending_candidate"]);
+    if (scheduledError) throw new Error(scheduledError.message);
     const hasInterview = new Set((scheduled ?? []).map((r) => r.application_id as string));
 
     const now = Date.now();
@@ -466,4 +455,12 @@ export const listOpenSchedulingSlaBreaches = createServerFn({ method: "POST" })
         job_title: jMap.get(a.job_id) ?? null,
       }))
       .sort((x, y) => y.hours_stuck - x.hours_stuck);
+  });
+
+export const listAvailabilityCreateTargets = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<string[]> => {
+    const { data, error } = await context.supabase.rpc("ats_availability_create_targets" as never);
+    if (error) throw new Error(error.message);
+    return (data ?? []) as string[];
   });

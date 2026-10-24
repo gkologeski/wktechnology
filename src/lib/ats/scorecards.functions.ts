@@ -28,13 +28,19 @@ export const listScorecards = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z
-      .object({ job_id: z.string().uuid().optional() })
+      .object({ job_id: z.string().uuid().optional(), editor: z.boolean().optional() })
       .optional()
       .parse(d ?? {}),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    if (data?.editor)
+      await assertAnyPermission(supabase, userId, workspaceId, [
+        "techhire.scorecards.view.own",
+        "techhire.scorecards.view.team",
+        "techhire.scorecards.view.workspace",
+      ]);
     let q = supabase
       .from("ats_scorecards")
       .select("id, name, description, job_id, is_active, criteria, created_at")
@@ -43,7 +49,7 @@ export const listScorecards = createServerFn({ method: "POST" })
     if (data?.job_id) q = q.or(`job_id.eq.${data.job_id},job_id.is.null`);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    return rows ?? [];
+    return (rows ?? []).filter((row) => data?.editor || row.is_active);
   });
 
 export const saveScorecard = createServerFn({ method: "POST" })
@@ -52,9 +58,13 @@ export const saveScorecard = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    if (data.id) await assertHrRecordAccess(supabase, "scorecards", "update", data.id);
+    else
+      await assertAnyPermission(supabase, userId, workspaceId, [
+        "techhire.scorecards.create.own",
+        "techhire.scorecards.create.workspace",
+      ]);
     const base = {
-      owner_id: userId,
-      workspace_id: workspaceId,
       name: data.name,
       description: data.description ?? null,
       job_id: data.job_id ?? null,
@@ -62,17 +72,20 @@ export const saveScorecard = createServerFn({ method: "POST" })
       criteria: data.criteria,
     };
     if (data.id) {
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from("ats_scorecards")
         .update(base as never)
         .eq("id", data.id)
-        .eq("workspace_id", workspaceId);
+        .eq("workspace_id", workspaceId)
+        .select("id")
+        .single();
+      if (!updated && !error) throw new Error("Modelo indisponível ou sem permissão.");
       if (error) throw new Error(error.message);
       return { id: data.id };
     }
     const { data: ins, error } = await supabase
       .from("ats_scorecards")
-      .insert(base as never)
+      .insert({ owner_id: userId, workspace_id: workspaceId, ...base } as never)
       .select("id")
       .single();
     if (error) throw new Error(error.message);
@@ -85,6 +98,7 @@ export const deleteScorecard = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    await assertHrRecordAccess(supabase, "scorecards", "delete", data.id);
     await deleteWhereGuarded(
       supabase,
       "ats_scorecards",

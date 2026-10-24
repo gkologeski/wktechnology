@@ -1,3 +1,7 @@
+import { readViewAs } from "@/lib/view-as-client";
+import { HrScreenAccess, HrAccessError } from "@/components/hr-access";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { useHrCapabilities } from "@/lib/access-control/use-hr-capabilities";
 // Admin de Kits de Entrevista (perguntas reaproveitáveis).
 // Lote 4 do rollout UX/UI — segue Design Foundation TechHire.
 import { createFileRoute } from "@tanstack/react-router";
@@ -41,17 +45,35 @@ type Kit = {
   id?: string;
   name: string;
   is_default: boolean;
+  is_active: boolean;
+  pipeline_id?: string | null;
+  stage_value?: string | null;
   questions: InterviewKitQuestion[];
 };
 
 function emptyKit(): Kit {
-  return { name: "Novo kit", is_default: false, questions: [emptyQ()] };
+  return { name: "Novo kit", is_default: false, is_active: true, questions: [emptyQ()] };
 }
 function emptyQ(): InterviewKitQuestion {
   return { id: crypto.randomUUID().slice(0, 8), text: "", kind: "text" };
 }
 
 function InterviewKitsPage() {
+  const identity = usePermissions();
+  return (
+    <HrScreenAccess resources={["techhire.interview_kits"]}>
+      <InterviewKitsPageContent key={[...identity.permissions].sort().join("|")} />
+    </HrScreenAccess>
+  );
+}
+function InterviewKitsPageContent() {
+  const permissions = usePermissions();
+  const canCreate =
+    !readViewAs()?.readOnly &&
+    permissions.canAny([
+      "techhire.interview_kits.create.own",
+      "techhire.interview_kits.create.workspace",
+    ]);
   const listFn = useServerFn(listInterviewKits);
   const saveFn = useServerFn(saveInterviewKit);
   const delFn = useServerFn(deleteInterviewKit);
@@ -61,18 +83,33 @@ function InterviewKitsPage() {
   const [editing, setEditing] = useState<Kit | null>(null);
   const [saving, setSaving] = useState(false);
 
+  const access = useHrCapabilities(
+    "interview_kits",
+    kits.map((k) => k.id),
+  );
+  const canDefault =
+    permissions.can("techhire.interview_kits.view.workspace") &&
+    permissions.can("techhire.interview_kits.update.workspace");
+  const [loadError, setLoadError] = useState(false);
   const reload = () =>
-    listFn()
+    listFn({ data: { editor: true } })
       .then((rows) =>
         setKits(
           rows.map((r) => ({
             id: r.id as string,
             name: r.name as string,
             is_default: !!r.is_default,
+            is_active: r.is_active,
+            pipeline_id: r.pipeline_id,
+            stage_value: r.stage_value,
             questions: (r.questions as InterviewKitQuestion[]) ?? [],
           })),
         ),
       )
+      .catch(() => {
+        setKits([]);
+        setLoadError(true);
+      })
       .finally(() => setLoading(false));
   useEffect(() => {
     reload();
@@ -98,11 +135,24 @@ function InterviewKitsPage() {
 
   const handleDelete = async (id: string) => {
     if (!(await confirmDialog("Excluir este kit?"))) return;
-    await delFn({ data: { id } });
-    toast.success("Excluído");
-    reload();
+    try {
+      await delFn({ data: { id } });
+      toast.success("Excluído");
+      reload();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao excluir");
+    }
   };
 
+  if (loadError)
+    return (
+      <HrAccessError
+        retry={() => {
+          setLoadError(false);
+          void reload();
+        }}
+      />
+    );
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -111,7 +161,7 @@ function InterviewKitsPage() {
         description="Conjuntos de perguntas reaproveitáveis. Para entrevistas assíncronas, marque perguntas como vídeo."
         descriptionLive
         primaryAction={
-          <Button onClick={() => setEditing(emptyKit())}>
+          <Button disabled={!canCreate} onClick={() => setEditing(emptyKit())}>
             <Plus className="h-4 w-4 mr-2" />
             Novo kit
           </Button>
@@ -130,7 +180,7 @@ function InterviewKitsPage() {
           title="Nenhum kit ainda"
           description="Crie um kit para padronizar entrevistas e habilitar respostas assíncronas em vídeo."
           action={
-            <Button size="sm" onClick={() => setEditing(emptyKit())}>
+            <Button disabled={!canCreate} size="sm" onClick={() => setEditing(emptyKit())}>
               <Plus className="h-4 w-4 mr-2" />
               Novo kit
             </Button>
@@ -169,15 +219,56 @@ function InterviewKitsPage() {
                       )}
                       {k.is_default && <MetaPill>Padrão</MetaPill>}
                     </div>
+                    <div className="flex gap-2 mt-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={!canCreate}
+                        onClick={() =>
+                          setEditing({
+                            ...k,
+                            id: undefined,
+                            name: `${k.name} (cópia)`,
+                            is_default: false,
+                            is_active: true,
+                          })
+                        }
+                      >
+                        Duplicar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={!access.for(k.id).can_update}
+                        onClick={async () => {
+                          try {
+                            await saveFn({
+                              data: { ...k, is_default: false, is_active: !k.is_active },
+                            });
+                            await reload();
+                          } catch (e) {
+                            toast.error(e instanceof Error ? e.message : "Falha");
+                          }
+                        }}
+                      >
+                        {k.is_active ? "Desativar" : "Ativar"}
+                      </Button>
+                    </div>
                   </div>
                   <div className="flex shrink-0 gap-1 opacity-0 transition group-hover:opacity-100 focus-within:opacity-100">
-                    <Button size="sm" variant="outline" onClick={() => setEditing(k)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={!access.for(k.id).can_update}
+                      onClick={() => setEditing(k)}
+                    >
                       Editar
                     </Button>
                     <Button
                       size="icon"
                       variant="ghost"
                       className="h-8 w-8 text-destructive"
+                      disabled={!access.for(k.id).can_delete}
                       onClick={() => handleDelete(k.id)}
                       aria-label={`Excluir kit ${k.name}`}
                     >
@@ -191,7 +282,7 @@ function InterviewKitsPage() {
         </div>
       )}
 
-      {editing && (
+      {editing && (editing.id ? access.for(editing.id).can_update : canCreate) && (
         <section className="rounded-lg border border-border-default bg-surface-1 p-5 shadow-xs space-y-5">
           <SectionHeader
             title={editing.id ? "Editar kit" : "Novo kit"}
@@ -209,6 +300,7 @@ function InterviewKitsPage() {
             </div>
             <div className="flex items-center gap-2">
               <Switch
+                disabled={!canDefault}
                 id="kit-default"
                 checked={editing.is_default}
                 onCheckedChange={(v) => setEditing({ ...editing, is_default: v })}
