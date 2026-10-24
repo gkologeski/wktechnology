@@ -1,8 +1,9 @@
+import { assertHrRecordAccess } from "@/lib/access-control/hr-records.server";
+import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 // Server functions de export CSV do ATS (candidatos e candidaturas).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { neutralizeCsvFormula } from "@/lib/security/escape";
 
 function csvEscape(v: unknown): string {
@@ -24,7 +25,10 @@ export const exportAtsCandidatesCsv = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techhire.candidates.export.workspace",
+    ]);
     const { data, error } = await supabase
       .from("ats_candidates")
       .select(
@@ -63,7 +67,12 @@ export const exportJobApplicationsCsv = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ jobId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
+    await assertHrRecordAccess(supabase, "jobs", "view", data.jobId);
+    await assertAnyPermission(supabase, userId, workspaceId, ["techhire.jobs.export.workspace"]);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techhire.candidates.export.workspace",
+    ]);
     const { data: apps, error } = await supabase
       .from("ats_applications")
       .select("id, candidate_id, stage_value, status, source, applied_at, moved_at, ai_match_score")
@@ -122,7 +131,7 @@ export const listApplicationEvents = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ applicationId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
     const { data: rows, error } = await supabase
       .from("ats_application_events")
       .select("id, event_type, from_stage, to_stage, actor_id, metadata, created_at")

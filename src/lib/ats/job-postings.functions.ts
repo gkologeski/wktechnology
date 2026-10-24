@@ -1,3 +1,5 @@
+import { assertHrRecordAccess } from "@/lib/access-control/hr-records.server";
+import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 /**
  * Multi-posting de vagas — Onda 5 / slice 1.
  *
@@ -57,6 +59,7 @@ export const listJobPostings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ job_id: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
+    await assertHrRecordAccess(context.supabase, "jobs", "view", data.job_id);
     const { data: rows, error } = await context.supabase
       .from("ats_job_postings")
       .select(
@@ -114,18 +117,11 @@ export const publishJobToProvider = createServerFn({ method: "POST" })
     z.object({ job_id: z.string().uuid(), provider: PROVIDER }).parse(input),
   )
   .handler(async ({ context, data }) => {
-    {
-      const [{ resolveActiveWorkspace }, { assertAnyPermission }] = await Promise.all([
-        import("@/lib/active-workspace.server"),
-        import("@/lib/access-control/enforce.server"),
-      ]);
-      const ws = await resolveActiveWorkspace(context.userId);
-      await assertAnyPermission(context.supabase, context.userId, ws, [
-        "techhire.jobs.publish.workspace",
-        "techhire.jobs.update.workspace",
-        "techhire.jobs.update.team",
-      ]);
-    }
+    await assertHrRecordAccess(context.supabase, "jobs", "update", data.job_id);
+    const workspaceId = await getActiveWorkspaceId(context.supabase, context.userId);
+    await assertAnyPermission(context.supabase, context.userId, workspaceId, [
+      "techhire.jobs.publish.workspace",
+    ]);
     // 1. Carrega a vaga (RLS garante autorização)
     const { data: job, error: jobErr } = await context.supabase
       .from("ats_jobs")
@@ -198,6 +194,7 @@ export const publishJobToProvider = createServerFn({ method: "POST" })
     if (!result.ok) {
       await supabaseAdmin.from("ats_job_postings").upsert(
         {
+          workspace_id: workspaceId,
           owner_id: jobOwnerId,
           job_id: job.id,
           provider: data.provider,
@@ -216,6 +213,7 @@ export const publishJobToProvider = createServerFn({ method: "POST" })
       .from("ats_job_postings")
       .upsert(
         {
+          workspace_id: workspaceId,
           owner_id: jobOwnerId,
           job_id: job.id,
           provider: data.provider,
@@ -260,14 +258,20 @@ export const unpublishJobFromProvider = createServerFn({ method: "POST" })
       .maybeSingle();
     if (pErr) throw new Error(pErr.message);
     if (!posting) throw new Error("Publicação não encontrada");
+    await assertHrRecordAccess(context.supabase, "jobs", "update", posting.job_id);
+    const workspaceId = await getActiveWorkspaceId(context.supabase, context.userId);
+    await assertAnyPermission(context.supabase, context.userId, workspaceId, [
+      "techhire.jobs.publish.workspace",
+    ]);
 
     const provider = PROVIDER.parse(posting.provider);
     const adapter = await loadAdapter(provider);
     if (adapter.closeJob && posting.external_id) {
-      await adapter.closeJob(
+      const result = await adapter.closeJob(
         { ownerId: context.userId, provider, config: {}, credentialsSecretRef: null },
         posting.external_id,
       );
+      if (!result.ok) throw new Error(result.error);
     }
 
     const { supabaseAdmin: sbAdmin } = await import("@/integrations/supabase/client.server");
@@ -303,26 +307,20 @@ export const syncPostingApplicantsNow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ posting_id: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
-    {
-      const [{ resolveActiveWorkspace }, { assertAnyPermission }] = await Promise.all([
-        import("@/lib/active-workspace.server"),
-        import("@/lib/access-control/enforce.server"),
-      ]);
-      const ws = await resolveActiveWorkspace(context.userId);
-      await assertAnyPermission(context.supabase, context.userId, ws, [
-        "techhire.jobs.publish.workspace",
-        "techhire.jobs.update.workspace",
-        "techhire.jobs.update.team",
-      ]);
-    }
     // Verifica se o posting pertence ao workspace do usuário (RLS aplica).
     const { data: posting, error } = await context.supabase
       .from("ats_job_postings")
-      .select("id, provider, status, is_mock")
+      .select("id, job_id, provider, status, is_mock")
       .eq("id", data.posting_id)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!posting) throw new Error("Publicação não encontrada");
+    await assertHrRecordAccess(context.supabase, "jobs", "update", posting.job_id);
+    const workspaceId = await getActiveWorkspaceId(context.supabase, context.userId);
+    await assertAnyPermission(context.supabase, context.userId, workspaceId, [
+      "techhire.jobs.publish.workspace",
+    ]);
+
     if (posting.provider !== "linkedin") {
       throw new Error("Sync automático disponível apenas para LinkedIn");
     }

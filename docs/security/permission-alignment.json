@@ -771,6 +771,37 @@
       "exceptions": [
         "trusted jobs without auth.uid retain service path; no new grants outside explicitly authorized WK Head RH; existing denies preserved"
       ]
+    },
+    {
+      "operation": "TechHire jobs CRUD, publication/configuration, copilot and job CSV",
+      "kind": "business_action",
+      "route_consumers": [
+        "/jobs",
+        "/jobs/$id",
+        "legacy /ats/jobs redirects"
+      ],
+      "actor": "authenticated active member in selected workspace",
+      "resource": "techhire.jobs + techhire.copilot + techhire.candidates exports",
+      "action": "view/create/update/delete; independent publish, export and copilot generation",
+      "permission_keys": [
+        "techhire.jobs.<action>.<scope>",
+        "techhire.jobs.publish.workspace",
+        "techhire.jobs.export.workspace",
+        "techhire.candidates.export.workspace",
+        "techhire.copilot.view.<scope>",
+        "techhire.copilot.create.own|workspace"
+      ],
+      "scope": "actual persisted owner/assignee/hiring manager/recruiter or workspace groups; view also required for update/delete; create cannot use update key",
+      "server": "assertHrRecordAccess/create, zero-affected-row checks, authenticated LinkedIn config writes; no copilot admin fallback; posting provider calls require actual job update + publish key before I/O; exports require explicit keys and actual job view",
+      "database": "0200 replaces all jobs permissive bypasses, retains restrictive fences, guards actual OLD row for updates, immutable tenant/authorship, same-workspace changed links, separate publish key; postings are parent-scoped read-only for user APIs",
+      "migration": "0200",
+      "state": "applied_sql_tested_ui_publication_pending",
+      "exceptions": [
+        "trusted no-JWT internal service writes remain controlled paths; API-key and LinkedIn credential/workspace import paths require the separate rule 9 audit",
+        "read-only shared pipeline catalog may be read with pipelines.view or jobs.view in the selected workspace; create/promote additionally require pipeline keys",
+        "client-side visible-grid export is an affordance control; server CSV has independent authorization",
+        "source workflow job creation uses its persisted workspace, never the operator profile/default"
+      ]
     }
   ],
   "rules": [
@@ -917,8 +948,8 @@
       "area": "TechHire",
       "problema": "Acesso à vaga exige vínculo direto",
       "decisao_alvo": "Reconhecer gestão no workspace/equipe conforme chave, preservando próprio e vínculos específicos.",
-      "status": "revisar_impacto",
-      "evidencia_migracao": null,
+      "status": "aplicado_testado_sql_publicacao_ui_pendente",
+      "evidencia_migracao": "0200 jobs action/record scope; public API-key and integration credential paths remain separate audit fronts",
       "aceite_visual": false
     },
     {
@@ -926,8 +957,8 @@
       "area": "TechHire",
       "problema": "Edição depende de equipe/criador",
       "decisao_alvo": "Substituir decisões genéricas de owner por ação e escopo do recurso.",
-      "status": "revisar_impacto",
-      "evidencia_migracao": null,
+      "status": "aplicado_testado_sql_publicacao_ui_pendente",
+      "evidencia_migracao": "0200 jobs action/record scope; public API-key and integration credential paths remain separate audit fronts",
       "aceite_visual": false
     },
     {
@@ -1072,7 +1103,7 @@
     }
   ],
   "limitations": [
-    "36 operation contracts recorded; remaining actions require explicit validation.",
+    "37 operation contracts recorded; remaining actions require explicit validation.",
     "Route inventory is static evidence, not certification of enforcement.",
     "SQL tests are not browser/GoTrue/PostgREST acceptance.",
     "No new business role grants in 0191 or 0192; six new catalog keys in 0192.",

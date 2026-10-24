@@ -1,3 +1,5 @@
+import { HrScreenAccess, HrRecordAccess } from "@/components/hr-access";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
@@ -50,6 +52,17 @@ export const Route = createFileRoute("/_authenticated/(ats)/jobs/$id")({
 });
 
 function JobDetailPage() {
+  const { id } = Route.useParams();
+  return (
+    <HrScreenAccess resources={["techhire.jobs"]}>
+      <HrRecordAccess resource="jobs" id={id}>
+        <JobDetailContent />
+      </HrRecordAccess>
+    </HrScreenAccess>
+  );
+}
+function JobDetailContent() {
+  const { can } = usePermissions();
   const { id } = Route.useParams();
   const getJob = useServerFn(getAtsJob);
   const listApps = useServerFn(listJobApplications);
@@ -333,6 +346,9 @@ function JobDetailPage() {
 
   const header = (
     <JobDetailHeader
+      canExport={
+        can("techhire.jobs.export.workspace") && can("techhire.candidates.export.workspace")
+      }
       title={jobAny.title}
       status={jobAny.status}
       metaItems={metaItems}

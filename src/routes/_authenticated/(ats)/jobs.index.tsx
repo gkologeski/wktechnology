@@ -1,3 +1,5 @@
+import { HrScreenAccess } from "@/components/hr-access";
+import { useHrCapabilities } from "@/lib/access-control/use-hr-capabilities";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -204,8 +206,10 @@ function JobKanbanCard({
   onDragEnd,
   dragging,
   showPipeline,
+  canDrag = false,
 }: {
   job: JobRow;
+  canDrag?: boolean;
   onDragStart?: (jobId: string) => void;
   onDragEnd?: () => void;
   dragging?: boolean;
@@ -215,8 +219,12 @@ function JobKanbanCard({
     <Link
       to="/jobs/$id"
       params={{ id: job.id }}
-      draggable
+      draggable={canDrag}
       onDragStart={(e) => {
+        if (!canDrag) {
+          e.preventDefault();
+          return;
+        }
         e.dataTransfer.effectAllowed = "move";
         e.dataTransfer.setData("text/plain", job.id);
         onDragStart?.(job.id);
@@ -226,7 +234,7 @@ function JobKanbanCard({
         "block rounded-md border border-border-subtle bg-surface-1 p-2.5",
         "transition-all hover:border-border-strong hover:shadow-sm",
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        "cursor-grab active:cursor-grabbing",
+        canDrag ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
         dragging && "opacity-50",
       )}
     >
@@ -269,6 +277,13 @@ function JobsGridSkeleton() {
 }
 
 function AtsJobsPage() {
+  return (
+    <HrScreenAccess resources={["techhire.jobs"]}>
+      <AtsJobsContent />
+    </HrScreenAccess>
+  );
+}
+function AtsJobsContent() {
   const list = useServerFn(listAtsJobs);
   const save = useServerFn(saveAtsJob);
   const updateJobStatus = useServerFn(setAtsJobStatus);
@@ -332,7 +347,11 @@ function AtsJobsPage() {
     location: (j) => j.location,
   });
   // Seleção múltipla / em massa (padrão de grids — visão em tabela).
-  const { canAny } = usePermissions();
+  const { can, canAny } = usePermissions();
+  const access = useHrCapabilities(
+    "jobs",
+    rows.map((r) => r.id),
+  );
   const selection = useGridSelection(rows as Array<JobRow & { id: string }>);
   const selectAllFiltered = () => selection.setSelectedIds(new Set(rows.map((r) => r.id)));
 
@@ -359,8 +378,18 @@ function AtsJobsPage() {
     setPipelinesLoading(true);
     setPipelinesError(null);
     try {
-      // garante um único pipeline padrão do workspace antes de listar
-      await ensureDefaultPipelineFn().catch(() => undefined);
+      // Opening a read-only list never creates or promotes a pipeline.
+      if (
+        canAny(["techhire.jobs.create.own", "techhire.jobs.create.workspace"]) &&
+        canAny([
+          "techhire.pipelines.create.own",
+          "techhire.pipelines.create.workspace",
+          "techhire.pipelines.update.own",
+          "techhire.pipelines.update.workspace",
+        ])
+      ) {
+        await ensureDefaultPipelineFn().catch(() => undefined);
+      }
       const rs = await listPipelinesFn();
       const list = (rs as Array<{ id: string; name: string; is_default: boolean }>).map((p) => ({
         id: p.id,
@@ -373,7 +402,7 @@ function AtsJobsPage() {
     } finally {
       setPipelinesLoading(false);
     }
-  }, [listPipelinesFn, ensureDefaultPipelineFn]);
+  }, [listPipelinesFn, ensureDefaultPipelineFn, canAny]);
 
   // Mantém coerência entre o filtro da tela e o pipeline sugerido na criação.
   useEffect(() => {
@@ -533,7 +562,7 @@ function AtsJobsPage() {
   }, [rows]);
 
   const newJobButton = (
-    <Can permission="techhire.jobs.create.own">
+    <Can any={["techhire.jobs.create.own", "techhire.jobs.create.workspace"]}>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
           <Button size="sm">
@@ -642,7 +671,11 @@ function AtsJobsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {ATS_JOB_STATUSES.map((s) => (
-                    <SelectItem key={s.value} value={s.value}>
+                    <SelectItem
+                      key={s.value}
+                      value={s.value}
+                      disabled={s.value === "published" && !can("techhire.jobs.publish.workspace")}
+                    >
                       {s.label}
                     </SelectItem>
                   ))}
@@ -842,14 +875,20 @@ function AtsJobsPage() {
               onDone={() => void refresh()}
               totalMatching={rows.length}
               onSelectAll={selectAllFiltered}
-              canUpdate={canAny(["techhire.jobs.update.workspace", "techhire.jobs.update.team"])}
-              canDelete={canAny(["techhire.jobs.delete.workspace"])}
+              canUpdate={
+                selection.ids.length > 0 && selection.ids.every((id) => access.for(id).can_update)
+              }
+              canDelete={
+                selection.ids.length > 0 && selection.ids.every((id) => access.for(id).can_delete)
+              }
               bulkEditFields={[
                 {
                   name: "status",
                   label: "Status",
                   type: "select",
-                  options: ATS_JOB_STATUSES.map((s) => ({ value: s.value, label: s.label })),
+                  options: ATS_JOB_STATUSES.filter(
+                    (s) => s.value !== "published" || can("techhire.jobs.publish.workspace"),
+                  ).map((s) => ({ value: s.value, label: s.label })),
                 },
                 { name: "department", label: "Departamento", type: "text" },
                 { name: "location", label: "Localização", type: "text" },
@@ -867,6 +906,7 @@ function AtsJobsPage() {
           )}
           <div className="rounded-lg border border-border-subtle bg-surface-1 overflow-x-auto">
             <GridListToolbar
+              canExport={can("techhire.jobs.export.workspace")}
               exportValue={{
                 seniority: (j) =>
                   j.seniority ? (SENIORITY_LABEL[j.seniority] ?? j.seniority) : null,
@@ -1018,9 +1058,14 @@ function AtsJobsPage() {
                     setDragOverCol(null);
                     const jobId = e.dataTransfer.getData("text/plain") || draggingId;
                     setDraggingId(null);
-                    if (!jobId) return;
+                    if (!jobId || !access.for(jobId).can_update) return;
                     const current = rows.find((r) => r.id === jobId);
-                    if (!current || current.status === s.value) return;
+                    if (
+                      !current ||
+                      current.status === s.value ||
+                      (s.value === "published" && !can("techhire.jobs.publish.workspace"))
+                    )
+                      return;
                     const prevStatus = current.status;
                     setRows((rs) =>
                       rs.map((r) =>
@@ -1057,6 +1102,7 @@ function AtsJobsPage() {
                       <JobKanbanCard
                         key={j.id}
                         job={j}
+                        canDrag={access.for(j.id).can_update}
                         showPipeline={pipelineFilter === "all"}
                         dragging={draggingId === j.id}
                         onDragStart={(id) => setDraggingId(id)}
@@ -1101,7 +1147,7 @@ function AtsJobsPage() {
                     setDragOverCol(null);
                     const jobId = e.dataTransfer.getData("text/plain") || draggingId;
                     setDraggingId(null);
-                    if (!jobId) return;
+                    if (!jobId || !access.for(jobId).can_update) return;
                     const current = rows.find((r) => r.id === jobId) as
                       | (JobRow & { department?: string | null })
                       | undefined;
@@ -1152,6 +1198,7 @@ function AtsJobsPage() {
                       <JobKanbanCard
                         key={j.id}
                         job={j}
+                        canDrag={access.for(j.id).can_update}
                         showPipeline={pipelineFilter === "all"}
                         dragging={draggingId === j.id}
                         onDragStart={(id) => setDraggingId(id)}

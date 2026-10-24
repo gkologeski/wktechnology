@@ -1,3 +1,6 @@
+import { useHrCapabilities } from "@/lib/access-control/use-hr-capabilities";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { AssigneeCell } from "@/components/entity/assignee-cell";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -27,7 +30,6 @@ import {
 import { AtsSectionHeader } from "@/components/ats/ui";
 import { PipelineSelectNotice } from "@/components/ats/pipeline-select-notice";
 import { DealPicker } from "@/components/ats/deal-picker";
-import { OwnerField } from "@/components/entity/owner-field";
 import { AssigneeField } from "@/components/entity/assignee-field";
 import { listAtsPipelines } from "@/lib/ats/pipelines.functions";
 import { ATS_JOB_STATUSES } from "@/lib/ats/stages";
@@ -60,6 +62,10 @@ export function JobPropertiesPanel({
   onSaved: () => void;
   applicationCount: number;
 }) {
+  const recordId = String(job.id);
+  const access = useHrCapabilities("jobs", [recordId]);
+  const canWrite = access.for(recordId).can_update;
+  const { can } = usePermissions();
   const j = job as unknown as {
     title: string;
     seniority: string | null;
@@ -173,6 +179,7 @@ export function JobPropertiesPanel({
     (form.deal_id ?? null) !== (j.deal_id ?? null);
 
   const persist = async () => {
+    if (!canWrite) return;
     setSaving(true);
     try {
       await save({
@@ -217,20 +224,19 @@ export function JobPropertiesPanel({
     <section className="rounded-lg border border-border-subtle bg-surface-1 p-4 space-y-3">
       <AtsSectionHeader title="Propriedades" />
       <div className="space-y-3 pb-3 border-b border-border-subtle">
-        <OwnerField
-          table="ats_jobs"
-          rowId={jobRow.id}
-          ownerId={jobRow.owner_id}
-          onChanged={onSaved}
-        />
+        <div className="space-y-1">
+          <Label>Criado por</Label>
+          <AssigneeCell assignedTo={jobRow.owner_id} />
+        </div>
         <AssigneeField
+          disabled={!canWrite}
           table="ats_jobs"
           rowId={jobRow.id}
           assignedTo={jobRow.assigned_to}
           onChanged={() => onSaved()}
         />
       </div>
-      <div className="space-y-2 text-sm">
+      <fieldset disabled={!canWrite} className="space-y-2 text-sm">
         <div>
           <Label htmlFor="prop-title" className="text-xs text-text-tertiary">
             Título
@@ -251,7 +257,11 @@ export function JobPropertiesPanel({
             </SelectTrigger>
             <SelectContent>
               {ATS_JOB_STATUSES.map((s) => (
-                <SelectItem key={s.value} value={s.value}>
+                <SelectItem
+                  key={s.value}
+                  value={s.value}
+                  disabled={s.value === "published" && !can("techhire.jobs.publish.workspace")}
+                >
                   {s.label}
                 </SelectItem>
               ))}
@@ -429,9 +439,9 @@ export function JobPropertiesPanel({
             onChange={(e) => setForm({ ...form, requirements: e.target.value })}
           />
         </div>
-      </div>
+      </fieldset>
       <div className="flex justify-end">
-        <Button size="sm" onClick={onSubmit} disabled={!dirty || saving}>
+        <Button size="sm" onClick={onSubmit} disabled={!canWrite || !dirty || saving}>
           <Save className="h-3.5 w-3.5 mr-1.5" aria-hidden />
           {saving ? "Salvando…" : "Salvar"}
         </Button>
@@ -454,7 +464,7 @@ export function JobPropertiesPanel({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={persist} disabled={saving}>
+            <AlertDialogAction onClick={persist} disabled={!canWrite || saving}>
               Confirmar
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -1,3 +1,4 @@
+import { assertHrRecordAccess } from "@/lib/access-control/hr-records.server";
 import { emailSchema } from "@/lib/email-schema";
 /**
  * Server functions para configurar publicação da vaga no LinkedIn (via Unipile)
@@ -40,6 +41,7 @@ export const getLinkedinJobConfig = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ job_id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
+    await assertHrRecordAccess(context.supabase, "jobs", "view", data.job_id);
     const { data: row, error } = await context.supabase
       .from("ats_jobs")
       .select(
@@ -55,6 +57,7 @@ export const updateLinkedinJobConfig = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => CONFIG.parse(i))
   .handler(async ({ context, data }) => {
+    await assertHrRecordAccess(context.supabase, "jobs", "update", data.job_id);
     // Verifica acesso à vaga sob RLS do usuário (admin, líder de time ou dono).
     const { data: job, error: readErr } = await context.supabase
       .from("ats_jobs")
@@ -79,9 +82,8 @@ export const updateLinkedinJobConfig = createServerFn({ method: "POST" })
       linkedin_budget_amount: data.linkedin_budget_amount ?? null,
       linkedin_budget_currency: data.linkedin_budget_currency ?? null,
     };
-    // UPDATE via admin: autorização já garantida acima. Preserva owner_id original.
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: row, error } = await supabaseAdmin
+    // Editing uses the caller's RLS and the same record/action predicate.
+    const { data: row, error } = await context.supabase
       .from("ats_jobs")
       .update(patch as never)
       .eq("id", data.job_id)
@@ -101,6 +103,7 @@ export const searchLinkedinDirectory = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) =>
     z
       .object({
+        job_id: z.string().uuid(),
         type: z.enum(["COMPANY", "LOCATION"]),
         keywords: z.string().trim().min(1).max(120),
         limit: z.number().int().min(1).max(15).default(8),
@@ -108,6 +111,7 @@ export const searchLinkedinDirectory = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ context, data }) => {
+    await assertHrRecordAccess(context.supabase, "jobs", "update", data.job_id);
     const { loadAccountCtx, resolveSearchParameterItems } =
       await import("@/lib/unipile/client.server");
     // Reaproveita o helper versionado (v1/v2) que fala com

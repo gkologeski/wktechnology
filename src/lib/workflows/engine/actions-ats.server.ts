@@ -14,6 +14,7 @@ export async function handleAtsAction(
 ): Promise<LogStep | null> {
   switch (action.type) {
     case "create_ats_job": {
+      if (!ctx.workspaceId) throw new Error("Workspace do fluxo não identificado.");
       const after = ctx.after ?? {};
       const title =
         (renderTokens(action.title, ctx.after) as string) ||
@@ -22,7 +23,7 @@ export async function handleAtsAction(
       const { data: pipe } = await supabase
         .from("ats_pipelines")
         .select("id")
-        .eq("owner_id", ctx.ownerId)
+        .eq("workspace_id", ctx.workspaceId)
         .order("is_default", { ascending: false })
         .order("created_at", { ascending: true })
         .limit(1)
@@ -33,6 +34,7 @@ export async function handleAtsAction(
           .from("ats_pipelines")
           .insert({
             owner_id: ctx.ownerId,
+            workspace_id: ctx.workspaceId,
             name: "Pipeline padrão",
             is_default: true,
             stages: [],
@@ -56,6 +58,7 @@ export async function handleAtsAction(
           .from("ats_jobs")
           .insert({
             owner_id: ctx.ownerId,
+            workspace_id: ctx.workspaceId,
             pipeline_id: pipelineId,
             title,
             slug,
@@ -75,6 +78,7 @@ export async function handleAtsAction(
       if (action.notify_user_id) {
         await supabase.from("notifications").insert({
           owner_id: ctx.ownerId,
+          workspace_id: ctx.workspaceId,
           user_id: action.notify_user_id,
           type: "workflow",
           title: `Nova vaga em rascunho: ${title}`,

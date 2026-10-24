@@ -367,3 +367,55 @@ RPC privada: 186 linhas em 49,16 ms (medição só da RPC). O primeiro ensaio de
 latência da RPC. Os 18 novos grants estão apenas no Head RH da WK. A matriz geral
 de hidden/masked/readonly, outras ações/módulos e o aceite no navegador seguem
 frentes pendentes do plano de seis etapas.
+
+
+### Próxima frente: vagas do TechHire (0200, preparada)
+
+Estimativa comunicada: 2–3 horas. O lote alinha CRUD e helper can_access_ats_job
+à ação efetiva e vínculo real de owner/responsável/gestor/recrutador ou grupo do
+workspace. Remove políticas permissivas de owner/membership, preserva fences
+restritivas e valida o registro antigo antes de permitir edição. Workspace e
+autoria são imutáveis; responsável continua editável conforme update efetiva.
+Publicação exige sua chave específica. Sem novos grants ou alterações de defaults.
+
+UI de URL direta e ações usam as mesmas capacidades. O campo legado Proprietário
+da vaga passa a exibir Criado por sem edição, coerente com a autoria já documentada
+no gravador; o Responsável usa a permissão de edição real. Configuração LinkedIn
+deixa de gravar com admin após simples leitura. Copiloto não usa fallback admin e
+exige leitura da vaga e view/create do próprio recurso. Exportações do servidor
+exigem chaves de export, incluindo candidatos quando contêm seus dados pessoais.
+
+O estado persistido de publicação em provedores torna-se somente leitura para
+APIs de usuário: alterações só pelos handlers guardados ou worker interno assinado.
+Os novos upserts informam workspace explicitamente e falhas do provedor não viram
+sucesso. A conta de integração, publisher e os demais gravadores de importação
+continuam uma frente própria da regra 9; este lote não os certifica.
+
+Listar vagas em modo somente leitura não cria/promove pipeline. O catálogo de
+pipelines usado no board/picker é uma exceção explícita de metadados compartilhados
+do workspace, autorizada por pipelines.view ou jobs.view. Criação/promoção exige
+separadamente create/update de pipelines. O CRUD/RLS completo de pipelines ainda
+deve ser auditado. Vagas/pipelines/notificações criados pelo workflow usam
+ctx.workspaceId do registro de origem. API pública por chave continua uma exceção
+a auditar: tenant fixado na chave, feature flag e contrato de status precisam
+revisão separada; não é validação de navegador.
+
+11 grupos SQL de vagas, incluindo reprodução prévia do bypass e da negativa
+indevida ao Head, passaram. Foram repetidas as equivalências de capacidades de RH
+após estender os helpers. 26 testes de handlers + 3 de origem de workspace do
+workflow passaram; tipos sem erro. Aplicação, publicação e gates completos ainda
+precisam ser registrados.
+
+
+0200 aplicada (hash 4b465b491183ba8286356cd77463ab22badc24a145c387af4060fe4af14fa22d,
+when 1792799590341, id 204). Verify 1626 testes/tipos/lint e build completos no
+mesmo fingerprint, sem mudança de fonte durante os gates. Simulação SQL de
+Priscila confirmou criar/ler/editar/excluir uma vaga sintética em rascunho e as
+capacidades correspondentes; mudança de autoria negada; usuário não membro sem
+leitura. Estado de provedor não editável diretamente por authenticated, inclusive
+Head; serviço preservado. Rollback integral e zero vagas sintéticas restantes.
+
+Contagens/fingerprints de vagas (5), publicações (4), pipeline (1), defaults
+(6653), memberships (244), overrides (971) e catálogo (1721) permaneceram idênticos.
+Nenhum grant novo neste lote. Interface ainda precisa ser publicada e conferida;
+aceite com sessão real no navegador permanece pendente do ambiente.

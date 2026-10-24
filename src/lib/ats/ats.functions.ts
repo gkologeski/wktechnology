@@ -36,6 +36,10 @@ async function ensureDefaultPipeline(
       stages: (existing.stages as AtsStage[]) ?? DEFAULT_ATS_STAGES,
     };
   }
+  await assertAnyPermission(supabase, userId, workspaceId, [
+    "techhire.pipelines.create.own",
+    "techhire.pipelines.create.workspace",
+  ]);
   const { data: created, error: insErr } = await supabase
     .from("ats_pipelines")
     .insert({
@@ -140,7 +144,7 @@ export const listAtsJobs = createServerFn({ method: "POST" })
       // Sem filtro por owner_id: as políticas RLS já expõem vagas do próprio
       // usuário, das quais é hiring manager/recruiter, e as compartilhadas no
       // workspace para quem tem `techhire.jobs.view.workspace`
-      // (ats_jobs_rbac_select). Filtrar por owner_id aqui escondia vagas
+      // (ats_jobs_action_select). Filtrar por owner_id aqui escondia vagas
       // criadas por colegas do mesmo workspace.
 
       .order(projection.sortKey ?? "updated_at", {
@@ -238,6 +242,7 @@ export const getAtsJob = createServerFn({ method: "POST" })
   .inputValidator((data: { id: string }) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    await assertHrRecordAccess(supabase, "jobs", "view", data.id);
     const { data: job, error } = await supabase
       .from("ats_jobs")
       .select("*")
@@ -254,12 +259,19 @@ export const saveAtsJob = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => JobSaveSchema.parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
-    const workspaceIdForCheck = await getActiveWorkspaceId(supabase, userId);
-    await assertAnyPermission(supabase, userId, workspaceIdForCheck, [
-      data.id ? "techhire.jobs.update.own" : "techhire.jobs.create.own",
-      "techhire.jobs.update.workspace",
-    ]);
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
+    if (data.id) await assertHrRecordAccess(supabase, "jobs", "update", data.id);
+    else await assertHrCreate(supabase, userId, "techhire.jobs");
+    if (data.status === "published") {
+      const previous = data.id
+        ? await supabase.from("ats_jobs").select("status").eq("id", data.id).maybeSingle()
+        : null;
+      if (previous?.error) throw new Error(previous.error.message);
+      if (!data.id || previous?.data?.status !== "published")
+        await assertAnyPermission(supabase, userId, workspaceId, [
+          "techhire.jobs.publish.workspace",
+        ]);
+    }
     let pipelineId: string;
     if (data.pipeline_id) {
       // Confia no RLS de ats_pipelines (owner + workspace share) — não filtra
@@ -321,7 +333,8 @@ export const saveAtsJob = createServerFn({ method: "POST" })
         .select("id, status")
         .limit(1);
       if (error) throw new Error(error.message);
-      const updated = updatedRows?.[0] ?? { id: data.id, status: data.status };
+      const updated = updatedRows?.[0];
+      if (!updated) throw new Error("Vaga indisponível ou sem permissão para editar.");
       if (data.status === "published") {
         await emitEvent(supabase, {
           ownerId: userId,
@@ -361,11 +374,7 @@ export const deleteAtsJob = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
-    const workspaceIdForCheck = await getActiveWorkspaceId(supabase, userId);
-    await assertAnyPermission(supabase, userId, workspaceIdForCheck, [
-      "techhire.jobs.delete.workspace",
-    ]);
+    await assertHrRecordAccess(supabase, "jobs", "delete", data.id);
     // Sem filtro por owner_id: o RLS decide (dono, admin do workspace ou
     // permissão de delete no workspace). Filtrar aqui impedia excluir
     // registros criados por colegas do mesmo workspace.
@@ -388,7 +397,7 @@ export const createJobFromDeal = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
+    const workspaceId = await assertHrCreate(supabase, userId, "techhire.jobs");
     const { data: deal, error: dErr } = await supabase
       .from("deals")
       .select("id, name, company_id, owner_id")
@@ -1176,6 +1185,11 @@ export const setAtsJobStatus = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    await assertHrRecordAccess(supabase, "jobs", "update", data.id);
+    if (data.status === "published") {
+      const workspaceId = await getActiveWorkspaceId(supabase, userId);
+      await assertAnyPermission(supabase, userId, workspaceId, ["techhire.jobs.publish.workspace"]);
+    }
     const patch: Record<string, unknown> = { status: data.status };
     if (data.status === "published") patch.opened_at = new Date().toISOString();
     const { data: upd, error } = await supabase
@@ -1212,6 +1226,7 @@ export const setAtsJobDepartment = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    await assertHrRecordAccess(supabase, "jobs", "update", data.id);
     const { data: cur, error: readErr } = await supabase
       .from("ats_jobs")
       .select("metadata")

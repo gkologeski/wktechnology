@@ -35,6 +35,7 @@ export function JobDetailHeader({
   onSelectedCandChange,
   onAdd,
   onExport,
+  canExport = false,
 }: {
   title: string;
   status: string;
@@ -48,6 +49,7 @@ export function JobDetailHeader({
   onSelectedCandChange: (v: string) => void;
   onAdd: () => void;
   onExport: () => void;
+  canExport?: boolean;
 }) {
   const statusVariant = STATUS_TO_BADGE[status] ?? "draft";
   return (
@@ -74,10 +76,12 @@ export function JobDetailHeader({
         </span>
       }
       secondaryActions={
-        <Button variant="outline" onClick={onExport}>
-          <Download className="h-4 w-4 mr-2" aria-hidden />
-          CSV
-        </Button>
+        canExport ? (
+          <Button variant="outline" onClick={onExport}>
+            <Download className="h-4 w-4 mr-2" aria-hidden />
+            CSV
+          </Button>
+        ) : undefined
       }
       primaryAction={
         <Dialog open={addOpen} onOpenChange={onAddOpenChange}>

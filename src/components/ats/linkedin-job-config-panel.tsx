@@ -1,3 +1,4 @@
+import { useHrCapabilities } from "@/lib/access-control/use-hr-capabilities";
 import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Linkedin, Search, Check, AlertCircle } from "lucide-react";
@@ -86,6 +87,8 @@ const EMPLOYMENT_LABEL: Record<string, string> = {
 };
 
 export function LinkedinJobConfigPanel({ jobId }: { jobId: string }) {
+  const access = useHrCapabilities("jobs", [jobId]);
+  const canWrite = access.for(jobId).can_update;
   const getCfg = useServerFn(getLinkedinJobConfig);
   const saveCfg = useServerFn(updateLinkedinJobConfig);
   const search = useServerFn(searchLinkedinDirectory);
@@ -119,6 +122,7 @@ export function LinkedinJobConfigPanel({ jobId }: { jobId: string }) {
   }, []);
 
   const onSave = async () => {
+    if (!canWrite) return;
     setSaving(true);
     try {
       await saveCfg({ data: { job_id: jobId, ...cfg } });
@@ -154,7 +158,7 @@ export function LinkedinJobConfigPanel({ jobId }: { jobId: string }) {
           <Loader2 className="h-4 w-4 animate-spin" /> Carregando…
         </div>
       ) : (
-        <div className="space-y-3 text-sm">
+        <fieldset disabled={!canWrite} className="space-y-3 text-sm">
           <div
             className={`flex items-start gap-2 rounded-md border px-2.5 py-2 text-xs ${
               ready
@@ -183,7 +187,7 @@ export function LinkedinJobConfigPanel({ jobId }: { jobId: string }) {
             onSelect={(id, title) =>
               update({ linkedin_company_id: id, linkedin_company_name: title })
             }
-            search={(kw) => search({ data: { type: "COMPANY", keywords: kw } })}
+            search={(kw) => search({ data: { job_id: jobId, type: "COMPANY", keywords: kw } })}
           />
 
           <DirectoryPicker
@@ -195,7 +199,7 @@ export function LinkedinJobConfigPanel({ jobId }: { jobId: string }) {
             onSelect={(id, title) =>
               update({ linkedin_location_id: id, linkedin_location_name: title })
             }
-            search={(kw) => search({ data: { type: "LOCATION", keywords: kw } })}
+            search={(kw) => search({ data: { job_id: jobId, type: "LOCATION", keywords: kw } })}
           />
 
           <div className="grid grid-cols-2 gap-2">
@@ -391,7 +395,7 @@ export function LinkedinJobConfigPanel({ jobId }: { jobId: string }) {
           <div className="flex justify-end">
             <Button
               onClick={onSave}
-              disabled={!dirty || saving || (promoted && !cfg.linkedin_budget_amount)}
+              disabled={!canWrite || !dirty || saving || (promoted && !cfg.linkedin_budget_amount)}
               size="sm"
             >
               {saving ? (
@@ -402,7 +406,7 @@ export function LinkedinJobConfigPanel({ jobId }: { jobId: string }) {
               Salvar configuração
             </Button>
           </div>
-        </div>
+        </fieldset>
       )}
     </section>
   );

@@ -1,3 +1,5 @@
+import { HrScreenAccess } from "@/components/hr-access";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 // Wave 8 — Slice 2: Painel Copilot da Vaga (Quiet Premium)
 // Rankeia pipeline com IA, gera perguntas de entrevista e drafts de outreach.
 import { useState } from "react";
@@ -29,13 +31,17 @@ type Tab = "ranking" | "questions" | "outreach";
 
 type CandidateLite = { id: string; full_name: string };
 
-export function JobCopilotPanel({
-  jobId,
-  candidates,
-}: {
-  jobId: string;
-  candidates: CandidateLite[];
-}) {
+type JobCopilotProps = { jobId: string; candidates: CandidateLite[] };
+export function JobCopilotPanel(props: JobCopilotProps) {
+  return (
+    <HrScreenAccess resources={["techhire.copilot"]}>
+      <JobCopilotContent {...props} />
+    </HrScreenAccess>
+  );
+}
+function JobCopilotContent({ jobId, candidates }: JobCopilotProps) {
+  const { canAny } = usePermissions();
+  const canGenerate = canAny(["techhire.copilot.create.workspace", "techhire.copilot.create.own"]);
   const rankFn = useServerFn(rankPipelineCandidates);
   const questionsFn = useServerFn(suggestInterviewQuestions);
   const outreachFn = useServerFn(draftOutreach);
@@ -53,6 +59,7 @@ export function JobCopilotPanel({
   const candName = (id: string) => candidates.find((c) => c.id === id)?.full_name ?? id;
 
   const doRank = async () => {
+    if (!canGenerate) return;
     setLoading("ranking");
     try {
       const r = await rankFn({ data: { job_id: jobId } });
@@ -65,6 +72,7 @@ export function JobCopilotPanel({
   };
 
   const doQuestions = async () => {
+    if (!canGenerate) return;
     setLoading("questions");
     try {
       const r = await questionsFn({
@@ -79,6 +87,7 @@ export function JobCopilotPanel({
   };
 
   const doOutreach = async () => {
+    if (!canGenerate) return;
     if (!candidateId) {
       toast.error("Selecione um candidato");
       return;
@@ -144,7 +153,12 @@ export function JobCopilotPanel({
               <p className="text-xs text-text-tertiary">
                 Avalia os candidatos ativos desta vaga com base na JD e nos perfis.
               </p>
-              <Button size="sm" onClick={doRank} disabled={loading === "ranking"} className="h-8">
+              <Button
+                size="sm"
+                onClick={doRank}
+                disabled={!canGenerate || loading === "ranking"}
+                className="h-8"
+              >
                 {loading === "ranking" ? (
                   <Loader2 className="size-3 animate-spin mr-1" />
                 ) : (
@@ -222,7 +236,7 @@ export function JobCopilotPanel({
             <Button
               size="sm"
               onClick={doQuestions}
-              disabled={loading === "questions"}
+              disabled={!canGenerate || loading === "questions"}
               className="h-8 w-full"
             >
               {loading === "questions" ? (
@@ -298,7 +312,7 @@ export function JobCopilotPanel({
             <Button
               size="sm"
               onClick={doOutreach}
-              disabled={loading === "outreach" || !candidateId}
+              disabled={!canGenerate || loading === "outreach" || !candidateId}
               className="h-8 w-full"
             >
               {loading === "outreach" ? (

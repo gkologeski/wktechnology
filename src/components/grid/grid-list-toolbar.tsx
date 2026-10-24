@@ -16,6 +16,8 @@ type Props<T, K extends string> = {
   filename: string;
   /** Mostra a busca textual (desligar quando a tela já tem busca própria). */
   search?: boolean;
+  /** Caller supplies the effective export action; legacy consumers are audited separately. */
+  canExport?: boolean;
   searchPlaceholder?: string;
   /** Valor exportado diferente do usado para ordenar (ex.: rótulo de prioridade). */
   exportValue?: Partial<Record<K, SortAccessor<T>>>;
@@ -31,6 +33,7 @@ export function GridListToolbar<T, K extends string>({
   labels,
   filename,
   search = true,
+  canExport = true,
   searchPlaceholder = "Buscar nesta lista…",
   exportValue,
   filters,
@@ -39,8 +42,9 @@ export function GridListToolbar<T, K extends string>({
 }: Props<T, K>) {
   const inShell = useInGridShell();
   const keys = Object.keys(labels) as K[];
-  const onExport = (format: "csv" | "json" | "xlsx") =>
-    exportRows(grid.sorted, {
+  const onExport = (format: "csv" | "json" | "xlsx") => {
+    if (!canExport) return;
+    return exportRows(grid.sorted, {
       filename,
       format,
       columns: keys.map((k) => ({
@@ -48,6 +52,7 @@ export function GridListToolbar<T, K extends string>({
         value: (row: T) => (exportValue?.[k] ?? grid.accessors[k])(row) ?? "",
       })),
     });
+  };
 
   return (
     <div className="flex flex-wrap items-center gap-2 pb-3">
@@ -82,11 +87,13 @@ export function GridListToolbar<T, K extends string>({
           <GridFilterPanel ctl={filters} />
         </div>
       )}
-      <ExportMenuButton
-        className="ml-auto"
-        disabled={grid.sorted.length === 0}
-        onExport={onExport}
-      />
+      {canExport && (
+        <ExportMenuButton
+          className="ml-auto"
+          disabled={grid.sorted.length === 0}
+          onExport={onExport}
+        />
+      )}
       {filters && <GridFilterChips ctl={filters} />}
     </div>
   );

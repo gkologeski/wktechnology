@@ -1,3 +1,9 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  assertAnyPermission,
+  getActiveWorkspaceId,
+  hasPermission,
+} from "@/lib/access-control/enforce.server";
 // CRUD de pipelines do ATS (editor visual).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -22,16 +28,33 @@ const PipelineSaveSchema = z.object({
   stages: z.array(StageSchema).min(2).max(20),
 });
 
+// Read-only shared workflow catalog used by the job picker/board. This metadata
+// exception never grants create/update; constructors check those independently.
+async function pipelineCatalogWorkspace(client: SupabaseClient, userId: string): Promise<string> {
+  const workspaceId = await getActiveWorkspaceId(client, userId);
+  await assertAnyPermission(client, userId, workspaceId, [
+    "techhire.pipelines.view.workspace",
+    "techhire.pipelines.view.team",
+    "techhire.pipelines.view.own",
+    "techhire.jobs.view.workspace",
+    "techhire.jobs.view.team",
+    "techhire.jobs.view.own",
+  ]);
+  return workspaceId;
+}
+
 export const listAtsPipelines = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    const workspaceId = await pipelineCatalogWorkspace(supabase, userId);
     // Visibilidade é decidida pelas políticas do banco (workspace/RBAC),
     // não por filtro manual de owner_id. A listagem não cria registros:
     // a criação do pipeline padrão é feita por ensureDefaultAtsPipeline.
     const { data, error } = await supabase
       .from("ats_pipelines")
       .select("id, name, is_default, stages, created_at, updated_at")
+      .eq("workspace_id", workspaceId)
       .order("is_default", { ascending: false })
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
@@ -48,9 +71,11 @@ export const ensureDefaultAtsPipeline = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await pipelineCatalogWorkspace(supabase, userId);
     const { data: rows, error } = await supabase
       .from("ats_pipelines")
-      .select("id, name, is_default, stages, created_at, updated_at")
+      .select("id, owner_id, name, is_default, stages, created_at, updated_at")
+      .eq("workspace_id", workspaceId)
       .order("is_default", { ascending: false })
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
@@ -61,27 +86,42 @@ export const ensureDefaultAtsPipeline = createServerFn({ method: "POST" })
 
     if (existing.length > 0) {
       const first = existing[0];
-      const { data: promoted } = await supabase
+      const canPromote =
+        (await hasPermission(
+          supabase,
+          userId,
+          workspaceId,
+          "techhire.pipelines.update.workspace",
+        )) ||
+        (first.owner_id === userId &&
+          (await hasPermission(supabase, userId, workspaceId, "techhire.pipelines.update.own")));
+      if (!canPromote) return first;
+      const { data: promoted, error: promoteError } = await supabase
         .from("ats_pipelines")
         .update({ is_default: true } as never)
         .eq("id", first.id)
         .select("id, name, is_default, stages, created_at, updated_at")
         .maybeSingle();
-      // sem permissão de update: devolve o primeiro visível como está
+      if (promoteError) throw new Error(promoteError.message);
       return promoted ?? first;
     }
 
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techhire.pipelines.create.own",
+      "techhire.pipelines.create.workspace",
+    ]);
     const { data: created, error: insErr } = await supabase
       .from("ats_pipelines")
       .insert({
         owner_id: userId,
+        workspace_id: workspaceId,
         name: "Pipeline padrão",
         is_default: true,
         stages: DEFAULT_ATS_STAGES as never,
       } as never)
       .select("id, name, is_default, stages, created_at, updated_at")
       .maybeSingle();
-    if (insErr) return null;
+    if (insErr) throw new Error(insErr.message);
     return created ?? null;
   });
 

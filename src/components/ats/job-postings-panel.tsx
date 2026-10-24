@@ -1,3 +1,5 @@
+import { useHrCapabilities } from "@/lib/access-control/use-hr-capabilities";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { useEffect, useState, useCallback } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { ExternalLink, Loader2, Send, X, Share2, RefreshCw } from "lucide-react";
@@ -43,6 +45,9 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export function JobPostingsPanel({ jobId }: { jobId: string }) {
+  const access = useHrCapabilities("jobs", [jobId]);
+  const { can } = usePermissions();
+  const canPublish = access.for(jobId).can_update && can("techhire.jobs.publish.workspace");
   const list = useServerFn(listJobPostings);
   const publish = useServerFn(publishJobToProvider);
   const unpublish = useServerFn(unpublishJobFromProvider);
@@ -72,6 +77,7 @@ export function JobPostingsPanel({ jobId }: { jobId: string }) {
   const byProvider = new Map(postings.map((p) => [p.provider, p]));
 
   const handlePublish = async (provider: ProviderSlug) => {
+    if (!canPublish) return;
     setBusy(provider);
     try {
       await publish({ data: { job_id: jobId, provider } });
@@ -85,6 +91,7 @@ export function JobPostingsPanel({ jobId }: { jobId: string }) {
   };
 
   const handleUnpublish = async (postingId: string) => {
+    if (!canPublish) return;
     setBusy(postingId);
     try {
       await unpublish({ data: { posting_id: postingId } });
@@ -98,6 +105,7 @@ export function JobPostingsPanel({ jobId }: { jobId: string }) {
   };
 
   const handleSyncApplicants = async (postingId: string) => {
+    if (!canPublish) return;
     setBusy(`sync:${postingId}`);
     try {
       const r = await syncNow({ data: { posting_id: postingId } });
@@ -195,7 +203,7 @@ export function JobPostingsPanel({ jobId }: { jobId: string }) {
                     <button
                       type="button"
                       className="inline-flex items-center gap-1 text-text-primary hover:underline disabled:opacity-50 shrink-0"
-                      disabled={Boolean(isBusy)}
+                      disabled={!canPublish || Boolean(isBusy)}
                       onClick={() => posting && handleSyncApplicants(posting.id)}
                     >
                       {isSyncing ? (
@@ -227,7 +235,7 @@ export function JobPostingsPanel({ jobId }: { jobId: string }) {
                       variant="outline"
                       size="sm"
                       className="flex-1"
-                      disabled={Boolean(isBusy)}
+                      disabled={!canPublish || Boolean(isBusy)}
                       onClick={() => handleUnpublish(posting.id)}
                     >
                       {isBusy ? (
@@ -241,7 +249,7 @@ export function JobPostingsPanel({ jobId }: { jobId: string }) {
                     <Button
                       size="sm"
                       className="flex-1"
-                      disabled={Boolean(isBusy)}
+                      disabled={!canPublish || Boolean(isBusy)}
                       onClick={() => handlePublish(p.slug as ProviderSlug)}
                     >
                       {isBusy ? (

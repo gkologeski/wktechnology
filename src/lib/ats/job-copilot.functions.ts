@@ -1,3 +1,5 @@
+import { assertHrRecordAccess } from "@/lib/access-control/hr-records.server";
+import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 // Wave 8 — Slice 2: Job Copilot
 // IA grounded em uma vaga: rankeia candidatos da pipeline, sugere perguntas
 // para entrevista e drafta outreach personalizado. Sem efeitos colaterais.
@@ -33,37 +35,27 @@ async function callAi(messages: Array<{ role: string; content: string }>, json =
 }
 
 async function buildJobContext(supabase: any, jobId: string, userId?: string) {
+  await assertHrRecordAccess(supabase, "jobs", "view", jobId);
+  if (!userId) throw new Error("Sessão indisponível.");
+  const workspaceId = await getActiveWorkspaceId(supabase, userId);
+  await assertAnyPermission(supabase, userId, workspaceId, [
+    "techhire.copilot.view.workspace",
+    "techhire.copilot.view.team",
+    "techhire.copilot.view.own",
+  ]);
+  await assertAnyPermission(supabase, userId, workspaceId, [
+    "techhire.copilot.create.workspace",
+    "techhire.copilot.create.own",
+  ]);
   const cols =
     "title, seniority, remote_mode, employment_type, location, description, requirements, metadata, owner_id, hiring_manager_id, recruiter_id";
-  // eslint-disable-next-line prefer-const -- `job` é reatribuído abaixo
-  let { data: job, error } = await supabase
+  const { data: job, error } = await supabase
     .from("ats_jobs")
     .select(cols)
     .eq("id", jobId)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  if (!job) {
-    // Fallback: usuário pode ter acesso via role admin ou membership futura.
-    // Lê via admin e valida que o caller é owner/HM/recruiter ou admin.
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: full } = await supabaseAdmin
-      .from("ats_jobs")
-      .select(cols)
-      .eq("id", jobId)
-      .maybeSingle();
-    if (!full) throw new Error("Vaga não encontrada");
-    let allowed =
-      userId != null &&
-      (full.owner_id === userId ||
-        full.hiring_manager_id === userId ||
-        full.recruiter_id === userId);
-    if (!allowed && userId) {
-      const { data: isAdmin } = await supabaseAdmin.rpc("is_platform_admin", { _user: userId });
-      allowed = Boolean(isAdmin);
-    }
-    if (!allowed) throw new Error("Sem permissão para acessar esta vaga");
-    job = full;
-  }
+  if (!job) throw new Error("Vaga indisponível ou sem permissão de consulta.");
   const department = (job.metadata as { department?: string } | null)?.department ?? null;
   const lines: string[] = [];
   lines.push(`Vaga: ${job.title}`);
