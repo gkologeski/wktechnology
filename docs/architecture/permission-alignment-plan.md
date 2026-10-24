@@ -1071,3 +1071,48 @@ O webhook de gateway não altera dados sem um adaptador verificado (503). Não
 prometer emissão real, homologação de gateway, TED, estorno bancário, nova alçada
 ou fechamento contábil, que não são entregas de alinhamento de permissões.
 Nenhum cargo padrão ou override de produção será alterado automaticamente.
+
+
+### Ordem 2 concluída no escopo de permissionamento — 24/10/2026
+
+Implementação `0bb5537d61e7b91c9423a9cef413e3cdd783ad8b`. Migrações 0214/0215
+aplicadas no journal 218/219, when 1792873273594/1792873273595. Hashes SHA-256:
+`08f5d86ba99127b939a4a2315958dd4362fd1393b0e3dc19a4e1fe26638ed3c1` e
+`24d8737984524c3edda1ff85fa0bc5afda2d113055121b49e9bc38a2ddb46334`.
+
+Preparação antes da publicação; ativação somente após conferir o entrypoint e
+13 assets byte a byte em app.wktechnology.com.br e wktechnology.lovable.app.
+Deploy `ff9268b2-8b65-45af-b43c-5b1fb0eff157`. Gates finais: 1.727 testes em
+221 arquivos, tipos e lint aprovados; verify 41.691 ms e build 99.452 ms,
+ambos completos, sem alteração de fonte, hash
+`e0323869a4ed7796b45953f0fbfaacfe835ed7a2cdd158b0ea0c1ebf53abb9ad`.
+
+Aceite final: 26 casos GoTrue/JWT/PostgREST, 20 regressões bancárias, 5 fluxos
+Chrome/HTTP, zero erros de página, 18 grupos SQL de regressão e roteiro adicional
+de aceite ensaiado localmente. Concessões fictícias e registros de teste limpos;
+rodadas anteriores com catálogo truncado foram descartadas e não contam como
+aceite. Produção: identidade SQL autenticada com rollback validou cadastros,
+grupos atômicos, padrão, quitação manual, proteção de provedor, imutabilidade de
+fatura paga, segredos, fiscal protegido, régua, exportação e negação de não membro.
+Zero resíduos em fatura, empresa, categoria, grupo ou régua de QA.
+
+Os agendadores tinham uma referência de segredo ausente. Agora cada um usa
+credencial privada própria no Vault, validada por RPC exclusiva de serviço;
+as credenciais não são retornadas ao navegador nem registradas no relatório.
+Horários e estado ativo preservados: banco */30, cobrança */15 e recorrências
+06h05 no fuso do cron existente. A implementação não depende daquela referência
+vazia e mantém compatibilidade com o CRON_SECRET do servidor. Não houve envio
+real de cobrança, emissão fiscal ou chamada financeira a provedor no aceite.
+
+Preservação de contagens E hashes: 28.531 lançamentos, 26.035 baixas, 1 fatura,
+1 registro fiscal, 6.653 defaults e 1.008 overrides. Nove guards, 37 políticas
+canônicas e quatro chaves específicas; nenhum grant novo para cargos. Histórico
+original e dados reais não foram migrados, apagados ou reescritos.
+
+Evidências: projeto ChatGPT, outputs/permission-finance-business-2026-10-24/.
+Este aceite combina navegador/autenticação locais, SQL e metadados de produção;
+não alegar teste visual de todos os cargos financeiros em produção. Integrações
+reais de cobrança/NFS-e, TED, estorno bancário e fechamento contábil novo
+continuam fora do escopo. Emissão fictícia foi removida e substituída por
+indisponibilidade explícita. As outras ordens e seis etapas globais continuam
+com seus próprios critérios: concluir Ordem 2 não encerra o plano inteiro.

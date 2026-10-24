@@ -1726,7 +1726,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1740,7 +1740,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1754,7 +1754,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1768,7 +1768,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1782,7 +1782,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1796,7 +1796,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1810,7 +1810,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1824,7 +1824,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1838,7 +1838,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1852,7 +1852,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1866,7 +1866,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1880,7 +1880,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1894,7 +1894,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1908,7 +1908,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1922,7 +1922,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1936,7 +1936,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1950,7 +1950,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1967,7 +1967,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1984,7 +1984,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -2001,7 +2001,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -2018,7 +2018,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -2032,7 +2032,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -2046,7 +2046,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -2060,7 +2060,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -2074,7 +2074,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -2088,7 +2088,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -2102,7 +2102,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -2116,7 +2116,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -2130,7 +2130,7 @@
       "scope": "Owner/team only for actual owned records. Unowned catalogs require workspace scope. No automatic role grants.",
       "server": "caller client + finance_business_authorize",
       "database": "Canonical action policies, immutable tenant/authorship, same-tenant references and state guards",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -2143,7 +2143,7 @@
       "scope": "reports/audit use caller-visible underlying entries; NFSe also requires parent invoice visibility; raw payload is service-only",
       "server": "explicit helper before query",
       "database": "caller RLS on each source; fiscal DML revoked",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -2156,7 +2156,7 @@
       "scope": "reports/audit use caller-visible underlying entries; NFSe also requires parent invoice visibility; raw payload is service-only",
       "server": "explicit helper before query",
       "database": "caller RLS on each source; fiscal DML revoked",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -2169,7 +2169,7 @@
       "scope": "reports/audit use caller-visible underlying entries; NFSe also requires parent invoice visibility; raw payload is service-only",
       "server": "explicit helper before query",
       "database": "caller RLS on each source; fiscal DML revoked",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -2181,7 +2181,7 @@
       "scope": "Explicit export gate plus visible rows only; raw CSV/bulk/kanban bypass disabled",
       "server": "authorizeFinanceBusinessExport",
       "database": "underlying row scope retained",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -2193,7 +2193,7 @@
       "scope": "Explicit export gate plus visible rows only; raw CSV/bulk/kanban bypass disabled",
       "server": "authorizeFinanceBusinessExport",
       "database": "underlying row scope retained",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -2205,7 +2205,7 @@
       "scope": "Explicit export gate plus visible rows only; raw CSV/bulk/kanban bypass disabled",
       "server": "authorizeFinanceBusinessExport",
       "database": "underlying row scope retained",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -2217,49 +2217,49 @@
       "scope": "Explicit export gate plus visible rows only; raw CSV/bulk/kanban bypass disabled",
       "server": "authorizeFinanceBusinessExport",
       "database": "underlying row scope retained",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "operation": "finance_reference_list",
       "kind": "metadata_exception",
       "migration": "0214–0215",
       "scope": "Minimal IDs/names/currency and grouping only; active selected tenant plus legitimate Sales/Contracts/People/Projects/Finance consumer. No balances, documents, settings or raw metadata.",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "operation": "finance_dunning_claim/finish/enroll",
       "kind": "service_exception",
       "migration": "0214–0215",
       "scope": "Only service_role; revalidate active policy owner, invoice view, dunning.manage, channel action and source tenant; reserve each run/step once before outbound effect; uncertain effect pauses without auto retry.",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "operation": "/api/public/hooks/dunning-tick",
       "kind": "service_exception",
       "migration": "0214–0215",
-      "scope": "CRON_SECRET; use same vault reference as recurrences scheduler. Publishable key rejected.",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "scope": "Private per-job Vault credential checked by service-only RPC; optional legacy server CRON_SECRET compatibility. Public API key and another job token rejected. Dunning/recurrences/banking schedules retained.",
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "operation": "/api/public/payments/br-webhook/$provider",
       "kind": "public_exception",
       "migration": "0214–0215",
       "scope": "503 and no mutations until verified provider adapters exist. Existing implementation had only fake issuance and zero live provider invoices in production inventory.",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "operation": "finance_invoice_from_timesheet",
       "kind": "business_action",
       "migration": "0214–0215",
       "scope": "Invoice create+view, visible allocation/contract/time rows, caller RLS update and existing project measurement guards; all effects in one transaction.",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "operation": "invoice manual settlement/cancellation",
       "kind": "business_action",
       "migration": "0214–0215",
       "scope": "Requires invoices.update and visible invoice plus separate invoice_settlement/invoice_cancellation.manage.workspace; terminal state and provider fields protected.",
-      "status": "preparado_testado_isolado_nao_publicado"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     }
   ],
   "rules": [
@@ -2616,6 +2616,7 @@
     "0193 covers CRUD of people/candidates/onboarding plans/tasks/templates only; sensitive fields, jobs, other HR resources and browser acceptance remain separate.",
     "Finance core 0210–0211: does not complete bank approval/token/provider/cancellation permissions, catalogs, fiscal/invoice/dunning boundaries, accounting period closing or the entire Order 2. No business-role grants were added.",
     "Banking 0212–0213: all bank actions require banking.view.workspace plus a specific action. Legacy banking own/team/create/delete/export catalog keys do not grant these operations; no automatic role grants. Inter sandbox/production, TED and bank-side payment reversal remain unavailable. This lot does not finish fiscal, bank-account catalogs or reporting permissions.",
-    "0214–0215 preparation: permission alignment does not implement real charge/NFS-e providers, TED, bank reversals or new accounting period-closing features. Unsupported fake issuance is replaced with an explicit unavailable result; no fabricated links/QR codes or fake fiscal success."
+    "0214–0215 preparation: permission alignment does not implement real charge/NFS-e providers, TED, bank reversals or new accounting period-closing features. Unsupported fake issuance is replaced with an explicit unavailable result; no fabricated links/QR codes or fake fiscal success.",
+    "Order 2 permission alignment closed in 0210–0215: 26 actual JWT cases, 20 banking regression cases, 5 local browser/HTTP flows and rollback SQL acceptance in production. Does not certify all financial roles visually in production or real gateway/fiscal integrations. No automatic role/default/override grants."
   ]
 }
