@@ -1,3 +1,5 @@
+import { HrScreenAccess } from "@/components/hr-access";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { createFileRoute } from "@tanstack/react-router";
 import { GridListToolbar } from "@/components/grid/grid-list-toolbar";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
@@ -58,7 +60,11 @@ import { IsoDatePicker } from "@/components/iso-date-picker";
 import { formatIsoDate } from "@/lib/iso-date";
 export const Route = createFileRoute("/_authenticated/finance/recurrences")({
   head: () => ({ meta: [{ title: "Recorrências financeiras" }] }),
-  component: RecurrencesPage,
+  component: () => (
+    <HrScreenAccess resources={["techfinance.recurrences"]}>
+      <RecurrencesPage />
+    </HrScreenAccess>
+  ),
 });
 
 const CADENCE_LABEL: Record<string, string> = {
@@ -70,6 +76,11 @@ const CADENCE_LABEL: Record<string, string> = {
 
 function RecurrencesPage() {
   const qc = useQueryClient();
+  const { canAny, workspaceId } = usePermissions();
+  const canCreate = canAny([
+    "techfinance.recurrences.create.own",
+    "techfinance.recurrences.create.workspace",
+  ]);
   const list = useServerFn(listRecurrences);
   const upsert = useServerFn(upsertRecurrence);
   const toggle = useServerFn(toggleRecurrence);
@@ -83,7 +94,7 @@ function RecurrencesPage() {
   const [legalEntityId, setLegalEntityId] = useLegalEntityFilter();
   const filterInput = useLegalEntityFilterInput(legalEntityId);
   const { data: rows = [], isLoading } = useQuery({
-    queryKey: ["finance-recurrences", tab, legalEntityId, JSON.stringify(filterInput)],
+    queryKey: ["finance-recurrences", workspaceId, tab, legalEntityId, JSON.stringify(filterInput)],
     queryFn: () =>
       list({
         data: { ...(tab === "all" ? {} : { direction: tab }), ...filterInput },
@@ -124,15 +135,23 @@ function RecurrencesPage() {
             <LegalEntitySelect value={legalEntityId} onChange={setLegalEntityId} />
             <Button
               variant="outline"
+              disabled={!rows.some((r) => r.capabilities?.can_generate)}
               onClick={async () => {
                 const r = await runDue();
-                toast.success(`Recorrências processadas. ${r.generated} lançamento(s) gerado(s).`);
+                if (r.errors.length)
+                  toast.error(
+                    `${r.generated} lançamento(s) gerado(s); ${r.errors.length} recorrência(s) com falha: ${r.errors[0]}`,
+                  );
+                else
+                  toast.success(
+                    `Recorrências processadas. ${r.generated} lançamento(s) gerado(s). ${r.skipped} sem permissão de geração.`,
+                  );
                 invalidate();
               }}
             >
               <RefreshCcw className="h-4 w-4 mr-1" /> Rodar agora
             </Button>
-            <Button onClick={() => setDialogOpen(true)}>
+            <Button disabled={!canCreate} onClick={() => setDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-1" /> Nova recorrência
             </Button>
           </div>
@@ -255,6 +274,7 @@ function RecurrencesPage() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            disabled={!r.capabilities?.can_update}
                             onClick={async () => {
                               await toggle({ data: { id: r.id, active: !r.active } });
                               invalidate();
@@ -281,7 +301,12 @@ function RecurrencesPage() {
                               toast.success("Recorrência excluída.");
                               invalidate();
                             }}
-                            title="Excluir"
+                            disabled={!r.capabilities?.can_delete}
+                            title={
+                              r.occurrences_generated > 0
+                                ? "Pause para preservar o histórico"
+                                : "Excluir"
+                            }
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>

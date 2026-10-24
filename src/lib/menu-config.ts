@@ -163,22 +163,23 @@ export const MENU_PERMISSIONS = {
   // Financeiro
   financeOverview: [
     "techfinance.entries.view.own",
+    "techfinance.entries.view.team",
     "techfinance.entries.view.workspace",
-    "techfinance.entries.manage.workspace",
   ],
   financeReceivable: [
-    "techfinance.invoices.view.workspace",
-    "techfinance.entries.view.workspace",
     "techfinance.entries.view.own",
+    "techfinance.entries.view.team",
+    "techfinance.entries.view.workspace",
   ],
   financePayable: [
-    "techfinance.payments.view.workspace",
-    "techfinance.entries.view.workspace",
     "techfinance.entries.view.own",
+    "techfinance.entries.view.team",
+    "techfinance.entries.view.workspace",
   ],
   financeRecurrences: [
+    "techfinance.recurrences.view.own",
+    "techfinance.recurrences.view.team",
     "techfinance.recurrences.view.workspace",
-    "techfinance.recurrences.update.workspace",
   ],
   financeCostCenters: [
     "techfinance.cost_centers.view.workspace",

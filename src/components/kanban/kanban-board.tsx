@@ -70,6 +70,8 @@ export type KanbanBoardProps<T extends { id: string }> = {
   activityEntity?: "leads" | "contacts" | "deals" | "companies";
   /** Guarda de RBAC na UI para exclusão em massa. */
   canDelete?: boolean;
+  csvEnabled?: boolean;
+  staticFieldsOnly?: boolean;
   /** Rótulo para cada card na seleção (acessibilidade). */
   cardLabel?: (row: T) => string;
   /**
@@ -100,6 +102,8 @@ export function KanbanBoard<T extends { id: string }>({
   assignColumn = "assigned_to",
   activityEntity,
   canDelete = false,
+  csvEnabled = true,
+  staticFieldsOnly = false,
   cardLabel,
   bulkEditFields,
 }: KanbanBoardProps<T>) {
@@ -308,6 +312,8 @@ export function KanbanBoard<T extends { id: string }>({
           canUpdate={canUpdate && (!canUpdateRecord || selection.ids.every(canUpdateRecord))}
           canDelete={canDelete && (!canDeleteRecord || selection.ids.every(canDeleteRecord))}
           bulkEditFields={bulkEditFields}
+          csvEnabled={csvEnabled}
+          staticFieldsOnly={staticFieldsOnly}
           onClear={selection.clear}
           onDone={invalidate}
         />

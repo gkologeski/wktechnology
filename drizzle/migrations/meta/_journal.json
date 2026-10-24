@@ -1471,6 +1471,20 @@
       "when": 1792850524965,
       "tag": "0209_ats_compliance_activation",
       "breakpoints": true
+    },
+    {
+      "idx": 210,
+      "version": "7",
+      "when": 1792873273590,
+      "tag": "0210_finance_core_actions",
+      "breakpoints": true
+    },
+    {
+      "idx": 211,
+      "version": "7",
+      "when": 1792873273591,
+      "tag": "0211_finance_core_activation",
+      "breakpoints": true
     }
   ]
 }

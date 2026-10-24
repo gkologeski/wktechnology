@@ -1,3 +1,5 @@
+import { HrScreenAccess } from "@/components/hr-access";
+import { useFinanceCapabilities } from "@/lib/access-control/use-finance-capabilities";
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -25,7 +27,7 @@ import {
 } from "@/components/ui/table";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { formatCompactDateTime } from "@/lib/format/compact-date";
-import { listFinancialEntries } from "@/lib/finance.functions";
+import { listFinancialEntries, authorizeFinancialExport } from "@/lib/finance.functions";
 import { QuickCreateEntryDialog } from "@/components/finance/quick-create-entry-dialog";
 import { RegisterPaymentDialog } from "@/components/finance/register-payment-dialog";
 import {
@@ -75,7 +77,7 @@ const STATUS_DOT: Record<string, string> = {
 
 type Entry = Awaited<ReturnType<typeof listFinancialEntries>>[number];
 
-export function EntriesListPage({
+function EntriesListContent({
   direction,
   title,
   description,
@@ -86,6 +88,8 @@ export function EntriesListPage({
 }) {
   const qc = useQueryClient();
   const list = useServerFn(listFinancialEntries);
+  const authorizeExport = useServerFn(authorizeFinancialExport);
+  const { workspaceId } = usePermissions();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string>("all");
   const [legalEntityId, setLegalEntityId] = useLegalEntityFilter();
@@ -102,6 +106,7 @@ export function EntriesListPage({
   } = useQuery({
     queryKey: [
       "finance-entries",
+      workspaceId,
       direction,
       status,
       search,
@@ -122,6 +127,7 @@ export function EntriesListPage({
       }),
   });
 
+  const access = useFinanceCapabilities(allRows.map((row) => row.id));
   const rows = useMemo(() => filterRows(allRows as Entry[]), [allRows, filterRows]);
 
   const total = useMemo(
@@ -130,7 +136,11 @@ export function EntriesListPage({
   );
 
   // Seleção múltipla / ações em massa (padrão de grids).
-  const { canAny } = usePermissions();
+  const { canAny, can } = usePermissions();
+  const canCreate = canAny([
+    "techfinance.entries.create.own",
+    "techfinance.entries.create.workspace",
+  ]);
   const selection = useGridSelection(
     rows as unknown as Array<Record<string, unknown> & { id: string }>,
   );
@@ -234,7 +244,8 @@ export function EntriesListPage({
   });
 
   const invalidate = () => {
-    qc.invalidateQueries({ queryKey: ["finance-entries", direction] });
+    access.refetch();
+    qc.invalidateQueries({ queryKey: ["finance-entries"] });
     qc.invalidateQueries({ queryKey: ["finance", "dashboard"] });
   };
 
@@ -249,9 +260,10 @@ export function EntriesListPage({
           <div className="flex gap-2">
             <ExportMenuButton
               size="default"
-              disabled={rows.length === 0}
-              onExport={(format) =>
-                exportRows(rows, {
+              disabled={rows.length === 0 || !can("techfinance.entries.export.workspace")}
+              onExport={async (format) => {
+                await authorizeExport();
+                return exportRows(rows, {
                   filename: `financeiro-${direction}`,
                   format,
                   columns: [
@@ -268,10 +280,10 @@ export function EntriesListPage({
                     { header: "Vencimento", value: (r) => r.due_date },
                     { header: "Competência", value: (r) => r.competence_date ?? "" },
                   ],
-                })
-              }
+                });
+              }}
             />
-            <Button onClick={() => setOpenNew(true)}>
+            <Button disabled={!canCreate} onClick={() => setOpenNew(true)}>
               <Plus className="h-4 w-4 mr-1" /> Novo lançamento
             </Button>
           </div>
@@ -326,19 +338,12 @@ export function EntriesListPage({
           }}
           totalMatching={rows.length}
           onSelectAll={selectAllFiltered}
-          canUpdate={canUpdateEntries}
-          canDelete={canAny([
-            "techfinance.entries.manage.workspace",
-            "techfinance.entries.delete.workspace",
-            "techfinance.entries.delete.own",
-          ])}
+          canUpdate={canUpdateEntries && selection.ids.every((id) => access.for(id).can_update)}
+          canDelete={selection.ids.every((id) => access.for(id).can_delete)}
+          csvEnabled={false}
+          staticFieldsOnly
+          assignColumn={can("techfinance.entries.assign.workspace") ? "assigned_to" : null}
           bulkEditFields={[
-            {
-              name: "status",
-              label: "Status",
-              type: "select",
-              options: Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label })),
-            },
             { name: "due_date", label: "Vencimento", type: "date" },
             { name: "competence_date", label: "Competência", type: "date" },
           ]}
@@ -351,6 +356,15 @@ export function EntriesListPage({
           table="financial_entries"
           stageField="status"
           selectable
+          csvEnabled={false}
+          staticFieldsOnly
+          assignColumn={can("techfinance.entries.assign.workspace") ? "assigned_to" : null}
+          canUpdateRecord={(id) => access.for(id).can_update}
+          canDeleteRecord={(id) => access.for(id).can_delete}
+          bulkEditFields={[
+            { name: "due_date", label: "Vencimento", type: "date" },
+            { name: "competence_date", label: "Competência", type: "date" },
+          ]}
           entityLabel="lançamento"
           canUpdate={canUpdateEntries}
           canDelete={canAny([
@@ -374,7 +388,7 @@ export function EntriesListPage({
               <p className="mt-2 text-sm text-muted-foreground">
                 Crie manualmente ou aguarde a geração automática por serviços e contratos.
               </p>
-              <Button className="mt-4" onClick={() => setOpenNew(true)}>
+              <Button disabled={!canCreate} className="mt-4" onClick={() => setOpenNew(true)}>
                 <Plus className="h-4 w-4 mr-1" /> Novo lançamento
               </Button>
             </div>
@@ -414,7 +428,7 @@ export function EntriesListPage({
               <p className="mt-2 text-sm text-muted-foreground">
                 Crie manualmente ou aguarde a geração automática por serviços e contratos.
               </p>
-              <Button className="mt-4" onClick={() => setOpenNew(true)}>
+              <Button disabled={!canCreate} className="mt-4" onClick={() => setOpenNew(true)}>
                 <Plus className="h-4 w-4 mr-1" /> Novo lançamento
               </Button>
             </div>
@@ -472,7 +486,12 @@ export function EntriesListPage({
                       ))}
                       <TableCell className="text-right">
                         {!paid && (
-                          <Button size="sm" variant="outline" onClick={() => setPayFor(e)}>
+                          <Button
+                            disabled={!access.for(e.id).can_pay}
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setPayFor(e)}
+                          >
                             Baixar
                           </Button>
                         )}
@@ -499,5 +518,13 @@ export function EntriesListPage({
       />
       <financeGrid.ColumnsEditor />
     </div>
+  );
+}
+
+export function EntriesListPage(props: Parameters<typeof EntriesListContent>[0]) {
+  return (
+    <HrScreenAccess resources={["techfinance.entries"]}>
+      <EntriesListContent {...props} />
+    </HrScreenAccess>
   );
 }

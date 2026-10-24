@@ -42,19 +42,7 @@ export async function settleChargePaymentAdmin(supabase: any, chargeId: string, 
     if (pErr) throw new Error(pErr.message);
     paymentId = pay.id;
 
-    const { data: entry } = await supabase
-      .from("financial_entries")
-      .select("amount, paid_amount")
-      .eq("id", charge.financial_entry_id)
-      .maybeSingle();
-    if (entry) {
-      const newPaid = Number(entry.paid_amount) + Number(charge.amount);
-      const newStatus = newPaid + 0.001 >= Number(entry.amount) ? "paid" : "partially_paid";
-      await supabase
-        .from("financial_entries")
-        .update({ paid_amount: newPaid, status: newStatus })
-        .eq("id", charge.financial_entry_id);
-    }
+    // financial_payments_after_change recalculates the entry exactly once.
   }
 
   await supabase

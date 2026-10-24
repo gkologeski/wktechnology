@@ -1,7 +1,12 @@
 // Server-only helper para liquidar um pagamento de saída (AP) — chamado pelo webhook público.
 // Marca bank_payments como paid, cria financial_payments no lançamento AP vinculado
 // e concilia com a transação de débito correspondente do extrato.
-export async function settleBankPaymentAdmin(supabase: any, paymentId: string, paidAtIso: string) {
+export async function settleBankPaymentAdmin(
+  supabase: any,
+  paymentId: string,
+  paidAtIso: string,
+  actorId?: string,
+) {
   const { data: p, error } = await supabase
     .from("bank_payments")
     .select(
@@ -32,6 +37,7 @@ export async function settleBankPaymentAdmin(supabase: any, paymentId: string, p
       .insert({
         workspace_id: p.workspace_id,
         entry_id: p.financial_entry_id,
+        created_by: actorId ?? null,
         bank_account_id: linkedAccount?.id ?? null,
         paid_at: paidDate,
         amount: p.amount,
@@ -44,19 +50,7 @@ export async function settleBankPaymentAdmin(supabase: any, paymentId: string, p
     if (pErr) throw new Error(pErr.message);
     financialPaymentId = pay.id;
 
-    const { data: entry } = await supabase
-      .from("financial_entries")
-      .select("amount, paid_amount")
-      .eq("id", p.financial_entry_id)
-      .maybeSingle();
-    if (entry) {
-      const newPaid = Number(entry.paid_amount) + Number(p.amount);
-      const newStatus = newPaid + 0.001 >= Number(entry.amount) ? "paid" : "partially_paid";
-      await supabase
-        .from("financial_entries")
-        .update({ paid_amount: newPaid, status: newStatus })
-        .eq("id", p.financial_entry_id);
-    }
+    // financial_payments_after_change recalculates the entry exactly once.
   }
 
   await supabase

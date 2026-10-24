@@ -912,3 +912,64 @@ Nenhuma alteração de código, esquema do banco ou concessão de permissões fo
 necessária neste aceite; somente registros fictícios foram criados/editados e
 removidos após a autorização específica do usuário.
 A revisão técnica anterior e a publicação permanecem válidas.
+
+## Ordem 2 — núcleo TechFinance (0210–0211), 24/10/2026
+
+Estimativa inicial da frente financeira: 2–4h, incluindo correções, teste e
+publicação. Este primeiro lote cobre lançamentos, baixas contábeis, parcelas,
+recorrências e rateios; não conclui toda a Ordem 2.
+
+A preparação 0210 foi aplicada no journal 214, when 1792873273590, hash
+`d42fb3bb981318bfc051f94bec0514c580ef6323736ea0529e8bb222606bb8e0`.
+A ativação 0211 será aplicada somente depois da interface compatível publicada.
+Não há mudança de defaults, overrides de cargos ou memberships em produção.
+Duas chaves entram no catálogo: cancelar lançamento e reatribuir lançamento;
+as concessões continuam sendo decisões da matriz, sem grants em massa.
+
+O responsável efetivo é assigned_to, com fallback para owner_id; team depende
+de grupo real no tenant. Acesso exige workspace selecionado e membership ativo.
+Owner sozinho não permite editar. Baixa tem view/create/delete próprios e não
+exige entries.update. Saldo/status continuam derivados do trigger: não podem ser
+forjados na edição. Baixas serializam no lançamento e não excedem seu saldo;
+condições já baixadas exigem reversão antes de alteração destrutiva.
+Reversão contábil não promete estorno bancário. Cancelamento exige sua ação e
+não pode apagar o histórico de baixas. Tenant, origem e autoria são imutáveis.
+
+Parcelas são criadas/excluídas em transação, conferindo todos os irmãos reais;
+o pai permanece quando há parcelas que precisam ser preservadas. Recorrência
+bloqueia a agenda e grava o lançamento junto com o cursor; duas execuções não
+repetem a mesma ocorrência. Corrige competência ausente na geração. Cron usa
+o tenant da origem e delegação do dono ativo; suspensão/revogação bloqueia novas
+gerações. Agenda com histórico pode ser pausada, não apagada. Falhas/itens sem
+permissão são informados no processamento, sem afirmar sucesso integral.
+
+Rateios exigem edição do lançamento, centro ativo no mesmo tenant e soma dentro
+do valor. Contexto de permissões é protegido e calculado uma vez por consulta,
+sem refazer a matriz para cada uma das milhares de linhas financeiras.
+
+Consumidores bancários foram adaptados ao saldo derivado: removida a segunda
+soma após o trigger. Liquidação simulada identifica a autoria; conciliação de
+extrato cria lançamento/baixa/vínculo em transação e serializa a transação do
+extrato. Workspace bancário usa o selecionado, em vez do primeiro de uma lista.
+Isso é compatibilidade do núcleo, não aceite integral de aprovação/provedores,
+segredos, cancelamento bancário ou idempotência concorrente de todos os webhooks.
+
+UI: consulta antes de montar, capacidades reais por linha, cache por workspace,
+edição em massa limitada às datas revisadas, atribuição com ação própria,
+exportação com autorização de servidor e ausência de histórico diferenciada de
+falta de permissão. Na revisão foi corrigida a invalidação da lista após incluir
+workspace na chave de cache. Fonte de verdade continua sendo o banco.
+
+Validação até a preparação: 1711 testes/218 arquivos, tipos/lint/build completos,
+mesmo source_hash `88207dd8e69b22a0512d014103f55f0ae4da1fd218842a98315eac2f3dbb9b3a`,
+source_changed=false. Quinze grupos SQL no catálogo real isolado, 12 cenários
+GoTrue/PostgREST reais e 3 de compatibilidade bancária sem provider externo.
+Quatro fluxos de navegador aprovados; complemento de campos em massa em aceite.
+Todas as regressões de RH/LGPD/settings/RPC anteriores passaram.
+
+Pendências da Ordem 2: autorização bancária completa (inclusive tokens,
+aprovação/execução, cancelamento e concorrência de liquidação); cadastros e
+relatórios; faturamento/NFS-e/cobrança e integrações. Não foi encontrado controle
+de fechamento de período nos fluxos avaliados: a matriz não substitui essa regra
+de negócio. Não houve reconciliação/mudança automática de valores históricos.
+Aplicação/versão publicada e encerramento do lote serão registrados abaixo.

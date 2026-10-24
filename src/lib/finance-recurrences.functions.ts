@@ -2,7 +2,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
+import { financeRpc } from "@/lib/access-control/finance-records.server";
 
 const directionEnum = z.enum(["receivable", "payable"]);
 const cadenceEnum = z.enum(["weekly", "monthly", "yearly", "custom_days"]);
@@ -58,7 +59,21 @@ export const listRecurrences = createServerFn({ method: "POST" })
       q = q.in("template->>legal_entity_id", data.legalEntityIds);
     const { data: rows, error } = await q;
     if (error) throw error;
-    return rows ?? [];
+    const caps: Array<{
+      id: string;
+      can_update: boolean;
+      can_delete: boolean;
+      can_generate: boolean;
+    }> = [];
+    const ids = (rows ?? []).map((row) => row.id);
+    for (let i = 0; i < ids.length; i += 200)
+      caps.push(
+        ...(await financeRpc<typeof caps>(supabase, "finance_recurrence_capabilities", {
+          _ids: ids.slice(i, i + 200),
+        })),
+      );
+    const byId = new Map(caps.map((cap) => [cap.id, cap]));
+    return (rows ?? []).map((row) => ({ ...row, capabilities: byId.get(row.id) }));
   });
 
 export const getRecurrence = createServerFn({ method: "POST" })
@@ -80,7 +95,7 @@ export const upsertRecurrence = createServerFn({ method: "POST" })
   .inputValidator((input) => upsertSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
     const payload = {
       workspace_id: workspaceId,
       owner_id: userId,
@@ -129,7 +144,9 @@ export const toggleRecurrence = createServerFn({ method: "POST" })
     const { error } = await context.supabase
       .from("financial_recurrences")
       .update({ active: data.active })
-      .eq("id", data.id);
+      .eq("id", data.id)
+      .select("id")
+      .single();
     if (error) throw error;
     return { ok: true };
   });
@@ -141,7 +158,9 @@ export const deleteRecurrence = createServerFn({ method: "POST" })
     const { error } = await context.supabase
       .from("financial_recurrences")
       .delete()
-      .eq("id", data.id);
+      .eq("id", data.id)
+      .select("id")
+      .single();
     if (error) throw error;
     return { ok: true };
   });
@@ -150,6 +169,13 @@ export const listRecurrenceEntries = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    if (
+      (await financeRpc(context.supabase, "finance_recurrence_access", {
+        _id: data.id,
+        _action: "view",
+      })) !== true
+    )
+      throw new Error("Recorrência indisponível ou sem permissão.");
     const { data: rows, error } = await context.supabase
       .from("financial_entries")
       .select("id, description, amount, due_date, status")
@@ -167,7 +193,7 @@ export const runMyDueRecurrences = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
     const today = new Date().toISOString().slice(0, 10);
     const { data: due, error } = await supabase
       .from("financial_recurrences")
@@ -178,18 +204,38 @@ export const runMyDueRecurrences = createServerFn({ method: "POST" })
     if (error) throw error;
     const { advanceRecurrenceOnce } = await import("@/lib/finance-recurrences.server");
     let generated = 0;
+    let skipped = 0;
+    const ids = (due ?? []).map((row) => row.id);
+    const allowed = new Set<string>();
+    for (let i = 0; i < ids.length; i += 200) {
+      const caps = await financeRpc<Array<{ id: string; can_generate: boolean }>>(
+        supabase,
+        "finance_recurrence_capabilities",
+        { _ids: ids.slice(i, i + 200) },
+      );
+      caps.filter((cap) => cap.can_generate).forEach((cap) => allowed.add(cap.id));
+    }
+    const errors: string[] = [];
     for (const r of due ?? []) {
-      // Loop so a paused-and-resumed recurrence can catch up multiple periods.
-      // Cap iterations per row to avoid runaway loops on bad data.
-      for (let i = 0; i < 24; i++) {
-        const advanced = await advanceRecurrenceOnce(supabase, r as any, today);
-        if (!advanced) break;
-        generated++;
-        r.next_run_date = advanced.next_run_date;
-        r.occurrences_generated = advanced.occurrences_generated;
-        r.active = advanced.active;
-        if (!advanced.active || r.next_run_date > today) break;
+      if (!allowed.has(r.id)) {
+        skipped++;
+        continue;
+      }
+      try {
+        // Loop so a paused-and-resumed recurrence can catch up multiple periods.
+        // Cap iterations per row to avoid runaway loops on bad data.
+        for (let i = 0; i < 24; i++) {
+          const advanced = await advanceRecurrenceOnce(supabase, r as any, today);
+          if (!advanced) break;
+          generated++;
+          r.next_run_date = advanced.next_run_date;
+          r.occurrences_generated = advanced.occurrences_generated;
+          r.active = advanced.active;
+          if (!advanced.active || r.next_run_date > today) break;
+        }
+      } catch (error) {
+        errors.push(error instanceof Error ? error.message : "Falha ao gerar recorrência.");
       }
     }
-    return { generated };
+    return { generated, skipped, errors };
   });

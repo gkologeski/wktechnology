@@ -2,6 +2,7 @@
 // Não expõe API pública: consumido por finance-recurrences.functions.ts e pelo
 // cron banking-tick / recurrences-tick.
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { financeRpc } from "@/lib/access-control/finance-records.server";
 
 type Cadence = "weekly" | "monthly" | "yearly" | "custom_days";
 
@@ -63,63 +64,9 @@ export async function advanceRecurrenceOnce(
   row: RecurrenceRow,
   today: string,
 ): Promise<{ next_run_date: string; occurrences_generated: number; active: boolean } | null> {
-  if (!row.active) return null;
-  if (row.next_run_date > today) return null;
-  if (row.max_occurrences && row.occurrences_generated >= row.max_occurrences) {
-    await supabase.from("financial_recurrences").update({ active: false }).eq("id", row.id);
-    return null;
-  }
-  if (row.end_date && row.next_run_date > row.end_date) {
-    await supabase.from("financial_recurrences").update({ active: false }).eq("id", row.id);
-    return null;
-  }
-
-  const t = row.template as Record<string, unknown>;
-  const entryPayload = {
-    workspace_id: row.workspace_id,
-    owner_id: row.owner_id,
-    direction: row.direction,
-    origin_type: "manual" as const,
-    status: "open" as const,
-    description: String(t.description ?? "Recorrência"),
-    amount: Number(t.amount ?? 0),
-    currency: (t.currency as string) ?? "BRL",
-    category_id: (t.category_id as string | null) ?? null,
-    counterparty_company_id: (t.counterparty_company_id as string | null) ?? null,
-    contract_id: (t.contract_id as string | null) ?? null,
-    service_id: (t.service_id as string | null) ?? null,
-    project_id: (t.project_id as string | null) ?? null,
-    payment_method: (t.payment_method as string | null) ?? null,
-    notes: (t.notes as string | null) ?? null,
-    due_date: row.next_run_date,
-    external_ref: `recurrence:${row.id}`,
-  };
-
-  const { data: inserted, error: insErr } = await supabase
-    .from("financial_entries")
-    .insert(entryPayload)
-    .select("id")
-    .single();
-  if (insErr) throw insErr;
-
-  const nextRun = computeNextRunDate(row);
-  const newCount = row.occurrences_generated + 1;
-  const reachedMax = !!row.max_occurrences && newCount >= row.max_occurrences;
-  const reachedEnd = !!row.end_date && nextRun > (row.end_date as string);
-  const stillActive = !reachedMax && !reachedEnd;
-
-  const { error: updErr } = await supabase
-    .from("financial_recurrences")
-    .update({
-      next_run_date: nextRun,
-      occurrences_generated: newCount,
-      last_generated_entry_id: inserted?.id ?? null,
-      active: stillActive,
-    })
-    .eq("id", row.id);
-  if (updErr) throw updErr;
-
-  return { next_run_date: nextRun, occurrences_generated: newCount, active: stillActive };
+  // The database locks and re-reads the schedule. Entry insertion and cursor
+  // advancement commit together, including under concurrent cron/UI requests.
+  return financeRpc(supabase, "finance_advance_recurrence", { _id: row.id, _today: today });
 }
 
 // Executado pelo cron. Percorre todas as recorrências ativas com next_run_date<=hoje

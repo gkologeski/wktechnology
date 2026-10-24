@@ -3,7 +3,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
+import {
+  assertFinanceEntry,
+  assertFinancePayment,
+  financeRpc,
+} from "@/lib/access-control/finance-records.server";
 import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 const directionEnum = z.enum(["receivable", "payable"]);
@@ -68,6 +73,7 @@ export const getFinancialEntry = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
+    await assertFinanceEntry(supabase, data.id, "view");
     const { data: entry, error } = await supabase
       .from("financial_entries")
       .select(
@@ -78,13 +84,19 @@ export const getFinancialEntry = createServerFn({ method: "POST" })
     if (error) throw error;
     if (!entry) return null;
 
-    const { data: payments } = await supabase
+    const paymentsVisible = await financeRpc<boolean>(supabase, "finance_payment_access", {
+      _entry: data.id,
+      _action: "view",
+    });
+    if (!paymentsVisible) return { ...entry, payments: [], payments_visible: false };
+    const { data: payments, error: paymentError } = await supabase
       .from("financial_payments")
       .select("*, financial_bank_accounts(id, name)")
       .eq("entry_id", data.id)
       .order("paid_at", { ascending: false });
 
-    return { ...entry, payments: payments ?? [] };
+    if (paymentError) throw paymentError;
+    return { ...entry, payments: payments ?? [], payments_visible: true };
   });
 
 const createEntryInput = z.object({
@@ -111,7 +123,7 @@ export const createFinancialEntry = createServerFn({ method: "POST" })
   .inputValidator((input) => createEntryInput.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
     const { data: row, error } = await supabase
       .from("financial_entries")
       .insert({
@@ -167,6 +179,7 @@ export const updateFinancialEntry = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
+    await assertFinanceEntry(supabase, data.id, "update");
     const { data: row, error } = await supabase
       .from("financial_entries")
       .update(data.patch)
@@ -182,10 +195,13 @@ export const cancelFinancialEntry = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
+    await assertFinanceEntry(supabase, data.id, "cancel");
     const { error } = await supabase
       .from("financial_entries")
       .update({ status: "cancelled" })
-      .eq("id", data.id);
+      .eq("id", data.id)
+      .select("id")
+      .single();
     if (error) throw error;
     return { ok: true };
   });
@@ -195,6 +211,7 @@ export const deleteFinancialEntry = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
+    await assertFinanceEntry(supabase, data.id, "delete");
     await deleteByIdGuarded(supabase, "financial_entries", data.id);
     return { ok: true };
   });
@@ -220,7 +237,8 @@ export const registerPayment = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
+    await assertFinancePayment(supabase, data.entry_id, "create");
     const { data: row, error } = await supabase
       .from("financial_payments")
       .insert({
@@ -246,6 +264,13 @@ export const deletePayment = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
+    const { data: payment, error } = await supabase
+      .from("financial_payments")
+      .select("entry_id")
+      .eq("id", data.id)
+      .single();
+    if (error) throw error;
+    await assertFinancePayment(supabase, payment.entry_id, "delete");
     await deleteByIdGuarded(supabase, "financial_payments", data.id);
     return { ok: true };
   });
@@ -294,7 +319,7 @@ export const createCategory = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
     const { data: row, error } = await supabase
       .from("financial_categories")
       .insert({
@@ -360,7 +385,7 @@ export const createBankAccount = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
     const { data: row, error } = await supabase
       .from("financial_bank_accounts")
       .insert({
@@ -853,7 +878,7 @@ export const createInstallments = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
     const total = data.base.amount;
 
     let amounts: number[] = [];
@@ -906,30 +931,17 @@ export const createInstallments = createServerFn({ method: "POST" })
       installment_total: data.count,
     };
 
-    const { data: parent, error: parentErr } = await supabase
-      .from("financial_entries")
-      .insert(parentInsert)
-      .select("*")
-      .single();
-    if (parentErr) throw parentErr;
-
-    if (data.count > 1) {
-      const rest = [];
-      for (let i = 1; i < data.count; i++) {
-        rest.push({
-          ...parentInsert,
-          description: `${data.base.description} (${i + 1}/${data.count})`,
-          amount: amounts[i],
-          due_date: dueDates[i],
-          installment_number: i + 1,
-          parent_entry_id: parent.id,
-        });
-      }
-      const { error: restErr } = await supabase.from("financial_entries").insert(rest);
-      if (restErr) throw restErr;
-    }
-
-    return { parent_id: parent.id, count: data.count, total_amount: roundCents(total) };
+    const rows = amounts.map((amount, i) => ({
+      ...parentInsert,
+      amount,
+      due_date: dueDates[i],
+      description: `${data.base.description} (${i + 1}/${data.count})`,
+    }));
+    return financeRpc<{ parent_id: string; count: number; total_amount: number }>(
+      supabase,
+      "finance_create_installments",
+      { _rows: rows },
+    );
   });
 
 export const listInstallmentSiblings = createServerFn({ method: "POST" })
@@ -965,20 +977,25 @@ export const deleteInstallmentGroup = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const parentId = data.parent_entry_id;
-    const { data: rows, error } = await supabase
-      .from("financial_entries")
-      .select("id, status, installment_number")
-      .or(`id.eq.${parentId},parent_entry_id.eq.${parentId}`);
-    if (error) throw error;
-    const list = rows ?? [];
-    const deletable = list.filter((r) =>
-      data.only_open ? r.status === "open" || r.status === "overdue" : true,
-    );
-    const kept = list.filter((r) => !deletable.find((d) => d.id === r.id));
-    if (deletable.length === 0) return { deleted: 0, kept: kept.length };
-    const ids = deletable.map((r) => r.id);
-    const { error: delErr } = await supabase.from("financial_entries").delete().in("id", ids);
-    if (delErr) throw delErr;
-    return { deleted: deletable.length, kept: kept.length };
+    return financeRpc<{ deleted: number; kept: number }>(supabase, "finance_delete_installments", {
+      _parent: data.parent_entry_id,
+      _only_open: data.only_open,
+    });
+  });
+
+/** Export is an explicit product action; reading a row does not grant it. */
+export const authorizeFinancialExport = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const workspace = await getActiveWorkspaceId(context.supabase, context.userId);
+    if (
+      (await financeRpc(context.supabase, "finance_scope_access", {
+        _workspace: workspace,
+        _resource: "entries",
+        _action: "export",
+        _responsible: null,
+      })) !== true
+    )
+      throw new Error("Sem permissão para exportar lançamentos.");
+    return { ok: true };
   });

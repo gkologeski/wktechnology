@@ -1,3 +1,5 @@
+import { HrScreenAccess } from "@/components/hr-access";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -32,7 +34,11 @@ export const Route = createFileRoute("/_authenticated/finance/")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: FinanceDashboard,
+  component: () => (
+    <HrScreenAccess resources={["techfinance.entries"]}>
+      <FinanceDashboard />
+    </HrScreenAccess>
+  ),
 });
 
 function Metric({
@@ -82,12 +88,13 @@ function Metric({
 
 function FinanceDashboard() {
   const get = useServerFn(getFinanceDashboard);
+  const { canAny, workspaceId } = usePermissions();
   const [openNew, setOpenNew] = useState(false);
   const [legalEntityId, setLegalEntityId] = useLegalEntityFilter();
 
   const filterInput = useLegalEntityFilterInput(legalEntityId);
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ["finance", "dashboard", legalEntityId, JSON.stringify(filterInput)],
+    queryKey: ["finance", "dashboard", workspaceId, legalEntityId, JSON.stringify(filterInput)],
     queryFn: () => get({ data: filterInput }),
   });
 
@@ -109,7 +116,12 @@ function FinanceDashboard() {
             <Button variant="outline" asChild>
               <Link to="/finance/payable">A pagar</Link>
             </Button>
-            <Button onClick={() => setOpenNew(true)}>
+            <Button
+              disabled={
+                !canAny(["techfinance.entries.create.own", "techfinance.entries.create.workspace"])
+              }
+              onClick={() => setOpenNew(true)}
+            >
               <Plus className="h-4 w-4 mr-1" /> Novo lançamento
             </Button>
           </div>

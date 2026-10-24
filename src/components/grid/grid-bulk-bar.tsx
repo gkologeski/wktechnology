@@ -39,6 +39,8 @@ export type GridBulkBarProps<T extends { id: string }> = {
   canUpdate?: boolean;
   canDelete?: boolean;
   csvEnabled?: boolean;
+  /** Use only the reviewed fixed fields, even if the entity has a dynamic catalog. */
+  staticFieldsOnly?: boolean;
   /** Ações extras específicas da tela. */
   extraActions?: ReactNode;
 };
@@ -59,13 +61,14 @@ export function GridBulkBar<T extends { id: string }>({
   canUpdate = true,
   canDelete = true,
   csvEnabled = true,
+  staticFieldsOnly = false,
   extraActions,
 }: GridBulkBarProps<T>) {
   const [exporting, setExporting] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   // Quando a tabela está no catálogo dinâmico, a edição em massa passa a
   // oferecer qualquer campo permitido da entidade; senão usa os campos fixos.
-  const dynamicEntity = isBulkEditEntity(table) ? table : null;
+  const dynamicEntity = !staticFieldsOnly && isBulkEditEntity(table) ? table : null;
   const canBulkEdit = canUpdate && (!!dynamicEntity || (bulkEditFields?.length ?? 0) > 0);
   const [assignOpen, setAssignOpen] = useState(false);
   const openActivity = useActivityWindows();

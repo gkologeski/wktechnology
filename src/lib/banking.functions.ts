@@ -1,3 +1,5 @@
+import { getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
+import { financeRpc } from "@/lib/access-control/finance-records.server";
 import { normalizeEmailAddress } from "@/lib/email-address";
 // Sprint G — Fase 1: fluxo OAuth Open Finance (provider abstrato).
 // Estado persiste por workspace em `bank_connections`. Tokens ficam em
@@ -10,11 +12,14 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 async function getCurrentWorkspace(supabase: any, userId: string): Promise<string> {
-  const { data, error } = await supabase.rpc("current_user_workspaces");
-  if (error) throw new Error(error.message);
-  const list = (data as string[] | null) ?? [];
-  if (list.length === 0) throw new Error("Usuário sem workspace ativo");
-  return list[0];
+  const workspace = await getActiveWorkspaceId(supabase, userId);
+  const { data, error } = await supabase.rpc("is_workspace_member", {
+    _workspace: workspace,
+    _user: userId,
+  });
+  if (error || data !== true)
+    throw new Error("Usuário sem participação ativa no workspace selecionado.");
+  return workspace;
 }
 
 async function assertAdmin(supabase: any, workspaceId: string, userId: string): Promise<void> {
@@ -795,83 +800,25 @@ export const bulkCreateEntries = createServerFn({ method: "POST" })
     const workspaceId = await getCurrentWorkspace(supabase, userId);
     await assertAdmin(supabase, workspaceId, userId);
 
-    const { data: txs, error: tErr } = await supabase
-      .from("bank_statement_transactions")
-      .select("id, posted_at, amount, direction, description, counterparty")
-      .in("id", data.transaction_ids)
-      .eq("workspace_id", workspaceId)
-      .eq("reconciliation_status", "pending");
-    if (tErr) throw new Error(tErr.message);
-    const txList = txs ?? [];
-
     let created = 0;
     const errors: string[] = [];
-    for (const t of txList) {
-      const amount = Math.abs(Number(t.amount));
-      const dir = t.direction === "credit" ? "receivable" : "payable";
-      const dateIso = new Date(t.posted_at).toISOString().slice(0, 10);
-      const description =
-        (t.description && String(t.description).trim()) ||
-        (t.counterparty && String(t.counterparty).trim()) ||
-        "Movimentação bancária";
-
-      const { data: entry, error: eErr } = await supabase
-        .from("financial_entries")
-        .insert({
-          workspace_id: workspaceId,
-          owner_id: userId,
-          direction: dir,
-          origin_type: "manual",
-          description,
-          amount,
-          currency: "BRL",
-          competence_date: dateIso,
-          due_date: dateIso,
-          paid_amount: amount,
-          status: "paid",
-          category_id: data.category_id ?? null,
-          external_ref: `bank_tx:${t.id}`,
-        })
-        .select("id")
-        .single();
-      if (eErr || !entry) {
-        errors.push(eErr?.message ?? "Falha ao criar lançamento");
-        continue;
+    for (const id of data.transaction_ids) {
+      try {
+        const result = await financeRpc<{ created: boolean }>(
+          supabase,
+          "finance_reconcile_transaction",
+          {
+            _transaction: id,
+            _category: data.category_id ?? null,
+            _bank: data.bank_account_id ?? null,
+          },
+        );
+        if (result.created) created++;
+      } catch (error) {
+        errors.push(error instanceof Error ? error.message : "Falha ao conciliar transação.");
       }
-
-      const { data: pay, error: pErr } = await supabase
-        .from("financial_payments")
-        .insert({
-          workspace_id: workspaceId,
-          entry_id: entry.id,
-          bank_account_id: data.bank_account_id ?? null,
-          paid_at: dateIso,
-          amount,
-          method: "bank",
-          reference: description.slice(0, 120),
-          created_by: userId,
-        })
-        .select("id")
-        .single();
-      if (pErr || !pay) {
-        errors.push(pErr?.message ?? "Falha ao registrar pagamento");
-        continue;
-      }
-
-      const { error: uErr } = await supabase
-        .from("bank_statement_transactions")
-        .update({
-          reconciliation_status: "matched",
-          matched_payment_id: pay.id,
-        })
-        .eq("id", t.id)
-        .eq("workspace_id", workspaceId);
-      if (uErr) {
-        errors.push(uErr.message);
-        continue;
-      }
-      created++;
     }
+
     return { ok: true, created, errors };
   });
 
@@ -1084,19 +1031,7 @@ async function settleChargePayment(
     if (pErr) throw new Error(pErr.message);
     paymentId = pay.id;
 
-    const { data: entry } = await supabase
-      .from("financial_entries")
-      .select("amount, paid_amount, status")
-      .eq("id", charge.financial_entry_id)
-      .maybeSingle();
-    if (entry) {
-      const newPaid = Number(entry.paid_amount) + Number(charge.amount);
-      const newStatus = newPaid + 0.001 >= Number(entry.amount) ? "paid" : "partially_paid";
-      await supabase
-        .from("financial_entries")
-        .update({ paid_amount: newPaid, status: newStatus })
-        .eq("id", charge.financial_entry_id);
-    }
+    // financial_payments_after_change recalculates the entry exactly once.
   }
 
   await supabase
@@ -1410,7 +1345,7 @@ export const simulatePaymentSettlement = createServerFn({ method: "POST" })
 
     const { settleBankPaymentAdmin } = await import("./banking/payments.server");
     // supabase (usuário admin) tem RLS admin_update — usar diretamente.
-    return settleBankPaymentAdmin(supabase, data.payment_id, new Date().toISOString());
+    return settleBankPaymentAdmin(supabase, data.payment_id, new Date().toISOString(), userId);
   });
 
 // -------------------------------------------------------------------

@@ -1,3 +1,6 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { HrScreenAccess } from "@/components/hr-access";
+import { useFinanceCapabilities } from "@/lib/access-control/use-finance-capabilities";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -30,7 +33,11 @@ import { RegisterPaymentDialog } from "@/components/finance/register-payment-dia
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/finance/entries/$id")({
-  component: EntryDetailsPage,
+  component: () => (
+    <HrScreenAccess resources={["techfinance.entries"]}>
+      <EntryDetailsPage />
+    </HrScreenAccess>
+  ),
 });
 
 const STATUS_LABEL: Record<string, string> = {
@@ -43,6 +50,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 function EntryDetailsPage() {
   const { id } = Route.useParams();
+  const { workspaceId } = usePermissions();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const get = useServerFn(getFinancialEntry);
@@ -51,6 +59,8 @@ function EntryDetailsPage() {
   const listSiblings = useServerFn(listInstallmentSiblings);
   const delGroup = useServerFn(deleteInstallmentGroup);
 
+  const access = useFinanceCapabilities([id]);
+  const permitted = access.for(id);
   const [payOpen, setPayOpen] = useState(false);
 
   const {
@@ -58,7 +68,7 @@ function EntryDetailsPage() {
     isLoading,
     refetch,
   } = useQuery({
-    queryKey: ["finance-entry", id],
+    queryKey: ["finance-entry", workspaceId, id],
     queryFn: () => get({ data: { id } }),
   });
 
@@ -69,16 +79,19 @@ function EntryDetailsPage() {
   const parentId = entry?.parent_entry_id ?? entry?.id ?? null;
 
   const { data: siblings } = useQuery({
-    queryKey: ["finance-entry-siblings", id],
+    queryKey: ["finance-entry-siblings", workspaceId, id],
     queryFn: () => listSiblings({ data: { entry_id: id } }),
     enabled: isInstallment,
   });
 
   const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techfinance.entries");
   const canDelete =
-    !deletePermLoading && canDeleteRecord(entry as Parameters<typeof canDeleteRecord>[0]);
+    !deletePermLoading &&
+    permitted.can_delete &&
+    canDeleteRecord(entry as Parameters<typeof canDeleteRecord>[0]);
 
   const invalidate = () => {
+    access.refetch();
     refetch();
     qc.invalidateQueries({ queryKey: ["finance-entries"] });
     qc.invalidateQueries({ queryKey: ["finance-entry-siblings"] });
@@ -102,7 +115,7 @@ function EntryDetailsPage() {
   }
 
   const outstanding = Number(entry.amount) - Number(entry.paid_amount ?? 0);
-  const canPay = entry.status !== "paid" && entry.status !== "cancelled";
+  const canPay = permitted.can_pay && entry.status !== "paid" && entry.status !== "cancelled";
 
   return (
     <div className="p-6 space-y-5">
@@ -122,7 +135,7 @@ function EntryDetailsPage() {
                 {entry.direction === "receivable" ? "Registrar recebimento" : "Registrar pagamento"}
               </Button>
             )}
-            {entry.status !== "cancelled" && entry.status !== "paid" && (
+            {entry.status !== "cancelled" && entry.status !== "paid" && permitted.can_cancel && (
               <Button
                 variant="outline"
                 onClick={async () => {
@@ -298,7 +311,11 @@ function EntryDetailsPage() {
           <CardTitle>Pagamentos</CardTitle>
         </CardHeader>
         <CardContent>
-          {entry.payments.length === 0 ? (
+          {!entry.payments_visible ? (
+            <p className="text-sm text-muted-foreground">
+              Você não tem permissão para consultar o histórico de baixas.
+            </p>
+          ) : entry.payments.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhum pagamento registrado.</p>
           ) : (
             <Table>
@@ -328,10 +345,28 @@ function EntryDetailsPage() {
                       <Button
                         size="icon"
                         variant="ghost"
+                        disabled={!permitted.can_reverse}
+                        aria-label="Reverter baixa"
                         onClick={async () => {
-                          await delPayment({ data: { id: p.id } });
-                          toast.success("Pagamento removido");
-                          invalidate();
+                          if (
+                            !(await confirmDialog(
+                              "Reverter esta baixa? Isso ajusta o saldo do lançamento e não realiza estorno bancário.",
+                            ))
+                          )
+                            return;
+                          try {
+                            await delPayment({ data: { id: p.id } });
+                            toast.success(
+                              "Baixa revertida. Nenhum estorno bancário foi executado.",
+                            );
+                            invalidate();
+                          } catch (error) {
+                            toast.error(
+                              error instanceof Error
+                                ? error.message
+                                : "Não foi possível reverter a baixa.",
+                            );
+                          }
                         }}
                       >
                         <Trash2 className="h-4 w-4" />
