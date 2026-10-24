@@ -986,3 +986,16 @@ mesmo source_hash `cc90f03341c38554543556bd7cdad8bf046429ab3f1c39fa203550ff33b02
 source_changed=false. Cinco fluxos Chrome aprovados, incluindo edição em massa
 limitada às datas e negação de entry.view mantendo outro acesso financeiro.
 Fixtures locais zeradas e permissões locais anteriores restauradas.
+
+
+### Ordem 2 — fechamento do lote financeiro central (24/10/2026)
+
+Publicado e aplicado: código `478227332659f58e4badb66047f1ed94815173eb`, proteção final `48339fcc0fbd7ef4c05e666edb79eaf453119712`. Nos dois domínios públicos, o HTML referencia `/assets/index-C2HIv9f6.js` e os oito arquivos conferidos têm SHA-256 idêntico ao build validado. Não se usou apenas o status published do provedor como evidência.
+
+0210 registrada no journal 214; 0211 ativada em transação após a publicação, journal 215, when 1792873273591, SHA-256 `cf84a1e08b62f0c267080f089dc4f6d60303897fa22cdd9c5c54f55cf20b2f1d`. Confirmadas 15 políticas canônicas e quatro triggers de proteção; restrições de Ver como preservadas. Helper de recálculo permanece sem execução para authenticated, anon e techerp_api_subject.
+
+Aceite SQL de produção com identidade autenticada simulada: criar/editar, baixa parcial, rejeição de excesso e saldo forjado, imutabilidade de condições com baixa, rateios, reversão, cancelamento, parcelas atômicas, geração de recorrência sem repetição e bloqueio de não membro. Tudo revertido por rollback, zero resíduos fictícios. Esse teste não equivale a login de usuário financeiro não administrador no navegador de produção; os 5 fluxos visuais e os testes JWT foram locais. Contagens preservadas: 28.531 lançamentos, 26.035 baixas, 6.653 defaults e 1.008 overrides. Nenhuma concessão de cargo criada para as duas novas chaves.
+
+Evidências: `outputs/permission-finance-core-2026-10-24/` no workspace da auditoria. Verify: 1.711 testes, tipos e lint aprovados; build aprovado; mesma fonte cc90f03341c38554543556bd7cdad8bf046429ab3f1c39fa203550ff33b02d11.
+
+**Situação:** lote central concluído no escopo descrito. Ordem 2 e seis etapas globais continuam em andamento. Próximos lotes: permissionamento bancário (aprovação, execução, credenciais, cancelamento, webhooks), catálogos/relatórios e fiscal/cobrança. Não houve chamada a banco externo ou pagamento real.

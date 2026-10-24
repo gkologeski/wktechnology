@@ -1188,7 +1188,7 @@
       "scope": "own/team/workspace; responsible is assigned_to else owner_id",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
-      "status": "testado_local_aguardando_aplicacao_publicacao"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1203,7 +1203,7 @@
       "scope": "creator/responsible self; active tenant and valid parent links",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
-      "status": "testado_local_aguardando_aplicacao_publicacao"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1218,7 +1218,7 @@
       "scope": "actual responsible scope; immutable origin/tenant/creator; posted terms protected",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
-      "status": "testado_local_aguardando_aplicacao_publicacao"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1233,7 +1233,7 @@
       "scope": "scope + no posted payments; no silent zero-row success",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
-      "status": "testado_local_aguardando_aplicacao_publicacao"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1248,7 +1248,7 @@
       "scope": "workspace action + visible row; no outstanding posted payment",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
-      "status": "testado_local_aguardando_aplicacao_publicacao"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1263,7 +1263,7 @@
       "scope": "same tenant and visible parent entry; own/team follow entry responsible",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
-      "status": "testado_local_aguardando_aplicacao_publicacao"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1278,7 +1278,7 @@
       "scope": "visible entry/payment history + caller as creator; serialized balance check",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
-      "status": "testado_local_aguardando_aplicacao_publicacao"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1293,7 +1293,7 @@
       "scope": "accounting reversal only; no bank refund; serialized authoritative recalculation",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
-      "status": "testado_local_aguardando_aplicacao_publicacao"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1308,7 +1308,7 @@
       "scope": "caller-RLS transaction for entire group; failure leaves no partial rows",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
-      "status": "testado_local_aguardando_aplicacao_publicacao"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1323,7 +1323,7 @@
       "scope": "every actual sibling authorized; atomic; keep anchor when siblings remain",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
-      "status": "testado_local_aguardando_aplicacao_publicacao"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1338,7 +1338,7 @@
       "scope": "own/team/workspace, not creator-only owner bypass",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
-      "status": "testado_local_aguardando_aplicacao_publicacao"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1353,7 +1353,7 @@
       "scope": "caller/responsible self in selected tenant",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
-      "status": "testado_local_aguardando_aplicacao_publicacao"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1368,7 +1368,7 @@
       "scope": "scope, immutable creator/tenant/responsible and generator cursor",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
-      "status": "testado_local_aguardando_aplicacao_publicacao"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1383,7 +1383,7 @@
       "scope": "only unused schedules; pause preserves generated history",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
-      "status": "testado_local_aguardando_aplicacao_publicacao"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1398,7 +1398,7 @@
       "scope": "also entries.create; lock actual schedule; entry and cursor are atomic",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
-      "status": "testado_local_aguardando_aplicacao_publicacao"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1413,7 +1413,7 @@
       "scope": "entry child; no edit through view; same-tenant active cost center and bounded sum",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
-      "status": "testado_local_aguardando_aplicacao_publicacao"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1428,7 +1428,7 @@
       "scope": "also entries.create/payments.create/view; current tenant; statement lock; all-or-nothing per transaction",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
-      "status": "testado_local_aguardando_aplicacao_publicacao"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "kind": "business_action",
@@ -1443,7 +1443,7 @@
       "scope": "dedicated workspace export action; loaded rows remain RLS scoped",
       "server": "caller Supabase; explicit operation checks/RPC; no privileged client promotion",
       "database": "action RLS + state/link guards; protected per-statement permission context",
-      "status": "testado_local_aguardando_aplicacao_publicacao"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     },
     {
       "operation": "finance_advance_recurrence.service_role",
@@ -1455,7 +1455,7 @@
       "scope": "active source owner and recurrence.update + entries.create delegation; does not depend on browser workspace selection",
       "database": "same row lock and transaction as UI, explicit source tenant",
       "migration": "0210",
-      "status": "testado_local_aguardando_aplicacao_publicacao"
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao"
     }
   ],
   "rules": [
@@ -1780,7 +1780,7 @@
       "area": "TechFinance",
       "problema": "Edição permite owner/admin sem update",
       "decisao_alvo": "Exigir update efetiva, com escopo e regras de origem/fechamento preservadas.",
-      "status": "testado_local_aguardando_aplicacao_publicacao",
+      "status": "aplicado_publicado_testado_isolado_e_sql_producao",
       "evidencia_migracao": "0210–0211",
       "aceite_visual": true,
       "escopo": "Entries, payments, installments, recurrence and allocation children. Browser acceptance is isolated, synthetic nonadmin; does not certify bank permissions or period closing."

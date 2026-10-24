@@ -157,7 +157,7 @@
 /dei-analytics;Tela autenticada;src/routes/_authenticated/dei-analytics.tsx;6;ats;TechHire;techhire.dei_analytics;;;inventario_estatico_a_validar
 /dpa;Tela pública/retorno;src/routes/dpa.tsx;3;não exclusivo/compartilhado;;;;;inventario_estatico_a_validar
 /files;Tela autenticada;src/routes/_authenticated/files.tsx;64;não exclusivo/compartilhado;Sistema;system.files;;;inventario_estatico_a_validar
-/finance;Tela autenticada;src/routes/_authenticated/finance.index.tsx;21;finance;TechFinance;techfinance.entries;;;inventario_estatico_a_validar
+/finance;Tela autenticada;src/routes/_authenticated/finance.index.tsx;23;finance;TechFinance;techfinance.entries;techfinance.entries.view.own, techfinance.entries.view.team, techfinance.entries.view.workspace;;guard_0210_0211_aplicado_publicado_testado_isolado_e_sql_producao
 /finance/audit;Tela autenticada;src/routes/_authenticated/finance.audit.tsx;23;finance;TechFinance;techfinance.audit;;;inventario_estatico_a_validar
 /finance/bank-accounts;Tela autenticada;src/routes/_authenticated/finance.bank-accounts.tsx;56;finance;TechFinance;techfinance.bank_accounts;;;inventario_estatico_a_validar
 /finance/banking;Tela autenticada;src/routes/_authenticated/finance.banking.tsx;82;finance;TechFinance;techfinance.banking;;;inventario_estatico_a_validar
@@ -166,13 +166,13 @@
 /finance/categories;Tela autenticada;src/routes/_authenticated/finance.categories.tsx;38;finance;TechFinance;techfinance.categories;;;inventario_estatico_a_validar
 /finance/cost-centers;Tela autenticada;src/routes/_authenticated/finance.cost-centers.tsx;86;finance;TechFinance;techfinance.cost_centers;;;inventario_estatico_a_validar
 /finance/dre;Tela autenticada;src/routes/_authenticated/finance.dre.tsx;28;finance;TechFinance;techfinance.reports;;;inventario_estatico_a_validar
-/finance/entries/$id;Tela autenticada;src/routes/_authenticated/finance.entries.$id.tsx;32;finance;TechFinance;techfinance.entries;;;inventario_estatico_a_validar
+/finance/entries/$id;Tela autenticada;src/routes/_authenticated/finance.entries.$id.tsx;35;finance;TechFinance;techfinance.entries;techfinance.entries.view.own, techfinance.entries.view.team, techfinance.entries.view.workspace;;guard_0210_0211_aplicado_publicado_testado_isolado_e_sql_producao
 /finance/legal-entities;Tela autenticada;src/routes/_authenticated/finance.legal-entities.tsx;4;finance;TechFinance;techfinance.legal_entities;;;inventario_estatico_a_validar
 /finance/legal-entity-groups;Tela autenticada;src/routes/_authenticated/finance.legal-entity-groups.tsx;4;finance;TechFinance;techfinance.legal_entity_groups;;;inventario_estatico_a_validar
 /finance/nfse;Tela autenticada;src/routes/_authenticated/finance.nfse.tsx;41;finance;TechFinance;techfinance.nfse;;;inventario_estatico_a_validar
-/finance/payable;Tela autenticada;src/routes/_authenticated/finance.payable.tsx;4;finance;TechFinance;techfinance.payments;;;inventario_estatico_a_validar
-/finance/receivable;Tela autenticada;src/routes/_authenticated/finance.receivable.tsx;4;finance;TechFinance;techfinance.invoices;;;inventario_estatico_a_validar
-/finance/recurrences;Tela autenticada;src/routes/_authenticated/finance.recurrences.tsx;59;finance;TechFinance;techfinance.recurrences;;;inventario_estatico_a_validar
+/finance/payable;Tela autenticada;src/routes/_authenticated/finance.payable.tsx;4;finance;TechFinance;techfinance.payments;techfinance.entries.view.own, techfinance.entries.view.team, techfinance.entries.view.workspace;;guard_0210_0211_aplicado_publicado_testado_isolado_e_sql_producao
+/finance/receivable;Tela autenticada;src/routes/_authenticated/finance.receivable.tsx;4;finance;TechFinance;techfinance.invoices;techfinance.entries.view.own, techfinance.entries.view.team, techfinance.entries.view.workspace;;guard_0210_0211_aplicado_publicado_testado_isolado_e_sql_producao
+/finance/recurrences;Tela autenticada;src/routes/_authenticated/finance.recurrences.tsx;61;finance;TechFinance;techfinance.recurrences;techfinance.recurrences.view.own, techfinance.recurrences.view.team, techfinance.recurrences.view.workspace;;guard_0210_0211_aplicado_publicado_testado_isolado_e_sql_producao
 /forms;Tela autenticada;src/routes/_authenticated/forms.tsx;8;não exclusivo/compartilhado;TechSales;techsales.marketing.forms;;;inventario_estatico_a_validar
 /fraud-flags;Tela autenticada;src/routes/_authenticated/fraud-flags.tsx;12;ats;TechHire;techhire.fraud_flags;;;inventario_estatico_a_validar
 /home;Tela autenticada;src/routes/_authenticated/home.index.tsx;29;não exclusivo/compartilhado;Sistema;system.home;;;inventario_estatico_a_validar
