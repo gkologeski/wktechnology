@@ -9,7 +9,11 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { emitEvent } from "@/lib/events.server";
 import { recordAtsEvent } from "./audit.server";
 import { DEFAULT_ATS_STAGES, type AtsStage, atsStageOutcome, firstAtsStageValue } from "./stages";
-import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
+import {
+  assertAnyPermission,
+  getActiveWorkspaceId,
+  hasPermission,
+} from "@/lib/access-control/enforce.server";
 import { buildGridSelect } from "@/lib/grid/dynamic-select";
 import type { AtsGridInput } from "@/lib/grid/ats-grid-input";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
@@ -46,7 +50,12 @@ async function ensureDefaultPipeline(
       owner_id: userId,
       workspace_id: workspaceId,
       name: "Pipeline padrão",
-      is_default: true,
+      is_default: await hasPermission(
+        supabase,
+        userId,
+        workspaceId,
+        "techhire.pipelines.update.workspace",
+      ),
       stages: DEFAULT_ATS_STAGES as never,
     } as never)
     .select("id, stages")

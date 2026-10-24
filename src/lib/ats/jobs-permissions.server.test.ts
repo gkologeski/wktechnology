@@ -43,6 +43,7 @@ vi.mock("@/lib/ats/adapters/linkedin/job-board", () => ({
   LinkedInJobBoardAdapter: { closeJob: mocks.close, postJob: mocks.post },
 }));
 import {
+  getAtsDefaultPipeline,
   getAtsJob,
   saveAtsJob,
   deleteAtsJob,
@@ -67,7 +68,12 @@ import {
   syncPostingApplicantsNow,
 } from "./job-postings.functions";
 import { exportAtsCandidatesCsv, exportJobApplicationsCsv } from "./export.functions";
-import { ensureDefaultAtsPipeline } from "./pipelines.functions";
+import {
+  ensureDefaultAtsPipeline,
+  savePipeline,
+  deletePipeline,
+  setDefaultPipeline,
+} from "./pipelines.functions";
 const client = { from: mocks.from };
 const call = (fn: unknown, data: unknown) =>
   (fn as (args: unknown) => Promise<unknown>)({
@@ -270,4 +276,77 @@ it("an empty pipeline list does not authorize a default INSERT", async () => {
     "techhire.pipelines.create.workspace",
   ]);
   expect(query.insert).not.toHaveBeenCalled();
+});
+
+it.each([
+  ["update", savePipeline, { id: "pipeline", is_default: false, stages: [] }],
+  ["delete", deletePipeline, { id: "pipeline" }],
+  ["update", setDefaultPipeline, { id: "pipeline" }],
+])("pipeline %s is checked before data access", async (action, fn, data) => {
+  await expect(call(fn, data)).rejects.toThrow("Record denied");
+  expect(mocks.record).toHaveBeenCalledWith(client, "pipelines", action, "pipeline");
+  expect(mocks.from).not.toHaveBeenCalled();
+});
+it("pipeline update does not authorize creation", async () => {
+  await expect(call(savePipeline, { name: "New", is_default: false, stages: [] })).rejects.toThrow(
+    "Create denied",
+  );
+  expect(mocks.create).toHaveBeenCalledWith(client, "actor", "techhire.pipelines");
+  expect(mocks.from).not.toHaveBeenCalled();
+});
+it("default changes require workspace update even when the actual pipeline can be edited", async () => {
+  mocks.record.mockResolvedValue(undefined);
+  await expect(call(setDefaultPipeline, { id: "pipeline" })).rejects.toThrow("Permission denied");
+  expect(mocks.permission).toHaveBeenCalledWith(client, "actor", "workspace", [
+    "techhire.pipelines.update.workspace",
+  ]);
+  expect(mocks.from).not.toHaveBeenCalled();
+});
+it("a permitted pipeline creation pins the selected workspace", async () => {
+  mocks.create.mockResolvedValue("selected-workspace");
+  const query = {
+    insert: vi.fn().mockReturnThis(),
+    select: vi.fn().mockReturnThis(),
+    single: vi.fn().mockResolvedValue({ data: { id: "new" }, error: null }),
+  };
+  mocks.from.mockReturnValue(query);
+  expect(await call(savePipeline, { name: "New", is_default: false, stages: [] })).toEqual({
+    id: "new",
+  });
+  expect(query.insert).toHaveBeenCalledWith(
+    expect.objectContaining({ workspace_id: "selected-workspace", owner_id: "actor" }),
+  );
+});
+it("pipeline update with zero affected rows does not report success", async () => {
+  mocks.record.mockResolvedValue(undefined);
+  const query = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    update: vi.fn().mockReturnThis(),
+    single: vi.fn().mockResolvedValue({ data: { is_default: false }, error: null }),
+    maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+  };
+  mocks.from.mockReturnValue(query);
+  await expect(
+    call(savePipeline, { id: "pipeline", name: "Edited", is_default: false, stages: [] }),
+  ).rejects.toThrow("permissão para editar");
+});
+
+it("job constructor cannot implicitly promote a pipeline using only create permission", async () => {
+  mocks.permission.mockResolvedValue(undefined);
+  mocks.has.mockResolvedValue(false);
+  const query = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    order: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockReturnThis(),
+    maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+    insert: vi.fn().mockReturnThis(),
+    single: vi.fn().mockResolvedValue({ data: { id: "created", stages: [] }, error: null }),
+  };
+  mocks.from.mockReturnValue(query);
+  expect(await call(getAtsDefaultPipeline, {})).toEqual({ id: "created", stages: [] });
+  expect(query.insert).toHaveBeenCalledWith(
+    expect.objectContaining({ workspace_id: "workspace", is_default: false }),
+  );
 });

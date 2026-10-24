@@ -419,3 +419,37 @@ Contagens/fingerprints de vagas (5), publicações (4), pipeline (1), defaults
 (6653), memberships (244), overrides (971) e catálogo (1721) permaneceram idênticos.
 Nenhum grant novo neste lote. Interface ainda precisa ser publicada e conferida;
 aceite com sessão real no navegador permanece pendente do ambiente.
+
+
+### Funis do TechHire (0201)
+
+Estimativa comunicada: 1–2 horas. Remove bypass de membership/owner/admin
+no CRUD dos pipelines; ações independentes por registro e escopo real, selected
+workspace e membro ativo. Autoria e workspace imutáveis. Definir ou retirar
+padrão exige update.workspace, pois pode alterar outra linha do workspace.
+Gatilho protege exclusão do padrão e de funis vinculados a vagas, inclusive
+quando a vaga não é visível ao solicitante. Defaults/grants existentes preservados.
+
+Catálogo compartilhado usado pelas vagas permanece exceção somente leitura;
+/pipelines e ações de edição exigem permissões próprias. Tela não cria/promove
+funis sem as chaves necessárias; criação de cópia não é sobrescrita pela seleção
+automática. Testes SQL cobrem own, team, workspace, deny, inativo, outro tenant,
+ViewAs, padrão, vínculos e equivalência das capacidades. Aceite autenticado no
+navegador segue dependente do ambiente local.
+
+
+Publicação 0200 confirmada: commit c666c7b44f2fd206b47adefc716c206012078605
+entregue nos dois domínios, entry index-BzS7WDJV.js e chunks de vagas/listagem/
+capacidades conferidos byte a byte contra o build testado. Não substitui o aceite
+autenticado em navegador; este continua pendente. A consulta SQL de Priscila
+confirmou leitura das cinco vagas (uma de outro criador) e quatro publicações.
+
+0201 aplicada: hash 2c5180d1f0ecd443578aeb6996ecd3d58a29f98cce703d9300fea6acb5e5a0e1,
+when 1792800721831, id 205. Verify com 1634 testes, tipos/lint e build completos
+no mesmo fingerprint c95c8b543e7a919e5671add95ca88f5c63ccb2c6f1e804e2410197c681513614,
+sem mudança de fonte. Dez grupos SQL de funis e regressões de vagas/capacidades
+aprovados. Simulação SQL de Priscila confirmou CRUD sintético e acesso ao funil
+de outro criador, autoria imutável e não membro sem leitura. Rollback integral,
+zero resíduos. Pipeline existente/defaults/overrides/memberships/catálogo intactos.
+O construtor da primeira vaga cria funil sem promover padrão quando só possui
+create; o teste dessa borda também passou. Interface aguarda publicação.

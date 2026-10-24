@@ -69,8 +69,14 @@ run_sql tests/sql/permission-jobs-before.sql jobs-before
 run_sql drizzle/migrations/0200_jobs_action_scope.sql jobs-migration
 run_sql tests/sql/permission-jobs.sql jobs-tests
 run_sql tests/sql/permission-capabilities-equivalence.sql jobs-existing-caps-tests
-python3 - "$test_root/jobs-tests.log" "$test_root/private-tests.log" "$test_root/children-tests.log" "$test_root/hr-ui-tests.log" "$test_root/tests.log" "$test_root/save-after.log" "$test_root/rpc-after.log" "$test_root/settings-tests.log" "$test_root/hr-tests.log" <<'PY'
+run_sql tests/sql/fixtures/permission-pipelines.sql pipelines-fixture
+run_sql drizzle/migrations/0201_pipeline_action_scope.sql pipelines-migration
+run_sql tests/sql/permission-pipelines.sql pipelines-tests
+run_sql tests/sql/permission-jobs.sql pipelines-existing-jobs-tests
+run_sql tests/sql/permission-capabilities-equivalence.sql pipelines-existing-caps-tests
+python3 - "$test_root/pipelines-tests.log" "$test_root/jobs-tests.log" "$test_root/private-tests.log" "$test_root/children-tests.log" "$test_root/hr-ui-tests.log" "$test_root/tests.log" "$test_root/save-after.log" "$test_root/rpc-after.log" "$test_root/settings-tests.log" "$test_root/hr-tests.log" <<'PY'
 import re,sys
+pipelines=re.findall(r'NOTICE:  PIPELINE PASS (\d+):',open(sys.argv.pop(1)).read()); assert pipelines==[str(x) for x in range(1,11)],pipelines
 jobs=re.findall(r'NOTICE:  JOB PASS (\d+):',open(sys.argv.pop(1)).read()); assert jobs==[str(x) for x in range(1,12)],jobs
 private=re.findall(r'NOTICE:  PRIVATE PASS:',open(sys.argv.pop(1)).read()); assert len(private)==10,len(private)
 children=re.findall(r'NOTICE:  CHILD PASS (\d+):',open(sys.argv.pop(1)).read()); assert children==[str(x) for x in range(1,113)],children

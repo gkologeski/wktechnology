@@ -42,6 +42,9 @@ import { DEFAULT_ATS_STAGES, type AtsStage } from "@/lib/ats/stages";
 import { AtsPageHeader, AtsSectionHeader, EmptyState, Skeletons } from "@/components/ats/ui";
 import { MetaPill } from "@/components/techhire/ui";
 import { cn } from "@/lib/utils";
+import { HrScreenAccess } from "@/components/hr-access";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { useHrCapabilities } from "@/lib/access-control/use-hr-capabilities";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/(ats)/pipelines")({
@@ -81,6 +84,20 @@ function PipelinesSkeleton() {
 }
 
 function PipelinesPage() {
+  return (
+    <HrScreenAccess resources={["techhire.pipelines"]}>
+      <PipelinesContent />
+    </HrScreenAccess>
+  );
+}
+
+function PipelinesContent() {
+  const permissions = usePermissions();
+  const canCreate = permissions.canAny([
+    "techhire.pipelines.create.own",
+    "techhire.pipelines.create.workspace",
+  ]);
+  const canSetDefault = permissions.can("techhire.pipelines.update.workspace");
   const list = useServerFn(listAtsPipelines);
   const ensureDefault = useServerFn(ensureDefaultAtsPipeline);
   const save = useServerFn(savePipeline);
@@ -97,22 +114,29 @@ function PipelinesPage() {
     queryKey: ["ats-pipelines"],
     queryFn: async () => {
       // garante um único pipeline padrão do workspace (idempotente)
-      await ensureDefault().catch(() => undefined);
+      if (canCreate && canSetDefault) await ensureDefault();
       return (await list()) as unknown as Pipeline[];
     },
   });
 
+  const access = useHrCapabilities(
+    "pipelines",
+    pipelines.map((p) => p.id),
+  );
+  const [isCreating, setIsCreating] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const canEdit = selectedId ? access.for(selectedId).can_update : canCreate && isCreating;
+  const canDelete = !!selectedId && access.for(selectedId).can_delete;
   const [name, setName] = useState("");
   const [isDefault, setIsDefault] = useState(false);
   const [stages, setStages] = useState<AtsStage[]>([]);
 
   useEffect(() => {
-    if (!pipelines.length) return;
+    if (!pipelines.length || isCreating) return;
     if (!selectedId || !pipelines.find((p) => p.id === selectedId)) {
       setSelectedId(pipelines[0].id);
     }
-  }, [pipelines, selectedId]);
+  }, [pipelines, selectedId, isCreating]);
 
   useEffect(() => {
     const p = pipelines.find((x) => x.id === selectedId);
@@ -127,7 +151,7 @@ function PipelinesPage() {
 
   const onDragEnd = (e: DragEndEvent) => {
     const { active, over } = e;
-    if (!over || active.id === over.id) return;
+    if (!canEdit || !over || active.id === over.id) return;
     const oldIndex = stages.findIndex((s) => s.value === active.id);
     const newIndex = stages.findIndex((s) => s.value === over.id);
     if (oldIndex < 0 || newIndex < 0) return;
@@ -173,7 +197,9 @@ function PipelinesPage() {
         },
       });
     },
-    onSuccess: () => {
+    onSuccess: (row) => {
+      setIsCreating(false);
+      setSelectedId(row.id);
       toast.success("Pipeline salvo");
       qc.invalidateQueries({ queryKey: ["ats-pipelines"] });
     },
@@ -181,6 +207,8 @@ function PipelinesPage() {
   });
 
   const newPipeline = () => {
+    if (!canCreate) return;
+    setIsCreating(true);
     setSelectedId(null);
     setName("Novo pipeline");
     setIsDefault(false);
@@ -188,6 +216,8 @@ function PipelinesPage() {
   };
 
   const duplicate = () => {
+    if (!canCreate) return;
+    setIsCreating(true);
     setSelectedId(null);
     setName(`${name} (cópia)`);
     setIsDefault(false);
@@ -226,7 +256,7 @@ function PipelinesPage() {
         title="Pipelines de recrutamento"
         description="Crie, reordene e personalize as etapas de cada funil. Arraste para reordenar."
         primaryAction={
-          <Button onClick={newPipeline}>
+          <Button disabled={!canCreate} onClick={newPipeline}>
             <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
             Novo pipeline
           </Button>
@@ -257,7 +287,7 @@ function PipelinesPage() {
                   title="Nenhum pipeline visível"
                   description="Não há pipeline visível para você. Se este workspace já possui pipelines, peça a um administrador acesso de visualização de pipelines; caso contrário, crie o primeiro."
                   action={
-                    <Button size="sm" onClick={newPipeline}>
+                    <Button size="sm" disabled={!canCreate} onClick={newPipeline}>
                       <Plus className="h-4 w-4 mr-1" aria-hidden="true" />
                       Novo
                     </Button>
@@ -269,7 +299,10 @@ function PipelinesPage() {
                   return (
                     <button
                       key={p.id}
-                      onClick={() => setSelectedId(p.id)}
+                      onClick={() => {
+                        setIsCreating(false);
+                        setSelectedId(p.id);
+                      }}
                       aria-pressed={active}
                       className={cn(
                         "text-left px-3 py-2 rounded-md text-sm transition-colors",
@@ -309,93 +342,101 @@ function PipelinesPage() {
               />
             </div>
             <div className="p-4 space-y-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="pipeline-name">Nome</Label>
-                  <Input
-                    id="pipeline-name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                </div>
-                <div className="flex items-center justify-between rounded-md border border-border-subtle bg-surface-sunken px-3 py-2">
-                  <div className="min-w-0">
-                    <Label
-                      htmlFor="pipeline-default"
-                      className="text-sm font-medium text-text-primary"
-                    >
-                      Pipeline padrão
-                    </Label>
-                    <div className="text-xs text-text-tertiary">
-                      Usado por novas vagas automaticamente
+              <fieldset disabled={!canEdit} className="contents">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="pipeline-name">Nome</Label>
+                    <Input
+                      id="pipeline-name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between rounded-md border border-border-subtle bg-surface-sunken px-3 py-2">
+                    <div className="min-w-0">
+                      <Label
+                        htmlFor="pipeline-default"
+                        className="text-sm font-medium text-text-primary"
+                      >
+                        Pipeline padrão
+                      </Label>
+                      <div className="text-xs text-text-tertiary">
+                        Usado por novas vagas automaticamente
+                      </div>
                     </div>
+                    <Switch
+                      disabled={!canSetDefault}
+                      id="pipeline-default"
+                      checked={isDefault}
+                      onCheckedChange={setIsDefault}
+                    />
                   </div>
-                  <Switch
-                    id="pipeline-default"
-                    checked={isDefault}
-                    onCheckedChange={setIsDefault}
-                  />
                 </div>
-              </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-text-primary">Etapas</span>
-                  <MetaPill>{summary.open} em andamento</MetaPill>
-                  <MetaPill className="border-status-open/30 bg-status-open/10 text-status-open">
-                    {summary.won} ganhas
-                  </MetaPill>
-                  <MetaPill className="border-status-closed/30 bg-status-closed/10 text-status-closed">
-                    {summary.lost} perdidas
-                  </MetaPill>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-text-primary">Etapas</span>
+                    <MetaPill>{summary.open} em andamento</MetaPill>
+                    <MetaPill className="border-status-open/30 bg-status-open/10 text-status-open">
+                      {summary.won} ganhas
+                    </MetaPill>
+                    <MetaPill className="border-status-closed/30 bg-status-closed/10 text-status-closed">
+                      {summary.lost} perdidas
+                    </MetaPill>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={addStage}>
+                    <Plus className="h-4 w-4 mr-1" aria-hidden="true" />
+                    Adicionar etapa
+                  </Button>
                 </div>
-                <Button size="sm" variant="outline" onClick={addStage}>
-                  <Plus className="h-4 w-4 mr-1" aria-hidden="true" />
-                  Adicionar etapa
-                </Button>
-              </div>
 
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={onDragEnd}
-              >
-                <SortableContext
-                  items={stages.map((s) => s.value)}
-                  strategy={verticalListSortingStrategy}
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={onDragEnd}
                 >
-                  <div className="flex flex-col gap-2">
-                    {stages.map((s, idx) => (
-                      <SortableStageRow
-                        key={s.value || idx}
-                        stage={s}
-                        onChange={(patch) => updateStage(idx, patch)}
-                        onRemove={() => removeStage(idx)}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-              </DndContext>
-
+                  <SortableContext
+                    items={stages.map((s) => s.value)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="flex flex-col gap-2">
+                      {stages.map((s, idx) => (
+                        <SortableStageRow
+                          key={s.value || idx}
+                          disabled={!canEdit}
+                          stage={s}
+                          onChange={(patch) => updateStage(idx, patch)}
+                          onRemove={() => removeStage(idx)}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              </fieldset>
               <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-border-subtle">
-                <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
+                <Button onClick={() => saveMut.mutate()} disabled={!canEdit || saveMut.isPending}>
                   <Save className="h-4 w-4 mr-1" aria-hidden="true" />
                   {saveMut.isPending ? "Salvando…" : "Salvar pipeline"}
                 </Button>
                 {selectedId && (
                   <>
-                    <Button variant="outline" onClick={duplicate}>
+                    <Button variant="outline" disabled={!canCreate} onClick={duplicate}>
                       <Copy className="h-4 w-4 mr-1" aria-hidden="true" />
                       Duplicar
                     </Button>
                     {!isDefault && (
-                      <Button variant="outline" onClick={() => setDefMut.mutate()}>
+                      <Button
+                        variant="outline"
+                        disabled={!canEdit || !canSetDefault || setDefMut.isPending}
+                        onClick={() => setDefMut.mutate()}
+                      >
                         <Star className="h-4 w-4 mr-1" aria-hidden="true" />
                         Tornar padrão
                       </Button>
                     )}
                     <Button
                       variant="ghost"
+                      disabled={!canDelete || isDefault || deleteMut.isPending}
                       className="text-destructive hover:text-destructive"
                       onClick={async () => {
                         if (await confirmDialog("Excluir este pipeline?")) deleteMut.mutate();
@@ -416,16 +457,19 @@ function PipelinesPage() {
 }
 
 function SortableStageRow({
+  disabled,
   stage,
   onChange,
   onRemove,
 }: {
+  disabled: boolean;
   stage: AtsStage;
   onChange: (patch: Partial<AtsStage>) => void;
   onRemove: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: stage.value,
+    disabled,
   });
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -450,6 +494,7 @@ function SortableStageRow({
         )}
         {...attributes}
         {...listeners}
+        disabled={disabled}
         aria-label="Reordenar etapa"
       >
         <GripVertical className="h-4 w-4" aria-hidden="true" />
@@ -474,6 +519,7 @@ function SortableStageRow({
           aria-label="Identificador da etapa"
         />
         <Select
+          disabled={disabled}
           value={stage.type ?? "open"}
           onValueChange={(v) => onChange({ type: v as AtsStage["type"] })}
         >

@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 
 type HrRecord =
+  | "pipelines"
   | "jobs"
   | "documents"
   | "benefits"
@@ -54,6 +55,7 @@ export async function assertHrCreate(
     | "techpeople.people"
     | "techhire.candidates"
     | "techhire.jobs"
+    | "techhire.pipelines"
     | "techpeople.onboarding_templates"
     | "techpeople.incidents",
 ): Promise<string> {

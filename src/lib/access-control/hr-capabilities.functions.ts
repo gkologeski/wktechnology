@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const HR_RECORD_RESOURCES = [
+  "pipelines",
   "jobs",
   "people",
   "candidates",

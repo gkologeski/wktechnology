@@ -1408,6 +1408,13 @@
       "when": 1792799590341,
       "tag": "0200_jobs_action_scope",
       "breakpoints": true
+    },
+    {
+      "idx": 201,
+      "version": "7",
+      "when": 1792800721831,
+      "tag": "0201_pipeline_action_scope",
+      "breakpoints": true
     }
   ]
 }

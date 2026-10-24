@@ -802,6 +802,28 @@
         "client-side visible-grid export is an affordance control; server CSV has independent authorization",
         "source workflow job creation uses its persisted workspace, never the operator profile/default"
       ]
+    },
+    {
+      "operation": "TechHire pipeline editor CRUD and workspace default",
+      "kind": "business_action",
+      "route_consumers": [
+        "/pipelines",
+        "job pipeline picker"
+      ],
+      "actor": "authenticated active selected workspace member; not read-only for mutations",
+      "resource": "techhire.pipelines",
+      "action": "view/create/update/delete; workspace default update",
+      "permission_keys": [
+        "techhire.pipelines.{action}.{own|team|workspace}",
+        "techhire.pipelines.update.workspace for workspace default changes"
+      ],
+      "scope": "own by immutable creator; team by actual workspace groups; workspace by effective grant; create separate from update",
+      "server": "actual-row assertHrRecordAccess before mutation/read; create pins selected workspace; zero-row writes fail",
+      "database": "0201 action RLS and OLD-row trigger; immutable author/tenant; protect default and linked-job deletion; no new role grants",
+      "metadata_exception": "job viewers may read workspace pipeline catalog solely to render authorized job boards; never editor or mutation permission",
+      "internal_services": "trusted no-JWT system writers remain explicit; authored/workspace invariants still checked",
+      "migration": "0201",
+      "state": "applied_tested_sql_pending_ui_publication"
     }
   ],
   "rules": [
@@ -948,7 +970,7 @@
       "area": "TechHire",
       "problema": "Acesso à vaga exige vínculo direto",
       "decisao_alvo": "Reconhecer gestão no workspace/equipe conforme chave, preservando próprio e vínculos específicos.",
-      "status": "aplicado_testado_sql_publicacao_ui_pendente",
+      "status": "aplicado_testado_sql_publicado_aceite_browser_pendente",
       "evidencia_migracao": "0200 jobs action/record scope; public API-key and integration credential paths remain separate audit fronts",
       "aceite_visual": false
     },
@@ -957,7 +979,7 @@
       "area": "TechHire",
       "problema": "Edição depende de equipe/criador",
       "decisao_alvo": "Substituir decisões genéricas de owner por ação e escopo do recurso.",
-      "status": "aplicado_testado_sql_publicacao_ui_pendente",
+      "status": "aplicado_testado_sql_publicado_aceite_browser_pendente",
       "evidencia_migracao": "0200 jobs action/record scope; public API-key and integration credential paths remain separate audit fronts",
       "aceite_visual": false
     },

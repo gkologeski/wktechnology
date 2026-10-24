@@ -1,3 +1,4 @@
+import { assertHrCreate, assertHrRecordAccess } from "@/lib/access-control/hr-records.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   assertAnyPermission,
@@ -86,15 +87,12 @@ export const ensureDefaultAtsPipeline = createServerFn({ method: "POST" })
 
     if (existing.length > 0) {
       const first = existing[0];
-      const canPromote =
-        (await hasPermission(
-          supabase,
-          userId,
-          workspaceId,
-          "techhire.pipelines.update.workspace",
-        )) ||
-        (first.owner_id === userId &&
-          (await hasPermission(supabase, userId, workspaceId, "techhire.pipelines.update.own")));
+      const canPromote = await hasPermission(
+        supabase,
+        userId,
+        workspaceId,
+        "techhire.pipelines.update.workspace",
+      );
       if (!canPromote) return first;
       const { data: promoted, error: promoteError } = await supabase
         .from("ats_pipelines")
@@ -103,20 +101,27 @@ export const ensureDefaultAtsPipeline = createServerFn({ method: "POST" })
         .select("id, name, is_default, stages, created_at, updated_at")
         .maybeSingle();
       if (promoteError) throw new Error(promoteError.message);
-      return promoted ?? first;
+      if (!promoted) throw new Error("O pipeline não foi atualizado.");
+      return promoted;
     }
 
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techhire.pipelines.create.own",
       "techhire.pipelines.create.workspace",
     ]);
+    const canDefault = await hasPermission(
+      supabase,
+      userId,
+      workspaceId,
+      "techhire.pipelines.update.workspace",
+    );
     const { data: created, error: insErr } = await supabase
       .from("ats_pipelines")
       .insert({
         owner_id: userId,
         workspace_id: workspaceId,
         name: "Pipeline padrão",
-        is_default: true,
+        is_default: canDefault,
         stages: DEFAULT_ATS_STAGES as never,
       } as never)
       .select("id, name, is_default, stages, created_at, updated_at")
@@ -130,6 +135,27 @@ export const savePipeline = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => PipelineSaveSchema.parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+
+    const workspaceId = data.id
+      ? (await assertHrRecordAccess(supabase, "pipelines", "update", data.id),
+        await getActiveWorkspaceId(supabase, userId))
+      : await assertHrCreate(supabase, userId, "techhire.pipelines");
+    if (data.id) {
+      const { data: current, error } = await supabase
+        .from("ats_pipelines")
+        .select("is_default")
+        .eq("id", data.id)
+        .single();
+      if (error || !current) throw new Error("Pipeline indisponível.");
+      if (current.is_default !== data.is_default)
+        await assertAnyPermission(supabase, userId, workspaceId, [
+          "techhire.pipelines.update.workspace",
+        ]);
+    } else if (data.is_default) {
+      await assertAnyPermission(supabase, userId, workspaceId, [
+        "techhire.pipelines.update.workspace",
+      ]);
+    }
 
     // valores únicos dentro do pipeline
     const values = new Set<string>();
@@ -159,7 +185,7 @@ export const savePipeline = createServerFn({ method: "POST" })
     } else {
       const { data: ins, error } = await supabase
         .from("ats_pipelines")
-        .insert({ ...basePayload, owner_id: userId } as never)
+        .insert({ ...basePayload, owner_id: userId, workspace_id: workspaceId } as never)
         .select("id, is_default")
         .single();
       if (error) throw new Error(error.message);
@@ -175,6 +201,7 @@ export const deletePipeline = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { supabase } = context;
+    await assertHrRecordAccess(supabase, "pipelines", "delete", data.id);
 
     // não permitir apagar se há vagas usando
     const { count } = await supabase
@@ -210,7 +237,12 @@ export const setDefaultPipeline = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    await assertHrRecordAccess(supabase, "pipelines", "update", data.id);
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techhire.pipelines.update.workspace",
+    ]);
     // o gatilho do banco desmarca os outros padrões do mesmo workspace
     const { data: updated, error } = await supabase
       .from("ats_pipelines")
