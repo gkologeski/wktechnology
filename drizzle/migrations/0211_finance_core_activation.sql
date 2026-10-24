@@ -17,8 +17,9 @@ CREATE OR REPLACE FUNCTION public.finance_core_guard()
 RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path=public AS $$
 DECLARE e public.financial_entries;v_total numeric;v_row jsonb;v_ref record;v_workspace uuid;v_id uuid;BEGIN
  -- Internal recalc and trusted service writers keep their explicit origin tenant.
- -- No authenticated caller can SET ROLE to these database owners.
- IF current_user NOT IN('authenticated','anon') THEN RETURN COALESCE(NEW,OLD);END IF;
+ -- Only these trusted database owners/service writers bypass the guard.
+ -- Other roles (including an API subject inheriting authenticated) are checked.
+ IF current_user IN('postgres','supabase_admin','service_role') THEN RETURN COALESCE(NEW,OLD);END IF;
  IF auth.uid() IS NULL OR public.is_read_only_view() THEN RAISE EXCEPTION 'Operação financeira não autorizada.' USING ERRCODE='42501';END IF;
  IF TG_TABLE_NAME='financial_entries' THEN
   IF TG_OP='DELETE' THEN
@@ -79,7 +80,7 @@ CREATE POLICY finance_delete ON public.financial_recurrences FOR DELETE TO authe
 CREATE OR REPLACE FUNCTION public.finance_recurrence_guard()
 RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path=public AS $$
 BEGIN
- IF current_user NOT IN('authenticated','anon') THEN RETURN COALESCE(NEW,OLD);END IF;
+ IF current_user IN('postgres','supabase_admin','service_role') THEN RETURN COALESCE(NEW,OLD);END IF;
  IF TG_OP='DELETE' THEN
   IF OLD.occurrences_generated>0 THEN RAISE EXCEPTION 'Recorrência com histórico: pause em vez de excluir.' USING ERRCODE='23514';END IF;
   RETURN OLD;
@@ -104,7 +105,7 @@ CREATE POLICY finance_delete ON public.financial_entry_allocations FOR DELETE TO
 CREATE OR REPLACE FUNCTION public.finance_allocation_guard()
 RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path=public AS $$
 DECLARE e public.financial_entries;total numeric;BEGIN
- IF current_user NOT IN('authenticated','anon') THEN RETURN COALESCE(NEW,OLD);END IF;
+ IF current_user IN('postgres','supabase_admin','service_role') THEN RETURN COALESCE(NEW,OLD);END IF;
  SELECT * INTO e FROM financial_entries WHERE id=COALESCE(NEW.entry_id,OLD.entry_id) FOR UPDATE;
  -- A parent deletion already authorized by its own RLS cascades allocations.
  IF NOT FOUND AND TG_OP='DELETE' THEN RETURN OLD;END IF;

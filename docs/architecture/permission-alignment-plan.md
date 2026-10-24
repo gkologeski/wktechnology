@@ -973,3 +973,16 @@ relatórios; faturamento/NFS-e/cobrança e integrações. Não foi encontrado co
 de fechamento de período nos fluxos avaliados: a matriz não substitui essa regra
 de negócio. Não houve reconciliação/mudança automática de valores históricos.
 Aplicação/versão publicada e encerramento do lote serão registrados abaixo.
+
+Revisão final antes da ativação: os guards agora isentam somente postgres,
+supabase_admin e service_role. Papéis técnicos não privilegiados que herdam
+`authenticated` também passam pela validação de estado. Um caso SQL adicional
+com papel sintético herdado prova a negativa; criação/grants desse papel foram
+revertidos dentro da própria transação local. São 16 grupos SQL neste lote.
+A 0210 aplicada permanece intacta; somente a 0211 ainda não aplicada foi reforçada.
+
+Gates finais dessa revisão: 1711 testes/218 arquivos, tipos, lint e build;
+mesmo source_hash `cc90f03341c38554543556bd7cdad8bf046429ab3f1c39fa203550ff33b02d11`,
+source_changed=false. Cinco fluxos Chrome aprovados, incluindo edição em massa
+limitada às datas e negação de entry.view mantendo outro acesso financeiro.
+Fixtures locais zeradas e permissões locais anteriores restauradas.

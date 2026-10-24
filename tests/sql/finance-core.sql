@@ -66,6 +66,15 @@ RESET ROLE;UPDATE job_role_permission_overrides SET effect='deny' WHERE role_id=
 DO $$ BEGIN IF finance_entry_access('99700000-0000-4000-8000-000000000001','update') THEN RAISE EXCEPTION 'Deny bypass';END IF;
  BEGIN UPDATE financial_entries SET notes='deny bypass' WHERE id='99700000-0000-4000-8000-000000000001';IF FOUND THEN RAISE EXCEPTION 'Deny update bypass';END IF;EXCEPTION WHEN insufficient_privilege THEN NULL;END;
  RAISE NOTICE 'FINANCE PASS 7: explicit deny is preserved even with ownership/cancellation';END $$;
+RESET ROLE;
+UPDATE job_role_permission_overrides SET effect='grant' WHERE role_id='30000000-0000-4000-8000-0000000000a8' AND permission_key='techfinance.entries.update.own';
+CREATE ROLE finance_api_guard_test NOLOGIN INHERIT;
+GRANT authenticated TO finance_api_guard_test;
+GRANT finance_api_guard_test TO postgres;
+SET LOCAL ROLE finance_api_guard_test;
+DO $$ BEGIN
+ BEGIN UPDATE financial_entries SET paid_amount=100,status='paid' WHERE id='99700000-0000-4000-8000-000000000001';RAISE EXCEPTION 'Technical API role bypassed state guard';EXCEPTION WHEN check_violation THEN NULL;END;
+ RAISE NOTICE 'FINANCE PASS 11: nonprivileged technical API role is guarded too';END $$;
 RESET ROLE;UPDATE workspace_members SET status='inactive' WHERE user_id='10000000-0000-4000-8000-000000000002';SET LOCAL ROLE authenticated;
 DO $$ BEGIN IF EXISTS(SELECT 1 FROM financial_entries WHERE id::text LIKE '99700000%') OR finance_entry_access('99700000-0000-4000-8000-000000000001','cancel') THEN RAISE EXCEPTION 'Inactive bypass';END IF;RAISE NOTICE 'FINANCE PASS 8: inactive membership denied';END $$;
 RESET ROLE;SELECT set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000006',true);SET LOCAL ROLE authenticated;
