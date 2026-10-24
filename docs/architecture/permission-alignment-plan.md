@@ -560,3 +560,42 @@ Publicação confirmada no commit 2812408acc33297f96bcf560e3a07514d9fef5e1.
 Entry index-Dmydshuk.js e os chunks de vaga, notetaker, autoagendamento e
 capacidades foram conferidos byte a byte nos dois domínios públicos.
 Aceite no navegador com sessão real permanece pendente.
+
+### Etapa 5 — ambiente recuperado e primeiro aceite autenticado de RH
+
+Docker Desktop recuperado após encerramento normal e SIGTERM não resolverem um
+backend antigo travado. Não havia VM ativa; foi necessário encerrar apenas esse
+backend e reabrir o aplicativo. Engine 29.8.2 voltou a responder, sem exclusão de
+volumes. O ambiente anterior foi preservado.
+
+Uma segunda stack local, techerp-permissions-20261023, usa API 127.0.0.1:54521
+e cópia descartável da aplicação na porta 5175. Estrutura extraída do catálogo
+atual: 418 tabelas, 2230 políticas, 506 funções; catálogos globais de 1721 chaves
+e sete namespaces de módulos (inclui namespace legado). Nenhum dado de cliente,
+segredo ou sessão de produção foi importado. Ações HTTP externas/cron ficaram
+inertes; as contas e registros são sintéticos. A extração não foi feita pela
+reaplicação do histórico de migrations.
+
+Nove testes com login real do GoTrue, JWT e SDK/PostgREST passaram: Head RH
+fictício como membro sem admin, criação/edição de pessoa, criação/edição de plano,
+bloqueios de usuário sem chave, membro inativo e outro workspace, e limpeza com
+cascata. O perfil fictício recebe todas as chaves TechPeople/TechHire apenas no
+tenant de teste; não é uma reprodução integral dos grants ou da sessão da
+Priscila em produção.
+
+Chrome em perfil temporário confirmou cadastro de pessoa e onboarding pela UI,
+persistência após recarregar, negação de tela sem chave de RH e negação da ficha
+para administrador de outro workspace, sem montar formulário de edição. Nenhum
+pageerror no fluxo positivo. As tentativas anteriores do roteiro foram corrigidas
+para aguardar hidratação, aceitar os parâmetros da URL, tolerar redirecionamentos
+e usar o link Abrir da linha; não foram contadas como aceites aprovados.
+
+Todos os registros de pessoa/onboarding desses ensaios foram removidos via
+sessão autenticada local. Nenhum convite, chamada de IA ou integração externa
+foi acionado. Evidências e prints no relatório local
+outputs/permission-alignment-completion-2026-10-23/aceite-rh-ambiente-recuperado.html
+(no diretório do projeto ChatGPT; não no repositório).
+
+Este lote remove o bloqueio de infraestrutura e aprova esses caminhos locais.
+Não conclui o aceite de todos os cargos/ações, a sessão real de Priscila em
+produção nem as demais frentes de servidor, interface e CI do plano.
