@@ -841,3 +841,41 @@ Priscila: chaves efetivas conferidas; sessão real de produção ainda não acei
 A sessão disponibilizada inicialmente era floripinova@gmail.com em outro workspace;
 o usuário informou dificuldade para trocar a conta Google. Não tratar login de
 outro usuário ou simulação SQL como aceite da Priscila.
+
+
+### Fechamento técnico da Ordem 1 — aplicado e publicado
+
+Código dbb91491f8b65ff6c6c2ef8361abab6a970bad3a; 0208/0209 aplicadas no
+journal 212/213. Publicação confirmada byte a byte nos dois domínios:
+index-DBzaLVIr.js, compliance-Bd2-Agnt.js e hr-access-B2HVkveD.js. A fila chegou
+a pausar com server_error, mas a publicação foi posteriormente confirmada;
+não é bloqueio de publicação atual.
+
+Gates finais: 1705 testes/217 arquivos, tipos, lint e build completos, mesmo
+source_hash 60f08c85b6c9869c38c914ce09dbe550c4fe98dcb18549663906506ec5ff9842,
+source_changed=false. SQL: 9 grupos novos e todas as regressões anteriores;
+11 cenários GoTrue/PostgREST e 4 fluxos Chrome locais aprovados. Ensaio adicional
+com catálogo real local por rollback passou. Os registros sintéticos locais
+foram removidos.
+
+Na base ativa, a identidade SQL de Priscila criou/editou pessoa e onboarding,
+consultou pedido de outro criador e executou retenção, consentimento/revogação,
+exportação e anonimização com conclusão da solicitação. Negativa de não membro
+passou. Rollback integral, zero pessoas/candidatos/planos/pedidos QA restantes.
+Catálogo, defaults, overrides, memberships, candidatos, pessoas e planos
+mantiveram seus hashes. Três guards ativos, seis políticas permissivas canônicas,
+zero políticas permissivas legadas nas duas tabelas e nenhum EXECUTE anônimo
+nas RPCs conferidas. Nenhuma permissão nova foi concedida em produção.
+
+Priscila tem 363/363 chaves TechHire e 235/235 TechPeople efetivas. Isso é
+configuração e aceite SQL, não comprovação de todas as telas da sessão real.
+A Ordem 1 tem implementação técnica aplicada, testada e publicada; o único
+item do aceite específico desta frente ainda pendente é o navegador com a
+conta real de Priscila. O usuário relatou dificuldade para trocar a conta Google.
+Não marcar a Ordem 1 como integralmente aceita até resolver esse item.
+
+Estimativa inicial 1–2h. Até a confirmação final do banco, foram cerca de
+37 minutos corridos desde o início do turno; duração ativa final do turno
+não estava disponível nesse momento. A espera pelo aceite da usuária continua
+separada. Relatório e evidências em outputs/permission-hr-compliance-2026-10-24
+no projeto ChatGPT. As demais ordens e as seis etapas globais permanecem abertas.

@@ -1077,7 +1077,7 @@
       "server": "src/lib/ats/lgpd.functions.ts; caller client only",
       "database": "ats_compliance_access/write/export/capabilities; RLS and immutable parent/evidence guards",
       "migration": "0208 + 0209",
-      "status": "testado_preparacao_aplicada_ativacao_publicacao_pendentes"
+      "status": "aplicado_testado_publicado_aceite_usuario_producao_pendente"
     },
     {
       "operation": "LGPD consent evidence",
@@ -1095,7 +1095,7 @@
       "server": "src/lib/ats/lgpd.functions.ts; caller client only",
       "database": "ats_compliance_access/write/export/capabilities; RLS and immutable parent/evidence guards",
       "migration": "0208 + 0209",
-      "status": "testado_preparacao_aplicada_ativacao_publicacao_pendentes"
+      "status": "aplicado_testado_publicado_aceite_usuario_producao_pendente"
     },
     {
       "operation": "LGPD retention",
@@ -1113,7 +1113,7 @@
       "server": "src/lib/ats/lgpd.functions.ts; caller client only",
       "database": "ats_compliance_access/write/export/capabilities; RLS and immutable parent/evidence guards",
       "migration": "0208 + 0209",
-      "status": "testado_preparacao_aplicada_ativacao_publicacao_pendentes"
+      "status": "aplicado_testado_publicado_aceite_usuario_producao_pendente"
     },
     {
       "operation": "LGPD export",
@@ -1131,7 +1131,7 @@
       "server": "src/lib/ats/lgpd.functions.ts; caller client only",
       "database": "ats_compliance_access/write/export/capabilities; RLS and immutable parent/evidence guards",
       "migration": "0208 + 0209",
-      "status": "testado_preparacao_aplicada_ativacao_publicacao_pendentes"
+      "status": "aplicado_testado_publicado_aceite_usuario_producao_pendente"
     },
     {
       "operation": "LGPD erasure",
@@ -1149,7 +1149,7 @@
       "server": "src/lib/ats/lgpd.functions.ts; caller client only",
       "database": "ats_compliance_access/write/export/capabilities; RLS and immutable parent/evidence guards",
       "migration": "0208 + 0209",
-      "status": "testado_preparacao_aplicada_ativacao_publicacao_pendentes"
+      "status": "aplicado_testado_publicado_aceite_usuario_producao_pendente"
     },
     {
       "operation": "LGPD capabilities",
@@ -1167,7 +1167,7 @@
       "server": "src/lib/ats/lgpd.functions.ts; caller client only",
       "database": "ats_compliance_access/write/export/capabilities; RLS and immutable parent/evidence guards",
       "migration": "0208 + 0209",
-      "status": "testado_preparacao_aplicada_ativacao_publicacao_pendentes"
+      "status": "aplicado_testado_publicado_aceite_usuario_producao_pendente"
     }
   ],
   "rules": [
@@ -1307,7 +1307,7 @@
       "status": "aplicado_publicado_testado_sql",
       "evidencia_migracao": "0193",
       "aceite_visual": false,
-      "publicacao_evidencia": "Confirmação do usuário em 23/10/2026; projeto sincronizado, is_published=true; marcador HTTP não observado, aceite visual pendente.",
+      "publicacao_evidencia": "Published compatible release dbb91491f on both domains; SQL identity probe (person/onboarding and LGPD) passed with complete rollback. Actual Priscila browser session still pending.",
       "aceite_local": {
         "environment": "isolated GoTrue/PostgREST and Chrome, synthetic Head RH nonadmin",
         "production_user_session": false,
@@ -1337,14 +1337,19 @@
       "area": "TechHire",
       "problema": "LGPD usa filtros owner fixos",
       "decisao_alvo": "Aplicar leitura/alteração/exportação por escopo autorizado; manter segregação de tenant.",
-      "status": "preparado_testado_ativacao_pendente",
-      "evidencia_migracao": "0208 RPC preparation applied; 0209 RLS/guards pending compatible publication",
+      "status": "aplicado_publicado_testado_sql_aceite_browser_pendente",
+      "evidencia_migracao": "0208 + 0209 applied, journal 212/213; both public domains match verified build; production Priscila SQL rollback probe passed",
       "aceite_visual": false,
       "aceite_local": {
         "authenticated_groups": 11,
         "browser_flows": 4,
         "synthetic_nonadmin": true,
         "evidence": "permission-hr-compliance-2026-10-24"
+      },
+      "aceite_producao": {
+        "sql_identity_probe": true,
+        "real_user_browser": false,
+        "blocker": "Google session initially belongs to another account; user unable to switch account"
       }
     },
     {
@@ -1353,7 +1358,7 @@
       "problema": "Anonimização aceita ator NULL",
       "decisao_alvo": "Exigir compliance.delete.workspace e update do candidato no escopo correto; negar anon/inativo/Ver como e auditar.",
       "status": "aplicado_testado_sql",
-      "evidencia_migracao": "0191",
+      "evidencia_migracao": "0191 + 0209; same compliance/candidate assigned/team scope as caller predicate; atomic DSAR wrapper",
       "aceite_visual": false
     },
     {
@@ -1373,7 +1378,7 @@
       "status": "aplicado_publicado_testado_sql",
       "evidencia_migracao": "0193",
       "aceite_visual": false,
-      "publicacao_evidencia": "Confirmação do usuário em 23/10/2026; projeto sincronizado, is_published=true; marcador HTTP não observado, aceite visual pendente.",
+      "publicacao_evidencia": "Published compatible release dbb91491f on both domains; SQL identity probe (person/onboarding and LGPD) passed with complete rollback. Actual Priscila browser session still pending.",
       "aceite_local": {
         "environment": "isolated GoTrue/PostgREST and Chrome, synthetic Head RH nonadmin",
         "production_user_session": false,
@@ -1427,7 +1432,7 @@
       "status": "aplicado_publicado_testado_sql",
       "evidencia_migracao": "0193",
       "aceite_visual": false,
-      "publicacao_evidencia": "Confirmação do usuário em 23/10/2026; projeto sincronizado, is_published=true; marcador HTTP não observado, aceite visual pendente.",
+      "publicacao_evidencia": "Published compatible release dbb91491f on both domains; SQL identity probe (person/onboarding and LGPD) passed with complete rollback. Actual Priscila browser session still pending.",
       "aceite_local": {
         "environment": "isolated GoTrue/PostgREST and Chrome, synthetic Head RH nonadmin",
         "production_user_session": false,
