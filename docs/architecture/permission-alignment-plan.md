@@ -1014,3 +1014,18 @@ Conciliação mantém cliente do usuário e só altera estado/vínculo; impede v
 Validação local: teste SDK persistente em scripts/isolated-db/banking-acceptance.mjs; ACL e papel técnico em tests/sql/banking-actions.sql; testes de cifra e autorização em src/lib/banking/*.test.ts. Aceite visual usa usuário não administrador e adapter mock; webhook HTTP local assinado também verificado. Gates finais e aplicação/publicação serão registrados após a conclusão.
 
 Ordem 2 permanece aberta para catálogos/relatórios e fiscal/cobrança comercial. Este lote não implementa ou certifica um conector bancário real, estorno de dinheiro, TED ou regras de alçada que não existiam.
+
+
+### Ordem 2 — lote bancário publicado e ativado (24/10/2026)
+
+**Concluído no escopo descrito.** Commit `152395bd096b8a135f76afe60c82b4f8c7f70df8`. Verify: 1.720 testes / 220 arquivos, tipos e lint, 39.178ms. Build: 99.889ms. Ambos completos, source_changed=false e fingerprint `34b1f82ddc9d5b54b21f75ffad1348d997c698279f9955495b3f0546f3c6a34a`. Fonte permaneceu estável; tentativas anteriores durante alterações não foram aceitas como gate final.
+
+Preparação 0212 aplicada no journal 216, when 1792873273592, SHA-256 `55916bec0b321e9eb71602ddafee2f2300c2e873a542f20e1f1428c34cd66987`. Publicação confirmada nos dois domínios: HTML referencia `/assets/index-BkWLzOxU.js`; root, banking.functions, duas rotas bancárias, hr-access e settings.permissions conferidos por SHA-256. Só então 0213 foi ativada em transação, journal 217, when 1792873273593, SHA-256 `683bf9800da0992d294d3dd1bfd9cd0b0b910209aa95556b65373bad1d02444d`. Não reaplicar essas migrações.
+
+Aceite local: 20 cenários GoTrue/JWT/PostgREST, 5 fluxos de navegador/HTTP assinado, 2 grupos SQL bancários e 16 grupos de regressão financeira. Negação de URL direta, deny, outro tenant, inativo e Ver como testados. Zero erros de página no aceite final. Token cifrado confirmado após OAuth pelo formulário real. A renovação possui lease antes de chamar o provedor, além do CAS de armazenamento. Fixtures removidas e overrides locais restaurados.
+
+Aceite de produção: simulação SQL de identidade com rollback; criar/aprovar/claim sem executar provedor, impedir replay/cancelamento após envio/DML direto, callback atômico e repetição idempotente, segredo/RPC protegidos e não membro negado. Zero resíduos de conexão, lançamento ou baixa fictícios. Não equivale a sessão financeira não administradora no navegador de produção ou aceite de banco real. Os testes visuais ocorreram no ambiente isolado.
+
+Fotografias antes/depois: mesmos hashes e contagens de defaults (6.653), overrides (1.008), lançamentos (28.531) e baixas (26.035). Oito novas chaves, zero concessões em defaults/overrides. Tokens, metadata OAuth, UPDATE direto de bank_payments e callback de serviço indisponíveis para anon, authenticated e techerp_api_subject. Todas as cinco tabelas de dados bancários verificadas continuam vazias após rollback. Evidências externas: `outputs/permission-banking-2026-10-24/`.
+
+**Pendências da Ordem 2:** catálogos (incluindo contas bancárias), relatórios/exportações e fiscal/cobrança comercial. Adapter real, TED, estorno bancário, execução automática de pagamentos futuros e alçadas novas continuam fora deste lote; somente Inter mock existe. As seis etapas globais não estão concluídas por este fechamento.
