@@ -1,4 +1,6 @@
 // Dialog para criar uma nova oferta (carta-proposta) a partir do scorecard.
+import { useQuery } from "@tanstack/react-query";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -13,7 +15,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { createOffer, sendOffer } from "@/lib/ats/offers.functions";
+import { createOffer, reviewOffer, canCreateOffer } from "@/lib/ats/offers.functions";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
 type Props = {
@@ -38,7 +40,23 @@ export function CreateOfferDialog({
   onCreated,
 }: Props) {
   const create = useServerFn(createOffer);
-  const send = useServerFn(sendOffer);
+  const check = useServerFn(canCreateOffer);
+  const permissions = usePermissions();
+  const access = useQuery({
+    queryKey: [
+      "offer-create",
+      permissions.workspaceId,
+      [...permissions.permissions].sort(),
+      candidateId,
+      jobId,
+      applicationId,
+    ],
+    queryFn: () =>
+      check({ data: { candidate_id: candidateId, job_id: jobId, application_id: applicationId } }),
+    enabled: open && !permissions.isLoading && !permissions.isError && !!permissions.workspaceId,
+    staleTime: 0,
+  });
+  const send = useServerFn(reviewOffer);
   const [title, setTitle] = useState("Carta-proposta");
   const [salary, setSalary] = useState("");
   const [currency, setCurrency] = useState("BRL");
@@ -65,8 +83,8 @@ export function CreateOfferDialog({
         },
       });
       if (sendNow && offer?.id) {
-        await send({ data: { id: offer.id } });
-        toast.success("Oferta enviada para assinatura");
+        await send({ data: { id: offer.id, revision: offer.revision, action: "request" } });
+        toast.success("Oferta salva e encaminhada para aprovação");
       } else {
         toast.success("Oferta salva como rascunho");
       }
@@ -85,48 +103,63 @@ export function CreateOfferDialog({
         <DialogHeader>
           <DialogTitle>Nova oferta — {candidateName}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-3">
-          <div>
-            <Label>Título</Label>
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} />
-          </div>
-          <div className="grid grid-cols-3 gap-3">
+        {access.data === true && !access.isError ? (
+          <div className="space-y-3">
             <div>
-              <Label>Moeda</Label>
-              <Input value={currency} onChange={(e) => setCurrency(e.target.value)} />
+              <Label>Título</Label>
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label>Moeda</Label>
+                <Input value={currency} onChange={(e) => setCurrency(e.target.value)} />
+              </div>
+              <div>
+                <Label>Salário</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={salary}
+                  onChange={(e) => setSalary(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Data de início</Label>
+                <IsoDatePicker
+                  ariaLabel="Data de início"
+                  value={startDate}
+                  onChange={(v) => setStartDate(v ?? "")}
+                />
+              </div>
             </div>
             <div>
-              <Label>Salário</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={salary}
-                onChange={(e) => setSalary(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>Data de início</Label>
-              <IsoDatePicker
-                ariaLabel="Data de início"
-                value={startDate}
-                onChange={(v) => setStartDate(v ?? "")}
-              />
+              <Label>Texto da proposta</Label>
+              <Textarea rows={8} value={body} onChange={(e) => setBody(e.target.value)} />
             </div>
           </div>
-          <div>
-            <Label>Texto da proposta</Label>
-            <Textarea rows={8} value={body} onChange={(e) => setBody(e.target.value)} />
-          </div>
-        </div>
+        ) : (
+          <p role="status">
+            {access.isLoading
+              ? "Verificando acesso…"
+              : "Sem permissão para elaborar as condições desta oferta."}
+          </p>
+        )}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
             Cancelar
           </Button>
-          <Button variant="secondary" onClick={() => handleSave(false)} disabled={busy}>
+          <Button
+            variant="secondary"
+            onClick={() => handleSave(false)}
+            disabled={busy || access.data !== true || access.isError}
+          >
             Salvar rascunho
           </Button>
-          <Button onClick={() => handleSave(true)} disabled={busy}>
-            Salvar e enviar
+          <Button
+            onClick={() => handleSave(true)}
+            disabled={busy || access.data !== true || access.isError}
+          >
+            Salvar e solicitar aprovação
           </Button>
         </DialogFooter>
       </DialogContent>

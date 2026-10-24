@@ -678,3 +678,54 @@ externas. Isso não é aceite de uma sessão real da Priscila no navegador publi
 Evidências/prints: outputs/permission-ats-configuration-2026-10-24/relatorio.html
 no projeto ChatGPT. Lote concluído e publicado dentro do escopo descrito; não
 conclui as seis etapas nem alçadas/ofertas, outros módulos, APIs ou campos globais.
+
+
+### Ofertas, aprovação e confirmação de contratação (0206–0207)
+
+Estimativa comunicada: 3–5 horas. Preparação e ativação separadas para publicar
+os consumidores compatíveis antes de revogar leituras legadas. Este lote trata
+as ações e seus estados; não conclui a revisão dos seis módulos.
+
+A oferta passa por rascunho → solicitação → aprovação/reprovação da versão →
+disponibilização para assinatura. Alterar título, corpo, remuneração ou início
+invalida a aprovação anterior. Durante a revisão e após disponibilização, as
+condições ficam bloqueadas. Documento de assinatura contém a versão e as
+condições aprovadas; envio, aprovação e cancelamento serializam no registro e
+produzem histórico. Sem exclusão física de ofertas com histórico.
+
+Há 29 chaves novas: consulta/edição de condições de oferta e contratação nos
+escopos own/team/workspace, disponibilização, cancelamento, confirmação de
+contratação, reversão e reatribuição de oferta. Somente Head RH da WK recebe os
+novos overrides; denies, presets e outros cargos/workspaces são preservados.
+A aprovação existente `offers.approve.workspace` ganha uma operação real, em vez
+de um evento indevidamente emitido ao enviar. Não foram inventados limites
+monetários por cargo nem obrigatoriedade de segundo aprovador.
+
+Metadados seguem visíveis com a chave base. Corpo e valores só saem pela
+projeção de campos autorizada; a consulta direta dessas colunas e de
+hiring_details não é concedida a authenticated. eSign genérico não permite
+reescrever documentos vinculados à oferta nem obter o token do candidato.
+Link público exige estado, tenant e validade corretos; assinatura e cancelamento
+são concorrentes, com um vencedor. Aceite de todos os signatários marca apenas
+a oferta: não confirma contratação nem move automaticamente o pipeline.
+
+Contratar exige ação específica, além da edição da candidatura e visibilidade
+dos pais reais. Alterar condições após contratar também exige aprovação;
+reversão tem chave própria e avisa que Pessoas/Contratos/Financeiro já gerados
+precisam de revisão separada. Histórico de contratação não é apagado fisicamente;
+use reversão/anonimização autorizada. Workflows existentes continuam reagindo à
+contratação confirmada, mas uma movimentação genérica de serviço não pode criar
+contratação sem delegação. API exige chave ativa, escopo write e RBAC real do
+proprietário, sem criar/expor sessão de usuário.
+
+A tela usa o termo disponibilizar para assinatura: o mecanismo existente não
+comprova entrega de e-mail. O operador pode copiar o link autorizado para seu
+canal de envio. A página da oferta agora leva ao documento correspondente, em
+vez de afirmar que um e-mail foi enviado.
+
+Validação em andamento: 16 grupos SQL (mais todas as regressões e 219
+comparações de capacidades); 11 grupos com GoTrue/JWT/PostgREST reais locais;
+quatro fluxos no Chrome com Head RH não administrador e conta sem a chave.
+As verificações finais, hashes, aplicação e publicação serão registrados após
+as respectivas evidências. Isso não equivale ao aceite da sessão real de
+Priscila no ambiente publicado.

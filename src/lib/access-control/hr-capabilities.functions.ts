@@ -12,6 +12,7 @@ export const HR_RECORD_RESOURCES = [
   "interview_scoring",
   "interviews",
   "scorecard_responses",
+  "application_hiring",
   "applications",
   "pipelines",
   "jobs",

@@ -108,7 +108,9 @@ export const exportCandidateData = createServerFn({ method: "POST" })
     // Fetch applications first so we can fan out to scorecard responses by application_id.
     const { data: appsData } = await supabase
       .from("ats_applications")
-      .select("*")
+      .select(
+        "id, workspace_id, owner_id, candidate_id, job_id, status, stage_value, applied_at, moved_at, source, rejection_reason",
+      )
       .eq("owner_id", userId)
       .eq("candidate_id", cid);
     const appIds = (appsData ?? []).map((a: { id: string }) => a.id);

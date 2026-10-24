@@ -1,3 +1,4 @@
+import { offerRpc } from "./offer-rpc.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -243,11 +244,9 @@ export const getCandidateDetail = createServerFn({ method: "POST" })
     }));
 
     // Offers
-    const { data: offerRowsRaw } = await supabase
-      .from("ats_offers")
-      .select("id, job_id, status, salary_amount, salary_currency, sent_at, signed_at")
-      .eq("candidate_id", data.id)
-      .order("sent_at", { ascending: false });
+    const offerRowsRaw = await offerRpc<unknown[]>(supabase, "ats_offer_projection", {
+      _candidate: data.id,
+    });
     const offerRows = (offerRowsRaw ?? []) as unknown as Array<{
       id: string;
       job_id: string | null;
@@ -334,8 +333,11 @@ export const getCandidateDetail = createServerFn({ method: "POST" })
     // Derived status
     const now = Date.now();
     let derived: CandidateDetail["derived_status"] = "new";
-    if (offers.some((o) => o.status === "accepted" || o.status === "signed")) derived = "hired";
-    else if (offers.some((o) => o.status === "sent" || o.status === "viewed")) derived = "offer";
+    if (applications.some((a) => a.status === "hired")) derived = "hired";
+    else if (
+      offers.some((o) => o.status === "sent" || o.status === "viewed" || o.status === "signed")
+    )
+      derived = "offer";
     else if (
       interviews.some(
         (i) =>

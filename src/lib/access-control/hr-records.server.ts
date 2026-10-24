@@ -11,6 +11,7 @@ type HrRecord =
   | "scorecard_responses"
   | "application_interviews"
   | "application_scores"
+  | "application_hiring"
   | "applications"
   | "candidate_applications"
   | "pipelines"

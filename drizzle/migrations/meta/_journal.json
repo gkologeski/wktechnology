@@ -1443,6 +1443,20 @@
       "when": 1792842993109,
       "tag": "0205_ats_scheduling_privacy",
       "breakpoints": true
+    },
+    {
+      "idx": 206,
+      "version": "7",
+      "when": 1792845739194,
+      "tag": "0206_ats_offer_approval_boundaries",
+      "breakpoints": true
+    },
+    {
+      "idx": 207,
+      "version": "7",
+      "when": 1792845739195,
+      "tag": "0207_ats_offer_hiring_activation",
+      "breakpoints": true
     }
   ]
 }

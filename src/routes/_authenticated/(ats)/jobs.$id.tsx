@@ -1,3 +1,4 @@
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { HrScreenAccess, HrRecordAccess, HrAccessError } from "@/components/hr-access";
 import { useHrCapabilities } from "@/lib/access-control/use-hr-capabilities";
 import { usePermissions } from "@/lib/access-control/use-permissions";
@@ -19,7 +20,12 @@ import {
   listJobInterviews,
 } from "@/lib/ats/ats.functions";
 import { listAtsPipelines } from "@/lib/ats/pipelines.functions";
-import { DEFAULT_ATS_STAGES, parseAtsStages, type AtsStage } from "@/lib/ats/stages";
+import {
+  DEFAULT_ATS_STAGES,
+  parseAtsStages,
+  atsStageOutcome,
+  type AtsStage,
+} from "@/lib/ats/stages";
 import { listJobScorecardSummary } from "@/lib/ats/scorecards.functions";
 import { exportJobApplicationsCsv } from "@/lib/ats/export.functions";
 import { ScheduleInterviewDialog } from "@/components/ats/schedule-interview-dialog";
@@ -113,6 +119,10 @@ function JobDetailContent() {
 
   const appAccess = useHrCapabilities(
     "applications",
+    apps.map((a) => a.id),
+  );
+  const hiringAccess = useHrCapabilities(
+    "application_hiring",
     apps.map((a) => a.id),
   );
   const authorizedApps = apps.filter((a) => appAccess.for(a.id).can_view);
@@ -246,10 +256,40 @@ function JobDetailContent() {
     const app = apps.find((a) => a.id === dragging);
     setDragging(null);
     if (!app || !appAccess.for(app.id).can_update || app.stage_value === toStage) return;
-    if (stages.find((st) => st.value === toStage)?.type === "won") {
+    if (atsStageOutcome(stages, toStage) === "won") {
+      if (!hiringAccess.for(app.id).can_update) {
+        toast.error("Sem permissão para confirmar contratação.");
+        return;
+      }
+      if (!hiringAccess.for(app.id).can_create_child) {
+        if (
+          !(await confirmDialog(
+            "Confirmar contratação preservando as condições já registradas? Os workflows configurados poderão ser iniciados.",
+          ))
+        )
+          return;
+        try {
+          await moveApp({ data: { applicationId: app.id, toStage, position: 0 } });
+          refresh();
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : "Falha ao contratar");
+        }
+        return;
+      }
       setHiringMove({ app, toStage });
       return;
     }
+    if (app.status === "hired" && !hiringAccess.for(app.id).can_delete) {
+      toast.error("Sem permissão para reverter contratação.");
+      return;
+    }
+    if (
+      app.status === "hired" &&
+      !(await confirmDialog(
+        "Reverter a contratação? Pessoas, contratos e lançamentos já criados pelos workflows precisam de revisão separada.",
+      ))
+    )
+      return;
     setApps((prev) => prev.map((a) => (a.id === app.id ? { ...a, stage_value: toStage } : a)));
     try {
       await moveApp({ data: { applicationId: app.id, toStage, position: 0 } });
@@ -260,7 +300,12 @@ function JobDetailContent() {
   };
 
   const confirmHiring = async (outcome: HiringOutcome) => {
-    if (!hiringMove || !appAccess.for(hiringMove.app.id).can_update) return;
+    if (
+      !hiringMove ||
+      !hiringAccess.for(hiringMove.app.id).can_update ||
+      !hiringAccess.for(hiringMove.app.id).can_create_child
+    )
+      return;
     const { app, toStage } = hiringMove;
     setHiringSaving(true);
     try {
@@ -287,6 +332,10 @@ function JobDetailContent() {
   const onBulkMoveStage = async (ids: string[], toStage: string) => {
     if (!ids.every((id) => appAccess.for(id).can_update))
       throw new Error("Sem permissão para mover todas as candidaturas selecionadas.");
+    if (atsStageOutcome(stages, toStage) === "won")
+      throw new Error("Confirme cada contratação individualmente para revisar as condições.");
+    if (ids.some((id) => apps.find((a) => a.id === id)?.status === "hired"))
+      throw new Error("Reverta contratações individualmente para revisar seus efeitos.");
     try {
       for (const applicationId of ids) {
         await moveApp({ data: { applicationId, toStage, position: 0 } });
@@ -542,7 +591,11 @@ function JobDetailContent() {
         refresh={refresh}
       />
       <HiringOutcomeDialog
-        open={!!hiringMove && appAccess.for(hiringMove.app.id).can_update}
+        open={
+          !!hiringMove &&
+          hiringAccess.for(hiringMove.app.id).can_update &&
+          hiringAccess.for(hiringMove.app.id).can_create_child
+        }
         candidateName={
           (hiringMove?.app as unknown as { candidate?: { full_name?: string | null } | null })
             ?.candidate?.full_name ?? "Candidato"

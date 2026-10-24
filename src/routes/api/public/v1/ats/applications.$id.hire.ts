@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { authenticateApiKey, requireScope, unauthorized } from "@/lib/api-keys/auth.server";
 import { flagDisabled, isAtsPublicApiEnabled, notFound } from "@/lib/ats/public-api.server";
 import { recordAtsEvent } from "@/lib/ats/audit.server";
+import { offerRpc } from "@/lib/ats/offer-rpc.server";
 import { wonAtsStageValue } from "@/lib/ats/stages";
 
 export const Route = createFileRoute("/api/public/v1/ats/applications/$id/hire")({
@@ -20,12 +21,10 @@ export const Route = createFileRoute("/api/public/v1/ats/applications/$id/hire")
           .select("id, owner_id, job_id, candidate_id, status")
           .eq("id", id)
           .eq("owner_id", auth.ownerId)
+          .eq("workspace_id", auth.workspaceId)
           .maybeSingle();
         if (!app) return notFound();
-        if (app.status === "hired") {
-          return Response.json({ data: app, already_hired: true });
-        }
-        const nowIso = new Date().toISOString();
+
         // Etapa de contratação do pipeline da vaga (fallback: slug padrão).
         let hiredStage = "profissional_contratado";
         const { data: job } = await supabaseAdmin
@@ -41,14 +40,20 @@ export const Route = createFileRoute("/api/public/v1/ats/applications/$id/hire")
             .maybeSingle();
           hiredStage = wonAtsStageValue(pipeline?.stages) ?? hiredStage;
         }
-        const { data: updated, error } = await supabaseAdmin
-          .from("ats_applications")
-          .update({ status: "hired", stage_value: hiredStage, moved_at: nowIso })
-          .eq("id", id)
-          .eq("owner_id", auth.ownerId)
-          .select("id, job_id, candidate_id, status, stage_value, moved_at")
-          .single();
-        if (error) return new Response(JSON.stringify({ error: error.message }), { status: 400 });
+        let updated: { id: string; status: string; already_hired: boolean };
+        try {
+          updated = await offerRpc(supabaseAdmin, "ats_api_confirm_hire", {
+            _id: id,
+            _key: auth.keyId,
+            _stage: hiredStage,
+          });
+        } catch {
+          return Response.json(
+            { error: "Sem permissão para confirmar esta contratação." },
+            { status: 403 },
+          );
+        }
+        if (updated.already_hired) return Response.json({ data: updated, already_hired: true });
         await recordAtsEvent(supabaseAdmin, {
           ownerId: auth.ownerId,
           name: "ats.candidate.hired",

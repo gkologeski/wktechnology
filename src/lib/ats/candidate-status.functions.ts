@@ -52,9 +52,7 @@ export const getCandidateStatuses = createServerFn({ method: "POST" })
       .in("candidate_id", ids);
     for (const o of (offers ?? []) as Array<{ candidate_id: string; status: string }>) {
       const s = o.status;
-      if (s === "accepted" || s === "signed") result[o.candidate_id] = "hired";
-      else if ((s === "sent" || s === "viewed") && result[o.candidate_id] !== "hired")
-        result[o.candidate_id] = "offer";
+      if (s === "sent" || s === "viewed" || s === "signed") result[o.candidate_id] = "offer";
     }
 
     // Interviews (future, not cancelled)
@@ -86,6 +84,10 @@ export const getCandidateStatuses = createServerFn({ method: "POST" })
       appsByCand.set(a.candidate_id, arr);
     }
     for (const [cid, statuses] of appsByCand) {
+      if (statuses.includes("hired")) {
+        result[cid] = "hired";
+        continue;
+      }
       const cur = result[cid];
       if (cur === "hired" || cur === "offer" || cur === "interview") continue;
       if (statuses.some((s) => s === "active")) result[cid] = "in_process";

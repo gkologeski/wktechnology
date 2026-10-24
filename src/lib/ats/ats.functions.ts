@@ -952,6 +952,7 @@ export const moveApplication = createServerFn({ method: "POST" })
     const moveStages = await loadJobPipelineStages(supabase as never, prev.job_id as string);
     const outcome = atsStageOutcome(moveStages, data.toStage);
     if (outcome === "won") {
+      await assertHrRecordAccess(supabase, "application_hiring", "update", data.applicationId);
       patch.status = "hired";
       if (data.hiring) {
         patch.hiring_details = {
@@ -963,10 +964,16 @@ export const moveApplication = createServerFn({ method: "POST" })
     } else if (outcome === "lost") patch.status = "rejected";
     else patch.status = "active";
 
+    if (prev.status === "hired" && patch.status !== "hired")
+      await assertHrRecordAccess(supabase, "application_hiring", "delete", data.applicationId);
+    if (data.hiring && outcome !== "won")
+      throw new Error("Condições de contratação exigem uma etapa de contratação.");
     const { data: upd, error } = await supabase
       .from("ats_applications")
       .update(patch as never)
       .eq("id", data.applicationId)
+      .eq("stage_value", prev.stage_value)
+      .eq("status", prev.status)
       .select("id");
     if (error) throw new Error(error.message);
     if (!upd || upd.length === 0)
@@ -1006,7 +1013,7 @@ export const moveApplication = createServerFn({ method: "POST" })
         },
       }).catch(() => undefined);
 
-      if (outcome === "won") {
+      if (outcome === "won" && prev.status !== "hired") {
         await recordAtsEvent(supabase, {
           ownerId: userId,
           name: "ats.candidate.hired",

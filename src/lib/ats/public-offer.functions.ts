@@ -1,30 +1,21 @@
-// Acesso público da oferta via token (Fase 2): visualizar e aceitar/recusar.
-// O token é validado no handler; o cliente admin é usado para contornar RLS,
-// porque a política anon foi removida (acesso público acontece apenas via
-// server functions que checam o token antes de devolver dados).
+// Public capability checked atomically against offer state, document and expiry.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-
+import { offerRpc } from "./offer-rpc.server";
 export const getOfferByToken = createServerFn({ method: "GET" })
-  .inputValidator((d) => z.object({ token: z.string().min(8) }).parse(d))
+  .inputValidator((d) => z.object({ token: z.string().min(32).max(128) }).parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: row, error } = await supabaseAdmin
-      .from("ats_offers")
-      .select(
-        "id, title, body, status, salary_amount, salary_currency, start_date, sent_at, signed_at, declined_at, viewed_at, public_token, candidate_id, job_id",
-      )
-      .eq("public_token", data.token)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (!row) throw new Error("Oferta não encontrada");
-    if (["canceled", "cancelled", "withdrawn", "revoked"].includes(String(row.status)))
-      throw new Error("Oferta não encontrada");
-    if (!row.viewed_at) {
-      await supabaseAdmin
-        .from("ats_offers")
-        .update({ viewed_at: new Date().toISOString() })
-        .eq("id", row.id);
-    }
-    return row;
+    return offerRpc<{
+      signing_token: string | null;
+      title: string;
+      body: string;
+      status: string;
+      salary_amount: number | null;
+      salary_currency: string;
+      start_date: string | null;
+      sent_at: string | null;
+      signed_at: string | null;
+      declined_at: string | null;
+    }>(supabaseAdmin, "ats_offer_public", { _token: data.token });
   });

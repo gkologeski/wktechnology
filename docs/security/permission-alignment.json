@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23",
+  "updated_at": "2026-10-24",
   "modules": [
     "TechSales",
     "TechHire",
@@ -961,6 +961,105 @@
       "contract": "invoker atomic default change and save; workspace view+update to change default; failed save rolls back demotion",
       "migration": "0204/0205",
       "status": "aplicado_publicado_testado_sql_auth_browser_local_aceite_producao_pendente"
+    },
+    {
+      "operation": "public.ats_offer_projection + ats_offer_action_access",
+      "kind": "business_action",
+      "route_consumers": [
+        "/offers",
+        "ficha do candidato",
+        "elaboração de oferta"
+      ],
+      "actor": "authenticated active member, active workspace, not read-only for writes",
+      "resource": "offers + offer_terms",
+      "action": "view/create/update/delete and private terms",
+      "permission_keys": [
+        "techhire.offers.{view,create,update,delete}.{own,team,workspace}",
+        "techhire.offer_terms.{view,update}.{own,team,workspace}",
+        "techhire.offers.assign.workspace"
+      ],
+      "scope": "actual assigned owner/team; candidate, job and application visible in same tenant",
+      "database": "whitelisted projection; private columns/token have no direct authenticated SELECT; immutable tenant/author/parents; approved conditions versioned; historical deletion blocked",
+      "migration": "0206-0207"
+    },
+    {
+      "operation": "public.ats_offer_transition",
+      "kind": "business_action",
+      "route_consumers": [
+        "/offers"
+      ],
+      "actor": "authenticated active member, not read-only",
+      "resource": "offers + approval + delivery + cancellation",
+      "action": "request/approve/reject/send/cancel",
+      "permission_keys": [
+        "techhire.offers.update.{own,team,workspace}",
+        "techhire.offers.approve.workspace",
+        "techhire.offer_delivery.manage.workspace",
+        "techhire.offer_cancellation.manage.workspace",
+        "techhire.offer_terms.view.{own,team,workspace}"
+      ],
+      "scope": "actual visible offer; expected revision; state machine",
+      "database": "row lock, approval audit and protected transaction attestation; atomic eSign creation; generic eSign cannot edit linked documents or reveal signer token",
+      "exception_reason": "No email-delivery claim: send means making the approved offer available for signing. Approval is by capability and version; monetary limits and mandatory second approver are not configured.",
+      "migration": "0206-0207"
+    },
+    {
+      "operation": "public.ats_offer_public + ats_offer_sign",
+      "kind": "public_capability_exception",
+      "route_consumers": [
+        "/offer/$token",
+        "/sign/$token"
+      ],
+      "actor": "validated offer/signer bearer token through server-only service RPC",
+      "resource": "one offer and its matching signing document",
+      "action": "view/sign/decline",
+      "permission_keys": [],
+      "scope": "token length/state/expiry/workspace; signer order; serialized with cancellation",
+      "database": "service-only EXECUTE; staff cannot directly mutate signers of linked offers; all signers required for completion; no automatic hiring or stage promotion",
+      "exception_reason": "Candidate needs to review and accept the exact approved conditions without ERP login. Tokens are never returned by staff metadata APIs; offer-link retrieval requires delivery permission.",
+      "migration": "0206-0207"
+    },
+    {
+      "operation": "public.ats_hiring_guard + application_hiring capabilities + ats_hiring_terms",
+      "kind": "business_action",
+      "route_consumers": [
+        "ficha da vaga / pipeline",
+        "moveApplication",
+        "API de contratação",
+        "workflows de movimentação"
+      ],
+      "actor": "active member with actual candidature update; not read-only",
+      "resource": "hiring + hiring_reversal + hiring_terms",
+      "action": "confirm/reverse/read or update terms",
+      "permission_keys": [
+        "techhire.hiring.approve.workspace",
+        "techhire.hiring_reversal.manage.workspace",
+        "techhire.hiring_terms.{view,update}.{own,team,workspace}",
+        "existing actual candidature/candidate/job access"
+      ],
+      "scope": "actual visible candidate/job/application and selected workspace; same-tenant client",
+      "database": "before INSERT/UPDATE/DELETE guard, no direct SELECT hiring_details, typed terms/actor audit; hiring history cannot be physically deleted; reversal does not compensate downstream workflows automatically",
+      "exception_reason": "A signed offer is distinct from a confirmed hire. Existing confirmed-hire workflows remain configurable/idempotent. Generic service stage updates cannot create a new hire.",
+      "migration": "0206-0207"
+    },
+    {
+      "operation": "public.ats_api_confirm_hire",
+      "kind": "internal_service_exception",
+      "route_consumers": [
+        "/api/public/v1/ats/applications/$id/hire"
+      ],
+      "actor": "service server after API-key authentication; actual active key owner delegated only inside the transaction",
+      "resource": "actual owned candidature in key workspace",
+      "action": "confirm hire",
+      "permission_keys": [
+        "write API scope",
+        "techhire.hiring.approve.workspace",
+        "actual application update/candidate/job scope predicates"
+      ],
+      "scope": "active, unexpired, unrevoked key; exact key owner/tenant; active selected workspace matches key; existing hired outcome idempotent",
+      "database": "service-only EXECUTE, caller context restored, same canonical record predicates/guards; key write scope alone is insufficient",
+      "exception_reason": "API key authenticates a server-side delegation without issuing a user session; human RBAC and data-scope predicates still apply.",
+      "migration": "0206-0207"
     }
   ],
   "rules": [
@@ -1262,7 +1361,7 @@
     }
   ],
   "limitations": [
-    "37 operation contracts recorded; remaining actions require explicit validation.",
+    "53 operation contracts recorded; remaining actions require explicit validation.",
     "Route inventory is static evidence, not certification of enforcement.",
     "SQL tests are not browser/GoTrue/PostgREST acceptance.",
     "No new business role grants in 0191 or 0192; six new catalog keys in 0192.",

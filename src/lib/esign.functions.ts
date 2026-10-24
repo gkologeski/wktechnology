@@ -1,3 +1,4 @@
+import { offerRpc } from "./ats/offer-rpc.server";
 import { emailSchema } from "@/lib/email-schema";
 import { workspaceOfSource } from "@/lib/workspace-source.server";
 import { createServerFn } from "@tanstack/react-start";
@@ -267,24 +268,32 @@ export const getEsignSession = createServerFn({ method: "GET" })
       canSign = false;
     }
 
-    // marca como visto
-    if (!signer.viewed_at) {
-      await supabaseAdmin
-        .from("esign_signers")
-        .update({
-          viewed_at: new Date().toISOString(),
-          status: signer.status === "pending" ? "viewed" : signer.status,
-        })
-        .eq("id", signer.id);
-      await supabaseAdmin.from("esign_audit").insert({
-        document_id: doc.id,
-        signer_id: signer.id,
-        owner_id: signer.owner_id,
-        workspace_id: workspaceId,
-        event: "viewed",
-      });
+    const { data: linkedOffer } = await supabaseAdmin
+      .from("ats_offers")
+      .select("id")
+      .eq("esign_document_id", doc.id)
+      .maybeSingle();
+    if (linkedOffer) {
+      await offerRpc(supabaseAdmin, "ats_offer_sign", { _token: data.token, _action: "view" });
+    } else {
+      // marca como visto
+      if (!signer.viewed_at) {
+        await supabaseAdmin
+          .from("esign_signers")
+          .update({
+            viewed_at: new Date().toISOString(),
+            status: signer.status === "pending" ? "viewed" : signer.status,
+          })
+          .eq("id", signer.id);
+        await supabaseAdmin.from("esign_audit").insert({
+          document_id: doc.id,
+          signer_id: signer.id,
+          owner_id: signer.owner_id,
+          workspace_id: workspaceId,
+          event: "viewed",
+        });
+      }
     }
-
     return { doc, signer, signers: allSigners ?? [], canSign };
   });
 
@@ -319,6 +328,38 @@ export const submitEsignSignature = createServerFn({ method: "POST" })
     if (signer.status === "signed") throw new Error("Você já assinou este documento.");
     if (signer.status === "declined") throw new Error("Assinatura recusada anteriormente.");
 
+    const { data: linkedOffer } = await supabaseAdmin
+      .from("ats_offers")
+      .select("id, owner_id, candidate_id, job_id, application_id")
+      .eq("esign_document_id", signer.document_id)
+      .maybeSingle();
+    if (linkedOffer) {
+      const result = await offerRpc<{ completed: boolean }>(supabaseAdmin, "ats_offer_sign", {
+        _token: data.token,
+        _action: "sign",
+        _name: data.signedName,
+        _signature: data.signatureData ?? null,
+        _ip: ip,
+        _ua: ua,
+      });
+      if (result.completed && linkedOffer.owner_id) {
+        const { recordAtsEvent } = await import("./ats/audit.server");
+        await recordAtsEvent(supabaseAdmin, {
+          ownerId: linkedOffer.owner_id,
+          name: "ats.offer.signed",
+          entityType: "offer",
+          entityId: linkedOffer.id,
+          dedupeKey: `ats.offer.signed:${linkedOffer.id}`,
+          payload: {
+            offerId: linkedOffer.id,
+            applicationId: linkedOffer.application_id,
+            jobId: linkedOffer.job_id,
+            candidateId: linkedOffer.candidate_id,
+          },
+        }).catch(() => undefined);
+      }
+      return { ok: true };
+    }
     const { error: e2 } = await supabaseAdmin
       .from("esign_signers")
       .update({
@@ -341,35 +382,6 @@ export const submitEsignSignature = createServerFn({ method: "POST" })
       ip_address: ip,
       user_agent: ua,
     });
-
-    // Se este documento estiver ligado a uma oferta do ATS, emitir ats.offer.signed.
-    try {
-      const { data: offer } = await supabaseAdmin
-        .from("ats_offers")
-        .select("id, owner_id, candidate_id, job_id, application_id")
-        .eq("esign_document_id", signer.document_id)
-        .maybeSingle();
-      if (offer?.id && offer.owner_id) {
-        const { recordAtsEvent } = await import("./ats/audit.server");
-        await recordAtsEvent(supabaseAdmin, {
-          ownerId: offer.owner_id as string,
-          name: "ats.offer.signed",
-          entityType: "offer",
-          entityId: offer.id as string,
-          dedupeKey: `ats.offer.signed:${offer.id}`,
-          payload: {
-            offerId: offer.id,
-            candidateId: offer.candidate_id,
-            jobId: offer.job_id,
-            applicationId: offer.application_id,
-            esignDocumentId: signer.document_id,
-            signerId: signer.id,
-          },
-        });
-      }
-    } catch (e) {
-      console.warn("[submitEsignSignature] ats.offer.signed emit failed", e);
-    }
 
     return { ok: true };
   });
@@ -400,6 +412,22 @@ export const declineEsign = createServerFn({ method: "POST" })
     );
     if (signer.workspace_id !== workspaceId)
       throw new Error("Signatário e documento pertencem a empresas diferentes.");
+    const { data: linkedOffer } = await supabaseAdmin
+      .from("ats_offers")
+      .select("id, owner_id, candidate_id, job_id, application_id")
+      .eq("esign_document_id", signer.document_id)
+      .maybeSingle();
+    if (linkedOffer) {
+      await offerRpc<{ completed: boolean }>(supabaseAdmin, "ats_offer_sign", {
+        _token: data.token,
+        _action: "decline",
+        _reason: data.reason ?? null,
+        _ip: ip,
+        _ua: ua,
+      });
+
+      return { ok: true };
+    }
     const { error: e2 } = await supabaseAdmin
       .from("esign_signers")
       .update({

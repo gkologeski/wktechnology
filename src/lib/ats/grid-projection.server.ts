@@ -16,6 +16,10 @@ export type AtsCatalogTable =
 /** Colunas nunca projetadas dinamicamente (payloads pesados/sensíveis). */
 const NEVER_PROJECT = new Set<string>([
   "hs_raw",
+  "hiring_details",
+  "public_token",
+  "body",
+  "signature_data",
   "external_ids",
   "portal_token",
   "self_schedule_token",

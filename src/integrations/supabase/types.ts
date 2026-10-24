@@ -2524,6 +2524,12 @@ export type Database = {
       }
       ats_offers: {
         Row: {
+          approval_status: string
+          revision: number
+          approved_revision: number | null
+          approved_by: string | null
+          approved_at: string | null
+          approval_note: string | null
           application_id: string | null
           assigned_to: string | null
           body: string
@@ -2549,6 +2555,12 @@ export type Database = {
           workspace_id: string | null
         }
         Insert: {
+          approval_status?: string
+          revision?: number
+          approved_revision?: number | null
+          approved_by?: string | null
+          approved_at?: string | null
+          approval_note?: string | null
           application_id?: string | null
           assigned_to?: string | null
           body?: string
@@ -2574,6 +2586,12 @@ export type Database = {
           workspace_id?: string | null
         }
         Update: {
+          approval_status?: string
+          revision?: number
+          approved_revision?: number | null
+          approved_by?: string | null
+          approved_at?: string | null
+          approval_note?: string | null
           application_id?: string | null
           assigned_to?: string | null
           body?: string
