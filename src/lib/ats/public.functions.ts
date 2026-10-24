@@ -1,3 +1,4 @@
+import { firstAtsStageValue } from "./stages";
 import { emailSchema } from "@/lib/email-schema";
 // Server functions PÚBLICAS do ATS — sem autenticação.
 // Usadas pelas páginas /careers e /careers/$slug. Cada workspace é resolvido
@@ -6,45 +7,43 @@ import { createServerFn } from "@tanstack/react-start";
 import { humanPhone, workspacePhoneCountry } from "@/lib/phone/phone-boundary";
 import { z } from "zod";
 
-/** Resolve owner_id do workspace pelo host do ATS. */
-async function resolveOwnerByHost(host: string | null): Promise<string | null> {
+/** Public career context is a workspace, never all records by its creator. */
+async function resolvePublicWorkspace(
+  host: string | null,
+): Promise<{ workspaceId: string; ownerId: string } | null> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  // 1) tenta por custom_domain
+  let workspaceId: string | null = null;
   if (host) {
-    const cleanHost = host.replace(/^www\./, "").toLowerCase();
-    const { data: mb } = await supabaseAdmin
+    const { data: branding, error } = await supabaseAdmin
       .from("module_branding")
       .select("workspace_id")
       .eq("module_id", "ats")
-      .eq("custom_domain", cleanHost)
+      .eq("custom_domain", host.replace(/^www\./, "").toLowerCase())
       .maybeSingle();
-    if (mb?.workspace_id) {
-      const { data: ws } = await supabaseAdmin
-        .from("workspaces")
-        .select("created_by")
-        .eq("id", mb.workspace_id as string)
-        .maybeSingle();
-      if (ws?.created_by) return ws.created_by as string;
-    }
+    if (error) throw new Error("Não foi possível identificar o portal de carreiras.");
+    workspaceId = branding?.workspace_id ?? null;
   }
-  // 2) fallback: workspace mais antigo com módulo ATS habilitado
-  const { data: wm } = await supabaseAdmin
+  // Preserve the existing default public portal for the shared app/preview host.
+  let enabled = supabaseAdmin
     .from("workspace_modules")
     .select("workspace_id")
     .eq("module_id", "ats")
-    .eq("enabled", true)
+    .eq("enabled", true);
+  if (workspaceId) enabled = enabled.eq("workspace_id", workspaceId);
+  const { data: module, error } = await enabled
     .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
-  if (wm?.workspace_id) {
-    const { data: ws } = await supabaseAdmin
-      .from("workspaces")
-      .select("created_by")
-      .eq("id", wm.workspace_id as string)
-      .maybeSingle();
-    return (ws?.created_by as string | null) ?? null;
-  }
-  return null;
+  if (error) throw new Error("Não foi possível verificar o portal de carreiras.");
+  if (!module?.workspace_id) return null;
+  const { data: workspace } = await supabaseAdmin
+    .from("workspaces")
+    .select("created_by")
+    .eq("id", module.workspace_id)
+    .maybeSingle();
+  return workspace?.created_by
+    ? { workspaceId: module.workspace_id, ownerId: workspace.created_by }
+    : null;
 }
 
 /** Lista vagas publicadas do workspace correspondente ao host. */
@@ -52,38 +51,30 @@ export const listPublicJobs = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ host: z.string().nullable().optional() }).parse(i ?? {}))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const ownerId = await resolveOwnerByHost(data.host ?? null);
-    if (!ownerId) return { jobs: [], branding: null };
+    const workspace = await resolvePublicWorkspace(data.host ?? null);
+    if (!workspace) return { jobs: [], branding: null };
 
     const { data: jobs } = await supabaseAdmin
       .from("ats_jobs")
       .select(
         "id, title, slug, seniority, employment_type, location, remote_mode, salary_min, salary_max, salary_currency, opened_at, description",
       )
-      .eq("owner_id", ownerId)
+      .eq("workspace_id", workspace.workspaceId)
       .eq("status", "published")
       .order("opened_at", { ascending: false, nullsFirst: false })
       .limit(100);
 
-    // Branding do módulo ATS (logo, cor, nome do produto)
-    const { data: wm } = await supabaseAdmin
-      .from("workspace_modules")
-      .select("workspace_id")
-      .eq("module_id", "ats")
-      .eq("enabled", true)
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
+    // Branding belongs to the same resolved public workspace.
     let branding: {
       product_name: string | null;
       logo_url: string | null;
       primary_color: string | null;
     } | null = null;
-    if (wm?.workspace_id) {
+    if (workspace.workspaceId) {
       const { data: b } = await supabaseAdmin
         .from("module_branding")
         .select("product_name, logo_url, primary_color")
-        .eq("workspace_id", wm.workspace_id as string)
+        .eq("workspace_id", workspace.workspaceId)
         .eq("module_id", "ats")
         .maybeSingle();
       branding = b ?? null;
@@ -104,15 +95,15 @@ export const getPublicJob = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const ownerId = await resolveOwnerByHost(data.host ?? null);
-    if (!ownerId) return null;
+    const workspace = await resolvePublicWorkspace(data.host ?? null);
+    if (!workspace) return null;
 
     const { data: job } = await supabaseAdmin
       .from("ats_jobs")
       .select(
         "id, owner_id, title, slug, seniority, employment_type, location, remote_mode, salary_min, salary_max, salary_currency, opened_at, description, requirements",
       )
-      .eq("owner_id", ownerId)
+      .eq("workspace_id", workspace.workspaceId)
       .eq("slug", data.slug)
       .eq("status", "published")
       .maybeSingle();
@@ -138,16 +129,22 @@ export const submitPublicApplication = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const ownerId = await resolveOwnerByHost(data.host ?? null);
-    if (!ownerId) throw new Error("Workspace não encontrado para este domínio.");
+    const workspace = await resolvePublicWorkspace(data.host ?? null);
+    if (!workspace) throw new Error("Workspace não encontrado para este domínio.");
+    const ownerId = workspace.ownerId;
 
     // Garante que a vaga pertence ao owner e está publicada
     const { data: job } = await supabaseAdmin
       .from("ats_jobs")
-      .select("id, owner_id, status, title, workspace_id")
+      .select("id, owner_id, status, title, workspace_id, pipeline_id")
       .eq("id", data.job_id)
       .maybeSingle();
-    if (!job || job.owner_id !== ownerId || job.status !== "published") {
+    if (
+      !job ||
+      !job.workspace_id ||
+      job.workspace_id !== workspace.workspaceId ||
+      job.status !== "published"
+    ) {
       throw new Error("Vaga indisponível para candidatura.");
     }
     const applicantPhone = humanPhone(data.phone || null, {
@@ -164,8 +161,8 @@ export const submitPublicApplication = createServerFn({ method: "POST" })
       const { data: existing } = await supabaseAdmin
         .from("ats_candidates")
         .select("id")
-        .eq("owner_id", ownerId)
-        .ilike("email", data.email)
+        .eq("workspace_id", job.workspace_id)
+        .eq("email", data.email)
         .maybeSingle();
       if (existing) candidateId = existing.id as string;
     }
@@ -175,6 +172,8 @@ export const submitPublicApplication = createServerFn({ method: "POST" })
         .from("ats_candidates")
         .insert({
           owner_id: ownerId,
+          workspace_id: job.workspace_id,
+          assigned_to: ownerId,
           full_name: data.full_name,
           email: data.email,
           phone: applicantPhone,
@@ -191,34 +190,59 @@ export const submitPublicApplication = createServerFn({ method: "POST" })
       candidateWasCreated = true;
     }
 
-    // Application (idempotente via UNIQUE job_id,candidate_id)
-    const { data: app, error: aErr } = await supabaseAdmin
+    const { data: pipeline } = job.pipeline_id
+      ? await supabaseAdmin
+          .from("ats_pipelines")
+          .select("stages")
+          .eq("id", job.pipeline_id)
+          .eq("workspace_id", job.workspace_id)
+          .maybeSingle()
+      : { data: null };
+    const initialStage = firstAtsStageValue(pipeline?.stages);
+    // Repeated submissions never reopen or reset an existing recruitment process.
+    const { data: insertedApp, error: aErr } = await supabaseAdmin
       .from("ats_applications")
       .upsert(
         {
           owner_id: ownerId,
+          workspace_id: job.workspace_id,
+          assigned_to: ownerId,
           candidate_id: candidateId,
           job_id: data.job_id,
-          stage_value: "applied",
+          stage_value: initialStage,
           status: "active",
           source: "career_page",
         } as never,
-        { onConflict: "job_id,candidate_id" },
+        { onConflict: "job_id,candidate_id", ignoreDuplicates: true },
       )
       .select("id")
-      .single();
+      .maybeSingle();
     if (aErr) throw new Error(aErr.message);
+    let app = insertedApp;
+    if (!app) {
+      const { data: existing, error } = await supabaseAdmin
+        .from("ats_applications")
+        .select("id")
+        .eq("workspace_id", job.workspace_id)
+        .eq("job_id", data.job_id)
+        .eq("candidate_id", candidateId)
+        .single();
+      if (error || !existing) throw new Error("Não foi possível confirmar a candidatura.");
+      app = existing;
+    }
 
     // Auditoria + enfileira e-mail de confirmação ao candidato.
     try {
-      await supabaseAdmin.from("ats_application_events").insert({
-        owner_id: ownerId,
-        application_id: app.id as string,
-        job_id: data.job_id,
-        candidate_id: candidateId,
-        event_type: "application_created",
-        metadata: { source: "career_page" },
-      } as never);
+      if (insertedApp)
+        await supabaseAdmin.from("ats_application_events").insert({
+          owner_id: ownerId,
+          workspace_id: job.workspace_id,
+          application_id: app.id as string,
+          job_id: data.job_id,
+          candidate_id: candidateId,
+          event_type: "application_created",
+          metadata: { source: "career_page" },
+        } as never);
     } catch {
       /* auditoria não pode bloquear candidatura */
     }

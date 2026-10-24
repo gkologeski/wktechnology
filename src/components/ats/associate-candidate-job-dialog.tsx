@@ -1,3 +1,4 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
 // Diálogo reutilizável para associar um candidato a uma vaga.
 // Usado a partir de /candidates/$id, /jobs/$id e do Quick Create global.
 import { useEffect, useMemo, useState } from "react";
@@ -69,6 +70,11 @@ export function AssociateCandidateJobDialog({
   presetJobTitle,
   onSuccess,
 }: AssociateCandidateJobDialogProps) {
+  const p = usePermissions();
+  const canCreate = p.canAny([
+    "techhire.candidates.create.own",
+    "techhire.candidates.create.workspace",
+  ]);
   const listCands = useServerFn(listAtsCandidates);
   const listJobs = useServerFn(listAtsJobs);
   const addApp = useServerFn(addApplication);
@@ -85,17 +91,17 @@ export function AssociateCandidateJobDialog({
 
   // Reset on open
   useEffect(() => {
-    if (!open) return;
+    if (!open || !canCreate) return;
     setCandidateId(presetCandidateId ?? "");
     setJobId(presetJobId ?? "");
     setSource("manual");
     setCandQuery("");
     setJobQuery("");
-  }, [open, presetCandidateId, presetJobId]);
+  }, [open, canCreate, presetCandidateId, presetJobId]);
 
   // Load lists
   useEffect(() => {
-    if (!open) return;
+    if (!open || !canCreate) return;
     let cancelled = false;
     setLoadingLists(true);
     (async () => {
@@ -124,7 +130,7 @@ export function AssociateCandidateJobDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, presetCandidateId, presetJobId, listCands, listJobs]);
+  }, [open, canCreate, presetCandidateId, presetJobId, listCands, listJobs]);
 
   const filteredCands = useMemo(() => {
     const q = candQuery.trim().toLowerCase();
@@ -143,7 +149,7 @@ export function AssociateCandidateJobDialog({
     return base.filter((j) => j.title.toLowerCase().includes(q)).slice(0, 50);
   }, [jobs, jobQuery]);
 
-  const canSubmit = !!candidateId && !!jobId && !submitting;
+  const canSubmit = canCreate && !!candidateId && !!jobId && !submitting;
 
   async function handleSubmit() {
     if (!canSubmit) return;

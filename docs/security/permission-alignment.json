@@ -823,7 +823,34 @@
       "metadata_exception": "job viewers may read workspace pipeline catalog solely to render authorized job boards; never editor or mutation permission",
       "internal_services": "trusted no-JWT system writers remain explicit; authored/workspace invariants still checked",
       "migration": "0201",
-      "state": "applied_tested_sql_pending_ui_publication"
+      "state": "applied_tested_sql_published_browser_pending"
+    },
+    {
+      "operation": "Candidatures and candidate job timeline",
+      "kind": "business_action",
+      "route_consumers": [
+        "/jobs/$id",
+        "/candidates/$id",
+        "candidate-job association",
+        "hunting capture"
+      ],
+      "actor": "authenticated active selected workspace member",
+      "resource": "techhire.candidates aggregate plus actual job view",
+      "action": "view/create/update/delete; candidate assign for reassignment",
+      "permission_keys": [
+        "techhire.candidates.{action}.{own|team|workspace}",
+        "techhire.jobs.view.{own|team|workspace}",
+        "techhire.candidates.assign.workspace for changing assignee"
+      ],
+      "scope": "canonical candidate responsibility/team, with BOTH candidate and job readable; applications do not grant a separate path around a hidden parent",
+      "database": "0202 four action policies, OLD-row mutation guard, immutable author/workspace/parents and same-tenant links; candidate/job FK cascades follow already-authorized parent deletion",
+      "timeline": "parent-bounded SELECT; append requires actual actor and action-specific create/update/score/schedule; user UPDATE/DELETE revoked; trusted service audit remains explicit; historical NULL workspace remains parent-bounded",
+      "public_exception": "enabled public career workspace + published job; listing/branding/application pinned to workspace, no owner-wide query; preserve legacy shared-host default portal; conflict submission does not reset existing process",
+      "worker_exception": "existing signed cron/manual-sync service uses actual job workspace and configured intake stage; ambiguous identities and provider failures remain retryable failures; publisher credential binding remains rule 9 pending",
+      "ui": "record capabilities for drag/bulk update/delete/assignment, explicit export/create/score keys; use configured pipeline stages",
+      "migration": "0202",
+      "state": "applied_tested_sql_pending_ui_publication",
+      "remaining": "interview/scorecard table RLS and hiring/offer state approvals require their own subsequent contracts; global field rules and API-key authorization remain pending"
     }
   ],
   "rules": [

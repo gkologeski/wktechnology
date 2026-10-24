@@ -453,3 +453,50 @@ de outro criador, autoria imutável e não membro sem leitura. Rollback integral
 zero resíduos. Pipeline existente/defaults/overrides/memberships/catálogo intactos.
 O construtor da primeira vaga cria funil sem promover padrão quando só possui
 create; o teste dessa borda também passou. Interface aguarda publicação.
+
+
+Publicação 0201 confirmada no commit b9422963b409fdda28c83075dece2c7e0b121f57,
+entry index-DTLzrL_v.js e chunks de funis/capacidades conferidos byte a byte nos
+dois domínios. Aceite autenticado no navegador continua pendente do Docker.
+
+### Candidaturas e timeline (0202, preparada)
+
+Estimativa comunicada: 2–3 horas. Candidatura é parte do agregado de candidato: usa
+as chaves existentes de candidatos, sem novo catálogo/grants, mas exige leitura
+do candidato E da vaga. Remove bypass de membership/owner. Create separado de
+update, atribuição requer assign; autoria, workspace e pais imutáveis. Relações
+de grupo reais no escopo team. Cascatas de exclusão seguem o pai já autorizado.
+
+Timeline deixa de ser leitura geral de workspace. Exige candidatura visível, pais
+consistentes e ator real; anexação por ação específica, sem UPDATE/DELETE de
+usuário. Serviços confiáveis mantêm logs. A timeline ainda registra ações de
+serviço/aplicação; não se declara prova forense de toda transição de negócio.
+
+UI de arrastar e ações em massa usa capacidade por registro, exportação exige
+chave própria e avaliação sua chave de score. Quadro usa etapas configuradas,
+com bucket visual de compatibilidade para etapas históricas, sem regravar dados.
+Portal público usa workspace para vagas e branding, exige módulo habilitado e
+vaga publicada; mantém o portal padrão legado no host compartilhado. Repetir
+candidatura não reabre nem sobrescreve processo; novas escritas e intake stage
+usam o tenant/pipeline reais. Worker LinkedIn também usa esse tenant e não escolhe
+candidato ambíguo; erro preserva página para retry sem fingir sucesso. Conta e
+publisher da integração continuam na frente da regra 9.
+
+13 grupos SQL de candidaturas/timeline passaram, incluindo autoria, ambos os
+pais, own/team, deny/inativo/ViewAs, metadados e cascatas com workspace legado
+nulo. A fixture preservou inclusive o deny de update.workspace do Head deixado
+por um teste anterior; o novo caso usa uma linha efetivamente editável. Em
+produção, as 12 chaves de candidatos da Priscila foram conferidas como permitidas.
+Entrevistas, respostas de avaliação, alçadas de contratação/ofertas e regras
+globais de campo/API seguem contratos posteriores, ainda não concluídos.
+
+0202 aplicada: hash 31fdfbd79e31ea5cb035de7e1ec0744c21aa1d9ea09b22cf62e9098c7d099247,
+when 1792802324945, id 206. Verify: 1647 testes/tipos/lint e build completos no
+mesmo fingerprint 393fd8d1fe4faa54c0aaca5d729f4aac2e2e188bde54437c679a4d5bfcf05ccd,
+sem mudança de fonte. Simulação SQL de Priscila confirmou cinco candidaturas
+reais legíveis e editáveis; todas são de sua autoria, portanto o teste de edição
+de outro criador foi feito com dados sintéticos em transação revertida. CRUD
+próprio e de outro criador, capacidade por registro, autoria imutável, timeline
+anexada e sem edição, cascata e não membro sem leitura passaram. Zero resíduos.
+Candidatos (14), candidaturas (5), eventos (13), seus fingerprints, catálogo (1721),
+memberships, defaults e overrides preservados. Interface aguarda publicação.

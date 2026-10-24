@@ -43,7 +43,7 @@ async function recordEvent(
       candidate_id: args.candidateId,
       event_type: args.eventType,
       actor_id: args.ownerId,
-      metadata: args.metadata ?? null,
+      metadata: args.metadata ?? {},
     })
     .then(
       () => undefined,

@@ -1,3 +1,4 @@
+import { firstAtsStageValue } from "./stages";
 /**
  * Sync automático de aplicantes LinkedIn → ats_applications.
  *
@@ -47,42 +48,42 @@ function toIsoOrNull(v: string | null | undefined): string | null {
 
 async function resolveCandidateId(
   ownerId: string,
+  workspaceId: string,
   applicant: JobApplicantRecord,
 ): Promise<{ id: string; created: boolean }> {
   const linkedinUrl = applicant.linkedinUrl?.toLowerCase().replace(/\/$/, "") ?? null;
   const email = applicant.email?.toLowerCase() ?? null;
 
-  // 1. tenta por linkedin_url (case-insensitive)
-  if (linkedinUrl) {
-    const { data: byLi } = await supabaseAdmin
+  async function exactCandidate(
+    field: "linkedin_url" | "email",
+    value: string,
+  ): Promise<string | null> {
+    const escaped = value.replace(/[\\%_]/g, "\\$&");
+    const { data, error } = await supabaseAdmin
       .from("ats_candidates")
       .select("id")
-      .eq("owner_id", ownerId)
-      .ilike("linkedin_url", linkedinUrl)
-      .limit(1)
-      .maybeSingle();
-    if (byLi?.id) return { id: byLi.id as string, created: false };
+      .eq("workspace_id", workspaceId)
+      .ilike(field, escaped)
+      .limit(2);
+    if (error) throw new Error(error.message);
+    if (data && data.length > 1) throw new Error("ambiguous_candidate_" + field);
+    return data?.[0]?.id ?? null;
   }
-
-  // 2. tenta por email
+  if (linkedinUrl) {
+    const id = await exactCandidate("linkedin_url", linkedinUrl);
+    if (id) return { id, created: false };
+  }
   if (email) {
-    const { data: byEmail } = await supabaseAdmin
-      .from("ats_candidates")
-      .select("id")
-      .eq("owner_id", ownerId)
-      .ilike("email", email)
-      .limit(1)
-      .maybeSingle();
-    if (byEmail?.id) {
-      // enriquece linkedin_url se faltar
-      if (linkedinUrl) {
+    const id = await exactCandidate("email", email);
+    if (id) {
+      if (linkedinUrl)
         await supabaseAdmin
           .from("ats_candidates")
           .update({ linkedin_url: applicant.linkedinUrl })
-          .eq("id", byEmail.id)
+          .eq("id", id)
+          .eq("workspace_id", workspaceId)
           .is("linkedin_url", null);
-      }
-      return { id: byEmail.id as string, created: false };
+      return { id, created: false };
     }
   }
 
@@ -91,6 +92,8 @@ async function resolveCandidateId(
     .from("ats_candidates")
     .insert({
       owner_id: ownerId,
+      workspace_id: workspaceId,
+      assigned_to: ownerId,
       full_name: applicant.fullName ?? "Candidato LinkedIn",
       email: applicant.email,
       phone: sourcePhone(applicant.phone),
@@ -140,6 +143,24 @@ export async function syncPostingApplicants(postingId: string): Promise<SyncPost
     return result;
   }
 
+  const { data: job, error: jobError } = await supabaseAdmin
+    .from("ats_jobs")
+    .select("workspace_id, pipeline_id")
+    .eq("id", posting.job_id)
+    .single();
+  if (jobError || !job?.workspace_id) {
+    result.error = "posting_job_workspace_missing";
+    return result;
+  }
+  const { data: pipeline } = job.pipeline_id
+    ? await supabaseAdmin
+        .from("ats_pipelines")
+        .select("stages")
+        .eq("id", job.pipeline_id)
+        .eq("workspace_id", job.workspace_id)
+        .maybeSingle()
+    : { data: null };
+  const initialStage = firstAtsStageValue(pipeline?.stages);
   const meta = (posting.metadata ?? {}) as Record<string, unknown>;
   let cursor: string | null = (meta.applicants_sync_cursor as string | null | undefined) ?? null;
 
@@ -182,6 +203,7 @@ export async function syncPostingApplicants(postingId: string): Promise<SyncPost
 
           const { id: candidateId, created } = await resolveCandidateId(
             posting.owner_id,
+            job.workspace_id,
             applicant,
           );
           if (created) result.createdCandidates += 1;
@@ -190,9 +212,11 @@ export async function syncPostingApplicants(postingId: string): Promise<SyncPost
 
           const { error: insErr } = await supabaseAdmin.from("ats_applications").insert({
             owner_id: posting.owner_id,
+            workspace_id: job.workspace_id,
+            assigned_to: posting.owner_id,
             job_id: posting.job_id,
             candidate_id: candidateId,
-            stage_value: "applied",
+            stage_value: initialStage,
             status: "active",
             source: "linkedin_easy_apply",
             applied_at: appliedAt,
@@ -213,6 +237,7 @@ export async function syncPostingApplicants(postingId: string): Promise<SyncPost
         } catch (e) {
           // erro por candidato — não aborta o batch
           result.skipped += 1;
+          result.error ??= (e as Error).message;
           console.error("[linkedin-applicants-sync] applicant error", {
             postingId,
             providerApplicantId: applicant.providerApplicantId,
@@ -221,11 +246,12 @@ export async function syncPostingApplicants(postingId: string): Promise<SyncPost
         }
       }
 
+      if (result.error) break; // Retry this page; completed rows are deduplicated.
       cursor = nextCursor;
       if (!cursor || applicants.length === 0) break;
     }
 
-    result.ok = true;
+    result.ok = !result.error;
   } catch (e) {
     result.error = (e as Error).message;
   }

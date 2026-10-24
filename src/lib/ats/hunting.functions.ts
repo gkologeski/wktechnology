@@ -1,3 +1,4 @@
+import { assertHrRecordAccess } from "@/lib/access-control/hr-records.server";
 /**
  * Hunting (LinkedIn) — captura de candidatos via extensão Chrome.
  *
@@ -136,6 +137,8 @@ export const linkCaptureToJob = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    await assertHrRecordAccess(supabase, "jobs", "view", data.job_id);
+    await assertHrRecordAccess(supabase, "candidate_applications", "create", data.candidate_id);
     const workspaceId = await resolveActiveWorkspace(userId);
     // upsert manual: evita duplicar candidatura ativa para a mesma vaga
     const { data: dup } = await supabase

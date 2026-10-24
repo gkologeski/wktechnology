@@ -1,3 +1,5 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { useHrCapabilities } from "@/lib/access-control/use-hr-capabilities";
 import { useMemo } from "react";
 import { Link } from "@tanstack/react-router";
 import { ClipboardCheck, MoveRight, Plus, Users } from "lucide-react";
@@ -32,7 +34,6 @@ export function JobPipelineBoard({
   onDropStage,
   onBulkMoveStage,
   onBulkDone,
-  canDelete = false,
 }: {
   totalApps: number;
   stages: AtsStage[];
@@ -47,10 +48,22 @@ export function JobPipelineBoard({
   onBulkMoveStage?: (ids: string[], stageValue: string) => Promise<void> | void;
   /** Chamado após qualquer ação em massa (recarrega os dados da vaga). */
   onBulkDone?: () => void;
-  canDelete?: boolean;
 }) {
   const allApps = useMemo(() => stages.flatMap((s) => byStage[s.value] ?? []), [stages, byStage]);
   const selection = useBoardSelection(allApps);
+  const access = useHrCapabilities(
+    "applications",
+    allApps.map((a) => a.id),
+  );
+  const p = usePermissions();
+  const canAdd = p.canAny([
+    "techhire.candidates.create.own",
+    "techhire.candidates.create.workspace",
+  ]);
+  const canUpdate =
+    selection.ids.length > 0 && selection.ids.every((id) => access.for(id).can_update);
+  const canDelete =
+    selection.ids.length > 0 && selection.ids.every((id) => access.for(id).can_delete);
 
   if (totalApps === 0) {
     return (
@@ -59,7 +72,7 @@ export function JobPipelineBoard({
         title="Nenhum candidato nesta vaga"
         description="Adicione candidatos manualmente ou compartilhe a página de carreiras para receber aplicações."
         action={
-          <Button onClick={onAddCandidate}>
+          <Button disabled={!canAdd} onClick={onAddCandidate}>
             <Plus className="h-4 w-4 mr-2" aria-hidden />
             Adicionar candidato
           </Button>
@@ -111,12 +124,14 @@ export function JobPipelineBoard({
                       items.map((a) => (
                         <div
                           key={a.id}
-                          draggable
+                          draggable={access.for(a.id).can_update}
                           onDragStart={() => onDragStart(a.id)}
                           onDragEnd={onDragEnd}
                           className={cn(
                             "bg-surface-1 border border-border-subtle rounded-md p-3 text-sm",
-                            "cursor-grab active:cursor-grabbing",
+                            access.for(a.id).can_update
+                              ? "cursor-grab active:cursor-grabbing"
+                              : "cursor-default",
                             "hover:border-border-strong hover:shadow-xs transition-all",
                             selection.isSelected(a.id) && "ring-2 ring-ring",
                           )}
@@ -166,6 +181,7 @@ export function JobPipelineBoard({
                               size="sm"
                               variant="ghost"
                               className="h-7 px-2 text-[11px]"
+                              disabled={!p.can("techhire.interviews.score.workspace")}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onEvaluate(a);
@@ -195,10 +211,15 @@ export function JobPipelineBoard({
           rows={selection.selectedRows}
           entityLabel="candidatura"
           canDelete={canDelete}
+          canUpdate={canUpdate}
+          csvEnabled={p.can("techhire.candidates.export.workspace")}
+          assignColumn={
+            canUpdate && p.can("techhire.candidates.assign.workspace") ? "assigned_to" : null
+          }
           onClear={selection.clear}
           onDone={() => onBulkDone?.()}
           extraActions={
-            onBulkMoveStage ? (
+            onBulkMoveStage && canUpdate ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm">

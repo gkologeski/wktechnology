@@ -43,6 +43,10 @@ vi.mock("@/lib/ats/adapters/linkedin/job-board", () => ({
   LinkedInJobBoardAdapter: { closeJob: mocks.close, postJob: mocks.post },
 }));
 import {
+  listJobApplications,
+  addApplication,
+  moveApplication,
+  listApplicationEvents,
   getAtsDefaultPipeline,
   getAtsJob,
   saveAtsJob,
@@ -349,4 +353,45 @@ it("job constructor cannot implicitly promote a pipeline using only create permi
   expect(query.insert).toHaveBeenCalledWith(
     expect.objectContaining({ workspace_id: "workspace", is_default: false }),
   );
+});
+
+it.each([
+  ["jobs", "view", "job", listJobApplications, { jobId: "job" }],
+  [
+    "jobs",
+    "view",
+    "job",
+    addApplication,
+    { jobId: "job", candidateId: "candidate", source: "manual" },
+  ],
+  [
+    "applications",
+    "update",
+    "application",
+    moveApplication,
+    { applicationId: "application", toStage: "screening" },
+  ],
+  ["applications", "view", "application", listApplicationEvents, { application_id: "application" }],
+])(
+  "candidature %s/%s is checked before reads or writes",
+  async (resource, action, id, fn, data) => {
+    await expect(call(fn, data)).rejects.toThrow("Record denied");
+    expect(mocks.record).toHaveBeenCalledWith(client, resource, action, id);
+    expect(mocks.from).not.toHaveBeenCalled();
+  },
+);
+it("a visible job does not authorize associating a candidate without aggregate create", async () => {
+  mocks.record
+    .mockResolvedValueOnce(undefined)
+    .mockRejectedValueOnce(new Error("Candidate create denied"));
+  await expect(
+    call(addApplication, { jobId: "job", candidateId: "candidate", source: "manual" }),
+  ).rejects.toThrow("Candidate create denied");
+  expect(mocks.record).toHaveBeenLastCalledWith(
+    client,
+    "candidate_applications",
+    "create",
+    "candidate",
+  );
+  expect(mocks.from).not.toHaveBeenCalled();
 });

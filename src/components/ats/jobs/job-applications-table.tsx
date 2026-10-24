@@ -1,3 +1,4 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { Link } from "@tanstack/react-router";
 import { ArrowUpDown, ClipboardCheck, Plus, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,11 @@ export function JobApplicationsTable({
   onClearAssigneeFilter: () => void;
   onAddCandidate: () => void;
 }) {
+  const p = usePermissions();
+  const canAdd = p.canAny([
+    "techhire.candidates.create.own",
+    "techhire.candidates.create.workspace",
+  ]);
   const columns = useMemo<GridColumnDef<App>[]>(
     () => [
       {
@@ -127,7 +133,7 @@ export function JobApplicationsTable({
               Limpar filtro
             </Button>
           ) : (
-            <Button onClick={onAddCandidate}>
+            <Button disabled={!canAdd} onClick={onAddCandidate}>
               <Plus className="h-4 w-4 mr-2" aria-hidden />
               Adicionar candidato
             </Button>
@@ -173,6 +179,7 @@ export function JobApplicationsTable({
                     size="sm"
                     variant="ghost"
                     className="h-7 px-2 text-[11px]"
+                    disabled={!p.can("techhire.interviews.score.workspace")}
                     onClick={() => onEvaluate(a)}
                   >
                     <ClipboardCheck className="h-3 w-3 mr-1" aria-hidden />

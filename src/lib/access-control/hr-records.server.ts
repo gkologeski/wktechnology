@@ -2,6 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 
 type HrRecord =
+  | "applications"
+  | "candidate_applications"
   | "pipelines"
   | "jobs"
   | "documents"

@@ -689,7 +689,8 @@ export const listJobApplications = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ jobId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
-    const { supabase, userId } = context;
+    const { supabase } = context;
+    await assertHrRecordAccess(supabase, "jobs", "view", data.jobId);
     const { data: apps, error } = await supabase
       .from("ats_applications")
       .select(
@@ -784,7 +785,9 @@ export const addApplication = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertHrRecordAccess(supabase, "jobs", "view", data.jobId);
+    await assertHrRecordAccess(supabase, "candidate_applications", "create", data.candidateId);
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
     // A etapa inicial vem do pipeline da vaga (nunca um slug fixo),
     // senão a candidatura não apareceria em nenhuma coluna do kanban.
     const jobStages = await loadJobPipelineStages(supabase as never, data.jobId);
@@ -844,6 +847,7 @@ export const listApplicationEvents = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
+    await assertHrRecordAccess(supabase, "applications", "view", data.application_id);
     const { data: rows, error } = await supabase
       .from("ats_application_events")
       .select("id, event_type, from_stage, to_stage, actor_id, metadata, created_at")
@@ -927,7 +931,8 @@ export const moveApplication = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertHrRecordAccess(supabase, "applications", "update", data.applicationId);
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
     // Estado anterior para detectar transição.
     // Sem filtro por owner_id: o RLS libera candidaturas do workspace.
     const { data: prev } = await supabase

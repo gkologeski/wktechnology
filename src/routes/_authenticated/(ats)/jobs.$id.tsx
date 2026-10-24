@@ -1,4 +1,5 @@
 import { HrScreenAccess, HrRecordAccess } from "@/components/hr-access";
+import { useHrCapabilities } from "@/lib/access-control/use-hr-capabilities";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -18,7 +19,7 @@ import {
   listJobInterviews,
 } from "@/lib/ats/ats.functions";
 import { listAtsPipelines } from "@/lib/ats/pipelines.functions";
-import { DEFAULT_ATS_STAGES, type AtsStage } from "@/lib/ats/stages";
+import { DEFAULT_ATS_STAGES, parseAtsStages, type AtsStage } from "@/lib/ats/stages";
 import { listJobScorecardSummary } from "@/lib/ats/scorecards.functions";
 import { exportJobApplicationsCsv } from "@/lib/ats/export.functions";
 import { ScheduleInterviewDialog } from "@/components/ats/schedule-interview-dialog";
@@ -62,7 +63,8 @@ function JobDetailPage() {
   );
 }
 function JobDetailContent() {
-  const { can } = usePermissions();
+  const { can, canAny } = usePermissions();
+  const canAdd = canAny(["techhire.candidates.create.own", "techhire.candidates.create.workspace"]);
   const { id } = Route.useParams();
   const getJob = useServerFn(getAtsJob);
   const listApps = useServerFn(listJobApplications);
@@ -75,6 +77,7 @@ function JobDetailContent() {
   const listEventsFn = useServerFn(listJobEvents);
   const listInterviewsFn = useServerFn(listJobInterviews);
   const listPipelinesFn = useServerFn(listAtsPipelines);
+  const [pipelineStages, setPipelineStages] = useState<Record<string, AtsStage[]>>({});
   const [pipelineNames, setPipelineNames] = useState<Record<string, string>>({});
 
   const [job, setJob] = useState<Job | null>(null);
@@ -107,7 +110,14 @@ function JobDetailContent() {
   const [appsSortDir, setAppsSortDir] = useState<"asc" | "desc">("asc");
   const { nameFor: assigneeNameFor } = useWorkspaceMembers();
 
-  const stages: AtsStage[] = DEFAULT_ATS_STAGES;
+  const appAccess = useHrCapabilities(
+    "applications",
+    apps.map((a) => a.id),
+  );
+  const stages = useMemo(() => {
+    const current = pipelineStages[String(job?.pipeline_id ?? "")];
+    return current?.length ? current : DEFAULT_ATS_STAGES;
+  }, [pipelineStages, job?.pipeline_id]);
 
   const refresh = async () => {
     setLoading(true);
@@ -151,7 +161,12 @@ function JobDetailContent() {
     listPipelinesFn()
       .then((rs) => {
         const m: Record<string, string> = {};
-        for (const p of rs as Array<{ id: string; name: string }>) m[p.id] = p.name;
+        const stageMap: Record<string, AtsStage[]> = {};
+        for (const p of rs as Array<{ id: string; name: string; stages: unknown }>) {
+          m[p.id] = p.name;
+          stageMap[p.id] = parseAtsStages(p.stages);
+        }
+        setPipelineStages(stageMap);
         setPipelineNames(m);
       })
       .catch(() => undefined);
@@ -164,7 +179,7 @@ function JobDetailContent() {
     const m: Record<string, App[]> = {};
     for (const s of stages) m[s.value] = [];
     for (const a of visibleApps) {
-      const k = a.stage_value in m ? a.stage_value : "applied";
+      const k = a.stage_value in m ? a.stage_value : stages[0].value;
       m[k].push(a);
     }
     return m;
@@ -192,6 +207,7 @@ function JobDetailContent() {
   }, [visibleApps, assigneeNameFor, appsSortDir]);
 
   const openAdd = async () => {
+    if (!canAdd) return;
     setAddOpen(true);
     try {
       const c = await listCands({ data: {} });
@@ -202,7 +218,7 @@ function JobDetailContent() {
   };
 
   const handleAdd = async () => {
-    if (!selectedCand) return;
+    if (!canAdd || !selectedCand) return;
     try {
       await addApp({ data: { jobId: id, candidateId: selectedCand, source: "manual" } });
       setAddOpen(false);
@@ -218,7 +234,7 @@ function JobDetailContent() {
     if (!dragging) return;
     const app = apps.find((a) => a.id === dragging);
     setDragging(null);
-    if (!app || app.stage_value === toStage) return;
+    if (!app || !appAccess.for(app.id).can_update || app.stage_value === toStage) return;
     if (stages.find((st) => st.value === toStage)?.type === "won") {
       setHiringMove({ app, toStage });
       return;
@@ -233,7 +249,7 @@ function JobDetailContent() {
   };
 
   const confirmHiring = async (outcome: HiringOutcome) => {
-    if (!hiringMove) return;
+    if (!hiringMove || !appAccess.for(hiringMove.app.id).can_update) return;
     const { app, toStage } = hiringMove;
     setHiringSaving(true);
     try {
@@ -258,6 +274,8 @@ function JobDetailContent() {
 
   // Move várias candidaturas de etapa (ação em massa do quadro).
   const onBulkMoveStage = async (ids: string[], toStage: string) => {
+    if (!ids.every((id) => appAccess.for(id).can_update))
+      throw new Error("Sem permissão para mover todas as candidaturas selecionadas.");
     try {
       for (const applicationId of ids) {
         await moveApp({ data: { applicationId, toStage, position: 0 } });
@@ -346,6 +364,7 @@ function JobDetailContent() {
 
   const header = (
     <JobDetailHeader
+      canAdd={canAdd}
       canExport={
         can("techhire.jobs.export.workspace") && can("techhire.candidates.export.workspace")
       }

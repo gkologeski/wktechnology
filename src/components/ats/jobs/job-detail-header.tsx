@@ -36,6 +36,7 @@ export function JobDetailHeader({
   onAdd,
   onExport,
   canExport = false,
+  canAdd = false,
 }: {
   title: string;
   status: string;
@@ -50,6 +51,7 @@ export function JobDetailHeader({
   onAdd: () => void;
   onExport: () => void;
   canExport?: boolean;
+  canAdd?: boolean;
 }) {
   const statusVariant = STATUS_TO_BADGE[status] ?? "draft";
   return (
@@ -86,7 +88,7 @@ export function JobDetailHeader({
       primaryAction={
         <Dialog open={addOpen} onOpenChange={onAddOpenChange}>
           <DialogTrigger asChild>
-            <Button onClick={onOpenAdd}>
+            <Button disabled={!canAdd} onClick={onOpenAdd}>
               <Plus className="h-4 w-4 mr-2" aria-hidden />
               Adicionar candidato
             </Button>
@@ -121,7 +123,7 @@ export function JobDetailHeader({
               <Button variant="outline" onClick={() => onAddOpenChange(false)}>
                 Cancelar
               </Button>
-              <Button onClick={onAdd} disabled={!selectedCand}>
+              <Button onClick={onAdd} disabled={!canAdd || !selectedCand}>
                 Adicionar
               </Button>
             </DialogFooter>
