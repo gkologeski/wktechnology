@@ -101,6 +101,39 @@ const ids = async (table, list) =>
     .sort();
 try {
   await grant(keys, "deny");
+  await check(
+    "projected policy context preserves actor, workspace, team and readonly state",
+    async () => {
+      const full = must(await h.rpc("sales_access_context"));
+      const thin = must(await h.rpc("sales_policy_context", { resources: ["techsales.leads"] }));
+      for (const key of ["actor", "workspace", "team", "read_only"])
+        assert(
+          JSON.stringify(thin[key]) === JSON.stringify(full[key]),
+          `context field changed: ${key}`,
+        );
+    },
+  );
+  await check(
+    "projected policy context contains exactly the caller's requested resource keys",
+    async () => {
+      const full = must(await h.rpc("sales_access_context"));
+      const thin = must(await h.rpc("sales_policy_context", { resources: ["techsales.leads"] }));
+      const expected = Object.keys(full.keys ?? {})
+        .filter((k) => k.startsWith("techsales.leads."))
+        .sort();
+      assert(
+        JSON.stringify(Object.keys(thin.keys ?? {}).sort()) === JSON.stringify(expected),
+        "permission projection broadened or dropped keys",
+      );
+    },
+  );
+  await check("invalid resource projections cannot return an authorization context", async () => {
+    assert(
+      Object.keys(must(await h.rpc("sales_policy_context", { resources: ["x".repeat(101)] })))
+        .length === 0,
+      "invalid projection allowed",
+    );
+  });
   for (const table of ["deal_contacts", "proposal_template_services", "segment_members"]) {
     await check(
       `composite association ${table} denies UUID capabilities without a database error`,

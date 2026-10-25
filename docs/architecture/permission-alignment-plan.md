@@ -1257,13 +1257,13 @@ aprovações, importação/sincronização, marketplace, exportações, pontuaç
 histórico e notificações. A cobertura executável é por famílias de controle;
 o inventário não representa 528 testes individuais de ponta a ponta.
 
-Migrações aplicadas: 0222 (id354), 0223 (id355), 0224 (id388) e 0225 (id389).
+Migrações aplicadas: 0222 (id354), 0223 (id355), 0224 (id388) 0225 (id389) e 0226 (id390).
 A 0224 atribui somente as quatro assinaturas legadas WK a Guilherme Kologeski,
 por decisão do usuário, sem conceder direitos ou reescrever a autoria histórica.
 A 0225 corrige a descrição das três tabelas de vínculo com chave composta;
 a operação dos vínculos continua autorizada pelos registros pais.
 
-Validação: 1.761 testes de código, 279 cenários reais isolados, 116 consultas
+Validação: 1.761 testes de código, 282 cenários reais isolados, 116 consultas
 HTTP anônimas de produção sem acesso a dados, ensaio SQL com privilégios
 hospedados e rollback, TypeScript/lint/build/perf aprovados no mesmo hash.
 As contagens das 120 tabelas acompanhadas e os hashes de defaults, overrides,
@@ -1272,3 +1272,11 @@ comunicações, convites ou operações financeiras reais.
 
 Aceite de produção e detalhes em docs/security/order4-implementation-status.md;
 relatório e screenshots na pasta local da tarefa permission-order4-2026-10-25.
+
+Complemento de performance da Ordem 4: a 0226 mantém as decisões de permissão,
+mas reduz o contexto processado por linha. Contagem autenticada de 20 mil
+contatos: de timeout acima de 8 s para 564 ms no ensaio isolado; em produção,
+51.150 contatos permitidos contados em 2,506 s. Não há bypass por cargo nem
+cache de permissões controlável pelo chamador. Matriz e escopos foram
+revalidados nas sete suítes reais, incluindo a entrega realtime autorizada e
+bloqueio após revogação.

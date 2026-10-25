@@ -23,15 +23,15 @@ O usuário indicou Guilherme Kologeski (guilherme@wktechnology.com.br) para as q
 
 ## Evidência local atual
 
-- 279 verificações reais com GoTrue/PostgREST/HTTP/realtime: CRM 51, API 21, propostas 26, workers/OAuth 53, periféricos 66, execução/aprovações/exportação/pontuação/SLA 51, HTTP/realtime 11. Somente dados fictícios, sem envios reais.
-- 1.761 testes de código; TypeScript e lint aprovados. verify completo: source_hash bf7038ca1d410a2e619e25461c8f635396e1f7e8f1d208992b6d114c65c5d43d, 78.1 segundos.
-- Migrações 0222–0225 ensaiadas integralmente em banco descartável, inclusive com papel postgres sem superusuário e privilégios equivalentes aos hospedados, com ROLLBACK; nunca replay do histórico.
+- 282 verificações reais com GoTrue/PostgREST/HTTP/realtime: CRM 51, API 21, propostas 26, workers/OAuth 53, periféricos 66, execução/aprovações/exportação/pontuação/SLA 54, HTTP/realtime 11. Somente dados fictícios, sem envios reais.
+- 1.761 testes de código; TypeScript e lint aprovados. verify completo: source_hash 34cdaa430c37be1f6c8038e4a088208d3f6fe3630cd07cc3b8f903cfa920148a, 88.1 segundos.
+- Migrações 0222–0226 ensaiadas integralmente em banco descartável, inclusive com papel postgres sem superusuário e privilégios equivalentes aos hospedados, com ROLLBACK; nunca replay do histórico.
 - Aceite visual local: bloqueio de URL sem permissão, propostas/cotações de leitura, negócio sem edição, marketplace negado, workflow de leitura e decisão de aprovação sem administração. Fixtures e overrides restaurados.
-- Rollout principal confirmado nos dois domínios com código fa04eb7c9444be341b8ba133a4b23b3404c36347. Journal: 0222/id354, 0223/id355, 0224/id388 e 0225/id389. O identificador final do pacote é o mesmo registrado no gate local e no build-info dos domínios após sincronização final.
+- Rollout principal confirmado nos dois domínios com código fa04eb7c9444be341b8ba133a4b23b3404c36347. Journal: 0222/id354, 0223/id355, 0224/id388 e 0225/id389 e 0226/id390. O identificador final do pacote é o mesmo registrado no gate local e no build-info dos domínios após sincronização final.
 
 ## Aceite de produção
 
-- Migrações 0222–0225 aplicadas e registradas com os hashes dos arquivos. A tentativa 0224 que retornou indisponibilidade foi conferida no journal e em pg_stat_activity antes de nova tentativa; não foi repetida às cegas.
+- Migrações 0222–0226 aplicadas e registradas com os hashes dos arquivos. A tentativa 0224 que retornou indisponibilidade foi conferida no journal e em pg_stat_activity antes de nova tentativa; não foi repetida às cegas.
 - Mesmas contagens nas 120 tabelas acompanhadas; hashes de defaults, overrides, cargos e memberships preservados. A alteração operacional é somente execution_user_id das quatro assinaturas WK aprovadas.
 - 116 tabelas com RLS habilitada. Leituras anônimas bloqueadas nas 116, tanto no teste SQL como no teste HTTP com chave publicável e sem sessão; nenhum dado exposto.
 - Tokens de contato/cotação e credenciais de e-mail/agenda inacessíveis ao papel autenticado comum; dispatcher de worker indisponível a anônimos e sessões comuns; escrita direta em fila e auditoria de pontos bloqueada.
@@ -42,3 +42,20 @@ O usuário indicou Guilherme Kologeski (guilherme@wktechnology.com.br) para as q
 A documentação e o relatório local preservam os resultados dos gates, das consultas de reconciliação e do aceite visual. A identificação de build dos dois domínios é a prova de publicação; o botão Publicar por si só não é evidência.
 
 Exceções: links públicos usam token de capacidade validado, prazo/status e operações finitas; APIs pessoais usam proprietário e workspace ativo; observabilidade de plataforma requer platform_admins; schedulers exigem segredo técnico e autorização atual dos responsáveis. Testes locais não exercitam comunicações reais ou credenciais de provedores.
+
+
+## Revisão de performance da RLS
+
+A migração 0226 projeta somente as chaves de recurso utilizadas por cada política
+simples da Ordem 4. Mantém exatamente o ator, workspace, equipe, modo de leitura,
+permissões efetivas e negações; não altera as políticas restritivas legadas nem os
+helpers que precisam das fontes completas (resumos/aprovações).
+
+Com 20 mil contatos sintéticos e a RLS autenticada ativa, a contagem excedia o
+limite de 8 segundos e passou a 564,311 ms. O carregamento da fixture é isolado,
+com rollback; triggers normais são restaurados antes da medição. Em produção,
+a mesma família de consulta, sob o papel autenticado de Guilherme, contou os
+51.150 contatos permitidos em 2.506,1 ms. Os resultados não representam um ganho
+uniforme em todas as telas. Foram repetidas as sete suítes de autorização,
+incluindo realtime; 282 verificações aprovadas. Build final em 124.0 segundos,
+com o mesmo identificador do verify e limites de performance aprovados.
