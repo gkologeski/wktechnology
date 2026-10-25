@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Two-way sync HubSpot: push local contacts → HubSpot e pull contacts → local com mapping.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -38,7 +39,7 @@ async function hsRequest(path: string, init: RequestInit = {}) {
 }
 
 export const pushContactsToHubspot = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.hubspot_sync", "manage")])
   .inputValidator((d: { limit?: number }) =>
     z.object({ limit: z.number().min(1).max(200).default(50) }).parse(d),
   )
@@ -108,7 +109,7 @@ export const pushContactsToHubspot = createServerFn({ method: "POST" })
   });
 
 export const listHubspotSyncState = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.hubspot_sync", "view")])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);

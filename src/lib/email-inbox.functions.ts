@@ -1,9 +1,11 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const listEmailThreads = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.inbox.email", "view")])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("email_threads")
@@ -17,9 +19,12 @@ export const listEmailThreads = createServerFn({ method: "GET" })
   });
 
 export const getEmailThread = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.inbox.email", "view")])
   .inputValidator((input) => z.object({ thread_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    if (data.thread_id)
+      await assertSalesRecord(context.supabase, "email_threads", data.thread_id, "view");
+
     const { data: thread, error: tErr } = await context.supabase
       .from("email_threads")
       .select(

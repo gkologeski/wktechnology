@@ -20,14 +20,17 @@ const ROW_CAP = 5000;
 const DAYS = 30;
 
 const PERMS = {
-  cadences: ["techsales.prospecting.cadences.view", "techsales.prospecting.cadences.view.own"],
-  queue: [
-    "techsales.prospecting.queue.view",
-    "techsales.prospecting.queue.view.workspace",
-    "techsales.prospecting.queue.view.team",
-    "techsales.prospecting.queue.view.own",
+  cadences: [
+    "techsales.prospecting_cadences.view.workspace",
+    "techsales.prospecting_cadences.view.own",
   ],
-  voice: ["techsales.prospecting.voice.view"],
+  queue: [
+    "techsales.prospecting_queue.view.workspace",
+    "techsales.prospecting_queue.view.workspace",
+    "techsales.prospecting_queue.view.team",
+    "techsales.prospecting_queue.view.own",
+  ],
+  voice: ["techsales.prospecting_voice.view.workspace"],
   whatsapp: [
     "techsales.marketing.campaigns.view.workspace",
     "techsales.marketing.campaigns.view.team",

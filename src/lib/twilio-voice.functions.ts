@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -57,7 +58,7 @@ async function signTwilioVoiceToken(opts: {
 }
 
 export const getVoiceAccessToken = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_voice", "create")])
   .handler(async ({ context }) => {
     const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim();
     const apiKeySid = process.env.TWILIO_API_KEY_SID?.trim();
@@ -131,7 +132,7 @@ export const getVoiceAccessToken = createServerFn({ method: "POST" })
   });
 
 export const logCallActivity = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.activities", "create")])
   .inputValidator((input) =>
     z
       .object({

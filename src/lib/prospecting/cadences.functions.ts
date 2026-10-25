@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 /**
  * Suíte de Prospecção — Cadências multi-canal unificadas.
  *
@@ -32,7 +34,7 @@ const CHANNEL = z.enum([
 const ON_TIMEOUT = z.enum(["skip_messages", "end_sequence", "continue"]);
 
 export const listCadences = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_cadences", "view")])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("prospecting_cadences")
@@ -43,7 +45,7 @@ export const listCadences = createServerFn({ method: "GET" })
   });
 
 export const getCadence = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_cadences", "view")])
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
     const [{ data: cadence }, { data: steps }, { data: enrollments }] = await Promise.all([
@@ -67,7 +69,7 @@ export const getCadence = createServerFn({ method: "POST" })
   });
 
 export const upsertCadence = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_cadences", ["create", "update"])])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -86,6 +88,9 @@ export const upsertCadence = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ context, data }) => {
+    if (data.id)
+      await assertSalesRecord(context.supabase, "prospecting_cadences", data.id, "update");
+
     const ws = await getActiveWorkspaceId(context.supabase, context.userId);
     await assertAnyPermission(
       context.supabase,
@@ -126,9 +131,12 @@ export const upsertCadence = createServerFn({ method: "POST" })
   });
 
 export const deleteCadence = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_cadences", "delete")])
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
+    if (data.id)
+      await assertSalesRecord(context.supabase, "prospecting_cadences", data.id, "delete");
+
     const ws = await getActiveWorkspaceId(context.supabase, context.userId);
     await assertAnyPermission(context.supabase, context.userId, ws, asKeys(CADENCES_DELETE));
     const { error } = await context.supabase
@@ -140,7 +148,7 @@ export const deleteCadence = createServerFn({ method: "POST" })
   });
 
 export const upsertCadenceStep = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_cadences", "update")])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -161,6 +169,9 @@ export const upsertCadenceStep = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ context, data }) => {
+    if (data.id)
+      await assertSalesRecord(context.supabase, "prospecting_cadence_steps", data.id, "update");
+
     const ws = await getActiveWorkspaceId(context.supabase, context.userId);
     await assertAnyPermission(context.supabase, context.userId, ws, asKeys(CADENCES_UPDATE));
     const isWaitAccept = data.channel === "wait_invite_accept";
@@ -199,9 +210,12 @@ export const upsertCadenceStep = createServerFn({ method: "POST" })
   });
 
 export const deleteCadenceStep = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_cadences", "update")])
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
+    if (data.id)
+      await assertSalesRecord(context.supabase, "prospecting_cadence_steps", data.id, "update");
+
     const ws = await getActiveWorkspaceId(context.supabase, context.userId);
     await assertAnyPermission(context.supabase, context.userId, ws, asKeys(CADENCES_UPDATE));
     const { error } = await context.supabase
@@ -213,7 +227,7 @@ export const deleteCadenceStep = createServerFn({ method: "POST" })
   });
 
 export const enrollEntities = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_cadences", "create")])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -242,7 +256,7 @@ export const enrollEntities = createServerFn({ method: "POST" })
   });
 
 export const stopEnrollment = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_cadences", "update")])
   .inputValidator((i: unknown) =>
     z
       .object({

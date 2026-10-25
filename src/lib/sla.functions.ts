@@ -1,3 +1,4 @@
+import { salesPipelineReferences } from "@/lib/access-control/sales-references";
 // Server functions for SLA por pipeline stage.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -87,8 +88,7 @@ export const listSlaBreaches = createServerFn({ method: "GET" })
 export const listPipelinesForSla = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
-      .from("pipelines")
+    const { data, error } = await salesPipelineReferences(context.supabase)
       .select("id, name, entity, stages, is_default")
       .order("entity", { ascending: true })
       .order("is_default", { ascending: false });
@@ -114,8 +114,7 @@ export const setPipelineSla = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { data: pipe, error } = await supabase
-      .from("pipelines")
+    const { data: pipe, error } = await salesPipelineReferences(supabase)
       .select("stages")
       .eq("id", data.pipeline_id)
       .single();

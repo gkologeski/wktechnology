@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // Server functions de enriquecimento (refinado) — cascade multi-provider,
 // modo fill_empty/overwrite, dry-run e histórico de jobs.
@@ -11,7 +12,7 @@ export const ENRICH_PROVIDERS = ["apollo", "lusha"] as const;
 export type EnrichProvider = (typeof ENRICH_PROVIDERS)[number];
 
 export const enrichBatch = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_enrichment", "manage")])
   .inputValidator((input) =>
     z
       .object({
@@ -38,7 +39,7 @@ export const enrichBatch = createServerFn({ method: "POST" })
   });
 
 export const listEnrichmentJobs = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_enrichment", "view")])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("enrichment_jobs")
@@ -52,7 +53,7 @@ export const listEnrichmentJobs = createServerFn({ method: "GET" })
   });
 
 export const listJobItems = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_enrichment", "view")])
   .inputValidator((input) => z.object({ jobId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { data: items, error } = await context.supabase

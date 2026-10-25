@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // ViaCEP server-side bulk enrichment for companies
 // Endpoint: GET https://viacep.com.br/ws/{cep}/json/  (sem autenticação)
@@ -25,7 +26,7 @@ async function lookup(cep: string): Promise<ViaCepResp | null> {
 }
 
 export const enrichCompaniesAddress = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_enrichment", "manage")])
   .inputValidator((i: unknown) =>
     z
       .object({

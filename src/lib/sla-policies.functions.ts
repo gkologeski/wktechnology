@@ -1,3 +1,4 @@
+import { salesPipelineReferences } from "@/lib/access-control/sales-references";
 // Server functions for ticket SLA policies (priority/queue).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -118,8 +119,7 @@ export const runSlaBreachCheck = createServerFn({ method: "POST" })
 export const listTicketPipelines = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
-      .from("pipelines")
+    const { data, error } = await salesPipelineReferences(context.supabase)
       .select("id, name, entity")
       .eq("entity", "ticket")
       .order("name");

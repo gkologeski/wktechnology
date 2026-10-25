@@ -1,3 +1,4 @@
+import { apiSubjectClient } from "@/lib/api-keys/subject-client.server";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/api/public/v1/meetings/$id/reschedule")({
         if (!auth) return unauthorized();
         const denied = requireScope(auth, "write");
         if (denied) return denied;
+        const subjectClient = apiSubjectClient(supabaseAdmin, auth);
 
         const body = await request.json().catch(() => null);
         const parsed = RescheduleMeeting.safeParse(body);
@@ -36,7 +38,7 @@ export const Route = createFileRoute("/api/public/v1/meetings/$id/reschedule")({
             fieldErrors: { scheduled_at: ["Data inválida (use ISO 8601)."] },
           });
 
-        const { data: meeting } = await supabaseAdmin
+        const { data: meeting } = await subjectClient
           .from("meetings")
           .select(MEETING_SELECT)
           .eq("id", params.id)
@@ -58,7 +60,7 @@ export const Route = createFileRoute("/api/public/v1/meetings/$id/reschedule")({
           ).toISOString();
         }
 
-        const { data: updated, error } = await supabaseAdmin
+        const { data: updated, error } = await subjectClient
           .from("meetings")
           .update(patch)
           .eq("id", meeting.id)
@@ -70,7 +72,7 @@ export const Route = createFileRoute("/api/public/v1/meetings/$id/reschedule")({
         const previous = meeting.scheduled_at
           ? new Date(meeting.scheduled_at as string).toISOString()
           : "sem data";
-        await syncMeetingActivity(meeting.id, {
+        await syncMeetingActivity(subjectClient, meeting.id, {
           subjectPrefix: "Reagendada",
           note: `Reunião reagendada via API pública: ${previous} → ${scheduledAt.toISOString()}.${
             input.reason ? ` Motivo: ${input.reason.trim()}` : ""

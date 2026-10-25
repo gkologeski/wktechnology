@@ -2,6 +2,7 @@
 // Passo 1: upload do arquivo .docx → extração via mammoth (browser)
 // Passo 2: detecção de placeholders + edição/criação de campos variáveis
 // Passo 3: metadados (título, valor, validade) e criação
+import { SalesAction } from "@/components/sales-access";
 import { useCallback, useMemo, useRef, useState } from "react";
 import DOMPurify from "dompurify";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -362,277 +363,279 @@ export function ImportContractWizard() {
   });
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(o) => {
-        setOpen(o);
-        if (!o) reset();
-      }}
-    >
-      <DialogTrigger asChild>
-        <Button variant="outline">
-          <Upload className="mr-2 h-4 w-4" /> Importar .docx
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Wand2 className="h-4 w-4" /> Importar contrato — passo {step} de 3
-          </DialogTitle>
-        </DialogHeader>
+    <SalesAction table="proposals" action="create">
+      <Dialog
+        open={open}
+        onOpenChange={(o) => {
+          setOpen(o);
+          if (!o) reset();
+        }}
+      >
+        <DialogTrigger asChild>
+          <Button variant="outline">
+            <Upload className="mr-2 h-4 w-4" /> Importar .docx
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wand2 className="h-4 w-4" /> Importar proposta — passo {step} de 3
+            </DialogTitle>
+          </DialogHeader>
 
-        {/* Stepper visual */}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {[
-            { n: 1, label: "Upload" },
-            { n: 2, label: "Campos variáveis" },
-            { n: 3, label: "Revisar e criar" },
-          ].map((s, i, arr) => (
-            <div key={s.n} className="flex items-center gap-2">
-              <div
-                className={`grid h-6 w-6 place-items-center rounded-full border text-[11px] font-semibold ${step >= s.n ? "bg-primary text-primary-foreground border-primary" : "bg-muted"}`}
-              >
-                {step > s.n ? <CheckCircle2 className="h-3.5 w-3.5" /> : s.n}
-              </div>
-              <span className={step === s.n ? "text-foreground font-medium" : ""}>{s.label}</span>
-              {i < arr.length - 1 && <div className="h-px w-8 bg-border" />}
-            </div>
-          ))}
-        </div>
-
-        {/* PASSO 1 */}
-        {step === 1 && (
-          <div className="space-y-3 py-2">
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border p-10 text-center hover:bg-muted/30 transition-colors"
-            >
-              <FileText className="h-10 w-10 text-muted-foreground" />
-              <div className="font-medium">Clique para selecionar um arquivo .docx</div>
-              <div className="text-xs text-muted-foreground">
-                Use placeholders como{" "}
-                <code className="px-1 rounded bg-muted">{`{{contratante}}`}</code>,{" "}
-                <code className="px-1 rounded bg-muted">[VALOR]</code> ou deixe-nos detectar
-                automaticamente
-              </div>
-              {parsing && <Badge variant="secondary">Lendo arquivo…</Badge>}
-            </button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".docx"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) handleFile(f);
-              }}
-            />
-          </div>
-        )}
-
-        {/* PASSO 2 */}
-        {step === 2 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-2">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                  Campos detectados ({fields.length})
-                </Label>
-                <Button size="sm" variant="ghost" onClick={addField}>
-                  <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar
-                </Button>
-              </div>
-              <ScrollArea className="h-[340px] rounded-md border">
-                <div className="p-2 space-y-2">
-                  {fields.length === 0 && (
-                    <p className="text-xs text-muted-foreground p-4 text-center">
-                      Nenhum campo detectado. Adicione manualmente.
-                    </p>
-                  )}
-                  {fields.map((f, idx) => (
-                    <Card key={idx}>
-                      <CardContent className="p-3 space-y-2">
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <Label className="text-[10px]">Chave</Label>
-                            <Input
-                              value={f.key}
-                              onChange={(e) => updateField(idx, { key: slugify(e.target.value) })}
-                              className="h-8 text-xs font-mono"
-                            />
-                          </div>
-                          <div>
-                            <Label className="text-[10px]">Rótulo</Label>
-                            <Input
-                              value={f.label}
-                              onChange={(e) => updateField(idx, { label: e.target.value })}
-                              className="h-8 text-xs"
-                            />
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-[1fr_auto] gap-2 items-end">
-                          <div>
-                            <Label className="text-[10px]">Tipo</Label>
-                            <Select
-                              value={f.type}
-                              onValueChange={(v: VarType) => updateField(idx, { type: v })}
-                            >
-                              <SelectTrigger className="h-8 text-xs">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {(Object.keys(TYPE_LABEL) as VarType[]).map((t) => (
-                                  <SelectItem key={t} value={t} className="text-xs">
-                                    {TYPE_LABEL[t]}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <Button size="icon" variant="ghost" onClick={() => removeField(idx)}>
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                        <div>
-                          <Label className="text-[10px]">Valor padrão (opcional)</Label>
-                          <Input
-                            value={f.defaultValue}
-                            onChange={(e) => updateField(idx, { defaultValue: e.target.value })}
-                            className="h-8 text-xs"
-                            placeholder="Ex.: Empresa XYZ Ltda."
-                          />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+          {/* Stepper visual */}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            {[
+              { n: 1, label: "Upload" },
+              { n: 2, label: "Campos variáveis" },
+              { n: 3, label: "Revisar e criar" },
+            ].map((s, i, arr) => (
+              <div key={s.n} className="flex items-center gap-2">
+                <div
+                  className={`grid h-6 w-6 place-items-center rounded-full border text-[11px] font-semibold ${step >= s.n ? "bg-primary text-primary-foreground border-primary" : "bg-muted"}`}
+                >
+                  {step > s.n ? <CheckCircle2 className="h-3.5 w-3.5" /> : s.n}
                 </div>
-              </ScrollArea>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                Pré-visualização ({fileName})
-              </Label>
-              <ScrollArea className="h-[340px] rounded-md border bg-card">
-                {rawHtml ? (
-                  <div
-                    className="prose prose-sm max-w-none p-3 text-xs"
-                    dangerouslySetInnerHTML={{
-                      __html: DOMPurify.sanitize(rawHtml, { ADD_TAGS: ["style"] }),
-                    }}
-                  />
-                ) : (
-                  <pre className="p-3 text-xs whitespace-pre-wrap">{rawText}</pre>
-                )}
-              </ScrollArea>
-              <p className="text-[11px] text-muted-foreground">
-                Os placeholders reconhecidos serão normalizados para{" "}
-                <code className="px-1 rounded bg-muted">{`{{chave}}`}</code> ao salvar.
-              </p>
-            </div>
+                <span className={step === s.n ? "text-foreground font-medium" : ""}>{s.label}</span>
+                {i < arr.length - 1 && <div className="h-px w-8 bg-border" />}
+              </div>
+            ))}
           </div>
-        )}
 
-        {/* PASSO 3 */}
-        {step === 3 && (
-          <div className="space-y-3 py-2">
-            <div className="space-y-1">
-              <Label>Título</Label>
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Contrato Acme — Setembro/2026"
+          {/* PASSO 1 */}
+          {step === 1 && (
+            <div className="space-y-3 py-2">
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border p-10 text-center hover:bg-muted/30 transition-colors"
+              >
+                <FileText className="h-10 w-10 text-muted-foreground" />
+                <div className="font-medium">Clique para selecionar um arquivo .docx</div>
+                <div className="text-xs text-muted-foreground">
+                  Use placeholders como{" "}
+                  <code className="px-1 rounded bg-muted">{`{{contratante}}`}</code>,{" "}
+                  <code className="px-1 rounded bg-muted">[VALOR]</code> ou deixe-nos detectar
+                  automaticamente
+                </div>
+                {parsing && <Badge variant="secondary">Lendo arquivo…</Badge>}
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".docx"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleFile(f);
+                }}
               />
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="space-y-1">
-                <Label>Valor</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                />
+          )}
+
+          {/* PASSO 2 */}
+          {step === 2 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-2">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                    Campos detectados ({fields.length})
+                  </Label>
+                  <Button size="sm" variant="ghost" onClick={addField}>
+                    <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar
+                  </Button>
+                </div>
+                <ScrollArea className="h-[340px] rounded-md border">
+                  <div className="p-2 space-y-2">
+                    {fields.length === 0 && (
+                      <p className="text-xs text-muted-foreground p-4 text-center">
+                        Nenhum campo detectado. Adicione manualmente.
+                      </p>
+                    )}
+                    {fields.map((f, idx) => (
+                      <Card key={idx}>
+                        <CardContent className="p-3 space-y-2">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <Label className="text-[10px]">Chave</Label>
+                              <Input
+                                value={f.key}
+                                onChange={(e) => updateField(idx, { key: slugify(e.target.value) })}
+                                className="h-8 text-xs font-mono"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-[10px]">Rótulo</Label>
+                              <Input
+                                value={f.label}
+                                onChange={(e) => updateField(idx, { label: e.target.value })}
+                                className="h-8 text-xs"
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-[1fr_auto] gap-2 items-end">
+                            <div>
+                              <Label className="text-[10px]">Tipo</Label>
+                              <Select
+                                value={f.type}
+                                onValueChange={(v: VarType) => updateField(idx, { type: v })}
+                              >
+                                <SelectTrigger className="h-8 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {(Object.keys(TYPE_LABEL) as VarType[]).map((t) => (
+                                    <SelectItem key={t} value={t} className="text-xs">
+                                      {TYPE_LABEL[t]}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <Button size="icon" variant="ghost" onClick={() => removeField(idx)}>
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                          <div>
+                            <Label className="text-[10px]">Valor padrão (opcional)</Label>
+                            <Input
+                              value={f.defaultValue}
+                              onChange={(e) => updateField(idx, { defaultValue: e.target.value })}
+                              className="h-8 text-xs"
+                              placeholder="Ex.: Empresa XYZ Ltda."
+                            />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </ScrollArea>
               </div>
-              <div className="space-y-1">
-                <Label>Moeda</Label>
-                <Select value={currency} onValueChange={setCurrency}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="BRL">BRL</SelectItem>
-                    <SelectItem value="USD">USD</SelectItem>
-                    <SelectItem value="EUR">EUR</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label>Validade</Label>
-                <IsoDatePicker
-                  ariaLabel="Validade"
-                  value={expiresAt}
-                  onChange={(v) => setExpiresAt(v ?? "")}
-                />
+
+              <div className="space-y-2">
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Pré-visualização ({fileName})
+                </Label>
+                <ScrollArea className="h-[340px] rounded-md border bg-card">
+                  {rawHtml ? (
+                    <div
+                      className="prose prose-sm max-w-none p-3 text-xs"
+                      dangerouslySetInnerHTML={{
+                        __html: DOMPurify.sanitize(rawHtml, { ADD_TAGS: ["style"] }),
+                      }}
+                    />
+                  ) : (
+                    <pre className="p-3 text-xs whitespace-pre-wrap">{rawText}</pre>
+                  )}
+                </ScrollArea>
+                <p className="text-[11px] text-muted-foreground">
+                  Os placeholders reconhecidos serão normalizados para{" "}
+                  <code className="px-1 rounded bg-muted">{`{{chave}}`}</code> ao salvar.
+                </p>
               </div>
             </div>
-
-            <Card>
-              <CardContent className="p-3 space-y-1 text-xs">
-                <div className="font-semibold uppercase tracking-wider text-muted-foreground text-[10px]">
-                  Resumo
-                </div>
-                <div>
-                  📄 Arquivo: <span className="font-mono">{fileName}</span>
-                </div>
-                <div>
-                  🔑 Campos variáveis: <strong>{fields.length}</strong>
-                  {fields.length > 0 && (
-                    <span className="ml-2 inline-flex flex-wrap gap-1">
-                      {fields.slice(0, 8).map((f) => (
-                        <Badge
-                          key={f.key}
-                          variant="outline"
-                          className="text-[10px]"
-                        >{`{{${f.key}}}`}</Badge>
-                      ))}
-                      {fields.length > 8 && (
-                        <Badge variant="outline" className="text-[10px]">
-                          +{fields.length - 8}
-                        </Badge>
-                      )}
-                    </span>
-                  )}
-                </div>
-                <div>📝 Tamanho do corpo: {(normalizedBody.length / 1024).toFixed(1)} KB</div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        <DialogFooter className="flex items-center justify-between sm:justify-between gap-2">
-          <Button
-            variant="ghost"
-            onClick={() => setStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3) : s))}
-            disabled={step === 1}
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
-          </Button>
-          {step < 3 ? (
-            <Button
-              onClick={() => setStep((s) => (s + 1) as 1 | 2 | 3)}
-              disabled={step === 1 ? !rawText : false}
-            >
-              Avançar <ArrowRight className="h-4 w-4 ml-1" />
-            </Button>
-          ) : (
-            <Button onClick={() => createM.mutate()} disabled={!title || createM.isPending}>
-              {createM.isPending ? "Criando…" : "Criar contrato"}
-            </Button>
           )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+
+          {/* PASSO 3 */}
+          {step === 3 && (
+            <div className="space-y-3 py-2">
+              <div className="space-y-1">
+                <Label>Título</Label>
+                <Input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Contrato Acme — Setembro/2026"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <Label>Valor</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Moeda</Label>
+                  <Select value={currency} onValueChange={setCurrency}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="BRL">BRL</SelectItem>
+                      <SelectItem value="USD">USD</SelectItem>
+                      <SelectItem value="EUR">EUR</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label>Validade</Label>
+                  <IsoDatePicker
+                    ariaLabel="Validade"
+                    value={expiresAt}
+                    onChange={(v) => setExpiresAt(v ?? "")}
+                  />
+                </div>
+              </div>
+
+              <Card>
+                <CardContent className="p-3 space-y-1 text-xs">
+                  <div className="font-semibold uppercase tracking-wider text-muted-foreground text-[10px]">
+                    Resumo
+                  </div>
+                  <div>
+                    📄 Arquivo: <span className="font-mono">{fileName}</span>
+                  </div>
+                  <div>
+                    🔑 Campos variáveis: <strong>{fields.length}</strong>
+                    {fields.length > 0 && (
+                      <span className="ml-2 inline-flex flex-wrap gap-1">
+                        {fields.slice(0, 8).map((f) => (
+                          <Badge
+                            key={f.key}
+                            variant="outline"
+                            className="text-[10px]"
+                          >{`{{${f.key}}}`}</Badge>
+                        ))}
+                        {fields.length > 8 && (
+                          <Badge variant="outline" className="text-[10px]">
+                            +{fields.length - 8}
+                          </Badge>
+                        )}
+                      </span>
+                    )}
+                  </div>
+                  <div>📝 Tamanho do corpo: {(normalizedBody.length / 1024).toFixed(1)} KB</div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          <DialogFooter className="flex items-center justify-between sm:justify-between gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => setStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3) : s))}
+              disabled={step === 1}
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+            </Button>
+            {step < 3 ? (
+              <Button
+                onClick={() => setStep((s) => (s + 1) as 1 | 2 | 3)}
+                disabled={step === 1 ? !rawText : false}
+              >
+                Avançar <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            ) : (
+              <Button onClick={() => createM.mutate()} disabled={!title || createM.isPending}>
+                {createM.isPending ? "Criando…" : "Criar proposta"}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </SalesAction>
   );
 }

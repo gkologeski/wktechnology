@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 /**
  * Suíte de Prospecção — Filas configuráveis de leads/contatos.
  *
@@ -42,7 +44,7 @@ const SortSchema = z
   .partial();
 
 export const listQueues = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_queue", "view")])
   .handler(async ({ context }) => {
     const ws = await getActiveWorkspaceId(context.supabase, context.userId);
     await assertAnyPermission(context.supabase, context.userId, ws, asKeys(QUEUE_VIEW));
@@ -57,7 +59,7 @@ export const listQueues = createServerFn({ method: "GET" })
   });
 
 export const upsertQueue = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_queue", ["create", "update"])])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -75,6 +77,8 @@ export const upsertQueue = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ context, data }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "prospecting_queues", data.id, "update");
+
     const ws = await getActiveWorkspaceId(context.supabase, context.userId);
     await assertAnyPermission(
       context.supabase,
@@ -114,7 +118,7 @@ export const upsertQueue = createServerFn({ method: "POST" })
   });
 
 export const addToQueue = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_queue", "update")])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -148,7 +152,7 @@ export const addToQueue = createServerFn({ method: "POST" })
   });
 
 export const removeFromQueue = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_queue", "delete")])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -180,7 +184,7 @@ export const removeFromQueue = createServerFn({ method: "POST" })
   });
 
 export const enrollInCadence = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_queue", "create")])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -220,9 +224,11 @@ export const enrollInCadence = createServerFn({ method: "POST" })
   });
 
 export const deleteQueue = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_queue", "delete")])
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "prospecting_queues", data.id, "delete");
+
     const ws = await getActiveWorkspaceId(context.supabase, context.userId);
     await assertAnyPermission(context.supabase, context.userId, ws, asKeys(QUEUE_DELETE));
     const { error } = await context.supabase.from("prospecting_queues").delete().eq("id", data.id);
@@ -231,7 +237,7 @@ export const deleteQueue = createServerFn({ method: "POST" })
   });
 
 export const countQueueItems = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_queue", "view")])
   .inputValidator((i: unknown) => z.object({ queue_id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
     const { data: queue, error: qErr } = await context.supabase
@@ -291,7 +297,7 @@ export const countQueueItems = createServerFn({ method: "POST" })
  * a página de itens para o workspace de prospecção.
  */
 export const listQueueItems = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_queue", "view")])
   .inputValidator((i: unknown) =>
     z
       .object({

@@ -1,3 +1,5 @@
+import { salesPipelineReferences } from "@/lib/access-control/sales-references";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Server function fina: sugere substatus de uma etapa com IA.
 // Só lê o pipeline sob a RLS do usuário; nada é gravado aqui.
 import { createServerFn } from "@tanstack/react-start";
@@ -5,7 +7,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const suggestStageSubstatusesWithAi = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.pipelines", "manage")])
   .inputValidator((input) =>
     z
       .object({
@@ -18,8 +20,7 @@ export const suggestStageSubstatusesWithAi = createServerFn({ method: "POST" })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const client = context.supabase as any;
 
-    const { data: pipeline, error } = await client
-      .from("pipelines")
+    const { data: pipeline, error } = await salesPipelineReferences(client)
       .select("id, name, entity, stages")
       .eq("id", data.pipelineId)
       .maybeSingle();

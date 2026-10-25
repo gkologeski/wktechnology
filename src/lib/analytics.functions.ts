@@ -1,3 +1,5 @@
+import { salesPipelineReferences } from "@/lib/access-control/sales-references";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -42,7 +44,7 @@ async function fetchDeals(supabase: any, input: z.infer<typeof RangeInput>): Pro
 
 // ---------- FUNNEL ----------
 export const getFunnel = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.analytics.insights", "view")])
   .inputValidator((d) => RangeInput.parse(d))
   .handler(async ({ data, context }) => {
     const deals = await fetchDeals(context.supabase, data);
@@ -83,7 +85,7 @@ export const getFunnel = createServerFn({ method: "POST" })
 
 // ---------- SALES VELOCITY ----------
 export const getSalesVelocity = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.analytics.insights", "view")])
   .inputValidator((d) => RangeInput.parse(d))
   .handler(async ({ data, context }) => {
     const deals = await fetchDeals(context.supabase, data);
@@ -123,7 +125,7 @@ export const getSalesVelocity = createServerFn({ method: "POST" })
 // ---------- COHORT ----------
 // Created month -> conversion at 30/60/90 days (and total won so far)
 export const getCohort = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.analytics.insights", "view")])
   .inputValidator((d) => RangeInput.parse(d))
   .handler(async ({ data, context }) => {
     const deals = await fetchDeals(context.supabase, data);
@@ -167,10 +169,9 @@ export const getCohort = createServerFn({ method: "POST" })
   });
 
 export const listPipelinesForFunnel = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.analytics.insights", "view")])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
-      .from("pipelines")
+    const { data, error } = await salesPipelineReferences(context.supabase)
       .select("id,name,entity")
       .in("entity", ["deal", "deals"])
       .order("name");

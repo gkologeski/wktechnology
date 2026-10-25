@@ -1,7 +1,8 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Server functions para webhooks de saída
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { randomBytes } from "crypto";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runWebhookDispatch } from "@/lib/webhooks/dispatcher.server";
 import { assertPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
@@ -45,7 +46,7 @@ export const WEBHOOK_EVENTS = [
 ] as const;
 
 export const listWebhooks = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.webhooks", "view")])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
@@ -58,7 +59,7 @@ export const listWebhooks = createServerFn({ method: "GET" })
   });
 
 export const upsertWebhook = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.webhooks", ["create", "update"])])
   .inputValidator(
     (d: { id?: string; name: string; url: string; events: string[]; active?: boolean }) =>
       z
@@ -72,6 +73,8 @@ export const upsertWebhook = createServerFn({ method: "POST" })
         .parse(d),
   )
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "outbound_webhooks", data.id, "update");
+
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     const ws = await getActiveWorkspaceId(supabase, userId);
@@ -93,7 +96,6 @@ export const upsertWebhook = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
       return { ok: true };
     }
-    const secret = `whsec_${randomBytes(24).toString("hex")}`;
     const { error } = await supabase.from("outbound_webhooks").insert({
       owner_id: userId,
       workspace_id: workspaceId,
@@ -101,16 +103,17 @@ export const upsertWebhook = createServerFn({ method: "POST" })
       url: data.url,
       events: data.events,
       active: data.active ?? true,
-      secret,
     });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 export const deleteWebhook = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.webhooks", "delete")])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "outbound_webhooks", data.id, "delete");
+
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     const ws = await getActiveWorkspaceId(supabase, userId);
@@ -124,7 +127,7 @@ export const deleteWebhook = createServerFn({ method: "POST" })
   });
 
 export const listWebhookDeliveries = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.webhooks", "view")])
   .inputValidator(
     (d: { webhook_id?: string | null; event_type?: string | null; status?: string | null }) =>
       z
@@ -154,9 +157,11 @@ export const listWebhookDeliveries = createServerFn({ method: "GET" })
   });
 
 export const retryWebhookDelivery = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.webhooks", "manage")])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "webhook_deliveries", data.id, "manage");
+
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     const ws = await getActiveWorkspaceId(supabase, userId);
@@ -184,9 +189,11 @@ export const retryWebhookDelivery = createServerFn({ method: "POST" })
   });
 
 export const getWebhookSecret = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.webhooks", "view")])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "outbound_webhooks", data.id, "view");
+
     const { userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     await assertPermission(context.supabase, userId, workspaceId, WEBHOOK_MANAGE);
@@ -202,7 +209,7 @@ export const getWebhookSecret = createServerFn({ method: "GET" })
   });
 
 export const runWebhookTick = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.webhooks", "manage")])
   .handler(async () => {
     const r = await runWebhookDispatch();
     return r;

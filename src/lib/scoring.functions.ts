@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // Server functions do módulo de Lead Scoring.
 import { createServerFn } from "@tanstack/react-start";
@@ -34,7 +36,7 @@ const SaveSchema = z.object({
 });
 
 export const listScoringRules = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_scoring", "view")])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("scoring_rules")
@@ -45,7 +47,7 @@ export const listScoringRules = createServerFn({ method: "GET" })
   });
 
 export const saveScoringRule = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_scoring", ["create", "update"])])
   .inputValidator((i) => SaveSchema.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -75,16 +77,18 @@ export const saveScoringRule = createServerFn({ method: "POST" })
   });
 
 export const deleteScoringRule = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_scoring", "delete")])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "scoring_rules", data.id, "delete");
+
     const { error } = await context.supabase.from("scoring_rules").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 export const listRecentScoreEvents = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_scoring", "view")])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("score_events")
@@ -96,7 +100,7 @@ export const listRecentScoreEvents = createServerFn({ method: "GET" })
   });
 
 export const runScoringTickNow = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_scoring", "manage")])
   .handler(async ({ context }) => {
     // Full-scan: aplica todas as regras habilitadas sobre a base visível ao caller (RLS).
     return await runScoringFullScan(context.supabase);

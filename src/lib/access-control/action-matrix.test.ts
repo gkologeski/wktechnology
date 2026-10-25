@@ -57,8 +57,8 @@ describe("resolveResources", () => {
   });
 
   it("faz parse tolerante de chaves sem escopo", () => {
-    expect(resolveResources(["techsales.prospecting.search.view"], catalog)).toEqual([
-      "techsales.prospecting.search",
+    expect(resolveResources(["techsales.prospecting_search.view"], catalog)).toEqual([
+      "techsales.prospecting_search",
     ]);
   });
 });

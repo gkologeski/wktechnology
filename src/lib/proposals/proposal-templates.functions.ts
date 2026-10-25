@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -6,7 +8,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // política de acesso do banco (is_workspace_admin).
 
 export const listProposalTemplates = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.proposal_templates", "view")])
   .handler(async ({ context }) => {
     const sb = context.supabase;
     const [t, s] = await Promise.all([
@@ -23,7 +25,7 @@ export const listProposalTemplates = createServerFn({ method: "POST" })
   });
 
 export const saveProposalTemplate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.proposal_templates", ["create", "update"])])
   .inputValidator((d) =>
     z
       .object({
@@ -78,9 +80,11 @@ export const saveProposalTemplate = createServerFn({ method: "POST" })
   });
 
 export const deleteProposalTemplate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.proposal_templates", "delete")])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "proposal_templates", data.id, "delete");
+
     const { data: rows, error } = await context.supabase
       .from("proposal_templates")
       .delete()

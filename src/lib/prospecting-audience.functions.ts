@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Resolve um "público" multi-entidade em uma lista de lead_ids.
 // Fontes suportadas: leads, contacts, companies → contacts → leads, deals → contacts → leads, manual (UUIDs).
 import { createServerFn } from "@tanstack/react-start";
@@ -460,7 +461,7 @@ async function resolveContactsToLeads(
 }
 
 export const previewAudience = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_queue", "view")])
   .inputValidator((i) => z.object({ rules: AudienceRulesSchema }).parse(i))
   .handler(async ({ data, context }): Promise<ResolvedAudience> => {
     const ws = await resolveActiveWorkspace(context.userId);

@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { workspaceOfSource } from "@/lib/workspace-source.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -11,7 +13,7 @@ async function resolveWorkspaceFor(userId: string): Promise<string> {
 // ---------- Proposals ----------
 
 export const listProposals = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.proposals", "view")])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("proposals")
@@ -24,7 +26,7 @@ export const listProposals = createServerFn({ method: "GET" })
   });
 
 export const getProposal = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.proposals", "view")])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -41,7 +43,7 @@ export const getProposal = createServerFn({ method: "GET" })
   });
 
 export const createProposal = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.proposals", "create")])
   .inputValidator((d) =>
     z
       .object({
@@ -82,7 +84,7 @@ export const createProposal = createServerFn({ method: "POST" })
   });
 
 export const updateProposal = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.proposals", "update")])
   .inputValidator((d) =>
     z
       .object({
@@ -101,6 +103,8 @@ export const updateProposal = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "proposals", data.id, "update");
+
     const { data: cur, error: e0 } = await context.supabase
       .from("proposals")
       .select("status,locked")
@@ -114,9 +118,11 @@ export const updateProposal = createServerFn({ method: "POST" })
   });
 
 export const deleteProposal = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.proposals", "delete")])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "proposals", data.id, "delete");
+
     const { error } = await context.supabase.from("proposals").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -125,7 +131,7 @@ export const deleteProposal = createServerFn({ method: "POST" })
 // ---------- Approvals (US-14.3) ----------
 
 export const requestProposalApproval = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.proposals", "update")])
   .inputValidator((d) =>
     z
       .object({
@@ -136,26 +142,20 @@ export const requestProposalApproval = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await resolveWorkspaceFor(userId);
-    const { error: e1 } = await supabase
-      .from("proposals")
-      .update({ status: "in_review" })
-      .eq("id", data.proposalId);
-    if (e1) throw new Error(e1.message);
-    const { error: e2 } = await supabase.from("proposal_approvals").insert({
-      workspace_id: workspaceId,
-      proposal_id: data.proposalId,
-      requested_by: userId,
-      reviewer_id: data.reviewerId ?? null,
-      comment: data.comment ?? null,
-    });
-    if (e2) throw new Error(e2.message);
-    return { ok: true };
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    return workRpc<{ ok: boolean; approvalId: string }>(
+      context.supabase,
+      "sales_proposal_request",
+      {
+        p_id: data.proposalId,
+        p_reviewer: data.reviewerId ?? null,
+        p_comment: data.comment ?? null,
+      },
+    );
   });
 
 export const decideProposalApproval = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.proposals", "approve")])
   .inputValidator((d) =>
     z
       .object({
@@ -166,37 +166,16 @@ export const decideProposalApproval = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { data: appr, error: e0 } = await supabase
-      .from("proposal_approvals")
-      .select("proposal_id")
-      .eq("id", data.approvalId)
-      .single();
-    if (e0) throw new Error(e0.message);
-    const now = new Date().toISOString();
-    const { error: e1 } = await supabase
-      .from("proposal_approvals")
-      .update({
-        status: data.decision,
-        comment: data.comment ?? null,
-        decided_at: now,
-        reviewer_id: userId,
-      })
-      .eq("id", data.approvalId);
-    if (e1) throw new Error(e1.message);
-    const newStatus = data.decision === "approved" ? "approved" : "draft";
-    const { error: e2 } = await supabase
-      .from("proposals")
-      .update({ status: newStatus })
-      .eq("id", appr.proposal_id);
-    if (e2) throw new Error(e2.message);
-    return { ok: true };
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    return workRpc<{ ok: boolean }>(context.supabase, "sales_proposal_decide", {
+      p_approval: data.approvalId,
+      p_decision: data.decision,
+      p_comment: data.comment ?? null,
+    });
   });
 
-// ---------- Send + Seal (CA-14.1, CA-14.5) ----------
-
 export const sendProposal = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.proposal_send", "manage")])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -240,7 +219,7 @@ export const sendProposal = createServerFn({ method: "POST" })
 // ---------- Clauses (US-14.2) ----------
 
 export const listClauses = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.proposal_clauses", "view")])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("proposal_clauses")
@@ -252,7 +231,7 @@ export const listClauses = createServerFn({ method: "GET" })
   });
 
 export const createClause = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.proposal_clauses", "create")])
   .inputValidator((d) =>
     z
       .object({
@@ -289,7 +268,7 @@ export const createClause = createServerFn({ method: "POST" })
   });
 
 export const updateClause = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.proposal_clauses", "update")])
   .inputValidator((d) =>
     z
       .object({
@@ -304,6 +283,8 @@ export const updateClause = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "proposal_clauses", data.id, "update");
+
     const { error } = await context.supabase
       .from("proposal_clauses")
       .update(data.patch)
@@ -313,9 +294,11 @@ export const updateClause = createServerFn({ method: "POST" })
   });
 
 export const deleteClause = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.proposal_clauses", "delete")])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "proposal_clauses", data.id, "delete");
+
     const { error } = await context.supabase.from("proposal_clauses").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -324,7 +307,7 @@ export const deleteClause = createServerFn({ method: "POST" })
 // ---------- E-sign attachments (US-14.4) ----------
 
 export const listEsignAttachments = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.proposals", "view")])
   .inputValidator((d: { documentId: string }) =>
     z.object({ documentId: z.string().uuid() }).parse(d),
   )
@@ -339,7 +322,7 @@ export const listEsignAttachments = createServerFn({ method: "GET" })
   });
 
 export const addEsignAttachment = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.proposals", "update")])
   .inputValidator((d) =>
     z
       .object({
@@ -368,7 +351,7 @@ export const addEsignAttachment = createServerFn({ method: "POST" })
   });
 
 export const removeEsignAttachment = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.proposals", "delete")])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { workRpc } = await import("@/lib/access-control/work-core.server");

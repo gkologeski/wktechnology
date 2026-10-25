@@ -1,3 +1,4 @@
+import { salesPipelineReferences } from "@/lib/access-control/sales-references";
 // Server functions for advanced SLA reports.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -104,7 +105,7 @@ export const getSlaOffenders = createServerFn({ method: "POST" })
         ? supabase.from("profiles").select("id, full_name").in("id", agentIds)
         : Promise.resolve({ data: [] as Array<{ id: string; full_name: string | null }> }),
       pipeIds.length
-        ? supabase.from("pipelines").select("id, name").in("id", pipeIds)
+        ? salesPipelineReferences(supabase).select("id, name").in("id", pipeIds)
         : Promise.resolve({ data: [] as Array<{ id: string; name: string }> }),
     ]);
     const aMap = new Map((agentsData.data ?? []).map((a) => [a.id, a.full_name ?? "Sem nome"]));

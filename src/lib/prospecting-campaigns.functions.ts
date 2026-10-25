@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -140,7 +142,7 @@ const CampaignInput = z.object({
 });
 
 export const listCampaigns = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "view")])
   .handler(async ({ context }): Promise<Campaign[]> => {
     const sb = await sbAdmin();
     const ws = await resolveActiveWorkspace(context.userId);
@@ -154,7 +156,7 @@ export const listCampaigns = createServerFn({ method: "POST" })
   });
 
 export const getCampaign = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "view")])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }): Promise<{ campaign: Campaign; variants: Variant[] }> => {
     const sb = await sbAdmin();
@@ -177,7 +179,7 @@ export const getCampaign = createServerFn({ method: "POST" })
   });
 
 export const upsertCampaign = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", ["create", "update"])])
   .inputValidator((i) => CampaignInput.parse(i))
   .handler(async ({ data, context }) => {
     const sb = await sbAdmin();
@@ -247,9 +249,12 @@ export const upsertCampaign = createServerFn({ method: "POST" })
   });
 
 export const deleteCampaign = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "delete")])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    if (data.id)
+      await assertSalesRecord(context.supabase, "prospecting_campaigns", data.id, "delete");
+
     const sb = await sbAdmin();
     const ws = await resolveActiveWorkspace(context.userId);
     const { error } = await sb
@@ -262,7 +267,7 @@ export const deleteCampaign = createServerFn({ method: "POST" })
   });
 
 export const setCampaignStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "manage")])
   .inputValidator((i) =>
     z
       .object({ id: z.string().uuid(), status: z.enum(["draft", "running", "paused", "done"]) })
@@ -346,7 +351,7 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
   });
 
 export const listCampaignAttempts = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "view")])
   .inputValidator((i) => z.object({ campaign_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }): Promise<Attempt[]> => {
     const sb = await sbAdmin();
@@ -373,7 +378,7 @@ export type LeadAudit = {
 };
 
 export const auditCampaignQueueability = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "view")])
   .inputValidator((i) => z.object({ campaign_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }): Promise<LeadAudit[]> => {
     const sb = await sbAdmin();
@@ -488,7 +493,7 @@ function renderTemplate(tpl: string, ctx: { lead: { name: string; company: strin
 }
 
 export const dialLeadNow = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "manage")])
   .inputValidator((i) =>
     z.object({ lead_id: z.string().uuid(), script_id: z.string().uuid() }).parse(i),
   )

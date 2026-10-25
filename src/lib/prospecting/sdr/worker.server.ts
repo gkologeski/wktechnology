@@ -1,3 +1,4 @@
+import { assertSalesWorker } from "@/lib/access-control/sales-worker.server";
 // Execução do SDR: follow-ups, turnos com lease e conciliação de reuniões.
 // Nenhuma transação SQL fica aberta durante a chamada de IA: o claim marca o
 // trabalho e devolve; o envio recheca dono/versão antes de sair.
@@ -290,6 +291,20 @@ export async function processJob(
       error: "context_mismatch",
     });
     return "discarded";
+  }
+  try {
+    await assertSalesWorker(admin, "sdr_enrollments", enr.id, [
+      { table: "whatsapp_conversations", id: conv.id },
+      ...(enr.lead_id ? [{ table: "leads", id: enr.lead_id }] : []),
+      ...(enr.contact_id ? [{ table: "contacts", id: enr.contact_id }] : []),
+    ]);
+  } catch {
+    await finish(admin, job.id, job.lease_token, {
+      status: "failed",
+      error: "permission_revoked",
+      block_category: "technical",
+    });
+    return "failed";
   }
   const pre = sendGuard({ job, leaseToken: job.lease_token, conversation: conv, enrollment: enr });
   if (!pre.ok) {

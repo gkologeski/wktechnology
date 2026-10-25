@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 /**
  * Intenção pendente de criação de oportunidade.
  *
@@ -19,7 +20,7 @@ export type PendingDealIntent = {
 
 /** Intenção pendente mais recente de um lead (ou `null`). */
 export const getPendingDealIntent = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.leads", "view")])
   .inputValidator((i: unknown) => z.object({ lead_id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }): Promise<PendingDealIntent | null> => {
     const { data: rows, error } = await context.supabase
@@ -47,7 +48,7 @@ export const getPendingDealIntent = createServerFn({ method: "POST" })
 
 /** Marca a intenção como concluída. */
 export const completeDealIntent = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.leads", "manage")])
   .inputValidator((i: unknown) => z.object({ activity_id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
     const { error } = await context.supabase

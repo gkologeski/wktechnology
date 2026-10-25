@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Release 16 — Zapier integration server functions (Lovable side).
 // Zapier REST hook: o usuário cria um Zap com trigger "New X" e o Zapier
 // chama nosso endpoint /api/public/zapier/subscribe para registrar o webhook.
@@ -30,7 +31,7 @@ export const ZAPIER_ACTIONS = [
 ] as const;
 
 export const listZapierSubscriptions = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.integrations", "view")])
   .handler(async ({ context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const { data, error } = await context.supabase
@@ -43,7 +44,7 @@ export const listZapierSubscriptions = createServerFn({ method: "GET" })
   });
 
 export const deleteZapierSubscription = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.integrations", "delete")])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);

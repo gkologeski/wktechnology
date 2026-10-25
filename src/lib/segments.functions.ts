@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // Server functions para gerenciamento de listas (segments).
 import { createServerFn } from "@tanstack/react-start";
@@ -24,7 +26,7 @@ const FilterNodeSchema: z.ZodType = z.lazy(() =>
 );
 
 export const listSegments = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.segments", "view")])
   .handler(async ({ context }) => {
     const { supabase } = context;
     const { data, error } = await supabase
@@ -36,7 +38,7 @@ export const listSegments = createServerFn({ method: "GET" })
   });
 
 export const upsertSegment = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.segments", ["create", "update"])])
   .inputValidator((input) =>
     z
       .object({
@@ -51,6 +53,8 @@ export const upsertSegment = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "segments", data.id, "update");
+
     const { supabase, userId } = context;
     const payload = {
       owner_id: userId,
@@ -84,16 +88,18 @@ export const upsertSegment = createServerFn({ method: "POST" })
   });
 
 export const deleteSegment = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.segments", "delete")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "segments", data.id, "delete");
+
     const { error } = await context.supabase.from("segments").delete().eq("id", data.id);
     if (error) throw error;
     return { ok: true };
   });
 
 export const listSegmentMembers = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.segments", "view")])
   .inputValidator((input) =>
     z
       .object({
@@ -137,9 +143,11 @@ export const listSegmentMembers = createServerFn({ method: "POST" })
   });
 
 export const refreshSegmentNow = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.segments", "manage")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "segments", data.id, "manage");
+
     // ownership check via RLS
     const { data: seg, error } = await context.supabase
       .from("segments")
@@ -152,7 +160,7 @@ export const refreshSegmentNow = createServerFn({ method: "POST" })
   });
 
 export const addStaticMembers = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.segments", "update")])
   .inputValidator((input) =>
     z
       .object({
@@ -180,7 +188,7 @@ export const addStaticMembers = createServerFn({ method: "POST" })
   });
 
 export const removeStaticMember = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.segments", "delete")])
   .inputValidator((input) =>
     z
       .object({

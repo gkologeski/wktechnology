@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 /**
  * Backfill das qualificações antigas na timeline.
  *
@@ -29,7 +30,7 @@ type QualRow = {
 };
 
 export const backfillQualificationActivities = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_qualifications", "manage")])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { logQualificationActivity } =

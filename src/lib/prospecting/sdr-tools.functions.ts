@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -8,9 +10,12 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const Pb = z.object({ playbookId: z.string().uuid() });
 
 export const getSdrToolCatalog = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "view")])
   .inputValidator((i) => Pb.parse(i))
   .handler(async ({ data, context }) => {
+    if (data.playbookId)
+      await assertSalesRecord(context.supabase, "sdr_playbooks", data.playbookId, "view");
+
     const { getCatalog } = await import("@/lib/prospecting/sdr/tools/admin.server");
     // JSON string: schemas das ferramentas têm formato livre.
     return {
@@ -19,15 +24,18 @@ export const getSdrToolCatalog = createServerFn({ method: "POST" })
   });
 
 export const saveSdrToolConfig = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "update")])
   .inputValidator((i) => Pb.extend({ config: z.unknown() }).parse(i))
   .handler(async ({ data, context }) => {
+    if (data.playbookId)
+      await assertSalesRecord(context.supabase, "sdr_playbooks", data.playbookId, "update");
+
     const { saveToolDraft } = await import("@/lib/prospecting/sdr/tools/admin.server");
     return saveToolDraft(context.supabase, context.userId, data.playbookId, data.config);
   });
 
 export const testSdrTool = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "manage")])
   .inputValidator((i) =>
     Pb.extend({
       tool: z.string().min(3).max(60),
@@ -36,6 +44,9 @@ export const testSdrTool = createServerFn({ method: "POST" })
     }).parse(i),
   )
   .handler(async ({ data, context }) => {
+    if (data.playbookId)
+      await assertSalesRecord(context.supabase, "sdr_playbooks", data.playbookId, "view");
+
     const admin = await import("@/lib/prospecting/sdr/tools/admin.server");
     const ws = await admin.gate(context.supabase, context.userId, "update");
     const pb = await admin.loadPlaybook(context.supabase, ws, data.playbookId);

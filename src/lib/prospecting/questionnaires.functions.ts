@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 /**
  * Suíte de Prospecção — Questionários de qualificação.
  *
@@ -25,7 +27,7 @@ const OptionSchema = z.object({
 });
 
 export const listQuestionnaires = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_questionnaires", "view")])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("prospecting_questionnaires")
@@ -39,7 +41,7 @@ export const listQuestionnaires = createServerFn({ method: "GET" })
   });
 
 export const getQuestionnaire = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_questionnaires", "view")])
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
     const [{ data: q }, { data: questions }] = await Promise.all([
@@ -59,7 +61,9 @@ export const getQuestionnaire = createServerFn({ method: "POST" })
   });
 
 export const upsertQuestionnaire = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([
+    requireSalesPermission("techsales.prospecting_questionnaires", ["create", "update"]),
+  ])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -74,6 +78,9 @@ export const upsertQuestionnaire = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ context, data }) => {
+    if (data.id)
+      await assertSalesRecord(context.supabase, "prospecting_questionnaires", data.id, "update");
+
     const ws = await getActiveWorkspaceId(context.supabase, context.userId);
     await assertAnyPermission(
       context.supabase,
@@ -110,9 +117,12 @@ export const upsertQuestionnaire = createServerFn({ method: "POST" })
   });
 
 export const deleteQuestionnaire = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_questionnaires", "delete")])
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
+    if (data.id)
+      await assertSalesRecord(context.supabase, "prospecting_questionnaires", data.id, "delete");
+
     const ws = await getActiveWorkspaceId(context.supabase, context.userId);
     await assertAnyPermission(context.supabase, context.userId, ws, asKeys(QUESTIONNAIRES_DELETE));
     const { error } = await context.supabase
@@ -128,7 +138,9 @@ export const deleteQuestionnaire = createServerFn({ method: "POST" })
  * (blocos antes/depois das perguntas) — configurável por questionário.
  */
 export const saveQuestionnaireFieldLayout = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([
+    requireSalesPermission("techsales.prospecting_questionnaires", ["create", "update"]),
+  ])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -161,6 +173,9 @@ export const saveQuestionnaireFieldLayout = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ context, data }) => {
+    if (data.id)
+      await assertSalesRecord(context.supabase, "prospecting_questionnaires", data.id, "update");
+
     const ws = await getActiveWorkspaceId(context.supabase, context.userId);
     await assertAnyPermission(context.supabase, context.userId, ws, asKeys(QUESTIONNAIRES_UPDATE));
     const { error } = await context.supabase
@@ -172,7 +187,7 @@ export const saveQuestionnaireFieldLayout = createServerFn({ method: "POST" })
   });
 
 export const upsertQuestion = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_questionnaires", "update")])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -192,6 +207,9 @@ export const upsertQuestion = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ context, data }) => {
+    if (data.id)
+      await assertSalesRecord(context.supabase, "prospecting_questions", data.id, "update");
+
     const ws = await getActiveWorkspaceId(context.supabase, context.userId);
     await assertAnyPermission(context.supabase, context.userId, ws, asKeys(QUESTIONNAIRES_UPDATE));
     const payload = {
@@ -218,9 +236,12 @@ export const upsertQuestion = createServerFn({ method: "POST" })
   });
 
 export const deleteQuestion = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_questionnaires", "update")])
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
+    if (data.id)
+      await assertSalesRecord(context.supabase, "prospecting_questions", data.id, "update");
+
     const ws = await getActiveWorkspaceId(context.supabase, context.userId);
     await assertAnyPermission(context.supabase, context.userId, ws, asKeys(QUESTIONNAIRES_UPDATE));
     const { error } = await context.supabase
@@ -232,7 +253,7 @@ export const deleteQuestion = createServerFn({ method: "POST" })
   });
 
 export const reorderQuestions = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_questionnaires", "update")])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -266,7 +287,7 @@ export const reorderQuestions = createServerFn({ method: "POST" })
   });
 
 export const duplicateQuestionnaire = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_questionnaires", "manage")])
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
     const ws = await getActiveWorkspaceId(context.supabase, context.userId);
@@ -332,7 +353,7 @@ export const duplicateQuestionnaire = createServerFn({ method: "POST" })
  * questionário e todas as perguntas com pesos e opções padrão de mercado.
  */
 export const seedFramework = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_questionnaires", "manage")])
   .inputValidator((i: unknown) =>
     z.object({ framework: FRAMEWORK, name: z.string().min(1).max(120).optional() }).parse(i),
   )
@@ -544,11 +565,14 @@ export const FRAMEWORKS = Object.keys(FRAMEWORK_TEMPLATES) as z.infer<typeof FRA
 
 /** Liga/desliga a pontuação do questionário (sem pontuação: score nulo, sem aprovação automática). */
 export const setQuestionnaireScoring = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_questionnaires", "update")])
   .inputValidator((i: unknown) =>
     z.object({ id: z.string().uuid(), scoring_enabled: z.boolean() }).parse(i),
   )
   .handler(async ({ context, data }) => {
+    if (data.id)
+      await assertSalesRecord(context.supabase, "prospecting_questionnaires", data.id, "update");
+
     const ws = await getActiveWorkspaceId(context.supabase, context.userId);
     await assertAnyPermission(context.supabase, context.userId, ws, asKeys(QUESTIONNAIRES_UPDATE));
     const { error } = await context.supabase
@@ -561,9 +585,12 @@ export const setQuestionnaireScoring = createServerFn({ method: "POST" })
 
 /** Marca se a pergunta entra na soma (independente de ser obrigatória). */
 export const setQuestionScored = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_questionnaires", "update")])
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid(), scored: z.boolean() }).parse(i))
   .handler(async ({ context, data }) => {
+    if (data.id)
+      await assertSalesRecord(context.supabase, "prospecting_questions", data.id, "update");
+
     const ws = await getActiveWorkspaceId(context.supabase, context.userId);
     await assertAnyPermission(context.supabase, context.userId, ws, asKeys(QUESTIONNAIRES_UPDATE));
     const { error } = await context.supabase

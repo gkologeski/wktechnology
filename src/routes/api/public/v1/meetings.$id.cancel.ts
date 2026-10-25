@@ -1,3 +1,4 @@
+import { apiSubjectClient } from "@/lib/api-keys/subject-client.server";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -18,13 +19,14 @@ export const Route = createFileRoute("/api/public/v1/meetings/$id/cancel")({
         if (!auth) return unauthorized();
         const denied = requireScope(auth, "write");
         if (denied) return denied;
+        const subjectClient = apiSubjectClient(supabaseAdmin, auth);
 
         const body = await request.json().catch(() => null);
         const parsed = CancelMeeting.safeParse(body);
         if (!parsed.success) return jsonError("invalid_input", 400, parsed.error.flatten());
         const reason = parsed.data?.reason?.trim() || null;
 
-        const { data: meeting } = await supabaseAdmin
+        const { data: meeting } = await subjectClient
           .from("meetings")
           .select(MEETING_SELECT)
           .eq("id", params.id)
@@ -36,7 +38,7 @@ export const Route = createFileRoute("/api/public/v1/meetings/$id/cancel")({
         if (meeting.status === "cancelled") return Response.json({ data: meeting });
 
         const now = new Date().toISOString();
-        const { data: updated, error } = await supabaseAdmin
+        const { data: updated, error } = await subjectClient
           .from("meetings")
           .update({ status: "cancelled", ended_at: meeting.ended_at ?? now })
           .eq("id", meeting.id)
@@ -45,7 +47,7 @@ export const Route = createFileRoute("/api/public/v1/meetings/$id/cancel")({
           .single();
         if (error) return jsonError(error.message, 400);
 
-        await syncMeetingActivity(meeting.id, {
+        await syncMeetingActivity(subjectClient, meeting.id, {
           subjectPrefix: "Cancelada",
           note: reason
             ? `Reunião cancelada via API pública. Motivo: ${reason}`

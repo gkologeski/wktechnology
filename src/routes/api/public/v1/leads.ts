@@ -1,3 +1,4 @@
+import { apiSubjectClient } from "@/lib/api-keys/subject-client.server";
 import { emailSchema } from "@/lib/email-schema";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
@@ -31,9 +32,10 @@ export const Route = createFileRoute("/api/public/v1/leads")({
         if (!auth) return unauthorized();
         const denied = requireScope(auth, "read");
         if (denied) return denied;
+        const subjectClient = apiSubjectClient(supabaseAdmin, auth);
         const url = new URL(request.url);
         const params = parseListParams(url);
-        let query = supabaseAdmin
+        let query = subjectClient
           .from("leads")
           .select(
             "id, first_name, last_name, email, phone, job_title, cargo_resumido, area_atuacao, nivel_hierarquico, company_name, status, source, created_at",
@@ -59,6 +61,7 @@ export const Route = createFileRoute("/api/public/v1/leads")({
         if (!auth) return unauthorized();
         const denied = requireScope(auth, "write");
         if (denied) return denied;
+        const subjectClient = apiSubjectClient(supabaseAdmin, auth);
         const body = await request.json().catch(() => null);
         const parsed = CreateLead.safeParse(body);
         if (!parsed.success) {
@@ -83,7 +86,7 @@ export const Route = createFileRoute("/api/public/v1/leads")({
           if (isPhoneValidationError(e)) return Response.json(phoneErrorBody(e), { status: 422 });
           throw e;
         }
-        const dup = await checkLeadDuplicate(supabaseAdmin, {
+        const dup = await checkLeadDuplicate(subjectClient, {
           workspaceId: auth.workspaceId,
           email: parsed.data.email ?? null,
           phone: parsed.data.phone ?? null,
@@ -94,7 +97,7 @@ export const Route = createFileRoute("/api/public/v1/leads")({
             headers: { "Content-Type": "application/json" },
           });
         }
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await subjectClient
           .from("leads")
           .insert({
             owner_id: auth.ownerId,
@@ -110,7 +113,7 @@ export const Route = createFileRoute("/api/public/v1/leads")({
           .single();
         if (error) return new Response(JSON.stringify({ error: error.message }), { status: 400 });
         // Garante empresa e contato vinculados ao lead
-        await ensureLeadRelationsSafe(supabaseAdmin, data.id);
+        await ensureLeadRelationsSafe(subjectClient, data.id);
         return Response.json({ data });
       },
     },

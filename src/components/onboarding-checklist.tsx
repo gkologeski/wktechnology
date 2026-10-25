@@ -1,3 +1,4 @@
+import { salesPipelineReferences } from "@/lib/access-control/sales-references";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
@@ -21,7 +22,7 @@ export function OnboardingChecklist() {
       const [contacts, deals, pipelines, members, invites, integrations] = await Promise.all([
         supabase.from("contacts").select("id", { head: true, count: "exact" }),
         supabase.from("deals").select("id", { head: true, count: "exact" }),
-        supabase.from("pipelines").select("id", { head: true, count: "exact" }),
+        salesPipelineReferences(supabase).select("id", { head: true, count: "exact" }),
         supabase
           .from("workspace_members")
           .select("id", { head: true, count: "exact" })

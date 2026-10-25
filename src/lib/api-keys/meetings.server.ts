@@ -13,10 +13,11 @@ export const MEETING_SELECT =
  * isso para localizá-la sem depender de colunas adicionais.
  */
 export async function syncMeetingActivity(
+  client: typeof supabaseAdmin,
   meetingId: string,
   options: { subjectPrefix?: string; note: string; dueDate?: string | null },
 ): Promise<void> {
-  const { data: activity } = await supabaseAdmin
+  const { data: activity } = await client
     .from("activities")
     .select("id, subject, body")
     .contains("external_ids", { meeting_id: meetingId })
@@ -38,5 +39,5 @@ export async function syncMeetingActivity(
   };
   if (options.dueDate !== undefined) patch.due_date = options.dueDate;
 
-  await supabaseAdmin.from("activities").update(patch).eq("id", activity.id);
+  await client.from("activities").update(patch).eq("id", activity.id);
 }

@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -37,7 +39,7 @@ function roomName(workspaceId: string): string {
  * Create meeting (host action)
  * ============================================================ */
 export const createMeeting = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.meetings", "create")])
   .inputValidator((input) =>
     z
       .object({
@@ -108,7 +110,7 @@ export const createMeeting = createServerFn({ method: "POST" })
  * List meetings (library + entity panel)
  * ============================================================ */
 export const listMeetings = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.meetings", "view")])
   .inputValidator((input) =>
     z
       .object({
@@ -162,7 +164,7 @@ export const listMeetings = createServerFn({ method: "POST" })
  * Get one meeting (with summary) for the detail drawer
  * ============================================================ */
 export const getMeeting = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.meetings", "view")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const supabaseAdmin = await getSupabaseAdmin();
@@ -202,9 +204,11 @@ export const getMeeting = createServerFn({ method: "POST" })
  * End meeting
  * ============================================================ */
 export const endMeeting = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.meetings", "manage")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "meetings", data.id, "manage");
+
     const supabaseAdmin = await getSupabaseAdmin();
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const { error } = await supabaseAdmin
@@ -220,9 +224,11 @@ export const endMeeting = createServerFn({ method: "POST" })
  * Delete meeting
  * ============================================================ */
 export const deleteMeeting = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.meetings", "delete")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "meetings", data.id, "delete");
+
     const supabaseAdmin = await getSupabaseAdmin();
     const workspaceId = await resolveActiveWorkspace(context.userId);
     // delete recording from storage if present
@@ -248,7 +254,7 @@ export const deleteMeeting = createServerFn({ method: "POST" })
  * Issue signed upload URL for recording
  * ============================================================ */
 export const createRecordingUploadUrl = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.meetings", "create")])
   .inputValidator((input) =>
     z
       .object({
@@ -281,7 +287,7 @@ export const createRecordingUploadUrl = createServerFn({ method: "POST" })
  * Mark recording uploaded (saves path on the meeting)
  * ============================================================ */
 export const attachRecording = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.meetings", "manage")])
   .inputValidator((input) =>
     z
       .object({
@@ -356,7 +362,7 @@ export const attachRecording = createServerFn({ method: "POST" })
  * ============================================================ */
 
 export const generateMeetingSummary = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.meetings", "manage")])
   .inputValidator((input) => z.object({ meeting_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const supabaseAdmin = await getSupabaseAdmin();
@@ -585,7 +591,7 @@ async function downloadDriveTextFile(token: string, fileId: string, mime: string
 }
 
 export const summarizeCalendarEventRecording = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.meetings", "manage")])
   .inputValidator((input) => z.object({ calendar_event_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const supabaseAdmin = await getSupabaseAdmin();
@@ -753,7 +759,7 @@ Responda APENAS com JSON válido.`;
  * Create tasks (activities type=task) from action items
  * ============================================================ */
 export const createTasksFromActionItems = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.meetings", "create")])
   .inputValidator((input) => z.object({ meeting_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const supabaseAdmin = await getSupabaseAdmin();
@@ -803,7 +809,7 @@ export const createTasksFromActionItems = createServerFn({ method: "POST" })
  * Sign a meeting recording URL (workspace-scoped)
  * ============================================================ */
 export const signMeetingRecording = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.meetings", "manage")])
   .inputValidator((input) =>
     z
       .object({
@@ -829,7 +835,7 @@ export const signMeetingRecording = createServerFn({ method: "POST" })
  * Workspace meeting settings
  * ============================================================ */
 export const getMeetingSettings = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.meeting_settings", "view")])
   .handler(async ({ context }) => ({
     settings: (await readWorkspaceSettings(context.supabase, context.userId, "meeting")) as {
       provider?: string;
@@ -840,7 +846,7 @@ export const getMeetingSettings = createServerFn({ method: "POST" })
   }));
 
 export const saveMeetingSettings = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.meeting_settings", "manage")])
   .inputValidator((input) =>
     z
       .object({

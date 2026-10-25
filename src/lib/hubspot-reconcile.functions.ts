@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Reconcilia activities (notes/tasks/calls/meetings/emails) entre HubSpot e o sistema.
 // Lista IDs no HubSpot (paginado, mais recentes primeiro), descobre quais não existem
 // localmente e importa os faltantes. Não toca em registros já presentes.
@@ -178,7 +179,7 @@ function buildPayload(kind: Kind, ownerId: string, rec: HsRec) {
 }
 
 export const reconcileHubspotActivities = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.hubspot_sync", "manage")])
   .inputValidator(
     z.object({
       type: z.enum(["note", "task", "call", "meeting", "email"]),

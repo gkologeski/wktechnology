@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Server functions: engajamento de e-mail 1:1 (aberturas e cliques)
 // para o timeline da entidade e para o relatório agregado em Analytics.
 import { createServerFn } from "@tanstack/react-start";
@@ -31,7 +32,7 @@ export interface EntityEmailItem {
 
 /** Lista e-mails 1:1 (outbound) enviados para uma entidade, com métricas de engajamento. */
 export const listEntityEmailEngagement = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.inbox.email", "view")])
   .inputValidator((i) =>
     z
       .object({
@@ -128,7 +129,7 @@ export interface EmailEngagementReport {
 
 /** Relatório agregado de engajamento de e-mail 1:1 para a aba Analytics. */
 export const getEmailEngagementReport = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.inbox.email", "view")])
   .inputValidator((i) =>
     z
       .object({

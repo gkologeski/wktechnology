@@ -1,3 +1,5 @@
+import { SalesAction } from "@/components/sales-access";
+import { useSalesSharing } from "@/lib/access-control/use-sales-sharing";
 import { getPublicAppUrl } from "@/lib/app-url";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -85,6 +87,7 @@ function SnippetHint() {
 
 export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props) {
   const openActivity = useActivityWindows();
+  const sharing = useSalesSharing("quotes");
   const qc = useQueryClient();
   const createFn = useServerFn(createQuoteFromDeal);
   const updateFn = useServerFn(updateQuote);
@@ -238,7 +241,7 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
     onSuccess: (r) => {
       if (r.created && r.quote) {
         setQuoteId(r.quote.id);
-        setPublicToken(r.quote.public_token);
+        setPublicToken(null);
         setQuoteNumber(r.quote.number);
         setTotals({
           subtotal: Number(r.quote.subtotal ?? 0),
@@ -368,12 +371,21 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
 
   async function handlePublishAndSend() {
     await publishMut.mutateAsync();
-    if (!deal) return;
+    if (!deal || !quoteId) return;
+    let link: string;
+    try {
+      link = await sharing.url(quoteId);
+    } catch (e) {
+      toast.error((e as Error).message);
+      return;
+    }
     openActivity?.({
       action: ACTIONS_BY_KEY["create:email"],
       to: contact?.email ?? "",
       subject: emailDefaults.subject,
-      body: emailDefaults.body,
+      body: publicUrl
+        ? emailDefaults.body
+        : `${emailDefaults.body}<p>Acesse pelo link: <a href="${link}">${link}</a></p>`,
       contactId: contact?.id,
       dealId,
       companyId: deal.company_id ?? undefined,
@@ -636,15 +648,40 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
                 </Button>
               ) : (
                 <>
-                  <Button variant="secondary" onClick={handlePublish} disabled={isBusy || !quoteId}>
-                    Publicar
-                  </Button>
-                  <Button
-                    onClick={handlePublishAndSend}
-                    disabled={isBusy || !quoteId || !contact?.email}
+                  <SalesAction
+                    table="quotes"
+                    id={quoteId ?? undefined}
+                    action="manage"
+                    resource="techsales.quote_send"
                   >
-                    Publicar e enviar
-                  </Button>
+                    <Button
+                      variant="secondary"
+                      onClick={handlePublish}
+                      disabled={isBusy || !quoteId}
+                    >
+                      Publicar
+                    </Button>
+                  </SalesAction>
+                  <SalesAction
+                    table="quotes"
+                    id={quoteId ?? undefined}
+                    action="manage"
+                    resource="techsales.quote_send"
+                  >
+                    <SalesAction
+                      table="quotes"
+                      id={quoteId ?? undefined}
+                      action="manage"
+                      resource="techsales.quote_share"
+                    >
+                      <Button
+                        onClick={handlePublishAndSend}
+                        disabled={isBusy || !quoteId || !contact?.email}
+                      >
+                        Publicar e enviar
+                      </Button>
+                    </SalesAction>
+                  </SalesAction>
                 </>
               )}
             </div>

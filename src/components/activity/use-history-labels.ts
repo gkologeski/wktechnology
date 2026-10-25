@@ -1,3 +1,4 @@
+import { salesPipelineReferences } from "@/lib/access-control/sales-references";
 // Resolve IDs presentes no histórico de propriedades para nomes legíveis
 // (responsável, pipeline, etapa, substatus, empresa, contato).
 import { useEffect, useMemo, useState } from "react";
@@ -87,8 +88,7 @@ export function useHistoryLabels(rows: PropertyChangeRow[]) {
     const tasks: Array<PromiseLike<unknown>> = [];
     if (pipelines.size > 0) {
       tasks.push(
-        supabase
-          .from("pipelines")
+        salesPipelineReferences(supabase)
           .select("id, name")
           .in("id", [...pipelines])
           .then(({ data }) => {
@@ -148,8 +148,7 @@ export function useHistoryLabels(rows: PropertyChangeRow[]) {
 
     if (stageEntities.size > 0) {
       tasks.push(
-        supabase
-          .from("pipelines")
+        salesPipelineReferences(supabase)
           .select("id, entity, stages")
           .in("entity", [...stageEntities])
           .then(({ data }) => {

@@ -40,47 +40,47 @@ const CampaignsHub = L(
 const SECTIONS: Record<Section, { label: string; permission: string; Component: ComponentType }> = {
   fila: {
     label: "Filas",
-    permission: "techsales.prospecting.queue.view",
+    permission: "techsales.prospecting_queue.view.workspace",
     Component: L(() => import("@/components/prospecting/queue-tab"), "QueueTab"),
   },
   nutricao: {
     label: "Nutrição",
-    permission: "techsales.prospecting.queue.view",
+    permission: "techsales.prospecting_queue.view.workspace",
     Component: L(() => import("@/components/prospecting/nurturing-tab"), "NurturingTab"),
   },
   qualificacao: {
     label: "Qualificação e pontuação",
-    permission: "techsales.prospecting.scoring.view",
+    permission: "techsales.prospecting_scoring.view.workspace",
     Component: L(() => import("@/components/prospecting/pages/scoring-page"), "ScoringPage"),
   },
   cadencias: {
     label: "Cadências",
-    permission: "techsales.prospecting.cadences.view",
+    permission: "techsales.prospecting_cadences.view.workspace",
     Component: L(() => import("@/components/prospecting/cadences-tab"), "CadencesTab"),
   },
   roteiros: {
     label: "Roteiros de ligação",
-    permission: "techsales.prospecting.scripts.view",
+    permission: "techsales.prospecting_scripts.view.workspace",
     Component: L(() => import("@/components/prospecting/pages/scripts-page"), "ScriptsPage"),
   },
   questionarios: {
     label: "Questionários comerciais",
-    permission: "techsales.prospecting.questionnaires.view",
+    permission: "techsales.prospecting_questionnaires.view.workspace",
     Component: L(() => import("@/components/prospecting/questionnaires-tab"), "QuestionnairesTab"),
   },
   playbooks: {
     label: "Roteiros de descoberta",
-    permission: "techsales.prospecting.playbooks.view",
+    permission: "techsales.prospecting_playbooks.view.workspace",
     Component: L(() => import("@/components/prospecting/pages/playbooks-page"), "PlaybooksPage"),
   },
   base: {
     label: "Base interna",
-    permission: "techsales.prospecting.search.view",
+    permission: "techsales.prospecting_search.view.workspace",
     Component: L(() => import("@/components/prospecting/base-tab"), "BaseTab"),
   },
   apollo: {
     label: "Busca de prospects (Apollo)",
-    permission: "techsales.prospecting.search.view",
+    permission: "techsales.prospecting_search.view.workspace",
     Component: L(
       () => import("@/components/prospecting/pages/prospecting-page"),
       "ProspectingPage",
@@ -88,7 +88,7 @@ const SECTIONS: Record<Section, { label: string; permission: string; Component: 
   },
   enriquecimento: {
     label: "Enriquecimento",
-    permission: "techsales.prospecting.enrichment.view",
+    permission: "techsales.prospecting_enrichment.view.workspace",
     Component: L(
       () => import("@/components/prospecting/pages/enrichment-history-page"),
       "EnrichmentHistoryPage",
@@ -112,9 +112,9 @@ const AREAS: Record<Area, { label: string; description: string }> = {
 
 /** Áreas sem seções exigem ao menos uma permissão de leitura da Prospecção. */
 const AREA_BASE_PERMS = [
-  "techsales.prospecting.queue.view",
-  "techsales.prospecting.cadences.view",
-  "techsales.prospecting.voice.view",
+  "techsales.prospecting_queue.view.workspace",
+  "techsales.prospecting_cadences.view.workspace",
+  "techsales.prospecting_voice.view.workspace",
   "techsales.marketing.sdr_agent.view.workspace",
   "techsales.marketing.campaigns.view.workspace",
 ];

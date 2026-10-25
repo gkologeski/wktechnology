@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { parseEmailList } from "@/lib/email-address";
 import { emailSchema } from "@/lib/email-schema";
 import { randomUUID } from "crypto";
@@ -52,7 +53,7 @@ const inputSchema = z.object({
 });
 
 export const sendGmailEmail = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.inbox.email", "create")])
   .inputValidator((input) => inputSchema.parse(input))
   .handler(async ({ data, context }) => {
     await (await import("@/lib/view-as-guard.server")).assertNotReadOnlyView(context.supabase);

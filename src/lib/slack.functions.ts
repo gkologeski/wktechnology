@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Release 16 — Slack integration server functions.
 // Modelo simplificado: usuário cola a Webhook URL (Incoming Webhook do Slack).
 // O canal alvo é definido na própria URL. Para roteamento por evento, criamos
@@ -21,7 +23,7 @@ export const SLACK_EVENT_TYPES = [
 const EventZ = z.enum(SLACK_EVENT_TYPES);
 
 export const getSlackIntegration = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.integrations", "view")])
   .handler(async ({ context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const [{ data: integ }, { data: routes }] = await Promise.all([
@@ -42,7 +44,7 @@ export const getSlackIntegration = createServerFn({ method: "GET" })
   });
 
 export const saveSlackIntegration = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.integrations", ["create", "update"])])
   .inputValidator((d) =>
     z
       .object({
@@ -53,24 +55,17 @@ export const saveSlackIntegration = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const workspaceId = await resolveActiveWorkspace(context.userId);
-    const { error } = await context.supabase.from("slack_integrations").upsert(
-      {
-        workspace_id: workspaceId,
-        owner_id: workspaceId,
-        access_token: data.webhook_url,
-        team_name: data.team_name ?? null,
-        default_channel_name: data.default_channel_name ?? null,
-        installed_by: context.userId,
-      },
-      { onConflict: "workspace_id" },
-    );
-    if (error) throw new Error(error.message);
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    await workRpc<string>(context.supabase, "sales_configure_slack", {
+      p_url: data.webhook_url,
+      p_team: data.team_name ?? null,
+      p_channel: data.default_channel_name ?? null,
+    });
     return { ok: true };
   });
 
 export const deleteSlackIntegration = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.integrations", "delete")])
   .handler(async ({ context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
     await context.supabase.from("slack_event_routes").delete().eq("workspace_id", workspaceId);
@@ -83,7 +78,7 @@ export const deleteSlackIntegration = createServerFn({ method: "POST" })
   });
 
 export const upsertSlackRoute = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.integrations", ["create", "update"])])
   .inputValidator((d) =>
     z
       .object({
@@ -96,6 +91,8 @@ export const upsertSlackRoute = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "slack_event_routes", data.id, "update");
+
     const workspaceId = await resolveActiveWorkspace(context.userId);
     if (data.id) {
       const { error } = await context.supabase
@@ -112,7 +109,7 @@ export const upsertSlackRoute = createServerFn({ method: "POST" })
     } else {
       const { error } = await context.supabase.from("slack_event_routes").insert({
         workspace_id: workspaceId,
-        owner_id: workspaceId,
+        owner_id: context.userId,
         event_type: data.event_type,
         channel_id: data.channel_id,
         channel_name: data.channel_name ?? null,
@@ -124,9 +121,11 @@ export const upsertSlackRoute = createServerFn({ method: "POST" })
   });
 
 export const deleteSlackRoute = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.integrations", "delete")])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "slack_event_routes", data.id, "delete");
+
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const { error } = await context.supabase
       .from("slack_event_routes")
@@ -138,7 +137,7 @@ export const deleteSlackRoute = createServerFn({ method: "POST" })
   });
 
 export const sendSlackTest = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.integrations", "manage")])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const workspaceId = await resolveActiveWorkspace(context.userId);

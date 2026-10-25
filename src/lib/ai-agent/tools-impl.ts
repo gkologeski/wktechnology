@@ -1,3 +1,4 @@
+import { salesPipelineReferences } from "@/lib/access-control/sales-references";
 // Funções puras das tools de LEITURA do agente. Recebem um supabase client
 // já autenticado (não dependem de getRequest()/middleware de server-fn),
 // o que evita "Unauthorized" quando invocadas de dentro do streamText.
@@ -150,8 +151,7 @@ export async function searchEntityImpl(
 }
 
 export async function listPipelinesImpl(supabase: SB, input: { kind: "deal" | "ticket" }) {
-  const { data: pipelines } = await supabase
-    .from("pipelines")
+  const { data: pipelines } = await salesPipelineReferences(supabase)
     .select("id, name, entity, stages")
     .eq("entity", input.kind)
     .limit(20);

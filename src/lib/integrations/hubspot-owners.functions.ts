@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Sincroniza owners do HubSpot para a tabela local hubspot_owners.
 // NÃO cria usuários em auth.users, NÃO envia convites.
 import { createServerFn } from "@tanstack/react-start";
@@ -45,7 +46,7 @@ async function fetchOwners(archived: boolean): Promise<HSOwner[]> {
 }
 
 export const syncHubspotOwners = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.hubspot_sync", "manage")])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const { data: wsData } = await supabase.rpc("default_workspace_for_user", { _user: userId });
@@ -106,7 +107,7 @@ const RebindSchema = z.object({
 });
 
 export const setHubspotOwnerMapping = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.hubspot_sync", "update")])
   .inputValidator((d: unknown) => RebindSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -142,7 +143,7 @@ export const setHubspotOwnerMapping = createServerFn({ method: "POST" })
   });
 
 export const listHubspotOwners = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.hubspot_sync", "view")])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const { data: wsData } = await supabase.rpc("default_workspace_for_user", { _user: userId });
@@ -174,7 +175,7 @@ export const listHubspotOwners = createServerFn({ method: "GET" })
 
 /** Cria usuários inativos (ou vincula existentes) para responsáveis do HubSpot sem vínculo. */
 export const provisionHubspotOwnerUsers = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.hubspot_sync", "manage")])
   .handler(async ({ context }) => {
     const { provisionHubspotOwners, assertWorkspaceAdmin } =
       await import("./hubspot-owner-provision.server");
@@ -184,7 +185,7 @@ export const provisionHubspotOwnerUsers = createServerFn({ method: "POST" })
 
 /** Ativa/desativa um membro do workspace. */
 export const setWorkspaceMemberStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.hubspot_sync", "manage")])
   .inputValidator((i) =>
     z.object({ userId: z.string().uuid(), status: z.enum(["active", "inactive"]) }).parse(i),
   )

@@ -96,16 +96,16 @@ export type SettingsGroup = { label: string; items: SettingsItem[] };
  * Deve espelhar as abas definidas em `routes/_authenticated/prospecting.index.tsx`.
  */
 export const PROSPECTING_VIEW_PERMISSIONS = [
-  "techsales.prospecting.search.view",
+  "techsales.prospecting_search.view.workspace",
   "techsales.marketing.sdr_agent.view.workspace",
-  "techsales.prospecting.queue.view",
-  "techsales.prospecting.cadences.view",
-  "techsales.prospecting.questionnaires.view",
-  "techsales.prospecting.scoring.view",
-  "techsales.prospecting.scripts.view",
-  "techsales.prospecting.playbooks.view",
-  "techsales.prospecting.enrichment.view",
-  "techsales.prospecting.voice.view",
+  "techsales.prospecting_queue.view.workspace",
+  "techsales.prospecting_cadences.view.workspace",
+  "techsales.prospecting_questionnaires.view.workspace",
+  "techsales.prospecting_scoring.view.workspace",
+  "techsales.prospecting_scripts.view.workspace",
+  "techsales.prospecting_playbooks.view.workspace",
+  "techsales.prospecting_enrichment.view.workspace",
+  "techsales.prospecting_voice.view.workspace",
 ];
 
 /**

@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -35,7 +36,7 @@ async function findContactByPhone(supabase: any, phoneE164: string): Promise<str
 
 // ---------- janela de atendimento de 24 horas ----------
 export const getWhatsAppServiceWindow = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.inbox.whatsapp", "view")])
   .inputValidator((input) =>
     z.object({ to: z.string().min(5), conversationId: z.string().uuid().nullish() }).parse(input),
   )
@@ -61,7 +62,7 @@ export const getWhatsAppServiceWindow = createServerFn({ method: "POST" })
 
 // ---------- send (API oficial da Meta) ----------
 export const sendWhatsAppMessage = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.inbox.whatsapp", "create")])
   .inputValidator((input) =>
     z
       .object({
@@ -323,7 +324,7 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
 
 // ---------- list conversations ----------
 export const listWhatsAppConversations = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.inbox.whatsapp", "view")])
   .handler(async ({ context }) => {
     const { supabase } = context;
     const { data, error } = await supabase
@@ -339,7 +340,7 @@ export const listWhatsAppConversations = createServerFn({ method: "GET" })
 
 // ---------- list messages ----------
 export const listWhatsAppMessages = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.inbox.whatsapp", "view")])
   .inputValidator((input) => z.object({ conversationId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -358,7 +359,7 @@ export const listWhatsAppMessages = createServerFn({ method: "POST" })
 
 // ---------- mark conversation read ----------
 export const markWhatsAppRead = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.inbox.whatsapp", "manage")])
   .inputValidator((input) => z.object({ conversationId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -399,7 +400,7 @@ export const markWhatsAppRead = createServerFn({ method: "POST" })
 
 // ---------- números conectados (configuração) ----------
 export const getWhatsAppConfig = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.whatsapp", "view")])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
@@ -426,7 +427,7 @@ export const getWhatsAppConfig = createServerFn({ method: "GET" })
   });
 
 export const saveWhatsAppConfig = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.whatsapp", "manage")])
   .inputValidator((input) =>
     z.object({ default_phone_number_id: z.string().min(3).max(64) }).parse(input),
   )
@@ -449,7 +450,7 @@ export const saveWhatsAppConfig = createServerFn({ method: "POST" })
 
 // ---------- assignment ----------
 export const listAssignableMembers = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.inbox.whatsapp", "view")])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
@@ -476,7 +477,7 @@ export const listAssignableMembers = createServerFn({ method: "GET" })
   });
 
 export const assignWhatsAppConversation = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.inbox.whatsapp", "assign")])
   .inputValidator((input) =>
     z
       .object({
@@ -520,7 +521,7 @@ export const assignWhatsAppConversation = createServerFn({ method: "POST" })
   });
 
 export const setWhatsAppConversationStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.inbox.whatsapp", "update")])
   .inputValidator((input) =>
     z
       .object({
@@ -544,7 +545,7 @@ export const setWhatsAppConversationStatus = createServerFn({ method: "POST" })
 // a interface distinguir "erro", "não sincronizado" e "catálogo vazio" e para
 // a chave de cache ficar por workspace + canal + idioma.
 export const getWhatsAppTemplateCatalog = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.inbox.whatsapp", "view")])
   .inputValidator((input) =>
     z
       .object({ language: z.string().max(10).nullish() })

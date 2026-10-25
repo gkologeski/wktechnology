@@ -1,3 +1,4 @@
+import { salesPipelineReferences } from "@/lib/access-control/sales-references";
 // Aplicação da edição em massa dos grids. Roda no servidor, sob a RLS do
 // usuário: a validação de campos é uma camada extra, não substitui a RLS.
 import { createServerFn } from "@tanstack/react-start";
@@ -131,8 +132,7 @@ export const bulkUpdateEntity = createServerFn({ method: "POST" })
       { ids: uniqueIds, payload },
     ];
     if (PIPELINE_ENTITIES.has(data.entity) && payload["pipeline_id"]) {
-      const { data: pipe, error: pipeError } = await client
-        .from("pipelines")
+      const { data: pipe, error: pipeError } = await salesPipelineReferences(client)
         .select("stages")
         .eq("id", payload["pipeline_id"])
         .maybeSingle();
@@ -252,8 +252,7 @@ export const bulkUpdateEntity = createServerFn({ method: "POST" })
       );
       const stagesByPipeline = new Map<string, ReturnType<typeof parseStages>>();
       if (pipelineIds.length > 0) {
-        const { data: pipes, error: pipesError } = await client
-          .from("pipelines")
+        const { data: pipes, error: pipesError } = await salesPipelineReferences(client)
           .select("id, stages")
           .in("id", pipelineIds);
         if (pipesError) {

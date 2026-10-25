@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -6,7 +7,7 @@ import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 const MIN_SAMPLES = 100;
 
 export const getMlScoringStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_scoring", "view")])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
@@ -28,7 +29,7 @@ export const getMlScoringStatus = createServerFn({ method: "POST" })
   });
 
 export const setMlWeight = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_scoring", "update")])
   .inputValidator((input) => z.object({ weight_ml: z.number().min(0).max(1) }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -44,7 +45,7 @@ export const setMlWeight = createServerFn({ method: "POST" })
   });
 
 export const trainMlScoring = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_scoring", "manage")])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);

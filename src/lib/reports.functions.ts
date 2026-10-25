@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -72,7 +74,7 @@ const ConfigSchema = z.object({
 
 // ---------- CRUD ----------
 export const listReports = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.analytics.reports", "view")])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("custom_reports")
@@ -84,7 +86,7 @@ export const listReports = createServerFn({ method: "GET" })
   });
 
 export const saveReport = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.analytics.reports", ["create", "update"])])
   .inputValidator((d) =>
     z
       .object({
@@ -97,6 +99,8 @@ export const saveReport = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "custom_reports", data.id, "update");
+
     const { supabase, userId } = context;
     const payload = {
       name: data.name,
@@ -124,9 +128,11 @@ export const saveReport = createServerFn({ method: "POST" })
   });
 
 export const deleteReport = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.analytics.reports", "delete")])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "custom_reports", data.id, "delete");
+
     const { error } = await context.supabase.from("custom_reports").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -134,7 +140,7 @@ export const deleteReport = createServerFn({ method: "POST" })
 
 // ---------- Run ----------
 export const runReport = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.analytics.reports", "manage")])
   .inputValidator((d) => z.object({ config: ConfigSchema }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -188,9 +194,11 @@ export const runReport = createServerFn({ method: "POST" })
   });
 
 export const toggleReportFavorite = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.analytics.reports", "update")])
   .inputValidator((d) => z.object({ id: z.string().uuid(), is_favorite: z.boolean() }).parse(d))
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "custom_reports", data.id, "update");
+
     const { error } = await context.supabase
       .from("custom_reports")
       .update({ is_favorite: data.is_favorite })

@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Server functions do ICP (Perfil de Cliente Ideal) e do detalhamento de score.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -19,7 +21,7 @@ const CriterionSchema = z.object({
 });
 
 export const listIcpCriteria = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_scoring", "view")])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("icp_criteria")
@@ -30,7 +32,7 @@ export const listIcpCriteria = createServerFn({ method: "GET" })
   });
 
 export const saveIcpCriterion = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_scoring", ["create", "update"])])
   .inputValidator((i: unknown) => CriterionSchema.parse(i))
   .handler(async ({ context, data }) => {
     const ws = await getActiveWorkspaceId(context.supabase, context.userId);
@@ -64,23 +66,25 @@ export const saveIcpCriterion = createServerFn({ method: "POST" })
   });
 
 export const deleteIcpCriterion = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_scoring", "delete")])
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "icp_criteria", data.id, "delete");
+
     const { error } = await context.supabase.from("icp_criteria").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 export const runIcpScanNow = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_scoring", "manage")])
   .handler(async ({ context }) => {
     const ws = await getActiveWorkspaceId(context.supabase, context.userId);
     return await runIcpScan(context.supabase, { ownerId: context.userId, workspaceId: ws });
   });
 
 export const getLeadIcpFit = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_scoring", "view")])
   .inputValidator((i: unknown) => z.object({ lead_id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
     return await getFit(context.supabase, data.lead_id);
@@ -88,7 +92,7 @@ export const getLeadIcpFit = createServerFn({ method: "POST" })
 
 /** Detalhamento do score de um registro por origem (Regras / Qualificação / ICP). */
 export const getScoreBreakdown = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_scoring", "view")])
   .inputValidator((i: unknown) =>
     z
       .object({

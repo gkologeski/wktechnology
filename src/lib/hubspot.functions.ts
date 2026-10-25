@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -80,7 +81,7 @@ function normalize(l: HSLead) {
 }
 
 export const previewHubspotLeads = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.hubspot_sync", "view")])
   .inputValidator((input: unknown) =>
     z.object({ limit: z.number().min(1).max(100).default(10) }).parse(input),
   )
@@ -90,7 +91,7 @@ export const previewHubspotLeads = createServerFn({ method: "POST" })
   });
 
 export const importHubspotLeads = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.hubspot_sync", "manage")])
   .inputValidator((input: unknown) =>
     z.object({ maxRecords: z.number().min(1).max(20000).default(200) }).parse(input),
   )

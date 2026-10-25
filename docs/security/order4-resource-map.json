@@ -1,0 +1,938 @@
+[
+  {
+    "table": "tickets",
+    "resource": "techsales.tickets",
+    "label": "Tickets",
+    "responsibles": ["assignee_id", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "slack_event_routes",
+    "resource": "system.integrations",
+    "label": "Integra\u00e7\u00f5es",
+    "responsibles": ["owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "leads",
+    "resource": "techsales.leads",
+    "label": "Leads",
+    "responsibles": ["assigned_to", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "contacts",
+    "resource": "techsales.contacts",
+    "label": "Contatos",
+    "responsibles": ["assigned_to", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "companies",
+    "resource": "techsales.companies",
+    "label": "Empresas",
+    "responsibles": ["assigned_to", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "deals",
+    "resource": "techsales.deals",
+    "label": "Neg\u00f3cios",
+    "responsibles": ["assigned_to", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "activities",
+    "resource": "techsales.activities",
+    "label": "Atividades",
+    "responsibles": ["assigned_to", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "quotes",
+    "resource": "techsales.quotes",
+    "label": "Cota\u00e7\u00f5es",
+    "responsibles": ["assigned_to", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "proposals",
+    "resource": "techsales.proposals",
+    "label": "Propostas",
+    "responsibles": ["assigned_to", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "prospecting_queues",
+    "resource": "techsales.prospecting_queue",
+    "label": "Filas de prospec\u00e7\u00e3o",
+    "responsibles": ["assigned_to", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "prospecting_cadences",
+    "resource": "techsales.prospecting_cadences",
+    "label": "Cad\u00eancias de prospec\u00e7\u00e3o",
+    "responsibles": ["assigned_to", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "prospecting_questionnaires",
+    "resource": "techsales.prospecting_questionnaires",
+    "label": "Question\u00e1rios de prospec\u00e7\u00e3o",
+    "responsibles": ["assigned_to", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "prospecting_scripts",
+    "resource": "techsales.prospecting_scripts",
+    "label": "Roteiros de prospec\u00e7\u00e3o",
+    "responsibles": ["assigned_to", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "prospecting_searches",
+    "resource": "techsales.prospecting_search",
+    "label": "Pesquisas de prospec\u00e7\u00e3o",
+    "responsibles": ["assigned_to", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "prospecting_campaigns",
+    "resource": "techsales.marketing.campaigns",
+    "label": "Campanhas",
+    "responsibles": ["assigned_to", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "prospecting_qualifications",
+    "resource": "techsales.prospecting_qualifications",
+    "label": "Qualifica\u00e7\u00f5es",
+    "responsibles": ["owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "sdr_playbooks",
+    "resource": "techsales.marketing.sdr_agent",
+    "label": "Agentes SDR",
+    "responsibles": ["assigned_to", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "whatsapp_campaigns",
+    "resource": "techsales.marketing.campaigns",
+    "label": "Campanhas",
+    "responsibles": ["owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "email_broadcasts",
+    "resource": "techsales.marketing.campaigns",
+    "label": "Campanhas",
+    "responsibles": ["assigned_to", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "email_templates",
+    "resource": "system.automation.email_templates",
+    "label": "Modelos de e-mail",
+    "responsibles": ["owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "email_snippets",
+    "resource": "system.snippets",
+    "label": "Respostas r\u00e1pidas",
+    "responsibles": ["owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "segments",
+    "resource": "techsales.segments",
+    "label": "Segmentos comerciais",
+    "responsibles": ["owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "sequences",
+    "resource": "system.automation.sequences",
+    "label": "Sequ\u00eancias",
+    "responsibles": ["assigned_to", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "scoring_rules",
+    "resource": "techsales.prospecting_scoring",
+    "label": "Regras de pontua\u00e7\u00e3o",
+    "responsibles": ["assigned_to", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "icp_criteria",
+    "resource": "techsales.prospecting_scoring",
+    "label": "Regras de pontua\u00e7\u00e3o",
+    "responsibles": ["owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "forms",
+    "resource": "techsales.marketing.forms",
+    "label": "Formul\u00e1rios",
+    "responsibles": ["assigned_to", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "landing_pages",
+    "resource": "techsales.marketing.landing_pages",
+    "label": "Landing pages",
+    "responsibles": ["assigned_to", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "survey_templates",
+    "resource": "techsales.surveys",
+    "label": "Pesquisas",
+    "responsibles": ["owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "survey_responses",
+    "resource": "techsales.surveys",
+    "label": "Pesquisas",
+    "responsibles": ["assigned_to", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "task_queues",
+    "resource": "techsales.task_queues",
+    "label": "Filas de tarefas",
+    "responsibles": ["owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "goals",
+    "resource": "techsales.goals",
+    "label": "Metas comerciais",
+    "responsibles": ["owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "whatsapp_conversations",
+    "resource": "techsales.inbox.whatsapp",
+    "label": "Inbox WhatsApp",
+    "responsibles": ["assigned_to", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "email_threads",
+    "resource": "techsales.inbox.email",
+    "label": "Inbox E-mail",
+    "responsibles": ["assigned_to", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "live_chat_sessions",
+    "resource": "techsales.inbox.chat",
+    "label": "Chat ao vivo",
+    "responsibles": ["assignee_id", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "email_accounts",
+    "resource": "techsales.email_accounts",
+    "label": "Contas de e-mail",
+    "responsibles": ["owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "integrations",
+    "resource": "system.integrations",
+    "label": "Integra\u00e7\u00f5es",
+    "responsibles": ["owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "slack_integrations",
+    "resource": "system.integrations",
+    "label": "Integra\u00e7\u00f5es",
+    "responsibles": ["owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "outbound_webhooks",
+    "resource": "system.webhooks",
+    "label": "Webhooks",
+    "responsibles": ["owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "enrichment_jobs",
+    "resource": "techsales.prospecting_enrichment",
+    "label": "Enriquecimento",
+    "responsibles": ["assigned_to", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "booking_pages",
+    "resource": "system.booking",
+    "label": "P\u00e1ginas de agendamento",
+    "responsibles": ["owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "bookings",
+    "resource": "system.booking",
+    "label": "Agendamentos",
+    "responsibles": ["assigned_to", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "calendar_accounts",
+    "resource": "system.calendars",
+    "label": "Agendas",
+    "responsibles": ["owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "calendar_events",
+    "resource": "system.calendars",
+    "label": "Agendas",
+    "responsibles": ["owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "meetings",
+    "resource": "techsales.meetings",
+    "label": "Reuni\u00f5es",
+    "responsibles": ["assigned_to", "host_user_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "pipelines",
+    "resource": "system.pipelines",
+    "label": "Funis",
+    "responsibles": ["owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "deal_loss_reasons",
+    "resource": "techsales.deal_loss_reasons",
+    "label": "Motivos de perda",
+    "responsibles": ["assigned_to", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "lead_sources",
+    "resource": "techsales.lead_sources",
+    "label": "Origens de leads",
+    "responsibles": ["owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "quote_templates",
+    "resource": "techsales.quote_templates",
+    "label": "Modelos de cota\u00e7\u00e3o",
+    "responsibles": ["owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "proposal_templates",
+    "resource": "techsales.proposal_templates",
+    "label": "Modelos de proposta",
+    "responsibles": [],
+    "shared": true,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "proposal_clauses",
+    "resource": "techsales.proposal_clauses",
+    "label": "Cl\u00e1usulas de proposta",
+    "responsibles": ["owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "workflows",
+    "resource": "system.workflows",
+    "label": "Fluxos de automa\u00e7\u00e3o",
+    "responsibles": ["owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "workflow_action_templates",
+    "resource": "system.workflows",
+    "label": "Fluxos de automa\u00e7\u00e3o",
+    "responsibles": ["owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "workflow_subscriptions",
+    "resource": "system.workflows",
+    "label": "Fluxos de automa\u00e7\u00e3o",
+    "responsibles": ["owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "rotation_rules",
+    "resource": "system.automation.rotation",
+    "label": "Distribui\u00e7\u00e3o autom\u00e1tica",
+    "responsibles": ["owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "custom_reports",
+    "resource": "system.analytics.reports",
+    "label": "Relat\u00f3rios",
+    "responsibles": ["assigned_to", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "dashboards",
+    "resource": "system.analytics.dashboards",
+    "label": "Pain\u00e9is personalizados",
+    "responsibles": ["assigned_to", "owner_id"],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "deal_line_items",
+    "resource": "techsales.deals",
+    "parent": "deals",
+    "parent_column": "deal_id",
+    "worker": false,
+    "id_column": "id"
+  },
+  {
+    "table": "deal_contacts",
+    "resource": "techsales.deals",
+    "parent": "deals",
+    "parent_column": "deal_id",
+    "worker": false,
+    "id_column": "id"
+  },
+  {
+    "table": "quote_line_items",
+    "resource": "techsales.quotes",
+    "parent": "quotes",
+    "parent_column": "quote_id",
+    "worker": false,
+    "id_column": "id"
+  },
+  {
+    "table": "proposal_approvals",
+    "resource": "techsales.proposals",
+    "parent": "proposals",
+    "parent_column": "proposal_id",
+    "worker": true,
+    "id_column": "id"
+  },
+  {
+    "table": "proposal_template_services",
+    "resource": "techsales.proposal_templates",
+    "parent": "proposal_templates",
+    "parent_column": "template_id",
+    "worker": false,
+    "id_column": "id"
+  },
+  {
+    "table": "prospecting_cadence_steps",
+    "resource": "techsales.prospecting_cadences",
+    "parent": "prospecting_cadences",
+    "parent_column": "cadence_id",
+    "worker": false,
+    "id_column": "id"
+  },
+  {
+    "table": "prospecting_enrollments",
+    "resource": "techsales.prospecting_cadences",
+    "parent": "prospecting_cadences",
+    "parent_column": "cadence_id",
+    "worker": false,
+    "id_column": "id"
+  },
+  {
+    "table": "prospecting_questions",
+    "resource": "techsales.prospecting_questionnaires",
+    "parent": "prospecting_questionnaires",
+    "parent_column": "questionnaire_id",
+    "worker": false,
+    "id_column": "id"
+  },
+  {
+    "table": "prospecting_results",
+    "resource": "techsales.prospecting_search",
+    "parent": "prospecting_searches",
+    "parent_column": "search_id",
+    "worker": false,
+    "id_column": "id"
+  },
+  {
+    "table": "prospecting_campaign_variants",
+    "resource": "techsales.marketing.campaigns",
+    "parent": "prospecting_campaigns",
+    "parent_column": "campaign_id",
+    "worker": false,
+    "id_column": "id"
+  },
+  {
+    "table": "prospecting_call_attempts",
+    "resource": "techsales.marketing.campaigns",
+    "parent": "prospecting_campaigns",
+    "parent_column": "campaign_id",
+    "worker": true,
+    "id_column": "id"
+  },
+  {
+    "table": "whatsapp_campaign_recipients",
+    "resource": "techsales.marketing.campaigns",
+    "parent": "whatsapp_campaigns",
+    "parent_column": "campaign_id",
+    "worker": false,
+    "id_column": "id"
+  },
+  {
+    "table": "email_broadcast_recipients",
+    "resource": "techsales.marketing.campaigns",
+    "parent": "email_broadcasts",
+    "parent_column": "broadcast_id",
+    "worker": false,
+    "id_column": "id"
+  },
+  {
+    "table": "segment_members",
+    "resource": "techsales.segments",
+    "parent": "segments",
+    "parent_column": "segment_id",
+    "worker": false,
+    "id_column": "id"
+  },
+  {
+    "table": "sequence_enrollments",
+    "resource": "system.automation.sequences",
+    "parent": "sequences",
+    "parent_column": "sequence_id",
+    "worker": false,
+    "id_column": "id"
+  },
+  {
+    "table": "form_submissions",
+    "resource": "techsales.marketing.forms",
+    "parent": "forms",
+    "parent_column": "form_id",
+    "worker": false,
+    "id_column": "id"
+  },
+  {
+    "table": "landing_page_events",
+    "resource": "techsales.marketing.landing_pages",
+    "parent": "landing_pages",
+    "parent_column": "landing_page_id",
+    "worker": true,
+    "id_column": "id"
+  },
+  {
+    "table": "survey_template_questions",
+    "resource": "techsales.surveys",
+    "parent": "survey_templates",
+    "parent_column": "survey_template_id",
+    "worker": false,
+    "id_column": "id"
+  },
+  {
+    "table": "survey_template_versions",
+    "resource": "techsales.surveys",
+    "parent": "survey_templates",
+    "parent_column": "template_id",
+    "worker": true,
+    "id_column": "id"
+  },
+  {
+    "table": "activity_survey_responses",
+    "resource": "techsales.activities",
+    "parent": "activities",
+    "parent_column": "activity_id",
+    "worker": false,
+    "id_column": "id"
+  },
+  {
+    "table": "task_queue_items",
+    "resource": "techsales.task_queues",
+    "parent": "task_queues",
+    "parent_column": "queue_id",
+    "worker": false,
+    "id_column": "id"
+  },
+  {
+    "table": "whatsapp_messages",
+    "resource": "techsales.inbox.whatsapp",
+    "parent": "whatsapp_conversations",
+    "parent_column": "conversation_id",
+    "worker": false,
+    "id_column": "id"
+  },
+  {
+    "table": "email_messages",
+    "resource": "techsales.inbox.email",
+    "parent": "email_threads",
+    "parent_column": "thread_id",
+    "worker": false,
+    "id_column": "id"
+  },
+  {
+    "table": "email_tracking_events",
+    "resource": "techsales.inbox.email",
+    "parent": "email_messages",
+    "parent_column": "message_id",
+    "worker": true,
+    "id_column": "id"
+  },
+  {
+    "table": "live_chat_messages",
+    "resource": "techsales.inbox.chat",
+    "parent": "live_chat_sessions",
+    "parent_column": "session_id",
+    "worker": false,
+    "id_column": "id"
+  },
+  {
+    "table": "enrichment_job_items",
+    "resource": "techsales.prospecting_enrichment",
+    "parent": "enrichment_jobs",
+    "parent_column": "job_id",
+    "worker": true,
+    "id_column": "id"
+  },
+  {
+    "table": "webhook_deliveries",
+    "resource": "system.webhooks",
+    "parent": "outbound_webhooks",
+    "parent_column": "webhook_id",
+    "worker": true,
+    "id_column": "id"
+  },
+  {
+    "table": "meeting_participants",
+    "resource": "techsales.meetings",
+    "parent": "meetings",
+    "parent_column": "meeting_id",
+    "worker": false,
+    "id_column": "id"
+  },
+  {
+    "table": "meeting_summaries",
+    "resource": "techsales.meetings",
+    "parent": "meetings",
+    "parent_column": "meeting_id",
+    "worker": true,
+    "id_column": "id"
+  },
+  {
+    "table": "pipeline_stage_substatuses",
+    "resource": "system.pipelines",
+    "parent": "pipelines",
+    "parent_column": "pipeline_id",
+    "worker": false,
+    "id_column": "id"
+  },
+  {
+    "table": "sdr_agent_versions",
+    "resource": "techsales.marketing.sdr_agent",
+    "parent": "sdr_playbooks",
+    "parent_column": "playbook_id",
+    "worker": false,
+    "id_column": "id"
+  },
+  {
+    "table": "sdr_enrollments",
+    "resource": "techsales.marketing.sdr_agent",
+    "parent": "sdr_playbooks",
+    "parent_column": "playbook_id",
+    "worker": false,
+    "id_column": "id"
+  },
+  {
+    "table": "sdr_actions",
+    "resource": "techsales.marketing.sdr_agent",
+    "parent": "sdr_enrollments",
+    "parent_column": "enrollment_id",
+    "worker": true,
+    "id_column": "id"
+  },
+  {
+    "table": "sdr_turn_jobs",
+    "resource": "techsales.marketing.sdr_agent",
+    "parent": "sdr_enrollments",
+    "parent_column": "enrollment_id",
+    "worker": true,
+    "id_column": "id"
+  },
+  {
+    "table": "sdr_qualification_evidence",
+    "resource": "techsales.marketing.sdr_agent",
+    "parent": "sdr_enrollments",
+    "parent_column": "enrollment_id",
+    "worker": true,
+    "id_column": "id"
+  },
+  {
+    "table": "sdr_meetings",
+    "resource": "techsales.marketing.sdr_agent",
+    "parent": "sdr_playbooks",
+    "parent_column": "playbook_id",
+    "worker": true,
+    "id_column": "id"
+  },
+  {
+    "table": "sdr_slot_offers",
+    "resource": "techsales.marketing.sdr_agent",
+    "parent": "sdr_playbooks",
+    "parent_column": "playbook_id",
+    "worker": true,
+    "id_column": "id"
+  },
+  {
+    "table": "sdr_tool_calls",
+    "resource": "techsales.marketing.sdr_agent",
+    "parent": "sdr_playbooks",
+    "parent_column": "playbook_id",
+    "worker": true,
+    "id_column": "id"
+  },
+  {
+    "table": "workflow_runs",
+    "resource": "system.workflows",
+    "parent": "workflows",
+    "parent_column": "workflow_id",
+    "worker": true,
+    "id_column": "id"
+  },
+  {
+    "table": "workflow_approvals",
+    "resource": "system.workflows",
+    "parent": "workflows",
+    "parent_column": "workflow_id",
+    "worker": false,
+    "id_column": "id"
+  },
+  {
+    "table": "workflow_deliveries",
+    "resource": "system.workflows",
+    "parent": "workflows",
+    "parent_column": "workflow_id",
+    "worker": true,
+    "id_column": "id"
+  },
+  {
+    "table": "workflow_time_cursors",
+    "resource": "system.workflows",
+    "parent": "workflows",
+    "parent_column": "workflow_id",
+    "worker": true,
+    "id_column": "id"
+  },
+  {
+    "table": "dashboard_widgets",
+    "resource": "system.analytics.dashboards",
+    "parent": "dashboards",
+    "parent_column": "dashboard_id",
+    "worker": false,
+    "id_column": "id"
+  },
+  {
+    "table": "report_schedules",
+    "resource": "system.analytics.reports",
+    "parent": "custom_reports",
+    "parent_column": "report_id",
+    "worker": false,
+    "id_column": "id"
+  },
+  {
+    "table": "sdr_materials",
+    "resource": "techsales.marketing.sdr_agent",
+    "label": "techsales.marketing.sdr_agent",
+    "responsibles": [],
+    "shared": true,
+    "parent": null,
+    "id_column": "id",
+    "manage_config": false
+  },
+  {
+    "table": "sdr_offers",
+    "resource": "techsales.marketing.sdr_agent",
+    "label": "techsales.marketing.sdr_agent",
+    "responsibles": [],
+    "shared": true,
+    "parent": null,
+    "id_column": "id",
+    "manage_config": false
+  },
+  {
+    "table": "sdr_workspace_settings",
+    "resource": "techsales.marketing.sdr_agent",
+    "label": "techsales.marketing.sdr_agent",
+    "responsibles": [],
+    "shared": true,
+    "parent": null,
+    "id_column": "workspace_id",
+    "manage_config": true
+  },
+  {
+    "table": "voice_agent_settings",
+    "resource": "techsales.prospecting_voice",
+    "label": "techsales.prospecting_voice",
+    "responsibles": ["owner_id"],
+    "shared": true,
+    "parent": null,
+    "id_column": "workspace_id",
+    "manage_config": false
+  },
+  {
+    "table": "ml_scoring_models",
+    "resource": "techsales.prospecting_scoring",
+    "label": "techsales.prospecting_scoring",
+    "responsibles": ["owner_id"],
+    "shared": true,
+    "parent": null,
+    "id_column": "owner_id",
+    "manage_config": false
+  },
+  {
+    "table": "workflow_send_policies",
+    "resource": "system.workflows",
+    "label": "system.workflows",
+    "responsibles": [],
+    "shared": true,
+    "parent": null,
+    "id_column": "workspace_id",
+    "manage_config": true
+  },
+  {
+    "table": "sdr_agent_identities",
+    "resource": "techsales.marketing.sdr_agent",
+    "label": "techsales.marketing.sdr_agent",
+    "responsibles": [],
+    "shared": true,
+    "parent": null,
+    "id_column": "user_id",
+    "manage_config": true
+  },
+  {
+    "table": "sdr_agent_reassign_backup",
+    "resource": "techsales.marketing.sdr_agent",
+    "label": "techsales.marketing.sdr_agent",
+    "responsibles": [],
+    "shared": true,
+    "parent": null,
+    "id_column": null,
+    "manage_config": true
+  }
+]

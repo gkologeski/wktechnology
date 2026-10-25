@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -29,7 +30,7 @@ const Input = z.object({
  * vinculadas ao outro lado são preservadas (NOT NULL fica intacto).
  */
 export const propagateAssociationHistory = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.activities", "manage")])
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data, context }) => {
     const { sourceKind, sourceId, targetKind, targetId, windowDays } = data;

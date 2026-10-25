@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -10,7 +12,7 @@ import { qualificationFeasibility } from "@/lib/prospecting/sdr/readiness";
 // tocam provedores leem o registro primeiro com RLS e só então usam o admin.
 
 export const getSdrOverview = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "view")])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const { data: wsRaw } = await supabase.rpc("default_workspace_for_user", { _user: userId });
@@ -158,7 +160,7 @@ async function assertAdmin(supabase: any, userId: string, workspaceId: string) {
 }
 
 export const saveSdrSettings = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "manage")])
   .inputValidator((i) =>
     z
       .object({
@@ -194,7 +196,7 @@ export const saveSdrSettings = createServerFn({ method: "POST" })
   });
 
 export const setSdrOfferActive = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "manage")])
   .inputValidator((i) =>
     z
       .object({ workspaceId: z.string().uuid(), id: z.string().uuid(), active: z.boolean() })
@@ -212,7 +214,7 @@ export const setSdrOfferActive = createServerFn({ method: "POST" })
   });
 
 export const setSdrOfferApproval = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "manage")])
   .inputValidator((i) =>
     z
       .object({
@@ -238,7 +240,7 @@ export const setSdrOfferApproval = createServerFn({ method: "POST" })
   });
 
 export const saveSdrMaterial = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", ["create", "update"])])
   .inputValidator((i) =>
     z
       .object({
@@ -330,7 +332,7 @@ export const saveSdrMaterial = createServerFn({ method: "POST" })
 
 /** URL de envio direto ao armazenamento privado (só administradores do workspace). */
 export const createSdrMaterialUpload = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "create")])
   .inputValidator((i) =>
     z
       .object({
@@ -365,11 +367,13 @@ export const createSdrMaterialUpload = createServerFn({ method: "POST" })
 
 /** Exclui um material (e o arquivo, se houver). Histórico de envios é preservado. */
 export const deleteSdrMaterial = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "delete")])
   .inputValidator((i) =>
     z.object({ workspaceId: z.string().uuid(), id: z.string().uuid() }).parse(i),
   )
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "sdr_turn_jobs", data.id, "delete");
+
     const { supabase, userId } = context;
     await assertAdmin(supabase, userId, data.workspaceId);
     const { data: row, error: rErr } = await supabase
@@ -416,7 +420,7 @@ async function loadJobScoped(supabase: any, userId: string, jobId: string) {
 }
 
 export const approveSdrDraft = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "manage")])
   .inputValidator((i) => JobInput.extend({ text: z.string().trim().min(1).max(4000) }).parse(i))
   .handler(async ({ data, context }) => {
     const job = await loadJobScoped(context.supabase, context.userId, data.jobId);
@@ -458,7 +462,7 @@ export const approveSdrDraft = createServerFn({ method: "POST" })
  *    volta à fila com tentativas zeradas e gera resposta para a versão atual.
  */
 export const resumeSdrJob = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "manage")])
   .inputValidator((i) => JobInput.extend({ mode: z.enum(["reconcile", "requeue"]) }).parse(i))
   .handler(async ({ data, context }) => {
     const job = await loadJobScoped(context.supabase, context.userId, data.jobId);
@@ -532,7 +536,7 @@ export const resumeSdrJob = createServerFn({ method: "POST" })
 
 /** Fecha o disjuntor técnico do workspace (somente administradores). */
 export const resetSdrBreaker = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "manage")])
   .inputValidator((i) => z.object({ workspaceId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId, data.workspaceId);
@@ -552,7 +556,7 @@ export const resetSdrBreaker = createServerFn({ method: "POST" })
   });
 
 export const discardSdrDraft = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "manage")])
   .inputValidator((i) => JobInput.parse(i))
   .handler(async ({ data, context }) => {
     const job = await loadJobScoped(context.supabase, context.userId, data.jobId);
@@ -571,7 +575,7 @@ export const discardSdrDraft = createServerFn({ method: "POST" })
   });
 
 export const takeoverSdrConversation = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "manage")])
   .inputValidator((i) =>
     JobInput.extend({ reason: z.string().max(300).default("Assumido manualmente") }).parse(i),
   )
@@ -591,7 +595,7 @@ export const takeoverSdrConversation = createServerFn({ method: "POST" })
   });
 
 export const retrySdrMeetingSync = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "manage")])
   .inputValidator((i) => z.object({ enrollmentId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const { data: enr, error } = await context.supabase
@@ -621,7 +625,7 @@ export const retrySdrMeetingSync = createServerFn({ method: "POST" })
  * Bloqueia limiar impossível com os critérios atuais e agenda de outro workspace.
  */
 export const saveSdrPilotPlaybook = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", ["create", "update"])])
   .inputValidator((i) =>
     z
       .object({

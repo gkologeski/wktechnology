@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -7,7 +9,7 @@ import { cleanEmailSignatureHtml } from "@/lib/email-signature-html";
 
 // Start Gmail OAuth — returns an authorize URL the client should redirect to.
 export const startGmailOAuth = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.email_accounts", "create")])
   .inputValidator((input) =>
     z.object({ return_to: z.string().optional(), origin: z.string().url() }).parse(input ?? {}),
   )
@@ -25,7 +27,7 @@ export const startGmailOAuth = createServerFn({ method: "POST" })
 
 // List the current user's connected email accounts.
 export const listEmailAccounts = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.email_accounts", "view")])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("email_accounts")
@@ -39,13 +41,15 @@ export const listEmailAccounts = createServerFn({ method: "GET" })
 
 // Salva a assinatura (HTML) usada ao compor e-mails a partir desta conta.
 export const saveEmailSignature = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.email_accounts", "update")])
   .inputValidator((input) =>
     z
       .object({ id: z.string().uuid(), signature_html: z.string().max(20000).nullable() })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "email_accounts", data.id, "update");
+
     const { error } = await context.supabase
       .from("email_accounts")
       .update({
@@ -58,9 +62,11 @@ export const saveEmailSignature = createServerFn({ method: "POST" })
 
 // Disconnect (delete) an email account.
 export const disconnectEmailAccount = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.email_accounts", "delete")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "email_accounts", data.id, "delete");
+
     const { error } = await context.supabase.from("email_accounts").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };

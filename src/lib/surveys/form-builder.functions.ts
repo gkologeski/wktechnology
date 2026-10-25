@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Construtor de pesquisas: rascunho com controle de conflito, publicação versionada.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -8,9 +10,11 @@ import { FormSchemaZ } from "@/lib/surveys/form-schema-zod";
 import { schemaFromLegacy, validateSchema, type FormSchema } from "@/lib/surveys/form-schema";
 
 export const getFormDraft = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.surveys", "view")])
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "survey_templates", data.id, "view");
+
     const { data: t, error } = await context.supabase
       .from("survey_templates")
       .select(
@@ -52,7 +56,7 @@ export const getFormDraft = createServerFn({ method: "POST" })
   });
 
 export const createFormTemplate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.surveys", "create")])
   .inputValidator((i: unknown) => z.object({ schema: FormSchemaZ }).parse(i))
   .handler(async ({ context, data }) => {
     const ws = await getActiveWorkspaceId(context.supabase, context.userId);
@@ -79,13 +83,15 @@ export const createFormTemplate = createServerFn({ method: "POST" })
 
 /** Salva rascunho. Falha com conflito se outra pessoa salvou antes (revisão diferente). */
 export const saveFormDraft = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.surveys", "update")])
   .inputValidator((i: unknown) =>
     z
       .object({ id: z.string().uuid(), revision: z.number().int().min(0), schema: FormSchemaZ })
       .parse(i),
   )
   .handler(async ({ context, data }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "survey_templates", data.id, "update");
+
     const { data: rows, error } = await context.supabase
       .from("survey_templates")
       .update({
@@ -107,11 +113,13 @@ export const saveFormDraft = createServerFn({ method: "POST" })
 
 /** Publica: valida, grava versão imutável e sincroniza perguntas legadas. Não dispara envios. */
 export const publishForm = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.surveys", "manage")])
   .inputValidator((i: unknown) =>
     z.object({ id: z.string().uuid(), activate: z.boolean().default(true) }).parse(i),
   )
   .handler(async ({ context, data }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "survey_templates", data.id, "update");
+
     const { supabase, userId } = context;
     const ws = await getActiveWorkspaceId(supabase, userId);
     const { data: t, error } = await supabase

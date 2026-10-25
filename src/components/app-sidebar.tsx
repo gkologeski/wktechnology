@@ -1,3 +1,4 @@
+import { salesRouteResources, canViewSalesRoute } from "@/lib/access-control/sales-route-map";
 import { canSeeHrMenu } from "@/lib/access-control/hr-menu-access";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
@@ -110,14 +111,18 @@ export function AppSidebar() {
           .filter(
             (i) =>
               canSeeHrMenu(i.url, grantedPermissions, hrMenuReady) &&
-              canSee(i.need, perms, i.permissionAny),
+              (salesRouteResources(i.url)
+                ? canViewSalesRoute(i.url, grantedPermissions, hrMenuReady)
+                : canSee(i.need, perms, i.permissionAny)),
           )
           .map((i) => ({
             ...i,
             children: (i.children ?? []).filter(
               (c) =>
                 canSeeHrMenu(c.url, grantedPermissions, hrMenuReady) &&
-                canSee(c.need, perms, c.permissionAny) &&
+                (salesRouteResources(c.url)
+                  ? canViewSalesRoute(c.url, grantedPermissions, hrMenuReady)
+                  : canSee(c.need, perms, c.permissionAny)) &&
                 matches(c.title),
             ),
           }))

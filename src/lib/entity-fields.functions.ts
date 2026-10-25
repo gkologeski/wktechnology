@@ -1,3 +1,4 @@
+import { salesPipelineReferences } from "@/lib/access-control/sales-references";
 // Catálogo dinâmico de campos por entidade para o construtor de filtros.
 // Retorna lista de colunas com tipo inferido e, quando aplicável,
 // valores distintos (até 21) já escolhidos como opções.
@@ -152,8 +153,7 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
     if (data.entity === "deals" || data.entity === "leads" || data.entity === "tickets") {
       const pipelineEntity =
         data.entity === "deals" ? "deal" : data.entity === "leads" ? "lead" : "ticket";
-      const { data: pls } = await supabase
-        .from("pipelines")
+      const { data: pls } = await salesPipelineReferences(supabase)
         .select("name, stages, entity")
         .eq("entity", pipelineEntity);
       const seen = new Set<string>();

@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // ClickUp — POST /api/v2/list/{list_id}/task
 // Personal token: header Authorization: pk_xxx (sem "Bearer")
@@ -27,28 +28,28 @@ async function cuFetch(path: string, init?: RequestInit) {
 }
 
 export const listClickUpTeams = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.integration_sync", "view")])
   .handler(async () => {
     const r = await cuFetch("/team");
     return r as { teams: { id: string; name: string }[] };
   });
 
 export const listClickUpSpaces = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.integration_sync", "view")])
   .inputValidator((i: unknown) => z.object({ team_id: z.string() }).parse(i))
   .handler(async ({ data }) => {
     return await cuFetch(`/team/${encodeURIComponent(data.team_id)}/space`);
   });
 
 export const listClickUpLists = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.integration_sync", "view")])
   .inputValidator((i: unknown) => z.object({ space_id: z.string() }).parse(i))
   .handler(async ({ data }) => {
     return await cuFetch(`/space/${encodeURIComponent(data.space_id)}/list`);
   });
 
 export const createClickUpTasksForDeals = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.integration_sync", "create")])
   .inputValidator((i: unknown) =>
     z
       .object({

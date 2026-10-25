@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -35,7 +37,7 @@ const ScriptInput = z.object({
 });
 
 export const listScripts = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_scripts", "view")])
   .handler(async ({ context }): Promise<ProspectingScript[]> => {
     const sb = await sbAdmin();
     const ws = await resolveActiveWorkspace(context.userId);
@@ -49,7 +51,7 @@ export const listScripts = createServerFn({ method: "POST" })
   });
 
 export const upsertScript = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_scripts", ["create", "update"])])
   .inputValidator((i) => ScriptInput.parse(i))
   .handler(async ({ data, context }) => {
     const sb = await sbAdmin();
@@ -84,9 +86,12 @@ export const upsertScript = createServerFn({ method: "POST" })
   });
 
 export const deleteScript = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_scripts", "delete")])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    if (data.id)
+      await assertSalesRecord(context.supabase, "prospecting_scripts", data.id, "delete");
+
     const sb = await sbAdmin();
     const ws = await resolveActiveWorkspace(context.userId);
     const { error } = await sb

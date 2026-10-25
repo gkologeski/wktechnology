@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // RPC do painel de campanhas. Arquivo fino: valida e delega ao servidor.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -15,7 +16,7 @@ const Input = z.object({
 });
 
 export const getCampaignFunnel = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "view")])
   .inputValidator((d) => Input.parse(d))
   .handler(async ({ data, context }): Promise<CampaignFunnelData> => {
     const workspaceId = await resolveActiveWorkspace(context.userId);

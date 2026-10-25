@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // RPC do painel inicial do TechSales. Arquivo fino: apenas valida a entrada
 // e delega a agregação para `sales-dashboard.server.ts`.
 import { createServerFn } from "@tanstack/react-start";
@@ -41,7 +42,7 @@ const InputSchema = z
   );
 
 export const getSalesDashboard = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.dashboard", "view")])
   .inputValidator((d) => InputSchema.parse(d))
   .handler(async ({ data, context }): Promise<SalesDashboardData> => {
     const workspaceId = await resolveActiveWorkspace(context.userId);

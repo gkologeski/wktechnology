@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Perguntas dos modelos de pesquisa (formulário padronizado).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -27,7 +28,7 @@ const QuestionSchema = z.object({
 });
 
 export const listSurveyTemplateQuestions = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.surveys", "view")])
   .inputValidator((i: unknown) => z.object({ survey_template_id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
     const { data: rows, error } = await context.supabase
@@ -41,7 +42,7 @@ export const listSurveyTemplateQuestions = createServerFn({ method: "POST" })
 
 /** Substitui o conjunto de perguntas do modelo, preservando ids existentes. */
 export const saveSurveyTemplateQuestions = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.surveys", "manage")])
   .inputValidator((i: unknown) =>
     z
       .object({

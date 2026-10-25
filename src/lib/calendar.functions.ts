@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -33,7 +35,7 @@ function describeGoogleCalendarError(status: number, text: string) {
 }
 
 export const testCalendarConnection = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.calendars", "manage")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(
     async ({
@@ -186,7 +188,7 @@ export const testCalendarConnection = createServerFn({ method: "POST" })
   );
 
 export const startCalendarOAuth = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.calendars", "create")])
   .inputValidator((input) =>
     z
       .object({
@@ -213,7 +215,7 @@ export const startCalendarOAuth = createServerFn({ method: "POST" })
   });
 
 export const listCalendarAccounts = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.calendars", "view")])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
@@ -229,9 +231,11 @@ export const listCalendarAccounts = createServerFn({ method: "GET" })
   });
 
 export const setCalendarMeetEnabled = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.calendars", "update")])
   .inputValidator((input) => z.object({ id: z.string().uuid(), enabled: z.boolean() }).parse(input))
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "calendar_accounts", data.id, "update");
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
     const { error } = await supabaseAdmin
@@ -244,7 +248,7 @@ export const setCalendarMeetEnabled = createServerFn({ method: "POST" })
   });
 
 export const disconnectCalendarAccount = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.calendars", "delete")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -269,9 +273,11 @@ export const disconnectCalendarAccount = createServerFn({ method: "POST" })
   });
 
 export const setCalendarSyncEnabled = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.calendars", "update")])
   .inputValidator((input) => z.object({ id: z.string().uuid(), enabled: z.boolean() }).parse(input))
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "calendar_accounts", data.id, "update");
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
     const { error } = await supabaseAdmin
@@ -284,9 +290,11 @@ export const setCalendarSyncEnabled = createServerFn({ method: "POST" })
   });
 
 export const syncCalendarNow = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.calendars", "manage")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "calendar_accounts", data.id, "manage");
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
     const { data: row, error } = await supabaseAdmin
@@ -301,7 +309,7 @@ export const syncCalendarNow = createServerFn({ method: "POST" })
   });
 
 export const syncAccountRecordings = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.calendars", "manage")])
   .inputValidator((input) => z.object({ account_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -321,7 +329,7 @@ export const syncAccountRecordings = createServerFn({ method: "POST" })
   });
 
 export const pushActivityToCalendar = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.calendars", "manage")])
   .inputValidator((input) =>
     z
       .object({
@@ -351,7 +359,7 @@ export const pushActivityToCalendar = createServerFn({ method: "POST" })
   });
 
 export const listCalendarEvents = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.calendars", "view")])
   .inputValidator((input) =>
     z
       .object({

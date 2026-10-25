@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { emailSchema } from "@/lib/email-schema";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // Server fns para campanhas de email (broadcast).
@@ -24,7 +26,7 @@ const CreateInput = z.object({
 });
 
 export const listEmailBroadcasts = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "view")])
   .handler(async ({ context }) => {
     const { data, error } = await anyOf(context.supabase)
       .from("email_broadcasts")
@@ -38,7 +40,7 @@ export const listEmailBroadcasts = createServerFn({ method: "GET" })
   });
 
 export const getEmailBroadcast = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "view")])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const sb = anyOf(context.supabase);
@@ -58,7 +60,7 @@ export const getEmailBroadcast = createServerFn({ method: "POST" })
   });
 
 export const createEmailBroadcast = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "create")])
   .inputValidator((i) => CreateInput.parse(i))
   .handler(async ({ data, context }) => {
     const sb = anyOf(context.supabase);
@@ -87,11 +89,13 @@ export const createEmailBroadcast = createServerFn({ method: "POST" })
   });
 
 export const updateEmailBroadcast = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "update")])
   .inputValidator((i) =>
     z.object({ id: z.string().uuid() }).extend(CreateInput.partial().shape).parse(i),
   )
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "email_broadcasts", data.id, "update");
+
     const { id, ...patch } = data;
     const { error } = await anyOf(context.supabase)
       .from("email_broadcasts")
@@ -102,9 +106,11 @@ export const updateEmailBroadcast = createServerFn({ method: "POST" })
   });
 
 export const deleteEmailBroadcast = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "delete")])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "email_broadcasts", data.id, "delete");
+
     const { error } = await anyOf(context.supabase)
       .from("email_broadcasts")
       .delete()
@@ -114,11 +120,13 @@ export const deleteEmailBroadcast = createServerFn({ method: "POST" })
   });
 
 export const scheduleEmailBroadcast = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "manage")])
   .inputValidator((i) =>
     z.object({ id: z.string().uuid(), scheduled_at: z.string().datetime().optional() }).parse(i),
   )
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "email_broadcasts", data.id, "manage");
+
     const { resolveBroadcastRecipients } = await import("@/lib/email-broadcast/engine.server");
     const res = await resolveBroadcastRecipients(data.id);
     const { error } = await anyOf(context.supabase)
@@ -136,7 +144,7 @@ export const scheduleEmailBroadcast = createServerFn({ method: "POST" })
   });
 
 export const setEmailBroadcastStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "manage")])
   .inputValidator((i) =>
     z
       .object({
@@ -146,6 +154,8 @@ export const setEmailBroadcastStatus = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "email_broadcasts", data.id, "manage");
+
     const patch: Record<string, unknown> = { status: data.status };
     if (data.status === "canceled") patch.finished_at = new Date().toISOString();
     const { error } = await anyOf(context.supabase)
@@ -157,7 +167,7 @@ export const setEmailBroadcastStatus = createServerFn({ method: "POST" })
   });
 
 export const sendTestEmailBroadcast = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "manage")])
   .inputValidator((i) =>
     z
       .object({
@@ -200,7 +210,7 @@ export const sendTestEmailBroadcast = createServerFn({ method: "POST" })
   });
 
 export const listSegmentsForBroadcast = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "view")])
   .handler(async ({ context }) => {
     const { data, error } = await anyOf(context.supabase)
       .from("segments")

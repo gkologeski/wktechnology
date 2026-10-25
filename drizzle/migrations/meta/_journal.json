@@ -1555,6 +1555,20 @@
       "when": 1792873273601,
       "tag": "0221_order3_reconciliation_admin_context",
       "breakpoints": true
+    },
+    {
+      "idx": 222,
+      "version": "7",
+      "when": 1792873273602,
+      "tag": "0222_order4_sales_prepare",
+      "breakpoints": true
+    },
+    {
+      "idx": 223,
+      "version": "7",
+      "when": 1792873273603,
+      "tag": "0223_order4_sales_activate",
+      "breakpoints": true
     }
   ]
 }

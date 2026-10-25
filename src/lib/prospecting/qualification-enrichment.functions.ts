@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 /**
  * Enriquecimento Apollo.io para a tela de qualificação.
  *
@@ -25,7 +26,7 @@ export type {
 const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 dias
 
 export const enrichLeadForQualification = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_enrichment", "manage")])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -304,7 +305,7 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
  * enriquecimento completo (empresa, contato, telefone) roda depois de salvar.
  */
 export const previewLinkedinEnrichment = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_enrichment", "view")])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -350,7 +351,7 @@ export const previewLinkedinEnrichment = createServerFn({ method: "POST" })
 const ValuesSchema = z.record(z.string(), z.unknown()).optional();
 
 export const applyQualificationEnrichment = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_enrichment", "manage")])
   .inputValidator((input: unknown) =>
     z
       .object({

@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // BrasilAPI CNPJ enrichment for companies.
 // Endpoint: GET https://brasilapi.com.br/api/cnpj/v1/{cnpj}
@@ -137,7 +138,7 @@ async function lookup(cnpj: string): Promise<NormalizedCnpj | null> {
 
 // Enrich a single company by its CNPJ. Only fills empty fields (non-destructive).
 export const enrichCompanyByCNPJ = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_enrichment", "manage")])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -181,7 +182,7 @@ export const enrichCompanyByCNPJ = createServerFn({ method: "POST" })
 
 // Bulk enrichment. Enriches by explicit IDs or all companies with CNPJ and no enrichment yet.
 export const enrichCompaniesByCNPJ = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_enrichment", "manage")])
   .inputValidator((i: unknown) =>
     z
       .object({

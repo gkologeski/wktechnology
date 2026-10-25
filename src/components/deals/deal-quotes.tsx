@@ -1,4 +1,5 @@
-import { getPublicAppUrl } from "@/lib/app-url";
+import { useSalesSharing } from "@/lib/access-control/use-sales-sharing";
+import { SalesAction, SalesCapabilityScope } from "@/components/sales-access";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -54,6 +55,7 @@ type QuoteListItem = Awaited<ReturnType<typeof listDealQuotes>>[number];
 export function DealQuotes({ dealId }: { dealId: string }) {
   const openActivity = useActivityWindows();
   const qc = useQueryClient();
+  const sharing = useSalesSharing("quotes");
   const list = useServerFn(listDealQuotes);
   const update = useServerFn(updateQuote);
   const del = useServerFn(deleteQuote);
@@ -127,13 +129,6 @@ export function DealQuotes({ dealId }: { dealId: string }) {
   });
   const hasLineItems = lineItems.length > 0;
 
-  function publicUrl(token: string) {
-    return `${getPublicAppUrl()}/quote/${token}`;
-  }
-  async function copyLink(token: string) {
-    await navigator.clipboard.writeText(publicUrl(token));
-    toast.success("Link copiado.");
-  }
   async function markSent(id: string) {
     await update({ data: { id, patch: { status: "sent", sent_at: new Date().toISOString() } } });
     qc.invalidateQueries({ queryKey: ["deal-quotes", dealId] });
@@ -176,15 +171,17 @@ export function DealQuotes({ dealId }: { dealId: string }) {
           <Tooltip>
             <TooltipTrigger asChild>
               <span tabIndex={hasLineItems ? -1 : 0}>
-                <Button
-                  size="sm"
-                  variant="link"
-                  className="h-auto p-0"
-                  onClick={openNew}
-                  disabled={!hasLineItems}
-                >
-                  <Plus className="h-3.5 w-3.5 mr-0.5" /> Adicionar
-                </Button>
+                <SalesAction table="quotes" action="create">
+                  <Button
+                    size="sm"
+                    variant="link"
+                    className="h-auto p-0"
+                    onClick={openNew}
+                    disabled={!hasLineItems}
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-0.5" /> Adicionar
+                  </Button>
+                </SalesAction>
               </span>
             </TooltipTrigger>
             {!hasLineItems && (
@@ -199,155 +196,201 @@ export function DealQuotes({ dealId }: { dealId: string }) {
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando…</p>
       ) : quotes.length === 0 ? null : (
-        <div className="space-y-2">
-          {quotes.map((q) => {
-            const status = (q.status as QuoteStatus) ?? "draft";
-            const expiredOrExpiring =
-              status === "expired"
-                ? `Expirou: ${q.valid_until ? formatDateTime(q.valid_until) : "—"}`
-                : q.valid_until
-                  ? `Validade: ${formatDateTime(q.valid_until)}`
-                  : null;
-            return (
-              <div key={q.id} className="rounded-md border p-3 group">
-                <div className="flex items-start justify-between gap-2">
-                  <button
-                    type="button"
-                    onClick={() => window.open(publicUrl(q.public_token), "_blank")}
-                    className="min-w-0 text-left flex items-center gap-1 text-primary hover:underline"
-                  >
-                    <span className="font-semibold truncate">{q.title || q.number}</span>
-                    <ExternalLink className="h-3.5 w-3.5 shrink-0" />
-                  </button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7 shrink-0"
-                        aria-label="Ações"
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                      <DropdownMenuItem
-                        onSelect={() => window.open(publicUrl(q.public_token), "_blank")}
-                      >
-                        Detalhes
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onSelect={() => copyLink(q.public_token)}>
-                        Copiar link
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onSelect={() =>
-                          window.open(
-                            `${getPublicAppUrl()}/api/public/quotes/${q.public_token}/pdf`,
-                            "_blank",
-                          )
-                        }
-                      >
-                        Baixar PDF
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      {(status === "draft" || status === "published") && (
-                        <DropdownMenuItem onSelect={() => openEdit(q)}>Editar</DropdownMenuItem>
-                      )}
-                      {(status === "draft" || status === "published") && contactHasEmail && (
-                        <DropdownMenuItem
-                          onSelect={() => {
-                            if (!primaryContact?.email) return;
-                            const name = [primaryContact.first_name, primaryContact.last_name]
-                              .filter(Boolean)
-                              .join(" ")
-                              .trim();
-                            const title = q.title || deal?.name || "Cotação";
-                            const link = publicUrl(q.public_token);
-                            openActivity?.({
-                              action: ACTIONS_BY_KEY["create:email"],
-                              to: primaryContact.email,
-                              subject: `Cotação ${q.number ? `${q.number} · ` : ""}${title}`,
-                              body: `<p>${name ? `Olá ${name.split(" ")[0]},` : "Olá,"}</p><p>Segue nossa cotação <strong>${title}</strong>${q.number ? ` (${q.number})` : ""}.</p><p>Acesse pelo link: <a href="${link}">${link}</a></p><p>Qualquer dúvida, estou à disposição.</p>`,
-                              contactId: primaryContact.id,
-                              dealId,
-                              companyId: deal?.company_id ?? undefined,
-                              contactName: name || undefined,
-                              onSent: async () => {
-                                try {
-                                  await update({
-                                    data: {
-                                      id: q.id,
-                                      patch: { status: "sent", sent_at: new Date().toISOString() },
-                                    },
-                                  });
-                                  void qc.invalidateQueries({ queryKey: ["deal-quotes", dealId] });
-                                } catch (e) {
-                                  toast.error((e as Error).message);
-                                }
-                              },
-                            });
-                          }}
+        <SalesCapabilityScope table="quotes" ids={quotes.map((q) => q.id)}>
+          <div className="space-y-2">
+            {quotes.map((q) => {
+              const status = (q.status as QuoteStatus) ?? "draft";
+              const expiredOrExpiring =
+                status === "expired"
+                  ? `Expirou: ${q.valid_until ? formatDateTime(q.valid_until) : "—"}`
+                  : q.valid_until
+                    ? `Validade: ${formatDateTime(q.valid_until)}`
+                    : null;
+              return (
+                <div key={q.id} className="rounded-md border p-3 group">
+                  <div className="flex items-start justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void sharing.open(q.id)}
+                      className="min-w-0 text-left flex items-center gap-1 text-primary hover:underline"
+                    >
+                      <span className="font-semibold truncate">{q.title || q.number}</span>
+                      <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                    </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 shrink-0"
+                          aria-label="Ações"
                         >
-                          Enviar por e-mail
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-56">
+                        <SalesAction
+                          table="quotes"
+                          action="manage"
+                          id={q.id}
+                          resource="techsales.quote_share"
+                        >
+                          <DropdownMenuItem onSelect={() => void sharing.open(q.id)}>
+                            Detalhes
+                          </DropdownMenuItem>
+                        </SalesAction>
+                        <SalesAction
+                          table="quotes"
+                          action="manage"
+                          id={q.id}
+                          resource="techsales.quote_share"
+                        >
+                          <DropdownMenuItem onSelect={() => void sharing.copy(q.id)}>
+                            Copiar link
+                          </DropdownMenuItem>
+                        </SalesAction>
+                        <SalesAction
+                          table="quotes"
+                          action="manage"
+                          id={q.id}
+                          resource="techsales.quote_share"
+                        >
+                          <DropdownMenuItem onSelect={() => void sharing.open(q.id, true)}>
+                            Baixar PDF
+                          </DropdownMenuItem>
+                        </SalesAction>
+                        <DropdownMenuSeparator />
+                        {(status === "draft" || status === "published") && (
+                          <SalesAction table="quotes" action="update" id={q.id}>
+                            <DropdownMenuItem onSelect={() => openEdit(q)}>Editar</DropdownMenuItem>
+                          </SalesAction>
+                        )}
+                        {(status === "draft" || status === "published") && contactHasEmail && (
+                          <DropdownMenuItem
+                            onSelect={async () => {
+                              if (!primaryContact?.email) return;
+                              const name = [primaryContact.first_name, primaryContact.last_name]
+                                .filter(Boolean)
+                                .join(" ")
+                                .trim();
+                              const title = q.title || deal?.name || "Cotação";
+                              const link = await sharing.url(q.id);
+                              openActivity?.({
+                                action: ACTIONS_BY_KEY["create:email"],
+                                to: primaryContact.email,
+                                subject: `Cotação ${q.number ? `${q.number} · ` : ""}${title}`,
+                                body: `<p>${name ? `Olá ${name.split(" ")[0]},` : "Olá,"}</p><p>Segue nossa cotação <strong>${title}</strong>${q.number ? ` (${q.number})` : ""}.</p><p>Acesse pelo link: <a href="${link}">${link}</a></p><p>Qualquer dúvida, estou à disposição.</p>`,
+                                contactId: primaryContact.id,
+                                dealId,
+                                companyId: deal?.company_id ?? undefined,
+                                contactName: name || undefined,
+                                onSent: async () => {
+                                  try {
+                                    await update({
+                                      data: {
+                                        id: q.id,
+                                        patch: {
+                                          status: "sent",
+                                          sent_at: new Date().toISOString(),
+                                        },
+                                      },
+                                    });
+                                    void qc.invalidateQueries({
+                                      queryKey: ["deal-quotes", dealId],
+                                    });
+                                  } catch (e) {
+                                    toast.error((e as Error).message);
+                                  }
+                                },
+                              });
+                            }}
+                          >
+                            Enviar por e-mail
+                          </DropdownMenuItem>
+                        )}
+                        {(status === "draft" || status === "published") && (
+                          <SalesAction
+                            table="quotes"
+                            action="manage"
+                            id={q.id}
+                            resource="techsales.quote_send"
+                          >
+                            <DropdownMenuItem onSelect={() => markSent(q.id)}>
+                              Marcar como enviada
+                            </DropdownMenuItem>
+                          </SalesAction>
+                        )}
+                        {status !== "accepted" && (
+                          <SalesAction table="quotes" action="approve" id={q.id}>
+                            <DropdownMenuItem onSelect={() => markAccepted(q.id)}>
+                              Marcar como aceita
+                            </DropdownMenuItem>
+                          </SalesAction>
+                        )}
+                        {!q.paid_at && (
+                          <SalesAction
+                            table="quotes"
+                            action="manage"
+                            id={q.id}
+                            resource="techsales.quote_send"
+                          >
+                            <DropdownMenuItem onSelect={() => genPayLink(q.id)}>
+                              {q.payment_link_url
+                                ? "Regerar link de pagamento"
+                                : "Gerar link de pagamento"}
+                            </DropdownMenuItem>
+                          </SalesAction>
+                        )}
+                        <DropdownMenuItem onSelect={() => genProposal(q.id)}>
+                          Gerar proposta
                         </DropdownMenuItem>
-                      )}
-                      {(status === "draft" || status === "published") && (
-                        <DropdownMenuItem onSelect={() => markSent(q.id)}>
-                          Marcar como enviada
+                        <DropdownMenuItem
+                          onSelect={() => setContractWizard({ quoteId: q.id, dealId })}
+                        >
+                          Gerar contrato
                         </DropdownMenuItem>
-                      )}
-                      {status !== "accepted" && (
-                        <DropdownMenuItem onSelect={() => markAccepted(q.id)}>
-                          Marcar como aceita
-                        </DropdownMenuItem>
-                      )}
-                      {!q.paid_at && (
-                        <DropdownMenuItem onSelect={() => genPayLink(q.id)}>
-                          {q.payment_link_url
-                            ? "Regerar link de pagamento"
-                            : "Gerar link de pagamento"}
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem onSelect={() => genProposal(q.id)}>
-                        Gerar proposta
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onSelect={() => setContractWizard({ quoteId: q.id, dealId })}
-                      >
-                        Gerar contrato
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onSelect={() => regenerate(q.id)}>
-                        Gerar novo link público
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onSelect={() => remove(q.id)}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        Excluir
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-                <div className="mt-2 space-y-1 text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className={`h-2 w-2 rounded-full ${STATUS_DOT[status] ?? ""}`} />
-                    <span>{STATUS_LABEL[status] ?? status}</span>
+                        <SalesAction
+                          table="quotes"
+                          action="manage"
+                          id={q.id}
+                          resource="techsales.quote_share"
+                        >
+                          <DropdownMenuItem onSelect={() => regenerate(q.id)}>
+                            Gerar novo link público
+                          </DropdownMenuItem>
+                        </SalesAction>
+                        <DropdownMenuSeparator />
+                        <SalesAction table="quotes" action="delete" id={q.id}>
+                          <DropdownMenuItem
+                            onSelect={() => remove(q.id)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            Excluir
+                          </DropdownMenuItem>
+                        </SalesAction>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
-                  {expiredOrExpiring && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <span className="h-2 w-2 rounded-full bg-muted-foreground/40" />
-                      <span className="text-xs">{expiredOrExpiring}</span>
+                  <div className="mt-2 space-y-1 text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className={`h-2 w-2 rounded-full ${STATUS_DOT[status] ?? ""}`} />
+                      <span>{STATUS_LABEL[status] ?? status}</span>
                     </div>
-                  )}
-                  <div className="text-xs text-muted-foreground tabular-nums pt-0.5">
-                    {q.number} · {formatCurrency(Number(q.total), q.currency)}
+                    {expiredOrExpiring && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <span className="h-2 w-2 rounded-full bg-muted-foreground/40" />
+                        <span className="text-xs">{expiredOrExpiring}</span>
+                      </div>
+                    )}
+                    <div className="text-xs text-muted-foreground tabular-nums pt-0.5">
+                      {q.number} · {formatCurrency(Number(q.total), q.currency)}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        </SalesCapabilityScope>
       )}
 
       <ContractWizard source={contractWizard} onOpenChange={(o) => !o && setContractWizard(null)} />

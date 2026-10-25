@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Painel de conexão do WhatsApp (canal único via conexão WhatsApp Business do Lovable).
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -15,7 +16,7 @@ export type WhatsAppConnectionState = {
 };
 
 export const getWhatsAppConnection = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.whatsapp", "view")])
   .handler(async (): Promise<WhatsAppConnectionState> => {
     const { gatewayConfigured, getConnectedPhone } =
       await import("@/lib/whatsapp/gateway-channel.server");
@@ -48,7 +49,7 @@ export const getWhatsAppConnection = createServerFn({ method: "GET" })
   });
 
 export const testWhatsAppConnection = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.whatsapp", "manage")])
   .handler(async (): Promise<WhatsAppConnectionState> => {
     const { gatewayConfigured, getConnectedPhone } =
       await import("@/lib/whatsapp/gateway-channel.server");

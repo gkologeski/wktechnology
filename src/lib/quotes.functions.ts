@@ -1,14 +1,11 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { workspaceOfSource } from "@/lib/workspace-source.server";
 import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { randomBytes } from "crypto";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
-
-function token() {
-  return randomBytes(24).toString("hex");
-}
 
 type LineForTotals = {
   quantity: number | string | null;
@@ -90,7 +87,7 @@ function recompute(items: LineForTotals[]) {
 // ============= AUTH =============
 
 export const listQuotes = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.quotes", "view")])
   .handler(async ({ context }) => {
     const { supabase } = context;
     const { data, error } = await supabase
@@ -103,7 +100,7 @@ export const listQuotes = createServerFn({ method: "GET" })
   });
 
 export const listDealQuotes = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.quotes", "view")])
   .inputValidator((input) => z.object({ dealId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -117,7 +114,7 @@ export const listDealQuotes = createServerFn({ method: "POST" })
   });
 
 export const createQuoteFromDeal = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.quotes", "create")])
   .inputValidator((input) =>
     z
       .object({
@@ -176,7 +173,6 @@ export const createQuoteFromDeal = createServerFn({ method: "POST" })
         number: num,
         title: data.title ?? deal.name,
         currency: deal.currency ?? "BRL",
-        public_token: token(),
         valid_until: data.validUntil || null,
         notes: data.notes || null,
         terms: data.terms || null,
@@ -215,7 +211,7 @@ export const createQuoteFromDeal = createServerFn({ method: "POST" })
   });
 
 export const updateQuote = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.quotes", "update")])
   .inputValidator((input) =>
     z
       .object({
@@ -239,6 +235,8 @@ export const updateQuote = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "quotes", data.id, "update");
+
     const { supabase } = context;
     const { error } = await supabase.from("quotes").update(data.patch).eq("id", data.id);
     if (error) throw error;
@@ -246,7 +244,7 @@ export const updateQuote = createServerFn({ method: "POST" })
   });
 
 export const resyncQuoteLineItems = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.quotes", "manage")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -304,7 +302,7 @@ export const resyncQuoteLineItems = createServerFn({ method: "POST" })
   });
 
 export const deleteQuote = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.quotes", "delete")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -313,14 +311,17 @@ export const deleteQuote = createServerFn({ method: "POST" })
   });
 
 export const regenerateQuoteToken = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.quote_share", "manage")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
-    const t = token();
-    const { error } = await supabase.from("quotes").update({ public_token: t }).eq("id", data.id);
-    if (error) throw error;
-    return { token: t };
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    const token = await workRpc<string>(context.supabase, "sales_public_token", {
+      p_table: "quotes",
+      p_id: data.id,
+      p_rotate: true,
+      p_purpose: "share",
+    });
+    return { token };
   });
 
 // ============= STRIPE PAYMENT LINK =============
@@ -330,7 +331,7 @@ function siteOrigin() {
 }
 
 export const createQuotePaymentLink = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.quote_send", "manage")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -340,6 +341,14 @@ export const createQuotePaymentLink = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .maybeSingle();
     if (error || !quote) throw new Error("Cotação não encontrada");
+    await assertSalesRecord(supabase, "quotes", quote.id, "update");
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    const publicToken = await workRpc<string>(supabase, "sales_public_token", {
+      p_table: "quotes",
+      p_id: quote.id,
+      p_rotate: false,
+      p_purpose: "send",
+    });
     if (quote.paid_at) throw new Error("Esta cotação já foi paga.");
     const total = Number(quote.total);
     if (!total || total <= 0) throw new Error("Cotação sem valor para pagamento.");
@@ -353,11 +362,11 @@ export const createQuotePaymentLink = createServerFn({ method: "POST" })
 
     const params = new URLSearchParams();
     params.set("mode", "payment");
-    params.set("success_url", `${origin}/quote/${quote.public_token}?paid=1`);
-    params.set("cancel_url", `${origin}/quote/${quote.public_token}`);
+    params.set("success_url", `${origin}/quote/${publicToken}?paid=1`);
+    params.set("cancel_url", `${origin}/quote/${publicToken}`);
     params.set("client_reference_id", quote.id);
     params.set("metadata[quote_id]", quote.id);
-    params.set("metadata[quote_token]", quote.public_token);
+    params.set("metadata[quote_token]", publicToken);
     params.set("line_items[0][quantity]", "1");
     params.set("line_items[0][price_data][currency]", currency);
     params.set("line_items[0][price_data][unit_amount]", String(cents));
@@ -390,7 +399,8 @@ export const createQuotePaymentLink = createServerFn({ method: "POST" })
     if (quote.status === "draft") {
       patch.status = "published";
     }
-    await supabase.from("quotes").update(patch).eq("id", quote.id);
+    const { error: saveError } = await supabase.from("quotes").update(patch).eq("id", quote.id);
+    if (saveError) throw new Error(saveError.message);
 
     return { url: session.url as string, session_id: session.id as string };
   });
@@ -398,15 +408,22 @@ export const createQuotePaymentLink = createServerFn({ method: "POST" })
 // ============= PUBLIC (via token) =============
 
 export const getQuoteByToken = createServerFn({ method: "POST" })
-  .inputValidator((input) => z.object({ token: z.string().min(1).max(128) }).parse(input))
+  .inputValidator((input) => z.object({ token: z.string().min(16).max(128) }).parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: quote, error } = await supabaseAdmin
       .from("quotes")
-      .select("*")
+      .select(
+        "id,workspace_id,owner_id,company_id,contact_id,template_id,number,title,status,valid_until,currency,subtotal,discount_total,tax_total,total,notes,terms,view_count,created_at,accepted_at,declined_at,signature_name,payment_link_url,paid_at",
+      )
       .eq("public_token", data.token)
       .maybeSingle();
-    if (error || !quote) throw new Error("Cotação não encontrada");
+    if (
+      error ||
+      !quote ||
+      !["published", "sent", "accepted", "declined", "expired"].includes(quote.status)
+    )
+      throw new Error("Cotação indisponível.");
 
     await supabaseAdmin
       .from("quotes")
@@ -417,6 +434,7 @@ export const getQuoteByToken = createServerFn({ method: "POST" })
       .from("quote_line_items")
       .select("*, service:service_catalog(name), preset:contracting_presets(name)")
       .eq("quote_id", quote.id)
+      .eq("workspace_id", quote.workspace_id)
       .order("position");
 
     let company = null;
@@ -425,6 +443,7 @@ export const getQuoteByToken = createServerFn({ method: "POST" })
         .from("companies")
         .select("id, name, website")
         .eq("id", quote.company_id)
+        .eq("workspace_id", quote.workspace_id)
         .maybeSingle();
       company = r.data;
     }
@@ -434,6 +453,7 @@ export const getQuoteByToken = createServerFn({ method: "POST" })
         .from("contacts")
         .select("id, first_name, last_name, email")
         .eq("id", quote.contact_id)
+        .eq("workspace_id", quote.workspace_id)
         .maybeSingle();
       contact = r.data;
     }
@@ -452,6 +472,7 @@ export const getQuoteByToken = createServerFn({ method: "POST" })
         .from("quote_templates")
         .select("id, name, html")
         .eq("id", quote.template_id)
+        .eq("workspace_id", quote.workspace_id)
         .maybeSingle();
       template = (r.data ?? null) as typeof template;
     }
@@ -474,7 +495,7 @@ export const respondToQuote = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
       .object({
-        token: z.string().min(1).max(128),
+        token: z.string().min(16).max(128),
         action: z.enum(["accept", "decline"]),
         signature: z.string().max(255).optional(),
       })
@@ -482,21 +503,11 @@ export const respondToQuote = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: quote, error } = await supabaseAdmin
-      .from("quotes")
-      .select("id, status")
-      .eq("public_token", data.token)
-      .maybeSingle();
-    if (error || !quote) throw new Error("Cotação não encontrada");
-    if (quote.status === "accepted" || quote.status === "declined") {
-      throw new Error("Esta cotação já foi respondida.");
-    }
-    const now = new Date().toISOString();
-    const patch =
-      data.action === "accept"
-        ? { status: "accepted" as const, accepted_at: now, signature_name: data.signature || null }
-        : { status: "declined" as const, declined_at: now };
-    const { error: uErr } = await supabaseAdmin.from("quotes").update(patch).eq("id", quote.id);
-    if (uErr) throw uErr;
-    return { ok: true };
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    return workRpc<{ ok: boolean }>(supabaseAdmin, "sales_public_decision", {
+      p_kind: "quotes",
+      p_token: data.token,
+      p_action: data.action,
+      p_signature: data.signature ?? null,
+    });
   });

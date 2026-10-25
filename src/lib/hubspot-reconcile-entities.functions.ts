@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Reconcilia entidades (contacts/companies/deals/leads) entre HubSpot e o sistema.
 // Lista IDs no HubSpot (mais recentes primeiro), descobre quais não existem
 // localmente e importa os faltantes. Não toca em registros já presentes.
@@ -391,7 +392,7 @@ function buildTicketPayload(ownerId: string, rec: HsRec): Record<string, unknown
 }
 
 export const reconcileHubspotEntities = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.hubspot_sync", "manage")])
   .inputValidator(
     z.object({
       entity: z.enum(["contact", "company", "deal", "lead", "ticket"]),

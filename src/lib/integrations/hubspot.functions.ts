@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -31,7 +32,7 @@ import {
 
 import { countryFromRecordField, sourcePhone } from "@/lib/phone/phone-boundary";
 export const countHubspotObjects = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.hubspot_sync", "view")])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -101,7 +102,7 @@ export const countHubspotObjects = createServerFn({ method: "POST" })
 
 // Mantido para compat
 export const previewHubspotCounts = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.hubspot_sync", "view")])
   .handler(async () => {
     const [companies, contacts, deals] = await Promise.all([
       searchTotal("companies"),
@@ -114,7 +115,7 @@ export const previewHubspotCounts = createServerFn({ method: "POST" })
 // ─── Enqueue-only: cria job + items e retorna. A execução roda em ticks
 // (UI/cron chamam tickHubspotImportJob), evitando o timeout de ~30s do Worker.
 export const startHubspotImport = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.hubspot_sync", "manage")])
   .inputValidator((input: unknown) => ScopeSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { planStepsFromScope, ensureJobItems } = await import("./hubspot-tick.server");
@@ -159,7 +160,7 @@ export const startHubspotImport = createServerFn({ method: "POST" })
 
 // Limpa tabelas locais (apenas registros do usuário) antes de importar.
 export const clearHubspotLocalTables = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.hubspot_sync", "manage")])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -197,7 +198,7 @@ export const clearHubspotLocalTables = createServerFn({ method: "POST" })
 
 // Executa UM step do job HubSpot. Chamado pela UI (polling) e pelo cron.
 export const tickHubspotImportJob = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.hubspot_sync", "manage")])
   .inputValidator((input: unknown) =>
     z.object({ jobId: z.string().uuid().optional() }).parse(input),
   )
@@ -209,7 +210,7 @@ export const tickHubspotImportJob = createServerFn({ method: "POST" })
   });
 
 export const resumeHubspotImport = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.hubspot_sync", "manage")])
   .inputValidator((input: unknown) => z.object({ jobId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -322,7 +323,7 @@ export const resumeHubspotImport = createServerFn({ method: "POST" })
   });
 
 export const cancelHubspotImport = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.hubspot_sync", "manage")])
   .inputValidator((input: unknown) => z.object({ jobId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -1408,7 +1409,7 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
 
 // ─────────────────────────── Legacy compat ────────────────────────────────────
 export const previewHubspotLeads = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.hubspot_sync", "view")])
   .inputValidator((input: unknown) =>
     z.object({ limit: z.number().min(1).max(100).default(10) }).parse(input),
   )

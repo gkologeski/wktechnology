@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -21,7 +23,7 @@ const snippetSchema = z.object({
 });
 
 export const listEmailTemplates = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.automation.email_templates", "view")])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("email_templates")
@@ -32,7 +34,7 @@ export const listEmailTemplates = createServerFn({ method: "GET" })
   });
 
 export const upsertEmailTemplate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.automation.email_templates", ["create", "update"])])
   .inputValidator((input) => templateSchema.parse(input))
   .handler(async ({ data, context }) => {
     const payload = {
@@ -49,16 +51,18 @@ export const upsertEmailTemplate = createServerFn({ method: "POST" })
   });
 
 export const deleteEmailTemplate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.automation.email_templates", "delete")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "email_templates", data.id, "delete");
+
     const { error } = await context.supabase.from("email_templates").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 export const listEmailSnippets = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.snippets", "view")])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("email_snippets")
@@ -69,7 +73,7 @@ export const listEmailSnippets = createServerFn({ method: "GET" })
   });
 
 export const upsertEmailSnippet = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.snippets", ["create", "update"])])
   .inputValidator((input) => snippetSchema.parse(input))
   .handler(async ({ data, context }) => {
     const payload = { ...data, owner_id: context.userId };
@@ -83,9 +87,11 @@ export const upsertEmailSnippet = createServerFn({ method: "POST" })
   });
 
 export const deleteEmailSnippet = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.snippets", "delete")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "email_snippets", data.id, "delete");
+
     const { error } = await context.supabase.from("email_snippets").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };

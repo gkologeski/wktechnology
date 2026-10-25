@@ -1207,3 +1207,30 @@ describe("estado explícito da conversa (commit atômico)", () => {
     expect(d.handoffToHuman).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("permissões atuais do worker", () => {
+  it("interrompe antes da IA e de ferramentas após revogação", async () => {
+    db.workerAuthorized = false;
+    job(db);
+    const j = await claimOne(db);
+    const d = deps({ intent: "qualify", reply: "Olá" });
+    expect(await processJob(db as never, j, d)).toBe("failed");
+    expect(d.callAgent).not.toHaveBeenCalled();
+    expect(d.sendMessage).not.toHaveBeenCalled();
+    expect(db.find("sdr_turn_jobs", j.id)?.error).toBe("permission_revoked");
+    expect(metaSend).not.toHaveBeenCalled();
+  });
+
+  it("revalida a permissão também ao enviar um rascunho aprovado", async () => {
+    db.workerAuthorized = false;
+    const j = job(db, { status: "drafted" });
+    const result = await sendSdrMessage(db as never, {
+      jobId: j.id,
+      expectedStatus: "drafted",
+      actorUserId: null,
+      text: "Olá",
+    });
+    expect(result).toMatchObject({ ok: false, reason: "permission_revoked" });
+    expect(metaSend).not.toHaveBeenCalled();
+  });
+});

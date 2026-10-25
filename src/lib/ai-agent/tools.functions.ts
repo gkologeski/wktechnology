@@ -1,3 +1,4 @@
+import { salesPipelineReferences } from "@/lib/access-control/sales-references";
 import { emailSchema } from "@/lib/email-schema";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { orSafeLike } from "@/lib/postgrest-search";
@@ -98,8 +99,7 @@ export const agentListPipelines = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ kind: z.enum(["deal", "ticket"]) }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: pipelines } = await context.supabase
-      .from("pipelines")
+    const { data: pipelines } = await salesPipelineReferences(context.supabase)
       .select("id, name, entity, stages")
       .eq("entity", data.kind)
       .limit(20);

@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -21,7 +22,7 @@ async function requireAdmin(supabase: unknown, userId: string) {
 }
 
 export const getSdrAgentProfile = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "view")])
   .handler(async ({ context }) => {
     const ws = await requireSdr(context.supabase, context.userId, "view");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -30,7 +31,7 @@ export const getSdrAgentProfile = createServerFn({ method: "GET" })
   });
 
 export const createSdrAgentProfile = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "create")])
   .handler(async ({ context }) => {
     const { ws, admin } = await requireAdmin(context.supabase, context.userId);
     const { provisionSdrAgentIdentity } =
@@ -39,7 +40,7 @@ export const createSdrAgentProfile = createServerFn({ method: "POST" })
   });
 
 export const sdrAgentHistory = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "manage")])
   .inputValidator((d: unknown) => z.object({ apply: z.boolean() }).parse(d))
   .handler(async ({ context, data }) => {
     const { ws, admin } = await requireAdmin(context.supabase, context.userId);
@@ -48,7 +49,7 @@ export const sdrAgentHistory = createServerFn({ method: "POST" })
   });
 
 export const undoSdrAgentHistory = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "manage")])
   .inputValidator((d: unknown) => z.object({ runId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { ws, admin } = await requireAdmin(context.supabase, context.userId);

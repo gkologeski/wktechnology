@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Server functions para o módulo de Distribuição (rotação).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -36,7 +38,7 @@ const SaveSchema = z.object({
 });
 
 export const listRotationRules = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.automation.rotation", "view")])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("rotation_rules")
@@ -49,7 +51,7 @@ export const listRotationRules = createServerFn({ method: "GET" })
   });
 
 export const saveRotationRule = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.automation.rotation", ["create", "update"])])
   .inputValidator((i) => SaveSchema.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -77,127 +79,63 @@ export const saveRotationRule = createServerFn({ method: "POST" })
   });
 
 export const deleteRotationRule = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.automation.rotation", "delete")])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "rotation_rules", data.id, "delete");
+
     const { error } = await context.supabase.from("rotation_rules").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
-/** Lista os membros do workspace ativo do usuário. Resolve nomes a partir de profiles. */
+/** Technical selector: names/IDs/status from the selected active workspace only.
+ * This does not authorize assignment or expose member credentials/contact details. */
 export const listWorkspaceMembers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { userId } = context;
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    // Descobre o workspace ativo do usuário (via profiles.active_workspace_id);
-    // se não houver, usa o primeiro workspace do qual ele é membro.
-    const { data: profile } = await supabaseAdmin
-      .from("profiles")
-      .select("active_workspace_id")
-      .eq("id", userId)
-      .maybeSingle();
-
-    let activeWorkspaceId =
-      (profile as { active_workspace_id: string | null } | null)?.active_workspace_id ?? null;
-
-    if (!activeWorkspaceId) {
-      const { data: firstMembership } = await supabaseAdmin
-        .from("workspace_members")
-        .select("workspace_id")
-        .eq("user_id", userId)
-        .limit(1)
-        .maybeSingle();
-      activeWorkspaceId = (firstMembership?.workspace_id as string | undefined) ?? null;
-    }
-
-    // Coleta IDs: membros do workspace ativo + legado (team_members) + o próprio usuário.
-    const ids = new Set<string>([userId]);
-    let workspaceOwnerId: string | null = null;
-    const inactiveIds = new Set<string>();
-
-    if (activeWorkspaceId) {
-      const { data: wsMembers } = await supabaseAdmin
-        .from("workspace_members")
-        .select("user_id, status, is_test_user")
-        .eq("workspace_id", activeWorkspaceId);
-      (wsMembers ?? []).forEach((m) => {
-        // Usuários de teste ("Ver como" por papel) não aparecem como responsáveis.
-        if (m.is_test_user && m.user_id !== userId) return;
-        ids.add(m.user_id as string);
-        if (m.status === "inactive") inactiveIds.add(m.user_id as string);
-      });
-
-      const { data: ws } = await supabaseAdmin
-        .from("workspaces")
-        .select("created_by")
-        .eq("id", activeWorkspaceId)
-        .maybeSingle();
-      workspaceOwnerId = (ws as { created_by: string | null } | null)?.created_by ?? null;
-      if (workspaceOwnerId) ids.add(workspaceOwnerId);
-    }
-
-    // Fallback legado (estrutura antiga baseada em owner_id).
-    const { data: legacyMembership } = await supabaseAdmin
-      .from("team_members")
-      .select("workspace_owner_id")
-      .eq("member_user_id", userId)
-      .limit(1)
-      .maybeSingle();
-    const legacyOwnerId = (legacyMembership?.workspace_owner_id as string | undefined) ?? userId;
-    ids.add(legacyOwnerId);
-    const { data: legacyMembers } = await supabaseAdmin
-      .from("team_members")
-      .select("member_user_id")
-      .eq("workspace_owner_id", legacyOwnerId);
-    (legacyMembers ?? []).forEach((m) => ids.add(m.member_user_id as string));
-
-    const idList = Array.from(ids);
-    const { data: profiles } = await supabaseAdmin
-      .from("profiles")
-      .select("id, full_name")
-      .in("id", idList);
-
-    const nameById = new Map(
-      (profiles ?? []).map((p) => [p.id as string, ((p.full_name as string | null) ?? "").trim()]),
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    const scope = await workRpc<{ workspace?: string; actor?: string }>(
+      context.supabase,
+      "sales_access_context",
+      {},
     );
-
-    // Fallback: buscar e-mail em auth.users apenas para IDs sem full_name.
-    const missing = idList.filter((id) => !nameById.get(id));
-    const emailById = new Map<string, string>();
-    if (missing.length > 0) {
-      const lookups = await Promise.all(
-        missing.map((id) => supabaseAdmin.auth.admin.getUserById(id).catch(() => null)),
-      );
-      lookups.forEach((res, i) => {
-        const email = res?.data?.user?.email;
-        if (email) emailById.set(missing[i], email);
-      });
-    }
-
-    return idList
-      .map((id) => ({
-        user_id: id,
-        full_name:
-          nameById.get(id) ||
-          emailById.get(id) ||
-          (id === workspaceOwnerId ? "Workspace (admin)" : `${id.slice(0, 8)}…`),
-        is_owner: id === workspaceOwnerId || id === legacyOwnerId,
-        is_me: id === userId,
-        status: (inactiveIds.has(id) ? "inactive" : "active") as "active" | "inactive",
+    if (!scope.workspace || scope.actor !== context.userId)
+      throw new Error("Workspace ativo indisponível.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: members, error } = await supabaseAdmin
+      .from("workspace_members")
+      .select("user_id,status,is_test_user,role")
+      .eq("workspace_id", scope.workspace);
+    if (error) throw new Error(error.message);
+    const rows = (members ?? []).filter((m) => !m.is_test_user || m.user_id === context.userId);
+    const ids = rows.map((m) => m.user_id);
+    if (!ids.length) return [];
+    const { data: profiles, error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .select("id,full_name")
+      .in("id", ids);
+    if (profileError) throw new Error(profileError.message);
+    const names = new Map((profiles ?? []).map((p) => [p.id, p.full_name?.trim()]));
+    return rows
+      .map((m) => ({
+        user_id: m.user_id,
+        full_name: names.get(m.user_id) || `${m.user_id.slice(0, 8)}…`,
+        is_owner: m.role === "owner",
+        is_me: m.user_id === context.userId,
+        status: (m.status === "active" ? "active" : "inactive") as "active" | "inactive",
       }))
-      .sort((a, b) => {
-        if (a.is_me !== b.is_me) return a.is_me ? -1 : 1;
-        if (a.is_owner !== b.is_owner) return a.is_owner ? -1 : 1;
-        return a.full_name.localeCompare(b.full_name);
-      });
+      .sort(
+        (a, b) =>
+          Number(b.is_me) - Number(a.is_me) ||
+          Number(b.is_owner) - Number(a.is_owner) ||
+          a.full_name.localeCompare(b.full_name),
+      );
   });
 
 /** Aplica rotação manualmente em um registro (debug/uso pontual). */
 export const rotateRecordNow = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.automation.rotation", "manage")])
   .inputValidator((i) =>
     z
       .object({

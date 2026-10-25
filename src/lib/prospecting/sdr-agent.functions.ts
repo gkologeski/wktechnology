@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -8,9 +10,12 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const Ids = z.object({ workspaceId: z.string().uuid(), playbookId: z.string().uuid() });
 
 export const getSdrAgentVersions = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "view")])
   .inputValidator((i) => Ids.parse(i))
   .handler(async ({ data, context }) => {
+    if (data.playbookId)
+      await assertSalesRecord(context.supabase, "sdr_playbooks", data.playbookId, "view");
+
     const { assertSdr } = await import("@/lib/prospecting/sdr/access.server");
     await assertSdr(context.supabase, context.userId, data.workspaceId, "view");
     const { data: rows, error } = await context.supabase
@@ -25,11 +30,14 @@ export const getSdrAgentVersions = createServerFn({ method: "POST" })
   });
 
 export const saveSdrAgentDraft = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "update")])
   .inputValidator((i) =>
     Ids.extend({ persona: z.unknown(), notes: z.string().max(500).nullish() }).parse(i),
   )
   .handler(async ({ data, context }) => {
+    if (data.playbookId)
+      await assertSalesRecord(context.supabase, "sdr_playbooks", data.playbookId, "update");
+
     const { assertSdr } = await import("@/lib/prospecting/sdr/access.server");
     const { PersonaSchema } = await import("@/lib/prospecting/sdr/persona");
     await assertSdr(context.supabase, context.userId, data.workspaceId, "manage");
@@ -89,9 +97,12 @@ export const saveSdrAgentDraft = createServerFn({ method: "POST" })
 
 /** Publica o rascunho ou restaura uma versão arquivada (rollback). */
 export const publishSdrAgentVersion = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "manage")])
   .inputValidator((i) => Ids.extend({ versionId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    if (data.playbookId)
+      await assertSalesRecord(context.supabase, "sdr_playbooks", data.playbookId, "update");
+
     const { assertSdr } = await import("@/lib/prospecting/sdr/access.server");
     await assertSdr(context.supabase, context.userId, data.workspaceId, "manage");
     // Leitura com RLS confirma que a versão é deste workspace/agente.
@@ -118,7 +129,7 @@ const TestMsg = z.object({
 });
 
 export const testSdrAgent = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "manage")])
   .inputValidator((i) =>
     Ids.extend({
       persona: z.unknown(),
@@ -130,6 +141,9 @@ export const testSdrAgent = createServerFn({ method: "POST" })
     }).parse(i),
   )
   .handler(async ({ data, context }) => {
+    if (data.playbookId)
+      await assertSalesRecord(context.supabase, "sdr_playbooks", data.playbookId, "view");
+
     // Mesmo domínio de turno da produção (decideTurn), com adaptadores de
     // sandbox: IA real marcada como teste, ferramentas em memória, agenda
     // falsa, nenhuma escrita no banco, nenhum envio ao WhatsApp/Google/CRM.
@@ -333,9 +347,12 @@ export const testSdrAgent = createServerFn({ method: "POST" })
 // Cada agente guarda a própria configuração em `sdr_playbooks`. O workspace
 // controla só liga/desliga e limites técnicos: nunca sobrescreve estes campos.
 export const getSdrAgentConfig = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "view")])
   .inputValidator((i) => Ids.parse(i))
   .handler(async ({ data, context }) => {
+    if (data.playbookId)
+      await assertSalesRecord(context.supabase, "sdr_playbooks", data.playbookId, "view");
+
     const { assertSdr } = await import("@/lib/prospecting/sdr/access.server");
     const { configFromRow } = await import("@/lib/prospecting/sdr/agent-config");
     await assertSdr(context.supabase, context.userId, data.workspaceId, "view");
@@ -407,7 +424,7 @@ export const getSdrAgentConfig = createServerFn({ method: "POST" })
   });
 
 export const saveSdrAgentConfig = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "update")])
   .inputValidator((i) =>
     Ids.extend({
       config: z.unknown(),
@@ -425,6 +442,9 @@ export const saveSdrAgentConfig = createServerFn({ method: "POST" })
     }).parse(i),
   )
   .handler(async ({ data, context }) => {
+    if (data.playbookId)
+      await assertSalesRecord(context.supabase, "sdr_playbooks", data.playbookId, "update");
+
     const { assertSdr } = await import("@/lib/prospecting/sdr/access.server");
     const { AgentConfigSchema } = await import("@/lib/prospecting/sdr/agent-config");
     await assertSdr(context.supabase, context.userId, data.workspaceId, "manage");
@@ -469,9 +489,12 @@ export const saveSdrAgentConfig = createServerFn({ method: "POST" })
 
 /** Últimos turnos do agente (logs e métricas por agente). */
 export const getSdrAgentLogs = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "view")])
   .inputValidator((i) => Ids.parse(i))
   .handler(async ({ data, context }) => {
+    if (data.playbookId)
+      await assertSalesRecord(context.supabase, "sdr_playbooks", data.playbookId, "view");
+
     const { assertSdr } = await import("@/lib/prospecting/sdr/access.server");
     await assertSdr(context.supabase, context.userId, data.workspaceId, "view");
     const { data: enr } = await context.supabase

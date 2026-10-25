@@ -1,3 +1,4 @@
+import { assertSalesWorker } from "@/lib/access-control/sales-worker.server";
 import { workspaceOfSource } from "@/lib/workspace-source.server";
 // Sequence executor: avança enrollments cujo next_run_at já passou.
 // Chamado pelo endpoint /api/public/hooks/sequences-tick a cada minuto.
@@ -77,6 +78,9 @@ async function executeStep(
   )
     throw new Error("Registro fora da empresa da cadência.");
   if (step.type === "wait") return;
+  await assertSalesWorker(supabase, "sequence_enrollments", enrollment.id, [
+    { table: seq.entity, id: enrollment.entity_id },
+  ]);
   const relCol = seq.entity === "leads" ? "related_lead_id" : "related_contact_id";
   const ctx = await loadSequenceTokenContext(
     supabase,

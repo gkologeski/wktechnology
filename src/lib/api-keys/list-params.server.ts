@@ -77,6 +77,7 @@ export function buildMeta(params: ListParams, rows: number, total: number | null
 }
 
 export function jsonError(error: string, status: number, details?: unknown): Response {
+  if (/sem permissão|permission denied|row-level security/i.test(error)) status = 403;
   return new Response(JSON.stringify(details === undefined ? { error } : { error, details }), {
     status,
     headers: { "Content-Type": "application/json" },

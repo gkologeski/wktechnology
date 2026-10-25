@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // Server functions para Goals (metas por usuário/time/workspace).
 import { createServerFn } from "@tanstack/react-start";
@@ -48,7 +50,7 @@ const UpsertSchema = z.object({
 });
 
 export const listGoals = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.goals", "view")])
   .handler(async ({ context }) => {
     const { supabase } = context;
     const { data, error } = await supabase
@@ -60,7 +62,7 @@ export const listGoals = createServerFn({ method: "GET" })
   });
 
 export const upsertGoal = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.goals", ["create", "update"])])
   .inputValidator((d: unknown) => UpsertSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -89,9 +91,11 @@ export const upsertGoal = createServerFn({ method: "POST" })
   });
 
 export const deleteGoal = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.goals", "delete")])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "goals", data.id, "delete");
+
     const { error } = await context.supabase.from("goals").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -104,7 +108,7 @@ export const deleteGoal = createServerFn({ method: "POST" })
  * servindo como referência de meta individual/equipe baseada na operação total.
  */
 export const computeGoalsProgress = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.goals", "view")])
   .handler(async ({ context }) => {
     const { supabase } = context;
     const { data: goals, error } = await supabase

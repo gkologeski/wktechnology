@@ -1,3 +1,4 @@
+import { apiSubjectClient } from "@/lib/api-keys/subject-client.server";
 import { emailSchema } from "@/lib/email-schema";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
@@ -32,11 +33,12 @@ export const Route = createFileRoute("/api/public/v1/contacts")({
         if (!auth) return unauthorized();
         const denied = requireScope(auth, "read");
         if (denied) return denied;
+        const subjectClient = apiSubjectClient(supabaseAdmin, auth);
 
         const url = new URL(request.url);
         const params = parseListParams(url);
 
-        let query = supabaseAdmin
+        let query = subjectClient
           .from("contacts")
           .select(SELECT, { count: "exact" })
           .eq("workspace_id", auth.workspaceId)
@@ -62,6 +64,7 @@ export const Route = createFileRoute("/api/public/v1/contacts")({
         if (!auth) return unauthorized();
         const denied = requireScope(auth, "write");
         if (denied) return denied;
+        const subjectClient = apiSubjectClient(supabaseAdmin, auth);
 
         const body = await request.json().catch(() => null);
         const parsed = CreateContact.safeParse(body);
@@ -80,7 +83,7 @@ export const Route = createFileRoute("/api/public/v1/contacts")({
 
         let companyId: string | null = null;
         if (input.company_id) {
-          const { data: company } = await supabaseAdmin
+          const { data: company } = await subjectClient
             .from("companies")
             .select("id")
             .eq("id", input.company_id)
@@ -90,7 +93,7 @@ export const Route = createFileRoute("/api/public/v1/contacts")({
           companyId = company.id;
         } else if (input.company_name?.trim()) {
           const name = input.company_name.trim();
-          const { data: existing } = await supabaseAdmin
+          const { data: existing } = await subjectClient
             .from("companies")
             .select("id")
             .eq("workspace_id", auth.workspaceId)
@@ -100,7 +103,7 @@ export const Route = createFileRoute("/api/public/v1/contacts")({
           if (existing?.id) {
             companyId = existing.id;
           } else {
-            const { data: created, error: companyError } = await supabaseAdmin
+            const { data: created, error: companyError } = await subjectClient
               .from("companies")
               .insert({
                 owner_id: auth.ownerId,
@@ -115,7 +118,7 @@ export const Route = createFileRoute("/api/public/v1/contacts")({
           }
         }
 
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await subjectClient
           .from("contacts")
           .insert({
             owner_id: auth.ownerId,

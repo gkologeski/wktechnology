@@ -10,19 +10,25 @@ import {
 import type { ProposalDocumentData } from "./proposal-document-types";
 
 const PROPOSAL_COLUMNS =
-  "id, title, body, status, locked, version, total_amount, currency, expires_at, sent_at, decided_at, created_at, public_token, owner_id, company_id, contact_id, deal_id, quote_id";
+  "id, workspace_id, title, body, status, locked, version, total_amount, currency, expires_at, sent_at, decided_at, created_at, public_token, owner_id, company_id, contact_id, deal_id, quote_id";
 
 type ItemRow = DealLineItemRow & {
   service?: { name: string | null } | null;
   preset?: { name: string | null } | null;
 };
 
-async function items(sb: SupabaseClient, quoteId: string | null, dealId: string | null) {
+async function items(
+  sb: SupabaseClient,
+  quoteId: string | null,
+  dealId: string | null,
+  workspaceId: string,
+) {
   const pick = async (table: "quote_line_items" | "deal_line_items", col: string, id: string) => {
     const { data } = await sb
       .from(table)
       .select(DEAL_LINE_ITEM_COLUMNS)
       .eq(col, id)
+      .eq("workspace_id", workspaceId)
       .order("position");
     return (data ?? []) as unknown as ItemRow[];
   };
@@ -41,18 +47,31 @@ export async function loadProposalDocument(
   const { data: p, error } = await q.maybeSingle();
   if (error) throw new Error(error.message);
   if (!p) throw new Error("Proposta não encontrada");
+  if (
+    "token" in by &&
+    (!["sent", "accepted", "rejected"].includes(p.status) || !p.locked || !p.sent_at)
+  )
+    throw new Error("Proposta ainda não disponível.");
 
   const currency = p.currency ?? "BRL";
   const fmt = (v: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency }).format(v);
   const [rows, company, contact, agent] = await Promise.all([
-    items(sb, p.quote_id, p.deal_id),
-    p.company_id ? sb.from("companies").select("name").eq("id", p.company_id).maybeSingle() : null,
+    items(sb, p.quote_id, p.deal_id, p.workspace_id),
+    p.company_id
+      ? sb
+          .from("companies")
+          .select("name")
+          .eq("id", p.company_id)
+          .eq("workspace_id", p.workspace_id)
+          .maybeSingle()
+      : null,
     p.contact_id
       ? sb
           .from("contacts")
           .select("first_name, last_name, email")
           .eq("id", p.contact_id)
+          .eq("workspace_id", p.workspace_id)
           .maybeSingle()
       : null,
     sb.from("profiles").select("full_name").eq("id", p.owner_id).maybeSingle(),
@@ -77,7 +96,7 @@ export async function loadProposalDocument(
       sent_at: p.sent_at,
       decided_at: p.decided_at,
       created_at: p.created_at,
-      public_token: p.public_token,
+      public_token: "token" in by ? by.token : null,
       deal_id: p.deal_id,
       quote_id: p.quote_id,
     },

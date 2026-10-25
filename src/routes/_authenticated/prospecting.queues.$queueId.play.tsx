@@ -35,7 +35,7 @@ export const Route = createFileRoute("/_authenticated/prospecting/queues/$queueI
 function PlayProspectingQueueGuarded() {
   const { can, isLoading } = usePermissions();
   if (isLoading) return null;
-  if (!can("techsales.prospecting.queue.view")) {
+  if (!can("techsales.prospecting_queue.view.workspace")) {
     return (
       <div className="p-6">
         <Card>

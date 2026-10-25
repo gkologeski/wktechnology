@@ -1,96 +1,60 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { randomBytes } from "crypto";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { workRpc } from "@/lib/access-control/work-core.server";
 
-// ============= ADMIN (autenticado) =============
-// portal_token é column-revoked do papel `authenticated`. Estas funções usam
-// supabaseAdmin e filtram por owner_id = userId para garantir que apenas o
-// dono do workspace gerencie tokens dos próprios contatos.
-
-async function assertContactOwned(contactId: string, workspaceId: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
-    .from("contacts")
-    .select("id")
-    .eq("id", contactId)
-    .eq("owner_id", workspaceId)
-    .maybeSingle();
-  if (error) throw error;
-  if (!data) throw new Error("Contato não encontrado.");
-}
-
+// Token ports execute with a NOLOGIN/NOBYPASSRLS role: actual caller rows only.
 export const listPortalContacts = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
-    const { data, error } = await supabaseAdmin
-      .from("contacts")
-      .select("id, first_name, last_name, email, portal_enabled, portal_token")
-      .eq("owner_id", workspaceId)
-      .order("first_name", { ascending: true })
-      .limit(1000);
-    if (error) throw error;
-    return data ?? [];
-  });
+  .middleware([requireSalesPermission("system.portal", "manage")])
+  .handler(async ({ context }) =>
+    workRpc<
+      Array<{
+        id: string;
+        first_name: string | null;
+        last_name: string | null;
+        email: string | null;
+        portal_enabled: boolean;
+        portal_token: string | null;
+      }>
+    >(context.supabase, "sales_portal_contacts", {}),
+  );
 
 export const togglePortalAccess = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.portal", "manage")])
   .inputValidator((input) =>
-    z
-      .object({
-        contactId: z.string().uuid(),
-        enabled: z.boolean(),
-      })
-      .parse(input),
+    z.object({ contactId: z.string().uuid(), enabled: z.boolean() }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
-    await assertContactOwned(data.contactId, userId);
-    const patch: { portal_enabled: boolean; portal_token?: string } = {
-      portal_enabled: data.enabled,
-    };
-    if (data.enabled) {
-      const { data: current } = await supabaseAdmin
-        .from("contacts")
-        .select("portal_token")
-        .eq("id", data.contactId)
-        .maybeSingle();
-      if (!current?.portal_token) {
-        patch.portal_token = randomBytes(24).toString("hex");
-      }
-    }
-    const { error } = await supabaseAdmin
+    await assertSalesRecord(context.supabase, "contacts", data.contactId, "update");
+    if (data.enabled)
+      await workRpc<string>(context.supabase, "sales_public_token", {
+        p_table: "contacts",
+        p_id: data.contactId,
+        p_rotate: false,
+        p_purpose: "share",
+      });
+    const { data: saved, error } = await context.supabase
       .from("contacts")
-      .update(patch)
+      .update({ portal_enabled: data.enabled })
       .eq("id", data.contactId)
-      .eq("owner_id", workspaceId);
-    if (error) throw error;
+      .select("id")
+      .single();
+    if (error || !saved) throw new Error(error?.message ?? "Contato indisponível.");
     return { ok: true };
   });
 
 export const regeneratePortalToken = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.portal", "manage")])
   .inputValidator((input) => z.object({ contactId: z.string().uuid() }).parse(input))
-  .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
-    await assertContactOwned(data.contactId, userId);
-    const token = randomBytes(24).toString("hex");
-    const { error } = await supabaseAdmin
-      .from("contacts")
-      .update({ portal_token: token, portal_enabled: true })
-      .eq("id", data.contactId)
-      .eq("owner_id", workspaceId);
-    if (error) throw error;
-    return { token };
-  });
+  .handler(async ({ data, context }) => ({
+    token: await workRpc<string>(context.supabase, "sales_public_token", {
+      p_table: "contacts",
+      p_id: data.contactId,
+      p_rotate: true,
+      p_purpose: "share",
+    }),
+  }));
 
 // ============= PÚBLICO (token, sem auth) =============
 

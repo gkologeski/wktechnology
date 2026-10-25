@@ -49,7 +49,7 @@ export const getVoiceAgentSettings = createServerFn({ method: "POST" })
       context.supabase,
       context.userId,
       ws,
-      "techsales.prospecting.voice.view",
+      "techsales.prospecting_voice.view.workspace",
     );
     const sb = await sbAdmin();
     const { data } = await sb
@@ -85,7 +85,7 @@ export const saveVoiceAgentSettings = createServerFn({ method: "POST" })
       context.supabase,
       context.userId,
       ws,
-      "techsales.prospecting.voice.update.workspace",
+      "techsales.prospecting_voice.update.workspace",
     );
     const sb = await sbAdmin();
     const payload = { workspace_id: ws, owner_id: ws, ...data };

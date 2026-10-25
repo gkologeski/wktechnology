@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -6,7 +7,7 @@ export type LogoSuggestion = { name: string; domain: string; logo: string | null
 
 /** Sugere marcas pelo nome no catálogo gratuito da Clearbit. Nunca grava nada. */
 export const searchCompanyLogos = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.companies", "view")])
   .inputValidator((i) => z.object({ query: z.string().trim().min(2).max(120) }).parse(i))
   .handler(async ({ data }): Promise<{ items: LogoSuggestion[]; error: string | null }> => {
     const ctrl = new AbortController();

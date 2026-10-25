@@ -1,3 +1,4 @@
+import { salesPipelineReferences } from "@/lib/access-control/sales-references";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -65,8 +66,7 @@ export function usePipelines(entity: "deal" | "lead" | "ticket" = "deal") {
     queryKey: ["pipelines", entity, user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("pipelines")
+      const { data, error } = await salesPipelineReferences(supabase)
         .select("*")
         .eq("entity", entity)
         .order("is_default", { ascending: false })

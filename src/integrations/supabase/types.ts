@@ -13040,7 +13040,7 @@ export type Database = {
           id?: string
           name: string
           owner_id: string
-          secret: string
+          secret?: string
           updated_at?: string
           url: string
           workspace_id?: string
@@ -20020,7 +20020,7 @@ export type Database = {
           paid_at?: string | null
           payment_link_url?: string | null
           payment_session_id?: string | null
-          public_token: string
+          public_token?: string
           sent_at?: string | null
           service_line?: string | null
           signature_name?: string | null

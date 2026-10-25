@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Prospecting agent — busca prospects reais via Apollo.io.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -95,7 +97,7 @@ type ProspectResult = {
 };
 
 export const listProspectSearches = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_search", "view")])
   .handler(async ({ context }): Promise<ProspectSearch[]> => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
@@ -112,7 +114,7 @@ export const listProspectSearches = createServerFn({ method: "POST" })
   });
 
 export const upsertProspectSearch = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_search", ["create", "update"])])
   .inputValidator((i) => SearchInput.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -155,9 +157,12 @@ export const upsertProspectSearch = createServerFn({ method: "POST" })
   });
 
 export const deleteProspectSearch = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_search", "delete")])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    if (data.id)
+      await assertSalesRecord(context.supabase, "prospecting_searches", data.id, "delete");
+
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     const { error } = await withTransientRetry(() =>
@@ -173,7 +178,7 @@ export const deleteProspectSearch = createServerFn({ method: "POST" })
   });
 
 export const listProspectResults = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_search", "view")])
   .inputValidator((i) => z.object({ search_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }): Promise<ProspectResult[]> => {
     const { supabase, userId } = context;
@@ -396,7 +401,7 @@ function buildLocation(person: ApolloPersonDetail): string | null {
 }
 
 export const runProspectSearch = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_search", "manage")])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const { userId } = context;
@@ -548,7 +553,7 @@ export const runProspectSearch = createServerFn({ method: "POST" })
   });
 
 export const importProspectAsLead = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_search", "create")])
   .inputValidator((i) => z.object({ result_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const { userId } = context;

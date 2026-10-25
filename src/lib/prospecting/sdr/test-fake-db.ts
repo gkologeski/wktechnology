@@ -176,6 +176,7 @@ export class FakeDb {
   tables: Record<string, Row[]> = {};
   unique: Record<string, string[]> = {};
   /** Ganchos para simular eventos concorrentes. */
+  workerAuthorized = true; // Explicit synthetic actor; SQL scope is tested with real JWT separately.
   hooks: { beforeCommit?: () => void } = {};
 
   from(table: string) {
@@ -195,6 +196,7 @@ export class FakeDb {
 
   async rpc(fn: string, a: any): Promise<{ data: any; error: any }> {
     const now = new Date().toISOString();
+    if (fn === "sales_worker_authorize") return { data: this.workerAuthorized, error: null };
     if (fn === "sdr_set_conversation_owner") {
       const c = this.find("whatsapp_conversations", a.p_conversation);
       if (!c) return { data: null, error: null };

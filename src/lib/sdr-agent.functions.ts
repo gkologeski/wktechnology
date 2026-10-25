@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -34,7 +36,7 @@ const PlaybookInput = z.object({
 });
 
 export const listPlaybooks = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "view")])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const ws = await requireSdr(supabase, userId, "view");
@@ -59,9 +61,11 @@ export const listPlaybooks = createServerFn({ method: "POST" })
 
 /** Define o agente principal (⭐) do workspace. */
 export const setDefaultPlaybook = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "update")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "sdr_playbooks", data.id, "update");
+
     const { supabase, userId } = context;
     const ws = await requireSdr(supabase, userId, "manage");
     const { data: ro } = await supabase.rpc("is_read_only_view");
@@ -95,7 +99,7 @@ export const setDefaultPlaybook = createServerFn({ method: "POST" })
   });
 
 export const upsertPlaybook = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", ["create", "update"])])
   .inputValidator((input) => PlaybookInput.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -124,7 +128,7 @@ export const upsertPlaybook = createServerFn({ method: "POST" })
   });
 
 export const deletePlaybook = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "delete")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -173,11 +177,13 @@ export const deletePlaybook = createServerFn({ method: "POST" })
 
 /** Edição rápida do agente (nome) a partir de "Persona e teste". */
 export const renamePlaybook = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "update")])
   .inputValidator((input) =>
     z.object({ id: z.string().uuid(), name: z.string().trim().min(1).max(120) }).parse(input),
   )
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "sdr_playbooks", data.id, "update");
+
     const { supabase, userId } = context;
     const ws = await requireSdr(supabase, userId, "update");
     const { data: out, error } = await supabase
@@ -193,7 +199,7 @@ export const renamePlaybook = createServerFn({ method: "POST" })
   });
 
 export const listEnrollments = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "view")])
   .inputValidator((input) => z.object({ status: z.string().optional() }).parse(input ?? {}))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -213,7 +219,7 @@ export const listEnrollments = createServerFn({ method: "POST" })
   });
 
 export const enrollLead = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "create")])
   .inputValidator((input) =>
     z.object({ playbook_id: z.string().uuid(), lead_id: z.string().uuid() }).parse(input),
   )
@@ -252,7 +258,7 @@ export const enrollLead = createServerFn({ method: "POST" })
   });
 
 export const requestHandoff = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "update")])
   .inputValidator((input) =>
     z
       .object({ enrollment_id: z.string().uuid(), reason: z.string().max(500).optional() })
@@ -299,7 +305,7 @@ const AiOwnerInput = z.object({ conversation_id: z.string().uuid() });
 
 /** Quem atende a conversa de WhatsApp: agente (ai), pessoa (human) ou pausado. */
 export const getConversationAiOwner = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "view")])
   .inputValidator((input) => AiOwnerInput.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -324,7 +330,7 @@ export const getConversationAiOwner = createServerFn({ method: "POST" })
 
 /** Devolve a conversa para o agente SDR ou passa para atendimento humano. */
 export const setConversationAiOwner = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "update")])
   .inputValidator((input) => AiOwnerInput.extend({ owner: z.enum(["ai", "human"]) }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;

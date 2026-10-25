@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 /**
  * Pesquisa como tipo de atividade.
  *
@@ -53,7 +54,7 @@ export type SalesScoreQuestion = {
 
 /** Pesquisas disponíveis para responder, agrupadas por tipo. */
 export const listAvailableSurveys = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.surveys", "view")])
   .handler(async ({ context }) => {
     const [templates, questionnaires] = await Promise.all([
       context.supabase
@@ -83,7 +84,7 @@ export const listAvailableSurveys = createServerFn({ method: "GET" })
 
 /** Perguntas do formulário de uma pesquisa. */
 export const getSurveyForm = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.surveys", "view")])
   .inputValidator((i: unknown) =>
     z.object({ source: SOURCE, source_id: z.string().uuid() }).parse(i),
   )
@@ -220,7 +221,7 @@ const SaveSchema = z.object({
 
 /** Cria (ou atualiza) a atividade de pesquisa com as respostas. */
 export const saveSurveyActivity = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.surveys", ["create", "update"])])
   .inputValidator((i: unknown) => SaveSchema.parse(i))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
@@ -353,7 +354,7 @@ export const saveSurveyActivity = createServerFn({ method: "POST" })
 
 /** Respostas + perguntas para renderizar cards de pesquisa na timeline. */
 export const getActivitySurveyResponses = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.surveys", "view")])
   .inputValidator((i: unknown) =>
     z.object({ activity_ids: z.array(z.string().uuid()).max(500) }).parse(i),
   )
@@ -461,7 +462,7 @@ export const getActivitySurveyResponses = createServerFn({ method: "POST" })
  * `survey` ainda sem resposta registrada.
  */
 export const getPendingSurveyActivity = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.surveys", "view")])
   .inputValidator((i: unknown) =>
     z.object({ related_key: z.enum(RELATED_KEYS), related_id: z.string().uuid() }).parse(i),
   )

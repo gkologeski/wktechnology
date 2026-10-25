@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 /**
  * Suíte de Prospecção — Qualificações.
  *
@@ -89,7 +91,7 @@ async function buildUnifiedScore(
 }
 
 export const listQualificationsForEntity = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_qualifications", "view")])
   .inputValidator((i: unknown) =>
     z.object({ entity: EntityEnum, entity_id: z.string().uuid() }).parse(i),
   )
@@ -105,7 +107,9 @@ export const listQualificationsForEntity = createServerFn({ method: "POST" })
   });
 
 export const saveQualification = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([
+    requireSalesPermission("techsales.prospecting_qualifications", ["create", "update"]),
+  ])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -123,6 +127,9 @@ export const saveQualification = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ context, data }) => {
+    if (data.id)
+      await assertSalesRecord(context.supabase, "prospecting_qualifications", data.id, "update");
+
     const { data: qs, error: qsErr } = await context.supabase
       .from("prospecting_questions")
       .select(QUESTION_COLUMNS)
@@ -222,7 +229,7 @@ export const saveQualification = createServerFn({ method: "POST" })
   });
 
 export const setDecision = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_qualifications", "update")])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -233,6 +240,9 @@ export const setDecision = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ context, data }) => {
+    if (data.id)
+      await assertSalesRecord(context.supabase, "prospecting_qualifications", data.id, "update");
+
     const { error } = await context.supabase
       .from("prospecting_qualifications")
       .update({
@@ -252,7 +262,7 @@ export const setDecision = createServerFn({ method: "POST" })
  * numa cadência de nutrição (definida na fila ou padrão do workspace).
  */
 export const nurtureLead = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_qualifications", "update")])
   .inputValidator((i: unknown) =>
     z
       .object({

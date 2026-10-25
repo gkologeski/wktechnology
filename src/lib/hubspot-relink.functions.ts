@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Re-vincula atividades já importadas usando associações da HubSpot.
 // Lê hs_object_id das atividades locais, chama v4 batch associations
 // para contacts/companies/deals/leads e atualiza apenas os FKs nulos.
@@ -74,7 +75,7 @@ const ENGAGEMENT_OBJECT: Record<string, string> = {
 };
 
 export const relinkHubspotActivities = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.hubspot_sync", "manage")])
   .inputValidator(
     z.object({
       type: z.enum(["note", "task", "call", "meeting", "email"]),
@@ -217,7 +218,7 @@ export const relinkHubspotActivities = createServerFn({ method: "POST" })
   });
 
 export const countActivitiesToRelink = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.hubspot_sync", "view")])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);

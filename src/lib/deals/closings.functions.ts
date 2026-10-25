@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Série mensal de fechamentos de negócios (ganhos x perdidos) por data real de fechamento.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -21,7 +22,7 @@ export type DealClosingMonth = {
 };
 
 export const getDealClosingsByMonth = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.deals", "view")])
   .inputValidator((d: unknown) => InputSchema.parse(d ?? {}))
   .handler(async ({ context, data }): Promise<DealClosingMonth[]> => {
     const { supabase } = context;

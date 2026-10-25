@@ -1,3 +1,5 @@
+import { assertSalesSourcePermission } from "@/lib/access-control/sales-source-permission.server";
+import { workRpc } from "@/lib/access-control/work-core.server";
 import { requireSourceWorkspaceAccess } from "@/lib/workspace-source.server";
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -111,45 +113,32 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
             parsed.user_id,
             parsed.workspace_id,
           );
+          await assertSalesSourcePermission(
+            supabaseAdmin,
+            parsed.user_id,
+            workspaceId,
+            mode === "calendar" ? "system.calendars" : "techsales.email_accounts",
+            ["create", "update"],
+          );
           const tokens = await exchangeCodeForTokens({ code, redirectUri });
           const info = await fetchGoogleUserInfo(tokens.access_token);
           const scopes = tokens.scope ? tokens.scope.split(" ") : [];
           const expiresAt = new Date(Date.now() + (tokens.expires_in - 60) * 1000).toISOString();
 
-          if (mode === "calendar") {
-            const { data: existing } = await supabaseAdmin
-              .from("calendar_accounts")
-              .select("id, refresh_token")
-              .eq("owner_id", parsed.user_id)
-              .eq("workspace_id", workspaceId)
-              .eq("provider", "google")
-              .eq("email", info.email)
-              .maybeSingle();
-            const refreshToken = tokens.refresh_token ?? existing?.refresh_token ?? null;
-            const payload = {
-              owner_id: parsed.user_id,
-              workspace_id: workspaceId,
-              provider: "google",
+          const savedId = await workRpc<string>(supabaseAdmin, "sales_save_google_account", {
+            p_actor: parsed.user_id,
+            p_ws: workspaceId,
+            p_kind: mode,
+            p_payload: {
               email: info.email,
               access_token: tokens.access_token,
-              refresh_token: refreshToken,
+              refresh_token: tokens.refresh_token ?? null,
               expires_at: expiresAt,
               scopes,
-              primary_calendar_id: "primary",
-              sync_enabled: true,
-              last_status: "connected",
-              last_error: null as string | null,
-            };
-            if (existing) {
-              const { error } = await supabaseAdmin
-                .from("calendar_accounts")
-                .update(payload)
-                .eq("id", existing.id);
-              if (error) throw new Error(error.message);
-            } else {
-              const { error } = await supabaseAdmin.from("calendar_accounts").insert(payload);
-              if (error) throw new Error(error.message);
-            }
+            },
+          });
+          if (!savedId) throw new Error("Não foi possível concluir a conexão.");
+          if (mode === "calendar") {
             const returnTo = buildGoogleOAuthReturnUrl({
               returnOrigin: parsed.return_origin,
               returnTo: parsed.return_to,
@@ -160,42 +149,6 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
               integration: "calendar",
               messageTargetOrigin: parsed.return_origin,
             });
-          }
-
-          // Default: gmail
-          const { data: existing } = await supabaseAdmin
-            .from("email_accounts")
-            .select("id, refresh_token")
-            .eq("owner_id", parsed.user_id)
-            .eq("workspace_id", workspaceId)
-            .eq("provider", "gmail")
-            .eq("email", info.email)
-            .maybeSingle();
-
-          const refreshToken = tokens.refresh_token ?? existing?.refresh_token ?? null;
-
-          const payload = {
-            owner_id: parsed.user_id,
-            workspace_id: workspaceId,
-            provider: "gmail",
-            email: info.email,
-            access_token: tokens.access_token,
-            refresh_token: refreshToken,
-            expires_at: expiresAt,
-            scopes,
-            status: "connected",
-            last_error: null as string | null,
-          };
-
-          if (existing) {
-            const { error } = await supabaseAdmin
-              .from("email_accounts")
-              .update(payload)
-              .eq("id", existing.id);
-            if (error) throw new Error(error.message);
-          } else {
-            const { error } = await supabaseAdmin.from("email_accounts").insert(payload);
-            if (error) throw new Error(error.message);
           }
 
           const returnTo = buildGoogleOAuthReturnUrl({

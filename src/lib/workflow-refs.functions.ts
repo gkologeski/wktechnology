@@ -1,3 +1,4 @@
+import { salesPipelineReferences } from "@/lib/access-control/sales-references";
 // Server functions para o construtor de Workflows resolverem referências
 // (empresas, pipelines, usuários) respeitando as policies RLS do usuário atual.
 //
@@ -58,15 +59,14 @@ export const searchPipelines = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     if (data.ids && data.ids.length > 0) {
-      const { data: rows, error } = await supabase
-        .from("pipelines")
+      const { data: rows, error } = await salesPipelineReferences(supabase)
         .select("id, name")
         .in("id", data.ids);
       if (error) throw new Error(error.message);
       return (rows ?? []) as Array<{ id: string; name: string }>;
     }
     const q = data.q?.trim();
-    let query = supabase.from("pipelines").select("id, name").order("name").limit(LIMIT);
+    let query = salesPipelineReferences(supabase).select("id, name").order("name").limit(LIMIT);
     if (q) query = query.ilike("name", `%${escapeLike(q)}%`);
     const { data: rows, error } = await query;
     if (error) throw new Error(error.message);

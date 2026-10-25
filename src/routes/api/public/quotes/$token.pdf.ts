@@ -163,7 +163,7 @@ export const Route = createFileRoute("/api/public/quotes/$token/pdf")({
     handlers: {
       GET: async ({ params }) => {
         const token = params.token;
-        if (!token || token.length < 8 || token.length > 128) {
+        if (!token || token.length < 16 || token.length > 128) {
           return new Response("Invalid token", { status: 400 });
         }
 
@@ -183,7 +183,7 @@ export const Route = createFileRoute("/api/public/quotes/$token/pdf")({
         if (error || !quote) {
           return new Response("Cotação não encontrada", { status: 404 });
         }
-        if (quote.status === "draft") {
+        if (!["published", "sent", "accepted", "declined", "expired"].includes(quote.status)) {
           return new Response("Cotação em rascunho não pode ser baixada", { status: 403 });
         }
 
@@ -191,6 +191,7 @@ export const Route = createFileRoute("/api/public/quotes/$token/pdf")({
           .from("quote_line_items")
           .select("*, service:service_catalog(name), preset:contracting_presets(name)")
           .eq("quote_id", quote.id)
+          .eq("workspace_id", quote.workspace_id)
           .order("position");
 
         let company: { name: string | null; website: string | null } | null = null;
@@ -199,6 +200,7 @@ export const Route = createFileRoute("/api/public/quotes/$token/pdf")({
             .from("companies")
             .select("name, website")
             .eq("id", quote.company_id)
+            .eq("workspace_id", quote.workspace_id)
             .maybeSingle();
           company = r.data;
         }
@@ -212,6 +214,7 @@ export const Route = createFileRoute("/api/public/quotes/$token/pdf")({
             .from("contacts")
             .select("first_name, last_name, email")
             .eq("id", quote.contact_id)
+            .eq("workspace_id", quote.workspace_id)
             .maybeSingle();
           contact = r.data;
         }
@@ -230,6 +233,7 @@ export const Route = createFileRoute("/api/public/quotes/$token/pdf")({
             .from("quote_templates")
             .select("html")
             .eq("id", quote.template_id)
+            .eq("workspace_id", quote.workspace_id)
             .maybeSingle();
           template = r.data;
         }

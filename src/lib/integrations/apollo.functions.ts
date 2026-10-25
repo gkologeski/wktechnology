@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // Apollo.io People Enrichment via direct API (POST /api/v1/people/match)
 // Docs: https://docs.apollo.io/reference/people-enrichment
@@ -59,7 +60,7 @@ const TargetSchema = z.object({
 });
 
 export const enrichWithApollo = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_enrichment", "manage")])
   .inputValidator((input: unknown) => TargetSchema.parse(input))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;

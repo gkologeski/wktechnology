@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // Two-way HubSpot sync — server functions (push manual, conflitos, config).
 import { createServerFn } from "@tanstack/react-start";
@@ -14,7 +15,7 @@ const EntityZ = z.enum(["contact", "company", "deal"]);
 
 /** Dispara push manual de uma entidade. */
 export const pushEntityNow = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.hubspot_sync", "manage")])
   .inputValidator((i) =>
     z
       .object({
@@ -30,7 +31,7 @@ export const pushEntityNow = createServerFn({ method: "POST" })
 
 /** Push das 3 entidades (botão "Sincronizar agora"). */
 export const pushAllNow = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.hubspot_sync", "manage")])
   .inputValidator((i) =>
     z
       .object({
@@ -45,7 +46,7 @@ export const pushAllNow = createServerFn({ method: "POST" })
 
 /** Lista conflitos pendentes para a UI. */
 export const listSyncConflicts = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.hubspot_sync", "view")])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
@@ -62,7 +63,7 @@ export const listSyncConflicts = createServerFn({ method: "GET" })
 
 /** Resolve um conflito específico forçando lado vencedor. */
 export const resolveSyncConflict = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.hubspot_sync", "manage")])
   .inputValidator((i) =>
     z
       .object({
@@ -78,7 +79,7 @@ export const resolveSyncConflict = createServerFn({ method: "POST" })
 
 /** Lê config do connector hubspot (auto_push_enabled etc.). */
 export const getHubspotSyncConfig = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.hubspot_sync", "view")])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
@@ -96,7 +97,7 @@ export const getHubspotSyncConfig = createServerFn({ method: "GET" })
 
 /** Liga/desliga auto-push periódico. */
 export const setHubspotAutoPush = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.hubspot_sync", "manage")])
   .inputValidator((i) => z.object({ enabled: z.boolean() }).parse(i))
   .handler(async ({ data, context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);

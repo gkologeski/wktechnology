@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -295,7 +297,7 @@ async function resolveCampaignRecipients(
 }
 
 export const createWhatsAppCampaign = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "create")])
   .inputValidator((input) => CreateInput.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -354,7 +356,7 @@ export const createWhatsAppCampaign = createServerFn({ method: "POST" })
   });
 
 export const listWhatsAppCampaigns = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "view")])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("whatsapp_campaigns")
@@ -385,7 +387,7 @@ export const listWhatsAppCampaigns = createServerFn({ method: "GET" })
   });
 
 export const getWhatsAppCampaign = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "view")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -405,7 +407,7 @@ export const getWhatsAppCampaign = createServerFn({ method: "POST" })
   });
 
 export const setWhatsAppCampaignStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "manage")])
   .inputValidator((input) =>
     z
       .object({
@@ -415,6 +417,8 @@ export const setWhatsAppCampaignStatus = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "whatsapp_campaigns", data.id, "manage");
+
     const patch: {
       status: "running" | "paused" | "canceled";
       started_at?: string;
@@ -464,7 +468,7 @@ const UpdateInput = z.object({
 });
 
 export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "update")])
   .inputValidator((input) => UpdateInput.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -553,7 +557,7 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
   });
 
 export const duplicateWhatsAppCampaign = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "manage")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -611,7 +615,7 @@ export const duplicateWhatsAppCampaign = createServerFn({ method: "POST" })
   });
 
 export const deleteWhatsAppCampaign = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "delete")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -642,7 +646,7 @@ export const deleteWhatsAppCampaign = createServerFn({ method: "POST" })
   });
 
 export const previewCampaignAudience = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "view")])
   .inputValidator((input) => PreviewInput.parse(input))
   .handler(async ({ data, context }) => {
     if (!data.audience) throw new Error("Escolha um público.");
@@ -703,9 +707,11 @@ export const previewCampaignAudience = createServerFn({ method: "POST" })
   });
 
 export const getWhatsAppCampaignForEdit = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "view")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "whatsapp_campaigns", data.id, "view");
+
     const { data: camp, error } = await context.supabase
       .from("whatsapp_campaigns")
       .select(
@@ -718,7 +724,7 @@ export const getWhatsAppCampaignForEdit = createServerFn({ method: "POST" })
   });
 
 export const listAudienceFieldValues = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "view")])
   .inputValidator((input) =>
     z
       .object({

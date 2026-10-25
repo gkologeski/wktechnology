@@ -1,3 +1,4 @@
+import { assertSalesWorker } from "@/lib/access-control/sales-worker.server";
 import { renderTokens as renderTemplate } from "@/lib/message-tokens";
 // Engine de envio de campanhas de email (broadcast).
 // - resolveRecipients: materializa destinatários a partir de segment (lead|contact) ou lista manual,
@@ -306,12 +307,14 @@ async function processBroadcast(broadcastId: string): Promise<{ sent: number; fa
   const batchSize = Math.max(1, Math.min(60, Number(b.rate_per_minute ?? 30)));
   const { data: recips } = await admin
     .from("email_broadcast_recipients")
-    .select("id, email, name, variables")
+    .select("id, email, name, variables,contact_id,lead_id")
     .eq("broadcast_id", b.id)
     .eq("status", "pending")
     .limit(batchSize);
 
   const list = (recips ?? []) as Array<{
+    contact_id: string | null;
+    lead_id: string | null;
     id: string;
     email: string;
     name: string | null;
@@ -377,6 +380,11 @@ async function processBroadcast(broadcastId: string): Promise<{ sent: number; fa
         "MIME-Version: 1.0\r\n",
         `MIME-Version: 1.0\r\nList-Unsubscribe: <${unsubUrl}>\r\nList-Unsubscribe-Post: List-Unsubscribe=One-Click\r\n`,
       );
+      await assertSalesWorker(supabaseAdmin, "email_broadcasts", b.id, [
+        { table: "email_accounts", id: account.id },
+        ...(r.contact_id ? [{ table: "contacts", id: r.contact_id }] : []),
+        ...(r.lead_id ? [{ table: "leads", id: r.lead_id }] : []),
+      ]);
       await gmailSendRaw(accessToken, rawWithUnsub);
       await admin
         .from("email_broadcast_recipients")

@@ -5,6 +5,17 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
+import { SalesRecordAccess, SalesAction } from "@/components/sales-access";
+import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
+import { useCurrentUserId } from "@/hooks/use-current-user-id";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { getSalesPublicToken } from "@/lib/access-control/sales-sharing.functions";
 import { ArrowLeft, Copy, Download, Lock, Pencil, Send, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
@@ -49,7 +60,19 @@ const APPROVAL_LABEL: Record<string, string> = {
 
 function ProposalPage() {
   const { id } = Route.useParams();
+  return (
+    <SalesRecordAccess table="proposals" id={id}>
+      <ProposalContent id={id} />
+    </SalesRecordAccess>
+  );
+}
+function ProposalContent({ id }: { id: string }) {
   const qc = useQueryClient();
+  const members = useWorkspaceMembers();
+  const userId = useCurrentUserId();
+  const [reviewerId, setReviewerId] = useState("");
+  const share = useServerFn(getSalesPublicToken);
+  const sharedToken = async () => share({ data: { table: "proposals", id } });
   const getDoc = useServerFn(getProposalDocument);
   const get = useServerFn(getProposal);
   const send = useServerFn(sendProposal);
@@ -79,7 +102,7 @@ function ProposalPage() {
     onError: (e: Error) => toast.error(e.message),
   });
   const reqM = useMutation({
-    mutationFn: () => req({ data: { proposalId: id, comment } }),
+    mutationFn: () => req({ data: { proposalId: id, reviewerId, comment } }),
     onSuccess: () => {
       toast.success("Aprovação solicitada.");
       setComment("");
@@ -125,7 +148,15 @@ function ProposalPage() {
 
   const doc = docQ.data;
   const p = doc.proposal;
-  const publicUrl = p.public_token ? `${getPublicAppUrl()}/proposal/${p.public_token}` : null;
+  const copyLink = async () => {
+    try {
+      const token = await sharedToken();
+      await navigator.clipboard.writeText(`${getPublicAppUrl()}/proposal/${token}`);
+      toast.success("Link copiado.");
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-5xl space-y-4 p-6">
@@ -148,59 +179,93 @@ function ProposalPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           {!p.locked && (
-            <Button variant="outline" onClick={() => setWizard({ proposalId: id })}>
-              <Pencil className="mr-2 h-4 w-4" /> Editar
-            </Button>
+            <SalesAction table="proposals" id={id} action="update">
+              <Button variant="outline" onClick={() => setWizard({ proposalId: id })}>
+                <Pencil className="mr-2 h-4 w-4" /> Editar
+              </Button>
+            </SalesAction>
           )}
-          {publicUrl && (
-            <Button
-              variant="outline"
-              onClick={() => {
-                void navigator.clipboard.writeText(publicUrl);
-                toast.success("Link copiado.");
-              }}
-            >
+          <SalesAction
+            table="proposals"
+            id={id}
+            action="manage"
+            resource="techsales.proposal_share"
+          >
+            <Button variant="outline" onClick={() => void copyLink()}>
               <Copy className="mr-2 h-4 w-4" /> Copiar link
             </Button>
-          )}
-          {p.public_token && (
             <Button
               variant="outline"
-              onClick={() => window.location.assign(`/api/public/proposals/${p.public_token}/pdf`)}
+              onClick={async () => {
+                try {
+                  const token = await sharedToken();
+                  window.location.assign(`/api/public/proposals/${token}/pdf`);
+                } catch (e) {
+                  toast.error((e as Error).message);
+                }
+              }}
             >
               <Download className="mr-2 h-4 w-4" /> Baixar PDF
             </Button>
-          )}
+          </SalesAction>
           {p.status === "draft" && !p.locked && (
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="secondary">
-                  <ShieldCheck className="mr-2 h-4 w-4" /> Enviar para aprovação
-                </Button>
-              </SheetTrigger>
-              <SheetContent>
-                <SheetHeader>
-                  <SheetTitle>Solicitar aprovação interna</SheetTitle>
-                </SheetHeader>
-                <div className="space-y-3 pt-4">
-                  <Label htmlFor="appr-comment">Comentário</Label>
-                  <Textarea
-                    id="appr-comment"
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    rows={4}
-                  />
-                  <Button onClick={() => reqM.mutate()} disabled={reqM.isPending}>
-                    Enviar para revisão
+            <SalesAction table="proposals" id={id} action="update">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="secondary">
+                    <ShieldCheck className="mr-2 h-4 w-4" /> Enviar para aprovação
                   </Button>
-                </div>
-              </SheetContent>
-            </Sheet>
+                </SheetTrigger>
+                <SheetContent>
+                  <SheetHeader>
+                    <SheetTitle>Solicitar aprovação interna</SheetTitle>
+                  </SheetHeader>
+                  <div className="space-y-3 pt-4">
+                    <Label htmlFor="appr-reviewer">Revisor</Label>
+                    <Select value={reviewerId} onValueChange={setReviewerId}>
+                      <SelectTrigger id="appr-reviewer">
+                        <SelectValue placeholder="Selecione o responsável pela aprovação" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(members.data ?? [])
+                          .filter((m) => m.user_id !== userId)
+                          .map((m) => (
+                            <SelectItem key={m.user_id} value={m.user_id}>
+                              {m.full_name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      O revisor precisa ter permissão de aprovação. Você não pode aprovar a própria
+                      solicitação.
+                    </p>
+                    <Label htmlFor="appr-comment">Comentário</Label>
+                    <Textarea
+                      id="appr-comment"
+                      value={comment}
+                      onChange={(e) => setComment(e.target.value)}
+                      rows={4}
+                    />
+                    <Button onClick={() => reqM.mutate()} disabled={reqM.isPending || !reviewerId}>
+                      Enviar para revisão
+                    </Button>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </SalesAction>
           )}
           {(p.status === "approved" || p.status === "draft") && (
-            <Button onClick={() => sendM.mutate()} disabled={sendM.isPending}>
-              <Send className="mr-2 h-4 w-4" /> Enviar ao cliente
-            </Button>
+            <SalesAction
+              table="proposals"
+              id={id}
+              action="manage"
+              resource="techsales.proposal_send"
+            >
+              <Button onClick={() => sendM.mutate()} disabled={sendM.isPending}>
+                <Send className="mr-2 h-4 w-4" /> Enviar ao cliente
+              </Button>
+            </SalesAction>
           )}
           <GenerateContractButton source={{ proposalId: id }} size="default" />
         </div>
@@ -233,24 +298,28 @@ function ProposalPage() {
                   </Badge>
                   <span className="ml-2 text-muted-foreground">{a.comment ?? ""}</span>
                 </div>
-                {a.status === "pending" && (
-                  <div className="flex gap-1">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => decideM.mutate({ approvalId: a.id, decision: "approved" })}
-                    >
-                      Aprovar
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => decideM.mutate({ approvalId: a.id, decision: "rejected" })}
-                    >
-                      Reprovar
-                    </Button>
-                  </div>
-                )}
+                {a.status === "pending" &&
+                  a.reviewer_id === userId &&
+                  a.requested_by !== userId && (
+                    <SalesAction table="proposals" id={id} action="approve">
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => decideM.mutate({ approvalId: a.id, decision: "approved" })}
+                        >
+                          Aprovar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => decideM.mutate({ approvalId: a.id, decision: "rejected" })}
+                        >
+                          Reprovar
+                        </Button>
+                      </div>
+                    </SalesAction>
+                  )}
               </div>
             ))}
           </CardContent>

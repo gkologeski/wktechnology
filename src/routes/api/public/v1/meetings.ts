@@ -1,3 +1,4 @@
+import { apiSubjectClient } from "@/lib/api-keys/subject-client.server";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -40,10 +41,11 @@ export const Route = createFileRoute("/api/public/v1/meetings")({
         if (!auth) return unauthorized();
         const denied = requireScope(auth, "read");
         if (denied) return denied;
+        const subjectClient = apiSubjectClient(supabaseAdmin, auth);
 
         const url = new URL(request.url);
         const params = parseListParams(url);
-        let query = supabaseAdmin
+        let query = subjectClient
           .from("meetings")
           .select(SELECT, { count: "exact" })
           .eq("workspace_id", auth.workspaceId);
@@ -72,6 +74,7 @@ export const Route = createFileRoute("/api/public/v1/meetings")({
         if (!auth) return unauthorized();
         const denied = requireScope(auth, "write");
         if (denied) return denied;
+        const subjectClient = apiSubjectClient(supabaseAdmin, auth);
 
         const body = await request.json().catch(() => null);
         const parsed = CreateMeeting.safeParse(body);
@@ -84,7 +87,7 @@ export const Route = createFileRoute("/api/public/v1/meetings")({
 
         // Garante que a entidade vinculada pertence ao workspace da chave
         if (input.lead_id) {
-          const { data: lead } = await supabaseAdmin
+          const { data: lead } = await subjectClient
             .from("leads")
             .select("id")
             .eq("id", input.lead_id)
@@ -97,7 +100,7 @@ export const Route = createFileRoute("/api/public/v1/meetings")({
             });
         }
         if (input.contact_id) {
-          const { data: contact } = await supabaseAdmin
+          const { data: contact } = await subjectClient
             .from("contacts")
             .select("id")
             .eq("id", input.contact_id)
@@ -110,7 +113,7 @@ export const Route = createFileRoute("/api/public/v1/meetings")({
             });
         }
         if (input.deal_id) {
-          const { data: deal } = await supabaseAdmin
+          const { data: deal } = await subjectClient
             .from("deals")
             .select("id")
             .eq("id", input.deal_id)
@@ -126,7 +129,7 @@ export const Route = createFileRoute("/api/public/v1/meetings")({
         const token = randomToken(28);
         const room = `wkt-${auth.workspaceId.slice(0, 8)}-${randomToken(20)}`;
 
-        const { data: meeting, error } = await supabaseAdmin
+        const { data: meeting, error } = await subjectClient
           .from("meetings")
           .insert({
             // meetings.owner_id referencia workspaces (não usuários).
@@ -154,7 +157,7 @@ export const Route = createFileRoute("/api/public/v1/meetings")({
           });
 
         // Registra a reunião na timeline da entidade vinculada
-        const { error: activityError } = await supabaseAdmin.from("activities").insert({
+        const { error: activityError } = await subjectClient.from("activities").insert({
           owner_id: auth.ownerId,
           workspace_id: auth.workspaceId,
           created_by: auth.ownerId,

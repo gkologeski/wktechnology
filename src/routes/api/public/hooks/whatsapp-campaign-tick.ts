@@ -1,3 +1,4 @@
+import { assertSalesWorker } from "@/lib/access-control/sales-worker.server";
 import { createFileRoute } from "@tanstack/react-router";
 import { toWhatsAppE164 } from "@/lib/phone/whatsapp-e164";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -196,6 +197,12 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
     const body = applyTemplate(camp.body_template ?? "", vars);
 
     try {
+      await assertSalesWorker(
+        supabaseAdmin,
+        "whatsapp_campaigns",
+        camp.id,
+        r.contact_id ? [{ table: "contacts", id: r.contact_id }] : [],
+      );
       const { wamid, raw } = await metaSend(num, {
         to: toBare,
         body: camp.template_name ? "" : body,

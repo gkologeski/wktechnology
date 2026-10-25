@@ -1,3 +1,4 @@
+import { salesPipelineReferences } from "@/lib/access-control/sales-references";
 // Resolve UUIDs de FKs comuns (usuário, empresa, pipeline, sequência,
 // regra de rotação) para nomes amigáveis. Faz pré-carregamento leve dos
 // primeiros N registros e resolve IDs desconhecidos sob demanda via server
@@ -43,7 +44,7 @@ export function useReferenceLabels() {
     queryKey: ["ref-pipelines-basic"],
     staleTime: 5 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from("pipelines").select("id, name, stages");
+      const { data, error } = await salesPipelineReferences(supabase).select("id, name, stages");
       if (error) throw error;
       return (data ?? []) as Pipeline[];
     },

@@ -1,3 +1,6 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { workRpc } from "@/lib/access-control/work-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -53,7 +56,7 @@ async function withTransientRetry<T>(
 
 // List integrations of the current user
 export const listIntegrations = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.integrations", "view")])
   .handler(async ({ context }) => {
     const { supabase } = context;
     const { data, error } = await withTransientRetry(() =>
@@ -71,22 +74,29 @@ export const listIntegrations = createServerFn({ method: "GET" })
   });
 
 export const getIntegration = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.integrations", "view")])
   .inputValidator((input: unknown) =>
     z.object({ provider: z.string().min(1).max(40) }).parse(input),
   )
   .handler(async ({ context, data }) => {
     const { userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    // oauth_tokens is revoked from the authenticated role at the column level;
-    // read it server-side via service role, scoped explicitly by owner_id.
+    const { data: visible, error: visibilityError } = await context.supabase
+      .from("integrations")
+      .select("id")
+      .eq("provider", data.provider)
+      .eq("workspace_id", workspaceId)
+      .maybeSingle();
+    if (visibilityError) throw new Error(visibilityError.message);
+    if (!visible) return { integration: null };
+    await assertSalesRecord(context.supabase, "integrations", visible.id, "view");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row, error } = await supabaseAdmin
       .from("integrations")
       .select(
-        "id, provider, status, config, oauth_tokens, credentials_secret_ref, last_used_at, created_at, updated_at",
+        "id,provider,status,config,oauth_tokens,credentials_secret_ref,last_used_at,created_at,updated_at",
       )
-      .eq("provider", data.provider)
+      .eq("id", visible.id)
       .eq("workspace_id", workspaceId)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -106,7 +116,7 @@ export const getIntegration = createServerFn({ method: "POST" })
   });
 
 export const upsertIntegration = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.integrations", ["create", "update"])])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -122,28 +132,23 @@ export const upsertIntegration = createServerFn({ method: "POST" })
     const workspaceId = await resolveActiveWorkspace(userId);
     const ws = await getActiveWorkspaceId(supabase, userId);
     await assertPermission(supabase, userId, ws, INTEGRATIONS_MANAGE);
+    const id = await workRpc<string>(supabase, "sales_configure_integration", {
+      p_provider: data.provider,
+      p_status: data.status ?? "connected",
+      p_config: data.config ?? {},
+      p_credential_ref: data.credentials_secret_ref ?? null,
+    });
     const { data: row, error } = await supabase
-
       .from("integrations")
-      .upsert(
-        {
-          owner_id: userId,
-          workspace_id: workspaceId,
-          provider: data.provider,
-          status: data.status ?? "connected",
-          config: (data.config ?? {}) as never,
-          credentials_secret_ref: data.credentials_secret_ref ?? null,
-        },
-        { onConflict: "owner_id,provider" },
-      )
-      .select()
+      .select("id,provider,status,config,created_at,updated_at")
+      .eq("id", id)
       .single();
     if (error) throw new Error(error.message);
     return { integration: row };
   });
 
 export const disconnectIntegration = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.integrations", "delete")])
   .inputValidator((input: unknown) =>
     z.object({ provider: z.string().min(1).max(40) }).parse(input),
   )
@@ -158,7 +163,7 @@ export const disconnectIntegration = createServerFn({ method: "POST" })
   });
 
 export const listJobs = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.integrations", "view")])
   .inputValidator((input: unknown) =>
     z.object({ provider: z.string().min(1).max(40).optional() }).parse(input),
   )
@@ -184,7 +189,7 @@ export const listJobs = createServerFn({ method: "POST" })
   });
 
 export const getCreditUsage = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.integrations", "view")])
   .inputValidator((input: unknown) =>
     z.object({ provider: z.string().min(1).max(40) }).parse(input),
   )
@@ -229,7 +234,7 @@ export const getCreditUsage = createServerFn({ method: "POST" })
   });
 
 export const setCreditLimit = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.integrations", "update")])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -266,7 +271,7 @@ export type ProviderSlugType = ProviderSlug;
 const ZOMBIE_IDLE_SECONDS = 300;
 
 export const sweepZombieJobs = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.integrations", "manage")])
   .inputValidator((input: unknown) =>
     z.object({ provider: z.string().min(1).max(40).optional() }).parse(input),
   )
@@ -327,7 +332,7 @@ export const sweepZombieJobs = createServerFn({ method: "POST" })
 
 // Cancela manualmente um job em execução, marcando-o como "failed".
 export const cancelJob = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.integrations", "update")])
   .inputValidator((input: unknown) => z.object({ jobId: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
     const { supabase } = context;

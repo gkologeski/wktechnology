@@ -1,0 +1,3303 @@
+[
+  {
+    "file": "src/lib/webhooks.functions.ts",
+    "operation": "listWebhooks",
+    "resource": "system.webhooks",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/webhooks.functions.ts",
+    "operation": "upsertWebhook",
+    "resource": "system.webhooks",
+    "action": [
+      "create",
+      "update"
+    ],
+    "record_guard": [
+      "outbound_webhooks",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/webhooks.functions.ts",
+    "operation": "deleteWebhook",
+    "resource": "system.webhooks",
+    "action": "delete",
+    "record_guard": [
+      "outbound_webhooks",
+      "id",
+      "delete"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/webhooks.functions.ts",
+    "operation": "listWebhookDeliveries",
+    "resource": "system.webhooks",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/webhooks.functions.ts",
+    "operation": "retryWebhookDelivery",
+    "resource": "system.webhooks",
+    "action": "manage",
+    "record_guard": [
+      "webhook_deliveries",
+      "id",
+      "manage"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/webhooks.functions.ts",
+    "operation": "getWebhookSecret",
+    "resource": "system.webhooks",
+    "action": "view",
+    "record_guard": [
+      "outbound_webhooks",
+      "id",
+      "view"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/webhooks.functions.ts",
+    "operation": "runWebhookTick",
+    "resource": "system.webhooks",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/hubspot-reconcile-entities.functions.ts",
+    "operation": "reconcileHubspotEntities",
+    "resource": "system.hubspot_sync",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/ml-scoring.functions.ts",
+    "operation": "getMlScoringStatus",
+    "resource": "techsales.prospecting_scoring",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/ml-scoring.functions.ts",
+    "operation": "setMlWeight",
+    "resource": "techsales.prospecting_scoring",
+    "action": "update",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/ml-scoring.functions.ts",
+    "operation": "trainMlScoring",
+    "resource": "techsales.prospecting_scoring",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/meetings.functions.ts",
+    "operation": "createMeeting",
+    "resource": "techsales.meetings",
+    "action": "create",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/meetings.functions.ts",
+    "operation": "listMeetings",
+    "resource": "techsales.meetings",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/meetings.functions.ts",
+    "operation": "getMeeting",
+    "resource": "techsales.meetings",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/meetings.functions.ts",
+    "operation": "endMeeting",
+    "resource": "techsales.meetings",
+    "action": "manage",
+    "record_guard": [
+      "meetings",
+      "id",
+      "manage"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/meetings.functions.ts",
+    "operation": "deleteMeeting",
+    "resource": "techsales.meetings",
+    "action": "delete",
+    "record_guard": [
+      "meetings",
+      "id",
+      "delete"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/meetings.functions.ts",
+    "operation": "createRecordingUploadUrl",
+    "resource": "techsales.meetings",
+    "action": "create",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/meetings.functions.ts",
+    "operation": "attachRecording",
+    "resource": "techsales.meetings",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/meetings.functions.ts",
+    "operation": "generateMeetingSummary",
+    "resource": "techsales.meetings",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/meetings.functions.ts",
+    "operation": "summarizeCalendarEventRecording",
+    "resource": "techsales.meetings",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/meetings.functions.ts",
+    "operation": "createTasksFromActionItems",
+    "resource": "techsales.meetings",
+    "action": "create",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/meetings.functions.ts",
+    "operation": "signMeetingRecording",
+    "resource": "techsales.meetings",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/meetings.functions.ts",
+    "operation": "getMeetingSettings",
+    "resource": "techsales.meeting_settings",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/meetings.functions.ts",
+    "operation": "saveMeetingSettings",
+    "resource": "techsales.meeting_settings",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting-scripts.functions.ts",
+    "operation": "listScripts",
+    "resource": "techsales.prospecting_scripts",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting-scripts.functions.ts",
+    "operation": "upsertScript",
+    "resource": "techsales.prospecting_scripts",
+    "action": [
+      "create",
+      "update"
+    ],
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting-scripts.functions.ts",
+    "operation": "deleteScript",
+    "resource": "techsales.prospecting_scripts",
+    "action": "delete",
+    "record_guard": [
+      "prospecting_scripts",
+      "id",
+      "delete"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/hubspot-reconcile.functions.ts",
+    "operation": "reconcileHubspotActivities",
+    "resource": "system.hubspot_sync",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/email-templates.functions.ts",
+    "operation": "listEmailTemplates",
+    "resource": "system.automation.email_templates",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/email-templates.functions.ts",
+    "operation": "upsertEmailTemplate",
+    "resource": "system.automation.email_templates",
+    "action": [
+      "create",
+      "update"
+    ],
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/email-templates.functions.ts",
+    "operation": "deleteEmailTemplate",
+    "resource": "system.automation.email_templates",
+    "action": "delete",
+    "record_guard": [
+      "email_templates",
+      "id",
+      "delete"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/email-templates.functions.ts",
+    "operation": "listEmailSnippets",
+    "resource": "system.snippets",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/email-templates.functions.ts",
+    "operation": "upsertEmailSnippet",
+    "resource": "system.snippets",
+    "action": [
+      "create",
+      "update"
+    ],
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/email-templates.functions.ts",
+    "operation": "deleteEmailSnippet",
+    "resource": "system.snippets",
+    "action": "delete",
+    "record_guard": [
+      "email_snippets",
+      "id",
+      "delete"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/email-broadcast.functions.ts",
+    "operation": "listEmailBroadcasts",
+    "resource": "techsales.marketing.campaigns",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/email-broadcast.functions.ts",
+    "operation": "getEmailBroadcast",
+    "resource": "techsales.marketing.campaigns",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/email-broadcast.functions.ts",
+    "operation": "createEmailBroadcast",
+    "resource": "techsales.marketing.campaigns",
+    "action": "create",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/email-broadcast.functions.ts",
+    "operation": "updateEmailBroadcast",
+    "resource": "techsales.marketing.campaigns",
+    "action": "update",
+    "record_guard": [
+      "email_broadcasts",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/email-broadcast.functions.ts",
+    "operation": "deleteEmailBroadcast",
+    "resource": "techsales.marketing.campaigns",
+    "action": "delete",
+    "record_guard": [
+      "email_broadcasts",
+      "id",
+      "delete"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/email-broadcast.functions.ts",
+    "operation": "scheduleEmailBroadcast",
+    "resource": "techsales.marketing.campaigns",
+    "action": "manage",
+    "record_guard": [
+      "email_broadcasts",
+      "id",
+      "manage"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/email-broadcast.functions.ts",
+    "operation": "setEmailBroadcastStatus",
+    "resource": "techsales.marketing.campaigns",
+    "action": "manage",
+    "record_guard": [
+      "email_broadcasts",
+      "id",
+      "manage"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/email-broadcast.functions.ts",
+    "operation": "sendTestEmailBroadcast",
+    "resource": "techsales.marketing.campaigns",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/email-broadcast.functions.ts",
+    "operation": "listSegmentsForBroadcast",
+    "resource": "techsales.marketing.campaigns",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/sdr-agent.functions.ts",
+    "operation": "listPlaybooks",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/sdr-agent.functions.ts",
+    "operation": "setDefaultPlaybook",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "update",
+    "record_guard": [
+      "sdr_playbooks",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/sdr-agent.functions.ts",
+    "operation": "upsertPlaybook",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": [
+      "create",
+      "update"
+    ],
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/sdr-agent.functions.ts",
+    "operation": "deletePlaybook",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "delete",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/sdr-agent.functions.ts",
+    "operation": "renamePlaybook",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "update",
+    "record_guard": [
+      "sdr_playbooks",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/sdr-agent.functions.ts",
+    "operation": "listEnrollments",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/sdr-agent.functions.ts",
+    "operation": "enrollLead",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "create",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/sdr-agent.functions.ts",
+    "operation": "requestHandoff",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "update",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/sdr-agent.functions.ts",
+    "operation": "getConversationAiOwner",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/sdr-agent.functions.ts",
+    "operation": "setConversationAiOwner",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "update",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/rotation.functions.ts",
+    "operation": "listRotationRules",
+    "resource": "system.automation.rotation",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/rotation.functions.ts",
+    "operation": "saveRotationRule",
+    "resource": "system.automation.rotation",
+    "action": [
+      "create",
+      "update"
+    ],
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/rotation.functions.ts",
+    "operation": "deleteRotationRule",
+    "resource": "system.automation.rotation",
+    "action": "delete",
+    "record_guard": [
+      "rotation_rules",
+      "id",
+      "delete"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/rotation.functions.ts",
+    "operation": "listWorkspaceMembers",
+    "resource": null,
+    "action": null,
+    "record_guard": null,
+    "exception": "Technical metadata: selected active workspace member IDs/names/status only; no legacy tenant fallback or credentials. No assignment authority.",
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/rotation.functions.ts",
+    "operation": "rotateRecordNow",
+    "resource": "system.automation.rotation",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/scoring.functions.ts",
+    "operation": "listScoringRules",
+    "resource": "techsales.prospecting_scoring",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/scoring.functions.ts",
+    "operation": "saveScoringRule",
+    "resource": "techsales.prospecting_scoring",
+    "action": [
+      "create",
+      "update"
+    ],
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/scoring.functions.ts",
+    "operation": "deleteScoringRule",
+    "resource": "techsales.prospecting_scoring",
+    "action": "delete",
+    "record_guard": [
+      "scoring_rules",
+      "id",
+      "delete"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/scoring.functions.ts",
+    "operation": "listRecentScoreEvents",
+    "resource": "techsales.prospecting_scoring",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/scoring.functions.ts",
+    "operation": "runScoringTickNow",
+    "resource": "techsales.prospecting_scoring",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/whatsapp-campaigns.functions.ts",
+    "operation": "createWhatsAppCampaign",
+    "resource": "techsales.marketing.campaigns",
+    "action": "create",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/whatsapp-campaigns.functions.ts",
+    "operation": "listWhatsAppCampaigns",
+    "resource": "techsales.marketing.campaigns",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/whatsapp-campaigns.functions.ts",
+    "operation": "getWhatsAppCampaign",
+    "resource": "techsales.marketing.campaigns",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/whatsapp-campaigns.functions.ts",
+    "operation": "setWhatsAppCampaignStatus",
+    "resource": "techsales.marketing.campaigns",
+    "action": "manage",
+    "record_guard": [
+      "whatsapp_campaigns",
+      "id",
+      "manage"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/whatsapp-campaigns.functions.ts",
+    "operation": "updateWhatsAppCampaign",
+    "resource": "techsales.marketing.campaigns",
+    "action": "update",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/whatsapp-campaigns.functions.ts",
+    "operation": "duplicateWhatsAppCampaign",
+    "resource": "techsales.marketing.campaigns",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/whatsapp-campaigns.functions.ts",
+    "operation": "deleteWhatsAppCampaign",
+    "resource": "techsales.marketing.campaigns",
+    "action": "delete",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/whatsapp-campaigns.functions.ts",
+    "operation": "previewCampaignAudience",
+    "resource": "techsales.marketing.campaigns",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/whatsapp-campaigns.functions.ts",
+    "operation": "getWhatsAppCampaignForEdit",
+    "resource": "techsales.marketing.campaigns",
+    "action": "view",
+    "record_guard": [
+      "whatsapp_campaigns",
+      "id",
+      "view"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/whatsapp-campaigns.functions.ts",
+    "operation": "listAudienceFieldValues",
+    "resource": "techsales.marketing.campaigns",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/sdr-agent-identity.functions.ts",
+    "operation": "getSdrAgentProfile",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/sdr-agent-identity.functions.ts",
+    "operation": "createSdrAgentProfile",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "create",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/sdr-agent-identity.functions.ts",
+    "operation": "sdrAgentHistory",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/sdr-agent-identity.functions.ts",
+    "operation": "undoSdrAgentHistory",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/email-inbox.functions.ts",
+    "operation": "listEmailThreads",
+    "resource": "techsales.inbox.email",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/email-inbox.functions.ts",
+    "operation": "getEmailThread",
+    "resource": "techsales.inbox.email",
+    "action": "view",
+    "record_guard": [
+      "email_threads",
+      "thread_id",
+      "view"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/zapier.functions.ts",
+    "operation": "listZapierSubscriptions",
+    "resource": "system.integrations",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/zapier.functions.ts",
+    "operation": "deleteZapierSubscription",
+    "resource": "system.integrations",
+    "action": "delete",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting-campaigns.functions.ts",
+    "operation": "listCampaigns",
+    "resource": "techsales.marketing.campaigns",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting-campaigns.functions.ts",
+    "operation": "getCampaign",
+    "resource": "techsales.marketing.campaigns",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting-campaigns.functions.ts",
+    "operation": "upsertCampaign",
+    "resource": "techsales.marketing.campaigns",
+    "action": [
+      "create",
+      "update"
+    ],
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting-campaigns.functions.ts",
+    "operation": "deleteCampaign",
+    "resource": "techsales.marketing.campaigns",
+    "action": "delete",
+    "record_guard": [
+      "prospecting_campaigns",
+      "id",
+      "delete"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting-campaigns.functions.ts",
+    "operation": "setCampaignStatus",
+    "resource": "techsales.marketing.campaigns",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting-campaigns.functions.ts",
+    "operation": "listCampaignAttempts",
+    "resource": "techsales.marketing.campaigns",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting-campaigns.functions.ts",
+    "operation": "auditCampaignQueueability",
+    "resource": "techsales.marketing.campaigns",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting-campaigns.functions.ts",
+    "operation": "dialLeadNow",
+    "resource": "techsales.marketing.campaigns",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/booking.functions.ts",
+    "operation": "listBookingPages",
+    "resource": "system.booking",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/booking.functions.ts",
+    "operation": "upsertBookingPage",
+    "resource": "system.booking",
+    "action": [
+      "create",
+      "update"
+    ],
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/booking.functions.ts",
+    "operation": "deleteBookingPage",
+    "resource": "system.booking",
+    "action": "delete",
+    "record_guard": [
+      "booking_pages",
+      "id",
+      "delete"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/booking.functions.ts",
+    "operation": "listBookings",
+    "resource": "system.booking",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/booking.functions.ts",
+    "operation": "cancelBooking",
+    "resource": "system.booking",
+    "action": "update",
+    "record_guard": [
+      "bookings",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/whatsapp.functions.ts",
+    "operation": "getWhatsAppServiceWindow",
+    "resource": "techsales.inbox.whatsapp",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/whatsapp.functions.ts",
+    "operation": "sendWhatsAppMessage",
+    "resource": "techsales.inbox.whatsapp",
+    "action": "create",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/whatsapp.functions.ts",
+    "operation": "listWhatsAppConversations",
+    "resource": "techsales.inbox.whatsapp",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/whatsapp.functions.ts",
+    "operation": "listWhatsAppMessages",
+    "resource": "techsales.inbox.whatsapp",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/whatsapp.functions.ts",
+    "operation": "markWhatsAppRead",
+    "resource": "techsales.inbox.whatsapp",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/whatsapp.functions.ts",
+    "operation": "getWhatsAppConfig",
+    "resource": "system.whatsapp",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/whatsapp.functions.ts",
+    "operation": "saveWhatsAppConfig",
+    "resource": "system.whatsapp",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/whatsapp.functions.ts",
+    "operation": "listAssignableMembers",
+    "resource": "techsales.inbox.whatsapp",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/whatsapp.functions.ts",
+    "operation": "assignWhatsAppConversation",
+    "resource": "techsales.inbox.whatsapp",
+    "action": "assign",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/whatsapp.functions.ts",
+    "operation": "setWhatsAppConversationStatus",
+    "resource": "techsales.inbox.whatsapp",
+    "action": "update",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/whatsapp.functions.ts",
+    "operation": "getWhatsAppTemplateCatalog",
+    "resource": "techsales.inbox.whatsapp",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/twilio-voice.functions.ts",
+    "operation": "getVoiceAccessToken",
+    "resource": "techsales.prospecting_voice",
+    "action": "create",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/twilio-voice.functions.ts",
+    "operation": "logCallActivity",
+    "resource": "techsales.activities",
+    "action": "create",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/hubspot-sync.functions.ts",
+    "operation": "pushContactsToHubspot",
+    "resource": "system.hubspot_sync",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/hubspot-sync.functions.ts",
+    "operation": "listHubspotSyncState",
+    "resource": "system.hubspot_sync",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/email-engagement.functions.ts",
+    "operation": "listEntityEmailEngagement",
+    "resource": "techsales.inbox.email",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/email-engagement.functions.ts",
+    "operation": "getEmailEngagementReport",
+    "resource": "techsales.inbox.email",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/email-accounts.functions.ts",
+    "operation": "startGmailOAuth",
+    "resource": "techsales.email_accounts",
+    "action": "create",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/email-accounts.functions.ts",
+    "operation": "listEmailAccounts",
+    "resource": "techsales.email_accounts",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/email-accounts.functions.ts",
+    "operation": "saveEmailSignature",
+    "resource": "techsales.email_accounts",
+    "action": "update",
+    "record_guard": [
+      "email_accounts",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/email-accounts.functions.ts",
+    "operation": "disconnectEmailAccount",
+    "resource": "techsales.email_accounts",
+    "action": "delete",
+    "record_guard": [
+      "email_accounts",
+      "id",
+      "delete"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/associations.functions.ts",
+    "operation": "propagateAssociationHistory",
+    "resource": "techsales.activities",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/email-send.functions.ts",
+    "operation": "sendGmailEmail",
+    "resource": "techsales.inbox.email",
+    "action": "create",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/hubspot.functions.ts",
+    "operation": "previewHubspotLeads",
+    "resource": "system.hubspot_sync",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/hubspot.functions.ts",
+    "operation": "importHubspotLeads",
+    "resource": "system.hubspot_sync",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/slack.functions.ts",
+    "operation": "getSlackIntegration",
+    "resource": "system.integrations",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/slack.functions.ts",
+    "operation": "saveSlackIntegration",
+    "resource": "system.integrations",
+    "action": [
+      "create",
+      "update"
+    ],
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/slack.functions.ts",
+    "operation": "deleteSlackIntegration",
+    "resource": "system.integrations",
+    "action": "delete",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/slack.functions.ts",
+    "operation": "upsertSlackRoute",
+    "resource": "system.integrations",
+    "action": [
+      "create",
+      "update"
+    ],
+    "record_guard": [
+      "slack_event_routes",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/slack.functions.ts",
+    "operation": "deleteSlackRoute",
+    "resource": "system.integrations",
+    "action": "delete",
+    "record_guard": [
+      "slack_event_routes",
+      "id",
+      "delete"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/slack.functions.ts",
+    "operation": "sendSlackTest",
+    "resource": "system.integrations",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting-audience.functions.ts",
+    "operation": "previewAudience",
+    "resource": "techsales.prospecting_queue",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/goals.functions.ts",
+    "operation": "listGoals",
+    "resource": "techsales.goals",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/goals.functions.ts",
+    "operation": "upsertGoal",
+    "resource": "techsales.goals",
+    "action": [
+      "create",
+      "update"
+    ],
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/goals.functions.ts",
+    "operation": "deleteGoal",
+    "resource": "techsales.goals",
+    "action": "delete",
+    "record_guard": [
+      "goals",
+      "id",
+      "delete"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/goals.functions.ts",
+    "operation": "computeGoalsProgress",
+    "resource": "techsales.goals",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/reports.functions.ts",
+    "operation": "listReports",
+    "resource": "system.analytics.reports",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/reports.functions.ts",
+    "operation": "saveReport",
+    "resource": "system.analytics.reports",
+    "action": [
+      "create",
+      "update"
+    ],
+    "record_guard": [
+      "custom_reports",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/reports.functions.ts",
+    "operation": "deleteReport",
+    "resource": "system.analytics.reports",
+    "action": "delete",
+    "record_guard": [
+      "custom_reports",
+      "id",
+      "delete"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/reports.functions.ts",
+    "operation": "runReport",
+    "resource": "system.analytics.reports",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/reports.functions.ts",
+    "operation": "toggleReportFavorite",
+    "resource": "system.analytics.reports",
+    "action": "update",
+    "record_guard": [
+      "custom_reports",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/sequences.functions.ts",
+    "operation": "listSequences",
+    "resource": "system.automation.sequences",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/sequences.functions.ts",
+    "operation": "saveSequence",
+    "resource": "system.automation.sequences",
+    "action": [
+      "create",
+      "update"
+    ],
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/sequences.functions.ts",
+    "operation": "deleteSequence",
+    "resource": "system.automation.sequences",
+    "action": "delete",
+    "record_guard": [
+      "sequences",
+      "id",
+      "delete"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/sequences.functions.ts",
+    "operation": "listEnrollments",
+    "resource": "system.automation.sequences",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/sequences.functions.ts",
+    "operation": "enrollInSequence",
+    "resource": "system.automation.sequences",
+    "action": "create",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/sequences.functions.ts",
+    "operation": "updateEnrollmentStatus",
+    "resource": "system.automation.sequences",
+    "action": "update",
+    "record_guard": [
+      "sequence_enrollments",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/sequences.functions.ts",
+    "operation": "triggerSequencesTickNow",
+    "resource": "system.automation.sequences",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting.functions.ts",
+    "operation": "listProspectSearches",
+    "resource": "techsales.prospecting_search",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting.functions.ts",
+    "operation": "upsertProspectSearch",
+    "resource": "techsales.prospecting_search",
+    "action": [
+      "create",
+      "update"
+    ],
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting.functions.ts",
+    "operation": "deleteProspectSearch",
+    "resource": "techsales.prospecting_search",
+    "action": "delete",
+    "record_guard": [
+      "prospecting_searches",
+      "id",
+      "delete"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting.functions.ts",
+    "operation": "listProspectResults",
+    "resource": "techsales.prospecting_search",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting.functions.ts",
+    "operation": "runProspectSearch",
+    "resource": "techsales.prospecting_search",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting.functions.ts",
+    "operation": "importProspectAsLead",
+    "resource": "techsales.prospecting_search",
+    "action": "create",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/pipelines.functions.ts",
+    "operation": "ensureDefaultPipeline",
+    "resource": "system.pipelines",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/hubspot-twoway.functions.ts",
+    "operation": "pushEntityNow",
+    "resource": "system.hubspot_sync",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/hubspot-twoway.functions.ts",
+    "operation": "pushAllNow",
+    "resource": "system.hubspot_sync",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/hubspot-twoway.functions.ts",
+    "operation": "listSyncConflicts",
+    "resource": "system.hubspot_sync",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/hubspot-twoway.functions.ts",
+    "operation": "resolveSyncConflict",
+    "resource": "system.hubspot_sync",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/hubspot-twoway.functions.ts",
+    "operation": "getHubspotSyncConfig",
+    "resource": "system.hubspot_sync",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/hubspot-twoway.functions.ts",
+    "operation": "setHubspotAutoPush",
+    "resource": "system.hubspot_sync",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/hubspot-relink.functions.ts",
+    "operation": "relinkHubspotActivities",
+    "resource": "system.hubspot_sync",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/hubspot-relink.functions.ts",
+    "operation": "countActivitiesToRelink",
+    "resource": "system.hubspot_sync",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/quotes.functions.ts",
+    "operation": "listQuotes",
+    "resource": "techsales.quotes",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/quotes.functions.ts",
+    "operation": "listDealQuotes",
+    "resource": "techsales.quotes",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/quotes.functions.ts",
+    "operation": "createQuoteFromDeal",
+    "resource": "techsales.quotes",
+    "action": "create",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/quotes.functions.ts",
+    "operation": "updateQuote",
+    "resource": "techsales.quotes",
+    "action": "update",
+    "record_guard": [
+      "quotes",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/quotes.functions.ts",
+    "operation": "resyncQuoteLineItems",
+    "resource": "techsales.quotes",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/quotes.functions.ts",
+    "operation": "deleteQuote",
+    "resource": "techsales.quotes",
+    "action": "delete",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/quotes.functions.ts",
+    "operation": "regenerateQuoteToken",
+    "resource": "techsales.quote_share",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/quotes.functions.ts",
+    "operation": "createQuotePaymentLink",
+    "resource": "techsales.quote_send",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/quotes.functions.ts",
+    "operation": "getQuoteByToken",
+    "exception": "public token/hash port; validated separately",
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/quotes.functions.ts",
+    "operation": "respondToQuote",
+    "exception": "public token/hash port; validated separately",
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/calendar.functions.ts",
+    "operation": "testCalendarConnection",
+    "resource": "system.calendars",
+    "action": "manage",
+    "record_guard": [
+      "calendar_accounts",
+      "id",
+      "manage"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/calendar.functions.ts",
+    "operation": "startCalendarOAuth",
+    "resource": "system.calendars",
+    "action": "create",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/calendar.functions.ts",
+    "operation": "listCalendarAccounts",
+    "resource": "system.calendars",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/calendar.functions.ts",
+    "operation": "setCalendarMeetEnabled",
+    "resource": "system.calendars",
+    "action": "update",
+    "record_guard": [
+      "calendar_accounts",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/calendar.functions.ts",
+    "operation": "disconnectCalendarAccount",
+    "resource": "system.calendars",
+    "action": "delete",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/calendar.functions.ts",
+    "operation": "setCalendarSyncEnabled",
+    "resource": "system.calendars",
+    "action": "update",
+    "record_guard": [
+      "calendar_accounts",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/calendar.functions.ts",
+    "operation": "syncCalendarNow",
+    "resource": "system.calendars",
+    "action": "manage",
+    "record_guard": [
+      "calendar_accounts",
+      "id",
+      "manage"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/calendar.functions.ts",
+    "operation": "syncAccountRecordings",
+    "resource": "system.calendars",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/calendar.functions.ts",
+    "operation": "pushActivityToCalendar",
+    "resource": "system.calendars",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/calendar.functions.ts",
+    "operation": "listCalendarEvents",
+    "resource": "system.calendars",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/analytics.functions.ts",
+    "operation": "getFunnel",
+    "resource": "system.analytics.insights",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/analytics.functions.ts",
+    "operation": "getSalesVelocity",
+    "resource": "system.analytics.insights",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/analytics.functions.ts",
+    "operation": "getCohort",
+    "resource": "system.analytics.insights",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/analytics.functions.ts",
+    "operation": "listPipelinesForFunnel",
+    "resource": "system.analytics.insights",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/proposals.functions.ts",
+    "operation": "listProposals",
+    "resource": "techsales.proposals",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/proposals.functions.ts",
+    "operation": "getProposal",
+    "resource": "techsales.proposals",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/proposals.functions.ts",
+    "operation": "createProposal",
+    "resource": "techsales.proposals",
+    "action": "create",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/proposals.functions.ts",
+    "operation": "updateProposal",
+    "resource": "techsales.proposals",
+    "action": "update",
+    "record_guard": [
+      "proposals",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/proposals.functions.ts",
+    "operation": "deleteProposal",
+    "resource": "techsales.proposals",
+    "action": "delete",
+    "record_guard": [
+      "proposals",
+      "id",
+      "delete"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/proposals.functions.ts",
+    "operation": "requestProposalApproval",
+    "resource": "techsales.proposals",
+    "action": "update",
+    "record_guard": [
+      "proposals",
+      "proposalId",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/proposals.functions.ts",
+    "operation": "decideProposalApproval",
+    "resource": "techsales.proposals",
+    "action": "approve",
+    "record_guard": [
+      "proposal_approvals",
+      "approvalId",
+      "view"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/proposals.functions.ts",
+    "operation": "sendProposal",
+    "resource": "techsales.proposal_send",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/proposals.functions.ts",
+    "operation": "listClauses",
+    "resource": "techsales.proposal_clauses",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/proposals.functions.ts",
+    "operation": "createClause",
+    "resource": "techsales.proposal_clauses",
+    "action": "create",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/proposals.functions.ts",
+    "operation": "updateClause",
+    "resource": "techsales.proposal_clauses",
+    "action": "update",
+    "record_guard": [
+      "proposal_clauses",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/proposals.functions.ts",
+    "operation": "deleteClause",
+    "resource": "techsales.proposal_clauses",
+    "action": "delete",
+    "record_guard": [
+      "proposal_clauses",
+      "id",
+      "delete"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/proposals.functions.ts",
+    "operation": "listEsignAttachments",
+    "resource": "techsales.proposals",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/proposals.functions.ts",
+    "operation": "addEsignAttachment",
+    "resource": "techsales.proposals",
+    "action": "update",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/proposals.functions.ts",
+    "operation": "removeEsignAttachment",
+    "resource": "techsales.proposals",
+    "action": "delete",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/proposals.functions.ts",
+    "operation": "verifyEsignHash",
+    "exception": "public token/hash port; validated separately",
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/forms.functions.ts",
+    "operation": "listForms",
+    "resource": "techsales.marketing.forms",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/forms.functions.ts",
+    "operation": "upsertForm",
+    "resource": "techsales.marketing.forms",
+    "action": [
+      "create",
+      "update"
+    ],
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/forms.functions.ts",
+    "operation": "deleteForm",
+    "resource": "techsales.marketing.forms",
+    "action": "delete",
+    "record_guard": [
+      "forms",
+      "id",
+      "delete"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/forms.functions.ts",
+    "operation": "listFormSubmissions",
+    "resource": "techsales.marketing.forms",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/segments.functions.ts",
+    "operation": "listSegments",
+    "resource": "techsales.segments",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/segments.functions.ts",
+    "operation": "upsertSegment",
+    "resource": "techsales.segments",
+    "action": [
+      "create",
+      "update"
+    ],
+    "record_guard": [
+      "segments",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/segments.functions.ts",
+    "operation": "deleteSegment",
+    "resource": "techsales.segments",
+    "action": "delete",
+    "record_guard": [
+      "segments",
+      "id",
+      "delete"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/segments.functions.ts",
+    "operation": "listSegmentMembers",
+    "resource": "techsales.segments",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/segments.functions.ts",
+    "operation": "refreshSegmentNow",
+    "resource": "techsales.segments",
+    "action": "manage",
+    "record_guard": [
+      "segments",
+      "id",
+      "manage"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/segments.functions.ts",
+    "operation": "addStaticMembers",
+    "resource": "techsales.segments",
+    "action": "update",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/segments.functions.ts",
+    "operation": "removeStaticMember",
+    "resource": "techsales.segments",
+    "action": "delete",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/inbox/identity.functions.ts",
+    "operation": "associateInboxIdentity",
+    "resource": [
+      "techsales.inbox.email",
+      "techsales.inbox.whatsapp",
+      "techsales.inbox.chat"
+    ],
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/inbox/identity.functions.ts",
+    "operation": "getWhatsAppConversationOrigin",
+    "resource": [
+      "techsales.inbox.email",
+      "techsales.inbox.whatsapp",
+      "techsales.inbox.chat"
+    ],
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/inbox/channel-page.functions.ts",
+    "operation": "listInboxChannelPage",
+    "resource": [
+      "techsales.inbox.email",
+      "techsales.inbox.whatsapp",
+      "techsales.inbox.chat"
+    ],
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/inbox/ai-assist.functions.ts",
+    "operation": "listConversationSuggestions",
+    "resource": [
+      "techsales.inbox.email",
+      "techsales.inbox.whatsapp",
+      "techsales.inbox.chat"
+    ],
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/inbox/ai-assist.functions.ts",
+    "operation": "resolveSuggestion",
+    "resource": [
+      "techsales.inbox.email",
+      "techsales.inbox.whatsapp",
+      "techsales.inbox.chat"
+    ],
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/inbox/ai-assist.functions.ts",
+    "operation": "getMessageMaterialLink",
+    "resource": [
+      "techsales.inbox.email",
+      "techsales.inbox.whatsapp",
+      "techsales.inbox.chat"
+    ],
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/inbox/message-history.functions.ts",
+    "operation": "listConversationMessages",
+    "resource": [
+      "techsales.inbox.email",
+      "techsales.inbox.whatsapp",
+      "techsales.inbox.chat"
+    ],
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/inbox/message-history.functions.ts",
+    "operation": "getEmailThreadMeta",
+    "resource": [
+      "techsales.inbox.email",
+      "techsales.inbox.whatsapp",
+      "techsales.inbox.chat"
+    ],
+    "action": "view",
+    "record_guard": [
+      "email_threads",
+      "thread_id",
+      "view"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/inbox/message-history.functions.ts",
+    "operation": "getEmailMessageBody",
+    "resource": [
+      "techsales.inbox.email",
+      "techsales.inbox.whatsapp",
+      "techsales.inbox.chat"
+    ],
+    "action": "view",
+    "record_guard": [
+      "email_messages",
+      "message_id",
+      "view"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/leads/deal-intent.functions.ts",
+    "operation": "getPendingDealIntent",
+    "resource": "techsales.leads",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/leads/deal-intent.functions.ts",
+    "operation": "completeDealIntent",
+    "resource": "techsales.leads",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/deals/sales-dashboard.functions.ts",
+    "operation": "getSalesDashboard",
+    "resource": "techsales.dashboard",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/deals/closings.functions.ts",
+    "operation": "getDealClosingsByMonth",
+    "resource": "techsales.deals",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/deals/campaign-funnel.functions.ts",
+    "operation": "getCampaignFunnel",
+    "resource": "techsales.marketing.campaigns",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/pipelines/substatus-ai.functions.ts",
+    "operation": "suggestStageSubstatusesWithAi",
+    "resource": "system.pipelines",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/lusha.functions.ts",
+    "operation": "enrichWithLusha",
+    "resource": "techsales.prospecting_enrichment",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/core.functions.ts",
+    "operation": "listIntegrations",
+    "resource": "system.integrations",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/core.functions.ts",
+    "operation": "getIntegration",
+    "resource": "system.integrations",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/core.functions.ts",
+    "operation": "upsertIntegration",
+    "resource": "system.integrations",
+    "action": [
+      "create",
+      "update"
+    ],
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/core.functions.ts",
+    "operation": "disconnectIntegration",
+    "resource": "system.integrations",
+    "action": "delete",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/core.functions.ts",
+    "operation": "listJobs",
+    "resource": "system.integrations",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/core.functions.ts",
+    "operation": "getCreditUsage",
+    "resource": "system.integrations",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/core.functions.ts",
+    "operation": "setCreditLimit",
+    "resource": "system.integrations",
+    "action": "update",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/core.functions.ts",
+    "operation": "sweepZombieJobs",
+    "resource": "system.integrations",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/core.functions.ts",
+    "operation": "cancelJob",
+    "resource": "system.integrations",
+    "action": "update",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/enrichment.functions.ts",
+    "operation": "enrichBatch",
+    "resource": "techsales.prospecting_enrichment",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/enrichment.functions.ts",
+    "operation": "listEnrichmentJobs",
+    "resource": "techsales.prospecting_enrichment",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/enrichment.functions.ts",
+    "operation": "listJobItems",
+    "resource": "techsales.prospecting_enrichment",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/apollo.functions.ts",
+    "operation": "enrichWithApollo",
+    "resource": "techsales.prospecting_enrichment",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/viacep.functions.ts",
+    "operation": "enrichCompaniesAddress",
+    "resource": "techsales.prospecting_enrichment",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/hubspot.functions.ts",
+    "operation": "countHubspotObjects",
+    "resource": "system.hubspot_sync",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/hubspot.functions.ts",
+    "operation": "previewHubspotCounts",
+    "resource": "system.hubspot_sync",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/hubspot.functions.ts",
+    "operation": "startHubspotImport",
+    "resource": "system.hubspot_sync",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/hubspot.functions.ts",
+    "operation": "clearHubspotLocalTables",
+    "resource": "system.hubspot_sync",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/hubspot.functions.ts",
+    "operation": "tickHubspotImportJob",
+    "resource": "system.hubspot_sync",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/hubspot.functions.ts",
+    "operation": "resumeHubspotImport",
+    "resource": "system.hubspot_sync",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/hubspot.functions.ts",
+    "operation": "cancelHubspotImport",
+    "resource": "system.hubspot_sync",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/hubspot.functions.ts",
+    "operation": "previewHubspotLeads",
+    "resource": "system.hubspot_sync",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/hubspot-owners.functions.ts",
+    "operation": "syncHubspotOwners",
+    "resource": "system.hubspot_sync",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/hubspot-owners.functions.ts",
+    "operation": "setHubspotOwnerMapping",
+    "resource": "system.hubspot_sync",
+    "action": "update",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/hubspot-owners.functions.ts",
+    "operation": "listHubspotOwners",
+    "resource": "system.hubspot_sync",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/hubspot-owners.functions.ts",
+    "operation": "provisionHubspotOwnerUsers",
+    "resource": "system.hubspot_sync",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/hubspot-owners.functions.ts",
+    "operation": "setWorkspaceMemberStatus",
+    "resource": "system.hubspot_sync",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/brasilapi-cnpj.functions.ts",
+    "operation": "enrichCompanyByCNPJ",
+    "resource": "techsales.prospecting_enrichment",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/brasilapi-cnpj.functions.ts",
+    "operation": "enrichCompaniesByCNPJ",
+    "resource": "techsales.prospecting_enrichment",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/clickup.functions.ts",
+    "operation": "listClickUpTeams",
+    "resource": "system.integration_sync",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/clickup.functions.ts",
+    "operation": "listClickUpSpaces",
+    "resource": "system.integration_sync",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/clickup.functions.ts",
+    "operation": "listClickUpLists",
+    "resource": "system.integration_sync",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/integrations/clickup.functions.ts",
+    "operation": "createClickUpTasksForDeals",
+    "resource": "system.integration_sync",
+    "action": "create",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/scoring/icp.functions.ts",
+    "operation": "listIcpCriteria",
+    "resource": "techsales.prospecting_scoring",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/scoring/icp.functions.ts",
+    "operation": "saveIcpCriterion",
+    "resource": "techsales.prospecting_scoring",
+    "action": [
+      "create",
+      "update"
+    ],
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/scoring/icp.functions.ts",
+    "operation": "deleteIcpCriterion",
+    "resource": "techsales.prospecting_scoring",
+    "action": "delete",
+    "record_guard": [
+      "icp_criteria",
+      "id",
+      "delete"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/scoring/icp.functions.ts",
+    "operation": "runIcpScanNow",
+    "resource": "techsales.prospecting_scoring",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/scoring/icp.functions.ts",
+    "operation": "getLeadIcpFit",
+    "resource": "techsales.prospecting_scoring",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/scoring/icp.functions.ts",
+    "operation": "getScoreBreakdown",
+    "resource": "techsales.prospecting_scoring",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/surveys/survey-templates.functions.ts",
+    "operation": "listSurveyTemplateQuestions",
+    "resource": "techsales.surveys",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/surveys/survey-templates.functions.ts",
+    "operation": "saveSurveyTemplateQuestions",
+    "resource": "techsales.surveys",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/surveys/survey-activity.functions.ts",
+    "operation": "listAvailableSurveys",
+    "resource": "techsales.surveys",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/surveys/survey-activity.functions.ts",
+    "operation": "getSurveyForm",
+    "resource": "techsales.surveys",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/surveys/survey-activity.functions.ts",
+    "operation": "saveSurveyActivity",
+    "resource": "techsales.surveys",
+    "action": [
+      "create",
+      "update"
+    ],
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/surveys/survey-activity.functions.ts",
+    "operation": "getActivitySurveyResponses",
+    "resource": "techsales.surveys",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/surveys/survey-activity.functions.ts",
+    "operation": "getPendingSurveyActivity",
+    "resource": "techsales.surveys",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/surveys/form-builder.functions.ts",
+    "operation": "getFormDraft",
+    "resource": "techsales.surveys",
+    "action": "view",
+    "record_guard": [
+      "survey_templates",
+      "id",
+      "view"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/surveys/form-builder.functions.ts",
+    "operation": "createFormTemplate",
+    "resource": "techsales.surveys",
+    "action": "create",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/surveys/form-builder.functions.ts",
+    "operation": "saveFormDraft",
+    "resource": "techsales.surveys",
+    "action": "update",
+    "record_guard": [
+      "survey_templates",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/surveys/form-builder.functions.ts",
+    "operation": "publishForm",
+    "resource": "techsales.surveys",
+    "action": "manage",
+    "record_guard": [
+      "survey_templates",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/companies/logo-search.functions.ts",
+    "operation": "searchCompanyLogos",
+    "resource": "techsales.companies",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/whatsapp/connection.functions.ts",
+    "operation": "getWhatsAppConnection",
+    "resource": "system.whatsapp",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/whatsapp/connection.functions.ts",
+    "operation": "testWhatsAppConnection",
+    "resource": "system.whatsapp",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/proposals/proposal-templates.functions.ts",
+    "operation": "listProposalTemplates",
+    "resource": "techsales.proposal_templates",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/proposals/proposal-templates.functions.ts",
+    "operation": "saveProposalTemplate",
+    "resource": "techsales.proposal_templates",
+    "action": [
+      "create",
+      "update"
+    ],
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/proposals/proposal-templates.functions.ts",
+    "operation": "deleteProposalTemplate",
+    "resource": "techsales.proposal_templates",
+    "action": "delete",
+    "record_guard": [
+      "proposal_templates",
+      "id",
+      "delete"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/proposals/proposal-document.functions.ts",
+    "operation": "getProposalDocument",
+    "resource": "techsales.proposals",
+    "action": "view",
+    "record_guard": [
+      "proposals",
+      "id",
+      "view"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/proposals/proposal-document.functions.ts",
+    "operation": "getProposalByToken",
+    "exception": "public token/hash port; validated separately",
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/proposals/proposal-document.functions.ts",
+    "operation": "respondToProposal",
+    "exception": "public token/hash port; validated separately",
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/queues.functions.ts",
+    "operation": "listQueues",
+    "resource": "techsales.prospecting_queue",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/queues.functions.ts",
+    "operation": "upsertQueue",
+    "resource": "techsales.prospecting_queue",
+    "action": [
+      "create",
+      "update"
+    ],
+    "record_guard": [
+      "prospecting_queues",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/queues.functions.ts",
+    "operation": "addToQueue",
+    "resource": "techsales.prospecting_queue",
+    "action": "update",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/queues.functions.ts",
+    "operation": "removeFromQueue",
+    "resource": "techsales.prospecting_queue",
+    "action": "delete",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/queues.functions.ts",
+    "operation": "enrollInCadence",
+    "resource": "techsales.prospecting_queue",
+    "action": "create",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/queues.functions.ts",
+    "operation": "deleteQueue",
+    "resource": "techsales.prospecting_queue",
+    "action": "delete",
+    "record_guard": [
+      "prospecting_queues",
+      "id",
+      "delete"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/queues.functions.ts",
+    "operation": "countQueueItems",
+    "resource": "techsales.prospecting_queue",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/queues.functions.ts",
+    "operation": "listQueueItems",
+    "resource": "techsales.prospecting_queue",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/cadences.functions.ts",
+    "operation": "listCadences",
+    "resource": "techsales.prospecting_cadences",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/cadences.functions.ts",
+    "operation": "getCadence",
+    "resource": "techsales.prospecting_cadences",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/cadences.functions.ts",
+    "operation": "upsertCadence",
+    "resource": "techsales.prospecting_cadences",
+    "action": [
+      "create",
+      "update"
+    ],
+    "record_guard": [
+      "prospecting_cadences",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/cadences.functions.ts",
+    "operation": "deleteCadence",
+    "resource": "techsales.prospecting_cadences",
+    "action": "delete",
+    "record_guard": [
+      "prospecting_cadences",
+      "id",
+      "delete"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/cadences.functions.ts",
+    "operation": "upsertCadenceStep",
+    "resource": "techsales.prospecting_cadences",
+    "action": "update",
+    "record_guard": [
+      "prospecting_cadence_steps",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/cadences.functions.ts",
+    "operation": "deleteCadenceStep",
+    "resource": "techsales.prospecting_cadences",
+    "action": "update",
+    "record_guard": [
+      "prospecting_cadence_steps",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/cadences.functions.ts",
+    "operation": "enrollEntities",
+    "resource": "techsales.prospecting_cadences",
+    "action": "create",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/cadences.functions.ts",
+    "operation": "stopEnrollment",
+    "resource": "techsales.prospecting_cadences",
+    "action": "update",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/qualifications-backfill.functions.ts",
+    "operation": "backfillQualificationActivities",
+    "resource": "techsales.prospecting_qualifications",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/sdr-agent.functions.ts",
+    "operation": "getSdrAgentVersions",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "view",
+    "record_guard": [
+      "sdr_playbooks",
+      "playbookId",
+      "view"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/sdr-agent.functions.ts",
+    "operation": "saveSdrAgentDraft",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "update",
+    "record_guard": [
+      "sdr_playbooks",
+      "playbookId",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/sdr-agent.functions.ts",
+    "operation": "publishSdrAgentVersion",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "manage",
+    "record_guard": [
+      "sdr_playbooks",
+      "playbookId",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/sdr-agent.functions.ts",
+    "operation": "testSdrAgent",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "manage",
+    "record_guard": [
+      "sdr_playbooks",
+      "playbookId",
+      "view"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/sdr-agent.functions.ts",
+    "operation": "getSdrAgentConfig",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "view",
+    "record_guard": [
+      "sdr_playbooks",
+      "playbookId",
+      "view"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/sdr-agent.functions.ts",
+    "operation": "saveSdrAgentConfig",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "update",
+    "record_guard": [
+      "sdr_playbooks",
+      "playbookId",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/sdr-agent.functions.ts",
+    "operation": "getSdrAgentLogs",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "view",
+    "record_guard": [
+      "sdr_playbooks",
+      "playbookId",
+      "view"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/qualification-enrichment.functions.ts",
+    "operation": "enrichLeadForQualification",
+    "resource": "techsales.prospecting_enrichment",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/qualification-enrichment.functions.ts",
+    "operation": "previewLinkedinEnrichment",
+    "resource": "techsales.prospecting_enrichment",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/qualification-enrichment.functions.ts",
+    "operation": "applyQualificationEnrichment",
+    "resource": "techsales.prospecting_enrichment",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/sdr.functions.ts",
+    "operation": "getSdrOverview",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/sdr.functions.ts",
+    "operation": "saveSdrSettings",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/sdr.functions.ts",
+    "operation": "setSdrOfferActive",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/sdr.functions.ts",
+    "operation": "setSdrOfferApproval",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/sdr.functions.ts",
+    "operation": "saveSdrMaterial",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": [
+      "create",
+      "update"
+    ],
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/sdr.functions.ts",
+    "operation": "createSdrMaterialUpload",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "create",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/sdr.functions.ts",
+    "operation": "deleteSdrMaterial",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "delete",
+    "record_guard": [
+      "sdr_turn_jobs",
+      "id",
+      "delete"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/sdr.functions.ts",
+    "operation": "approveSdrDraft",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/sdr.functions.ts",
+    "operation": "resumeSdrJob",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/sdr.functions.ts",
+    "operation": "resetSdrBreaker",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/sdr.functions.ts",
+    "operation": "discardSdrDraft",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/sdr.functions.ts",
+    "operation": "takeoverSdrConversation",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/sdr.functions.ts",
+    "operation": "retrySdrMeetingSync",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/sdr.functions.ts",
+    "operation": "saveSdrPilotPlaybook",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": [
+      "create",
+      "update"
+    ],
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/overview.functions.ts",
+    "operation": "getProspectingOverview",
+    "resource": [
+      "techsales.prospecting_queue",
+      "techsales.prospecting_cadences",
+      "techsales.prospecting_search",
+      "techsales.marketing.campaigns"
+    ],
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/overview.functions.ts",
+    "operation": "getProspectingResults",
+    "resource": [
+      "techsales.prospecting_queue",
+      "techsales.prospecting_cadences",
+      "techsales.prospecting_search",
+      "techsales.marketing.campaigns"
+    ],
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/questionnaires.functions.ts",
+    "operation": "listQuestionnaires",
+    "resource": "techsales.prospecting_questionnaires",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/questionnaires.functions.ts",
+    "operation": "getQuestionnaire",
+    "resource": "techsales.prospecting_questionnaires",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/questionnaires.functions.ts",
+    "operation": "upsertQuestionnaire",
+    "resource": "techsales.prospecting_questionnaires",
+    "action": [
+      "create",
+      "update"
+    ],
+    "record_guard": [
+      "prospecting_questionnaires",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/questionnaires.functions.ts",
+    "operation": "deleteQuestionnaire",
+    "resource": "techsales.prospecting_questionnaires",
+    "action": "delete",
+    "record_guard": [
+      "prospecting_questionnaires",
+      "id",
+      "delete"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/questionnaires.functions.ts",
+    "operation": "saveQuestionnaireFieldLayout",
+    "resource": "techsales.prospecting_questionnaires",
+    "action": [
+      "create",
+      "update"
+    ],
+    "record_guard": [
+      "prospecting_questionnaires",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/questionnaires.functions.ts",
+    "operation": "upsertQuestion",
+    "resource": "techsales.prospecting_questionnaires",
+    "action": "update",
+    "record_guard": [
+      "prospecting_questions",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/questionnaires.functions.ts",
+    "operation": "deleteQuestion",
+    "resource": "techsales.prospecting_questionnaires",
+    "action": "update",
+    "record_guard": [
+      "prospecting_questions",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/questionnaires.functions.ts",
+    "operation": "reorderQuestions",
+    "resource": "techsales.prospecting_questionnaires",
+    "action": "update",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/questionnaires.functions.ts",
+    "operation": "duplicateQuestionnaire",
+    "resource": "techsales.prospecting_questionnaires",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/questionnaires.functions.ts",
+    "operation": "seedFramework",
+    "resource": "techsales.prospecting_questionnaires",
+    "action": "manage",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/questionnaires.functions.ts",
+    "operation": "setQuestionnaireScoring",
+    "resource": "techsales.prospecting_questionnaires",
+    "action": "update",
+    "record_guard": [
+      "prospecting_questionnaires",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/questionnaires.functions.ts",
+    "operation": "setQuestionScored",
+    "resource": "techsales.prospecting_questionnaires",
+    "action": "update",
+    "record_guard": [
+      "prospecting_questions",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/qualifications.functions.ts",
+    "operation": "listQualificationsForEntity",
+    "resource": "techsales.prospecting_qualifications",
+    "action": "view",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/qualifications.functions.ts",
+    "operation": "saveQualification",
+    "resource": "techsales.prospecting_qualifications",
+    "action": [
+      "create",
+      "update"
+    ],
+    "record_guard": [
+      "prospecting_qualifications",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/qualifications.functions.ts",
+    "operation": "setDecision",
+    "resource": "techsales.prospecting_qualifications",
+    "action": "update",
+    "record_guard": [
+      "prospecting_qualifications",
+      "id",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/qualifications.functions.ts",
+    "operation": "nurtureLead",
+    "resource": "techsales.prospecting_qualifications",
+    "action": "update",
+    "record_guard": null,
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/sdr-tools.functions.ts",
+    "operation": "getSdrToolCatalog",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "view",
+    "record_guard": [
+      "sdr_playbooks",
+      "playbookId",
+      "view"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/sdr-tools.functions.ts",
+    "operation": "saveSdrToolConfig",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "update",
+    "record_guard": [
+      "sdr_playbooks",
+      "playbookId",
+      "update"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/prospecting/sdr-tools.functions.ts",
+    "operation": "testSdrTool",
+    "resource": "techsales.marketing.sdr_agent",
+    "action": "manage",
+    "record_guard": [
+      "sdr_playbooks",
+      "playbookId",
+      "view"
+    ],
+    "review_status": "initial_gate_prepared; full functional review pending"
+  },
+  {
+    "file": "src/lib/access-control/sales-capabilities.functions.ts",
+    "operation": "getSalesCapabilities",
+    "resource": "catalog table resource",
+    "action": "view",
+    "control": "Technical metadata: booleans only for records visible through caller RLS.",
+    "review_status": "prepared; see isolated acceptance evidence and remaining tasks"
+  },
+  {
+    "file": "src/lib/access-control/sales-sharing.functions.ts",
+    "operation": "getSalesPublicToken",
+    "resource": "techsales.quote_share / techsales.proposal_share",
+    "action": "manage",
+    "control": "NOLOGIN/NOBYPASSRLS finite token port; selected workspace/current row scope; readonly blocked.",
+    "review_status": "prepared; see isolated acceptance evidence and remaining tasks"
+  },
+  {
+    "file": "src/lib/portal.functions.ts",
+    "operation": "listPortalContacts",
+    "resource": "system.portal",
+    "action": "manage",
+    "control": "NOLOGIN/NOBYPASSRLS metadata/token port; CRM contact visibility still required.",
+    "review_status": "prepared; see isolated acceptance evidence and remaining tasks"
+  },
+  {
+    "file": "src/lib/portal.functions.ts",
+    "operation": "togglePortalAccess",
+    "resource": "system.portal",
+    "action": "manage",
+    "control": "Requires current contact update, then finite token port and caller RLS update.",
+    "review_status": "prepared; see isolated acceptance evidence and remaining tasks"
+  },
+  {
+    "file": "src/lib/portal.functions.ts",
+    "operation": "regeneratePortalToken",
+    "resource": "system.portal",
+    "action": "manage",
+    "control": "Requires current contact view/update and finite token port.",
+    "review_status": "prepared; see isolated acceptance evidence and remaining tasks"
+  },
+  {
+    "file": "src/lib/sales-flow.functions.ts",
+    "operation": "createProposalFromQuote",
+    "resource": "techsales.proposals",
+    "action": "create",
+    "control": "Source quote visible through caller RLS; destination create enforced.",
+    "review_status": "prepared; see isolated acceptance evidence and remaining tasks"
+  },
+  {
+    "file": "src/lib/sales-flow.functions.ts",
+    "operation": "getProposalDraft",
+    "resource": "techsales.proposals",
+    "action": "create/update",
+    "control": "Each provided quote/deal/proposal must be visible.",
+    "review_status": "prepared; see isolated acceptance evidence and remaining tasks"
+  },
+  {
+    "file": "src/lib/sales-flow.functions.ts",
+    "operation": "createContractFromSales",
+    "resource": "techcontracts.contracts",
+    "action": "create",
+    "control": "Source quote/proposal visibility and optional parent contract view required.",
+    "review_status": "prepared; see isolated acceptance evidence and remaining tasks"
+  },
+  {
+    "file": "src/lib/sales-flow.functions.ts",
+    "operation": "listActiveContractsForSales",
+    "resource": "techcontracts.contracts",
+    "action": "view",
+    "control": "Source quote/proposal visibility required.",
+    "review_status": "prepared; see isolated acceptance evidence and remaining tasks"
+  },
+  {
+    "file": "src/lib/sales-flow.functions.ts",
+    "operation": "listAmendmentSources",
+    "resource": "techcontracts.contracts",
+    "action": "view",
+    "control": "Actual contract view required.",
+    "review_status": "prepared; see isolated acceptance evidence and remaining tasks"
+  },
+  {
+    "file": "src/routes/api/public/oauth/google-callback.ts",
+    "operation": "GET Google OAuth callback",
+    "resource": "techsales.email_accounts / system.calendars",
+    "action": "create/update",
+    "control": "Signed state + active source membership/current action before exchange and atomic persistence; no credentials returned.",
+    "review_status": "prepared; see isolated acceptance evidence and remaining tasks"
+  }
+]

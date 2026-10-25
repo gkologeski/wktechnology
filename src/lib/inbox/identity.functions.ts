@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -16,7 +17,12 @@ const channelTable = {
 } as const;
 
 export const associateInboxIdentity = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([
+    requireSalesPermission(
+      ["techsales.inbox.email", "techsales.inbox.whatsapp", "techsales.inbox.chat"],
+      "manage",
+    ),
+  ])
   .inputValidator((input) => inputSchema.parse(input))
   .handler(async ({ data, context }) => {
     const entityTable = data.entityType === "contact" ? "contacts" : "leads";
@@ -55,7 +61,12 @@ export const associateInboxIdentity = createServerFn({ method: "POST" })
   });
 
 export const getWhatsAppConversationOrigin = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([
+    requireSalesPermission(
+      ["techsales.inbox.email", "techsales.inbox.whatsapp", "techsales.inbox.chat"],
+      "view",
+    ),
+  ])
   .inputValidator((input) => z.object({ conversationId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const sb = context.supabase as any;

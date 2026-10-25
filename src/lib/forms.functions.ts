@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -46,7 +48,7 @@ const UpsertSchema = z.object({
 });
 
 export const listForms = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.forms", "view")])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("forms")
@@ -59,7 +61,7 @@ export const listForms = createServerFn({ method: "GET" })
   });
 
 export const upsertForm = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.forms", ["create", "update"])])
   .inputValidator((input) => UpsertSchema.parse(input))
   .handler(async ({ data, context }) => {
     const payload = {
@@ -89,16 +91,18 @@ export const upsertForm = createServerFn({ method: "POST" })
   });
 
 export const deleteForm = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.forms", "delete")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "forms", data.id, "delete");
+
     const { error } = await context.supabase.from("forms").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 export const listFormSubmissions = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.forms", "view")])
   .inputValidator((input) => z.object({ form_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase

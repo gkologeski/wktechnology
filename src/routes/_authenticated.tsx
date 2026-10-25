@@ -1,3 +1,5 @@
+import { SalesRouteAccess } from "@/components/sales-access";
+import { salesRouteResources } from "@/lib/access-control/sales-route-map";
 import { WorkspaceOutlet } from "@/components/workspace-outlet";
 import { createFileRoute, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
@@ -150,6 +152,7 @@ function AuthenticatedLayout() {
 
   const roleBlocked =
     !roleLoading &&
+    !salesRouteResources(path) &&
     ((matches(path, ADMIN_ONLY) && !isAdmin) || (matches(path, MANAGER_PLUS) && !isManager));
 
   const pathModule = detectModuleFromPath(path);
@@ -225,7 +228,9 @@ function AuthenticatedLayout() {
                     </p>
                   </div>
                 ) : (
-                  <WorkspaceOutlet />
+                  <SalesRouteAccess path={path}>
+                    <WorkspaceOutlet />
+                  </SalesRouteAccess>
                 )}
               </main>
             </div>

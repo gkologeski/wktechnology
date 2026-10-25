@@ -26,6 +26,13 @@ export async function authenticateApiKey(request: Request): Promise<ApiAuthConte
   if (!data) return null;
   if (data.revoked_at) return null;
   if (data.expires_at && new Date(data.expires_at as string) < new Date()) return null;
+  const { data: member, error: memberError } = await supabaseAdmin
+    .from("workspace_members")
+    .select("status")
+    .eq("workspace_id", data.workspace_id)
+    .eq("user_id", data.owner_id)
+    .maybeSingle();
+  if (memberError || member?.status !== "active") return null;
   await supabaseAdmin
     .from("api_keys")
     .update({ last_used_at: new Date().toISOString() })

@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -40,7 +42,7 @@ const PageInput = z.object({
 });
 
 export const listBookingPages = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.booking", "view")])
   .handler(async ({ context }) => {
     const { supabase } = context;
     const { data, error } = await supabase
@@ -52,7 +54,7 @@ export const listBookingPages = createServerFn({ method: "GET" })
   });
 
 export const upsertBookingPage = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.booking", ["create", "update"])])
   .inputValidator((input: unknown) => PageInput.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -75,16 +77,18 @@ export const upsertBookingPage = createServerFn({ method: "POST" })
   });
 
 export const deleteBookingPage = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.booking", "delete")])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "booking_pages", data.id, "delete");
+
     const { error } = await context.supabase.from("booking_pages").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 export const listBookings = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.booking", "view")])
   .inputValidator((input: unknown) =>
     z.object({ page_id: z.string().uuid().optional() }).default({}).parse(input),
   )
@@ -101,11 +105,13 @@ export const listBookings = createServerFn({ method: "GET" })
   });
 
 export const cancelBooking = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.booking", "update")])
   .inputValidator((input: unknown) =>
     z.object({ id: z.string().uuid(), reason: z.string().max(500).optional() }).parse(input),
   )
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "bookings", data.id, "update");
+
     const { error } = await context.supabase
       .from("bookings")
       .update({

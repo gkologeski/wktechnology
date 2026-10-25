@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { getPublicAppUrl } from "@/lib/app-url";
+import { useSalesSharing } from "@/lib/access-control/use-sales-sharing";
+import { SalesAction, SalesCapabilityScope } from "@/components/sales-access";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -29,6 +30,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 function QuotesPage() {
   const qc = useQueryClient();
+  const sharing = useSalesSharing("quotes");
   const list = useServerFn(listQuotes);
   const del = useServerFn(deleteQuote);
 
@@ -45,10 +47,6 @@ function QuotesPage() {
     if (!(await confirmDialog("Excluir esta cotação?"))) return;
     await del({ data: { id } });
     qc.invalidateQueries({ queryKey: ["quotes"] });
-  }
-  async function copyLink(token: string) {
-    await navigator.clipboard.writeText(`${getPublicAppUrl()}/quote/${token}`);
-    toast.success("Link copiado.");
   }
 
   const total = quotes.length;
@@ -77,60 +75,75 @@ function QuotesPage() {
               Nenhuma cotação. Crie a partir da aba "Cotações" em um negócio.
             </p>
           ) : (
-            <div className="space-y-2">
-              {quotes.map((q) => (
-                <div
-                  key={q.id}
-                  className="flex items-center justify-between gap-3 rounded-md border p-3"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium truncate">{q.title || q.number}</span>
-                      <Badge variant="outline" className="font-mono text-xs">
-                        {q.number}
-                      </Badge>
-                      <Badge
-                        variant={
-                          q.status === "accepted"
-                            ? "default"
-                            : q.status === "declined"
-                              ? "destructive"
-                              : q.status === "sent" || q.status === "published"
-                                ? "secondary"
-                                : "outline"
-                        }
+            <SalesCapabilityScope table="quotes" ids={quotes.map((q) => q.id)}>
+              <div className="space-y-2">
+                {quotes.map((q) => (
+                  <div
+                    key={q.id}
+                    className="flex items-center justify-between gap-3 rounded-md border p-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium truncate">{q.title || q.number}</span>
+                        <Badge variant="outline" className="font-mono text-xs">
+                          {q.number}
+                        </Badge>
+                        <Badge
+                          variant={
+                            q.status === "accepted"
+                              ? "default"
+                              : q.status === "declined"
+                                ? "destructive"
+                                : q.status === "sent" || q.status === "published"
+                                  ? "secondary"
+                                  : "outline"
+                          }
+                        >
+                          {STATUS_LABEL[q.status]}
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {formatDateTime(q.created_at)} ·{" "}
+                        {formatCurrency(Number(q.total), q.currency)}
+                        {q.view_count > 0 && ` · ${q.view_count} visualizações`}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end">
+                      <Button variant="outline" size="sm" onClick={() => genProposal(q.id)}>
+                        <FileText className="mr-1 h-4 w-4" />
+                        Gerar proposta
+                      </Button>
+                      <GenerateContractButton source={{ quoteId: q.id }} />
+                      <SalesAction
+                        table="quotes"
+                        id={q.id}
+                        action="manage"
+                        resource="techsales.quote_share"
                       >
-                        {STATUS_LABEL[q.status]}
-                      </Badge>
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {formatDateTime(q.created_at)} · {formatCurrency(Number(q.total), q.currency)}
-                      {q.view_count > 0 && ` · ${q.view_count} visualizações`}
+                        <Button variant="ghost" size="icon" onClick={() => void sharing.open(q.id)}>
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                      </SalesAction>
+                      <SalesAction
+                        table="quotes"
+                        id={q.id}
+                        action="manage"
+                        resource="techsales.quote_share"
+                      >
+                        <Button variant="ghost" size="icon" onClick={() => void sharing.copy(q.id)}>
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </SalesAction>
+                      <SalesAction table="quotes" id={q.id} action="delete">
+                        <Button variant="ghost" size="icon" onClick={() => remove(q.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </SalesAction>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end">
-                    <Button variant="outline" size="sm" onClick={() => genProposal(q.id)}>
-                      <FileText className="mr-1 h-4 w-4" />
-                      Gerar proposta
-                    </Button>
-                    <GenerateContractButton source={{ quoteId: q.id }} />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => window.open(`/quote/${q.public_token}`, "_blank")}
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => copyLink(q.public_token)}>
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => remove(q.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </SalesCapabilityScope>
           )}
         </CardContent>
       </Card>

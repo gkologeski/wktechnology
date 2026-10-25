@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // Lusha API v2 (https://docs.lusha.com/apis/openapi.md)
 // GET /v2/person — single contact (by email/linkedinUrl/personId or name+company)
@@ -40,7 +41,7 @@ type LushaPerson = {
 };
 
 export const enrichWithLusha = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_enrichment", "manage")])
   .inputValidator((input: unknown) => Schema.parse(input))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;

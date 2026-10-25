@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Histórico paginado das conversas da Inbox (sob RLS do usuário).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -11,7 +13,12 @@ const cursorSchema = z.object({
 });
 
 export const listConversationMessages = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([
+    requireSalesPermission(
+      ["techsales.inbox.email", "techsales.inbox.whatsapp", "techsales.inbox.chat"],
+      "view",
+    ),
+  ])
   .inputValidator((i) =>
     z
       .object({
@@ -85,9 +92,17 @@ export const listConversationMessages = createServerFn({ method: "POST" })
   });
 
 export const getEmailThreadMeta = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([
+    requireSalesPermission(
+      ["techsales.inbox.email", "techsales.inbox.whatsapp", "techsales.inbox.chat"],
+      "view",
+    ),
+  ])
   .inputValidator((i) => z.object({ thread_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    if (data.thread_id)
+      await assertSalesRecord(context.supabase, "email_threads", data.thread_id, "view");
+
     const { data: thread, error } = await context.supabase
       .from("email_threads")
       .select(
@@ -101,9 +116,17 @@ export const getEmailThreadMeta = createServerFn({ method: "POST" })
   });
 
 export const getEmailMessageBody = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([
+    requireSalesPermission(
+      ["techsales.inbox.email", "techsales.inbox.whatsapp", "techsales.inbox.chat"],
+      "view",
+    ),
+  ])
   .inputValidator((i) => z.object({ message_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    if (data.message_id)
+      await assertSalesRecord(context.supabase, "email_messages", data.message_id, "view");
+
     const { data: row, error } = await context.supabase
       .from("email_messages")
       .select("id, body_html, body_text, attachments")

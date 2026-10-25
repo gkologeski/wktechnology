@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { bookingReadiness, pricingLabel, qualificationFeasibility } from "./readiness";
 
 const q = (pts: number[]) => ({
@@ -90,41 +90,63 @@ describe("agenda", () => {
   });
 });
 
-vi.mock("@/lib/access-control/enforce.server", () => ({
-  assertAnyPermission: vi.fn(async (sb: any, _u: string, ws: string, keys: string[]) => {
-    for (const k of keys) {
-      const { data } = await sb.rpc("user_has_permission", {
-        _permission_key: k,
-        _workspace_id: ws,
-      });
-      if (data) return;
-    }
-    throw Object.assign(new Error("forbidden"), { status: 403 });
-  }),
-}));
-
 describe("permissões do Agente SDR", () => {
-  const sb = (granted: string[]) => ({
-    rpc: async (fn: string, a: any) =>
-      fn === "default_workspace_for_user"
-        ? { data: "w1", error: null }
-        : { data: granted.includes(a._permission_key), error: null },
+  const P = "techsales.marketing.sdr_agent";
+  const sb = (granted: string[], active = true) => ({
+    rpc: async (fn: string, args: { r?: string; a?: string }) => {
+      if (fn === "sales_access_context")
+        return {
+          data: active
+            ? {
+                workspace: "w1",
+                actor: "u",
+                keys: Object.fromEntries(granted.map((k) => [k, true])),
+              }
+            : {},
+          error: null,
+        };
+      const has = (action: string) =>
+        ["own", "team", "workspace"].some((scope) =>
+          granted.includes(`${args.r}.${action}.${scope}`),
+        );
+      if (fn === "sales_area_authorize")
+        return has("view") && has(args.a ?? "")
+          ? { data: true, error: null }
+          : { data: null, error: { message: "forbidden" } };
+      throw new Error("Unexpected RPC: " + fn);
+    },
   });
   it("só leitura vê, mas não supervisiona nem exclui", async () => {
     const { requireSdr } = await import("./access.server");
-    const s = sb(["techsales.marketing.sdr_agent.view.own"]) as never;
+    const s = sb([`${P}.view.own`]) as never;
     await expect(requireSdr(s, "u", "view")).resolves.toBe("w1");
     await expect(requireSdr(s, "u", "supervise")).rejects.toThrow("forbidden");
     await expect(requireSdr(s, "u", "delete")).rejects.toThrow("forbidden");
   });
-  it("update.own não basta para supervisionar; manage concede tudo", async () => {
+  it("supervisão requer leitura e atualização da equipe ou workspace", async () => {
     const { requireSdr } = await import("./access.server");
     await expect(
-      requireSdr(sb(["techsales.marketing.sdr_agent.update.own"]) as never, "u", "supervise"),
-    ).rejects.toThrow();
-    const m = sb(["techsales.marketing.sdr_agent.manage.workspace"]) as never;
-    for (const a of ["view", "create", "update", "delete", "supervise"] as const)
-      await expect(requireSdr(m, "u", a)).resolves.toBe("w1");
+      requireSdr(sb([`${P}.view.own`, `${P}.update.own`]) as never, "u", "supervise"),
+    ).rejects.toThrow("supervisão");
+    await expect(
+      requireSdr(sb([`${P}.view.team`, `${P}.update.team`]) as never, "u", "supervise"),
+    ).resolves.toBe("w1");
+  });
+  it("manage não substitui leitura, criação, edição e exclusão explícitas", async () => {
+    const { requireSdr } = await import("./access.server");
+    const m = sb([`${P}.manage.workspace`, `${P}.view.workspace`]) as never;
+    await expect(requireSdr(m, "u", "manage")).resolves.toBe("w1");
+    for (const action of ["create", "update", "delete", "supervise"] as const)
+      await expect(requireSdr(m, "u", action)).rejects.toThrow();
+  });
+  it("inativo e workspace diferente falham antes de autorizar a ação", async () => {
+    const { requireSdr, assertSdr } = await import("./access.server");
+    await expect(
+      requireSdr(sb([`${P}.view.workspace`], false) as never, "u", "view"),
+    ).rejects.toThrow("Workspace ativo");
+    await expect(
+      assertSdr(sb([`${P}.view.workspace`]) as never, "u", "w2", "view"),
+    ).rejects.toThrow("Workspace inválido");
   });
   it("sem nenhuma permissão: acesso negado", async () => {
     const { requireSdr } = await import("./access.server");

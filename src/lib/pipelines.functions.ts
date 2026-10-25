@@ -1,3 +1,5 @@
+import { salesPipelineReferences } from "@/lib/access-control/sales-references";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Server functions de pipelines (CRM): garantia idempotente do pipeline padrão.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -13,15 +15,14 @@ const EntitySchema = z.object({ entity: z.enum(["deal", "lead", "ticket"]) });
  * Retorna null quando o usuário não pode ver nem criar pipelines.
  */
 export const ensureDefaultPipeline = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.pipelines", "manage")])
   .inputValidator((i: unknown) => EntitySchema.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { entity } = data;
 
     // Visibilidade decidida pelas políticas do banco (workspace/RBAC).
-    const { data: rows, error } = await supabase
-      .from("pipelines")
+    const { data: rows, error } = await salesPipelineReferences(supabase)
       .select("id, name, is_default, created_at")
       .eq("entity", entity)
       .order("is_default", { ascending: false })

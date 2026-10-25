@@ -1,3 +1,4 @@
+import { apiSubjectClient } from "@/lib/api-keys/subject-client.server";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -38,11 +39,12 @@ export const Route = createFileRoute("/api/public/v1/deals")({
         if (!auth) return unauthorized();
         const denied = requireScope(auth, "read");
         if (denied) return denied;
+        const subjectClient = apiSubjectClient(supabaseAdmin, auth);
 
         const url = new URL(request.url);
         const params = parseListParams(url);
 
-        let query = supabaseAdmin
+        let query = subjectClient
           .from("deals")
           .select(SELECT, { count: "exact" })
           .eq("workspace_id", auth.workspaceId)
@@ -65,7 +67,7 @@ export const Route = createFileRoute("/api/public/v1/deals")({
         // Filtro por lead vinculado: usa o negócio convertido do lead.
         const leadId = url.searchParams.get("lead_id");
         if (leadId) {
-          const { data: lead } = await supabaseAdmin
+          const { data: lead } = await subjectClient
             .from("leads")
             .select("converted_deal_id")
             .eq("id", leadId)
@@ -96,6 +98,7 @@ export const Route = createFileRoute("/api/public/v1/deals")({
         if (!auth) return unauthorized();
         const denied = requireScope(auth, "write");
         if (denied) return denied;
+        const subjectClient = apiSubjectClient(supabaseAdmin, auth);
 
         const body = await request.json().catch(() => null);
         const parsed = CreateDeal.safeParse(body);
@@ -106,7 +109,7 @@ export const Route = createFileRoute("/api/public/v1/deals")({
         let contactId = input.contact_id ?? null;
 
         if (companyId) {
-          const { data: company } = await supabaseAdmin
+          const { data: company } = await subjectClient
             .from("companies")
             .select("id")
             .eq("id", companyId)
@@ -115,7 +118,7 @@ export const Route = createFileRoute("/api/public/v1/deals")({
           if (!company) return jsonError("company_not_found", 404);
         }
         if (contactId) {
-          const { data: contact } = await supabaseAdmin
+          const { data: contact } = await subjectClient
             .from("contacts")
             .select("id")
             .eq("id", contactId)
@@ -131,7 +134,7 @@ export const Route = createFileRoute("/api/public/v1/deals")({
           converted_contact_id: string | null;
         } | null = null;
         if (input.lead_id) {
-          const { data: found } = await supabaseAdmin
+          const { data: found } = await subjectClient
             .from("leads")
             .select("id, company_id, converted_contact_id")
             .eq("id", input.lead_id)
@@ -147,7 +150,7 @@ export const Route = createFileRoute("/api/public/v1/deals")({
         let pipelineId = input.pipeline_id ?? null;
         let stages: PipelineStage[] = [];
         if (pipelineId) {
-          const { data: pipeline } = await supabaseAdmin
+          const { data: pipeline } = await subjectClient
             .from("pipelines")
             .select("id, stages")
             .eq("id", pipelineId)
@@ -156,7 +159,7 @@ export const Route = createFileRoute("/api/public/v1/deals")({
           if (!pipeline) return jsonError("pipeline_not_found", 404);
           stages = (pipeline.stages as PipelineStage[] | null) ?? [];
         } else {
-          const { data: pipeline } = await supabaseAdmin
+          const { data: pipeline } = await subjectClient
             .from("pipelines")
             .select("id, stages")
             .eq("workspace_id", auth.workspaceId)
@@ -192,7 +195,7 @@ export const Route = createFileRoute("/api/public/v1/deals")({
           expectedCloseDate = parsedDate.toISOString().slice(0, 10);
         }
 
-        const { data: deal, error } = await supabaseAdmin
+        const { data: deal, error } = await subjectClient
           .from("deals")
           .insert({
             owner_id: auth.ownerId,
@@ -215,14 +218,14 @@ export const Route = createFileRoute("/api/public/v1/deals")({
 
         // Associa o contato ao negócio (aba de associações).
         if (contactId) {
-          await supabaseAdmin
+          await subjectClient
             .from("deal_contacts")
             .insert({ deal_id: deal.id, contact_id: contactId });
         }
 
         // Marca a conversão no lead de origem.
         if (lead) {
-          await supabaseAdmin
+          await subjectClient
             .from("leads")
             .update({
               converted_deal_id: deal.id,
@@ -235,7 +238,7 @@ export const Route = createFileRoute("/api/public/v1/deals")({
         }
 
         // Registra na timeline do lead/contato/negócio.
-        const { error: activityError } = await supabaseAdmin.from("activities").insert({
+        const { error: activityError } = await subjectClient.from("activities").insert({
           owner_id: auth.ownerId,
           workspace_id: auth.workspaceId,
           created_by: auth.ownerId,

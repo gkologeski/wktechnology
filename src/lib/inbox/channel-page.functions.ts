@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -6,7 +7,12 @@ import type { Json } from "@/integrations/supabase/types";
 // Lista paginada de um canal da Inbox (RPC sob a RLS do usuário). O chat continua
 // restrito ao workspace ativo, como em listChatSessions.
 export const listInboxChannelPage = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([
+    requireSalesPermission(
+      ["techsales.inbox.email", "techsales.inbox.whatsapp", "techsales.inbox.chat"],
+      "view",
+    ),
+  ])
   .inputValidator((input) =>
     z
       .object({

@@ -1,3 +1,5 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -30,7 +32,7 @@ const saveSchema = z.object({
 });
 
 export const listSequences = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.automation.sequences", "view")])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
@@ -63,7 +65,7 @@ export const listSequences = createServerFn({ method: "POST" })
   });
 
 export const saveSequence = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.automation.sequences", ["create", "update"])])
   .inputValidator((input: unknown) => saveSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -93,16 +95,18 @@ export const saveSequence = createServerFn({ method: "POST" })
   });
 
 export const deleteSequence = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.automation.sequences", "delete")])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    if (data.id) await assertSalesRecord(context.supabase, "sequences", data.id, "delete");
+
     const { error } = await context.supabase.from("sequences").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 export const listEnrollments = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.automation.sequences", "view")])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -126,7 +130,7 @@ export const listEnrollments = createServerFn({ method: "POST" })
   });
 
 export const enrollInSequence = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.automation.sequences", "create")])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -163,7 +167,7 @@ export const enrollInSequence = createServerFn({ method: "POST" })
   });
 
 export const updateEnrollmentStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.automation.sequences", "update")])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -173,6 +177,9 @@ export const updateEnrollmentStatus = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    if (data.id)
+      await assertSalesRecord(context.supabase, "sequence_enrollments", data.id, "update");
+
     const patch: { status: string; next_run_at?: string | null } = { status: data.status };
     if (data.status === "removed") patch.next_run_at = null;
     if (data.status === "active") patch.next_run_at = new Date().toISOString();
@@ -185,7 +192,7 @@ export const updateEnrollmentStatus = createServerFn({ method: "POST" })
   });
 
 export const triggerSequencesTickNow = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.automation.sequences", "manage")])
   .handler(async () => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     return tickSequences(supabaseAdmin, 100);

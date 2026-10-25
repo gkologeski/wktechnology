@@ -1,10 +1,16 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // Sugestões da IA na conversa (leitura pela RLS do usuário).
 export const listConversationSuggestions = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([
+    requireSalesPermission(
+      ["techsales.inbox.email", "techsales.inbox.whatsapp", "techsales.inbox.chat"],
+      "view",
+    ),
+  ])
   .inputValidator((i) => z.object({ conversationId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
@@ -31,7 +37,12 @@ export const listConversationSuggestions = createServerFn({ method: "POST" })
 
 // Aplica ou ignora uma sugestão. A troca usa o cliente do usuário (RLS de edição).
 export const resolveSuggestion = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([
+    requireSalesPermission(
+      ["techsales.inbox.email", "techsales.inbox.whatsapp", "techsales.inbox.chat"],
+      "manage",
+    ),
+  ])
   .inputValidator((i) =>
     z
       .object({
@@ -123,7 +134,12 @@ export const resolveSuggestion = createServerFn({ method: "POST" })
 
 // Link curto para o material anexado pela Lia (o arquivo continua privado).
 export const getMessageMaterialLink = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([
+    requireSalesPermission(
+      ["techsales.inbox.email", "techsales.inbox.whatsapp", "techsales.inbox.chat"],
+      "view",
+    ),
+  ])
   .inputValidator((i) => z.object({ messageId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     // Acesso: o usuário precisa enxergar a mensagem pela RLS.

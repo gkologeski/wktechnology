@@ -1,3 +1,4 @@
+import { assertSalesWorker } from "@/lib/access-control/sales-worker.server";
 // Efeitos externos do SDR: envio (com rechecagem), CRM sem duplicatas,
 // handoff/opt-out e reunião confirmada só com retorno do Google.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -175,6 +176,7 @@ export const SDR_BLOCK_CATEGORY: Record<string, BlockCategory> = {
   conversation_rate_anomaly: "technical",
   quota_check_failed: "technical",
   provider_failed: "technical",
+  permission_revoked: "technical",
   uncertain_after_send: "reconcile",
 };
 
@@ -239,6 +241,13 @@ export async function sendSdrMessage(
   if (conv.ai_owner !== "ai") return blocked("owner_not_ai");
   if (conv.ai_version !== job.conversation_version) return blocked("stale_version");
   if (!enr || enr.status !== "active") return blocked("enrollment_inactive");
+  try {
+    await assertSalesWorker(admin, "sdr_enrollments", enr.id, [
+      { table: "whatsapp_conversations", id: conv.id },
+    ]);
+  } catch {
+    return blocked("permission_revoked");
+  }
   const { isPhoneAllowlisted } = await import("./allowlist");
   if (!isPhoneAllowlisted(conv.contact_phone ?? "", settings?.pilot_allowlist))
     return blocked("not_allowlisted");
