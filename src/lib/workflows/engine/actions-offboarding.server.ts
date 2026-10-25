@@ -13,15 +13,6 @@ const OFFBOARDING_TYPES = new Set([
 ]);
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-/** Contratos ainda vigentes (podem ser encerrados no desligamento). */
-const OPEN_CONTRACT_STATUSES = [
-  "draft",
-  "in_review",
-  "in_negotiation",
-  "awaiting_signature",
-  "active",
-  "renewing",
-];
 
 function personIdFor(ctx: RunCtx, explicit?: string): string | null {
   const rendered = explicit ? String(renderTokens(explicit, ctx.after, ctx.vars) ?? "").trim() : "";
@@ -49,19 +40,29 @@ async function loadPerson(supabase: SupabaseClient, ctx: RunCtx, personId: strin
   };
 }
 
-/** IDs dos contratos ligados à pessoa (metadata.person_id gravado na contratação). */
+/** Contract references for the actual workflow actor and source workspace. */
 async function personContractIds(
   supabase: SupabaseClient,
   ctx: RunCtx,
   personId: string,
 ): Promise<string[]> {
+  const { workRpc } = await import("@/lib/access-control/work-core.server");
+  if (
+    !(await workRpc<boolean>(supabase, "work_delegated_authorize", {
+      p_ws: ctx.workspaceId,
+      p_actor: ctx.ownerId,
+      p_kind: "person_contracts",
+      p_record: personId,
+    }))
+  )
+    throw new Error("Sem acesso aos contratos desta pessoa.");
   const { data, error } = await supabase
     .from("contracts")
     .select("id")
     .eq("workspace_id", ctx.workspaceId)
     .contains("metadata", { person_id: personId });
   if (error) throw new Error(error.message);
-  return ((data ?? []) as Array<{ id: string }>).map((r) => r.id);
+  return (data ?? []).map((r) => r.id);
 }
 
 export async function handleOffboardingAction(
@@ -79,45 +80,21 @@ export async function handleOffboardingAction(
 
   switch (action.type) {
     case "terminate_contracts": {
-      const ids = await personContractIds(supabase, ctx, personId);
-      if (ids.length === 0) {
-        return { at, ok: true, action: action.type, detail: { contracts: 0 } };
-      }
-      const { data: open, error: oErr } = await supabase
-        .from("contracts")
-        .select("id, metadata")
-        .in("id", ids)
-        .in("status", OPEN_CONTRACT_STATUSES);
-      if (oErr) throw new Error(oErr.message);
-      const rows = (open ?? []) as Array<{ id: string; metadata: AnyRow | null }>;
-      for (const r of rows) {
-        const { error } = await supabase
-          .from("contracts")
-          .update({
-            status: "terminated",
-            ends_at: endDate,
-            metadata: {
-              ...(r.metadata ?? {}),
-              termination: {
-                date: endDate,
-                origin: "workflow_offboarding",
-                workflow_id: ctx.workflowId ?? null,
-                distrato_document: "pendente",
-              },
-            },
-          } as never)
-          .eq("id", r.id)
-          .eq("workspace_id", ctx.workspaceId);
-        if (error) throw new Error(error.message);
-      }
+      const { workRpc } = await import("@/lib/access-control/work-core.server");
+      const result = await workRpc<{ contracts: number }>(supabase, "contract_workflow_terminate", {
+        p_person: personId,
+        p_actor: ctx.ownerId,
+        p_date: endDate,
+        p_workflow: ctx.workflowId ?? null,
+      });
       return {
         at,
         ok: true,
         action: action.type,
         detail: {
-          contracts: rows.length,
+          contracts: result.contracts,
           ends_at: endDate,
-          note: rows.length
+          note: result.contracts
             ? "Contratos encerrados; gere o documento de distrato e envie para assinatura no TechContracts."
             : "Nenhum contrato vigente.",
         },

@@ -35,9 +35,13 @@ describe("services.functions.ts — gate de permissão por handler", () => {
   const src = loadSource("src/lib/services.functions.ts");
   const handlers = extractHandlers(src);
 
-  it("todo handler usa requireSupabaseAuth (rejeita não-autenticado)", () => {
+  it("todo handler exige autenticação direta ou middleware de permissão autenticado", () => {
+    const middleware = loadSource("src/lib/access-control/work-permission.middleware.ts");
+    expect(middleware).toMatch(/middleware\(\[requireSupabaseAuth\]\)/);
     for (const [name, body] of handlers) {
-      expect(body, `${name} sem requireSupabaseAuth`).toMatch(/requireSupabaseAuth/);
+      expect(body, `${name} sem requireSupabaseAuth`).toMatch(
+        /requireSupabaseAuth|requireWorkPermission/,
+      );
     }
   });
 
@@ -66,19 +70,15 @@ describe("services.functions.ts — gate de permissão por handler", () => {
     ]);
   });
 
-  it("deleteService exige techservice.services.delete.workspace (não expõe .own)", () => {
-    const body = handlers.get("deleteService");
-    expectAsserts(body, ["techservice.services.delete.workspace"]);
-    // delete jamais pode ser autorizado por .own — apenas workspace/manager.
-    expect(body).not.toContain("techservice.services.delete.own");
+  it("deleteService exige a chave canônica e deixa o escopo para a RLS", () => {
+    expect(handlers.get("deleteService")).toContain(
+      'requireWorkPermission("techservice.services", "delete")',
+    );
   });
 
-  it("activateService exige techservice.services.update.*", () => {
-    expectAsserts(handlers.get("activateService"), ["techservice.services.update.workspace"]);
-  });
-
-  it("runServicesBillingNow exige techservice.services.update.workspace", () => {
-    expectAsserts(handlers.get("runServicesBillingNow"), ["techservice.services.update.workspace"]);
+  it("ativação e cobrança usam a fronteira atômica", () => {
+    expect(handlers.get("activateService")).toContain("service_bill_checked");
+    expect(handlers.get("runServicesBillingNow")).toContain("service_bill_checked");
   });
 });
 
@@ -92,7 +92,9 @@ describe("kb.functions.ts — gate de permissão por handler", () => {
   it("todo handler admin usa requireSupabaseAuth", () => {
     for (const [name, body] of handlers) {
       if (publicByDesign.has(name)) continue;
-      expect(body, `${name} sem requireSupabaseAuth`).toMatch(/requireSupabaseAuth/);
+      expect(body, `${name} sem requireSupabaseAuth`).toMatch(
+        /requireSupabaseAuth|requireWorkPermission/,
+      );
     }
   });
 

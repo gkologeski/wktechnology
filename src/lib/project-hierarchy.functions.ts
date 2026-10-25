@@ -1,32 +1,21 @@
+import { requireWorkPermission } from "@/lib/access-control/work-permission.middleware";
+import { workRpc } from "@/lib/access-control/work-core.server";
+import type { Database } from "@/integrations/supabase/types";
 // Sprint C - Fase 4.2 parte 1
 // Hierarquia ClickUp para TechProjects: Espaço → Pasta → Lista → Tarefa (+ Subtarefa).
 // Status customizados por lista.
 import { DEFAULT_RECORD_COLOR } from "@/lib/ui/default-colors";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 const categoryEnum = z.enum(["todo", "doing", "done"]);
 const priorityEnum = z.enum(["low", "normal", "high", "urgent"]);
 
-// Statuses padrão criados junto de uma nova lista.
-const DEFAULT_STATUSES: Array<{
-  name: string;
-  color: string;
-  category: "todo" | "doing" | "done";
-  is_default?: boolean;
-}> = [
-  { name: "A fazer", color: DEFAULT_RECORD_COLOR, category: "todo", is_default: true },
-  { name: "Em execução", color: "#0ea5e9", category: "doing" },
-  { name: "Em revisão", color: "#f59e0b", category: "doing" },
-  { name: "Concluída", color: "#10b981", category: "done" },
-];
-
 // ============ SPACES ============
 export const listSpaces = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.spaces", "view")])
   .handler(async ({ context }) => {
     const { supabase } = context;
     const { data, error } = await supabase
@@ -40,7 +29,7 @@ export const listSpaces = createServerFn({ method: "POST" })
   });
 
 export const createSpace = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.spaces", "create")])
   .inputValidator((input) =>
     z
       .object({
@@ -71,7 +60,7 @@ export const createSpace = createServerFn({ method: "POST" })
   });
 
 export const updateSpace = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.spaces", "update")])
   .inputValidator((input) =>
     z
       .object({
@@ -104,7 +93,7 @@ export const updateSpace = createServerFn({ method: "POST" })
   });
 
 export const deleteSpace = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.spaces", "delete")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -114,7 +103,7 @@ export const deleteSpace = createServerFn({ method: "POST" })
 
 // ============ FOLDERS ============
 export const createFolder = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.folders", "create")])
   .inputValidator((input) =>
     z
       .object({
@@ -141,7 +130,7 @@ export const createFolder = createServerFn({ method: "POST" })
   });
 
 export const deleteFolder = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.folders", "delete")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -151,7 +140,7 @@ export const deleteFolder = createServerFn({ method: "POST" })
 
 // ============ LISTS ============
 export const listSpaceTree = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.spaces", "view")])
   .handler(async ({ context }) => {
     const { supabase } = context;
     const [spacesRes, foldersRes, listsRes] = await Promise.all([
@@ -185,7 +174,7 @@ export const listSpaceTree = createServerFn({ method: "POST" })
   });
 
 export const createList = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.lists", "create")])
   .inputValidator((input) =>
     z
       .object({
@@ -199,41 +188,15 @@ export const createList = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
-    const { data: row, error } = await supabase
-      .from("project_lists")
-      .insert({
-        workspace_id: workspaceId,
-        space_id: data.spaceId,
-        folder_id: data.folderId ?? null,
-        project_id: data.projectId ?? null,
-        name: data.name,
-        color: data.color ?? null,
-        icon: data.icon ?? null,
-        created_by: userId,
-      })
-      .select("*")
-      .single();
-    if (error) throw error;
-
-    // Seed default statuses
-    const statusesToInsert = DEFAULT_STATUSES.map((s, i) => ({
-      workspace_id: workspaceId,
-      list_id: row.id,
-      name: s.name,
-      color: s.color,
-      category: s.category,
-      sort_order: i,
-      is_default: s.is_default ?? false,
-    }));
-    await supabase.from("project_task_statuses").insert(statusesToInsert);
-
-    return row;
+    return workRpc<Database["public"]["Tables"]["project_lists"]["Row"]>(
+      context.supabase,
+      "project_list_create_checked",
+      { p_data: data, p_template: null },
+    );
   });
 
 export const updateList = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.lists", "update")])
   .inputValidator((input) =>
     z
       .object({
@@ -268,7 +231,7 @@ export const updateList = createServerFn({ method: "POST" })
   });
 
 export const deleteList = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.lists", "delete")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -277,7 +240,7 @@ export const deleteList = createServerFn({ method: "POST" })
   });
 
 export const getList = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.lists", "view")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -287,11 +250,16 @@ export const getList = createServerFn({ method: "POST" })
         .select("*, project_spaces(id, name, color), project_folders(id, name), projects(id, name)")
         .eq("id", data.id)
         .maybeSingle(),
-      supabase
-        .from("project_task_statuses")
-        .select("*")
-        .eq("list_id", data.id)
-        .order("sort_order", { ascending: true }),
+      workRpc<{
+        statuses: Array<
+          Pick<
+            Database["public"]["Tables"]["project_task_statuses"]["Row"],
+            "id" | "list_id" | "name" | "color" | "category" | "sort_order" | "is_default"
+          >
+        >;
+      }>(supabase, "project_list_runtime_references", { p_list: data.id, p_task: null }).then(
+        (r) => ({ data: r.statuses, error: null }),
+      ),
       supabase
         .from("project_tasks")
         .select("*")
@@ -311,7 +279,7 @@ export const getList = createServerFn({ method: "POST" })
 
 // ============ STATUSES ============
 export const createStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.statuses", "manage")])
   .inputValidator((input) =>
     z
       .object({
@@ -346,7 +314,7 @@ export const createStatus = createServerFn({ method: "POST" })
   });
 
 export const updateStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.statuses", "manage")])
   .inputValidator((input) =>
     z
       .object({
@@ -376,7 +344,7 @@ export const updateStatus = createServerFn({ method: "POST" })
   });
 
 export const deleteStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.statuses", "manage")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -386,7 +354,7 @@ export const deleteStatus = createServerFn({ method: "POST" })
 
 // ============ LIST TASKS ============
 export const createListTask = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.tasks", "create")])
   .inputValidator((input) =>
     z
       .object({
@@ -422,13 +390,12 @@ export const createListTask = createServerFn({ method: "POST" })
     // status default se não veio
     let statusId = data.customStatusId ?? null;
     if (!statusId) {
-      const { data: def } = await supabase
-        .from("project_task_statuses")
-        .select("id")
-        .eq("list_id", data.listId)
-        .eq("is_default", true)
-        .maybeSingle();
-      statusId = def?.id ?? null;
+      const refs = await workRpc<{ statuses: Array<{ id: string; is_default: boolean }> }>(
+        supabase,
+        "project_list_runtime_references",
+        { p_list: data.listId, p_task: null },
+      );
+      statusId = refs.statuses.find((s) => s.is_default)?.id ?? null;
     }
 
     const { data: row, error } = await supabase
@@ -436,6 +403,7 @@ export const createListTask = createServerFn({ method: "POST" })
       .insert({
         workspace_id: workspaceId,
         project_id: list.project_id,
+        assignee_id: userId,
         list_id: data.listId,
         title: data.title,
         custom_status_id: statusId,
@@ -451,7 +419,7 @@ export const createListTask = createServerFn({ method: "POST" })
   });
 
 export const moveTaskStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.tasks", "update")])
   .inputValidator((input) =>
     z
       .object({
@@ -463,11 +431,13 @@ export const moveTaskStatus = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     // Reflete category no status legado para relatórios existentes
-    const { data: st } = await supabase
-      .from("project_task_statuses")
-      .select("category")
-      .eq("id", data.customStatusId)
-      .maybeSingle();
+    const refs = await workRpc<{ statuses: Array<{ id: string; category: string }> }>(
+      supabase,
+      "project_list_runtime_references",
+      { p_task: data.taskId, p_list: null },
+    );
+    const st = refs.statuses.find((s) => s.id === data.customStatusId);
+    if (!st) throw new Error("Status indisponível para esta tarefa.");
     const legacy = st?.category === "done" ? "done" : st?.category === "doing" ? "doing" : "todo";
     const { data: row, error } = await supabase
       .from("project_tasks")
@@ -480,7 +450,7 @@ export const moveTaskStatus = createServerFn({ method: "POST" })
   });
 
 export const updateListTask = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.tasks", "update")])
   .inputValidator((input) =>
     z
       .object({
@@ -514,7 +484,7 @@ export const updateListTask = createServerFn({ method: "POST" })
   });
 
 export const deleteListTask = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.tasks", "delete")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;

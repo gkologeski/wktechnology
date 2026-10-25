@@ -1,3 +1,4 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { WorkScreenAccess, WorkRecordAccess } from "@/components/work-access";
 import { useWorkCapabilities } from "@/lib/access-control/use-work-capabilities";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -88,6 +89,8 @@ function ContractDetail() {
 
   const access = useWorkCapabilities("techcontracts.contracts", [id]);
   const canUpdateContract = access.for(id).can_update;
+  const { can } = usePermissions();
+  const canTransition = can("techcontracts.contract_transition.manage.workspace");
   const canDelete = access.for(id).can_delete;
 
   const [title, setTitle] = useState("");
@@ -310,13 +313,26 @@ function ContractDetail() {
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select value={status} onValueChange={(v) => setStatus(v as Status)}>
+                <Select
+                  disabled={!canUpdateContract || !canTransition}
+                  value={status}
+                  onValueChange={(v) => setStatus(v as Status)}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(STATUS_LABEL).map(([k, v]) => (
-                      <SelectItem key={k} value={k}>
+                      <SelectItem
+                        key={k}
+                        value={k}
+                        disabled={
+                          k === "in_review" ||
+                          k === "awaiting_signature" ||
+                          (k === "active" &&
+                            !can("techcontracts.contract_activation.manage.workspace"))
+                        }
+                      >
                         {v}
                       </SelectItem>
                     ))}

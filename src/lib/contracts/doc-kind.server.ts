@@ -227,27 +227,11 @@ export async function applyDocKindCorrections(
     };
     if (newTitle) patch["title"] = newTitle;
 
-    const { data: upRow, error: upErr } = await supabase
-      .from("contracts")
-      .update(patch as never)
-      .eq("id", item.id)
-      .select("id")
-      .maybeSingle();
-    if (upErr) throw new Error(upErr.message);
-    if (!upRow) {
-      skipped += 1;
-      continue;
-    }
-
-    updated += 1;
-    if (newTitle) retitled += 1;
-
-    await supabase.from("contract_events").insert({
-      workspace_id: workspaceId,
-      contract_id: item.id,
-      actor_id: userId,
-      event_type: "document_kind_corrected",
-      payload: {
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    await workRpc(supabase, "contract_change_checked", {
+      p_contract: item.id,
+      p_patch: patch,
+      p_evidence: {
         from: row.document_kind ?? "main",
         to: "amendment",
         main_contract_id: item.mainContractId,
@@ -256,7 +240,9 @@ export async function applyDocKindCorrections(
         title_after: newTitle,
         source: "doc-kind-review",
       },
-    } as never);
+    });
+    updated += 1;
+    if (newTitle) retitled += 1;
   }
 
   return { updated, retitled, skipped };

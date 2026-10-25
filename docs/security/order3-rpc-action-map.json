@@ -1,0 +1,236 @@
+[
+  {
+    "rpc": "project_time_policy_save",
+    "resource": "techprojects.time_policy",
+    "action": "manage",
+    "retains_domain_rules": true
+  },
+  {
+    "rpc": "project_time_approver_set",
+    "resource": "techprojects.approvers",
+    "action": "manage",
+    "retains_domain_rules": true
+  },
+  {
+    "rpc": "project_time_approver_revoke",
+    "resource": "techprojects.approvers",
+    "action": "manage",
+    "retains_domain_rules": true
+  },
+  {
+    "rpc": "project_delivery_template_save",
+    "resource": "techprojects.delivery_templates",
+    "action": "manage",
+    "retains_domain_rules": true
+  },
+  {
+    "rpc": "project_delivery_template_suggest",
+    "resource": "techprojects.delivery_templates",
+    "action": "view",
+    "retains_domain_rules": true
+  },
+  {
+    "rpc": "project_delivery_template_apply",
+    "resource": "techprojects.delivery_templates",
+    "action": "manage",
+    "retains_domain_rules": true
+  },
+  {
+    "rpc": "project_ops_status",
+    "resource": "techprojects.operations",
+    "action": "view",
+    "retains_domain_rules": true
+  },
+  {
+    "rpc": "project_risk_rules_get",
+    "resource": "techprojects.risk_rules",
+    "action": "view",
+    "retains_domain_rules": true
+  },
+  {
+    "rpc": "project_risk_rules_save",
+    "resource": "techprojects.risk_rules",
+    "action": "manage",
+    "retains_domain_rules": true
+  },
+  {
+    "rpc": "project_alert_refresh",
+    "resource": "techprojects.alerts",
+    "action": "manage",
+    "retains_domain_rules": true
+  },
+  {
+    "rpc": "project_alert_act",
+    "resource": "techprojects.alerts",
+    "action": "manage",
+    "retains_domain_rules": true
+  },
+  {
+    "rpc": "project_reconciliation_overview",
+    "resource": "techprojects.reconciliation",
+    "action": "view",
+    "retains_admin_requirement": true
+  },
+  {
+    "rpc": "project_reconciliation_breakdown",
+    "resource": "techprojects.reconciliation",
+    "action": "view",
+    "retains_admin_requirement": true
+  },
+  {
+    "rpc": "project_link_people_overview",
+    "resource": "techprojects.reconciliation",
+    "action": "view",
+    "retains_admin_requirement": true
+  },
+  {
+    "rpc": "project_reconciliation_decide",
+    "resource": "techprojects.reconciliation",
+    "action": "manage",
+    "retains_admin_requirement": true
+  },
+  {
+    "rpc": "project_links_apply_exact",
+    "resource": "techprojects.reconciliation",
+    "action": "manage",
+    "retains_admin_requirement": true
+  },
+  {
+    "rpc": "project_reconciliation_refresh",
+    "resource": "techprojects.reconciliation",
+    "action": "manage",
+    "retains_admin_requirement": true
+  },
+  {
+    "rpc": "project_link_suggestions_decide",
+    "resource": "techprojects.reconciliation",
+    "action": "manage",
+    "retains_admin_requirement": true
+  },
+  {
+    "rpc": "project_links_revert",
+    "resource": "techprojects.reconciliation",
+    "action": "manage",
+    "retains_admin_requirement": true
+  },
+  {
+    "rpc": "deal_delivery_policy_get",
+    "resource": "techprojects.delivery",
+    "action": "view",
+    "retains_admin_requirement": true
+  },
+  {
+    "rpc": "deal_delivery_policy_save",
+    "resource": "techprojects.delivery",
+    "action": "manage",
+    "retains_admin_requirement": true
+  },
+  {
+    "rpc": "deal_delivery_history_list",
+    "resource": "techprojects.delivery",
+    "action": "view",
+    "retains_admin_requirement": true
+  },
+  {
+    "rpc": "deal_delivery_history_preview",
+    "resource": "techprojects.delivery",
+    "action": "manage",
+    "retains_admin_requirement": true
+  },
+  {
+    "rpc": "deal_delivery_history_apply",
+    "resource": "techprojects.delivery",
+    "action": "manage",
+    "retains_admin_requirement": true
+  },
+  {
+    "rpc": "deal_delivery_history_apply_exact",
+    "resource": "techprojects.delivery",
+    "action": "manage",
+    "retains_admin_requirement": true
+  },
+  {
+    "rpc": "deal_delivery_history_create",
+    "resource": "techprojects.delivery",
+    "action": "manage",
+    "retains_admin_requirement": true
+  },
+  {
+    "rpc": "deal_delivery_history_revert",
+    "resource": "techprojects.delivery",
+    "action": "manage",
+    "retains_admin_requirement": true
+  },
+  {
+    "rpc": "contract_approval_start",
+    "resource": "techcontracts.approvals",
+    "action": "manage",
+    "retains_domain_rules": true
+  },
+  {
+    "rpc": "contract_approval_decide",
+    "resource": "techcontracts.approvals",
+    "action": "approve",
+    "retains_domain_rules": true
+  },
+  {
+    "rpc": "contract_esign_manage",
+    "resource": "techcontracts.esign",
+    "action": "action-specific",
+    "retains_domain_rules": true
+  },
+  {
+    "rpc": "contract_template_save_checked",
+    "resource": "techcontracts.contract_templates",
+    "action": "create/update",
+    "retains_domain_rules": true
+  },
+  {
+    "rpc": "contract_create_batch",
+    "resource": "techcontracts.contracts",
+    "action": "create",
+    "retains_domain_rules": true
+  },
+  {
+    "rpc": "service_bill_checked",
+    "resource": "techservice.billing",
+    "action": "manage",
+    "retains_domain_rules": true
+  },
+  {
+    "rpc": "project_milestone_complete_checked",
+    "resource": "techprojects.milestone_billing",
+    "action": "create",
+    "retains_domain_rules": true
+  },
+  {
+    "rpc": "project_list_create_checked",
+    "resource": "techprojects.lists",
+    "action": "create",
+    "retains_domain_rules": true
+  },
+  {
+    "rpc": "project_time_capabilities",
+    "resource": "techprojects.time_entries",
+    "action": "view",
+    "retains_domain_rules": true
+  },
+  {
+    "rpc": "work_cost_projection",
+    "resource": "techprojects.profitability",
+    "action": "view",
+    "retains_domain_rules": true
+  },
+  {
+    "rpc": "contract_workflow_terminate",
+    "resource": "techcontracts.contract_transition",
+    "action": "manage",
+    "mechanism": "service-only; source person visibility, actual actor and all affected contract scopes; atomic and audited"
+  },
+  {
+    "rpc": "contract_create_batch:delegated",
+    "resource": "techcontracts.contracts",
+    "action": "create",
+    "mechanism": "service-only source envelope; active source actor, deal/person visibility, selected source workspace; idempotent without scope bypass"
+  }
+]

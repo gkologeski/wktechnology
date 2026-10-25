@@ -39,6 +39,12 @@ export async function requireClockifyAdmin(
   opts: { write: boolean },
 ): Promise<Ctx> {
   const workspaceId = await resolveActiveWorkspace(userId);
+  const { workRpc } = await import("@/lib/access-control/work-core.server");
+  await workRpc(supabase, "work_area_authorize", {
+    r: "techprojects.clockify_import",
+    a: opts.write ? "manage" : "view",
+    i: null,
+  });
   const { data, error } = await supabase.rpc("is_active_workspace_admin", {
     _workspace: workspaceId,
     _user: userId,
@@ -435,6 +441,24 @@ export async function advanceClockifyRun(workspaceId: string, runId: string) {
         .eq("id", runId);
       return { advanced: true };
     }
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    const allowed = await workRpc<boolean>(db, "work_import_delegate_allowed", {
+      p_ws: workspaceId,
+      p_actor: claimed.delegation_authorized_by ?? claimed.requested_by,
+      p_provider: "clockify",
+    });
+    if (!allowed) {
+      await db
+        .from("clockify_import_runs")
+        .update({
+          status: "paused",
+          error:
+            "Permissão do solicitante revogada. Um administrador autorizado deve retomar a importação.",
+        })
+        .eq("id", runId)
+        .eq("workspace_id", workspaceId);
+      return { advanced: false };
+    }
     const conn = await loadConn(workspaceId);
     if (!conn?.key_ciphertext) {
       await db
@@ -471,7 +495,17 @@ export async function setClockifyRunState(
   const from = action === "resume" ? ["paused", "failed"] : ["queued", "running", "paused"];
   const { data, error } = await db
     .from("clockify_import_runs")
-    .update({ status: next, error: null, updated_at: new Date().toISOString() })
+    .update({
+      status: next,
+      error: null,
+      updated_at: new Date().toISOString(),
+      ...(action === "resume"
+        ? {
+            delegation_authorized_by: ctx.userId,
+            delegation_authorized_at: new Date().toISOString(),
+          }
+        : {}),
+    })
     .eq("id", runId)
     .eq("workspace_id", ctx.workspaceId)
     .in("status", from)

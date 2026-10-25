@@ -128,6 +128,14 @@ export function contractFieldsFromDeal(
 }
 
 export type CreateContractArgs = {
+  skipExisting?: boolean;
+  /** Server-only proof for the source actor of an automated creation. */
+  delegation?: {
+    kind: "contract_from_deal" | "contract_from_person";
+    record: string;
+    template: string | null;
+  };
+  metadata?: Record<string, unknown>;
   workspaceId: string;
   userId: string;
   kind: ContractKind;
@@ -246,29 +254,15 @@ export async function createContractShared(
     status: args.status ?? "draft",
   };
 
-  const { data: inserted, error } = await supabase
-    .from("contracts")
-    .insert(payload as never)
-    .select("id, number, title")
-    .single();
-  if (error) throw new Error(error.message);
-  const contract = inserted as unknown as {
-    id: string;
-    number: string | null;
-    title: string | null;
-  } | null;
-  const contractId = contract?.id;
-  if (!contract || !contractId) throw new Error("Não foi possível criar o contrato");
-
-  let servicesCreated = 0;
+  let servicePayload: Record<string, unknown>[] = [];
   // Serviço só pode ser associado a contrato de prestação.
   const canHaveServices = role === "provider" && document_kind === "main";
   if (canHaveServices && args.copyLineItems !== false && items.length > 0) {
     const startsAt = (merged["starts_at"] as string | null) ?? null;
-    const servicePayload = items.map((li) => ({
+    servicePayload = items.map((li) => ({
       workspace_id: args.workspaceId,
       owner_id: args.userId,
-      contract_id: contractId,
+      contract_id: null,
       role,
       name: li.name ?? "Serviço",
       description: li.description,
@@ -297,10 +291,18 @@ export async function createContractShared(
         tax_rate: li.tax_rate,
       },
     }));
-    const { error: svcErr } = await supabase.from("services").insert(servicePayload as never);
-    if (svcErr) throw new Error(svcErr.message);
-    servicesCreated = servicePayload.length;
   }
-
-  return { contract, servicesCreated };
+  const { workRpc } = await import("@/lib/access-control/work-core.server");
+  return workRpc<{
+    contract: { id: string; number: string | null; title: string | null };
+    servicesCreated: number;
+  }>(supabase, "contract_create_batch", {
+    p_contract: {
+      ...payload,
+      ...(args.metadata ? { metadata: args.metadata } : {}),
+      ...(args.delegation ? { __delegation: args.delegation } : {}),
+    },
+    p_services: servicePayload,
+    p_skip_existing: args.skipExisting ?? false,
+  });
 }

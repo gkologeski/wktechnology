@@ -1,9 +1,13 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { useWorkCapabilities } from "@/lib/access-control/use-work-capabilities";
+import { WorkAction } from "@/components/work-action";
+import { HrScreenAccess as Order3ScreenAccess } from "@/components/hr-access";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { useCanDelete, DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
+import { DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
 import { ArrowLeft, Package, Play, Save, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -33,7 +37,7 @@ import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { IsoDatePicker } from "@/components/iso-date-picker";
 export const Route = createFileRoute("/_authenticated/services/$id")({
   head: () => ({ meta: [{ title: "Serviço" }] }),
-  component: ServiceDetail,
+  component: Order3RouteAccess,
 });
 
 const STATUS_LABEL: Record<string, string> = {
@@ -53,6 +57,14 @@ const STATUS_TONE: Record<string, string> = {
 };
 
 function ServiceDetail() {
+  const permissions = usePermissions();
+  const canBill =
+    permissions.can("techservice.billing.manage.workspace") &&
+    permissions.canAny([
+      "techfinance.entries.create.own",
+      "techfinance.entries.create.workspace",
+    ]) &&
+    permissions.canAny(["techfinance.entries.view.own", "techfinance.entries.view.workspace"]);
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -66,11 +78,8 @@ function ServiceDetail() {
     queryFn: () => get({ data: { id } }),
   });
 
-  const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete(
-    "techsales.catalog.services",
-  );
-  const canDelete =
-    !deletePermLoading && canDeleteRecord(row as Parameters<typeof canDeleteRecord>[0]);
+  const access = useWorkCapabilities("techservice.services", [id]);
+  const canDelete = access.for(id).can_delete;
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -206,25 +215,31 @@ function ServiceDetail() {
           </Badge>
         </div>
         <div className="flex items-center gap-2">
-          {row.status === "pending" ? (
-            <Button variant="outline" onClick={activateNow}>
-              <Play className="h-4 w-4 mr-1" /> Ativar
-            </Button>
+          {row.status === "pending" && canBill ? (
+            <WorkAction resource="techservice.services" action="update" id={id}>
+              <Button variant="outline" onClick={activateNow}>
+                <Play className="h-4 w-4 mr-1" /> Ativar
+              </Button>
+            </WorkAction>
           ) : null}
-          <Button variant="outline" onClick={save} disabled={saving}>
-            <Save className="h-4 w-4 mr-1" /> {saving ? "Salvando…" : "Salvar"}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={del}
-            disabled={!canDelete}
-            aria-disabled={!canDelete}
-            title={canDelete ? "Excluir serviço" : DELETE_NOT_ALLOWED_TITLE}
-            aria-label="Excluir serviço"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <WorkAction resource="techservice.services" action="update" id={id}>
+            <Button variant="outline" onClick={save} disabled={saving}>
+              <Save className="h-4 w-4 mr-1" /> {saving ? "Salvando…" : "Salvar"}
+            </Button>
+          </WorkAction>
+          <WorkAction resource="techservice.services" action="delete" id={id}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={del}
+              disabled={!canDelete}
+              aria-disabled={!canDelete}
+              title={canDelete ? "Excluir serviço" : DELETE_NOT_ALLOWED_TITLE}
+              aria-label="Excluir serviço"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </WorkAction>
         </div>
       </div>
 
@@ -376,5 +391,14 @@ function ServiceDetail() {
         </div>
       </div>
     </div>
+  );
+}
+
+const Order3Page = ServiceDetail;
+function Order3RouteAccess() {
+  return (
+    <Order3ScreenAccess resources={["techservice.services"]}>
+      <Order3Page />
+    </Order3ScreenAccess>
   );
 }

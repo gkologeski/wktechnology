@@ -1,3 +1,4 @@
+import { useWorkRecordCapability } from "@/components/work-action";
 // Sprint D — Sheet de detalhes de uma tarefa de projeto.
 // Expõe checklist, dependências e tags (múltiplos assignees ainda são geridos via campo assignee_id).
 import { useState } from "react";
@@ -31,7 +32,10 @@ import {
   listWorkspaceTaskTags,
 } from "@/lib/project-tasks-advanced.functions";
 import { listAllProjectTasks } from "@/lib/projects.functions";
-import { listCustomFields, updateTaskCustomFieldValues } from "@/lib/project-list-extras.functions";
+import {
+  listTaskFieldReferences,
+  updateTaskCustomFieldValues,
+} from "@/lib/project-list-extras.functions";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
 type TaskLite = {
@@ -52,6 +56,7 @@ export function TaskDetailsSheet({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
+  const capability = useWorkRecordCapability("techprojects.tasks", task?.id ?? "");
   if (!task) return null;
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -59,23 +64,25 @@ export function TaskDetailsSheet({
         <SheetHeader>
           <SheetTitle className="text-base">{task.title}</SheetTitle>
         </SheetHeader>
-        <div className="mt-4 space-y-6">
-          <TagsSection task={task} />
-          {task.list_id && (
-            <>
-              <Separator />
-              <CustomFieldsSection
-                taskId={task.id}
-                listId={task.list_id}
-                initialValues={task.custom_field_values ?? {}}
-              />
-            </>
-          )}
-          <Separator />
-          <ChecklistSection taskId={task.id} />
-          <Separator />
-          <DependenciesSection task={task} />
-        </div>
+        <fieldset className="contents" disabled={!capability.can_update}>
+          <div className="mt-4 space-y-6">
+            <TagsSection task={task} />
+            {task.list_id && (
+              <>
+                <Separator />
+                <CustomFieldsSection
+                  taskId={task.id}
+                  listId={task.list_id}
+                  initialValues={task.custom_field_values ?? {}}
+                />
+              </>
+            )}
+            <Separator />
+            <ChecklistSection taskId={task.id} />
+            <Separator />
+            <DependenciesSection task={task} />
+          </div>
+        </fieldset>
       </SheetContent>
     </Sheet>
   );
@@ -91,12 +98,12 @@ function CustomFieldsSection({
   listId: string;
   initialValues: Record<string, any>;
 }) {
-  const listFn = useServerFn(listCustomFields);
+  const listFn = useServerFn(listTaskFieldReferences);
   const updateFn = useServerFn(updateTaskCustomFieldValues);
   const qc = useQueryClient();
   const { data: fields = [], isLoading } = useQuery({
     queryKey: ["project-list-custom-fields", listId],
-    queryFn: () => listFn({ data: { listId } }),
+    queryFn: () => listFn({ data: { taskId } }),
   });
   const [values, setValues] = useState<Record<string, any>>(initialValues);
   const m = useMutation({

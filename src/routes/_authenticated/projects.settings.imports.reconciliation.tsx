@@ -1,3 +1,4 @@
+import { HrScreenAccess as Order3ScreenAccess } from "@/components/hr-access";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   ReconciliationPage,
@@ -31,7 +32,7 @@ export const Route = createFileRoute("/_authenticated/projects/settings/imports/
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: ReconciliationRoute,
+  component: Order3RouteAccess,
 });
 
 function ReconciliationRoute() {
@@ -42,5 +43,14 @@ function ReconciliationRoute() {
       search={search}
       onSearch={(next) => void navigate({ search: (prev) => ({ ...prev, ...next }) })}
     />
+  );
+}
+
+const Order3Page = ReconciliationRoute;
+function Order3RouteAccess() {
+  return (
+    <Order3ScreenAccess resources={["techprojects.reconciliation"]}>
+      <Order3Page />
+    </Order3ScreenAccess>
   );
 }

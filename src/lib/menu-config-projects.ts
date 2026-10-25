@@ -146,12 +146,17 @@ export const PROJECTS_SIDEBAR_GROUPS: SidebarGroup[] = [
       {
         title: "Política de horas e modelos",
         url: "/projects/settings/time",
+        permissionAny: [
+          "techprojects.time_policy.view.workspace",
+          "techprojects.delivery_templates.view.workspace",
+        ],
         need: "admin",
         icon: Clock,
       },
       {
         title: "Tarifas e custos",
         url: "/projects/settings/rates",
+        permissionAny: ["techprojects.rates.view.workspace"],
         need: "admin",
         icon: Coins,
       },

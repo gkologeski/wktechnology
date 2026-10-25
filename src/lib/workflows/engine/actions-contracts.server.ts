@@ -31,27 +31,25 @@ export async function handleContractAction(
   }
 
   const { deal } = await loadDealForContract(supabase, ctx.entityId);
+  const { workRpc } = await import("@/lib/access-control/work-core.server");
+  if (!deal.workspace_id || deal.workspace_id !== ctx.workspaceId || !ctx.ownerId)
+    throw new Error("Origem ou responsável do workflow inválido.");
+  const allowed = await workRpc<boolean>(supabase, "work_delegated_authorize", {
+    p_ws: deal.workspace_id,
+    p_actor: ctx.ownerId,
+    p_kind: "contract_from_deal",
+    p_record: deal.id,
+    p_copy: action.copy_line_items !== false,
+    p_template: action.template_id ?? null,
+    p_status: action.status ?? "draft",
+  });
+  if (!allowed)
+    throw new Error(
+      "O responsável do workflow não possui as permissões atuais para criar este contrato e seus serviços.",
+    );
   const kind = resolveKind(action.document_kind ?? action.role);
   const { document_kind } = kindToColumns(kind, action.role ?? null);
   const skipIfExists = action.skip_if_exists !== false;
-
-  if (skipIfExists) {
-    const { data: existing, error: exErr } = await supabase
-      .from("contracts")
-      .select("id")
-      .eq("deal_id", deal.id)
-      .eq("document_kind", document_kind)
-      .limit(1);
-    if (exErr) throw new Error(exErr.message);
-    if (existing && existing.length > 0) {
-      return {
-        at,
-        ok: true,
-        action: "create_contract_from_deal",
-        detail: { skipped: true, contract_id: (existing[0] as { id: string }).id },
-      };
-    }
-  }
 
   let bodyHtml: string | null = null;
   if (action.template_id) {
@@ -70,7 +68,7 @@ export async function handleContractAction(
     ? String(renderTokens(action.starts_at, ctx.after, ctx.vars)).trim()
     : null;
 
-  const workspaceId = deal.workspace_id ?? ctx.workspaceId;
+  const workspaceId = deal.workspace_id;
   if (!workspaceId) throw new Error("workspace do negócio não encontrado");
 
   // Demais campos do contrato configurados no passo: tokens são resolvidos com
@@ -80,7 +78,13 @@ export async function handleContractAction(
 
   const { contract, servicesCreated } = await createContractShared(supabase, {
     workspaceId,
-    userId: ctx.ownerId || deal.owner_id || "",
+    skipExisting: skipIfExists,
+    delegation: {
+      kind: "contract_from_deal",
+      record: deal.id,
+      template: action.template_id ?? null,
+    },
+    userId: ctx.ownerId,
     kind,
     role: action.role ?? null,
     fields: {

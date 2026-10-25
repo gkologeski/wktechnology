@@ -1,3 +1,4 @@
+import { HrScreenAccess as Order3ScreenAccess } from "@/components/hr-access";
 import { createFileRoute } from "@tanstack/react-router";
 import { ClockifyImportPage } from "@/components/projects/clockify-import/clockify-import-page";
 
@@ -20,5 +21,14 @@ export const Route = createFileRoute("/_authenticated/projects/settings/imports/
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: ClockifyImportPage,
+  component: Order3RouteAccess,
 });
+
+const Order3Page = ClockifyImportPage;
+function Order3RouteAccess() {
+  return (
+    <Order3ScreenAccess resources={["techprojects.clockify_import"]}>
+      <Order3Page />
+    </Order3ScreenAccess>
+  );
+}

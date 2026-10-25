@@ -1,0 +1,100 @@
+[
+  {
+    "file": "src/routes/_authenticated/projects.spaces.tsx",
+    "resources": ["techprojects.spaces"]
+  },
+  {
+    "file": "src/routes/_authenticated/projects.lists.$id.tsx",
+    "resources": ["techprojects.lists"]
+  },
+  {
+    "file": "src/routes/_authenticated/projects.settings.rates.tsx",
+    "resources": ["techprojects.rates"]
+  },
+  {
+    "file": "src/routes/_authenticated/projects.settings.time.tsx",
+    "resources": ["techprojects.time_policy", "techprojects.delivery_templates"]
+  },
+  {
+    "file": "src/routes/_authenticated/projects.settings.delivery.tsx",
+    "resources": ["techprojects.delivery"]
+  },
+  {
+    "file": "src/routes/_authenticated/projects.settings.operations.tsx",
+    "resources": ["techprojects.operations"]
+  },
+  {
+    "file": "src/routes/_authenticated/projects.settings.imports.clockify.tsx",
+    "resources": ["techprojects.clockify_import"]
+  },
+  {
+    "file": "src/routes/_authenticated/projects.settings.imports.jibble.tsx",
+    "resources": ["techprojects.jibble_import"]
+  },
+  {
+    "file": "src/routes/_authenticated/projects.settings.imports.reconciliation.tsx",
+    "resources": ["techprojects.reconciliation"]
+  },
+  {
+    "file": "src/routes/_authenticated/projects.settings.imports.index.tsx",
+    "resources": [
+      "techprojects.clockify_import",
+      "techprojects.jibble_import",
+      "techprojects.reconciliation"
+    ]
+  },
+  {
+    "file": "src/routes/_authenticated/contracts.templates.index.tsx",
+    "resources": ["techcontracts.contract_templates"]
+  },
+  {
+    "file": "src/routes/_authenticated/contracts.templates.$id.tsx",
+    "resources": ["techcontracts.contract_templates"]
+  },
+  {
+    "file": "src/routes/_authenticated/contracts.links.tsx",
+    "resources": ["techcontracts.links"]
+  },
+  {
+    "file": "src/routes/_authenticated/settings.contract-defaults.tsx",
+    "resources": ["techcontracts.defaults"]
+  },
+  {
+    "file": "src/routes/_authenticated/services.index.tsx",
+    "resources": ["techservice.services"]
+  },
+  {
+    "file": "src/routes/_authenticated/services.$id.tsx",
+    "resources": ["techservice.services"]
+  },
+  {
+    "file": "src/routes/_authenticated/contracts.$id_.medicoes.tsx",
+    "resources": [
+      "techcontracts.contracts",
+      "techprojects.billing_config",
+      "techprojects.measurements",
+      "techprojects.profitability"
+    ],
+    "record_resource": "techcontracts.contracts",
+    "sections_independent": true
+  },
+  {
+    "file": "src/routes/_authenticated/projects_.$id.financeiro.tsx",
+    "resources": [
+      "techprojects.projects",
+      "techprojects.profitability",
+      "techprojects.measurements"
+    ],
+    "record_resource": "techprojects.projects",
+    "sections_independent": true
+  },
+  {
+    "file": "src/routes/_authenticated/projects_.$id.entrega.tsx",
+    "resources": ["techprojects.projects", "techprojects.project_updates"],
+    "record_resource": "techprojects.projects"
+  },
+  {
+    "file": "src/routes/_authenticated/settings.esign.tsx",
+    "resources": ["techcontracts.esign"]
+  }
+]

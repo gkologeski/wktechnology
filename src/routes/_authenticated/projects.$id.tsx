@@ -1,3 +1,4 @@
+import { WorkAction, WorkCapabilityScope } from "@/components/work-action";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { WorkScreenAccess, WorkRecordAccess } from "@/components/work-access";
 import { useWorkCapabilities } from "@/lib/access-control/use-work-capabilities";
@@ -53,6 +54,7 @@ import {
   listTimeEntries,
   logTime,
   deleteTimeEntry,
+  getTimeActionCapabilities,
   listMembers,
   addMember,
   removeMember,
@@ -93,15 +95,17 @@ function ProjectDetailPage() {
   const update = useServerFn(updateProject);
   const fin = useServerFn(getProjectFinancials);
   const access = useWorkCapabilities("techprojects.projects", [id]);
+  const permissions = usePermissions();
 
   const { data: project, isLoading } = useQuery({
     queryKey: ["project", id],
     queryFn: () => get({ data: { id } }),
   });
 
-  const { data: financials } = useQuery({
+  const { data: financials, isError: financialsError } = useQuery({
     queryKey: ["project-financials", id],
     queryFn: () => fin({ data: { projectId: id } }),
+    enabled: permissions.can("techprojects.profitability.view.workspace"),
   });
 
   if (isLoading) return <div className="p-6 text-sm text-muted-foreground">Carregando…</div>;
@@ -159,7 +163,15 @@ function ProjectDetailPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         <MetricTile
           label="Horas apontadas"
-          value={`${(financials?.loggedHours ?? 0).toFixed(1)}h`}
+          value={
+            !permissions.can("techprojects.profitability.view.workspace")
+              ? "Sem acesso"
+              : financialsError
+                ? "Indisponível"
+                : financials
+                  ? `${financials.loggedHours.toFixed(1)}h`
+                  : "…"
+          }
         />
         <ProjectProfitabilityTiles
           projectId={id}
@@ -213,16 +225,22 @@ function ProjectDetailPage() {
           <TabsTrigger value="members">Membros</TabsTrigger>
         </TabsList>
         <TabsContent value="tasks" className="mt-4">
-          <TasksKanban projectId={id} />
+          <WorkScreenAccess resources={["techprojects.tasks"]}>
+            <TasksKanban projectId={id} />
+          </WorkScreenAccess>
         </TabsContent>
         <TabsContent value="milestones" className="mt-4">
-          <MilestonesPanel projectId={id} />
+          <WorkScreenAccess resources={["techprojects.milestones"]}>
+            <MilestonesPanel projectId={id} />
+          </WorkScreenAccess>
         </TabsContent>
         <TabsContent value="timesheet" className="mt-4">
           <TimesheetPanel projectId={id} />
         </TabsContent>
         <TabsContent value="members" className="mt-4">
-          <MembersPanel projectId={id} />
+          <WorkScreenAccess resources={["techprojects.members"]}>
+            <MembersPanel projectId={id} />
+          </WorkScreenAccess>
         </TabsContent>
       </Tabs>
     </div>
@@ -290,15 +308,22 @@ function TasksKanban({ projectId }: { projectId: string }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <Button
-          size="sm"
-          disabled={
-            !canTask(["techprojects.tasks.create.own", "techprojects.tasks.create.workspace"])
-          }
-          onClick={() => setOpenCreate(true)}
-        >
-          <Plus className="h-4 w-4 mr-2" /> Nova tarefa
-        </Button>
+        <WorkAction resource="techprojects.tasks" action="create">
+          {" "}
+          <Button
+            size="sm"
+            disabled={
+              !canTask([
+                "techprojects.tasks.create.own",
+                "techprojects.tasks.create.team",
+                "techprojects.tasks.create.workspace",
+              ])
+            }
+            onClick={() => setOpenCreate(true)}
+          >
+            <Plus className="h-4 w-4 mr-2" /> Nova tarefa
+          </Button>
+        </WorkAction>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         {TASK_COLUMNS.map((col) => (
@@ -326,7 +351,7 @@ function TasksKanban({ projectId }: { projectId: string }) {
                   <div className="flex items-start justify-between gap-2">
                     <div className="font-medium flex-1">{t.title}</div>
                     <button
-                      className="text-muted-foreground hover:text-destructive"
+                      className="text-muted-foreground hover:text-destructive disabled:opacity-50"
                       disabled={!taskAccess.for(t.id).can_delete}
                       onClick={async () => {
                         if (!(await confirmDialog("Remover tarefa?"))) return;
@@ -427,6 +452,18 @@ function MilestonesPanel({ projectId }: { projectId: string }) {
     queryFn: () => list({ data: { projectId } }),
   });
 
+  const milestoneRights = useWorkCapabilities(
+    "techprojects.milestones",
+    milestones.map((m) => m.id),
+  );
+  const permissions = usePermissions();
+  const canBill =
+    permissions.can("techprojects.milestone_billing.create.workspace") &&
+    permissions.canAny([
+      "techfinance.entries.create.own",
+      "techfinance.entries.create.workspace",
+    ]) &&
+    permissions.canAny(["techfinance.entries.view.own", "techfinance.entries.view.workspace"]);
   const [openCreate, setOpenCreate] = useState(false);
   const [name, setName] = useState("");
   const [dueAt, setDueAt] = useState("");
@@ -455,9 +492,11 @@ function MilestonesPanel({ projectId }: { projectId: string }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <Button size="sm" onClick={() => setOpenCreate(true)}>
-          <Plus className="h-4 w-4 mr-2" /> Novo marco
-        </Button>
+        <WorkAction resource="techprojects.milestones" action="create">
+          <Button size="sm" onClick={() => setOpenCreate(true)}>
+            <Plus className="h-4 w-4 mr-2" /> Novo marco
+          </Button>
+        </WorkAction>
       </div>
       <div className="rounded-lg border bg-card">
         {milestones.length === 0 ? (
@@ -495,6 +534,10 @@ function MilestonesPanel({ projectId }: { projectId: string }) {
                       <Button
                         size="sm"
                         variant="outline"
+                        disabled={
+                          !milestoneRights.for(m.id).can_update ||
+                          (m.billable && Number(m.bill_amount) > 0 && !canBill)
+                        }
                         onClick={async () => {
                           try {
                             await complete({ data: { id: m.id } });
@@ -515,6 +558,7 @@ function MilestonesPanel({ projectId }: { projectId: string }) {
                     <Button
                       size="sm"
                       variant="ghost"
+                      disabled={!milestoneRights.for(m.id).can_delete}
                       onClick={async () => {
                         if (!(await confirmDialog("Remover marco?"))) return;
                         await del({ data: { id: m.id } });
@@ -587,12 +631,17 @@ function TimesheetPanel({ projectId }: { projectId: string }) {
   const list = useServerFn(listTimeEntries);
   const log = useServerFn(logTime);
   const del = useServerFn(deleteTimeEntry);
+  const timeRightsFn = useServerFn(getTimeActionCapabilities);
 
   const { data: entries = [] } = useQuery({
     queryKey: ["project-time-entries", projectId],
     queryFn: () => list({ data: { projectId } }),
   });
 
+  const { data: timeRights } = useQuery({
+    queryKey: ["time-action-capabilities", projectId, entries.map((e) => e.id)],
+    queryFn: () => timeRightsFn({ data: { ids: entries.map((e) => e.id) } }),
+  });
   const [date, setDate] = useState(formatIsoDate(new Date()));
   const [hours, setHours] = useState("");
   const [description, setDescription] = useState("");
@@ -653,7 +702,7 @@ function TimesheetPanel({ projectId }: { projectId: string }) {
                 Billable
               </Label>
             </div>
-            <Button onClick={submit} disabled={saving} size="sm">
+            <Button onClick={submit} disabled={saving || !timeRights?.can_create} size="sm">
               Registrar
             </Button>
           </div>
@@ -689,7 +738,8 @@ function TimesheetPanel({ projectId }: { projectId: string }) {
                   </TableCell>
                   <TableCell className="text-right">
                     <button
-                      className="text-muted-foreground hover:text-destructive"
+                      disabled={!timeRights?.rows.some((r) => r.id === e.id && r.can_delete)}
+                      className="text-muted-foreground hover:text-destructive disabled:opacity-50"
                       onClick={async () => {
                         if (!(await confirmDialog("Remover apontamento?"))) return;
                         await del({ data: { id: e.id } });
@@ -713,6 +763,12 @@ function TimesheetPanel({ projectId }: { projectId: string }) {
 // ============= MEMBERS =============
 
 function MembersPanel({ projectId }: { projectId: string }) {
+  const { can } = usePermissions();
+  const canManage = can("techprojects.members.manage.workspace");
+  const canCost =
+    can("techprojects.profitability.view.workspace") || can("techprojects.rates.view.workspace");
+  const canChangeCost =
+    can("techprojects.costs.manage.workspace") || can("techprojects.rates.manage.workspace");
   const qc = useQueryClient();
   const list = useServerFn(listMembers);
   const add = useServerFn(addMember);
@@ -744,8 +800,8 @@ function MembersPanel({ projectId }: { projectId: string }) {
           projectId,
           userId,
           roleInProject,
-          costRateHour: cost ? Number(cost) : null,
-          billRateHour: bill ? Number(bill) : null,
+          costRateHour: canChangeCost && cost ? Number(cost) : undefined,
+          billRateHour: canChangeCost && bill ? Number(bill) : undefined,
         },
       });
       setUserId("");
@@ -759,114 +815,134 @@ function MembersPanel({ projectId }: { projectId: string }) {
   };
 
   return (
-    <div className="space-y-3">
-      <div className="rounded-lg border bg-card p-4">
-        <div className="text-sm font-medium mb-3">Adicionar membro</div>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-          <div className="space-y-1.5 md:col-span-2">
-            <Label>Usuário</Label>
-            <Select value={userId} onValueChange={setUserId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableMembers.map((m: any) => (
-                  <SelectItem key={m.user_id} value={m.user_id}>
-                    {m.full_name ?? m.email ?? m.user_id}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+    <WorkCapabilityScope resource="techprojects.members" ids={members.map((m) => m.id)}>
+      <div className="space-y-3">
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-sm font-medium mb-3">Adicionar membro</div>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+            <div className="space-y-1.5 md:col-span-2">
+              <Label>Usuário</Label>
+              <Select value={userId} onValueChange={setUserId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableMembers.map((m: any) => (
+                    <SelectItem key={m.user_id} value={m.user_id}>
+                      {m.full_name ?? m.email ?? m.user_id}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Papel</Label>
+              <Select value={roleInProject} onValueChange={(v) => setRoleInProject(v as any)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="manager">Gestor</SelectItem>
+                  <SelectItem value="contributor">Colaborador</SelectItem>
+                  <SelectItem value="viewer">Observador</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Custo/h</Label>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                disabled={!canChangeCost}
+                value={cost}
+                onChange={(e) => setCost(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Bill/h</Label>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                disabled={!canChangeCost}
+                value={bill}
+                onChange={(e) => setBill(e.target.value)}
+              />
+            </div>
           </div>
-          <div className="space-y-1.5">
-            <Label>Papel</Label>
-            <Select value={roleInProject} onValueChange={(v) => setRoleInProject(v as any)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="manager">Gestor</SelectItem>
-                <SelectItem value="contributor">Colaborador</SelectItem>
-                <SelectItem value="viewer">Observador</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>Custo/h</Label>
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
-              value={cost}
-              onChange={(e) => setCost(e.target.value)}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Bill/h</Label>
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
-              value={bill}
-              onChange={(e) => setBill(e.target.value)}
-            />
+          <div className="mt-3 flex justify-end">
+            <WorkAction resource="techprojects.members" action="manage">
+              {" "}
+              <Button size="sm" disabled={!canManage} onClick={submit}>
+                <Plus className="h-4 w-4 mr-2" /> Adicionar
+              </Button>
+            </WorkAction>
           </div>
         </div>
-        <div className="mt-3 flex justify-end">
-          <Button size="sm" onClick={submit}>
-            <Plus className="h-4 w-4 mr-2" /> Adicionar
-          </Button>
-        </div>
-      </div>
 
-      <div className="rounded-lg border bg-card">
-        {members.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">Nenhum membro.</div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Papel</TableHead>
-                <TableHead className="text-right">Custo/h</TableHead>
-                <TableHead className="text-right">Bill/h</TableHead>
-                <TableHead className="w-16"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {(members as any[]).map((m) => (
-                <TableRow key={m.id}>
-                  <TableCell className="font-medium">
-                    {m.profiles?.full_name ?? m.profiles?.email ?? m.user_id}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{m.role_in_project}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {m.cost_rate_hour ? formatCurrency(Number(m.cost_rate_hour)) : "—"}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {m.bill_rate_hour ? formatCurrency(Number(m.bill_rate_hour)) : "—"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <button
-                      className="text-muted-foreground hover:text-destructive"
-                      onClick={async () => {
-                        if (!(await confirmDialog("Remover membro?"))) return;
-                        await rm({ data: { id: m.id } });
-                        qc.invalidateQueries({ queryKey: ["project-members", projectId] });
-                      }}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </TableCell>
+        <div className="rounded-lg border bg-card">
+          {members.length === 0 ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">Nenhum membro.</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Papel</TableHead>
+                  <TableHead className="text-right">Custo/h</TableHead>
+                  <TableHead className="text-right">Bill/h</TableHead>
+                  <TableHead className="w-16"></TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
+              </TableHeader>
+              <TableBody>
+                {(members as any[]).map((m) => (
+                  <TableRow key={m.id}>
+                    <TableCell className="font-medium">
+                      {m.profiles?.full_name ?? m.profiles?.email ?? m.user_id}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{m.role_in_project}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {!canCost
+                        ? "Sem acesso"
+                        : m.cost_rate_hour == null
+                          ? "Não informado"
+                          : formatCurrency(Number(m.cost_rate_hour))}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {!canCost
+                        ? "Sem acesso"
+                        : m.bill_rate_hour == null
+                          ? "Não informado"
+                          : formatCurrency(Number(m.bill_rate_hour))}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <WorkAction resource="techprojects.members" action="manage" id={m.id}>
+                        {" "}
+                        <button
+                          disabled={!canManage}
+                          className="text-muted-foreground hover:text-destructive disabled:opacity-50"
+                          onClick={async () => {
+                            if (!canManage) return;
+                            if (!(await confirmDialog("Remover membro?"))) return;
+                            await rm({ data: { id: m.id } });
+                            qc.invalidateQueries({ queryKey: ["project-members", projectId] });
+                          }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </WorkAction>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
       </div>
-    </div>
+    </WorkCapabilityScope>
   );
 }
 
@@ -879,6 +955,8 @@ function ProjectProfitabilityTiles({
   projectId: string;
   currency: string;
 }) {
+  const { can } = usePermissions();
+  const mayView = can("techprojects.profitability.view.workspace");
   const fn = useServerFn(getProfitability);
   const now = new Date();
   const ym = (offset: number) => {
@@ -887,9 +965,11 @@ function ProjectProfitabilityTiles({
   };
   const q = useQuery({
     queryKey: ["profitability", projectId, null, ym(-2), ym(0), currency, "tiles"],
+    enabled: mayView,
     queryFn: () => fn({ data: { projectId, fromMonth: ym(-2), toMonth: ym(0), currency } }),
     retry: false,
   });
+  if (!mayView) return <MetricTile label="Rentabilidade" value="Sem acesso" />;
   if (q.isError) {
     return (
       <MetricTile label="Rentabilidade (3 meses)" value="—" hint={(q.error as Error).message} />

@@ -1,8 +1,8 @@
+import { requireWorkPermission } from "@/lib/access-control/work-permission.middleware";
 // Sprint D — Fase 4.2 parte 2:
 // Dependências, checklists, tags e múltiplos assignees para project_tasks.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
@@ -16,7 +16,7 @@ const depTypeEnum = z.enum([
 // ============= DEPENDENCIES =============
 
 export const listDependencies = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.tasks", "view")])
   .inputValidator((input) => z.object({ taskId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -31,7 +31,7 @@ export const listDependencies = createServerFn({ method: "POST" })
   });
 
 export const addDependency = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.tasks", "update")])
   .inputValidator((input) =>
     z
       .object({
@@ -62,7 +62,7 @@ export const addDependency = createServerFn({ method: "POST" })
   });
 
 export const removeDependency = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.tasks", "update")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -73,7 +73,7 @@ export const removeDependency = createServerFn({ method: "POST" })
 // ============= CHECKLIST =============
 
 export const listChecklist = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.tasks", "view")])
   .inputValidator((input) => z.object({ taskId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -88,7 +88,7 @@ export const listChecklist = createServerFn({ method: "POST" })
   });
 
 export const addChecklistItem = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.tasks", "update")])
   .inputValidator((input) =>
     z
       .object({
@@ -116,7 +116,7 @@ export const addChecklistItem = createServerFn({ method: "POST" })
   });
 
 export const toggleChecklistItem = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.tasks", "update")])
   .inputValidator((input) => z.object({ id: z.string().uuid(), isDone: z.boolean() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -136,7 +136,7 @@ export const toggleChecklistItem = createServerFn({ method: "POST" })
   });
 
 export const updateChecklistItem = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.tasks", "update")])
   .inputValidator((input) =>
     z
       .object({
@@ -162,7 +162,7 @@ export const updateChecklistItem = createServerFn({ method: "POST" })
   });
 
 export const removeChecklistItem = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.tasks", "update")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -173,7 +173,7 @@ export const removeChecklistItem = createServerFn({ method: "POST" })
 // ============= TAGS & ASSIGNEES =============
 
 export const updateTaskTags = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.tasks", "update")])
   .inputValidator((input) =>
     z.object({ taskId: z.string().uuid(), tags: z.array(z.string().min(1).max(50)) }).parse(input),
   )
@@ -191,7 +191,7 @@ export const updateTaskTags = createServerFn({ method: "POST" })
   });
 
 export const updateTaskAssignees = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.tasks", "assign")])
   .inputValidator((input) =>
     z
       .object({
@@ -217,7 +217,7 @@ export const updateTaskAssignees = createServerFn({ method: "POST" })
 
 // Lista tags únicas usadas no workspace (para autocomplete).
 export const listWorkspaceTaskTags = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.tasks", "view")])
   .handler(async ({ context }) => {
     const { supabase } = context;
     const { data: rows, error } = await supabase.from("project_tasks").select("tags").limit(500);

@@ -1,8 +1,8 @@
+import { requireWorkPermission } from "@/lib/access-control/work-permission.middleware";
 // TechProjects Ciclo 4 — tarifas/custos com vigência e modelo de cobrança (dono da cobrança).
 // Regras e autorização no banco (`project_rate_*`, `project_billing_config_*`); aqui só forma da entrada.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import {
   configSave,
@@ -26,21 +26,21 @@ import type { LegacyRateCandidates, RateImpact } from "@/lib/projects/billing.ty
 // ============= tarifas e custos =============
 
 export const listRates = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.rates", "view")])
   .handler(async ({ context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
     return loadRates(context.supabase, ws);
   });
 
 export const listRateTargets = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.rates", "view")])
   .handler(async ({ context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
     return loadRateOptions(context.supabase, ws);
   });
 
 export const previewRateImpact = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.rates", "view")])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -63,7 +63,7 @@ export const previewRateImpact = createServerFn({ method: "POST" })
   });
 
 export const createRate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.rates", "manage")])
   .inputValidator((i: unknown) => rateCreate.parse(i))
   .handler(async ({ data, context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
@@ -85,7 +85,7 @@ export const createRate = createServerFn({ method: "POST" })
   });
 
 export const splitRate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.rates", "manage")])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -109,7 +109,7 @@ export const splitRate = createServerFn({ method: "POST" })
   });
 
 export const endRate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.rates", "manage")])
   .inputValidator((i: unknown) =>
     z
       .object({ rateId: uuid, end: isoDate, reason: shortReason, confirmRetroactive: z.boolean() })
@@ -126,7 +126,7 @@ export const endRate = createServerFn({ method: "POST" })
   });
 
 export const listLegacyRateCandidates = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.rates", "view")])
   .handler(async ({ context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
     return rpc<LegacyRateCandidates>(context.supabase, "project_rate_legacy_candidates", {
@@ -137,19 +137,19 @@ export const listLegacyRateCandidates = createServerFn({ method: "GET" })
 // ============= modelo de cobrança =============
 
 export const getContractBillingContext = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.billing_config", "view")])
   .inputValidator((i: unknown) => z.object({ contractId: uuid }).parse(i))
   .handler(async ({ data, context }) =>
     loadContractBillingContext(context.supabase, data.contractId),
   );
 
 export const listBillingConfigs = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.billing_config", "view")])
   .inputValidator((i: unknown) => z.object({ contractId: uuid }).parse(i))
   .handler(async ({ data, context }) => loadConfigs(context.supabase, data.contractId));
 
 export const saveBillingConfig = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.billing_config", "manage")])
   .inputValidator((i: unknown) => configSave.parse(i))
   .handler(async ({ data, context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
@@ -169,7 +169,7 @@ export const saveBillingConfig = createServerFn({ method: "POST" })
   });
 
 export const endBillingConfig = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.billing_config", "manage")])
   .inputValidator((i: unknown) => z.object({ configId: uuid, end: isoDate, reason }).parse(i))
   .handler(async ({ data, context }) => {
     await rpc(context.supabase, "project_billing_config_end", {

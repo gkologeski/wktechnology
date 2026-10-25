@@ -1,0 +1,813 @@
+[
+  {
+    "file": "src/lib/project-hierarchy.functions.ts",
+    "function": "listSpaces",
+    "resource": "techprojects.spaces",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/project-hierarchy.functions.ts",
+    "function": "listSpaceTree",
+    "resource": "techprojects.spaces",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/project-hierarchy.functions.ts",
+    "function": "createSpace",
+    "resource": "techprojects.spaces",
+    "action": "create"
+  },
+  {
+    "file": "src/lib/project-hierarchy.functions.ts",
+    "function": "updateSpace",
+    "resource": "techprojects.spaces",
+    "action": "update"
+  },
+  {
+    "file": "src/lib/project-hierarchy.functions.ts",
+    "function": "deleteSpace",
+    "resource": "techprojects.spaces",
+    "action": "delete"
+  },
+  {
+    "file": "src/lib/project-hierarchy.functions.ts",
+    "function": "createFolder",
+    "resource": "techprojects.folders",
+    "action": "create"
+  },
+  {
+    "file": "src/lib/project-hierarchy.functions.ts",
+    "function": "deleteFolder",
+    "resource": "techprojects.folders",
+    "action": "delete"
+  },
+  {
+    "file": "src/lib/project-hierarchy.functions.ts",
+    "function": "getList",
+    "resource": "techprojects.lists",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/project-hierarchy.functions.ts",
+    "function": "createList",
+    "resource": "techprojects.lists",
+    "action": "create"
+  },
+  {
+    "file": "src/lib/project-hierarchy.functions.ts",
+    "function": "updateList",
+    "resource": "techprojects.lists",
+    "action": "update"
+  },
+  {
+    "file": "src/lib/project-hierarchy.functions.ts",
+    "function": "deleteList",
+    "resource": "techprojects.lists",
+    "action": "delete"
+  },
+  {
+    "file": "src/lib/project-hierarchy.functions.ts",
+    "function": "createStatus",
+    "resource": "techprojects.statuses",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/project-hierarchy.functions.ts",
+    "function": "updateStatus",
+    "resource": "techprojects.statuses",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/project-hierarchy.functions.ts",
+    "function": "deleteStatus",
+    "resource": "techprojects.statuses",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/project-hierarchy.functions.ts",
+    "function": "createListTask",
+    "resource": "techprojects.tasks",
+    "action": "create"
+  },
+  {
+    "file": "src/lib/project-hierarchy.functions.ts",
+    "function": "moveTaskStatus",
+    "resource": "techprojects.tasks",
+    "action": "update"
+  },
+  {
+    "file": "src/lib/project-hierarchy.functions.ts",
+    "function": "updateListTask",
+    "resource": "techprojects.tasks",
+    "action": "update"
+  },
+  {
+    "file": "src/lib/project-hierarchy.functions.ts",
+    "function": "deleteListTask",
+    "resource": "techprojects.tasks",
+    "action": "delete"
+  },
+  {
+    "file": "src/lib/project-list-extras.functions.ts",
+    "function": "listCustomFields",
+    "resource": "techprojects.custom_fields",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/project-list-extras.functions.ts",
+    "function": "createCustomField",
+    "resource": "techprojects.custom_fields",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/project-list-extras.functions.ts",
+    "function": "deleteCustomField",
+    "resource": "techprojects.custom_fields",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/project-list-extras.functions.ts",
+    "function": "updateTaskCustomFieldValues",
+    "resource": "techprojects.tasks",
+    "action": "update"
+  },
+  {
+    "file": "src/lib/project-list-extras.functions.ts",
+    "function": "listTemplates",
+    "resource": "techprojects.list_templates",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/project-list-extras.functions.ts",
+    "function": "saveListAsTemplate",
+    "resource": "techprojects.list_templates",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/project-list-extras.functions.ts",
+    "function": "deleteTemplate",
+    "resource": "techprojects.list_templates",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/project-list-extras.functions.ts",
+    "function": "createListFromTemplate",
+    "resource": "techprojects.lists",
+    "action": "create"
+  },
+  {
+    "file": "src/lib/project-tasks-advanced.functions.ts",
+    "function": "listDependencies",
+    "resource": "techprojects.tasks",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/project-tasks-advanced.functions.ts",
+    "function": "listChecklist",
+    "resource": "techprojects.tasks",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/project-tasks-advanced.functions.ts",
+    "function": "listWorkspaceTaskTags",
+    "resource": "techprojects.tasks",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/project-tasks-advanced.functions.ts",
+    "function": "addDependency",
+    "resource": "techprojects.tasks",
+    "action": "update"
+  },
+  {
+    "file": "src/lib/project-tasks-advanced.functions.ts",
+    "function": "removeDependency",
+    "resource": "techprojects.tasks",
+    "action": "update"
+  },
+  {
+    "file": "src/lib/project-tasks-advanced.functions.ts",
+    "function": "addChecklistItem",
+    "resource": "techprojects.tasks",
+    "action": "update"
+  },
+  {
+    "file": "src/lib/project-tasks-advanced.functions.ts",
+    "function": "toggleChecklistItem",
+    "resource": "techprojects.tasks",
+    "action": "update"
+  },
+  {
+    "file": "src/lib/project-tasks-advanced.functions.ts",
+    "function": "updateChecklistItem",
+    "resource": "techprojects.tasks",
+    "action": "update"
+  },
+  {
+    "file": "src/lib/project-tasks-advanced.functions.ts",
+    "function": "removeChecklistItem",
+    "resource": "techprojects.tasks",
+    "action": "update"
+  },
+  {
+    "file": "src/lib/project-tasks-advanced.functions.ts",
+    "function": "updateTaskTags",
+    "resource": "techprojects.tasks",
+    "action": "update"
+  },
+  {
+    "file": "src/lib/project-tasks-advanced.functions.ts",
+    "function": "updateTaskAssignees",
+    "resource": "techprojects.tasks",
+    "action": "assign"
+  },
+  {
+    "file": "src/lib/projects.functions.ts",
+    "function": "listMilestones",
+    "resource": "techprojects.milestones",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/projects.functions.ts",
+    "function": "createMilestone",
+    "resource": "techprojects.milestones",
+    "action": "create"
+  },
+  {
+    "file": "src/lib/projects.functions.ts",
+    "function": "updateMilestone",
+    "resource": "techprojects.milestones",
+    "action": "update"
+  },
+  {
+    "file": "src/lib/projects.functions.ts",
+    "function": "completeMilestone",
+    "resource": "techprojects.milestones",
+    "action": "update"
+  },
+  {
+    "file": "src/lib/projects.functions.ts",
+    "function": "deleteMilestone",
+    "resource": "techprojects.milestones",
+    "action": "delete"
+  },
+  {
+    "file": "src/lib/projects.functions.ts",
+    "function": "listMembers",
+    "resource": "techprojects.members",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/projects.functions.ts",
+    "function": "addMember",
+    "resource": "techprojects.members",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects.functions.ts",
+    "function": "updateMember",
+    "resource": "techprojects.members",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects.functions.ts",
+    "function": "removeMember",
+    "resource": "techprojects.members",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects.functions.ts",
+    "function": "getProjectFinancials",
+    "resource": "techprojects.profitability",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/services.functions.ts",
+    "function": "listServices",
+    "resource": "techservice.services",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/services.functions.ts",
+    "function": "listServiceIds",
+    "resource": "techservice.services",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/services.functions.ts",
+    "function": "getService",
+    "resource": "techservice.services",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/services.functions.ts",
+    "function": "listCatalogServiceOptions",
+    "resource": "techservice.services",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/services.functions.ts",
+    "function": "listServiceDealDivergences",
+    "resource": "techservice.services",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/services.functions.ts",
+    "function": "createService",
+    "resource": "techservice.services",
+    "action": "create"
+  },
+  {
+    "file": "src/lib/services.functions.ts",
+    "function": "linkCatalogServiceToContract",
+    "resource": "techservice.services",
+    "action": "create"
+  },
+  {
+    "file": "src/lib/services.functions.ts",
+    "function": "updateService",
+    "resource": "techservice.services",
+    "action": "update"
+  },
+  {
+    "file": "src/lib/services.functions.ts",
+    "function": "activateService",
+    "resource": "techservice.services",
+    "action": "update"
+  },
+  {
+    "file": "src/lib/services.functions.ts",
+    "function": "deleteService",
+    "resource": "techservice.services",
+    "action": "delete"
+  },
+  {
+    "file": "src/lib/services.functions.ts",
+    "function": "runServicesBillingNow",
+    "resource": "techservice.billing",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/contracts/role-recalc.functions.ts",
+    "function": "diagnoseContractRoles",
+    "resource": "techcontracts.links",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/contracts/role-recalc.functions.ts",
+    "function": "recalcContractRoles",
+    "resource": "techcontracts.links",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/contracts/doc-kind.functions.ts",
+    "function": "diagnoseContractDocKinds",
+    "resource": "techcontracts.links",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/contracts/doc-kind.functions.ts",
+    "function": "applyContractDocKinds",
+    "resource": "techcontracts.links",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/contracts/link-suggest.functions.ts",
+    "function": "listContractLinkSuggestions",
+    "resource": "techcontracts.links",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/contracts/link-suggest.functions.ts",
+    "function": "suggestContractLinks",
+    "resource": "techcontracts.links",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/contracts/link-suggest.functions.ts",
+    "function": "decideContractLinkSuggestion",
+    "resource": "techcontracts.links",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/contracts/import.functions.ts",
+    "function": "parseContractPdf",
+    "resource": "techcontracts.imports",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/contracts/import.functions.ts",
+    "function": "parseContractText",
+    "resource": "techcontracts.imports",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/contracts/import.functions.ts",
+    "function": "createContractFromImport",
+    "resource": "techcontracts.imports",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/contracts/import.functions.ts",
+    "function": "listContractsPendingLink",
+    "resource": "techcontracts.links",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/contracts/import.functions.ts",
+    "function": "countContractsPendingLink",
+    "resource": "techcontracts.links",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/contracts/import.functions.ts",
+    "function": "linkImportedContracts",
+    "resource": "techcontracts.links",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/contracts/import.functions.ts",
+    "function": "dismissContractLink",
+    "resource": "techcontracts.links",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/contracts/template-import.functions.ts",
+    "function": "parseContractTemplatePdf",
+    "resource": "techcontracts.contract_templates",
+    "action": "create"
+  },
+  {
+    "file": "src/lib/contracts/template-import.functions.ts",
+    "function": "parseContractTemplateHtml",
+    "resource": "techcontracts.contract_templates",
+    "action": "create"
+  },
+  {
+    "file": "src/lib/contracts/contract-defaults.functions.ts",
+    "function": "getContractDefaults",
+    "resource": "techcontracts.defaults",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/contracts/contract-defaults.functions.ts",
+    "function": "getDealContractPrefill",
+    "resource": "techcontracts.defaults",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/contracts/contract-defaults.functions.ts",
+    "function": "saveContractDefaults",
+    "resource": "techcontracts.defaults",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/reconciliation.functions.ts",
+    "function": "getReconciliationOverview",
+    "resource": "techprojects.reconciliation",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/projects/reconciliation.functions.ts",
+    "function": "getReconciliationBreakdown",
+    "resource": "techprojects.reconciliation",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/projects/reconciliation.functions.ts",
+    "function": "listReconciliationIssues",
+    "resource": "techprojects.reconciliation",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/projects/reconciliation.functions.ts",
+    "function": "exportReconciliationIssues",
+    "resource": "techprojects.reconciliation",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/projects/reconciliation.functions.ts",
+    "function": "getReconciliationLinks",
+    "resource": "techprojects.reconciliation",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/projects/reconciliation.functions.ts",
+    "function": "refreshReconciliationIssues",
+    "resource": "techprojects.reconciliation",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/reconciliation.functions.ts",
+    "function": "decideReconciliationIssues",
+    "resource": "techprojects.reconciliation",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/reconciliation.functions.ts",
+    "function": "applyReconciliationExactLinks",
+    "resource": "techprojects.reconciliation",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/reconciliation.functions.ts",
+    "function": "decideReconciliationSuggestions",
+    "resource": "techprojects.reconciliation",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/reconciliation.functions.ts",
+    "function": "revertReconciliationLinks",
+    "resource": "techprojects.reconciliation",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/time-governance.functions.ts",
+    "function": "getTimePolicy",
+    "resource": "techprojects.time_policy",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/projects/time-governance.functions.ts",
+    "function": "saveTimePolicy",
+    "resource": "techprojects.time_policy",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/time-governance.functions.ts",
+    "function": "listProjectApprovers",
+    "resource": "techprojects.approvers",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/projects/time-governance.functions.ts",
+    "function": "setProjectApprover",
+    "resource": "techprojects.approvers",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/time-governance.functions.ts",
+    "function": "revokeProjectApprover",
+    "resource": "techprojects.approvers",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/time-governance.functions.ts",
+    "function": "listDeliveryTemplates",
+    "resource": "techprojects.delivery_templates",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/projects/time-governance.functions.ts",
+    "function": "getProjectTemplateSuggestion",
+    "resource": "techprojects.delivery_templates",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/projects/time-governance.functions.ts",
+    "function": "saveDeliveryTemplate",
+    "resource": "techprojects.delivery_templates",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/time-governance.functions.ts",
+    "function": "applyDeliveryTemplate",
+    "resource": "techprojects.delivery_templates",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/time-governance.functions.ts",
+    "function": "previewJibbleHours",
+    "resource": "techprojects.jibble_import",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/projects/time-governance.functions.ts",
+    "function": "materializeJibbleHours",
+    "resource": "techprojects.jibble_import",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/ops.functions.ts",
+    "function": "getProjectsOps",
+    "resource": "techprojects.operations",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/projects/billing-rates.functions.ts",
+    "function": "listRates",
+    "resource": "techprojects.rates",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/projects/billing-rates.functions.ts",
+    "function": "listRateTargets",
+    "resource": "techprojects.rates",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/projects/billing-rates.functions.ts",
+    "function": "previewRateImpact",
+    "resource": "techprojects.rates",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/projects/billing-rates.functions.ts",
+    "function": "listLegacyRateCandidates",
+    "resource": "techprojects.rates",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/projects/billing-rates.functions.ts",
+    "function": "createRate",
+    "resource": "techprojects.rates",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/billing-rates.functions.ts",
+    "function": "splitRate",
+    "resource": "techprojects.rates",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/billing-rates.functions.ts",
+    "function": "endRate",
+    "resource": "techprojects.rates",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/billing-rates.functions.ts",
+    "function": "getContractBillingContext",
+    "resource": "techprojects.billing_config",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/projects/billing-rates.functions.ts",
+    "function": "listBillingConfigs",
+    "resource": "techprojects.billing_config",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/projects/billing-rates.functions.ts",
+    "function": "saveBillingConfig",
+    "resource": "techprojects.billing_config",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/billing-rates.functions.ts",
+    "function": "endBillingConfig",
+    "resource": "techprojects.billing_config",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/billing.functions.ts",
+    "function": "listMeasurements",
+    "resource": "techprojects.measurements",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/projects/billing.functions.ts",
+    "function": "getMeasurement",
+    "resource": "techprojects.measurements",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/projects/billing.functions.ts",
+    "function": "buildMeasurement",
+    "resource": "techprojects.measurements",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/billing.functions.ts",
+    "function": "refreshMeasurement",
+    "resource": "techprojects.measurements",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/billing.functions.ts",
+    "function": "addMeasurementAdjustment",
+    "resource": "techprojects.measurements",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/billing.functions.ts",
+    "function": "addMeasurementSuccessEvent",
+    "resource": "techprojects.measurements",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/billing.functions.ts",
+    "function": "removeMeasurementLine",
+    "resource": "techprojects.measurements",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/billing.functions.ts",
+    "function": "submitMeasurement",
+    "resource": "techprojects.measurements",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/billing.functions.ts",
+    "function": "returnMeasurement",
+    "resource": "techprojects.measurements",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/billing.functions.ts",
+    "function": "recheckMeasurement",
+    "resource": "techprojects.measurements",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/billing.functions.ts",
+    "function": "cancelMeasurement",
+    "resource": "techprojects.measurements",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/billing.functions.ts",
+    "function": "approveMeasurement",
+    "resource": "techprojects.measurements",
+    "action": "approve"
+  },
+  {
+    "file": "src/lib/projects/billing.functions.ts",
+    "function": "generateMeasurementEntry",
+    "resource": "techprojects.measurement_finance",
+    "action": "create"
+  },
+  {
+    "file": "src/lib/projects/billing.functions.ts",
+    "function": "linkMeasurementLegacy",
+    "resource": "techprojects.measurement_finance",
+    "action": "create"
+  },
+  {
+    "file": "src/lib/projects/billing.functions.ts",
+    "function": "reverseMeasurement",
+    "resource": "techprojects.measurement_reverse",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/billing.functions.ts",
+    "function": "getProfitability",
+    "resource": "techprojects.profitability",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/projects/delivery.functions.ts",
+    "function": "createProjectUpdate",
+    "resource": "techprojects.project_updates",
+    "action": "create"
+  },
+  {
+    "file": "src/lib/projects/delivery.functions.ts",
+    "function": "updateProjectUpdate",
+    "resource": "techprojects.project_updates",
+    "action": "update"
+  },
+  {
+    "file": "src/lib/projects/delivery.functions.ts",
+    "function": "deleteProjectUpdate",
+    "resource": "techprojects.project_updates",
+    "action": "delete"
+  },
+  {
+    "file": "src/lib/projects/dashboard-views.functions.ts",
+    "function": "reevaluateDashAlerts",
+    "resource": "techprojects.alerts",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/dashboard-views.functions.ts",
+    "function": "actOnAlert",
+    "resource": "techprojects.alerts",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects/dashboard-views.functions.ts",
+    "function": "getRiskRules",
+    "resource": "techprojects.risk_rules",
+    "action": "view"
+  },
+  {
+    "file": "src/lib/projects/dashboard-views.functions.ts",
+    "function": "saveRiskRules",
+    "resource": "techprojects.risk_rules",
+    "action": "manage"
+  },
+  {
+    "file": "src/lib/projects.functions.ts",
+    "function": "getTimeActionCapabilities",
+    "resource": "techprojects.time_entries",
+    "action": "view",
+    "mechanism": "project_time_capabilities: normalized aliases, effective deny, selected workspace and real row scope"
+  },
+  {
+    "file": "src/lib/projects/billing.functions.ts",
+    "function": "exportProfitability",
+    "resource": "techprojects.profitability",
+    "action": "export"
+  }
+]

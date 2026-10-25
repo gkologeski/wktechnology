@@ -1,3 +1,4 @@
+import { HrScreenAccess as Order3ScreenAccess } from "@/components/hr-access";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -59,7 +60,7 @@ export const Route = createFileRoute("/_authenticated/services/")({
       },
     ],
   }),
-  component: ServicesPage,
+  component: Order3RouteAccess,
 });
 
 const STATUS_LABEL: Record<string, string> = {
@@ -94,7 +95,6 @@ const TYPE_LABEL: Record<string, string> = {
   usage_based: "Por uso",
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ServiceRow = {
   id: string;
   name?: string | null;
@@ -312,12 +312,12 @@ function ServicesPage() {
             canUpdate={canAny([
               "techservice.services.update.workspace",
               "techservice.services.update.own",
-              "techsales.catalog.services.update.workspace",
+              "techservice.services.update.team",
             ])}
             canDelete={canAny([
               "techservice.services.delete.workspace",
               "techservice.services.delete.own",
-              "techsales.catalog.services.delete.workspace",
+              "techservice.services.delete.team",
             ])}
             bulkEditFields={[
               {
@@ -347,12 +347,12 @@ function ServicesPage() {
             canDelete={canAny([
               "techservice.services.delete.workspace",
               "techservice.services.delete.own",
-              "techsales.catalog.services.delete.workspace",
+              "techservice.services.delete.team",
             ])}
             canUpdate={canAny([
               "techservice.services.update.workspace",
               "techservice.services.update.own",
-              "techsales.catalog.services.update.workspace",
+              "techservice.services.update.team",
             ])}
             isLoading={isLoading}
             invalidateKeys={[["services"]]}
@@ -458,5 +458,14 @@ function ServicesPage() {
         <grid.ColumnsEditor />
       </div>
     </div>
+  );
+}
+
+const Order3Page = ServicesPage;
+function Order3RouteAccess() {
+  return (
+    <Order3ScreenAccess resources={["techservice.services"]}>
+      <Order3Page />
+    </Order3ScreenAccess>
   );
 }

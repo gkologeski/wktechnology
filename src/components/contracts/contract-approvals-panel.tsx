@@ -1,3 +1,6 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { useWorkCapabilities } from "@/lib/access-control/use-work-capabilities";
+import { useCurrentUserId } from "@/hooks/use-current-user-id";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -48,6 +51,19 @@ const EVENT_LABEL: Record<string, string> = {
 
 export function ContractApprovalsPanel({ contractId }: { contractId: string }) {
   const qc = useQueryClient();
+  const perms = usePermissions();
+  const me = useCurrentUserId();
+  const parentAccess = useWorkCapabilities("techcontracts.contracts", [contractId]);
+  const canView = perms.canAny([
+    "techcontracts.approvals.view.own",
+    "techcontracts.approvals.view.team",
+    "techcontracts.approvals.view.workspace",
+  ]);
+  const canManage =
+    canView &&
+    perms.can("techcontracts.approvals.manage.workspace") &&
+    parentAccess.for(contractId).can_update;
+  const canApprove = canView && perms.can("techcontracts.approvals.approve.workspace");
   const list = useServerFn(listContractApprovals);
   const events = useServerFn(listContractEvents);
   const start = useServerFn(startContractApprovals);
@@ -57,11 +73,13 @@ export function ContractApprovalsPanel({ contractId }: { contractId: string }) {
   const { data: approvals = [], isLoading } = useQuery({
     queryKey: ["contract-approvals", contractId],
     queryFn: () => list({ data: { contractId } }),
+    enabled: canView,
   });
 
   const { data: eventList = [] } = useQuery({
     queryKey: ["contract-events", contractId],
     queryFn: () => events({ data: { contractId } }),
+    enabled: perms.can("techcontracts.audit.view.workspace"),
   });
 
   const invalidate = () => {
@@ -83,7 +101,7 @@ export function ContractApprovalsPanel({ contractId }: { contractId: string }) {
   const handleReset = async () => {
     if (
       !(await confirmDialog(
-        "Reiniciar o fluxo de aprovação removerá as decisões atuais. Continuar?",
+        "Reiniciar abrirá uma nova cadeia. As decisões anteriores serão preservadas no histórico. Continuar?",
       ))
     )
       return;
@@ -103,11 +121,11 @@ export function ContractApprovalsPanel({ contractId }: { contractId: string }) {
           <CardTitle className="text-base">Aprovações</CardTitle>
           <div className="flex gap-2">
             {approvals.length === 0 ? (
-              <Button size="sm" onClick={handleStart}>
+              <Button size="sm" onClick={handleStart} disabled={!canManage}>
                 <PlayCircle className="h-4 w-4 mr-2" /> Iniciar fluxo
               </Button>
             ) : (
-              <Button size="sm" variant="outline" onClick={handleReset}>
+              <Button size="sm" variant="outline" onClick={handleReset} disabled={!canManage}>
                 <RotateCw className="h-4 w-4 mr-2" /> Reiniciar
               </Button>
             )}
@@ -128,6 +146,12 @@ export function ContractApprovalsPanel({ contractId }: { contractId: string }) {
                   key={a.id}
                   approval={a}
                   index={idx}
+                  canDecide={
+                    canApprove &&
+                    (!a.approver_id || a.approver_id === me) &&
+                    (approvals as any[]).slice(0, idx).every((p) => p.status === "approved") &&
+                    !(approvals as any[]).some((p) => p.status === "rejected")
+                  }
                   onDecide={invalidate}
                   nameFor={nameFor}
                 />
@@ -181,7 +205,9 @@ function ApprovalRow({
   index,
   onDecide,
   nameFor,
+  canDecide,
 }: {
+  canDecide: boolean;
   approval: any;
   index: number;
   onDecide: () => void;
@@ -252,6 +278,7 @@ function ApprovalRow({
       {isPending && (
         <div className="space-y-2 pt-1">
           <Textarea
+            disabled={!canDecide}
             placeholder="Comentário (obrigatório para rejeição)"
             value={comment}
             onChange={(e) => setComment(e.target.value)}
@@ -263,11 +290,11 @@ function ApprovalRow({
               size="sm"
               variant="outline"
               onClick={() => submit("rejected")}
-              disabled={saving}
+              disabled={saving || !canDecide}
             >
               <XCircle className="h-4 w-4 mr-2" /> Rejeitar
             </Button>
-            <Button size="sm" onClick={() => submit("approved")} disabled={saving}>
+            <Button size="sm" onClick={() => submit("approved")} disabled={saving || !canDecide}>
               <CheckCircle2 className="h-4 w-4 mr-2" /> Aprovar
             </Button>
           </div>

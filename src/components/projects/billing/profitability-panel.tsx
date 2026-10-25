@@ -1,3 +1,5 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { toast } from "sonner";
 // Rentabilidade de projeto ou contrato: receitas separadas por situação (nunca somadas), custo estimado
 // (horas × tarifa vigente na data + custo mensal alocado) separado do custo real lançado no Financeiro,
 // cobertura e margem só quando a cobertura permite. Valores vêm prontos do banco, conforme a permissão.
@@ -18,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getProfitability } from "@/lib/projects/billing.functions";
+import { getProfitability, exportProfitability } from "@/lib/projects/billing.functions";
 import { formatMoney, formatPct, toCsv } from "@/lib/projects/billing.shared";
 import { formatSeconds } from "@/lib/projects/time-entry.shared";
 
@@ -48,6 +50,9 @@ export function ProfitabilityPanel({
   defaultCurrency?: string;
 }) {
   const fn = useServerFn(getProfitability);
+  const exportFn = useServerFn(exportProfitability);
+  const permissions = usePermissions();
+  const canExport = permissions.can("techprojects.profitability.export.workspace");
   const [fromMonth, setFromMonth] = useState(() => currentMonth(-2));
   const [toMonth, setToMonth] = useState(() => currentMonth(0));
   const [currency, setCurrency] = useState(defaultCurrency);
@@ -83,30 +88,37 @@ export function ProfitabilityPanel({
     return total > 0 && covered < total ? `${v} (parcial)` : v;
   })();
 
-  const exportCsv = () => {
-    if (!p) return;
-    const rows: Array<Record<string, unknown>> = [
-      { item: "Receita prevista (rascunho/revisão)", valor: p.revenue.forecast },
-      { item: "Receita aprovada (medida)", valor: p.revenue.approved },
-      { item: "Lançada no Financeiro", valor: p.finance.launched },
-      { item: "Recebida", valor: p.finance.received },
-      { item: "Estornada", valor: p.revenue.reversed },
-      { item: "Custo estimado", valor: p.cost.estimated },
-      { item: "Custo real (títulos a pagar)", valor: p.cost.actual_payables },
-      { item: "Margem estimada", valor: p.margin.estimated ?? "desconhecida" },
-      { item: "Cobertura de custo (%)", valor: p.coverage.cost_pct ?? "n/a" },
-      { item: "Horas registradas (s)", valor: p.effort.total_seconds },
-    ];
-    for (const person of p.people ?? []) {
-      rows.push({ item: `Custo — ${person.name ?? person.user_id}`, valor: person.cost_hourly });
+  const exportCsv = async () => {
+    if (!p || !canExport) return;
+    try {
+      const p = await exportFn({
+        data: { projectId, contractId, fromMonth, toMonth, currency: currency.toUpperCase() },
+      });
+      const rows: Array<Record<string, unknown>> = [
+        { item: "Receita prevista (rascunho/revisão)", valor: p.revenue.forecast },
+        { item: "Receita aprovada (medida)", valor: p.revenue.approved },
+        { item: "Lançada no Financeiro", valor: p.finance.launched },
+        { item: "Recebida", valor: p.finance.received },
+        { item: "Estornada", valor: p.revenue.reversed },
+        { item: "Custo estimado", valor: p.cost.estimated },
+        { item: "Custo real (títulos a pagar)", valor: p.cost.actual_payables },
+        { item: "Margem estimada", valor: p.margin.estimated ?? "desconhecida" },
+        { item: "Cobertura de custo (%)", valor: p.coverage.cost_pct ?? "n/a" },
+        { item: "Horas registradas (s)", valor: p.effort.total_seconds },
+      ];
+      for (const person of p.people ?? []) {
+        rows.push({ item: `Custo — ${person.name ?? person.user_id}`, valor: person.cost_hourly });
+      }
+      download(
+        `rentabilidade-${p.period_from}-${p.period_to}-${cur}.csv`,
+        toCsv(rows, [
+          ["item", "Item"],
+          ["valor", `Valor (${cur})`],
+        ]),
+      );
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível exportar.");
     }
-    download(
-      `rentabilidade-${p.period_from}-${p.period_to}-${cur}.csv`,
-      toCsv(rows, [
-        ["item", "Item"],
-        ["valor", `Valor (${cur})`],
-      ]),
-    );
   };
 
   return (
@@ -115,7 +127,7 @@ export function ProfitabilityPanel({
         title="Rentabilidade"
         description="Receitas por situação (prevista, aprovada, lançada, recebida) nunca somadas entre si. Custo estimado usa a tarifa vigente na data de cada apontamento; custo real vem dos títulos a pagar do Financeiro."
         action={
-          <Button variant="outline" size="sm" onClick={exportCsv} disabled={!p}>
+          <Button variant="outline" size="sm" onClick={exportCsv} disabled={!p || !canExport}>
             <Download className="mr-1 h-4 w-4" aria-hidden="true" /> Exportar CSV
           </Button>
         }

@@ -1,8 +1,9 @@
+import { requireWorkPermission } from "@/lib/access-control/work-permission.middleware";
+import { workRpc } from "@/lib/access-control/work-core.server";
+import type { Database } from "@/integrations/supabase/types";
 // Refinos Sprint E: Custom Fields por lista + List Templates.
-import { DEFAULT_RECORD_COLOR } from "@/lib/ui/default-colors";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
@@ -10,7 +11,7 @@ const fieldTypeEnum = z.enum(["text", "number", "date", "select", "checkbox", "u
 
 // ============ CUSTOM FIELDS ============
 export const listCustomFields = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.custom_fields", "view")])
   .inputValidator((input) => z.object({ listId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -24,7 +25,7 @@ export const listCustomFields = createServerFn({ method: "POST" })
   });
 
 export const createCustomField = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.custom_fields", "manage")])
   .inputValidator((input) =>
     z
       .object({
@@ -64,7 +65,7 @@ export const createCustomField = createServerFn({ method: "POST" })
   });
 
 export const deleteCustomField = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.custom_fields", "manage")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -73,7 +74,7 @@ export const deleteCustomField = createServerFn({ method: "POST" })
   });
 
 export const updateTaskCustomFieldValues = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.tasks", "update")])
   .inputValidator((input) =>
     z
       .object({
@@ -96,7 +97,7 @@ export const updateTaskCustomFieldValues = createServerFn({ method: "POST" })
 
 // ============ LIST TEMPLATES ============
 export const listTemplates = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.list_templates", "view")])
   .handler(async ({ context }) => {
     const { supabase } = context;
     const { data, error } = await supabase
@@ -108,7 +109,7 @@ export const listTemplates = createServerFn({ method: "POST" })
   });
 
 export const saveListAsTemplate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.list_templates", "manage")])
   .inputValidator((input) =>
     z
       .object({
@@ -121,28 +122,18 @@ export const saveListAsTemplate = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    const [statusesRes, fieldsRes] = await Promise.all([
-      supabase
-        .from("project_task_statuses")
-        .select("name, color, category, sort_order, is_default")
-        .eq("list_id", data.listId)
-        .order("sort_order", { ascending: true }),
-      supabase
-        .from("project_list_custom_fields")
-        .select("key, label, type, options, sort_order")
-        .eq("list_id", data.listId)
-        .order("sort_order", { ascending: true }),
-    ]);
-    if (statusesRes.error) throw statusesRes.error;
-    if (fieldsRes.error) throw fieldsRes.error;
+    const refs = await workRpc<{
+      statuses: Database["public"]["Tables"]["project_task_statuses"]["Row"][];
+      fields: Database["public"]["Tables"]["project_list_custom_fields"]["Row"][];
+    }>(supabase, "project_list_runtime_references", { p_list: data.listId, p_task: null });
     const { data: row, error } = await supabase
       .from("project_list_templates")
       .insert({
         workspace_id: workspaceId,
         name: data.name,
         description: data.description ?? null,
-        statuses: statusesRes.data ?? [],
-        custom_fields: fieldsRes.data ?? [],
+        statuses: refs.statuses,
+        custom_fields: refs.fields,
         created_by: userId,
       })
       .select("*")
@@ -152,7 +143,7 @@ export const saveListAsTemplate = createServerFn({ method: "POST" })
   });
 
 export const deleteTemplate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.list_templates", "manage")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -161,7 +152,7 @@ export const deleteTemplate = createServerFn({ method: "POST" })
   });
 
 export const createListFromTemplate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.lists", "create")])
   .inputValidator((input) =>
     z
       .object({
@@ -174,63 +165,25 @@ export const createListFromTemplate = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
+    return workRpc<Database["public"]["Tables"]["project_lists"]["Row"]>(
+      context.supabase,
+      "project_list_create_checked",
+      { p_data: data, p_template: data.templateId },
+    );
+  });
 
-    const { data: tpl, error: tplErr } = await supabase
-      .from("project_list_templates")
-      .select("*")
-      .eq("id", data.templateId)
-      .maybeSingle();
-    if (tplErr) throw tplErr;
-    if (!tpl) throw new Error("Template não encontrado");
-
-    // Cria a lista
-    const { data: list, error: listErr } = await supabase
-      .from("project_lists")
-      .insert({
-        workspace_id: workspaceId,
-        name: data.name,
-        space_id: data.spaceId,
-        folder_id: data.folderId ?? null,
-        project_id: data.projectId ?? null,
-        created_by: userId,
-      })
-      .select("*")
-      .single();
-    if (listErr) throw listErr;
-
-    // Statuses do template
-    const tplStatuses = Array.isArray(tpl.statuses) ? tpl.statuses : [];
-    if (tplStatuses.length > 0) {
-      await supabase.from("project_task_statuses").insert(
-        tplStatuses.map((s: any, i: number) => ({
-          workspace_id: workspaceId,
-          list_id: list.id,
-          name: s.name,
-          color: s.color ?? DEFAULT_RECORD_COLOR,
-          category: s.category ?? "todo",
-          sort_order: s.sort_order ?? i,
-          is_default: !!s.is_default,
-        })),
-      );
-    }
-
-    // Custom fields do template
-    const tplFields = Array.isArray(tpl.custom_fields) ? tpl.custom_fields : [];
-    if (tplFields.length > 0) {
-      await supabase.from("project_list_custom_fields").insert(
-        tplFields.map((f: any, i: number) => ({
-          workspace_id: workspaceId,
-          list_id: list.id,
-          key: f.key,
-          label: f.label,
-          type: f.type,
-          options: f.options ?? null,
-          sort_order: f.sort_order ?? i,
-        })),
-      );
-    }
-
-    return list;
+/** Minimal field schema for an already visible task; no configuration mutation. */
+export const listTaskFieldReferences = createServerFn({ method: "POST" })
+  .middleware([requireWorkPermission("techprojects.tasks", "view")])
+  .inputValidator((i) => z.object({ taskId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const refs = await workRpc<{
+      fields: Array<
+        Pick<
+          Database["public"]["Tables"]["project_list_custom_fields"]["Row"],
+          "id" | "key" | "label" | "type" | "options" | "sort_order"
+        >
+      >;
+    }>(context.supabase, "project_list_runtime_references", { p_task: data.taskId, p_list: null });
+    return refs.fields;
   });

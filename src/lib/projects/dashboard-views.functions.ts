@@ -1,3 +1,4 @@
+import { requireWorkPermission } from "@/lib/access-control/work-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -101,7 +102,7 @@ export const searchDashFilterOptions = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => loadDashFilterOptions(context.supabase, data.kind, data.q));
 
 export const reevaluateDashAlerts = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.alerts", "manage")])
   .inputValidator((input: unknown) =>
     z
       .object({ tz: z.string().min(1).max(64) })
@@ -111,7 +112,7 @@ export const reevaluateDashAlerts = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => refreshDashAlerts(context.supabase, data.tz));
 
 export const actOnAlert = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.alerts", "manage")])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -127,12 +128,12 @@ export const actOnAlert = createServerFn({ method: "POST" })
   );
 
 export const getRiskRules = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.risk_rules", "view")])
   .inputValidator((input: unknown) => z.object({ projectId: uuid.nullable() }).parse(input))
   .handler(async ({ context, data }) => loadDashRiskRules(context.supabase, data.projectId));
 
 export const saveRiskRules = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.risk_rules", "manage")])
   .inputValidator((input: unknown) =>
     z
       .object({

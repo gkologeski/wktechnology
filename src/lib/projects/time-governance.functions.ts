@@ -1,3 +1,4 @@
+import { requireWorkPermission } from "@/lib/access-control/work-permission.middleware";
 import { emailSchema } from "@/lib/email-schema";
 // TechProjects Ciclo 3 — governança: política de horas, aprovadores/delegação, aceite manual do
 // cliente, fechamento/reabertura de competência, modelos por serviço e horas sem horário do Jibble.
@@ -21,7 +22,7 @@ const uuid = z.string().uuid();
 // ============= política =============
 
 export const getTimePolicy = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.time_policy", "view")])
   .handler(async ({ context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
     const { data, error } = await context.supabase.rpc("project_time_policy_get", { p_ws: ws });
@@ -36,7 +37,7 @@ export const getTimePolicy = createServerFn({ method: "GET" })
   });
 
 export const saveTimePolicy = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.time_policy", "manage")])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -59,7 +60,7 @@ export const saveTimePolicy = createServerFn({ method: "POST" })
 // ============= aprovadores e gestores do projeto =============
 
 export const listProjectApprovers = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.approvers", "view")])
   .inputValidator((i: unknown) => z.object({ projectId: uuid }).parse(i))
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
@@ -85,7 +86,7 @@ export const listProjectApprovers = createServerFn({ method: "POST" })
   });
 
 export const setProjectApprover = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.approvers", "manage")])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -116,7 +117,7 @@ export const setProjectApprover = createServerFn({ method: "POST" })
   });
 
 export const revokeProjectApprover = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.approvers", "manage")])
   .inputValidator((i: unknown) =>
     z.object({ id: uuid, reason: z.string().trim().min(3).max(500) }).parse(i),
   )
@@ -300,7 +301,7 @@ export const reopenPeriod = createServerFn({ method: "POST" })
 // ============= modelos de entrega por serviço =============
 
 export const listDeliveryTemplates = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.delivery_templates", "view")])
   .handler(async ({ context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
     const [tpl, ver, svc, catalog] = await Promise.all([
@@ -334,7 +335,7 @@ export const listDeliveryTemplates = createServerFn({ method: "GET" })
   });
 
 export const saveDeliveryTemplate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.delivery_templates", "manage")])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -365,7 +366,7 @@ export const saveDeliveryTemplate = createServerFn({ method: "POST" })
   });
 
 export const getProjectTemplateSuggestion = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.delivery_templates", "view")])
   .inputValidator((i: unknown) => z.object({ projectId: uuid }).parse(i))
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase.rpc("project_delivery_template_suggest", {
@@ -390,7 +391,7 @@ export const getProjectTemplateSuggestion = createServerFn({ method: "POST" })
   });
 
 export const applyDeliveryTemplate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.delivery_templates", "manage")])
   .inputValidator((i: unknown) =>
     z
       .object({ projectId: uuid, versionId: uuid, confirmImported: z.boolean().default(false) })
@@ -409,7 +410,7 @@ export const applyDeliveryTemplate = createServerFn({ method: "POST" })
 // ============= Jibble: horas sem horário =============
 
 export const previewJibbleHours = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.jibble_import", "view")])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -432,7 +433,7 @@ export const previewJibbleHours = createServerFn({ method: "POST" })
   });
 
 export const materializeJibbleHours = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.jibble_import", "manage")])
   .inputValidator((i: unknown) =>
     z
       .object({

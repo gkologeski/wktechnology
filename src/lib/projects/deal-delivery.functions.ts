@@ -1,3 +1,4 @@
+import { requireWorkPermission } from "@/lib/access-control/work-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -129,14 +130,14 @@ export const getContractDeliveryProjects = createServerFn({ method: "POST" })
 
 // ------------------------------------------------------------------ administrador do workspace
 export const getDeliveryPolicy = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.delivery", "view")])
   .handler(async ({ context }) => {
     const ctx = await requireReconAdmin(context.supabase, context.userId, { write: false });
     return loadPolicy(context.supabase, ctx);
   });
 
 export const saveDeliveryPolicy = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.delivery", "manage")])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -155,7 +156,7 @@ export const saveDeliveryPolicy = createServerFn({ method: "POST" })
   });
 
 export const getDeliveryHistory = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.delivery", "view")])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -173,7 +174,7 @@ export const getDeliveryHistory = createServerFn({ method: "POST" })
   });
 
 export const previewDeliveryHistory = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.delivery", "manage")])
   .inputValidator((input: unknown) =>
     z.object({ pairs: z.array(pair).min(1).max(100) }).parse(input),
   )
@@ -183,7 +184,7 @@ export const previewDeliveryHistory = createServerFn({ method: "POST" })
   });
 
 export const applyDeliveryHistory = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.delivery", "manage")])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -203,14 +204,14 @@ export const applyDeliveryHistory = createServerFn({ method: "POST" })
   });
 
 export const applyExactDeliveryHistory = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.delivery", "manage")])
   .handler(async ({ context }) => {
     const ctx = await requireReconAdmin(context.supabase, context.userId, { write: true });
     return applyExactHistory(context.supabase, ctx);
   });
 
 export const createMissingDeliveryProjects = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.delivery", "manage")])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -225,7 +226,7 @@ export const createMissingDeliveryProjects = createServerFn({ method: "POST" })
   });
 
 export const revertDeliveryHistory = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.delivery", "manage")])
   .inputValidator((input: unknown) =>
     z
       .object({ eventIds: z.array(uuid).min(1).max(100), note: note.min(5, "Informe o motivo.") })

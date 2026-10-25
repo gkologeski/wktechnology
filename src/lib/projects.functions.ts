@@ -1,3 +1,5 @@
+import { workCostTable } from "@/lib/access-control/work-cost-projection";
+import { requireWorkPermission } from "@/lib/access-control/work-permission.middleware";
 import { assertWorkRecord } from "@/lib/access-control/work-core.server";
 // Server functions for Projects (Sprint 5 - PSA MVP).
 // CRUD de projetos, tarefas, marcos, apontamento de horas e membros.
@@ -31,8 +33,7 @@ export const listProjects = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    let q = supabase
-      .from("projects")
+    let q = workCostTable(supabase, "projects")
       .select(
         "*, contracts(id, number, title, counterparty_company_id, companies:counterparty_company_id(id, name)), services(id, name)",
       )
@@ -60,7 +61,7 @@ export const listProjectIds = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    let q = supabase.from("projects").select("id").order("id");
+    let q = workCostTable(supabase, "projects").select("id").order("id");
     if (data.status) q = q.eq("status", data.status);
     if (data.search?.trim()) q = q.ilike("name", `%${data.search.trim()}%`);
     if (data.assigneeId === null) q = q.is("assigned_to", null);
@@ -75,8 +76,7 @@ export const getProject = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { data: row, error } = await supabase
-      .from("projects")
+    const { data: row, error } = await workCostTable(supabase, "projects")
       .select(
         "*, contracts(id, number, title, currency, counterparty_company_id), services(id, name, currency)",
       )
@@ -131,8 +131,7 @@ export const createProject = createServerFn({ method: "POST" })
       if (c) role = ((c as any).role as "provider" | "client") ?? role;
     }
 
-    const { data: row, error } = await supabase
-      .from("projects")
+    const { data: row, error } = await workCostTable(supabase, "projects")
       .insert({
         workspace_id: workspaceId,
         owner_id: userId,
@@ -185,8 +184,7 @@ export const updateProject = createServerFn({ method: "POST" })
       "techprojects.projects.update.workspace",
       "techprojects.projects.update.team",
     ]);
-    const { data: row, error } = await supabase
-      .from("projects")
+    const { data: row, error } = await workCostTable(supabase, "projects")
       .update(data.patch)
       .eq("id", data.id)
       .select("*")
@@ -248,6 +246,7 @@ export const createTask = createServerFn({ method: "POST" })
     const workspaceId = await resolveActiveWorkspace(userId);
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techprojects.tasks.create.own",
+      "techprojects.tasks.create.team",
       "techprojects.tasks.create.workspace",
     ]);
     const { data: row, error } = await supabase
@@ -296,6 +295,7 @@ export const updateTask = createServerFn({ method: "POST" })
     await assertWorkRecord(supabase, "techprojects.tasks", data.id, "update");
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techprojects.tasks.update.own",
+      "techprojects.tasks.update.team",
       "techprojects.tasks.update.workspace",
       "techprojects.tasks.update.team",
     ]);
@@ -319,6 +319,7 @@ export const deleteTask = createServerFn({ method: "POST" })
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techprojects.tasks.delete.workspace",
       "techprojects.tasks.delete.own",
+      "techprojects.tasks.delete.team",
     ]);
     await deleteByIdGuarded(supabase, "project_tasks", data.id);
     return { ok: true };
@@ -385,7 +386,7 @@ export const listAllProjectTaskIds = createServerFn({ method: "POST" })
 // ============= MILESTONES =============
 
 export const listMilestones = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.milestones", "view")])
   .inputValidator((input) => z.object({ projectId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -400,7 +401,7 @@ export const listMilestones = createServerFn({ method: "POST" })
   });
 
 export const createMilestone = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.milestones", "create")])
   .inputValidator((input) =>
     z
       .object({
@@ -435,7 +436,7 @@ export const createMilestone = createServerFn({ method: "POST" })
   });
 
 export const updateMilestone = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.milestones", "update")])
   .inputValidator((input) =>
     z
       .object({
@@ -467,7 +468,7 @@ export const updateMilestone = createServerFn({ method: "POST" })
   });
 
 export const deleteMilestone = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.milestones", "delete")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -480,61 +481,13 @@ export const deleteMilestone = createServerFn({ method: "POST" })
  * Idempotente — se já concluído com entry, retorna o existente.
  */
 export const completeMilestone = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.milestones", "update")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
-
-    const { data: ms, error: mErr } = await supabase
-      .from("project_milestones")
-      .select("*, projects(id, role, contract_id, service_id, name)")
-      .eq("id", data.id)
-      .maybeSingle();
-    if (mErr) throw mErr;
-    if (!ms) throw new Error("Marco não encontrado");
-
-    const proj = (ms as any).projects;
-    let entryId: string | null = (ms as any).financial_entry_id ?? null;
-
-    if ((ms as any).billable && !entryId && (ms as any).bill_amount) {
-      const today = new Date().toISOString().slice(0, 10);
-      const direction = proj?.role === "client" ? "payable" : "receivable";
-      const { data: entry, error: fErr } = await supabase
-        .from("financial_entries")
-        .insert({
-          workspace_id: workspaceId,
-          owner_id: userId,
-          direction,
-          origin_type: "project_milestone",
-          origin_id: (ms as any).id,
-          contract_id: proj?.contract_id ?? null,
-          service_id: proj?.service_id ?? null,
-          description: `${proj?.name ?? "Projeto"} — ${(ms as any).name}`,
-          amount: Number((ms as any).bill_amount),
-          currency: "BRL",
-          competence_date: today,
-          due_date: today,
-          status: "open",
-        })
-        .select("id")
-        .single();
-      if (fErr) throw fErr;
-      entryId = (entry as any).id;
-    }
-
-    const { data: row, error } = await supabase
-      .from("project_milestones")
-      .update({
-        status: "done",
-        completed_at: new Date().toISOString(),
-        financial_entry_id: entryId,
-      })
-      .eq("id", data.id)
-      .select("*")
-      .single();
-    if (error) throw error;
-    return row;
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    return workRpc<
+      import("@/integrations/supabase/types").Database["public"]["Tables"]["project_milestones"]["Row"]
+    >(context.supabase, "project_milestone_complete_checked", { p_id: data.id });
   });
 
 // ============= TIME ENTRIES =============
@@ -614,12 +567,11 @@ export const deleteTimeEntry = createServerFn({ method: "POST" })
 // ============= MEMBERS =============
 
 export const listMembers = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.members", "view")])
   .inputValidator((input) => z.object({ projectId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { data: rows, error } = await supabase
-      .from("project_members")
+    const { data: rows, error } = await workCostTable(supabase, "project_members")
       .select("*, profiles:user_id(id, full_name, email, avatar_url)")
       .eq("project_id", data.projectId);
     if (error) throw error;
@@ -627,7 +579,7 @@ export const listMembers = createServerFn({ method: "POST" })
   });
 
 export const addMember = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.members", "manage")])
   .inputValidator((input) =>
     z
       .object({
@@ -642,8 +594,7 @@ export const addMember = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    const { data: row, error } = await supabase
-      .from("project_members")
+    const { data: row, error } = await workCostTable(supabase, "project_members")
       .insert({
         workspace_id: workspaceId,
         project_id: data.projectId,
@@ -659,7 +610,7 @@ export const addMember = createServerFn({ method: "POST" })
   });
 
 export const updateMember = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.members", "manage")])
   .inputValidator((input) =>
     z
       .object({
@@ -676,21 +627,12 @@ export const updateMember = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { data: target } = await supabase
-      .from("project_members")
+    const { data: target } = await workCostTable(supabase, "project_members")
       .select("workspace_id, project_id")
       .eq("id", data.id)
       .maybeSingle();
     if (!target) throw new Error("Membro não encontrado.");
-    const { assertProjectManagerFor } = await import("@/lib/projects/project-authz.server");
-    await assertProjectManagerFor(
-      supabase,
-      userId,
-      [target],
-      ["techprojects.projects.manage.workspace", "techprojects.projects.update.workspace"],
-    );
-    const { data: row, error } = await supabase
-      .from("project_members")
+    const { data: row, error } = await workCostTable(supabase, "project_members")
       .update(data.patch)
       .eq("id", data.id)
       .select("*")
@@ -700,7 +642,7 @@ export const updateMember = createServerFn({ method: "POST" })
   });
 
 export const removeMember = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.members", "manage")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -712,18 +654,28 @@ export const removeMember = createServerFn({ method: "POST" })
 // Custo realizado (Σ hours × cost_rate) + Receita billável (Σ hours × bill_rate + marcos billáveis).
 
 export const getProjectFinancials = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.profitability", "view")])
   .inputValidator((input) => z.object({ projectId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { computeProjectFinancials } = await import("@/lib/projects/financials");
     const { supabase } = context;
-    const [{ data: entries }, { data: members }, { data: milestones }] = await Promise.all([
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    await workRpc(supabase, "work_area_authorize", {
+      r: "techprojects.projects",
+      a: "view",
+      i: data.projectId,
+    });
+    await workRpc(supabase, "work_area_authorize", {
+      r: "techprojects.members",
+      a: "view",
+      i: null,
+    });
+    const results = await Promise.all([
       supabase
         .from("project_time_entries")
         .select("user_id, hours, billable")
         .eq("project_id", data.projectId),
-      supabase
-        .from("project_members")
+      workCostTable(supabase, "project_members")
         .select("user_id, cost_rate_hour, bill_rate_hour")
         .eq("project_id", data.projectId),
       supabase
@@ -732,9 +684,25 @@ export const getProjectFinancials = createServerFn({ method: "POST" })
         .eq("project_id", data.projectId),
     ]);
 
+    for (const result of results) if (result.error) throw new Error(result.error.message);
+    const [entries, members, milestones] = results.map((r) => r.data);
+
     return computeProjectFinancials(
       (entries ?? []) as any,
       (members ?? []) as any,
       (milestones ?? []) as any,
+    );
+  });
+
+/** Normalized time aliases and row scope; never infer access from manager role. */
+export const getTimeActionCapabilities = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ ids: z.array(z.string().uuid()).max(500) }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    return workRpc<{ can_create: boolean; rows: Array<{ id: string; can_delete: boolean }> }>(
+      context.supabase,
+      "project_time_capabilities",
+      { p_ids: data.ids },
     );
   });

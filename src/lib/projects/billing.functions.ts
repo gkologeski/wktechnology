@@ -1,9 +1,9 @@
+import { requireWorkPermission } from "@/lib/access-control/work-permission.middleware";
 // TechProjects Ciclo 4 — medições, geração no Financeiro e rentabilidade (tarifas em billing-rates.functions.ts).
 // Toda regra e autorização ficam no banco (`project_rate_*`, `project_billing_*`, `project_measurement_*`,
 // `project_profitability`); aqui só validamos a forma da entrada e chamamos como o usuário (RLS).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import {
   hash,
@@ -22,7 +22,7 @@ import type { MeasurementRow, Profitability } from "@/lib/projects/billing.types
 // ============= medições =============
 
 export const listMeasurements = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.measurements", "view")])
   .inputValidator((i: unknown) => listScope.parse(i))
   .handler(async ({ data, context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
@@ -40,12 +40,12 @@ export const listMeasurements = createServerFn({ method: "POST" })
   });
 
 export const getMeasurement = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.measurements", "view")])
   .inputValidator((i: unknown) => z.object({ id: uuid }).parse(i))
   .handler(async ({ data, context }) => loadMeasurementDetail(context.supabase, data.id));
 
 export const buildMeasurement = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.measurements", "manage")])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -67,7 +67,7 @@ export const buildMeasurement = createServerFn({ method: "POST" })
   });
 
 export const refreshMeasurement = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.measurements", "manage")])
   .inputValidator((i: unknown) => z.object({ id: uuid }).parse(i))
   .handler(async ({ data, context }) =>
     rpc<{ lines_hash: string; revision: number }>(context.supabase, "project_measurement_refresh", {
@@ -76,7 +76,7 @@ export const refreshMeasurement = createServerFn({ method: "POST" })
   );
 
 export const addMeasurementAdjustment = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.measurements", "manage")])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -101,7 +101,7 @@ export const addMeasurementAdjustment = createServerFn({ method: "POST" })
   });
 
 export const addMeasurementSuccessEvent = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.measurements", "manage")])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -125,7 +125,7 @@ export const addMeasurementSuccessEvent = createServerFn({ method: "POST" })
   });
 
 export const removeMeasurementLine = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.measurements", "manage")])
   .inputValidator((i: unknown) => z.object({ lineId: uuid, reason: shortReason }).parse(i))
   .handler(async ({ data, context }) => {
     await rpc(context.supabase, "project_measurement_remove_line", {
@@ -136,7 +136,7 @@ export const removeMeasurementLine = createServerFn({ method: "POST" })
   });
 
 export const submitMeasurement = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.measurements", "manage")])
   .inputValidator((i: unknown) => z.object({ id: uuid, hash }).parse(i))
   .handler(async ({ data, context }) => {
     await rpc(context.supabase, "project_measurement_submit", { p_id: data.id, p_hash: data.hash });
@@ -144,7 +144,7 @@ export const submitMeasurement = createServerFn({ method: "POST" })
   });
 
 export const returnMeasurement = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.measurements", "manage")])
   .inputValidator((i: unknown) => z.object({ id: uuid, reason }).parse(i))
   .handler(async ({ data, context }) => {
     await rpc(context.supabase, "project_measurement_return", {
@@ -155,7 +155,7 @@ export const returnMeasurement = createServerFn({ method: "POST" })
   });
 
 export const approveMeasurement = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.measurements", "approve")])
   .inputValidator((i: unknown) => z.object({ id: uuid, hash }).parse(i))
   .handler(async ({ data, context }) => {
     const status = await rpc<string>(context.supabase, "project_measurement_approve", {
@@ -166,7 +166,7 @@ export const approveMeasurement = createServerFn({ method: "POST" })
   });
 
 export const recheckMeasurement = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.measurements", "manage")])
   .inputValidator((i: unknown) => z.object({ id: uuid }).parse(i))
   .handler(async ({ data, context }) => {
     const status = await rpc<string>(context.supabase, "project_measurement_recheck", {
@@ -176,7 +176,7 @@ export const recheckMeasurement = createServerFn({ method: "POST" })
   });
 
 export const generateMeasurementEntry = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.measurement_finance", "create")])
   .inputValidator((i: unknown) => z.object({ id: uuid, hash, dueDate: isoDate }).parse(i))
   .handler(async ({ data, context }) =>
     rpc<{
@@ -192,7 +192,7 @@ export const generateMeasurementEntry = createServerFn({ method: "POST" })
   );
 
 export const linkMeasurementLegacy = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.measurement_finance", "create")])
   .inputValidator((i: unknown) => z.object({ id: uuid, entryId: uuid, hash, reason }).parse(i))
   .handler(async ({ data, context }) => {
     await rpc(context.supabase, "project_measurement_link_legacy", {
@@ -205,7 +205,7 @@ export const linkMeasurementLegacy = createServerFn({ method: "POST" })
   });
 
 export const reverseMeasurement = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.measurement_reverse", "manage")])
   .inputValidator((i: unknown) => z.object({ id: uuid, reason }).parse(i))
   .handler(async ({ data, context }) =>
     rpc<{ cancelled_entries: number; unlinked_legacy: number }>(
@@ -216,7 +216,7 @@ export const reverseMeasurement = createServerFn({ method: "POST" })
   );
 
 export const cancelMeasurement = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.measurements", "manage")])
   .inputValidator((i: unknown) => z.object({ id: uuid, reason }).parse(i))
   .handler(async ({ data, context }) => {
     await rpc(context.supabase, "project_measurement_cancel", {
@@ -229,7 +229,24 @@ export const cancelMeasurement = createServerFn({ method: "POST" })
 // ============= rentabilidade =============
 
 export const getProfitability = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.profitability", "view")])
+  .inputValidator((i: unknown) => profitabilityInput.parse(i))
+  .handler(async ({ data, context }) => {
+    const { monthRangeBounds } = await import("@/lib/projects/billing.shared");
+    const ws = await resolveActiveWorkspace(context.userId);
+    const { from, to } = monthRangeBounds(data.fromMonth, data.toMonth);
+    return rpc<Profitability>(context.supabase, "project_profitability", {
+      p_ws: ws,
+      p_project: data.projectId ?? null,
+      p_contract: data.contractId ?? null,
+      p_from: from,
+      p_to: to,
+      p_currency: data.currency.toUpperCase(),
+    });
+  });
+
+export const exportProfitability = createServerFn({ method: "POST" })
+  .middleware([requireWorkPermission("techprojects.profitability", "export")])
   .inputValidator((i: unknown) => profitabilityInput.parse(i))
   .handler(async ({ data, context }) => {
     const { monthRangeBounds } = await import("@/lib/projects/billing.shared");

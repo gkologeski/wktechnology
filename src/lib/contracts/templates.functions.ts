@@ -1,3 +1,5 @@
+import { workRpc } from "@/lib/access-control/work-core.server";
+import type { Database } from "@/integrations/supabase/types";
 // Server functions dos Modelos de Contrato (TechContracts).
 // Um modelo é um corpo Rich Text com variáveis ({{...}}) que pode ser aplicado
 // para gerar contratos reais — inclusive a partir do TechSales.
@@ -9,25 +11,28 @@ import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { assertAnyPermission } from "@/lib/access-control/enforce.server";
 import { mergeTemplateBody } from "@/lib/contracts/template-tokens";
 import { buildMergeContext } from "@/lib/contracts/template-merge.server";
-import type { Json } from "@/integrations/supabase/types";
 import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 const VIEW = [
   "techcontracts.contract_templates.view.own",
   "techcontracts.contract_templates.view.team",
+  "techcontracts.contract_templates.view.team",
   "techcontracts.contract_templates.view.workspace",
 ];
 const CREATE = [
   "techcontracts.contract_templates.create.own",
+  "techcontracts.contract_templates.create.team",
   "techcontracts.contract_templates.create.workspace",
 ];
 const UPDATE = [
   "techcontracts.contract_templates.update.own",
   "techcontracts.contract_templates.update.team",
+  "techcontracts.contract_templates.update.team",
   "techcontracts.contract_templates.update.workspace",
 ];
 const DELETE = [
   "techcontracts.contract_templates.delete.own",
+  "techcontracts.contract_templates.delete.team",
   "techcontracts.contract_templates.delete.workspace",
 ];
 
@@ -143,58 +148,16 @@ const upsertFields = z.object({
   serviceIds: z.array(z.string().uuid()).optional(),
 });
 
-async function syncServices(
-  supabase: { from: (t: string) => any },
-  workspaceId: string,
-  templateId: string,
-  serviceIds: string[],
-) {
-  // Sincronização de filhos: limpeza idempotente antes de reinserir o vínculo.
-  // 0 linhas afetadas é resultado válido (modelo sem serviços), por isso não há
-  // guarda de permissão aqui — o gate está no upsert do modelo.
-  await supabase.from("contract_template_services").delete().eq("template_id", templateId);
-  if (!serviceIds.length) return;
-  const { error } = await supabase.from("contract_template_services").insert(
-    serviceIds.map((id) => ({
-      workspace_id: workspaceId,
-      template_id: templateId,
-      service_catalog_id: id,
-    })),
-  );
-  if (error) throw error;
-}
-
 export const createContractTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => upsertFields.parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
-    await assertAnyPermission(supabase, userId, workspaceId, CREATE);
-
     const { serviceIds, ...fields } = data;
-    const { data: row, error } = await supabase
-      .from("contract_templates")
-      .insert({
-        workspace_id: workspaceId,
-        owner_id: userId,
-        assigned_to: userId,
-        name: fields.name,
-        description: fields.description ?? null,
-        role: fields.role ?? "provider",
-        service_type: fields.service_type ?? null,
-        body_html: fields.body_html ?? null,
-        defaults: (fields.defaults ?? {}) as Json,
-        status: fields.status ?? "draft",
-        is_default: fields.is_default ?? false,
-        source_file_path: fields.source_file_path ?? null,
-        imported_from: fields.imported_from ?? undefined,
-      })
-      .select("*")
-      .single();
-    if (error) throw error;
-    if (serviceIds?.length) await syncServices(supabase, workspaceId, row.id, serviceIds);
-    return row;
+    return workRpc<Database["public"]["Tables"]["contract_templates"]["Row"]>(
+      context.supabase,
+      "contract_template_save_checked",
+      { p_id: null, p_patch: fields, p_services: serviceIds ?? null, p_copy: null },
+    );
   });
 
 export const updateContractTemplate = createServerFn({ method: "POST" })
@@ -203,27 +166,12 @@ export const updateContractTemplate = createServerFn({ method: "POST" })
     z.object({ id: z.string().uuid(), patch: upsertFields.partial() }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
-    await assertAnyPermission(supabase, userId, workspaceId, UPDATE);
-
-    const { serviceIds, ...patch } = data.patch;
-    if (Object.keys(patch).length) {
-      const { error } = await supabase
-        .from("contract_templates")
-        .update(patch as never)
-        .eq("id", data.id);
-      if (error) throw error;
-    }
-    if (serviceIds) await syncServices(supabase, workspaceId, data.id, serviceIds);
-
-    const { data: row, error: rErr } = await supabase
-      .from("contract_templates")
-      .select("*")
-      .eq("id", data.id)
-      .maybeSingle();
-    if (rErr) throw rErr;
-    return row;
+    const { serviceIds, ...fields } = data.patch;
+    return workRpc<Database["public"]["Tables"]["contract_templates"]["Row"]>(
+      context.supabase,
+      "contract_template_save_checked",
+      { p_id: data.id, p_patch: fields, p_services: serviceIds ?? null, p_copy: null },
+    );
   });
 
 export const deleteContractTemplate = createServerFn({ method: "POST" })
@@ -241,45 +189,11 @@ export const duplicateContractTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
-    await assertAnyPermission(supabase, userId, workspaceId, CREATE);
-
-    const { data: src, error } = await supabase
-      .from("contract_templates")
-      .select("*")
-      .eq("id", data.id)
-      .maybeSingle();
-    if (error) throw error;
-    if (!src) throw new Error("Modelo não encontrado");
-
-    const { data: row, error: iErr } = await supabase
-      .from("contract_templates")
-      .insert({
-        workspace_id: workspaceId,
-        owner_id: userId,
-        assigned_to: userId,
-        name: `${src.name} (cópia)`,
-        description: src.description,
-        role: src.role,
-        service_type: src.service_type,
-        body_html: src.body_html,
-        variables: src.variables,
-        defaults: src.defaults,
-        status: "draft",
-        is_default: false,
-      })
-      .select("*")
-      .single();
-    if (iErr) throw iErr;
-
-    const { data: links } = await supabase
-      .from("contract_template_services")
-      .select("service_catalog_id")
-      .eq("template_id", data.id);
-    const ids = (links ?? []).map((l) => l.service_catalog_id);
-    if (ids.length) await syncServices(supabase, workspaceId, row.id, ids);
-    return row;
+    return workRpc<Database["public"]["Tables"]["contract_templates"]["Row"]>(
+      context.supabase,
+      "contract_template_save_checked",
+      { p_id: null, p_patch: {}, p_services: null, p_copy: data.id },
+    );
   });
 
 // ============= SERVIÇOS DO CATÁLOGO (para vincular) =============

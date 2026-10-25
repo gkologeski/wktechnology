@@ -1,3 +1,6 @@
+import { useWorkRecordCapability } from "@/components/work-action";
+import { WorkAction, WorkCapabilityScope } from "@/components/work-action";
+import { HrScreenAccess as Order3ScreenAccess } from "@/components/hr-access";
 // Sprint C - Fase 4.2 parte 1
 // Detalhe da Lista: views List e Board, status customizados por lista.
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -61,7 +64,7 @@ export const Route = createFileRoute("/_authenticated/projects/lists/$id")({
       },
     ],
   }),
-  component: ListDetailPage,
+  component: Order3RouteAccess,
 });
 
 type Status = {
@@ -105,7 +108,7 @@ function ListDetailPage() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
   const getListFn = useServerFn(getList);
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["project-list", id],
     queryFn: () => getListFn({ data: { id } }),
   });
@@ -114,6 +117,12 @@ function ListDetailPage() {
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["project-list", id] });
 
+  if (error || (!isLoading && !data))
+    return (
+      <div role="alert" className="p-6 text-sm text-destructive">
+        Não foi possível carregar esta lista. Confira seu acesso e tente novamente.
+      </div>
+    );
   if (isLoading || !data) {
     return <div className="p-6 text-sm text-muted-foreground">Carregando…</div>;
   }
@@ -143,109 +152,119 @@ function ListDetailPage() {
   const hasProject = !!list.projects;
 
   return (
-    <div className="p-6 space-y-5">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Button asChild variant="ghost" size="sm" className="h-7 -ml-2">
-          <Link to="/projects/spaces">
-            <ArrowLeft className="h-4 w-4 mr-1" /> Espaços
-          </Link>
-        </Button>
-        {list.project_spaces && <span>/ {list.project_spaces.name}</span>}
-        {list.project_folders && <span>/ {list.project_folders.name}</span>}
-      </div>
-
-      <PageHeader
-        title={list.name}
-        description={
-          list.projects
-            ? `Vinculada ao projeto ${list.projects.name}`
-            : "Sem projeto vinculado — vincule um projeto para criar tarefas."
-        }
-        count={tasks.length}
-        countLabel={tasks.length === 1 ? "tarefa" : "tarefas"}
-        actions={
-          <div className="flex items-center gap-2 flex-wrap">
-            <CustomFieldsManagerButton listId={id} />
-            <SaveAsTemplateButton listId={id} listName={list.name} />
-            <ManageStatusesButton listId={id} statuses={statuses} onChanged={invalidate} />
-            <NewTaskButton
-              listId={id}
-              statuses={statuses}
-              disabled={!hasProject}
-              onCreated={invalidate}
-            />
-          </div>
-        }
-      />
-
-      {!hasProject && (
-        <div className="rounded-md border border-amber-300 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">
-          Vincule esta lista a um projeto (em{" "}
-          <Link to="/projects/spaces" className="underline">
-            Espaços
-          </Link>
-          ) para começar a criar tarefas.
+    <WorkCapabilityScope resource="techprojects.tasks" ids={data.tasks.map((t) => t.id)}>
+      <div className="p-6 space-y-5">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Button asChild variant="ghost" size="sm" className="h-7 -ml-2">
+            <Link to="/projects/spaces">
+              <ArrowLeft className="h-4 w-4 mr-1" /> Espaços
+            </Link>
+          </Button>
+          {list.project_spaces && <span>/ {list.project_spaces.name}</span>}
+          {list.project_folders && <span>/ {list.project_folders.name}</span>}
         </div>
-      )}
 
-      <Tabs defaultValue="board">
-        <TabsList>
-          <TabsTrigger value="board">
-            <LayoutGrid className="h-4 w-4 mr-2" /> Board
-          </TabsTrigger>
-          <TabsTrigger value="list">
-            <ListIcon className="h-4 w-4 mr-2" /> Lista
-          </TabsTrigger>
-          <TabsTrigger value="calendar">
-            <CalendarDays className="h-4 w-4 mr-2" /> Calendário
-          </TabsTrigger>
-          <TabsTrigger value="timeline">
-            <GanttChart className="h-4 w-4 mr-2" /> Timeline
-          </TabsTrigger>
-          <TabsTrigger value="workload">
-            <Users2 className="h-4 w-4 mr-2" /> Workload
-          </TabsTrigger>
-        </TabsList>
+        <PageHeader
+          title={list.name}
+          description={
+            list.projects
+              ? `Vinculada ao projeto ${list.projects.name}`
+              : "Sem projeto vinculado — vincule um projeto para criar tarefas."
+          }
+          count={tasks.length}
+          countLabel={tasks.length === 1 ? "tarefa" : "tarefas"}
+          actions={
+            <div className="flex items-center gap-2 flex-wrap">
+              <WorkAction resource="techprojects.custom_fields" action="manage">
+                <CustomFieldsManagerButton listId={id} />
+              </WorkAction>
+              <WorkAction resource="techprojects.list_templates" action="manage">
+                <SaveAsTemplateButton listId={id} listName={list.name} />
+              </WorkAction>
+              <WorkAction resource="techprojects.statuses" action="manage">
+                <ManageStatusesButton listId={id} statuses={statuses} onChanged={invalidate} />
+              </WorkAction>
+              <WorkAction resource="techprojects.tasks" action="create">
+                <NewTaskButton
+                  listId={id}
+                  statuses={statuses}
+                  disabled={!hasProject}
+                  onCreated={invalidate}
+                />
+              </WorkAction>
+            </div>
+          }
+        />
 
-        <TabsContent value="board" className="mt-4">
-          <BoardView
-            statuses={statuses}
-            tasks={tasks}
-            onChanged={invalidate}
-            onOpen={setSelectedTask}
-          />
-        </TabsContent>
+        {!hasProject && (
+          <div className="rounded-md border border-amber-300 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">
+            Vincule esta lista a um projeto (em{" "}
+            <Link to="/projects/spaces" className="underline">
+              Espaços
+            </Link>
+            ) para começar a criar tarefas.
+          </div>
+        )}
 
-        <TabsContent value="list" className="mt-4">
-          <ListView
-            statuses={statuses}
-            tasks={tasks}
-            onChanged={invalidate}
-            onOpen={setSelectedTask}
-          />
-        </TabsContent>
+        <Tabs defaultValue="board">
+          <TabsList>
+            <TabsTrigger value="board">
+              <LayoutGrid className="h-4 w-4 mr-2" /> Board
+            </TabsTrigger>
+            <TabsTrigger value="list">
+              <ListIcon className="h-4 w-4 mr-2" /> Lista
+            </TabsTrigger>
+            <TabsTrigger value="calendar">
+              <CalendarDays className="h-4 w-4 mr-2" /> Calendário
+            </TabsTrigger>
+            <TabsTrigger value="timeline">
+              <GanttChart className="h-4 w-4 mr-2" /> Timeline
+            </TabsTrigger>
+            <TabsTrigger value="workload">
+              <Users2 className="h-4 w-4 mr-2" /> Workload
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="calendar" className="mt-4">
-          <CalendarView tasks={tasks} onOpen={setSelectedTask} />
-        </TabsContent>
+          <TabsContent value="board" className="mt-4">
+            <BoardView
+              statuses={statuses}
+              tasks={tasks}
+              onChanged={invalidate}
+              onOpen={setSelectedTask}
+            />
+          </TabsContent>
 
-        <TabsContent value="timeline" className="mt-4">
-          <TimelineView tasks={tasks} statuses={statuses} onOpen={setSelectedTask} />
-        </TabsContent>
+          <TabsContent value="list" className="mt-4">
+            <ListView
+              statuses={statuses}
+              tasks={tasks}
+              onChanged={invalidate}
+              onOpen={setSelectedTask}
+            />
+          </TabsContent>
 
-        <TabsContent value="workload" className="mt-4">
-          <WorkloadView tasks={tasks} />
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="calendar" className="mt-4">
+            <CalendarView tasks={tasks} onOpen={setSelectedTask} />
+          </TabsContent>
 
-      <TaskDetailsSheet
-        task={selectedTask}
-        open={Boolean(selectedTask)}
-        onOpenChange={(v) => {
-          if (!v) setSelectedTask(null);
-        }}
-      />
-    </div>
+          <TabsContent value="timeline" className="mt-4">
+            <TimelineView tasks={tasks} statuses={statuses} onOpen={setSelectedTask} />
+          </TabsContent>
+
+          <TabsContent value="workload" className="mt-4">
+            <WorkloadView tasks={tasks} />
+          </TabsContent>
+        </Tabs>
+
+        <TaskDetailsSheet
+          task={selectedTask}
+          open={Boolean(selectedTask)}
+          onOpenChange={(v) => {
+            if (!v) setSelectedTask(null);
+          }}
+        />
+      </div>
+    </WorkCapabilityScope>
   );
 }
 
@@ -270,6 +289,7 @@ function BoardView({
   });
 
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const draggingCapability = useWorkRecordCapability("techprojects.tasks", draggingId ?? "");
 
   const byStatus = useMemo(() => {
     const map = new Map<string, Task[]>();
@@ -289,7 +309,7 @@ function BoardView({
           className="min-w-[280px] w-72 flex-shrink-0 rounded-lg border bg-muted/30"
           onDragOver={(e) => e.preventDefault()}
           onDrop={() => {
-            if (draggingId) {
+            if (draggingId && draggingCapability.can_update) {
               moveM.mutate({ taskId: draggingId, statusId: s.id });
               setDraggingId(null);
             }
@@ -333,6 +353,7 @@ function TaskCard({
   onChanged: () => void;
   onOpen: () => void;
 }) {
+  const capability = useWorkRecordCapability("techprojects.tasks", task.id);
   const del = useServerFn(deleteListTask);
   const delM = useMutation({
     mutationFn: () => del({ data: { id: task.id } }),
@@ -343,7 +364,7 @@ function TaskCard({
   });
   return (
     <div
-      draggable
+      draggable={capability.can_update}
       onDragStart={onDragStart}
       onClick={onOpen}
       className="rounded-md border bg-card p-3 cursor-pointer hover:border-primary/40 active:cursor-grabbing"
@@ -365,18 +386,20 @@ function TaskCard({
             )}
           </div>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-            <Button variant="ghost" size="icon" className="h-6 w-6">
-              …
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-            <DropdownMenuItem className="text-destructive" onClick={() => delM.mutate()}>
-              <Trash2 className="h-4 w-4 mr-2" /> Remover
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <WorkAction resource="techprojects.tasks" action="delete" id={task.id}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <Button variant="ghost" size="icon" className="h-6 w-6">
+                …
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+              <DropdownMenuItem className="text-destructive" onClick={() => delM.mutate()}>
+                <Trash2 className="h-4 w-4 mr-2" /> Remover
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </WorkAction>
       </div>
     </div>
   );
@@ -479,17 +502,19 @@ function ListRow({
         {task.due_at ? formatDateTime(task.due_at).split(" ")[0] : "—"}
       </td>
       <td className="px-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onClick={(e) => {
-            e.stopPropagation();
-            delM.mutate();
-          }}
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
+        <WorkAction resource="techprojects.tasks" action="delete" id={task.id}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={(e) => {
+              e.stopPropagation();
+              delM.mutate();
+            }}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </WorkAction>
       </td>
     </tr>
   );
@@ -716,5 +741,14 @@ function ManageStatusesButton({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+const Order3Page = ListDetailPage;
+function Order3RouteAccess() {
+  return (
+    <Order3ScreenAccess resources={["techprojects.lists"]}>
+      <Order3Page />
+    </Order3ScreenAccess>
   );
 }

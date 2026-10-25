@@ -202,21 +202,11 @@ export async function recalcRoles(
     const patch: Record<string, unknown> = { role: inferred, metadata: nextMetadata };
     if (newTitle) patch.title = newTitle;
 
-    const { error: upErr } = await supabase
-      .from("contracts")
-      .update(patch as never)
-      .eq("id", raw.id);
-    if (upErr) throw new Error(upErr.message);
-
-    updated += 1;
-    if (newTitle) retitled += 1;
-
-    await supabase.from("contract_events").insert({
-      workspace_id: workspaceId,
-      contract_id: raw.id,
-      actor_id: userId,
-      event_type: "role_recalculated",
-      payload: {
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    await workRpc(supabase, "contract_change_checked", {
+      p_contract: raw.id,
+      p_patch: patch,
+      p_evidence: {
         from: meta.role,
         to: inferred,
         title_before: raw.title ?? null,
@@ -229,7 +219,9 @@ export async function recalcRoles(
         },
         source: "role-recalc",
       },
-    } as never);
+    });
+    updated += 1;
+    if (newTitle) retitled += 1;
   }
 
   return { updated, skipped, retitled };

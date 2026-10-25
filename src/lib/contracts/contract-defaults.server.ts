@@ -1,7 +1,6 @@
 // Leitura dos padrões de contrato do workspace (server-only).
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
-  EMPTY_DEFAULTS,
   sanitizeDefaults,
   type ContractDefaultsBundle,
   type ContractDefaultsMap,
@@ -15,11 +14,8 @@ export async function loadContractDefaults(
   supabase: SupabaseClient,
   workspaceId: string,
 ): Promise<ContractDefaultsBundle> {
-  const { data, error } = await supabase
-    .from("contract_defaults")
-    .select("document_kind, defaults")
-    .eq("workspace_id", workspaceId);
-  if (error) return EMPTY_DEFAULTS;
+  const { workRpc } = await import("@/lib/access-control/work-core.server");
+  const data = await workRpc<Row[]>(supabase, "contract_defaults_resolve", { p_ws: workspaceId });
 
   const bundle: ContractDefaultsBundle = { general: {}, byKind: {} };
   for (const row of (data ?? []) as Row[]) {

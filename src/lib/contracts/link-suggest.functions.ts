@@ -1,9 +1,10 @@
+import { workRpc } from "@/lib/access-control/work-core.server";
+import { requireWorkPermission } from "@/lib/access-control/work-permission.middleware";
 // Sugestão de vínculos entre contratos: camada determinística (números citados,
 // CNPJs próprios do workspace, contraparte de aditivos) + camada de IA para o resto.
-// Nunca grava nada: apenas devolve propostas para revisão humana.
+// Registra sugestões auditáveis; a aplicação do vínculo depende de revisão humana.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { assertAnyPermission } from "@/lib/access-control/enforce.server";
 import {
@@ -63,7 +64,7 @@ export type SuggestionHistoryRow = {
 };
 
 export const suggestContractLinks = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.links", "manage")])
   .inputValidator((input) =>
     z
       .object({ role: z.enum(["provider", "client", "amendment", "all"]).optional() })
@@ -93,7 +94,15 @@ export const suggestContractLinks = createServerFn({ method: "POST" })
     if (error) throw error;
 
     const all = (rows ?? []) as unknown as Parameters<typeof computePendingLinks>[0];
-    const pendingRows = computePendingLinks(all, { role: data.role ?? "all" });
+    const capabilities = await workRpc<Array<{ id: string; can_update: boolean }>>(
+      supabase,
+      "work_area_capabilities",
+      { r: "techcontracts.contracts", ids: all.map((r) => r.id) },
+    );
+    const editable = new Set(capabilities.filter((r) => r.can_update).map((r) => r.id));
+    const pendingRows = computePendingLinks(all, { role: data.role ?? "all" }).filter((r) =>
+      editable.has(r.id),
+    );
     const metaById = new Map<string, ContractLinkMeta>();
     for (const r of rows ?? []) {
       const m = toContractLinkMeta(r as Record<string, unknown>);
@@ -326,7 +335,7 @@ export const suggestContractLinks = createServerFn({ method: "POST" })
     // Histórico: propostas anteriores ainda não decididas passam a "reavaliadas".
     if (suggestions.length > 0) {
       const table = (supabase as any).from("contract_link_ai_suggestions");
-      await table
+      const { error: supersedeError } = await table
         .update({ status: "superseded" })
         .eq("workspace_id", workspaceId)
         .eq("status", "proposed")
@@ -334,6 +343,7 @@ export const suggestContractLinks = createServerFn({ method: "POST" })
           "pending_contract_id",
           suggestions.map((s) => s.pending_id),
         );
+      if (supersedeError) throw new Error(supersedeError.message);
 
       const { data: inserted, error: insertError } = await (supabase as any)
         .from("contract_link_ai_suggestions")
@@ -353,7 +363,8 @@ export const suggestContractLinks = createServerFn({ method: "POST" })
           })),
         )
         .select("id, pending_contract_id");
-      if (!insertError) {
+      if (insertError) throw new Error(insertError.message);
+      {
         const idByPending = new Map<string, string>(
           ((inserted ?? []) as Array<{ id: string; pending_contract_id: string }>).map((r) => [
             r.pending_contract_id,
@@ -380,7 +391,7 @@ export const suggestContractLinks = createServerFn({ method: "POST" })
 
 /** Sugestões registradas: todas do workspace ou apenas as de um contrato. */
 export const listContractLinkSuggestions = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.links", "view")])
   .inputValidator((input) =>
     z
       .object({
@@ -472,7 +483,7 @@ export const listContractLinkSuggestions = createServerFn({ method: "POST" })
 
 /** Marca uma sugestão como aplicada ou ignorada pelo usuário. */
 export const decideContractLinkSuggestion = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.links", "manage")])
   .inputValidator((input) =>
     z
       .object({

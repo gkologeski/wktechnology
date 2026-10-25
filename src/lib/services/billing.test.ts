@@ -1,214 +1,68 @@
 import { describe, it, expect, vi } from "vitest";
 import { tickServicesBilling } from "./billing.server";
-
-type Service = {
-  id: string;
-  workspace_id: string;
-  owner_id: string;
-  role: "provider" | "consumer";
-  name: string;
-  quantity: number;
-  unit_price: number;
-  currency: string;
-  status: string;
-  type: string;
-  cadence: "monthly" | "quarterly" | "yearly" | null;
-  next_billing_at: string | null;
-  ends_at: string | null;
-  contract_id: string | null;
-};
-
-function makeService(over: Partial<Service> = {}): Service {
-  return {
-    id: "svc-1",
-    workspace_id: "ws-1",
-    owner_id: "user-1",
-    role: "provider",
-    name: "Recurring service",
-    quantity: 1,
-    unit_price: 100,
-    currency: "BRL",
-    status: "active",
-    type: "recurring",
-    cadence: "monthly",
-    next_billing_at: "2025-01-10",
-    ends_at: null,
-    contract_id: null,
-    ...over,
-  };
+function client(results: Array<{ data: unknown; error: unknown }>) {
+  const rpc = vi.fn(async () => results.shift());
+  const query: Record<string, unknown> = {};
+  for (const method of ["select", "eq", "not", "lte", "order"]) query[method] = () => query;
+  query.limit = async () => ({
+    data: [
+      { id: "a", workspace_id: "tenant-a" },
+      { id: "b", workspace_id: "tenant-b" },
+    ],
+    error: null,
+  });
+  const from = vi.fn(() => query);
+  return { db: { from, rpc } as never, from, rpc };
 }
-
-/**
- * Minimal mock of the PostgREST query builder chain used by
- * `tickServicesBilling`. `upsertBehavior` decides whether an insert is
- * treated as a fresh row (returns [{id}]) or a duplicate skipped by the
- * unique index (returns []). `updateShouldFail` toggles the update error path.
- */
-function makeAdminMock(opts: {
-  due: Service[];
-  upsertBehavior?: "insert" | "duplicate";
-  updateShouldFail?: boolean;
-  ownedIds?: string[];
-}) {
-  const upsertCalls: unknown[] = [];
-  const updateCalls: unknown[] = [];
-
-  const client = {
-    rpc(fn: string, args: { p_service: string }) {
-      if (fn !== "project_billing_service_owned") throw new Error("unexpected rpc: " + fn);
-      return Promise.resolve({ data: (opts.ownedIds ?? []).includes(args.p_service), error: null });
-    },
-    from(table: string) {
-      if (table === "services") {
-        // Two shapes are used against `services`:
-        //   .select().eq().eq().not().lte().order().limit()  → returns due list
-        //   .update({...}).eq(id)                            → advances cursor
-        return {
-          select: () => ({
-            eq: () => ({
-              eq: () => ({
-                not: () => ({
-                  lte: () => ({
-                    order: () => ({
-                      limit: () => Promise.resolve({ data: opts.due, error: null }),
-                    }),
-                  }),
-                }),
-              }),
-            }),
-          }),
-          update: (payload: unknown) => ({
-            eq: (_col: string, id: string) => {
-              updateCalls.push({ id, payload });
-              return Promise.resolve({
-                error: opts.updateShouldFail ? { message: "update failed" } : null,
-              });
-            },
-          }),
-        };
-      }
-      if (table === "financial_entries") {
-        return {
-          upsert: (payload: unknown, options: unknown) => {
-            upsertCalls.push({ payload, options });
-            const inserted = opts.upsertBehavior === "duplicate" ? [] : [{ id: "fe-new" }];
-            return {
-              select: () => Promise.resolve({ data: inserted, error: null }),
-            };
-          },
-        };
-      }
-      throw new Error("unexpected table: " + table);
-    },
-  };
-  return { client: client as never, upsertCalls, updateCalls };
-}
-
-describe("tickServicesBilling", () => {
-  it("gera lançamento e avança next_billing_at para serviço mensal", async () => {
-    const svc = makeService({ next_billing_at: "2025-01-10", cadence: "monthly" });
-    const { client, upsertCalls, updateCalls } = makeAdminMock({ due: [svc] });
-
-    const res = await tickServicesBilling(client);
-
-    expect(res).toEqual({
+describe("scheduled service billing delegation", () => {
+  it("submits only source IDs and leaves atomic authorization/ownership to the database", async () => {
+    const { db, rpc, from } = client([
+      { data: { authorized: true, generated: true }, error: null },
+      { data: { authorized: true, skippedOwned: true }, error: null },
+    ]);
+    expect(await tickServicesBilling(db)).toEqual({
+      scanned: 2,
       generated: 1,
-      scanned: 1,
+      skippedOwned: 1,
       skippedDuplicates: 0,
-      skippedOwned: 0,
       updateErrors: 0,
     });
-    expect(upsertCalls).toHaveLength(1);
-    const upsert = upsertCalls[0] as { payload: any; options: any };
-    expect(upsert.payload.competence_date).toBe("2025-01-10");
-    expect(upsert.payload.amount).toBe(100);
-    expect(upsert.payload.direction).toBe("receivable");
-    // O upsert deve ser idempotente por (service_id, competence_date).
-    expect(upsert.options).toEqual({
-      onConflict: "service_id,competence_date",
-      ignoreDuplicates: true,
+    expect(from).toHaveBeenCalledTimes(1);
+    expect(rpc).toHaveBeenNthCalledWith(1, "service_bill_checked", {
+      p_service: "a",
+      p_mode: "tick",
+      p_starts: null,
     });
-    expect(updateCalls[0]).toMatchObject({
-      id: "svc-1",
-      payload: { next_billing_at: "2025-02-10", status: "active" },
+    expect(rpc).toHaveBeenNthCalledWith(2, "service_bill_checked", {
+      p_service: "b",
+      p_mode: "tick",
+      p_starts: null,
     });
   });
-
-  it("não conta duplicidade como gerada quando o índice único ignora insert", async () => {
-    const svc = makeService();
-    const { client } = makeAdminMock({ due: [svc], upsertBehavior: "duplicate" });
-
-    const res = await tickServicesBilling(client);
-
-    expect(res.generated).toBe(0);
-    expect(res.skippedDuplicates).toBe(1);
-    expect(res.scanned).toBe(1);
-  });
-
-  it("não gera título nem avança cursor quando a cobrança do serviço pertence às Medições", async () => {
-    const svc = makeService({ id: "svc-owned" });
-    const { client, upsertCalls, updateCalls } = makeAdminMock({
-      due: [svc],
-      ownedIds: ["svc-owned"],
-    });
-
-    const res = await tickServicesBilling(client);
-
-    expect(res.generated).toBe(0);
-    expect(res.skippedOwned).toBe(1);
-    expect(upsertCalls).toHaveLength(0);
-    expect(updateCalls).toHaveLength(0);
-  });
-
-  it("marca status completed quando o próximo ciclo ultrapassa ends_at", async () => {
-    const svc = makeService({
-      next_billing_at: "2025-01-10",
-      ends_at: "2025-01-31",
-      cadence: "monthly",
-    });
-    const { client, updateCalls } = makeAdminMock({ due: [svc] });
-
-    await tickServicesBilling(client);
-
-    expect(updateCalls[0]).toMatchObject({
-      payload: { next_billing_at: null, status: "completed" },
-    });
-  });
-
-  it("registra updateErrors mas não desfaz o generated do upsert", async () => {
-    const svc = makeService();
-    const { client } = makeAdminMock({ due: [svc], updateShouldFail: true });
-
-    const res = await tickServicesBilling(client);
-
-    expect(res.generated).toBe(1);
-    expect(res.updateErrors).toBe(1);
-  });
-
-  it("direção é payable quando o serviço tem role=consumer", async () => {
-    const svc = makeService({ role: "consumer" });
-    const { client, upsertCalls } = makeAdminMock({ due: [svc] });
-
-    await tickServicesBilling(client);
-
-    expect((upsertCalls[0] as { payload: any }).payload.direction).toBe("payable");
-  });
-
-  it("retorna zeros quando não há serviços vencendo", async () => {
-    const { client, upsertCalls } = makeAdminMock({ due: [] });
-    const res = await tickServicesBilling(client);
-    expect(res).toEqual({
+  it("does not bill a revoked delegate and does not count a duplicate as a new invoice", async () => {
+    const { db } = client([
+      { data: { authorized: false }, error: null },
+      { data: { authorized: true, duplicate: true }, error: null },
+    ]);
+    expect(await tickServicesBilling(db)).toEqual({
+      scanned: 2,
       generated: 0,
-      scanned: 0,
-      skippedDuplicates: 0,
       skippedOwned: 0,
+      skippedDuplicates: 1,
       updateErrors: 0,
     });
-    expect(upsertCalls).toHaveLength(0);
+  });
+  it("a failed atomic transaction creates no reported invoice and does not stop other tenants", async () => {
+    const { db } = client([
+      { data: null, error: { message: "transaction rejected" } },
+      { data: { authorized: true, generated: true }, error: null },
+    ]);
+    expect(await tickServicesBilling(db)).toEqual({
+      scanned: 2,
+      generated: 1,
+      skippedOwned: 0,
+      skippedDuplicates: 0,
+      updateErrors: 1,
+    });
   });
 });
-
-// silencia logs de console durante os testes
-vi.spyOn(console, "log").mockImplementation(() => {});
-vi.spyOn(console, "warn").mockImplementation(() => {});
-vi.spyOn(console, "error").mockImplementation(() => {});

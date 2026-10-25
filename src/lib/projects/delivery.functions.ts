@@ -1,3 +1,4 @@
+import { requireWorkPermission } from "@/lib/access-control/work-permission.middleware";
 // Server functions do acompanhamento macro de entrega.
 // Vendedor acessa o projeto pela ponte: deals -> contracts.deal_id -> projects.contract_id.
 // A visibilidade dos registros é garantida por RLS em public.project_updates.
@@ -156,7 +157,7 @@ async function projectWorkspace(supabase: Supa, projectId: string): Promise<stri
 }
 
 export const createProjectUpdate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.project_updates", "create")])
   .inputValidator((input) => checkpointInput.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -188,7 +189,7 @@ export const createProjectUpdate = createServerFn({ method: "POST" })
   });
 
 export const updateProjectUpdate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.project_updates", "update")])
   .inputValidator((input) =>
     checkpointInput
       .partial({ projectId: true, visibility: true })
@@ -230,7 +231,7 @@ export const updateProjectUpdate = createServerFn({ method: "POST" })
   });
 
 export const deleteProjectUpdate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.project_updates", "delete")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;

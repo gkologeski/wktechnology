@@ -1,8 +1,8 @@
+import { requireWorkPermission } from "@/lib/access-control/work-permission.middleware";
 // Server functions do diagnóstico/correção do tipo de documento (Principal x Aditivo).
 // A regra fica em doc-kind.server.ts; aqui só validação de entrada e workspace.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { assertAnyPermission } from "@/lib/access-control/enforce.server";
 
@@ -14,7 +14,7 @@ export type {
 } from "@/lib/contracts/doc-kind.server";
 
 export const diagnoseContractDocKinds = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.links", "view")])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
@@ -25,7 +25,7 @@ export const diagnoseContractDocKinds = createServerFn({ method: "POST" })
   });
 
 export const applyContractDocKinds = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.links", "manage")])
   .inputValidator((input) =>
     z
       .object({

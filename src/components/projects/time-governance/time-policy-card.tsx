@@ -1,3 +1,4 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
 // Política de horas do workspace (versionada). Cada salvamento cria uma nova versão auditada;
 // envios e fechamentos guardam a versão em vigor.
 import { useEffect, useState } from "react";
@@ -58,6 +59,7 @@ const BOOLS: { key: keyof TimePolicy; label: string; hint: string }[] = [
 ];
 
 export function TimePolicyCard() {
+  const { can } = usePermissions();
   const qc = useQueryClient();
   const getFn = useServerFn(getTimePolicy);
   const saveFn = useServerFn(saveTimePolicy);
@@ -159,7 +161,10 @@ export function TimePolicyCard() {
               <Input id="pol-note" value={note} onChange={(e) => setNote(e.target.value)} />
             </div>
           </div>
-          <Button disabled={save.isPending} onClick={() => save.mutate()}>
+          <Button
+            disabled={save.isPending || !can("techprojects.time_policy.manage.workspace")}
+            onClick={() => save.mutate()}
+          >
             {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Salvar nova versão
           </Button>

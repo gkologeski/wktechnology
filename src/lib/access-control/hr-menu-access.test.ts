@@ -39,3 +39,24 @@ it("project dashboard accepts task view while project list remains independent",
   expect(canSeeHrMenu("/projects/dashboard", keys, true)).toBe(true);
   expect(canSeeHrMenu("/projects", keys, true)).toBe(false);
 });
+
+it("hours grants do not grant configuration, and esign is independent from role", () => {
+  expect(
+    canSeeHrMenu(
+      "/projects/settings/time",
+      new Set(["techprojects.time_entries.view.workspace"]),
+      true,
+    ),
+  ).toBe(false);
+  expect(
+    canSeeHrMenu(
+      "/projects/settings/time",
+      new Set(["techprojects.time_policy.view.workspace"]),
+      true,
+    ),
+  ).toBe(true);
+  expect(canSeeHrMenu("/settings/esign", new Set(), true)).toBe(false);
+  expect(
+    canSeeHrMenu("/settings/esign", new Set(["techcontracts.esign.view.workspace"]), true),
+  ).toBe(true);
+});

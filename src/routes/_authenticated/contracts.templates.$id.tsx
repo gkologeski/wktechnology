@@ -1,3 +1,5 @@
+import { WorkAction } from "@/components/work-action";
+import { HrScreenAccess as Order3ScreenAccess } from "@/components/hr-access";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -57,7 +59,7 @@ export const Route = createFileRoute("/_authenticated/contracts/templates/$id")(
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: ContractTemplateEditorPage,
+  component: Order3RouteAccess,
 });
 
 const SERVICE_TYPE_LABEL: Record<string, string> = {
@@ -194,17 +196,21 @@ function ContractTemplateEditorPage() {
           <Button variant="outline" onClick={() => setPreviewOpen(true)}>
             <Eye className="mr-1 h-4 w-4" /> Pré-visualizar
           </Button>
-          <Button variant="outline" onClick={() => save()} disabled={saving}>
-            {saving ? (
-              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="mr-1 h-4 w-4" />
-            )}
-            Salvar rascunho
-          </Button>
-          <Button onClick={() => save({ status: "published" })} disabled={saving}>
-            <Check className="mr-1 h-4 w-4" /> Publicar
-          </Button>
+          <WorkAction resource="techcontracts.contract_templates" action="update" id={id}>
+            <Button variant="outline" onClick={() => save()} disabled={saving}>
+              {saving ? (
+                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-1 h-4 w-4" />
+              )}
+              Salvar rascunho
+            </Button>
+          </WorkAction>
+          <WorkAction resource="techcontracts.contract_templates" action="update" id={id}>
+            <Button onClick={() => save({ status: "published" })} disabled={saving}>
+              <Check className="mr-1 h-4 w-4" /> Publicar
+            </Button>
+          </WorkAction>
         </div>
       </div>
 
@@ -400,5 +406,14 @@ function ContractTemplateEditorPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+const Order3Page = ContractTemplateEditorPage;
+function Order3RouteAccess() {
+  return (
+    <Order3ScreenAccess resources={["techcontracts.contract_templates"]}>
+      <Order3Page />
+    </Order3ScreenAccess>
   );
 }

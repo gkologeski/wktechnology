@@ -29,10 +29,14 @@ export function DealDeliveryPanel({ dealId }: { dealId: string }) {
   const qc = useQueryClient();
   const fetchDelivery = useServerFn(getDealDelivery);
   const removeUpdate = useServerFn(deleteProjectUpdate);
-  const { can } = usePermissions();
+  const { canAny } = usePermissions();
 
-  const canWrite = can("techprojects.project_updates.create.own");
-  const canDelete = can("techprojects.project_updates.delete.workspace");
+  const canWrite = canAny(
+    ["own", "team", "workspace"].map((s) => `techprojects.project_updates.create.${s}`),
+  );
+  const canDelete = canAny(
+    ["own", "team", "workspace"].map((s) => `techprojects.project_updates.delete.${s}`),
+  );
 
   const query = useQuery({
     queryKey: ["deal-delivery", dealId],

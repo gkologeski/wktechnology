@@ -1,3 +1,4 @@
+import { requireWorkPermission } from "@/lib/access-control/work-permission.middleware";
 // Server functions para importar contratos a partir de arquivos .pdf ou .docx.
 // A extração é feita via Lovable AI Gateway (Gemini 2.5 Flash) e devolve JSON estruturado.
 // A criação em `public.contracts` acontece apenas após revisão humana no wizard.
@@ -133,7 +134,7 @@ async function callGeminiExtract(
 // ============= PARSE PDF (base64) =============
 
 export const parseContractPdf = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.imports", "manage")])
   .inputValidator((input) =>
     z
       .object({
@@ -148,6 +149,8 @@ export const parseContractPdf = createServerFn({ method: "POST" })
     const workspaceId = await resolveActiveWorkspace(userId);
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techcontracts.contracts.create.own",
+      "techcontracts.contracts.create.team",
+      "techcontracts.contracts.create.workspace",
     ]);
 
     const dataUrl = `data:application/pdf;base64,${data.base64}`;
@@ -167,7 +170,7 @@ export const parseContractPdf = createServerFn({ method: "POST" })
 // ============= PARSE TEXT (docx já convertido no cliente) =============
 
 export const parseContractText = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.imports", "manage")])
   .inputValidator((input) =>
     z
       .object({
@@ -181,6 +184,8 @@ export const parseContractText = createServerFn({ method: "POST" })
     const workspaceId = await resolveActiveWorkspace(userId);
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techcontracts.contracts.create.own",
+      "techcontracts.contracts.create.team",
+      "techcontracts.contracts.create.workspace",
     ]);
 
     const extracted = await callGeminiExtract([
@@ -234,13 +239,15 @@ async function findCompanyIdByCnpjOrName(
 }
 
 export const createContractFromImport = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.imports", "manage")])
   .inputValidator((input) => CreateFromImportSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techcontracts.contracts.create.own",
+      "techcontracts.contracts.create.team",
+      "techcontracts.contracts.create.workspace",
     ]);
 
     const f = data.fields;
@@ -441,7 +448,7 @@ export const getContractSourceFileUrl = createServerFn({ method: "POST" })
 // aparece na aba de vinculação manual.
 
 export const linkImportedContracts = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.links", "manage")])
   .inputValidator((input) =>
     z.object({ ids: z.array(z.string().uuid()).min(1).max(50) }).parse(input),
   )
@@ -451,6 +458,8 @@ export const linkImportedContracts = createServerFn({ method: "POST" })
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techcontracts.contracts.update.own",
       "techcontracts.contracts.create.own",
+      "techcontracts.contracts.create.team",
+      "techcontracts.contracts.create.workspace",
     ]);
 
     const { resolveReferencedContract } = await import("@/lib/contracts/import-link.server");
@@ -525,7 +534,7 @@ export const linkImportedContracts = createServerFn({ method: "POST" })
 export type { PendingLinkRow } from "./pending-link";
 
 export const listContractsPendingLink = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.links", "view")])
   .inputValidator((input) =>
     z
       .object({
@@ -555,7 +564,7 @@ export const listContractsPendingLink = createServerFn({ method: "POST" })
 
 // Contagem leve da fila de vinculação, usada na badge do botão em /contracts.
 export const countContractsPendingLink = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.links", "view")])
   .handler(async ({ context }) => {
     const { supabase } = context;
     const { computePendingLinks } = await import("./pending-link");
@@ -577,7 +586,7 @@ export const countContractsPendingLink = createServerFn({ method: "POST" })
 
 // Remove um contrato da fila de vinculação (declara que não há contrato par).
 export const dismissContractLink = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.links", "manage")])
   .inputValidator((input) =>
     z.object({ id: z.string().uuid(), dismissed: z.boolean().default(true) }).parse(input),
   )

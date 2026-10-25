@@ -1,3 +1,5 @@
+import { WorkRecordAccess } from "@/components/work-access";
+import { HrScreenAccess as Order3ScreenAccess } from "@/components/hr-access";
 // Visão macro de entrega de um projeto (somente leitura, sem marcos/tarefas/horas).
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
@@ -29,7 +31,7 @@ import {
 import { usePermissions } from "@/lib/access-control/use-permissions";
 
 export const Route = createFileRoute("/_authenticated/projects_/$id/entrega")({
-  component: ProjectDeliveryPage,
+  component: Order3RouteAccess,
 });
 
 function ProjectDeliveryPage() {
@@ -37,14 +39,18 @@ function ProjectDeliveryPage() {
   const qc = useQueryClient();
   const fetchDelivery = useServerFn(getProjectDelivery);
   const removeUpdate = useServerFn(deleteProjectUpdate);
-  const { can } = usePermissions();
+  const { canAny } = usePermissions();
   const [editing, setEditing] = useState<ProjectUpdateRow | null>(null);
 
-  const canWrite = can("techprojects.project_updates.create.own");
-  const canEdit =
-    can("techprojects.project_updates.update.own") ||
-    can("techprojects.project_updates.update.workspace");
-  const canDelete = can("techprojects.project_updates.delete.workspace");
+  const canWrite = canAny(
+    ["own", "team", "workspace"].map((s) => `techprojects.project_updates.create.${s}`),
+  );
+  const canEdit = canAny(
+    ["own", "team", "workspace"].map((s) => `techprojects.project_updates.update.${s}`),
+  );
+  const canDelete = canAny(
+    ["own", "team", "workspace"].map((s) => `techprojects.project_updates.delete.${s}`),
+  );
 
   const query = useQuery({
     queryKey: ["project-delivery", id],
@@ -194,5 +200,17 @@ function ProjectDeliveryPage() {
         />
       )}
     </div>
+  );
+}
+
+const Order3Page = ProjectDeliveryPage;
+function Order3RouteAccess() {
+  const { id } = Route.useParams();
+  return (
+    <WorkRecordAccess resource="techprojects.projects" id={id}>
+      <Order3ScreenAccess resources={["techprojects.project_updates"]}>
+        <Order3Page />
+      </Order3ScreenAccess>
+    </WorkRecordAccess>
   );
 }

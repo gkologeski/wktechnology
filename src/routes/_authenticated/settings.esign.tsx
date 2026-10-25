@@ -1,3 +1,6 @@
+import { HrScreenAccess } from "@/components/hr-access";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { useWorkCapabilities } from "@/lib/access-control/use-work-capabilities";
 import { getPublicAppUrl } from "@/lib/app-url";
 import { formatDateTime } from "@/lib/crm";
 import { useState } from "react";
@@ -36,7 +39,11 @@ import { toast } from "sonner";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/settings/esign")({
-  component: EsignPage,
+  component: () => (
+    <HrScreenAccess resources={["techcontracts.esign"]}>
+      <EsignPage />
+    </HrScreenAccess>
+  ),
 });
 
 const STATUS_LABEL: Record<string, string> = {
@@ -66,6 +73,7 @@ const SIGNER_LABEL: Record<string, string> = {
 
 function EsignPage() {
   const qc = useQueryClient();
+  const permissions = usePermissions();
   const list = useServerFn(listEsignDocuments);
   const create = useServerFn(createEsignDocument);
   const send = useServerFn(sendEsignDocument);
@@ -87,6 +95,10 @@ function EsignPage() {
     queryFn: () => list(),
   });
 
+  const caps = useWorkCapabilities(
+    "techcontracts.esign",
+    docs.map((d) => d.id),
+  );
   const createMut = useMutation({
     mutationFn: () =>
       create({
@@ -145,7 +157,15 @@ function EsignPage() {
       <div className="flex justify-end">
         <Dialog open={openCreate} onOpenChange={setOpenCreate}>
           <DialogTrigger asChild>
-            <Button>
+            <Button
+              disabled={
+                !permissions.canAny([
+                  "techcontracts.esign.create.workspace",
+                  "techcontracts.esign.create.own",
+                  "techcontracts.esign.create.team",
+                ])
+              }
+            >
               <Plus className="h-4 w-4 mr-1" /> Novo documento
             </Button>
           </DialogTrigger>
@@ -303,7 +323,7 @@ function EsignPage() {
                   <Badge variant={STATUS_VARIANT[d.status] ?? "outline"}>
                     {STATUS_LABEL[d.status] ?? d.status}
                   </Badge>
-                  {d.status === "draft" && (
+                  {d.status === "draft" && caps.for(d.id).can_send && (
                     <Button
                       size="sm"
                       variant="outline"
@@ -317,20 +337,22 @@ function EsignPage() {
                       Enviar
                     </Button>
                   )}
-                  {!["completed", "declined", "canceled"].includes(d.status) && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={async () => {
-                        if (!(await confirmDialog("Cancelar este documento?"))) return;
-                        await cancel({ data: { id: d.id } });
-                        qc.invalidateQueries({ queryKey: ["esign-docs"] });
-                      }}
-                    >
-                      Cancelar
-                    </Button>
-                  )}
+                  {!["completed", "declined", "canceled"].includes(d.status) &&
+                    caps.for(d.id).can_cancel && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={async () => {
+                          if (!(await confirmDialog("Cancelar este documento?"))) return;
+                          await cancel({ data: { id: d.id } });
+                          qc.invalidateQueries({ queryKey: ["esign-docs"] });
+                        }}
+                      >
+                        Cancelar
+                      </Button>
+                    )}
                   <Button
+                    disabled={d.status !== "draft" || !caps.for(d.id).can_delete}
                     size="sm"
                     variant="ghost"
                     onClick={async () => {
@@ -355,6 +377,7 @@ function EsignPage() {
 
 function EsignDrawer({ id, onClose }: { id: string | null; onClose: () => void }) {
   const qc = useQueryClient();
+  const access = useWorkCapabilities("techcontracts.esign", id ? [id] : []);
   const get = useServerFn(getEsignDocument);
   const addS = useServerFn(addEsignSigner);
   const rmS = useServerFn(removeEsignSigner);
@@ -408,7 +431,9 @@ function EsignDrawer({ id, onClose }: { id: string | null; onClose: () => void }
                         <Button
                           size="icon"
                           variant="ghost"
+                          disabled={!s.public_token}
                           onClick={async () => {
+                            if (!s.public_token) return;
                             await navigator.clipboard.writeText(publicUrl(s.public_token));
                             toast.success("Link copiado.");
                           }}
@@ -418,23 +443,28 @@ function EsignDrawer({ id, onClose }: { id: string | null; onClose: () => void }
                         <Button
                           size="icon"
                           variant="ghost"
-                          onClick={() => window.open(publicUrl(s.public_token), "_blank")}
+                          disabled={!s.public_token}
+                          onClick={() =>
+                            s.public_token && window.open(publicUrl(s.public_token), "_blank")
+                          }
                         >
                           <ExternalLink className="h-3.5 w-3.5" />
                         </Button>
-                        {s.status === "pending" && (
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={async () => {
-                              await rmS({ data: { id: s.id } });
-                              qc.invalidateQueries({ queryKey: ["esign-doc", id] });
-                              qc.invalidateQueries({ queryKey: ["esign-docs"] });
-                            }}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        )}
+                        {s.status === "pending" &&
+                          data.doc.status === "draft" &&
+                          access.for(id!).can_manage && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={async () => {
+                                await rmS({ data: { id: s.id } });
+                                qc.invalidateQueries({ queryKey: ["esign-doc", id] });
+                                qc.invalidateQueries({ queryKey: ["esign-docs"] });
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
                       </div>
                     </div>
                     {s.signed_at && (
@@ -444,39 +474,41 @@ function EsignDrawer({ id, onClose }: { id: string | null; onClose: () => void }
                     )}
                   </div>
                 ))}
-                <div className="grid grid-cols-[1fr_1fr_70px_auto] gap-2 items-end pt-2">
-                  <Input
-                    placeholder="Nome"
-                    value={newSigner.name}
-                    onChange={(e) => setNewSigner({ ...newSigner, name: e.target.value })}
-                  />
-                  <EmailInput
-                    placeholder="Email"
-                    value={newSigner.email}
-                    onChange={(v) => setNewSigner({ ...newSigner, email: v })}
-                  />
-                  <Input
-                    placeholder="Ord."
-                    type="number"
-                    min={1}
-                    value={newSigner.sign_order}
-                    onChange={(e) =>
-                      setNewSigner({ ...newSigner, sign_order: Number(e.target.value) || 1 })
-                    }
-                  />
-                  <Button
-                    size="sm"
-                    onClick={async () => {
-                      if (!newSigner.name || !newSigner.email) return;
-                      await addS({ data: { documentId: id!, ...newSigner } });
-                      setNewSigner({ name: "", email: "", sign_order: data.signers.length + 1 });
-                      qc.invalidateQueries({ queryKey: ["esign-doc", id] });
-                      qc.invalidateQueries({ queryKey: ["esign-docs"] });
-                    }}
-                  >
-                    Adicionar
-                  </Button>
-                </div>
+                {data.doc.status === "draft" && access.for(id!).can_manage && (
+                  <div className="grid grid-cols-[1fr_1fr_70px_auto] gap-2 items-end pt-2">
+                    <Input
+                      placeholder="Nome"
+                      value={newSigner.name}
+                      onChange={(e) => setNewSigner({ ...newSigner, name: e.target.value })}
+                    />
+                    <EmailInput
+                      placeholder="Email"
+                      value={newSigner.email}
+                      onChange={(v) => setNewSigner({ ...newSigner, email: v })}
+                    />
+                    <Input
+                      placeholder="Ord."
+                      type="number"
+                      min={1}
+                      value={newSigner.sign_order}
+                      onChange={(e) =>
+                        setNewSigner({ ...newSigner, sign_order: Number(e.target.value) || 1 })
+                      }
+                    />
+                    <Button
+                      size="sm"
+                      onClick={async () => {
+                        if (!newSigner.name || !newSigner.email) return;
+                        await addS({ data: { documentId: id!, ...newSigner } });
+                        setNewSigner({ name: "", email: "", sign_order: data.signers.length + 1 });
+                        qc.invalidateQueries({ queryKey: ["esign-doc", id] });
+                        qc.invalidateQueries({ queryKey: ["esign-docs"] });
+                      }}
+                    >
+                      Adicionar
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
 

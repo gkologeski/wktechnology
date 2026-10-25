@@ -1,14 +1,14 @@
+import { requireWorkPermission } from "@/lib/access-control/work-permission.middleware";
 // Server functions dos padrões de contrato do workspace e do pré-preenchimento
 // a partir do negócio.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { assertAnyPermission } from "@/lib/access-control/enforce.server";
 import { CONTRACT_KINDS } from "./contract-kinds";
 
 export const getContractDefaults = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.defaults", "view")])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
@@ -17,7 +17,7 @@ export const getContractDefaults = createServerFn({ method: "POST" })
   });
 
 export const saveContractDefaults = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.defaults", "manage")])
   .inputValidator((input) =>
     z
       .object({
@@ -66,7 +66,7 @@ export const saveContractDefaults = createServerFn({ method: "POST" })
 
 /** Dados do negócio para pré-preencher o formulário de contrato. */
 export const getDealContractPrefill = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.defaults", "view")])
   .inputValidator((input) => z.object({ dealId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;

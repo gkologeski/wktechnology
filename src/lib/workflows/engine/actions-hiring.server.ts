@@ -248,28 +248,21 @@ export async function handleHiringAction(
       const kind: ContractKind = isContractKind(action.kind) ? action.kind : "client";
       const { document_kind, role } = kindToColumns(kind, null);
 
-      if (action.skip_if_exists !== false) {
-        const { data: existing, error: exErr } = await supabase
-          .from("contracts")
-          .select("id")
-          .eq("workspace_id", ctx.workspaceId)
-          .eq("document_kind", document_kind)
-          .eq("role", role)
-          .contains("metadata", { person_id: personId })
-          .not("status", "in", "(ended,terminated)")
-          .limit(1);
-        if (exErr) throw new Error(exErr.message);
-        if (existing && existing.length > 0) {
-          h.contract_id = (existing[0] as { id: string }).id;
-          return {
-            at,
-            ok: true,
-            action: action.type,
-            detail: { skipped: true, contract_id: h.contract_id },
-          };
-        }
-      }
-
+      const { workRpc } = await import("@/lib/access-control/work-core.server");
+      const authorized = await workRpc<boolean>(supabase, "work_delegated_authorize", {
+        p_ws: ctx.workspaceId,
+        p_actor: ctx.ownerId,
+        p_kind: "contract_from_person",
+        p_record: personId,
+        p_copy: false,
+        p_template: action.template_id ?? null,
+        p_status: action.status ?? "draft",
+      });
+      if (!authorized)
+        throw new Error(
+          "O responsável do workflow não possui as permissões atuais para criar o contrato desta pessoa.",
+        );
+      const { candidateId, applicationId } = sourceIds(ctx);
       const { data: person } = await supabase
         .from("people")
         .select("full_name, legal_entity_name")
@@ -295,6 +288,19 @@ export async function handleHiringAction(
       const { contract } = await createContractShared(supabase, {
         workspaceId: ctx.workspaceId,
         userId: ctx.ownerId,
+        skipExisting: action.skip_if_exists !== false,
+        delegation: {
+          kind: "contract_from_person",
+          record: personId,
+          template: action.template_id ?? null,
+        },
+        metadata: {
+          person_id: personId,
+          candidate_id: candidateId,
+          application_id: applicationId,
+          origin: "workflow_hiring",
+          workflow_id: ctx.workflowId ?? null,
+        },
         kind,
         role,
         fields: {
@@ -306,21 +312,6 @@ export async function handleHiringAction(
         bodyHtml,
         status: action.status ?? "draft",
       });
-      const { candidateId, applicationId } = sourceIds(ctx);
-      const { error: mErr } = await supabase
-        .from("contracts")
-        .update({
-          metadata: {
-            person_id: personId,
-            candidate_id: candidateId,
-            application_id: applicationId,
-            origin: "workflow_hiring",
-            workflow_id: ctx.workflowId ?? null,
-          },
-        } as never)
-        .eq("id", contract.id)
-        .eq("workspace_id", ctx.workspaceId);
-      if (mErr) throw new Error(mErr.message);
       h.contract_id = contract.id;
       return { at, ok: true, action: action.type, detail: { contract_id: contract.id, title } };
     }

@@ -1,8 +1,8 @@
 // Sprint 6: Contract approvals (legal / finance / purchasing) + audit events.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { workRpc } from "@/lib/access-control/work-core.server";
+import { requireWorkPermission } from "@/lib/access-control/work-permission.middleware";
 
 const stageEnum = z.enum(["legal", "finance", "purchasing"]);
 const decisionEnum = z.enum(["approved", "rejected"]);
@@ -17,7 +17,7 @@ export function defaultStagesForRole(
 }
 
 export const listContractApprovals = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.approvals", "view")])
   .inputValidator((input) => z.object({ contractId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -25,13 +25,14 @@ export const listContractApprovals = createServerFn({ method: "POST" })
       .from("contract_approvals")
       .select("*")
       .eq("contract_id", data.contractId)
+      .is("superseded_at", null)
       .order("sort_order", { ascending: true });
     if (error) throw error;
     return rows ?? [];
   });
 
 export const listContractEvents = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.audit", "view")])
   .inputValidator((input) => z.object({ contractId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -50,7 +51,7 @@ export const listContractEvents = createServerFn({ method: "POST" })
  * Muda o status do contrato para "in_review".
  */
 export const startContractApprovals = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.approvals", "manage")])
   .inputValidator((input) =>
     z
       .object({
@@ -60,60 +61,18 @@ export const startContractApprovals = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
-
-    const { data: contract, error: cErr } = await supabase
-      .from("contracts")
-      .select("id, role, status")
-      .eq("id", data.contractId)
-      .maybeSingle();
-    if (cErr) throw cErr;
-    if (!contract) throw new Error("Contrato não encontrado");
-
-    const { data: existing } = await (supabase as any)
-      .from("contract_approvals")
-      .select("id, status")
-      .eq("contract_id", data.contractId);
-    if (existing && existing.length > 0) {
-      return { started: false, approvals: existing };
-    }
-
-    const stages = data.stages ?? defaultStagesForRole((contract as any).role);
-    const rows = stages.map((stage, idx) => ({
-      workspace_id: workspaceId,
-      owner_id: userId,
-      contract_id: data.contractId,
-      stage,
-      sort_order: idx,
-      status: "pending" as const,
-    }));
-
-    const { data: created, error: iErr } = await (supabase as any)
-      .from("contract_approvals")
-      .insert(rows)
-      .select("*");
-    if (iErr) throw iErr;
-
-    await supabase.from("contracts").update({ status: "in_review" }).eq("id", data.contractId);
-
-    await (supabase as any).from("contract_events").insert({
-      workspace_id: workspaceId,
-      contract_id: data.contractId,
-      actor_id: userId,
-      event_type: "approvals_started",
-      payload: { stages },
+    return workRpc<{
+      started: boolean;
+      approvals: import("@/integrations/supabase/types").Database["public"]["Tables"]["contract_approvals"]["Row"][];
+    }>(context.supabase, "contract_approval_start", {
+      p_contract: data.contractId,
+      p_stages: data.stages ?? null,
+      p_reset: false,
     });
-
-    return { started: true, approvals: created ?? [] };
   });
 
-/**
- * Aprova ou rejeita uma etapa. Quando todas estão aprovadas, avança o contrato para
- * "awaiting_signature". Uma rejeição volta o contrato para "in_negotiation".
- */
 export const decideContractApproval = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.approvals", "approve")])
   .inputValidator((input) =>
     z
       .object({
@@ -124,75 +83,21 @@ export const decideContractApproval = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
-
-    const { data: approval, error: aErr } = await (supabase as any)
-      .from("contract_approvals")
-      .select("*")
-      .eq("id", data.approvalId)
-      .maybeSingle();
-    if (aErr) throw aErr;
-    if (!approval) throw new Error("Aprovação não encontrada");
-    if (approval.status !== "pending") throw new Error("Etapa já decidida");
-
-    const newStatus = data.decision === "approved" ? "approved" : "rejected";
-    const { error: uErr } = await (supabase as any)
-      .from("contract_approvals")
-      .update({
-        status: newStatus,
-        comment: data.comment ?? null,
-        decided_at: new Date().toISOString(),
-        decided_by: userId,
-        approver_id: approval.approver_id ?? userId,
-      })
-      .eq("id", data.approvalId);
-    if (uErr) throw uErr;
-
-    // Recarrega todas as aprovações para verificar estado agregado.
-    const { data: all } = await (supabase as any)
-      .from("contract_approvals")
-      .select("status")
-      .eq("contract_id", approval.contract_id);
-
-    let contractStatus: string | null = null;
-    if (data.decision === "rejected") {
-      contractStatus = "in_negotiation";
-    } else if ((all ?? []).every((r: any) => r.status === "approved" || r.status === "skipped")) {
-      contractStatus = "awaiting_signature";
-    }
-    if (contractStatus) {
-      await supabase
-        .from("contracts")
-        .update({ status: contractStatus as any })
-        .eq("id", approval.contract_id);
-    }
-
-    await (supabase as any).from("contract_events").insert({
-      workspace_id: workspaceId,
-      contract_id: approval.contract_id,
-      actor_id: userId,
-      event_type: `approval_${data.decision}`,
-      payload: { stage: approval.stage, comment: data.comment ?? null },
-    });
-
-    return { status: newStatus, contractStatus };
+    return workRpc<{ status: string; contractStatus: string | null }>(
+      context.supabase,
+      "contract_approval_decide",
+      { p_approval: data.approvalId, p_decision: data.decision, p_comment: data.comment ?? null },
+    );
   });
 
-/** Reinicia o fluxo removendo aprovações existentes e recriando pendências. */
 export const resetContractApprovals = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.approvals", "manage")])
   .inputValidator((input) => z.object({ contractId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
-    await (supabase as any).from("contract_approvals").delete().eq("contract_id", data.contractId);
-    await (supabase as any).from("contract_events").insert({
-      workspace_id: workspaceId,
-      contract_id: data.contractId,
-      actor_id: userId,
-      event_type: "approvals_reset",
-      payload: {},
+    await workRpc(context.supabase, "contract_approval_start", {
+      p_contract: data.contractId,
+      p_stages: null,
+      p_reset: true,
     });
     return { ok: true };
   });

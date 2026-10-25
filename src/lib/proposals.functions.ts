@@ -229,34 +229,12 @@ export const sendProposal = createServerFn({ method: "POST" })
     });
     const { createHash } = await import("crypto");
     const contentHash = createHash("sha256").update(hashInput).digest("hex");
-    const { error } = await supabase
-      .from("proposals")
-      .update({
-        status: "sent",
-        sent_at: sentAt,
-        locked: true,
-      })
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
-
-    // Seal linked esign document (if any)
-    if (prop.esign_document_id) {
-      await supabase
-        .from("esign_documents")
-        .update({
-          content_hash: contentHash,
-          sealed_at: sentAt,
-        })
-        .eq("id", prop.esign_document_id);
-      await supabase.from("esign_audit").insert({
-        document_id: prop.esign_document_id,
-        owner_id: prop.owner_id,
-        workspace_id: workspaceId,
-        event: "sealed",
-        metadata: { hash: contentHash, proposal_id: prop.id },
-      });
-    }
-    return { ok: true, contentHash };
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    return workRpc<{ ok: boolean; contentHash: string }>(supabase, "proposal_publish_with_esign", {
+      p_id: data.id,
+      p_hash: contentHash,
+      p_sent_at: sentAt,
+    });
   });
 
 // ---------- Clauses (US-14.2) ----------
@@ -380,40 +358,26 @@ export const addEsignAttachment = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await resolveWorkspaceFor(userId);
-    // CA-14.4: max 10 attachments / 25 MB total
-    const { data: existing } = await supabase
-      .from("esign_attachments")
-      .select("size_bytes")
-      .eq("document_id", data.documentId);
-    const count = existing?.length ?? 0;
-    const totalBytes = (existing ?? []).reduce((s, r) => s + (r.size_bytes ?? 0), 0);
-    if (count >= 10) throw new Error("Limite de 10 anexos por envelope.");
-    if (totalBytes + (data.sizeBytes ?? 0) > 25 * 1024 * 1024) {
-      throw new Error("Tamanho total dos anexos excederia 25 MB.");
-    }
-    const { error } = await supabase.from("esign_attachments").insert({
-      workspace_id: workspaceId,
-      document_id: data.documentId,
-      owner_id: userId,
-      file_name: data.fileName,
-      file_url: data.fileUrl,
-      mime_type: data.mimeType ?? null,
-      size_bytes: data.sizeBytes ?? null,
-      sha256: data.sha256 ?? null,
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    return workRpc<{ ok: boolean }>(context.supabase, "contract_esign_attachment", {
+      p_action: "add",
+      p_document: data.documentId,
+      p_id: null,
+      p_data: data,
     });
-    if (error) throw new Error(error.message);
-    return { ok: true };
   });
 
 export const removeEsignAttachment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("esign_attachments").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    return workRpc<{ ok: boolean }>(context.supabase, "contract_esign_attachment", {
+      p_action: "remove",
+      p_document: null,
+      p_id: data.id,
+      p_data: {},
+    });
   });
 
 // ---------- Public verify (CA-14.5) ----------

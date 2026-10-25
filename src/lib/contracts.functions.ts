@@ -1,3 +1,5 @@
+import { workCostTable } from "@/lib/access-control/work-cost-projection";
+import type { Database } from "@/integrations/supabase/types";
 import { assertWorkRecord } from "@/lib/access-control/work-core.server";
 // Server functions for Contracts (Sprint 2 MVP).
 // CRUD, número gerado, criação a partir de deal, transições de status.
@@ -38,8 +40,7 @@ export const listContracts = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    let q = supabase
-      .from("contracts")
+    let q = workCostTable(supabase, "contracts")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(data.limit ?? 200);
@@ -103,8 +104,7 @@ export const listContractsPaged = createServerFn({ method: "POST" })
     const from = (data.page - 1) * data.pageSize;
     const to = from + data.pageSize - 1;
 
-    let q = supabase
-      .from("contracts")
+    let q = workCostTable(supabase, "contracts")
       .select("*", { count: "exact" })
       .order(data.sortBy ?? "created_at", {
         ascending: (data.sortDir ?? "desc") === "asc",
@@ -153,8 +153,7 @@ export const getContract = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { data: row, error } = await supabase
-      .from("contracts")
+    const { data: row, error } = await workCostTable(supabase, "contracts")
       .select("*")
       .eq("id", data.id)
       .maybeSingle();
@@ -173,8 +172,7 @@ export const getContract = createServerFn({ method: "POST" })
     };
     let parent: ParentInfo | null = null;
     if (row.parent_contract_id) {
-      const { data: p } = await supabase
-        .from("contracts")
+      const { data: p } = await workCostTable(supabase, "contracts")
         .select("id, number, title, status, total_value, currency, role")
         .eq("id", row.parent_contract_id)
         .maybeSingle();
@@ -182,8 +180,7 @@ export const getContract = createServerFn({ method: "POST" })
     }
 
     // children (contratos de compra vinculados a este contrato de prestação)
-    const { data: children } = await supabase
-      .from("contracts")
+    const { data: children } = await workCostTable(supabase, "contracts")
       .select(
         "id, number, title, status, total_value, currency, role, counterparty_company_id, starts_at, ends_at, companies:counterparty_company_id(name)",
       )
@@ -210,15 +207,13 @@ export const getContract = createServerFn({ method: "POST" })
     let amendmentOf: AmendmentRow | null = null;
     const rowAny = row as unknown as { amendment_of_id?: string | null };
     if (rowAny.amendment_of_id) {
-      const { data: a } = await supabase
-        .from("contracts")
+      const { data: a } = await workCostTable(supabase, "contracts")
         .select(AMENDMENT_COLS)
         .eq("id", rowAny.amendment_of_id)
         .maybeSingle();
       if (a) amendmentOf = a as unknown as AmendmentRow;
     }
-    const { data: amendments } = await supabase
-      .from("contracts")
+    const { data: amendments } = await workCostTable(supabase, "contracts")
       .select(AMENDMENT_COLS)
       .eq("amendment_of_id", data.id)
       .order("amendment_effective_at", { ascending: true });
@@ -248,8 +243,7 @@ export const listLinkableContracts = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    let query = supabase
-      .from("contracts")
+    let query = workCostTable(supabase, "contracts")
       .select(
         "id, number, title, status, total_value, currency, role, starts_at, ends_at, parent_contract_id, companies:counterparty_company_id(name), parent:contracts!parent_contract_id(id, title, number)",
       )
@@ -299,8 +293,7 @@ export const listOwnContractingPurchaseContracts = createServerFn({ method: "POS
     const ownEntities = await loadOwnLegalEntities(supabase, workspaceId);
     const ownIds = new Set(ownEntities.map((e) => e.id));
 
-    let query = supabase
-      .from("contracts")
+    let query = workCostTable(supabase, "contracts")
       .select(
         "id, number, title, status, total_value, currency, role, contracting_legal_entity_id, metadata, companies:counterparty_company_id(name)",
       )
@@ -385,8 +378,7 @@ export const linkContractParent = createServerFn({ method: "POST" })
     }
 
     // Estado anterior (para registrar de qual contrato ele foi desaninhado).
-    const { data: before } = await supabase
-      .from("contracts")
+    const { data: before } = await workCostTable(supabase, "contracts")
       .select("id, title, number, parent_contract_id, role, document_kind")
       .eq("id", data.childId)
       .maybeSingle();
@@ -408,8 +400,7 @@ export const linkContractParent = createServerFn({ method: "POST" })
         );
       }
 
-      const { data: parentCheck } = await supabase
-        .from("contracts")
+      const { data: parentCheck } = await workCostTable(supabase, "contracts")
         .select("id, role, document_kind, parent_contract_id")
         .eq("id", data.parentId)
         .maybeSingle();
@@ -436,21 +427,11 @@ export const linkContractParent = createServerFn({ method: "POST" })
       }
     }
 
-    const { data: row, error } = await supabase
-      .from("contracts")
-      .update({ parent_contract_id: data.parentId })
-      .eq("id", data.childId)
-      .select("id, parent_contract_id")
-      .maybeSingle();
-    if (error) throw error;
-    if (!row) throw new Error("Você não tem permissão para alterar este vínculo.");
-
     // Título do contrato pai envolvido (o novo, ou o anterior no caso de desaninhar).
     const otherId = data.parentId ?? previousParentId;
     let parentLabel: string | null = null;
     if (otherId) {
-      const { data: parentRow } = await supabase
-        .from("contracts")
+      const { data: parentRow } = await workCostTable(supabase, "contracts")
         .select("title, number")
         .eq("id", otherId)
         .maybeSingle();
@@ -460,7 +441,6 @@ export const linkContractParent = createServerFn({ method: "POST" })
     const childLabel =
       (before as { title?: string | null; number?: string | null } | null)?.title ?? null;
 
-    const eventType = data.parentId ? "parent_linked" : "parent_unlinked";
     const payload = {
       parent_contract_id: data.parentId,
       previous_parent_contract_id: previousParentId,
@@ -470,16 +450,15 @@ export const linkContractParent = createServerFn({ method: "POST" })
       ai_suggestion: data.origin ?? null,
     };
 
-    // Registra nos dois contratos envolvidos para o histórico ficar visível em ambos.
-    const targets = Array.from(new Set([data.childId, otherId].filter(Boolean))) as string[];
-    await (supabase as any).from("contract_events").insert(
-      targets.map((contractId) => ({
-        workspace_id: workspaceId,
-        contract_id: contractId,
-        actor_id: userId,
-        event_type: eventType,
-        payload,
-      })),
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    const row = await workRpc<Database["public"]["Tables"]["contracts"]["Row"]>(
+      supabase,
+      "contract_change_checked",
+      {
+        p_contract: data.childId,
+        p_patch: { parent_contract_id: data.parentId },
+        p_evidence: payload,
+      },
     );
 
     return row;
@@ -578,8 +557,7 @@ export const searchMainContracts = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    let query = supabase
-      .from("contracts")
+    let query = workCostTable(supabase, "contracts")
       .select("id, number, title, status, total_value, currency, role, counterparty_company_id")
       .eq("document_kind", "main")
       .order("created_at", { ascending: false })
@@ -625,9 +603,11 @@ export const linkContractAmendment = createServerFn({ method: "POST" })
     // Aditivo sempre pertence a um contrato principal do MESMO papel.
     if (data.mainContractId) {
       const [{ data: amendmentRow }, { data: mainCheck }] = await Promise.all([
-        supabase.from("contracts").select("id, role").eq("id", data.amendmentId).maybeSingle(),
-        supabase
-          .from("contracts")
+        workCostTable(supabase, "contracts")
+          .select("id, role")
+          .eq("id", data.amendmentId)
+          .maybeSingle(),
+        workCostTable(supabase, "contracts")
           .select("id, role, document_kind")
           .eq("id", data.mainContractId)
           .maybeSingle(),
@@ -657,28 +637,17 @@ export const linkContractAmendment = createServerFn({ method: "POST" })
           amendment_effective_at: null,
         };
 
-    const { data: previous } = await supabase
-      .from("contracts")
+    const { data: previous } = await workCostTable(supabase, "contracts")
       .select("id, title, amendment_of_id")
       .eq("id", data.amendmentId)
       .maybeSingle();
     const previousMainId =
       (previous as { amendment_of_id?: string | null } | null)?.amendment_of_id ?? null;
 
-    const { data: row, error } = await supabase
-      .from("contracts")
-      .update(patch as never)
-      .eq("id", data.amendmentId)
-      .select("id, document_kind, amendment_of_id")
-      .maybeSingle();
-    if (error) throw error;
-    if (!row) throw new Error("Você não tem permissão para alterar este contrato.");
-
     const otherMainId = data.mainContractId ?? previousMainId;
     let mainLabel: string | null = null;
     if (otherMainId) {
-      const { data: mainRow } = await supabase
-        .from("contracts")
+      const { data: mainRow } = await workCostTable(supabase, "contracts")
         .select("title, number")
         .eq("id", otherMainId)
         .maybeSingle();
@@ -695,17 +664,11 @@ export const linkContractAmendment = createServerFn({ method: "POST" })
       ai_suggestion: data.origin ?? null,
     };
 
-    const amendmentTargets = Array.from(
-      new Set([data.amendmentId, otherMainId].filter(Boolean)),
-    ) as string[];
-    await (supabase as any).from("contract_events").insert(
-      amendmentTargets.map((contractId) => ({
-        workspace_id: workspaceId,
-        contract_id: contractId,
-        actor_id: userId,
-        event_type: data.mainContractId ? "amendment_linked" : "amendment_unlinked",
-        payload: amendmentPayload,
-      })),
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    const row = await workRpc<Database["public"]["Tables"]["contracts"]["Row"]>(
+      supabase,
+      "contract_change_checked",
+      { p_contract: data.amendmentId, p_patch: patch, p_evidence: amendmentPayload },
     );
 
     // Reaplica o padrão de título (prefixo [ADITIVO] entra/sai conforme o vínculo).
@@ -962,8 +925,7 @@ export const updateContract = createServerFn({ method: "POST" })
       amendment_effective_at?: string | null;
     };
     if (patchAny.document_kind !== undefined || patchAny.amendment_of_id !== undefined) {
-      const { data: current } = await supabase
-        .from("contracts")
+      const { data: current } = await workCostTable(supabase, "contracts")
         .select("document_kind, amendment_of_id")
         .eq("id", data.id)
         .maybeSingle();
@@ -989,14 +951,10 @@ export const updateContract = createServerFn({ method: "POST" })
       }
     }
 
-    const { data: row, error } = await supabase
-      .from("contracts")
-      .update(data.patch)
-      .eq("id", data.id)
-      .select("*")
-      .single();
-    if (error) throw error;
-    return row;
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    return workRpc<
+      import("@/integrations/supabase/types").Database["public"]["Tables"]["contracts"]["Row"]
+    >(supabase, "contract_mutate", { p_contract: data.id, p_patch: data.patch });
   });
 
 // ============= DELETE =============
@@ -1012,8 +970,7 @@ export const deleteContract = createServerFn({ method: "POST" })
       "techcontracts.contracts.delete.workspace",
       "techcontracts.contracts.delete.own",
     ]);
-    const { data: deleted, error } = await supabase
-      .from("contracts")
+    const { data: deleted, error } = await workCostTable(supabase, "contracts")
       .delete()
       .eq("id", data.id)
       .select("id");
@@ -1037,7 +994,7 @@ export const listContractGroupings = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
 
-    let cq = supabase.from("contracts").select("id, counterparty_company_id").limit(500);
+    let cq = workCostTable(supabase, "contracts").select("id, counterparty_company_id").limit(500);
     if (data.contractIds && data.contractIds.length > 0) {
       cq = cq.in("id", data.contractIds);
     }

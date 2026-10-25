@@ -1,3 +1,4 @@
+import { HrScreenAccess as Order3ScreenAccess } from "@/components/hr-access";
 // Tarifas e custos com vigência do TechProjects (Ciclo 4). Leitura e gestão exigem permissões próprias;
 // o banco recusa sobreposição, edição de valor e retroatividade sem confirmação.
 import { createFileRoute } from "@tanstack/react-router";
@@ -25,7 +26,7 @@ export const Route = createFileRoute("/_authenticated/projects/settings/rates")(
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: RatesPage,
+  component: Order3RouteAccess,
 });
 
 function RatesPage() {
@@ -37,5 +38,14 @@ function RatesPage() {
       />
       <RatesPanel />
     </div>
+  );
+}
+
+const Order3Page = RatesPage;
+function Order3RouteAccess() {
+  return (
+    <Order3ScreenAccess resources={["techprojects.rates"]}>
+      <Order3Page />
+    </Order3ScreenAccess>
   );
 }

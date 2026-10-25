@@ -1,3 +1,4 @@
+import { HrScreenAccess as Order3ScreenAccess } from "@/components/hr-access";
 // Fila de vinculação manual entre contratos de prestação e de compra.
 // Alimentada pela importação em lote: contratos sem par identificado pela IA.
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -60,7 +61,7 @@ export const Route = createFileRoute("/_authenticated/contracts/links")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: ContractLinksPage,
+  component: Order3RouteAccess,
 });
 
 const ROLE_LABEL: Record<string, string> = { provider: "Prestação", client: "Compra" };
@@ -373,5 +374,14 @@ function LinkDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+const Order3Page = ContractLinksPage;
+function Order3RouteAccess() {
+  return (
+    <Order3ScreenAccess resources={["techcontracts.links"]}>
+      <Order3Page />
+    </Order3ScreenAccess>
   );
 }

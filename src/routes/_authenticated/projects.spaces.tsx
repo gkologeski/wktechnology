@@ -1,3 +1,5 @@
+import { WorkAction, WorkCapabilityScope } from "@/components/work-action";
+import { HrScreenAccess as Order3ScreenAccess } from "@/components/hr-access";
 // Sprint C - Fase 4.2 parte 1
 // Hub estilo ClickUp: Espaços → Pastas → Listas.
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -55,7 +57,7 @@ export const Route = createFileRoute("/_authenticated/projects/spaces")({
       },
     ],
   }),
-  component: SpacesHub,
+  component: Order3RouteAccess,
 });
 
 type Space = { id: string; name: string; color: string | null; description: string | null };
@@ -81,42 +83,57 @@ function SpacesHub() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["project-space-tree"] });
 
   return (
-    <div className="p-6 space-y-5">
-      <PageHeader
-        title="Espaços"
-        description="Organize projetos em Espaços, Pastas e Listas. Cada lista tem seus próprios status e tarefas."
-        count={data?.spaces.length}
-        countLabel={(data?.spaces.length ?? 0) === 1 ? "espaço" : "espaços"}
-        actions={<NewSpaceButton onCreated={invalidate} />}
-      />
-
-      {isLoading ? (
-        <div className="p-8 text-center text-sm text-muted-foreground">Carregando…</div>
-      ) : (data?.spaces.length ?? 0) === 0 ? (
-        <div className="rounded-lg border bg-card p-12 text-center">
-          <LayoutGrid className="mx-auto h-10 w-10 text-muted-foreground" />
-          <h3 className="mt-4 text-lg font-medium">Nenhum espaço ainda</h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Crie um espaço para agrupar pastas e listas.
-          </p>
-          <div className="mt-4 flex justify-center">
-            <NewSpaceButton onCreated={invalidate} />
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {data!.spaces.map((s) => (
-            <SpaceCard
-              key={s.id}
-              space={s as Space}
-              folders={(data!.folders as FolderRow[]).filter((f) => f.space_id === s.id)}
-              lists={(data!.lists as ListRow[]).filter((l) => l.space_id === s.id)}
-              onChanged={invalidate}
+    <WorkCapabilityScope resource="techprojects.spaces" ids={data?.spaces.map((r) => r.id) ?? []}>
+      <WorkCapabilityScope
+        resource="techprojects.folders"
+        ids={data?.folders.map((r) => r.id) ?? []}
+      >
+        <WorkCapabilityScope resource="techprojects.lists" ids={data?.lists.map((r) => r.id) ?? []}>
+          <div className="p-6 space-y-5">
+            <PageHeader
+              title="Espaços"
+              description="Organize projetos em Espaços, Pastas e Listas. Cada lista tem seus próprios status e tarefas."
+              count={data?.spaces.length}
+              countLabel={(data?.spaces.length ?? 0) === 1 ? "espaço" : "espaços"}
+              actions={
+                <WorkAction resource="techprojects.spaces" action="create">
+                  <NewSpaceButton onCreated={invalidate} />
+                </WorkAction>
+              }
             />
-          ))}
-        </div>
-      )}
-    </div>
+
+            {isLoading ? (
+              <div className="p-8 text-center text-sm text-muted-foreground">Carregando…</div>
+            ) : (data?.spaces.length ?? 0) === 0 ? (
+              <div className="rounded-lg border bg-card p-12 text-center">
+                <LayoutGrid className="mx-auto h-10 w-10 text-muted-foreground" />
+                <h3 className="mt-4 text-lg font-medium">Nenhum espaço ainda</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Crie um espaço para agrupar pastas e listas.
+                </p>
+                <div className="mt-4 flex justify-center">
+                  <WorkAction resource="techprojects.spaces" action="create">
+                    <NewSpaceButton onCreated={invalidate} />
+                  </WorkAction>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {data!.spaces.map((s) => (
+                  <SpaceCard
+                    key={s.id}
+                    space={s as Space}
+                    folders={(data!.folders as FolderRow[]).filter((f) => f.space_id === s.id)}
+                    lists={(data!.lists as ListRow[]).filter((l) => l.space_id === s.id)}
+                    onChanged={invalidate}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </WorkCapabilityScope>
+      </WorkCapabilityScope>
+    </WorkCapabilityScope>
   );
 }
 
@@ -222,26 +239,34 @@ function SpaceCard({
         <Badge variant="outline" className="text-xs">
           {lists.length} {lists.length === 1 ? "lista" : "listas"}
         </Badge>
-        <NewFolderButton spaceId={space.id} onCreated={onChanged} />
-        <NewListButton spaceId={space.id} onCreated={onChanged} />
-        <CreateListFromTemplateButton spaceId={space.id} onCreated={onChanged} />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              …
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              className="text-destructive"
-              onClick={async () => {
-                if (await confirmDialog("Remover espaço e tudo dentro dele?")) delSpaceM.mutate();
-              }}
-            >
-              <Trash2 className="h-4 w-4 mr-2" /> Remover
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <WorkAction resource="techprojects.folders" action="create">
+          <NewFolderButton spaceId={space.id} onCreated={onChanged} />
+        </WorkAction>
+        <WorkAction resource="techprojects.lists" action="create">
+          <NewListButton spaceId={space.id} onCreated={onChanged} />
+        </WorkAction>
+        <WorkAction resource="techprojects.lists" action="create">
+          <CreateListFromTemplateButton spaceId={space.id} onCreated={onChanged} />
+        </WorkAction>
+        <WorkAction resource="techprojects.spaces" action="delete" id={space.id}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                …
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                className="text-destructive"
+                onClick={async () => {
+                  if (await confirmDialog("Remover espaço e tudo dentro dele?")) delSpaceM.mutate();
+                }}
+              >
+                <Trash2 className="h-4 w-4 mr-2" /> Remover
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </WorkAction>
       </div>
 
       {expanded && (
@@ -296,23 +321,29 @@ function FolderRowUI({
         </button>
         <Folder className="h-4 w-4 text-muted-foreground" />
         <div className="flex-1 text-sm font-medium">{folder.name}</div>
-        <NewListButton spaceId={folder.space_id} folderId={folder.id} onCreated={onChanged} />
-        <CreateListFromTemplateButton
-          spaceId={folder.space_id}
-          folderId={folder.id}
-          onCreated={onChanged}
-        />
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onClick={async () => {
-            if (await confirmDialog("Remover pasta? As listas ficarão soltas no espaço."))
-              delM.mutate();
-          }}
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
+        <WorkAction resource="techprojects.lists" action="create">
+          <NewListButton spaceId={folder.space_id} folderId={folder.id} onCreated={onChanged} />
+        </WorkAction>
+        <WorkAction resource="techprojects.lists" action="create">
+          <CreateListFromTemplateButton
+            spaceId={folder.space_id}
+            folderId={folder.id}
+            onCreated={onChanged}
+          />
+        </WorkAction>
+        <WorkAction resource="techprojects.folders" action="delete" id={folder.id}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={async () => {
+              if (await confirmDialog("Remover pasta? As listas ficarão soltas no espaço."))
+                delM.mutate();
+            }}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </WorkAction>
       </div>
       {open && (
         <div className="pb-2 pl-8 pr-2 space-y-1">
@@ -359,16 +390,18 @@ function ListRowUI({ list, onChanged }: { list: ListRow; onChanged: () => void }
           Sem projeto
         </Badge>
       )}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-7 w-7"
-        onClick={async () => {
-          if (await confirmDialog("Remover lista?")) delM.mutate();
-        }}
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-      </Button>
+      <WorkAction resource="techprojects.lists" action="delete" id={list.id}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={async () => {
+            if (await confirmDialog("Remover lista?")) delM.mutate();
+          }}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+      </WorkAction>
     </div>
   );
 }
@@ -508,5 +541,14 @@ function NewListButton({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+const Order3Page = SpacesHub;
+function Order3RouteAccess() {
+  return (
+    <Order3ScreenAccess resources={["techprojects.spaces"]}>
+      <Order3Page />
+    </Order3ScreenAccess>
   );
 }

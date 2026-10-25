@@ -1,14 +1,14 @@
+import { requireWorkPermission } from "@/lib/access-control/work-permission.middleware";
 // Server functions para importar MODELOS de contrato a partir de .docx/.pdf.
 // O diálogo usa a rota em fluxo /api/contracts/template-import; estas funções
 // permanecem por compatibilidade e delegam ao mesmo conversor.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { ImportedTemplate } from "./template-import.server";
 export type { ImportedTemplate };
 
 export const parseContractTemplatePdf = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.contract_templates", "create")])
   .inputValidator((input) =>
     z
       .object({ filename: z.string().min(1).max(255), base64: z.string().min(20).max(30_000_000) })
@@ -44,7 +44,7 @@ export const parseContractTemplatePdf = createServerFn({ method: "POST" })
   });
 
 export const parseContractTemplateHtml = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.contract_templates", "create")])
   .inputValidator((input) =>
     z
       .object({ filename: z.string().min(1).max(255), html: z.string().min(40).max(400_000) })

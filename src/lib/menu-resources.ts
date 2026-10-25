@@ -161,7 +161,9 @@ export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
   "/contracts/dashboard": ["techcontracts.contracts"],
   "/contracts": ["techcontracts.contracts"],
   "/contracts/templates": ["techcontracts.contract_templates"],
-  "/settings/contract-defaults": ["techcontracts.contracts"],
+  "/settings/esign": ["techcontracts.esign"],
+  "/contracts/links": ["techcontracts.links"],
+  "/settings/contract-defaults": ["techcontracts.defaults"],
   "/services": ["techservice.services"],
 
   // --- TechProjects ----------------------------------------------------------
@@ -174,13 +176,13 @@ export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
   "/projects/timesheet": ["techprojects.timesheet"],
   "/projects/my-hours": ["techprojects.time_entries"],
   "/projects/hours-review": ["techprojects.time_entries", "techprojects.timesheet"],
-  "/projects/settings/imports/clockify": ["system.import"],
-  "/projects/settings/imports/jibble": ["system.import"],
-  "/projects/settings/imports/reconciliation": ["system.import"],
-  "/projects/settings/delivery": ["techprojects.projects"],
+  "/projects/settings/imports/clockify": ["techprojects.clockify_import"],
+  "/projects/settings/imports/jibble": ["techprojects.jibble_import"],
+  "/projects/settings/imports/reconciliation": ["techprojects.reconciliation"],
+  "/projects/settings/delivery": ["techprojects.delivery"],
   // Leitura de agendamentos/filas; a tela e a função exigem administrador ativo do workspace.
-  "/projects/settings/operations": ["system.automation"],
-  "/projects/settings/time": ["techprojects.time_entries", "techprojects.timesheet"],
+  "/projects/settings/operations": ["techprojects.operations"],
+  "/projects/settings/time": ["techprojects.time_policy", "techprojects.delivery_templates"],
   "/projects/settings/rates": ["techprojects.rates"],
 
   // --- TechFinance -----------------------------------------------------------

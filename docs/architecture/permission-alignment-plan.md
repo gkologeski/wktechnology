@@ -1196,3 +1196,41 @@ executadas mutações nem envios externos em produção. Fixtures locais limpos.
 Evidências: projeto ChatGPT, outputs/permission-work-core-2026-10-24/.
 Este primeiro lote está concluído; os próximos lotes da Ordem 3 listados acima
 continuam pendentes. Não declarar toda a Ordem 3 ou as seis etapas concluídas.
+
+### Ordem 3 — fechamento dos lotes restantes (25/10/2026)
+
+Implementação complementar em `0218_order3_completion_prepare.sql` e
+`0219_order3_completion_activate.sql`. Abrange aprovações, transições e histórico
+contratual; assinaturas e seus links públicos; modelos e arquivos privados;
+serviços e cobrança; espaços, pastas, listas, campos e status; tarefas e seus
+filhos; marcos e membros; horas, cronômetro e aprovação; tarifas, medições,
+rentabilidade e exportação; configuração, importação, conciliação e delegações
+de workflows e entrega de negócios. Os mapas de telas, ações e RPCs estão em
+`docs/security/order3-*-map.json`.
+
+A matriz efetiva, membership ativo, workspace de origem/selecionado, deny e
+escopos reais governam as portas de usuário. Nomeação como gestor/aprovador não
+substitui a permissão. As exceções operacionais são referências mínimas de
+lista/tarefa/horas e padrões aplicados à criação; pausar ou descartar o próprio
+cronômetro não cria horas. Configuração de importadores e conciliação conserva a
+exigência adicional de administrador ativo. Links públicos de assinatura validam
+o destinatário, prazo, sequência, selo e estado; não expõem os outros e-mails,
+tokens nem assinaturas. Ofertas ATS mantêm sua porta específica.
+
+Preço de venda do contrato/serviço e valor comercial de um marco continuam
+parte do registro autorizado. Custo planejado e tarifas de membros exigem a
+permissão de rentabilidade/tarifas; alterar esses campos exige gestão de custo ou
+tarifas, além da edição do registro. Exportar rentabilidade exige ação própria
+revalidada no servidor. O catálogo recebe chaves, sem concedê-las a cargos.
+
+Validação da versão: 1.729 testes de código, verificação de tipos e lint;
+115 cenários GoTrue/JWT/PostgREST; 13 cenários Chrome; ensaio integral das duas
+migrações com rollback; regressão de configuração → medição → aprovação por
+outro usuário → Financeiro, sem cobrança duplicada; regressões financeiras e de
+contexto de API. Com 10 mil apontamentos, dashboard e RLS retornam os mesmos IDs
+e 3 milhões de segundos. Nenhum envio externo foi realizado.
+
+A liberação segue preparação aditiva → publicação da fonte validada → ativação
+restritiva → aceite de produção. O fechamento operacional é comprovado pelo
+relatório e pelas evidências em `outputs/permission-order3-completion-2026-10-25`
+no workspace desta tarefa; sucesso local não substitui essa comprovação.

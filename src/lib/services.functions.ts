@@ -1,8 +1,8 @@
+import { requireWorkPermission } from "@/lib/access-control/work-permission.middleware";
 // Server functions for Services (Sprint 3 MVP).
 // CRUD, ativação com cálculo de próxima cobrança, e disparo manual do motor de billing.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { assertAnyPermission } from "@/lib/access-control/enforce.server";
 
@@ -11,28 +11,10 @@ const statusEnum = z.enum(["pending", "active", "paused", "cancelled", "complete
 const cadenceEnum = z.enum(["monthly", "quarterly", "yearly", "on_delivery"]);
 const roleEnum = z.enum(["provider", "client"]);
 
-function addMonths(iso: string, months: number): string {
-  const d = new Date(iso);
-  const target = new Date(d);
-  target.setMonth(target.getMonth() + months);
-  return target.toISOString().slice(0, 10);
-}
-
-function computeNextBilling(
-  fromDate: string,
-  cadence: z.infer<typeof cadenceEnum> | null | undefined,
-): string | null {
-  if (!cadence) return null;
-  if (cadence === "monthly") return addMonths(fromDate, 1);
-  if (cadence === "quarterly") return addMonths(fromDate, 3);
-  if (cadence === "yearly") return addMonths(fromDate, 12);
-  return null; // on_delivery — sem cadência automática
-}
-
 // ============= LIST =============
 
 export const listServices = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techservice.services", "view")])
   .inputValidator((input) =>
     z
       .object({
@@ -51,6 +33,7 @@ export const listServices = createServerFn({ method: "POST" })
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techservice.services.view.workspace",
       "techservice.services.view.own",
+      "techservice.services.view.team",
     ]);
     let q = supabase
       .from("services")
@@ -109,7 +92,7 @@ export const listServices = createServerFn({ method: "POST" })
   });
 
 export const listServiceIds = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techservice.services", "view")])
   .inputValidator((input) =>
     z
       .object({
@@ -126,6 +109,7 @@ export const listServiceIds = createServerFn({ method: "POST" })
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techservice.services.view.workspace",
       "techservice.services.view.own",
+      "techservice.services.view.team",
     ]);
     let q = supabase.from("services").select("id").order("id");
     if (data.status) q = q.eq("status", data.status);
@@ -139,7 +123,7 @@ export const listServiceIds = createServerFn({ method: "POST" })
   });
 
 export const getService = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techservice.services", "view")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -147,6 +131,7 @@ export const getService = createServerFn({ method: "POST" })
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techservice.services.view.workspace",
       "techservice.services.view.own",
+      "techservice.services.view.team",
     ]);
     const { data: row, error } = await supabase
       .from("services")
@@ -181,7 +166,7 @@ const createInput = z.object({
 });
 
 export const createService = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techservice.services", "create")])
   .inputValidator((input) => createInput.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -265,7 +250,7 @@ const patchInput = z.object({
 });
 
 export const updateService = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techservice.services", "update")])
   .inputValidator((input) => patchInput.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -273,6 +258,7 @@ export const updateService = createServerFn({ method: "POST" })
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techservice.services.update.workspace",
       "techservice.services.update.own",
+      "techservice.services.update.team",
     ]);
     const { data: row, error } = await supabase
       .from("services")
@@ -287,13 +273,15 @@ export const updateService = createServerFn({ method: "POST" })
 // ============= DELETE =============
 
 export const deleteService = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techservice.services", "delete")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techservice.services.delete.workspace",
+      "techservice.services.delete.own",
+      "techservice.services.delete.team",
     ]);
     const { data: deleted, error } = await supabase
       .from("services")
@@ -312,7 +300,7 @@ export const deleteService = createServerFn({ method: "POST" })
 // Ativa um serviço: define starts_at, próximo faturamento e (para one_time) gera 1 entry imediatamente.
 
 export const activateService = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techservice.services", "update")])
   .inputValidator((input) =>
     z
       .object({
@@ -322,73 +310,15 @@ export const activateService = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
-    await assertAnyPermission(supabase, userId, workspaceId, [
-      "techservice.services.update.workspace",
-      "techservice.services.update.own",
-    ]);
-
-    const { data: svc, error: sErr } = await supabase
-      .from("services")
-      .select("*")
-      .eq("id", data.id)
-      .maybeSingle();
-    if (sErr) throw sErr;
-    if (!svc) throw new Error("Serviço não encontrado");
-
-    const today = new Date().toISOString().slice(0, 10);
-    const startsAt = data.startsAt ?? svc.starts_at ?? today;
-    const amount = Number(svc.quantity) * Number(svc.unit_price);
-
-    let nextBilling: string | null = null;
-    let newStatus: "active" | "completed" = "active";
-
-    if (svc.type === "one_time") {
-      // Cobrança deste serviço pertence às Medições do TechProjects? Então não gera título paralelo.
-      const { data: owned } = await supabase.rpc("project_billing_service_owned", {
-        p_service: svc.id,
-        p_date: startsAt,
-      });
-      if (owned) {
-        throw new Error(
-          "A cobrança deste serviço é feita pelas Medições do TechProjects nesta competência; gere pelo contrato.",
-        );
-      }
-      // gera 1 entry imediatamente e marca serviço como concluído
-      newStatus = "completed";
-      const { error: fErr } = await supabase.from("financial_entries").insert({
-        workspace_id: workspaceId,
-        owner_id: userId,
-        direction: svc.role === "provider" ? "receivable" : "payable",
-        origin_type: "service",
-        origin_id: svc.id,
-        service_id: svc.id,
-        contract_id: svc.contract_id,
-        description: svc.name,
-        amount,
-        currency: svc.currency,
-        competence_date: startsAt,
-        due_date: startsAt,
-        status: "open",
-      });
-      if (fErr) throw fErr;
-    } else if (svc.type === "recurring") {
-      nextBilling = startsAt;
-    }
-
-    const { data: row, error } = await supabase
-      .from("services")
-      .update({
-        status: newStatus,
-        starts_at: startsAt,
-        next_billing_at: nextBilling,
-      })
-      .eq("id", data.id)
-      .select("*")
-      .single();
-    if (error) throw error;
-    return row;
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    const result = await workRpc<{
+      service: import("@/integrations/supabase/types").Database["public"]["Tables"]["services"]["Row"];
+    }>(context.supabase, "service_bill_checked", {
+      p_service: data.id,
+      p_mode: "activate",
+      p_starts: data.startsAt ?? null,
+    });
+    return result.service;
   });
 
 // ============= BILLING TICK (manual) =============
@@ -396,69 +326,27 @@ export const activateService = createServerFn({ method: "POST" })
 // O tick automático roda via cron chamando /api/public/hooks/services-billing-tick.
 
 export const runServicesBillingNow = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techservice.billing", "manage")])
   .handler(async ({ context }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
-    await assertAnyPermission(supabase, userId, workspaceId, [
-      "techservice.services.update.workspace",
-    ]);
-    const today = new Date().toISOString().slice(0, 10);
-
-    const { data: due, error: dErr } = await supabase
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    const { data, error } = await context.supabase
       .from("services")
-      .select("*")
-      .eq("workspace_id", workspaceId)
+      .select("id")
       .eq("status", "active")
       .eq("type", "recurring")
-      .not("next_billing_at", "is", null)
-      .lte("next_billing_at", today);
-    if (dErr) throw dErr;
-
-    let generated = 0;
-    let skippedOwned = 0;
-    for (const svc of due ?? []) {
-      // Serviço com dono "Medições" na competência: o mecanismo legado não fatura (o banco também recusa).
-      const { data: owned } = await supabase.rpc("project_billing_service_owned", {
-        p_service: svc.id,
-        p_date: svc.next_billing_at as string,
-      });
-      if (owned) {
-        skippedOwned += 1;
-        continue;
-      }
-      const amount = Number(svc.quantity) * Number(svc.unit_price);
-      const next = computeNextBilling(svc.next_billing_at as string, svc.cadence as any);
-      const stops = svc.ends_at && next && next > (svc.ends_at as string);
-
-      const { error: fErr } = await supabase.from("financial_entries").insert({
-        workspace_id: workspaceId,
-        owner_id: userId,
-        direction: svc.role === "provider" ? "receivable" : "payable",
-        origin_type: "service",
-        origin_id: svc.id,
-        service_id: svc.id,
-        contract_id: svc.contract_id,
-        counterparty_company_id: null,
-        description: svc.name,
-        amount,
-        currency: svc.currency,
-        competence_date: svc.next_billing_at as string,
-        due_date: svc.next_billing_at as string,
-        status: "open",
-      });
-      if (fErr) throw fErr;
-      generated += 1;
-
-      await supabase
-        .from("services")
-        .update({
-          next_billing_at: stops ? null : next,
-          status: stops ? "completed" : "active",
-        })
-        .eq("id", svc.id);
+      .lte("next_billing_at", new Date().toISOString().slice(0, 10));
+    if (error) throw error;
+    let generated = 0,
+      skippedOwned = 0;
+    for (const service of data ?? []) {
+      const result = await workRpc<{ generated: boolean; skippedOwned: boolean }>(
+        context.supabase,
+        "service_bill_checked",
+        { p_service: service.id, p_mode: "tick" },
+      );
+      if (result.generated) generated++;
+      if (result.skippedOwned) skippedOwned++;
     }
-
     return { ok: true, generated, skippedOwned };
   });
 
@@ -468,7 +356,7 @@ export const runServicesBillingNow = createServerFn({ method: "POST" })
 // parâmetros comerciais daquela associação.
 
 export const listCatalogServiceOptions = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techservice.services", "view")])
   .inputValidator((input) => z.object({ search: z.string().optional() }).parse(input ?? {}))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -476,6 +364,7 @@ export const listCatalogServiceOptions = createServerFn({ method: "POST" })
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techservice.services.view.workspace",
       "techservice.services.view.own",
+      "techservice.services.view.team",
     ]);
     let q = supabase
       .from("service_catalog")
@@ -506,7 +395,7 @@ const linkCatalogInput = z.object({
 });
 
 export const linkCatalogServiceToContract = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techservice.services", "create")])
   .inputValidator((input) => linkCatalogInput.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -602,7 +491,7 @@ export const linkCatalogServiceToContract = createServerFn({ method: "POST" })
  * Só informa: não altera nada e não bloqueia o contrato.
  */
 export const listServiceDealDivergences = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techservice.services", "view")])
   .inputValidator((input) => z.object({ contractId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -610,6 +499,7 @@ export const listServiceDealDivergences = createServerFn({ method: "POST" })
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techservice.services.view.workspace",
       "techservice.services.view.own",
+      "techservice.services.view.team",
     ]);
 
     const { data: services, error } = await supabase

@@ -120,7 +120,7 @@ function SignPage() {
                     {s.id === signer.id && <span className="text-xs text-primary">(você)</span>}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {s.email} · ordem {s.sign_order}
+                    {s.id === signer.id ? `${signer.email} · ` : ""}ordem {s.sign_order}
                   </div>
                 </div>
                 <Badge

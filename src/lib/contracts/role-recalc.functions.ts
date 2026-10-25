@@ -1,10 +1,10 @@
+import { requireWorkPermission } from "@/lib/access-control/work-permission.middleware";
 // Diagnóstico e reprocessamento em lote do papel (Prestação/Compra) dos contratos.
 // O papel é derivado das empresas do workspace (CNPJ, com fallback por nome),
 // e não do campo `role` gravado pela IA na importação.
 // A regra fica em role-recalc.server.ts para ser reutilizada por outras server functions.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { assertAnyPermission } from "@/lib/access-control/enforce.server";
 
@@ -15,7 +15,7 @@ export type {
 } from "@/lib/contracts/role-recalc.server";
 
 export const diagnoseContractRoles = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.links", "view")])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
@@ -26,7 +26,7 @@ export const diagnoseContractRoles = createServerFn({ method: "POST" })
   });
 
 export const recalcContractRoles = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.links", "manage")])
   .inputValidator((input) =>
     z
       .object({

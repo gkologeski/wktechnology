@@ -1,3 +1,4 @@
+import { WorkAction } from "@/components/work-action";
 // Refinos Sprint E: salvar lista como template e criar lista a partir de template.
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -178,16 +179,18 @@ export function CreateListFromTemplateButton({
                   >
                     <div className="flex items-center justify-between">
                       <div className="font-medium">{t.name}</div>
-                      <span
-                        role="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteM.mutate(t.id);
-                        }}
-                        className="text-muted-foreground hover:text-destructive"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </span>
+                      <WorkAction resource="techprojects.list_templates" action="manage" id={t.id}>
+                        <span
+                          role="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteM.mutate(t.id);
+                          }}
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </span>
+                      </WorkAction>
                     </div>
                     {t.description && (
                       <div className="text-xs text-muted-foreground truncate">{t.description}</div>

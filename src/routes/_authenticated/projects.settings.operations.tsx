@@ -1,3 +1,4 @@
+import { HrScreenAccess as Order3ScreenAccess } from "@/components/hr-access";
 import { createFileRoute } from "@tanstack/react-router";
 import { ProjectsOpsPage } from "@/components/projects/ops/projects-ops-page";
 
@@ -18,5 +19,14 @@ export const Route = createFileRoute("/_authenticated/projects/settings/operatio
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: ProjectsOpsPage,
+  component: Order3RouteAccess,
 });
+
+const Order3Page = ProjectsOpsPage;
+function Order3RouteAccess() {
+  return (
+    <Order3ScreenAccess resources={["techprojects.operations"]}>
+      <Order3Page />
+    </Order3ScreenAccess>
+  );
+}

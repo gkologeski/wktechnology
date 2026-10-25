@@ -1,6 +1,6 @@
+import { requireWorkPermission } from "@/lib/access-control/work-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   decideIssues,
   exportIssuesCsv,
@@ -36,14 +36,14 @@ const issueFilters = z.object({
 });
 
 export const getReconciliationOverview = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.reconciliation", "view")])
   .handler(async ({ context }) => {
     const ctx = await requireReconAdmin(context.supabase, context.userId, { write: false });
     return loadOverview(context.supabase, ctx);
   });
 
 export const getReconciliationBreakdown = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.reconciliation", "view")])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -65,7 +65,7 @@ export const getReconciliationBreakdown = createServerFn({ method: "POST" })
   });
 
 export const listReconciliationIssues = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.reconciliation", "view")])
   .inputValidator((input: unknown) =>
     issueFilters
       .extend({
@@ -80,7 +80,7 @@ export const listReconciliationIssues = createServerFn({ method: "POST" })
   });
 
 export const exportReconciliationIssues = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.reconciliation", "view")])
   .inputValidator((input: unknown) => issueFilters.parse(input))
   .handler(async ({ context, data }) => {
     const ctx = await requireReconAdmin(context.supabase, context.userId, { write: false });
@@ -88,14 +88,14 @@ export const exportReconciliationIssues = createServerFn({ method: "POST" })
   });
 
 export const refreshReconciliationIssues = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.reconciliation", "manage")])
   .handler(async ({ context }) => {
     const ctx = await requireReconAdmin(context.supabase, context.userId, { write: true });
     return refreshIssues(context.supabase, ctx);
   });
 
 export const decideReconciliationIssues = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.reconciliation", "manage")])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -111,21 +111,21 @@ export const decideReconciliationIssues = createServerFn({ method: "POST" })
   });
 
 export const getReconciliationLinks = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.reconciliation", "view")])
   .handler(async ({ context }) => {
     const ctx = await requireReconAdmin(context.supabase, context.userId, { write: false });
     return loadLinks(context.supabase, ctx);
   });
 
 export const applyReconciliationExactLinks = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.reconciliation", "manage")])
   .handler(async ({ context }) => {
     const ctx = await requireReconAdmin(context.supabase, context.userId, { write: true });
     return applyExactLinks(context.supabase, ctx);
   });
 
 export const decideReconciliationSuggestions = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.reconciliation", "manage")])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -141,7 +141,7 @@ export const decideReconciliationSuggestions = createServerFn({ method: "POST" }
   });
 
 export const revertReconciliationLinks = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techprojects.reconciliation", "manage")])
   .inputValidator((input: unknown) =>
     z
       .object({ kind: z.enum(["company", "person"]), subjectIds: z.array(uuid).min(1).max(1000) })

@@ -1,3 +1,5 @@
+import { WorkRecordAccess } from "@/components/work-access";
+import { HrScreenAccess as Order3ScreenAccess } from "@/components/hr-access";
 // Medições e rentabilidade do projeto. Medições são preparadas no contrato; aqui aparecem as que
 // incluem o projeto ou o serviço dele. Valores e custos respeitam as permissões do banco.
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -28,7 +30,7 @@ export const Route = createFileRoute("/_authenticated/projects_/$id/financeiro")
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: ProjectFinancePage,
+  component: Order3RouteAccess,
 });
 
 function ProjectFinancePage() {
@@ -46,8 +48,24 @@ function ProjectFinancePage() {
           </Button>
         }
       />
-      <ProfitabilityPanel projectId={id} />
-      <MeasurementsPanel projectId={id} />
+      <Order3ScreenAccess resources={["techprojects.profitability"]}>
+        <ProfitabilityPanel projectId={id} />
+      </Order3ScreenAccess>
+      <Order3ScreenAccess resources={["techprojects.measurements"]}>
+        <MeasurementsPanel projectId={id} />
+      </Order3ScreenAccess>
     </div>
+  );
+}
+
+const Order3Page = ProjectFinancePage;
+function Order3RouteAccess() {
+  const { id } = Route.useParams();
+  return (
+    <WorkRecordAccess resource="techprojects.projects" id={id}>
+      <Order3ScreenAccess resources={["techprojects.profitability", "techprojects.measurements"]}>
+        <Order3Page />
+      </Order3ScreenAccess>
+    </WorkRecordAccess>
   );
 }

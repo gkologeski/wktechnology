@@ -184,7 +184,7 @@ const sections: Section[] = [
         to: "/settings/esign",
         label: "Assinaturas eletrônicas",
         icon: FileSignature,
-        need: "admin",
+        permission: "techcontracts.esign.view.workspace",
       },
       {
         to: "/settings/payments",

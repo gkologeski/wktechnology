@@ -31,6 +31,12 @@ export async function requireJibbleAdmin(
   opts: { write: boolean },
 ): Promise<Ctx> {
   const workspaceId = await resolveActiveWorkspace(userId);
+  const { workRpc } = await import("@/lib/access-control/work-core.server");
+  await workRpc(supabase, "work_area_authorize", {
+    r: "techprojects.jibble_import",
+    a: opts.write ? "manage" : "view",
+    i: null,
+  });
   const { data, error } = await supabase.rpc("is_active_workspace_admin", {
     _workspace: workspaceId,
     _user: userId,
@@ -389,6 +395,24 @@ export async function advanceJibbleRun(workspaceId: string, runId: string) {
         .eq("id", runId);
       return { advanced: true };
     }
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    const allowed = await workRpc<boolean>(db, "work_import_delegate_allowed", {
+      p_ws: workspaceId,
+      p_actor: claimed.delegation_authorized_by ?? claimed.requested_by,
+      p_provider: "jibble",
+    });
+    if (!allowed) {
+      await db
+        .from("time_import_runs")
+        .update({
+          status: "paused",
+          error:
+            "Permissão do solicitante revogada. Um administrador autorizado deve retomar a importação.",
+        })
+        .eq("id", runId)
+        .eq("workspace_id", workspaceId);
+      return { advanced: false };
+    }
     const conn = await loadConn(workspaceId);
     if (!conn?.credentials_ciphertext || conn.source_org_id !== claimed.source_org_id) {
       await db
@@ -421,7 +445,17 @@ export async function setJibbleRunState(
   const from = action === "resume" ? ["paused", "failed"] : ["queued", "running", "paused"];
   const { data, error } = await db
     .from("time_import_runs")
-    .update({ status: next, error: null, updated_at: new Date().toISOString() })
+    .update({
+      status: next,
+      error: null,
+      updated_at: new Date().toISOString(),
+      ...(action === "resume"
+        ? {
+            delegation_authorized_by: ctx.userId,
+            delegation_authorized_at: new Date().toISOString(),
+          }
+        : {}),
+    })
     .eq("id", runId)
     .eq("workspace_id", ctx.workspaceId)
     .eq("provider", PROVIDER)

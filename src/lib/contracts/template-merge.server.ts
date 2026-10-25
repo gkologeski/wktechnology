@@ -29,8 +29,10 @@ export async function buildMergeContext(
     const { data } = await supabase
       .from("deals")
       .select("id, name, value, currency, company_id")
+      .eq("workspace_id", workspaceId)
       .eq("id", input.dealId)
       .maybeSingle();
+    if (!data) throw new Error("Negócio indisponível neste workspace.");
     deal = data;
   }
 
@@ -40,8 +42,10 @@ export async function buildMergeContext(
     const { data } = await supabase
       .from("companies")
       .select("id, name, cnpj, address, city, state, phone")
+      .eq("workspace_id", workspaceId)
       .eq("id", companyId)
       .maybeSingle();
+    if (!data) throw new Error("Empresa indisponível neste workspace.");
     company = data;
   }
 
@@ -50,6 +54,7 @@ export async function buildMergeContext(
     const { data } = await supabase
       .from("contacts")
       .select("first_name, last_name, email, phone")
+      .eq("workspace_id", workspaceId)
       .eq("company_id", companyId)
       .order("created_at", { ascending: true })
       .limit(1);
@@ -69,8 +74,10 @@ export async function buildMergeContext(
     const { data } = await supabase
       .from("service_catalog")
       .select("name, description, unit, base_price, currency, service_type")
+      .eq("workspace_id", workspaceId)
       .eq("id", input.serviceCatalogId)
       .maybeSingle();
+    if (!data) throw new Error("Serviço do catálogo indisponível neste workspace.");
     service = data;
   }
 
