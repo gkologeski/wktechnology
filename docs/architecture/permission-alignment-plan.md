@@ -1161,3 +1161,38 @@ serviços, modelos, documentos e configurações; espaços/listas/marcos/membros
 filhos de tarefas; ações de configuração/importação/conciliação; exposição de
 campos financeiros e exportação; revisão das delegações de automações e
 integrações. Estes itens continuam pendentes e não são certificados por este lote.
+
+
+Fechamento deste lote (24/10/2026): código `892ba53cc7873694eee7c6410315820771f62c3e`
+publicado nos dois domínios, 12 assets idênticos ao build validado. A integração
+retornou pending sem atualizar o site; a publicação foi concluída pelo botão
+Publicar alterações no editor WK e confirmada por arquivos públicos e pela UI.
+Preparação journal 220 / ativação 221, when 1792873273596 / 1792873273597.
+SHA-256 das migrations: `43a152549a39ebe3355f7b55da00fd482d4aa0d50dc67b829cff03949a36671a`
+e `2c307ad0c9a5db352d424ee7ced3ca1435fafbefe5b1cf4e61d741c0f043ebaa`.
+
+Gates completos sobre a mesma fonte, sem alterações: 1.733 testes em 221 arquivos,
+tipos e lint aprovados; verify 35.870 ms e build 89.746 ms; source_hash
+`4eaff3e35b4e7d6c662e06b9b3642e3df6af4f3dd75fcac389f5a1038b661542`.
+Aceite: 26 casos JWT/PostgREST, seis fluxos Chrome sem erros de página, 18 grupos
+SQL financeiros e quatro verificações de contexto API com rollback. Consulta de
+dashboard com 10 mil tarefas sintéticas: 1.103 ms; leitura direta RLS: 3.249 ms.
+Medição isolada de uma consulta, não promessa de latência de tela ou comparação
+com a versão anterior. SQL/API-context e volume usam identidade SQL local;
+não confundir com testes ponta a ponta de uma chave API real.
+
+Produção: 64 contratos, 172 projetos e 15.862 tarefas preservados; hashes de
+defaults e overrides iguais à foto anterior; 12 políticas canônicas e nove
+proteções Ver Como preservadas. Conjunto de projetos RLS/dashboard tem hash
+`cdadf935d5174b056fa9e20e8c1096e4`; tarefas, `d69d66ccd313fe1deed17cff8fb96118`.
+A conferência combinada perdeu a conexão e foi descartada: a prova final foi
+obtida por consultas separadas, com a mesma identidade e workspace selecionado.
+Capacidades por registro e recusa de não membro passaram. Função de capacidades
+HTTP nos dois domínios recusou ausência/token inválido: protocolo TanStack
+retorna HTTP 200 com erro serializado Unauthorized, sem dados; não alegar 401.
+Nenhum cadastro real foi reescrito nem concessão de cargo ampliada. Não foram
+executadas mutações nem envios externos em produção. Fixtures locais limpos.
+
+Evidências: projeto ChatGPT, outputs/permission-work-core-2026-10-24/.
+Este primeiro lote está concluído; os próximos lotes da Ordem 3 listados acima
+continuam pendentes. Não declarar toda a Ordem 3 ou as seis etapas concluídas.
