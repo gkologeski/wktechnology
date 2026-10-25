@@ -1283,8 +1283,9 @@ bloqueio após revogação.
 
 ## Ordem 5 — revisão transversal em validação (25/10/2026)
 
-Estado: preparada e parcialmente aceita no ambiente isolado. **Não aplicada nem
-publicada em produção.** A Ordem 4 permanece a versão publicada.
+Estado: implementação validada localmente, com preparação aditiva 0227/id391 e
+0228/id392 aplicada em produção. **Ativação e publicação pendentes.** A Ordem 4
+permanece a versão publicada.
 
 O lote cobre Arquivos/compartilhamento, mensageiro interno, objetos e propriedades
 personalizados, branding, biblioteca de mídia, IA, configurações de segurança,
@@ -1307,7 +1308,7 @@ shared_activate; 0230 fields_activate; 0231 storage_activate pelo proprietário
 oficial do Storage. O journal deve acompanhar cada aplicação confirmada. Não
 ativar ACLs de colunas enquanto a aplicação publicada ainda usa consultas brutas.
 
-Evidências atuais: 62 cenários compartilhados e 30 de campos com GoTrue,
+Evidências atuais: 67 cenários compartilhados e 31 de campos com GoTrue,
 PostgREST e Storage reais no ambiente isolado, sem envios externos. Ensaio SQL
 com postgres sem superusuário passou com rollback; REFERENCES auth.users espelha
 privilégio já existente em produção. A interface foi aceita para consulta sem
@@ -1327,3 +1328,13 @@ de revogação instantânea. Essa limitação deve constar do aceite.
 Estimativa inicial 4–7h, revista para 8–12h de execução total após encontrar
 lacunas reais de campo e Storage. Espera por recuperação do provedor é separada;
 nenhum prazo externo pode ser garantido.
+
+Atualização operacional: 1.767 testes, tipos/lint e build passaram no hash
+9355db23baf4bc4efc49722bb51d790a7140b6d7578a90a2301e0d2dd26c2efb.
+Criação e edição administrativa de regra de campo passaram na interface local;
+a lista atualiza sem recarregar. A conta descartável e as regras foram removidas.
+Após 0227/0228, hashes de cargos/defaults/overrides/memberships/regras são iguais.
+A revisão automática rejeitou o envio do código de acesso ao repositório público
+sem autorização explícita dessa exposição. Push CLI sem autenticação e API de
+árvores do GitHub com 403 são bloqueios de sincronização adicionais. Não ativar
+0229/0230 nem declarar publicação até comprovar a fonte nova no hosting.
