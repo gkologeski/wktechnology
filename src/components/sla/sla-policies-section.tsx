@@ -1,3 +1,4 @@
+import { SalesAction } from "@/components/sales-access";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -59,22 +60,26 @@ export function SlaPoliciesSection() {
       <CardHeader className="flex flex-row items-center justify-between gap-2">
         <CardTitle className="text-base">Políticas de SLA por prioridade/fila (tickets)</CardTitle>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={async () => {
-              const r = await runCheck({});
-              toast.success(
-                `Checagem: ${r.first_response_breaches} 1ª resp + ${r.resolution_breaches} resolução`,
-              );
-              qc.invalidateQueries({ queryKey: ["sla-policies"] });
-            }}
-          >
-            <Zap className="h-4 w-4 mr-1" /> Verificar agora
-          </Button>
-          <Button size="sm" onClick={() => setEditing("new")}>
-            <Plus className="h-4 w-4 mr-1" /> Nova política
-          </Button>
+          <SalesAction table="sla_policies" action="manage">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                const r = await runCheck({});
+                toast.success(
+                  `Checagem: ${r.first_response_breaches} 1ª resp + ${r.resolution_breaches} resolução`,
+                );
+                qc.invalidateQueries({ queryKey: ["sla-policies"] });
+              }}
+            >
+              <Zap className="h-4 w-4 mr-1" /> Verificar agora
+            </Button>
+          </SalesAction>
+          <SalesAction table="sla_policies" action="create">
+            <Button size="sm" onClick={() => setEditing("new")}>
+              <Plus className="h-4 w-4 mr-1" /> Nova política
+            </Button>
+          </SalesAction>
         </div>
       </CardHeader>
       <CardContent>
@@ -106,21 +111,25 @@ export function SlaPoliciesSection() {
                     </div>
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <Button size="icon" variant="ghost" onClick={() => setEditing(p)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={async () => {
-                        if (!(await confirmDialog(`Excluir "${p.name}"?`))) return;
-                        await del({ data: { id: p.id } });
-                        toast.success("Política removida");
-                        qc.invalidateQueries({ queryKey: ["sla-policies"] });
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <SalesAction table="sla_policies" action="update" id={p.id}>
+                      <Button size="icon" variant="ghost" onClick={() => setEditing(p)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </SalesAction>
+                    <SalesAction table="sla_policies" action="delete" id={p.id}>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={async () => {
+                          if (!(await confirmDialog(`Excluir "${p.name}"?`))) return;
+                          await del({ data: { id: p.id } });
+                          toast.success("Política removida");
+                          qc.invalidateQueries({ queryKey: ["sla-policies"] });
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </SalesAction>
                   </div>
                 </div>
               );

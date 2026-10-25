@@ -1,3 +1,5 @@
+import { checkedMutationClient } from "@/lib/access-control/checked-mutation-client";
+import { useAssociationMutation } from "./access";
 import { usePersonPhotos } from "@/hooks/use-person-photos";
 import type { AssociationEntity } from "../associations-panel";
 import { useState, type ReactNode } from "react";
@@ -42,6 +44,7 @@ export function AssocCard({
   action?: ReactNode;
   children: ReactNode;
 }) {
+  const canMutate = useAssociationMutation();
   return (
     <div className="bg-card rounded-2xl p-5 shadow-sm border border-border/60 hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between mb-4">
@@ -54,7 +57,7 @@ export function AssocCard({
             </span>
           )}
         </div>
-        {action}
+        {canMutate && action}
       </div>
       {children}
     </div>
@@ -136,6 +139,7 @@ export function AssocItemActions({
   onUnlink?: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const canMutate = useAssociationMutation(link?.params.id);
   return (
     <div
       data-state={open ? "open" : "closed"}
@@ -171,7 +175,7 @@ export function AssocItemActions({
               </Link>
             </DropdownMenuItem>
           )}
-          {onUnlink && (
+          {onUnlink && canMutate && (
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
               onClick={onUnlink}
@@ -186,6 +190,8 @@ export function AssocItemActions({
 }
 
 export function AssocLabelAdder() {
+  const canMutate = useAssociationMutation();
+  if (!canMutate) return null;
   return (
     <button
       type="button"
@@ -257,7 +263,7 @@ export const relCol = (entity: AssociationEntity) =>
         : "related_contact_id";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const sb = supabase as any;
+export const sb = checkedMutationClient(supabase) as any;
 
 /**
  * Hook que adiciona o diálogo "vincular com janela de histórico" (estilo HubSpot)
@@ -348,9 +354,10 @@ export function StagePicker({
   stages: PipelineStage[];
   onChange: (value: string) => void;
 }) {
+  const canMutate = useAssociationMutation(dealId);
   const current = stages.find((s) => s.value === stage);
   const label = current?.label ?? stage;
-  if (!stages.length) {
+  if (!stages.length || !canMutate) {
     return <span className="text-xs text-foreground">{label}</span>;
   }
   return (

@@ -13,6 +13,7 @@ export async function workflowRecord(
   if (!ctx.workflowId) throw new Error("Workflow sem origem de autorização.");
   return workRpc<{ id: string }>(client, "sales_workflow_record", {
     p_workflow: ctx.workflowId,
+    p_version: ctx.workflowVersion ?? null,
     p_table: table,
     p_action: action,
     p_id: id,

@@ -1,3 +1,4 @@
+import { workRpc } from "@/lib/access-control/work-core.server";
 // Controle de fluxo dos workflows: espera, ramificações, escolha por valor,
 // espera até data e aprovação. Extraído de runActions sem mudança de
 // comportamento (mesmos logs, mesma ordem, mesmos motivos de parada).
@@ -397,6 +398,18 @@ export async function runControlAction(
   const title = (renderTokens(action.title, ctx.after, ctx.vars) as string) || "Aprovação";
   const note = action.note ? (renderTokens(action.note, ctx.after, ctx.vars) as string) : null;
   const approver = action.approver_user_id?.trim() || ctx.ownerId;
+  if (
+    !(await workRpc<boolean>(supabase, "sales_workflow_approval_recipient", {
+      p_workflow: ctx.workflowId,
+      p_user: approver,
+      p_entity: ctx.entity,
+      p_id: ctx.entityId,
+      p_version: ctx.workflowVersion ?? null,
+    }))
+  )
+    throw new Error(
+      "Aprovador inativo, sem permissão de decisão ou sem acesso ao registro de origem.",
+    );
   const { data: appr, error: apprErr } = await supabase
     .from("workflow_approvals")
     .insert({
@@ -406,6 +419,7 @@ export async function runControlAction(
       entity: ctx.entity,
       entity_id: ctx.entityId,
       requested_by: ctx.ownerId,
+      workflow_version: ctx.workflowVersion,
       approver_user_id: approver,
       resume_cursor: index + 1,
       status: "pending",

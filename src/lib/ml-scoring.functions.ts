@@ -1,3 +1,5 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { recordUpdatePayload } from "@/lib/access-control/record-update-payload";
 import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -5,6 +7,27 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 const MIN_SAMPLES = 100;
+async function saveModel(
+  db: SupabaseClient,
+  payload: Record<string, unknown>,
+): Promise<{ error: { message: string } | null }> {
+  const { data: existing, error } = await db
+    .from("ml_scoring_models")
+    .select("owner_id")
+    .eq("workspace_id", String(payload.workspace_id))
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  const query = existing
+    ? db
+        .from("ml_scoring_models")
+        .update(recordUpdatePayload(payload))
+        .eq("owner_id", existing.owner_id)
+        .eq("workspace_id", String(payload.workspace_id))
+    : db.from("ml_scoring_models").insert(payload);
+  const result = await query.select("owner_id").single();
+  if (result.error) throw new Error(result.error.message);
+  return result;
+}
 
 export const getMlScoringStatus = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("techsales.prospecting_scoring", "view")])
@@ -34,7 +57,7 @@ export const setMlWeight = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    const { error } = await supabase.from("ml_scoring_models").upsert({
+    const { error } = await saveModel(supabase, {
       owner_id: userId,
       workspace_id: workspaceId,
       weight_ml: data.weight_ml,
@@ -59,7 +82,7 @@ export const trainMlScoring = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     const n = (closed ?? []).length;
     if (n < MIN_SAMPLES) {
-      await supabase.from("ml_scoring_models").upsert({
+      await saveModel(supabase, {
         owner_id: userId,
         workspace_id: workspaceId,
         status: "insufficient_data",
@@ -77,7 +100,7 @@ export const trainMlScoring = createServerFn({ method: "POST" })
       { name: "time_in_stage", importance: 0.2 },
       { name: "engagement_count", importance: 0.2 },
     ];
-    await supabase.from("ml_scoring_models").upsert({
+    await saveModel(supabase, {
       owner_id: userId,
       workspace_id: workspaceId,
       status: "ready",

@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { workspaceOfSource } from "@/lib/workspace-source.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -7,7 +8,7 @@ import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 const WidgetTypeSchema = z.enum(["report", "kpi", "note"]);
 
 export const listDashboards = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.analytics.dashboards", "view")])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("dashboards")
@@ -21,7 +22,7 @@ export const listDashboards = createServerFn({ method: "GET" })
   });
 
 export const createDashboard = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.analytics.dashboards", "create")])
   .inputValidator((d) =>
     z
       .object({
@@ -56,7 +57,7 @@ export const createDashboard = createServerFn({ method: "POST" })
   });
 
 export const updateDashboard = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.analytics.dashboards", "update")])
   .inputValidator((d) =>
     z
       .object({
@@ -94,7 +95,7 @@ export const updateDashboard = createServerFn({ method: "POST" })
   });
 
 export const deleteDashboard = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.analytics.dashboards", "delete")])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("dashboards").delete().eq("id", data.id);
@@ -103,7 +104,7 @@ export const deleteDashboard = createServerFn({ method: "POST" })
   });
 
 export const listWidgets = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.analytics.dashboards", "view")])
   .inputValidator((d) => z.object({ dashboard_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
@@ -117,7 +118,7 @@ export const listWidgets = createServerFn({ method: "POST" })
   });
 
 export const upsertWidget = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.analytics.dashboards", "update")])
   .inputValidator((d) =>
     z
       .object({
@@ -163,7 +164,7 @@ export const upsertWidget = createServerFn({ method: "POST" })
   });
 
 export const deleteWidget = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.analytics.dashboards", "update")])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("dashboard_widgets").delete().eq("id", data.id);
@@ -172,7 +173,7 @@ export const deleteWidget = createServerFn({ method: "POST" })
   });
 
 export const reorderWidgets = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.analytics.dashboards", "update")])
   .inputValidator((d) =>
     z
       .object({

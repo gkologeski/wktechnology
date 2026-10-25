@@ -226,10 +226,10 @@ CREATE POLICY sales_update ON public."outbound_webhooks" FOR UPDATE TO authentic
 CREATE POLICY sales_delete ON public."outbound_webhooks" FOR DELETE TO authenticated USING((public.sales_context_access((SELECT public.sales_access_context()),"outbound_webhooks".workspace_id,'system.webhooks','delete',ARRAY["outbound_webhooks"."owner_id"]::uuid[]) AND (public.sales_context_access((SELECT public.sales_access_context()),"outbound_webhooks".workspace_id,'system.webhooks','view',ARRAY["outbound_webhooks"."owner_id"]::uuid[]))));
 ALTER TABLE public."enrichment_jobs" ENABLE ROW LEVEL SECURITY;
 DO $policy$DECLARE p record;BEGIN FOR p IN SELECT policyname FROM pg_policies WHERE schemaname='public' AND tablename='enrichment_jobs' AND permissive='PERMISSIVE' AND ('authenticated'=ANY(roles) OR 'public'=ANY(roles)) LOOP EXECUTE format('DROP POLICY %I ON public.%I',p.policyname,'enrichment_jobs');END LOOP;END $policy$;
-CREATE POLICY sales_view ON public."enrichment_jobs" FOR SELECT TO authenticated USING((public.sales_context_access((SELECT public.sales_access_context()),"enrichment_jobs".workspace_id,'techsales.prospecting_enrichment','view',ARRAY[coalesce("enrichment_jobs"."assigned_to","enrichment_jobs"."owner_id")]::uuid[])));
-CREATE POLICY sales_create ON public."enrichment_jobs" FOR INSERT TO authenticated WITH CHECK((public.sales_context_access((SELECT public.sales_access_context()),"enrichment_jobs".workspace_id,'techsales.prospecting_enrichment','create',ARRAY[coalesce("enrichment_jobs"."assigned_to","enrichment_jobs"."owner_id")]::uuid[]) AND (public.sales_context_access((SELECT public.sales_access_context()),"enrichment_jobs".workspace_id,'techsales.prospecting_enrichment','view',ARRAY[coalesce("enrichment_jobs"."assigned_to","enrichment_jobs"."owner_id")]::uuid[]))));
-CREATE POLICY sales_update ON public."enrichment_jobs" FOR UPDATE TO authenticated USING((public.sales_context_access((SELECT public.sales_access_context()),"enrichment_jobs".workspace_id,'techsales.prospecting_enrichment','update',ARRAY[coalesce("enrichment_jobs"."assigned_to","enrichment_jobs"."owner_id")]::uuid[]) AND (public.sales_context_access((SELECT public.sales_access_context()),"enrichment_jobs".workspace_id,'techsales.prospecting_enrichment','view',ARRAY[coalesce("enrichment_jobs"."assigned_to","enrichment_jobs"."owner_id")]::uuid[])))) WITH CHECK((public.sales_context_access((SELECT public.sales_access_context()),"enrichment_jobs".workspace_id,'techsales.prospecting_enrichment','update',ARRAY[coalesce("enrichment_jobs"."assigned_to","enrichment_jobs"."owner_id")]::uuid[]) AND (public.sales_context_access((SELECT public.sales_access_context()),"enrichment_jobs".workspace_id,'techsales.prospecting_enrichment','view',ARRAY[coalesce("enrichment_jobs"."assigned_to","enrichment_jobs"."owner_id")]::uuid[]))));
-CREATE POLICY sales_delete ON public."enrichment_jobs" FOR DELETE TO authenticated USING((public.sales_context_access((SELECT public.sales_access_context()),"enrichment_jobs".workspace_id,'techsales.prospecting_enrichment','delete',ARRAY[coalesce("enrichment_jobs"."assigned_to","enrichment_jobs"."owner_id")]::uuid[]) AND (public.sales_context_access((SELECT public.sales_access_context()),"enrichment_jobs".workspace_id,'techsales.prospecting_enrichment','view',ARRAY[coalesce("enrichment_jobs"."assigned_to","enrichment_jobs"."owner_id")]::uuid[]))));
+CREATE POLICY sales_view ON public."enrichment_jobs" FOR SELECT TO authenticated USING((public.sales_context_access((SELECT public.sales_access_context()),"enrichment_jobs".workspace_id,(CASE WHEN "enrichment_jobs".provider='hubspot' THEN 'system.hubspot_sync' ELSE 'techsales.prospecting_enrichment' END),'view',ARRAY[coalesce("enrichment_jobs"."assigned_to","enrichment_jobs"."owner_id")]::uuid[])));
+CREATE POLICY sales_create ON public."enrichment_jobs" FOR INSERT TO authenticated WITH CHECK((public.sales_context_access((SELECT public.sales_access_context()),"enrichment_jobs".workspace_id,(CASE WHEN "enrichment_jobs".provider='hubspot' THEN 'system.hubspot_sync' ELSE 'techsales.prospecting_enrichment' END),'create',ARRAY[coalesce("enrichment_jobs"."assigned_to","enrichment_jobs"."owner_id")]::uuid[]) AND (public.sales_context_access((SELECT public.sales_access_context()),"enrichment_jobs".workspace_id,(CASE WHEN "enrichment_jobs".provider='hubspot' THEN 'system.hubspot_sync' ELSE 'techsales.prospecting_enrichment' END),'view',ARRAY[coalesce("enrichment_jobs"."assigned_to","enrichment_jobs"."owner_id")]::uuid[]))));
+CREATE POLICY sales_update ON public."enrichment_jobs" FOR UPDATE TO authenticated USING((public.sales_context_access((SELECT public.sales_access_context()),"enrichment_jobs".workspace_id,(CASE WHEN "enrichment_jobs".provider='hubspot' THEN 'system.hubspot_sync' ELSE 'techsales.prospecting_enrichment' END),'update',ARRAY[coalesce("enrichment_jobs"."assigned_to","enrichment_jobs"."owner_id")]::uuid[]) AND (public.sales_context_access((SELECT public.sales_access_context()),"enrichment_jobs".workspace_id,(CASE WHEN "enrichment_jobs".provider='hubspot' THEN 'system.hubspot_sync' ELSE 'techsales.prospecting_enrichment' END),'view',ARRAY[coalesce("enrichment_jobs"."assigned_to","enrichment_jobs"."owner_id")]::uuid[])))) WITH CHECK((public.sales_context_access((SELECT public.sales_access_context()),"enrichment_jobs".workspace_id,(CASE WHEN "enrichment_jobs".provider='hubspot' THEN 'system.hubspot_sync' ELSE 'techsales.prospecting_enrichment' END),'update',ARRAY[coalesce("enrichment_jobs"."assigned_to","enrichment_jobs"."owner_id")]::uuid[]) AND (public.sales_context_access((SELECT public.sales_access_context()),"enrichment_jobs".workspace_id,(CASE WHEN "enrichment_jobs".provider='hubspot' THEN 'system.hubspot_sync' ELSE 'techsales.prospecting_enrichment' END),'view',ARRAY[coalesce("enrichment_jobs"."assigned_to","enrichment_jobs"."owner_id")]::uuid[]))));
+CREATE POLICY sales_delete ON public."enrichment_jobs" FOR DELETE TO authenticated USING((public.sales_context_access((SELECT public.sales_access_context()),"enrichment_jobs".workspace_id,(CASE WHEN "enrichment_jobs".provider='hubspot' THEN 'system.hubspot_sync' ELSE 'techsales.prospecting_enrichment' END),'delete',ARRAY[coalesce("enrichment_jobs"."assigned_to","enrichment_jobs"."owner_id")]::uuid[]) AND (public.sales_context_access((SELECT public.sales_access_context()),"enrichment_jobs".workspace_id,(CASE WHEN "enrichment_jobs".provider='hubspot' THEN 'system.hubspot_sync' ELSE 'techsales.prospecting_enrichment' END),'view',ARRAY[coalesce("enrichment_jobs"."assigned_to","enrichment_jobs"."owner_id")]::uuid[]))));
 ALTER TABLE public."booking_pages" ENABLE ROW LEVEL SECURITY;
 DO $policy$DECLARE p record;BEGIN FOR p IN SELECT policyname FROM pg_policies WHERE schemaname='public' AND tablename='booking_pages' AND permissive='PERMISSIVE' AND ('authenticated'=ANY(roles) OR 'public'=ANY(roles)) LOOP EXECUTE format('DROP POLICY %I ON public.%I',p.policyname,'booking_pages');END LOOP;END $policy$;
 CREATE POLICY sales_view ON public."booking_pages" FOR SELECT TO authenticated USING((public.sales_context_access((SELECT public.sales_access_context()),"booking_pages".workspace_id,'system.booking','view',ARRAY["booking_pages"."owner_id"]::uuid[])));
@@ -466,7 +466,7 @@ CREATE POLICY sales_update ON public."live_chat_messages" FOR UPDATE TO authenti
 CREATE POLICY sales_delete ON public."live_chat_messages" FOR DELETE TO authenticated USING(EXISTS(SELECT 1 FROM public."live_chat_sessions" parent_live_chat_sessions WHERE parent_live_chat_sessions."id"="live_chat_messages"."session_id" AND "live_chat_messages".workspace_id=parent_live_chat_sessions.workspace_id AND ((public.sales_context_access((SELECT public.sales_access_context()),parent_live_chat_sessions.workspace_id,'techsales.inbox.chat','update',ARRAY[coalesce(parent_live_chat_sessions."assignee_id",parent_live_chat_sessions."owner_id")]::uuid[]) AND (public.sales_context_access((SELECT public.sales_access_context()),parent_live_chat_sessions.workspace_id,'techsales.inbox.chat','view',ARRAY[coalesce(parent_live_chat_sessions."assignee_id",parent_live_chat_sessions."owner_id")]::uuid[]))))));
 ALTER TABLE public."enrichment_job_items" ENABLE ROW LEVEL SECURITY;
 DO $policy$DECLARE p record;BEGIN FOR p IN SELECT policyname FROM pg_policies WHERE schemaname='public' AND tablename='enrichment_job_items' AND permissive='PERMISSIVE' AND ('authenticated'=ANY(roles) OR 'public'=ANY(roles)) LOOP EXECUTE format('DROP POLICY %I ON public.%I',p.policyname,'enrichment_job_items');END LOOP;END $policy$;
-CREATE POLICY sales_view ON public."enrichment_job_items" FOR SELECT TO authenticated USING(EXISTS(SELECT 1 FROM public."enrichment_jobs" parent_enrichment_jobs WHERE parent_enrichment_jobs."id"="enrichment_job_items"."job_id" AND ((public.sales_context_access((SELECT public.sales_access_context()),parent_enrichment_jobs.workspace_id,'techsales.prospecting_enrichment','view',ARRAY[coalesce(parent_enrichment_jobs."assigned_to",parent_enrichment_jobs."owner_id")]::uuid[])))));
+CREATE POLICY sales_view ON public."enrichment_job_items" FOR SELECT TO authenticated USING(EXISTS(SELECT 1 FROM public."enrichment_jobs" parent_enrichment_jobs WHERE parent_enrichment_jobs."id"="enrichment_job_items"."job_id" AND ((public.sales_context_access((SELECT public.sales_access_context()),parent_enrichment_jobs.workspace_id,(CASE WHEN parent_enrichment_jobs.provider='hubspot' THEN 'system.hubspot_sync' ELSE 'techsales.prospecting_enrichment' END),'view',ARRAY[coalesce(parent_enrichment_jobs."assigned_to",parent_enrichment_jobs."owner_id")]::uuid[])))));
 ALTER TABLE public."webhook_deliveries" ENABLE ROW LEVEL SECURITY;
 DO $policy$DECLARE p record;BEGIN FOR p IN SELECT policyname FROM pg_policies WHERE schemaname='public' AND tablename='webhook_deliveries' AND permissive='PERMISSIVE' AND ('authenticated'=ANY(roles) OR 'public'=ANY(roles)) LOOP EXECUTE format('DROP POLICY %I ON public.%I',p.policyname,'webhook_deliveries');END LOOP;END $policy$;
 CREATE POLICY sales_view ON public."webhook_deliveries" FOR SELECT TO authenticated USING(EXISTS(SELECT 1 FROM public."outbound_webhooks" parent_outbound_webhooks WHERE parent_outbound_webhooks."id"="webhook_deliveries"."webhook_id" AND "webhook_deliveries".workspace_id=parent_outbound_webhooks.workspace_id AND ((public.sales_context_access((SELECT public.sales_access_context()),parent_outbound_webhooks.workspace_id,'system.webhooks','view',ARRAY[parent_outbound_webhooks."owner_id"]::uuid[])))));
@@ -1204,3 +1204,146 @@ REVOKE ALL ON TABLE public.calendar_accounts FROM PUBLIC,anon;
 REVOKE ALL ON TABLE public.integrations FROM PUBLIC,anon;
 REVOKE ALL ON TABLE public.slack_integrations FROM PUBLIC,anon;
 REVOKE ALL ON TABLE public.outbound_webhooks FROM PUBLIC,anon;
+
+-- Marketplace is configuration, never an authentication-only escape hatch.
+ALTER TABLE public.marketplace_installations ENABLE ROW LEVEL SECURITY;
+DO $p$DECLARE p record;BEGIN FOR p IN SELECT policyname FROM pg_policies WHERE schemaname='public' AND tablename='marketplace_installations' AND permissive='PERMISSIVE' AND ('authenticated'=ANY(roles) OR 'public'=ANY(roles)) LOOP EXECUTE format('DROP POLICY %I ON public.marketplace_installations',p.policyname);END LOOP;END$p$;
+CREATE POLICY sales_view ON public.marketplace_installations FOR SELECT TO authenticated USING(sales_context_access((SELECT sales_access_context()),workspace_id,'system.integrations','view',ARRAY[installed_by]));
+CREATE POLICY sales_create ON public.marketplace_installations FOR INSERT TO authenticated WITH CHECK(sales_context_access((SELECT sales_access_context()),workspace_id,'system.integrations','view',ARRAY[installed_by]) AND sales_context_access((SELECT sales_access_context()),workspace_id,'system.integrations','create',ARRAY[installed_by]));
+CREATE POLICY sales_update ON public.marketplace_installations FOR UPDATE TO authenticated USING(sales_context_access((SELECT sales_access_context()),workspace_id,'system.integrations','view',ARRAY[installed_by]) AND sales_context_access((SELECT sales_access_context()),workspace_id,'system.integrations','update',ARRAY[installed_by])) WITH CHECK(sales_context_access((SELECT sales_access_context()),workspace_id,'system.integrations','view',ARRAY[installed_by]) AND sales_context_access((SELECT sales_access_context()),workspace_id,'system.integrations','update',ARRAY[installed_by]));
+CREATE POLICY sales_delete ON public.marketplace_installations FOR DELETE TO authenticated USING(sales_context_access((SELECT sales_access_context()),workspace_id,'system.integrations','view',ARRAY[installed_by]) AND sales_context_access((SELECT sales_access_context()),workspace_id,'system.integrations','delete',ARRAY[installed_by]));
+CREATE TRIGGER zzzz_sales_structure BEFORE INSERT OR UPDATE ON public.marketplace_installations FOR EACH ROW EXECUTE FUNCTION public.sales_row_guard('[]');
+CREATE OR REPLACE FUNCTION public.sales_marketplace_config_guard() RETURNS trigger LANGUAGE plpgsql SET search_path=public,pg_temp AS $$BEGIN
+ IF auth.role()='service_role' THEN RETURN NEW;END IF;
+ IF (TG_OP='INSERT' OR NEW.config IS DISTINCT FROM OLD.config) AND coalesce(NEW.config,'{}')<>'{}'::jsonb THEN RAISE EXCEPTION 'Configure credenciais na integração correspondente, não no Marketplace.' USING ERRCODE='42501';END IF;
+ RETURN NEW;END$$;
+CREATE TRIGGER zzzz_sales_marketplace_config BEFORE INSERT OR UPDATE ON public.marketplace_installations FOR EACH ROW EXECUTE FUNCTION public.sales_marketplace_config_guard();
+ALTER TABLE public.marketplace_apps ENABLE ROW LEVEL SECURITY;
+DO $p$DECLARE p record;BEGIN FOR p IN SELECT policyname FROM pg_policies WHERE schemaname='public' AND tablename='marketplace_apps' AND permissive='PERMISSIVE' AND ('authenticated'=ANY(roles) OR 'public'=ANY(roles)) LOOP EXECUTE format('DROP POLICY %I ON public.marketplace_apps',p.policyname);END LOOP;END$p$;
+CREATE POLICY sales_catalog_view ON public.marketplace_apps FOR SELECT TO authenticated USING(active AND public.sales_context_access((SELECT public.sales_access_context()),(public.sales_access_context()->>'workspace')::uuid,'system.integrations','view',ARRAY[(public.sales_access_context()->>'actor')::uuid]));
+REVOKE ALL ON public.marketplace_apps,public.marketplace_installations FROM PUBLIC,anon;
+
+-- A recording reference cannot be forged to turn a private meeting into a signer
+-- for another record's storage object, including through direct PostgREST writes.
+CREATE OR REPLACE FUNCTION public.sales_meeting_recording_guard() RETURNS trigger LANGUAGE plpgsql SET search_path=public,pg_temp AS $$BEGIN
+ IF NEW.recording_storage_path IS NOT NULL AND (NEW.workspace_id IS NULL OR NEW.recording_storage_path NOT LIKE NEW.workspace_id::text||'/'||NEW.id::text||'/%' OR position('..' IN NEW.recording_storage_path)>0) THEN RAISE EXCEPTION 'Gravação fora da reunião de origem.' USING ERRCODE='42501';END IF;
+ RETURN NEW;END$$;
+CREATE TRIGGER zzzz_sales_meeting_recording BEFORE INSERT OR UPDATE OF recording_storage_path ON public.meetings FOR EACH ROW EXECUTE FUNCTION public.sales_meeting_recording_guard();
+
+-- One-off calls have no campaign parent; their immutable history follows the actual caller.
+CREATE POLICY sales_standalone_call_view ON public.prospecting_call_attempts FOR SELECT TO authenticated USING(campaign_id IS NULL AND sales_context_access((SELECT sales_access_context()),workspace_id,'techsales.prospecting_voice','view',ARRAY[owner_id]));
+
+-- Published agent versions are immutable for normal sessions; promotion uses the atomic authorized service operation.
+CREATE OR REPLACE FUNCTION public.sales_agent_version_guard() RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,pg_temp AS $$BEGIN
+ IF auth.role()='service_role' THEN RETURN CASE WHEN TG_OP='DELETE' THEN OLD ELSE NEW END;END IF;
+ IF TG_OP='INSERT' THEN
+  IF NEW.status<>'draft' OR NEW.published_at IS NOT NULL OR NEW.published_by IS NOT NULL THEN RAISE EXCEPTION 'Crie um rascunho antes de publicar.' USING ERRCODE='42501';END IF;
+ ELSIF OLD.status<>'draft' OR TG_OP='UPDATE' AND (NEW.status<>'draft' OR NEW.published_at IS DISTINCT FROM OLD.published_at OR NEW.published_by IS DISTINCT FROM OLD.published_by) THEN RAISE EXCEPTION 'Versões publicadas/arquivadas são imutáveis; edite um rascunho.' USING ERRCODE='42501';END IF;
+ RETURN CASE WHEN TG_OP='DELETE' THEN OLD ELSE NEW END;
+END$$;
+CREATE TRIGGER zzzz_sales_agent_version BEFORE INSERT OR UPDATE OR DELETE ON public.sdr_agent_versions FOR EACH ROW EXECUTE FUNCTION public.sales_agent_version_guard();
+
+-- Polymorphic summary content and activity comments follow actual source access.
+DO $guard$DECLARE t text;p record;BEGIN
+ FOREACH t IN ARRAY ARRAY['ai_summaries','activity_comments'] LOOP
+  EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY',t);
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname='public' AND tablename=t AND permissive='PERMISSIVE' AND ('authenticated'=ANY(roles) OR 'public'=ANY(roles)) LOOP EXECUTE format('DROP POLICY %I ON public.%I',p.policyname,t);END LOOP;
+ END LOOP;
+END$guard$;
+CREATE POLICY sales_view ON public.ai_summaries FOR SELECT TO authenticated USING(sales_summary_context_access((SELECT sales_access_context()),workspace_id,owner_id,entity,entity_id,source_refs,'view'));
+CREATE POLICY sales_create ON public.ai_summaries FOR INSERT TO authenticated WITH CHECK(owner_id=auth.uid() AND sales_summary_context_access((SELECT sales_access_context()),workspace_id,owner_id,entity,entity_id,source_refs,'create'));
+CREATE POLICY sales_delete ON public.ai_summaries FOR DELETE TO authenticated USING(sales_summary_context_access((SELECT sales_access_context()),workspace_id,owner_id,entity,entity_id,source_refs,'delete'));
+CREATE TRIGGER zzzz_sales_structure BEFORE INSERT OR UPDATE ON public.ai_summaries FOR EACH ROW EXECUTE FUNCTION public.sales_row_guard('[]');
+CREATE POLICY sales_view ON public.activity_comments FOR SELECT TO authenticated USING(sales_record_access('activities',activity_id,'view'));
+CREATE POLICY sales_create ON public.activity_comments FOR INSERT TO authenticated WITH CHECK(author_id=auth.uid() AND sales_record_access('activities',activity_id,'update'));
+CREATE POLICY sales_update ON public.activity_comments FOR UPDATE TO authenticated USING(sales_record_access('activities',activity_id,'update')) WITH CHECK(sales_record_access('activities',activity_id,'update'));
+CREATE POLICY sales_delete ON public.activity_comments FOR DELETE TO authenticated USING(sales_record_access('activities',activity_id,'update'));
+CREATE TRIGGER zzzz_sales_structure BEFORE INSERT OR UPDATE ON public.activity_comments FOR EACH ROW EXECUTE FUNCTION public.sales_row_guard('[{"column":"activity_id","table":"activities","reference":"id"}]');
+REVOKE ALL ON public.ai_summaries,public.activity_comments FROM anon;
+CREATE OR REPLACE FUNCTION public.sales_comment_author_guard() RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,pg_temp AS $$BEGIN
+ IF auth.role() IS DISTINCT FROM 'service_role' AND (TG_OP='INSERT' AND NEW.author_id IS DISTINCT FROM auth.uid() OR TG_OP='UPDATE' AND NEW.author_id IS DISTINCT FROM OLD.author_id) THEN RAISE EXCEPTION 'Autoria do comentário é imutável.' USING ERRCODE='42501';END IF;
+ RETURN NEW;
+END$$;
+CREATE TRIGGER zzzz_sales_comment_author BEFORE INSERT OR UPDATE ON public.activity_comments FOR EACH ROW EXECUTE FUNCTION public.sales_comment_author_guard();
+
+CREATE OR REPLACE FUNCTION public.sales_live_workflow_guard() RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,pg_temp AS $$
+DECLARE c jsonb:=sales_access_context();j jsonb:=to_jsonb(NEW);o jsonb:=CASE WHEN TG_OP='UPDATE' THEN to_jsonb(OLD) ELSE '{}' END;w uuid:=NEW.workspace_id;BEGIN
+ IF auth.role()='service_role' THEN RETURN NEW;END IF;
+ IF TG_TABLE_NAME='workflow_subscriptions' THEN
+  IF TG_OP='INSERT' OR j->'action' IS DISTINCT FROM o->'action' OR j->'event_pattern' IS DISTINCT FROM o->'event_pattern' OR j->'enabled' IS DISTINCT FROM o->'enabled' OR j->'execution_user_id' IS DISTINCT FROM o->'execution_user_id' THEN
+   IF NOT sales_context_access(c,w,'system.workflows','manage',ARRAY[(j->>'owner_id')::uuid]) OR (coalesce((j->>'enabled')::boolean,false) AND nullif(j->>'execution_user_id','')::uuid IS DISTINCT FROM auth.uid()) THEN RAISE EXCEPTION 'Ative/salve a automação com seu próprio responsável de execução e permissão de gestão.' USING ERRCODE='42501';END IF;
+  END IF;
+ ELSIF (TG_OP='INSERT' AND j->>'status'='published') OR (TG_OP='UPDATE' AND (j->'published_version' IS DISTINCT FROM o->'published_version' OR j->'execution_user_id' IS DISTINCT FROM o->'execution_user_id' OR j->'entity' IS DISTINCT FROM o->'entity' OR j->'actions' IS DISTINCT FROM o->'actions' OR j->'trigger' IS DISTINCT FROM o->'trigger' OR j->'goal_filters' IS DISTINCT FROM o->'goal_filters' OR j->'status' IS DISTINCT FROM o->'status' OR j->'enabled' IS DISTINCT FROM o->'enabled')) THEN
+  IF (coalesce((j->>'enabled')::boolean,false) AND nullif(j->>'execution_user_id','')::uuid IS DISTINCT FROM auth.uid()) OR NOT sales_context_access(c,w,'system.workflows','manage',ARRAY[coalesce((j->>'assigned_to')::uuid,(j->>'owner_id')::uuid)]) THEN RAISE EXCEPTION 'Publicação/ativação de workflow exige gestão explícita.' USING ERRCODE='42501';END IF;
+ END IF;
+ IF TG_TABLE_NAME='workflows' AND TG_OP='UPDATE' AND (j->'actions' IS DISTINCT FROM o->'actions' OR j->'trigger' IS DISTINCT FROM o->'trigger' OR j->'goal_filters' IS DISTINCT FROM o->'goal_filters' OR j->'entity' IS DISTINCT FROM o->'entity') AND (j->>'published_version')::integer IS DISTINCT FROM coalesce((o->>'published_version')::integer,0)+1 THEN RAISE EXCEPTION 'Alteração do fluxo executável exige uma nova versão publicada.' USING ERRCODE='42501';END IF;
+ RETURN NEW;
+END$$;
+CREATE TRIGGER zzzz_sales_live_workflow BEFORE INSERT OR UPDATE ON public.workflows FOR EACH ROW EXECUTE FUNCTION public.sales_live_workflow_guard();
+CREATE TRIGGER zzzz_sales_live_workflow BEFORE INSERT OR UPDATE ON public.workflow_subscriptions FOR EACH ROW EXECUTE FUNCTION public.sales_live_workflow_guard();
+
+CREATE OR REPLACE FUNCTION public.sales_report_execution_guard() RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,pg_temp AS $$BEGIN
+ IF auth.role()='service_role' THEN RETURN NEW;END IF;
+ IF NEW.execution_user_id IS DISTINCT FROM auth.uid() OR NOT sales_record_access('custom_reports',NEW.report_id,'export') THEN RAISE EXCEPTION 'Salvar/ativar exportação exige seu próprio responsável e exportação explícita do relatório.' USING ERRCODE='42501';END IF;
+ RETURN NEW;
+END$$;
+CREATE TRIGGER zzzz_sales_report_execution BEFORE INSERT OR UPDATE ON public.report_schedules FOR EACH ROW EXECUTE FUNCTION public.sales_report_execution_guard();
+-- No scheduled CSV is persisted. Refuse activation if an older export archive
+-- appears; storage policies are owned by the hosting platform, not this migration.
+DO $storage$BEGIN
+ IF to_regclass('storage.objects') IS NOT NULL AND (EXISTS(SELECT 1 FROM storage.objects WHERE bucket_id='exports') OR EXISTS(SELECT 1 FROM storage.buckets WHERE id='exports' AND public)) THEN
+  RAISE EXCEPTION 'Revise os arquivos e a privacidade do bucket de exports antes de ativar.';
+ END IF;
+END$storage$;
+
+ALTER TABLE public.workflow_events ENABLE ROW LEVEL SECURITY;
+DO $event$DECLARE p record;BEGIN
+ FOR p IN SELECT policyname FROM pg_policies WHERE schemaname='public' AND tablename='workflow_events' AND permissive='PERMISSIVE' AND ('authenticated'=ANY(roles) OR 'public'=ANY(roles)) LOOP EXECUTE format('DROP POLICY %I ON public.workflow_events',p.policyname);END LOOP;
+END$event$;
+CREATE POLICY sales_view ON public.workflow_events FOR SELECT TO authenticated USING(sales_context_access((SELECT sales_access_context()),workspace_id,'system.workflows','view',ARRAY[owner_id]) AND sales_event_reference_access(entity,entity_id));
+CREATE POLICY sales_create ON public.workflow_events FOR INSERT TO authenticated WITH CHECK(owner_id=auth.uid() AND sales_context_access((SELECT sales_access_context()),workspace_id,'system.workflows','manage',ARRAY[owner_id]) AND sales_event_reference_access(entity,entity_id));
+CREATE POLICY sales_update ON public.workflow_events FOR UPDATE TO authenticated USING(sales_context_access((SELECT sales_access_context()),workspace_id,'system.workflows','manage',ARRAY[owner_id]) AND sales_event_reference_access(entity,entity_id)) WITH CHECK(sales_context_access((SELECT sales_access_context()),workspace_id,'system.workflows','manage',ARRAY[owner_id]) AND sales_event_reference_access(entity,entity_id));
+REVOKE ALL ON public.workflow_events FROM anon;
+CREATE POLICY sales_run_source ON public.workflow_runs AS RESTRICTIVE FOR SELECT TO authenticated USING(workspace_id=(sales_access_context()->>'workspace')::uuid AND sales_event_reference_access(entity,entity_id));
+CREATE POLICY sales_approval_source ON public.workflow_approvals AS RESTRICTIVE FOR SELECT TO authenticated USING(workspace_id=(sales_access_context()->>'workspace')::uuid AND sales_event_reference_access(entity,entity_id));
+
+DROP POLICY sales_view ON public.workflow_approvals;
+DROP POLICY sales_create ON public.workflow_approvals;
+DROP POLICY sales_update ON public.workflow_approvals;
+DROP POLICY sales_delete ON public.workflow_approvals;
+CREATE POLICY sales_view ON public.workflow_approvals FOR SELECT TO authenticated USING(sales_approval_access((SELECT sales_access_context()),workspace_id,approver_user_id,'view',entity,entity_id));
+CREATE POLICY sales_decide ON public.workflow_approvals FOR UPDATE TO techerp_api_subject USING(status='pending' AND sales_approval_access((SELECT sales_access_context()),workspace_id,approver_user_id,'manage',entity,entity_id)) WITH CHECK(sales_approval_access((SELECT sales_access_context()),workspace_id,approver_user_id,'manage',entity,entity_id));
+REVOKE INSERT,UPDATE,DELETE ON public.workflow_approvals FROM authenticated,anon;
+GRANT UPDATE(status,decided_at,decided_by,decision_comment,updated_at) ON public.workflow_approvals TO techerp_api_subject;
+
+-- Queue cursors/snapshots are trusted execution state, never client-authored commands.
+REVOKE INSERT,UPDATE,DELETE ON public.workflow_events FROM authenticated,anon;
+
+DO $score$DECLARE p record;BEGIN
+ FOR p IN SELECT policyname FROM pg_policies WHERE schemaname='public' AND tablename='score_events' AND permissive='PERMISSIVE' AND ('authenticated'=ANY(roles) OR 'public'=ANY(roles)) LOOP EXECUTE format('DROP POLICY %I ON public.score_events',p.policyname);END LOOP;
+END $score$;
+CREATE POLICY sales_view ON public.score_events FOR SELECT TO authenticated USING(workspace_id=(sales_access_context()->>'workspace')::uuid AND sales_record_access('scoring_rules',rule_id,'view') AND sales_record_access(entity,entity_id,'view'));
+CREATE POLICY sales_score_audit ON public.score_events FOR INSERT TO techerp_api_subject WITH CHECK(owner_id=auth.uid() AND workspace_id=(sales_access_context()->>'workspace')::uuid AND sales_record_access('scoring_rules',rule_id,'manage') AND sales_record_access(entity,entity_id,'update'));
+REVOKE INSERT,UPDATE,DELETE ON public.score_events FROM authenticated,anon;
+
+DO $aux$DECLARE t text;p record;BEGIN
+ FOREACH t IN ARRAY ARRAY['stage_entries','attribution_touchpoints','sla_policies'] LOOP
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname='public' AND tablename=t AND permissive='PERMISSIVE' AND ('authenticated'=ANY(roles) OR 'public'=ANY(roles)) LOOP EXECUTE format('DROP POLICY %I ON public.%I',p.policyname,t);END LOOP;
+ END LOOP;
+END $aux$;
+CREATE POLICY sales_view ON public.stage_entries FOR SELECT TO authenticated USING(workspace_id=(sales_access_context()->>'workspace')::uuid AND sales_event_reference_access(entity,entity_id));
+CREATE POLICY sales_update ON public.stage_entries FOR UPDATE TO authenticated USING(sales_context_access((SELECT sales_access_context()),workspace_id,'system.automation.sla','manage',ARRAY[auth.uid()]) AND sales_record_access('pipelines',pipeline_id,'update') AND sales_event_reference_access(entity,entity_id)) WITH CHECK(sales_context_access((SELECT sales_access_context()),workspace_id,'system.automation.sla','manage',ARRAY[auth.uid()]) AND sales_record_access('pipelines',pipeline_id,'update') AND sales_event_reference_access(entity,entity_id));
+REVOKE INSERT,DELETE ON public.stage_entries FROM authenticated,anon;
+REVOKE UPDATE ON public.stage_entries FROM authenticated;
+GRANT UPDATE(sla_hours) ON public.stage_entries TO authenticated;
+CREATE POLICY sales_view ON public.attribution_touchpoints FOR SELECT TO authenticated USING(sales_touchpoint_access((SELECT sales_access_context()),workspace_id,contact_id,lead_id,deal_id,'view'));
+CREATE POLICY sales_create ON public.attribution_touchpoints FOR INSERT TO authenticated WITH CHECK(owner_id=auth.uid() AND sales_touchpoint_access((SELECT sales_access_context()),workspace_id,contact_id,lead_id,deal_id,'create'));
+REVOKE UPDATE,DELETE ON public.attribution_touchpoints FROM authenticated,anon;
+CREATE POLICY sales_view ON public.sla_policies FOR SELECT TO authenticated USING(sales_context_access((SELECT sales_access_context()),workspace_id,'system.automation.sla','view',ARRAY[auth.uid()]));
+CREATE POLICY sales_create ON public.sla_policies FOR INSERT TO authenticated WITH CHECK((sales_context_access((SELECT sales_access_context()),workspace_id,'system.automation.sla','create',ARRAY[auth.uid()]) AND sales_context_access((SELECT sales_access_context()),workspace_id,'system.automation.sla','view',ARRAY[auth.uid()])));
+CREATE POLICY sales_update ON public.sla_policies FOR UPDATE TO authenticated USING((sales_context_access((SELECT sales_access_context()),workspace_id,'system.automation.sla','update',ARRAY[auth.uid()]) AND sales_context_access((SELECT sales_access_context()),workspace_id,'system.automation.sla','view',ARRAY[auth.uid()]))) WITH CHECK((sales_context_access((SELECT sales_access_context()),workspace_id,'system.automation.sla','update',ARRAY[auth.uid()]) AND sales_context_access((SELECT sales_access_context()),workspace_id,'system.automation.sla','view',ARRAY[auth.uid()])));
+CREATE POLICY sales_delete ON public.sla_policies FOR DELETE TO authenticated USING((sales_context_access((SELECT sales_access_context()),workspace_id,'system.automation.sla','delete',ARRAY[auth.uid()]) AND sales_context_access((SELECT sales_access_context()),workspace_id,'system.automation.sla','view',ARRAY[auth.uid()])));
+CREATE TRIGGER zzzz_sales_structure BEFORE INSERT OR UPDATE ON public.sla_policies FOR EACH ROW EXECUTE FUNCTION public.sales_row_guard('[{"column":"pipeline_id","table":"pipelines","reference":"id"}]');
+CREATE TRIGGER zzzz_sales_structure BEFORE INSERT OR UPDATE ON public.attribution_touchpoints FOR EACH ROW EXECUTE FUNCTION public.sales_row_guard('[{"column":"contact_id","table":"contacts","reference":"id"},{"column":"lead_id","table":"leads","reference":"id"},{"column":"deal_id","table":"deals","reference":"id"}]');
+
+REVOKE ALL ON public.score_events,public.stage_entries,public.attribution_touchpoints,public.sla_policies FROM anon;

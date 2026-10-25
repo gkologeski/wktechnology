@@ -1,3 +1,4 @@
+import { hubspotRequestGuard } from "./hubspot-api.server";
 // Etapa "deals" da importação do HubSpot — extraída de hubspot-steps.server.ts
 import {
   type HSRec,
@@ -57,7 +58,7 @@ export async function runDealsStep(args: StepRunArgs): Promise<StepResult | void
     });
   }
 
-  const dealProps = await loadHsProperties("deals");
+  const dealProps = await loadHsProperties("deals", hubspotRequestGuard(supabase));
   const dealPropsList = dealProps.length
     ? dealProps
     : ["dealname", "amount", "dealstage", "closedate", "pipeline"];
@@ -73,10 +74,10 @@ export async function runDealsStep(args: StepRunArgs): Promise<StepResult | void
         break;
       }
       const chunkIds = targetIds.slice(idx, idx + CHUNK);
-      const recs = await batchRead("deals", chunkIds, dealPropsList);
+      const recs = await batchRead("deals", chunkIds, dealPropsList, hubspotRequestGuard(supabase));
       const [dealCompanies, dealContacts] = await Promise.all([
-        getAssocMany("deals", chunkIds, "companies", 20),
-        getAssocMany("deals", chunkIds, "contacts", 20),
+        getAssocMany("deals", chunkIds, "companies", 20, hubspotRequestGuard(supabase)),
+        getAssocMany("deals", chunkIds, "contacts", 20, hubspotRequestGuard(supabase)),
       ]);
       const parentCompanyHsIds = Array.from(
         new Set(Array.from(dealCompanies.values()).flatMap((arr) => arr.slice(0, 1))),
@@ -156,7 +157,7 @@ export async function runDealsStep(args: StepRunArgs): Promise<StepResult | void
     if (st.partial) await persistCursor({ read_index: idx });
   } else {
     if (resume.discovered === undefined) {
-      const total = await searchTotal("deals");
+      const total = await searchTotal("deals", hubspotRequestGuard(supabase));
       await patchItemBefore(supabase, itemId, { discovered: total });
       await appendLog(supabase, jobId, {
         level: "info",
@@ -177,7 +178,11 @@ export async function runDealsStep(args: StepRunArgs): Promise<StepResult | void
     const fetchPage = async (cursor?: string): Promise<DealsPage> => {
       const params: Record<string, string> = { limit: "100", properties: propsParam };
       if (cursor) params.after = cursor;
-      return (await hsFetch("/crm/v3/objects/deals", params)) as DealsPage;
+      return (await hsFetch(
+        "/crm/v3/objects/deals",
+        params,
+        hubspotRequestGuard(supabase),
+      )) as DealsPage;
     };
 
     let nextPromise: Promise<DealsPage> | null = fetchPage(after);
@@ -196,8 +201,8 @@ export async function runDealsStep(args: StepRunArgs): Promise<StepResult | void
 
       const pageIds = res.results.map((r) => r.id);
       const [dealCompanies, dealContacts] = await Promise.all([
-        getAssocMany("deals", pageIds, "companies", 20),
-        getAssocMany("deals", pageIds, "contacts", 20),
+        getAssocMany("deals", pageIds, "companies", 20, hubspotRequestGuard(supabase)),
+        getAssocMany("deals", pageIds, "contacts", 20, hubspotRequestGuard(supabase)),
       ]);
       const parentCompanyHsIds = Array.from(
         new Set(Array.from(dealCompanies.values()).flatMap((arr) => arr.slice(0, 1))),

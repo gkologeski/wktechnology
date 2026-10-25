@@ -1,3 +1,5 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { SalesAction } from "@/components/sales-access";
 import { formatDateTime } from "@/lib/crm";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -68,6 +70,17 @@ const KIND_LABEL: Record<Kind, string> = KIND_OPTIONS.reduce(
 );
 
 export function AiSummaryPanel({ entity, entityId }: { entity: Entity; entityId: string }) {
+  const permissions = usePermissions();
+  const canView = ["own", "team", "workspace"].some((scope) =>
+    permissions.can(`techsales.ai_summaries.view.${scope}`),
+  );
+  const canManage =
+    ["own", "team", "workspace"].some((scope) =>
+      permissions.can(`techsales.ai_assist.manage.${scope}`),
+    ) &&
+    ["own", "team", "workspace"].some((scope) =>
+      permissions.can(`techsales.ai_summaries.create.${scope}`),
+    );
   const list = useServerFn(listAiSummaries);
   const gen = useServerFn(generateAiSummary);
   const del = useServerFn(deleteAiSummary);
@@ -94,8 +107,8 @@ export function AiSummaryPanel({ entity, entityId }: { entity: Entity; entityId:
   }, [entity, entityId, list]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (canView) void load();
+  }, [load, canView]);
 
   const generate = async () => {
     setGenerating(true);
@@ -131,6 +144,7 @@ export function AiSummaryPanel({ entity, entityId }: { entity: Entity; entityId:
     }
   };
 
+  if (!canView) return null;
   return (
     <Card>
       <CardHeader className="flex flex-col gap-2 space-y-0 pb-3 sm:flex-row sm:items-center sm:justify-between">
@@ -166,7 +180,7 @@ export function AiSummaryPanel({ entity, entityId }: { entity: Entity; entityId:
               <SelectItem value="180">180 dias</SelectItem>
             </SelectContent>
           </Select>
-          <Button size="sm" onClick={generate} disabled={generating}>
+          <Button size="sm" onClick={generate} disabled={generating || !canManage}>
             {generating ? (
               <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
             ) : (
@@ -219,15 +233,17 @@ export function AiSummaryPanel({ entity, entityId }: { entity: Entity; entityId:
                     </span>
                   </button>
                 </CollapsibleTrigger>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  aria-label="Excluir resumo"
-                  onClick={() => remove(r.id)}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
+                <SalesAction table="ai_summaries" action="delete" id={r.id}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    aria-label="Excluir resumo"
+                    onClick={() => remove(r.id)}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </SalesAction>
               </div>
               {!open && <p className="text-xs text-muted-foreground line-clamp-2">{r.summary}</p>}
               <CollapsibleContent className="space-y-2">

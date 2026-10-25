@@ -1,3 +1,5 @@
+import { workRpc } from "@/lib/access-control/work-core.server";
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
 // Server functions for in-app notifications.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -187,6 +189,7 @@ export const notifyActivityEvent = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ activityId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    await assertSalesRecord(supabase, "activities", data.activityId, "update");
     const { data: activity, error: aerr } = await supabase
       .from("activities")
       .select(
@@ -232,6 +235,29 @@ export const notifyActivityEvent = createServerFn({ method: "POST" })
       targets.push({ userId: a.owner_id, category: "assignment" });
     }
 
+    const { data: activeMembers } = await supabase
+      .from("workspace_members")
+      .select("user_id")
+      .eq("workspace_id", a.workspace_id)
+      .eq("status", "active");
+    const active = new Set((activeMembers ?? []).map((m) => m.user_id));
+    for (let i = targets.length - 1; i >= 0; i--)
+      if (!active.has(targets[i].userId)) targets.splice(i, 1);
+    const { supabaseAdmin: recipientGuard } = await import("@/integrations/supabase/client.server");
+    const visibility = await Promise.all(
+      targets.map(async (target) => ({
+        id: target.userId,
+        allowed: await workRpc<boolean>(recipientGuard, "sales_notification_allowed", {
+          p_actor: userId,
+          p_recipient: target.userId,
+          p_table: "activities",
+          p_id: a.id,
+        }),
+      })),
+    );
+    const readable = new Set(visibility.filter((v) => v.allowed).map((v) => v.id));
+    for (let i = targets.length - 1; i >= 0; i--)
+      if (!readable.has(targets[i].userId)) targets.splice(i, 1);
     if (targets.length === 0) return { ok: true, sent: 0 };
 
     // Fetch preferences for all targets
@@ -356,6 +382,7 @@ export const notifyActivityCommentEvent = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    await assertSalesRecord(supabase, "activities", data.activityId, "update");
 
     const { data: activity, error: aerr } = await supabase
       .from("activities")
@@ -380,6 +407,15 @@ export const notifyActivityCommentEvent = createServerFn({ method: "POST" })
       related_ticket_id: string | null;
     };
 
+    const { data: savedComment } = await supabase
+      .from("activity_comments")
+      .select("body,mentions,author_id")
+      .eq("id", data.commentId)
+      .eq("activity_id", data.activityId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (!savedComment || savedComment.author_id !== userId)
+      throw new Error("Comentário indisponível para notificação.");
     const author = userId;
     const { data: authorProf } = await supabase
       .from("profiles")
@@ -389,12 +425,12 @@ export const notifyActivityCommentEvent = createServerFn({ method: "POST" })
     const authorName = authorProf?.full_name ?? "Alguém";
 
     const link = resolveLink(a);
-    const snippet = snippetFromHtml(data.bodySnippet ?? "");
+    const snippet = snippetFromHtml(savedComment.body ?? "");
     const activityLabel = snippetFromHtml(a.subject ?? a.body ?? "", 80);
 
     // Diff mentions vs previous (edits only notify new mentions)
     const prev = new Set(data.previousMentionIds ?? []);
-    const newMentions = (data.mentionIds ?? []).filter(
+    const newMentions = (savedComment.mentions ?? []).filter(
       (id) => id && id !== author && !prev.has(id),
     );
 
@@ -419,6 +455,21 @@ export const notifyActivityCommentEvent = createServerFn({ method: "POST" })
       }
     }
 
+    const { supabaseAdmin: recipientGuard } = await import("@/integrations/supabase/client.server");
+    const visibility = await Promise.all(
+      targets.map(async (target) => ({
+        id: target.userId,
+        allowed: await workRpc<boolean>(recipientGuard, "sales_notification_allowed", {
+          p_actor: userId,
+          p_recipient: target.userId,
+          p_table: "activities",
+          p_id: a.id,
+        }),
+      })),
+    );
+    const readable = new Set(visibility.filter((v) => v.allowed).map((v) => v.id));
+    for (let i = targets.length - 1; i >= 0; i--)
+      if (!readable.has(targets[i].userId)) targets.splice(i, 1);
     if (targets.length === 0) return { ok: true, sent: 0 };
 
     // Só notifica membros ativos do workspace da atividade.

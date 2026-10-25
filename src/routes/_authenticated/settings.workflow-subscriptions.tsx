@@ -206,6 +206,11 @@ function WorkflowSubscriptionsPage() {
                   >
                     <div className="min-w-0 flex-1">
                       <div className="font-medium truncate">{row.name}</div>
+                      {row.enabled && !row.execution_user_id && (
+                        <Badge variant="destructive">
+                          Suspensa: defina o responsável salvando a configuração
+                        </Badge>
+                      )}
                       {row.description ? (
                         <div className="text-xs text-muted-foreground truncate">
                           {row.description}
@@ -220,7 +225,7 @@ function WorkflowSubscriptionsPage() {
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <Switch
-                        checked={row.enabled}
+                        checked={row.enabled && !!row.execution_user_id}
                         onCheckedChange={(v) => toggleMut.mutate({ id: row.id, enabled: v })}
                       />
                       <Button
@@ -256,6 +261,10 @@ function WorkflowSubscriptionsPage() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{form.id ? "Editar assinatura" : "Nova assinatura"}</DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              Ao salvar ou ativar, você assume a execução. A automação usará apenas suas permissões
+              atuais, incluindo leitura da origem e criação do ticket.
+            </p>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>

@@ -1,3 +1,4 @@
+import { recordUpdatePayload } from "@/lib/access-control/record-update-payload";
 import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
 import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
@@ -74,7 +75,10 @@ export const upsertGoal = createServerFn({ method: "POST" })
       updated_at: new Date().toISOString(),
     };
     if (data.id) {
-      const { error } = await supabase.from("goals").update(payload).eq("id", data.id);
+      const { error } = await supabase
+        .from("goals")
+        .update(recordUpdatePayload(payload))
+        .eq("id", data.id);
       if (error) throw new Error(error.message);
       return { id: data.id };
     }

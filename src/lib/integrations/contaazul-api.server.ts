@@ -273,6 +273,7 @@ export async function getValidAccessToken(
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 export async function caFetch<T = unknown>(opts: {
+  authorize?: () => Promise<void>;
   accessToken: string;
   path: string;
   query?: Record<string, string | number | undefined>;
@@ -288,6 +289,7 @@ export async function caFetch<T = unknown>(opts: {
   const maxAttempts = opts.maxAttempts ?? 4;
   let lastError = "";
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    await opts.authorize?.();
     const res = await fetch(url.toString(), {
       method: opts.method ?? "GET",
       headers: { Authorization: `Bearer ${opts.accessToken}`, Accept: "application/json" },
@@ -327,6 +329,7 @@ export function extractList(payload: unknown): Array<Record<string, unknown>> {
 
 /** Percorre páginas até esgotar os resultados (ou o limite de páginas). */
 export async function caFetchAll(opts: {
+  authorize?: () => Promise<void>;
   accessToken: string;
   path: string;
   query?: Record<string, string | number | undefined>;
@@ -338,6 +341,7 @@ export async function caFetchAll(opts: {
   const out: Array<Record<string, unknown>> = [];
   for (let page = 1; page <= maxPages; page++) {
     const payload = await caFetch({
+      authorize: opts.authorize,
       accessToken: opts.accessToken,
       path: opts.path,
       query: { ...opts.query, pagina: page, tamanho_pagina: pageSize },

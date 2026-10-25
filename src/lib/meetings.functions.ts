@@ -1,4 +1,8 @@
-import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import {
+  assertSalesRecord,
+  assertSalesArea,
+  assertSalesReferences,
+} from "@/lib/access-control/sales-core.server";
 import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { createServerFn } from "@tanstack/react-start";
@@ -53,14 +57,30 @@ export const createMeeting = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    // Preserve legacy DTO typing; this is the caller client, never the service client.
+    const database = context.supabase as Awaited<ReturnType<typeof getSupabaseAdmin>>;
+
     const supabaseAdmin = await getSupabaseAdmin();
     const { userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    if (data.entity && data.entity_id)
+      await assertSalesReferences(context.supabase, {
+        [data.entity === "contact"
+          ? "contacts"
+          : data.entity === "lead"
+            ? "leads"
+            : data.entity === "deal"
+              ? "deals"
+              : "tickets"]: data.entity_id,
+      });
+    if (!data.skip_activity)
+      await assertSalesArea(context.supabase, "techsales.activities", "create");
     const room = roomName(workspaceId);
     const token = randomToken(28);
 
     const insert: Record<string, unknown> = {
       owner_id: workspaceId,
+      workspace_id: workspaceId,
       host_user_id: userId,
       // owner_id guarda o workspace; o responsável é sempre quem marcou.
       assigned_to: userId,
@@ -76,7 +96,7 @@ export const createMeeting = createServerFn({ method: "POST" })
       insert[REL_COL[data.entity]] = data.entity_id;
     }
 
-    const { data: meeting, error } = await supabaseAdmin
+    const { data: meeting, error } = await database
       .from("meetings")
       .insert(insert)
       .select("*")
@@ -89,7 +109,7 @@ export const createMeeting = createServerFn({ method: "POST" })
     // Log activity timeline entry (skip when the caller will record its own)
     if (!data.skip_activity) {
       const activity: Record<string, unknown> = {
-        owner_id: workspaceId,
+        owner_id: userId,
         workspace_id: workspaceId,
         created_by: userId,
         type: "meeting",
@@ -100,7 +120,7 @@ export const createMeeting = createServerFn({ method: "POST" })
       if (data.entity && data.entity_id) {
         activity[REL_COL[data.entity]] = data.entity_id;
       }
-      await supabaseAdmin.from("activities").insert(activity);
+      await database.from("activities").insert(activity);
     }
 
     return { meeting };
@@ -123,11 +143,14 @@ export const listMeetings = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    // Preserve legacy DTO typing; this is the caller client, never the service client.
+    const database = context.supabase as Awaited<ReturnType<typeof getSupabaseAdmin>>;
+
     const supabaseAdmin = await getSupabaseAdmin();
     const { userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
 
-    let q = supabaseAdmin
+    let q = database
       .from("meetings")
       .select(
         "id, title, status, room_name, public_token, recording_storage_path, recording_duration_seconds, scheduled_at, started_at, ended_at, created_at, related_contact_id, related_lead_id, related_deal_id, related_ticket_id, host_user_id, assigned_to",
@@ -147,7 +170,7 @@ export const listMeetings = createServerFn({ method: "POST" })
     if (data.search && data.search.trim()) {
       const term = data.search.toLowerCase();
       // Search title locally + transcript via meeting_summaries
-      const { data: hits } = await supabaseAdmin
+      const { data: hits } = await database
         .from("meeting_summaries")
         .select("meeting_id")
         .eq("owner_id", workspaceId)
@@ -167,10 +190,15 @@ export const getMeeting = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("techsales.meetings", "view")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    // Preserve legacy DTO typing; this is the caller client, never the service client.
+    const database = context.supabase as Awaited<ReturnType<typeof getSupabaseAdmin>>;
+
+    await assertSalesRecord(context.supabase, "meetings", data.id, "view");
+
     const supabaseAdmin = await getSupabaseAdmin();
     const { userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    const { data: meeting, error } = await supabaseAdmin
+    const { data: meeting, error } = await database
       .from("meetings")
       .select("*")
       .eq("id", data.id)
@@ -179,19 +207,23 @@ export const getMeeting = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!meeting) throw new Error("Reunião não encontrada");
 
-    const { data: summary } = await supabaseAdmin
+    const { data: summary } = await database
       .from("meeting_summaries")
       .select("*")
       .eq("meeting_id", meeting.id)
       .maybeSingle();
-    const { data: participants } = await supabaseAdmin
+    const { data: participants } = await database
       .from("meeting_participants")
       .select("id, display_name, email, joined_at, left_at")
       .eq("meeting_id", meeting.id)
       .order("joined_at", { ascending: true });
 
     let recordingUrl: string | null = null;
-    if (meeting.recording_storage_path) {
+    if (
+      meeting.recording_storage_path &&
+      meeting.recording_storage_path.startsWith(`${workspaceId}/${meeting.id}/`) &&
+      !meeting.recording_storage_path.includes("..")
+    ) {
       const { data: signed } = await supabaseAdmin.storage
         .from("meeting-recordings")
         .createSignedUrl(meeting.recording_storage_path, 60 * 60 * 24); // 24h
@@ -207,11 +239,16 @@ export const endMeeting = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("techsales.meetings", "manage")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    // Preserve legacy DTO typing; this is the caller client, never the service client.
+    const database = context.supabase as Awaited<ReturnType<typeof getSupabaseAdmin>>;
+
+    await assertSalesRecord(context.supabase, "meetings", data.id, "update");
+
     if (data.id) await assertSalesRecord(context.supabase, "meetings", data.id, "manage");
 
     const supabaseAdmin = await getSupabaseAdmin();
     const workspaceId = await resolveActiveWorkspace(context.userId);
-    const { error } = await supabaseAdmin
+    const { error } = await database
       .from("meetings")
       .update({ status: "ended", ended_at: new Date().toISOString() })
       .eq("id", data.id)
@@ -227,21 +264,31 @@ export const deleteMeeting = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("techsales.meetings", "delete")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    // Preserve legacy DTO typing; this is the caller client, never the service client.
+    const database = context.supabase as Awaited<ReturnType<typeof getSupabaseAdmin>>;
+
+    await assertSalesRecord(context.supabase, "meetings", data.id, "delete");
+
     if (data.id) await assertSalesRecord(context.supabase, "meetings", data.id, "delete");
 
     const supabaseAdmin = await getSupabaseAdmin();
     const workspaceId = await resolveActiveWorkspace(context.userId);
     // delete recording from storage if present
-    const { data: m } = await supabaseAdmin
+    const { data: m } = await database
       .from("meetings")
       .select("recording_storage_path")
       .eq("id", data.id)
       .eq("owner_id", workspaceId)
       .maybeSingle();
     if (m?.recording_storage_path) {
+      if (
+        !m.recording_storage_path.startsWith(`${workspaceId}/${data.id}/`) ||
+        m.recording_storage_path.includes("..")
+      )
+        throw new Error("Gravação fora da reunião autorizada.");
       await supabaseAdmin.storage.from("meeting-recordings").remove([m.recording_storage_path]);
     }
-    const { error } = await supabaseAdmin
+    const { error } = await database
       .from("meetings")
       .delete()
       .eq("id", data.id)
@@ -254,7 +301,7 @@ export const deleteMeeting = createServerFn({ method: "POST" })
  * Issue signed upload URL for recording
  * ============================================================ */
 export const createRecordingUploadUrl = createServerFn({ method: "POST" })
-  .middleware([requireSalesPermission("techsales.meetings", "create")])
+  .middleware([requireSalesPermission("techsales.meetings", "update")])
   .inputValidator((input) =>
     z
       .object({
@@ -264,9 +311,14 @@ export const createRecordingUploadUrl = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    // Preserve legacy DTO typing; this is the caller client, never the service client.
+    const database = context.supabase as Awaited<ReturnType<typeof getSupabaseAdmin>>;
+
+    await assertSalesRecord(context.supabase, "meetings", data.meeting_id, "update");
+
     const supabaseAdmin = await getSupabaseAdmin();
     const workspaceId = await resolveActiveWorkspace(context.userId);
-    const { data: m, error: mErr } = await supabaseAdmin
+    const { data: m, error: mErr } = await database
       .from("meetings")
       .select("id, owner_id")
       .eq("id", data.meeting_id)
@@ -299,12 +351,17 @@ export const attachRecording = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    // Preserve legacy DTO typing; this is the caller client, never the service client.
+    const database = context.supabase as Awaited<ReturnType<typeof getSupabaseAdmin>>;
+
+    await assertSalesRecord(context.supabase, "meetings", data.meeting_id, "update");
+
     const supabaseAdmin = await getSupabaseAdmin();
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const expectedPrefix = `${workspaceId}/${data.meeting_id}/`;
     if (!data.path.startsWith(expectedPrefix) || data.path.includes(".."))
       throw new Error("Caminho de gravação inválido para esta reunião.");
-    const { data: meeting, error } = await supabaseAdmin
+    const { data: meeting, error } = await database
       .from("meetings")
       .update({
         recording_storage_path: data.path,
@@ -350,7 +407,7 @@ export const attachRecording = createServerFn({ method: "POST" })
           external_ids: { meeting_id: meeting.id, source: "meeting_recording" },
           [targetCol]: (meeting as any)[targetCol],
         };
-        await supabaseAdmin.from("activities").insert(activity);
+        await database.from("activities").insert(activity);
       }
     }
     return { ok: true };
@@ -365,12 +422,18 @@ export const generateMeetingSummary = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("techsales.meetings", "manage")])
   .inputValidator((input) => z.object({ meeting_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    // Preserve legacy DTO typing; this is the caller client, never the service client.
+    const database = context.supabase as Awaited<ReturnType<typeof getSupabaseAdmin>>;
+
+    await assertSalesRecord(context.supabase, "meetings", data.meeting_id, "manage");
+    await assertSalesRecord(context.supabase, "meetings", data.meeting_id, "update");
+
     const supabaseAdmin = await getSupabaseAdmin();
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
 
-    const { data: meeting, error: mErr } = await supabaseAdmin
+    const { data: meeting, error: mErr } = await database
       .from("meetings")
       .select("*")
       .eq("id", data.meeting_id)
@@ -380,7 +443,7 @@ export const generateMeetingSummary = createServerFn({ method: "POST" })
     if (!meeting.recording_storage_path) throw new Error("Sem gravação para transcrever");
 
     // upsert summary as processing
-    await supabaseAdmin
+    await database
       .from("meeting_summaries")
       .upsert(
         { meeting_id: meeting.id, owner_id: workspaceId, status: "processing" },
@@ -389,6 +452,11 @@ export const generateMeetingSummary = createServerFn({ method: "POST" })
 
     try {
       // 1) download audio from storage
+      if (
+        !meeting.recording_storage_path?.startsWith(`${workspaceId}/${meeting.id}/`) ||
+        meeting.recording_storage_path.includes("..")
+      )
+        throw new Error("Gravação fora da reunião autorizada.");
       const { data: blob, error: dErr } = await supabaseAdmin.storage
         .from("meeting-recordings")
         .download(meeting.recording_storage_path);
@@ -457,7 +525,7 @@ Responda APENAS com JSON válido.`;
         parsed = { summary: content, transcript: content, decisions: [], action_items: [] };
       }
 
-      await supabaseAdmin
+      await database
         .from("meeting_summaries")
         .update({
           status: "completed",
@@ -473,7 +541,7 @@ Responda APENAS com JSON válido.`;
 
       return { ok: true, action_items: parsed.action_items ?? [] };
     } catch (e: any) {
-      await supabaseAdmin
+      await database
         .from("meeting_summaries")
         .update({
           status: "failed",
@@ -591,23 +659,40 @@ async function downloadDriveTextFile(token: string, fileId: string, mime: string
 }
 
 export const summarizeCalendarEventRecording = createServerFn({ method: "POST" })
-  .middleware([requireSalesPermission("techsales.meetings", "manage")])
+  .middleware([requireSalesPermission("system.calendars", "manage")])
   .inputValidator((input) => z.object({ calendar_event_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    // Preserve legacy DTO typing; this is the caller client, never the service client.
+    const database = context.supabase as Awaited<ReturnType<typeof getSupabaseAdmin>>;
+
+    await assertSalesRecord(context.supabase, "calendar_events", data.calendar_event_id, "view");
+
     const supabaseAdmin = await getSupabaseAdmin();
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
 
-    const { data: event, error: evErr } = await supabaseAdmin
+    const { data: event, error: evErr } = await database
       .from("calendar_events")
       .select("*")
       .eq("id", data.calendar_event_id)
       .eq("owner_id", context.userId)
       .maybeSingle();
     if (evErr || !event) throw new Error("Evento de calendário não encontrado");
+    await assertSalesRecord(
+      context.supabase,
+      "calendar_accounts",
+      event.calendar_account_id,
+      "manage",
+    );
     if (!event.recording_drive_file_id)
       throw new Error("Este evento ainda não tem gravação vinculada no Drive");
 
+    await assertSalesRecord(
+      context.supabase,
+      "calendar_accounts",
+      event.calendar_account_id,
+      "manage",
+    );
     await supabaseAdmin
       .from("calendar_events")
       .update({ summary_status: "processing", summary_error: null })
@@ -728,6 +813,12 @@ Responda APENAS com JSON válido.`;
             .join("\n");
       }
 
+      await assertSalesRecord(
+        context.supabase,
+        "calendar_accounts",
+        event.calendar_account_id,
+        "manage",
+      );
       await supabaseAdmin
         .from("calendar_events")
         .update({
@@ -747,6 +838,12 @@ Responda APENAS com JSON válido.`;
       };
     } catch (e: any) {
       const msg = String(e?.message ?? e);
+      await assertSalesRecord(
+        context.supabase,
+        "calendar_accounts",
+        event.calendar_account_id,
+        "manage",
+      );
       await supabaseAdmin
         .from("calendar_events")
         .update({ summary_status: "failed", summary_error: msg.slice(0, 500) })
@@ -759,19 +856,24 @@ Responda APENAS com JSON válido.`;
  * Create tasks (activities type=task) from action items
  * ============================================================ */
 export const createTasksFromActionItems = createServerFn({ method: "POST" })
-  .middleware([requireSalesPermission("techsales.meetings", "create")])
+  .middleware([requireSalesPermission("techsales.tasks", "create")])
   .inputValidator((input) => z.object({ meeting_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    // Preserve legacy DTO typing; this is the caller client, never the service client.
+    const database = context.supabase as Awaited<ReturnType<typeof getSupabaseAdmin>>;
+
+    await assertSalesRecord(context.supabase, "meetings", data.meeting_id, "view");
+    await assertSalesArea(context.supabase, "techsales.tasks", "create");
     const supabaseAdmin = await getSupabaseAdmin();
     const workspaceId = await resolveActiveWorkspace(context.userId);
-    const { data: meeting } = await supabaseAdmin
+    const { data: meeting } = await database
       .from("meetings")
       .select("*")
       .eq("id", data.meeting_id)
       .eq("owner_id", workspaceId)
       .maybeSingle();
     if (!meeting) throw new Error("Reunião não encontrada");
-    const { data: summary } = await supabaseAdmin
+    const { data: summary } = await database
       .from("meeting_summaries")
       .select("action_items")
       .eq("meeting_id", meeting.id)
@@ -783,7 +885,7 @@ export const createTasksFromActionItems = createServerFn({ method: "POST" })
     const due = new Date(Date.now() + 3 * 86400_000).toISOString();
     const rows = items.map((it) => {
       const base: Record<string, unknown> = {
-        owner_id: workspaceId,
+        owner_id: context.userId,
         workspace_id: workspaceId,
         created_by: context.userId,
         type: "task",
@@ -800,7 +902,7 @@ export const createTasksFromActionItems = createServerFn({ method: "POST" })
       if (meeting.related_ticket_id) base.related_ticket_id = meeting.related_ticket_id;
       return base;
     });
-    const { error } = await supabaseAdmin.from("activities").insert(rows);
+    const { error } = await database.from("activities").insert(rows);
     if (error) throw new Error(error.message);
     return { created: rows.length };
   });
@@ -809,7 +911,7 @@ export const createTasksFromActionItems = createServerFn({ method: "POST" })
  * Sign a meeting recording URL (workspace-scoped)
  * ============================================================ */
 export const signMeetingRecording = createServerFn({ method: "POST" })
-  .middleware([requireSalesPermission("techsales.meetings", "manage")])
+  .middleware([requireSalesPermission("techsales.meetings", "view")])
   .inputValidator((input) =>
     z
       .object({
@@ -819,6 +921,19 @@ export const signMeetingRecording = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    // Preserve legacy DTO typing; this is the caller client, never the service client.
+    const database = context.supabase as Awaited<ReturnType<typeof getSupabaseAdmin>>;
+
+    const meetingId = data.path.split("/")[1];
+    if (!meetingId) throw new Error("Caminho de gravação inválido.");
+    await assertSalesRecord(context.supabase, "meetings", meetingId, "view");
+    const { data: authorizedRecording, error: recordingError } = await database
+      .from("meetings")
+      .select("recording_storage_path")
+      .eq("id", meetingId)
+      .single();
+    if (recordingError || authorizedRecording.recording_storage_path !== data.path)
+      throw new Error("Gravação não pertence à reunião autorizada.");
     const supabaseAdmin = await getSupabaseAdmin();
     const workspaceId = await resolveActiveWorkspace(context.userId);
     // Path format: `${workspaceId}/${meetingId}/...`

@@ -41,7 +41,8 @@ export async function authorizeWorkflowStep(
   workflowJson?: string,
 ) {
   if (!ctx.workflowId) throw new Error("Workflow sem origem de autorização.");
-  const refs: Requirement[] = [];
+  const refs: Requirement[] =
+    ctx.workflowVersion != null ? [{ workflow_version: ctx.workflowVersion }] : [];
   const row = (
     table: string,
     id: string,
@@ -190,6 +191,8 @@ export async function authorizeWorkflowStep(
     }
     if (["update_record", "delete_record"].includes(action.type))
       row(table, resolved(a.target_id), action.type === "update_record" ? "update" : "delete");
+    if (action.type === "approval_step")
+      refs.push({ member_id: String(a.approver_user_id ?? ctx.ownerId) });
     if (action.type === "send_notification")
       refs.push({ member_id: String(a.user_id ?? "").trim() || ctx.ownerId });
     if (action.type === "handoff") {

@@ -1,3 +1,4 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
 // Leituras/escritas administrativas das ferramentas (somente servidor e sempre
 // depois de autorização RBAC no workspace ATIVO do usuário).
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -42,13 +43,28 @@ export async function readinessFacts(
   ws: string,
   pb: Record<string, unknown>,
   cfg: ToolConfig | null,
+  caller: SupabaseClient,
 ): Promise<ReadinessFacts> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { loadKnowledge } = await import("../worker.server");
   const agentCfg = configFromRow(pb);
-  const { materials } = scopeKnowledge(agentCfg, await loadKnowledge(supabaseAdmin, ws));
+  const { materials } = scopeKnowledge(agentCfg, await loadKnowledge(caller, ws));
   return {
-    calendar: await checkHostCalendar(supabaseAdmin, ws, cfg?.scheduling ?? null),
+    calendar: cfg?.scheduling
+      ? await (async () => {
+          try {
+            await assertSalesRecord(
+              caller,
+              "calendar_accounts",
+              cfg.scheduling!.calendar_account_id,
+              "manage",
+            );
+          } catch {
+            return { ok: false, reason: "Sem permissão para operar a agenda selecionada." };
+          }
+          return checkHostCalendar(supabaseAdmin, ws, cfg.scheduling!);
+        })()
+      : { ok: false, reason: "Anfitrião e agenda não definidos no agente." },
     crmLinked: true,
     questionnaire: !!pb.questionnaire_id,
     materials: materials.length > 0,
@@ -70,17 +86,17 @@ export async function getCatalog(supabase: SupabaseClient, userId: string, playb
   const published = versions?.find((v) => v.status === "published") ?? null;
   const draftCfg = parseToolConfig(draft?.tool_config) ?? parseToolConfig(published?.tool_config);
   const pubCfg = parseToolConfig(published?.tool_config);
-  const facts = await readinessFacts(ws, pb, draftCfg);
-  const pubFacts = await readinessFacts(ws, pb, pubCfg);
+  const facts = await readinessFacts(ws, pb, draftCfg, supabase);
+  const pubFacts = await readinessFacts(ws, pb, pubCfg, supabase);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   // Agendas desta empresa (sem tokens) para escolher o anfitrião.
-  const { data: accounts } = await supabaseAdmin
+  const { data: accounts } = await supabase
     .from("calendar_accounts")
     .select("id, provider, email, owner_id, last_status")
     .eq("workspace_id", ws);
   const ownerIds = [...new Set((accounts ?? []).map((a) => a.owner_id))];
   const { data: owners } = ownerIds.length
-    ? await supabaseAdmin.from("profiles").select("id, full_name").in("id", ownerIds)
+    ? await supabase.from("profiles").select("id, full_name").in("id", ownerIds)
     : { data: [] as { id: string; full_name: string | null }[] };
   const { data: logs } = await supabase
     .from("sdr_tool_calls")
@@ -141,11 +157,18 @@ export async function saveToolDraft(
 ) {
   const ws = await gate(supabase, userId, "manage");
   await loadPlaybook(supabase, ws, playbookId);
+  await assertSalesRecord(supabase, "sdr_playbooks", playbookId, "update");
   const parsed = ToolConfigSchema.parse(raw);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   if (parsed.scheduling) {
     // Anfitrião vem do dono da agenda escolhida; nunca do navegador.
-    const { data: acc } = await supabaseAdmin
+    await assertSalesRecord(
+      supabase,
+      "calendar_accounts",
+      parsed.scheduling.calendar_account_id,
+      "manage",
+    );
+    const { data: acc } = await supabase
       .from("calendar_accounts")
       .select("id, owner_id, workspace_id")
       .eq("id", parsed.scheduling.calendar_account_id)
@@ -154,7 +177,7 @@ export async function saveToolDraft(
     parsed.scheduling.host_user_id = acc.owner_id;
   }
   const cfg = parseToolConfig(parsed);
-  const { data: versions } = await supabaseAdmin
+  const { data: versions } = await supabase
     .from("sdr_agent_versions")
     .select("id, status, version, persona, flow")
     .eq("playbook_id", playbookId)
@@ -162,7 +185,7 @@ export async function saveToolDraft(
     .order("version", { ascending: false });
   const draft = versions?.find((v) => v.status === "draft");
   if (draft) {
-    const { error } = await supabaseAdmin
+    const { error } = await supabase
       .from("sdr_agent_versions")
       .update({ tool_config: cfg, updated_at: new Date().toISOString() })
       .eq("id", draft.id);
@@ -170,7 +193,7 @@ export async function saveToolDraft(
     return { id: draft.id, created: false };
   }
   const published = versions?.find((v) => v.status === "published");
-  const { data: ins, error } = await supabaseAdmin
+  const { data: ins, error } = await supabase
     .from("sdr_agent_versions")
     .insert({
       workspace_id: ws,

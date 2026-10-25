@@ -1,3 +1,4 @@
+import { recordUpdatePayload } from "@/lib/access-control/record-update-payload";
 import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
 import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
@@ -68,7 +69,7 @@ export const upsertSegment = createServerFn({ method: "POST" })
     if (data.id) {
       const { data: row, error } = await supabase
         .from("segments")
-        .update(payload)
+        .update(recordUpdatePayload(payload))
         .eq("id", data.id)
         .select()
         .single();

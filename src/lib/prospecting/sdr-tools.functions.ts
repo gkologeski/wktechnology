@@ -82,7 +82,7 @@ export const testSdrTool = createServerFn({ method: "POST" })
       workspaceId: ws,
       playbookId: data.playbookId,
       config: cfg,
-      facts: await admin.readinessFacts(ws, pb, cfg),
+      facts: await admin.readinessFacts(ws, pb, cfg, context.supabase),
       history,
       offers,
       materials,

@@ -7,12 +7,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { applyFilters, type FilterGroup } from "@/lib/filters";
 
-// Carrega o cliente admin sob demanda (mantém o bundle do cliente limpo).
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function sbAdmin(): Promise<any> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  return supabaseAdmin;
-}
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type AudienceSource = "leads" | "contacts" | "companies" | "deals" | "manual" | "segment";
 
@@ -70,8 +65,8 @@ export type ResolvedAudience = {
 export async function resolveAudienceServer(
   workspaceId: string,
   rules: AudienceRule[],
+  sb: SupabaseClient,
 ): Promise<ResolvedAudience> {
-  const sb = await sbAdmin();
   const collected = new Map<
     string,
     { name: string; phone: string | null; source: AudienceSource }
@@ -159,7 +154,7 @@ export async function resolveAudienceServer(
         email: string | null;
         phone: string | null;
       }>;
-      const resolved = await resolveContactsToLeads(workspaceId, contacts);
+      const resolved = await resolveContactsToLeads(workspaceId, sb, contacts);
       for (const r of resolved) {
         if (!collected.has(r.lead_id)) {
           collected.set(r.lead_id, { name: r.name, phone: r.phone, source: "contacts" });
@@ -198,7 +193,7 @@ export async function resolveAudienceServer(
           email: string | null;
           phone: string | null;
         }>;
-        const resolved = await resolveContactsToLeads(workspaceId, arr);
+        const resolved = await resolveContactsToLeads(workspaceId, sb, arr);
         resolvedCount = resolved.length;
         for (const r of resolved) {
           if (!collected.has(r.lead_id)) {
@@ -248,7 +243,7 @@ export async function resolveAudienceServer(
             email: string | null;
             phone: string | null;
           }>;
-          const resolved = await resolveContactsToLeads(workspaceId, arr);
+          const resolved = await resolveContactsToLeads(workspaceId, sb, arr);
           resolvedCount = resolved.length;
           for (const r of resolved) {
             if (!collected.has(r.lead_id)) {
@@ -327,7 +322,7 @@ export async function resolveAudienceServer(
           email: string | null;
           phone: string | null;
         }>;
-        const resolved = await resolveContactsToLeads(workspaceId, arr);
+        const resolved = await resolveContactsToLeads(workspaceId, sb, arr);
         for (const r of resolved) {
           if (!collected.has(r.lead_id)) {
             collected.set(r.lead_id, { name: r.name, phone: r.phone, source: "segment" });
@@ -348,7 +343,7 @@ export async function resolveAudienceServer(
           email: string | null;
           phone: string | null;
         }>;
-        const resolved = await resolveContactsToLeads(workspaceId, arr);
+        const resolved = await resolveContactsToLeads(workspaceId, sb, arr);
         for (const r of resolved) {
           if (!collected.has(r.lead_id)) {
             collected.set(r.lead_id, { name: r.name, phone: r.phone, source: "segment" });
@@ -382,7 +377,7 @@ export async function resolveAudienceServer(
             email: string | null;
             phone: string | null;
           }>;
-          const resolved = await resolveContactsToLeads(workspaceId, arr);
+          const resolved = await resolveContactsToLeads(workspaceId, sb, arr);
           for (const r of resolved) {
             if (!collected.has(r.lead_id)) {
               collected.set(r.lead_id, { name: r.name, phone: r.phone, source: "segment" });
@@ -409,6 +404,7 @@ export async function resolveAudienceServer(
 // Contatos sem lead correspondente são descartados.
 async function resolveContactsToLeads(
   workspaceId: string,
+  sb: SupabaseClient,
   contacts: Array<{
     id: string;
     first_name: string | null;
@@ -417,7 +413,6 @@ async function resolveContactsToLeads(
     phone: string | null;
   }>,
 ): Promise<Array<{ lead_id: string; name: string; phone: string | null }>> {
-  const sb = await sbAdmin();
   const emails = contacts.map((c) => c.email).filter((e): e is string => !!e);
   const phones = contacts.map((c) => c.phone).filter((p): p is string => !!p);
   if (emails.length === 0 && phones.length === 0) return [];
@@ -465,5 +460,5 @@ export const previewAudience = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ rules: AudienceRulesSchema }).parse(i))
   .handler(async ({ data, context }): Promise<ResolvedAudience> => {
     const ws = await resolveActiveWorkspace(context.userId);
-    return resolveAudienceServer(ws, data.rules as AudienceRule[]);
+    return resolveAudienceServer(ws, data.rules as AudienceRule[], context.supabase);
   });

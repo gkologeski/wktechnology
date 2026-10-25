@@ -1,3 +1,5 @@
+import { workRpc } from "@/lib/access-control/work-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Política de envio dos fluxos por empresa: horário, cotas comerciais,
 // deduplicação, remetente de e-mail e agenda padrão.
 import { createServerFn } from "@tanstack/react-start";
@@ -20,7 +22,7 @@ const policySchema = z.object({
 export type SendPolicyInput = z.infer<typeof policySchema>;
 
 export const getWorkflowSendPolicy = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.workflows", "view")])
   .handler(async ({ context }) => {
     const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
     const ws = await resolveActiveWorkspace(context.userId);
@@ -40,7 +42,11 @@ export const getWorkflowSendPolicy = createServerFn({ method: "GET" })
         .eq("provider", "gmail")
         .order("email"),
       sb.from("booking_pages").select("id, title, active").eq("workspace_id", ws).order("title"),
-      sb.rpc("is_active_workspace_admin", { _workspace: ws, _user: context.userId }),
+      workRpc<{ keys: Record<string, boolean>; read_only: boolean }>(
+        sb,
+        "sales_access_context",
+        {},
+      ),
     ]);
     if (pol.error) throw new Error(`Não foi possível ler a política: ${pol.error.message}`);
     const outlookReady = !!process.env["MICROSOFT_OUTLOOK_API_KEY"];
@@ -50,18 +56,17 @@ export const getWorkflowSendPolicy = createServerFn({ method: "GET" })
         (a) => ({ id: a.id, email: a.email, connected: a.status === "connected" }),
       ),
       bookingPages: (pages.data ?? []) as { id: string; title: string; active: boolean }[],
-      canEdit: isAdmin.data === true,
+      canEdit: !isAdmin.read_only && !!isAdmin.keys?.["system.workflows.manage.workspace"],
       outlookReady,
     };
   });
 
 export const saveWorkflowSendPolicy = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.workflows", "manage")])
   .inputValidator((d: unknown) => policySchema.parse(d))
   .handler(async ({ data, context }) => {
-    const { assertActiveWorkspaceAdmin } =
-      await import("@/lib/access-control/access-admin-guard.server");
-    const ws = await assertActiveWorkspaceAdmin(context.supabase, context.userId);
+    const { getActiveWorkspaceId } = await import("@/lib/access-control/enforce.server");
+    const ws = await getActiveWorkspaceId(context.supabase, context.userId);
     const sb = context.supabase;
     if ((data.window_start == null) !== (data.window_end == null))
       throw new Error("Informe início e fim do horário de envio, ou deixe ambos vazios.");

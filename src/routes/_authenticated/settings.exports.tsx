@@ -129,7 +129,7 @@ function ExportsPage() {
   const runMut = useMutation({
     mutationFn: (id: string) => runNow({ data: { id } }),
     onSuccess: (r: any) => {
-      if (r?.ok) toast.success(`Enviado (${r.rows} linhas).`);
+      if (r?.ok) toast.success("Exportação executada pelo responsável configurado.");
       else toast.error(r?.error ?? "Erro ao executar.");
       qc.invalidateQueries({ queryKey: ["report-schedules"] });
     },

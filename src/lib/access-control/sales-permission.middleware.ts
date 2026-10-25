@@ -1,3 +1,4 @@
+import { checkedMutationClient } from "./checked-mutation-client";
 import { createMiddleware } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { SalesAction } from "./sales-resources";
@@ -11,6 +12,11 @@ export function requireSalesPermission(
     .server(async ({ context, next }) => {
       const { assertSalesAnyArea } = await import("./sales-core.server");
       await assertSalesAnyArea(context.supabase, resource, action);
-      return next();
+      return next({
+        context: {
+          ...context,
+          supabase: checkedMutationClient(context.supabase, { server: true }),
+        },
+      });
     });
 }

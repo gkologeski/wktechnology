@@ -1,3 +1,4 @@
+import { recordUpdatePayload } from "@/lib/access-control/record-update-payload";
 import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
 import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
@@ -77,7 +78,10 @@ export const upsertForm = createServerFn({ method: "POST" })
       popup_config: data.popup_config ?? {},
     };
     if (data.id) {
-      const { error } = await context.supabase.from("forms").update(payload).eq("id", data.id);
+      const { error } = await context.supabase
+        .from("forms")
+        .update(recordUpdatePayload(payload))
+        .eq("id", data.id);
       if (error) throw new Error(error.message);
       return { id: data.id };
     }

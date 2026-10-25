@@ -20,6 +20,7 @@ export interface EventRow {
   after: AnyRow | null;
   resume_workflow_id?: string | null;
   resume_cursor?: number | null;
+  workflow_version?: number | null;
 }
 
 interface WorkflowRow {
@@ -30,6 +31,8 @@ interface WorkflowRow {
   trigger: WorkflowTrigger;
   actions: WorkflowAction[];
   goal_filters?: WorkflowCondition[] | null;
+  execution_user_id?: string | null;
+  published_version?: number;
 }
 
 /** Entidades cujos workflows valem para todo o workspace (ciclo de contratação). */
@@ -65,11 +68,12 @@ async function workflowSourceAllowed(
       {
         entity: event.entity,
         entityId: event.entity_id,
-        ownerId: wf.owner_id,
+        ownerId: wf.execution_user_id ?? wf.owner_id,
         workspaceId: wf.workspace_id,
         after: event.after,
         before: event.before,
         workflowId: wf.id,
+        workflowVersion: wf.published_version,
       },
       undefined,
       JSON.stringify({ t: wf.trigger, a: wf.actions, g: wf.goal_filters }),
@@ -84,7 +88,7 @@ async function workflowSourceAllowed(
       event_id: event.id,
       entity: event.entity,
       entity_id: event.entity_id,
-      status: "failed",
+      status: "error",
       error: reason,
       log: [{ at: new Date().toISOString(), ok: false, action: "permission_check", error: reason }],
       started_at: new Date().toISOString(),
@@ -94,13 +98,25 @@ async function workflowSourceAllowed(
   }
 }
 
-export async function processEvent(supabase: SupabaseClient, event: EventRow) {
+export async function processEvent(
+  supabase: SupabaseClient,
+  event: EventRow,
+  allowedWorkflowIds?: string[],
+) {
   const sourceWorkspace = workflowEventWorkspace(event);
+  if (
+    event.resume_workflow_id &&
+    allowedWorkflowIds &&
+    !allowedWorkflowIds.includes(event.resume_workflow_id)
+  )
+    return;
   // Caso 1: retomada (delay) → executa apenas o workflow indicado a partir do cursor.
   if (event.resume_workflow_id && typeof event.resume_cursor === "number") {
     const { data: wf } = await supabase
       .from("workflows")
-      .select("id, owner_id, workspace_id, entity, trigger, actions, goal_filters")
+      .select(
+        "id, owner_id, execution_user_id, published_version, workspace_id, entity, trigger, actions, goal_filters",
+      )
       .eq("enabled", true)
       .eq("status", "published")
       .eq("id", event.resume_workflow_id)
@@ -108,6 +124,26 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
       .maybeSingle();
     if (wf) {
       const wfr = wf as WorkflowRow;
+      if (event.workflow_version !== wfr.published_version) {
+        const reason = "Versão do workflow mudou após a pausa; retomada bloqueada.";
+        const now = new Date().toISOString();
+        const { error: logError } = await supabase.from("workflow_runs").insert({
+          workspace_id: sourceWorkspace,
+          owner_id: wfr.execution_user_id ?? wfr.owner_id,
+          workflow_id: wfr.id,
+          event_id: event.id,
+          entity: event.entity,
+          entity_id: event.entity_id,
+          status: "error",
+          error: reason,
+          started_at: now,
+          finished_at: now,
+          log: [{ at: now, ok: false, action: "version_check", error: reason }],
+        } as never);
+        if (logError && logError.code !== "23505") throw new Error(logError.message);
+        await supabase.from("workflow_events").update({ processed_at: now }).eq("id", event.id);
+        return;
+      }
       if (!(await workflowSourceAllowed(supabase, wfr, event))) return;
       const wfJson = JSON.stringify({ t: wfr.trigger, a: wfr.actions });
       const hydratedAfter = await hydrateDealLineItems(
@@ -141,24 +177,26 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
           {
             entity: event.entity,
             entityId: event.entity_id,
-            ownerId: wfr.owner_id,
+            ownerId: wfr.execution_user_id ?? wfr.owner_id,
             workspaceId: wfr.workspace_id,
             after: cleanAfter,
             before: event.before,
             workflowId: wfr.id,
+            workflowVersion: wfr.published_version,
             runId: run.id as string,
             state,
             resumeFrames: frames,
           },
           event.resume_cursor,
         );
-        await finishRun(supabase, run.id, res, event, wfr.id);
+        await finishRun(supabase, run.id, res, event, wfr.id, wfr.published_version);
       }
     }
-    await supabase
-      .from("workflow_events")
-      .update({ processed_at: new Date().toISOString() })
-      .eq("id", event.id);
+    if (!allowedWorkflowIds)
+      await supabase
+        .from("workflow_events")
+        .update({ processed_at: new Date().toISOString() })
+        .eq("id", event.id);
     return;
   }
 
@@ -168,12 +206,15 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
   const byWorkspace = WORKSPACE_SCOPED_ENTITIES.has(event.entity);
   let wfQuery = supabase
     .from("workflows")
-    .select("id, owner_id, workspace_id, entity, trigger, actions, goal_filters")
+    .select(
+      "id, owner_id, execution_user_id, published_version, workspace_id, entity, trigger, actions, goal_filters",
+    )
     .eq("entity", event.entity)
     .eq("workspace_id", sourceWorkspace)
     .eq("enabled", true)
     .eq("status", "published");
   wfQuery = byWorkspace ? wfQuery : wfQuery.eq("owner_id", event.owner_id);
+  if (allowedWorkflowIds) wfQuery = wfQuery.in("id", allowedWorkflowIds);
   const { data: workflows } = await wfQuery;
 
   for (const wf of (workflows ?? []) as WorkflowRow[]) {
@@ -245,20 +286,22 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
       entity: event.entity,
       entityId: event.entity_id,
       // Passos rodam com o dono do workflow (permissões do admin que o publicou).
-      ownerId: wf.owner_id,
+      ownerId: wf.execution_user_id ?? wf.owner_id,
       workspaceId: wf.workspace_id,
       after: hydratedAfter,
       before: event.before,
       workflowId: wf.id,
+      workflowVersion: wf.published_version,
       runId: run.id as string,
     });
-    await finishRun(supabase, run.id, res, event, wf.id);
+    await finishRun(supabase, run.id, res, event, wf.id, wf.published_version);
   }
 
-  await supabase
-    .from("workflow_events")
-    .update({ processed_at: new Date().toISOString() })
-    .eq("id", event.id);
+  if (!allowedWorkflowIds)
+    await supabase
+      .from("workflow_events")
+      .update({ processed_at: new Date().toISOString() })
+      .eq("id", event.id);
 }
 
 async function finishRun(
@@ -267,6 +310,7 @@ async function finishRun(
   res: RunResult,
   event: EventRow,
   workflowId?: string,
+  workflowVersion?: number,
 ) {
   // Se aguardando aprovação, deixa run em estado waiting (será retomado por decideApproval).
   if (res.waitingApproval) {
@@ -318,6 +362,7 @@ async function finishRun(
       },
       run_at: res.suspendedAt.runAtIso,
       resume_workflow_id: workflowId,
+      workflow_version: workflowVersion,
       resume_cursor: res.suspendedAt.resumeCursor,
     } as never);
     await supabase
@@ -341,23 +386,29 @@ async function finishRun(
     .eq("id", runId);
 }
 
-export async function tickWorkflows(supabase: SupabaseClient, limit = 50) {
+export async function tickWorkflows(
+  supabase: SupabaseClient,
+  limit = 50,
+  scope?: { workspaceId: string; eventIds: string[]; workflowIds: string[] },
+) {
   const nowIso = new Date().toISOString();
-  const { data: events, error } = await supabase
+  let query = supabase
     .from("workflow_events")
     .select(
-      "id, owner_id, workspace_id, entity, entity_id, event_type, before, after, resume_workflow_id, resume_cursor",
+      "id, owner_id, workspace_id, entity, entity_id, event_type, before, after, resume_workflow_id, resume_cursor, workflow_version",
     )
     .is("processed_at", null)
     .lte("run_at", nowIso)
     .order("created_at", { ascending: true })
     .limit(limit);
+  if (scope) query = query.eq("workspace_id", scope.workspaceId).in("id", scope.eventIds);
+  const { data: events, error } = await query;
   if (error) throw new Error(error.message);
 
   const results: Array<{ id: string; ok: boolean; error?: string }> = [];
   for (const ev of (events ?? []) as EventRow[]) {
     try {
-      await processEvent(supabase, ev);
+      await processEvent(supabase, ev, scope?.workflowIds);
       results.push({ id: ev.id, ok: true });
     } catch (e) {
       results.push({ id: ev.id, ok: false, error: e instanceof Error ? e.message : String(e) });

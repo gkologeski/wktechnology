@@ -95,6 +95,7 @@ export const listPortalTickets = createServerFn({ method: "GET" })
       .from("tickets")
       .select("id, subject, description, status, priority, created_at, resolved_at, due_at")
       .eq("contact_id", contact.id)
+      .eq("workspace_id", contact.workspace_id as string)
       .order("created_at", { ascending: false })
       .limit(200);
     if (error) throw error;

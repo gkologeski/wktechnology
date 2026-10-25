@@ -1,9 +1,10 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const listTaskQueues = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.task_queues", "view")])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("task_queues")
@@ -36,7 +37,7 @@ export const listTaskQueues = createServerFn({ method: "GET" })
   });
 
 export const createTaskQueue = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.task_queues", "create")])
   .inputValidator((input) =>
     z
       .object({ name: z.string().min(1).max(120), description: z.string().max(500).optional() })
@@ -53,7 +54,7 @@ export const createTaskQueue = createServerFn({ method: "POST" })
   });
 
 export const deleteTaskQueue = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.task_queues", "delete")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("task_queues").delete().eq("id", data.id);
@@ -77,7 +78,7 @@ const addItemSchema = z.object({
 });
 
 export const addQueueItems = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.task_queues", "update")])
   .inputValidator((input) => addItemSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { data: maxRow } = await context.supabase
@@ -113,7 +114,7 @@ type Item = {
 };
 
 export const getQueueWithItems = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.task_queues", "view")])
   .inputValidator((input) => z.object({ queue_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { data: q, error: qe } = await context.supabase
@@ -194,7 +195,7 @@ export const getQueueWithItems = createServerFn({ method: "GET" })
   });
 
 export const updateQueueItem = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.task_queues", "update")])
   .inputValidator((input) =>
     z
       .object({

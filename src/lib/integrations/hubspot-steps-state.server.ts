@@ -1,7 +1,7 @@
 // Estado/persistência dos passos de importação do HubSpot (logs, checkpoints, mapas).
 // Extraído de hubspot-steps.server.ts.
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { hsPost } from "./hubspot-api.server";
+import { hsPost, type HubspotRequestGuard } from "./hubspot-api.server";
 import type { HsTable, LogEntry, ResumeState, StepName } from "./hubspot-steps-types";
 
 export async function appendLog(
@@ -159,11 +159,15 @@ export async function loadResume(supabase: SupabaseClient, itemId: string): Prom
   return ((data?.before as ResumeState | null) ?? {}) as ResumeState;
 }
 
-export async function searchTotal(obj: string): Promise<number> {
+export async function searchTotal(obj: string, authorize?: HubspotRequestGuard): Promise<number> {
+  await authorize?.();
   try {
-    const r = (await hsPost(`/crm/v3/objects/${obj}/search`, { limit: 1 })) as { total?: number };
+    const r = (await hsPost(`/crm/v3/objects/${obj}/search`, { limit: 1 }, authorize)) as {
+      total?: number;
+    };
     return r.total ?? 0;
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && /permiss|autoriz|42501/i.test(error.message)) throw error;
     return 0;
   }
 }

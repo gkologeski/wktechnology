@@ -1,3 +1,6 @@
+import { workRpc } from "@/lib/access-control/work-core.server";
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Server fn: ao mudar o status de um ticket, envia uma DM ao usuário que abriu.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -12,7 +15,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export const notifyTicketStatusChange = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.tickets", "update")])
   .inputValidator((i) =>
     z
       .object({
@@ -23,16 +26,19 @@ export const notifyTicketStatusChange = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
+    await assertSalesRecord(context.supabase, "tickets", data.ticket_id, "update");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // 1) Carrega ticket
     // Leitura com o cliente do usuário (RLS): só tickets que ele pode ver.
     const { data: ticket } = await context.supabase
       .from("tickets")
-      .select("id, subject, workspace_id, assignee_id")
+      .select("id, subject, workspace_id, assignee_id, status")
       .eq("id", data.ticket_id)
       .maybeSingle();
     if (!ticket) return { ok: false, reason: "ticket_not_found" };
+    if (ticket.status !== data.new_status)
+      throw new Error("O status informado não corresponde ao ticket salvo.");
     const ws = (ticket as { workspace_id: string }).workspace_id;
     const subject = (ticket as { subject: string }).subject;
 
@@ -57,8 +63,18 @@ export const notifyTicketStatusChange = createServerFn({ method: "POST" })
       .select("user_id")
       .eq("workspace_id", ws)
       .eq("user_id", opener)
+      .eq("status", "active")
       .maybeSingle();
     if (!openerMember) return { ok: false, reason: "opener_not_member" };
+    if (
+      !(await workRpc<boolean>(supabaseAdmin, "sales_notification_allowed", {
+        p_actor: userId,
+        p_recipient: opener,
+        p_table: "tickets",
+        p_id: data.ticket_id,
+      }))
+    )
+      return { ok: false, reason: "recipient_without_access" };
 
     // 4) Obtém ou cria DM entre o usuário atual e o opener neste workspace
     const { data: mine } = await supabaseAdmin

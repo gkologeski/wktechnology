@@ -47,6 +47,7 @@ export const testCalendarConnection = createServerFn({ method: "POST" })
       calendar_count?: number;
       primary_email?: string;
     }> => {
+      await assertSalesRecord(context.supabase, "calendar_accounts", data.id, "manage");
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const steps: CalendarTestStep[] = [];
       const fail = (name: string, detail: string) => {
@@ -96,6 +97,7 @@ export const testCalendarConnection = createServerFn({ method: "POST" })
 
       let accessToken = full.access_token as string | null;
       try {
+        await assertSalesRecord(context.supabase, "calendar_accounts", data.id, "manage");
         const res = await fetch("https://oauth2.googleapis.com/token", {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -140,6 +142,7 @@ export const testCalendarConnection = createServerFn({ method: "POST" })
 
       let calendarCount = 0;
       try {
+        await assertSalesRecord(context.supabase, "calendar_accounts", data.id, "manage");
         const res = await fetch(
           "https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=50",
           {
@@ -219,7 +222,7 @@ export const listCalendarAccounts = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await context.supabase
       .from("calendar_accounts")
       .select(
         "id, provider, email, primary_calendar_id, sync_enabled, auto_create_meet_link, last_synced_at, last_status, last_error, created_at",
@@ -251,6 +254,7 @@ export const disconnectCalendarAccount = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("system.calendars", "delete")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    await assertSalesRecord(context.supabase, "calendar_accounts", data.id, "delete");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
     // Preserva o histórico de reuniões (recording_url, transcript, summary_text,

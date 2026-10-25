@@ -1,8 +1,17 @@
+import { assertSalesArea } from "@/lib/access-control/sales-core.server";
 // Cliente HTTP do HubSpot (via gateway), descoberta de propriedades e mapeadores
 // de payload HubSpot -> tabelas locais. Extraído de hubspot-steps.server.ts.
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { countryFromRecordField, sourcePhone } from "@/lib/phone/phone-boundary";
+export type HubspotRequestGuard = () => Promise<void>;
+export const hubspotRequestGuard =
+  (db: SupabaseClient): HubspotRequestGuard =>
+  () =>
+    assertSalesArea(db, "system.hubspot_sync", "manage").then(() => undefined);
+const rethrowPermission = (error: unknown) => {
+  if (error instanceof Error && /permiss|autoriz|42501/i.test(error.message)) throw error;
+};
 export const GATEWAY_URL = "https://connector-gateway.lovable.dev/hubspot";
 
 export function hsHeaders() {
@@ -17,7 +26,12 @@ export function hsHeaders() {
   } as Record<string, string>;
 }
 
-export async function hsFetch(path: string, params?: Record<string, string>) {
+export async function hsFetch(
+  path: string,
+  params?: Record<string, string>,
+  authorize?: HubspotRequestGuard,
+) {
+  await authorize?.();
   const qs = params ? "?" + new URLSearchParams(params).toString() : "";
   const res = await fetch(`${GATEWAY_URL}${path}${qs}`, { headers: hsHeaders() });
   const data = await res.json();
@@ -25,7 +39,8 @@ export async function hsFetch(path: string, params?: Record<string, string>) {
   return data;
 }
 
-export async function hsPost(path: string, body: object) {
+export async function hsPost(path: string, body: object, authorize?: HubspotRequestGuard) {
+  await authorize?.();
   const res = await fetch(`${GATEWAY_URL}${path}`, {
     method: "POST",
     headers: hsHeaders(),
@@ -37,26 +52,44 @@ export async function hsPost(path: string, body: object) {
   return data;
 }
 
-export async function discoverTotal(objectType: string): Promise<number | null> {
+export async function discoverTotal(
+  objectType: string,
+  authorize?: HubspotRequestGuard,
+): Promise<number | null> {
   try {
-    const r = (await hsPost(`/crm/v3/objects/${objectType}/search`, {
-      limit: 1,
-      properties: ["hs_object_id"],
-      filterGroups: [],
-    })) as { total?: number };
+    const r = (await hsPost(
+      `/crm/v3/objects/${objectType}/search`,
+      {
+        limit: 1,
+        properties: ["hs_object_id"],
+        filterGroups: [],
+      },
+      authorize,
+    )) as { total?: number };
     return typeof r.total === "number" ? r.total : null;
-  } catch {
+  } catch (error) {
+    rethrowPermission(error);
     return null;
   }
 }
 
-export async function getAssoc(fromObj: string, fromId: string, toObj: string): Promise<string[]> {
+export async function getAssoc(
+  fromObj: string,
+  fromId: string,
+  toObj: string,
+  authorize?: HubspotRequestGuard,
+): Promise<string[]> {
   try {
-    const r = (await hsFetch(`/crm/v3/objects/${fromObj}/${fromId}/associations/${toObj}`)) as {
+    const r = (await hsFetch(
+      `/crm/v3/objects/${fromObj}/${fromId}/associations/${toObj}`,
+      undefined,
+      authorize,
+    )) as {
       results?: { id?: string | number; toObjectId?: string | number }[];
     };
     return (r.results ?? []).map((x) => String(x.id ?? x.toObjectId)).filter(Boolean);
-  } catch {
+  } catch (error) {
+    rethrowPermission(error);
     return [];
   }
 }
@@ -69,15 +102,20 @@ export async function getAssocMany(
   fromIds: string[],
   toObj: string,
   _concurrency = 20,
+  authorize?: HubspotRequestGuard,
 ): Promise<Map<string, string[]>> {
   const out = new Map<string, string[]>();
   const BATCH = 1000;
   for (let i = 0; i < fromIds.length; i += BATCH) {
     const chunk = fromIds.slice(i, i + BATCH);
     try {
-      const r = (await hsPost(`/crm/v4/associations/${fromObj}/${toObj}/batch/read`, {
-        inputs: chunk.map((id) => ({ id })),
-      })) as {
+      const r = (await hsPost(
+        `/crm/v4/associations/${fromObj}/${toObj}/batch/read`,
+        {
+          inputs: chunk.map((id) => ({ id })),
+        },
+        authorize,
+      )) as {
         results?: {
           from?: { id?: string | number };
           to?: { toObjectId?: string | number; id?: string | number }[];
@@ -90,11 +128,12 @@ export async function getAssocMany(
         out.set(fromId, tos);
       }
       for (const id of chunk) if (!out.has(id)) out.set(id, []);
-    } catch {
+    } catch (error) {
+      rethrowPermission(error);
       // Fallback: chamadas individuais em paralelo (20 por vez)
       for (let j = 0; j < chunk.length; j += 20) {
         const sub = chunk.slice(j, j + 20);
-        const results = await Promise.all(sub.map((id) => getAssoc(fromObj, id, toObj)));
+        const results = await Promise.all(sub.map((id) => getAssoc(fromObj, id, toObj, authorize)));
         sub.forEach((id, idx) => out.set(id, results[idx]));
       }
     }
@@ -113,18 +152,24 @@ export async function batchRead(
   obj: string,
   ids: string[],
   properties: string[],
+  authorize?: HubspotRequestGuard,
 ): Promise<HSRec[]> {
   const out: HSRec[] = [];
   const unique = Array.from(new Set(ids));
   for (let i = 0; i < unique.length; i += 100) {
     const chunk = unique.slice(i, i + 100);
     try {
-      const r = (await hsPost(`/crm/v3/objects/${obj}/batch/read`, {
-        properties,
-        inputs: chunk.map((id) => ({ id })),
-      })) as { results?: HSRec[] };
+      const r = (await hsPost(
+        `/crm/v3/objects/${obj}/batch/read`,
+        {
+          properties,
+          inputs: chunk.map((id) => ({ id })),
+        },
+        authorize,
+      )) as { results?: HSRec[] };
       out.push(...(r.results ?? []));
-    } catch {
+    } catch (error) {
+      rethrowPermission(error);
       // skip chunk
     }
   }
@@ -136,11 +181,14 @@ export async function batchRead(
 // In-request cache (each tick runs one step in one HTTP request, so this is enough).
 export const propertyCache = new Map<string, string[]>();
 
-export async function loadHsProperties(objectType: string): Promise<string[]> {
+export async function loadHsProperties(
+  objectType: string,
+  authorize?: HubspotRequestGuard,
+): Promise<string[]> {
   const cached = propertyCache.get(objectType);
   if (cached) return cached;
   try {
-    const r = (await hsFetch(`/crm/v3/properties/${objectType}`)) as {
+    const r = (await hsFetch(`/crm/v3/properties/${objectType}`, undefined, authorize)) as {
       results?: { name: string; hidden?: boolean; calculated?: boolean }[];
     };
     const names = (r.results ?? [])
@@ -151,7 +199,8 @@ export async function loadHsProperties(objectType: string): Promise<string[]> {
     const capped = names.slice(0, 400);
     propertyCache.set(objectType, capped);
     return capped;
-  } catch {
+  } catch (error) {
+    rethrowPermission(error);
     propertyCache.set(objectType, []);
     return [];
   }

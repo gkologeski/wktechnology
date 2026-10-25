@@ -51,7 +51,7 @@ export const Route = createFileRoute("/api/public/v1/leads")({
         const { data, error, count } = await query
           .order("created_at", { ascending: params.ascending })
           .range(params.offset, params.offset + params.limit - 1);
-        if (error) return jsonError(error.message, 400);
+        if (error) return jsonError(error.message, error.code === "42501" ? 403 : 400);
 
         const rows = data ?? [];
         return Response.json({ data: rows, meta: buildMeta(params, rows.length, count ?? null) });
@@ -111,10 +111,10 @@ export const Route = createFileRoute("/api/public/v1/leads")({
             "id, first_name, last_name, email, phone, job_title, cargo_resumido, area_atuacao, nivel_hierarquico, company_name, status, source, created_at",
           )
           .single();
-        if (error) return new Response(JSON.stringify({ error: error.message }), { status: 400 });
+        if (error) return jsonError(error.message, error.code === "42501" ? 403 : 400);
         // Garante empresa e contato vinculados ao lead
         await ensureLeadRelationsSafe(subjectClient, data.id);
-        return Response.json({ data });
+        return Response.json({ data }, { status: 201 });
       },
     },
   },

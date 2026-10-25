@@ -329,21 +329,43 @@ export const completeOnbRun = createServerFn({ method: "POST" })
       }
 
       if (tpl?.workflow_id) {
-        const { error: evErr } = await supabase.from("workflow_events").insert({
+        const { assertSalesRecord } = await import("@/lib/access-control/sales-core.server");
+        await assertSalesRecord(supabase, "workflows", tpl.workflow_id, "manage");
+        const { data: wf, error: wfError } = await supabase
+          .from("workflows")
+          .select("id,workspace_id,entity,published_version,enabled,status")
+          .eq("id", tpl.workflow_id)
+          .single();
+        if (
+          wfError ||
+          !wf ||
+          wf.workspace_id !== sourceWorkspace ||
+          !wf.enabled ||
+          wf.status !== "published"
+        )
+          throw new Error("Workflow indisponível para o onboarding.");
+        const { data: actual, error: sourceError } = await supabase
+          .from(wf.entity as never)
+          .select("*")
+          .eq("id", data.entity_id)
+          .eq("workspace_id", sourceWorkspace)
+          .single();
+        if (sourceError || !actual) throw new Error("Origem do workflow indisponível.");
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { error: evErr } = await supabaseAdmin.from("workflow_events").insert({
           workspace_id: sourceWorkspace,
           owner_id: userId,
-          entity:
-            run.entity_type === "lead"
-              ? "leads"
-              : run.entity_type === "company"
-                ? "companies"
-                : "contacts",
+          entity: wf.entity,
           entity_id: data.entity_id,
           event_type: "created",
-          after: { onboarded_via: run.template_id } as never,
+          after: actual,
           before: null,
+          resume_workflow_id: wf.id,
+          resume_cursor: 0,
+          workflow_version: wf.published_version,
         } as never);
-        if (!evErr) workflowEnqueued = true;
+        if (evErr) throw new Error(evErr.message);
+        workflowEnqueued = true;
       }
     }
 

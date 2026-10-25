@@ -1,3 +1,4 @@
+import { recordUpdatePayload } from "@/lib/access-control/record-update-payload";
 import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
 import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
@@ -41,11 +42,13 @@ export const upsertEmailTemplate = createServerFn({ method: "POST" })
       ...data,
       owner_id: context.userId,
     };
-    const { data: row, error } = await context.supabase
-      .from("email_templates")
-      .upsert(payload)
-      .select("*")
-      .single();
+    const query = data.id
+      ? context.supabase
+          .from("email_templates")
+          .update(recordUpdatePayload(payload))
+          .eq("id", data.id)
+      : context.supabase.from("email_templates").insert(payload);
+    const { data: row, error } = await query.select("*").single();
     if (error) throw new Error(error.message);
     return { item: row };
   });
@@ -77,11 +80,13 @@ export const upsertEmailSnippet = createServerFn({ method: "POST" })
   .inputValidator((input) => snippetSchema.parse(input))
   .handler(async ({ data, context }) => {
     const payload = { ...data, owner_id: context.userId };
-    const { data: row, error } = await context.supabase
-      .from("email_snippets")
-      .upsert(payload)
-      .select("*")
-      .single();
+    const query = data.id
+      ? context.supabase
+          .from("email_snippets")
+          .update(recordUpdatePayload(payload))
+          .eq("id", data.id)
+      : context.supabase.from("email_snippets").insert(payload);
+    const { data: row, error } = await query.select("*").single();
     if (error) throw new Error(error.message);
     return { item: row };
   });

@@ -1,3 +1,5 @@
+import { assertSalesWorker } from "@/lib/access-control/sales-worker.server";
+import { hubspotSourceClient } from "@/lib/access-control/hubspot-source-client.server";
 // Implementação de produção: banco (cliente do worker, sempre filtrado pelo
 // workspace da conversa) e Google Agenda real do anfitrião do agente.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -36,7 +38,16 @@ export function createDbToolStore(
   },
 ): ToolStore {
   const ws = ctx.workspaceId;
-  return {
+  const authorize = async (refs: Parameters<typeof assertSalesWorker>[3] = []) => {
+    if (!ctx.enrollmentId) throw new Error("Ferramenta sem origem de atendimento autorizada.");
+    await assertSalesWorker(admin, "sdr_enrollments", ctx.enrollmentId, [
+      { table: "whatsapp_conversations", id: ctx.conversationId, action: "update" },
+      ...(ctx.agentVersionId ? [{ agent_version_id: ctx.agentVersionId }] : []),
+      ...refs,
+    ]);
+  };
+  const crm = hubspotSourceClient(admin, { table: "sdr_enrollments", id: ctx.enrollmentId ?? "" });
+  const store: ToolStore = {
     async getToolLog(k) {
       const row = must(
         await admin
@@ -149,12 +160,30 @@ export function createDbToolStore(
       );
     },
     async reserveMeeting(p) {
+      await authorize([
+        { table: "calendar_accounts", id: String(p.calendar_account_id), action: "manage" },
+        { resource: "techsales.meetings", action: "create", subject_id: String(p.host_user_id) },
+      ]);
       const data = must(
         await admin.rpc("sdr_reserve_meeting", { p: { ...p, workspace_id: ws } }),
       ) as { status: "reserved" | "exists" | "conflict"; id?: string; meeting_status?: string };
       return data;
     },
     async updateMeeting(id, patch) {
+      await authorize();
+      const existing = must(
+        await admin
+          .from("sdr_meetings")
+          .select("conversation_id,calendar_account_id")
+          .eq("id", id)
+          .eq("workspace_id", ws)
+          .single(),
+      ) as { conversation_id: string; calendar_account_id: string };
+      if (existing.conversation_id !== ctx.conversationId)
+        throw new Error("Reunião de outra conversa.");
+      await authorize([
+        { table: "calendar_accounts", id: existing.calendar_account_id, action: "manage" },
+      ]);
       must(
         await admin
           .from("sdr_meetings")
@@ -170,10 +199,12 @@ export function createDbToolStore(
           .select(MEETING_COLS)
           .eq("id", id)
           .eq("workspace_id", ws)
+          .eq("conversation_id", ctx.conversationId)
           .maybeSingle(),
       ) as MeetingRow | null;
     },
     async conversationMeetings(c) {
+      if (c !== ctx.conversationId) throw new Error("Conversa de outra origem.");
       return (must(
         await admin
           .from("sdr_meetings")
@@ -185,11 +216,13 @@ export function createDbToolStore(
       ) ?? []) as MeetingRow[];
     },
     async activeMeetingsBusy(cal, from, to, excludeId) {
+      await authorize([{ table: "calendar_accounts", id: cal, action: "manage" }]);
       const rows = must(
         await admin
           .from("sdr_meetings")
           .select("id, start_at, end_at")
           .eq("calendar_account_id", cal)
+          .eq("workspace_id", ws)
           .in("status", ["pending", "reconcile", "confirmed"])
           .lt("start_at", new Date(to).toISOString())
           .gt("end_at", new Date(from).toISOString()),
@@ -203,7 +236,7 @@ export function createDbToolStore(
       const out: CustomerCandidate[] = [];
       for (const kind of ["lead", "contact"] as const) {
         const table = kind === "lead" ? "leads" : "contacts";
-        let query = admin
+        let query = crm
           .from(table)
           .select("id, first_name, last_name, email, phone, mobile_phone")
           .eq("workspace_id", ws)
@@ -243,7 +276,7 @@ export function createDbToolStore(
       const personId = link.contactId ?? link.leadId;
       if (personId) {
         const person = must(
-          await admin
+          await crm
             .from(link.contactId ? "contacts" : "leads")
             .select("job_title, cargo_resumido, area_atuacao, nivel_hierarquico")
             .eq("id", personId)
@@ -254,7 +287,7 @@ export function createDbToolStore(
       }
       if (link.dealId) {
         const d = must(
-          await admin
+          await crm
             .from("deals")
             .select("name, stage")
             .eq("id", link.dealId)
@@ -265,7 +298,7 @@ export function createDbToolStore(
       }
       if (link.companyId) {
         const c = must(
-          await admin
+          await crm
             .from("companies")
             .select("name, size_description")
             .eq("id", link.companyId)
@@ -281,7 +314,7 @@ export function createDbToolStore(
       const val = link.contactId ?? link.leadId;
       if (col && val) {
         const acts = must(
-          await admin
+          await crm
             .from("activities")
             .select("type, subject, created_at")
             .eq("workspace_id", ws)
@@ -300,6 +333,24 @@ export function createDbToolStore(
     },
     async createActivity(a) {
       if (!a.owner_id) return null;
+      await authorize([
+        {
+          resource:
+            a.type === "note"
+              ? "techsales.notes"
+              : a.type === "task"
+                ? "techsales.tasks"
+                : "techsales.activities",
+          action: "create",
+          subject_id: String(a.owner_id),
+        },
+        ...[
+          ["related_lead_id", "leads"],
+          ["related_contact_id", "contacts"],
+          ["related_company_id", "companies"],
+          ["related_deal_id", "deals"],
+        ].flatMap(([field, table]) => (a[field] ? [{ table, id: String(a[field]) }] : [])),
+      ]);
       const row = must(
         await admin
           .from("activities")
@@ -310,6 +361,7 @@ export function createDbToolStore(
       return row.id;
     },
     async setEnrollment(eid, patch) {
+      if (eid !== ctx.enrollmentId) throw new Error("Atendimento de outra origem.");
       must(await admin.from("sdr_enrollments").update(patch).eq("id", eid).eq("workspace_id", ws));
     },
     async enrollmentTags(eid) {
@@ -340,6 +392,16 @@ export function createDbToolStore(
       }));
     },
   };
+  return new Proxy(store, {
+    get(target, key: keyof ToolStore) {
+      const method = target[key];
+      return async (...args: unknown[]) => {
+        // A denial may still be logged, but every business tool rechecks the persisted source.
+        if (key !== "saveToolLog") await authorize();
+        return (method as (...a: unknown[]) => unknown).apply(target, args);
+      };
+    },
+  });
 }
 
 /** Prontidão da agenda do anfitrião: conta ativa, mesmo workspace, do próprio anfitrião, membro ativo. */
@@ -429,10 +491,22 @@ export function createGoogleCalendar(
   workspaceId: string,
   s: ScheduleConfig,
   calendarId: string,
+  enrollmentId: string,
+  agentVersionId?: string | null,
 ): CalendarProvider {
   const base = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}`;
   const call = async (url: string, init: RequestInit = {}) => {
+    await assertSalesWorker(admin, "sdr_enrollments", enrollmentId, [
+      ...(agentVersionId ? [{ agent_version_id: agentVersionId }] : []),
+      { table: "calendar_accounts", id: s.calendar_account_id, action: "manage" },
+      { member_id: s.host_user_id },
+    ]);
     const token = await googleToken(admin, s.calendar_account_id, workspaceId);
+    await assertSalesWorker(admin, "sdr_enrollments", enrollmentId, [
+      ...(agentVersionId ? [{ agent_version_id: agentVersionId }] : []),
+      { table: "calendar_accounts", id: s.calendar_account_id, action: "manage" },
+      { member_id: s.host_user_id },
+    ]);
     return fetch(url, {
       ...init,
       headers: {

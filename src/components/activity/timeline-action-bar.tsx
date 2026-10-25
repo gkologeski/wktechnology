@@ -1,3 +1,6 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { readViewAs } from "@/lib/view-as-client";
+import { canCreateTimelineAction } from "@/lib/access-control/sales-timeline-policy";
 import { useState } from "react";
 import { MoreHorizontal, Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -48,6 +51,18 @@ export function TimelineActionBar({
   /** Slot extra ao fim da barra (ex.: botão de sala de vídeo). */
   trailing?: React.ReactNode;
 }) {
+  const permissions = usePermissions();
+  const view = readViewAs();
+  const allowed = (action: BarAction) =>
+    !permissions.isLoading &&
+    !permissions.isError &&
+    !!permissions.workspaceId &&
+    canCreateTimelineAction(
+      permissions.permissions,
+      action.kind,
+      action.value,
+      view?.mode === "role" ? action.kind !== "log" : !!view?.readOnly,
+    );
   const [order, setOrder] = useState<OrderState>(() => loadOrder());
   const [dragKey, setDragKey] = useState<string | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -112,6 +127,7 @@ export function TimelineActionBar({
   };
 
   const handleBarClick = (a: BarAction) => {
+    if (!allowed(a)) return;
     setMoreOpen(false);
     onAction(a);
   };
@@ -174,10 +190,10 @@ export function TimelineActionBar({
     isCompanyContext && a.kind === "create" && a.value === "email";
   const pinnedActions = order.pinned
     .map((k) => ACTIONS_BY_KEY[k])
-    .filter((a): a is BarAction => Boolean(a) && !hideAction(a));
+    .filter((a): a is BarAction => Boolean(a) && !hideAction(a) && allowed(a));
   const moreActions = order.more
     .map((k) => ACTIONS_BY_KEY[k])
-    .filter((a): a is BarAction => Boolean(a) && !hideAction(a));
+    .filter((a): a is BarAction => Boolean(a) && !hideAction(a) && allowed(a));
   const moreFiltered = moreActions
     .map((a, i) => ({ a, i }))
     .filter(({ a }) => a.label.toLowerCase().includes(moreQuery.toLowerCase()));

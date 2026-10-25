@@ -50,34 +50,34 @@ export const saveSdrAgentDraft = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!pb) throw new Error("Agente não encontrado neste workspace.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: draft } = await supabaseAdmin
+    const { data: draft } = await context.supabase
       .from("sdr_agent_versions")
       .select("id")
       .eq("playbook_id", data.playbookId)
       .eq("status", "draft")
       .maybeSingle();
     if (draft) {
-      const { error } = await supabaseAdmin
+      const { error } = await context.supabase
         .from("sdr_agent_versions")
         .update({ persona, notes: data.notes ?? null, updated_at: new Date().toISOString() })
         .eq("id", draft.id);
       if (error) throw new Error(error.message);
       return { id: draft.id };
     }
-    const { data: last } = await supabaseAdmin
+    const { data: last } = await context.supabase
       .from("sdr_agent_versions")
       .select("version")
       .eq("playbook_id", data.playbookId)
       .order("version", { ascending: false })
       .limit(1)
       .maybeSingle();
-    const { data: pubTools } = await supabaseAdmin
+    const { data: pubTools } = await context.supabase
       .from("sdr_agent_versions")
       .select("tool_config")
       .eq("playbook_id", data.playbookId)
       .eq("status", "published")
       .maybeSingle();
-    const { data: ins, error } = await supabaseAdmin
+    const { data: ins, error } = await context.supabase
       .from("sdr_agent_versions")
       .insert({
         workspace_id: data.workspaceId,
@@ -115,6 +115,7 @@ export const publishSdrAgentVersion = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!v) throw new Error("Versão não encontrada.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await assertSalesRecord(context.supabase, "sdr_playbooks", data.playbookId, "manage");
     const { error } = await supabaseAdmin.rpc("sdr_publish_agent_version", {
       p_version: v.id,
       p_user: context.userId,
@@ -203,7 +204,12 @@ export const testSdrAgent = createServerFn({ method: "POST" })
           workspaceId: data.workspaceId,
           playbookId: data.playbookId,
           config: toolCfg,
-          facts: await readinessFacts(data.workspaceId, pb as Record<string, unknown>, toolCfg),
+          facts: await readinessFacts(
+            data.workspaceId,
+            pb as Record<string, unknown>,
+            toolCfg,
+            context.supabase,
+          ),
           history,
           offers,
           materials,

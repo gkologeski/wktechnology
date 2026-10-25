@@ -1,3 +1,7 @@
+import { tickForWorkflowCaller } from "@/lib/workflows/caller-tick.server";
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { workRpc } from "@/lib/access-control/work-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { conditionsSummary, evaluateConditions } from "@/lib/workflows/conditions";
 import { isLineItemField, lineItemCaseMatches } from "@/lib/workflows/line-items";
@@ -66,7 +70,7 @@ function passesFilter(row: Record<string, unknown>, f: WorkflowFilter): boolean 
 }
 
 export const listWorkflows = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.workflows", "view")])
   .handler(async ({ context }) => {
     const { supabase } = context;
     const { data, error } = await supabase
@@ -111,7 +115,7 @@ export const listWorkflows = createServerFn({ method: "GET" })
   });
 
 export const saveWorkflow = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.workflows", ["create", "update"])])
   .inputValidator((input) => SaveSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -127,7 +131,19 @@ export const saveWorkflow = createServerFn({ method: "POST" })
       draft_goal_filters: (data.trigger as unknown as WorkflowTrigger).goal_filters ?? [],
     } as never;
     if (data.id) {
-      const { error } = await supabase.from("workflows").update(updatePayload).eq("id", data.id);
+      const { data: prior, error: priorError } = await supabase
+        .from("workflows")
+        .select("enabled")
+        .eq("id", data.id)
+        .single();
+      if (priorError) throw new Error(priorError.message);
+      const { error } = await supabase
+        .from("workflows")
+        .update({
+          ...(updatePayload as Record<string, unknown>),
+          ...(data.enabled && !prior.enabled ? { execution_user_id: userId } : {}),
+        } as never)
+        .eq("id", data.id);
       if (error) throw new Error(error.message);
       return { id: data.id };
     }
@@ -153,7 +169,7 @@ export const saveWorkflow = createServerFn({ method: "POST" })
   });
 
 export const publishWorkflow = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.workflows", "manage")])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -273,6 +289,7 @@ export const publishWorkflow = createServerFn({ method: "POST" })
         goal_filters: wf.draft_goal_filters ?? [],
         status: "published",
         published_version: (wf.published_version ?? 0) + 1,
+        execution_user_id: context.userId,
         last_published_at: new Date().toISOString(),
       } as never)
       .eq("id", data.id);
@@ -298,7 +315,6 @@ export const discardDraft = createServerFn({ method: "POST" })
         draft_trigger: wf.trigger,
         draft_actions: wf.actions,
         draft_goal_filters: wf.goal_filters,
-        status: "published",
       } as never)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -306,7 +322,7 @@ export const discardDraft = createServerFn({ method: "POST" })
   });
 
 export const deleteWorkflow = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.workflows", "delete")])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     await assertWorkflowsDelete(context.supabase, context.userId);
@@ -366,7 +382,7 @@ export const listRecordEnrollments = createServerFn({ method: "GET" })
 // Estratégia: usa um cliente wrapper que intercepta writes; para v1, apenas produz
 // um log estático caminhando pelas ações.
 export const testWorkflow = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.workflows", "manage")])
   .inputValidator((i) =>
     z
       .object({
@@ -379,9 +395,10 @@ export const testWorkflow = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertWorkflowsManage(context.supabase, context.userId);
+    await assertSalesRecord(context.supabase, "workflows", data.workflowId, "manage");
     const { data: wf, error: wfErr } = await context.supabase
       .from("workflows")
-      .select("id, entity, trigger, actions, draft_trigger, draft_actions")
+      .select("id, workspace_id, entity, trigger, actions, draft_trigger, draft_actions")
       .eq("id", data.workflowId)
       .maybeSingle();
     if (wfErr) throw new Error(wfErr.message);
@@ -396,6 +413,8 @@ export const testWorkflow = createServerFn({ method: "POST" })
       .maybeSingle();
     if (recErr) throw new Error(recErr.message);
     if (!rec) throw new Error("Registro não encontrado");
+    if ((rec as { workspace_id?: string }).workspace_id !== wf.workspace_id)
+      throw new Error("Registro fora do workspace do workflow.");
 
     const actions = ((data.useDraft ? wf.draft_actions : wf.actions) ?? []) as WorkflowAction[];
     const trigger = ((data.useDraft ? wf.draft_trigger : wf.trigger) ??
@@ -455,19 +474,40 @@ export const testWorkflow = createServerFn({ method: "POST" })
     };
     walk(actions);
 
-    // Persiste como run de teste para aparecer no histórico do registro.
-    await context.supabase.from("workflow_runs").insert({
+    // Somente trilha técnica: nenhuma ação do fluxo é executada neste teste.
+    await assertSalesRecord(context.supabase, "workflows", data.workflowId, "manage");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const eventId = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const { error: eventError } = await supabaseAdmin.from("workflow_events").insert({
+      id: eventId,
       owner_id: context.userId,
+      workspace_id: wf.workspace_id,
+      entity: data.entity,
+      entity_id: data.entityId,
+      event_type: "created",
+      processed_at: now,
+      before: null,
+      after: null,
+    } as never);
+    if (eventError) throw new Error(eventError.message);
+    const { error: runError } = await supabaseAdmin.from("workflow_runs").insert({
+      owner_id: context.userId,
+      workspace_id: wf.workspace_id,
       workflow_id: data.workflowId,
-      event_id: "00000000-0000-0000-0000-000000000000",
+      event_id: eventId,
       entity: data.entity,
       entity_id: data.entityId,
       status: triggerOk ? "success" : "skipped",
-      started_at: new Date().toISOString(),
-      finished_at: new Date().toISOString(),
+      started_at: now,
+      finished_at: now,
       log: log as never,
       is_test: true,
     } as never);
+    if (runError) {
+      await supabaseAdmin.from("workflow_events").delete().eq("id", eventId);
+      throw new Error(runError.message);
+    }
 
     return { ok: true, triggerOk, log };
   });
@@ -475,7 +515,7 @@ export const testWorkflow = createServerFn({ method: "POST" })
 // Fase 4 — aplicar workflow aos registros existentes que batem no gatilho.
 // Enfileira eventos sintéticos "created" em workflow_events; o tick normal processa.
 export const bulkEnrollWorkflow = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.workflows", "manage")])
   .inputValidator((i) =>
     z
       .object({
@@ -487,10 +527,11 @@ export const bulkEnrollWorkflow = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await assertWorkflowsManage(supabase, userId);
+    await assertSalesRecord(supabase, "workflows", data.workflowId, "manage");
 
     const { data: wf, error: wfErr } = await supabase
       .from("workflows")
-      .select("id, workspace_id, entity, trigger, status")
+      .select("id, workspace_id, entity, trigger, status, published_version")
       .eq("id", data.workflowId)
       .maybeSingle();
     if (wfErr) throw new Error(wfErr.message);
@@ -508,38 +549,52 @@ export const bulkEnrollWorkflow = createServerFn({ method: "POST" })
       .limit(data.limit);
     if (recErr) throw new Error(recErr.message);
 
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let enqueued = 0;
+    const eventIds: string[] = [];
     for (const rec of (records ?? []) as Record<string, unknown>[]) {
       if (rec.workspace_id !== wf.workspace_id)
         throw new Error("Workspace de origem incompatível.");
       if (!evaluateConditions(filters, (f) => passesFilter(rec, f))) continue;
-      const { error: evErr } = await supabase.from("workflow_events").insert({
-        workspace_id: wf.workspace_id,
-        owner_id: userId,
-        entity: wf.entity,
-        entity_id: rec.id as string,
-        event_type: "created",
-        after: rec as never,
-        before: null,
-      } as never);
-      if (!evErr) enqueued += 1;
+      const { data: newEvent, error: evErr } = await supabaseAdmin
+        .from("workflow_events")
+        .insert({
+          workspace_id: wf.workspace_id,
+          owner_id: userId,
+          entity: wf.entity,
+          entity_id: rec.id as string,
+          event_type: "created",
+          after: rec as never,
+          before: null,
+          resume_workflow_id: wf.id,
+          resume_cursor: 0,
+          workflow_version: wf.published_version,
+        } as never)
+        .select("id")
+        .single();
+      if (!evErr && newEvent) {
+        enqueued += 1;
+        eventIds.push(newEvent.id);
+      }
     }
 
     // Processa imediatamente (limita a `enqueued` para não pegar backlog alheio de outros triggers).
-    const tickRes = await tickWorkflows(supabase, Math.max(enqueued, 1));
+    const tickRes = await tickForWorkflowCaller(supabase, userId, Math.max(enqueued, 1), eventIds, [
+      wf.id,
+    ]);
     return { enqueued, processed: tickRes.processed };
   });
 
 export const triggerTickNow = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.workflows", "manage")])
   .handler(async ({ context }) => {
     // Roda como o usuário (RLS) — só processa eventos do owner_id dele.
-    return await tickWorkflows(context.supabase, 50);
+    return await tickForWorkflowCaller(context.supabase, context.userId, 50);
   });
 
 // Fase 5b — lista aprovações pendentes do usuário atual (owner-scoped via RLS).
 export const listPendingApprovals = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.workflow_approvals", "view")])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("workflow_approvals")
@@ -555,7 +610,7 @@ export const listPendingApprovals = createServerFn({ method: "GET" })
 
 // Fase 5b — aprovar/rejeitar. Se aprovado, enfileira evento de retomada.
 export const decideApproval = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.workflow_approvals", "manage")])
   .inputValidator((i) =>
     z
       .object({
@@ -566,55 +621,18 @@ export const decideApproval = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { data: appr, error: getErr } = await supabase
-      .from("workflow_approvals")
-      .select(
-        "id, owner_id, workspace_id, workflow_id, run_id, entity, entity_id, status, resume_cursor, event_snapshot",
-      )
-      .eq("id", data.approvalId)
-      .maybeSingle();
-    if (getErr) throw new Error(getErr.message);
-    if (!appr) throw new Error("Aprovação não encontrada");
-    if (!appr.workspace_id) throw new Error("Aprovação sem workspace de origem.");
-    if (appr.status !== "pending") throw new Error("Aprovação já foi decidida");
-
-    const { error: updErr } = await supabase
-      .from("workflow_approvals")
-      .update({
-        status: data.decision,
-        decided_at: new Date().toISOString(),
-        decided_by: userId,
-        decision_comment: data.comment ?? null,
-      } as never)
-      .eq("id", data.approvalId);
-    if (updErr) throw new Error(updErr.message);
-
-    if (data.decision === "approved") {
-      const snap = (appr.event_snapshot ?? {}) as { after?: unknown; before?: unknown };
-      await supabase.from("workflow_events").insert({
-        workspace_id: appr.workspace_id,
-        owner_id: appr.owner_id,
-        entity: appr.entity,
-        entity_id: appr.entity_id,
-        event_type: "created",
-        before: (snap.before ?? null) as never,
-        after: (snap.after ?? null) as never,
-        resume_workflow_id: appr.workflow_id,
-        resume_cursor: appr.resume_cursor,
-      } as never);
-      await tickWorkflows(supabase, 5);
-    } else if (appr.run_id) {
-      await supabase
-        .from("workflow_runs")
-        .update({
-          status: "rejected" as never,
-          finished_at: new Date().toISOString(),
-          error: `Aprovação rejeitada${data.comment ? `: ${data.comment}` : ""}`,
-        })
-        .eq("id", appr.run_id);
-    }
-    return { ok: true };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await assertSalesRecord(context.supabase, "workflow_approvals", data.approvalId, "manage");
+    return workRpc<{ ok: boolean; decision: string }>(
+      supabaseAdmin,
+      "sales_workflow_approval_decide",
+      {
+        p_actor: context.userId,
+        p_id: data.approvalId,
+        p_decision: data.decision,
+        p_comment: data.comment ?? null,
+      },
+    );
   });
 
 // Suprime warning de import não usado quando processEvent futuramente for referenciado.

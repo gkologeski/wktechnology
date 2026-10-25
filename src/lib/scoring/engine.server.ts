@@ -1,3 +1,6 @@
+import { assertSalesWorker } from "@/lib/access-control/sales-worker.server";
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { workRpc } from "@/lib/access-control/work-core.server";
 // Scoring engine: avalia regras de pontuação contra eventos da fila
 // workflow_events (reaproveitando a infraestrutura) e aplica pontos
 // idempotentemente em leads/contacts/companies.
@@ -132,7 +135,7 @@ export async function tickScoring(
 
     const { data: rules, error: rErr } = await supabase
       .from("scoring_rules")
-      .select("id, name, entity, condition, points, enabled")
+      .select("id, name, entity, condition, points, enabled, updated_at")
       .eq("workspace_id", workspaceId)
       .eq("owner_id", ownerId)
       .eq("enabled", true);
@@ -159,43 +162,25 @@ export async function tickScoring(
         const points = Number(rule.points ?? 0);
         if (!points) continue;
 
-        const { data: row } = await supabase
-          .from(evEntity)
-          .select("score")
-          .eq("workspace_id", workspaceId)
-          .eq("id", ev.entity_id)
-          .maybeSingle();
-        if (!row) continue;
-
-        const { error: insErr } = await supabase
-          .from("score_events")
-          .insert({
-            workspace_id: workspaceId,
-            owner_id: ownerId,
-            rule_id: rule.id,
-            entity: evEntity,
-            entity_id: ev.entity_id,
-            points,
-            reason: rule.name,
-          })
-          .select("id")
-          .single();
-        // unique violation = já aplicado, ignora silenciosamente
-        if (insErr) {
-          if (!/duplicate key/i.test(insErr.message)) {
-            console.error("[scoring] insert", insErr);
-          }
-          continue;
+        try {
+          await assertSalesWorker(supabase, "scoring_rules", rule.id, [
+            { table: evEntity, id: ev.entity_id, action: "update" },
+          ]);
+          if (
+            await workRpc<boolean>(supabase, "sales_scoring_apply", {
+              p_rule: rule.id,
+              p_table: evEntity,
+              p_record: ev.entity_id,
+              p_expected: rule,
+            })
+          )
+            result.applied += 1;
+        } catch (error) {
+          console.error(
+            "[scoring] current permission/version check",
+            error instanceof Error ? error.message : "blocked",
+          );
         }
-
-        // soma pontos no registro
-        const current = Number((row?.score as number | null) ?? 0);
-        await supabase
-          .from(evEntity)
-          .update({ score: current + points })
-          .eq("workspace_id", workspaceId)
-          .eq("id", ev.entity_id);
-        result.applied += 1;
       }
     }
 
@@ -240,7 +225,7 @@ export async function runScoringFullScan(
 
   const { data: rules, error: rErr } = await supabase
     .from("scoring_rules")
-    .select("id, workspace_id, owner_id, name, entity, condition, points, enabled")
+    .select("id, workspace_id, owner_id, name, entity, condition, points, enabled, updated_at")
     .eq("enabled", true);
   if (rErr) throw new Error(rErr.message);
   if (!rules?.length) return result;
@@ -278,35 +263,19 @@ export async function runScoringFullScan(
         lastId = (row.id as string) ?? lastId;
         if (!evalScoringCondition(condition, row, null)) continue;
 
-        const { error: insErr } = await supabase
-          .from("score_events")
-          .insert({
-            workspace_id: rule.workspace_id,
-            owner_id: rule.owner_id,
-            rule_id: rule.id,
-            entity: table,
-            entity_id: row.id,
-            points,
-            reason: rule.name,
+        await assertSalesRecord(supabase, "scoring_rules", rule.id, "manage");
+        await assertSalesRecord(supabase, table, String(row.id), "update");
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        if (
+          await workRpc<boolean>(supabaseAdmin, "sales_scoring_apply", {
+            p_rule: rule.id,
+            p_table: table,
+            p_record: row.id,
+            p_expected: rule,
           })
-          .select("id")
-          .single();
-        if (insErr) {
-          if (/duplicate key/i.test(insErr.message)) {
-            result.skipped += 1;
-          } else {
-            console.error("[scoring:full-scan] insert", insErr);
-          }
-          continue;
-        }
-
-        const current = Number((row.score as number | null) ?? 0);
-        await supabase
-          .from(table)
-          .update({ score: current + points })
-          .eq("workspace_id", rule.workspace_id)
-          .eq("id", row.id as string);
-        result.applied += 1;
+        )
+          result.applied += 1;
+        else result.skipped += 1;
       }
 
       if (rows.length < pageSize) break;

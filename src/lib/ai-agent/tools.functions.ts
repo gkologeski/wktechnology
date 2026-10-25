@@ -124,9 +124,20 @@ export const agentLookupUser = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ query: z.string().min(1).max(120) }).parse(d))
   .handler(async ({ data, context }) => {
     const like = orSafeLike(data.query);
+    const ws = await resolveActiveWorkspace(context.userId);
+    const { data: active, error } = await context.supabase
+      .from("workspace_members")
+      .select("user_id")
+      .eq("workspace_id", ws)
+      .eq("status", "active");
+    if (error) throw new Error(error.message);
     const { data: rows } = await context.supabase
       .from("profiles")
       .select("id, full_name")
+      .in(
+        "id",
+        (active ?? []).map((m) => m.user_id),
+      )
       .ilike("full_name", like)
       .limit(5);
     return {

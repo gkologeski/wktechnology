@@ -1,8 +1,8 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Server functions (RPC) da integração Conta Azul → TechFinance.
 // Arquivo fino: apenas imports client-safe e declarações de server functions.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 import { CA_ENTITIES } from "./contaazul-map";
 
@@ -17,7 +17,7 @@ const entitySchema = z.enum([
 
 /** Estado da conexão + último resultado por entidade. */
 export const contaAzulStatus = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.integrations", "view")])
   .handler(async ({ context }) => {
     const [{ resolveActiveWorkspace }, { supabaseAdmin }, api, steps] = await Promise.all([
       import("@/lib/active-workspace.server"),
@@ -75,7 +75,7 @@ export const contaAzulStatus = createServerFn({ method: "GET" })
 
 /** URL de autorização OAuth (abre em popup). */
 export const contaAzulAuthorizeUrl = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.integrations", "manage")])
   .inputValidator((input) => z.object({ origin: z.string().url() }).parse(input))
   .handler(async ({ data, context }) => {
     const [
@@ -109,7 +109,7 @@ export const contaAzulAuthorizeUrl = createServerFn({ method: "POST" })
 
 /** Configuração efetiva e último erro OAuth, sempre sem segredos. */
 export const contaAzulOAuthDiagnostics = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.integrations", "manage")])
   .inputValidator((input) => z.object({ origin: z.string().url() }).parse(input))
   .handler(async ({ data, context }) => {
     const [
@@ -137,7 +137,7 @@ export const contaAzulOAuthDiagnostics = createServerFn({ method: "POST" })
   });
 
 export const contaAzulDisconnect = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.integrations", "manage")])
   .handler(async ({ context }) => {
     const [{ resolveActiveWorkspace }, { supabaseAdmin }] = await Promise.all([
       import("@/lib/active-workspace.server"),
@@ -166,7 +166,7 @@ export const contaAzulDisconnect = createServerFn({ method: "POST" })
 
 /** Executa a importação/sincronização das entidades escolhidas. */
 export const contaAzulRunSync = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.integrations", "manage")])
   .inputValidator((input) =>
     z
       .object({
@@ -198,7 +198,7 @@ export const contaAzulRunSync = createServerFn({ method: "POST" })
 
 /** Importa lançamentos normalizados a partir de arquivo (fallback CSV). */
 export const contaAzulImportFileEntries = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.integrations", "manage")])
   .inputValidator((input) =>
     z
       .object({

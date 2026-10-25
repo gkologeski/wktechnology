@@ -2,79 +2,13 @@
 // Aplica os filtros JSON contra a tabela alvo (leads/contacts/companies/deals)
 // usando supabaseAdmin (escopado por owner_id) e regrava segment_members.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { applyFilters, type FilterGroup, type FilterNode } from "@/lib/filters";
+import { workRpc } from "@/lib/access-control/work-core.server";
 
-const ENTITY_TABLE: Record<string, "leads" | "contacts" | "companies" | "deals"> = {
-  leads: "leads",
-  contacts: "contacts",
-  companies: "companies",
-  deals: "deals",
-};
-
-function normalizeFilters(raw: unknown): FilterGroup {
-  if (!raw || typeof raw !== "object") return { type: "group", op: "and", conditions: [] };
-  const r = raw as Record<string, unknown>;
-  if (r.type === "group" || r.type === "condition") return raw as FilterGroup;
-  if (Array.isArray(r.conditions)) {
-    return {
-      type: "group",
-      op: (r.op as "and" | "or") ?? "and",
-      conditions: (r.conditions as unknown[]).map((c) => {
-        const cc = c as Record<string, unknown>;
-        if (cc.type) return cc as unknown as FilterNode;
-        if (Array.isArray(cc.conditions)) {
-          return normalizeFilters(cc);
-        }
-        return { type: "condition", ...(cc as object) } as FilterNode;
-      }),
-    };
-  }
-  return { type: "group", op: "and", conditions: [] };
-}
-
-export async function refreshDynamicSegment(segmentId: string): Promise<{
-  count: number;
-  refreshed_at: string;
-}> {
-  const { data: seg, error: segErr } = await supabaseAdmin
-    .from("segments")
-    .select("id, owner_id, entity, kind, filters, enabled")
-    .eq("id", segmentId)
-    .single();
-  if (segErr || !seg) throw new Error(segErr?.message ?? "Lista não encontrada");
-  if (seg.kind !== "dynamic") throw new Error("Apenas listas dinâmicas podem ser atualizadas");
-
-  const table = ENTITY_TABLE[seg.entity];
-  if (!table) throw new Error(`Entidade inválida: ${seg.entity}`);
-
-  const filters = normalizeFilters(seg.filters);
-  let q = supabaseAdmin.from(table).select("id").eq("owner_id", seg.owner_id).limit(50000);
-  q = applyFilters(q, filters);
-  const { data: rows, error: qErr } = await q;
-  if (qErr) throw qErr;
-  const ids = (rows ?? []).map((r: { id: string }) => r.id);
-
-  // Replace members
-  await supabaseAdmin.from("segment_members").delete().eq("segment_id", segmentId);
-  if (ids.length > 0) {
-    const chunkSize = 1000;
-    for (let i = 0; i < ids.length; i += chunkSize) {
-      const chunk = ids.slice(i, i + chunkSize).map((eid) => ({
-        segment_id: segmentId,
-        entity_id: eid,
-      }));
-      const { error: insErr } = await supabaseAdmin.from("segment_members").insert(chunk);
-      if (insErr) throw insErr;
-    }
-  }
-
-  const refreshed_at = new Date().toISOString();
-  await supabaseAdmin
-    .from("segments")
-    .update({ last_refreshed_at: refreshed_at, member_count: ids.length })
-    .eq("id", segmentId);
-
-  return { count: ids.length, refreshed_at };
+/** SQL derives the actor/workspace from the saved list and atomically replaces only visible members. */
+export async function refreshDynamicSegment(
+  segmentId: string,
+): Promise<{ count: number; refreshed_at: string }> {
+  return workRpc(supabaseAdmin, "sales_segment_refresh", { p_id: segmentId });
 }
 
 export async function tickRefreshDynamicSegments(): Promise<{

@@ -47,6 +47,8 @@ const STATUS_LABELS: Record<string, string> = {
   running: "Executando",
   skipped: "Ignorada",
   waiting_approval: "Aguardando aprovação",
+  approved: "Aprovada — retomada enfileirada",
+  rejected: "Rejeitada",
 };
 
 /**

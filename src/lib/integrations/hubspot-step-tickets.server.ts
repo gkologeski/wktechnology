@@ -1,3 +1,4 @@
+import { hubspotRequestGuard } from "./hubspot-api.server";
 // Etapa "tickets" da importação do HubSpot — extraída de hubspot-steps.server.ts
 import {
   type HSRec,
@@ -58,7 +59,11 @@ export async function runTicketsStep(args: StepRunArgs): Promise<StepResult | vo
   // Fetch ticket pipeline stages once to derive status (open/closed) per stage id.
   const stageState = new Map<string, "open" | "closed">();
   try {
-    const pr = (await hsFetch("/crm/v3/pipelines/tickets")) as {
+    const pr = (await hsFetch(
+      "/crm/v3/pipelines/tickets",
+      undefined,
+      hubspotRequestGuard(supabase),
+    )) as {
       results?: { stages?: { id: string; metadata?: { ticketState?: string } }[] }[];
     };
     for (const p of pr.results ?? []) {
@@ -71,7 +76,7 @@ export async function runTicketsStep(args: StepRunArgs): Promise<StepResult | vo
     // stage map is best-effort; default to 'new'
   }
 
-  const ticketProps = await loadHsProperties("tickets");
+  const ticketProps = await loadHsProperties("tickets", hubspotRequestGuard(supabase));
   const fallbackProps = [
     "subject",
     "content",
@@ -95,7 +100,7 @@ export async function runTicketsStep(args: StepRunArgs): Promise<StepResult | vo
   const dealMap = await loadMapForStep(supabase, workspaceId, jobId, "deals", "deals");
 
   if (resume.discovered === undefined) {
-    const total = await searchTotal("tickets");
+    const total = await searchTotal("tickets", hubspotRequestGuard(supabase));
     await patchItemBefore(supabase, itemId, { discovered: total });
     await appendLog(supabase, jobId, {
       level: "info",
@@ -114,7 +119,11 @@ export async function runTicketsStep(args: StepRunArgs): Promise<StepResult | vo
   const fetchPage = async (cursor?: string): Promise<TicketsPage> => {
     const params: Record<string, string> = { limit: "100", properties: propsParam };
     if (cursor) params.after = cursor;
-    return (await hsFetch("/crm/v3/objects/tickets", params)) as TicketsPage;
+    return (await hsFetch(
+      "/crm/v3/objects/tickets",
+      params,
+      hubspotRequestGuard(supabase),
+    )) as TicketsPage;
   };
 
   let nextPromise: Promise<TicketsPage> | null = fetchPage(after);
@@ -131,9 +140,9 @@ export async function runTicketsStep(args: StepRunArgs): Promise<StepResult | vo
 
     const pageIds = res.results.map((r) => r.id);
     const [tContacts, tCompanies, tDeals] = await Promise.all([
-      getAssocMany("tickets", pageIds, "contacts", 20),
-      getAssocMany("tickets", pageIds, "companies", 20),
-      getAssocMany("tickets", pageIds, "deals", 20),
+      getAssocMany("tickets", pageIds, "contacts", 20, hubspotRequestGuard(supabase)),
+      getAssocMany("tickets", pageIds, "companies", 20, hubspotRequestGuard(supabase)),
+      getAssocMany("tickets", pageIds, "deals", 20, hubspotRequestGuard(supabase)),
     ]);
 
     await appendLog(supabase, jobId, {

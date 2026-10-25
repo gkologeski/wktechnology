@@ -23,7 +23,7 @@ export const getChannelAvailability = createServerFn({ method: "GET" })
     const [wa, mail, cal, health] = await Promise.all([
       waCheck,
       supabase.from("email_accounts").select("status"),
-      supabaseAdmin.from("calendar_accounts").select("id").eq("workspace_id", ws).limit(1),
+      supabase.from("calendar_accounts").select("id").eq("workspace_id", ws).limit(1),
       supabase
         .from("channel_health_checks")
         .select("ready, reason, transient")
@@ -49,14 +49,14 @@ export const getChannelAvailability = createServerFn({ method: "GET" })
     return {
       whatsapp: wa,
       email: mail.error
-        ? { ready: true }
+        ? { ready: false, reason: "Não foi possível verificar o canal." }
         : {
             ready: (mail.data ?? []).some((a) => a.status === "connected"),
             reason: "E-mail não configurado",
           },
       call: { ready: callReady, reason: callReason },
       meeting: cal.error
-        ? { ready: true }
+        ? { ready: false, reason: "Não foi possível verificar o canal." }
         : { ready: (cal.data ?? []).length > 0, reason: "Agenda não conectada" },
     };
   });

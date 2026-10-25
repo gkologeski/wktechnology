@@ -3,7 +3,10 @@
     "table": "tickets",
     "resource": "techsales.tickets",
     "label": "Tickets",
-    "responsibles": ["assignee_id", "owner_id"],
+    "responsibles": [
+      "assignee_id",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -11,8 +14,10 @@
   {
     "table": "slack_event_routes",
     "resource": "system.integrations",
-    "label": "Integra\u00e7\u00f5es",
-    "responsibles": ["owner_id"],
+    "label": "Integrações",
+    "responsibles": [
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -21,7 +26,10 @@
     "table": "leads",
     "resource": "techsales.leads",
     "label": "Leads",
-    "responsibles": ["assigned_to", "owner_id"],
+    "responsibles": [
+      "assigned_to",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -30,7 +38,10 @@
     "table": "contacts",
     "resource": "techsales.contacts",
     "label": "Contatos",
-    "responsibles": ["assigned_to", "owner_id"],
+    "responsibles": [
+      "assigned_to",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -39,7 +50,10 @@
     "table": "companies",
     "resource": "techsales.companies",
     "label": "Empresas",
-    "responsibles": ["assigned_to", "owner_id"],
+    "responsibles": [
+      "assigned_to",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -47,8 +61,11 @@
   {
     "table": "deals",
     "resource": "techsales.deals",
-    "label": "Neg\u00f3cios",
-    "responsibles": ["assigned_to", "owner_id"],
+    "label": "Negócios",
+    "responsibles": [
+      "assigned_to",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -57,7 +74,10 @@
     "table": "activities",
     "resource": "techsales.activities",
     "label": "Atividades",
-    "responsibles": ["assigned_to", "owner_id"],
+    "responsibles": [
+      "assigned_to",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -65,8 +85,11 @@
   {
     "table": "quotes",
     "resource": "techsales.quotes",
-    "label": "Cota\u00e7\u00f5es",
-    "responsibles": ["assigned_to", "owner_id"],
+    "label": "Cotações",
+    "responsibles": [
+      "assigned_to",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -75,7 +98,10 @@
     "table": "proposals",
     "resource": "techsales.proposals",
     "label": "Propostas",
-    "responsibles": ["assigned_to", "owner_id"],
+    "responsibles": [
+      "assigned_to",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -83,8 +109,11 @@
   {
     "table": "prospecting_queues",
     "resource": "techsales.prospecting_queue",
-    "label": "Filas de prospec\u00e7\u00e3o",
-    "responsibles": ["assigned_to", "owner_id"],
+    "label": "Filas de prospecção",
+    "responsibles": [
+      "assigned_to",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -92,8 +121,11 @@
   {
     "table": "prospecting_cadences",
     "resource": "techsales.prospecting_cadences",
-    "label": "Cad\u00eancias de prospec\u00e7\u00e3o",
-    "responsibles": ["assigned_to", "owner_id"],
+    "label": "Cadências de prospecção",
+    "responsibles": [
+      "assigned_to",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -101,8 +133,11 @@
   {
     "table": "prospecting_questionnaires",
     "resource": "techsales.prospecting_questionnaires",
-    "label": "Question\u00e1rios de prospec\u00e7\u00e3o",
-    "responsibles": ["assigned_to", "owner_id"],
+    "label": "Questionários de prospecção",
+    "responsibles": [
+      "assigned_to",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -110,8 +145,11 @@
   {
     "table": "prospecting_scripts",
     "resource": "techsales.prospecting_scripts",
-    "label": "Roteiros de prospec\u00e7\u00e3o",
-    "responsibles": ["assigned_to", "owner_id"],
+    "label": "Roteiros de prospecção",
+    "responsibles": [
+      "assigned_to",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -119,8 +157,11 @@
   {
     "table": "prospecting_searches",
     "resource": "techsales.prospecting_search",
-    "label": "Pesquisas de prospec\u00e7\u00e3o",
-    "responsibles": ["assigned_to", "owner_id"],
+    "label": "Pesquisas de prospecção",
+    "responsibles": [
+      "assigned_to",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -129,7 +170,10 @@
     "table": "prospecting_campaigns",
     "resource": "techsales.marketing.campaigns",
     "label": "Campanhas",
-    "responsibles": ["assigned_to", "owner_id"],
+    "responsibles": [
+      "assigned_to",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -137,8 +181,10 @@
   {
     "table": "prospecting_qualifications",
     "resource": "techsales.prospecting_qualifications",
-    "label": "Qualifica\u00e7\u00f5es",
-    "responsibles": ["owner_id"],
+    "label": "Qualificações",
+    "responsibles": [
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -147,7 +193,10 @@
     "table": "sdr_playbooks",
     "resource": "techsales.marketing.sdr_agent",
     "label": "Agentes SDR",
-    "responsibles": ["assigned_to", "owner_id"],
+    "responsibles": [
+      "assigned_to",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -156,7 +205,9 @@
     "table": "whatsapp_campaigns",
     "resource": "techsales.marketing.campaigns",
     "label": "Campanhas",
-    "responsibles": ["owner_id"],
+    "responsibles": [
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -165,7 +216,10 @@
     "table": "email_broadcasts",
     "resource": "techsales.marketing.campaigns",
     "label": "Campanhas",
-    "responsibles": ["assigned_to", "owner_id"],
+    "responsibles": [
+      "assigned_to",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -174,7 +228,9 @@
     "table": "email_templates",
     "resource": "system.automation.email_templates",
     "label": "Modelos de e-mail",
-    "responsibles": ["owner_id"],
+    "responsibles": [
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -182,8 +238,10 @@
   {
     "table": "email_snippets",
     "resource": "system.snippets",
-    "label": "Respostas r\u00e1pidas",
-    "responsibles": ["owner_id"],
+    "label": "Respostas rápidas",
+    "responsibles": [
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -192,7 +250,9 @@
     "table": "segments",
     "resource": "techsales.segments",
     "label": "Segmentos comerciais",
-    "responsibles": ["owner_id"],
+    "responsibles": [
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -200,8 +260,11 @@
   {
     "table": "sequences",
     "resource": "system.automation.sequences",
-    "label": "Sequ\u00eancias",
-    "responsibles": ["assigned_to", "owner_id"],
+    "label": "Sequências",
+    "responsibles": [
+      "assigned_to",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -209,8 +272,11 @@
   {
     "table": "scoring_rules",
     "resource": "techsales.prospecting_scoring",
-    "label": "Regras de pontua\u00e7\u00e3o",
-    "responsibles": ["assigned_to", "owner_id"],
+    "label": "Regras de pontuação",
+    "responsibles": [
+      "assigned_to",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -218,8 +284,10 @@
   {
     "table": "icp_criteria",
     "resource": "techsales.prospecting_scoring",
-    "label": "Regras de pontua\u00e7\u00e3o",
-    "responsibles": ["owner_id"],
+    "label": "Regras de pontuação",
+    "responsibles": [
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -227,8 +295,11 @@
   {
     "table": "forms",
     "resource": "techsales.marketing.forms",
-    "label": "Formul\u00e1rios",
-    "responsibles": ["assigned_to", "owner_id"],
+    "label": "Formulários",
+    "responsibles": [
+      "assigned_to",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -237,7 +308,10 @@
     "table": "landing_pages",
     "resource": "techsales.marketing.landing_pages",
     "label": "Landing pages",
-    "responsibles": ["assigned_to", "owner_id"],
+    "responsibles": [
+      "assigned_to",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -246,7 +320,9 @@
     "table": "survey_templates",
     "resource": "techsales.surveys",
     "label": "Pesquisas",
-    "responsibles": ["owner_id"],
+    "responsibles": [
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -255,7 +331,10 @@
     "table": "survey_responses",
     "resource": "techsales.surveys",
     "label": "Pesquisas",
-    "responsibles": ["assigned_to", "owner_id"],
+    "responsibles": [
+      "assigned_to",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -264,7 +343,9 @@
     "table": "task_queues",
     "resource": "techsales.task_queues",
     "label": "Filas de tarefas",
-    "responsibles": ["owner_id"],
+    "responsibles": [
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -273,7 +354,9 @@
     "table": "goals",
     "resource": "techsales.goals",
     "label": "Metas comerciais",
-    "responsibles": ["owner_id"],
+    "responsibles": [
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -282,7 +365,10 @@
     "table": "whatsapp_conversations",
     "resource": "techsales.inbox.whatsapp",
     "label": "Inbox WhatsApp",
-    "responsibles": ["assigned_to", "owner_id"],
+    "responsibles": [
+      "assigned_to",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -291,7 +377,10 @@
     "table": "email_threads",
     "resource": "techsales.inbox.email",
     "label": "Inbox E-mail",
-    "responsibles": ["assigned_to", "owner_id"],
+    "responsibles": [
+      "assigned_to",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -300,7 +389,10 @@
     "table": "live_chat_sessions",
     "resource": "techsales.inbox.chat",
     "label": "Chat ao vivo",
-    "responsibles": ["assignee_id", "owner_id"],
+    "responsibles": [
+      "assignee_id",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -309,7 +401,9 @@
     "table": "email_accounts",
     "resource": "techsales.email_accounts",
     "label": "Contas de e-mail",
-    "responsibles": ["owner_id"],
+    "responsibles": [
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -317,8 +411,10 @@
   {
     "table": "integrations",
     "resource": "system.integrations",
-    "label": "Integra\u00e7\u00f5es",
-    "responsibles": ["owner_id"],
+    "label": "Integrações",
+    "responsibles": [
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -326,8 +422,10 @@
   {
     "table": "slack_integrations",
     "resource": "system.integrations",
-    "label": "Integra\u00e7\u00f5es",
-    "responsibles": ["owner_id"],
+    "label": "Integrações",
+    "responsibles": [
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -336,7 +434,9 @@
     "table": "outbound_webhooks",
     "resource": "system.webhooks",
     "label": "Webhooks",
-    "responsibles": ["owner_id"],
+    "responsibles": [
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -345,7 +445,10 @@
     "table": "enrichment_jobs",
     "resource": "techsales.prospecting_enrichment",
     "label": "Enriquecimento",
-    "responsibles": ["assigned_to", "owner_id"],
+    "responsibles": [
+      "assigned_to",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -353,8 +456,10 @@
   {
     "table": "booking_pages",
     "resource": "system.booking",
-    "label": "P\u00e1ginas de agendamento",
-    "responsibles": ["owner_id"],
+    "label": "Páginas de agendamento",
+    "responsibles": [
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -363,7 +468,10 @@
     "table": "bookings",
     "resource": "system.booking",
     "label": "Agendamentos",
-    "responsibles": ["assigned_to", "owner_id"],
+    "responsibles": [
+      "assigned_to",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -372,7 +480,9 @@
     "table": "calendar_accounts",
     "resource": "system.calendars",
     "label": "Agendas",
-    "responsibles": ["owner_id"],
+    "responsibles": [
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -381,7 +491,9 @@
     "table": "calendar_events",
     "resource": "system.calendars",
     "label": "Agendas",
-    "responsibles": ["owner_id"],
+    "responsibles": [
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -389,8 +501,11 @@
   {
     "table": "meetings",
     "resource": "techsales.meetings",
-    "label": "Reuni\u00f5es",
-    "responsibles": ["assigned_to", "host_user_id"],
+    "label": "Reuniões",
+    "responsibles": [
+      "assigned_to",
+      "host_user_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -399,7 +514,9 @@
     "table": "pipelines",
     "resource": "system.pipelines",
     "label": "Funis",
-    "responsibles": ["owner_id"],
+    "responsibles": [
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -408,7 +525,10 @@
     "table": "deal_loss_reasons",
     "resource": "techsales.deal_loss_reasons",
     "label": "Motivos de perda",
-    "responsibles": ["assigned_to", "owner_id"],
+    "responsibles": [
+      "assigned_to",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -417,7 +537,9 @@
     "table": "lead_sources",
     "resource": "techsales.lead_sources",
     "label": "Origens de leads",
-    "responsibles": ["owner_id"],
+    "responsibles": [
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -425,8 +547,10 @@
   {
     "table": "quote_templates",
     "resource": "techsales.quote_templates",
-    "label": "Modelos de cota\u00e7\u00e3o",
-    "responsibles": ["owner_id"],
+    "label": "Modelos de cotação",
+    "responsibles": [
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -443,8 +567,10 @@
   {
     "table": "proposal_clauses",
     "resource": "techsales.proposal_clauses",
-    "label": "Cl\u00e1usulas de proposta",
-    "responsibles": ["owner_id"],
+    "label": "Cláusulas de proposta",
+    "responsibles": [
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -452,8 +578,10 @@
   {
     "table": "workflows",
     "resource": "system.workflows",
-    "label": "Fluxos de automa\u00e7\u00e3o",
-    "responsibles": ["owner_id"],
+    "label": "Fluxos de automação",
+    "responsibles": [
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -461,8 +589,10 @@
   {
     "table": "workflow_action_templates",
     "resource": "system.workflows",
-    "label": "Fluxos de automa\u00e7\u00e3o",
-    "responsibles": ["owner_id"],
+    "label": "Fluxos de automação",
+    "responsibles": [
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -470,8 +600,10 @@
   {
     "table": "workflow_subscriptions",
     "resource": "system.workflows",
-    "label": "Fluxos de automa\u00e7\u00e3o",
-    "responsibles": ["owner_id"],
+    "label": "Fluxos de automação",
+    "responsibles": [
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -479,8 +611,10 @@
   {
     "table": "rotation_rules",
     "resource": "system.automation.rotation",
-    "label": "Distribui\u00e7\u00e3o autom\u00e1tica",
-    "responsibles": ["owner_id"],
+    "label": "Distribuição automática",
+    "responsibles": [
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -488,8 +622,11 @@
   {
     "table": "custom_reports",
     "resource": "system.analytics.reports",
-    "label": "Relat\u00f3rios",
-    "responsibles": ["assigned_to", "owner_id"],
+    "label": "Relatórios",
+    "responsibles": [
+      "assigned_to",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -497,8 +634,11 @@
   {
     "table": "dashboards",
     "resource": "system.analytics.dashboards",
-    "label": "Pain\u00e9is personalizados",
-    "responsibles": ["assigned_to", "owner_id"],
+    "label": "Painéis personalizados",
+    "responsibles": [
+      "assigned_to",
+      "owner_id"
+    ],
     "shared": false,
     "parent": null,
     "id_column": "id"
@@ -817,11 +957,15 @@
   },
   {
     "table": "workflow_approvals",
-    "resource": "system.workflows",
+    "resource": "system.workflow_approvals",
     "parent": "workflows",
     "parent_column": "workflow_id",
     "worker": false,
-    "id_column": "id"
+    "id_column": "id",
+    "responsibles": [
+      "approver_user_id"
+    ],
+    "label": "Aprovações humanas de workflow"
   },
   {
     "table": "workflow_deliveries",
@@ -889,7 +1033,9 @@
     "table": "voice_agent_settings",
     "resource": "techsales.prospecting_voice",
     "label": "techsales.prospecting_voice",
-    "responsibles": ["owner_id"],
+    "responsibles": [
+      "owner_id"
+    ],
     "shared": true,
     "parent": null,
     "id_column": "workspace_id",
@@ -899,7 +1045,9 @@
     "table": "ml_scoring_models",
     "resource": "techsales.prospecting_scoring",
     "label": "techsales.prospecting_scoring",
-    "responsibles": ["owner_id"],
+    "responsibles": [
+      "owner_id"
+    ],
     "shared": true,
     "parent": null,
     "id_column": "owner_id",
@@ -934,5 +1082,93 @@
     "parent": null,
     "id_column": null,
     "manage_config": true
+  },
+  {
+    "table": "marketplace_installations",
+    "resource": "system.integrations",
+    "label": "Instalações do Marketplace",
+    "responsibles": [
+      "installed_by"
+    ],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "ai_summaries",
+    "resource": "techsales.ai_summaries",
+    "responsibles": [
+      "owner_id"
+    ],
+    "shared": false,
+    "id_column": "id",
+    "label": "Resumos de IA com origem verificável",
+    "parent": null
+  },
+  {
+    "table": "activity_comments",
+    "resource": "techsales.activities",
+    "responsibles": [],
+    "shared": false,
+    "id_column": "id",
+    "label": "Comentários de atividades",
+    "parent": {
+      "table": "activities",
+      "column": "activity_id"
+    }
+  },
+  {
+    "table": "workflow_events",
+    "resource": "system.workflows",
+    "label": "Eventos de workflow com origem verificável",
+    "responsibles": [
+      "owner_id"
+    ],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "score_events",
+    "resource": "techsales.prospecting_scoring",
+    "label": "Histórico de pontuação vinculado à regra e ao registro",
+    "responsibles": [],
+    "shared": false,
+    "parent": {
+      "table": "scoring_rules",
+      "column": "rule_id"
+    },
+    "id_column": "id"
+  },
+  {
+    "table": "stage_entries",
+    "resource": "system.automation.sla",
+    "label": "Histórico de etapas/SLA",
+    "responsibles": [
+      "owner_id"
+    ],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "sla_policies",
+    "resource": "system.automation.sla",
+    "label": "Políticas de SLA",
+    "responsibles": [],
+    "shared": true,
+    "parent": null,
+    "id_column": "id"
+  },
+  {
+    "table": "attribution_touchpoints",
+    "resource": "system.analytics.insights",
+    "label": "Interações de atribuição com origem verificável",
+    "responsibles": [
+      "owner_id"
+    ],
+    "shared": false,
+    "parent": null,
+    "id_column": "id"
   }
 ]

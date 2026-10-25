@@ -1,3 +1,4 @@
+import { workRpc } from "@/lib/access-control/work-core.server";
 // Sincronização Conta Azul → TechFinance, por entidade (step), idempotente.
 // Cada step é reexecutável: registros são casados por identificador externo.
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -30,6 +31,18 @@ export type StepCtx = {
   since?: string | null;
 };
 
+async function authorize(ctx: StepCtx, entity: CaEntity) {
+  if (
+    !(await workRpc<boolean>(ctx.supabase, "sales_contaazul_authorize", {
+      p_user: ctx.userId,
+      p_ws: ctx.workspaceId,
+      p_entity: entity,
+    }))
+  )
+    throw new Error(
+      "Sincronização Conta Azul sem permissão atual de gestão e importação financeira do workspace.",
+    );
+}
 const nowIso = () => new Date().toISOString();
 
 function emptyResult(entity: CaEntity): StepResult {
@@ -154,10 +167,15 @@ async function ensureBankConnection(ctx: StepCtx): Promise<string> {
 
 async function syncCategories(ctx: StepCtx, accessToken: string): Promise<StepResult> {
   const result = emptyResult("categories");
-  const rows = await caFetchAll({ accessToken, path: CA_ENDPOINTS.categories });
+  const rows = await caFetchAll({
+    authorize: () => authorize(ctx, "categories"),
+    accessToken,
+    path: CA_ENDPOINTS.categories,
+  });
   const map = await loadExternalMap(ctx.supabase, "financial_categories", ctx.workspaceId);
 
   for (const raw of rows) {
+    await authorize(ctx, "categories");
     const mapped = mapCategory(raw);
     if (!mapped) {
       pushError(result, `Categoria sem id/nome: ${JSON.stringify(raw).slice(0, 120)}`);
@@ -196,10 +214,15 @@ async function syncCategories(ctx: StepCtx, accessToken: string): Promise<StepRe
 
 async function syncCostCenters(ctx: StepCtx, accessToken: string): Promise<StepResult> {
   const result = emptyResult("cost-centers");
-  const rows = await caFetchAll({ accessToken, path: CA_ENDPOINTS["cost-centers"] });
+  const rows = await caFetchAll({
+    authorize: () => authorize(ctx, "cost-centers"),
+    accessToken,
+    path: CA_ENDPOINTS["cost-centers"],
+  });
   const map = await loadExternalMap(ctx.supabase, "financial_cost_centers", ctx.workspaceId);
 
   for (const raw of rows) {
+    await authorize(ctx, "cost-centers");
     const mapped = mapCostCenter(raw);
     if (!mapped) {
       pushError(result, `Centro de custo sem id/nome: ${JSON.stringify(raw).slice(0, 120)}`);
@@ -238,10 +261,15 @@ async function syncCostCenters(ctx: StepCtx, accessToken: string): Promise<StepR
 
 async function syncBankAccounts(ctx: StepCtx, accessToken: string): Promise<StepResult> {
   const result = emptyResult("bank-accounts");
-  const rows = await caFetchAll({ accessToken, path: CA_ENDPOINTS["bank-accounts"] });
+  const rows = await caFetchAll({
+    authorize: () => authorize(ctx, "bank-accounts"),
+    accessToken,
+    path: CA_ENDPOINTS["bank-accounts"],
+  });
   const map = await loadBankAccountMap(ctx.supabase, ctx.workspaceId);
 
   for (const raw of rows) {
+    await authorize(ctx, "bank-accounts");
     const mapped = mapBankAccount(raw);
     if (!mapped) {
       pushError(result, `Conta bancária sem id/nome: ${JSON.stringify(raw).slice(0, 120)}`);
@@ -287,6 +315,7 @@ export async function persistEntries(
   entries: NormalizedEntry[],
 ): Promise<StepResult> {
   const result = emptyResult(entity);
+  await authorize(ctx, entity);
   if (!entries.length) return result;
 
   const categoryMap = await loadExternalMap(ctx.supabase, "financial_categories", ctx.workspaceId);
@@ -312,6 +341,7 @@ export async function persistEntries(
   }
 
   for (const entry of entries) {
+    await authorize(ctx, entity);
     const categoryId = entry.categoryExternalId
       ? (categoryMap.get(entry.categoryExternalId) ?? null)
       : null;
@@ -387,6 +417,7 @@ async function syncFinancialEvents(
 ): Promise<StepResult> {
   const entity: CaEntity = direction;
   const rows = await caFetchAll({
+    authorize: () => authorize(ctx, entity),
     accessToken,
     path: CA_ENDPOINTS[entity],
     query: ctx.since ? { data_alteracao_de: ctx.since } : undefined,
@@ -417,6 +448,7 @@ async function syncStatements(ctx: StepCtx, accessToken: string): Promise<StepRe
   const connectionId = await ensureBankConnection(ctx);
   const accountMap = await loadBankAccountMap(ctx.supabase, ctx.workspaceId);
   const rows = await caFetchAll({
+    authorize: () => authorize(ctx, "statements"),
     accessToken,
     path: CA_ENDPOINTS.statements,
     query: ctx.since
@@ -425,6 +457,7 @@ async function syncStatements(ctx: StepCtx, accessToken: string): Promise<StepRe
   });
 
   for (const raw of rows) {
+    await authorize(ctx, "statements");
     const tx = mapStatementTx(raw);
     if (!tx) {
       pushError(result, `Transação sem id: ${JSON.stringify(raw).slice(0, 120)}`);
@@ -466,7 +499,9 @@ async function syncStatements(ctx: StepCtx, accessToken: string): Promise<StepRe
 
 /** Executa um step específico. */
 export async function runContaAzulStep(ctx: StepCtx, entity: CaEntity): Promise<StepResult> {
+  await authorize(ctx, entity);
   const accessToken = await getValidAccessToken(ctx.supabase, ctx.workspaceId);
+  await authorize(ctx, entity);
   let result: StepResult;
   try {
     switch (entity) {

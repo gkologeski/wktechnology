@@ -1,5 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { runScoringFullScan, tickScoring } from "./engine.server";
+
+const holder = vi.hoisted(() => ({ client: null as unknown }));
+vi.mock("@/integrations/supabase/client.server", () => ({
+  get supabaseAdmin() {
+    return holder.client;
+  },
+}));
 
 type Row = Record<string, unknown>;
 function fixture(twoRules = false) {
@@ -51,6 +58,7 @@ function fixture(twoRules = false) {
       points: 1,
     });
   const client = {
+    rpc: vi.fn(async (_name: string, _args: unknown) => ({ data: true, error: null })),
     from: (table: string) => {
       const filters: ((row: Row) => boolean)[] = [];
       let patch: Row | undefined;
@@ -94,6 +102,7 @@ function fixture(twoRules = false) {
       return query;
     },
   };
+  holder.client = client;
   return { tables, client };
 }
 
@@ -101,14 +110,23 @@ describe("pontuação isolada por empresa", () => {
   it("regra B não pontua registro A, mesmo quando ambos são visíveis ao cliente", async () => {
     const { tables, client } = fixture();
     expect(await runScoringFullScan(client as never)).toMatchObject({ scanned: 1, applied: 1 });
-    expect(tables.leads.map((r) => r.score)).toEqual([0, 5]);
-    expect(tables.score_events).toHaveLength(1);
-    expect(tables.score_events[0]).toMatchObject({ workspace_id: "B", entity_id: "lead-B" });
+    expect(client.rpc).toHaveBeenCalledWith(
+      "sales_scoring_apply",
+      expect.objectContaining({ p_rule: "rule-B", p_table: "leads", p_record: "lead-B" }),
+    );
+    expect(client.rpc.mock.calls.filter(([name]) => name === "sales_scoring_apply")).toHaveLength(
+      1,
+    );
   });
   it("mantém duas filas e cursores independentes para o mesmo responsável", async () => {
     const { tables, client } = fixture(true);
     expect(await tickScoring(client as never)).toEqual({ owners: 1, events: 2, applied: 2 });
-    expect(tables.leads.map((r) => r.score)).toEqual([1, 5]);
+    expect(
+      client.rpc.mock.calls
+        .filter(([name]) => name === "sales_scoring_apply")
+        .map(([, args]) => (args as { p_record: string }).p_record)
+        .sort(),
+    ).toEqual(["lead-A", "lead-B"]);
     expect(tables.scoring_cursors).toHaveLength(2);
     expect(tables.scoring_cursors).toEqual(
       expect.arrayContaining([

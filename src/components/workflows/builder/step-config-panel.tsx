@@ -465,7 +465,9 @@ function StepConfigForm({
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground">
             Use <code className="text-[11px]">{`{{campo}}`}</code> para puxar valores do registro
-            que disparou o workflow.
+            que disparou o workflow. Este passo cria apenas o lead. Para criar ou vincular empresa e
+            contato, adicione passos explícitos, com as permissões correspondentes do responsável
+            pelo fluxo.
           </p>
           <div className="grid grid-cols-2 gap-2">
             <div>

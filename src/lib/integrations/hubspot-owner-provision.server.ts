@@ -1,3 +1,4 @@
+import { assertPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 // Cria/vincula usuários inativos para responsáveis do HubSpot. Server-only.
 import { decideProvision, normalizePersonKey } from "./hubspot-owner-match";
 
@@ -131,13 +132,7 @@ export async function assertWorkspaceAdmin(
   supabase: { rpc: (fn: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown }> },
   userId: string,
 ): Promise<string> {
-  const { data: ws } = await supabase.rpc("default_workspace_for_user", { _user: userId });
-  const workspaceId = ws as string | null;
-  if (!workspaceId) throw new Error("Usuário sem workspace ativo");
-  const { data: ok } = await supabase.rpc("is_workspace_admin_v2", {
-    _workspace: workspaceId,
-    _user: userId,
-  });
-  if (!ok) throw new Error("Somente administradores podem gerenciar usuários.");
+  const workspaceId = await getActiveWorkspaceId(supabase as never, userId);
+  await assertPermission(supabase as never, userId, workspaceId, "system.members.manage.workspace");
   return workspaceId;
 }

@@ -1,3 +1,4 @@
+import { hubspotRequestGuard } from "./hubspot-api.server";
 // Etapa "contacts" da importação do HubSpot — extraída de hubspot-steps.server.ts
 import { batchRead, mapContact, rawOf } from "./hubspot-api.server";
 import {
@@ -128,7 +129,7 @@ export async function runContactsStep(args: StepRunArgs): Promise<StepResult | v
       break;
     }
     const chunkIds = targetIds.slice(idx, idx + CHUNK);
-    const recs = await batchRead("contacts", chunkIds, propsList);
+    const recs = await batchRead("contacts", chunkIds, propsList, hubspotRequestGuard(supabase));
     const byId = new Map(recs.map((r) => [r.id, r]));
     const parentCompanyHsIds = Array.from(
       new Set(chunkIds.map((hsId) => parentMap?.[hsId]).filter((id): id is string => Boolean(id))),

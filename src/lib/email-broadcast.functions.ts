@@ -185,6 +185,17 @@ export const sendTestEmailBroadcast = createServerFn({ method: "POST" })
     const gmail = await import("@/lib/gmail.server");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const admin = supabaseAdmin as any;
+    const { assertSalesArea } = await import("@/lib/access-control/sales-core.server");
+    await assertSalesArea(context.supabase, "techsales.inbox.email", "create");
+    const { data: visible, error: visibleError } = await context.supabase
+      .from("email_accounts")
+      .select("id")
+      .eq("workspace_id", workspaceId)
+      .eq("owner_id", context.userId);
+    if (visibleError) throw visibleError;
+    if (!visible?.length) throw new Error("Nenhuma conta própria autorizada para envio.");
+    if (data.email_account_id)
+      await assertSalesRecord(context.supabase, "email_accounts", data.email_account_id, "view");
     let q = admin
       .from("email_accounts")
       .select(
@@ -192,7 +203,12 @@ export const sendTestEmailBroadcast = createServerFn({ method: "POST" })
       )
       .eq("provider", "gmail")
       .eq("status", "connected")
-      .eq("workspace_id", workspaceId);
+      .eq("workspace_id", workspaceId)
+      .eq("owner_id", context.userId)
+      .in(
+        "id",
+        visible.map((row) => row.id),
+      );
     if (data.email_account_id) q = q.eq("id", data.email_account_id);
     const { data: rows } = await q.order("created_at", { ascending: false }).limit(1);
     const acc = rows?.[0] as Parameters<typeof gmail.ensureAccessToken>[0] | undefined;

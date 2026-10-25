@@ -5,13 +5,6 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
-// Carrega o cliente admin sob demanda (mantém o bundle do cliente limpo).
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function sbAdmin(): Promise<any> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  return supabaseAdmin;
-}
-
 export type ProspectingScript = {
   id: string;
   name: string;
@@ -39,7 +32,7 @@ const ScriptInput = z.object({
 export const listScripts = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("techsales.prospecting_scripts", "view")])
   .handler(async ({ context }): Promise<ProspectingScript[]> => {
-    const sb = await sbAdmin();
+    const sb = context.supabase;
     const ws = await resolveActiveWorkspace(context.userId);
     const { data, error } = await sb
       .from("prospecting_scripts")
@@ -54,11 +47,11 @@ export const upsertScript = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("techsales.prospecting_scripts", ["create", "update"])])
   .inputValidator((i) => ScriptInput.parse(i))
   .handler(async ({ data, context }) => {
-    const sb = await sbAdmin();
+    const sb = context.supabase;
     const ws = await resolveActiveWorkspace(context.userId);
     const payload = {
       workspace_id: ws,
-      owner_id: ws,
+      owner_id: context.userId,
       name: data.name,
       system_prompt: data.system_prompt,
       first_message: data.first_message,
@@ -68,9 +61,10 @@ export const upsertScript = createServerFn({ method: "POST" })
       variables: data.variables,
     };
     if (data.id) {
+      const { owner_id: _owner, workspace_id: _ws, ...updatable } = payload;
       const { error } = await sb
         .from("prospecting_scripts")
-        .update(payload)
+        .update(updatable)
         .eq("id", data.id)
         .eq("workspace_id", ws);
       if (error) throw new Error(error.message);
@@ -92,7 +86,7 @@ export const deleteScript = createServerFn({ method: "POST" })
     if (data.id)
       await assertSalesRecord(context.supabase, "prospecting_scripts", data.id, "delete");
 
-    const sb = await sbAdmin();
+    const sb = context.supabase;
     const ws = await resolveActiveWorkspace(context.userId);
     const { error } = await sb
       .from("prospecting_scripts")

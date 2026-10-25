@@ -1,3 +1,4 @@
+import { withAssociationAccess } from "./access";
 import { useEffect, useState } from "react";
 import { useRefreshCallback } from "@/hooks/use-refresh-callback";
 import { Link } from "@tanstack/react-router";
@@ -24,7 +25,7 @@ import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
 
 /* ───────────── Lead → Contact / Deal cards (read-only, from conversion) ───────────── */
 
-export function LeadContactsCard({
+function LeadContactsCardContent({
   entityId,
   companyId,
 }: {
@@ -196,7 +197,7 @@ export function LeadContactsCard({
   );
 }
 
-export function LeadDealsCard({ entityId }: { entityId: string }) {
+function LeadDealsCardContent({ entityId }: { entityId: string }) {
   const [deal, setDeal] = useState<{
     id: string;
     name: string | null;
@@ -457,3 +458,12 @@ export function RecordLeadsCard({
     </AssocCard>
   );
 }
+
+export const LeadContactsCard = withAssociationAccess(LeadContactsCardContent, (p) => ({
+  table: "leads",
+  id: p.entityId,
+}));
+export const LeadDealsCard = withAssociationAccess(LeadDealsCardContent, (p) => ({
+  table: "leads",
+  id: p.entityId,
+}));

@@ -1,3 +1,6 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
+import { recordUpdatePayload } from "@/lib/access-control/record-update-payload";
+import { assertSalesArea, assertSalesRecord } from "@/lib/access-control/sales-core.server";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
@@ -19,7 +22,7 @@ async function activeWorkspace(supabase: any, userId: string): Promise<string> {
 }
 
 export const listLandingPages = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.landing_pages", "view")])
   .handler(async ({ context }) => {
     const { data, error } = await (context.supabase.from("landing_pages") as any)
       .select("id,slug,title,status,views_count,conversions_count,published_at,updated_at")
@@ -29,7 +32,7 @@ export const listLandingPages = createServerFn({ method: "GET" })
   });
 
 export const getLandingPage = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.landing_pages", "view")])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: row, error } = await (context.supabase.from("landing_pages") as any)
@@ -41,7 +44,7 @@ export const getLandingPage = createServerFn({ method: "GET" })
   });
 
 export const saveLandingPage = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.landing_pages", ["create", "update"])])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -58,8 +61,12 @@ export const saveLandingPage = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const ws = await activeWorkspace(context.supabase, context.userId);
+    if (data.status === "published") {
+      await assertSalesArea(context.supabase, "techsales.marketing.landing_pages", "manage");
+      if (data.id) await assertSalesRecord(context.supabase, "landing_pages", data.id, "manage");
+    }
     const payload = {
-      owner_id: ws,
+      owner_id: context.userId,
       workspace_id: ws,
       slug: data.slug,
       title: data.title,
@@ -72,7 +79,7 @@ export const saveLandingPage = createServerFn({ method: "POST" })
     };
     if (data.id) {
       const { error } = await (context.supabase.from("landing_pages") as any)
-        .update(payload)
+        .update(recordUpdatePayload(payload))
         .eq("id", data.id);
       if (error) throw new Error(error.message);
       return { id: data.id };
@@ -86,7 +93,7 @@ export const saveLandingPage = createServerFn({ method: "POST" })
   });
 
 export const deleteLandingPage = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.marketing.landing_pages", "delete")])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await (context.supabase.from("landing_pages") as any)
@@ -132,14 +139,14 @@ export const trackLpEvent = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: lp } = await (supabaseAdmin.from("landing_pages") as any)
-      .select("owner_id")
+      .select("owner_id,workspace_id")
       .eq("id", data.landing_page_id)
       .eq("status", "published")
       .maybeSingle();
     if (!lp) return { ok: false };
     await (supabaseAdmin.from("landing_page_events") as any).insert({
       owner_id: lp.owner_id,
-      workspace_id: lp.owner_id,
+      workspace_id: lp.workspace_id,
       landing_page_id: data.landing_page_id,
       variant_id: data.variant_id ?? null,
       event_type: data.event_type,

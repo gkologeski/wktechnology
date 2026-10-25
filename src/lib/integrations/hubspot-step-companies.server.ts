@@ -1,3 +1,4 @@
+import { hubspotRequestGuard } from "./hubspot-api.server";
 // Etapa "companies" da importação do HubSpot — extraída de hubspot-steps.server.ts
 import {
   type HSRec,
@@ -30,7 +31,7 @@ export async function runCompaniesStep(args: StepRunArgs): Promise<StepResult | 
     bump,
     persistCursor,
   } = args;
-  const allProps = await loadHsProperties("companies");
+  const allProps = await loadHsProperties("companies", hubspotRequestGuard(supabase));
   const propsParam = allProps.length
     ? allProps.join(",")
     : "name,domain,industry,numberofemployees,phone,city,state,zip,address,website";
@@ -60,7 +61,7 @@ export async function runCompaniesStep(args: StepRunArgs): Promise<StepResult | 
         break;
       }
       const chunkIds = targetIds.slice(idx, idx + CHUNK);
-      const recs = await batchRead("companies", chunkIds, propsList);
+      const recs = await batchRead("companies", chunkIds, propsList, hubspotRequestGuard(supabase));
       for (const c of recs) {
         const p = c.properties;
         if (!p.name) {
@@ -104,7 +105,7 @@ export async function runCompaniesStep(args: StepRunArgs): Promise<StepResult | 
     let page = Math.floor(alreadyProcessed / 100) + 1;
     // Descobre o total real no HubSpot apenas na primeira execução do step
     if (resume.discovered === undefined) {
-      const total = await discoverTotal("companies");
+      const total = await discoverTotal("companies", hubspotRequestGuard(supabase));
       if (total !== null) {
         const effective = Math.min(total, scope.maxCompanies);
         await patchItemBefore(supabase, itemId, { discovered: effective });
@@ -127,7 +128,11 @@ export async function runCompaniesStep(args: StepRunArgs): Promise<StepResult | 
       const limit = Math.min(100, remaining);
       const params: Record<string, string> = { limit: String(limit), properties: propsParam };
       if (after) params.after = after;
-      const res = (await hsFetch("/crm/v3/objects/companies", params)) as {
+      const res = (await hsFetch(
+        "/crm/v3/objects/companies",
+        params,
+        hubspotRequestGuard(supabase),
+      )) as {
         results: (HSRec & { createdAt?: string; updatedAt?: string })[];
         paging?: { next?: { after: string } };
       };

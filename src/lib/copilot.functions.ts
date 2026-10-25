@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { orSafeLike } from "@/lib/postgrest-search";
 import { createServerFn } from "@tanstack/react-start";
@@ -9,7 +10,7 @@ const MODEL = "google/gemini-2.5-flash";
 type Source = { kind: string; id: string; title: string; snippet: string; url?: string };
 
 export const askCopilot = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.ai_assist", "manage")])
   .inputValidator((input) =>
     z
       .object({

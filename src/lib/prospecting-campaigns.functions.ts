@@ -1,3 +1,6 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { assertSalesArea } from "@/lib/access-control/sales-core.server";
+import { assertSalesWorker } from "@/lib/access-control/sales-worker.server";
 import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
 import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
@@ -70,41 +73,6 @@ type JsonValue = string | number | boolean | null | { [k: string]: JsonValue } |
 
 const ACTIVE_ATTEMPT_STATUSES = ["queued", "ringing", "in_progress"];
 
-async function reconcileCampaignIfIdle(campaign: Campaign, workspaceId: string): Promise<Campaign> {
-  const sb = await sbAdmin();
-  if (campaign.status !== "running") return campaign;
-
-  const { count } = await sb
-    .from("prospecting_call_attempts")
-    .select("id", { count: "exact", head: true })
-    .eq("campaign_id", campaign.id)
-    .eq("workspace_id", workspaceId)
-    .in("status", ACTIVE_ATTEMPT_STATUSES);
-  if ((count ?? 0) > 0) return campaign;
-
-  const { data: latest } = await sb
-    .from("prospecting_call_attempts")
-    .select("status")
-    .eq("campaign_id", campaign.id)
-    .eq("workspace_id", workspaceId)
-    .order("updated_at", { ascending: false })
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  const nextStatus = latest?.status === "completed" ? "done" : "paused";
-  const { data: updated } = await sb
-    .from("prospecting_campaigns")
-    .update({ status: nextStatus })
-    .eq("id", campaign.id)
-    .eq("workspace_id", workspaceId)
-    .eq("status", "running")
-    .select("*")
-    .maybeSingle();
-
-  return (updated as Campaign | null) ?? { ...campaign, status: nextStatus };
-}
-
 const CampaignInput = z.object({
   id: z.string().uuid().nullable().optional(),
   name: z.string().min(1).max(120),
@@ -144,7 +112,7 @@ const CampaignInput = z.object({
 export const listCampaigns = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("techsales.marketing.campaigns", "view")])
   .handler(async ({ context }): Promise<Campaign[]> => {
-    const sb = await sbAdmin();
+    const sb = context.supabase;
     const ws = await resolveActiveWorkspace(context.userId);
     const { data, error } = await sb
       .from("prospecting_campaigns")
@@ -152,14 +120,14 @@ export const listCampaigns = createServerFn({ method: "POST" })
       .eq("workspace_id", ws)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return (data ?? []) as Campaign[];
+    return (data ?? []) as unknown as Campaign[];
   });
 
 export const getCampaign = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("techsales.marketing.campaigns", "view")])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }): Promise<{ campaign: Campaign; variants: Variant[] }> => {
-    const sb = await sbAdmin();
+    const sb = context.supabase;
     const ws = await resolveActiveWorkspace(context.userId);
     const { data: c, error } = await sb
       .from("prospecting_campaigns")
@@ -174,7 +142,7 @@ export const getCampaign = createServerFn({ method: "POST" })
       .select("*")
       .eq("campaign_id", data.id)
       .order("position", { ascending: true });
-    const campaign = await reconcileCampaignIfIdle(c as Campaign, ws);
+    const campaign = c as unknown as Campaign;
     return { campaign, variants: (variants ?? []) as Variant[] };
   });
 
@@ -182,14 +150,18 @@ export const upsertCampaign = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("techsales.marketing.campaigns", ["create", "update"])])
   .inputValidator((i) => CampaignInput.parse(i))
   .handler(async ({ data, context }) => {
-    const sb = await sbAdmin();
+    const sb = context.supabase;
     const ws = await resolveActiveWorkspace(context.userId);
 
     // Em modo estático, resolve as regras AGORA (snapshot) e usa esses ids.
     // Em modo dinâmico, lead_ids é recalculado a cada "Iniciar".
     let resolvedLeadIds: string[] = data.lead_ids;
     if (data.audience_mode === "static" && data.audience_rules.length > 0) {
-      const resolved = await resolveAudienceServer(ws, data.audience_rules as AudienceRule[]);
+      const resolved = await resolveAudienceServer(
+        ws,
+        data.audience_rules as AudienceRule[],
+        context.supabase,
+      );
       // União com lead_ids manuais já passados (caso o usuário também tenha colado UUIDs).
       const set = new Set<string>([...resolvedLeadIds, ...resolved.lead_ids]);
       resolvedLeadIds = Array.from(set);
@@ -199,7 +171,7 @@ export const upsertCampaign = createServerFn({ method: "POST" })
 
     const payload = {
       workspace_id: ws,
-      owner_id: ws,
+      owner_id: context.userId,
       name: data.name,
       assignment_mode: data.assignment_mode,
       max_attempts: data.max_attempts,
@@ -215,9 +187,11 @@ export const upsertCampaign = createServerFn({ method: "POST" })
     let id: string;
     if (data.id) {
       id = data.id;
+      await assertSalesRecord(context.supabase, "prospecting_campaigns", id, "update");
+      const { owner_id: _owner, workspace_id: _ws, ...updatable } = payload;
       const { error } = await sb
         .from("prospecting_campaigns")
-        .update(payload)
+        .update(updatable)
         .eq("id", id)
         .eq("workspace_id", ws);
       if (error) throw new Error(error.message);
@@ -235,7 +209,7 @@ export const upsertCampaign = createServerFn({ method: "POST" })
     if (data.variants.length > 0) {
       const rows = data.variants.map((v, i) => ({
         workspace_id: ws,
-        owner_id: ws,
+        owner_id: context.userId,
         campaign_id: id,
         script_id: v.script_id,
         weight: v.weight,
@@ -255,7 +229,7 @@ export const deleteCampaign = createServerFn({ method: "POST" })
     if (data.id)
       await assertSalesRecord(context.supabase, "prospecting_campaigns", data.id, "delete");
 
-    const sb = await sbAdmin();
+    const sb = context.supabase;
     const ws = await resolveActiveWorkspace(context.userId);
     const { error } = await sb
       .from("prospecting_campaigns")
@@ -274,11 +248,15 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    const sb = await sbAdmin();
+    const sb = context.supabase;
     const ws = await resolveActiveWorkspace(context.userId);
+    await assertSalesRecord(context.supabase, "prospecting_campaigns", data.id, "manage");
+    await assertSalesRecord(context.supabase, "prospecting_campaigns", data.id, "update");
+    const callQueue = await sbAdmin();
     if (data.status === "running") {
+      await assertSalesArea(context.supabase, "techsales.prospecting_voice", "create");
       const staleStartedBefore = new Date(Date.now() - 15 * 60 * 1000).toISOString();
-      await sb
+      await callQueue
         .from("prospecting_call_attempts")
         .update({
           status: "failed",
@@ -301,10 +279,21 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
       const audienceMode = (c?.audience_mode as string | undefined) ?? "static";
       if (audienceMode === "dynamic") {
         const rules = (c?.audience_rules ?? []) as AudienceRule[];
-        const resolved = await resolveAudienceServer(ws, rules);
+        const resolved = await resolveAudienceServer(ws, rules, context.supabase);
         leadIds = resolved.lead_ids;
       }
       if (leadIds.length) {
+        const { data: visibleLeads, error: leadError } = await sb
+          .from("leads")
+          .select("id")
+          .in("id", leadIds)
+          .eq("workspace_id", ws);
+        if (leadError) throw new Error(leadError.message);
+        const visibleIds = new Set((visibleLeads ?? []).map((x) => x.id));
+        if (leadIds.some((id) => !visibleIds.has(id)))
+          throw new Error(
+            "Há leads sem acesso atual no público da campanha. Revise a seleção antes de iniciar.",
+          );
         const { data: existing } = await sb
           .from("prospecting_call_attempts")
           .select("lead_id, status, attempt_number, ended_reason")
@@ -331,19 +320,29 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
           })
           .map((lid) => ({
             workspace_id: ws,
-            owner_id: ws,
+            owner_id: context.userId,
             campaign_id: data.id,
             lead_id: lid,
-            status: "queued",
+            status: "queued" as const,
             attempt_number: (byLead.get(lid)?.lastAttempt ?? 0) + 1,
             scheduled_at: new Date().toISOString(),
           }));
-        if (rows.length) await sb.from("prospecting_call_attempts").insert(rows);
+        if (rows.length) {
+          await assertSalesRecord(context.supabase, "prospecting_campaigns", data.id, "manage");
+          await assertSalesArea(context.supabase, "techsales.prospecting_voice", "create");
+          const { error: queueError } = await callQueue
+            .from("prospecting_call_attempts")
+            .insert(rows);
+          if (queueError) throw new Error(queueError.message);
+        }
       }
     }
     const { error } = await sb
       .from("prospecting_campaigns")
-      .update({ status: data.status })
+      .update({
+        status: data.status,
+        ...(data.status === "running" ? { execution_user_id: context.userId } : {}),
+      } as never)
       .eq("id", data.id)
       .eq("workspace_id", ws);
     if (error) throw new Error(error.message);
@@ -354,7 +353,7 @@ export const listCampaignAttempts = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("techsales.marketing.campaigns", "view")])
   .inputValidator((i) => z.object({ campaign_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }): Promise<Attempt[]> => {
-    const sb = await sbAdmin();
+    const sb = context.supabase;
     const ws = await resolveActiveWorkspace(context.userId);
     const { data: rows, error } = await sb
       .from("prospecting_call_attempts")
@@ -381,7 +380,7 @@ export const auditCampaignQueueability = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("techsales.marketing.campaigns", "view")])
   .inputValidator((i) => z.object({ campaign_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }): Promise<LeadAudit[]> => {
-    const sb = await sbAdmin();
+    const sb = context.supabase;
     const ws = await resolveActiveWorkspace(context.userId);
     const { data: c } = await sb
       .from("prospecting_campaigns")
@@ -395,7 +394,7 @@ export const auditCampaignQueueability = createServerFn({ method: "POST" })
     const audienceMode = (c.audience_mode as string | undefined) ?? "static";
     if (audienceMode === "dynamic") {
       const rules = (c.audience_rules ?? []) as AudienceRule[];
-      const resolved = await resolveAudienceServer(ws, rules);
+      const resolved = await resolveAudienceServer(ws, rules, context.supabase);
       leadIds = resolved.lead_ids;
     }
     if (!leadIds.length) return [];
@@ -493,17 +492,25 @@ function renderTemplate(tpl: string, ctx: { lead: { name: string; company: strin
 }
 
 export const dialLeadNow = createServerFn({ method: "POST" })
-  .middleware([requireSalesPermission("techsales.marketing.campaigns", "manage")])
+  .middleware([requireSalesPermission("techsales.prospecting_voice", "create")])
   .inputValidator((i) =>
     z.object({ lead_id: z.string().uuid(), script_id: z.string().uuid() }).parse(i),
   )
   .handler(async ({ data, context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
-    return startVapiCall({ workspaceId: ws, leadId: data.lead_id, scriptId: data.script_id });
+    return startVapiCall({
+      workspaceId: ws,
+      leadId: data.lead_id,
+      scriptId: data.script_id,
+      caller: context.supabase,
+      actorId: context.userId,
+    });
   });
 
 export async function startVapiCall(opts: {
   workspaceId: string;
+  caller?: SupabaseClient;
+  actorId?: string;
   leadId: string;
   scriptId: string;
   campaignId?: string | null;
@@ -511,10 +518,40 @@ export async function startVapiCall(opts: {
   attemptNumber?: number;
   attemptId?: string | null;
 }): Promise<{ ok: boolean; call_id?: string; error?: string }> {
-  const sb = await sbAdmin();
+  const sb = opts.caller ?? (await sbAdmin());
+  const diagnostics = await sbAdmin();
+  const authorize = async () => {
+    if (opts.campaignId) {
+      const { data: source } = await sb
+        .from("prospecting_campaigns")
+        .select("workspace_id,status")
+        .eq("id", opts.campaignId)
+        .eq("workspace_id", opts.workspaceId)
+        .maybeSingle();
+      if (!source || source.status !== "running")
+        throw new Error("Campanha indisponível para ligação.");
+    }
+    if (opts.caller) {
+      await assertSalesArea(opts.caller, "techsales.prospecting_voice", "create");
+      await assertSalesRecord(opts.caller, "leads", opts.leadId, "view");
+      await assertSalesRecord(opts.caller, "prospecting_scripts", opts.scriptId, "view");
+    } else {
+      if (!opts.campaignId) throw new Error("Chamada sem responsável de execução autorizado.");
+      await assertSalesWorker(sb, "prospecting_campaigns", opts.campaignId, [
+        { table: "leads", id: opts.leadId },
+        { table: "prospecting_scripts", id: opts.scriptId },
+        { resource: "techsales.prospecting_voice", action: "create" },
+      ]);
+    }
+  };
+  try {
+    await authorize();
+  } catch {
+    return { ok: false, error: "Chamada bloqueada: origem ou permissão atual indisponível." };
+  }
   const persistDiag = async (patch: Record<string, unknown>) => {
     if (!opts.attemptId) return;
-    await sb.from("prospecting_call_attempts").update(patch).eq("id", opts.attemptId);
+    await diagnostics.from("prospecting_call_attempts").update(patch).eq("id", opts.attemptId);
   };
 
   const apiKey = process.env.VAPI_API_KEY;
@@ -630,6 +667,11 @@ export async function startVapiCall(opts: {
 
   let res: Response;
   try {
+    await authorize();
+  } catch {
+    return { ok: false, error: "Chamada bloqueada após mudança de origem ou permissão." };
+  }
+  try {
     res = await fetch(`${VAPI_BASE}/call`, {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -662,9 +704,9 @@ export async function startVapiCall(opts: {
 
   // Only insert a fresh attempt row on the dialLeadNow path (no pre-existing attempt).
   if (!opts.attemptId) {
-    await sb.from("prospecting_call_attempts").insert({
+    await diagnostics.from("prospecting_call_attempts").insert({
       workspace_id: opts.workspaceId,
-      owner_id: opts.workspaceId,
+      owner_id: opts.actorId ?? opts.workspaceId,
       campaign_id: opts.campaignId ?? null,
       variant_id: opts.variantId ?? null,
       script_id: opts.scriptId,

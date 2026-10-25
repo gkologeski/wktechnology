@@ -26,7 +26,9 @@ export function usePermissions(): UsePermissionsResult {
   const query = useQuery({
     queryKey: ["my-permissions"],
     queryFn: () => fetchPerms(),
-    staleTime: 5 * 60_000,
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: "always",
     retry: 2,
   });
 

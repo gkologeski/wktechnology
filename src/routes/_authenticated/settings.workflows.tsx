@@ -10,8 +10,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
-import { Can } from "@/lib/access-control/use-permissions";
-import { WORKFLOWS_MANAGE, WORKFLOWS_PERMS } from "@/lib/access-control/admin-permission-keys";
+import { useSalesCapabilities } from "@/lib/access-control/use-sales-capabilities";
+import { readViewAs } from "@/lib/view-as-client";
+import { Can, usePermissions } from "@/lib/access-control/use-permissions";
+import { WORKFLOWS_PERMS } from "@/lib/access-control/admin-permission-keys";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -90,6 +92,10 @@ type WorkflowRow = {
 };
 
 function WorkflowsPage() {
+  const permissions = usePermissions();
+  const workflowView = permissions.canAny(
+    ["own", "team", "workspace"].map((s) => `system.workflows.view.${s}`),
+  );
   const listFn = useServerFn(listWorkflows);
   const saveFn = useServerFn(saveWorkflow);
   const deleteFn = useServerFn(deleteWorkflow);
@@ -114,6 +120,12 @@ function WorkflowsPage() {
   const [runsWorkflowId, setRunsWorkflowId] = useState<string | null>(null);
 
   const refresh = async () => {
+    if (!workflowView) {
+      setRows([]);
+      setRuns([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const [w, r] = await Promise.all([listFn(), runsFn({ data: { limit: 20 } })]);
@@ -125,8 +137,29 @@ function WorkflowsPage() {
   };
 
   useEffect(() => {
-    refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */
-  }, []);
+    if (!permissions.isLoading) {
+      void refresh();
+      if (!workflowView) setActiveTab("approvals");
+    } /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, [permissions.isLoading, workflowView]);
+
+  const capabilities = useSalesCapabilities(
+    "workflows",
+    rows.map((r) => r.id),
+  );
+  const readOnly = !!readViewAs();
+  const approvalView = permissions.canAny(
+    ["own", "team", "workspace"].map((s) => `system.workflow_approvals.view.${s}`),
+  );
+  const listApprovalsFn = useServerFn(listPendingApprovals);
+  const decideApprovalFn = useServerFn(decideApproval);
+  const draftManage =
+    !readOnly &&
+    (draft?.id
+      ? capabilities.for(draft.id).can_manage
+      : permissions.canAny(
+          ["own", "team", "workspace"].map((s) => `system.workflows.manage.${s}`),
+        ));
 
   const editingRow = draft?.id ? (rows.find((r) => r.id === draft.id) ?? null) : null;
 
@@ -135,14 +168,15 @@ function WorkflowsPage() {
       const res = await saveFn({ data: d });
       const id = (res as { id?: string } | undefined)?.id ?? d.id;
       toast.success("Rascunho salvo — publique para ativar", {
-        action: id
-          ? {
-              label: "Publicar",
-              onClick: () => {
-                void handlePublishById(id);
-              },
-            }
-          : undefined,
+        action:
+          id && draftManage
+            ? {
+                label: "Publicar",
+                onClick: () => {
+                  void handlePublishById(id);
+                },
+              }
+            : undefined,
       });
       setDraft(null);
       refresh();
@@ -279,55 +313,61 @@ function WorkflowsPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Can any={WORKFLOWS_MANAGE}>
-            <Button variant="outline" onClick={handleTick}>
-              <Zap className="h-4 w-4 mr-1" /> Rodar agora
-            </Button>
-          </Can>
-          <Can any={WORKFLOWS_PERMS.create}>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  <UserPlus className="h-4 w-4 mr-1" /> Modelos de contratação
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80">
-                {HIRING_TEMPLATES.map((t) => (
-                  <DropdownMenuItem
-                    key={t.key}
-                    className="flex flex-col items-start gap-0.5"
-                    onSelect={() =>
-                      setDraft({
-                        ...EMPTY_DRAFT,
-                        name: t.name,
-                        entity: t.entity,
-                        enabled: false,
-                        trigger: structuredClone(t.trigger),
-                        actions: structuredClone(t.actions),
-                      })
-                    }
-                  >
-                    <span className="text-sm font-medium">{t.name}</span>
-                    <span className="text-xs text-muted-foreground">{t.description}</span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Button onClick={() => setDraft({ ...EMPTY_DRAFT })}>
-              <Plus className="h-4 w-4 mr-1" /> Novo workflow
-            </Button>
-          </Can>
+          {!readOnly && (
+            <Can any={["own", "team", "workspace"].map((s) => `system.workflows.manage.${s}`)}>
+              <Button variant="outline" onClick={handleTick}>
+                <Zap className="h-4 w-4 mr-1" /> Rodar agora
+              </Button>
+            </Can>
+          )}
+          {!readOnly && (
+            <Can any={WORKFLOWS_PERMS.create}>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    <UserPlus className="h-4 w-4 mr-1" /> Modelos de contratação
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80">
+                  {HIRING_TEMPLATES.map((t) => (
+                    <DropdownMenuItem
+                      key={t.key}
+                      className="flex flex-col items-start gap-0.5"
+                      onSelect={() =>
+                        setDraft({
+                          ...EMPTY_DRAFT,
+                          name: t.name,
+                          entity: t.entity,
+                          enabled: false,
+                          trigger: structuredClone(t.trigger),
+                          actions: structuredClone(t.actions),
+                        })
+                      }
+                    >
+                      <span className="text-sm font-medium">{t.name}</span>
+                      <span className="text-xs text-muted-foreground">{t.description}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button onClick={() => setDraft({ ...EMPTY_DRAFT })}>
+                <Plus className="h-4 w-4 mr-1" /> Novo workflow
+              </Button>
+            </Can>
+          )}
         </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="list">Workflows</TabsTrigger>
-          <TabsTrigger value="runs">Execuções recentes</TabsTrigger>
-          <TabsTrigger value="policy">Política de envio</TabsTrigger>
-          <TabsTrigger value="approvals">
-            <ShieldCheck className="h-3.5 w-3.5 mr-1" /> Aprovações
-          </TabsTrigger>
+          {workflowView && <TabsTrigger value="list">Workflows</TabsTrigger>}
+          {workflowView && <TabsTrigger value="runs">Execuções recentes</TabsTrigger>}
+          {workflowView && <TabsTrigger value="policy">Política de envio</TabsTrigger>}
+          {approvalView && (
+            <TabsTrigger value="approvals">
+              <ShieldCheck className="h-3.5 w-3.5 mr-1" /> Aprovações
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="list" className="space-y-3 mt-3">
@@ -340,6 +380,9 @@ function WorkflowsPage() {
             </Card>
           )}
           {rows.map((row) => {
+            const cap = capabilities.for(row.id);
+            const canManage = !readOnly && cap.can_manage;
+            const canUpdate = !readOnly && cap.can_update;
             const isPublished = row.status === "published" && !row.has_draft_changes;
             const draftTrigger = row.draft_trigger ??
               row.trigger ?? { event: "created", filters: [] };
@@ -387,13 +430,17 @@ function WorkflowsPage() {
                     )}
                   </div>
                   <div className="flex items-center gap-1 flex-wrap justify-end">
-                    <Switch checked={row.enabled} onCheckedChange={(v) => handleToggle(row, v)} />
-                    {!isPublished && (
+                    <Switch
+                      disabled={!canManage}
+                      checked={row.enabled}
+                      onCheckedChange={(v) => handleToggle(row, v)}
+                    />
+                    {canManage && !isPublished && (
                       <>
                         <Button size="sm" variant="default" onClick={() => handlePublish(row)}>
                           <Upload className="h-3.5 w-3.5 mr-1" /> Publicar
                         </Button>
-                        {row.published_version > 0 && row.has_draft_changes && (
+                        {canUpdate && row.published_version > 0 && row.has_draft_changes && (
                           <Button size="sm" variant="ghost" onClick={() => handleDiscard(row)}>
                             Descartar
                           </Button>
@@ -404,6 +451,7 @@ function WorkflowsPage() {
                     <Button
                       size="sm"
                       variant="ghost"
+                      disabled={!canManage}
                       onClick={() => {
                         setTestTarget(row);
                         setTestEntityId("");
@@ -412,7 +460,7 @@ function WorkflowsPage() {
                     >
                       <TestTube2 className="h-3.5 w-3.5 mr-1" /> Testar
                     </Button>
-                    {row.published_version > 0 && (
+                    {canManage && row.published_version > 0 && (
                       <Button size="sm" variant="ghost" onClick={() => handleBulk(row)}>
                         <Users className="h-3.5 w-3.5 mr-1" /> Aplicar existentes
                       </Button>
@@ -420,6 +468,7 @@ function WorkflowsPage() {
                     <Button
                       variant="ghost"
                       size="icon"
+                      disabled={!canUpdate}
                       onClick={() =>
                         setDraft({
                           id: row.id,
@@ -433,11 +482,13 @@ function WorkflowsPage() {
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Can any={WORKFLOWS_PERMS.delete}>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(row.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </Can>
+                    {!readOnly && cap.can_delete && (
+                      <Can any={WORKFLOWS_PERMS.delete}>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(row.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </Can>
+                    )}
                   </div>
                 </CardHeader>
               </Card>
@@ -462,17 +513,21 @@ function WorkflowsPage() {
           />
         </TabsContent>
 
-        <TabsContent value="policy" className="mt-3">
-          <SendPolicyPanel />
-        </TabsContent>
+        {workflowView && (
+          <TabsContent value="policy" className="mt-3">
+            <SendPolicyPanel />
+          </TabsContent>
+        )}
 
-        <TabsContent value="approvals" className="mt-3">
-          <PendingApprovalsList
-            listFn={useServerFn(listPendingApprovals)}
-            decideFn={useServerFn(decideApproval)}
-            namesById={namesById}
-          />
-        </TabsContent>
+        {approvalView && (
+          <TabsContent value="approvals" className="mt-3">
+            <PendingApprovalsList
+              listFn={listApprovalsFn}
+              decideFn={decideApprovalFn}
+              namesById={namesById}
+            />
+          </TabsContent>
+        )}
       </Tabs>
 
       <WorkflowBuilder
@@ -484,7 +539,7 @@ function WorkflowsPage() {
           void refresh();
         }}
         onSave={handleSave}
-        onSaveAndPublish={handleSaveAndPublish}
+        onSaveAndPublish={draftManage ? handleSaveAndPublish : undefined}
         publishedVersion={editingRow?.published_version ?? 0}
         hasDraftChanges={editingRow ? editingRow.has_draft_changes : true}
       />
@@ -559,6 +614,12 @@ function PendingApprovalsList({
   const [loading, setLoading] = useState(true);
   const [decidingId, setDecidingId] = useState<string | null>(null);
   const [comment, setComment] = useState("");
+  const [submittingId, setSubmittingId] = useState<string | null>(null);
+  const capabilities = useSalesCapabilities(
+    "workflow_approvals",
+    rows.map((r) => r.id),
+  );
+  const readOnly = !!readViewAs();
 
   const refresh = async () => {
     setLoading(true);
@@ -575,15 +636,22 @@ function PendingApprovalsList({
   }, []);
 
   const handleDecide = async (id: string, decision: "approved" | "rejected") => {
-    setDecidingId(id);
+    setSubmittingId(id);
     try {
-      await decideFn({ data: { approvalId: id, decision, comment: comment || undefined } });
-      toast.success(decision === "approved" ? "Aprovado — workflow retomado" : "Rejeitado");
+      await decideFn({
+        data: {
+          approvalId: id,
+          decision,
+          comment: decidingId === id ? comment || undefined : undefined,
+        },
+      });
+      toast.success(decision === "approved" ? "Aprovado — retomada enfileirada" : "Rejeitado");
       setComment("");
       refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro");
     } finally {
+      setSubmittingId(null);
       setDecidingId(null);
     }
   };
@@ -613,32 +681,38 @@ function PendingApprovalsList({
               Registro: {r.entity_id} · Criada em {new Date(r.created_at).toLocaleString()}
             </p>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <Textarea
-              placeholder="Comentário da decisão (opcional)"
-              value={decidingId === r.id ? comment : ""}
-              onFocus={() => setDecidingId(r.id)}
-              onChange={(e) => setComment(e.target.value)}
-              rows={2}
-            />
-            <div className="flex gap-2 justify-end">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleDecide(r.id, "rejected")}
-                disabled={decidingId === r.id}
-              >
-                Rejeitar
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => handleDecide(r.id, "approved")}
-                disabled={decidingId === r.id}
-              >
-                Aprovar
-              </Button>
-            </div>
-          </CardContent>
+          {!readOnly && capabilities.for(r.id).can_manage && (
+            <CardContent className="space-y-2">
+              <Textarea
+                disabled={!!submittingId}
+                placeholder="Comentário da decisão (opcional)"
+                value={decidingId === r.id ? comment : ""}
+                onFocus={() => {
+                  if (decidingId !== r.id) setComment("");
+                  setDecidingId(r.id);
+                }}
+                onChange={(e) => setComment(e.target.value)}
+                rows={2}
+              />
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDecide(r.id, "rejected")}
+                  disabled={!!submittingId}
+                >
+                  Rejeitar
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => handleDecide(r.id, "approved")}
+                  disabled={!!submittingId}
+                >
+                  Aprovar
+                </Button>
+              </div>
+            </CardContent>
+          )}
         </Card>
       ))}
     </div>

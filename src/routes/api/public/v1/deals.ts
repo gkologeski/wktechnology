@@ -88,7 +88,7 @@ export const Route = createFileRoute("/api/public/v1/deals")({
         const { data, error, count } = await query
           .order("created_at", { ascending: params.ascending })
           .range(params.offset, params.offset + params.limit - 1);
-        if (error) return jsonError(error.message, 400);
+        if (error) return jsonError(error.message, error.code === "42501" ? 403 : 400);
 
         const rows = data ?? [];
         return Response.json({ data: rows, meta: buildMeta(params, rows.length, count ?? null) });
@@ -214,7 +214,7 @@ export const Route = createFileRoute("/api/public/v1/deals")({
           })
           .select(SELECT)
           .single();
-        if (error) return jsonError(error.message, 400);
+        if (error) return jsonError(error.message, error.code === "42501" ? 403 : 400);
 
         // Associa o contato ao negócio (aba de associações).
         if (contactId) {

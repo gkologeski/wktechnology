@@ -1,3 +1,5 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
 import { salesPipelineReferences } from "@/lib/access-control/sales-references";
 // Server functions for SLA por pipeline stage.
 import { createServerFn } from "@tanstack/react-start";
@@ -103,7 +105,7 @@ export const listPipelinesForSla = createServerFn({ method: "GET" })
 
 /** Atualiza sla_hours por estágio em uma pipeline. */
 export const setPipelineSla = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.automation.sla", "manage")])
   .inputValidator((i) =>
     z
       .object({
@@ -113,6 +115,7 @@ export const setPipelineSla = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    await assertSalesRecord(context.supabase, "pipelines", data.pipeline_id, "update");
     const { supabase } = context;
     const { data: pipe, error } = await salesPipelineReferences(supabase)
       .select("stages")
@@ -145,7 +148,8 @@ export const setPipelineSla = createServerFn({ method: "POST" })
         .from("stage_entries")
         .update({ sla_hours: (s as { sla_hours?: number }).sla_hours ?? null })
         .is("exited_at", null)
-        .eq("stage_id", v);
+        .eq("stage_id", v)
+        .eq("pipeline_id", data.pipeline_id);
     }
     return { ok: true };
   });

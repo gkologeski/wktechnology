@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Voice Agent settings, Vapi phone numbers, ElevenLabs voices.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -41,7 +42,7 @@ export type VoiceAgentSettings = {
 } | null;
 
 export const getVoiceAgentSettings = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_voice", "view")])
   .handler(async ({ context }): Promise<VoiceAgentSettings> => {
     const ws = await resolveActiveWorkspace(context.userId);
     const { assertPermission } = await import("@/lib/access-control/enforce.server");
@@ -51,7 +52,7 @@ export const getVoiceAgentSettings = createServerFn({ method: "POST" })
       ws,
       "techsales.prospecting_voice.view.workspace",
     );
-    const sb = await sbAdmin();
+    const sb = context.supabase;
     const { data } = await sb
       .from("voice_agent_settings")
       .select("*")
@@ -74,7 +75,7 @@ const SettingsSchema = z.object({
 });
 
 export const saveVoiceAgentSettings = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_voice", "update")])
   .inputValidator((i) => SettingsSchema.parse(i))
   .handler(async ({ data, context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
@@ -87,17 +88,24 @@ export const saveVoiceAgentSettings = createServerFn({ method: "POST" })
       ws,
       "techsales.prospecting_voice.update.workspace",
     );
-    const sb = await sbAdmin();
-    const payload = { workspace_id: ws, owner_id: ws, ...data };
-    const { error } = await sb
+    const sb = context.supabase;
+    const payload = { workspace_id: ws, owner_id: context.userId, ...data };
+    const { data: existing, error: readError } = await sb
       .from("voice_agent_settings")
-      .upsert(payload, { onConflict: "workspace_id" });
+      .select("workspace_id")
+      .eq("workspace_id", ws)
+      .maybeSingle();
+    if (readError) throw new Error(readError.message);
+    const query = existing
+      ? sb.from("voice_agent_settings").update(data).eq("workspace_id", ws)
+      : sb.from("voice_agent_settings").insert(payload);
+    const { error } = await query.select("workspace_id").single();
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 export const listVapiPhoneNumbers = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_voice", "manage")])
   .handler(async () => {
     const apiKey = process.env.VAPI_API_KEY;
     if (!apiKey) throw new Error("VAPI_API_KEY não configurado");
@@ -150,7 +158,7 @@ function isPortugueseVoice(v: ElevenVoice): boolean {
 }
 
 export const listElevenLabsVoices = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_voice", "manage")])
   .inputValidator((i: { onlyPortuguese?: boolean } | undefined) => i ?? {})
   .handler(async ({ data }) => {
     const apiKey = process.env.ELEVENLABS_API_KEY;
@@ -204,7 +212,7 @@ const PreviewSchema = z.object({
 });
 
 export const previewVoice = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.prospecting_voice", "manage")])
   .inputValidator((i) => PreviewSchema.parse(i))
   .handler(async ({ data }) => {
     const apiKey = process.env.ELEVENLABS_API_KEY;

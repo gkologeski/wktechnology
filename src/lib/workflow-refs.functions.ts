@@ -116,108 +116,37 @@ export const searchContacts = createServerFn({ method: "POST" })
  *
  * - Sugestões livres (`q`): retorna somente membros do workspace atual
  *   (mesma fonte de `listWorkspaceMembers`), filtrados por nome.
- * - Hidratação por `ids`: se algum ID não estiver no workspace atual,
- *   busca `profiles.full_name` + `auth.users.email` via supabaseAdmin
- *   APENAS para esses IDs — sem listar diretório completo.
+ * - Hidratação por `ids`: somente membros ativos do workspace selecionado.
  */
 export const searchUsers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => RefInput.parse(i))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    // Coleta membros do workspace atual (mesma lógica que listWorkspaceMembers).
-    const { data: profile } = await supabaseAdmin
+    const { getActiveWorkspaceId } = await import("@/lib/access-control/enforce.server");
+    const ws = await getActiveWorkspaceId(context.supabase, context.userId);
+    const { data: members, error } = await context.supabase
+      .from("workspace_members")
+      .select("user_id")
+      .eq("workspace_id", ws)
+      .eq("status", "active");
+    if (error) throw new Error(error.message);
+    const allowed = new Set((members ?? []).map((m) => m.user_id));
+    const requested = data.ids?.length ? data.ids.filter((id) => allowed.has(id)) : [...allowed];
+    if (!requested.length) return [];
+    const { data: profiles, error: profileError } = await context.supabase
       .from("profiles")
-      .select("active_workspace_id")
-      .eq("id", userId)
-      .maybeSingle();
-    let activeWorkspaceId =
-      (profile as { active_workspace_id: string | null } | null)?.active_workspace_id ?? null;
-    if (!activeWorkspaceId) {
-      const { data: firstMembership } = await supabaseAdmin
-        .from("workspace_members")
-        .select("workspace_id")
-        .eq("user_id", userId)
-        .limit(1)
-        .maybeSingle();
-      activeWorkspaceId = (firstMembership?.workspace_id as string | undefined) ?? null;
-    }
-
-    const memberIds = new Set<string>([userId]);
-    if (activeWorkspaceId) {
-      const { data: wsMembers } = await supabaseAdmin
-        .from("workspace_members")
-        .select("user_id")
-        .eq("workspace_id", activeWorkspaceId);
-      (wsMembers ?? []).forEach((m) => memberIds.add(m.user_id as string));
-      const { data: ws } = await supabaseAdmin
-        .from("workspaces")
-        .select("created_by")
-        .eq("id", activeWorkspaceId)
-        .maybeSingle();
-      const ownerId = (ws as { created_by: string | null } | null)?.created_by ?? null;
-      if (ownerId) memberIds.add(ownerId);
-    }
-    // Fallback legado
-    const { data: legacyMembers } = await supabaseAdmin
-      .from("team_members")
-      .select("member_user_id, workspace_owner_id")
-      .or(`workspace_owner_id.eq.${userId},member_user_id.eq.${userId}`);
-    (legacyMembers ?? []).forEach((m) => {
-      memberIds.add(m.member_user_id as string);
-      memberIds.add(m.workspace_owner_id as string);
-    });
-
-    // IDs a resolver: workspace members + ids externos pedidos.
-    const wanted = new Set<string>();
-    if (data.ids && data.ids.length > 0) {
-      data.ids.forEach((id) => wanted.add(id));
-    }
-    memberIds.forEach((id) => wanted.add(id));
-
-    const idList = Array.from(wanted);
-    if (idList.length === 0) return [];
-
-    const { data: profiles } = await supabaseAdmin
-      .from("profiles")
-      .select("id, full_name")
-      .in("id", idList);
-    const nameById = new Map(
-      (profiles ?? []).map((p) => [p.id as string, ((p.full_name as string | null) ?? "").trim()]),
-    );
-
-    // Precisamos de e-mail como fallback: busca em auth.users APENAS para
-    // ids que faltam nome.
-    // E-mail de auth só para membros do workspace; ids externos nunca expõem e-mail.
-    const missingName = idList.filter((id) => !nameById.get(id) && memberIds.has(id));
-    const emailById = new Map<string, string>();
-    if (missingName.length > 0) {
-      // getUserById um a um — a Admin API não suporta filtro por id-set.
-      // Lista sempre pequena (usuários fora do workspace referenciados no workflow).
-      const lookups = await Promise.all(
-        missingName.map((id) => supabaseAdmin.auth.admin.getUserById(id).catch(() => null)),
-      );
-      lookups.forEach((res, i) => {
-        const email = res?.data?.user?.email;
-        if (email) emailById.set(missingName[i], email);
-      });
-    }
-
-    const results = idList.map((id) => {
-      // Fallback em cascata: nome do perfil → e-mail → identificador curto.
-      // Nunca devolvemos o UUID cru para a interface.
-      const name = nameById.get(id) || emailById.get(id) || `Usuário ${id.slice(0, 8)}`;
-      return { id, name, is_member: memberIds.has(id) };
-    });
-
-    // Filtra por q se veio, e prioriza membros do workspace nas sugestões livres.
+      .select("id,full_name")
+      .in("id", requested);
+    if (profileError) throw new Error(profileError.message);
     const q = data.q?.trim().toLowerCase();
-    let filtered = data.ids && data.ids.length > 0 ? results : results.filter((r) => r.is_member);
-    if (q) filtered = filtered.filter((r) => r.name.toLowerCase().includes(q));
-    filtered.sort((a, b) => a.name.localeCompare(b.name));
-    return filtered.slice(0, LIMIT);
+    return (profiles ?? [])
+      .map((p) => ({
+        id: p.id,
+        name: p.full_name?.trim() || `Usuário ${p.id.slice(0, 8)}`,
+        is_member: true,
+      }))
+      .filter((p) => !q || p.name.toLowerCase().includes(q))
+      .slice(0, 50);
   });
 
 // ---------------------------------------------------------------------------

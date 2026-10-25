@@ -1,3 +1,6 @@
+import { workRpc } from "@/lib/access-control/work-core.server";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
+import { assertSalesArea, assertSalesRecord } from "@/lib/access-control/sales-core.server";
 import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { workspaceOfSource } from "@/lib/workspace-source.server";
 import { createServerFn } from "@tanstack/react-start";
@@ -13,6 +16,10 @@ const DEFAULT_MODEL = "google/gemini-2.5-flash";
 const MAX_MSGS = 400;
 
 type Msg = {
+  source: {
+    table: "activities" | "meetings" | "email_messages" | "whatsapp_messages" | "activity_comments";
+    id: string;
+  };
   at: string;
   channel: string;
   direction: "in" | "out" | "internal";
@@ -145,6 +152,7 @@ async function collectFromActivities(
                 ? "Task"
                 : String(a.type);
     msgs.push({
+      source: { table: "activities", id: a.id },
       at: a.created_at,
       channel: a.type,
       direction: "internal",
@@ -196,6 +204,7 @@ async function collectFromMeetings(
       ? Math.round(m.recording_duration_seconds / 60)
       : null;
     msgs.push({
+      source: { table: "meetings", id: m.id },
       at: m.started_at ?? m.created_at,
       channel: "meeting",
       direction: "internal",
@@ -237,7 +246,7 @@ async function collectFromEmails(
   const { data: emails } = await supabase
     .from("email_messages")
     .select(
-      "subject, snippet, body_text, direction, from_name, from_email, sent_at, received_at, created_at",
+      "id, subject, snippet, body_text, direction, from_name, from_email, sent_at, received_at, created_at",
     )
     .in("thread_id", threadIds)
     .gte("created_at", since)
@@ -247,6 +256,7 @@ async function collectFromEmails(
     const text = [e.subject, e.snippet || e.body_text?.slice(0, 1000)].filter(Boolean).join(" — ");
     if (!text) continue;
     msgs.push({
+      source: { table: "email_messages", id: e.id },
       at: e.sent_at ?? e.received_at ?? e.created_at,
       channel: "email",
       direction: e.direction === "inbound" ? "in" : "out",
@@ -274,7 +284,7 @@ async function collectFromWhatsapp(
   if (convIds.length === 0) return msgs;
   const { data: wa } = await supabase
     .from("whatsapp_messages")
-    .select("direction, body, created_at")
+    .select("id, direction, body, created_at")
     .in("conversation_id", convIds)
     .gte("created_at", since)
     .order("created_at", { ascending: true })
@@ -282,6 +292,7 @@ async function collectFromWhatsapp(
   for (const m of (wa ?? []) as SB[]) {
     if (!m.body) continue;
     msgs.push({
+      source: { table: "whatsapp_messages", id: m.id },
       at: m.created_at,
       channel: "whatsapp",
       direction: m.direction === "inbound" ? "in" : "out",
@@ -312,7 +323,7 @@ async function collectFromComments(
   if (ids.length === 0) return msgs;
   const { data: comments } = await supabase
     .from("activity_comments")
-    .select("body, created_at, author_id")
+    .select("id, body, created_at, author_id")
     .in("activity_id", ids)
     .is("deleted_at", null)
     .gte("created_at", since)
@@ -321,6 +332,7 @@ async function collectFromComments(
   for (const c of (comments ?? []) as SB[]) {
     if (!c.body) continue;
     msgs.push({
+      source: { table: "activity_comments", id: c.id },
       at: c.created_at,
       channel: "comment",
       direction: "internal",
@@ -455,7 +467,7 @@ async function callAi(
 }
 
 export const generateAiSummary = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.ai_assist", "manage")])
   .inputValidator((input) =>
     z
       .object({
@@ -468,6 +480,12 @@ export const generateAiSummary = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const entityTable = (
+      { lead: "leads", contact: "contacts", deal: "deals", ticket: "tickets" } as const
+    )[data.entity];
+    await assertSalesArea(supabase, "techsales.ai_summaries", "create");
+    await assertSalesArea(supabase, "techsales.ai_summaries", "view");
+    await assertSalesRecord(supabase, entityTable, data.entity_id, "view");
     const msgs = await collectMessages(
       supabase,
       data.entity,
@@ -486,6 +504,19 @@ export const generateAiSummary = createServerFn({ method: "POST" })
       data.entity
     ];
     const workspaceId = await workspaceOfSource(supabase, sourceTable, data.entity_id);
+    await assertSalesArea(supabase, "techsales.ai_assist", "manage");
+    const grouped = new Map<string, string[]>();
+    for (const msg of msgs)
+      grouped.set(msg.source.table, [...(grouped.get(msg.source.table) ?? []), msg.source.id]);
+    for (const [table, ids] of grouped) {
+      const caps = await workRpc<Array<{ id: string; can_view: boolean }>>(
+        supabase,
+        "sales_capabilities",
+        { t: table, ids: [...new Set(ids)] },
+      );
+      if (caps.length !== new Set(ids).size || caps.some((c) => !c.can_view))
+        throw new Error("Permissão das fontes alterada; gere o resumo novamente.");
+    }
     const ai = await callAi(prompt, DEFAULT_MODEL, { workspaceId, userId });
     const windowFrom = msgs[0].at;
     const windowTo = msgs[msgs.length - 1].at;
@@ -505,7 +536,8 @@ export const generateAiSummary = createServerFn({ method: "POST" })
         window_from: windowFrom,
         window_to: windowTo,
         source_count: msgs.length,
-      })
+        source_refs: msgs.map((m) => m.source),
+      } as never)
       .select("*")
       .single();
     if (error) throw error;
@@ -513,7 +545,7 @@ export const generateAiSummary = createServerFn({ method: "POST" })
   });
 
 export const listAiSummaries = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.ai_summaries", "view")])
   .inputValidator((input) =>
     z
       .object({
@@ -537,7 +569,7 @@ export const listAiSummaries = createServerFn({ method: "POST" })
   });
 
 export const deleteAiSummary = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.ai_summaries", "delete")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;

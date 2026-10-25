@@ -1,3 +1,4 @@
+import { SalesAction } from "@/components/sales-access";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -155,24 +156,36 @@ export function MarketplaceDetail({ slug }: { slug: string }) {
 
           <div className="flex flex-wrap gap-2 pt-2">
             {!installed && (
-              <Button onClick={doInstall} disabled={busy}>
-                {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Instalar
-              </Button>
+              <SalesAction table="marketplace_installations" action="create">
+                <Button onClick={doInstall} disabled={busy}>
+                  {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Instalar
+                </Button>
+              </SalesAction>
             )}
             {installed && (
               <>
-                <Button variant="outline" onClick={doTest} disabled={busy}>
-                  Testar conexão
-                </Button>
+                <SalesAction table="marketplace_installations" id={installation.id} action="manage">
+                  <SalesAction
+                    table="marketplace_installations"
+                    id={installation.id}
+                    action="update"
+                  >
+                    <Button variant="outline" onClick={doTest} disabled={busy}>
+                      Testar conexão
+                    </Button>
+                  </SalesAction>
+                </SalesAction>
                 {settingsLink && (
                   <Button variant="outline" asChild>
                     <Link to={settingsLink}>Abrir configurações</Link>
                   </Button>
                 )}
-                <Button variant="destructive" onClick={doUninstall} disabled={busy}>
-                  Remover
-                </Button>
+                <SalesAction table="marketplace_installations" id={installation.id} action="delete">
+                  <Button variant="destructive" onClick={doUninstall} disabled={busy}>
+                    Remover
+                  </Button>
+                </SalesAction>
               </>
             )}
             {app.docs_url && (

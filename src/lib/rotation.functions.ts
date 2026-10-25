@@ -1,3 +1,4 @@
+import { recordUpdatePayload } from "@/lib/access-control/record-update-payload";
 import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
 import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Server functions para o módulo de Distribuição (rotação).
@@ -65,7 +66,10 @@ export const saveRotationRule = createServerFn({ method: "POST" })
       assignees: data.assignees,
     } as never;
     if (data.id) {
-      const { error } = await supabase.from("rotation_rules").update(payload).eq("id", data.id);
+      const { error } = await supabase
+        .from("rotation_rules")
+        .update(recordUpdatePayload(payload))
+        .eq("id", data.id);
       if (error) throw new Error(error.message);
       return { id: data.id };
     }

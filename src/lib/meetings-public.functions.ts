@@ -23,7 +23,8 @@ export const getPublicMeeting = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!m) return { ok: false as const, reason: "not_found" as const };
-    if (m.status === "cancelled") return { ok: false as const, reason: "cancelled" as const };
+    if (["cancelled", "ended"].includes(m.status))
+      return { ok: false as const, reason: "cancelled" as const };
     if (m.expires_at && new Date(m.expires_at) < new Date()) {
       return { ok: false as const, reason: "expired" as const };
     }
@@ -53,15 +54,20 @@ export const registerPublicParticipant = createServerFn({ method: "POST" })
     const supabaseAdmin = await sbAdmin();
     const { data: m } = await supabaseAdmin
       .from("meetings")
-      .select("id, owner_id, expires_at, status")
+      .select("id, owner_id, workspace_id, expires_at, status")
       .eq("public_token", data.token)
       .maybeSingle();
-    if (!m || m.status === "cancelled" || (m.expires_at && new Date(m.expires_at) < new Date())) {
+    if (
+      !m ||
+      ["cancelled", "ended"].includes(m.status) ||
+      (m.expires_at && new Date(m.expires_at) < new Date())
+    ) {
       throw new Error("Reunião indisponível");
     }
     await supabaseAdmin.from("meeting_participants").insert({
       meeting_id: m.id,
       owner_id: m.owner_id,
+      workspace_id: m.workspace_id,
       display_name: data.display_name,
       email: data.email ?? null,
     });

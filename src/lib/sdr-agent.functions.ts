@@ -275,7 +275,10 @@ export const requestHandoff = createServerFn({ method: "POST" })
       .maybeSingle();
     if (eErr) throw new Error(eErr.message);
     if (!enr) throw new Error("Atendimento não encontrado neste workspace.");
+    await assertSalesRecord(supabase, "sdr_enrollments", enr.id, "update");
     if (enr.conversation_id) {
+      await assertSalesRecord(supabase, "whatsapp_conversations", enr.conversation_id, "update");
+      await assertSalesRecord(supabase, "whatsapp_conversations", enr.conversation_id, "assign");
       // Mesmo caminho do takeover da Prospecção: trava a IA na conversa.
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { handoffToHuman } = await import("@/lib/prospecting/sdr/actions.server");
@@ -346,6 +349,7 @@ export const setConversationAiOwner = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!conv) throw new Error("Conversa não encontrada neste workspace.");
+    await assertSalesRecord(supabase, "whatsapp_conversations", conv.id, "update");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error: rErr } = await supabaseAdmin.rpc("sdr_set_conversation_owner", {
       p_conversation: conv.id,

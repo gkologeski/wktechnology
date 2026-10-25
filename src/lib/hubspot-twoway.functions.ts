@@ -25,8 +25,12 @@ export const pushEntityNow = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    return await pushEntity(supabaseAdmin, context.userId, data.entity as SyncEntity, data.limit);
+    return await pushEntity(
+      context.supabase,
+      context.userId,
+      data.entity as SyncEntity,
+      data.limit,
+    );
   });
 
 /** Push das 3 entidades (botão "Sincronizar agora"). */
@@ -40,16 +44,14 @@ export const pushAllNow = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    return await pushAllForOwner(supabaseAdmin, context.userId, data.limit);
+    return await pushAllForOwner(context.supabase, context.userId, data.limit);
   });
 
 /** Lista conflitos pendentes para a UI. */
 export const listSyncConflicts = createServerFn({ method: "GET" })
   .middleware([requireSalesPermission("system.hubspot_sync", "view")])
   .handler(async ({ context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data } = await supabaseAdmin
+    const { data } = await context.supabase
       .from("hubspot_sync_state")
       .select(
         "id, entity, local_id, hubspot_id, conflict_reason, local_updated_at, remote_updated_at, last_synced_at",
@@ -73,16 +75,14 @@ export const resolveSyncConflict = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    return await resolveConflictRow(supabaseAdmin, context.userId, data.id, data.strategy);
+    return await resolveConflictRow(context.supabase, context.userId, data.id, data.strategy);
   });
 
 /** Lê config do connector hubspot (auto_push_enabled etc.). */
 export const getHubspotSyncConfig = createServerFn({ method: "GET" })
   .middleware([requireSalesPermission("system.hubspot_sync", "view")])
   .handler(async ({ context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data } = await supabaseAdmin
+    const { data } = await context.supabase
       .from("integrations")
       .select("config")
       .eq("owner_id", context.userId)
@@ -101,8 +101,7 @@ export const setHubspotAutoPush = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ enabled: z.boolean() }).parse(i))
   .handler(async ({ data, context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: cur } = await supabaseAdmin
+    const { data: cur } = await context.supabase
       .from("integrations")
       .select("id, config")
       .eq("workspace_id", workspaceId)
@@ -114,13 +113,13 @@ export const setHubspotAutoPush = createServerFn({ method: "POST" })
       auto_push_enabled: data.enabled,
     };
     if (cur?.id) {
-      const { error } = await supabaseAdmin
+      const { error } = await context.supabase
         .from("integrations")
         .update({ config: cfg } as never)
         .eq("id", cur.id as string);
       if (error) throw new Error(error.message);
     } else {
-      const { error } = await supabaseAdmin.from("integrations").insert({
+      const { error } = await context.supabase.from("integrations").insert({
         owner_id: context.userId,
         workspace_id: workspaceId,
         provider: "hubspot",

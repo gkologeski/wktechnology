@@ -1,3 +1,4 @@
+import { hubspotRequestGuard } from "./hubspot-api.server";
 // Descoberta de alvos via associações do HubSpot. Extraído de hubspot-steps.server.ts.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getAssocMany } from "./hubspot-api.server";
@@ -33,7 +34,7 @@ export async function discoverTargetsFromAssociations(args: {
       return { targetIds, parentMap, partial: true };
     }
     const chunk = fromIds.slice(assocIndex, assocIndex + CHUNK);
-    const assoc = await getAssocMany(fromObj, chunk, toObj, 20);
+    const assoc = await getAssocMany(fromObj, chunk, toObj, 20, hubspotRequestGuard(supabase));
     for (const [fromId, list] of assoc.entries()) {
       for (const id of list) {
         if (!parentMap[id]) parentMap[id] = fromId;
@@ -94,7 +95,7 @@ export async function discoverDealContactsMap(args: {
       return { dealContactsMap, partial: true };
     }
     const chunk = dealIds.slice(index, index + CHUNK);
-    const assoc = await getAssocMany("deals", chunk, "contacts", 20);
+    const assoc = await getAssocMany("deals", chunk, "contacts", 20, hubspotRequestGuard(supabase));
     for (const [dealId, list] of assoc.entries()) dealContactsMap[dealId] = list;
     index += chunk.length;
     await patchItemBefore(supabase, itemId, {
@@ -159,7 +160,7 @@ export async function discoverActivityTargets(args: {
         return { targetIds, parents, partial: true };
       }
       const chunk = ent.ids.slice(idIndex, idIndex + CHUNK);
-      const assoc = await getAssocMany(ent.fromObj, chunk, kind, 20);
+      const assoc = await getAssocMany(ent.fromObj, chunk, kind, 20, hubspotRequestGuard(supabase));
       for (const [, list] of assoc.entries()) {
         for (const eid of list) {
           const cur = parents[eid] ?? {};

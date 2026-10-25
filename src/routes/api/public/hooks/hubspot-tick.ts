@@ -1,3 +1,4 @@
+import { hubspotSourceClient } from "@/lib/access-control/hubspot-source-client.server";
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { tickOnce } from "@/lib/integrations/hubspot-tick.server";
@@ -18,7 +19,7 @@ export const Route = createFileRoute("/api/public/hooks/hubspot-tick")({
           try {
             const { data: owners } = await supabaseAdmin
               .from("integrations")
-              .select("owner_id, config")
+              .select("id,owner_id,workspace_id,config")
               .eq("provider", "hubspot")
               .eq("status", "connected")
               .limit(50);
@@ -28,7 +29,11 @@ export const Route = createFileRoute("/api/public/hooks/hubspot-tick")({
             );
             for (const o of enabled) {
               try {
-                const res = await pushAllForOwner(supabaseAdmin, o.owner_id as string, 10);
+                const res = await pushAllForOwner(
+                  hubspotSourceClient(supabaseAdmin, { table: "integrations", id: o.id }),
+                  o.owner_id as string,
+                  10,
+                );
                 pushResults.push({ owner: o.owner_id as string, results: res });
               } catch (e) {
                 pushResults.push({

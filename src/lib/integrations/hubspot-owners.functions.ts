@@ -1,3 +1,5 @@
+import { getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
+import { assertSalesArea } from "@/lib/access-control/sales-core.server";
 import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Sincroniza owners do HubSpot para a tabela local hubspot_owners.
 // NÃO cria usuários em auth.users, NÃO envia convites.
@@ -29,12 +31,13 @@ function hsHeaders() {
   } as Record<string, string>;
 }
 
-async function fetchOwners(archived: boolean): Promise<HSOwner[]> {
+async function fetchOwners(archived: boolean, authorize: () => Promise<void>): Promise<HSOwner[]> {
   const out: HSOwner[] = [];
   let after: string | undefined;
   do {
     const params = new URLSearchParams({ limit: "100", archived: String(archived) });
     if (after) params.set("after", after);
+    await authorize();
     const res = await fetch(`${GATEWAY_URL}/crm/v3/owners?${params}`, { headers: hsHeaders() });
     const data = await res.json();
     if (!res.ok) throw new Error(`HubSpot owners [${res.status}]: ${JSON.stringify(data)}`);
@@ -49,11 +52,14 @@ export const syncHubspotOwners = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("system.hubspot_sync", "manage")])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const { data: wsData } = await supabase.rpc("default_workspace_for_user", { _user: userId });
-    const workspaceId = (wsData as string | null) ?? userId;
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
 
-    const active = await fetchOwners(false);
-    const archived = await fetchOwners(true);
+    const active = await fetchOwners(false, () =>
+      assertSalesArea(supabase, "system.hubspot_sync", "manage"),
+    );
+    const archived = await fetchOwners(true, () =>
+      assertSalesArea(supabase, "system.hubspot_sync", "manage"),
+    );
     const all = [...active, ...archived];
 
     let upserted = 0;
@@ -111,8 +117,7 @@ export const setHubspotOwnerMapping = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => RebindSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { data: wsData } = await supabase.rpc("default_workspace_for_user", { _user: userId });
-    const workspaceId = (wsData as string | null) ?? userId;
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
     {
       const [{ assertAnyPermission }, { INTEGRATIONS_MANAGE }] = await Promise.all([
         import("@/lib/access-control/enforce.server"),
@@ -121,22 +126,35 @@ export const setHubspotOwnerMapping = createServerFn({ method: "POST" })
       await assertAnyPermission(supabase, userId, workspaceId, INTEGRATIONS_MANAGE);
     }
 
-    const { error } = await supabase
+    if (data.mapped_user_id) {
+      const { data: member } = await supabase
+        .from("workspace_members")
+        .select("user_id")
+        .eq("workspace_id", workspaceId)
+        .eq("user_id", data.mapped_user_id)
+        .eq("status", "active")
+        .maybeSingle();
+      if (!member) throw new Error("Responsável não é membro ativo deste workspace.");
+    }
+    const { data: changed, error } = await supabase
       .from("hubspot_owners")
       .update({ mapped_user_id: data.mapped_user_id, updated_at: new Date().toISOString() })
       .eq("id", data.hubspot_owner_id)
-      .eq("workspace_id", workspaceId);
+      .eq("workspace_id", workspaceId)
+      .select("id");
     if (error) throw new Error(error.message);
+    if (!changed?.length) throw new Error("Mapeamento indisponível ou sem permissão para editar.");
 
     // Propaga para registros existentes
     if (data.mapped_user_id) {
-      const upd = { assigned_user_id: data.mapped_user_id } as never;
+      const upd = { assigned_to: data.mapped_user_id } as never;
       for (const t of ["leads", "contacts", "companies", "deals"] as const) {
-        await supabase
+        const { error: assignmentError } = await supabase
           .from(t)
           .update(upd)
           .eq("hubspot_owner_id", data.hubspot_owner_id)
           .eq("workspace_id", workspaceId);
+        if (assignmentError) throw new Error(assignmentError.message);
       }
     }
     return { ok: true };
@@ -146,8 +164,7 @@ export const listHubspotOwners = createServerFn({ method: "GET" })
   .middleware([requireSalesPermission("system.hubspot_sync", "view")])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const { data: wsData } = await supabase.rpc("default_workspace_for_user", { _user: userId });
-    const workspaceId = (wsData as string | null) ?? userId;
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
 
     const { data: owners } = await supabase
       .from("hubspot_owners")

@@ -1,10 +1,11 @@
+import { workRpc } from "@/lib/access-control/work-core.server";
 import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
 import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertAnyPermission } from "@/lib/access-control/enforce.server";
-import { assertSdr } from "@/lib/prospecting/sdr/access.server";
+import { assertSdr, requireSdr } from "@/lib/prospecting/sdr/access.server";
 import { loadSdrReadiness } from "@/lib/prospecting/sdr/readiness.server";
 import { qualificationFeasibility } from "@/lib/prospecting/sdr/readiness";
 
@@ -15,15 +16,7 @@ export const getSdrOverview = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "view")])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const { data: wsRaw } = await supabase.rpc("default_workspace_for_user", { _user: userId });
-    if (!wsRaw) throw new Error("Workspace não identificado.");
-    const wsId: string = wsRaw;
-    await assertAnyPermission(supabase, userId, wsId, [
-      "techsales.marketing.sdr_agent.view.workspace",
-      "techsales.marketing.sdr_agent.view.team",
-      "techsales.marketing.sdr_agent.view.own",
-      "techsales.marketing.sdr_agent.manage.workspace",
-    ]);
+    const wsId = await requireSdr(supabase, userId, "view");
     const since = new Date(Date.now() - 30 * 86400_000).toISOString();
     const [settings, offers, materials, links, jobs, enrollments, actions, isAdmin] =
       await Promise.all([
@@ -58,7 +51,11 @@ export const getSdrOverview = createServerFn({ method: "POST" })
           .eq("workspace_id", wsId)
           .gte("created_at", since)
           .limit(5000),
-        supabase.rpc("is_workspace_admin", { _workspace: wsId, _user: userId }),
+        workRpc<{ keys?: Record<string, boolean>; read_only?: boolean }>(
+          supabase,
+          "sales_access_context",
+          {},
+        ).then((data) => ({ data, error: null })),
       ]);
     const err = [settings, offers, materials, links, jobs, enrollments, actions].find(
       (r) => r.error,
@@ -137,7 +134,11 @@ export const getSdrOverview = createServerFn({ method: "POST" })
       metrics[`${a.kind}:${a.status}`] = (metrics[`${a.kind}:${a.status}`] ?? 0) + 1;
     return {
       workspaceId: wsId as string,
-      canManage: !!isAdmin.data,
+      canManage:
+        !(isAdmin.data as { read_only?: boolean } | null)?.read_only &&
+        !!(isAdmin.data as { keys?: Record<string, boolean> } | null)?.keys?.[
+          "techsales.marketing.sdr_agent.manage.workspace"
+        ],
       settings: settings.data,
       offers: offers.data ?? [],
       materials: materials.data ?? [],
@@ -152,11 +153,7 @@ export const getSdrOverview = createServerFn({ method: "POST" })
   });
 
 async function assertAdmin(supabase: any, userId: string, workspaceId: string) {
-  const { data } = await supabase.rpc("is_workspace_admin", {
-    _workspace: workspaceId,
-    _user: userId,
-  });
-  if (!data) throw new Error("Somente administradores do workspace podem alterar o SDR.");
+  await assertSdr(supabase, userId, workspaceId, "manage");
 }
 
 export const saveSdrSettings = createServerFn({ method: "POST" })
@@ -410,6 +407,10 @@ async function loadJobScoped(supabase: any, userId: string, jobId: string) {
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Rascunho não encontrado.");
+  if (data.enrollment_id)
+    await assertSalesRecord(supabase, "sdr_enrollments", data.enrollment_id, "update");
+  if (data.conversation_id)
+    await assertSalesRecord(supabase, "whatsapp_conversations", data.conversation_id, "update");
   return data as {
     id: string;
     workspace_id: string;

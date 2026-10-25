@@ -1,3 +1,4 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -51,7 +52,7 @@ function compile(input: { html?: string; blocks?: unknown }): { html: string; bl
 }
 
 export const listQuoteTemplates = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.quote_templates", "view")])
   .handler(async ({ context }) => {
     const { supabase } = context;
     const { data, error } = await supabase
@@ -64,7 +65,7 @@ export const listQuoteTemplates = createServerFn({ method: "GET" })
   });
 
 export const getQuoteTemplate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.quote_templates", "view")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -79,7 +80,7 @@ export const getQuoteTemplate = createServerFn({ method: "POST" })
   });
 
 export const createQuoteTemplate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.quote_templates", "create")])
   .inputValidator((input) => TemplateInput.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -104,7 +105,7 @@ export const createQuoteTemplate = createServerFn({ method: "POST" })
   });
 
 export const updateQuoteTemplate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.quote_templates", "update")])
   .inputValidator((input) =>
     z
       .object({
@@ -153,7 +154,7 @@ export const updateQuoteTemplate = createServerFn({ method: "POST" })
   });
 
 export const deleteQuoteTemplate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.quote_templates", "delete")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -171,7 +172,7 @@ export const deleteQuoteTemplate = createServerFn({ method: "POST" })
   });
 
 export const setDefaultQuoteTemplate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.quote_templates", "update")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -190,7 +191,7 @@ export const setDefaultQuoteTemplate = createServerFn({ method: "POST" })
   });
 
 export const duplicateQuoteTemplate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.quote_templates", "create")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;

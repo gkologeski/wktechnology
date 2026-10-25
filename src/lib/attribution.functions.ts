@@ -1,5 +1,5 @@
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
 async function activeWorkspace(supabase: any, userId: string): Promise<string> {
@@ -13,7 +13,7 @@ async function activeWorkspace(supabase: any, userId: string): Promise<string> {
 }
 
 export const recordTouchpoint = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.analytics.insights", "create")])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -34,7 +34,7 @@ export const recordTouchpoint = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const ws = await activeWorkspace(context.supabase, context.userId);
     const { error } = await (context.supabase.from("attribution_touchpoints") as any).insert({
-      owner_id: ws,
+      owner_id: context.userId,
       workspace_id: ws,
       ...data,
     });
@@ -45,7 +45,7 @@ export const recordTouchpoint = createServerFn({ method: "POST" })
 type Model = "first_touch" | "last_touch" | "linear" | "u_shaped";
 
 export const computeAttribution = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.analytics.insights", "view")])
   .inputValidator((d: unknown) =>
     z
       .object({

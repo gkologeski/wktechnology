@@ -165,6 +165,8 @@ export const getMessageMaterialLink = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!mat) return { url: null };
     if (mat.storage_path) {
+      if (!mat.storage_path.startsWith(`${msg.workspace_id}/`) || mat.storage_path.includes(".."))
+        return { url: null };
       const { data: signed } = await supabaseAdmin.storage
         .from("sdr-materials")
         .createSignedUrl(mat.storage_path, 300);

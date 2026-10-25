@@ -1,3 +1,5 @@
+import { recordUpdatePayload } from "@/lib/access-control/record-update-payload";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Sprint 8 — CRUD de assinaturas de workflow (eventos cross-módulo).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -21,6 +23,7 @@ export type WorkflowSubscriptionRow = {
   event_pattern: string;
   action: WorkflowSubscriptionAction;
   enabled: boolean;
+  execution_user_id?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -49,13 +52,13 @@ const UpsertSchema = z.object({
 });
 
 export const listWorkflowSubscriptions = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.workflows", "view")])
   .handler(async ({ context }): Promise<{ items: WorkflowSubscriptionRow[] }> => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const { data, error } = await context.supabase
       .from("workflow_subscriptions")
       .select("*")
-      .eq("owner_id", workspaceId)
+      .eq("workspace_id", workspaceId)
       .order("event_pattern", { ascending: true })
       .order("name", { ascending: true });
     if (error) throw new Error(error.message);
@@ -63,45 +66,54 @@ export const listWorkflowSubscriptions = createServerFn({ method: "POST" })
   });
 
 export const saveWorkflowSubscription = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.workflows", ["create", "update"])])
   .inputValidator((d: unknown) => UpsertSchema.parse(d))
   .handler(async ({ context, data }): Promise<{ item: WorkflowSubscriptionRow }> => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const payload = {
       id: data.id,
-      owner_id: workspaceId,
+      owner_id: context.userId,
+      workspace_id: workspaceId,
       name: data.name,
       description: data.description ?? null,
       event_pattern: data.event_pattern,
       action: data.action as unknown as Record<string, unknown>,
       enabled: data.enabled,
       created_by: context.userId,
+      execution_user_id: context.userId,
     };
-    const { data: row, error } = await context.supabase
-      .from("workflow_subscriptions")
-      .upsert(payload as never)
-      .select("*")
-      .single();
+    const update = recordUpdatePayload(payload) as Record<string, unknown>;
+    delete update.created_by;
+    const query = data.id
+      ? context.supabase
+          .from("workflow_subscriptions")
+          .update(update as never)
+          .eq("id", data.id)
+      : context.supabase.from("workflow_subscriptions").insert(payload as never);
+    const { data: row, error } = await query.select("*").single();
     if (error) throw new Error(error.message);
     return { item: row as unknown as WorkflowSubscriptionRow };
   });
 
 export const toggleWorkflowSubscription = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.workflows", "update")])
   .inputValidator((d: unknown) =>
     z.object({ id: z.string().uuid(), enabled: z.boolean() }).parse(d),
   )
   .handler(async ({ context, data }) => {
     const { error } = await context.supabase
       .from("workflow_subscriptions")
-      .update({ enabled: data.enabled })
+      .update({
+        enabled: data.enabled,
+        ...(data.enabled ? { execution_user_id: context.userId } : {}),
+      } as never)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 export const deleteWorkflowSubscription = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.workflows", "delete")])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { error } = await context.supabase

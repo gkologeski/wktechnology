@@ -1,3 +1,4 @@
+import { recordUpdatePayload } from "@/lib/access-control/record-update-payload";
 import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
 import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 /**
@@ -195,14 +196,14 @@ export const upsertCadenceStep = createServerFn({ method: "POST" })
     if (data.id) {
       const { error: updErr } = await context.supabase
         .from("prospecting_cadence_steps")
-        .update(row)
+        .update(recordUpdatePayload(row) as never)
         .eq("id", data.id);
       if (updErr) throw new Error(updErr.message);
       return { id: data.id };
     }
     const { data: saved, error } = await context.supabase
       .from("prospecting_cadence_steps")
-      .upsert(row, { onConflict: "cadence_id,step_order,variant_label" })
+      .insert(row)
       .select("id")
       .single();
     if (error) throw new Error(error.message);

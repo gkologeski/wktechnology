@@ -1,3 +1,4 @@
+import { hubspotRequestGuard } from "./hubspot-api.server";
 // Etapa "activities" da importação do HubSpot — extraída de hubspot-steps.server.ts
 import {
   type HSRec,
@@ -111,7 +112,7 @@ export async function runActivitiesStep(args: StepRunArgs): Promise<StepResult |
   if (targetIds.length === 0) {
     await appendLog(supabase, jobId, { level: "info", step, message: `Sem ${kind}` });
   } else {
-    const allActProps = await loadHsProperties(kind);
+    const allActProps = await loadHsProperties(kind, hubspotRequestGuard(supabase));
     const actPropsList = allActProps.length ? allActProps : t.props;
     let idx = (resume.read_index as number) ?? 0;
     const CHUNK = 100;
@@ -121,7 +122,7 @@ export async function runActivitiesStep(args: StepRunArgs): Promise<StepResult |
         break;
       }
       const chunkIds = targetIds.slice(idx, idx + CHUNK);
-      const recs = await batchRead(kind, chunkIds, actPropsList);
+      const recs = await batchRead(kind, chunkIds, actPropsList, hubspotRequestGuard(supabase));
       for (const a of recs) {
         const p = a.properties;
         const subject =

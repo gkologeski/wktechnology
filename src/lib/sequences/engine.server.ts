@@ -101,15 +101,22 @@ async function executeStep(
   if (error) throw new Error(error.message);
 }
 
-export async function tickSequences(supabase: SupabaseClient, limit = 100) {
+export async function tickSequences(
+  supabase: SupabaseClient,
+  limit = 100,
+  scope?: { workspaceId: string; ids: string[] },
+) {
   const nowIso = new Date().toISOString();
-  const { data: enrollments, error } = await supabase
+  if (scope && scope.ids.length === 0) return { processed: 0, results: [] };
+  let query = supabase
     .from("sequence_enrollments")
     .select("id, workspace_id, owner_id, sequence_id, entity_id, current_step, status")
     .eq("status", "active")
     .lte("next_run_at", nowIso)
     .order("next_run_at", { ascending: true })
     .limit(limit);
+  if (scope) query = query.eq("workspace_id", scope.workspaceId).in("id", scope.ids);
+  const { data: enrollments, error } = await query;
   if (error) throw new Error(error.message);
 
   const results: Array<{ id: string; ok: boolean; error?: string }> = [];

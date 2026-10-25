@@ -64,7 +64,7 @@ export const Route = createFileRoute("/api/public/v1/meetings")({
         const { data, error, count } = await query
           .order("scheduled_at", { ascending: params.ascending, nullsFirst: false })
           .range(params.offset, params.offset + params.limit - 1);
-        if (error) return jsonError(error.message, 400);
+        if (error) return jsonError(error.message, error.code === "42501" ? 403 : 400);
 
         const rows = data ?? [];
         return Response.json({ data: rows, meta: buildMeta(params, rows.length, count ?? null) });

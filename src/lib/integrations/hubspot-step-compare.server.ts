@@ -1,3 +1,4 @@
+import { hubspotRequestGuard } from "./hubspot-api.server";
 // Etapa "compare" da importação do HubSpot: conta remoto vs local por objeto,
 // registra a diferença e marca as etapas já sincronizadas para serem puladas.
 // Extraído de hubspot-steps.server.ts sem mudança de comportamento.
@@ -28,23 +29,31 @@ export async function runCompareStep({
   if (scope.companies !== false)
     objects.push({
       key: "companies",
-      remote: () => searchTotal("companies"),
+      remote: () => searchTotal("companies", hubspotRequestGuard(supabase)),
       localTable: "companies",
     });
   if (scope.contacts)
     objects.push({
       key: "contacts",
-      remote: () => searchTotal("contacts"),
+      remote: () => searchTotal("contacts", hubspotRequestGuard(supabase)),
       localTable: "contacts",
     });
   if (scope.deals)
-    objects.push({ key: "deals", remote: () => searchTotal("deals"), localTable: "deals" });
+    objects.push({
+      key: "deals",
+      remote: () => searchTotal("deals", hubspotRequestGuard(supabase)),
+      localTable: "deals",
+    });
   if (scope.leads)
-    objects.push({ key: "leads", remote: () => searchTotal("leads"), localTable: "leads" });
+    objects.push({
+      key: "leads",
+      remote: () => searchTotal("leads", hubspotRequestGuard(supabase)),
+      localTable: "leads",
+    });
   if (scope.tickets)
     objects.push({
       key: "tickets",
-      remote: () => searchTotal("tickets"),
+      remote: () => searchTotal("tickets", hubspotRequestGuard(supabase)),
       localTable: "tickets",
     });
   if (scope.activities) {
@@ -52,11 +61,11 @@ export async function runCompareStep({
       key: "activities",
       remote: async () => {
         const parts = await Promise.all([
-          searchTotal("notes"),
-          searchTotal("calls"),
-          searchTotal("meetings"),
-          searchTotal("tasks"),
-          searchTotal("emails"),
+          searchTotal("notes", hubspotRequestGuard(supabase)),
+          searchTotal("calls", hubspotRequestGuard(supabase)),
+          searchTotal("meetings", hubspotRequestGuard(supabase)),
+          searchTotal("tasks", hubspotRequestGuard(supabase)),
+          searchTotal("emails", hubspotRequestGuard(supabase)),
         ]);
         return parts.reduce((a: number, b: number) => a + b, 0);
       },

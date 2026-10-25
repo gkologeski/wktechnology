@@ -1,3 +1,4 @@
+import { recordUpdatePayload } from "@/lib/access-control/record-update-payload";
 import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
 import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 /**
@@ -226,11 +227,13 @@ export const upsertQuestion = createServerFn({ method: "POST" })
       text_points: data.text_points,
       text_min_chars: data.text_min_chars,
     } as never;
-    const { data: row, error } = await context.supabase
-      .from("prospecting_questions")
-      .upsert(payload)
-      .select("id")
-      .single();
+    const query = data.id
+      ? context.supabase
+          .from("prospecting_questions")
+          .update(recordUpdatePayload(payload) as never)
+          .eq("id", data.id)
+      : context.supabase.from("prospecting_questions").insert(payload);
+    const { data: row, error } = await query.select("id").single();
     if (error) throw new Error(error.message);
     return { id: row.id };
   });

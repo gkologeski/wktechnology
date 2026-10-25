@@ -1,3 +1,4 @@
+import { recordUpdatePayload } from "@/lib/access-control/record-update-payload";
 import { emailSchema } from "@/lib/email-schema";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // Server functions para Agendamentos de Export por Email.
@@ -55,6 +56,7 @@ export const upsertSchedule = createServerFn({ method: "POST" })
       day_of_month: data.day_of_month ?? null,
     }).toISOString();
     const payload = {
+      execution_user_id: userId,
       report_id: data.report_id,
       name: data.name,
       recipients: data.recipients,
@@ -68,7 +70,10 @@ export const upsertSchedule = createServerFn({ method: "POST" })
       updated_at: new Date().toISOString(),
     };
     if (data.id) {
-      const { error } = await supabase.from("report_schedules").update(payload).eq("id", data.id);
+      const { error } = await supabase
+        .from("report_schedules")
+        .update(recordUpdatePayload(payload) as never)
+        .eq("id", data.id);
       if (error) throw new Error(error.message);
       return { id: data.id };
     }
@@ -102,7 +107,11 @@ export const toggleSchedule = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
       .from("report_schedules")
-      .update({ enabled: data.enabled, updated_at: new Date().toISOString() })
+      .update({
+        enabled: data.enabled,
+        updated_at: new Date().toISOString(),
+        ...(data.enabled ? { execution_user_id: context.userId } : {}),
+      } as never)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -121,5 +130,6 @@ export const runScheduleNow = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!row) throw new Error("Agendamento não encontrado.");
-    return runExportNow(data.id);
+    const result = await runExportNow(data.id);
+    return { ok: result.ok, error: result.error ?? null };
   });

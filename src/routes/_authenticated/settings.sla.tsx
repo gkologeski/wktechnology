@@ -1,3 +1,6 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { useSalesCapabilities } from "@/lib/access-control/use-sales-capabilities";
+import { readViewAs } from "@/lib/view-as-client";
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -102,6 +105,14 @@ function PipelineEditor({
   pipe: Pipe;
   onSave: (sla: Record<string, number | null>) => Promise<void>;
 }) {
+  const permissions = usePermissions();
+  const caps = useSalesCapabilities("pipelines", [pipe.id]);
+  const canEdit =
+    !readViewAs() &&
+    caps.for(pipe.id).can_update &&
+    permissions.canAny(
+      ["own", "team", "workspace"].map((s) => `system.automation.sla.manage.${s}`),
+    );
   const initial = useMemo(() => {
     const m: Record<string, string> = {};
     for (const s of pipe.stages) m[s.value] = s.sla_hours != null ? String(s.sla_hours) : "";
@@ -129,6 +140,7 @@ function PipelineEditor({
             <div key={s.value} className="flex items-center gap-2">
               <span className="text-sm flex-1 truncate">{s.label || s.value}</span>
               <Input
+                disabled={!canEdit}
                 type="number"
                 min={0}
                 step={1}
@@ -144,7 +156,7 @@ function PipelineEditor({
         <div className="flex justify-end">
           <Button
             size="sm"
-            disabled={saving}
+            disabled={saving || !canEdit}
             onClick={async () => {
               setSaving(true);
               try {

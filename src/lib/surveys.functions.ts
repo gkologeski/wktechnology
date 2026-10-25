@@ -42,14 +42,17 @@ export const submitSurvey = createServerFn({ method: "POST" })
     if (existing.responded_at) throw new Error("Pesquisa já respondida.");
     const max = existing.kind === "nps" ? 10 : 5;
     if (data.score > max) throw new Error(`Pontuação deve estar entre 0 e ${max}.`);
-    const { error: e2 } = await supabaseAdmin
+    const { data: changed, error: e2 } = await supabaseAdmin
       .from("survey_responses")
       .update({
         score: data.score,
         comment: data.comment ?? null,
         responded_at: new Date().toISOString(),
       })
-      .eq("id", existing.id);
+      .eq("id", existing.id)
+      .is("responded_at", null)
+      .select("id");
     if (e2) throw e2;
+    if (!changed?.length) throw new Error("Pesquisa já respondida.");
     return { ok: true };
   });

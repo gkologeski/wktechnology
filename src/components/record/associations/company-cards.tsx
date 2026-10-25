@@ -1,3 +1,4 @@
+import { withAssociationAccess } from "./access";
 import { useCallback, useEffect, useState } from "react";
 import { useRefreshCallback } from "@/hooks/use-refresh-callback";
 import { Link } from "@tanstack/react-router";
@@ -29,7 +30,7 @@ import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
 
 /* ───────────── Company card (entity = contact|deal) ───────────── */
 
-export function CompanyCard({
+function CompanyCardContent({
   entity,
   entityId,
   companyId,
@@ -205,7 +206,7 @@ export function CompanyCard({
 
 /* ───────────── Contacts card (entity = company|deal) ───────────── */
 
-export function ContactsCard({
+function ContactsCardContent({
   entity,
   entityId,
   companyId,
@@ -434,7 +435,7 @@ export function ContactsCard({
 
 /* ───────────── Single Contact / Deal cards (entity = ticket) ───────────── */
 
-export function SingleContactCard({
+function SingleContactCardContent({
   entityId,
   contactId,
   companyId,
@@ -596,7 +597,7 @@ export function SingleContactCard({
   );
 }
 
-export function SingleDealCard({ entityId, dealId }: { entityId: string; dealId: string | null }) {
+function SingleDealCardContent({ entityId, dealId }: { entityId: string; dealId: string | null }) {
   const [d, setD] = useState<{
     id: string;
     name: string;
@@ -714,3 +715,23 @@ export function SingleDealCard({ entityId, dealId }: { entityId: string; dealId:
     </>
   );
 }
+
+export const CompanyCard = withAssociationAccess(CompanyCardContent, (p) => ({
+  table: ({ contact: "contacts", deal: "deals", ticket: "tickets", lead: "leads" } as const)[
+    p.entity
+  ],
+  id: p.entityId,
+}));
+export const ContactsCard = withAssociationAccess(ContactsCardContent, (p) => ({
+  table: p.entity === "deal" ? "deals" : "contacts",
+  id: p.entity === "deal" ? p.entityId : undefined,
+  linked: p.entity === "company",
+}));
+export const SingleContactCard = withAssociationAccess(SingleContactCardContent, (p) => ({
+  table: "tickets",
+  id: p.entityId,
+}));
+export const SingleDealCard = withAssociationAccess(SingleDealCardContent, (p) => ({
+  table: "tickets",
+  id: p.entityId,
+}));

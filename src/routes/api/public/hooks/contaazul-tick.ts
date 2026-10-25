@@ -28,7 +28,7 @@ export const Route = createFileRoute("/api/public/hooks/contaazul-tick")({
         const run = await runCronWithLogging("contaazul-tick", async () => {
           const { data: rows, error } = await supabaseAdmin
             .from("integrations")
-            .select("owner_id, oauth_tokens, config")
+            .select("owner_id, workspace_id, oauth_tokens, config")
             .eq("provider", "contaazul")
             .eq("status", "connected");
           if (error) throw new Error(error.message);
@@ -41,10 +41,11 @@ export const Route = createFileRoute("/api/public/hooks/contaazul-tick")({
 
           for (const row of (rows ?? []) as Array<{
             owner_id: string;
+            workspace_id: string;
             oauth_tokens: { access_token?: string } | null;
             config: { connected_by?: string } | null;
           }>) {
-            if (!row.oauth_tokens?.access_token) continue;
+            if (!row.oauth_tokens?.access_token || !row.workspace_id) continue;
             workspaces += 1;
 
             // Log por workspace: permite que a tela de sincronização mostre
@@ -60,7 +61,7 @@ export const Route = createFileRoute("/api/public/hooks/contaazul-tick")({
               const results = await runContaAzulSteps(
                 {
                   supabase: supabaseAdmin,
-                  workspaceId: row.owner_id,
+                  workspaceId: row.workspace_id,
                   userId: row.config?.connected_by ?? row.owner_id,
                   since,
                 },
@@ -81,7 +82,7 @@ export const Route = createFileRoute("/api/public/hooks/contaazul-tick")({
 
             const { error: logError } = await supabaseAdmin.from("cron_run_logs").insert({
               job_name: "contaazul-tick",
-              workspace_id: row.owner_id,
+              workspace_id: row.workspace_id,
               started_at: wsStartedAt.toISOString(),
               finished_at: new Date().toISOString(),
               duration_ms: Date.now() - wsT0,
@@ -96,7 +97,7 @@ export const Route = createFileRoute("/api/public/hooks/contaazul-tick")({
             });
             if (logError) {
               console.warn("[cron:contaazul-tick] falha ao gravar log do workspace", {
-                workspace_id: row.owner_id,
+                workspace_id: row.workspace_id,
                 error: logError.message,
               });
             }

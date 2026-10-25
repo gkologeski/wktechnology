@@ -1,6 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { workRpc } from "./work-core.server";
 export type SalesWorkerSource =
+  | "scoring_rules"
+  | "report_schedules"
+  | "workflow_subscriptions"
+  | "prospecting_campaigns"
   | "whatsapp_campaigns"
   | "email_broadcasts"
   | "sequence_enrollments"
@@ -14,9 +18,15 @@ export async function assertSalesWorker(
   source: SalesWorkerSource,
   id: string,
   references: Array<
+    | { workflow_version: number }
+    | { agent_version_id: string }
     | { member_id: string }
     | { record_table: string; id: string }
-    | { table: string; id: string; action?: "view" | "update" | "delete" | "assign" | "manage" }
+    | {
+        table: string;
+        id: string;
+        action?: "view" | "update" | "delete" | "assign" | "manage" | "export";
+      }
     | {
         resource: string;
         action: "view" | "create" | "update" | "delete" | "assign" | "manage";

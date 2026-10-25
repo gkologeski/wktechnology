@@ -1,3 +1,4 @@
+import { withAssociationAccess } from "./access";
 import type { AssociationEntity } from "../associations-panel";
 import { useEffect, useState } from "react";
 import { useRefreshCallback } from "@/hooks/use-refresh-callback";
@@ -29,7 +30,7 @@ import {
   useAssociateWithPeriod,
 } from "./primitives";
 
-export function DealsCard({
+function DealsCardContent({
   entity,
   entityId,
   companyId,
@@ -251,7 +252,7 @@ export function DealsCard({
 
 /* ───────────── Tickets card ───────────── */
 
-export function TicketsCard({
+function TicketsCardContent({
   entity,
   entityId,
   companyId,
@@ -450,3 +451,12 @@ export function TicketsCard({
     </>
   );
 }
+
+export const DealsCard = withAssociationAccess(DealsCardContent, () => ({
+  table: "deals",
+  linked: true,
+}));
+export const TicketsCard = withAssociationAccess(TicketsCardContent, () => ({
+  table: "tickets",
+  linked: true,
+}));

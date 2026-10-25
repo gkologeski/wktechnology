@@ -150,6 +150,8 @@ async function defaultToolEnv(
           p.workspaceId,
           p.scheduling,
           await primaryCalendarId(admin, p.workspaceId, p.scheduling.calendar_account_id),
+          p.enrollmentId,
+          p.agentVersionId,
         )
       : null;
   return { store, calendar, calendarFacts: facts };
@@ -1359,6 +1361,7 @@ async function reconcileDirectMeetings(admin: Admin, workspaceIds: string[]): Pr
       m.workspace_id,
       sched,
       await primaryCalendarId(admin, m.workspace_id, m.calendar_account_id),
+      m.enrollment_id,
     );
     const r = await reconcileMeeting(store, cal, m);
     if (r === "confirmed" && m.enrollment_id)

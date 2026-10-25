@@ -1,3 +1,5 @@
+import { recordUpdatePayload } from "@/lib/access-control/record-update-payload";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Modelos reutilizáveis de ações de workflow.
 // O usuário salva uma ação já configurada (com valores/variáveis mapeados) e
 // pode reaplicá-la em outros workflows.
@@ -36,7 +38,7 @@ const upsertSchema = z.object({
 });
 
 export const listWorkflowActionTemplates = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.workflows", "view")])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -66,7 +68,7 @@ export const listWorkflowActionTemplates = createServerFn({ method: "POST" })
   });
 
 export const saveWorkflowActionTemplate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.workflows", ["create", "update"])])
   .inputValidator((d: unknown) => upsertSchema.parse(d))
   .handler(async ({ context, data }): Promise<{ item: WorkflowActionTemplateRow }> => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
@@ -82,17 +84,21 @@ export const saveWorkflowActionTemplate = createServerFn({ method: "POST" })
       action_json: data.action_json as unknown as Json,
       visibility: data.visibility,
     };
-    const { data: row, error } = await context.supabase
-      .from("workflow_action_templates")
-      .upsert(payload)
-      .select("*")
-      .single();
+    const update = recordUpdatePayload(payload) as Record<string, unknown>;
+    delete update.created_by;
+    const query = data.id
+      ? context.supabase
+          .from("workflow_action_templates")
+          .update(update as never)
+          .eq("id", data.id)
+      : context.supabase.from("workflow_action_templates").insert(payload as never);
+    const { data: row, error } = await query.select("*").single();
     if (error) throw new Error(error.message);
     return { item: row as WorkflowActionTemplateRow };
   });
 
 export const deleteWorkflowActionTemplate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.workflows", "delete")])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { error } = await context.supabase

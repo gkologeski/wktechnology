@@ -1,3 +1,5 @@
+import { assertSalesArea } from "@/lib/access-control/sales-core.server";
+import { hubspotSourceClient } from "@/lib/access-control/hubspot-source-client.server";
 // Tick-based execution for HubSpot imports.
 // One tick = one pending item (= one step from planSteps) executed in its own
 // HTTP request, so the Cloudflare Worker timeout (~30s) only has to fit a
@@ -327,8 +329,10 @@ export async function tickOnce(
 
   // 3) Executar o step (com orçamento de 22s; runStep gerencia status do item)
   try {
+    const checkedClient = hubspotSourceClient(supabase, { table: "enrichment_jobs", id: job.id });
+    await assertSalesArea(checkedClient, "system.hubspot_sync", "manage");
     const result = await runStep({
-      supabase,
+      supabase: checkedClient,
       userId: job.owner_id,
       workspaceId: job.workspace_id ?? job.owner_id,
       jobId: job.id,

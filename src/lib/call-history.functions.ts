@@ -1,3 +1,4 @@
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -38,6 +39,13 @@ export const listCallHistory = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
+    const sourceTable = {
+      contact: "contacts",
+      lead: "leads",
+      deal: "deals",
+      ticket: "tickets",
+    } as const;
+    await assertSalesRecord(supabase, sourceTable[data.entity], data.entity_id, "view");
     const col =
       data.entity === "contact"
         ? "related_contact_id"

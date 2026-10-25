@@ -1,3 +1,6 @@
+import { hubspotSourceClient } from "@/lib/access-control/hubspot-source-client.server";
+import { assertSalesWorker } from "@/lib/access-control/sales-worker.server";
+import { workRpc } from "@/lib/access-control/work-core.server";
 // Engine para processar agendamentos de export de relatórios.
 // Chamado pelo /api/public/hooks/scheduled-exports-tick a cada hora.
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -13,6 +16,8 @@ import {
 interface ScheduleRow {
   id: string;
   owner_id: string;
+  workspace_id: string;
+  execution_user_id: string | null;
   report_id: string;
   name: string;
   recipients: string[];
@@ -72,19 +77,29 @@ async function runReport(
   supabase: SupabaseClient,
   ownerId: string,
   report: ReportRow,
-): Promise<Array<{ key: string; value: number; count: number }>> {
+): Promise<{
+  rows: Array<{ key: string; value: number; count: number }>;
+  ids: string[];
+  table: string;
+}> {
   const cfg = report.config;
   const ent = REPORT_ENTITIES[cfg.entity];
   if (!ent) throw new Error(`Entidade inválida: ${cfg.entity}`);
-  const cols = cfg.metric === "count" ? cfg.groupBy : `${cfg.groupBy},${cfg.metricField}`;
+  const cols =
+    cfg.metric === "count" ? `id,${cfg.groupBy}` : `id,${cfg.groupBy},${cfg.metricField}`;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let q = (supabase as any).from(ent.table).select(cols).eq("owner_id", ownerId).limit(5000);
+  let q = (supabase as any).from(ent.table).select(cols).limit(5000);
   if (cfg.dateField && (ent.date as readonly string[]).includes(cfg.dateField)) {
     if (cfg.dateFrom) q = q.gte(cfg.dateField, cfg.dateFrom);
     if (cfg.dateTo) q = q.lte(cfg.dateField, cfg.dateTo);
   }
-  const { data: rows, error } = await q;
-  if (error) throw new Error(error.message);
+  const rows: Record<string, unknown>[] = [];
+  for (let offset = 0; offset < 5000; offset += 1000) {
+    const { data: page, error } = await q.range(offset, offset + 999);
+    if (error) throw new Error(error.message);
+    rows.push(...(page ?? []));
+    if ((page ?? []).length < 1000) break;
+  }
   const buckets = new Map<string, { key: string; count: number; sum: number }>();
   for (const r of (rows ?? []) as Record<string, unknown>[]) {
     const k = String(r[cfg.groupBy] ?? "—");
@@ -109,7 +124,11 @@ async function runReport(
     count: b.count,
   }));
   arr.sort((a, b) => b.value - a.value);
-  return arr.slice(0, cfg.limit ?? 50);
+  return {
+    rows: arr.slice(0, cfg.limit ?? 50),
+    ids: rows.map((r) => String(r.id)),
+    table: ent.table,
+  };
 }
 
 function toCsv(
@@ -190,6 +209,7 @@ function buildMimeWithAttachment(opts: {
 async function getGmailAccount(
   ownerId: string,
   accountId: string | null,
+  workspaceId: string,
 ): Promise<EmailAccountRow | null> {
   let q = supabaseAdmin
     .from("email_accounts")
@@ -197,6 +217,7 @@ async function getGmailAccount(
       "id, workspace_id, owner_id, email, access_token, refresh_token, expires_at, status, history_id",
     )
     .eq("owner_id", ownerId)
+    .eq("workspace_id", workspaceId)
     .eq("provider", "gmail")
     .eq("status", "connected");
   if (accountId) q = q.eq("id", accountId);
@@ -218,36 +239,74 @@ export async function runExportNow(scheduleId: string): Promise<{
   if (sErr || !schedule) throw new Error(sErr?.message ?? "Agendamento não encontrado");
 
   const s = schedule as ScheduleRow;
+  const actor = s.execution_user_id ?? s.owner_id;
+  const scoped = hubspotSourceClient(supabaseAdmin, { table: "report_schedules", id: s.id });
+  const authorize = async (accountId?: string) => {
+    await assertSalesWorker(supabaseAdmin, "report_schedules", s.id, [
+      { table: "custom_reports", id: s.report_id, action: "export" },
+      ...(accountId
+        ? [
+            { table: "email_accounts", id: accountId },
+            { resource: "techsales.inbox.email", action: "create" as const },
+          ]
+        : []),
+    ]);
+  };
 
+  let expectedVersion: string | null = null;
+  const version = (schedule: Record<string, unknown>, report: Record<string, unknown>) =>
+    JSON.stringify({
+      schedule: Object.fromEntries(
+        [
+          "owner_id",
+          "execution_user_id",
+          "workspace_id",
+          "report_id",
+          "enabled",
+          "recipients",
+          "email_account_id",
+        ].map((k) => [k, schedule[k]]),
+      ),
+      report: Object.fromEntries(["id", "name", "entity", "config"].map((k) => [k, report[k]])),
+    });
+  const checkVersion = async () => {
+    if (!expectedVersion) return;
+    const [{ data: current }, { data: currentReport }] = await Promise.all([
+      supabaseAdmin.from("report_schedules").select("*").eq("id", s.id).single(),
+      supabaseAdmin
+        .from("custom_reports")
+        .select("id,name,entity,config")
+        .eq("id", s.report_id)
+        .single(),
+    ]);
+    if (!current || !currentReport || version(current, currentReport) !== expectedVersion)
+      throw new Error("Exportação cancelada: a configuração mudou durante a execução.");
+  };
   try {
-    const { data: report, error: rErr } = await supabaseAdmin
+    await authorize();
+    const { data: report, error: rErr } = await scoped
       .from("custom_reports")
       .select("id, name, entity, config")
       .eq("id", s.report_id)
       .single();
     if (rErr || !report) throw new Error("Relatório não encontrado");
+    expectedVersion = version(schedule, report);
 
-    const rows = await runReport(supabaseAdmin, s.owner_id, report as ReportRow);
+    const proof = await runReport(scoped, actor, report as ReportRow);
+    const rows = proof.rows;
     const csv = toCsv(report as ReportRow, rows);
     const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
     const filename = `${(report as ReportRow).name.replace(/[^a-z0-9-_]/gi, "_")}_${stamp}.csv`;
-    const storagePath = `${s.owner_id}/${s.id}/${filename}`;
-
-    await supabaseAdmin.storage
-      .from("exports")
-      .upload(storagePath, new Blob([csv], { type: "text/csv" }), {
-        upsert: true,
-        contentType: "text/csv",
-      });
-
     if (s.recipients.length > 0) {
-      const account = await getGmailAccount(s.owner_id, s.email_account_id);
+      const account = await getGmailAccount(actor, s.email_account_id, s.workspace_id);
       if (!account) throw new Error("Nenhuma conta Gmail conectada para envio");
+      await checkVersion();
+      await authorize(account.id);
       const accessToken = await ensureAccessToken(account);
 
       const subject = `[Relatório agendado] ${(report as ReportRow).name}`;
-      const bodyText = `Segue em anexo o relatório "${(report as ReportRow).name}" com ${rows.length} linhas.\n\nGerado em ${new Date().toISOString()}.\n\n— Lovable CRM`;
-      const bodyHtml = `<p>Segue em anexo o relatório <strong>${(report as ReportRow).name}</strong> com <strong>${rows.length}</strong> linhas.</p><p>Gerado em ${new Date().toISOString()}.</p><p>— Lovable CRM</p>`;
+      const bodyText = `Segue em anexo o relatório "${(report as ReportRow).name}" com ${rows.length} linhas.\n\nGerado em ${new Date().toISOString()}.\n\n— TechERP`;
+      const bodyHtml = `<p>Segue em anexo o relatório <strong>${(report as ReportRow).name}</strong> com <strong>${rows.length}</strong> linhas.</p><p>Gerado em ${new Date().toISOString()}.</p><p>— TechERP</p>`;
 
       const raw = buildMimeWithAttachment({
         from: account.email,
@@ -260,6 +319,14 @@ export async function runExportNow(scheduleId: string): Promise<{
       });
       // Avoid unused import warning when no attachment helper needed:
       void buildRawMime;
+      await checkVersion();
+      await authorize(account.id);
+      await workRpc(supabaseAdmin, "sales_source_query", {
+        p_source: "report_schedules",
+        p_id: s.id,
+        p_table: proof.table,
+        p_query: { operation: "authorize_export", record_ids: proof.ids },
+      });
       await gmailSendRaw(accessToken, raw);
     }
 
@@ -274,7 +341,7 @@ export async function runExportNow(scheduleId: string): Promise<{
       })
       .eq("id", s.id);
 
-    return { ok: true, rows: rows.length, storage_path: storagePath };
+    return { ok: true, rows: rows.length };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     await supabaseAdmin

@@ -1,3 +1,4 @@
+import { recordUpdatePayload } from "@/lib/access-control/record-update-payload";
 import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
 import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
@@ -60,7 +61,10 @@ export const upsertBookingPage = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const payload = { ...data, owner_id: userId };
     if (data.id) {
-      const { error } = await supabase.from("booking_pages").update(payload).eq("id", data.id);
+      const { error } = await supabase
+        .from("booking_pages")
+        .update(recordUpdatePayload(payload))
+        .eq("id", data.id);
       if (error) throw new Error(error.message);
       return { id: data.id };
     }

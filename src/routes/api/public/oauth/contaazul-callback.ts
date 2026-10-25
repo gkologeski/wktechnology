@@ -74,8 +74,21 @@ export const Route = createFileRoute("/api/public/oauth/contaazul-callback")({
             import("@/lib/integrations/contaazul-api.server"),
             import("@/integrations/supabase/client.server"),
           ]);
+          const { workRpc } = await import("@/lib/access-control/work-core.server");
+          const authorize = async () => {
+            if (
+              !(await workRpc<boolean>(supabaseAdmin, "sales_contaazul_authorize", {
+                p_user: state.userId,
+                p_ws: state.workspaceId,
+                p_entity: "connection",
+              }))
+            )
+              throw new Error("Permissão de conexão revogada ou responsável inativo.");
+          };
+          await authorize();
           const origin = normalizeContaAzulReturnOrigin(state.origin);
           const tokens = await exchangeCodeForTokens({ code, origin });
+          await authorize();
           await saveTokens(supabaseAdmin, {
             workspaceId: state.workspaceId,
             tokens,

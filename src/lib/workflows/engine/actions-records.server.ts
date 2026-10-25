@@ -97,6 +97,7 @@ export async function handleRecordAction(
       }
       const inserted = await workRpc<{ id: string }>(supabase, "sales_workflow_record", {
         p_workflow: ctx.workflowId,
+        p_version: ctx.workflowVersion ?? null,
         p_table: action.table,
         p_action: "create",
         p_id: null,
@@ -125,6 +126,7 @@ export async function handleRecordAction(
       if (!ctx.workflowId) throw new Error("Workflow sem origem de autorização.");
       await workRpc(supabase, "sales_workflow_record", {
         p_workflow: ctx.workflowId,
+        p_version: ctx.workflowVersion ?? null,
         p_table: action.table,
         p_action: "update",
         p_id: targetId,
@@ -143,6 +145,7 @@ export async function handleRecordAction(
       if (!ctx.workflowId) throw new Error("Workflow sem origem de autorização.");
       await workRpc(supabase, "sales_workflow_record", {
         p_workflow: ctx.workflowId,
+        p_version: ctx.workflowVersion ?? null,
         p_table: action.table,
         p_action: "delete",
         p_id: targetId,

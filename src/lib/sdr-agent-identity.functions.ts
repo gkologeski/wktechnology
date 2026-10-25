@@ -1,3 +1,4 @@
+import { assertPermission } from "@/lib/access-control/enforce.server";
 import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -10,14 +11,7 @@ import { requireSdr } from "@/lib/prospecting/sdr/access.server";
 async function requireAdmin(supabase: unknown, userId: string) {
   const ws = await requireSdr(supabase as never, userId, "manage");
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
-    .from("workspace_members")
-    .select("role, status")
-    .eq("workspace_id", ws)
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (!data || data.status !== "active" || !["owner", "admin"].includes(data.role as string))
-    throw new Error("Apenas administradores do workspace podem fazer isso.");
+  await assertPermission(supabase as never, userId, ws, "system.members.manage.workspace");
   return { ws, admin: supabaseAdmin };
 }
 
@@ -27,7 +21,7 @@ export const getSdrAgentProfile = createServerFn({ method: "GET" })
     const ws = await requireSdr(context.supabase, context.userId, "view");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { getSdrAgentIdentity } = await import("@/lib/prospecting/sdr/agent-identity.server");
-    return { identity: await getSdrAgentIdentity(supabaseAdmin, ws) };
+    return { identity: await getSdrAgentIdentity(context.supabase, ws) };
   });
 
 export const createSdrAgentProfile = createServerFn({ method: "POST" })

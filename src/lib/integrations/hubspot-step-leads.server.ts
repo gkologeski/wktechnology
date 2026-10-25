@@ -1,3 +1,4 @@
+import { hubspotRequestGuard } from "./hubspot-api.server";
 // Etapa "leads" da importação do HubSpot — extraída de hubspot-steps.server.ts
 import {
   type HSRec,
@@ -30,7 +31,7 @@ export async function runLeadsStep(args: StepRunArgs): Promise<StepResult | void
   } = args;
   // Importa o objeto NATIVO de Leads do HubSpot (/crm/v3/objects/leads),
   // paginando com cursor — não depende da importação de contatos.
-  const leadProps = await loadHsProperties("leads");
+  const leadProps = await loadHsProperties("leads", hubspotRequestGuard(supabase));
   const fallbackProps = [
     "hs_lead_name",
     "hs_lead_name_calculated",
@@ -61,7 +62,7 @@ export async function runLeadsStep(args: StepRunArgs): Promise<StepResult | void
         break;
       }
       const chunkIds = targetIds.slice(idx, idx + CHUNK);
-      const recs = await batchRead("leads", chunkIds, propsList);
+      const recs = await batchRead("leads", chunkIds, propsList, hubspotRequestGuard(supabase));
       const tasks: { hsId: string; payload: Record<string, unknown> }[] = [];
       for (const c of recs) {
         const p = c.properties;
@@ -111,7 +112,7 @@ export async function runLeadsStep(args: StepRunArgs): Promise<StepResult | void
     if (st.partial) await persistCursor({ read_index: idx });
   } else {
     if (resume.discovered === undefined) {
-      const total = await searchTotal("leads");
+      const total = await searchTotal("leads", hubspotRequestGuard(supabase));
       await patchItemBefore(supabase, itemId, { discovered: total });
       await appendLog(supabase, jobId, {
         level: "info",
@@ -130,7 +131,11 @@ export async function runLeadsStep(args: StepRunArgs): Promise<StepResult | void
     const fetchPage = async (cursor?: string): Promise<LeadsPage> => {
       const params: Record<string, string> = { limit: "100", properties: propsParam };
       if (cursor) params.after = cursor;
-      return (await hsFetch("/crm/v3/objects/leads", params)) as LeadsPage;
+      return (await hsFetch(
+        "/crm/v3/objects/leads",
+        params,
+        hubspotRequestGuard(supabase),
+      )) as LeadsPage;
     };
 
     // Prefetch first page; subsequent pages are prefetched in parallel

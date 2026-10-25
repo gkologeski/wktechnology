@@ -13,6 +13,7 @@ export interface RunCtx {
   vars?: AnyRow;
   /** Fase 5b — usados para vincular workflow_approvals ao run/workflow atuais. */
   workflowId?: string;
+  workflowVersion?: number;
   runId?: string;
   /**
    * Retomada dentro de caminhos: um quadro por nível (de fora para dentro),

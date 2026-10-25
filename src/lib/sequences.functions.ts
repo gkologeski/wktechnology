@@ -193,9 +193,31 @@ export const updateEnrollmentStatus = createServerFn({ method: "POST" })
 
 export const triggerSequencesTickNow = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("system.automation.sequences", "manage")])
-  .handler(async () => {
+  .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    return tickSequences(supabaseAdmin, 100);
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    const scope = await workRpc<{ workspace: string }>(
+      context.supabase,
+      "sales_access_context",
+      {},
+    );
+    const { data: visible, error } = await context.supabase
+      .from("sequence_enrollments")
+      .select("id,sequence_id")
+      .eq("workspace_id", scope.workspace)
+      .eq("status", "active")
+      .limit(100);
+    if (error) throw error;
+    const caps = await workRpc<Array<{ id: string; can_manage: boolean }>>(
+      context.supabase,
+      "sales_capabilities",
+      { t: "sequences", ids: [...new Set((visible ?? []).map((x) => x.sequence_id))] },
+    );
+    const allowed = new Set(caps.filter((x) => x.can_manage).map((x) => x.id));
+    return tickSequences(supabaseAdmin, 100, {
+      workspaceId: scope.workspace,
+      ids: (visible ?? []).filter((x) => allowed.has(x.sequence_id)).map((x) => x.id),
+    });
   });
 
 export type SequenceListItem = Awaited<ReturnType<typeof listSequences>>[number];

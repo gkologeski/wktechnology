@@ -1,3 +1,5 @@
+import { hubspotSourceClient } from "@/lib/access-control/hubspot-source-client.server";
+import { assertSalesWorker } from "@/lib/access-control/sales-worker.server";
 import { workspaceOfSource } from "@/lib/workspace-source.server";
 // Event Bus v2 — emissão de eventos de domínio cross-módulo.
 // Use em qualquer ponto server-side para publicar acontecimentos relevantes
@@ -60,6 +62,40 @@ async function executeSubscriptionAction(
   event: EmitEventInput,
   workspaceId: string,
 ): Promise<void> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const entities: Record<string, string> = {
+    lead: "leads",
+    leads: "leads",
+    contact: "contacts",
+    contacts: "contacts",
+    company: "companies",
+    companies: "companies",
+    deal: "deals",
+    deals: "deals",
+    ticket: "tickets",
+    tickets: "tickets",
+    candidate: "ats_candidates",
+    application: "ats_applications",
+    job: "ats_jobs",
+    interview: "ats_interviews",
+    person: "people",
+    people: "people",
+    contract: "contracts",
+    project: "projects",
+    ats_applications: "ats_applications",
+    ats_candidates: "ats_candidates",
+    ats_jobs: "ats_jobs",
+    ats_interviews: "ats_interviews",
+    contracts: "contracts",
+    projects: "projects",
+  };
+  const table = event.entityType ? entities[event.entityType] : undefined;
+  if (!table || !event.entityId) throw new Error("Evento sem registro de origem verificável.");
+  const ref = ["leads", "contacts", "companies", "deals", "tickets"].includes(table)
+    ? { table, id: event.entityId }
+    : { record_table: table, id: event.entityId };
+  await assertSalesWorker(supabaseAdmin, "workflow_subscriptions", sub.id, [ref]);
+  supabase = hubspotSourceClient(supabaseAdmin, { table: "workflow_subscriptions", id: sub.id });
   const action = sub.action ?? {};
   const type = String((action as { type?: string }).type ?? "");
   const ctx: RenderCtx = {
@@ -85,7 +121,6 @@ async function executeSubscriptionAction(
         .from("pipelines")
         .select("id")
         .eq("workspace_id", workspaceId)
-        .eq("owner_id", sub.owner_id)
         .eq("entity", "tickets")
         .order("is_default", { ascending: false })
         .order("created_at", { ascending: true })
@@ -121,7 +156,6 @@ async function fanoutSubscriptions(
     .from("workflow_subscriptions")
     .select("id,owner_id,event_pattern,action,enabled")
     .eq("workspace_id", workspaceId)
-    .eq("owner_id", event.ownerId)
     .eq("enabled", true);
   if (error || !data) return;
   const subs = (data as SubscriptionRow[]).filter((s) => {

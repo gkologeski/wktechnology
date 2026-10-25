@@ -830,6 +830,7 @@ export type Database = {
       }
       ai_summaries: {
         Row: {
+          source_refs: Json
           created_at: string
           entity: string
           entity_id: string
@@ -848,6 +849,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          source_refs?: Json
           created_at?: string
           entity: string
           entity_id: string
@@ -866,6 +868,7 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          source_refs?: Json
           created_at?: string
           entity?: string
           entity_id?: string
@@ -19071,6 +19074,7 @@ export type Database = {
       }
       prospecting_campaigns: {
         Row: {
+          execution_user_id: string | null
           assigned_to: string | null
           assignment_mode: Database["public"]["Enums"]["prospecting_assignment_mode"]
           audience_mode: string
@@ -19090,6 +19094,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          execution_user_id?: string | null
           assigned_to?: string | null
           assignment_mode?: Database["public"]["Enums"]["prospecting_assignment_mode"]
           audience_mode?: string
@@ -19109,6 +19114,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          execution_user_id?: string | null
           assigned_to?: string | null
           assignment_mode?: Database["public"]["Enums"]["prospecting_assignment_mode"]
           audience_mode?: string
@@ -20263,6 +20269,7 @@ export type Database = {
       }
       report_schedules: {
         Row: {
+          execution_user_id: string | null
           created_at: string
           day_of_month: number | null
           day_of_week: number | null
@@ -20284,6 +20291,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          execution_user_id?: string | null
           created_at?: string
           day_of_month?: number | null
           day_of_week?: number | null
@@ -20305,6 +20313,7 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          execution_user_id?: string | null
           created_at?: string
           day_of_month?: number | null
           day_of_week?: number | null
@@ -25753,6 +25762,7 @@ export type Database = {
       }
       workflow_approvals: {
         Row: {
+          workflow_version: number | null
           approver_user_id: string | null
           created_at: string
           decided_at: string | null
@@ -25774,6 +25784,7 @@ export type Database = {
           workspace_id: string | null
         }
         Insert: {
+          workflow_version?: number | null
           approver_user_id?: string | null
           created_at?: string
           decided_at?: string | null
@@ -25795,6 +25806,7 @@ export type Database = {
           workspace_id?: string | null
         }
         Update: {
+          workflow_version?: number | null
           approver_user_id?: string | null
           created_at?: string
           decided_at?: string | null
@@ -25899,6 +25911,7 @@ export type Database = {
       }
       workflow_events: {
         Row: {
+          workflow_version: number | null
           after: Json | null
           before: Json | null
           created_at: string
@@ -25914,6 +25927,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          workflow_version?: number | null
           after?: Json | null
           before?: Json | null
           created_at?: string
@@ -25929,6 +25943,7 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          workflow_version?: number | null
           after?: Json | null
           before?: Json | null
           created_at?: string
@@ -26084,6 +26099,7 @@ export type Database = {
       }
       workflow_subscriptions: {
         Row: {
+          execution_user_id: string | null
           action: Json
           created_at: string
           created_by: string | null
@@ -26097,6 +26113,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          execution_user_id?: string | null
           action: Json
           created_at?: string
           created_by?: string | null
@@ -26110,6 +26127,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          execution_user_id?: string | null
           action?: Json
           created_at?: string
           created_by?: string | null
@@ -26166,6 +26184,7 @@ export type Database = {
       }
       workflows: {
         Row: {
+          execution_user_id: string | null
           actions: Json
           created_at: string
           draft_actions: Json | null
@@ -26185,6 +26204,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          execution_user_id?: string | null
           actions?: Json
           created_at?: string
           draft_actions?: Json | null
@@ -26204,6 +26224,7 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          execution_user_id?: string | null
           actions?: Json
           created_at?: string
           draft_actions?: Json | null
