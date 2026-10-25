@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { workRpc } from "@/lib/access-control/work-core.server";
 import { requireSharedPermission } from "@/lib/access-control/shared-permission.middleware";
 // Home dashboard: KPIs agregados por módulo, filtrados por intervalo de datas.
@@ -19,10 +20,17 @@ export type HomeDashboardResponse = {
   sections: ModuleSection[];
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function safeCount(sb: any, table: string, build: (q: any) => any): Promise<number> {
+async function safeCount(
+  sb: any,
+  workspaceId: string,
+  table: string,
+  build: (q: any) => any,
+): Promise<number> {
   try {
-    const q = sb.from(table).select("id", { count: "exact", head: true });
+    const q = sb
+      .from(table)
+      .select("id", { count: "exact", head: true })
+      .eq("workspace_id", workspaceId);
     const { count, error } = await build(q);
     if (error) throw new Error(error.message);
     return count ?? 0;
@@ -33,12 +41,13 @@ async function safeCount(sb: any, table: string, build: (q: any) => any): Promis
 
 async function safeSum(
   sb: any,
+  workspaceId: string,
   table: string,
   column: string,
   build: (q: any) => any,
 ): Promise<number> {
   try {
-    const q = sb.from(table).select(column);
+    const q = sb.from(table).select(column).eq("workspace_id", workspaceId);
     const { data, error } = await build(q);
     if (error) throw new Error(error.message);
     if (!data) return 0;
@@ -59,183 +68,207 @@ function fmtBRL(n: number): string {
   });
 }
 
+async function loadHomeDashboard(
+  supabase: SupabaseClient,
+  workspaceId: string,
+  data: z.infer<typeof RangeSchema>,
+): Promise<HomeDashboardResponse> {
+  const { from, to } = data;
+
+  let enabledModules: string[] = [];
+  if (workspaceId) {
+    const { data: rows, error } = await supabase
+      .from("workspace_modules")
+      .select("module_id, enabled")
+      .eq("workspace_id", workspaceId)
+      .eq("enabled", true);
+    if (error) throw new Error("Não foi possível consultar os módulos autorizados.");
+    enabledModules = (rows ?? []).map((r) => r.module_id as string);
+  }
+
+  const fieldContext = await workRpc<{ rules?: Record<string, Record<string, string>> }>(
+    supabase,
+    "shared_field_context",
+    {},
+  );
+  const sections: ModuleSection[] = [];
+
+  if (enabledModules.includes("crm")) {
+    const [
+      leadsCount,
+      dealsCreated,
+      dealsWonCount,
+      dealsWonValue,
+      dealsLostCount,
+      dealsLostValue,
+      pipelineOpen,
+    ] = await Promise.all([
+      safeCount(supabase, workspaceId, "leads", (q) =>
+        q.gte("created_at", from).lte("created_at", to),
+      ),
+      safeCount(supabase, workspaceId, "deals", (q) =>
+        q.gte("created_at", from).lte("created_at", to),
+      ),
+      // Janela pela data real de fechamento (preenchida por trigger em stage = 'won').
+      safeCount(supabase, workspaceId, "deals", (q) =>
+        q.eq("stage", "won").gte("closed_at", from).lte("closed_at", to),
+      ),
+      safeSum(supabase, workspaceId, "deals", "value", (q) =>
+        q.eq("stage", "won").gte("closed_at", from).lte("closed_at", to),
+      ),
+      // Perdidos pela data real de perda (trigger em stage = 'lost').
+      safeCount(supabase, workspaceId, "deals", (q) =>
+        q.eq("stage", "lost").gte("lost_at", from).lte("lost_at", to),
+      ),
+      safeSum(supabase, workspaceId, "deals", "value", (q) =>
+        q.eq("stage", "lost").gte("lost_at", from).lte("lost_at", to),
+      ),
+      safeSum(supabase, workspaceId, "deals", "value", (q) => q.not("stage", "in", "(won,lost)")),
+    ]);
+    const closedTotal = dealsWonCount + dealsLostCount;
+    sections.push({
+      moduleId: "crm",
+      kpis: [
+        { label: "Leads criados", value: String(leadsCount) },
+        { label: "Negócios criados", value: String(dealsCreated) },
+        { label: "Negócios ganhos", value: String(dealsWonCount), hint: fmtBRL(dealsWonValue) },
+        {
+          label: "Negócios perdidos",
+          value: String(dealsLostCount),
+          hint: fmtBRL(dealsLostValue),
+        },
+        {
+          label: "Taxa de conversão",
+          value: closedTotal > 0 ? `${((dealsWonCount / closedTotal) * 100).toFixed(1)}%` : "—",
+          hint:
+            closedTotal > 0
+              ? `${dealsWonCount} de ${closedTotal} fechados`
+              : "Sem fechamentos no período",
+        },
+        { label: "Pipeline aberto", value: fmtBRL(pipelineOpen) },
+      ],
+    });
+  }
+
+  if (enabledModules.includes("ats")) {
+    const [candidates, applications, interviews, offers] = await Promise.all([
+      safeCount(supabase, workspaceId, "ats_candidates", (q) =>
+        q.gte("created_at", from).lte("created_at", to),
+      ),
+      safeCount(supabase, workspaceId, "ats_applications", (q) =>
+        q.gte("created_at", from).lte("created_at", to),
+      ),
+      safeCount(supabase, workspaceId, "ats_interviews", (q) =>
+        q.gte("created_at", from).lte("created_at", to),
+      ),
+      safeCount(supabase, workspaceId, "ats_offers", (q) =>
+        q.gte("created_at", from).lte("created_at", to),
+      ),
+    ]);
+    sections.push({
+      moduleId: "ats",
+      kpis: [
+        { label: "Candidatos", value: String(candidates) },
+        { label: "Aplicações", value: String(applications) },
+        { label: "Entrevistas", value: String(interviews) },
+        { label: "Ofertas", value: String(offers) },
+      ],
+    });
+  }
+
+  if (enabledModules.includes("contracts")) {
+    const [created, active] = await Promise.all([
+      safeCount(supabase, workspaceId, "contracts", (q) =>
+        q.gte("created_at", from).lte("created_at", to),
+      ),
+      safeCount(supabase, workspaceId, "contracts", (q) => q.eq("status", "active")),
+    ]);
+    sections.push({
+      moduleId: "contracts",
+      kpis: [
+        { label: "Contratos criados", value: String(created) },
+        { label: "Contratos ativos", value: String(active) },
+      ],
+    });
+  }
+
+  if (enabledModules.includes("projects")) {
+    const [tasksDone, activeProjects] = await Promise.all([
+      safeCount(supabase, workspaceId, "project_tasks", (q) =>
+        q.eq("status", "done").gte("updated_at", from).lte("updated_at", to),
+      ),
+      safeCount(supabase, workspaceId, "projects", (q) => q.eq("status", "active")),
+    ]);
+    sections.push({
+      moduleId: "projects",
+      kpis: [
+        { label: "Tarefas concluídas", value: String(tasksDone) },
+        { label: "Projetos ativos", value: String(activeProjects) },
+      ],
+    });
+  }
+
+  if (enabledModules.includes("finance")) {
+    const [recvOpen, payOpen, paymentsIn] = await Promise.all([
+      safeSum(supabase, workspaceId, "financial_entries", "amount", (q) =>
+        q.eq("direction", "receivable").in("status", ["open", "partial", "overdue"]),
+      ),
+      safeSum(supabase, workspaceId, "financial_entries", "amount", (q) =>
+        q.eq("direction", "payable").in("status", ["open", "partial", "overdue"]),
+      ),
+      safeSum(supabase, workspaceId, "financial_payments", "amount", (q) =>
+        q.gte("paid_at", from).lte("paid_at", to),
+      ),
+    ]);
+    sections.push({
+      moduleId: "finance",
+      kpis: [
+        { label: "A receber (aberto)", value: fmtBRL(recvOpen) },
+        { label: "A pagar (aberto)", value: fmtBRL(payOpen) },
+        { label: "Pagamentos no período", value: fmtBRL(paymentsIn) },
+      ],
+    });
+  }
+
+  if (enabledModules.includes("people")) {
+    const [active, expiring] = await Promise.all([
+      safeCount(supabase, workspaceId, "people", (q) => q.eq("status", "active")),
+      workRpc<number | null>(supabase, "shared_home_expiring_documents", {}),
+    ]);
+    sections.push({
+      moduleId: "people",
+      kpis: [
+        { label: "Pessoas ativas", value: String(active) },
+        {
+          label: "Documentos vencendo",
+          value: expiring === null ? "Restrito" : String(expiring),
+        },
+      ],
+    });
+  }
+
+  const valueMode = fieldContext.rules?.["techsales.deals"]?.value;
+  if (valueMode === "hidden" || valueMode === "masked")
+    for (const section of sections)
+      if (section.moduleId === "crm")
+        for (const kpi of section.kpis) {
+          if (kpi.label === "Pipeline aberto") kpi.value = "Restrito";
+          if (kpi.label === "Negócios ganhos" || kpi.label === "Negócios perdidos")
+            kpi.hint = "Valor restrito";
+        }
+  return { from, to, enabledModules, sections };
+}
+
 export const getHomeDashboard = createServerFn({ method: "POST" })
   .middleware([requireSharedPermission("system.home")])
   .inputValidator((d: unknown) => RangeSchema.parse(d))
-  .handler(async ({ context, data }): Promise<HomeDashboardResponse> => {
-    const { supabase } = context;
-    const { from, to } = data;
+  .handler(({ context, data }) =>
+    loadHomeDashboard(context.supabase, context.sharedWorkspaceId, data),
+  );
 
-    const workspaceId = context.sharedWorkspaceId;
-
-    let enabledModules: string[] = [];
-    if (workspaceId) {
-      const { data: rows } = await supabase
-        .from("workspace_modules")
-        .select("module_id, enabled")
-        .eq("workspace_id", workspaceId)
-        .eq("enabled", true);
-      enabledModules = (rows ?? []).map((r) => r.module_id as string);
-    }
-
-    const fieldContext = await workRpc<{ rules?: Record<string, Record<string, string>> }>(
-      supabase,
-      "shared_field_context",
-      {},
-    );
-    const sections: ModuleSection[] = [];
-
-    if (enabledModules.includes("crm")) {
-      const [
-        leadsCount,
-        dealsCreated,
-        dealsWonCount,
-        dealsWonValue,
-        dealsLostCount,
-        dealsLostValue,
-        pipelineOpen,
-      ] = await Promise.all([
-        safeCount(supabase, "leads", (q) => q.gte("created_at", from).lte("created_at", to)),
-        safeCount(supabase, "deals", (q) => q.gte("created_at", from).lte("created_at", to)),
-        // Janela pela data real de fechamento (preenchida por trigger em stage = 'won').
-        safeCount(supabase, "deals", (q) =>
-          q.eq("stage", "won").gte("closed_at", from).lte("closed_at", to),
-        ),
-        safeSum(supabase, "deals", "value", (q) =>
-          q.eq("stage", "won").gte("closed_at", from).lte("closed_at", to),
-        ),
-        // Perdidos pela data real de perda (trigger em stage = 'lost').
-        safeCount(supabase, "deals", (q) =>
-          q.eq("stage", "lost").gte("lost_at", from).lte("lost_at", to),
-        ),
-        safeSum(supabase, "deals", "value", (q) =>
-          q.eq("stage", "lost").gte("lost_at", from).lte("lost_at", to),
-        ),
-        safeSum(supabase, "deals", "value", (q) => q.not("stage", "in", "(won,lost)")),
-      ]);
-      const closedTotal = dealsWonCount + dealsLostCount;
-      sections.push({
-        moduleId: "crm",
-        kpis: [
-          { label: "Leads criados", value: String(leadsCount) },
-          { label: "Negócios criados", value: String(dealsCreated) },
-          { label: "Negócios ganhos", value: String(dealsWonCount), hint: fmtBRL(dealsWonValue) },
-          {
-            label: "Negócios perdidos",
-            value: String(dealsLostCount),
-            hint: fmtBRL(dealsLostValue),
-          },
-          {
-            label: "Taxa de conversão",
-            value: closedTotal > 0 ? `${((dealsWonCount / closedTotal) * 100).toFixed(1)}%` : "—",
-            hint:
-              closedTotal > 0
-                ? `${dealsWonCount} de ${closedTotal} fechados`
-                : "Sem fechamentos no período",
-          },
-          { label: "Pipeline aberto", value: fmtBRL(pipelineOpen) },
-        ],
-      });
-    }
-
-    if (enabledModules.includes("ats")) {
-      const [candidates, applications, interviews, offers] = await Promise.all([
-        safeCount(supabase, "ats_candidates", (q) =>
-          q.gte("created_at", from).lte("created_at", to),
-        ),
-        safeCount(supabase, "ats_applications", (q) =>
-          q.gte("created_at", from).lte("created_at", to),
-        ),
-        safeCount(supabase, "ats_interviews", (q) =>
-          q.gte("created_at", from).lte("created_at", to),
-        ),
-        safeCount(supabase, "ats_offers", (q) => q.gte("created_at", from).lte("created_at", to)),
-      ]);
-      sections.push({
-        moduleId: "ats",
-        kpis: [
-          { label: "Candidatos", value: String(candidates) },
-          { label: "Aplicações", value: String(applications) },
-          { label: "Entrevistas", value: String(interviews) },
-          { label: "Ofertas", value: String(offers) },
-        ],
-      });
-    }
-
-    if (enabledModules.includes("contracts")) {
-      const [created, active] = await Promise.all([
-        safeCount(supabase, "contracts", (q) => q.gte("created_at", from).lte("created_at", to)),
-        safeCount(supabase, "contracts", (q) => q.eq("status", "active")),
-      ]);
-      sections.push({
-        moduleId: "contracts",
-        kpis: [
-          { label: "Contratos criados", value: String(created) },
-          { label: "Contratos ativos", value: String(active) },
-        ],
-      });
-    }
-
-    if (enabledModules.includes("projects")) {
-      const [tasksDone, activeProjects] = await Promise.all([
-        safeCount(supabase, "project_tasks", (q) =>
-          q.eq("status", "done").gte("updated_at", from).lte("updated_at", to),
-        ),
-        safeCount(supabase, "projects", (q) => q.eq("status", "active")),
-      ]);
-      sections.push({
-        moduleId: "projects",
-        kpis: [
-          { label: "Tarefas concluídas", value: String(tasksDone) },
-          { label: "Projetos ativos", value: String(activeProjects) },
-        ],
-      });
-    }
-
-    if (enabledModules.includes("finance")) {
-      const [recvOpen, payOpen, paymentsIn] = await Promise.all([
-        safeSum(supabase, "financial_entries", "amount", (q) =>
-          q.eq("direction", "receivable").in("status", ["open", "partial", "overdue"]),
-        ),
-        safeSum(supabase, "financial_entries", "amount", (q) =>
-          q.eq("direction", "payable").in("status", ["open", "partial", "overdue"]),
-        ),
-        safeSum(supabase, "financial_payments", "amount", (q) =>
-          q.gte("paid_at", from).lte("paid_at", to),
-        ),
-      ]);
-      sections.push({
-        moduleId: "finance",
-        kpis: [
-          { label: "A receber (aberto)", value: fmtBRL(recvOpen) },
-          { label: "A pagar (aberto)", value: fmtBRL(payOpen) },
-          { label: "Pagamentos no período", value: fmtBRL(paymentsIn) },
-        ],
-      });
-    }
-
-    if (enabledModules.includes("people")) {
-      const [active, expiring] = await Promise.all([
-        safeCount(supabase, "people", (q) => q.eq("status", "active")),
-        safeCount(supabase, "people_documents", (q) => q.eq("status", "expiring")),
-      ]);
-      sections.push({
-        moduleId: "people",
-        kpis: [
-          { label: "Pessoas ativas", value: String(active) },
-          { label: "Documentos vencendo", value: String(expiring) },
-        ],
-      });
-    }
-
-    const valueMode = fieldContext.rules?.["techsales.deals"]?.value;
-    if (valueMode === "hidden" || valueMode === "masked")
-      for (const section of sections)
-        if (section.moduleId === "crm")
-          for (const kpi of section.kpis) {
-            if (kpi.label === "Pipeline aberto") kpi.value = "Restrito";
-            if (kpi.label === "Negócios ganhos" || kpi.label === "Negócios perdidos")
-              kpi.hint = "Valor restrito";
-          }
-    return { from, to, enabledModules, sections };
-  });
+export const exportHomeDashboard = createServerFn({ method: "POST" })
+  .middleware([requireSharedPermission("system.home", "export")])
+  .inputValidator((d: unknown) => RangeSchema.parse(d))
+  .handler(({ context, data }) =>
+    loadHomeDashboard(context.supabase, context.sharedWorkspaceId, data),
+  );

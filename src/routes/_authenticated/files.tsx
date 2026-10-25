@@ -107,7 +107,7 @@ function FilesPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const permissions = usePermissions();
-  const readOnly = !!readViewAs();
+  const readOnly = readViewAs()?.readOnly ?? false;
   const canCreate =
     !readOnly &&
     !permissions.isLoading &&

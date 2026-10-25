@@ -1281,60 +1281,53 @@ cache de permissões controlável pelo chamador. Matriz e escopos foram
 revalidados nas sete suítes reais, incluindo a entrega realtime autorizada e
 bloqueio após revogação.
 
-## Ordem 5 — revisão transversal em validação (25/10/2026)
+## Ordem 5 — revisão transversal e aceite final (25/10/2026)
 
-Estado: implementação validada localmente, com preparação aditiva 0227/id391 e
-0228/id392 aplicada em produção. **Ativação e publicação pendentes.** A Ordem 4
-permanece a versão publicada.
+A implementação cobre Arquivos/compartilhamento, mensageiro interno, objetos e
+propriedades personalizados, branding, mídia, IA, configurações, módulos,
+pesquisa/pins e proteção de campos estruturados. Workspace selecionado,
+membership ativa, ação efetiva, deny e vínculo real são obrigatórios.
+A matriz permite gerenciar regras de campo e sinaliza regras históricas para
+campos inexistentes, preservando os registros globais e as concessões atuais.
 
-O lote cobre Arquivos/compartilhamento, mensageiro interno, objetos e propriedades
-personalizados, branding, biblioteca de mídia, IA, configurações de segurança,
-ativação de módulos, pesquisa/pins e proteção de campos estruturados. A seleção
-de workspace passa a ser explícita, sem assumir a primeira membership. Segurança
-pessoal/2FA permanece disponível ao titular. A matriz recebe uma área de regras
-de campo e controles somente leitura para quem pode consultar sem administrar.
+Banco aplicado: 0227/id391 (preparação compartilhada), 0228/id392 (campos),
+0229/id393 (ativação compartilhada), 0230/id394 (ACLs e portas de campos),
+0231/id395 (indicador de documentos), 0232/id396 (Storage) e 0233/id397
+(referências de mídia). As quatro políticas adicionais de Storage são
+RESTRITIVAS, preservam as existentes e foram aplicadas pelo executor SQL oficial.
+Nenhum proprietário foi trocado nem storage_admin concedido. A checagem inicial
+de propriedade não comprovava incapacidade do executor oficial; a aplicação
+real confirmou sua capacidade. O chat do Lovable continuou com server_error.
 
-A autorização exige workspace selecionado, membership ativa, ação efetiva,
-deny prevalecendo, escopo e vínculo reais. O serviço de requisições autenticadas
-não recupera valores brutos de tabelas protegidas pelo cliente administrativo.
-As APIs finitas consultam views com RLS e máscaras; índices telefônicos, JSON de
-importação e valores de itens comerciais acompanham a restrição do campo fonte.
-Regras antigas para campos inexistentes são sinalizadas; nenhuma regra, cargo,
-default, override ou membership real foi alterada.
-
-Migrações em preparação, ordenadas para liberação compatível:
-0227 shared_prepare; 0228 fields_prepare; publicar a fonte validada; 0229
-shared_activate; 0230 fields_activate; 0231 storage_activate pelo proprietário
-oficial do Storage. O journal deve acompanhar cada aplicação confirmada. Não
-ativar ACLs de colunas enquanto a aplicação publicada ainda usa consultas brutas.
-
-Evidências atuais: 67 cenários compartilhados e 31 de campos com GoTrue,
-PostgREST e Storage reais no ambiente isolado, sem envios externos. Ensaio SQL
-com postgres sem superusuário passou com rollback; REFERENCES auth.users espelha
-privilégio já existente em produção. A interface foi aceita para consulta sem
-controles de gestão; alterações de permissão sintéticas restauradas ao final.
-Gates finais no mesmo hash, teste administrativo, publicação e aceite produtivo
-continuam necessários. Não usar contagem de testes como prova de cobertura total.
-
-Dependência externa identificada: postgres não é proprietário de storage.objects.
-O diagnóstico oficial falhou com erro interno no conector e no editor; o painel
-Storage/Policies acessível é somente leitura. Não conceder storage_admin nem
-mudar a propriedade para contornar. Políticas de 0231 exigem sessão ativa e modo de escrita em todos os buckets,
-além de controles específicos em quatro buckets. Os demais conservam seus
-predicados de domínio e exigem revisão explícita no aceite transversal. URLs assinadas emitidas anteriormente continuam válidas até vencer;
-assets de branding/material publicado têm exceção de duração longa, não promessa
-de revogação instantânea. Essa limitação deve constar do aceite.
-
-Estimativa inicial 4–7h, revista para 8–12h de execução total após encontrar
-lacunas reais de campo e Storage. Espera por recuperação do provedor é separada;
-nenhum prazo externo pode ser garantido.
-
-Atualização operacional: 1.767 testes, tipos/lint e build passaram no hash
+A fonte inicial foi publicada e ativada no hash
 9355db23baf4bc4efc49722bb51d790a7140b6d7578a90a2301e0d2dd26c2efb.
-Criação e edição administrativa de regra de campo passaram na interface local;
-a lista atualiza sem recarregar. A conta descartável e as regras foram removidas.
-Após 0227/0228, hashes de cargos/defaults/overrides/memberships/regras são iguais.
-A revisão automática rejeitou o envio do código de acesso ao repositório público
-sem autorização explícita dessa exposição. Push CLI sem autenticação e API de
-árvores do GitHub com 403 são bloqueios de sincronização adicionais. Não ativar
-0229/0230 nem declarar publicação até comprovar a fonte nova no hosting.
+O aceite encontrou timeout no indicador de documentos: 9.713ms pela consulta
+canônica versus 37ms pelo agregado equivalente, no diagnóstico SQL em produção.
+O agregado é finito e exige as permissões atuais da pessoa e do documento;
+próprio/equipe/escopos mistos mantêm o predicado canônico. A leitura das tabelas
+continua sob as políticas anteriores. Os indicadores são filtrados também pelo
+workspace selecionado. CSV/PDF exigem a permissão própria de exportação no
+servidor e revalidam os dados; modo usuário no Ver como respeita readOnly=false.
+
+Mídias de WhatsApp são associadas pelo caminho literal extraído da URL assinada,
+nunca por wildcard. Transferência da conversa/revogação remove a autorização
+mesmo para o autor histórico do upload. Uploads ainda não enviados exigem dono,
+permissão atual e prazo de uma hora. URLs de capacidade já emitidas duram até
+expirar; branding/material publicado mantém sua política de duração longa.
+Essas capacidades não prometem revogação instantânea de links já distribuídos.
+
+Validação final da fonte: 1.767 testes de código, 127 cenários reais isolados
+(67 compartilhados, 31 campos, 17 Home/exportação, 12 WhatsApp/Storage), tipos,
+lint sem erros, build e ensaio SQL sem superusuário com rollback. Fonte validada:
+adb056872a9acc01ab0b4cdbc496dceba2504cd3153152f4654e24b29192e84e.
+Os cenários de aceite usam JWT real; o diagnóstico SQL de performance não é
+contado como aceite de autenticação. Nenhum envio externo ocorreu nos testes.
+Os registros sintéticos de negócio foram removidos e overrides restaurados.
+
+A publicação desta última fonte e o aceite final autenticado ainda estão em
+andamento. Não declarar conclusão até comprovar o hash nos dois domínios,
+verificar a interface e repetir os hashes de defaults/overrides/cargos/memberships
+/regras. A autorização explícita de publicação do código no repositório público
+foi dada pelo usuário; a sincronização usa sua autenticação SSH já existente.
+Estimativa inicial 4–7h, recalibrada para 8–12h totais; fechamento após autorização
+estimado em 1–2h, com 30–45min previstos para a correção encontrada no aceite.

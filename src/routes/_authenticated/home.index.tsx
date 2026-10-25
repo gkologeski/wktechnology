@@ -1,14 +1,17 @@
+import { useSharedAction } from "@/lib/access-control/use-shared-action";
+import { toast } from "sonner";
 // /home — Dashboard consolidado do ERP com KPIs por módulo, filtrado por período.
 // A tela antiga (grid de módulos + atalhos) foi movida para /modules.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Boxes, ArrowRight, Download, FileText, FileSpreadsheet } from "lucide-react";
 import { DateRangePicker } from "@/components/date-range-picker";
 import { usePersistedDateRange } from "@/hooks/use-persisted-date-range";
 import {
   getHomeDashboard,
+  exportHomeDashboard,
   type HomeDashboardResponse,
   type ModuleKpi,
   type ModuleSection,
@@ -179,6 +182,8 @@ function ModuleKpiSection({
 function ErpHomeDashboard() {
   const { range, setRange } = usePersistedDateRange("home", "last30");
   const fetchDashboard = useServerFn(getHomeDashboard);
+  const fetchExport = useServerFn(exportHomeDashboard);
+  const canExport = useSharedAction("system.home", "export");
 
   const fromISO = range.from.toISOString();
   const toISO = range.to.toISOString();
@@ -191,10 +196,16 @@ function ErpHomeDashboard() {
 
   const sections = useMemo(() => query.data?.sections ?? [], [query.data]);
 
-  const handleCsv = () => {
-    if (query.data) exportDashboardCsv(query.data, range);
-  };
+  const csvExport = useMutation({
+    mutationFn: () => fetchExport({ data: { from: fromISO, to: toISO } }),
+    onSuccess: (snapshot) => exportDashboardCsv(snapshot, range),
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : "Não foi possível exportar o dashboard.",
+      ),
+  });
   const handlePdf = () => {
+    if (!canExport) return;
     const url = `/home/print?from=${encodeURIComponent(fromISO)}&to=${encodeURIComponent(toISO)}&autoprint=1`;
     window.open(url, "_blank", "noopener");
   };
@@ -214,13 +225,19 @@ function ErpHomeDashboard() {
             />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" disabled={!query.data || sections.length === 0}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={
+                    !canExport || !query.data || sections.length === 0 || csvExport.isPending
+                  }
+                >
                   <Download className="mr-2 h-4 w-4" />
                   Exportar
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleCsv}>
+                <DropdownMenuItem onClick={() => csvExport.mutate()}>
                   <FileSpreadsheet className="mr-2 h-4 w-4" />
                   CSV
                 </DropdownMenuItem>

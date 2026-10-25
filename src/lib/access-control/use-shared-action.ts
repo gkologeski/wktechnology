@@ -7,7 +7,7 @@ export function useSharedAction(resource: string, action: string) {
     !p.isLoading &&
     !p.isError &&
     !!p.workspaceId &&
-    (action === "view" || !readViewAs()) &&
+    (action === "view" || !readViewAs()?.readOnly) &&
     p.can(`${resource}.view.workspace`) &&
     p.can(`${resource}.${action}.workspace`)
   );

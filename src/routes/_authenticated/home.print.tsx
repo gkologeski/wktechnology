@@ -7,7 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { z } from "zod";
-import { getHomeDashboard, type HomeDashboardResponse } from "@/lib/home/dashboard.functions";
+import { exportHomeDashboard, type HomeDashboardResponse } from "@/lib/home/dashboard.functions";
 import { MODULES } from "@/lib/modules/registry";
 
 const Search = z.object({
@@ -32,7 +32,7 @@ const MODULE_TITLES: Record<string, string> = {
 
 function HomePrintPage() {
   const search = Route.useSearch();
-  const fetchDashboard = useServerFn(getHomeDashboard);
+  const fetchDashboard = useServerFn(exportHomeDashboard);
   const now = new Date();
   const from = search.from ?? new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
   const to = search.to ?? now.toISOString();
@@ -63,6 +63,10 @@ function HomePrintPage() {
 
       {query.isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando...</p>
+      ) : query.isError ? (
+        <p role="alert" className="text-sm text-muted-foreground">
+          Não foi possível gerar o relatório. Verifique sua permissão de exportação.
+        </p>
       ) : !query.data || query.data.sections.length === 0 ? (
         <p className="text-sm text-muted-foreground">Sem dados no período.</p>
       ) : (
